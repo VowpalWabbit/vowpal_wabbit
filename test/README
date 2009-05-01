@@ -3,6 +3,9 @@ not a regeression test since numerical output varies between
 platforms. Think of this just as a little instant gratification for
 building the code.
 
+John Langford's original example can replicated by following the
+instructions at: http://hunch.net/~vw/examples.html
+
 Running 'make test' or 'make -f Makefile.<flavor>' should produce this
 output (modulo one decimal place of accuracy on some of the later
 numbers)
