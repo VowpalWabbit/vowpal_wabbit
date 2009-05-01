@@ -8,6 +8,12 @@ embodied in the content of this file are licensed under the BSD
 #include <float.h>
 #include <fcntl.h>
 #include <pthread.h>
+
+#ifdef __APPLE__
+#include "platform.h"
+#include "getline.h"
+#endif
+
 #include "parse_example.h"
 #include "hash.h"
 

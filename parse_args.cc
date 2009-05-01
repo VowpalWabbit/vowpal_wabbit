@@ -8,6 +8,11 @@ embodied in the content of this file are licensed under the BSD
 #include <fstream.h>
 #include <boost/program_options.hpp>
 #include <math.h>
+
+#ifdef __APPLE__
+#include "platform.h" 			// MAC OS X
+#endif
+
 #include "fcntl.h"
 #include "io.h"
 #include "parse_regressor.h"
