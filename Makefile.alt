@@ -65,11 +65,13 @@ vw-test: vw-train
 	@cat test/test.dat | ./vw -t -i test/t_r_temp -p test/t_p_out
 
 install:
-	mkdir -p ~/bin
-	cp vw ~/bin
+	@mkdir -p ~/bin
+	@cp vw ~/bin
+	@echo "installed ~/bin/vw"
 
 uninstall:
-	rm -f ~/bin/vw
+	@rm -f ~/bin/vw
+	@echo "rm -f ~/bin/vw"
 
 clean:
-	rm -f *.o bin/vw *~ test/t_* vw
+	rm -f *.o *~ test/t_* vw
