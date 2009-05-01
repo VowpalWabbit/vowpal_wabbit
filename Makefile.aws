@@ -1,0 +1,47 @@
+# minimal modifications to get this to build on AWS running CENTOS 5.2 
+# run it as: make -f Makefile.aws <target>
+
+# for boost includes
+INCLUDES = -I/usr/local/include/boost-1_37
+
+# this needs to point to the .so file for boost_program_options
+# some folks have LD_LIBRARY_PATH set so they won't need this
+LIBDIR = /usr/local/lib
+LD_FLAGS = -Wl,-rpath=$(LIBDIR)
+LIB_FLAGS = -L$(LIBDIR)
+
+# flags from original Makefile
+ARCH = -msse2 -mfpmath=sse
+
+# from original Makefile specific to pentium
+# ARCH += -march=pentium-m
+
+# flags variable
+FLAGS = -Wall $(ARCH) -O3 -ffast-math -D_FILE_OFFSET_BITS=64 -Wno-deprecated \
+	$(INCLUDES) $(LIB_FLAGS) 
+
+# this will vary for boost depending on compiler option
+LIBS = 	-lboost_program_options-gcc41-mt \
+		-lpthread
+
+# targets
+all:	vw 
+
+vw.o:	vw.cc parse_example.h parse_regressor.h parse_args.h
+	g++ $(FLAGS) -c $< -o $@  
+
+parse_args.o:	parse_regressor.h parse_example.h io.h
+
+parse_example.o:	io.h stack.h parse_example.cc
+
+io.o:	stack.h
+
+%.o:	%.cc %.h
+	g++ $(FLAGS) -c $< -o $@
+
+vw: hash.o io.o parse_regressor.o parse_example.o parse_args.o vw.o 
+	g++ $(FLAGS) $(LD_FLAGS) -o vw $+ $(LIBS)
+
+clean:
+	rm -f *.o vw *~ 
+
