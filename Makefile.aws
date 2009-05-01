@@ -42,6 +42,19 @@ io.o:	stack.h
 vw: hash.o io.o parse_regressor.o parse_example.o parse_args.o vw.o 
 	g++ $(FLAGS) $(LD_FLAGS) -o vw $+ $(LIBS)
 
+test: vw vw-train vw-test
+
+vw-train: vw
+	@echo "TEST: vw training ..."
+	@cat test/train.dat | ./vw -b 24 -l 1280000 --initial_t 128000 \
+	--power_t 1 -f test/t_r_temp
+
+vw-test: vw-train
+	@echo
+	@echo "TEST: vw test only ..."
+	@cat test/test.dat | ./vw -t -i test/t_r_temp -p test/t_p_out
+
+
 clean:
 	rm -f *.o vw *~ 
 

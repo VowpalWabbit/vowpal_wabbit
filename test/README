@@ -1,0 +1,51 @@
+Minimal test just to verify that the output looks reasonable. This is
+not a regeression test since numerical output varies between
+platforms. Think of this just as a little instant gratification for
+building the code.
+
+Running 'make test' or 'make -f Makefile.<flavor>' should produce this
+output (modulo one decimal place of accuracy on some of the later
+numbers)
+
+TEST: vw training ...
+using no cache
+reading from stdin
+final_regressor = test/t_r_temp
+learning_rate set to 1.28e+06
+average	since	example	example	current	current	current
+loss	last	counter	weight	label	predict	features
+0.3926	0.3926	3	3	0	0.3032	57	
+0.31	0.2275	6	6	1	0.1897	31	
+0.2852	0.2553	11	11	0	0.6957	38	
+0.2845	0.2839	22	22	1	0.4427	88	
+0.3088	0.3331	44	44	0	0.3216	66	
+0.2803	0.2512	87	87	1	0.0781	61	
+0.2874	0.2945	174	1.7e+02	1	0.6602	26	
+
+finished run
+number of examples = 200
+weighted_examples = 200
+weighted_labels = 91
+average_loss = 0.2873
+best constant's loss = 0.248
+
+TEST: vw test only ...
+using no cache
+reading from stdin
+predictions = test/t_p_out
+only testing
+average	since	example	example	current	current	current
+loss	last	counter	weight	label	predict	features
+0.233	0.233	3	3	0	0.4552	62	
+0.2315	0.2301	6	6	0	0.3615	144	
+0.2524	0.2775	11	11	0	0.4932	56	
+0.2256	0.1988	22	22	0	0.5193	36	
+0.1769	0.1281	44	44	1	0.7839	34	
+0.17	0.1629	87	87	1	1	15	
+
+finished run
+number of examples = 100
+weighted_examples = 100
+weighted_labels = 57
+average_loss = 0.1507
+best constant's loss = 0.2451
