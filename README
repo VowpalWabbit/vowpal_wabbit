@@ -5,13 +5,15 @@ source license.
 Contributing authors are John Langford (Primary), Lihong Li, Alex
 Strehl.
 
-Checked into github with clone URL: git://github.com/gparker/vowpal_wabbit.git
+Checked into github with clone URL:
+git://github.com/gparker/vowpal_wabbit.git
 
 To get the code install git -- in a clean directory:
 
 git clone git://github.com/gparker/vowpal_wabbit.git
 
-I've created a tag for the completely stock initial distribution '2.3' so to check out that original release and create a branch based on it:
+I've created a tag for the completely stock initial distribution '2.3'
+so to check out that original release and create a branch based on it:
 
 git checkout 2.3
 git checkout -b from-2.3
@@ -25,4 +27,3 @@ Swicegood, Travis. Pragmatic Version Control with Git. 2008. (p. 102)
 Alternatively, the code can be downloaded directly from github:
 
 http://github.com/gparker/vowpal_wabbit/downloads
-
