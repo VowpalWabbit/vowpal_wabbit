@@ -49,7 +49,7 @@ inline unsigned long ulong_of_substring(substring s)
   return strtoul(string(s.start, s.end-s.start).c_str(),NULL,10);
 }
 
-inline ulong ss_length(substring s)
+inline unsigned long ss_length(substring s)
 {
   return (s.end - s.start);
 }
