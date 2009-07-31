@@ -1,260 +1,56 @@
-/* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
+/*
+Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-#include <vector.h>
+#include <vector>
+#include <string>
+#include <string.h>
 #include <float.h>
 #include <fcntl.h>
 #include <pthread.h>
-
-#ifdef __APPLE__
-#include "platform.h"
-#include "getline.h"
-#endif
-
+#include <unistd.h>
+#include <sys/file.h>
 #include "parse_example.h"
 #include "hash.h"
-
-pthread_mutex_t input_mutex;
-
-void parse(char delim, substring s, v_array<substring> &ret)
-{
-  char *last = s.start;
-  for (; s.start != s.end; s.start++) {
-    if (*s.start == delim) {
-      if (s.start != last)
-	{
-	  substring temp = {last,s.start};
-	  push(ret, temp);
-	}
-      last = s.start+1;
-    }
-  }
-  if (s.start != last)
-    {
-      substring final = {last, s.start};
-      push(ret, final);
-    }
-}
-
-void unmark(bool* in_already, v_array<feature> &features)
-{
-  for (feature* j =features.begin; j != features.end; j++)
-    in_already[j->weight_index] = false;
-}
-
-void mark(bool* in_already, v_array<feature> &features)
-{
-  for (feature* j =features.begin; j != features.end; j++)
-    in_already[j->weight_index] = true;
-}
+#include "source.h"
+#include "cache.h"
 
 inline size_t hashstring (substring s, unsigned long h)
 {
-  return hash((unsigned char *)s.start, s.end - s.start, h);
+  size_t ret = h;
+  while (s.start != s.end)
+    if (*s.start > 47 && *s.start < 58)
+      ret = 10*ret + *(s.start++) - 48;
+    else
+      return uniform_hash((unsigned char *)s.start, s.end - s.start, h);
+
+  return ret;
 }
 
-inline void add_unique_index(bool *in_already, v_array<feature> &features, 
-			     float v, size_t hashvalue)
+parser* new_parser(example_source* s, const label_parser* lp)
 {
-  size_t index = hashvalue;
-  if (in_already[index] != true)
-    {
-      in_already[index] = true;
-      feature f = {v,index};
-      push(features, f);
-    }
+  parser* ret = (parser*) calloc(1,sizeof(parser));
+  ret->source = s;
+  ret->lp = lp;
+  return ret;
 }
 
-void new_quadratic(bool *in_already, v_array<feature> &pair_features, 
-		   const v_array<feature> &first_part, 
-		   const v_array<feature> &second_part, size_t mask)
-{
-  for (feature* i = first_part.begin; i != first_part.end; i++)
-    {
-      size_t halfhash = 16381 * i->weight_index;
-      float i_value = i->x;
-      for (feature* ele = second_part.begin; ele != second_part.end; ele++)
-	add_unique_index(in_already, pair_features, i_value * ele->x, 
-			 (halfhash + ele->weight_index) & mask);
-    }
-}
-
-size_t neg_1 = 1;
-size_t general = 2;
-
-char* run_len_decode(char *p, size_t& i)
-{// read an int 7 bits at a time.
-  size_t count = 0;
-  while(*p & 128)
-    i = i | ((*(p++) & 127) << 7*count++);
-  i = i | (*(p++) << 7*count);
-  return p;
-}
-
-pthread_mutex_t cache_lock;
-size_t int_size = 5;
-size_t char_size = 2;
-
-int read_cached_features(float& label, float& weight, io_buf &cache, 
-			 v_array<char> &tag, v_array<feature>* atomics, 
-			 v_array<size_t> &indicies)
-{
-  char *p;
-  pthread_mutex_lock(&cache_lock);
-  size_t total = sizeof(label)+sizeof(weight)+int_size*2;
-  size_t num_indicies = 0;
-  size_t tag_size = 0;
-  if (buf_read(cache, p, total) < total) 
-    goto badness;
-
-  label = *(float *)p;
-  p += sizeof(float);
-  weight = *(float *)p;
-  p += sizeof(float);
-  p = run_len_decode(p, num_indicies);
-  p = run_len_decode(p, tag_size);
-  cache.set(p);
-  if (buf_read(cache, p, tag_size) < tag_size) 
-    goto badness;
-  push_many(tag, p, tag_size);
-  
-  for (;num_indicies > 0; num_indicies--)
-    {
-      size_t temp;
-      if((temp = buf_read(cache,p,int_size + sizeof(size_t))) < char_size + sizeof(size_t)) {
-	cerr << "truncated example! " << temp << " " << char_size +sizeof(size_t) << endl;
-	goto badness;
-      }
-
-      size_t index = 0;
-      p = run_len_decode(p, index);
-      push(indicies, index);
-      v_array<feature>* ours = atomics+index;
-      size_t storage = *(size_t *)p;
-      p += sizeof(size_t);
-      cache.set(p);
-      total += storage;
-      if (buf_read(cache,p,storage) < storage) {
-	cerr << "truncated example!" << endl;
-	goto badness;
-      }
-
-      char *end = p+storage;
-
-      size_t last = 0;
-      
-      for (;p!= end;)
-	{	  
-	  feature f = {1., 0};
-	  p = run_len_decode(p,f.weight_index);
-	  if (f.weight_index & neg_1) 
-	    f.x = -1.;
-	  else if (f.weight_index & general)
-	    {
-	      f.x = *(float *)p;
-	      p += sizeof(float);
-	    }
-	  f.weight_index = last + (f.weight_index >> 2);
-	  last = f.weight_index;
-	  push(*ours, f);
-	}
-      cache.set(p);
-    }
-  pthread_mutex_unlock(&cache_lock);
-
-  return total;
-
- badness:
-  pthread_mutex_unlock(&cache_lock);
-  return 0;
-}
-
-char* run_len_encode(char *p, size_t i)
-{// store an int 7 bits at a time.
-  while (i >= 128)
-    {
-      *(p++) = (i & 127) | 128;
-      i = i >> 7;
-    }
-  *(p++) = (i & 127);
-  return p;
-}
 
 int order_features(const void* first, const void* second)
 {
   return ((feature*)first)->weight_index - ((feature*)second)->weight_index;
 }
 
-void cache_features(float label, float weight, io_buf &cache, 
-		    v_array<char> &tag, v_array<feature>* atomics, 
-		    v_array<size_t> &indicies)
+int order_audit_features(const void* first, const void* second)
 {
-  char *p;
-
-  pthread_mutex_lock(&cache_lock);
-  
-  buf_write(cache, p, sizeof(label)+sizeof(weight)+int_size*2+tag.index());
-  
-  *(float *)p = label;
-  p += sizeof(label);
-  *(float *)p = weight;
-  p += sizeof(weight);
-  
-  p = run_len_encode(p, indicies.index());
-  p = run_len_encode(p, tag.index());
-  memcpy(p,tag.begin,tag.index());
-  p += tag.index();
-  cache.set(p);
-  
-  for (size_t* b = indicies.begin; b != indicies.end; b++)
-    {
-      size_t storage = atomics[*b].index() * int_size;
-      feature* end = atomics[*b].end;
-      for (feature* i = atomics[*b].begin; i != end; i++)
-	if (i->x != 1. && i->x != -1.)
-	  storage+=sizeof(float);
-
-      buf_write(cache, p, int_size + storage + sizeof(size_t));
-      p = run_len_encode(p, *b);
-      char *storage_size_loc = p;
-      p += sizeof(size_t);
-
-      qsort(atomics[*b].begin, atomics[*b].index(), sizeof(feature), 
-	    order_features);
-      size_t last = 0;
-
-      for (feature* i = atomics[*b].begin; i != end; i++)
-	{
-	  size_t diff = (i->weight_index - last) << 2;
-	  last = i->weight_index;
-	  if (i->x == 1.) 
-	    p = run_len_encode(p, diff);
-	  else if (i->x == -1.) 
-	    p = run_len_encode(p, diff | neg_1);
-	  else {
-	    p = run_len_encode(p, diff | general);
-	    *(float *)p = i->x;
-	    p += sizeof(float);
-	  }
-	}
-      cache.set(p);
-      *(size_t*)storage_size_loc = p - storage_size_loc - sizeof(size_t);
-    }
-  pthread_mutex_unlock(&cache_lock);
-}
-
-inline float float_of_substring(substring s)
-{
-  return atof(string(s.start, s.end-s.start).c_str());
+  return ((audit_data*)first)->weight_index - ((audit_data*)second)->weight_index;
 }
 
 void feature_value(substring &s, v_array<substring>& name, float &v)
 {
-  name.erase();
-  parse(':', s, name);
+  tokenize(':', s, name);
   
   switch (name.index()) {
   case 0:
@@ -270,170 +66,399 @@ void feature_value(substring &s, v_array<substring>& name, float &v)
   }
 }
 
-int read_features(thread_data &stuff, FILE* data, float &label, 
-		  float &weight, v_array<char> &tag, size_t mask)
+void unique_features(v_array<feature> &features)
 {
-  pthread_mutex_lock(&input_mutex);
-  int num_chars = getline (&stuff.line, &stuff.linesize, data);
-  if (num_chars == -1) {
-    pthread_mutex_unlock(&input_mutex);
+  if (features.empty())
+    return;
+  feature* last = features.begin;
+  for (feature* current = features.begin+1; 
+       current != features.end; current++)
+    if (current->weight_index != last->weight_index) 
+      *(++last) = *current;
+  features.end = ++last;
+}
+
+void unique_audit_features(v_array<audit_data> &features)
+{
+  if (features.empty())
+    return;
+  audit_data* last = features.begin;
+  for (audit_data* current = features.begin+1; 
+       current != features.end; current++)
+    if (current->weight_index != last->weight_index) 
+      *(++last) = *current;
+  features.end = ++last;
+}
+
+// new should be empty. --Alex
+template<class T> void copy_v_array(v_array<T>& old, v_array<T>& new_va)
+{
+  // allocate new memory for new.
+  new_va.begin = (T *) malloc(sizeof(T)*old.index());
+
+  // copy the old to the new.
+  memcpy(new_va.begin,old.begin,sizeof(T)*old.index());
+  
+  // update pointers
+  new_va.end = new_va.begin + old.index();
+  new_va.end_array = new_va.end;
+}
+
+char* c_string_of_substring(substring s)
+{
+  size_t len = s.end - s.start+1;
+  char* ret = (char *)calloc(len,sizeof(char));
+  memcpy(ret,s.start,len-1);
+  return ret;
+}
+
+char* copy(char* base)
+{
+  size_t len = 0;
+  while (base[len++] != '\0');
+  char* ret = (char *)calloc(len,sizeof(char));
+  memcpy(ret,base,len);
+  return ret;
+}
+
+int read_features(parser* p, example* ae)
+{
+  char *line=NULL;
+  int num_chars = readto(p->source->input, line, '\n');
+  if (num_chars == 0)
     return num_chars;
-  }
   
-  substring page_offer = {stuff.line, stuff.line + num_chars-1};
-  
-  stuff.channels.erase();
-  parse('|', page_offer, stuff.channels);
-  
-  stuff.words.erase();
-  parse(' ',stuff.channels[0], stuff.words);
-  switch(stuff.words.index()) {
-  case 0:
-    label = FLT_MAX;
-    break;
-  case 1:
-    label = float_of_substring(stuff.words[0]);
-    weight = 1.;
-    break;
-  case 2:
-    label = float_of_substring(stuff.words[0]);
-    weight = float_of_substring(stuff.words[1]);
-    break;
-  case 3:
-    label = float_of_substring(stuff.words[0]);
-    weight = float_of_substring(stuff.words[1]);
-    push_many(tag, stuff.words[2].start, 
-	      stuff.words[2].end - stuff.words[2].start);
-    break;
-  default:
-    cerr << "malformed example!\n";
-  }
+  substring example = {line, line + num_chars};
 
-
-  for (substring* i = stuff.channels.begin+1; i != stuff.channels.end; i++) {
+  tokenize('|', example, p->channels);
+  p->lp->default_label(ae->ld);
+  substring* feature_start = &(p->channels[1]);
+  if (*line == '|')
+    feature_start = &(p->channels[0]);
+  else 
+    p->lp->parse_label(ae->ld,p->channels[0],p->words);
+  
+  size_t mask = p->source->global->mask;
+  bool audit = p->source->global->audit;
+  for (substring* i = feature_start; i != p->channels.end; i++) {
     substring channel = *i;
     
-    stuff.words.erase();
-    parse(' ',channel, stuff.words);
-    if (stuff.words.begin == stuff.words.end)
+    tokenize(' ',channel, p->words);
+    if (p->words.begin == p->words.end)
       continue;
     
     float channel_v = 1.;
-    feature_value(stuff.words[0], stuff.name, channel_v);
-    
+    size_t channel_hash;
+    char* base=NULL;
     size_t index = 0;
     bool new_index = false;
-    if (stuff.name.index() > 0) {
-      index = (unsigned char)*(stuff.name[0].start);
-      if (stuff.atomics[index].begin == stuff.atomics[index].end)
-	new_index = true;
-    }
-    
-    size_t channel_hash = hashstring(stuff.name[0], 0);
-    for (substring* i = stuff.words.begin+1; i != stuff.words.end; i++) {
+    size_t feature_offset = 0;
+    if (channel.start[0] != ' ')//we have a nonanonymous namespace
+      {
+	feature_offset++;
+	feature_value(p->words[0], p->name, channel_v);
+
+	if (p->name.index() > 0) {
+	  index = (unsigned char)(*p->name[0].start);
+	  if (ae->atomics[index].begin == ae->atomics[index].end)
+	    new_index = true;
+	}
+	if (audit)
+	  base = c_string_of_substring(p->name[0]);
+	channel_hash = hashstring(p->name[0], hash_base);
+      }
+    else
+      {
+	index = (unsigned char)' ';
+	if (ae->atomics[index].begin == ae->atomics[index].end)
+	  new_index = true;
+	if (audit)
+	  {
+	    base = (char *)calloc(2,sizeof(char));
+	    base[0]=' ';
+	    base[1]='\0';
+	  }
+	channel_hash = 0;
+      }
+ 
+    for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
       float v = channel_v;
-      feature_value(*i, stuff.name, v);
+      feature_value(*i, p->name, v);
       
-      size_t word_hash = (hashstring(stuff.name[0], channel_hash)) & mask;
-      add_unique_index(stuff.in_already, stuff.atomics[index], v, word_hash);
+      size_t word_hash = (hashstring(p->name[0], channel_hash)) & mask;
+      feature f = {v,word_hash};
+      push(ae->atomics[index], f);
     }
-    if (new_index && stuff.atomics[index].begin != stuff.atomics[index].end)
-      push(stuff.indicies, index);
+
+    if (new_index && ae->atomics[index].begin != ae->atomics[index].end)
+      push(ae->indices, index);
+    
+    if (audit)
+      {
+	for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
+	  float v = channel_v;
+	  feature_value(*i, p->name, v);
+	  
+	  size_t word_hash = (hashstring(p->name[0], channel_hash)) & mask;
+      
+	  char* feature = c_string_of_substring(p->name[0]);
+	  audit_data ad = {copy(base), feature, word_hash, v, true};
+	  push(ae->audit_features[index], ad);
+	}
+	free(base);
+      }
   }
-  
-  pthread_mutex_unlock(&input_mutex);
+
+  for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
+    {
+      qsort(ae->atomics[*b].begin, ae->atomics[*b].index(), sizeof(feature), 
+	    order_features);
+      unique_features(ae->atomics[*b]);
+
+      if (audit)
+	{
+	  qsort(ae->audit_features[*b].begin, ae->audit_features[*b].index(), sizeof(audit_data), 
+		order_audit_features);
+	  unique_audit_features(ae->audit_features[*b]);
+	}
+    }
+
   return num_chars;
 }
 
-bool parse_example(thread_data &stuff, example_file &example_source, 
-		   regressor &reg, v_array<feature> &features,
-		   float &label, float &weight, v_array<char> &tag)
+bool parse_atomic_example(parser* p, example *ae)
 {
-  features.erase();
-  tag.erase();
+  if (p->source->global->audit)
+    for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
+      {
+	for (audit_data* temp 
+	       = ae->audit_features[*i].begin; 
+	     temp != ae->audit_features[*i].end; temp++)
+	  {
+	    if (temp->alloced)
+	      {
+		free(temp->space);
+		free(temp->feature);
+		temp->alloced=false;
+	      }
+	  }
+	ae->audit_features[*i].erase();
+      }
 
-  for (size_t* i = stuff.indicies.begin; i != stuff.indicies.end; i++) 
-    stuff.atomics[*i].erase();
-  stuff.indicies.erase();
+  for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
+    ae->atomics[*i].erase();
 
-  if (example_source.cache.file == -1 || example_source.write_cache){
-    
-    if (read_features(stuff, example_source.data, label, weight, tag, 
-		      example_source.mask) <= 0)
+  ae->indices.erase();
+  if (p->source->cache.file == -1 || p->source->write_cache){
+    if (read_features(p, ae) <= 0)
       return false;
-    
-    if (example_source.write_cache)
-      cache_features(label,weight, example_source.cache, tag, 
-		     stuff.atomics, stuff.indicies);
+    if (p->source->write_cache) 
+      cache_features(p, ae);
   }
-  else // use the read_cache.
-    {
-      if (read_cached_features(label, weight, example_source.cache, tag, 
-			       stuff.atomics, stuff.indicies) <= 0)
-	return false;
-    }  
-
-  for (size_t* i = stuff.indicies.begin; i != stuff.indicies.end; i++) 
-    push_many(features, stuff.atomics[*i].begin, stuff.atomics[*i].index());
-
-  if (example_source.cache.file != -1 && !example_source.write_cache 
-      /*&& reg.pairs.size() > 0*/)
-    mark(stuff.in_already, features);
-  
-  for (vector<string>::iterator i = reg.pairs.begin(); i != reg.pairs.end();i++) 
-    new_quadratic(stuff.in_already, features, stuff.atomics[(int)(*i)[0]], 
-		  stuff.atomics[(int)(*i)[1]], example_source.mask);
-  
-  add_unique_index(stuff.in_already, features, 1, 0);//a constant features
-
-  unmark(stuff.in_already, features);
+  else
+    if (read_cached_features(p, ae) == 0) 
+      return false;
 
   return true;
 }
 
-bool inconsistent_cache(size_t numbits, io_buf &cache)
+const size_t ring_size = 20;
+example* examples;//A Ring of examples.
+pthread_mutex_t examples_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
+pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
+size_t parsed_index; // The index of the parsed example.
+size_t* used_index; // The index of the example currently used by thread i.
+bool done;
+
+example* get_unused_example()
 {
-  size_t total = sizeof(numbits);
-  char *p;
-  if (buf_read(cache, p, total) < total) 
-    return true;
+  while (true)
+    {
+      pthread_mutex_lock(&examples_lock);
+      if (examples[parsed_index % ring_size].in_use == false)
+	{
+	  examples[parsed_index % ring_size].in_use = true;
+	  pthread_mutex_unlock(&examples_lock);
+	  return examples + (parsed_index % ring_size);
+	}
+      else 
+	pthread_cond_wait(&example_unused, &examples_lock);
+      pthread_mutex_unlock(&examples_lock);
+    }
+}
 
-  size_t cache_numbits = *(size_t *)p;
-  if (cache_numbits != numbits)
-    return true;
+void setup_example(example* ae, static_data* global)
+{
+  size_t num_threads = global->num_threads();
 
+  ae->partial_prediction = 0.;
+  ae->num_features = 1;
+  ae->threads_to_finish = num_threads;	
+
+  
+  //Should loop through the features to determine the boundaries
+  size_t length = global->mask + 1;
+  size_t expert_size = length >> global->thread_bits; //#features/expert
+  for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
+    {
+      ae->subsets[*i].erase();
+      feature* f = ae->atomics[*i].begin;
+      push(ae->subsets[*i],f);
+      size_t last_index = 0;
+      for (; f != ae->atomics[*i].end && f->weight_index < length; f++)
+	while (f->weight_index / expert_size != last_index) {
+	  push(ae->subsets[*i],f);
+	  last_index++;
+	}
+      while(ae->subsets[*i].index() < num_threads+1)
+	push(ae->subsets[*i],f);
+      
+      ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
+    }
+  
+  for (vector<string>::iterator i = global->pairs.begin(); i != global->pairs.end();i++) 
+    {
+    ae->num_features 
+      += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
+      *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin);
+    }
+}
+
+void *main_parse_loop(void *in)
+{
+  parser* p = (parser*) in;
+  
+  while(!done)
+    {
+      example* ae=get_unused_example();
+
+      if (parse_atomic_example(p, ae)) {	
+	setup_example(ae,p->source->global);
+
+	pthread_mutex_lock(&examples_lock);
+	parsed_index++;
+	pthread_cond_broadcast(&example_available);
+	pthread_mutex_unlock(&examples_lock);
+
+      }
+      else
+	{
+	  pthread_mutex_lock(&examples_lock);
+	  done = true;
+	  ae->in_use = false;
+	  pthread_cond_broadcast(&example_available);
+	  pthread_mutex_unlock(&examples_lock);
+	}
+    }  
+
+  free(p->channels.begin);
+  p->channels.begin = p->channels.end = p->channels.end_array = NULL;
+  free(p->words.begin);
+  p->words.begin = p->words.end = p->words.end_array = NULL;
+  free(p->name.begin);
+  p->name.begin = p->name.end = p->name.end_array = NULL;
+
+  return NULL;
+}
+
+pthread_t parse_thread;
+
+void setup_parser(size_t num_threads, parser* pf)
+{
+  //This must be called first.
+  used_index = (size_t*) calloc(num_threads, sizeof(size_t));
+  parsed_index = 0;
+  done = false;
+  
+  examples = (example*)calloc(ring_size, sizeof(example));
+  
+  for (size_t i = 0; i < ring_size; i++)
+    {
+      examples[i].lock = examples_lock;
+      examples[i].ld = calloc(1,pf->lp->label_size);
+    }
+  pthread_create(&parse_thread, NULL, main_parse_loop, pf);
+}
+
+void destroy_parser(parser* pf)
+{
+  pthread_join(parse_thread, NULL);
+  free(used_index);
+  
+  for (size_t i = 0; i < ring_size; i++) 
+    {
+      pf->lp->delete_label(examples[i].ld);
+      free(examples[i].ld);
+      for (size_t j = 0; j < 256; j++)
+	{
+	  if (examples[i].atomics[j].begin != examples[i].atomics[j].end_array)
+	    free(examples[i].atomics[j].begin);
+	  if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end)
+	    {
+	      for (audit_data* temp = examples[i].audit_features[j].begin; 
+		   temp != examples[i].audit_features[j].end; temp++)
+		if (temp->alloced) {
+		  free(temp->space);
+		  free(temp->feature);
+		  temp->alloced = false;
+		}
+	      free(examples[i].audit_features[j].begin);
+	    }
+	  if (examples[i].subsets[j].begin != examples[i].subsets[j].end_array)
+	    free(examples[i].subsets[j].begin);
+	}
+      free(examples[i].indices.begin);
+    }
+  free(examples);
+}
+
+bool examples_to_finish()
+{
+  for(size_t i = 0; i < ring_size; i++)
+    if (examples[i].in_use)
+      return true;
   return false;
 }
 
-void reset(size_t numbits, example_file &source)
+inline void finish_example(example* ec)
 {
-  if (source.write_cache)
+  pthread_mutex_lock(&examples_lock);
+  if (-- ec->threads_to_finish == 0)
     {
-      source.cache.flush();
-      source.write_cache = false;
-      close(source.cache.file);
-      rename(source.cache.currentname.c_str(), source.cache.finalname.c_str());
-      source.cache.file = open(source.cache.finalname.c_str(), O_RDONLY|O_LARGEFILE);
+      ec->in_use = false;
+      pthread_cond_signal(&example_unused);
+      if (done)
+	pthread_cond_broadcast(&example_available);
     }
-  if (source.cache.file != -1)
-    {
-      lseek(source.cache.file, 0, SEEK_SET);
-      alloc(source.cache.space, 1 << 16);
-      source.cache.fill(0);
-      if (inconsistent_cache(numbits, source.cache)) {
-	cout << "argh, a bug in caching of some sort!  Exitting\n" ;
-	exit(1);
-      }
-    }
-  else
-    fseek(source.data, 0, SEEK_SET);
+  pthread_mutex_unlock(&examples_lock);
 }
 
-void finalize_source(example_file &source)
+example* get_example(example* ec, size_t thread_num)
 {
-  fclose(source.data);
-  if (source.cache.file != -1) {
-    close(source.cache.file);  
-    free(source.cache.space.begin);
-  }
+  if (ec != NULL)
+    finish_example(ec);
+  
+  while (true) // busy wait until an atomic example is acquired.
+    {
+      pthread_mutex_lock(&examples_lock);
+      
+      if (parsed_index != used_index[thread_num]) {
+	size_t ring_index = used_index[thread_num]++ % ring_size;
+	pthread_mutex_unlock(&examples_lock);
+	return examples + ring_index;
+      }
+      else {
+	if (!done || examples_to_finish()) {
+	  pthread_cond_wait(&example_available, &examples_lock);
+	  pthread_mutex_unlock(&examples_lock);
+	}
+	else 
+	  { 
+	    pthread_mutex_unlock(&examples_lock);
+	    return NULL;
+	  }
+      }
+    }
 }
+

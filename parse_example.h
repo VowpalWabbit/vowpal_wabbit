@@ -1,56 +1,84 @@
+/*
+Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
+embodied in the content of this file are licensed under the BSD
+(revised) open source license
+ */
+
 /* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
+   Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
 #ifndef PE_H
 #define PE_H
-#include "stack.h"
+//#include "stack.h"
 #include "io.h"
 #include "parse_regressor.h"
+#include "parse_primitives.h"
+#include "source.h"
 
 using namespace std;
 
 struct feature {
   float x;
-  size_t weight_index;
+  uint32_t weight_index;
+  bool operator==(feature j){return weight_index == j.weight_index;}
 };
 
-struct substring {
-  char *start;
-  char *end;
+struct label_parser {
+  void (*default_label)(void*);
+  void (*parse_label)(void*, substring, v_array<substring>&);
+  void (*cache_label)(void*, io_buf& cache);
+  size_t (*read_cached_label)(void*, io_buf& cache);
+  void (*delete_label)(void*);
+  size_t label_size;
 };
 
-struct thread_data {
-  size_t linesize;
-  char *line;
-  
+struct parser {
   v_array<substring> channels;
   v_array<substring> words;
   v_array<substring> name;
 
-  v_array<size_t> indicies;
-  v_array<feature> atomics[256];
-  bool *in_already;
+  example_source* source;
+
+  const label_parser* lp;
 };
+
+parser* new_parser(example_source* s, const label_parser* lp);
+
+struct audit_data {
+  char* space;
+  char* feature;
+  size_t weight_index;
+  float x;
+  bool alloced;
+};
+
+struct example
+{ 
+  void* ld;
+
+  v_array<size_t> indices;
+  v_array<feature> atomics[256]; // raw parsed data
   
-struct example_file {
-  FILE* data;
-  io_buf cache;
-  bool write_cache;
-  size_t mask;
+  v_array<audit_data> audit_features[256];
+  
+  v_array<feature*> subsets[256];// helper for fast example expansion
+  size_t num_features;//precomputed, cause it's fast&easy.
+  float partial_prediction;//shared data for prediction.
+  float eta_round;
+
+  pthread_mutex_t lock; //thread coordination devices
+  size_t threads_to_finish;
+  bool in_use; //in use or not (for the parser)
 };
 
-// Parse a string 'page_off' to extract features and label.
-bool parse_example(thread_data &stuff, example_file &example_source, 
-		   regressor &reg, v_array<feature> &features,
-		   float &label, float &weight, v_array<char> &tag);
+//parser control
 
-bool inconsistent_cache(size_t numbits, io_buf &cache);
-
-void reset(size_t numbits, example_file &source);
-
-void finalize_source(example_file &source);
+void setup_parser(size_t num_threads, parser* pf);
+void destroy_parser(parser* pf);
+//example processing
+example* get_example(example* ec, size_t thread_num);
 
 #endif

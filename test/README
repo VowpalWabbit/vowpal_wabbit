@@ -1,20 +1,13 @@
-Minimal test just to verify that the output looks reasonable. This is
-not a regeression test since numerical output varies between
-platforms. Think of this just as a little instant gratification for
-building the code.
-
-John Langford's original example can replicated by following the
-instructions at: http://hunch.net/~vw/examples.html
-
-Running 'make test' or 'make -f Makefile.<flavor>' should produce this
-output (modulo one decimal place of accuracy on some of the later
-numbers)
-
-TEST: vw training ...
+Num weight bits = 24
+learning rate = 2.56e+06
+initial_t = 128000
+power_t = 1
+decay_learning_rate = 0.707107
+Warning: decay_learning_rate has no effect when there is only one pass
 using no cache
-reading from stdin
+Reading from stdin
 final_regressor = test/t_r_temp
-learning_rate set to 1.28e+06
+learning_rate set to 2.56e+06
 average	since	example	example	current	current	current
 loss	last	counter	weight	label	predict	features
 0.3926	0.3926	3	3	0	0.3032	57	
@@ -27,28 +20,34 @@ loss	last	counter	weight	label	predict	features
 
 finished run
 number of examples = 200
-weighted_examples = 200
-weighted_labels = 91
-average_loss = 0.2873
+weighted example sum = 200
+weighted label sum = 91
+average loss = 0.2873
 best constant's loss = 0.248
-
-TEST: vw test only ...
+total feature number = 15482
+Num weight bits = 24
+learning rate = 0.1
+initial_t = 1
+power_t = 0
+decay_learning_rate = 0.707107
+Warning: decay_learning_rate has no effect when there is only one pass
 using no cache
-reading from stdin
 predictions = test/t_p_out
+Reading from stdin
 only testing
 average	since	example	example	current	current	current
 loss	last	counter	weight	label	predict	features
 0.233	0.233	3	3	0	0.4552	62	
 0.2315	0.2301	6	6	0	0.3615	144	
 0.2524	0.2775	11	11	0	0.4932	56	
-0.2256	0.1988	22	22	0	0.5193	36	
-0.1769	0.1281	44	44	1	0.7839	34	
+0.2256	0.1987	22	22	0	0.5193	36	
+0.1768	0.1281	44	44	1	0.7838	34	
 0.17	0.1629	87	87	1	1	15	
 
 finished run
 number of examples = 100
-weighted_examples = 100
-weighted_labels = 57
-average_loss = 0.1507
+weighted example sum = 100
+weighted label sum = 57
+average loss = 0.1507
 best constant's loss = 0.2451
+total feature number = 5069

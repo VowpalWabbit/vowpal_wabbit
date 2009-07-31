@@ -1,294 +1,171 @@
 /*
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
+Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
+/*
+Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
+embodied in the content of this file are licensed under the BSD
+(revised) open source license
+
+A smaller change.
+ */
+
 #include <math.h>
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include <float.h>
 #include <pthread.h>
+#include <time.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include "parse_regressor.h"
 #include "parse_example.h"
 #include "parse_args.h"
+#include "gd.h"
+#include "vw.h"
 
-pthread_mutex_t weight_lock;
-float eta = 0.1;
-float t = 1.;
-float power_t = 0.;
-ofstream predictions;
-ofstream raw_predictions;
-bool training = true;
-
-float dump_interval = exp(1.);
-double sum_loss = 0.0;
-double sum_loss_since_last_dump = 0.0;
-long long int example_number = 0;
-double weighted_examples = 0.;
-double old_weighted_examples = 0.;
-double weighted_labels = 0.;
-
-regressor regressor;
-example_file source;
-ofstream final_regressor;
-
-inline float final_prediction(float ret) {
-  if (isnan(ret))
-    return 0.5;
-  if ( ret > 1.0 )
-    return 1.0;
-  if (ret < 0.0)
-    return 0.0;
-  return ret;
-}
-
-float vector_sum(const v_array<feature> &features, weight* w)
-{
-  float sum = 0.0;
-  for (feature* ele = features.begin; ele != features.end; ele++) 
-    sum += w[ele->weight_index];
-
-  return sum;
-}
-
-float seg_predict(v_array<feature> &features, 
-		  float &neg_weight_sum, float &pos_weight_sum,
-		  float &raw_prediction)
-{
-  pos_weight_sum = vector_sum(features, regressor.weights);
-  neg_weight_sum = vector_sum(features, regressor.other_weights);
-  
-  raw_prediction = pos_weight_sum;
-
-  if (fpclassify(neg_weight_sum) == FP_ZERO)
-    return 0.5;
-  else
-    return final_prediction(pos_weight_sum / (neg_weight_sum+pos_weight_sum));
-}
-
-void vector_multiply(const v_array<feature> &features, weight *w, 
-		     const float update)
-{
-  for (feature* ele = features.begin; ele != features.end; ele++) 
-    w[ele->weight_index] *= update;
-}
-
-void seg_train(v_array<feature> &features,  
-	       float neg_weight_update, float pos_weight_update)
-{
-  vector_multiply(features, regressor.weights, pos_weight_update);
-  vector_multiply(features, regressor.other_weights, neg_weight_update);
-}
-
-float predict(const v_array<feature> &features, float &norm, float & raw_prediction)
-{
-  float prediction = 0.0;
-  weight *weights = regressor.weights;
-  for (feature* j = features.begin; j != features.end; j++)
-    prediction += weights[j->weight_index] * j->x;
- 
-  if (features.end - features.begin > 0)
-    norm = 1. / sqrtf(features.end - features.begin);
-  else
-    norm = 1.;
-
-  raw_prediction = prediction;
-  prediction *= norm;
-  
-  return final_prediction(prediction);
-}
-
-void train(const v_array<feature> &features, float update)
-{
-  if (fabs(update) > 0.)
-    {
-      weight* weights = regressor.weights;
-      for (feature* j = features.begin; j != features.end; j++)
-	weights[j->weight_index] += update * j->x;
-    }
-}
+int sum_sock = -1;
 
 void* go(void *in)
 {
-  thread_data td;
-  td.line = NULL;
-  td.linesize = 0;
-  td.in_already = (bool*)calloc(regressor.length, sizeof(bool)); 
-  
-  v_array<feature> features;
-  v_array<char> tag;
-  float label;
-  float weight;
-  
-  while ( parse_example(td, source, regressor, features, label, weight, tag))
+  go_params* params = (go_params*) in;
+  regressor reg = params->reg;
+  size_t thread_num = params->thread_num;
+  example* ec = NULL;
+
+  while ( (ec = get_example(ec,thread_num)) )
     {
-      if (features.end == features.begin)
+      label_data* ld = (label_data*)ec->ld;
+      if ( ((ld->tag).begin != (ld->tag).end) 
+	   && ((ld->tag)[0] == 's')&&((ld->tag)[1] == 'a')&&((ld->tag)[2] == 'v')&&((ld->tag)[3] == 'e'))
 	{
-	  cout << "You have an example with no features.  Skipping.\n";
-	  continue;
-	}
-      
-      pthread_mutex_lock(&weight_lock);
-
-      float norm = 0.;
-      float neg_weight_sum = 0.;
-      float prediction;
-      float raw_prediction;
-      if (regressor.seg)
-	  prediction = seg_predict(features,neg_weight_sum,
-				   norm,raw_prediction);
-      else
-	prediction = predict(features,norm,raw_prediction);
-
-      example_number++;
-      weighted_examples += weight;
-      weighted_labels += label * weight;
-
-      predictions << prediction;
-      if (tag.begin != tag.end){
-	predictions << " ";
-	predictions.write(tag.begin, tag.index());
-      }
-      predictions << endl;
-      
-      raw_predictions << raw_prediction;
-      if (tag.begin != tag.end) {
-	raw_predictions << " ";
-	raw_predictions.write(tag.begin,tag.index());
-      }
-      raw_predictions << endl;
-      
-      if (label != FLT_MAX)
-	{
-	  float example_loss = (prediction - label) * (prediction - label);
-	  example_loss *= weight;
-
-	  t += weight;
-	  sum_loss = sum_loss + example_loss;
-	  sum_loss_since_last_dump += example_loss;
-	  if (weighted_examples > dump_interval)
+	  if ((*(params->final_regressor_name)) != "") 
 	    {
-	      cout.precision(4);
-	      cout << sum_loss/weighted_examples << "\t" 
-		   << sum_loss_since_last_dump / (weighted_examples - old_weighted_examples) << "\t"
-		   << example_number << "\t";
-	      cout.precision(2);
-	      cout << weighted_examples << "\t";
-	      cout.precision(4);
-	      cout << label << "\t" << prediction << "\t"
-		   << features.index() << "\t" << endl;
-	      
-	      sum_loss_since_last_dump = 0.0;
-	      old_weighted_examples = weighted_examples;
-	      dump_interval *= 2;
+	      ofstream tempOut;
+	      tempOut.open((*(params->final_regressor_name)).c_str());
+	      dump_regressor(tempOut, reg);
 	    }
 	}
-      if (label != FLT_MAX && training)
-	{
-	  float eta_round = eta / pow(t, power_t);
-	  if (regressor.seg) {      
-	    float update = expf(2.0 * eta_round * (label - prediction) * weight);
-	    float neg_update;
-	    if (fpclassify(norm) == FP_ZERO && fpclassify(neg_weight_sum) == FP_ZERO)
-	      neg_update = 1.;
-	    else
-	      neg_update = (norm + neg_weight_sum) / (norm * update + neg_weight_sum);
-	    if (isnan(neg_update) || isnan(update*neg_update)) 
-	      {
-		cout << "argh!, a nan! neg_update = " << neg_update << endl;
-		cout << "label = " << label << endl;
-		cout << "prediction = " << prediction << endl;
-		cout << "norm = " << norm << endl;
-		cout << "neg_weight_sum = " << neg_weight_sum << endl;
-		cout << "feature number = " << features.index() << endl;
-		cout << "update = " << update << endl;
-		cout << "example_number = " << example_number << endl;
-		for (feature* ele = features.begin; ele != features.end; ele++) 
-		  cout << ele->weight_index << "\t" << regressor.weights[ele->weight_index] << " " 
-		       << regressor.other_weights[ele->weight_index] << endl;
-		
-	      }
-	    seg_train(features, neg_update, update * neg_update);
-	    
-	    float new_neg = 0.;
-	    float new_pos = 0.;
-	    float new_raw = 0.;
-	    seg_predict(features, new_neg, new_pos, new_raw);
-	    if (fabs(new_pos + new_neg - norm - neg_weight_sum) > (norm+neg_weight_sum) * 0.001) {
-	      cout.precision(20);
-	      cout << "Update isn't preserving weight!\n";
-	      cout << new_pos + new_neg << "\t" << norm + neg_weight_sum << endl;
-		cout << "label = " << label << endl;
-		cout << "prediction = " << prediction << endl;
-		cout << "norm = " << norm << endl;
-		cout << "neg_weight_sum = " << neg_weight_sum << endl;
-		cout << "feature number = " << features.index() << endl;
-		cout << "update = " << update << endl;
-		cout << "example_number = " << example_number << endl;	      cout << "Features = " << endl;
-	      for (feature* ele = features.begin; ele != features.end; ele++) 
-		cout << ele->weight_index << "\t" << regressor.weights[ele->weight_index] << "\t" 
-		     << regressor.other_weights[ele->weight_index] << endl;
-	    }
-	  }
-	  else
-	    train(features, eta_round * (label - prediction) * 2. * norm * weight);
-	}
-      pthread_mutex_unlock(&weight_lock);
+      else
+	train_one_example(reg,ec,thread_num,*(params->vars));
     }
 
-  alloc(features,0);
-  alloc(tag,0);
-  free(td.in_already);
-  free(td.line);
-  free(td.channels.begin);
-  free(td.words.begin);
-  free(td.name.begin);
-  alloc(td.indicies,0);
-  for (int i = 0; i < 256; i++)
-    free(td.atomics[i].begin);
-  
-  return NULL;  
+  return NULL;
 }
 
-int main(int argc, char *argv[])
+gd_vars* vw(int argc, char *argv[])
 {
-  int numthreads;
-  int numpasses;
+  size_t numpasses;
   float eta_decay;
-  parse_args(argc, argv, eta, eta_decay, t, power_t, predictions, 
-	     raw_predictions, training, numthreads, numpasses, regressor, source, 
-	     final_regressor);
+  ofstream final_regressor;
+  string final_regressor_name;
+
+  example_source source;
+  parser* p = new_parser(&source,&simple_label);
+  regressor regressor1;
+
+  gd_vars *vars = new gd_vars;
+
+  po::options_description desc("VW options");
+
+  parse_args(argc, argv, desc, *vars, eta_decay, 
+	     numpasses, regressor1, p, 
+	     final_regressor_name, sum_sock);
+
+  if (!vars->quiet)
+    {
+      cerr << "average\tsince\texample\texample\tcurrent\tcurrent\tcurrent" << endl;
+      cerr << "loss\tlast\tcounter\tweight\tlabel\tpredict\tfeatures" << endl;
+      cerr.precision(4);
+    }
+
+  size_t num_threads = regressor1.global->num_threads();
+  if (vars->daemon != -1)
+    while(true)
+      {
+	sockaddr_in client_address;
+	socklen_t size = sizeof(client_address);
+	source.input.file = accept(vars->daemon,(sockaddr*)&client_address,&size);
+	if (source.input.file < 0)
+	  {
+	    cerr << "bad client socket!" << endl;
+	    exit (1);
+	  }
+	cerr << "reading data from port 39523" << endl;
+	vars->predictions = source.input.file;
+
+	setup_parser(num_threads, p);
+	pthread_t threads[num_threads];
+	
+	go_params* passers[num_threads];
+	
+	for (size_t i = 0; i < num_threads; i++) 
+	  {
+	    passers[i] = (go_params*)calloc(1, sizeof(go_params));
+	    passers[i]->init(vars,regressor1,&final_regressor_name,i);
+	    pthread_create(&threads[i], NULL, go, (void *) passers[i]);
+	  }
+	
+	for (size_t i = 0; i < num_threads; i++) 
+	  {
+	    pthread_join(threads[i], NULL);
+	    free(passers[i]);
+	  }
+	destroy_parser(p);
+      }
+  else 
+    for (; numpasses > 0; numpasses--) {
+      setup_parser(num_threads, p);
+      pthread_t threads[num_threads];
+      
+      go_params* passers[num_threads];
+      
+      for (size_t i = 0; i < num_threads; i++) 
+	{
+	  passers[i] = (go_params*)calloc(1, sizeof(go_params));
+	  passers[i]->init(vars,regressor1,&final_regressor_name,i);
+	  pthread_create(&threads[i], NULL, go, (void *) passers[i]);
+	}
+      
+      for (size_t i = 0; i < num_threads; i++) 
+	{
+	  pthread_join(threads[i], NULL);
+	  free(passers[i]);
+	}
+      destroy_parser(p);
+      vars->eta *= eta_decay;
+      reset_source(regressor1.global->num_bits, source);
+    }
   
-  cout << "average\tsince\texample\texample\tcurrent\tcurrent\tcurrent" << endl;
-  cout << "loss\tlast\tcounter\tweight\tlabel\tpredict\tfeatures" << endl;
-  cout.precision(4);
+  if (final_regressor_name  != "")
+    {
+      final_regressor.open(final_regressor_name.c_str());
+      dump_regressor(final_regressor, regressor1);
+    }
 
-  for (; numpasses > 0; numpasses--) {
-    pthread_t threads[numthreads];
-    for (int i = 0; i < numthreads; i++)
-      pthread_create(&threads[i], NULL, go, NULL);
-    
-    for (int i = 0; i < numthreads; i++) 
-      pthread_join(threads[i], NULL);
-    
-    eta *= eta_decay;
-    reset(regressor.numbits, source);
-  }
-
-  dump_regressor(final_regressor, regressor);
+  finalize_regressor(final_regressor,regressor1);
   finalize_source(source);
-  float best_constant = weighted_labels / weighted_examples;
+  source.global->pairs.~vector();
+  free(source.global);
+/*  float best_constant = vars.weighted_labels / vars.weighted_examples;
   float constant_loss = (best_constant*(1.0 - best_constant)*(1.0 - best_constant)
 			 + (1.0 - best_constant)*best_constant*best_constant);
-  
-  cout << endl << "finished run";
-  cout << endl << "number of examples = " << example_number;
-  cout << endl << "weighted_examples = " << weighted_examples;
-  cout << endl << "weighted_labels = " << weighted_labels;
-  cout << endl << "average_loss = " << sum_loss / weighted_examples;
-  cout << endl << "best constant's loss = " << constant_loss;
-  cout << endl;
+
+  if (!vars.quiet) 
+    {
+      cerr << endl << "finished run";
+      cerr << endl << "number of examples = " << vars.example_number;
+      cerr << endl << "weighted example sum = " << vars.weighted_examples;
+      cerr << endl << "weighted label sum = " << vars.weighted_labels;
+      cerr << endl << "average loss = " << vars.sum_loss / vars.weighted_examples;
+      cerr << endl << "best constant's loss = " << constant_loss;
+      cerr << endl << "total feature number = " << vars.total_features;
+      cerr << endl;
+    }
 
   return 0;
+*/
+  return vars;
 }
