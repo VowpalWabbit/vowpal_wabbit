@@ -27,6 +27,7 @@ public :
 	//virtual double getUpdate(example *&ec, gd_vars &vars) = 0;
 	virtual double getUpdate(double prediction, double label) = 0;
 
+	virtual ~loss_function() {};
 };
 
 loss_function* getLossFunction(string funcName, double loss_parameter = 0);
