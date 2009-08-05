@@ -4,29 +4,14 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-/* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
- */
-
-#include <iostream>
-#include <fstream>
-#include <math.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <unistd.h>
 #include "fcntl.h"
 #include "io.h"
 #include "parse_regressor.h"
 #include "source.h"
 #include "parse_args.h"
 
-using namespace std;
-
+//For OSX
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
 #endif

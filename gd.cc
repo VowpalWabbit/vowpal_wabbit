@@ -4,10 +4,7 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-#include <stdlib.h>
-#include <math.h>
 #include <float.h>
-#include <string.h>
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"

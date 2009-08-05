@@ -4,12 +4,6 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-/* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
- */
-
 #ifndef PR_H
 #define PR_H
 #include "static_data.h"

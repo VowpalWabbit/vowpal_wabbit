@@ -7,9 +7,8 @@ embodied in the content of this file are licensed under the BSD
 #ifndef GD_H
 #define GD_H
 
-#include "math.h"
+#include <math.h>
 #include "parse_example.h"
-using namespace std;
 
 void print_result(int f, float res, v_array<char> tag);
 

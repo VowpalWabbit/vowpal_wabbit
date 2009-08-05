@@ -4,22 +4,11 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-/* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
- */
-
 #ifndef IO_H__
 #define IO_H__
 
-#include <iostream>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include "v_array.h"
-
+#include<iostream>
 using namespace std;
 
 class io_buf {

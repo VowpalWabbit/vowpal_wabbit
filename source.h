@@ -9,7 +9,6 @@ embodied in the content of this file are licensed under the BSD
 
 #include "io.h"
 #include "static_data.h"
-#include <vector>
 
 struct example_source 
 { 

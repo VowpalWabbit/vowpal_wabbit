@@ -6,7 +6,6 @@ embodied in the content of this file are licensed under the BSD
 
 #include "loss_functions.h"
 #include<math.h>
-#include<iostream>
 
 class squaredloss : public loss_function {
 public:

@@ -4,12 +4,6 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-/* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
- */
-#include <string.h>
 #include "io.h"
 
 unsigned int buf_read(io_buf &i, char* &pointer, int n)

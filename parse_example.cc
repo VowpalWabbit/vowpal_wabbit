@@ -4,17 +4,8 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-#include <vector>
-#include <string>
-#include <string.h>
-#include <float.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <sys/file.h>
 #include "parse_example.h"
 #include "hash.h"
-#include "source.h"
 #include "cache.h"
 
 inline size_t hashstring (substring s, unsigned long h)

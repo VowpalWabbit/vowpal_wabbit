@@ -8,6 +8,8 @@ embodied in the content of this file are licensed under the BSD
 #define PP
 
 #include "v_array.h"
+#include<iostream>
+using namespace std;
 
 struct substring {
   char *start;

@@ -4,19 +4,12 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-/* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
- */
-
 #include <fstream>
 #include <iostream>
-#include <unistd.h>
-#include <stdlib.h>
+using namespace std;
+
 #include "parse_regressor.h"
 #include "loss_functions.h"
-using namespace std;
 
 void initialize_regressor(regressor &r)
 {
