@@ -61,20 +61,12 @@ struct gd_vars
   }
 };
 
-struct go_params
+struct gd_thread_params
 {
   gd_vars* vars;
   size_t thread_num;
   regressor reg;
   string* final_regressor_name;
-
-  void init(gd_vars* in_vars, regressor& reg_in, string* final_regressor_name_in, size_t in_tn)
-  {
-    vars = in_vars;
-    reg = reg_in;
-    final_regressor_name = final_regressor_name_in;
-    thread_num = in_tn;
-  }
 };
 
 struct label_data {
@@ -119,5 +111,7 @@ void train_offset_example(regressor& r, example* ex, size_t thread_num, gd_vars&
 void compute_update(example* ec, gd_vars& vars);
 void offset_train(regressor &reg, example* &ec, size_t thread_num, float update, size_t offset);
 void train_one_example_single_thread(regressor& r, example* ex, gd_vars& vars);
+void setup_gd(gd_thread_params t);
+void destroy_gd();
 
 #endif

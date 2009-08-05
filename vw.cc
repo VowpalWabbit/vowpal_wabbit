@@ -47,6 +47,7 @@ gd_vars* vw(int argc, char *argv[])
     }
 
   size_t num_threads = regressor1.global->num_threads();
+  gd_thread_params t = {vars, num_threads, regressor1, &final_regressor_name};
   if (vars->daemon != -1)
     while(true)
       {
@@ -62,30 +63,16 @@ gd_vars* vw(int argc, char *argv[])
 	vars->predictions = source.input.file;
 
 	setup_parser(num_threads, p);
-	pthread_t threads[num_threads];
-	
-	go_params* passers[num_threads];
-	
-	for (size_t i = 0; i < num_threads; i++) 
-	  {
-	    passers[i] = (go_params*)calloc(1, sizeof(go_params));
-	    passers[i]->init(vars,regressor1,&final_regressor_name,i);
-	    pthread_create(&threads[i], NULL, go, (void *) passers[i]);
-	  }
-	
-	for (size_t i = 0; i < num_threads; i++) 
-	  {
-	    pthread_join(threads[i], NULL);
-	    free(passers[i]);
-	  }
+	setup_gd(t);
+	destroy_gd();
 	destroy_parser(p);
       }
   else 
     for (; numpasses > 0; numpasses--) {
       setup_parser(num_threads, p);
-      setup_gd();
-      destroy_parser(p);
+      setup_gd(t);
       destroy_gd();
+      destroy_parser(p);
       vars->eta *= eta_decay;
       reset_source(regressor1.global->num_bits, source);
     }
@@ -96,27 +83,11 @@ gd_vars* vw(int argc, char *argv[])
       dump_regressor(final_regressor, regressor1);
     }
 
+  free(p);
   finalize_regressor(final_regressor,regressor1);
   finalize_source(source);
   source.global->pairs.~vector();
   free(source.global);
-/*  float best_constant = vars.weighted_labels / vars.weighted_examples;
-  float constant_loss = (best_constant*(1.0 - best_constant)*(1.0 - best_constant)
-			 + (1.0 - best_constant)*best_constant*best_constant);
 
-  if (!vars.quiet) 
-    {
-      cerr << endl << "finished run";
-      cerr << endl << "number of examples = " << vars.example_number;
-      cerr << endl << "weighted example sum = " << vars.weighted_examples;
-      cerr << endl << "weighted label sum = " << vars.weighted_labels;
-      cerr << endl << "average loss = " << vars.sum_loss / vars.weighted_examples;
-      cerr << endl << "best constant's loss = " << constant_loss;
-      cerr << endl << "total feature number = " << vars.total_features;
-      cerr << endl;
-    }
-
-  return 0;
-*/
   return vars;
 }

@@ -3,7 +3,7 @@ Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
-
+#include <fstream>
 #include <float.h>
 #include "parse_example.h"
 #include "constant.h"
@@ -11,34 +11,9 @@ embodied in the content of this file are licensed under the BSD
 #include "gd.h"
 #include "cache.h"
 
-pthread_t* threads;
-
-void* setup_gd(int num_threads)
-{
-  threads = (pthread_t*)calloc(sizeof(pthread_t)*num_threads);
-  
-  gd_thread_params* passers[num_threads];
-  
-  for (size_t i = 0; i < num_threads; i++)
-    {
-      passers[i] = (go_params*)calloc(1, sizeof(go_params));
-      passers[i]->init(vars,regressor1,&final_regressor_name,i);
-      pthread_create(&threads[i], NULL, gd_thread, (void *) passers[i]);
-    }
-}
-
-void destroy_gd()
-{
-  for (size_t i = 0; i < num_threads; i++) 
-    {
-      pthread_join(threads[i], NULL);
-      free(passers[i]);
-    }
-}
-
 void* gd_thread(void *in)
 {
-  gd_thread_params* params = (go_params*) in;
+  gd_thread_params* params = (gd_thread_params*) in;
   regressor reg = params->reg;
   size_t thread_num = params->thread_num;
   example* ec = NULL;
@@ -531,3 +506,34 @@ void train_offset_example(regressor& r, example* ex, size_t thread_num, gd_vars&
   if (ld->label != FLT_MAX && vars.training) 
     offset_train(r, ex, thread_num, ex->eta_round, offset);
 }
+
+pthread_t* threads;
+gd_thread_params** passers;
+size_t num_threads;
+
+void setup_gd(gd_thread_params t)
+{
+  num_threads = t.thread_num;
+  threads = (pthread_t*)calloc(num_threads,sizeof(pthread_t));
+  passers = (gd_thread_params**)calloc(num_threads,sizeof(gd_thread_params*));
+
+  for (size_t i = 0; i < num_threads; i++)
+    {
+      passers[i] = (gd_thread_params*)calloc(1, sizeof(gd_thread_params));
+      *(passers[i]) = t;
+      passers[i]->thread_num = i;
+      pthread_create(&threads[i], NULL, gd_thread, (void *) passers[i]);
+    }
+}
+
+void destroy_gd()
+{
+  for (size_t i = 0; i < num_threads; i++) 
+    {
+      pthread_join(threads[i], NULL);
+      free(passers[i]);
+    }
+  free(threads);
+  free(passers);
+}
+

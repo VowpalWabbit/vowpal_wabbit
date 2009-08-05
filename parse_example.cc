@@ -359,6 +359,7 @@ void setup_parser(size_t num_threads, parser* pf)
 {
   //This must be called first.
   used_index = (size_t*) calloc(num_threads, sizeof(size_t));
+  cerr << "finished calloc used_index" << endl;
   parsed_index = 0;
   done = false;
   
@@ -430,7 +431,7 @@ example* get_example(example* ec, size_t thread_num)
   if (ec != NULL)
     finish_example(ec);
   
-  while (true) // busy wait until an atomic example is acquired.
+  while (true) // busy wait until an example is acquired.
     {
       pthread_mutex_lock(&examples_lock);
       
