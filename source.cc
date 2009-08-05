@@ -22,7 +22,7 @@ bool inconsistent_cache(size_t numbits, io_buf &cache)
   return false;
 }
 
-#ifndef O_LARGEFILE
+#ifndef O_LARGEFILE //for OSX
 #define O_LARGEFILE 0
 #endif
 
@@ -73,6 +73,7 @@ void stdin_source(example_source& source, size_t numbits)
 {
   stdin_source(source, numbits, true);
 }
+
 void stdin_source(example_source& source, size_t numbits, bool quiet)
 {
   setup_source(source,numbits);

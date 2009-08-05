@@ -20,33 +20,6 @@ embodied in the content of this file are licensed under the BSD
 
 int sum_sock = -1;
 
-void* go(void *in)
-{
-  go_params* params = (go_params*) in;
-  regressor reg = params->reg;
-  size_t thread_num = params->thread_num;
-  example* ec = NULL;
-
-  while ( (ec = get_example(ec,thread_num)) )
-    {
-      label_data* ld = (label_data*)ec->ld;
-      if ( ((ld->tag).begin != (ld->tag).end) 
-	   && ((ld->tag)[0] == 's')&&((ld->tag)[1] == 'a')&&((ld->tag)[2] == 'v')&&((ld->tag)[3] == 'e'))
-	{
-	  if ((*(params->final_regressor_name)) != "") 
-	    {
-	      ofstream tempOut;
-	      tempOut.open((*(params->final_regressor_name)).c_str());
-	      dump_regressor(tempOut, reg);
-	    }
-	}
-      else
-	train_one_example(reg,ec,thread_num,*(params->vars));
-    }
-
-  return NULL;
-}
-
 gd_vars* vw(int argc, char *argv[])
 {
   size_t numpasses;
@@ -110,23 +83,9 @@ gd_vars* vw(int argc, char *argv[])
   else 
     for (; numpasses > 0; numpasses--) {
       setup_parser(num_threads, p);
-      pthread_t threads[num_threads];
-      
-      go_params* passers[num_threads];
-      
-      for (size_t i = 0; i < num_threads; i++) 
-	{
-	  passers[i] = (go_params*)calloc(1, sizeof(go_params));
-	  passers[i]->init(vars,regressor1,&final_regressor_name,i);
-	  pthread_create(&threads[i], NULL, go, (void *) passers[i]);
-	}
-      
-      for (size_t i = 0; i < num_threads; i++) 
-	{
-	  pthread_join(threads[i], NULL);
-	  free(passers[i]);
-	}
+      setup_gd();
       destroy_parser(p);
+      destroy_gd();
       vars->eta *= eta_decay;
       reset_source(regressor1.global->num_bits, source);
     }

@@ -11,6 +11,58 @@ embodied in the content of this file are licensed under the BSD
 #include "gd.h"
 #include "cache.h"
 
+pthread_t* threads;
+
+void* setup_gd(int num_threads)
+{
+  threads = (pthread_t*)calloc(sizeof(pthread_t)*num_threads);
+  
+  gd_thread_params* passers[num_threads];
+  
+  for (size_t i = 0; i < num_threads; i++)
+    {
+      passers[i] = (go_params*)calloc(1, sizeof(go_params));
+      passers[i]->init(vars,regressor1,&final_regressor_name,i);
+      pthread_create(&threads[i], NULL, gd_thread, (void *) passers[i]);
+    }
+}
+
+void destroy_gd()
+{
+  for (size_t i = 0; i < num_threads; i++) 
+    {
+      pthread_join(threads[i], NULL);
+      free(passers[i]);
+    }
+}
+
+void* gd_thread(void *in)
+{
+  gd_thread_params* params = (go_params*) in;
+  regressor reg = params->reg;
+  size_t thread_num = params->thread_num;
+  example* ec = NULL;
+
+  while ( (ec = get_example(ec,thread_num)) )
+    {
+      label_data* ld = (label_data*)ec->ld;
+      if ( ((ld->tag).begin != (ld->tag).end) 
+	   && ((ld->tag)[0] == 's')&&((ld->tag)[1] == 'a')&&((ld->tag)[2] == 'v')&&((ld->tag)[3] == 'e'))
+	{
+	  if ((*(params->final_regressor_name)) != "") 
+	    {
+	      ofstream tempOut;
+	      tempOut.open((*(params->final_regressor_name)).c_str());
+	      dump_regressor(tempOut, reg);
+	    }
+	}
+      else
+	train_one_example(reg,ec,thread_num,*(params->vars));
+    }
+
+  return NULL;
+}
+
 float final_prediction(float ret, size_t num_features, gd_vars& vars, float &norm) 
 {
   if (num_features > 0)
