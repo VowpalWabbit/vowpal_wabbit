@@ -38,7 +38,7 @@ void* go(void *in)
   while ( (ec = get_example(ec,thread_num)) )
     {
       label_data* ld = (label_data*)ec->ld;
-      if ( ((ld->tag).begin != (ld->tag).end) 
+      if ( ec->num_features <= 1 && ((ld->tag).end - (ld->tag).begin == 4) 
 	   && ((ld->tag)[0] == 's')&&((ld->tag)[1] == 'a')&&((ld->tag)[2] == 'v')&&((ld->tag)[3] == 'e'))
 	{
 	  if ((*(params->final_regressor_name)) != "") 
