@@ -279,6 +279,24 @@ example* get_unused_example()
     }
 }
 
+feature* search(feature* begin, size_t value, feature* end)
+{//return the smallest position >= value, never referencing end.
+  size_t diff = end-begin;
+  if (diff <= 1)
+    if (begin->weight_index >= value)
+      return begin;
+    else
+      return end;
+  else
+    {
+      feature* middle = begin + (diff >> 1);
+      if (middle->weight_index >= value)
+	return search(begin, value, middle);
+      else
+	return search(middle,value, end);
+    }
+}
+
 void setup_example(example* ae, static_data* global)
 {
   size_t num_threads = global->num_threads();
@@ -296,14 +314,14 @@ void setup_example(example* ae, static_data* global)
       ae->subsets[*i].erase();
       feature* f = ae->atomics[*i].begin;
       push(ae->subsets[*i],f);
-      size_t last_index = 0;
-      for (; f != ae->atomics[*i].end && f->weight_index < length; f++)
-	while (f->weight_index / expert_size != last_index) {
-	  push(ae->subsets[*i],f);
-	  last_index++;
+      size_t current = expert_size;
+      while (current <= length)
+	{
+	  feature* ret = search(f, current, ae->atomics[*i].end);
+	  push(ae->subsets[*i],ret);
+	  f = ret;
+	  current += expert_size;
 	}
-      while(ae->subsets[*i].index() < num_threads+1)
-	push(ae->subsets[*i],f);
       
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
     }
