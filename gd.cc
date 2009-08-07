@@ -431,7 +431,6 @@ void process(example* ec, size_t num_threads, gd_vars& vars, regressor& reg, siz
   if (ld->label != FLT_MAX)
     {
       float example_loss = reg.loss->getLoss(ec->partial_prediction, ld->label) * ld->weight;
-      example_loss *= ld->weight;
       vars.t += ld->weight;
       vars.sum_loss = vars.sum_loss + example_loss;
             
