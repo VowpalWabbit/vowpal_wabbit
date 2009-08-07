@@ -293,7 +293,7 @@ feature* search(feature* begin, size_t value, feature* end)
       if (middle->weight_index >= value)
 	return search(begin, value, middle);
       else
-	return search(middle,value, end);
+	return search(middle, value, end);
     }
 }
 
