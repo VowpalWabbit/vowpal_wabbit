@@ -10,6 +10,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_regressor.h"
 #include "source.h"
 #include "parse_args.h"
+#include "sender.h"
 
 //For OSX
 #ifndef O_LARGEFILE
@@ -133,6 +134,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quiet", "Don't output diagnostics")
     ("raw_predictions,r", po::value< string >(), 
      "File to output unnormalized predictions to")
+    ("send_to", po::value< vector<string> >(), "send example to <hosts>")
     ("summer,s", po::value< string > (), "host to use as a summer")
     ("testonly,t", "Ignore label information and just test")
     ("thread_bits", po::value<size_t>(&sd->thread_bits)->default_value(0), "log_2 threads")
@@ -257,6 +259,17 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	  exit(1);
 	}
       listen(vars.daemon,1);
+
+      sockaddr_in client_address;
+      socklen_t size = sizeof(client_address);
+      par->source->input.file = accept(vars.daemon,(sockaddr*)&client_address,&size);
+      if (par->source->input.file < 0)
+	{
+	  cerr << "bad client socket!" << endl;
+	  exit (1);
+	}
+      cerr << "reading data from port 39523" << endl;
+      vars.predictions = par->source->input.file;
     }
   else if (vm.count("data"))
     { 
@@ -283,6 +296,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     par->source->global->audit = true;
   else 
     par->source->global->audit = false;
+
+  parse_send_args(vm, sd->pairs);
 
   if (vm.count("final_regressor")) {
     final_regressor_name = vm["final_regressor"].as<string>();

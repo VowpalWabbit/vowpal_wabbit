@@ -29,6 +29,8 @@ parse_args.o:	 parse_regressor.h  parse_example.h  io.h  gd.h
 
 parse_example.o:  io.h  parse_example.cc  source.h
 
+sender.o: parse_example.h
+
 cache.o:	 parse_example.h
 
 sparse_dense.o:	 parse_example.h
@@ -41,7 +43,7 @@ gd.o:	 parse_example.h
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
-vw: hash.o  io.o  parse_regressor.o  parse_primitives.o  cache.o  parse_example.o  sparse_dense.o  parse_args.o  gd.o  source.o  vw.o loss_functions.o  main.o
+vw: hash.o  io.o  parse_regressor.o  parse_primitives.o  cache.o  parse_example.o  sparse_dense.o  parse_args.o  gd.o  source.o  vw.o loss_functions.o sender.o main.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_dense.o parse_example.o parse_args.o gd.o source.o offset_tree.o loss_functions.o

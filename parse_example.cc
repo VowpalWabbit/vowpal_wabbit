@@ -244,7 +244,10 @@ bool parse_atomic_example(parser* p, example *ae)
     if (read_features(p, ae) <= 0)
       return false;
     if (p->source->write_cache) 
-      cache_features(p, ae);
+      {
+	p->lp->cache_label(ae->ld,p->source->cache);
+	cache_features(p->source->cache, ae);
+      }
   }
   else
     if (read_cached_features(p, ae) == 0) 
@@ -380,7 +383,7 @@ void setup_parser(size_t num_threads, parser* pf)
   cerr << "finished calloc used_index" << endl;
   parsed_index = 0;
   done = false;
-  
+
   examples = (example*)calloc(ring_size, sizeof(example));
   
   for (size_t i = 0; i < ring_size; i++)

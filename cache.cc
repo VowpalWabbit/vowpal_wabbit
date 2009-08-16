@@ -89,45 +89,52 @@ char* run_len_encode(char *p, size_t i)
   return p;
 }
 
-void cache_features(parser* p, example* ae)
+void output_int(io_buf& cache, size_t s)
 {
-  p->lp->cache_label(ae->ld,p->source->cache);
   char *c;
   
-  buf_write(p->source->cache, c, int_size);
-  c = run_len_encode(c, ae->indices.index());
-  p->source->cache.set(c);
+  buf_write(cache, c, int_size);
+  c = run_len_encode(c, s);
+  cache.set(c);
+}
 
-  for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
+void output_features(io_buf& cache, size_t index, feature* begin, feature* end)
+{
+  char* c;
+  
+  size_t storage = (end-begin) * int_size;
+  for (feature* i = begin; i != end; i++)
+    if (i->x != 1. && i->x != -1.)
+      storage+=sizeof(float);
+  
+  buf_write(cache, c, int_size + storage + sizeof(size_t));
+  c = run_len_encode(c, index);
+  char *storage_size_loc = c;
+  c += sizeof(size_t);
+  
+  size_t last = 0;
+  
+  for (feature* i = begin; i != end; i++)
     {
-      size_t storage = ae->atomics[*b].index() * int_size;
-      feature* end = ae->atomics[*b].end;
-      for (feature* i = ae->atomics[*b].begin; i != end; i++)
-	if (i->x != 1. && i->x != -1.)
-	  storage+=sizeof(float);
-
-      buf_write(p->source->cache, c, int_size + storage + sizeof(size_t));
-      c = run_len_encode(c, *b);
-      char *storage_size_loc = c;
-      c += sizeof(size_t);
-
-      size_t last = 0;
-
-      for (feature* i = ae->atomics[*b].begin; i != end; i++)
-	{
-	  size_t diff = (i->weight_index - last) << 2;
-	  last = i->weight_index;
-	  if (i->x == 1.) 
-	    c = run_len_encode(c, diff);
-	  else if (i->x == -1.) 
-	    c = run_len_encode(c, diff | neg_1);
-	  else {
-	    c = run_len_encode(c, diff | general);
-	    *(float *)c = i->x;
-	    c += sizeof(float);
-	  }
-	}
-      p->source->cache.set(c);
-      *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);
+      size_t diff = (i->weight_index - last) << 2;
+      last = i->weight_index;
+      if (i->x == 1.) 
+	c = run_len_encode(c, diff);
+      else if (i->x == -1.) 
+	c = run_len_encode(c, diff | neg_1);
+      else {
+	c = run_len_encode(c, diff | general);
+	*(float *)c = i->x;
+	c += sizeof(float);
+      }
     }
+  cache.set(c);
+  *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);  
+}
+
+void cache_features(io_buf& cache, example* ae)
+{
+  output_int(cache, ae->indices.index());
+  for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
+    output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end);
 }
