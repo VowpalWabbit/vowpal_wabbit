@@ -91,7 +91,7 @@ void open_sockets(vector<string>& hosts)
 
 void parse_send_args(po::variables_map& vm, vector<string> pairs)
 {
-  if (vm.count("send_to"))
+  if (vm.count("sendto"))
     {
       if (pairs.size() > 0)
 	{
@@ -102,7 +102,7 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs)
 	    second_of_pair[(int)(*i)[1]] = true;
 	}
 
-      vector<string> hosts = vm["send_to"].as< vector<string> >();
+      vector<string> hosts = vm["sendto"].as< vector<string> >();
       find_split(hosts.size());
       open_sockets(hosts);      
     }
@@ -135,6 +135,7 @@ void* send_thread(void*)
 	    send_features(i,j,bufs[i][j],ec);
 	  }
     }
+
   return NULL;
 }
 

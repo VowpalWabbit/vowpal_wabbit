@@ -53,7 +53,7 @@ gd_vars* vw(int argc, char *argv[])
   
   for (; numpasses > 0; numpasses--) {
     setup_parser(num_threads, p);
-    if (vm.count("send_to"))
+    if (vm.count("sendto"))
       {
 	setup_send();
 	destroy_send();
@@ -65,7 +65,8 @@ gd_vars* vw(int argc, char *argv[])
       }
     destroy_parser(p);
     vars->eta *= eta_decay;
-    reset_source(regressor1.global->num_bits, source);
+    if (numpasses > 1)
+      reset_source(regressor1.global->num_bits, source);
   }
   
   if (final_regressor_name  != "")

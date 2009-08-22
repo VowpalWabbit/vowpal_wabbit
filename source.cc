@@ -30,18 +30,18 @@ void reset_source(size_t numbits, example_source &source)
 {
   if (source.write_cache)
     {
-      source.cache.flush();
+      source.binary.flush();
       source.write_cache = false;
-      close(source.cache.file);
-      rename(source.cache.currentname.c_str(), source.cache.finalname.c_str());
-      source.cache.file = open(source.cache.finalname.c_str(), O_RDONLY|O_LARGEFILE);
+      close(source.binary.file);
+      rename(source.binary.currentname.begin, source.binary.finalname.begin);
+      source.binary.file = open(source.binary.finalname.begin, O_RDONLY|O_LARGEFILE);
     }
-  if (source.cache.file != -1)
+  if (source.binary.file != -1)
     {
-      lseek(source.cache.file, 0, SEEK_SET);
-      source.cache.endloaded = source.cache.space.begin;
-      source.cache.space.end = source.cache.space.begin;
-      if (inconsistent_cache(numbits, source.cache)) {
+      lseek(source.binary.file, 0, SEEK_SET);
+      source.binary.endloaded = source.binary.space.begin;
+      source.binary.space.end = source.binary.space.begin;
+      if (inconsistent_cache(numbits, source.binary)) {
 	cout << "argh, a bug in caching of some sort!  Exitting\n" ;
 	exit(1);
       }
@@ -50,21 +50,21 @@ void reset_source(size_t numbits, example_source &source)
 
 void finalize_source(example_source &source)
 {
-  if (source.input.file != -1) {
-    close(source.input.file);
-    free(source.input.space.begin);
+  if (source.text.file != -1) {
+    close(source.text.file);
+    free(source.text.space.begin);
   }
-  if (source.cache.file != -1) {
-    close(source.cache.file);  
-    free(source.cache.space.begin);
+  if (source.binary.file != -1) {
+    close(source.binary.file);  
+    free(source.binary.space.begin);
   }
 }
 
 void setup_source(example_source& source, size_t numbits)
 {
   source.global->mask = (1 << numbits) - 1;
-  reserve(source.cache.space,0);
-  source.cache.file=-1;
+  reserve(source.binary.space,0);
+  source.binary.file=-1;
   source.write_cache = false;  
 }
 
@@ -77,7 +77,7 @@ void stdin_source(example_source& source, size_t numbits)
 void stdin_source(example_source& source, size_t numbits, bool quiet)
 {
   setup_source(source,numbits);
-  source.input.file = fileno(stdin);
+  source.text.file = fileno(stdin);
   if (!quiet)
     cout << "reading from stdin" << endl;
 }
@@ -98,7 +98,7 @@ void file_source(example_source& source, size_t numbits, string data_file_name, 
       cerr << "can't open " << data_file_name << ", bailing!" << endl;
       exit(0);
     }
-  source.input.file = fileno(t);
+  source.text.file = fileno(t);
 }
 
 // sets the example_source to read from a cache file
@@ -109,16 +109,16 @@ void cache_source(example_source& source, size_t numbits, string cache_file_name
 void cache_source(example_source& source, size_t numbits, string cache_file_name,bool quiet)
 {
   source.global->mask = (1 << numbits) - 1;
-  source.cache.file = 
+  source.binary.file = 
     open(cache_file_name.c_str(), O_RDONLY|O_LARGEFILE);  
-  if (source.cache.file == -1)
+  if (source.binary.file == -1)
     {
       cerr << "Cache file " << cache_file_name << " does not exist." << endl;
     }
   else {
-    if (inconsistent_cache(numbits, source.cache)) {
-      close(source.cache.file);
-      source.cache.space.erase();
+    if (inconsistent_cache(numbits, source.binary)) {
+      close(source.binary.file);
+      source.binary.space.erase();
       cerr << "Cache file is invalid." << endl;
     }
     else {

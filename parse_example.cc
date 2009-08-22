@@ -140,7 +140,7 @@ void unique_sort_features(parser* p, example* ae)
 int read_features(parser* p, example* ae)
 {
   char *line=NULL;
-  int num_chars = readto(p->source->input, line, '\n');
+  int num_chars = readto(p->source->text, line, '\n');
   if (num_chars == 0)
     return num_chars;
   
@@ -253,13 +253,13 @@ bool parse_atomic_example(parser* p, example *ae)
     ae->atomics[*i].erase();
 
   ae->indices.erase();
-  if (p->source->cache.file == -1 || p->source->write_cache){
+  if (p->source->binary.file == -1 || p->source->write_cache){
     if (read_features(p, ae) <= 0)
       return false;
     if (p->source->write_cache) 
       {
-	p->lp->cache_label(ae->ld,p->source->cache);
-	cache_features(p->source->cache, ae);
+	p->lp->cache_label(ae->ld,p->source->binary);
+	cache_features(p->source->binary, ae);
       }
   }
   else
@@ -392,9 +392,7 @@ pthread_t parse_thread;
 
 void setup_parser(size_t num_threads, parser* pf)
 {
-  //This must be called first.
   used_index = (size_t*) calloc(num_threads, sizeof(size_t));
-  cerr << "finished calloc used_index" << endl;
   parsed_index = 0;
   done = false;
 

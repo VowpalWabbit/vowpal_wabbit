@@ -20,9 +20,10 @@ embodied in the content of this file are licensed under the BSD
 void make_write_cache(size_t numbits, bool &create_cache, string &newname, 
 		      io_buf &cache, bool quiet)
 {
-  cache.currentname = newname+string(".writing");
+  string temp = newname+string(".writing");
+  push_many(cache.currentname,temp.c_str(),temp.length()+1);
   
-  cache.file = open(cache.currentname.c_str(), O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+  cache.file = open(temp.c_str(), O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
   if (cache.file == -1) {
     cerr << "can't create cache file !" << endl;
     return;
@@ -32,7 +33,7 @@ void make_write_cache(size_t numbits, bool &create_cache, string &newname,
   
   *(size_t *)p = numbits;
   
-  cache.finalname = newname;
+  push_many(cache.finalname,newname.c_str(),newname.length()+1);
   create_cache = true;
   if (!quiet)
     cerr << "creating cache_file = " << newname << endl;
@@ -49,15 +50,15 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
 	cache_string = vm["cache_file"].as< string >();
       else 
 	cache_string = source+string(".cache");
-      e->cache.file = 
+      e->binary.file = 
 	open(cache_string.c_str(), O_RDONLY|O_LARGEFILE);  
-      if (e->cache.file == -1)
-	make_write_cache(numbits, e->write_cache, cache_string, e->cache, quiet);
+      if (e->binary.file == -1)
+	make_write_cache(numbits, e->write_cache, cache_string, e->binary, quiet);
       else {
-	if (inconsistent_cache(numbits, e->cache)) {
-	  close(e->cache.file);
-	  e->cache.space.erase();
-	  make_write_cache(numbits, e->write_cache, cache_string, e->cache, quiet);
+	if (inconsistent_cache(numbits, e->binary)) {
+	  close(e->binary.file);
+	  e->binary.space.erase();
+	  make_write_cache(numbits, e->write_cache, cache_string, e->binary, quiet);
 	}
 	else {
 	  if (!quiet)
@@ -73,8 +74,8 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
 	cerr << "using no cache" << endl;
       if (passes > 1)
 	cerr << sd->program_name << ": Warning only one pass will occur: try using --cache_file" << endl;
-      reserve(e->cache.space,0);
-      e->cache.file=-1;
+      reserve(e->binary.space,0);
+      e->binary.file=-1;
       e->write_cache = false;
     }
 }
@@ -136,7 +137,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quiet", "Don't output diagnostics")
     ("raw_predictions,r", po::value< string >(), 
      "File to output unnormalized predictions to")
-    ("send_to", po::value< vector<string> >(), "send example to <hosts>")
+    ("sendto", po::value< vector<string> >(), "send example to <hosts>")
     ("summer,s", po::value< string > (), "host to use as a summer")
     ("testonly,t", "Ignore label information and just test")
     ("thread_bits", po::value<size_t>(&sd->thread_bits)->default_value(0), "log_2 threads")
@@ -243,8 +244,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("daemon") )
     {
-      cerr << "inside daemon." << endl;
-
       vars.daemon = socket(PF_INET, SOCK_STREAM, 0);
       if (vars.daemon < 0) {
 	cerr << "can't open socket!" << endl;
@@ -264,14 +263,18 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      par->source->input.file = accept(vars.daemon,(sockaddr*)&client_address,&size);
-      if (par->source->input.file < 0)
+      par->source->binary.file = accept(vars.daemon,(sockaddr*)&client_address,&size);
+      if (par->source->binary.file < 0)
 	{
 	  cerr << "bad client socket!" << endl;
 	  exit (1);
 	}
       cerr << "reading data from port 39523" << endl;
-      vars.predictions = par->source->input.file;
+      vars.predictions = par->source->binary.file;
+      reserve(par->source->binary.space, 1 << 16);
+      par->source->binary.endloaded = par->source->binary.space.begin;
+      par->source->text.file = -1;
+      reserve(par->source->text.space,0);
     }
   else if (vm.count("data"))
     { 
@@ -280,8 +283,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	{
 	  if (!vars.quiet)
 	    cerr << "Reading from " << temp << endl;
-	  par->source->input.file = open(temp.c_str(), O_RDONLY);
-	  if (par->source->input.file == -1)
+	  par->source->text.file = open(temp.c_str(), O_RDONLY);
+	  if (par->source->text.file == -1)
 	    {
 	      cerr << "can't open " << temp << ", bailing!" << endl;
 	      exit(0);
@@ -291,7 +294,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	{
 	  if (!vars.quiet)
 	    cerr << "Reading from stdin" << endl;
-	  par->source->input.file = fileno(stdin);
+	  par->source->text.file = fileno(stdin);
 	}
     }
   if (vm.count("audit"))

@@ -22,21 +22,21 @@ int read_cached_features(parser* p, example* ae)
 {
   size_t mask = p->source->global->mask;
 
-  size_t total = p->lp->read_cached_label(ae->ld, p->source->cache);
+  size_t total = p->lp->read_cached_label(ae->ld, p->source->binary);
   if (total == 0)
     return 0;
 
   char* c;
   size_t num_indices = 0;
-  if (buf_read(p->source->cache, c, int_size) < int_size) 
+  if (buf_read(p->source->binary, c, int_size) < int_size) 
     return 0;
   c = run_len_decode(c, num_indices);
-  p->source->cache.set(c);
+  p->source->binary.set(c);
 
   for (;num_indices > 0; num_indices--)
     {
       size_t temp;
-      if((temp = buf_read(p->source->cache,c,int_size + sizeof(size_t))) < char_size + sizeof(size_t)) {
+      if((temp = buf_read(p->source->binary,c,int_size + sizeof(size_t))) < char_size + sizeof(size_t)) {
 	cerr << "truncated example! " << temp << " " << char_size +sizeof(size_t) << endl;
 	return 0;
       }
@@ -47,9 +47,9 @@ int read_cached_features(parser* p, example* ae)
       v_array<feature>* ours = ae->atomics+index;
       size_t storage = *(size_t *)c;
       c += sizeof(size_t);
-      p->source->cache.set(c);
+      p->source->binary.set(c);
       total += storage;
-      if (buf_read(p->source->cache,c,storage) < storage) {
+      if (buf_read(p->source->binary,c,storage) < storage) {
 	cerr << "truncated example!" << endl;
 	return 0;
       }
@@ -75,7 +75,7 @@ int read_cached_features(parser* p, example* ae)
 	  f.weight_index = f.weight_index & mask;
 	  push(*ours, f);
 	}
-      p->source->cache.set(c);
+      p->source->binary.set(c);
     }
 
   return total;

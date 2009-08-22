@@ -13,8 +13,8 @@ embodied in the content of this file are licensed under the BSD
 struct example_source 
 { 
   //the source of example information.
-  io_buf cache;
-  io_buf input;
+  io_buf binary;
+  io_buf text;
   bool write_cache;
   
   static_data* global;
