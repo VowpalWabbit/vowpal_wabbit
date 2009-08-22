@@ -22,8 +22,8 @@ size_t log_int_r(size_t v)
 }
 
 size_t log_int(size_t v)
-{//find largest number n such that 2^n <= v+1
-  return log_int_r(v+1);
+{//find largest number n such that 2^n <= v
+  return log_int_r(v);
 }
 
 void find_split(size_t number)
@@ -37,11 +37,14 @@ void find_split(size_t number)
 	d_1 = 1 << log_2;
       else
 	{
-	  d_2 = 1 << (log_2 -1);
-	  if (d_2 * d_2 * 2 > number)
-	    d_1 = d_2;
-	  else
-	    d_1 = d_2*2;
+	  d_1 = 1 << (log_2 -1);
+	  if (d_1 * d_1 > number)
+	    d_2 = d_1 / 2;
+	  else {
+	    d_2 = d_1;
+	    if (d_1 * 2 * d_2 < number)
+	      d_1 *=2;
+	  }
 	}
       if (d_1 * d_2 < number)
 	cerr << "warning: number of remote hosts is not a factor of 2, so some are wasted" << endl;
@@ -90,10 +93,6 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs)
 {
   if (vm.count("send_to"))
     {
-      vector<string> hosts = vm["send_to"].as< vector<string> >();
-      find_split(hosts.size());
-      open_sockets(hosts);
-
       if (pairs.size() > 0)
 	{
 	  pairs_exist=true;
@@ -102,6 +101,10 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs)
 	  for (vector<string>::iterator i = pairs.begin(); i != pairs.end();i++) 
 	    second_of_pair[(int)(*i)[1]] = true;
 	}
+
+      vector<string> hosts = vm["send_to"].as< vector<string> >();
+      find_split(hosts.size());
+      open_sockets(hosts);      
     }
 }
 
@@ -114,6 +117,7 @@ void send_features(int i, int j, io_buf& b, example* ec)
       output_features(b, *index, ec->subsets[*index][j*d_1], ec->subsets[*index][(j+1)*d_1]);
     else
       output_features(b, *index, ec->subsets[*index][i*d_2], ec->subsets[*index][(i+1)*d_2]);
+  b.flush();
 }
 
 void* send_thread(void*)

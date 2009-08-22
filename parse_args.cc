@@ -93,6 +93,8 @@ void parse_args(int argc, char *argv[], boost::program_options::options_descript
 	     sum_sock, comment);
 }
 
+const float default_decay = 1. / sqrt(2.);
+
 po::variables_map parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
 		gd_vars& vars, float& eta_decay_rate,
 		size_t &passes, regressor &r, parser* par,
@@ -113,7 +115,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("cache_file", po::value< string >(), "The location of a cache_file.")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
-    ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(1/sqrt(2.)), 
+    ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("help,h","Output Arguments")
@@ -210,7 +212,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cerr << "decay_learning_rate = " << eta_decay_rate << endl;
     }
 
-  if (vm.count("decay_learning_rate") && vm.count("passes") <= 1)
+  if (eta_decay_rate != default_decay && vm.count("passes") <= 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
   parse_cache(vm, sd->num_bits, vm["data"].as<string>(), par->source, vars.quiet, r.global, passes);

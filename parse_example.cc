@@ -4,6 +4,7 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
+#include <math.h>
 #include "parse_example.h"
 #include "hash.h"
 #include "cache.h"
@@ -27,7 +28,6 @@ parser* new_parser(example_source* s, const label_parser* lp)
   ret->lp = lp;
   return ret;
 }
-
 
 int order_features(const void* first, const void* second)
 {
