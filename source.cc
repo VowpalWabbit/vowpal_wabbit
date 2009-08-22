@@ -16,7 +16,7 @@ bool inconsistent_cache(size_t numbits, io_buf &cache)
 
   size_t cache_numbits = *(size_t *)p;
 
-  if (cache_numbits != numbits)
+  if (cache_numbits < numbits)
     return true;
 
   return false;
