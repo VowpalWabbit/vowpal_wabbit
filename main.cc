@@ -23,7 +23,9 @@ int main(int argc, char *argv[]) {
 		cerr << endl << "weighted example sum = " << vars->weighted_examples;
 		cerr << endl << "weighted label sum = " << vars->weighted_labels;
 		cerr << endl << "average loss = " << vars->sum_loss / vars->weighted_examples;
-		cerr << endl << "best constant's loss = " << constant_loss;
+		cerr << endl << "best constant = " << best_constant;
+		if (vars->min_prediction == 0. && vars->max_prediction == 1. && best_constant < 1. && best_constant > 0.)
+		  cerr << endl << "best constant's loss = " << constant_loss;
 		cerr << endl << "total feature number = " << vars->total_features;
 		cerr << endl;
 	}

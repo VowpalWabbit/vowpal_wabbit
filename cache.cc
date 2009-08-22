@@ -20,6 +20,8 @@ char* run_len_decode(char *p, size_t& i)
 
 int read_cached_features(parser* p, example* ae)
 {
+  size_t mask = p->source->global->mask;
+
   size_t total = p->lp->read_cached_label(ae->ld, p->source->cache);
   if (total == 0)
     return 0;
@@ -70,6 +72,7 @@ int read_cached_features(parser* p, example* ae)
 	    }
 	  f.weight_index = last + (f.weight_index >> 2);
 	  last = f.weight_index;
+	  f.weight_index = f.weight_index & mask;
 	  push(*ours, f);
 	}
       p->source->cache.set(c);

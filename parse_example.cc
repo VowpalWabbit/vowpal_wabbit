@@ -5,6 +5,7 @@ embodied in the content of this file are licensed under the BSD
  */
 
 #include <vector>
+#include <math.h>
 #include <string>
 #include <string.h>
 #include <float.h>
@@ -58,6 +59,13 @@ void feature_value(substring &s, v_array<substring>& name, float &v)
     break;
   case 2:
     v = float_of_substring(name[1]);
+    if (isnan(v))
+      {
+	cerr << "error NaN value for feature: ";
+	cerr.write(name[0].start, name[0].end - name[0].start);
+	cerr << " terminating." << endl;
+	exit(1);
+      }
     break;
   default:
     cerr << "example with a wierd name.  What is ";
@@ -119,6 +127,24 @@ char* copy(char* base)
   char* ret = (char *)calloc(len,sizeof(char));
   memcpy(ret,base,len);
   return ret;
+}
+
+void unique_sort_features(parser* p, example* ae)
+{
+  bool audit = p->source->global->audit;
+  for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
+    {
+      qsort(ae->atomics[*b].begin, ae->atomics[*b].index(), sizeof(feature), 
+	    order_features);
+      unique_features(ae->atomics[*b]);
+      
+      if (audit)
+	{
+	  qsort(ae->audit_features[*b].begin, ae->audit_features[*b].index(), sizeof(audit_data), 
+		order_audit_features);
+	  unique_audit_features(ae->audit_features[*b]);
+	}
+    }
 }
 
 int read_features(parser* p, example* ae)
@@ -209,19 +235,7 @@ int read_features(parser* p, example* ae)
       }
   }
 
-  for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
-    {
-      qsort(ae->atomics[*b].begin, ae->atomics[*b].index(), sizeof(feature), 
-	    order_features);
-      unique_features(ae->atomics[*b]);
-
-      if (audit)
-	{
-	  qsort(ae->audit_features[*b].begin, ae->audit_features[*b].index(), sizeof(audit_data), 
-		order_audit_features);
-	  unique_audit_features(ae->audit_features[*b]);
-	}
-    }
+  unique_sort_features(p,ae);
 
   return num_chars;
 }
@@ -256,9 +270,11 @@ bool parse_atomic_example(parser* p, example *ae)
       cache_features(p, ae);
   }
   else
-    if (read_cached_features(p, ae) == 0) 
-      return false;
-
+    {
+      if (read_cached_features(p, ae) == 0) 
+	return false;
+      unique_sort_features(p,ae);
+    }
   return true;
 }
 
@@ -296,7 +312,6 @@ void setup_example(example* ae, static_data* global)
   ae->num_features = 1;
   ae->threads_to_finish = num_threads;	
 
-  
   //Should loop through the features to determine the boundaries
   size_t length = global->mask + 1;
   size_t expert_size = length >> global->thread_bits; //#features/expert
