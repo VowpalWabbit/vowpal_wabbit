@@ -72,6 +72,7 @@ struct example
   pthread_mutex_t lock; //thread coordination devices
   size_t threads_to_finish;
   bool in_use; //in use or not (for the parser)
+  bool done; //set to false by setup_example()
 };
 
 //parser control

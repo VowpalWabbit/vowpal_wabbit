@@ -438,10 +438,12 @@ float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
   pthread_mutex_lock(&ex->lock);
   ex->partial_prediction += prediction;
   if (--ex->threads_to_finish != 0) 
-    pthread_cond_wait(&finished_sum, &ex->lock);
+    while (!ex->done)
+      pthread_cond_wait(&finished_sum, &ex->lock);
   else // We are the last thread using this example.
     {
       process(ex, r.global->num_threads(),vars,r,0);
+      ex->done = true;
       pthread_cond_broadcast(&finished_sum);
     }
   pthread_mutex_unlock(&ex->lock);
