@@ -106,7 +106,7 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs, size_t& thread
 
       vector<string> hosts = vm["sendto"].as< vector<string> >();
       thread_bits = max(thread_bits,find_split(hosts.size()));
-      open_sockets(hosts);      
+      open_sockets(hosts);
     }
 }
 
@@ -136,7 +136,8 @@ void* send_thread(void*)
 	    simple_label.cache_label(ld,bufs[i][j]);//send label information.
 	    send_features(i,j,bufs[i][j],ec);
 	  }
-      ec->threads_to_finish = 0;
+      ec->threads_to_finish = 1;
+      ec->done = true;
     }
 
   return NULL;
