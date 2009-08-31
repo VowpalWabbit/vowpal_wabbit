@@ -23,10 +23,16 @@ unsigned int buf_read(io_buf &i, char* &pointer, int n)
 	  i.space.end = i.space.begin;
 	  i.endloaded = i.space.begin+left;
 	}
-      if (i.fill() > 0)
+      if (i.fill(i.files.last()) > 0)
 	return buf_read(i,pointer,n);
-      else //no more bytes to read
+      else if (i.files.index() > 1)
 	{
+	  close(i.files.pop());
+	  return buf_read(i,pointer,n);
+	}
+      else//no more bytes to read
+	{
+	  close(i.files.pop());
 	  pointer = i.space.end;
 	  i.space.end = i.endloaded;
 	  return i.endloaded - pointer;
@@ -56,10 +62,17 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
 	  i.endloaded = i.space.begin+left;
 	  pointer = i.endloaded;
 	}
-      if (i.fill() > 0)
+      if (i.fill(i.files.last()) > 0)
 	return readto(i,pointer,terminal);
-      else
+      else if (i.files.index() > 1)
+	{
+	  close(i.files.pop());
+	  return readto(i,pointer,terminal);
+	}
+      else {
+	close(i.files.pop());
 	return 0;
+      }
     }
 }
 

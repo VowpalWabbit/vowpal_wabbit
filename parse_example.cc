@@ -245,7 +245,7 @@ bool parse_atomic_example(parser* p, example *ae)
 
   ae->indices.erase();
   if (p->reader(p,ae) <= 0)
-    return false;
+      return false;
   unique_sort_features(p,ae);
   if (p->write_cache) 
     {
@@ -344,7 +344,8 @@ void *main_parse_loop(void *in)
     {
       example* ae=get_unused_example();
 
-      if (parse_atomic_example(p, ae)) {	
+      int output = parse_atomic_example(p,ae);
+      if (output) {	
 	setup_example(ae,p->global);
 
 	pthread_mutex_lock(&examples_lock);

@@ -14,26 +14,25 @@ using namespace std;
 class io_buf {
  public:
   v_array<char > space; //space.begin = beginning of loaded values.  space.end = end of read or written values.
-  int file;
+  v_array<int> files;
   char* endloaded; //end of loaded values
   v_array<char> currentname;
   v_array<char> finalname;
   
   io_buf() {
     size_t s = 1 << 16;
-    file = -1;
     reserve(space, s); 
     endloaded = space.begin;
   }
   void set(char *p){space.end = p;}
-  size_t fill() {
+  size_t fill(int f) {
     if (space.end_array - endloaded == 0)
       {
 	size_t offset = endloaded - space.begin;
 	reserve(space, 2 * (space.end_array - space.begin));
 	endloaded = space.begin+offset;
       }
-    ssize_t num_read = read(file, endloaded, space.end_array - endloaded);
+    ssize_t num_read = read(f, endloaded, space.end_array - endloaded);
     if (num_read >= 0)
       {
 	endloaded = endloaded+num_read;
@@ -43,9 +42,9 @@ class io_buf {
       return 0;
   }
   void flush() { 
-    if (write(file, space.begin, space.index()) != (int) space.index())
+    if (write(files[0], space.begin, space.index()) != (int) space.index())
       cerr << "error, failed to write example\n";
-    space.end = space.begin; fsync(file); }
+    space.end = space.begin; fsync(files[0]); }
 };
 
 void buf_write(io_buf &o, char* &pointer, int n);

@@ -36,6 +36,7 @@ struct parser {
 };
 
 parser* new_parser(const label_parser* lp);
+void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes);
 
 //source control functions
 bool inconsistent_cache(size_t numbits, io_buf& cache);

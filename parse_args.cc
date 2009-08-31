@@ -13,74 +13,6 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_args.h"
 #include "sender.h"
 
-//For OSX
-#ifndef O_LARGEFILE
-#define O_LARGEFILE 0
-#endif
-
-void make_write_cache(size_t numbits, parser* par, string &newname, 
-		      bool quiet)
-{
-  string temp = newname+string(".writing");
-  push_many(par->output.currentname,temp.c_str(),temp.length()+1);
-  
-  par->output.file = open(temp.c_str(), O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
-  if (par->output.file == -1) {
-    cerr << "can't create cache file !" << endl;
-    return;
-  }
-  char *p;
-  buf_write(par->output, p, sizeof(size_t));
-  
-  *(size_t *)p = numbits;
-  
-  push_many(par->output.finalname,newname.c_str(),newname.length()+1);
-  par->write_cache = true;
-  if (!quiet)
-    cerr << "creating cache_file = " << newname << endl;
-}
-
-void parse_cache(po::variables_map &vm, size_t numbits, string source,
-		 parser* par, bool quiet, static_data* sd, size_t passes)
-{
-  par->global->mask = (1 << numbits) - 1;
-  if (vm.count("cache") || vm.count("cache_file"))
-    {
-      string cache_string;
-      if (vm.count("cache_file")) 
-	cache_string = vm["cache_file"].as< string >();
-      else 
-	cache_string = source+string(".cache");
-      par->input.file = 
-	open(cache_string.c_str(), O_RDONLY|O_LARGEFILE);  
-      if (par->input.file == -1)
-	make_write_cache(numbits, par, cache_string, quiet);
-      else {
-	if (inconsistent_cache(numbits, par->input)) {
-	  close(par->input.file);
-	  par->input.space.erase();
-	  make_write_cache(numbits, par, cache_string, quiet);
-	}
-	else {
-	  if (!quiet)
-	    cerr << "using cache_file = " << cache_string << endl;
-	  par->reader = read_cached_features;
-	  par->write_cache = false;
-	}
-      }
-    }
-  else
-    {
-      if (!quiet)
-	cerr << "using no cache" << endl;
-      if (passes > 1)
-	cerr << sd->program_name << ": Warning only one pass will occur: try using --cache_file" << endl;
-      reserve(par->output.space,0);
-      par->output.file=-1;
-      par->write_cache = false;
-    }
-}
-
 void parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
 		gd_vars& vars, float& eta_decay_rate,
 		size_t &passes, regressor &r, parser* par,
@@ -114,14 +46,14 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("bit_precision,b", po::value<size_t>(&sd->num_bits)->default_value(18), 
      "number of bits in the feature table")
     ("cache,c", "Use a cache.  The default is <data>.cache")
-    ("cache_file", po::value< string >(), "The location of a cache_file.")
+    ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
     ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("help,h","Output Arguments")
-    ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor")
+    ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&vars.t)->default_value(1.), "initial t value")
     ("keep,k", po::value<size_t>(&keep)->default_value(0), "Features to keep")
     ("min_prediction", po::value<float>(&vars.min_prediction)->default_value(0), "Smallest prediction to output")
@@ -217,8 +149,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (eta_decay_rate != default_decay && vm.count("passes") <= 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
-  par->reader = read_features;
-  parse_cache(vm, sd->num_bits, vm["data"].as<string>(), par, vars.quiet, r.global, passes);
+  parse_source_args(vm,par,vars.quiet,passes);
 
   if (vm.count("predictions")) {
     if (!vars.quiet)
@@ -244,60 +175,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       vars.raw_predictions = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
   }
 
-  if (par->input.file == -1)
-    if (vm.count("daemon"))
-      {
-	vars.daemon = socket(PF_INET, SOCK_STREAM, 0);
-	if (vars.daemon < 0) {
-	    cerr << "can't open socket!" << endl;
-	    exit(1);
-	}
-	sockaddr_in address;
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = htonl(INADDR_ANY);
-	address.sin_port = htons(39523);
-	
-	if (bind(vars.daemon,(sockaddr*)&address, sizeof(address)) < 0)
-	  {
-	    cerr << "failure to bind!" << endl;
-	    exit(1);
-	  }
-	listen(vars.daemon,1);
-	
-	sockaddr_in client_address;
-	socklen_t size = sizeof(client_address);
-	par->input.file = accept(vars.daemon,(sockaddr*)&client_address,&size);
-	if (par->input.file < 0)
-	  {
-	    cerr << "bad client socket!" << endl;
-	    exit (1);
-	  }
-	cerr << "reading data from port 39523" << endl;
-	vars.predictions = par->input.file;
-	par->reader = read_cached_features;
-	reserve(par->output.space,0);
-      }
-    else if (vm.count("data"))
-      { 
-	string temp = vm["data"].as< string >();
-	if (temp.length() != 0)
-	  {
-	    if (!vars.quiet)
-	      cerr << "Reading from " << temp << endl;
-	    par->input.file = open(temp.c_str(), O_RDONLY);
-	    if (par->input.file == -1)
-	      {
-		cerr << "can't open " << temp << ", bailing!" << endl;
-		exit(0);
-	      }
-	  }
-      }
-    else // Default to stdin
-      {
-	if (!vars.quiet)
-	  cerr << "Reading from stdin" << endl;
-	par->input.file = fileno(stdin);
-      }
   if (vm.count("audit"))
     par->global->audit = true;
   else 

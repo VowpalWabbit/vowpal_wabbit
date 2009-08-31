@@ -85,7 +85,7 @@ void open_sockets(vector<string>& hosts)
 	      exit(1);
 	    }
 	  io_buf b;
-	  b.file = sd;
+	  push(b.files, sd);
 	  push(bufs[i], b);
 	}
     }

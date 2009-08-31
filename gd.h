@@ -20,7 +20,6 @@ struct gd_vars
   double weighted_labels;
   size_t total_features;
   float eta;
-  int daemon;
   int predictions, raw_predictions;
   double sum_loss;
   double sum_loss_since_last_dump;
@@ -43,7 +42,6 @@ struct gd_vars
     example_number = 0;
     weighted_labels = 0.;
     total_features = 0;
-    daemon = -1;
     predictions = -1;
     raw_predictions = -1;
     sum_loss = 0.0;
