@@ -24,7 +24,9 @@ unsigned int buf_read(io_buf &i, char* &pointer, int n)
 	  i.endloaded = i.space.begin+left;
 	}
       if (i.fill() > 0)
-	return buf_read(i,pointer,n);
+	{
+	  return buf_read(i,pointer,n);
+	}
       else //no more bytes to read
 	{
 	  pointer = i.space.end;

@@ -18,8 +18,13 @@ char* run_len_decode(char *p, size_t& i)
   return p;
 }
 
+size_t invocations = 0;
+
 int read_cached_features(parser* p, void* ec)
 {
+  cout << "read_cached_features " << ++invocations << endl;
+  cout << "left = " << p->input.endloaded - p->input.space.end << endl;
+ 
   example* ae = (example*)ec;
   size_t mask = p->global->mask;
 
