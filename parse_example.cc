@@ -322,6 +322,7 @@ void setup_example(example* ae, static_data* global)
   ae->partial_prediction = 0.;
   ae->num_features = 1;
   ae->threads_to_finish = num_threads;	
+  ae->done = false;
 
   //Should loop through the features to determine the boundaries
   size_t length = global->mask + 1;
