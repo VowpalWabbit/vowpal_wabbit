@@ -26,7 +26,7 @@ size_t log_int(size_t v)
   return log_int_r(v);
 }
 
-void find_split(size_t number)
+size_t find_split(size_t number)
 {/* Breaks <number> things into a factor of 2 by a factor of 2, with the first dimension longest */
   d_1 = 1;
   d_2 = 1;
@@ -48,7 +48,9 @@ void find_split(size_t number)
 	}
       if (d_1 * d_2 < number)
 	cerr << "warning: number of remote hosts is not a factor of 2, so some are wasted" << endl;
+      return log_2;
     }
+  return 0;
 }
 
 void open_sockets(vector<string>& hosts)
@@ -89,10 +91,10 @@ void open_sockets(vector<string>& hosts)
     }
 }
 
-void parse_send_args(po::variables_map& vm, vector<string> pairs)
+void parse_send_args(po::variables_map& vm, vector<string> pairs, size_t& thread_bits)
 {
   if (vm.count("sendto"))
-    {
+    {      
       if (pairs.size() > 0)
 	{
 	  pairs_exist=true;
@@ -103,7 +105,7 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs)
 	}
 
       vector<string> hosts = vm["sendto"].as< vector<string> >();
-      find_split(hosts.size());
+      thread_bits = max(thread_bits,find_split(hosts.size()));
       open_sockets(hosts);      
     }
 }
@@ -134,6 +136,7 @@ void* send_thread(void*)
 	    simple_label.cache_label(ld,bufs[i][j]);//send label information.
 	    send_features(i,j,bufs[i][j],ec);
 	  }
+      ec->threads_to_finish = 0;
     }
 
   return NULL;

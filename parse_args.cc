@@ -302,7 +302,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   else 
     par->source->global->audit = false;
 
-  parse_send_args(vm, sd->pairs);
+  parse_send_args(vm, sd->pairs, sd->thread_bits);
 
   if (vm.count("final_regressor")) {
     final_regressor_name = vm["final_regressor"].as<string>();

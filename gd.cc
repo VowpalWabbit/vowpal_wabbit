@@ -426,8 +426,6 @@ void process(example* ec, size_t num_threads, gd_vars& vars, regressor& reg, siz
   if (reg.global->audit)
     print_audit_features(reg, ec, offset);
 
-  //  cout << "[[[process]]], (ld->label == FLT_MAX) = " << (ld->label == FLT_MAX) << endl;
-
   if (ld->label != FLT_MAX)
     {
       float example_loss = reg.loss->getLoss(ec->partial_prediction, ld->label) * ld->weight;
@@ -441,11 +439,6 @@ void process(example* ec, size_t num_threads, gd_vars& vars, regressor& reg, siz
 	* (ld->label - ec->partial_prediction)
 	* norm * ld->weight;
       
-      //      print(ec,vars);      
-      //            cout << "\t\tupdate = " << ec->eta_round << endl;
-      //            cout << "\t\t\tlabel = " << ld->label << ", pred = " << ec->partial_prediction << endl;
-      //            cout << "\t\t\teta = " << vars.eta << " vars.t = " << vars.t << endl;
-
       float example_update = reg.loss->getUpdate(ec->partial_prediction, ld->label) * ld->weight;
       ec->eta_round = vars.eta/pow(vars.t,vars.power_t) * example_update * norm;
       if (ld->undo)

@@ -49,7 +49,7 @@ struct audit_data {
 };
 
 struct example
-{ 
+{
   void* ld;
 
   v_array<size_t> indices;
