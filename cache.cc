@@ -22,14 +22,10 @@ size_t invocations = 0;
 
 int read_cached_features(parser* p, void* ec)
 {
-  cout << "read_cached_features " << ++invocations << endl;
-  cout << "left = " << p->input.endloaded - p->input.space.end << endl;
- 
   example* ae = (example*)ec;
   size_t mask = p->global->mask;
 
   size_t total = p->lp->read_cached_label(ae->ld, p->input);
-  cout << "total = " << total << endl;
   if (total == 0)
     return 0;
 
@@ -144,7 +140,6 @@ void output_features(io_buf& cache, size_t index, feature* begin, feature* end)
 
 void cache_features(io_buf& cache, example* ae)
 {
-  cout << "called cache_features" << endl;
   output_int(cache, ae->indices.index());
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end);

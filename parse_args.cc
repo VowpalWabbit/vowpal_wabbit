@@ -244,59 +244,60 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       vars.raw_predictions = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
   }
 
-  if (vm.count("daemon") )
-    {
-      vars.daemon = socket(PF_INET, SOCK_STREAM, 0);
-      if (vars.daemon < 0) {
-	cerr << "can't open socket!" << endl;
-	exit(1);
+  if (par->input.file == -1)
+    if (vm.count("daemon"))
+      {
+	vars.daemon = socket(PF_INET, SOCK_STREAM, 0);
+	if (vars.daemon < 0) {
+	    cerr << "can't open socket!" << endl;
+	    exit(1);
+	}
+	sockaddr_in address;
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_port = htons(39523);
+	
+	if (bind(vars.daemon,(sockaddr*)&address, sizeof(address)) < 0)
+	  {
+	    cerr << "failure to bind!" << endl;
+	    exit(1);
+	  }
+	listen(vars.daemon,1);
+	
+	sockaddr_in client_address;
+	socklen_t size = sizeof(client_address);
+	par->input.file = accept(vars.daemon,(sockaddr*)&client_address,&size);
+	if (par->input.file < 0)
+	  {
+	    cerr << "bad client socket!" << endl;
+	    exit (1);
+	  }
+	cerr << "reading data from port 39523" << endl;
+	vars.predictions = par->input.file;
+	par->reader = read_cached_features;
+	reserve(par->output.space,0);
       }
-      sockaddr_in address;
-      address.sin_family = AF_INET;
-      address.sin_addr.s_addr = htonl(INADDR_ANY);
-      address.sin_port = htons(39523);
- 
-      if (bind(vars.daemon,(sockaddr*)&address, sizeof(address)) < 0)
-	{
-	  cerr << "failure to bind!" << endl;
-	  exit(1);
-	}
-      listen(vars.daemon,1);
-
-      sockaddr_in client_address;
-      socklen_t size = sizeof(client_address);
-      par->input.file = accept(vars.daemon,(sockaddr*)&client_address,&size);
-      if (par->input.file < 0)
-	{
-	  cerr << "bad client socket!" << endl;
-	  exit (1);
-	}
-      cerr << "reading data from port 39523" << endl;
-      vars.predictions = par->input.file;
-      par->reader = read_cached_features;
-      reserve(par->output.space,0);
-    }
-  else if (vm.count("data"))
-    { 
-      string temp = vm["data"].as< string >();
-      if (temp.length() != 0)
-	{
-	  if (!vars.quiet)
-	    cerr << "Reading from " << temp << endl;
-	  par->input.file = open(temp.c_str(), O_RDONLY);
-	  if (par->input.file == -1)
-	    {
-	      cerr << "can't open " << temp << ", bailing!" << endl;
-	      exit(0);
-	    }
-	}
-      else // Default to stdin
-	{
-	  if (!vars.quiet)
-	    cerr << "Reading from stdin" << endl;
-	  par->input.file = fileno(stdin);
-	}
-    }
+    else if (vm.count("data"))
+      { 
+	string temp = vm["data"].as< string >();
+	if (temp.length() != 0)
+	  {
+	    if (!vars.quiet)
+	      cerr << "Reading from " << temp << endl;
+	    par->input.file = open(temp.c_str(), O_RDONLY);
+	    if (par->input.file == -1)
+	      {
+		cerr << "can't open " << temp << ", bailing!" << endl;
+		exit(0);
+	      }
+	  }
+      }
+    else // Default to stdin
+      {
+	if (!vars.quiet)
+	  cerr << "Reading from stdin" << endl;
+	par->input.file = fileno(stdin);
+      }
   if (vm.count("audit"))
     par->global->audit = true;
   else 

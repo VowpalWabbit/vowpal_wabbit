@@ -34,7 +34,6 @@ class io_buf {
 	endloaded = space.begin+offset;
       }
     ssize_t num_read = read(file, endloaded, space.end_array - endloaded);
-    cout << "filling read " << num_read << endl;
     if (num_read >= 0)
       {
 	endloaded = endloaded+num_read;
