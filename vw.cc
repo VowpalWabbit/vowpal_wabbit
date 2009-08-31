@@ -28,8 +28,7 @@ gd_vars* vw(int argc, char *argv[])
   ofstream final_regressor;
   string final_regressor_name;
 
-  example_source source;
-  parser* p = new_parser(&source,&simple_label);
+  parser* p = new_parser(&simple_label);
   regressor regressor1;
 
   gd_vars *vars = new gd_vars;
@@ -65,8 +64,7 @@ gd_vars* vw(int argc, char *argv[])
       }
     destroy_parser(p);
     vars->eta *= eta_decay;
-    if (numpasses > 1)
-      reset_source(regressor1.global->num_bits, source);
+    reset_source(regressor1.global->num_bits, p);
   }
   
   if (final_regressor_name  != "")
@@ -75,11 +73,11 @@ gd_vars* vw(int argc, char *argv[])
       dump_regressor(final_regressor, regressor1);
     }
   
-  free(p);
   finalize_regressor(final_regressor,regressor1);
-  finalize_source(source);
-  source.global->pairs.~vector();
-  free(source.global);
+  finalize_source(p);
+  p->global->pairs.~vector();
+  free(p->global);
+  free(p);
   
   return vars;
 }

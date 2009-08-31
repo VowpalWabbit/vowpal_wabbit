@@ -6,6 +6,7 @@ embodied in the content of this file are licensed under the BSD
 
 #include <netdb.h>
 #include "fcntl.h"
+#include "cache.h"
 #include "io.h"
 #include "parse_regressor.h"
 #include "source.h"
@@ -17,32 +18,32 @@ embodied in the content of this file are licensed under the BSD
 #define O_LARGEFILE 0
 #endif
 
-void make_write_cache(size_t numbits, bool &create_cache, string &newname, 
-		      io_buf &cache, bool quiet)
+void make_write_cache(size_t numbits, parser* par, string &newname, 
+		      bool quiet)
 {
   string temp = newname+string(".writing");
-  push_many(cache.currentname,temp.c_str(),temp.length()+1);
+  push_many(par->output.currentname,temp.c_str(),temp.length()+1);
   
-  cache.file = open(temp.c_str(), O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
-  if (cache.file == -1) {
+  par->output.file = open(temp.c_str(), O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+  if (par->output.file == -1) {
     cerr << "can't create cache file !" << endl;
     return;
   }
   char *p;
-  buf_write(cache, p, sizeof(size_t));
+  buf_write(par->output, p, sizeof(size_t));
   
   *(size_t *)p = numbits;
   
-  push_many(cache.finalname,newname.c_str(),newname.length()+1);
-  create_cache = true;
+  push_many(par->output.finalname,newname.c_str(),newname.length()+1);
+  par->write_cache = true;
   if (!quiet)
     cerr << "creating cache_file = " << newname << endl;
 }
 
 void parse_cache(po::variables_map &vm, size_t numbits, string source,
-		 example_source* e, bool quiet, static_data* sd, size_t passes)
+		 parser* par, bool quiet, static_data* sd, size_t passes)
 {
-  e->global->mask = (1 << numbits) - 1;
+  par->global->mask = (1 << numbits) - 1;
   if (vm.count("cache") || vm.count("cache_file"))
     {
       string cache_string;
@@ -50,21 +51,21 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
 	cache_string = vm["cache_file"].as< string >();
       else 
 	cache_string = source+string(".cache");
-      e->binary.file = 
+      par->input.file = 
 	open(cache_string.c_str(), O_RDONLY|O_LARGEFILE);  
-      if (e->binary.file == -1)
-	make_write_cache(numbits, e->write_cache, cache_string, e->binary, quiet);
+      if (par->input.file == -1)
+	make_write_cache(numbits, par, cache_string, quiet);
       else {
-	if (inconsistent_cache(numbits, e->binary)) {
-	  close(e->binary.file);
-	  e->binary.space.erase();
-	  make_write_cache(numbits, e->write_cache, cache_string, e->binary, quiet);
+	if (inconsistent_cache(numbits, par->input)) {
+	  close(par->input.file);
+	  par->input.space.erase();
+	  make_write_cache(numbits, par, cache_string, quiet);
 	}
 	else {
 	  if (!quiet)
 	    cerr << "using cache_file = " << cache_string << endl;
-
-	  e->write_cache = false;
+	  par->reader = read_cached_features;
+	  par->write_cache = false;
 	}
       }
     }
@@ -74,9 +75,9 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
 	cerr << "using no cache" << endl;
       if (passes > 1)
 	cerr << sd->program_name << ": Warning only one pass will occur: try using --cache_file" << endl;
-      reserve(e->binary.space,0);
-      e->binary.file=-1;
-      e->write_cache = false;
+      reserve(par->output.space,0);
+      par->output.file=-1;
+      par->write_cache = false;
     }
 }
 
@@ -146,7 +147,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quantiles_tau", po::value<double>()->default_value(0.0), "Parameter \\tau associated with Quantiles loss. Unless mentioned this parameter would default to a value of 0.0");
 
   r.global=sd;
-  par->source->global=sd;
+  par->global=sd;
   
   po::positional_options_description p;
   
@@ -216,7 +217,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (eta_decay_rate != default_decay && vm.count("passes") <= 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
-  parse_cache(vm, sd->num_bits, vm["data"].as<string>(), par->source, vars.quiet, r.global, passes);
+  par->reader = read_features;
+  parse_cache(vm, sd->num_bits, vm["data"].as<string>(), par, vars.quiet, r.global, passes);
 
   if (vm.count("predictions")) {
     if (!vars.quiet)
@@ -263,18 +265,16 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      par->source->binary.file = accept(vars.daemon,(sockaddr*)&client_address,&size);
-      if (par->source->binary.file < 0)
+      par->input.file = accept(vars.daemon,(sockaddr*)&client_address,&size);
+      if (par->input.file < 0)
 	{
 	  cerr << "bad client socket!" << endl;
 	  exit (1);
 	}
       cerr << "reading data from port 39523" << endl;
-      vars.predictions = par->source->binary.file;
-      reserve(par->source->binary.space, 1 << 16);
-      par->source->binary.endloaded = par->source->binary.space.begin;
-      par->source->text.file = -1;
-      reserve(par->source->text.space,0);
+      vars.predictions = par->input.file;
+      par->reader = read_cached_features;
+      reserve(par->output.space,0);
     }
   else if (vm.count("data"))
     { 
@@ -283,24 +283,24 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	{
 	  if (!vars.quiet)
 	    cerr << "Reading from " << temp << endl;
-	  par->source->text.file = open(temp.c_str(), O_RDONLY);
-	  if (par->source->text.file == -1)
+	  par->input.file = open(temp.c_str(), O_RDONLY);
+	  if (par->input.file == -1)
 	    {
 	      cerr << "can't open " << temp << ", bailing!" << endl;
 	      exit(0);
 	    }
 	}
-      else // Default to stdi
+      else // Default to stdin
 	{
 	  if (!vars.quiet)
 	    cerr << "Reading from stdin" << endl;
-	  par->source->text.file = fileno(stdin);
+	  par->input.file = fileno(stdin);
 	}
     }
   if (vm.count("audit"))
-    par->source->global->audit = true;
+    par->global->audit = true;
   else 
-    par->source->global->audit = false;
+    par->global->audit = false;
 
   parse_send_args(vm, sd->pairs, sd->thread_bits);
 

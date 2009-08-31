@@ -6,7 +6,6 @@ embodied in the content of this file are licensed under the BSD
 
 #ifndef PE_H
 #define PE_H
-#include "io.h"
 #include "parse_regressor.h"
 #include "parse_primitives.h"
 #include "source.h"
@@ -18,27 +17,6 @@ struct feature {
   uint32_t weight_index;
   bool operator==(feature j){return weight_index == j.weight_index;}
 };
-
-struct label_parser {
-  void (*default_label)(void*);
-  void (*parse_label)(void*, substring, v_array<substring>&);
-  void (*cache_label)(void*, io_buf& cache);
-  size_t (*read_cached_label)(void*, io_buf& cache);
-  void (*delete_label)(void*);
-  size_t label_size;
-};
-
-struct parser {
-  v_array<substring> channels;
-  v_array<substring> words;
-  v_array<substring> name;
-
-  example_source* source;
-
-  const label_parser* lp;
-};
-
-parser* new_parser(example_source* s, const label_parser* lp);
 
 struct audit_data {
   char* space;
@@ -73,6 +51,7 @@ struct example
 void setup_parser(size_t num_threads, parser* pf);
 void destroy_parser(parser* pf);
 //example processing
+int read_features(parser* p, void* ex);
 example* get_example(example* ec, size_t thread_num);
 
 #endif

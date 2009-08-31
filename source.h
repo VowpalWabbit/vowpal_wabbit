@@ -9,27 +9,37 @@ embodied in the content of this file are licensed under the BSD
 
 #include "io.h"
 #include "static_data.h"
+#include "parse_primitives.h"
 
-struct example_source 
-{ 
-  //the source of example information.
-  io_buf binary;
-  io_buf text;
+struct label_parser {
+  void (*default_label)(void*);
+  void (*parse_label)(void*, substring, v_array<substring>&);
+  void (*cache_label)(void*, io_buf& cache);
+  size_t (*read_cached_label)(void*, io_buf& cache);
+  void (*delete_label)(void*);
+  size_t label_size;
+};
+
+struct parser {
+  v_array<substring> channels;
+  v_array<substring> words;
+  v_array<substring> name;
+
+  const label_parser* lp;
+
+  io_buf input;
+  int (*reader)(parser* p, void* ae);
+  io_buf output;
   bool write_cache;
   
   static_data* global;
 };
 
+parser* new_parser(const label_parser* lp);
+
 //source control functions
 bool inconsistent_cache(size_t numbits, io_buf& cache);
-void reset_source(size_t numbits, example_source& source);
-void finalize_source(example_source& source);
-
-void stdin_source(example_source& source, size_t numbits);
-void stdin_source(example_source& source, size_t numbits, bool quiet);
-void file_source(example_source& source, size_t numbits, string data_file_name);
-void file_source(example_source& source, size_t numbits, string data_file_name, bool quiet);
-void cache_source(example_source& source, size_t numbits, string cache_file_name);
-void cache_source(example_source& source, size_t numbits, string cache_file_name,bool quiet);
+void reset_source(size_t numbits, parser* source);
+void finalize_source(parser* source);
 
 #endif

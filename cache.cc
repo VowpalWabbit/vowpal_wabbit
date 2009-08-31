@@ -18,25 +18,27 @@ char* run_len_decode(char *p, size_t& i)
   return p;
 }
 
-int read_cached_features(parser* p, example* ae)
+int read_cached_features(parser* p, void* ec)
 {
-  size_t mask = p->source->global->mask;
+  example* ae = (example*)ec;
+  size_t mask = p->global->mask;
 
-  size_t total = p->lp->read_cached_label(ae->ld, p->source->binary);
+  size_t total = p->lp->read_cached_label(ae->ld, p->input);
+  cout << "total = " << total << endl;
   if (total == 0)
     return 0;
 
   char* c;
   size_t num_indices = 0;
-  if (buf_read(p->source->binary, c, int_size) < int_size) 
+  if (buf_read(p->input, c, int_size) < int_size) 
     return 0;
   c = run_len_decode(c, num_indices);
-  p->source->binary.set(c);
+  p->input.set(c);
 
   for (;num_indices > 0; num_indices--)
     {
       size_t temp;
-      if((temp = buf_read(p->source->binary,c,int_size + sizeof(size_t))) < char_size + sizeof(size_t)) {
+      if((temp = buf_read(p->input,c,int_size + sizeof(size_t))) < char_size + sizeof(size_t)) {
 	cerr << "truncated example! " << temp << " " << char_size +sizeof(size_t) << endl;
 	return 0;
       }
@@ -47,10 +49,10 @@ int read_cached_features(parser* p, example* ae)
       v_array<feature>* ours = ae->atomics+index;
       size_t storage = *(size_t *)c;
       c += sizeof(size_t);
-      p->source->binary.set(c);
+      p->input.set(c);
       total += storage;
-      if (buf_read(p->source->binary,c,storage) < storage) {
-	cerr << "truncated example!" << endl;
+      if (buf_read(p->input,c,storage) < storage) {
+	cerr << "truncated example! wanted: " << storage << endl;
 	return 0;
       }
 
@@ -75,7 +77,7 @@ int read_cached_features(parser* p, example* ae)
 	  f.weight_index = f.weight_index & mask;
 	  push(*ours, f);
 	}
-      p->source->binary.set(c);
+      p->input.set(c);
     }
 
   return total;
@@ -137,6 +139,7 @@ void output_features(io_buf& cache, size_t index, feature* begin, feature* end)
 
 void cache_features(io_buf& cache, example* ae)
 {
+  cout << "called cache_features" << endl;
   output_int(cache, ae->indices.index());
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end);

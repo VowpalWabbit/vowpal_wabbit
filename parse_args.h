@@ -24,9 +24,4 @@ void parse_args(int argc, char *argv[], boost::program_options::options_descript
 		string &final_regressor_name, int &sum_sock);
 
 
-
-// a helper function for other parsers
-void parse_cache(po::variables_map &vm, size_t numbits, string source,
-		 example_source& e, bool quiet);
-
 #endif

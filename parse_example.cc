@@ -21,14 +21,6 @@ inline size_t hashstring (substring s, unsigned long h)
   return ret;
 }
 
-parser* new_parser(example_source* s, const label_parser* lp)
-{
-  parser* ret = (parser*) calloc(1,sizeof(parser));
-  ret->source = s;
-  ret->lp = lp;
-  return ret;
-}
-
 int order_features(const void* first, const void* second)
 {
   return ((feature*)first)->weight_index - ((feature*)second)->weight_index;
@@ -121,7 +113,7 @@ char* copy(char* base)
 
 void unique_sort_features(parser* p, example* ae)
 {
-  bool audit = p->source->global->audit;
+  bool audit = p->global->audit;
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     {
       qsort(ae->atomics[*b].begin, ae->atomics[*b].index(), sizeof(feature), 
@@ -137,10 +129,11 @@ void unique_sort_features(parser* p, example* ae)
     }
 }
 
-int read_features(parser* p, example* ae)
+int read_features(parser* p, void* ex)
 {
+  example* ae = (example*)ex;
   char *line=NULL;
-  int num_chars = readto(p->source->text, line, '\n');
+  int num_chars = readto(p->input, line, '\n');
   if (num_chars == 0)
     return num_chars;
   
@@ -154,8 +147,8 @@ int read_features(parser* p, example* ae)
   else 
     p->lp->parse_label(ae->ld,p->channels[0],p->words);
   
-  size_t mask = p->source->global->mask;
-  bool audit = p->source->global->audit;
+  size_t mask = p->global->mask;
+  bool audit = p->global->audit;
   for (substring* i = feature_start; i != p->channels.end; i++) {
     substring channel = *i;
     
@@ -225,14 +218,12 @@ int read_features(parser* p, example* ae)
       }
   }
 
-  unique_sort_features(p,ae);
-
   return num_chars;
 }
 
 bool parse_atomic_example(parser* p, example *ae)
 {
-  if (p->source->global->audit)
+  if (p->global->audit)
     for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
       {
 	for (audit_data* temp 
@@ -253,20 +244,13 @@ bool parse_atomic_example(parser* p, example *ae)
     ae->atomics[*i].erase();
 
   ae->indices.erase();
-  if (p->source->binary.file == -1 || p->source->write_cache){
-    if (read_features(p, ae) <= 0)
-      return false;
-    if (p->source->write_cache) 
-      {
-	p->lp->cache_label(ae->ld,p->source->binary);
-	cache_features(p->source->binary, ae);
-      }
-  }
-  else
+  if (p->reader(p,ae) <= 0)
+    return false;
+  unique_sort_features(p,ae);
+  if (p->write_cache) 
     {
-      if (read_cached_features(p, ae) == 0) 
-	return false;
-      unique_sort_features(p,ae);
+      p->lp->cache_label(ae->ld,p->output);
+      cache_features(p->output, ae);
     }
   return true;
 }
@@ -361,7 +345,7 @@ void *main_parse_loop(void *in)
       example* ae=get_unused_example();
 
       if (parse_atomic_example(p, ae)) {	
-	setup_example(ae,p->source->global);
+	setup_example(ae,p->global);
 
 	pthread_mutex_lock(&examples_lock);
 	parsed_index++;
