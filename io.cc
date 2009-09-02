@@ -23,16 +23,12 @@ unsigned int buf_read(io_buf &i, char* &pointer, int n)
 	  i.space.end = i.space.begin;
 	  i.endloaded = i.space.begin+left;
 	}
-      if (i.fill(i.files.last()) > 0)
-	return buf_read(i,pointer,n);
-      else if (i.files.index() > 1)
-	{
-	  close(i.files.pop());
-	  return buf_read(i,pointer,n);
-	}
-      else//no more bytes to read
-	{
-	  close(i.files.pop());
+      if (i.fill(i.files[i.current]) > 0)
+	return buf_read(i,pointer,n);// more bytes are read.
+      else if (++i.current < i.files.index()) 
+	return buf_read(i,pointer,n);// No more bytes, so go to next file and try again.
+      else
+	{//no more bytes to read, return all that we have left.
 	  pointer = i.space.end;
 	  i.space.end = i.endloaded;
 	  return i.endloaded - pointer;
@@ -62,17 +58,12 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
 	  i.endloaded = i.space.begin+left;
 	  pointer = i.endloaded;
 	}
-      if (i.fill(i.files.last()) > 0)
+      if (i.fill(i.files[i.current]) > 0)// more bytes are read.
 	return readto(i,pointer,terminal);
-      else if (i.files.index() > 1)
-	{
-	  close(i.files.pop());
-	  return readto(i,pointer,terminal);
-	}
-      else {
-	close(i.files.pop());
+      else if (++i.current < i.files.index())  //no more bytes, so go to next file.
+	return readto(i,pointer,terminal);
+      else //no more bytes to read, return nothing.
 	return 0;
-      }
     }
 }
 

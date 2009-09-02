@@ -29,6 +29,7 @@ struct parser {
 
   io_buf input;
   int (*reader)(parser* p, void* ae);
+  bool resettable; //whether or not the input can be reset.
   io_buf output;
   bool write_cache;
   
