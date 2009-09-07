@@ -145,12 +145,16 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cerr << "power_t = " << vars.power_t << endl;
       cerr << "decay_learning_rate = " << eta_decay_rate << endl;
     }
-
-  if (eta_decay_rate != default_decay && vm.count("passes") <= 1)
+  
+  if (eta_decay_rate != default_decay && passes == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
+  if (pow(eta_decay_rate, passes) < 0.0001 )
+    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(eta_decay_rate, passes) 
+	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
+  
   parse_source_args(vm,par,vars.quiet,passes);
-
+  
   if (vm.count("predictions")) {
     if (!vars.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
