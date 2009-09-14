@@ -17,6 +17,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_args.h"
 #include "gd.h"
 #include "vw.h"
+#include "simple_label.h"
 #include "sender.h"
 
 int sum_sock = -1;
@@ -51,7 +52,7 @@ gd_vars* vw(int argc, char *argv[])
   gd_thread_params t = {vars, num_threads, regressor1, &final_regressor_name};
   
   for (; numpasses > 0; numpasses--) {
-    setup_parser(num_threads, p);
+    start_parser(num_threads, p);
     if (vm.count("sendto"))
       {
 	setup_send();
@@ -62,7 +63,7 @@ gd_vars* vw(int argc, char *argv[])
 	setup_gd(t);
 	destroy_gd();
       }
-    destroy_parser(p);
+    end_parser(p);
     vars->eta *= eta_decay;
     reset_source(regressor1.global->num_bits, p);
   }

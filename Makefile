@@ -21,13 +21,13 @@ BINARIES = vw offset_tree
 
 all:	$(BINARIES)
 
-vw.o:	 parse_example.h  parse_regressor.h  parse_args.h  source.h
+vw.o:	 parse_example.h  parse_regressor.h  parse_args.h  parser.h
 
-offset_tree.o:	parse_example.h parse_regressor.h parse_args.h source.h
+offset_tree.o:	parse_example.h parse_regressor.h parse_args.h parser.h
 
 parse_args.o:	 parse_regressor.h  parse_example.h  io.h  gd.h
 
-parse_example.o:  io.h  parse_example.cc  source.h
+parse_example.o:  io.h  parse_example.cc  parser.h
 
 sender.o: parse_example.h
 
@@ -43,10 +43,10 @@ gd.o:	 parse_example.h
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
-vw: hash.o  io.o  parse_regressor.o  parse_primitives.o  cache.o  parse_example.o  sparse_dense.o  parse_args.o  gd.o  source.o  vw.o loss_functions.o sender.o main.o
+vw: hash.o  io.o  parse_regressor.o  parse_primitives.o  cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  parse_args.o  gd.o parser.o vw.o loss_functions.o sender.o main.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
-offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_dense.o parse_example.o parse_args.o gd.o source.o offset_tree.o loss_functions.o
+offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_dense.o parse_example.o parse_args.o gd.o parser.o offset_tree.o loss_functions.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 

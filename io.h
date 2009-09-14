@@ -15,7 +15,7 @@ class io_buf {
  public:
   v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values.
   v_array<int> files;
-  size_t current;
+  size_t current; //file descriptor currently being used.
   char* endloaded; //end of loaded values
   v_array<char> currentname;
   v_array<char> finalname;
@@ -23,6 +23,7 @@ class io_buf {
   io_buf() {
     size_t s = 1 << 16;
     reserve(space, s); 
+    current = 0;
     endloaded = space.begin;
   }
   void set(char *p){space.end = p;}

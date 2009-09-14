@@ -5,6 +5,7 @@
 #include "parse_args.h"
 #include "cache.h"
 #include "vw.h"
+#include "simple_label.h"
 
 pthread_t* thread;
 size_t d_1;

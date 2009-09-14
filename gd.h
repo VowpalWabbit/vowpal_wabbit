@@ -8,7 +8,9 @@ embodied in the content of this file are licensed under the BSD
 #define GD_H
 
 #include <math.h>
-#include "parse_example.h"
+#include "example.h"
+#include "parse_regressor.h"
+#include "parser.h"
 
 void print_result(int f, float res, v_array<char> tag);
 
@@ -66,22 +68,6 @@ struct gd_thread_params
   regressor reg;
   string* final_regressor_name;
 };
-
-struct label_data {
-  double label;
-  float weight;
-  bool undo;
-  v_array<char> tag;
-};
-
-size_t read_cached_simple_label(void* v, io_buf& cache);
-void cache_simple_label(void* v, io_buf& cache);
-void default_simple_label(void* v);
-void parse_simple_label(void* v, substring label_space, v_array<substring>& words);
-void delete_simple_label(void* v);
-const label_parser simple_label = {default_simple_label, parse_simple_label, 
-				   cache_simple_label, read_cached_simple_label, 
-				   delete_simple_label, sizeof(label_data)};
 
 float final_prediction(float ret, size_t num_features, float &norm);
 

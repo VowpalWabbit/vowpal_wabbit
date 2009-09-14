@@ -10,6 +10,7 @@ embodied in the content of this file are licensed under the BSD
 #include "io.h"
 #include "static_data.h"
 #include "parse_primitives.h"
+#include "example.h"
 
 struct label_parser {
   void (*default_label)(void*);
@@ -21,23 +22,35 @@ struct label_parser {
 };
 
 struct parser {
-  v_array<substring> channels;
+  v_array<substring> channels;//helper(s) for text parsing
   v_array<substring> words;
   v_array<substring> name;
 
   const label_parser* lp;
 
-  io_buf input;
+  io_buf input; //Input source(s)
   int (*reader)(parser* p, void* ae);
-  bool resettable; //whether or not the input can be reset.
-  io_buf output;
-  bool write_cache;
-  
+  bool resettable; //Whether or not the input can be reset.
+  io_buf output; //Where to output the cache.
+  bool write_cache; 
+
+  v_array<partial_example> pes;//partial examples
+  int label_sock;
+  int max_fd;
+
   static_data* global;
 };
 
 parser* new_parser(const label_parser* lp);
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes);
+
+//parser control
+
+void start_parser(size_t num_threads, parser* pf);
+void end_parser(parser* pf);
+example* get_example(example* ec, size_t thread_num);
 
 //source control functions
 bool inconsistent_cache(size_t numbits, io_buf& cache);
