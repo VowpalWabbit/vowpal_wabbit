@@ -127,7 +127,12 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
     {
       int f = open(caches[i].c_str(), O_RDONLY|O_LARGEFILE);
       if (f == -1)
-	make_write_cache(numbits, par, caches[i], quiet);
+	{
+	  if (par->output.files.index() == 0)
+	    make_write_cache(numbits, par, caches[i], quiet);
+	  else 
+	    cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+	}
       else {
 	if (inconsistent_cache(numbits, f)) {
 	  close(f);
