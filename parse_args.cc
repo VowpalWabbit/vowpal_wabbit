@@ -121,11 +121,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
-  vector<string> regs;
-  if (vm.count("initial_regressor"))
-    regs = vm["initial_regressor"].as< vector<string> >();
+  parse_regressor_args(vm, r, final_regressor_name, !vars.quiet);
 
-  parse_regressor(regs, r);
   string loss_function;
   if(vm.count("loss_function")) 
 	  loss_function = vm["loss_function"].as<string>();
@@ -186,14 +183,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     par->global->audit = false;
 
   parse_send_args(vm, sd->pairs, sd->thread_bits);
-
-  if (vm.count("final_regressor")) {
-    final_regressor_name = vm["final_regressor"].as<string>();
-    if (!vars.quiet)
-      cerr << "final_regressor = " << vm["final_regressor"].as<string>() << endl;
-  }
-  else
-    final_regressor_name = "";
 
   if (vm.count("comment")) 
     {

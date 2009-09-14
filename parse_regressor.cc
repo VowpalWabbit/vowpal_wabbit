@@ -28,19 +28,30 @@ void initialize_regressor(regressor &r)
     }
 }
 
-/* 
-   Read in regressors.  If multiple regressors are specified, do a weighted 
-   average.  If none are specified, initialize according to global_seg & 
-   numbits.
-*/
-void parse_regressor(vector<string> regressors, regressor &r)
+void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_regressor_name, bool quiet)
 {
+  if (vm.count("final_regressor")) {
+    final_regressor_name = vm["final_regressor"].as<string>();
+    if (!quiet)
+      cerr << "final_regressor = " << vm["final_regressor"].as<string>() << endl;
+  }
+  else
+    final_regressor_name = "";
 
+  vector<string> regs;
+  if (vm.count("initial_regressor"))
+    regs = vm["initial_regressor"].as< vector<string> >();
+  
+  /* 
+     Read in regressors.  If multiple regressors are specified, do a weighted 
+     average.  If none are specified, initialize according to global_seg & 
+     numbits.
+  */
   bool initialized = false;
   
-  for (size_t i = 0; i < regressors.size(); i++)
+  for (size_t i = 0; i < regs.size(); i++)
     {
-      ifstream regressor(regressors[i].c_str());
+      ifstream regressor(regs[i].c_str());
       size_t local_num_bits;
       regressor.read((char *)&local_num_bits, sizeof(local_num_bits));
       if (!initialized){
@@ -109,16 +120,21 @@ void parse_regressor(vector<string> regressors, regressor &r)
       regressor.close();
     }
   if (!initialized)
-    initialize_regressor(r);
-
-//  r.loss = getLossFunction(loss_function);
+    if(final_regressor_name != string(""))
+      initialize_regressor(r);
+    else
+      r.weight_vectors = NULL;
 }
 
 void free_regressor(regressor &r)
 {
-  for (size_t i = 0; i < r.global->num_threads(); i++)
-    free(r.weight_vectors[i]);
-  free(r.weight_vectors);
+  if (r.weight_vectors != NULL)
+    {
+      for (size_t i = 0; i < r.global->num_threads(); i++)
+	if (r.weight_vectors[i] != NULL)
+	  free(r.weight_vectors[i]);
+      free(r.weight_vectors);
+    }
 }
 
 void dump_regressor(ofstream &o, regressor &r)

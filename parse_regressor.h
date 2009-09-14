@@ -22,8 +22,9 @@ struct regressor {
   loss_function *loss;
 };
 
+void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_regressor_name, bool quiet);
+
 void initialize_regressor(regressor &r);
-void parse_regressor(vector<string> regs, regressor &r);
 
 void finalize_regressor(ofstream& o, regressor &r);
 void dump_regressor(ofstream &o, regressor &r);

@@ -16,6 +16,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_example.h"
 #include "parse_args.h"
 #include "gd.h"
+#include "noop.h"
 #include "vw.h"
 #include "simple_label.h"
 #include "sender.h"
@@ -57,6 +58,11 @@ gd_vars* vw(int argc, char *argv[])
       {
 	setup_send();
 	destroy_send();
+      }
+    else if (final_regressor_name == string("") && !vm.count("initial_regressor"))
+      {
+	start_noop();
+	end_noop();
       }
     else
       {
