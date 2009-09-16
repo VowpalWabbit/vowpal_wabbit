@@ -11,6 +11,8 @@ struct prediction {
 
 const size_t multindex = 5;
 
-int recieve_features(parser* p, void* ex);
+int receive_features(parser* p, void* ex);
+void send_prediction(int sock, prediction pred);
+bool get_prediction(int sock, prediction &p);
 
 #endif

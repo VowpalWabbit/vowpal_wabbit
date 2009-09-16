@@ -6,7 +6,7 @@ embodied in the content of this file are licensed under the BSD
 
 #ifndef PR_H
 #define PR_H
-#include "static_data.h"
+#include "global_data.h"
 #include "loss_functions.h"
 #include "boost/program_options.hpp"
 
@@ -17,7 +17,7 @@ typedef float weight;
 struct regressor {
   weight** weight_vectors;
 
-  static_data* global;
+  global_data* global;
 
   loss_function *loss;
 };

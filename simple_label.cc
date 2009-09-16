@@ -3,6 +3,15 @@
 #include "simple_label.h"
 #include "cache.h"
 
+char* bufread_simple_label(label_data* ld, char* c)
+{
+  ld->label = *(double *)c;
+  c += sizeof(ld->label);
+  ld->weight = *(float *)c;
+  c += sizeof(ld->weight);
+  return c;
+}
+
 size_t read_cached_simple_label(void* v, io_buf& cache)
 {
   label_data* ld = (label_data*) v;
@@ -11,11 +20,8 @@ size_t read_cached_simple_label(void* v, io_buf& cache)
   size_t tag_size = 0;
   if (buf_read(cache, c, total) < total) 
     return 0;
+  c = bufread_simple_label(ld,c);
 
-  ld->label = *(double *)c;
-  c += sizeof(ld->label);
-  ld->weight = *(float *)c;
-  c += sizeof(ld->weight);
   c = run_len_decode(c, tag_size);
 
   cache.set(c);
@@ -27,19 +33,27 @@ size_t read_cached_simple_label(void* v, io_buf& cache)
   return total+tag_size;
 }
 
-void cache_simple_label(void* v, io_buf& cache)
+char* bufcache_simple_label(label_data* ld, char* c)
 {
-  char *c;
-  label_data* ld = (label_data*) v;
-  buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight)+int_size+ld->tag.index());
   *(double *)c = ld->label;
   c += sizeof(ld->label);
   *(float *)c = ld->weight;
   c += sizeof(ld->weight);
   
+  return c;
+}
+
+void cache_simple_label(void* v, io_buf& cache)
+{
+  char *c;
+  label_data* ld = (label_data*) v;
+  buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight)+int_size+ld->tag.index());
+  c = bufcache_simple_label(ld,c);
+
   c = run_len_encode(c, ld->tag.index());
   memcpy(c,ld->tag.begin,ld->tag.index());
   c += ld->tag.index();
+
   cache.set(c);
 }
 

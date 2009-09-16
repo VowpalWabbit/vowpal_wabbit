@@ -5,6 +5,9 @@
 #include "parse_primitives.h"
 #include "parser.h"
 
+char* bufread_simple_label(label_data* ld, char* c);
+char* bufcache_simple_label(label_data* ld, char* c);
+
 size_t read_cached_simple_label(void* v, io_buf& cache);
 void cache_simple_label(void* v, io_buf& cache);
 void default_simple_label(void* v);

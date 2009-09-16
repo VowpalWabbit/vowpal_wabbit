@@ -199,13 +199,23 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  int flag = 1;
 	  if (setsockopt(f,IPPROTO_TCP,TCP_NODELAY,(char*) &flag, sizeof(int)) == -1)
 	    cerr << strerror(errno) << " " << errno << " " << IPPROTO_TCP << endl;
+
+	  size_t id;
+	  read(f, &id, sizeof(id));
+	  if (id == 0)
+	    {
+	      par->label_sock = f;
+	      par->global->network_prediction = f;
+	    }
+
+	  push(par->ids,id);
 	  push(par->input.files,f);
 	  max_fd = max(f, max_fd);
 	  cerr << "reading data from port 39523" << endl;
 	}
       max_fd++;
       if(source_count > 1)
-	par->reader = recieve_features;
+	par->reader = receive_features;
       else 
 	par->reader = read_cached_features;
 
@@ -379,7 +389,9 @@ feature* search(feature* begin, size_t value, feature* end)
     }
 }
 
-void setup_example(example* ae, static_data* global)
+size_t example_count = 0;
+
+void setup_example(example* ae, global_data* global)
 {
   size_t num_threads = global->num_threads();
 
@@ -387,6 +399,7 @@ void setup_example(example* ae, static_data* global)
   ae->num_features = 1;
   ae->threads_to_finish = num_threads;	
   ae->done = false;
+  ae->example_counter = ++example_count;
 
   //Should loop through the features to determine the boundaries
   size_t length = global->mask + 1;

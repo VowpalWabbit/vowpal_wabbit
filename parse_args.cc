@@ -6,6 +6,11 @@ embodied in the content of this file are licensed under the BSD
 
 #include <netdb.h>
 #include "fcntl.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <errno.h>
+
 #include "cache.h"
 #include "io.h"
 #include "parse_regressor.h"
@@ -38,7 +43,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   vars.init();
   size_t keep = 0;
   size_t of = 1;
-  static_data* sd = (static_data*)calloc(1,sizeof(static_data));
+  global_data* sd = (global_data*)calloc(1,sizeof(global_data));
   sd->program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
@@ -61,6 +66,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("multisource", po::value<float>(), "multiple sources for daemon input")
     ("of", po::value<size_t>(&of)->default_value(1), "keep k of <n> features")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.), "t power value")
+    ("predictto", po::value< string > (), "host to send predictions to")
     ("learning_rate,l", po::value<float>(&vars.eta)->default_value(0.1), 
      "Set Learning Rate")
     ("passes", po::value<size_t>(&passes)->default_value(1), 
@@ -72,15 +78,29 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("raw_predictions,r", po::value< string >(), 
      "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send example to <hosts>")
-    ("summer,s", po::value< string > (), "host to use as a summer")
     ("testonly,t", "Ignore label information and just test")
     ("thread_bits", po::value<size_t>(&sd->thread_bits)->default_value(0), "log_2 threads")
     ("comment,z", po::value< string >(), "Comment field.")
     ("loss_function", po::value<string>()->default_value("squaredloss"), "Specify the loss function to be used, uses squaredloss by default. Currently available ones are squaredloss, hingeloss, logloss and quantilesloss.")
-    ("quantiles_tau", po::value<double>()->default_value(0.0), "Parameter \\tau associated with Quantiles loss. Unless mentioned this parameter would default to a value of 0.0");
+    ("quantiles_tau", po::value<double>()->default_value(0.0), "Parameter \\tau associated with Quantiles loss. Unless mentioned this parameter would default to a value of 0.0")
+    ("unique_id", po::value<int>(&sd->unique_id)->default_value(0),"unique id used for cluster parallel");
 
   r.global=sd;
   par->global=sd;
+  
+  sd->example_number = 0;
+  sd->weighted_examples = 0.;
+  sd->old_weighted_examples = 0.;
+  sd->weighted_labels = 0.;
+  sd->total_features = 0;
+  sd->sum_loss = 0.0;
+  sd->sum_loss_since_last_dump = 0.0;
+  sd->dump_interval = exp(1.);
+
+  sd->predictions = -1;
+  sd->raw_predictions = -1;
+  sd->network_prediction = -1;
+  sd->print = print_result;
   
   po::positional_options_description p;
   
@@ -100,12 +120,14 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     exit(1);
   }
   if (vm.count("quiet"))
-    vars.quiet = true;
+    sd->quiet = true;
+  else
+    sd->quiet = false;
 
   if (vm.count("quadratic")) 
     {
       sd->pairs = vm["quadratic"].as< vector<string> >();
-      if (!vars.quiet)
+      if (!sd->quiet)
 	{
 	  cerr << "creating quadratic features for pairs: ";
 	  for (vector<string>::iterator i = sd->pairs.begin(); i != sd->pairs.end();i++) {
@@ -121,7 +143,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
-  parse_regressor_args(vm, r, final_regressor_name, !vars.quiet);
+  parse_regressor_args(vm, r, final_regressor_name, !sd->quiet);
 
   string loss_function;
   if(vm.count("loss_function")) 
@@ -135,7 +157,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   r.loss = getLossFunction(loss_function, loss_parameter);
 
   vars.eta *= pow(vars.t, vars.power_t);
-  if (!vars.quiet)
+  if (!sd->quiet)
     {
       cerr << "Num weight bits = " << r.global->num_bits << endl;
       cerr << "learning rate = " << vars.eta << endl;
@@ -151,30 +173,29 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(eta_decay_rate, passes) 
 	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
   
-  parse_source_args(vm,par,vars.quiet,passes);
+  parse_source_args(vm,par,sd->quiet,passes);
   
   if (vm.count("predictions")) {
-    if (!vars.quiet)
+    if (!sd->quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
-      vars.predictions = 1;//stdout
+      sd->predictions = 1;//stdout
     else 
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	//	vars.predictions = open(fstr, (O_WRONLY | O_CREAT));
-	vars.predictions = fileno(fopen(fstr,"w"));
-	if (vars.predictions < 0)
+	sd->predictions = fileno(fopen(fstr,"w"));
+	if (sd->predictions < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
       }
   }
   
   if (vm.count("raw_predictions")) {
-    if (!vars.quiet)
+    if (!sd->quiet)
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
-      vars.raw_predictions = 1;//stdout
+      sd->raw_predictions = 1;//stdout
     else
-      vars.raw_predictions = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
+      sd->raw_predictions = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
   }
 
   if (vm.count("audit"))
@@ -191,19 +212,22 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   
   if (vm.count("testonly"))
     {
-      if (!vars.quiet)
+      if (!sd->quiet)
 	cerr << "only testing" << endl;
-      vars.training = false;
+      sd->training = false;
     }
   else 
-    if (!vars.quiet)
-      cerr << "learning_rate set to " << vars.eta << endl;
-
-  if (vm.count("summer"))
     {
-      if (!vars.quiet)
-	cerr << "summer = " << vm["summer"].as< string >() << endl;
-      hostent* he = gethostbyname(vm["summer"].as< string >().c_str());
+      sd->training = true;
+      if (!sd->quiet)
+	cerr << "learning_rate set to " << vars.eta << endl;
+    }
+
+  if (vm.count("predictto"))
+    {
+      if (!sd->quiet)
+	cerr << "predictto = " << vm["predictto"].as< string >() << endl;
+      hostent* he = gethostbyname(vm["predictto"].as< string >().c_str());
       if (he == NULL)
 	{
 	  cerr << "can't resolve hostname" << endl;
@@ -224,6 +248,16 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	{
 	  cerr << "can't connect." << endl;
 	  exit(1);
+	}
+      else 
+	{
+	  int flag = 1;
+	  if (setsockopt(sum_sock,IPPROTO_TCP,TCP_NODELAY,(char*) &flag, sizeof(int)) == -1)
+	    cerr << strerror(errno) << " " << errno << " " << IPPROTO_TCP << endl;
+
+	  sd->network_prediction = sum_sock;
+	  write(sum_sock,&(sd->unique_id),sizeof(sd->unique_id));
+	  fsync(sum_sock);
 	}
     }
   return vm;

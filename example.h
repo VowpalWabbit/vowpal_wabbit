@@ -28,6 +28,7 @@ struct audit_data {
 struct example // core example datatype.
 {
   void* ld;
+  size_t example_counter;
 
   v_array<size_t> indices;
   v_array<feature> atomics[256]; // raw parsed data

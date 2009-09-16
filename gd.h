@@ -16,48 +16,22 @@ void print_result(int f, float res, v_array<char> tag);
 
 struct gd_vars
 { 
-  long long int example_number;
-  double weighted_examples;
-  double old_weighted_examples;
-  double weighted_labels;
-  size_t total_features;
+  float t;//learning rate control.
   float eta;
-  int predictions, raw_predictions;
-  double sum_loss;
-  double sum_loss_since_last_dump;
-  float t;
   float power_t;
-  float dump_interval;
   float min_prediction;
   float max_prediction;
-  bool quiet;
-  bool training;
-  
-  void (*print)(int,float,v_array<char>);
 
   gd_vars()
   {};
 
   void init()
   {
-    weighted_examples = 0.;
-    example_number = 0;
-    weighted_labels = 0.;
-    total_features = 0;
-    predictions = -1;
-    raw_predictions = -1;
-    sum_loss = 0.0;
-    sum_loss_since_last_dump = 0.0;
     t = 1.;
+    eta = 0.1;
     power_t = 0.;
-    dump_interval = exp(1.);
     min_prediction = 0.;
     max_prediction = 1.;
-    old_weighted_examples = 0.;
-    quiet = false;
-    training = true;
-    eta = 0.1;
-    print = print_result;
   }
 };
 

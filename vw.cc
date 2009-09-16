@@ -42,7 +42,7 @@ gd_vars* vw(int argc, char *argv[])
 				    numpasses, regressor1, p, 
 				    final_regressor_name, sum_sock, comment);
 
-  if (!vars->quiet)
+  if (!p->global->quiet)
     {
       cerr << "average\tsince\texample\texample\tcurrent\tcurrent\tcurrent" << endl;
       cerr << "loss\tlast\tcounter\tweight\tlabel\tpredict\tfeatures" << endl;

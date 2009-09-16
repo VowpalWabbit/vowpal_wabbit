@@ -8,7 +8,7 @@ embodied in the content of this file are licensed under the BSD
 #define SCE
 
 #include "io.h"
-#include "static_data.h"
+#include "global_data.h"
 #include "parse_primitives.h"
 #include "example.h"
 
@@ -35,10 +35,11 @@ struct parser {
   bool write_cache; 
 
   v_array<partial_example> pes;//partial examples
+  v_array<size_t> ids; //unique ids for sources
   int label_sock;
   int max_fd;
 
-  static_data* global;
+  global_data* global;
 };
 
 parser* new_parser(const label_parser* lp);

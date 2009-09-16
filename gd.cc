@@ -10,16 +10,40 @@ embodied in the content of this file are licensed under the BSD
 #include "sparse_dense.h"
 #include "gd.h"
 #include "cache.h"
+#include "multisource.h"
+#include "simple_label.h"
+
+example ring[30]; 
+size_t sent_index;
+size_t finished_index;
+
+void check_mesg(int sock, int sock2)
+{
+  while (true)
+    {
+      prediction ps;
+      if (get_prediction(sock,ps))
+	send_prediction(sock2,ps);
+      else
+	return;
+    }
+
+}
 
 void* gd_thread(void *in)
 {
   gd_thread_params* params = (gd_thread_params*) in;
   regressor reg = params->reg;
   size_t thread_num = params->thread_num;
+  bool extra_io = (reg.global->unique_id == 0);
   example* ec = NULL;
 
-  while ( (ec = get_example(ec,thread_num)) )
+  while ( true )
     {
+      if (extra_io)
+	check_mesg(reg.global->network_prediction, 0);//I'm a bug.
+
+      ec = get_example(ec,thread_num);
       label_data* ld = (label_data*)ec->ld;
       if ( ((ld->tag).begin != (ld->tag).end) 
 	   && ((ld->tag)[0] == 's')&&((ld->tag)[1] == 'a')&&((ld->tag)[2] == 'v')&&((ld->tag)[3] == 'e'))
@@ -230,24 +254,24 @@ void train(weight* weights, const v_array<feature> &features, float update)
       weights[j->weight_index] += update * j->x;
 }
 
-void print(example *ec, gd_vars& vars)
+void print(example *ec, global_data* sd)
 {
-  if (vars.weighted_examples > vars.dump_interval && !vars.quiet)
+  if (sd->weighted_examples > sd->dump_interval && !sd->quiet)
     {
       cerr.precision(4);
-      cerr << vars.sum_loss/vars.weighted_examples << "\t" 
-	   << vars.sum_loss_since_last_dump / (vars.weighted_examples - vars.old_weighted_examples) << "\t"
-	   << vars.example_number << "\t";
+      cerr << sd->sum_loss/sd->weighted_examples << "\t" 
+	   << sd->sum_loss_since_last_dump / (sd->weighted_examples - sd->old_weighted_examples) << "\t"
+	   << sd->example_number << "\t";
       cerr.precision(2);
-      cerr << vars.weighted_examples << "\t";
+      cerr << sd->weighted_examples << "\t";
       cerr.precision(4);
       label_data* ld = (label_data*) ec->ld;
       cerr << ld->label << "\t" << ec->partial_prediction << "\t"
 	   << ec->num_features << "\t" << endl;
       
-      vars.sum_loss_since_last_dump = 0.0;
-      vars.old_weighted_examples = vars.weighted_examples;
-      vars.dump_interval *= 2;
+      sd->sum_loss_since_last_dump = 0.0;
+      sd->old_weighted_examples = sd->weighted_examples;
+      sd->dump_interval *= 2;
     }
 }
 
@@ -284,53 +308,35 @@ void print_audit_features(regressor &reg, example* ec, size_t offset)
   print_offset_features(reg, ec, offset);
 }
 
-/**
-   calculates the update for this example and sets
-   ec->eta_round to it.
- */
-void compute_update(example* ec, gd_vars& vars)
-{
-  label_data* ld = (label_data*)ec->ld;
-
-  /* the following is a wasted computation. */
-  float norm;  
-  if (ec->num_features > 0)
-    norm = 1. / sqrtf(ec->num_features);
-  else 
-    norm = 1.;
-
-  float example_loss = (ec->partial_prediction - ld->label) 
-    * (ec->partial_prediction - ld->label);
-  example_loss *= ld->weight;
-  vars.t += ld->weight;
-  vars.sum_loss = vars.sum_loss + example_loss;
-  
-  vars.sum_loss_since_last_dump += example_loss;
-  print(ec,vars);      
-
-  ec->eta_round = vars.eta/pow(vars.t,vars.power_t)
-    * (ld->label - ec->partial_prediction)
-    * norm * ld->weight;
-    
-  if (ld->undo)
-    ec->eta_round = -ec->eta_round;
-}
-
 void process(example* ec, size_t num_threads, gd_vars& vars, regressor& reg, size_t offset)
 {
-  vars.example_number++;
+  global_data* sd = reg.global;
+  sd->example_number++;
   label_data* ld = (label_data*)ec->ld;
-  vars.weighted_examples += ld->weight;
-  vars.weighted_labels += ld->label * ld->weight;
-  vars.total_features += ec->num_features;
+  sd->weighted_examples += ld->weight;
+  sd->weighted_labels += ld->label * ld->weight;
+  sd->total_features += ec->num_features;
 
-  vars.print(vars.raw_predictions, ec->partial_prediction, ld->tag);
+  sd->print(sd->raw_predictions, ec->partial_prediction, ld->tag);
 
   float norm;
   ec->partial_prediction = 
     final_prediction(ec->partial_prediction, ec->num_features, vars, norm);
 
-  vars.print(vars.predictions, ec->partial_prediction, ld->tag);
+  sd->print(sd->predictions, ec->partial_prediction, ld->tag);
+  if (sd->network_prediction > 0)
+    {
+      prediction pred = {ec->partial_prediction, ec->example_counter}; 
+      send_prediction(sd->network_prediction, pred);
+      if (sd->unique_id == 0)
+	{
+	  size_t len = sizeof(ld->label) + sizeof(ld->weight);
+	  char c[len];
+	  bufcache_simple_label(ld,c);
+	  write(sd->network_prediction,c,len);
+	}
+      fsync(sd->network_prediction);
+    }
   if (reg.global->audit)
     print_audit_features(reg, ec, offset);
 
@@ -338,11 +344,11 @@ void process(example* ec, size_t num_threads, gd_vars& vars, regressor& reg, siz
     {
       float example_loss = reg.loss->getLoss(ec->partial_prediction, ld->label) * ld->weight;
       vars.t += ld->weight;
-      vars.sum_loss = vars.sum_loss + example_loss;
+      sd->sum_loss = sd->sum_loss + example_loss;
             
-      vars.sum_loss_since_last_dump += example_loss;
+      sd->sum_loss_since_last_dump += example_loss;
 
-      print(ec,vars);
+      print(ec,sd);
       ec->eta_round = vars.eta/pow(vars.t,vars.power_t)
 	* (ld->label - ec->partial_prediction)
 	* norm * ld->weight;
@@ -396,7 +402,7 @@ void train_one_example(regressor& r, example* ex, size_t thread_num, gd_vars& va
 {
   predict(r,ex,thread_num,vars);
   label_data* ld = (label_data*) ex->ld;
-  if (ld->label != FLT_MAX && vars.training) 
+  if (ld->label != FLT_MAX && r.global->training) 
     inline_train(r, ex, thread_num, ex->eta_round);
 }
 
@@ -405,7 +411,7 @@ void train_offset_example(regressor& r, example* ex, size_t thread_num, gd_vars&
 {
   offset_predict(r,ex,thread_num,vars,offset);
   label_data* ld = (label_data*) ex->ld;
-  if (ld->label != FLT_MAX && vars.training) 
+  if (ld->label != FLT_MAX && r.global->training) 
     offset_train(r, ex, thread_num, ex->eta_round, offset);
 }
 
