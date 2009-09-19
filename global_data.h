@@ -25,8 +25,9 @@ struct global_data {
   size_t length () { return 1 << num_bits; };
 
   //Prediction output
-  int predictions, raw_predictions; // file descriptors for text output.
-  int network_prediction;  //file descriptor to send prediction to over a network in binary format.
+  int final_prediction_sink; // set to send global predictions to.
+  int raw_prediction; // file descriptors for text output.
+  int local_prediction;  //file descriptor to send local prediction to.
   int unique_id; //unique id for each node in the network, id == 0 means extra io.
 
   void (*print)(int,float,v_array<char>);
@@ -42,6 +43,11 @@ struct global_data {
   double sum_loss;
   double sum_loss_since_last_dump;
   float dump_interval;// when should I update for the user.
+
 };
+extern  pthread_mutex_t io;
+extern global_data global;
+void print_result(int f, float res, v_array<char> tag);
+void binary_print_result(int f, float res, v_array<char> tag);
 
 #endif

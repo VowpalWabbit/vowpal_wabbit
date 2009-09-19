@@ -10,22 +10,22 @@ embodied in the content of this file are licensed under the BSD
 int main(int argc, char *argv[]) {
 	gd_vars *vars = vw(argc, argv);
 
-	float best_constant = vars->weighted_labels / vars->weighted_examples;
+	float best_constant = global.weighted_labels / global.weighted_examples;
 	float constant_loss = (best_constant*(1.0 - best_constant)*(1.0 - best_constant)
 			+ (1.0 - best_constant)*best_constant*best_constant);
 
-	if (!vars->quiet)
+	if (!global.quiet)
 	{
 		cerr.precision(4);
 		cerr << endl << "finished run";
-		cerr << endl << "number of examples = " << vars->example_number;
-		cerr << endl << "weighted example sum = " << vars->weighted_examples;
-		cerr << endl << "weighted label sum = " << vars->weighted_labels;
-		cerr << endl << "average loss = " << vars->sum_loss / vars->weighted_examples;
+		cerr << endl << "number of examples = " << global.example_number;
+		cerr << endl << "weighted example sum = " << global.weighted_examples;
+		cerr << endl << "weighted label sum = " << global.weighted_labels;
+		cerr << endl << "average loss = " << global.sum_loss / global.weighted_examples;
 		cerr << endl << "best constant = " << best_constant;
 		if (vars->min_prediction == 0. && vars->max_prediction == 1. && best_constant < 1. && best_constant > 0.)
 		  cerr << endl << "best constant's loss = " << constant_loss;
-		cerr << endl << "total feature number = " << vars->total_features;
+		cerr << endl << "total feature number = " << global.total_features;
 		cerr << endl;
 	}
 

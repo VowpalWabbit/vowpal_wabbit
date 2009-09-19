@@ -114,7 +114,7 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
 void parse_cache(po::variables_map &vm, size_t numbits, string source,
 		 parser* par, bool quiet)
 {
-  par->global->mask = (1 << numbits) - 1;
+  global.mask = (1 << numbits) - 1;
   vector<string> caches;
   if (vm.count("cache_file"))
     caches = vm["cache_file"].as< vector<string> >();
@@ -159,9 +159,9 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes)
 {
   par->input.current = 0;
-  parse_cache(vm, par->global->num_bits, vm["data"].as<string>(), par, quiet);
+  parse_cache(vm, global.num_bits, vm["data"].as<string>(), par, quiet);
 
-  if (vm.count("daemon"))
+  if (vm.count("daemon") || vm.count("multisource"))
     {
       int daemon = socket(PF_INET, SOCK_STREAM, 0);
       if (daemon < 0) {
@@ -171,7 +171,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       sockaddr_in address;
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = htonl(INADDR_ANY);
-      address.sin_port = htons(39523);
+      address.sin_port = htons(39524);
       
       if (bind(daemon,(sockaddr*)&address, sizeof(address)) < 0)
 	{
@@ -188,6 +188,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       int max_fd = 0;
+      int min_id = INT_MAX;
       for (int i = 0; i < source_count; i++)
 	{
 	  int f = accept(daemon,(sockaddr*)&client_address,&size);
@@ -202,10 +203,12 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
 	  size_t id;
 	  read(f, &id, sizeof(id));
+	  min_id = min (min_id, (int)id);
 	  if (id == 0)
 	    {
 	      par->label_sock = f;
-	      par->global->network_prediction = f;
+	      global.final_prediction_sink = f;
+	      global.print = binary_print_result;
 	    }
 
 	  push(par->ids,id);
@@ -213,6 +216,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  max_fd = max(f, max_fd);
 	  cerr << "reading data from port 39523" << endl;
 	}
+      global.unique_id = min_id;
       max_fd++;
       if(source_count > 1)
 	par->reader = receive_features;
@@ -255,7 +259,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       par->resettable = par->write_cache;
     }
   if (passes > 1 && !par->resettable)
-    cerr << par->global->program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
+    cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
   cout << "num sources = " << par->input.files.index() << endl;
 }
 
@@ -268,6 +272,43 @@ size_t parsed_index; // The index of the parsed example.
 size_t* used_index; // The index of the example currently used by thread i.
 bool done;
 
+void print_update(example *ec)
+{
+  if (global.weighted_examples > global.dump_interval && !global.quiet)
+    {
+      cerr.precision(4);
+      cerr << global.sum_loss/global.weighted_examples << "\t" 
+	   << global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples) << "\t"
+	   << global.example_number << "\t";
+      cerr.precision(2);
+      cerr << global.weighted_examples << "\t";
+      cerr.precision(4);
+      label_data* ld = (label_data*) ec->ld;
+      cerr << ld->label << "\t" << ec->final_prediction << "\t"
+	   << ec->num_features << "\t" << endl;
+      
+      global.sum_loss_since_last_dump = 0.0;
+      global.old_weighted_examples = global.weighted_examples;
+      global.dump_interval *= 2;
+    }
+}
+
+void output_and_account_example(example* ec)
+{
+  global.example_number++;
+  label_data* ld = (label_data*)ec->ld;
+  global.weighted_examples += ld->weight;
+  global.weighted_labels += ld->label * ld->weight;
+  global.total_features += ec->num_features;
+  
+  global.print(global.raw_prediction, ec->partial_prediction, ld->tag);
+  
+  global.print(global.final_prediction_sink, ec->final_prediction, ld->tag);
+  
+  print_update(ec);
+
+}
+
 example* get_unused_example()
 {
   while (true)
@@ -276,6 +317,7 @@ example* get_unused_example()
       if (examples[parsed_index % ring_size].in_use == false)
 	{
 	  examples[parsed_index % ring_size].in_use = true;
+	  
 	  pthread_mutex_unlock(&examples_lock);
 	  return examples + (parsed_index % ring_size);
 	}
@@ -321,7 +363,7 @@ void unique_audit_features(v_array<audit_data> &features)
 
 void unique_sort_features(parser* p, example* ae)
 {
-  bool audit = p->global->audit;
+  bool audit = global.audit;
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     {
       qsort(ae->atomics[*b].begin, ae->atomics[*b].index(), sizeof(feature), 
@@ -339,7 +381,7 @@ void unique_sort_features(parser* p, example* ae)
 
 bool parse_atomic_example(parser* p, example *ae)
 {
-  if (p->global->audit)
+  if (global.audit)
     for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
       {
 	for (audit_data* temp 
@@ -391,9 +433,9 @@ feature* search(feature* begin, size_t value, feature* end)
 
 size_t example_count = 0;
 
-void setup_example(example* ae, global_data* global)
+void setup_example(example* ae)
 {
-  size_t num_threads = global->num_threads();
+  size_t num_threads = global.num_threads();
 
   ae->partial_prediction = 0.;
   ae->num_features = 1;
@@ -402,8 +444,8 @@ void setup_example(example* ae, global_data* global)
   ae->example_counter = ++example_count;
 
   //Should loop through the features to determine the boundaries
-  size_t length = global->mask + 1;
-  size_t expert_size = length >> global->thread_bits; //#features/expert
+  size_t length = global.mask + 1;
+  size_t expert_size = length >> global.thread_bits; //#features/expert
   for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
     {
       ae->subsets[*i].erase();
@@ -421,7 +463,7 @@ void setup_example(example* ae, global_data* global)
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
     }
   
-  for (vector<string>::iterator i = global->pairs.begin(); i != global->pairs.end();i++) 
+  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
     ae->num_features 
       += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
@@ -439,7 +481,7 @@ void *main_parse_loop(void *in)
 
       int output = parse_atomic_example(p,ae);
       if (output) {	
-	setup_example(ae,p->global);
+	setup_example(ae);
 
 	pthread_mutex_lock(&examples_lock);
 	parsed_index++;
@@ -475,11 +517,12 @@ bool examples_to_finish()
   return false;
 }
 
-inline void finish_example(example* ec)
+void finish_example(example* ec)
 {
   pthread_mutex_lock(&examples_lock);
   if (-- ec->threads_to_finish == 0)
     {
+      output_and_account_example(ec);
       ec->in_use = false;
       pthread_cond_signal(&example_unused);
       if (done)
@@ -488,11 +531,8 @@ inline void finish_example(example* ec)
   pthread_mutex_unlock(&examples_lock);
 }
 
-example* get_example(example* ec, size_t thread_num)
+example* get_example(size_t thread_num)
 {
-  if (ec != NULL)
-    finish_example(ec);
-  
   while (true) // busy wait until an example is acquired.
     {
       pthread_mutex_lock(&examples_lock);

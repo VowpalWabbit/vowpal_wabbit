@@ -3,52 +3,29 @@ Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
-
-#include <netdb.h>
-#include "fcntl.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <errno.h>
-
 #include "cache.h"
 #include "io.h"
 #include "parse_regressor.h"
 #include "parser.h"
 #include "parse_args.h"
 #include "sender.h"
-
-void parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
-		gd_vars& vars, float& eta_decay_rate,
-		size_t &passes, regressor &r, parser* par,
-		string& final_regressor_name,
-		int &sum_sock)
-{
-  string comment;
-  parse_args(argc, argv, desc,
-	     vars, eta_decay_rate,
-	     passes, r, par,
-	     final_regressor_name,
-	     sum_sock, comment);
-}
+#include "network.h"
 
 const float default_decay = 1. / sqrt(2.);
 
 po::variables_map parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
-		gd_vars& vars, float& eta_decay_rate,
-		size_t &passes, regressor &r, parser* par,
-		string& final_regressor_name,
-		int &sum_sock, string &comment)
+			     gd_vars& vars, float& eta_decay_rate,
+			     size_t &passes, regressor &r, parser* par,
+			     string& final_regressor_name)
 {
   vars.init();
   size_t keep = 0;
   size_t of = 1;
-  global_data* sd = (global_data*)calloc(1,sizeof(global_data));
-  sd->program_name = argv[0];
+  global.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
     ("audit,a", "print weights of features")
-    ("bit_precision,b", po::value<size_t>(&sd->num_bits)->default_value(18), 
+    ("bit_precision,b", po::value<size_t>(&global.num_bits)->default_value(18), 
      "number of bits in the feature table")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
@@ -79,28 +56,26 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
      "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send example to <hosts>")
     ("testonly,t", "Ignore label information and just test")
-    ("thread_bits", po::value<size_t>(&sd->thread_bits)->default_value(0), "log_2 threads")
-    ("comment,z", po::value< string >(), "Comment field.")
+    ("thread_bits", po::value<size_t>(&global.thread_bits)->default_value(0), "log_2 threads")
     ("loss_function", po::value<string>()->default_value("squaredloss"), "Specify the loss function to be used, uses squaredloss by default. Currently available ones are squaredloss, hingeloss, logloss and quantilesloss.")
     ("quantiles_tau", po::value<double>()->default_value(0.0), "Parameter \\tau associated with Quantiles loss. Unless mentioned this parameter would default to a value of 0.0")
-    ("unique_id", po::value<int>(&sd->unique_id)->default_value(0),"unique id used for cluster parallel");
+    ("unique_id", po::value<int>(&global.unique_id)->default_value(0),"unique id used for cluster parallel");
 
-  r.global=sd;
-  par->global=sd;
-  
-  sd->example_number = 0;
-  sd->weighted_examples = 0.;
-  sd->old_weighted_examples = 0.;
-  sd->weighted_labels = 0.;
-  sd->total_features = 0;
-  sd->sum_loss = 0.0;
-  sd->sum_loss_since_last_dump = 0.0;
-  sd->dump_interval = exp(1.);
+  global.example_number = 0;
+  global.weighted_examples = 0.;
+  global.old_weighted_examples = 0.;
+  global.weighted_labels = 0.;
+  global.total_features = 0;
+  global.sum_loss = 0.0;
+  global.sum_loss_since_last_dump = 0.0;
+  global.dump_interval = exp(1.);
 
-  sd->predictions = -1;
-  sd->raw_predictions = -1;
-  sd->network_prediction = -1;
-  sd->print = print_result;
+  global.final_prediction_sink = -1;
+  global.raw_prediction = -1;
+  global.local_prediction = -1;
+  global.print = print_result;
+
+  global.audit = false;
   
   po::positional_options_description p;
   
@@ -115,22 +90,22 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     exit(1);
   }
 
-  if (sd->num_bits > 31) {
+  if (global.num_bits > 31) {
     cerr << "The system limits at 31 bits of precision!\n" << endl;
     exit(1);
   }
   if (vm.count("quiet"))
-    sd->quiet = true;
+    global.quiet = true;
   else
-    sd->quiet = false;
+    global.quiet = false;
 
   if (vm.count("quadratic")) 
     {
-      sd->pairs = vm["quadratic"].as< vector<string> >();
-      if (!sd->quiet)
+      global.pairs = vm["quadratic"].as< vector<string> >();
+      if (!global.quiet)
 	{
 	  cerr << "creating quadratic features for pairs: ";
-	  for (vector<string>::iterator i = sd->pairs.begin(); i != sd->pairs.end();i++) {
+	  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) {
 	    cerr << *i << " ";
 	    if (i->length() > 2)
 	      cerr << endl << "warning, ignoring characters after the 2nd.\n";
@@ -143,7 +118,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
-  parse_regressor_args(vm, r, final_regressor_name, !sd->quiet);
+  parse_regressor_args(vm, r, final_regressor_name, !global.quiet);
 
   string loss_function;
   if(vm.count("loss_function")) 
@@ -157,9 +132,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   r.loss = getLossFunction(loss_function, loss_parameter);
 
   vars.eta *= pow(vars.t, vars.power_t);
-  if (!sd->quiet)
+  if (!global.quiet)
     {
-      cerr << "Num weight bits = " << r.global->num_bits << endl;
+      cerr << "Num weight bits = " << global.num_bits << endl;
       cerr << "learning rate = " << vars.eta << endl;
       cerr << "initial_t = " << vars.t << endl;
       cerr << "power_t = " << vars.power_t << endl;
@@ -173,93 +148,56 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(eta_decay_rate, passes) 
 	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
   
-  parse_source_args(vm,par,sd->quiet,passes);
+  parse_source_args(vm,par,global.quiet,passes);
   
   if (vm.count("predictions")) {
-    if (!sd->quiet)
+    if (!global.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
-      sd->predictions = 1;//stdout
+      global.final_prediction_sink = 1;//stdout
     else 
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	sd->predictions = fileno(fopen(fstr,"w"));
-	if (sd->predictions < 0)
+	global.final_prediction_sink = fileno(fopen(fstr,"w"));
+	if (global.final_prediction_sink < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
       }
   }
   
   if (vm.count("raw_predictions")) {
-    if (!sd->quiet)
+    if (!global.quiet)
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
-      sd->raw_predictions = 1;//stdout
+      global.raw_prediction = 1;//stdout
     else
-      sd->raw_predictions = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
+      global.raw_prediction = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
   }
 
   if (vm.count("audit"))
-    par->global->audit = true;
-  else 
-    par->global->audit = false;
+    global.audit = true;
 
-  parse_send_args(vm, sd->pairs, sd->thread_bits);
+  parse_send_args(vm, global.pairs, global.thread_bits);
 
-  if (vm.count("comment")) 
-    {
-      comment = vm["comment"].as<string>();
-    }
-  
   if (vm.count("testonly"))
     {
-      if (!sd->quiet)
+      if (!global.quiet)
 	cerr << "only testing" << endl;
-      sd->training = false;
+      global.training = false;
     }
   else 
     {
-      sd->training = true;
-      if (!sd->quiet)
+      global.training = true;
+      if (!global.quiet)
 	cerr << "learning_rate set to " << vars.eta << endl;
     }
 
   if (vm.count("predictto"))
     {
-      if (!sd->quiet)
+      if (!global.quiet)
 	cerr << "predictto = " << vm["predictto"].as< string >() << endl;
-      hostent* he = gethostbyname(vm["predictto"].as< string >().c_str());
-      if (he == NULL)
-	{
-	  cerr << "can't resolve hostname" << endl;
-	  exit(1);
-	}
-      sum_sock = socket(PF_INET, SOCK_STREAM, 0);
-      if (sum_sock == -1)
-	{
-	  cerr << "can't get socket " << endl;
-	  exit(1);
-	}
-      sockaddr_in far_end;
-      far_end.sin_family = AF_INET;
-      far_end.sin_port = htons(39524);
-      far_end.sin_addr = *(in_addr*)(he->h_addr);
-      memset(&far_end.sin_zero, '\0',8);
-      if (connect(sum_sock,(sockaddr*)&far_end, sizeof(far_end)) == -1)
-	{
-	  cerr << "can't connect." << endl;
-	  exit(1);
-	}
-      else 
-	{
-	  int flag = 1;
-	  if (setsockopt(sum_sock,IPPROTO_TCP,TCP_NODELAY,(char*) &flag, sizeof(int)) == -1)
-	    cerr << strerror(errno) << " " << errno << " " << IPPROTO_TCP << endl;
-
-	  sd->network_prediction = sum_sock;
-	  write(sum_sock,&(sd->unique_id),sizeof(sd->unique_id));
-	  fsync(sum_sock);
-	}
+      global.local_prediction = open_socket(vm["predictto"].as< string > (), global.unique_id);
     }
+
   return vm;
 }
 

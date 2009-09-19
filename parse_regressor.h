@@ -17,8 +17,6 @@ typedef float weight;
 struct regressor {
   weight** weight_vectors;
 
-  global_data* global;
-
   loss_function *loss;
 };
 

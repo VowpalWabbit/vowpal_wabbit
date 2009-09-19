@@ -38,8 +38,6 @@ struct parser {
   v_array<size_t> ids; //unique ids for sources
   int label_sock;
   int max_fd;
-
-  global_data* global;
 };
 
 parser* new_parser(const label_parser* lp);
@@ -51,7 +49,8 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
 void start_parser(size_t num_threads, parser* pf);
 void end_parser(parser* pf);
-example* get_example(example* ec, size_t thread_num);
+example* get_example(size_t thread_num);
+void finish_example(example* ec);
 
 //source control functions
 bool inconsistent_cache(size_t numbits, io_buf& cache);

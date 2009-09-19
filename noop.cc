@@ -7,11 +7,8 @@ void start_noop()
 {
   example* ec = NULL;
   
-  while ( (ec = get_example(ec,0)) )
-    {
-      ec->threads_to_finish = 1;
-      ec->done = true;
-    }
+  while ( (ec = get_example(0)) )
+    finish_example(ec);
 }
 
 void end_noop()

@@ -38,6 +38,7 @@ struct example // core example datatype.
   v_array<feature*> subsets[256];// helper for fast example expansion
   size_t num_features;//precomputed, cause it's fast&easy.
   float partial_prediction;//shared data for prediction.
+  float final_prediction;
   float eta_round;
 
   pthread_mutex_t lock; //thread coordination devices

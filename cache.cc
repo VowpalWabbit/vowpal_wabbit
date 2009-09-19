@@ -23,7 +23,7 @@ size_t invocations = 0;
 int read_cached_features(parser* p, void* ec)
 {
   example* ae = (example*)ec;
-  size_t mask = p->global->mask;
+  size_t mask = global.mask;
 
   size_t total = p->lp->read_cached_label(ae->ld, p->input);
   if (total == 0)
