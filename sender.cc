@@ -63,7 +63,7 @@ void open_sockets(vector<string>& hosts)
     {
       v_array<io_buf> t;
       push(bufs,t);
-      int new_id = global.unique_id;
+      size_t new_id = global.unique_id;
       for (size_t j = 0; j< d_2; j++)
 	{
 	  size_t number = j + d_2*i;

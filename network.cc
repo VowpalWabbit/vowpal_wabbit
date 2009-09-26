@@ -9,7 +9,7 @@
 
 using namespace std;
 
-int open_socket(string host, int new_id)
+int open_socket(string host, size_t new_id)
 {
   hostent* he = gethostbyname(host.c_str());
   if (he == NULL)

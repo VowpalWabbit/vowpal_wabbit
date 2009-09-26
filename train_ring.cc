@@ -5,8 +5,6 @@
 #include "example.h"
 #include "global_data.h"
 
-const size_t ring_size = 30;
-
 v_array<size_t> thread_train_index;//thread specific state.
 
 v_array<example*> train_ring;//train_ring state & mutexes

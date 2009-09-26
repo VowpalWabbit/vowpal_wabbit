@@ -59,7 +59,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("thread_bits", po::value<size_t>(&global.thread_bits)->default_value(0), "log_2 threads")
     ("loss_function", po::value<string>()->default_value("squaredloss"), "Specify the loss function to be used, uses squaredloss by default. Currently available ones are squaredloss, hingeloss, logloss and quantilesloss.")
     ("quantiles_tau", po::value<double>()->default_value(0.0), "Parameter \\tau associated with Quantiles loss. Unless mentioned this parameter would default to a value of 0.0")
-    ("unique_id", po::value<int>(&global.unique_id)->default_value(0),"unique id used for cluster parallel");
+    ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel");
 
   global.example_number = 0;
   global.weighted_examples = 0.;

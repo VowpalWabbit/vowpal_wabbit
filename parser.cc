@@ -188,7 +188,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       int max_fd = 0;
-      int min_id = INT_MAX;
+      size_t min_id = INT_MAX;
       for (int i = 0; i < source_count; i++)
 	{
 	  int f = accept(daemon,(sockaddr*)&client_address,&size);
@@ -203,7 +203,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
 	  size_t id;
 	  read(f, &id, sizeof(id));
-	  min_id = min (min_id, (int)id);
+	  min_id = min (min_id, (size_t)id);
 	  if (id == 0)
 	    {
 	      par->label_sock = f;
@@ -263,7 +263,6 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
   cout << "num sources = " << par->input.files.index() << endl;
 }
 
-const size_t ring_size = 20;
 example* examples;//A Ring of examples.
 pthread_mutex_t examples_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
