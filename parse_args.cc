@@ -76,6 +76,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.print = print_result;
 
   global.audit = false;
+  global.reg = r;
   
   po::positional_options_description p;
   
@@ -195,7 +196,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     {
       if (!global.quiet)
 	cerr << "predictto = " << vm["predictto"].as< string >() << endl;
-      global.local_prediction = open_socket(vm["predictto"].as< string > (), global.unique_id);
+      global.local_prediction = open_socket(vm["predictto"].as< string > ().c_str(), global.unique_id);
     }
 
   return vm;

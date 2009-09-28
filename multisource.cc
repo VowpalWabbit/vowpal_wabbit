@@ -3,17 +3,26 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-
+#include <errno.h>
 
 bool get_prediction(int sock, prediction &p)
 {
   return (recv(sock, &p, sizeof(p), MSG_DONTWAIT) == sizeof(p));
 }
 
+bool blocking_get_prediction(int sock, prediction &p)
+{
+  return (read(sock, &p, sizeof(p)) == sizeof(p));
+}
+
 void send_prediction(int sock, prediction pred)
 {
   if (write(sock,&pred,sizeof(prediction)) < (int)sizeof(prediction))
-    cerr << "argh! bad write!" << endl;
+    {
+      cerr << "argh! bad write! " << endl;
+      perror(NULL);
+      exit(0);
+    }
   fsync(sock);
 }
 

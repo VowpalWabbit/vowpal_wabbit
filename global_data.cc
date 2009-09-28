@@ -7,8 +7,11 @@ pthread_mutex_t io = PTHREAD_MUTEX_INITIALIZER;
 
 void binary_print_result(int f, float res, v_array<char> tag)
 {
-  prediction ps = {res, -1};
-  send_prediction(f, ps);
+  if (f >= 0)
+    {
+      prediction ps = {res, -1};
+      send_prediction(f, ps);
+    }
 }
 
 void print_result(int f, float res, v_array<char> tag)

@@ -6,7 +6,6 @@ embodied in the content of this file are licensed under the BSD
 
 #ifndef PR_H
 #define PR_H
-#include "global_data.h"
 #include "loss_functions.h"
 #include "boost/program_options.hpp"
 

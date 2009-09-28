@@ -8,7 +8,7 @@
 #include "simple_label.h"
 #include "network.h"
 #include "multisource.h"
-#include "train_ring.h"
+#include "delay_ring.h"
 
 pthread_t* thread;
 size_t d_1;
@@ -67,7 +67,7 @@ void open_sockets(vector<string>& hosts)
       for (size_t j = 0; j< d_2; j++)
 	{
 	  size_t number = j + d_2*i;
-	  int sd = open_socket(hosts[number], new_id);
+	  int sd = open_socket(hosts[number].c_str(), new_id);
 	  if (new_id == 0)
 	    global.local_prediction = sd;
 	  new_id++;
@@ -109,31 +109,13 @@ void send_features(int i, int j, io_buf& b, example* ec)
   b.flush();
 }
 
-bool check_mesg(int sock)
-{
-  while (true)
-    {
-      prediction ps;
-      if (get_prediction(sock,ps))
-	{
-	  example* ec = get_train_example(0);
-	  ec->final_prediction = ps.p;
-	  finish_example(ec);
-	}
-      else
-	return false;
-    }
-}
-
 void* send_thread(void*)
 {
   example* ec = NULL;
 
   while ( true )
     {//this is a poor man's select operation.
-      if (check_mesg(global.local_prediction))//nonblocking
-	;
-      else if ((ec = get_example(0)) != NULL)//blocking operation.
+      if ((ec = get_example(0)) != NULL)//blocking operation.
 	{
 	  label_data* ld = (label_data*)ec->ld;
 	  
@@ -143,12 +125,19 @@ void* send_thread(void*)
 		simple_label.cache_label(ld,bufs[i][j]);//send label information.
 		send_features(i,j,bufs[i][j],ec);
 	      }
-	  insert_example(ec);
-	  ec->threads_to_finish = 1;
-	  ec->done = true;
+	  delay_example(ec);
+	  example* t = get_delay_example(0);
+	  finish_example(t);
 	}
       else if (thread_done(0))
-	return NULL;
+	{
+	  //close our outputs to signal finishing.
+	  for (size_t i = 0; i < d_1; i++)
+	    for (size_t j = 0; j < d_2; j++)
+	      shutdown(bufs[i][j].files[0],SHUT_WR);
+
+	  return NULL;
+	}
       else 
 	;//busywait when we have sent out all examples but not yet received predictions for all.
     }

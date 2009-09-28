@@ -20,7 +20,8 @@ embodied in the content of this file are licensed under the BSD
 #include "vw.h"
 #include "simple_label.h"
 #include "sender.h"
-#include "train_ring.h"
+#include "delay_ring.h"
+#include "message_relay.h"
 
 gd_vars* vw(int argc, char *argv[])
 {
@@ -52,8 +53,11 @@ gd_vars* vw(int argc, char *argv[])
   
   for (; numpasses > 0; numpasses--) {
     start_parser(num_threads, p);
-    initialize_train_ring();
-
+    initialize_delay_ring();
+    
+    if (global.unique_id == 0 && global.local_prediction > 0)
+      setup_relay();
+   
     if (vm.count("sendto"))
       {
 	setup_send();
@@ -69,7 +73,11 @@ gd_vars* vw(int argc, char *argv[])
 	setup_gd(t);
 	destroy_gd();
       }
-    destroy_train_ring();
+    
+    if (global.unique_id == 0 && global.local_prediction > 0)
+      destroy_relay();
+    
+    destroy_delay_ring();
     end_parser(p);
     vars->eta *= eta_decay;
     reset_source(global.num_bits, p);

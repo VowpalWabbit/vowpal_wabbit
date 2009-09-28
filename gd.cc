@@ -12,32 +12,7 @@ embodied in the content of this file are licensed under the BSD
 #include "cache.h"
 #include "multisource.h"
 #include "simple_label.h"
-#include "train_ring.h"
-
-size_t message_in = 0;
-size_t message_out = 0;
-pthread_mutex_t msg = PTHREAD_MUTEX_INITIALIZER;
-
-inline bool check_mesg(int sock, int sock2)
-{
-  if (sock > 0)
-    while (true)
-      {
-	prediction ps;
-	if (get_prediction(sock,ps))
-	  {
-	    pthread_mutex_lock(&msg);
-	    message_in++;
-	    pthread_mutex_unlock(&msg);
-
-	    send_prediction(sock2,ps);
-	    return true;
-	  }
-	else
-	  return false;
-      }
-  return false;
-}
+#include "delay_ring.h"
 
 void* gd_thread(void *in)
 {
@@ -46,14 +21,9 @@ void* gd_thread(void *in)
   size_t thread_num = params->thread_num;
   example* ec = NULL;
 
-  //cout << "in gd_thread" << endl;
   while ( true )
     {//this is a poor man's select operation.
-      if (global.unique_id == 0 && check_mesg(global.local_prediction, global.final_prediction_sink))//nonblocking
-	{
-	//cout << "mesg received" << endl;
-	}
-      else if ((ec = get_train_example(thread_num)) != NULL)//nonblocking
+      if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
 	{
 	  inline_train(reg, ec, thread_num, ec->eta_round);
 	  finish_example(ec);
@@ -74,10 +44,8 @@ void* gd_thread(void *in)
 	  else
 	    predict(reg,ec,thread_num,*(params->vars));
 	}
-      else if (thread_done(thread_num) && (global.unique_id != 0 || message_in == message_out))
-	{
-	  return NULL;
-	}
+      else if (thread_done(thread_num))
+	return NULL;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
@@ -296,9 +264,6 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
 	  write(global.local_prediction,c,len);
 	}
       fsync(global.local_prediction);
-      pthread_mutex_lock(&msg);
-      message_out++;
-      pthread_mutex_unlock(&msg);
     }
 
   if (global.audit)
@@ -306,11 +271,8 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
 
   if (ld->label != FLT_MAX)
     {
-      float example_loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
       vars.t += ld->weight;
-      global.sum_loss = global.sum_loss + example_loss;
-            
-      global.sum_loss_since_last_dump += example_loss;
 
       ec->eta_round = vars.eta/pow(vars.t,vars.power_t)
 	* (ld->label - ec->final_prediction)
@@ -321,7 +283,6 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
       if (ld->undo)
 	ec->eta_round = -ec->eta_round;
     }
-  ec->threads_to_finish = num_threads;
 }
 
 pthread_cond_t finished_sum = PTHREAD_COND_INITIALIZER;
@@ -339,20 +300,15 @@ float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
 	{
 	  pthread_cond_wait(&finished_sum, &ex->lock);
 	}
-      if ( ! (  ((label_data*)(ex->ld))->label != FLT_MAX && global.training ) ) // if not training...
-	finish_example(ex);
     }
   else // We are the last thread using this example.
     {
       local_predict(ex, global.num_threads(),vars,r);
       ex->done = true;
 
-      if (((label_data*)(ex->ld))->label != FLT_MAX && global.training) 
-	insert_example(ex);
-      else
-	finish_example(ex);
-
       pthread_cond_broadcast(&finished_sum);
+
+      delay_example(ex);
     }
   pthread_mutex_unlock(&ex->lock);
   return ex->final_prediction;

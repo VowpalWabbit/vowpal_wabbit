@@ -10,6 +10,7 @@ using namespace std;
 
 #include "parse_regressor.h"
 #include "loss_functions.h"
+#include "global_data.h"
 
 void initialize_regressor(regressor &r)
 {

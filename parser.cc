@@ -203,10 +203,12 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
 	  size_t id;
 	  read(f, &id, sizeof(id));
+	  cout << "id read = " << id << endl;
 	  min_id = min (min_id, (size_t)id);
 	  if (id == 0)
 	    {
 	      par->label_sock = f;
+	      cout << "setting final_prediction_sink f = " << f << endl;
 	      global.final_prediction_sink = f;
 	      global.print = binary_print_result;
 	    }
@@ -299,6 +301,8 @@ void output_and_account_example(example* ec)
   global.weighted_examples += ld->weight;
   global.weighted_labels += ld->label * ld->weight;
   global.total_features += ec->num_features;
+  global.sum_loss += ec->loss;
+  global.sum_loss_since_last_dump += ec->loss;
   
   global.print(global.raw_prediction, ec->partial_prediction, ld->tag);
   
@@ -527,6 +531,7 @@ void finish_example(example* ec)
       if (done)
 	pthread_cond_broadcast(&example_available);
     }
+
   pthread_mutex_unlock(&examples_lock);
 }
 

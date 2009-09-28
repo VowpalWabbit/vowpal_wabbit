@@ -8,6 +8,7 @@ embodied in the content of this file are licensed under the BSD
 #define GLOBAL_DATA_H
 #include <vector>
 #include "v_array.h"
+#include "parse_regressor.h"
 
 using namespace std;
 
@@ -44,6 +45,7 @@ struct global_data {
   double sum_loss_since_last_dump;
   float dump_interval;// when should I update for the user.
 
+  regressor reg;
 };
 extern pthread_mutex_t io;
 extern global_data global;

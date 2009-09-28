@@ -9,9 +9,9 @@
 
 using namespace std;
 
-int open_socket(string host, size_t new_id)
+int open_socket(const char* host, size_t new_id)
 {
-  hostent* he = gethostbyname(host.c_str());
+  hostent* he = gethostbyname(host);
   if (he == NULL)
     {
       cerr << "can't resolve hostname: " << host << endl;
