@@ -10,8 +10,8 @@ void* mesg_relay(void* in)
     {
       example *ec = blocking_get_delay_example(global.num_threads());
       ec->final_prediction = ps.p;
-      //      label_data* ld = (label_data*)ec->ld;
-      ec->loss = 0;//global.reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+      label_data* ld = (label_data*)ec->ld;
+      ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
       finish_example(ec);
     }
   return NULL;

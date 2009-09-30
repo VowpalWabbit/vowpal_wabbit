@@ -131,6 +131,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if(vm.count("quantiles_tau"))
 	  loss_parameter = vm["quantiles_tau"].as<double>();
   r.loss = getLossFunction(loss_function, loss_parameter);
+  global.loss = r.loss;
 
   vars.eta *= pow(vars.t, vars.power_t);
   if (!global.quiet)

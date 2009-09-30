@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include "global_data.h"
 #include "multisource.h"
+#include "message_relay.h"
 
 global_data global;
 pthread_mutex_t io = PTHREAD_MUTEX_INITIALIZER;

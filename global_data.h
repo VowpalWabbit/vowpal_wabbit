@@ -32,6 +32,7 @@ struct global_data {
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
 
   void (*print)(int,float,v_array<char>);
+  loss_function* loss;
 
   char* program_name;
 
