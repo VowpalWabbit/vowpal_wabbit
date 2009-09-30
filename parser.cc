@@ -184,7 +184,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       int source_count = 1;
       
       if (vm.count("multisource"))
-	source_count = vm["multisource"].as<int>();
+	source_count = vm["multisource"].as<size_t>();
 
       listen(daemon, source_count);
 
