@@ -59,11 +59,11 @@ size_t find_split(size_t number)
 
 void open_sockets(vector<string>& hosts)
 {
+  size_t new_id = global.unique_id;
   for (size_t i = 0; i < d_1; i++)
     {
       v_array<io_buf> t;
       push(bufs,t);
-      size_t new_id = global.unique_id;
       for (size_t j = 0; j< d_2; j++)
 	{
 	  size_t number = j + d_2*i;
@@ -125,21 +125,16 @@ void* send_thread(void*)
 		simple_label.cache_label(ld,bufs[i][j]);//send label information.
 		send_features(i,j,bufs[i][j],ec);
 	      }
-	  delay_example(ec);
-	  example* t = get_delay_example(0);
-	  finish_example(t);
+	  delay_example(ec,0);
 	}
-      else if (thread_done(0))
-	{
-	  //close our outputs to signal finishing.
+      else 
+	{ //close our outputs to signal finishing.
 	  for (size_t i = 0; i < d_1; i++)
 	    for (size_t j = 0; j < d_2; j++)
 	      shutdown(bufs[i][j].files[0],SHUT_WR);
 
 	  return NULL;
 	}
-      else 
-	;//busywait when we have sent out all examples but not yet received predictions for all.
     }
 
   return NULL;

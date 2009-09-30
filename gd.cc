@@ -297,9 +297,7 @@ float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
   if (--ex->threads_to_finish != 0)
     {
       while (!ex->done)
-	{
-	  pthread_cond_wait(&finished_sum, &ex->lock);
-	}
+	pthread_cond_wait(&finished_sum, &ex->lock);
     }
   else // We are the last thread using this example.
     {
@@ -308,7 +306,10 @@ float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
 
       pthread_cond_broadcast(&finished_sum);
 
-      delay_example(ex);
+      if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
+	delay_example(ex,global.num_threads());
+      else
+	delay_example(ex,0);
     }
   pthread_mutex_unlock(&ex->lock);
   return ex->final_prediction;

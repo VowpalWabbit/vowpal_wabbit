@@ -11,7 +11,15 @@ using namespace std;
 
 int open_socket(const char* host, size_t new_id)
 {
-  hostent* he = gethostbyname(host);
+  char* colon = index(host,':');
+  short unsigned int port = 39524;
+  if (colon != NULL)
+    port = atoi(colon+1);
+  char hostname[colon-host+1];
+  strncpy(hostname, host, colon-host);
+  hostname[colon-host]='\0';
+
+  hostent* he = gethostbyname(hostname);
   if (he == NULL)
     {
       cerr << "can't resolve hostname: " << host << endl;
@@ -25,12 +33,12 @@ int open_socket(const char* host, size_t new_id)
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
-  far_end.sin_port = htons(39524);
+  far_end.sin_port = htons(port);
   far_end.sin_addr = *(in_addr*)(he->h_addr);
   memset(&far_end.sin_zero, '\0',8);
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
     {
-      cerr << "can't connect to: " << host << endl;
+      cerr << "can't connect to: " << host << ':' << port << endl;
       exit(1);
     }
   write(sd, &new_id, sizeof(new_id));

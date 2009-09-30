@@ -171,7 +171,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       sockaddr_in address;
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = htonl(INADDR_ANY);
-      address.sin_port = htons(39524);
+      short unsigned int port = 39524;
+      if (vm.count("port"))
+	port = vm["port"].as<size_t>();
+      address.sin_port = htons(port);
       
       if (bind(daemon,(sockaddr*)&address, sizeof(address)) < 0)
 	{
@@ -216,7 +219,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  push(par->ids,id);
 	  push(par->input.files,f);
 	  max_fd = max(f, max_fd);
-	  cerr << "reading data from port 39523" << endl;
+	  cerr << "reading data from port " << port << endl;
 	}
       global.unique_id = min_id;
       max_fd++;

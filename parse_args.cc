@@ -42,6 +42,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("max_prediction", po::value<float>(&vars.max_prediction)->default_value(1), "Largest prediction to output")
     ("multisource", po::value<float>(), "multiple sources for daemon input")
     ("of", po::value<size_t>(&of)->default_value(1), "keep k of <n> features")
+    ("port", po::value<size_t>(),"port to listen on")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.), "t power value")
     ("predictto", po::value< string > (), "host to send predictions to")
     ("learning_rate,l", po::value<float>(&vars.eta)->default_value(0.1), 

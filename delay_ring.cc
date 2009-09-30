@@ -18,14 +18,12 @@ pthread_cond_t delay_empty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t delay_nonempty = PTHREAD_COND_INITIALIZER;
 
 size_t mesg = 0;
-size_t compute_threads = 0;
 
 void initialize_delay_ring()
 {
   if (global.unique_id == 0 && global.local_prediction > 0)
     mesg = 1;
-  compute_threads = global.num_threads();
-  size_t nt = compute_threads+mesg;
+  size_t nt = global.num_threads()+mesg;
   reserve(delay_indicies, nt);
   for (size_t i = 0; i < nt; i++)
     delay_indicies[i] = 0;
@@ -83,11 +81,9 @@ example* blocking_get_delay_example(size_t thread)
   return get_delay_example(thread);
 }
 
-void delay_example(example* ex)
+void delay_example(example* ex, size_t count)
 {
-  size_t delay_count = mesg;
-  if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
-    delay_count += compute_threads;
+  size_t delay_count = count+mesg;
   
   if (delay_count == 0)
     {
@@ -101,7 +97,7 @@ void delay_example(example* ex)
       pthread_mutex_lock(&delay);
       while (delay_ring[index] != NULL)
 	pthread_cond_wait(&delay_empty, &delay);
-      
+
       delay_ring[index] = ex;
       threads_to_use[index] = delay_count;
       ex->threads_to_finish = delay_count;
