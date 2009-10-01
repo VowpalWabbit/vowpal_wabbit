@@ -38,15 +38,21 @@ int receive_features(parser* p, void* ex)
   fd_set fds;
   FD_ZERO(&fds);
   for (int* sock= p->input.files.begin; sock != p->input.files.end; sock++)
-    FD_SET(*sock,&fds);
-  
+    {
+      FD_SET(*sock,&fds);
+      cout << "socket = " << *sock << endl;
+    }  
+
+  cout << "max_fd " << p->max_fd << endl;
   while (true)
     {
+      cout << "select begins" << endl;
       if (select(p->max_fd,&fds,NULL, NULL, NULL) == -1)
 	{
 	  cerr << "Select failed!" << endl;
 	  exit (1);
 	}
+      cout << "select ends" << endl;
       for (size_t index = 0; index <= p->input.files.index(); index++)
 	{
 	  int sock = p->input.files[index];

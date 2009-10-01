@@ -17,7 +17,7 @@ ARCH = -march=nocona
 # for valgrind
 FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
-BINARIES = vw offset_tree
+BINARIES = vw
 
 all:	$(BINARIES)
 

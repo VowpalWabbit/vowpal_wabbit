@@ -190,11 +190,13 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      int max_fd = 0;
+      par->max_fd = 0;
       size_t min_id = INT_MAX;
       for (int i = 0; i < source_count; i++)
 	{
+	  cout << "calling accept" << endl;
 	  int f = accept(daemon,(sockaddr*)&client_address,&size);
+	  cout << "finished accept" << endl;
 	  if (f < 0)
 	    {
 	      cerr << "bad client socket!" << endl;
@@ -218,13 +220,16 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
 	  push(par->ids,id);
 	  push(par->input.files,f);
-	  max_fd = max(f, max_fd);
+	  par->max_fd = max(f, par->max_fd);
 	  cerr << "reading data from port " << port << endl;
 	}
       global.unique_id = min_id;
-      max_fd++;
+      par->max_fd++;
       if(source_count > 1)
-	par->reader = receive_features;
+	{
+	  par->reader = receive_features;
+	  reserve(par->pes,ring_size);
+	}
       else 
 	par->reader = read_cached_features;
 
