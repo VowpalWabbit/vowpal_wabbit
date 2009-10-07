@@ -50,7 +50,6 @@ struct example // core example datatype.
 
 struct partial_example { //used by the multisource parser
   int example_number;
-  size_t counter;
   label_data ld;
   v_array<feature> features;
 };

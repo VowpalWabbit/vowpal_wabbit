@@ -51,10 +51,13 @@ bool thread_done(size_t thread)
 
 example* get_delay_example(size_t thread)
 {//nonblocking
-  size_t index = delay_indicies[thread] % ring_size;
-  example* ret = delay_ring[index];
-  if (ret != NULL)
+  if (delay_indicies[thread] == master_index)
+    return NULL;
+  else 
     {
+      size_t index = delay_indicies[thread] % ring_size;
+      example* ret = delay_ring[index];
+
       delay_indicies[thread]++;
       
       pthread_mutex_lock(&ret->lock);
@@ -66,8 +69,8 @@ example* get_delay_example(size_t thread)
 	  pthread_mutex_unlock(&delay);
 	}
       pthread_mutex_unlock(&ret->lock);
+      return ret;
     }
-  return ret;
 }
 
 example* blocking_get_delay_example(size_t thread)

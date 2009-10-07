@@ -225,10 +225,12 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	}
       global.unique_id = min_id;
       par->max_fd++;
-      if(source_count > 1)
+      if(vm.count("multisource"))
 	{
 	  par->reader = receive_features;
-	  reserve(par->pes,ring_size);
+	  cout << "reserving " << ring_size << endl;
+	  calloc_reserve(par->pes,ring_size);
+	  par->pes.end = par->pes.begin+ring_size;
 	}
       else 
 	par->reader = read_cached_features;
@@ -414,7 +416,7 @@ bool parse_atomic_example(parser* p, example *ae)
 
   ae->indices.erase();
   if (p->reader(p,ae) <= 0)
-      return false;
+    return false;
   unique_sort_features(p,ae);
   if (p->write_cache) 
     {

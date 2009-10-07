@@ -28,9 +28,10 @@ void send_prediction(int sock, prediction pred)
 
 void reset(partial_example &ex)
 {
-  ex.counter = 0;
   ex.features.erase();
 }
+
+int receive_count = 0;
 
 int receive_features(parser* p, void* ex)
 {
@@ -38,36 +39,30 @@ int receive_features(parser* p, void* ex)
   fd_set fds;
   FD_ZERO(&fds);
   for (int* sock= p->input.files.begin; sock != p->input.files.end; sock++)
-    {
-      FD_SET(*sock,&fds);
-      cout << "socket = " << *sock << endl;
-    }  
+    FD_SET(*sock,&fds);
 
-  cout << "max_fd " << p->max_fd << endl;
   while (true)
     {
-      cout << "select begins" << endl;
       if (select(p->max_fd,&fds,NULL, NULL, NULL) == -1)
 	{
 	  cerr << "Select failed!" << endl;
 	  exit (1);
 	}
-      cout << "select ends" << endl;
-      for (size_t index = 0; index <= p->input.files.index(); index++)
+      for (size_t index = 0; index < p->input.files.index(); index++)
 	{
 	  int sock = p->input.files[index];
 	  if (FD_ISSET(sock, &fds))
 	    {//there is a feature or label to read
 	      prediction pre;
-	      get_prediction(sock, pre);
+	      if (!get_prediction(sock, pre) )
+		return 0;
 	      size_t index = pre.example_number % p->pes.index();
+	      if (p->pes[index].features.index() == 0)
+		p->pes[index].example_number = pre.example_number;
 	      if (p->pes[index].example_number != pre.example_number)
-		if (p->pes[index].counter == 0)
-		  p->pes[index].example_number = pre.example_number;
-		else
-		  cerr << "Error, two examples map to the same index" << endl;
+		cerr << "Error, example " << p->pes[index].example_number << " != " << pre.example_number << endl;
 	      feature f = {pre.p, p->ids[index]};
-	      push(p->pes[index].features,f);
+	      push(p->pes[index].features, f);
 	      if (sock == p->label_sock) // The label source
 		{
 		  label_data ld;
@@ -76,7 +71,7 @@ int receive_features(parser* p, void* ex)
 		  read(sock,c,len);
 		  bufread_simple_label(&(p->pes[index].ld), c);
 		}
-	      if( p->pes[index].counter == p->input.files.index() ) 
+	      if( p->pes[index].features.index() == p->input.files.index() ) 
 		{
 		  push( ae->indices, multindex );
 		  push_many( ae->atomics[multindex], p->pes[index].features.begin, p->pes[index].features.index() );

@@ -62,6 +62,13 @@ template<class T> void reserve(v_array<T>& v, size_t length)
   v.end_array = v.begin + length;
 }
 
+template<class T> void calloc_reserve(v_array<T>& v, size_t length)
+{
+  v.begin = (T *)calloc(length, sizeof(T));
+  v.end = v.begin;
+  v.end_array = v.begin + length;
+}
+
 template<class T> v_array<T> pop(v_array<v_array<T> > &stack)
 {
   if (stack.end != stack.begin)

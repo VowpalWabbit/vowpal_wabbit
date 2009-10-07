@@ -5,6 +5,7 @@ embodied in the content of this file are licensed under the BSD
  */
 #include <fstream>
 #include <float.h>
+#include <netdb.h>
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"
@@ -45,7 +46,11 @@ void* gd_thread(void *in)
 	    predict(reg,ec,thread_num,*(params->vars));
 	}
       else if (thread_done(thread_num))
-	return NULL;
+	{
+	  if (global.local_prediction > 0)
+	    shutdown(global.local_prediction, SHUT_WR);
+	  return NULL;
+	}
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
@@ -254,7 +259,7 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
 
   if (global.local_prediction > 0)
     {
-      prediction pred = {ec->partial_prediction, ec->example_counter}; 
+      prediction pred = {ec->final_prediction, ec->example_counter}; 
       send_prediction(global.local_prediction, pred);
       if (global.unique_id == 0)
 	{
