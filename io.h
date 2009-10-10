@@ -15,6 +15,7 @@ class io_buf {
  public:
   v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values.
   v_array<int> files;
+  size_t count; // maximum number of file descriptors.
   size_t current; //file descriptor currently being used.
   char* endloaded; //end of loaded values
   v_array<char> currentname;

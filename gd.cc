@@ -48,7 +48,10 @@ void* gd_thread(void *in)
       else if (thread_done(thread_num))
 	{
 	  if (global.local_prediction > 0)
-	    shutdown(global.local_prediction, SHUT_WR);
+	    {
+	      cout << "shutting down local_prediction" << endl;
+	      shutdown(global.local_prediction, SHUT_WR);
+	    }
 	  return NULL;
 	}
       else 

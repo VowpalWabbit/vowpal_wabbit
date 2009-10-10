@@ -272,6 +272,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
     }
   if (passes > 1 && !par->resettable)
     cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
+  par->input.count = par->input.files.index();
   cout << "num sources = " << par->input.files.index() << endl;
 }
 
@@ -472,7 +473,6 @@ void setup_example(example* ae)
 	  f = ret;
 	  current += expert_size;
 	}
-      
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
     }
   
@@ -618,5 +618,14 @@ void end_parser(parser* pf)
       free(examples[i].indices.begin);
     }
   free(examples);
+
+  if (pf->pes.begin != NULL)
+    {
+      for (size_t i = 0; i < ring_size; i++)
+	free(pf->pes[i].features.begin);
+      free(pf->pes.begin);
+    }
+  if (pf->ids.begin != NULL)
+    free(pf->ids.begin);
 }
 

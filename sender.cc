@@ -130,9 +130,16 @@ void* send_thread(void*)
       else 
 	{ //close our outputs to signal finishing.
 	  for (size_t i = 0; i < d_1; i++)
-	    for (size_t j = 0; j < d_2; j++)
-	      shutdown(bufs[i][j].files[0],SHUT_WR);
-
+	    {
+	      for (size_t j = 0; j < d_2; j++)
+		{
+		  shutdown(bufs[i][j].files[0],SHUT_WR);
+		  free(bufs[i][j].files.begin);
+		  free(bufs[i][j].space.begin);
+		}
+	      free(bufs[i].begin);
+	    }
+	  free(bufs.begin);
 	  return NULL;
 	}
     }
@@ -150,4 +157,5 @@ void setup_send()
 void destroy_send()
 {
   pthread_join(*thread, NULL);
+  free(thread);
 }
