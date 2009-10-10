@@ -13,13 +13,18 @@ int open_socket(const char* host, size_t new_id)
 {
   char* colon = index(host,':');
   short unsigned int port = 39524;
+  hostent* he;
   if (colon != NULL)
-    port = atoi(colon+1);
-  char hostname[colon-host+1];
-  strncpy(hostname, host, colon-host);
-  hostname[colon-host]='\0';
+    {
+      port = atoi(colon+1);
+      char hostname[colon-host+1];
+      strncpy(hostname, host, colon-host);
+      hostname[colon-host]='\0';
+      he = gethostbyname(hostname);
+    }
+  else
+    he = gethostbyname(host);
 
-  hostent* he = gethostbyname(hostname);
   if (he == NULL)
     {
       cerr << "can't resolve hostname: " << host << endl;
