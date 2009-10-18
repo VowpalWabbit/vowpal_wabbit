@@ -52,7 +52,7 @@ void cache_simple_label(void* v, io_buf& cache)
   c = bufcache_simple_label(ld,c);
 
   *(size_t*)c = ld->tag.index();
-  c += sizeof(ld->tag.index());
+  c += sizeof(size_t);
 
   memcpy(c,ld->tag.begin,ld->tag.index());
   c += ld->tag.index();
