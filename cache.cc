@@ -30,23 +30,26 @@ int read_cached_features(parser* p, void* ec)
     return 0;
 
   char* c;
-  size_t num_indices = 0;
-  if (buf_read(p->input, c, int_size) < int_size) 
+  unsigned char num_indices = 0;
+  if (buf_read(p->input, c, sizeof(num_indices)) < sizeof(num_indices)) 
     return 0;
-  c = run_len_decode(c, num_indices);
+  num_indices = *(unsigned char*)c;
+  c += sizeof(num_indices);
+  
   p->input.set(c);
 
   for (;num_indices > 0; num_indices--)
     {
       size_t temp;
-      if((temp = buf_read(p->input,c,int_size + sizeof(size_t))) < char_size + sizeof(size_t)) {
+      unsigned char index = 0;
+      if((temp = buf_read(p->input,c,sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t)) {
 	cerr << "truncated example! " << temp << " " << char_size +sizeof(size_t) << endl;
 	return 0;
       }
 
-      size_t index = 0;
-      c = run_len_decode(c, index);
-      push(ae->indices, index);
+      index = *(unsigned char*)c;
+      c+= sizeof(index);
+      push(ae->indices, (size_t)index);
       v_array<feature>* ours = ae->atomics+index;
       size_t storage = *(size_t *)c;
       c += sizeof(size_t);
@@ -104,7 +107,7 @@ void output_int(io_buf& cache, size_t s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, size_t index, feature* begin, feature* end)
+void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end)
 {
   char* c;
   
@@ -113,8 +116,10 @@ void output_features(io_buf& cache, size_t index, feature* begin, feature* end)
     if (i->x != 1. && i->x != -1.)
       storage+=sizeof(float);
   
-  buf_write(cache, c, int_size + storage + sizeof(size_t));
-  c = run_len_encode(c, index);
+  buf_write(cache, c, sizeof(index) + storage + sizeof(size_t));
+  *(unsigned char*)c = index;
+  c += sizeof(index);
+
   char *storage_size_loc = c;
   c += sizeof(size_t);
   

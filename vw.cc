@@ -63,7 +63,7 @@ gd_vars* vw(int argc, char *argv[])
 	setup_send();
 	destroy_send();
       }
-    else if (final_regressor_name == string("") && !vm.count("initial_regressor"))
+    else if (vm.count("noop"))
       {
 	start_noop();
 	end_noop();

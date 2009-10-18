@@ -36,6 +36,8 @@ struct parser {
 
   v_array<partial_example> pes;//partial examples
   v_array<size_t> ids; //unique ids for sources
+  v_array<size_t> counts; //partial examples received from sources
+  size_t finished_count;//the number of finished examples;
   int label_sock;
   int max_fd;
 };

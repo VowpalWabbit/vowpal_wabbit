@@ -16,13 +16,14 @@ size_t read_cached_simple_label(void* v, io_buf& cache)
 {
   label_data* ld = (label_data*) v;
   char *c;
-  size_t total = sizeof(ld->label)+sizeof(ld->weight)+int_size;
   size_t tag_size = 0;
+  size_t total = sizeof(ld->label)+sizeof(ld->weight)+sizeof(tag_size);
   if (buf_read(cache, c, total) < total) 
     return 0;
   c = bufread_simple_label(ld,c);
-
-  c = run_len_decode(c, tag_size);
+  
+  tag_size = *(size_t*)c;
+  c += sizeof(tag_size);
 
   cache.set(c);
   if (buf_read(cache, c, tag_size) < tag_size) 
@@ -47,10 +48,12 @@ void cache_simple_label(void* v, io_buf& cache)
 {
   char *c;
   label_data* ld = (label_data*) v;
-  buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight)+int_size+ld->tag.index());
+  buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight)+sizeof(ld->tag.index())+ld->tag.index());
   c = bufcache_simple_label(ld,c);
 
-  c = run_len_encode(c, ld->tag.index());
+  *(size_t*)c = ld->tag.index();
+  c += sizeof(ld->tag.index());
+
   memcpy(c,ld->tag.begin,ld->tag.index());
   c += ld->tag.index();
 

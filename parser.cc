@@ -231,6 +231,9 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  cout << "reserving " << ring_size << endl;
 	  calloc_reserve(par->pes,ring_size);
 	  par->pes.end = par->pes.begin+ring_size;
+	  calloc_reserve(par->counts,ring_size);
+	  par->counts.end = par->counts.begin+ring_size;
+	  par->finished_count = 0;
 	}
       else 
 	par->reader = read_cached_features;
@@ -468,7 +471,9 @@ void setup_example(example* ae)
       size_t current = expert_size;
       while (current <= length)
 	{
-	  feature* ret = search(f, current, ae->atomics[*i].end);
+	  feature* ret = f;
+	  if (ae->atomics[*i].end > f)
+	    ret = search(f, current, ae->atomics[*i].end);
 	  push(ae->subsets[*i],ret);
 	  f = ret;
 	  current += expert_size;
@@ -627,5 +632,7 @@ void end_parser(parser* pf)
     }
   if (pf->ids.begin != NULL)
     free(pf->ids.begin);
+  if (pf->counts.begin != NULL)
+    free(pf->counts.begin);
 }
 

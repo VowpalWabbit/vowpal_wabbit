@@ -5,12 +5,6 @@
 #include <sys/socket.h>
 #include <errno.h>
 
-bool get_prediction(int sock, prediction &p)
-{
-  bool ret = (recv(sock, &p, sizeof(p), MSG_DONTWAIT) == sizeof(p));
-  return ret;
-}
-
 bool blocking_get_prediction(int sock, prediction &p)
 {
   int count = read(sock, &p, sizeof(p));
@@ -33,8 +27,6 @@ void reset(partial_example &ex)
 {
   ex.features.erase();
 }
-
-int receive_count = 0;
 
 int receive_features(parser* p, void* ex)
 {
@@ -64,20 +56,28 @@ int receive_features(parser* p, void* ex)
 		  close(sock);
 		  memmove(p->input.files.begin+index, 
 			  p->input.files.begin+index+1, 
-			  p->input.files.index() - index-1);
+			  (p->input.files.index() - index-1)*sizeof(int));
+		  p->input.files.pop();
 		  memmove(p->ids.begin+index, 
 			  p->ids.begin+index+1, 
-			  p->ids.index() - index-1);
-		  p->input.files.pop();
+			  (p->ids.index() - index-1)*sizeof(size_t));
 		  p->ids.pop();
+		  memmove(p->counts.begin+index,
+			  p->counts.begin+index+1,
+			  (p->counts.index() - index-1)*sizeof(size_t));
+		  p->counts.pop();
 		  index--;
 		}
 	      else
 		{
+		  if (pre.example_number != ++ (p->counts[index]))
+		    cout << "count is off! " << pre.example_number << " != " << p->counts[index] << endl;
+		  if (pre.example_number == p->finished_count + ring_size -1)
+		    FD_CLR(sock,&fds);//this ones to far ahead, let the buffer fill for awhile.
 		  size_t ring_index = pre.example_number % p->pes.index();
 		  if (p->pes[ring_index].features.index() == 0)
 		    p->pes[ring_index].example_number = pre.example_number;
-		  if (p->pes[ring_index].example_number != pre.example_number)
+		  if (p->pes[ring_index].example_number != (int)pre.example_number)
 		    cerr << "Error, example " << p->pes[ring_index].example_number << " != " << pre.example_number << endl;
 		  feature f = {pre.p, p->ids[index]};
 		  push(p->pes[ring_index].features, f);
@@ -96,6 +96,7 @@ int receive_features(parser* p, void* ex)
 		      label_data* ld = (label_data*)ae->ld;
 		      *ld = p->pes[ring_index].ld;
 		      reset(p->pes[ring_index]);
+		      p->finished_count++;
 		      return ae->atomics[multindex].index();
 		    }
 		}
