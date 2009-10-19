@@ -101,7 +101,7 @@ int receive_features(parser* p, void* ex)
 		    }
 		}
 	    }
-	  else
+	  else  if (p->counts[index] < p->finished_count + ring_size -1)
 	    FD_SET(sock,&fds);
 	}
     }
