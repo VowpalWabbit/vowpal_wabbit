@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <stdio.h>
 #include "global_data.h"
 #include "multisource.h"
 #include "message_relay.h"

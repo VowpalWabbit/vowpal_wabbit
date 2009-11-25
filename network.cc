@@ -3,6 +3,9 @@
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <netdb.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <string>
 #include <iostream>
@@ -11,7 +14,7 @@ using namespace std;
 
 int open_socket(const char* host, size_t new_id)
 {
-  char* colon = index(host,':');
+  const char* colon = index(host,':');
   short unsigned int port = 39524;
   hostent* he;
   if (colon != NULL)

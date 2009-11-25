@@ -8,6 +8,9 @@ embodied in the content of this file are licensed under the BSD
 #include <iostream>
 using namespace std;
 
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdint.h>
 #include "parse_regressor.h"
 #include "loss_functions.h"
 #include "global_data.h"

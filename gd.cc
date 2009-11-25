@@ -6,6 +6,8 @@ embodied in the content of this file are licensed under the BSD
 #include <fstream>
 #include <float.h>
 #include <netdb.h>
+#include <string.h>
+#include <stdio.h>
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"

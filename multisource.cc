@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <stdio.h>
 
 bool blocking_get_prediction(int sock, prediction &p)
 {
