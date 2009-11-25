@@ -6,6 +6,7 @@ embodied in the content of this file are licensed under the BSD
 
 #include "source.h"
 #include <fcntl.h>
+#include <stdio.h>
 
 bool inconsistent_cache(size_t numbits, io_buf &cache)
 {

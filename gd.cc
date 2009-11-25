@@ -8,6 +8,7 @@ embodied in the content of this file are licensed under the BSD
 #include <math.h>
 #include <float.h>
 #include <string.h>
+#include <stdio.h>
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"

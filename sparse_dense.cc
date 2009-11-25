@@ -49,11 +49,11 @@ float one_of_quad_predict(v_array<feature> &page_features, feature& offer_featur
   return prediction * offer_feature.x;
 }
 
-float one_pf_quad_predict(weight* weights, feature& feature, v_array<feature> &cross_features, size_t mask)
+float one_pf_quad_predict(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask)
 {
-  size_t halfhash = quadratic_constant * feature.weight_index;
+  size_t halfhash = quadratic_constant * f.weight_index;
   
-  return feature.x * 
+  return f.x * 
     sd_offset_add(weights, mask, cross_features.begin, cross_features.end, halfhash);
 }
 
