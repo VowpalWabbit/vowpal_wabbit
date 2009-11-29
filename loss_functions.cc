@@ -31,8 +31,7 @@ public:
 	}
 
 	double getLoss(double prediction, double label) {
-		double y = (label == 0.0) ? -1.0 : 1.0;
-		double e = 1 - y*prediction;
+		double e = 1 - label*prediction;
 		return (e > 0) ? e : 0;
 	}
 

@@ -76,11 +76,15 @@ gd_vars* vw(int argc, char *argv[])
 
   if (!vars->quiet)
     {
-      cerr << "average\tsince\texample\texample\tcurrent\tcurrent\tcurrent" << endl;
-      cerr << "loss\tlast\tcounter\tweight\tlabel\tpredict\tfeatures" << endl;
-      cerr.precision(4);
+      const char * header_fmt = "%-10s %-10s %8s %8s %10s %8s %8s\n";
+      fprintf(stderr, header_fmt,
+	      "average", "since", "example", "example",
+	      "current", "current", "current");
+      fprintf(stderr, header_fmt,
+	      "loss", "last", "counter", "weight", "label", "predict", "features");
+      cerr.precision(5);
     }
-
+  
   size_t num_threads = regressor1.global->num_threads();
   if (vars->daemon != -1)
     while(true)
