@@ -292,16 +292,15 @@ void print_update(example *ec)
 {
   if (global.weighted_examples > global.dump_interval && !global.quiet)
     {
-      cerr.precision(4);
-      cerr << global.sum_loss/global.weighted_examples << "\t" 
-	   << global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples) << "\t"
-	   << global.example_number << "\t";
-      cerr.precision(2);
-      cerr << global.weighted_examples << "\t";
-      cerr.precision(4);
       label_data* ld = (label_data*) ec->ld;
-      cerr << ld->label << "\t" << ec->final_prediction << "\t"
-	   << ec->num_features << "\t" << endl;
+      fprintf(stderr, "%-10.5f %-10.5f %8lld %8g %10.6g %8g %8lu\n",
+	      global.sum_loss/global.weighted_examples,
+	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
+	      global.example_number,
+	      global.weighted_examples,
+	      ld->label,
+	      ec->partial_prediction,
+	      (long unsigned int)ec->num_features);
       
       global.sum_loss_since_last_dump = 0.0;
       global.old_weighted_examples = global.weighted_examples;
