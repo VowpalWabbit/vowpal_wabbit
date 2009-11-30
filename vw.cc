@@ -33,7 +33,7 @@ gd_vars* vw(int argc, char *argv[])
   parser* p = new_parser(&simple_label);
   regressor regressor1;
 
-  gd_vars *vars = new gd_vars;
+  gd_vars *vars = (gd_vars*) malloc(sizeof(gd_vars));
 
   po::options_description desc("VW options");
 
@@ -95,6 +95,7 @@ gd_vars* vw(int argc, char *argv[])
   finalize_regressor(final_regressor,regressor1);
   finalize_source(p);
   global.pairs.~vector();
+  free(global.loss);
   free(p);
   
   return vars;

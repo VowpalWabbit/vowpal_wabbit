@@ -277,7 +277,8 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
   if (passes > 1 && !par->resettable)
     cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
   par->input.count = par->input.files.index();
-  cout << "num sources = " << par->input.files.index() << endl;
+  if (!quiet)
+    cout << "num sources = " << par->input.files.index() << endl;
 }
 
 example* examples;//A Ring of examples.
@@ -299,7 +300,7 @@ void print_update(example *ec)
 	      global.example_number,
 	      global.weighted_examples,
 	      ld->label,
-	      ec->partial_prediction,
+	      ec->final_prediction,
 	      (long unsigned int)ec->num_features);
       
       global.sum_loss_since_last_dump = 0.0;

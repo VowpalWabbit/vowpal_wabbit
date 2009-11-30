@@ -21,8 +21,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 			     string& final_regressor_name)
 {
   vars.init();
-  size_t keep = 0;
-  size_t of = 1;
   global.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
@@ -39,12 +37,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("help,h","Output Arguments")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&vars.t)->default_value(1.), "initial t value")
-    ("keep,k", po::value<size_t>(&keep)->default_value(0), "Features to keep")
     ("min_prediction", po::value<float>(&vars.min_prediction)->default_value(0), "Smallest prediction to output")
     ("max_prediction", po::value<float>(&vars.max_prediction)->default_value(1), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
-    ("of", po::value<size_t>(&of)->default_value(1), "keep k of <n> features")
     ("port", po::value<size_t>(),"port to listen on")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.), "t power value")
     ("predictto", po::value< string > (), "host to send predictions to")
@@ -123,7 +119,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
-  parse_regressor_args(vm, r, final_regressor_name, !global.quiet);
+  parse_regressor_args(vm, r, final_regressor_name, global.quiet);
 
   string loss_function;
   if(vm.count("loss_function")) 
