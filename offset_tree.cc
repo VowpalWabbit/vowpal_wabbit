@@ -279,8 +279,8 @@ void* offset_tree(void *in)
 		ec->partial_prediction = 0;
 		
 		float prediction = offset_predict(reg,ec,thread_num,*(params->vars),offset);
-		if (prediction > 0.5 && label_bit != 1 
-		    || prediction < 0.5 && label_bit != 0)
+		if ((prediction > 0.5 && label_bit != 1) 
+		    || (prediction < 0.5 && label_bit != 0))
 		  break;
 	      }
 	  }

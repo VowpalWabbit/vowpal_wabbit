@@ -304,14 +304,14 @@ void print(example *ec, gd_vars& vars)
   if (vars.weighted_examples > vars.dump_interval && !vars.quiet)
     {
       label_data* ld = (label_data*) ec->ld;
-      fprintf(stderr, "%-10.5f %-10.5f %8lld %8g %10.6g %8g %8u\n",
+      fprintf(stderr, "%-10.5f %-10.5f %8lld %8g %10.6g %8g %8lu\n",
 	      vars.sum_loss/vars.weighted_examples,
 	      vars.sum_loss_since_last_dump / (vars.weighted_examples - vars.old_weighted_examples),
 	      vars.example_number,
 	      vars.weighted_examples,
 	      ld->label,
 	      ec->partial_prediction,
-	      ec->num_features);
+	      (long unsigned int)ec->num_features);
       
       vars.sum_loss_since_last_dump = 0.0;
       vars.old_weighted_examples = vars.weighted_examples;
