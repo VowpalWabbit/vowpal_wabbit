@@ -46,6 +46,17 @@ bool inconsistent_cache(size_t numbits, int filepointer)
   return false;
 }
 
+size_t cache_numbits(int filepointer)
+{
+  int total = sizeof(size_t);
+  char* p[total];
+  if (read(filepointer, p, total) < total) 
+    return true;
+
+  size_t cache_numbits = *(size_t *)p;
+  return cache_numbits;
+}
+
 void close_files(v_array<int>& files)
 {
   while(files.index() > 0)
@@ -71,7 +82,7 @@ void reset_source(size_t numbits, parser* p)
 	lseek(p->input.files[i], 0, SEEK_SET);
 	p->input.endloaded = p->input.space.begin;
 	p->input.space.end = p->input.space.begin;
-	if (inconsistent_cache(numbits, p->input.files[i])) {
+	if (cache_numbits(p->input.files[i]) < numbits) {
 	  cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
 	  exit(1);
 	}
@@ -135,7 +146,8 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
 	    cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
 	}
       else {
-	if (inconsistent_cache(numbits, f)) {
+	size_t c = cache_numbits(f);
+	if (c < numbits) {
 	  close(f);
 	  make_write_cache(numbits, par, caches[i], quiet);
 	}
@@ -143,7 +155,10 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
 	  if (!quiet)
 	    cerr << "using cache_file = " << caches[i].c_str() << endl;
 	  push(par->input.files,f);
-	  par->reader = read_cached_features;
+	  if (c == numbits)
+	    par->reader = read_cached_features;
+	  else
+	    par->reader = read_and_order_cached_features;
 	  par->resettable = true;
 	}
       }
@@ -345,58 +360,6 @@ example* get_unused_example()
     }
 }
 
-int order_features(const void* first, const void* second)
-{
-  return ((feature*)first)->weight_index - ((feature*)second)->weight_index;
-}
-
-int order_audit_features(const void* first, const void* second)
-{
-  return ((audit_data*)first)->weight_index - ((audit_data*)second)->weight_index;
-}
-
-void unique_features(v_array<feature> &features)
-{
-  if (features.empty())
-    return;
-  feature* last = features.begin;
-  for (feature* current = features.begin+1; 
-       current != features.end; current++)
-    if (current->weight_index != last->weight_index) 
-      *(++last) = *current;
-  features.end = ++last;
-}
-
-void unique_audit_features(v_array<audit_data> &features)
-{
-  if (features.empty())
-    return;
-  audit_data* last = features.begin;
-  for (audit_data* current = features.begin+1; 
-       current != features.end; current++)
-    if (current->weight_index != last->weight_index) 
-      *(++last) = *current;
-  features.end = ++last;
-}
-
-void unique_sort_features(parser* p, example* ae)
-{
-  bool audit = global.audit;
-  for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
-    {
-      qsort(ae->atomics[*b].begin, ae->atomics[*b].index(), sizeof(feature), 
-	    order_features);
-      unique_features(ae->atomics[*b]);
-      
-      if (audit)
-	{
-	  qsort(ae->audit_features[*b].begin, ae->audit_features[*b].index(), sizeof(audit_data), 
-		order_audit_features);
-	  unique_audit_features(ae->audit_features[*b]);
-	}
-    }
-}
-
 bool parse_atomic_example(parser* p, example *ae)
 {
   if (global.audit)
@@ -422,7 +385,6 @@ bool parse_atomic_example(parser* p, example *ae)
   ae->indices.erase();
   if (p->reader(p,ae) <= 0)
     return false;
-  unique_sort_features(p,ae);
   if (p->write_cache) 
     {
       p->lp->cache_label(ae->ld,p->output);

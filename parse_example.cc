@@ -8,6 +8,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_example.h"
 #include "hash.h"
 #include "cache.h"
+#include "unique_sort.h"
 
 inline size_t hashstring (substring s, unsigned long h)
 {
@@ -165,6 +166,8 @@ int read_features(parser* p, void* ex)
 	free(base);
       }
   }
+
+  unique_sort_features(p,ae);
 
   return num_chars;
 }

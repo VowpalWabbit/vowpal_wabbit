@@ -5,6 +5,7 @@ embodied in the content of this file are licensed under the BSD
  */
 
 #include "cache.h"
+#include "unique_sort.h"
 
 size_t neg_1 = 1;
 size_t general = 2;
@@ -86,6 +87,14 @@ int read_cached_features(parser* p, void* ec)
 
   return total;
 }
+
+int read_and_order_cached_features(parser* p, void* ec)
+{
+  int ret = read_cached_features(p,ec);
+  unique_sort_features(p,(example*)ec);
+  return ret;
+}
+
 
 char* run_len_encode(char *p, size_t i)
 {// store an int 7 bits at a time.
