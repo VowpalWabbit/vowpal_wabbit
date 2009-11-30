@@ -293,7 +293,7 @@ void print_update(example *ec)
   if (global.weighted_examples > global.dump_interval && !global.quiet)
     {
       label_data* ld = (label_data*) ec->ld;
-      fprintf(stderr, "%-10.5f %-10.5f %8lld %8g %10.6g %8g %8lu\n",
+      fprintf(stderr, "%-10.6f %-10.6f %8lld %8.1f   %8.4f %8.4f %8lu\n",
 	      global.sum_loss/global.weighted_examples,
 	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
 	      global.example_number,
