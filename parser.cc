@@ -31,21 +31,6 @@ parser* new_parser(const label_parser* lp)
 #define O_LARGEFILE 0
 #endif
 
-bool inconsistent_cache(size_t numbits, int filepointer)
-{
-  int total = sizeof(numbits);
-  char* p[sizeof(numbits)];
-  if (read(filepointer, p, total) < total) 
-    return true;
-
-  size_t cache_numbits = *(size_t *)p;
-
-  if (cache_numbits < numbits)
-    return true;
-
-  return false;
-}
-
 size_t cache_numbits(int filepointer)
 {
   int total = sizeof(size_t);
