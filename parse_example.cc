@@ -31,7 +31,7 @@ void feature_value(substring &s, v_array<substring>& name, float &v)
   case 1:
     break;
   case 2:
-    v = float_of_substring(name[1]);
+    v = zero_copy_float_of_substring(name[1]);
     if (isnan(v))
       {
 	cerr << "error NaN value for feature: ";

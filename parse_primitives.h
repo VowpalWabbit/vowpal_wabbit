@@ -36,6 +36,15 @@ inline float float_of_substring(substring s)
   return atof(string(s.start, s.end-s.start).c_str());
 }
 
+inline float zero_copy_float_of_substring(substring s)
+{
+  char temp = *s.end;
+  *s.end = '\0';
+  float f = atof(s.start);
+  *s.end = temp;
+  return f;
+}
+
 inline double double_of_substring(substring s)
 {
   return atof(string(s.start, s.end-s.start).c_str());
