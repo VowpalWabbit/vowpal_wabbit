@@ -33,9 +33,8 @@ void* gd_thread(void *in)
 	}
       else if ((ec = get_example(thread_num)) != NULL)//blocking operation.
 	{
-	  label_data* ld = (label_data*)ec->ld;
-	  if ( ((ld->tag).begin != (ld->tag).end) 
-	       && ((ld->tag)[0] == 's')&&((ld->tag)[1] == 'a')&&((ld->tag)[2] == 'v')&&((ld->tag)[3] == 'e'))
+	  if ( ((ec->tag).begin != (ec->tag).end) 
+	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))
 	    {
 	      if ((*(params->final_regressor_name)) != "") 
 		{
@@ -166,8 +165,7 @@ void print_offset_features(regressor &reg, example* &ec, size_t offset)
 
 void print_audit_features(regressor &reg, example* ec, size_t offset)
 {
-  label_data* ld = (label_data*) ec->ld;
-  print_result(fileno(stdout),ec->final_prediction,ld->tag);
+  print_result(fileno(stdout),ec->final_prediction,ec->tag);
   print_offset_features(reg, ec, offset);
 }
 

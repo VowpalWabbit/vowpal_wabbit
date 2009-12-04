@@ -94,7 +94,21 @@ int read_features(parser* p, void* ex)
   if (*line == '|')
     feature_start = &(p->channels[0]);
   else 
-    p->lp->parse_label(ae->ld,p->channels[0],p->words);
+    {
+      substring label_space = p->channels[0];
+      char* tab_location = safe_index(label_space.start, '\t', label_space.end);
+      if (tab_location != label_space.end)
+	label_space.start = tab_location+1;
+      
+      tokenize(' ',label_space,p->words);
+      if (p->words.last().end == label_space.end) //The last field is a tag, so record and strip it off
+	{
+	  substring tag = p->words.pop();
+	  push_many(ae->tag, tag.start, tag.end - tag.start);
+	}
+      
+      p->lp->parse_label(ae->ld, p->words);
+    }
   
   size_t mask = global.mask;
   bool audit = global.audit;

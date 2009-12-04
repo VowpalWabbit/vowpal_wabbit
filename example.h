@@ -8,7 +8,6 @@ struct label_data {
   double label;
   float weight;
   bool undo;
-  v_array<char> tag;
 };
 
 struct feature {
@@ -28,6 +27,7 @@ struct audit_data {
 struct example // core example datatype.
 {
   void* ld;
+  v_array<char> tag;//An identifier for the example.
   size_t example_counter;
 
   v_array<size_t> indices;

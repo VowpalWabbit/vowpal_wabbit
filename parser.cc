@@ -319,9 +319,9 @@ void output_and_account_example(example* ec)
   global.sum_loss += ec->loss;
   global.sum_loss_since_last_dump += ec->loss;
   
-  global.print(global.raw_prediction, ec->partial_prediction, ld->tag);
+  global.print(global.raw_prediction, ec->partial_prediction, ec->tag);
   
-  global.print(global.final_prediction_sink, ec->final_prediction, ld->tag);
+  global.print(global.final_prediction_sink, ec->final_prediction, ec->tag);
   
   print_update(ec);
 
@@ -368,6 +368,7 @@ bool parse_atomic_example(parser* p, example *ae)
     ae->atomics[*i].erase();
 
   ae->indices.erase();
+  ae->tag.erase();
   if (p->reader(p,ae) <= 0)
     return false;
   if (p->write_cache) 
@@ -549,6 +550,12 @@ void end_parser(parser* pf)
   for (size_t i = 0; i < ring_size; i++) 
     {
       pf->lp->delete_label(examples[i].ld);
+      if (examples[i].tag.end_array != examples[i].tag.begin)
+	{
+	  free(examples[i].tag.begin);
+	  examples[i].tag.end_array = examples[i].tag.begin;
+	}
+
       free(examples[i].ld);
       for (size_t j = 0; j < 256; j++)
 	{

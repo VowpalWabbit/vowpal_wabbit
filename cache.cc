@@ -21,6 +21,24 @@ char* run_len_decode(char *p, size_t& i)
 
 size_t invocations = 0;
 
+size_t read_cached_tag(io_buf& cache, example* ae)
+{
+  char* c;
+  size_t tag_size;
+  if (buf_read(cache, c, sizeof(tag_size)) < sizeof(tag_size))
+    return 0;
+  tag_size = *(size_t*)c;
+  c += sizeof(tag_size);
+  
+  cache.set(c);
+  if (buf_read(cache, c, tag_size) < tag_size) 
+    return 0;
+  
+  ae->tag.erase();
+  push_many(ae->tag, c, tag_size);
+  return tag_size+sizeof(tag_size);
+}
+
 int read_cached_features(parser* p, void* ec)
 {
   example* ae = (example*)ec;
@@ -152,8 +170,20 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);  
 }
 
+void cache_tag(io_buf& cache, example* ae)
+{
+  char *c;
+  buf_write(cache, c, sizeof(ae->tag.index())+ae->tag.index());
+  *(size_t*)c = ae->tag.index();
+  c += sizeof(size_t);
+  memcpy(c, ae->tag.begin, ae->tag.index());
+  c += ae->tag.index();
+  cache.set(c);
+}
+
 void cache_features(io_buf& cache, example* ae)
 {
+  cache_tag(cache,ae);
   output_int(cache, ae->indices.index());
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end);

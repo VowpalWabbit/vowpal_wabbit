@@ -14,7 +14,7 @@ embodied in the content of this file are licensed under the BSD
 
 struct label_parser {
   void (*default_label)(void*);
-  void (*parse_label)(void*, substring, v_array<substring>&);
+  void (*parse_label)(void*, v_array<substring>&);
   void (*cache_label)(void*, io_buf& cache);
   size_t (*read_cached_label)(void*, io_buf& cache);
   void (*delete_label)(void*);
