@@ -47,6 +47,8 @@ int read_cached_features(parser* p, void* ec)
   size_t total = p->lp->read_cached_label(ae->ld, p->input);
   if (total == 0)
     return 0;
+  if (read_cached_tag(p->input,ae) == 0)
+    return 0;
 
   char* c;
   unsigned char num_indices = 0;
@@ -54,7 +56,7 @@ int read_cached_features(parser* p, void* ec)
     return 0;
   num_indices = *(unsigned char*)c;
   c += sizeof(num_indices);
-  
+
   p->input.set(c);
 
   for (;num_indices > 0; num_indices--)
@@ -62,7 +64,7 @@ int read_cached_features(parser* p, void* ec)
       size_t temp;
       unsigned char index = 0;
       if((temp = buf_read(p->input,c,sizeof(index) + sizeof(size_t))) < sizeof(index) + sizeof(size_t)) {
-	cerr << "truncated example! " << temp << " " << char_size +sizeof(size_t) << endl;
+	cerr << "truncated example! " << temp << " " << char_size + sizeof(size_t) << endl;
 	return 0;
       }
 
@@ -75,7 +77,7 @@ int read_cached_features(parser* p, void* ec)
       p->input.set(c);
       total += storage;
       if (buf_read(p->input,c,storage) < storage) {
-	cerr << "truncated example! wanted: " << storage << endl;
+	cerr << "truncated example! wanted: " << storage << " bytes" << endl;
 	return 0;
       }
 
@@ -170,20 +172,20 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   *(size_t*)storage_size_loc = c - storage_size_loc - sizeof(size_t);  
 }
 
-void cache_tag(io_buf& cache, example* ae)
+void cache_tag(io_buf& cache, v_array<char> tag)
 {
   char *c;
-  buf_write(cache, c, sizeof(ae->tag.index())+ae->tag.index());
-  *(size_t*)c = ae->tag.index();
+  buf_write(cache, c, sizeof(tag.index())+tag.index());
+  *(size_t*)c = tag.index();
   c += sizeof(size_t);
-  memcpy(c, ae->tag.begin, ae->tag.index());
-  c += ae->tag.index();
+  memcpy(c, tag.begin, tag.index());
+  c += tag.index();
   cache.set(c);
 }
 
 void cache_features(io_buf& cache, example* ae)
 {
-  cache_tag(cache,ae);
+  cache_tag(cache,ae->tag);
   output_int(cache, ae->indices.index());
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end);

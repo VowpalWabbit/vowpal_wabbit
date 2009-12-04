@@ -112,6 +112,8 @@ void send_features(int i, int j, io_buf& b, example* ec)
 void* send_thread(void*)
 {
   example* ec = NULL;
+  v_array<char> null_tag;
+  null_tag.erase();
 
   while ( true )
     {//this is a poor man's select operation.
@@ -122,7 +124,8 @@ void* send_thread(void*)
 	  for (size_t i = 0; i < d_1; i++)
 	    for (size_t j = 0; j < d_2; j++)
 	      {
-		simple_label.cache_label(ld,bufs[i][j]);//send label information.
+		simple_label.cache_label(ld, bufs[i][j]);//send label information.
+		cache_tag(bufs[i][j], null_tag);
 		send_features(i,j,bufs[i][j],ec);
 	      }
 	  delay_example(ec,0);

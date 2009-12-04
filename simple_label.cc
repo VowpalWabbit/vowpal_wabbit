@@ -16,13 +16,12 @@ size_t read_cached_simple_label(void* v, io_buf& cache)
 {
   label_data* ld = (label_data*) v;
   char *c;
-  size_t tag_size = 0;
-  size_t total = sizeof(ld->label)+sizeof(ld->weight)+sizeof(tag_size);
+  size_t total = sizeof(ld->label)+sizeof(ld->weight);
   if (buf_read(cache, c, total) < total) 
     return 0;
   c = bufread_simple_label(ld,c);
-  
-  return total+tag_size;
+
+  return total;
 }
 
 char* bufcache_simple_label(label_data* ld, char* c)
@@ -31,7 +30,6 @@ char* bufcache_simple_label(label_data* ld, char* c)
   c += sizeof(ld->label);
   *(float *)c = ld->weight;
   c += sizeof(ld->weight);
-  
   return c;
 }
 

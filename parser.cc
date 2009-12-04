@@ -195,9 +195,9 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       size_t min_id = INT_MAX;
       for (int i = 0; i < source_count; i++)
 	{
-	  cout << "calling accept" << endl;
+	  if (!global.quiet)
+	    cout << "calling accept" << endl;
 	  int f = accept(daemon,(sockaddr*)&client_address,&size);
-	  cout << "finished accept" << endl;
 	  if (f < 0)
 	    {
 	      cerr << "bad client socket!" << endl;
@@ -209,12 +209,12 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
 	  size_t id;
 	  read(f, &id, sizeof(id));
-	  cout << "id read = " << id << endl;
+	  if (!global.quiet)
+	    cout << "id read = " << id << endl;
 	  min_id = min (min_id, (size_t)id);
 	  if (id == 0)
 	    {
 	      par->label_sock = f;
-	      cout << "setting final_prediction_sink f = " << f << endl;
 	      global.final_prediction_sink = f;
 	      global.print = binary_print_result;
 	    }
@@ -222,14 +222,14 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  push(par->ids,id);
 	  push(par->input.files,f);
 	  par->max_fd = max(f, par->max_fd);
-	  cerr << "reading data from port " << port << endl;
+	  if (!global.quiet)
+	    cerr << "reading data from port " << port << endl;
 	}
       global.unique_id = min_id;
       par->max_fd++;
       if(vm.count("multisource"))
 	{
 	  par->reader = receive_features;
-	  cout << "reserving " << ring_size << endl;
 	  calloc_reserve(par->pes,ring_size);
 	  par->pes.end = par->pes.begin+ring_size;
 	  calloc_reserve(par->counts,ring_size);

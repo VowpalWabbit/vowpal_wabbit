@@ -17,6 +17,7 @@ char* run_len_encode(char *p, size_t i);
 
 int read_cached_features(parser* p, void* ec);
 int read_and_order_cached_features(parser* p, void* ec);
+void cache_tag(io_buf& cache, v_array<char> tag);
 void cache_features(io_buf& cache, example* ae);
 void output_int(io_buf& cache, size_t s);
 void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end);
