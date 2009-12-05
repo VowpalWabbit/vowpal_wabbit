@@ -50,6 +50,5 @@ int open_socket(const char* host, size_t new_id)
       exit(1);
     }
   write(sd, &new_id, sizeof(new_id));
-  fsync(sd);
   return sd;
 }

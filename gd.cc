@@ -268,7 +268,6 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
 	  bufcache_simple_label(ld,c);
 	  write(global.local_prediction,c,len);
 	}
-      fsync(global.local_prediction);
     }
 
   if (global.audit)

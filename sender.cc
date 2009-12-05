@@ -99,7 +99,7 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs, size_t& thread
 
 void send_features(int i, int j, io_buf& b, example* ec)
 {
-  output_int(bufs[i][j],ec->indices.index());
+  output_int(b,ec->indices.index());
   
   for (size_t* index = ec->indices.begin; index != ec->indices.end; index++)
     if (second_of_pair[*index])
@@ -136,6 +136,7 @@ void* send_thread(void*)
 	    {
 	      for (size_t j = 0; j < d_2; j++)
 		{
+		  bufs[i][j].flush();
 		  shutdown(bufs[i][j].files[0],SHUT_WR);
 		  free(bufs[i][j].files.begin);
 		  free(bufs[i][j].space.begin);

@@ -53,6 +53,6 @@ extern global_data global;
 void print_result(int f, float res, v_array<char> tag);
 void binary_print_result(int f, float res, v_array<char> tag);
 
-const size_t ring_size = 1 << 5;
+const size_t ring_size = 1 << 10;
 
 #endif

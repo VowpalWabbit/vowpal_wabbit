@@ -4,4 +4,4 @@ export FLAGS='-l 20 --initial_t 128000 --power_t 1 --daemon --quiet --predictto 
 /home/jl/programs/temp/vowpal_wabbit/vw --port 39523 $FLAGS &
 /home/jl/programs/temp/vowpal_wabbit/vw --port 39524 $FLAGS &
 sleep 1
-/home/jl/programs/temp/vowpal_wabbit/vw --sendto localhost:39523 --sendto localhost:39524 
+/home/jl/programs/temp/vowpal_wabbit/vw --cache_file cache_train --sendto localhost:39523 --sendto localhost:39524 

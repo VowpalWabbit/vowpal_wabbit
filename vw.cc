@@ -95,7 +95,6 @@ gd_vars* vw(int argc, char *argv[])
   finalize_regressor(final_regressor,regressor1);
   finalize_source(p);
   global.pairs.~vector();
-  free(global.loss);
   free(p);
   
   return vars;

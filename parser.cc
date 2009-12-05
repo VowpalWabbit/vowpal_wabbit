@@ -169,6 +169,11 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	cerr << "can't open socket!" << endl;
 	exit(1);
       }
+
+      int on = 1;
+      if (setsockopt(daemon, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
+	perror("setsockopt SO_REUSEADDR");
+
       sockaddr_in address;
       address.sin_family = AF_INET;
       address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -203,12 +208,9 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      cerr << "bad client socket!" << endl;
 	      exit (1);
 	    }
-	  int flag = 1;
-	  if (setsockopt(f,IPPROTO_TCP,TCP_NODELAY,(char*) &flag, sizeof(int)) == -1)
-	    cerr << strerror(errno) << " " << errno << " " << IPPROTO_TCP << endl;
 
 	  size_t id;
-	  read(f, &id, sizeof(id));
+	  really_read(f, &id, sizeof(id));
 	  if (!global.quiet)
 	    cout << "id read = " << id << endl;
 	  min_id = min (min_id, (size_t)id);
