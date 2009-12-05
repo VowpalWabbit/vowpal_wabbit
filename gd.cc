@@ -99,7 +99,7 @@ float inline_predict(regressor &reg, example* &ec, size_t thread_num)
     }
   
   if ( thread_num == 0 ) 
-    prediction += weights[0];
+    prediction += weights[constant & thread_mask];
   
   return prediction;
 }
@@ -126,7 +126,7 @@ float inline_offset_predict(regressor &reg, example* &ec, size_t thread_num, siz
     }
 
   if ( thread_num == 0 )
-    prediction += weights[offset & thread_mask];
+    prediction += weights[(constant+offset) & thread_mask];
 
   return prediction;
 }
@@ -139,9 +139,6 @@ void print_offset_features(regressor &reg, example* &ec, size_t offset)
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
       for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	{
-	  // old
-	  //	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index << ':' << f->x;
-	  // new
 	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & thread_mask)  << ")" << ':' << f->x;
 
 	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
@@ -160,7 +157,7 @@ void print_offset_features(regressor &reg, example* &ec, size_t offset)
       for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
 	print_offset_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask, offset);      
 
-  cout << "\tConstant:0:1:" << weights[offset & global.thread_mask] << endl;
+  cout << "\tConstant:0:1:" << weights[(constant+offset) & global.thread_mask] << endl;
 }
 
 void print_audit_features(regressor &reg, example* ec, size_t offset)
@@ -211,7 +208,7 @@ void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 	}
       
       if ( thread_num == 0 )
-	weights[0] += update;
+	weights[constant & thread_mask] += update;
     }
 }  
 
@@ -238,7 +235,7 @@ void offset_train(regressor &reg, example* &ec, size_t thread_num, float update,
 	}
       
       if ( thread_num == 0 )
-	weights[offset & thread_mask] += update;
+	weights[(constant+offset) & thread_mask] += update;
     }
 }  
 

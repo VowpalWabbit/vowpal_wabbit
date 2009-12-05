@@ -29,6 +29,7 @@ void feature_value(substring &s, v_array<substring>& name, float &v)
   switch (name.index()) {
   case 0:
   case 1:
+    v = 1.;
     break;
   case 2:
     v = zero_copy_float_of_substring(name[1]);
@@ -154,9 +155,10 @@ int read_features(parser* p, void* ex)
       }
  
     for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
-      float v = channel_v;
+      float v;
       feature_value(*i, p->name, v);
-      
+      v *= channel_v;
+
       size_t word_hash = (hashstring(p->name[0], channel_hash)) & mask;
       feature f = {v,word_hash};
       push(ae->atomics[index], f);
@@ -168,9 +170,10 @@ int read_features(parser* p, void* ex)
     if (audit)
       {
 	for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
-	  float v = channel_v;
+	  float v;
 	  feature_value(*i, p->name, v);
-	  
+	  v *= channel_v;
+
 	  size_t word_hash = (hashstring(p->name[0], channel_hash)) & mask;
       
 	  char* feature = c_string_of_substring(p->name[0]);
