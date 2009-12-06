@@ -140,7 +140,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cerr << "learning rate = " << vars.eta << endl;
       cerr << "initial_t = " << vars.t << endl;
       cerr << "power_t = " << vars.power_t << endl;
-      cerr << "decay_learning_rate = " << eta_decay_rate << endl;
+      if (passes > 1)
+	cerr << "decay_learning_rate = " << eta_decay_rate << endl;
     }
   
   if (eta_decay_rate != default_decay && passes == 1)

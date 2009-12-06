@@ -280,7 +280,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
     cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
   par->input.count = par->input.files.index();
   if (!quiet)
-    cout << "num sources = " << par->input.files.index() << endl;
+    cerr << "num sources = " << par->input.files.index() << endl;
 }
 
 example* examples;//A Ring of examples.
