@@ -15,6 +15,7 @@ using namespace std;
 struct global_data {
   size_t thread_bits; // log_2 of the number of threads.
   size_t num_bits; // log_2 of the number of features.
+  bool default_bits;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.

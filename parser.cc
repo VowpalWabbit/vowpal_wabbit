@@ -108,10 +108,10 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
     cerr << "creating cache_file = " << newname << endl;
 }
 
-void parse_cache(po::variables_map &vm, size_t numbits, string source,
+void parse_cache(po::variables_map &vm, string source,
 		 parser* par, bool quiet)
 {
-  global.mask = (1 << numbits) - 1;
+  global.mask = (1 << global.num_bits) - 1;
   vector<string> caches;
   if (vm.count("cache_file"))
     caches = vm["cache_file"].as< vector<string> >();
@@ -126,21 +126,23 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
       if (f == -1)
 	{
 	  if (par->output.files.index() == 0)
-	    make_write_cache(numbits, par, caches[i], quiet);
+	    make_write_cache(global.num_bits, par, caches[i], quiet);
 	  else 
 	    cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
 	}
       else {
 	size_t c = cache_numbits(f);
-	if (c < numbits) {
+	if (global.default_bits)
+	  global.num_bits = c;
+	if (c < global.num_bits) {
 	  close(f);
-	  make_write_cache(numbits, par, caches[i], quiet);
+	  make_write_cache(global.num_bits, par, caches[i], quiet);
 	}
 	else {
 	  if (!quiet)
 	    cerr << "using cache_file = " << caches[i].c_str() << endl;
 	  push(par->input.files,f);
-	  if (c == numbits)
+	  if (c == global.num_bits)
 	    par->reader = read_cached_features;
 	  else
 	    par->reader = read_and_order_cached_features;
@@ -168,7 +170,7 @@ bool member(v_array<size_t> ids, size_t id)
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes)
 {
   par->input.current = 0;
-  parse_cache(vm, global.num_bits, vm["data"].as<string>(), par, quiet);
+  parse_cache(vm, vm["data"].as<string>(), par, quiet);
 
   if (vm.count("daemon") || vm.count("multisource"))
     {

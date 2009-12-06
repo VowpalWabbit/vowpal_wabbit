@@ -90,6 +90,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cerr << "\n" << desc << "\n";
     exit(1);
   }
+  
+  if (vm.count("bit_precision"))
+    global.default_bits = false;
+  else
+    global.default_bits = true;
 
   if (global.num_bits > 31) {
     cerr << "The system limits at 31 bits of precision!\n" << endl;
