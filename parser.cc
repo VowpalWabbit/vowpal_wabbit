@@ -157,6 +157,14 @@ void parse_cache(po::variables_map &vm, size_t numbits, string source,
     }
 }
 
+bool member(v_array<size_t> ids, size_t id)
+{
+  for (size_t i = 0; i < ids.index(); i++)
+    if (ids[i] == id)
+      return true;
+  return false;
+}
+
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes)
 {
   par->input.current = 0;
@@ -201,7 +209,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       for (int i = 0; i < source_count; i++)
 	{
 	  if (!global.quiet)
-	    cout << "calling accept" << endl;
+	    cerr << "calling accept" << endl;
 	  int f = accept(daemon,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
@@ -212,7 +220,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  size_t id;
 	  really_read(f, &id, sizeof(id));
 	  if (!global.quiet)
-	    cout << "id read = " << id << endl;
+	    cerr << "id read = " << id << endl;
 	  min_id = min (min_id, (size_t)id);
 	  if (id == 0)
 	    {
@@ -220,7 +228,11 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      global.final_prediction_sink = f;
 	      global.print = binary_print_result;
 	    }
-
+	  if (member(par->ids, id))
+	    {
+	      cout << "error, two inputs with same id! Exiting.  Use --unique_id <n> next time." << endl;
+	      exit(1);
+	    }
 	  push(par->ids,id);
 	  push(par->input.files,f);
 	  par->max_fd = max(f, par->max_fd);
