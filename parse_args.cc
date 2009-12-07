@@ -25,7 +25,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   // Declare the supported options.
   desc.add_options()
     ("audit,a", "print weights of features")
-    ("bit_precision,b", po::value<size_t>(&global.num_bits)->default_value(18), 
+    ("bit_precision,b", po::value<size_t>(), 
      "number of bits in the feature table")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
@@ -69,7 +69,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.sum_loss = 0.0;
   global.sum_loss_since_last_dump = 0.0;
   global.dump_interval = exp(1.);
-
+  global.num_bits = 18;
+  global.default_bits = true;
   global.final_prediction_sink = -1;
   global.raw_prediction = -1;
   global.local_prediction = -1;
@@ -92,9 +93,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   }
   
   if (vm.count("bit_precision"))
-    global.default_bits = false;
-  else
-    global.default_bits = true;
+    {
+      global.default_bits = false;
+      global.num_bits = vm["bit_precision"].as< size_t>();
+    }
 
   if (global.num_bits > 31) {
     cerr << "The system limits at 31 bits of precision!\n" << endl;
