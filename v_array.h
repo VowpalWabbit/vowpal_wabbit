@@ -6,14 +6,8 @@ embodied in the content of this file are licensed under the BSD
 
 #include <stdlib.h>
 
-/* 
-Copyright (c) 2004 John Langford. All rights reserved.  The
-copyrights embodied in the content of this file are licensed under the
-BSD (revised) open source license.
-*/
-
-#ifndef STACK_H__
-#define STACK_H__
+#ifndef VARRAY_H__
+#define VARRAY_H__
 
 template<class T> class v_array{
  public:
@@ -30,7 +24,6 @@ template<class T> class v_array{
   unsigned int index(){return end-begin;}
   void erase() { end = begin;}
 };
-
 
 template<class T> inline void push(v_array<T>& v, const T &new_ele)
 {
@@ -62,12 +55,16 @@ template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
   v.end += num;
 }
 
-#include<iostream>
-using namespace std;
-
 template<class T> void reserve(v_array<T>& v, size_t length)
 {
   v.begin = (T *)realloc(v.begin, sizeof(T) * length);
+  v.end = v.begin;
+  v.end_array = v.begin + length;
+}
+
+template<class T> void calloc_reserve(v_array<T>& v, size_t length)
+{
+  v.begin = (T *)calloc(length, sizeof(T));
   v.end = v.begin;
   v.end_array = v.begin + length;
 }
@@ -80,4 +77,4 @@ template<class T> v_array<T> pop(v_array<v_array<T> > &stack)
     return v_array<T>();
 }
 
-#endif  // STACK_H__
+#endif  // VARRAY_H__

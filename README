@@ -8,13 +8,13 @@ release, and our intention is to create an open source project this
 time.
 
 Checked into github with clone URL:
-git://github.com/gparker/vowpal_wabbit.git
+git://github.com/JohnLangford/vowpal_wabbit.git
 
 To get the code install git -- in a clean directory:
 
-git clone git://github.com/gparker/vowpal_wabbit.git
+git clone git://github.com/JohnLangford/vowpal_wabbit.git
 
-I've created a tag for the completely stock initial distribution '2.3'
+Gordon created a tag for the completely stock initial distribution '2.3'
 so to check out that original release and create a branch based on it:
 
 git checkout 2.3

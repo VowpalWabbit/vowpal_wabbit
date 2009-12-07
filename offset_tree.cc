@@ -4,7 +4,9 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 /*
-The offset tree algorithm for a fixed tree.
+The offset tree algorithm for a fixed tree.  One difference with
+respect to the original paper is that the rewards are in [-1,1] rather
+than [0,1].
 
 John Langford
 */

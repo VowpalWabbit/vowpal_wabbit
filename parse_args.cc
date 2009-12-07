@@ -3,141 +3,47 @@ Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
-
-/* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
- */
-
-#include <iostream>
-#include <fstream>
-#include <math.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <stdio.h>
-#include <unistd.h>
-#include "fcntl.h"
+
+#include "cache.h"
 #include "io.h"
 #include "parse_regressor.h"
-#include "source.h"
+#include "parser.h"
 #include "parse_args.h"
+#include "sender.h"
+#include "network.h"
 
-using namespace std;
-
-#ifndef O_LARGEFILE
-#define O_LARGEFILE 0
-#endif
-
-void make_write_cache(size_t numbits, bool &create_cache, string &newname, 
-		      io_buf &cache, bool quiet)
-{
-  cache.currentname = newname+string(".writing");
-  
-  cache.file = open(cache.currentname.c_str(), O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
-  if (cache.file == -1) {
-    cerr << "can't create cache file !" << endl;
-    return;
-  }
-  char *p;
-  buf_write(cache, p, sizeof(size_t));
-  
-  *(size_t *)p = numbits;
-  
-  cache.finalname = newname;
-  create_cache = true;
-  if (!quiet)
-    cerr << "creating cache_file = " << newname << endl;
-}
-
-void parse_cache(po::variables_map &vm, size_t numbits, string source,
-		 example_source* e, bool quiet, static_data* sd, size_t passes)
-{
-  e->global->mask = (1 << numbits) - 1;
-  if (vm.count("cache") || vm.count("cache_file"))
-    {
-      string cache_string;
-      if (vm.count("cache_file")) 
-	cache_string = vm["cache_file"].as< string >();
-      else 
-	cache_string = source+string(".cache");
-      e->cache.file = 
-	open(cache_string.c_str(), O_RDONLY|O_LARGEFILE);  
-      if (e->cache.file == -1)
-	make_write_cache(numbits, e->write_cache, cache_string, e->cache, quiet);
-      else {
-	if (inconsistent_cache(numbits, e->cache)) {
-	  close(e->cache.file);
-	  e->cache.space.erase();
-	  make_write_cache(numbits, e->write_cache, cache_string, e->cache, quiet);
-	}
-	else {
-	  if (!quiet)
-	    cerr << "using cache_file = " << cache_string << endl;
-
-	  e->write_cache = false;
-	}
-      }
-    }
-  else
-    {
-      if (!quiet)
-	cerr << "using no cache" << endl;
-      if (passes > 1)
-	cerr << sd->program_name << ": Warning only one pass will occur: try using --cache_file" << endl;
-      reserve(e->cache.space,0);
-      e->cache.file=-1;
-      e->write_cache = false;
-    }
-}
-
-void parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
-		gd_vars& vars, float& eta_decay_rate,
-		size_t &passes, regressor &r, parser* par,
-		string& final_regressor_name,
-		int &sum_sock)
-{
-  string comment;
-  parse_args(argc, argv, desc,
-	     vars, eta_decay_rate,
-	     passes, r, par,
-	     final_regressor_name,
-	     sum_sock, comment);
-}
+const float default_decay = 1. / sqrt(2.);
 
 po::variables_map parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
-		gd_vars& vars, float& eta_decay_rate,
-		size_t &passes, regressor &r, parser* par,
-		string& final_regressor_name,
-		int &sum_sock, string &comment)
+			     gd_vars& vars, float& eta_decay_rate,
+			     size_t &passes, regressor &r, parser* par,
+			     string& final_regressor_name)
 {
   vars.init();
-  size_t keep = 0;
-  size_t of = 1;
-  static_data* sd = (static_data*)calloc(1,sizeof(static_data));
-  sd->program_name = argv[0];
+  global.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
     ("audit,a", "print weights of features")
-    ("bit_precision,b", po::value<size_t>(&sd->num_bits)->default_value(18), 
+    ("bit_precision,b", po::value<size_t>(), 
      "number of bits in the feature table")
     ("cache,c", "Use a cache.  The default is <data>.cache")
-    ("cache_file", po::value< string >(), "The location of a cache_file.")
+    ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
-    ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(1/sqrt(2.)), 
+    ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("help,h","Output Arguments")
-    ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor")
+    ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&vars.t)->default_value(1.), "initial t value")
-    ("keep,k", po::value<size_t>(&keep)->default_value(0), "Features to keep")
     ("min_prediction", po::value<float>(&vars.min_prediction)->default_value(0), "Smallest prediction to output")
     ("max_prediction", po::value<float>(&vars.max_prediction)->default_value(1), "Largest prediction to output")
-    ("of", po::value<size_t>(&of)->default_value(1), "keep k of <n> features")
+    ("multisource", po::value<size_t>(), "multiple sources for daemon input")
+    ("noop","do no learning")
+    ("port", po::value<size_t>(),"port to listen on")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.), "t power value")
+    ("predictto", po::value< string > (), "host to send predictions to")
     ("learning_rate,l", po::value<float>(&vars.eta)->default_value(0.1), 
      "Set Learning Rate")
     ("passes", po::value<size_t>(&passes)->default_value(1), 
@@ -148,15 +54,30 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quiet", "Don't output diagnostics")
     ("raw_predictions,r", po::value< string >(), 
      "File to output unnormalized predictions to")
-    ("summer,s", po::value< string > (), "host to use as a summer")
+    ("sendto", po::value< vector<string> >(), "send example to <hosts>")
     ("testonly,t", "Ignore label information and just test")
-    ("thread_bits", po::value<size_t>(&sd->thread_bits)->default_value(0), "log_2 threads")
-    ("comment,z", po::value< string >(), "Comment field.")
+    ("thread_bits", po::value<size_t>(&global.thread_bits)->default_value(0), "log_2 threads")
     ("loss_function", po::value<string>()->default_value("squaredloss"), "Specify the loss function to be used, uses squaredloss by default. Currently available ones are squaredloss, hingeloss, logloss and quantilesloss.")
-    ("quantiles_tau", po::value<double>()->default_value(0.0), "Parameter \\tau associated with Quantiles loss. Unless mentioned this parameter would default to a value of 0.0");
+    ("quantiles_tau", po::value<double>()->default_value(0.0), "Parameter \\tau associated with Quantiles loss. Unless mentioned this parameter would default to a value of 0.0")
+    ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel");
 
-  r.global=sd;
-  par->source->global=sd;
+  global.example_number = 0;
+  global.weighted_examples = 0.;
+  global.old_weighted_examples = 0.;
+  global.weighted_labels = 0.;
+  global.total_features = 0;
+  global.sum_loss = 0.0;
+  global.sum_loss_since_last_dump = 0.0;
+  global.dump_interval = exp(1.);
+  global.num_bits = 18;
+  global.default_bits = true;
+  global.final_prediction_sink = -1;
+  global.raw_prediction = -1;
+  global.local_prediction = -1;
+  global.print = print_result;
+
+  global.audit = false;
+  global.reg = r;
   
   po::positional_options_description p;
   
@@ -170,21 +91,29 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cerr << "\n" << desc << "\n";
     exit(1);
   }
+  
+  if (vm.count("bit_precision"))
+    {
+      global.default_bits = false;
+      global.num_bits = vm["bit_precision"].as< size_t>();
+    }
 
-  if (sd->num_bits > 31) {
+  if (global.num_bits > 31) {
     cerr << "The system limits at 31 bits of precision!\n" << endl;
     exit(1);
   }
   if (vm.count("quiet"))
-    vars.quiet = true;
+    global.quiet = true;
+  else
+    global.quiet = false;
 
   if (vm.count("quadratic")) 
     {
-      sd->pairs = vm["quadratic"].as< vector<string> >();
-      if (!vars.quiet)
+      global.pairs = vm["quadratic"].as< vector<string> >();
+      if (!global.quiet)
 	{
 	  cerr << "creating quadratic features for pairs: ";
-	  for (vector<string>::iterator i = sd->pairs.begin(); i != sd->pairs.end();i++) {
+	  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) {
 	    cerr << *i << " ";
 	    if (i->length() > 2)
 	      cerr << endl << "warning, ignoring characters after the 2nd.\n";
@@ -197,11 +126,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
-  vector<string> regs;
-  if (vm.count("initial_regressor"))
-    regs = vm["initial_regressor"].as< vector<string> >();
+  parse_regressor_args(vm, r, final_regressor_name, global.quiet);
 
-  parse_regressor(regs, r);
   string loss_function;
   if(vm.count("loss_function")) 
 	  loss_function = vm["loss_function"].as<string>();
@@ -212,143 +138,77 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if(vm.count("quantiles_tau"))
 	  loss_parameter = vm["quantiles_tau"].as<double>();
   r.loss = getLossFunction(loss_function, loss_parameter);
+  global.loss = r.loss;
 
   vars.eta *= pow(vars.t, vars.power_t);
-  if (!vars.quiet)
+  
+  if (eta_decay_rate != default_decay && passes == 1)
+    cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
+
+  if (pow(eta_decay_rate, passes) < 0.0001 )
+    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(eta_decay_rate, passes) 
+	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
+  
+  parse_source_args(vm,par,global.quiet,passes);
+
+  if (!global.quiet)
     {
-      cerr << "Num weight bits = " << r.global->num_bits << endl;
+      cerr << "Num weight bits = " << global.num_bits << endl;
       cerr << "learning rate = " << vars.eta << endl;
       cerr << "initial_t = " << vars.t << endl;
       cerr << "power_t = " << vars.power_t << endl;
-      cerr << "decay_learning_rate = " << eta_decay_rate << endl;
+      if (passes > 1)
+	cerr << "decay_learning_rate = " << eta_decay_rate << endl;
     }
-
-  if (vm.count("decay_learning_rate") && vm.count("passes") <= 1)
-    cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
-
-  parse_cache(vm, sd->num_bits, vm["data"].as<string>(), par->source, vars.quiet, r.global, passes);
-
+  
   if (vm.count("predictions")) {
-    if (!vars.quiet)
+    if (!global.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
-      vars.predictions = 1;//stdout
+      global.final_prediction_sink = 1;//stdout
     else 
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	//	vars.predictions = open(fstr, (O_WRONLY | O_CREAT));
-	vars.predictions = fileno(fopen(fstr,"w"));
-	if (vars.predictions < 0)
+	global.final_prediction_sink = fileno(fopen(fstr,"w"));
+	if (global.final_prediction_sink < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
       }
   }
   
   if (vm.count("raw_predictions")) {
-    if (!vars.quiet)
+    if (!global.quiet)
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
-      vars.raw_predictions = 1;//stdout
+      global.raw_prediction = 1;//stdout
     else
-      vars.raw_predictions = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
+      global.raw_prediction = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
   }
 
-  if (vm.count("daemon") )
-    {
-      cerr << "inside daemon." << endl;
-
-      vars.daemon = socket(PF_INET, SOCK_STREAM, 0);
-      if (vars.daemon < 0) {
-	cerr << "can't open socket!" << endl;
-	exit(1);
-      }
-      sockaddr_in address;
-      address.sin_family = AF_INET;
-      address.sin_addr.s_addr = htonl(INADDR_ANY);
-      address.sin_port = htons(39523);
- 
-      if (bind(vars.daemon,(sockaddr*)&address, sizeof(address)) < 0)
-	{
-	  cerr << "failure to bind!" << endl;
-	  exit(1);
-	}
-      listen(vars.daemon,1);
-    }
-  else if (vm.count("data"))
-    { 
-      string temp = vm["data"].as< string >();
-      if (temp.length() != 0)
-	{
-	  if (!vars.quiet)
-	    cerr << "Reading from " << temp << endl;
-	  par->source->input.file = open(temp.c_str(), O_RDONLY);
-	  if (par->source->input.file == -1)
-	    {
-	      cerr << "can't open " << temp << ", bailing!" << endl;
-	      exit(0);
-	    }
-	}
-      else // Default to stdi
-	{
-	  if (!vars.quiet)
-	    cerr << "Reading from stdin" << endl;
-	  par->source->input.file = fileno(stdin);
-	}
-    }
   if (vm.count("audit"))
-    par->source->global->audit = true;
-  else 
-    par->source->global->audit = false;
+    global.audit = true;
 
-  if (vm.count("final_regressor")) {
-    final_regressor_name = vm["final_regressor"].as<string>();
-    if (!vars.quiet)
-      cerr << "final_regressor = " << vm["final_regressor"].as<string>() << endl;
-  }
-  else
-    final_regressor_name = "";
+  parse_send_args(vm, global.pairs, global.thread_bits);
 
-  if (vm.count("comment")) 
-    {
-      comment = vm["comment"].as<string>();
-    }
-  
   if (vm.count("testonly"))
     {
-      if (!vars.quiet)
+      if (!global.quiet)
 	cerr << "only testing" << endl;
-      vars.training = false;
+      global.training = false;
     }
   else 
-    if (!vars.quiet)
-      cerr << "learning_rate set to " << vars.eta << endl;
-
-  if (vm.count("summer"))
     {
-      if (!vars.quiet)
-	cerr << "summer = " << vm["summer"].as< string >() << endl;
-      hostent* he = gethostbyname(vm["summer"].as< string >().c_str());
-      if (he == NULL)
-	{
-	  cerr << "can't resolve hostname" << endl;
-	  exit(1);
-	}
-      sum_sock = socket(PF_INET, SOCK_STREAM, 0);
-      if (sum_sock == -1)
-	{
-	  cerr << "can't get socket " << endl;
-	  exit(1);
-	}
-      sockaddr_in far_end;
-      far_end.sin_family = AF_INET;
-      far_end.sin_port = htons(39524);
-      far_end.sin_addr = *(in_addr*)(he->h_addr);
-      memset(&far_end.sin_zero, '\0',8);
-      if (connect(sum_sock,(sockaddr*)&far_end, sizeof(far_end)) == -1)
-	{
-	  cerr << "can't connect." << endl;
-	  exit(1);
-	}
+      global.training = true;
+      if (!global.quiet)
+	cerr << "learning_rate set to " << vars.eta << endl;
     }
+
+  if (vm.count("predictto"))
+    {
+      if (!global.quiet)
+	cerr << "predictto = " << vm["predictto"].as< string >() << endl;
+      global.local_prediction = open_socket(vm["predictto"].as< string > ().c_str(), global.unique_id);
+    }
+
   return vm;
 }
 

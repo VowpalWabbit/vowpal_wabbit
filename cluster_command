@@ -1,0 +1,7 @@
+# An example cluster command.  This just runs on one machine.
+export FLAGS='-l 20 --initial_t 128000 --power_t 1 --daemon --quiet --predictto localhost:39525'
+/home/jl/programs/temp/vowpal_wabbit/vw -l 20 --power_t 0.5 --multisource 2 --port 39525 --quiet &
+/home/jl/programs/temp/vowpal_wabbit/vw --port 39523 $FLAGS &
+/home/jl/programs/temp/vowpal_wabbit/vw --port 39524 $FLAGS &
+sleep 1
+/home/jl/programs/temp/vowpal_wabbit/vw --cache_file cache_train --sendto localhost:39523 --sendto localhost:39524 

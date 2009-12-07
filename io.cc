@@ -4,13 +4,8 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-/* 
-Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
- */
-#include <string.h>
 #include "io.h"
+#include "string.h"
 
 unsigned int buf_read(io_buf &i, char* &pointer, int n)
 {//return a pointer to the next n bytes.  n must be smaller than the maximum size.
@@ -29,10 +24,12 @@ unsigned int buf_read(io_buf &i, char* &pointer, int n)
 	  i.space.end = i.space.begin;
 	  i.endloaded = i.space.begin+left;
 	}
-      if (i.fill() > 0)
-	return buf_read(i,pointer,n);
-      else //no more bytes to read
-	{
+      if (i.fill(i.files[i.current]) > 0)
+	return buf_read(i,pointer,n);// more bytes are read.
+      else if (++i.current < i.files.index()) 
+	return buf_read(i,pointer,n);// No more bytes, so go to next file and try again.
+      else
+	{//no more bytes to read, return all that we have left.
 	  pointer = i.space.end;
 	  i.space.end = i.endloaded;
 	  return i.endloaded - pointer;
@@ -62,9 +59,11 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
 	  i.endloaded = i.space.begin+left;
 	  pointer = i.endloaded;
 	}
-      if (i.fill() > 0)
+      if (i.fill(i.files[i.current]) > 0)// more bytes are read.
 	return readto(i,pointer,terminal);
-      else
+      else if (++i.current < i.files.index())  //no more bytes, so go to next file.
+	return readto(i,pointer,terminal);
+      else //no more bytes to read, return nothing.
 	return 0;
     }
 }
