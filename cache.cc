@@ -175,7 +175,7 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
 void cache_tag(io_buf& cache, v_array<char> tag)
 {
   char *c;
-  buf_write(cache, c, sizeof(tag.index())+tag.index());
+  buf_write(cache, c, sizeof(size_t)+tag.index());
   *(size_t*)c = tag.index();
   c += sizeof(size_t);
   memcpy(c, tag.begin, tag.index());
