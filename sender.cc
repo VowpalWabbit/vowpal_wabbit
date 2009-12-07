@@ -46,7 +46,7 @@ size_t find_split(size_t number)
 	    d_2 = d_1 / 2;
 	  else {
 	    d_2 = d_1;
-	    if (d_1 * 2 * d_2 < number)
+	    if (d_1 * 2 * d_2 <= number)
 	      d_1 *=2;
 	  }
 	}
