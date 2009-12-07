@@ -139,15 +139,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.loss = r.loss;
 
   vars.eta *= pow(vars.t, vars.power_t);
-  if (!global.quiet)
-    {
-      cerr << "Num weight bits = " << global.num_bits << endl;
-      cerr << "learning rate = " << vars.eta << endl;
-      cerr << "initial_t = " << vars.t << endl;
-      cerr << "power_t = " << vars.power_t << endl;
-      if (passes > 1)
-	cerr << "decay_learning_rate = " << eta_decay_rate << endl;
-    }
   
   if (eta_decay_rate != default_decay && passes == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
@@ -157,6 +148,16 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
   
   parse_source_args(vm,par,global.quiet,passes);
+
+  if (!global.quiet)
+    {
+      cerr << "Num weight bits = " << global.num_bits << endl;
+      cerr << "learning rate = " << vars.eta << endl;
+      cerr << "initial_t = " << vars.t << endl;
+      cerr << "power_t = " << vars.power_t << endl;
+      if (passes > 1)
+	cerr << "decay_learning_rate = " << eta_decay_rate << endl;
+    }
   
   if (vm.count("predictions")) {
     if (!global.quiet)
