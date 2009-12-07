@@ -1,11 +1,5 @@
-/*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
- */
-
-// tweaked for inclusion Ariel Faigon.
-
+// Tweaked for VW and contributed by Ariel Faigon.
+// Original at: http://murmurhash.googlepages.com/
 //
 // Based on MurmurHash2, by Austin Appleby
 //
