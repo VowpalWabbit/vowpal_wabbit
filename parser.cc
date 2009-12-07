@@ -111,7 +111,6 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
 void parse_cache(po::variables_map &vm, string source,
 		 parser* par, bool quiet)
 {
-  global.mask = (1 << global.num_bits) - 1;
   vector<string> caches;
   if (vm.count("cache_file"))
     caches = vm["cache_file"].as< vector<string> >();
@@ -151,6 +150,7 @@ void parse_cache(po::variables_map &vm, string source,
       }
     }
   
+  global.mask = (1 << global.num_bits) - 1;
   if (caches.size() == 0)
     {
       if (!quiet)
