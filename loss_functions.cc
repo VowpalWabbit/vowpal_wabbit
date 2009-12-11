@@ -35,12 +35,9 @@ public:
 	}
 
 	double getUpdate(double prediction, double label) {
-		double y = (label == 0.0) ? -1.0 : 1.0;
-		if(prediction == y) return 0;
-		if((1 - y*prediction) > 0)
-			return y;
-		else 
-			return 0;
+		if(prediction == label) return 0;
+		return label;
+
 	}
 };
 
