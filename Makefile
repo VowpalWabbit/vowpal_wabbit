@@ -1,5 +1,5 @@
 COMPILER = g++
-LIBS = -l boost_program_options -l pthread
+LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/local/boost/include/boost-1_34_1
 BOOST_LIBRARY = /usr/local/boost/lib
 
@@ -25,9 +25,9 @@ vw.o:	 parse_example.h  parse_regressor.h  parse_args.h  parser.h
 
 offset_tree.o:	parse_example.h parse_regressor.h parse_args.h parser.h
 
-parse_args.o:	 parse_regressor.h  parse_example.h  io.h  gd.h
+parse_args.o:	 parse_regressor.h  parse_example.h  io.h  comp_io.h gd.h
 
-parse_example.o:  io.h  parse_example.cc  parser.h
+parse_example.o:  io.h  comp_io.h  parse_example.cc  parser.h
 
 sender.o: parse_example.h
 

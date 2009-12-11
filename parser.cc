@@ -4,7 +4,6 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-#include <fcntl.h>
 #include <netdb.h>
 #include <boost/program_options.hpp>
 #include <netinet/tcp.h>
@@ -17,25 +16,28 @@ namespace po = boost::program_options;
 #include "cache.h"
 #include "gd.h"
 #include "multisource.h"
+#include "comp_io.h"
 
 parser* new_parser(const label_parser* lp)
 {
   parser* ret = (parser*) calloc(1,sizeof(parser));
   ret->lp = lp;
-  ret->input = io_buf();
-  ret->output = io_buf();
+  ret->input = new io_buf;
+  ret->output = new io_buf;
   return ret;
 }
 
-#ifndef O_LARGEFILE //for OSX
-#define O_LARGEFILE 0
-#endif
+void set_compressed(parser* par){
+  finalize_source(par);
+  par->input = new comp_io_buf;
+  par->output = new comp_io_buf;
+}
 
-size_t cache_numbits(int filepointer)
+size_t cache_numbits(io_buf* buf, int filepointer)
 {
   int total = sizeof(size_t);
   char* p[total];
-  if (read(filepointer, p, total) < total) 
+  if (buf->read_file(filepointer, p, total) < total) 
     return true;
 
   size_t cache_numbits = *(size_t *)p;
@@ -50,59 +52,56 @@ void close_files(v_array<int>& files)
 
 void reset_source(size_t numbits, parser* p)
 {
-  p->input.current = 0;
+  p->input->current = 0;
   if (p->write_cache)
     {
-      p->output.flush();
+      p->output->flush();
       p->write_cache = false;
-      close(p->output.files.pop());
-      rename(p->output.currentname.begin, p->output.finalname.begin);
-      close_files(p->input.files);
-      push(p->input.files,open(p->output.finalname.begin, O_RDONLY|O_LARGEFILE));
+      p->output->close_file();
+      rename(p->output->currentname.begin, p->output->finalname.begin);
+      p->input->close_files();
+      p->input->open_file(p->output->finalname.begin,io_buf::READ); //pushing is merged into open_file
       p->reader = read_cached_features;
     }
-  if ( p->resettable == true )
-    for (size_t i = 0; i < p->input.files.index();i++)
+  if ( p->resettable == true ){
+    for (size_t i = 0; i < p->input->files.index();i++)
       {
-	lseek(p->input.files[i], 0, SEEK_SET);
-	p->input.endloaded = p->input.space.begin;
-	p->input.space.end = p->input.space.begin;
-	if (cache_numbits(p->input.files[i]) < numbits) {
-	  cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
-	  exit(1);
-	}
+        p->input->reset_file(p->input->files[i]);
+        if (cache_numbits(p->input, p->input->files[i]) < numbits) {
+          cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
+          exit(1);
+        }
       }
+  }
 }
 
 void finalize_source(parser* p)
 {
-  close_files(p->input.files);
-  free(p->input.files.begin);
-  free(p->input.space.begin);
-
-  close_files(p->output.files);
-  free(p->output.files.begin);
-  free(p->output.space.begin);
+  p->input->close_files();
+  delete p->input;
+  p->output->close_files();
+  delete p->output;
 }
 
 void make_write_cache(size_t numbits, parser* par, string &newname, 
 		      bool quiet)
 {
+  if (par->output->files.index() != 0){
+    cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    return;
+  }
+
   string temp = newname+string(".writing");
-  push_many(par->output.currentname,temp.c_str(),temp.length()+1);
+  push_many(par->output->currentname,temp.c_str(),temp.length()+1);
   
-  int f = open(temp.c_str(), O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+  int f = par->output->open_file(temp.c_str(), io_buf::WRITE);
   if (f == -1) {
     cerr << "can't create cache file !" << endl;
     return;
   }
-  push(par->output.files,f);
-  char *p;
-  buf_write(par->output, p, sizeof(size_t));
+  par->output->write_file(f, &numbits, sizeof(size_t));
   
-  *(size_t *)p = numbits;
-  
-  push_many(par->output.finalname,newname.c_str(),newname.length()+1);
+  push_many(par->output->finalname,newname.c_str(),newname.length()+1);
   par->write_cache = true;
   if (!quiet)
     cerr << "creating cache_file = " << newname << endl;
@@ -121,26 +120,20 @@ void parse_cache(po::variables_map &vm, string source,
 
   for (size_t i = 0; i < caches.size(); i++)
     {
-      int f = open(caches[i].c_str(), O_RDONLY|O_LARGEFILE);
+      int f = par->input->open_file(caches[i].c_str(),io_buf::READ);
       if (f == -1)
-	{
-	  if (par->output.files.index() == 0)
-	    make_write_cache(global.num_bits, par, caches[i], quiet);
-	  else 
-	    cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
-	}
+          make_write_cache(global.num_bits, par, caches[i], quiet);
       else {
-	size_t c = cache_numbits(f);
+	size_t c = cache_numbits(par->input, f);
 	if (global.default_bits)
 	  global.num_bits = c;
 	if (c < global.num_bits) {
-	  close(f);
+          par->input->close_file();          
 	  make_write_cache(global.num_bits, par, caches[i], quiet);
 	}
 	else {
 	  if (!quiet)
 	    cerr << "using cache_file = " << caches[i].c_str() << endl;
-	  push(par->input.files,f);
 	  if (c == global.num_bits)
 	    par->reader = read_cached_features;
 	  else
@@ -155,7 +148,7 @@ void parse_cache(po::variables_map &vm, string source,
     {
       if (!quiet)
 	cerr << "using no cache" << endl;
-      reserve(par->output.space,0);
+      reserve(par->output->space,0);
     }
 }
 
@@ -169,7 +162,7 @@ bool member(v_array<size_t> ids, size_t id)
 
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes)
 {
-  par->input.current = 0;
+  par->input->current = 0;
   parse_cache(vm, vm["data"].as<string>(), par, quiet);
 
   if (vm.count("daemon") || vm.count("multisource"))
@@ -236,7 +229,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      exit(1);
 	    }
 	  push(par->ids,id);
-	  push(par->input.files,f);
+	  push(par->input->files,f);
 	  par->max_fd = max(f, par->max_fd);
 	  if (!global.quiet)
 	    cerr << "reading data from port " << port << endl;
@@ -259,7 +252,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
     }
   
   if (vm.count("data"))
-    if (par->input.files.index() > 0)
+    if (par->input->files.index() > 0)
       {
 	if (!quiet)
 	  cerr << "ignoring text input in favor of cache input" << endl;
@@ -271,30 +264,29 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  {
 	    if (!quiet)
 	      cerr << "Reading from " << temp << endl;
-	    int f = open(temp.c_str(), O_RDONLY);
+            int f = par->input->open_file(temp.c_str(), io_buf::READ);
 	    if (f == -1)
 	      {
 		cerr << "can't open " << temp << ", bailing!" << endl;
 		exit(0);
 	      }
-	    push(par->input.files, f);
 	    par->reader = read_features;
 	    par->resettable = par->write_cache;
 	  }
       }
-  if (par->input.files.index() == 0)// Default to stdin
+  if (par->input->files.index() == 0)// Default to stdin
     {
       if (!quiet)
 	cerr << "Reading from stdin" << endl;
-      push(par->input.files,fileno(stdin));
+      push(par->input->files,fileno(stdin));
       par->reader = read_features;
       par->resettable = par->write_cache;
     }
   if (passes > 1 && !par->resettable)
     cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
-  par->input.count = par->input.files.index();
+  par->input->count = par->input->files.index();
   if (!quiet)
-    cerr << "num sources = " << par->input.files.index() << endl;
+    cerr << "num sources = " << par->input->files.index() << endl;
 }
 
 example* examples;//A Ring of examples.
@@ -389,8 +381,8 @@ bool parse_atomic_example(parser* p, example *ae)
     return false;
   if (p->write_cache) 
     {
-      p->lp->cache_label(ae->ld,p->output);
-      cache_features(p->output, ae);
+      p->lp->cache_label(ae->ld,*(p->output));
+      cache_features(*(p->output), ae);
     }
   return true;
 }
