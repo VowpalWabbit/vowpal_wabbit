@@ -4,6 +4,7 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 #include <stdio.h>
+#include <float.h>
 
 #include "cache.h"
 #include "io.h"
@@ -37,8 +38,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("help,h","Output Arguments")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&vars.t)->default_value(1.), "initial t value")
-    ("min_prediction", po::value<float>(&vars.min_prediction)->default_value(0), "Smallest prediction to output")
-    ("max_prediction", po::value<float>(&vars.max_prediction)->default_value(1), "Largest prediction to output")
+    ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
+    ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
     ("port", po::value<size_t>(),"port to listen on")
@@ -75,6 +76,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.raw_prediction = -1;
   global.local_prediction = -1;
   global.print = print_result;
+  global.min_label = 0.;
+  global.max_label = 1.;
 
   global.audit = false;
   global.reg = r;
@@ -128,6 +131,13 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
 
+  if (vm.count("min_prediction"))
+    global.min_label = vm["min_prediction"].as<double>();
+  if (vm.count("max_prediction"))
+    global.max_label = vm["max_prediction"].as<double>();
+  if (vm.count("min_prediction") || vm.count("max_prediction"))
+    set_minmax = noop_mm;
+
   string loss_function;
   if(vm.count("loss_function")) 
 	  loss_function = vm["loss_function"].as<string>();
@@ -136,7 +146,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   double loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
-	  loss_parameter = vm["quantile_tau"].as<double>();
+    loss_parameter = vm["quantile_tau"].as<double>();
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 

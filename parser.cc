@@ -33,6 +33,16 @@ parser* new_parser(const label_parser* lp)
 
 size_t cache_numbits(int filepointer)
 {
+  size_t v_length;
+  read(filepointer, (char*)&v_length, sizeof(v_length));
+  char t[v_length];
+  read(filepointer,t,v_length);
+  if (strcmp(t,version.c_str()) != 0)
+    {
+      cout << "cache has possibly incompatible version, rebuilding" << endl;
+      return 0;
+    }
+  
   int total = sizeof(size_t);
   char* p[total];
   if (read(filepointer, p, total) < total) 
@@ -98,8 +108,14 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
   }
   push(par->output.files,f);
   char *p;
-  buf_write(par->output, p, sizeof(size_t));
-  
+
+  size_t v_length = version.length()+1;
+  buf_write(par->output, p, sizeof(v_length)+v_length+sizeof(size_t));
+  *(size_t*) p = v_length;
+  p+=sizeof(v_length);
+  memcpy(p,version.c_str(), v_length);
+  p+=v_length;
+
   *(size_t *)p = numbits;
   
   push_many(par->output.finalname,newname.c_str(),newname.length()+1);

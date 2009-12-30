@@ -5,6 +5,7 @@
 #include "message_relay.h"
 
 global_data global;
+string version = "4.1";
 pthread_mutex_t io = PTHREAD_MUTEX_INITIALIZER;
 
 void binary_print_result(int f, float res, v_array<char> tag)
@@ -42,5 +43,14 @@ void print_result(int f, float res, v_array<char> tag)
     }
 }
 
+void set_mm(double label)
+{
+  global.min_label = min(global.min_label, label);
+  global.max_label = max(global.max_label, label);
+}
 
+void noop_mm(double label)
+{}
+
+void (*set_minmax)(double label) = set_mm;
 

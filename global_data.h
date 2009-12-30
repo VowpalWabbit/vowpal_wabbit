@@ -12,6 +12,8 @@ embodied in the content of this file are licensed under the BSD
 
 using namespace std;
 
+extern string version;
+
 struct global_data {
   size_t thread_bits; // log_2 of the number of threads.
   size_t num_bits; // log_2 of the number of features.
@@ -22,6 +24,9 @@ struct global_data {
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
+  
+  double min_label;//minimum label encountered
+  double max_label;//maximum label encountered
 
   size_t num_threads () { return 1 << thread_bits; };
   size_t length () { return 1 << num_bits; };
@@ -51,8 +56,10 @@ struct global_data {
 };
 extern pthread_mutex_t io;
 extern global_data global;
+extern void (*set_minmax)(double label);
 void print_result(int f, float res, v_array<char> tag);
 void binary_print_result(int f, float res, v_array<char> tag);
+void noop_mm(double label);
 
 const size_t ring_size = 1 << 11;
 

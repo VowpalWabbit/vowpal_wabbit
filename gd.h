@@ -19,8 +19,6 @@ struct gd_vars
   float t;//learning rate control.
   float eta;
   float power_t;
-  float min_prediction;
-  float max_prediction;
 
   gd_vars()
   {};
@@ -30,8 +28,6 @@ struct gd_vars
     t = 1.;
     eta = 0.1;
     power_t = 0.;
-    min_prediction = 0.;
-    max_prediction = 1.;
   }
 };
 

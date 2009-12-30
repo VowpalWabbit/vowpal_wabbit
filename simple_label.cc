@@ -7,6 +7,7 @@ char* bufread_simple_label(label_data* ld, char* c)
 {
   ld->label = *(double *)c;
   c += sizeof(ld->label);
+  set_minmax(ld->label);
   ld->weight = *(float *)c;
   c += sizeof(ld->weight);
   return c;
@@ -71,5 +72,6 @@ void parse_simple_label(void* v, v_array<substring>& words)
     cerr << "malformed example!\n";
     cerr << "words.index() = " << words.index() << endl;
   }
+  set_minmax(ld->label);
 }
 

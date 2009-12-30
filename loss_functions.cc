@@ -98,4 +98,3 @@ loss_function* getLossFunction(string funcName, double function_parameter) {
 		return NULL;
 	}
 }
-

@@ -56,6 +56,20 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
   for (size_t i = 0; i < regs.size(); i++)
     {
       ifstream regressor(regs[i].c_str());
+
+      size_t v_length;
+      regressor.read((char*)&v_length, sizeof(v_length));
+      char t[v_length];
+      regressor.read(t,v_length);
+      if (strcmp(t,version.c_str()) != 0)
+	{
+	  cout << "regressor has possibly incompatible version!" << endl;
+	  exit(1);
+	}
+
+      regressor.read((char*)&global.min_label, sizeof(global.min_label));
+      regressor.read((char*)&global.max_label, sizeof(global.max_label));
+
       size_t local_num_bits;
       regressor.read((char *)&local_num_bits, sizeof(local_num_bits));
       if (!initialized){
@@ -145,6 +159,13 @@ void dump_regressor(ofstream &o, regressor &r)
 {
   if (o.is_open()) 
     {
+      size_t v_length = version.length()+1;
+      o.write((char*)&v_length, sizeof(v_length));
+      o.write(version.c_str(),v_length);
+
+      o.write((char*)&global.min_label, sizeof(global.min_label));
+      o.write((char*)&global.max_label, sizeof(global.max_label));
+
       o.write((char *)&global.num_bits, sizeof(global.num_bits));
       o.write((char *)&global.thread_bits, sizeof(global.thread_bits));
       int len = global.pairs.size();

@@ -59,7 +59,7 @@ void* gd_thread(void *in)
   return NULL;
 }
 
-float finalize_prediction(float ret, size_t num_features, gd_vars& vars, float &norm) 
+float finalize_prediction(float ret, size_t num_features, float &norm) 
 {
   if (num_features > 0)
     norm = 1. / sqrtf(num_features);
@@ -68,12 +68,11 @@ float finalize_prediction(float ret, size_t num_features, gd_vars& vars, float &
   ret *= norm;
   if (isnan(ret))
     return 0.5;
-  if ( ret > vars.max_prediction )
-    return vars.max_prediction;
-  if (ret < vars.min_prediction)
-    return vars.min_prediction;
+  if ( ret > global.max_label )
+    return global.max_label;
+  if (ret < global.min_label)
+    return global.min_label;
   return ret;
-
 }
 
 float inline_predict(regressor &reg, example* &ec, size_t thread_num)
@@ -252,7 +251,7 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
 
   float norm;
   ec->final_prediction = 
-    finalize_prediction(ec->partial_prediction, ec->num_features, vars, norm);
+    finalize_prediction(ec->partial_prediction, ec->num_features, norm);
 
   if (global.local_prediction > 0)
     {
