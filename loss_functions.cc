@@ -48,25 +48,22 @@ public:
 	}
 
 	double getLoss(double prediction, double label) {
-		double y = (label == 0.0) ? -1.0 : 1.0;
-		return log(1 + exp(-y * prediction));
+		return log(1 + exp(-label * prediction));
 	}
 
 	double getUpdate(double prediction, double label) {
-		double y = (label == 0.0) ? -1.0 : 1.0;
-		double d = exp(-y * prediction);
-		return y * d / (1 + d);
+		double d = exp(-label * prediction);
+		return label * d / (1 + d);
 	}
 };
 
-class quantilesloss : public loss_function {
+class quantileloss : public loss_function {
 public:
-	quantilesloss(double &tau_) : tau(tau_) {
+	quantileloss(double &tau_) : tau(tau_) {
 	}
 
 	double getLoss(double prediction, double label) {
-		double y = (label == 0.0) ? -1.0 : 1.0;
-		double e = y - prediction;
+		double e = label - prediction;
 		if(e > 0) {
 			return tau * e;
 		} else {
@@ -76,8 +73,7 @@ public:
 	}
 
 	double getUpdate(double prediction, double label) {
-		double y = (label == 0.0) ? -1.0 : 1.0;
-		double e = y - prediction;
+		double e = label - prediction;
 		if(e == 0) return 0;
 		if(e > 0) {
 			return tau;
@@ -96,8 +92,8 @@ loss_function* getLossFunction(string funcName, double function_parameter) {
 		return new hingeloss();
 	} else if(funcName.compare("logloss") == 0) {
 		return new logloss();
-	} else if(funcName.compare("quantilesloss") == 0 || funcName.compare("pinballloss") == 0) {
-		return new quantilesloss(function_parameter);
+	} else if(funcName.compare("quantileloss") == 0 || funcName.compare("pinballloss") == 0) {
+		return new quantileloss(function_parameter);
 	} else {
 		return NULL;
 	}

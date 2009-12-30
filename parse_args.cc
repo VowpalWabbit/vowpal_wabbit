@@ -57,8 +57,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("sendto", po::value< vector<string> >(), "send example to <hosts>")
     ("testonly,t", "Ignore label information and just test")
     ("thread_bits", po::value<size_t>(&global.thread_bits)->default_value(0), "log_2 threads")
-    ("loss_function", po::value<string>()->default_value("squaredloss"), "Specify the loss function to be used, uses squaredloss by default. Currently available ones are squaredloss, hingeloss, logloss and quantilesloss.")
-    ("quantiles_tau", po::value<double>()->default_value(0.0), "Parameter \\tau associated with Quantiles loss. Unless mentioned this parameter would default to a value of 0.0")
+    ("loss_function", po::value<string>()->default_value("squaredloss"), "Specify the loss function to be used, uses squaredloss by default. Currently available ones are squaredloss, hingeloss, logloss and quantileloss.")
+    ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel");
 
   global.example_number = 0;
@@ -135,8 +135,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	  loss_function = "squaredloss";
 
   double loss_parameter = 0.0;
-  if(vm.count("quantiles_tau"))
-	  loss_parameter = vm["quantiles_tau"].as<double>();
+  if(vm.count("quantile_tau"))
+	  loss_parameter = vm["quantile_tau"].as<double>();
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
