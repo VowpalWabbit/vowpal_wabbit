@@ -58,7 +58,7 @@ gd_vars* vw(int argc, char *argv[])
   for (; numpasses > 0; numpasses--) {
     start_parser(num_threads, p);
     initialize_delay_ring();
-    
+
     if (global.unique_id == 0 && global.local_prediction > 0)
       setup_relay();
     

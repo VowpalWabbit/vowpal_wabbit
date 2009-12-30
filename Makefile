@@ -6,7 +6,7 @@ BOOST_LIBRARY = /usr/local/boost/lib
 ARCH = -march=nocona
 
 # for normal fast execution.
-FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3
+#FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3
 
 # for parallelization
 #FLAGS = -Wall $(ARCH) -ffast-math -Wno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3 -fopenmp
@@ -15,7 +15,7 @@ FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg -g
 
 # for valgrind
-#FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
+FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
 BINARIES = vw
 
@@ -55,8 +55,9 @@ test: vw vw-train vw-test
 
 vw-train: vw
 	@echo "TEST: vw training ..."
-	@cat test/train.dat | ./vw -b 24 -l 20 --initial_t 128000 \
-	--power_t 1 -f test/t_r_temp
+	@rm -f .cache
+	@cat test/train.dat | ./vw -b 17 -l 20 --initial_t 128000 \
+	--power_t 1 -f test/t_r_temp -c --passes 2
 
 vw-test: vw-train
 	@echo

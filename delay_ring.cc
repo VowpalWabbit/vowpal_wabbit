@@ -11,8 +11,7 @@ v_array<size_t> delay_indicies;//thread specific state.
 
 v_array<example*> delay_ring;//delay_ring state & mutexes
 v_array<size_t> threads_to_use;
-size_t master_index = 0;
-size_t message_index = 0;
+size_t master_index;
 pthread_mutex_t delay = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t delay_empty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t delay_nonempty = PTHREAD_COND_INITIALIZER;
@@ -27,17 +26,21 @@ void initialize_delay_ring()
   reserve(delay_indicies, nt);
   for (size_t i = 0; i < nt; i++)
     delay_indicies[i] = 0;
-  reserve(delay_ring,ring_size);
-  reserve(threads_to_use, ring_size);
+  reserve(delay_ring, ring_size);
   for (size_t i = 0; i < ring_size; i++)
     delay_ring[i] = NULL;
+  reserve(threads_to_use, ring_size);
+  master_index = 0;
 }
 
 void destroy_delay_ring()
 {
   free(delay_indicies.begin);
+  delay_indicies.begin = NULL;
   free(delay_ring.begin);
+  delay_ring.begin = NULL;
   free(threads_to_use.begin);
+  threads_to_use.begin = NULL;
 }
 
 bool thread_done(size_t thread)
