@@ -6,6 +6,8 @@ embodied in the content of this file are licensed under the BSD
 
 #include "loss_functions.h"
 #include<math.h>
+#include <iostream>
+using namespace std;
 
 class squaredloss : public loss_function {
 public:
@@ -86,15 +88,17 @@ public:
 };
 
 loss_function* getLossFunction(string funcName, double function_parameter) {
-	if(funcName.compare("squaredloss") == 0) {
+	if(funcName.compare("squared") == 0) {
 		return new squaredloss();
-	} else if(funcName.compare("hingeloss") == 0) {
+	} else if(funcName.compare("hinge") == 0) {
 		return new hingeloss();
-	} else if(funcName.compare("logloss") == 0) {
+	} else if(funcName.compare("logistic") == 0) {
 		return new logloss();
-	} else if(funcName.compare("quantileloss") == 0 || funcName.compare("pinballloss") == 0) {
+	} else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
 		return new quantileloss(function_parameter);
 	} else {
-		return NULL;
+	  cout << "Invalid loss function name: " << funcName << " Bailing!" << endl;
+	  exit(1);
 	}
+  cout << "end getLossFunction" << endl;
 }
