@@ -3,11 +3,12 @@ Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
+#include<math.h>
+#include<iostream>
+#include<stdlib.h>
+using namespace std;
 
 #include "loss_functions.h"
-#include<math.h>
-#include <iostream>
-using namespace std;
 
 class squaredloss : public loss_function {
 public:
