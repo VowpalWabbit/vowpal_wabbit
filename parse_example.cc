@@ -83,7 +83,7 @@ int read_features(parser* p, void* ex)
 {
   example* ae = (example*)ex;
   char *line=NULL;
-  int num_chars = readto(p->input, line, '\n');
+  int num_chars = readto(*(p->input), line, '\n');
   if (num_chars == 0)
     return num_chars;
   

@@ -28,10 +28,10 @@ struct parser {
 
   const label_parser* lp;
 
-  io_buf input; //Input source(s)
+  io_buf* input; //Input source(s)
   int (*reader)(parser* p, void* ae);
   bool resettable; //Whether or not the input can be reset.
-  io_buf output; //Where to output the cache.
+  io_buf* output; //Where to output the cache.
   bool write_cache; 
 
   v_array<partial_example> pes;//partial examples
@@ -58,5 +58,5 @@ void finish_example(example* ec);
 bool inconsistent_cache(size_t numbits, io_buf& cache);
 void reset_source(size_t numbits, parser* source);
 void finalize_source(parser* source);
-
+void set_compressed(parser* par);
 #endif

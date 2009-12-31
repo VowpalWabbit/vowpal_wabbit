@@ -60,7 +60,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("thread_bits", po::value<size_t>(&global.thread_bits)->default_value(0), "log_2 threads")
     ("loss_function", po::value<string>()->default_value("squaredloss"), "Specify the loss function to be used, uses squaredloss by default. Currently available ones are squaredloss, hingeloss, logloss and quantileloss.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
-    ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel");
+    ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel")
+    ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on");
 
   global.example_number = 0;
   global.weighted_examples = 0.;
@@ -100,6 +101,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       global.default_bits = false;
       global.num_bits = vm["bit_precision"].as< size_t>();
     }
+
+  if(vm.count("compressed")){
+    set_compressed(par);
+  }
 
   if (global.num_bits > 31) {
     cerr << "The system limits at 31 bits of precision!\n" << endl;

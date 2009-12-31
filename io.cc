@@ -5,7 +5,6 @@ embodied in the content of this file are licensed under the BSD
  */
 
 #include "io.h"
-#include "string.h"
 
 unsigned int buf_read(io_buf &i, char* &pointer, int n)
 {//return a pointer to the next n bytes.  n must be smaller than the maximum size.

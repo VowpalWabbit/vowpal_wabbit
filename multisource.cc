@@ -56,12 +56,13 @@ void reset(partial_example &ex)
 int receive_features(parser* p, void* ex)
 {
   example* ae = (example*)ex;
+  io_buf* input = p->input;
   fd_set fds;
   FD_ZERO(&fds);
-  for (int* sock= p->input.files.begin; sock != p->input.files.end; sock++)
+  for (int* sock= input->files.begin; sock != input->files.end; sock++)
     FD_SET(*sock,&fds);
   
-  while (p->input.files.index() > 0)
+  while (input->files.index() > 0)
     {
       if (select(p->max_fd,&fds,NULL, NULL, NULL) == -1)
 	{
@@ -69,9 +70,9 @@ int receive_features(parser* p, void* ex)
 	  perror(NULL);
 	  exit (1);
 	}
-      for (int index = 0; index < (int)p->input.files.index(); index++)
+      for (int index = 0; index < (int)input->files.index(); index++)
 	{
-	  int sock = p->input.files[index];
+	  int sock = input->files[index];
 	  if (FD_ISSET(sock, &fds))
 	    {//there is a feature or label to read
 	      prediction pre;
@@ -79,10 +80,10 @@ int receive_features(parser* p, void* ex)
 		{
 		  FD_CLR(sock, &fds);
 		  close(sock);
-		  memmove(p->input.files.begin+index, 
-			  p->input.files.begin+index+1, 
-			  (p->input.files.index() - index-1)*sizeof(int));
-		  p->input.files.pop();
+		  memmove(input->files.begin+index,
+			  input->files.begin+index+1,
+			  (input->files.index() - index-1)*sizeof(int));
+		  input->files.pop();
 		  memmove(p->ids.begin+index, 
 			  p->ids.begin+index+1, 
 			  (p->ids.index() - index-1)*sizeof(size_t));
@@ -116,7 +117,7 @@ int receive_features(parser* p, void* ex)
 		      bufread_simple_label(&(p->pes[ring_index].ld), c);
 		    }
 
-		  if( p->pes[ring_index].features.index() == p->input.count )
+		  if( p->pes[ring_index].features.index() == input->count )
 		    {
 		      push( ae->indices, multindex );
 		      push_many( ae->atomics[multindex], p->pes[ring_index].features.begin, p->pes[ring_index].features.index() );
