@@ -17,6 +17,7 @@ namespace po = boost::program_options;
 #include "gd.h"
 #include "multisource.h"
 #include "comp_io.h"
+#include "unique_sort.h"
 
 parser* new_parser(const label_parser* lp)
 {
@@ -318,6 +319,84 @@ pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
 size_t parsed_index; // The index of the parsed example.
 size_t* used_index; // The index of the example currently used by thread i.
 bool done;
+size_t *random_nos = NULL;
+size_t* indices = NULL;
+
+inline void add_features(v_array<feature> &atomics, size_t* indices, size_t ind_len){
+  size_t weight_mask = global.mask;
+  feature* begin = atomics.begin;
+  size_t mask = (1<<5) - 1;
+  size_t hash = begin[indices[0]].weight_index;
+  size_t weight_index = hash;
+  float value = 1.;
+  for(size_t i = 1; i < ind_len; i++)
+    weight_index = weight_index * random_nos[weight_index & mask] + begin[indices[i]].weight_index;
+  feature f = {value, weight_index & weight_mask};
+  push(atomics, f);
+}
+
+/**
+ * This function adds k-skip-n-grams to the feature vector.
+ * Definition of k-skip-n-grams:
+ * Consider a feature vector - a, b, c, d, e, f
+ * 2-skip-2-grams would be - ab, ac, ad, bc, bd, be, cd, ce, cf, de, df, ef
+ * 1-skip-3-grams would be - abc, abd, acd, ace, bcd, bce, bde, bdf, cde, cdf, cef, def
+ *                           ab, ac, bc, bd, cd, ce, de, df, ef
+ * Note that for a n-gram, (n-1)-grams, (n-2)-grams... 2-grams are also appended
+ * The k-skip-n-grams are appended to the feature vector.
+ * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
+ * 32 random nos. are maintained in an array and are used in the hashing.
+ */
+void generateGrams(size_t ngram, size_t skip_gram, example * &ex) {
+  for(size_t *index = ex->indices.begin; index < ex->indices.end; index++)
+    for(int n = ngram; n > 1; n--)
+      generateGrams(n, skip_gram, ex->atomics[*index], indices);
+}
+
+/**
+ * This function generates the k-skip n-grams using the iterator array
+ * approach. Just that the iterator is replaced by an index into the atomics
+ * v_array controlled by the skip gram parameter 
+ */
+void generateGrams(size_t ngram, size_t skip, v_array<feature> &atomics, size_t* indices) {
+  //Assume features a b c d e f & 2-skip trigram
+  //Initialize the iterator array
+  //with 0 1 2 ( a b c). The same procedure
+  //is used whenever an iterator is incremented.
+  //All the iterators next to this one are set
+  //to point features occurring right after the 
+  //current one.
+  indices[0] = 0;
+  for(size_t i=1; i<ngram; i++)
+    indices[i] = indices[i-1] + 1;
+
+  add_features(atomics, indices, ngram);
+
+  size_t num_features = atomics.index();
+  int p = ngram - 1;
+  while(p>=0)
+    {
+    if (indices[p] < (num_features-(ngram-p)) && (p==0 || indices[p] - indices[p-1] <= skip))
+      {
+      //Increment current iterator and point
+      //the remaining iterators to features
+      //occurring right after the current
+      //if currently considering the gram b c f
+      //and incrementing c to d reset the 
+      //gram to b d e
+      ++indices[p];
+      for(size_t j=p+1;j<ngram;j++)
+        indices[j] = indices[j-1] + 1;
+
+      add_features(atomics, indices, ngram);
+
+      p = ngram - 1;
+      }
+    else
+      --p;
+    }
+
+}
 
 void print_update(example *ec)
 {
@@ -406,6 +485,11 @@ bool parse_atomic_example(parser* p, example *ae)
       p->lp->cache_label(ae->ld,*(p->output));
       cache_features(*(p->output), ae);
     }
+
+  if(p->ngram > 1)
+    generateGrams(p->ngram, (0 > p->skip_gram ? 0 : p->skip_gram), ae);
+    
+  unique_sort_features(p,ae);
   return true;
 }
 
@@ -459,7 +543,6 @@ void setup_example(example* ae)
 	}
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
     }
-  
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
     ae->num_features 
@@ -562,6 +645,18 @@ void start_parser(size_t num_threads, parser* pf)
   parsed_index = 0;
   done = false;
 
+  if(pf->ngram>1)
+    {
+    if(random_nos == NULL)
+    {
+    random_nos = (size_t *)calloc(32, sizeof(size_t));
+    for(int i = 0; i < 32; ++i)
+           random_nos[i] = rand();
+    }
+    if(indices == NULL)
+      indices = new size_t [pf->ngram];
+    }
+
   examples = (example*)calloc(ring_size, sizeof(example));
   
   for (size_t i = 0; i < ring_size; i++)
@@ -576,6 +671,12 @@ void end_parser(parser* pf)
 {
   pthread_join(parse_thread, NULL);
   free(used_index);
+
+  if(pf->ngram>1)
+    {
+    if(random_nos != NULL) free(random_nos);
+    if(indices != NULL) delete [] indices;
+    }
   
   for (size_t i = 0; i < ring_size; i++) 
     {

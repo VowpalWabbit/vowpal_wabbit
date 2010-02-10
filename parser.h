@@ -41,6 +41,7 @@ struct parser {
   size_t finished_count;//the number of finished examples;
   int label_sock;
   int max_fd;
+  size_t ngram, skip_gram;
 };
 
 parser* new_parser(const label_parser* lp);
@@ -60,4 +61,8 @@ bool inconsistent_cache(size_t numbits, io_buf& cache);
 void reset_source(size_t numbits, parser* source);
 void finalize_source(parser* source);
 void set_compressed(parser* par);
+
+//NGrma functions
+void generateGrams(size_t ngram, size_t skip_gram, example * &ex);
+void generateGrams(size_t ngram, size_t skip_gram, v_array<feature> &atomics, size_t* indices);
 #endif

@@ -62,7 +62,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
-    ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes");
+    ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
+    ("ngram", po::value<size_t>(), "Generate N grams")
+    ("skip_gram", po::value<size_t>(), "Generate skip grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
+
 
   global.example_number = 0;
   global.weighted_examples = 0.;
@@ -97,6 +100,22 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     exit(1);
   }
   
+  if(vm.count("ngram")){
+    par->ngram = vm["ngram"].as<size_t>();
+    if(!vm.count("skip_gram")) cout << "You have chosen to generate " << par->ngram << "-grams" << endl;
+  }
+  if(vm.count("skip_gram"))
+    {
+    par->skip_gram = vm["skip_gram"].as<size_t>();
+    if(!vm.count("ngram")) par->ngram = 2;
+    cout << "You have chosen to generate " << par->skip_gram << "-skip-" << par->ngram << "-grams" << endl;
+    if(par->skip_gram > 4)
+      {
+      cout << "*********************************" << endl;
+      cout << "Generating these features might take quite some time" << endl;
+      cout << "*********************************" << endl;
+      }
+    }
   if (vm.count("bit_precision"))
     {
       global.default_bits = false;
