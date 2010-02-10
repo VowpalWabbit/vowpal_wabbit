@@ -184,7 +184,8 @@ int read_features(parser* p, void* ex)
       }
   }
 
-  unique_sort_features(p,ae);
+  if(p->sort_features)
+    unique_sort_features(p,ae);
 
   return num_chars;
 }

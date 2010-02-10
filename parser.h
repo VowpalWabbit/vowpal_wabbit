@@ -33,6 +33,7 @@ struct parser {
   bool resettable; //Whether or not the input can be reset.
   io_buf* output; //Where to output the cache.
   bool write_cache; 
+  bool sort_features;
 
   v_array<partial_example> pes;//partial examples
   v_array<size_t> ids; //unique ids for sources

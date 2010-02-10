@@ -21,6 +21,8 @@ char* run_len_decode(char *p, size_t& i)
 
 size_t invocations = 0;
 
+inline int32_t ZigZagDecode(uint32_t n) { return (n >> 1) ^ -static_cast<int32_t>(n & 1); }
+
 size_t read_cached_tag(io_buf& cache, example* ae)
 {
   char* c;
@@ -98,7 +100,9 @@ int read_cached_features(parser* p, void* ec)
 	      f.x = *(float *)c;
 	      c += sizeof(float);
 	    }
-	  f.weight_index = last + (f.weight_index >> 2);
+          size_t diff = f.weight_index >> 2;
+          int32_t s_diff = ZigZagDecode(diff);
+	  f.weight_index = last + s_diff;
 	  last = f.weight_index;
 	  f.weight_index = f.weight_index & mask;
 	  push(*ours, f);
@@ -127,6 +131,8 @@ char* run_len_encode(char *p, size_t i)
   *(p++) = (i & 127);
   return p;
 }
+
+inline uint32_t ZigZagEncode(int32_t n) { return (n << 1) ^ (n >> 28); }
 
 void output_int(io_buf& cache, size_t s)
 {
@@ -157,7 +163,8 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   
   for (feature* i = begin; i != end; i++)
     {
-      size_t diff = (i->weight_index - last) << 2;
+      int32_t s_diff = (i->weight_index - last);
+      size_t diff = ZigZagEncode(s_diff) << 2;
       last = i->weight_index;
       if (i->x == 1.) 
 	c = run_len_encode(c, diff);

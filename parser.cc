@@ -296,6 +296,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
     {
       if (!quiet)
 	cerr << "Reading from stdin" << endl;
+      if (vm.count("compressed")){
+        cerr << "Compressed source can't be read from stdin." << endl << "Directly use the compressed source with -d option";
+        exit(0);
+      }
       push(par->input->files,fileno(stdin));
       par->reader = read_features;
       par->resettable = par->write_cache;

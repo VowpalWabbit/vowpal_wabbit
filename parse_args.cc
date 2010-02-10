@@ -61,7 +61,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel")
-    ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on");
+    ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
+    ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes");
 
   global.example_number = 0;
   global.weighted_examples = 0.;
@@ -106,8 +107,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     set_compressed(par);
   }
 
-  if (global.num_bits > 31) {
-    cerr << "The system limits at 31 bits of precision!\n" << endl;
+  if(vm.count("sort_features"))
+    par->sort_features = true;
+
+  if (global.num_bits > 30) {
+    cerr << "The system limits at 30 bits of precision!\n" << endl;
     exit(1);
   }
   if (vm.count("quiet"))
