@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 		cerr << endl;
 	}
 
-	delete vars;
+	free(vars);
 
 	return 0;
 }
