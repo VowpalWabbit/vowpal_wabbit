@@ -1,0 +1,13 @@
+Source: vowpal-wabbit
+Section: unknown
+Priority: extra
+Maintainer: Yaroslav Halchenko <debian@onerussian.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.3
+Homepage: <insert the upstream URL, if relevant>
+
+Package: vowpal-wabbit
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
