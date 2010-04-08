@@ -13,6 +13,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_args.h"
 #include "sender.h"
 #include "network.h"
+#include "global_data.h"
 
 const float default_decay = 1. / sqrt(2.);
 
@@ -36,6 +37,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("help,h","Output Arguments")
+    ("version","Version information")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&vars.t)->default_value(1.), "initial t value")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
@@ -92,9 +94,17 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   po::notify(vm);
   
   if (vm.count("help") || argc == 1) {
-    cerr << "\n" << desc << "\n";
-    exit(1);
+    /* upon direct query for help -- spit it out to stdout */
+    cout << "\n" << desc << "\n";
+    exit(0);
   }
+
+  if (vm.count("version") || argc == 1) {
+    /* upon direct query for version -- spit it out to stdout */
+    cout << version << "\n";
+    exit(0);
+  }
+
   
   if (vm.count("bit_precision"))
     {
