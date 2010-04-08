@@ -2,7 +2,7 @@ Source: vowpal-wabbit
 Section: science
 Priority: optional
 Maintainer: Yaroslav Halchenko <debian@onerussian.com>
-Build-Depends: debhelper (>= 7)
+Build-Depends: debhelper (>= 7), libboost-program-options-dev, help2man
 Standards-Version: 3.8.4
 Homepage: http://hunch.net/~vw/
 Vcs-Browser: http://github.com/yarikoptic/vowpal_wabbit
