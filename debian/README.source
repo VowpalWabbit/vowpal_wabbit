@@ -1,9 +1,8 @@
 vowpal-wabbit for Debian
 ------------------------
 
-<this file describes information about the source package, see Debian policy
-manual section 4.14. You WILL either need to modify or delete this file>
+For flexibility and easier interaction with upstream, sources are
+obtained directly from upstream git repository and packaged into
+.orig.tar.gz using git-buildpackage.
 
-
-
-
+ -- Yaroslav Halchenko <debian@onerussian.com>, Thu,  8 Apr 2010 14:51:54 -0400

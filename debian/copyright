@@ -2,34 +2,35 @@ This work was packaged for Debian by:
 
     Yaroslav Halchenko <debian@onerussian.com> on Thu, 08 Apr 2010 14:35:16 -0400
 
-It was downloaded from <url://example.com>
+It was downloaded from <http://github.com/JohnLangford/vowpal_wabbit>
 
 Upstream Author(s):
 
-    <put author's name and email here>
-    <likewise for another author>
+    John Langford <http://hunch.net/~jl/>
 
 Copyright:
 
-    <Copyright (C) YYYY Name OfAuthor>
-    <likewise for another author>
+    Copyright (C) 2009 Yahoo! Inc
+    Copyright (c) 2004-2009 John Langford
 
 License:
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted under the terms of the BSD License.
+    Redistribution and use of this software in source and binary
+    forms, with or without modification, are permitted provided that
+    the following conditions are met:
 
-    THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-    ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-    OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-    SUCH DAMAGE.
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Yahoo! Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission of
+      Yahoo! Inc.
 
 On Debian systems, the complete text of the BSD License can be
 found in `/usr/share/common-licenses/BSD'.
@@ -38,16 +39,4 @@ The Debian packaging is:
 
     Copyright (C) 2010 Yaroslav Halchenko <debian@onerussian.com>
 
-# Please chose a license for your packaging work. If the program you package
-# uses a mainstream license, using the same license is the safest choice.
-# Please avoid to pick license terms that are more restrictive than the
-# packaged work, as it may make Debian's contributions unacceptable upstream.
-# If you just want it to be GPL version 3, leave the following lines in.
-
-and is licensed under the GPL version 3, 
-see `/usr/share/common-licenses/GPL-3'.
-
-
-
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
+and is licensed under the BSD-3 license,
