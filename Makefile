@@ -18,8 +18,12 @@ FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
 BINARIES = vw
+MANPAGES = vw.1
 
-all:	$(BINARIES)
+all:	$(BINARIES) $(MANPAGES)
+
+%.1:	%
+	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
 
 vw.o:	 parse_example.h  parse_regressor.h  parse_args.h  parser.h
 
@@ -68,4 +72,4 @@ install: vw
 	cp $(BINARIES) ~/bin
 
 clean:
-	rm -f  *.o $(BINARIES) *~
+	rm -f  *.o $(BINARIES) *~ $(MANPAGES)
