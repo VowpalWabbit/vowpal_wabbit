@@ -102,7 +102,7 @@ int read_features(parser* p, void* ex)
 	label_space.start = tab_location+1;
       
       tokenize(' ',label_space,p->words);
-      if (p->words.last().end == label_space.end) //The last field is a tag, so record and strip it off
+      if (p->words.index() > 0 && p->words.last().end == label_space.end) //The last field is a tag, so record and strip it off
 	{
 	  substring tag = p->words.pop();
 	  push_many(ae->tag, tag.start, tag.end - tag.start);

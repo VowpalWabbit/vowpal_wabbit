@@ -33,7 +33,7 @@ void* gd_thread(void *in)
 	}
       else if ((ec = get_example(thread_num)) != NULL)//blocking operation.
 	{
-	  if ( ((ec->tag).begin != (ec->tag).end) 
+	  if ( (ec->tag).end == (ec->tag).begin+4 
 	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))
 	    {
 	      if ((*(params->final_regressor_name)) != "") 
@@ -42,6 +42,7 @@ void* gd_thread(void *in)
 		  tempOut.open((*(params->final_regressor_name)).c_str());
 		  dump_regressor(tempOut, reg);
 		}
+	      delay_example(ec,0);
 	    }
 	  else
 	    predict(reg,ec,thread_num,*(params->vars));
