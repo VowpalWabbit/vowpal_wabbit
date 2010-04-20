@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # An example cluster command.  This just runs on one machine.
 export FLAGS='-l 20 --initial_t 128000 --power_t 1 --daemon --quiet --predictto localhost:39525'
 vw -l 20 --power_t 0.5 --multisource 2 --port 39525 --quiet &
