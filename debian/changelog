@@ -1,5 +1,0 @@
-vowpal-wabbit (4.1-1) unstable; urgency=low
-
-  * Initial release (Closes: #576956)
-
- -- Yaroslav Halchenko <debian@onerussian.com>  Thu, 08 Apr 2010 14:35:16 -0400

@@ -3,6 +3,6 @@
 #include "parser.h"
 #include "example.h"
 
-void unique_sort_features(parser* p, example* ae);
+void unique_sort_features(example* ae);
 
 #endif

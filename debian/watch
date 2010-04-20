@@ -1,2 +1,0 @@
-version=3
-http://github.com/JohnLangford/vowpal_wabbit/downloads .*tarball/([\d\.a-z]+)

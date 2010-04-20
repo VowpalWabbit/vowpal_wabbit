@@ -44,6 +44,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
 int read_cached_features(parser* p, void* ec)
 {
   example* ae = (example*)ec;
+  ae->sorted = p->sorted_cache;
   size_t mask = global.mask;
   io_buf* input = p->input;
 
@@ -102,6 +103,8 @@ int read_cached_features(parser* p, void* ec)
 	    }
           size_t diff = f.weight_index >> 2;
           int32_t s_diff = ZigZagDecode(diff);
+	  if (s_diff < 0)
+	    ae->sorted = false;
 	  f.weight_index = last + s_diff;
 	  last = f.weight_index;
 	  f.weight_index = f.weight_index & mask;
@@ -112,14 +115,6 @@ int read_cached_features(parser* p, void* ec)
 
   return total;
 }
-
-int read_and_order_cached_features(parser* p, void* ec)
-{
-  int ret = read_cached_features(p,ec);
-  unique_sort_features(p,(example*)ec);
-  return ret;
-}
-
 
 char* run_len_encode(char *p, size_t i)
 {// store an int 7 bits at a time.

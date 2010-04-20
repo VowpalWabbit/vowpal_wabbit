@@ -34,6 +34,7 @@ struct parser {
   io_buf* output; //Where to output the cache.
   bool write_cache; 
   bool sort_features;
+  bool sorted_cache;
 
   v_array<partial_example> pes;//partial examples
   v_array<size_t> ids; //unique ids for sources

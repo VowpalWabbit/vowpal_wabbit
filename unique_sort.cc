@@ -34,8 +34,9 @@ void unique_audit_features(v_array<audit_data> &features)
   features.end = ++last;
 }
 
-void unique_sort_features(parser* p, example* ae)
+void unique_sort_features(example* ae)
 {
+  ae->sorted=true;
   bool audit = global.audit;
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     {

@@ -30,6 +30,7 @@ struct example // core example datatype.
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
 
+  bool sorted;//Are the features sorted or not?
   v_array<size_t> indices;
   v_array<feature> atomics[256]; // raw parsed data
   
