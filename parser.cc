@@ -274,39 +274,41 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
     }
   
   if (vm.count("data"))
-    if (par->input->files.index() > 0)
-      {
-	if (!quiet)
-	  cerr << "ignoring text input in favor of cache input" << endl;
-      }
-    else
-      {
-	string temp = vm["data"].as< string >();
-	if (temp.length() != 0)
-	  {
-	    if (!quiet)
-	      cerr << "Reading from " << temp << endl;
-            int f = par->input->open_file(temp.c_str(), io_buf::READ);
-	    if (f == -1)
-	      {
-		cerr << "can't open " << temp << ", bailing!" << endl;
-		exit(0);
-	      }
-	    par->reader = read_features;
-	    par->resettable = par->write_cache;
-	  }
-      }
-  if (par->input->files.index() == 0)// Default to stdin
     {
-      if (!quiet)
-	cerr << "Reading from stdin" << endl;
-      if (vm.count("compressed")){
-        cerr << "Compressed source can't be read from stdin." << endl << "Directly use the compressed source with -d option";
-        exit(0);
-      }
-      push(par->input->files,fileno(stdin));
-      par->reader = read_features;
-      par->resettable = par->write_cache;
+      if (par->input->files.index() > 0)
+	{
+	  if (!quiet)
+	    cerr << "ignoring text input in favor of cache input" << endl;
+	}
+      else
+	{
+	  string temp = vm["data"].as< string >();
+	  if (temp.length() != 0)
+	    {
+	      if (!quiet)
+		cerr << "Reading from " << temp << endl;
+	      int f = par->input->open_file(temp.c_str(), io_buf::READ);
+	      if (f == -1)
+		{
+		  cerr << "can't open " << temp << ", bailing!" << endl;
+		  exit(0);
+		}
+	      par->reader = read_features;
+	      par->resettable = par->write_cache;
+	    }
+	}
+      if (par->input->files.index() == 0)// Default to stdin
+	{
+	  if (!quiet)
+	    cerr << "Reading from stdin" << endl;
+	  if (vm.count("compressed")){
+	    cerr << "Compressed source can't be read from stdin." << endl << "Directly use the compressed source with -d option";
+	    exit(0);
+	  }
+	  push(par->input->files,fileno(stdin));
+	  par->reader = read_features;
+	  par->resettable = par->write_cache;
+	}
     }
   if (passes > 1 && !par->resettable)
     cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
@@ -325,7 +327,7 @@ bool done;
 size_t *random_nos = NULL;
 v_array<size_t> gram_mask;
 
-void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, 
+void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& a,
 	      feature* end, v_array<size_t> &gram_mask, size_t skips)
 {
   if (ngram == 0)
@@ -336,16 +338,36 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics,
 	  size_t new_index = b->weight_index;
 	  for (size_t n = 1; n < gram_mask.index(); n++)
 	    new_index += random_nos[n]* (b+gram_mask[n])->weight_index;
+	  feature f = {1.,new_index};
+	  push(atomics,f);
+	  if (global.audit)
+	    {
+	      audit_data* f = a.begin+(b-atomics.begin);
+	      string feature_name(f->feature);
+	      for (size_t n = 1; n < gram_mask.index(); n++)
+		{
+		  feature_name += string("^");
+		  feature_name += string((f+gram_mask[n])->feature);
+		}
+	      string feature_space = string(f->space);
+	      
+	      audit_data a_feature = {NULL,NULL,new_index, 1., true};
+	      a_feature.space = (char*)malloc(feature_space.length()+1);
+	      strcpy(a_feature.space, feature_space.c_str());
+	      a_feature.feature = (char*)malloc(feature_name.length()+1);
+	      strcpy(a_feature.feature, feature_name.c_str());
+	      push(a, a_feature);
+	    }
 	}
     }
   if (ngram > 0)
     {
       push(gram_mask,gram_mask.last()+skips);
-      addgrams(ngram-1, skip_gram, atomics, end, gram_mask, 0);
+      addgrams(ngram-1, skip_gram, atomics, a, end, gram_mask, 0);
       gram_mask.pop();
     }
   if (skip_gram > 0 && ngram > 0)
-    addgrams(ngram, skip_gram-1, atomics, end, gram_mask, skips+1);
+    addgrams(ngram, skip_gram-1, atomics, a, end, gram_mask, skips+1);
 }
 
 /**
@@ -365,8 +387,9 @@ void generateGrams(size_t ngram, size_t skip_gram, example * &ex) {
       {
 	gram_mask.erase();
 	push(gram_mask,(size_t)0);
-	addgrams(n-1, skip_gram, ex->atomics[*index], ex->atomics[*index].end, 
-		 gram_mask, 0);
+	addgrams(n-1, skip_gram, ex->atomics[*index], 
+		 ex->audit_features[*index], 
+		 ex->atomics[*index].end, gram_mask, 0);
       }
 }
 
