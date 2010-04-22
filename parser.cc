@@ -471,7 +471,10 @@ bool parse_atomic_example(parser* p, example *ae)
       }
 
   for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
+  {  
     ae->atomics[*i].erase();
+    ae->subsets[*i].erase();
+  }
 
   ae->indices.erase();
   ae->tag.erase();
