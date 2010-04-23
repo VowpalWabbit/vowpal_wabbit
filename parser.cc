@@ -324,50 +324,49 @@ pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
 size_t parsed_index; // The index of the parsed example.
 size_t* used_index; // The index of the example currently used by thread i.
 bool done;
-size_t *random_nos = NULL;
+v_array<size_t> random_nos;
 v_array<size_t> gram_mask;
 
-void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& a,
-	      feature* end, v_array<size_t> &gram_mask, size_t skips)
+void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& audits,
+	      size_t initial_length, v_array<size_t> &gram_mask, size_t skips)
 {
-  if (ngram == 0)
+  if (ngram == 0 && gram_mask.last() < initial_length)
     {
-      feature* mask_end = end - gram_mask[gram_mask.last()];
-      for(feature* b = atomics.begin;  b < mask_end ;b++)
+      size_t last = initial_length - gram_mask.last();
+      for(size_t i = 0; i < last; i++)
 	{
-	  size_t new_index = b->weight_index;
+	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.index(); n++)
-	    new_index += random_nos[n]* (b+gram_mask[n])->weight_index;
-	  feature f = {1.,new_index};
+	    new_index += random_nos[n]* atomics[i+gram_mask[n]].weight_index;
+	  feature f = {1.,new_index & global.mask};
 	  push(atomics,f);
 	  if (global.audit)
 	    {
-	      audit_data* f = a.begin+(b-atomics.begin);
-	      string feature_name(f->feature);
+	      string feature_name(audits[i].feature);
 	      for (size_t n = 1; n < gram_mask.index(); n++)
 		{
 		  feature_name += string("^");
-		  feature_name += string((f+gram_mask[n])->feature);
+		  feature_name += string(audits[i+gram_mask[n]].feature);
 		}
-	      string feature_space = string(f->space);
+	      string feature_space = string(audits[i].space);
 	      
-	      audit_data a_feature = {NULL,NULL,new_index, 1., true};
+	      audit_data a_feature = {NULL,NULL,new_index & global.mask, 1., true};
 	      a_feature.space = (char*)malloc(feature_space.length()+1);
 	      strcpy(a_feature.space, feature_space.c_str());
 	      a_feature.feature = (char*)malloc(feature_name.length()+1);
 	      strcpy(a_feature.feature, feature_name.c_str());
-	      push(a, a_feature);
+	      push(audits, a_feature);
 	    }
 	}
     }
   if (ngram > 0)
     {
-      push(gram_mask,gram_mask.last()+skips);
-      addgrams(ngram-1, skip_gram, atomics, a, end, gram_mask, 0);
+      push(gram_mask,gram_mask.last()+1+skips);
+      addgrams(ngram-1, skip_gram, atomics, audits, initial_length, gram_mask, 0);
       gram_mask.pop();
     }
   if (skip_gram > 0 && ngram > 0)
-    addgrams(ngram, skip_gram-1, atomics, a, end, gram_mask, skips+1);
+    addgrams(ngram, skip_gram-1, atomics, audits, initial_length, gram_mask, skips+1);
 }
 
 /**
@@ -383,14 +382,17 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
  */
 void generateGrams(size_t ngram, size_t skip_gram, example * &ex) {
   for(size_t *index = ex->indices.begin; index < ex->indices.end; index++)
-    for (size_t n = 2; n < ngram; n++)
-      {
-	gram_mask.erase();
-	push(gram_mask,(size_t)0);
-	addgrams(n-1, skip_gram, ex->atomics[*index], 
-		 ex->audit_features[*index], 
-		 ex->atomics[*index].end, gram_mask, 0);
-      }
+    {
+      size_t length = ex->atomics[*index].index();
+      for (size_t n = 1; n < ngram; n++)
+	{
+	  gram_mask.erase();
+	  push(gram_mask,(size_t)0);
+	  addgrams(n, skip_gram, ex->atomics[*index], 
+		   ex->audit_features[*index], 
+		   length, gram_mask, 0);
+	}
+    }
 }
 
 
@@ -490,8 +492,8 @@ bool parse_atomic_example(parser* p, example *ae)
       cache_features(*(p->output), ae);
     }
 
-  if(p->ngram > 1)
-    generateGrams(p->ngram, (0 > p->skip_gram ? 0 : p->skip_gram), ae);
+  if(global.ngram > 1)
+    generateGrams(global.ngram, global.skips, ae);
     
   return true;
 }
@@ -651,14 +653,11 @@ void start_parser(size_t num_threads, parser* pf)
   parsed_index = 0;
   done = false;
   
-  if(pf->ngram>1)
+  if(global.ngram>1)
     {
-      if(random_nos == NULL)
-	{
-	  random_nos = (size_t *)calloc(32, sizeof(size_t));
-	  for(int i = 0; i < 32; ++i)
-	    random_nos[i] = rand();
-	}
+      if(random_nos.index() < global.ngram)
+	for (size_t i = 0; i < global.ngram; i++)
+	  push(random_nos, (size_t)rand());
     }      
   
   examples = (example*)calloc(ring_size, sizeof(example));
@@ -676,10 +675,10 @@ void end_parser(parser* pf)
   pthread_join(parse_thread, NULL);
   free(used_index);
 
-  if(pf->ngram>1)
+  if(global.ngram > 1)
     {
-    if(random_nos != NULL) free(random_nos);
-    if(gram_mask.begin != NULL) reserve(gram_mask,0);
+      if(random_nos.begin != NULL) reserve(random_nos,0);
+      if(gram_mask.begin != NULL) reserve(gram_mask,0);
     }
   
   for (size_t i = 0; i < ring_size; i++) 

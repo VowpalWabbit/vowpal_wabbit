@@ -109,7 +109,6 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	{
 	  global.pairs = local_pairs;
 	  initialize_regressor(r);
-	  initialized = true;
 	}
       else
 	if (local_pairs != global.pairs)
@@ -122,6 +121,22 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	      cout << global.pairs[i] << " " << global.pairs[i].size() << " ";
 	    cout << endl;
 	    exit (1);
+	  }
+      size_t local_ngram;
+      regressor.read((char*)&local_ngram, sizeof(local_ngram));
+      size_t local_skips;
+      regressor.read((char*)&local_skips, sizeof(local_skips));
+      if (!initialized)
+	{
+	  global.ngram = local_ngram;
+	  global.skips = local_skips;
+	  initialized = true;
+	}
+      else
+	if (global.ngram != local_ngram || global.skips != local_skips)
+	  {
+	    cout << "can't combine regressors with different ngram features!" << endl;
+	    exit(1);
 	  }
       while (regressor.good())
 	{
@@ -172,7 +187,9 @@ void dump_regressor(ofstream &o, regressor &r)
       o.write((char *)&len, sizeof(len));
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
 	o << (*i)[0] << (*i)[1];
-      
+      o.write((char*)&global.ngram, sizeof(global.ngram));
+      o.write((char*)&global.skips, sizeof(global.skips));
+
       uint32_t length = 1 << global.num_bits;
       size_t num_threads = global.num_threads();
       for(uint32_t i = 0; i < length; i++)

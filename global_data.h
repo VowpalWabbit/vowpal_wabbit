@@ -21,6 +21,8 @@ struct global_data {
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.
+  size_t ngram;//ngrams to generate.
+  size_t skips;//skips in ngrams.
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?

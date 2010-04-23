@@ -42,7 +42,6 @@ struct parser {
   size_t finished_count;//the number of finished examples;
   int label_sock;
   int max_fd;
-  size_t ngram, skip_gram;
 };
 
 parser* new_parser(const label_parser* lp);

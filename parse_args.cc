@@ -31,6 +31,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
      "number of bits in the feature table")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
+    ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
     ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
@@ -63,10 +64,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel")
-    ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
     ("ngram", po::value<size_t>(), "Generate N grams")
-    ("skip_gram", po::value<size_t>(), "Generate skip grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
+    ("skips", po::value<size_t>(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
 
 
   global.example_number = 0;
@@ -111,15 +111,19 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   
   if(vm.count("ngram")){
-    par->ngram = vm["ngram"].as<size_t>();
-    if(!vm.count("skip_gram")) cout << "You have chosen to generate " << par->ngram << "-grams" << endl;
+    global.ngram = vm["ngram"].as<size_t>();
+    if(!vm.count("skip_gram")) cout << "You have chosen to generate " << global.ngram << "-grams" << endl;
   }
-  if(vm.count("skip_gram"))
+  if(vm.count("skips"))
     {
-    par->skip_gram = vm["skip_gram"].as<size_t>();
-    if(!vm.count("ngram")) par->ngram = 2;
-    cout << "You have chosen to generate " << par->skip_gram << "-skip-" << par->ngram << "-grams" << endl;
-    if(par->skip_gram > 4)
+    global.skips = vm["skips"].as<size_t>();
+    if(!vm.count("ngram")) 
+      {
+	cout << "You can not skip unless ngram is > 1" << endl;
+	exit(1);
+      }
+    cout << "You have chosen to generate " << global.skips << "-skip-" << global.ngram << "-grams" << endl;
+    if(global.skips > 4)
       {
       cout << "*********************************" << endl;
       cout << "Generating these features might take quite some time" << endl;
