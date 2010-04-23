@@ -534,7 +534,7 @@ void setup_example(example* ae)
   size_t expert_size = length >> global.thread_bits; //#features/expert
   for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
     {
-      ae->subsets[*i].erase();
+      //subsets is already erased just before parsing.
       feature* f = ae->atomics[*i].begin;
       push(ae->subsets[*i],f);
       size_t current = expert_size;
