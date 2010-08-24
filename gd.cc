@@ -60,13 +60,8 @@ void* gd_thread(void *in)
   return NULL;
 }
 
-float finalize_prediction(float ret, size_t num_features, float &norm) 
+float finalize_prediction(float ret) 
 {
-  if (num_features > 0)
-    norm = 1. / sqrtf(num_features);
-  else 
-    norm = 1.;
-  ret *= norm;
   if (isnan(ret))
     return 0.5;
   if ( ret > global.max_label )
@@ -250,9 +245,8 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
 {
   label_data* ld = (label_data*)ec->ld;
 
-  float norm;
   ec->final_prediction = 
-    finalize_prediction(ec->partial_prediction, ec->num_features, norm);
+    finalize_prediction(ec->partial_prediction);
 
   if (global.local_prediction > 0)
     {
@@ -275,12 +269,7 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
       vars.t += ld->weight;
 
-      ec->eta_round = vars.eta/pow(vars.t,vars.power_t)
-	* (ld->label - ec->final_prediction)
-	* norm * ld->weight;
-      
-      float example_update = reg.loss->getUpdate(ec->final_prediction, ld->label) * ld->weight;
-      ec->eta_round = vars.eta/pow(vars.t,vars.power_t) * example_update * norm;
+      ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, vars.eta/pow(vars.t,vars.power_t), ec->total_sum_feat_sq, ld->weight);
       if (ld->undo)
 	ec->eta_round = -ec->eta_round;
     }
