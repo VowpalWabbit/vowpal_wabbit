@@ -24,9 +24,7 @@ public :
 	 * getUpdate evaluates the update scalar
 	 * The function return the update scalar
 	 */
-	//virtual double getUpdate(example *&ec, gd_vars &vars) = 0;
-	virtual double getUpdate(double prediction, double label) = 0;
-
+	virtual double getUpdate(double prediction, double label, double eta_t, double norm, float h) = 0;
 	virtual ~loss_function() {};
 };
 

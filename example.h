@@ -32,12 +32,14 @@ struct example // core example datatype.
 
   bool sorted;//Are the features sorted or not?
   v_array<size_t> indices;
+  float sum_feat_sq[256];
   v_array<feature> atomics[256]; // raw parsed data
   
   v_array<audit_data> audit_features[256];
   
   v_array<feature*> subsets[256];// helper for fast example expansion
   size_t num_features;//precomputed, cause it's fast&easy.
+  float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float partial_prediction;//shared data for prediction.
   float final_prediction;
   float loss;
