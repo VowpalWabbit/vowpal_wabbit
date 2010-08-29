@@ -6,18 +6,17 @@
 
 global_data global;
 string version = "4.1";
-pthread_mutex_t io = PTHREAD_MUTEX_INITIALIZER;
 
-void binary_print_result(int f, float res, v_array<char> tag)
+void binary_print_result(int f, float res, float weight, v_array<char> tag)
 {
   if (f >= 0)
     {
-      prediction ps = {res, -1};
-      send_prediction(f, ps);
+      global_prediction ps = {res, weight};
+      send_global_prediction(f, ps);
     }
 }
 
-void print_result(int f, float res, v_array<char> tag)
+void print_result(int f, float res, float weight, v_array<char> tag)
 {
   if (f >= 0)
     {
@@ -28,11 +27,11 @@ void print_result(int f, float res, v_array<char> tag)
       if (t != num) 
 	cerr << "write error" << endl;
       if (tag.begin != tag.end){
-        temp[0] = ' ';
-        t = write(f, temp, 1);
+	temp[0] = ' ';
+	t = write(f, temp, 1);
 	if (t != 1)
 	  cerr << "write error" << endl;
-        t = write(f, tag.begin, sizeof(char)*tag.index());
+	t = write(f, tag.begin, sizeof(char)*tag.index());
 	if (t != (ssize_t) (sizeof(char)*tag.index()))
 	  cerr << "write error" << endl;
       }

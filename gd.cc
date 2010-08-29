@@ -71,6 +71,67 @@ float finalize_prediction(float ret)
   return ret;
 }
 
+void finish_example(example* ec)
+{
+  pthread_mutex_lock(&ec->lock);
+  if (-- ec->threads_to_finish == 0)
+    {
+      pthread_mutex_unlock(&ec->lock);
+
+      output_and_account_example(ec);
+      free_example(ec);
+    }
+  else
+    pthread_mutex_unlock(&ec->lock);
+}
+
+void print_update(example *ec)
+{
+  if (global.weighted_examples > global.dump_interval && !global.quiet)
+    {
+      label_data* ld = (label_data*) ec->ld;
+      fprintf(stderr, "%-10.6f %-10.6f %8lld %8.1f   %8.4f %8.4f %8lu\n",
+	      global.sum_loss/global.weighted_examples,
+	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
+	      global.example_number,
+	      global.weighted_examples,
+	      ld->label,
+	      ec->final_prediction,
+	      (long unsigned int)ec->num_features);
+      
+      global.sum_loss_since_last_dump = 0.0;
+      global.old_weighted_examples = global.weighted_examples;
+      global.dump_interval *= 2;
+    }
+}
+
+void output_and_account_example(example* ec)
+{
+  global.example_number++;
+  label_data* ld = (label_data*)ec->ld;
+  global.weighted_examples += ld->weight;
+  global.weighted_labels += ld->label * ld->weight;
+  global.total_features += ec->num_features;
+  global.sum_loss += ec->loss;
+  global.sum_loss_since_last_dump += ec->loss;
+  
+  global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
+  
+  for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
+    {
+      int f = global.final_prediction_sink[i].fd;
+      float w;
+      if (global.reg.weight_vectors != NULL) {
+	w = global.reg.weight_vectors[0][global.final_prediction_sink[i].id];
+      } else {
+	w = 0.;
+      }
+      global.print(f, ec->final_prediction, w, ec->tag);
+    }
+
+  print_update(ec);
+}
+
 float inline_predict(regressor &reg, example* &ec, size_t thread_num)
 {
   float prediction = 0.0;
@@ -157,7 +218,7 @@ void print_offset_features(regressor &reg, example* &ec, size_t offset)
 
 void print_audit_features(regressor &reg, example* ec, size_t offset)
 {
-  print_result(fileno(stdout),ec->final_prediction,ec->tag);
+  print_result(fileno(stdout),ec->final_prediction,-1,ec->tag);
   print_offset_features(reg, ec, offset);
 }
 
@@ -248,22 +309,6 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
   ec->final_prediction = 
     finalize_prediction(ec->partial_prediction);
 
-  if (global.local_prediction > 0)
-    {
-      prediction pred = {ec->final_prediction, ec->example_counter}; 
-      send_prediction(global.local_prediction, pred);
-      if (global.unique_id == 0)
-	{
-	  size_t len = sizeof(ld->label) + sizeof(ld->weight);
-	  char c[len];
-	  bufcache_simple_label(ld,c);
-	  write(global.local_prediction,c,len);
-	}
-    }
-
-  if (global.audit)
-    print_audit_features(reg, ec, 0);
-
   if (ld->label != FLT_MAX)
     {
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
@@ -273,6 +318,23 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
       if (ld->undo)
 	ec->eta_round = -ec->eta_round;
     }
+
+  if (global.local_prediction > 0)
+    {
+      prediction pred = {ec->final_prediction+ ec->eta_round * ec->total_sum_feat_sq, ec->example_counter}; 
+      send_prediction(global.local_prediction, pred);
+      if (global.unique_id == 0)
+	{
+	  size_t len = sizeof(ld->label) + sizeof(ld->weight);
+	  char c[len];
+	  bufcache_simple_label(ld,c);
+	  if (write(global.local_prediction,c,len) < (int)len)
+	    cerr << "uhoh" << endl;
+	}
+    }
+
+  if (global.audit)
+    print_audit_features(reg, ec, 0);
 }
 
 pthread_cond_t finished_sum = PTHREAD_COND_INITIALIZER;

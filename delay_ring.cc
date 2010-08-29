@@ -6,6 +6,7 @@
 #include "example.h"
 #include "global_data.h"
 #include "parser.h"
+#include "gd.h"
 
 v_array<size_t> delay_indicies;//thread specific state.
 
@@ -20,7 +21,7 @@ size_t mesg = 0;
 
 void initialize_delay_ring()
 {
-  if (global.unique_id == 0 && global.local_prediction > 0)
+  if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop))
     mesg = 1;
   size_t nt = global.num_threads()+mesg;
   reserve(delay_indicies, nt);
@@ -93,8 +94,9 @@ void delay_example(example* ex, size_t count)
   
   if (delay_count == 0)
     {
-      ex->threads_to_finish = 1;
-      finish_example(ex);
+      ex->threads_to_finish = 0;
+      output_and_account_example(ex);
+      free_example(ex);
     }
   else
     {

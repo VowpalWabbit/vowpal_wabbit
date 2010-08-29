@@ -22,7 +22,7 @@ public:
 	}
 
 	double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
-		return (label - prediction)*(1-exp(-h*eta_t*norm))/norm;
+		return (label - prediction)*(1-exp(-h*eta_t))/norm;
 	}
 };
 
@@ -40,7 +40,7 @@ public:
 	double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
 		if(label*prediction >= label*label) return 0;
 		  double s1=(label*label-label*prediction)/(label*label*norm);
-		  double s2=eta_t*h;
+		  double s2=eta_t*h;//Not norm invariant.
 		return label*(s1<s2 ? s1 : s2);
 	}
 };
@@ -55,6 +55,7 @@ public:
 		return log(1 + exp(-label * prediction));
 	}
 
+  //Not norm invariant?
 	double getUpdate(double prediction, double label, double eta_t, double norm, float h) {
     /* There's a simpler solution for this which involves approximating W(exp(x))-x */
         double s,b,q;
@@ -99,7 +100,7 @@ public:
 		double s2;
         double e = label - prediction;
 		if(e == 0) return 0;
-        double s1=eta_t*h;
+		double s1=eta_t*h;//not norm invariant
 		if(e > 0) {
 			s2=e/(norm*tau);
 			return tau*(s1<s2?s1:s2);

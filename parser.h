@@ -54,7 +54,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 void start_parser(size_t num_threads, parser* pf);
 void end_parser(parser* pf);
 example* get_example(size_t thread_num);
-void finish_example(example* ec);
+void free_example(example* ec);
 
 //source control functions
 bool inconsistent_cache(size_t numbits, io_buf& cache);
@@ -65,4 +65,5 @@ void set_compressed(parser* par);
 //NGrma functions
 void generateGrams(size_t ngram, size_t skip_gram, example * &ex);
 void generateGrams(size_t ngram, size_t skip_gram, v_array<feature> &atomics, size_t* indices);
+
 #endif

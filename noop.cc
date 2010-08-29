@@ -2,6 +2,7 @@
 
 #include "example.h"
 #include "parser.h"
+#include "gd.h"
 
 void start_noop()
 {

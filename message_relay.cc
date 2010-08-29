@@ -2,11 +2,12 @@
 #include <pthread.h>
 #include "multisource.h"
 #include "delay_ring.h"
+#include "gd.h"
 
 void* mesg_relay(void* in)
 {
-  prediction ps;
-  while (blocking_get_prediction(global.local_prediction,ps))
+  global_prediction ps;
+  while (blocking_get_global_prediction(global.local_prediction,ps))
     {
       example *ec = blocking_get_delay_example(global.num_threads());
       ec->final_prediction = ps.p;

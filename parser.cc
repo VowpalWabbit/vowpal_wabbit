@@ -240,9 +240,14 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  if (id == 0)
 	    {
 	      par->label_sock = f;
-	      global.final_prediction_sink = f;
 	      global.print = binary_print_result;
 	    }
+	  if (id == 0 || global.backprop)
+	    {
+	      int_pair pf = {f,id};
+	      push(global.final_prediction_sink,pf);
+	    }
+
 	  if (member(par->ids, id))
 	    {
 	      cout << "error, two inputs with same id! Exiting.  Use --unique_id <n> next time." << endl;
@@ -393,46 +398,6 @@ void generateGrams(size_t ngram, size_t skip_gram, example * &ex) {
 		   length, gram_mask, 0);
 	}
     }
-}
-
-
-
-void print_update(example *ec)
-{
-  if (global.weighted_examples > global.dump_interval && !global.quiet)
-    {
-      label_data* ld = (label_data*) ec->ld;
-      fprintf(stderr, "%-10.6f %-10.6f %8lld %8.1f   %8.4f %8.4f %8lu\n",
-	      global.sum_loss/global.weighted_examples,
-	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
-	      global.example_number,
-	      global.weighted_examples,
-	      ld->label,
-	      ec->final_prediction,
-	      (long unsigned int)ec->num_features);
-      
-      global.sum_loss_since_last_dump = 0.0;
-      global.old_weighted_examples = global.weighted_examples;
-      global.dump_interval *= 2;
-    }
-}
-
-void output_and_account_example(example* ec)
-{
-  global.example_number++;
-  label_data* ld = (label_data*)ec->ld;
-  global.weighted_examples += ld->weight;
-  global.weighted_labels += ld->label * ld->weight;
-  global.total_features += ec->num_features;
-  global.sum_loss += ec->loss;
-  global.sum_loss_since_last_dump += ec->loss;
-  
-  global.print(global.raw_prediction, ec->partial_prediction, ec->tag);
-  
-  global.print(global.final_prediction_sink, ec->final_prediction, ec->tag);
-  
-  print_update(ec);
-
 }
 
 example* get_unused_example()
@@ -615,18 +580,13 @@ bool examples_to_finish()
   return false;
 }
 
-void finish_example(example* ec)
+void free_example(example* ec)
 {
   pthread_mutex_lock(&examples_lock);
-  if (-- ec->threads_to_finish == 0)
-    {
-      output_and_account_example(ec);
-      ec->in_use = false;
-      pthread_cond_signal(&example_unused);
-      if (done)
-	pthread_cond_broadcast(&example_available);
-    }
-
+  ec->in_use = false;
+  pthread_cond_signal(&example_unused);
+  if (done)
+    pthread_cond_broadcast(&example_available);
   pthread_mutex_unlock(&examples_lock);
 }
 

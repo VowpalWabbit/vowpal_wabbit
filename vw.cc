@@ -59,7 +59,7 @@ gd_vars* vw(int argc, char *argv[])
     start_parser(num_threads, p);
     initialize_delay_ring();
 
-    if (global.unique_id == 0 && global.local_prediction > 0)
+    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop) )
       setup_relay();
     
     if (vm.count("sendto"))

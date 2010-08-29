@@ -29,6 +29,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(), 
      "number of bits in the feature table")
+    ("backprop", po::value<bool>(), "turn on delayed backprop")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
@@ -72,6 +73,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.example_number = 0;
   global.weighted_examples = 0.;
   global.old_weighted_examples = 0.;
+  global.backprop = false;
   global.weighted_labels = 0.;
   global.total_features = 0;
   global.sum_loss = 0.0;
@@ -79,7 +81,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.dump_interval = exp(1.);
   global.num_bits = 18;
   global.default_bits = true;
-  global.final_prediction_sink = -1;
+  global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
   global.raw_prediction = -1;
   global.local_prediction = -1;
   global.print = print_result;
@@ -102,7 +104,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cout << "\n" << desc << "\n";
     exit(0);
   }
-
+  
+  if (vm.count("backprop")) {
+      global.backprop = true;
+      cout << "enabling backprop" << endl;
+  }
+  
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
     cout << version << "\n";
@@ -217,13 +224,17 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     if (!global.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
-      global.final_prediction_sink = 1;//stdout
+      {
+	int_pair pf = {1,0};
+	push(global.final_prediction_sink,pf);//stdout
+      }
     else 
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	global.final_prediction_sink = fileno(fopen(fstr,"w"));
-	if (global.final_prediction_sink < 0)
+	int_pair pf = {fileno(fopen(fstr,"w")),0};
+	if (pf.fd < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
+	push(global.final_prediction_sink,pf);
       }
   }
   
