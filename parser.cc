@@ -604,7 +604,8 @@ example* get_example(size_t thread_num)
 	return examples + ring_index;
       }
       else {
-	if (!done || examples_to_finish()) {
+	//if (!done || examples_to_finish()) {
+	if (!done) {
 	  pthread_cond_wait(&example_available, &examples_lock);
 	  pthread_mutex_unlock(&examples_lock);
 	}
@@ -638,6 +639,7 @@ void start_parser(size_t num_threads, parser* pf)
     {
       pthread_mutex_init(&examples[i].lock,NULL);
       examples[i].ld = calloc(1,pf->lp->label_size);
+      examples[i].in_use = false;
     }
   pthread_create(&parse_thread, NULL, main_parse_loop, pf);
 }

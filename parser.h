@@ -50,6 +50,8 @@ parser* new_parser(const label_parser* lp);
 namespace po = boost::program_options;
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes);
 
+bool examples_to_finish();
+
 //parser control
 
 void start_parser(size_t num_threads, parser* pf);

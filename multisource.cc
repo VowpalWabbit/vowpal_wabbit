@@ -53,6 +53,7 @@ void send_prediction(int sock, prediction &p)
       perror(NULL);
       exit(0);
     }
+  cout << "sent prediction" << endl;
 }
 
 void send_global_prediction(int sock, global_prediction p)

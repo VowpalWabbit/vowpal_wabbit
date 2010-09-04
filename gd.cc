@@ -323,7 +323,7 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
       prediction pred={0};
       pred.p = ec->final_prediction+ ec->eta_round * ec->total_sum_feat_sq;
       pred.example_number = ec->example_counter;
-      cout << pred.p << "\t" << pred.example_number << endl;
+      cout << "gd send prediction " << pred.p << "\t" << pred.example_number << endl;
       send_prediction(global.local_prediction, pred);
       if (global.unique_id == 0)
 	{
@@ -344,6 +344,7 @@ pthread_cond_t finished_sum = PTHREAD_COND_INITIALIZER;
 float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
 {
   float prediction = inline_predict(r, ex, thread_num);
+  float final_pred = 0.;
 
   pthread_mutex_lock(&ex->lock);
 
@@ -352,6 +353,7 @@ float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
     {
       while (!ex->done)
 	pthread_cond_wait(&finished_sum, &ex->lock);
+      final_pred = ex->final_prediction;
     }
   else // We are the last thread using this example.
     {
@@ -364,9 +366,10 @@ float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
 	delay_example(ex,global.num_threads());
       else
 	delay_example(ex,0);
+      final_pred = ex->final_prediction;
     }
   pthread_mutex_unlock(&ex->lock);
-  return ex->final_prediction;
+  return final_pred;
 }
 
 float offset_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars, size_t offset)
