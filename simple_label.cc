@@ -25,6 +25,12 @@ size_t read_cached_simple_label(void* v, io_buf& cache)
   return total;
 }
 
+float get_weight(void* v)
+{
+  label_data* ld = (label_data*) v;
+  return ld->weight;
+}
+
 char* bufcache_simple_label(label_data* ld, char* c)
 {
   *(double *)c = ld->label;
@@ -47,7 +53,6 @@ void default_simple_label(void* v)
   label_data* ld = (label_data*) v;
   ld->label = FLT_MAX;
   ld->weight = 1.;
-  ld->undo = false;
 }
 
 void delete_simple_label(void* v)

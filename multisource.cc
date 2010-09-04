@@ -45,7 +45,7 @@ bool blocking_get_global_prediction(int sock, global_prediction &p)
   return ret;
 }
 
-void send_prediction(int sock, prediction p)
+void send_prediction(int sock, prediction &p)
 {
   if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
     {

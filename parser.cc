@@ -233,6 +233,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    }
 
 	  size_t id;
+	  cout << "file descriptor" << endl;
 	  really_read(f, &id, sizeof(id));
 	  if (!global.quiet)
 	    cerr << "id read = " << id << endl;
@@ -484,7 +485,7 @@ feature* search(feature* begin, size_t value, feature* end)
 
 size_t example_count = 0;
 
-void setup_example(example* ae)
+void setup_example(parser* p, example* ae)
 {
   size_t num_threads = global.num_threads();
 
@@ -494,6 +495,7 @@ void setup_example(example* ae)
   ae->threads_to_finish = num_threads;	
   ae->done = false;
   ae->example_counter = ++example_count;
+  ae->global_weight = p->lp->get_weight(ae->ld);
 
   if (!ae->sorted && global.thread_bits > 0)
     unique_sort_features(ae);
@@ -544,7 +546,7 @@ void *main_parse_loop(void *in)
 
       int output = parse_atomic_example(p,ae);
       if (output) {	
-	setup_example(ae);
+	setup_example(p,ae);
 
 	pthread_mutex_lock(&examples_lock);
 	parsed_index++;
@@ -634,7 +636,7 @@ void start_parser(size_t num_threads, parser* pf)
   
   for (size_t i = 0; i < ring_size; i++)
     {
-      examples[i].lock = examples_lock;
+      pthread_mutex_init(&examples[i].lock,NULL);
       examples[i].ld = calloc(1,pf->lp->label_size);
     }
   pthread_create(&parse_thread, NULL, main_parse_loop, pf);

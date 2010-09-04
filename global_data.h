@@ -60,7 +60,7 @@ struct global_data {
   double sum_loss_since_last_dump;
   float dump_interval;// when should I update for the user.
 
-  regressor reg;
+  regressor* reg;
 };
 extern pthread_mutex_t io;
 extern global_data global;

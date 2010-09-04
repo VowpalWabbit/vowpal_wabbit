@@ -29,7 +29,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(), 
      "number of bits in the feature table")
-    ("backprop", po::value<bool>(), "turn on delayed backprop")
+    ("backprop", "turn on delayed backprop")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
@@ -89,7 +89,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.max_label = 1.;
 
   global.audit = false;
-  global.reg = r;
+  global.reg = &r;
   
   po::positional_options_description p;
   

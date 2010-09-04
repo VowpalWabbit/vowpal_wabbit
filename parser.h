@@ -18,6 +18,7 @@ struct label_parser {
   void (*cache_label)(void*, io_buf& cache);
   size_t (*read_cached_label)(void*, io_buf& cache);
   void (*delete_label)(void*);
+  float (*get_weight)(void*);
   size_t label_size;
 };
 

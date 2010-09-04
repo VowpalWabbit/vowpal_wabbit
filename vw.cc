@@ -60,8 +60,11 @@ gd_vars* vw(int argc, char *argv[])
     initialize_delay_ring();
 
     if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop) )
-      setup_relay();
-    
+      {
+	cout << "setting up relay" << endl;
+	setup_relay(vars);
+      }    
+
     if (vm.count("sendto"))
       {
 	setup_send();

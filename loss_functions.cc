@@ -9,122 +9,154 @@ embodied in the content of this file are licensed under the BSD
 using namespace std;
 
 #include "loss_functions.h"
+#include "global_data.h"
 
 class squaredloss : public loss_function {
 public:
-	squaredloss() {
-
-	}
-
-	double getLoss(double prediction, double label) {
-		double example_loss = (prediction - label) * (prediction - label);
-		return example_loss;
-	}
-
-	double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
-		return (label - prediction)*(1-exp(-h*eta_t))/norm;
-	}
+  squaredloss() {
+    
+  }
+  
+  double getLoss(double prediction, double label) {
+    double example_loss = (prediction - label) * (prediction - label);
+    return example_loss;
+  }
+  
+  double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
+    eta_t*=h;
+    if (eta_t<1e-12){ 
+      /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t) 
+       * with its first order Taylor expansion around 0
+       * to avoid catastrophic cancellation.
+       */
+      return (label - prediction)*eta_t/norm;
+    }
+    return (label - prediction)*(1-exp(-eta_t))/norm;
+  }
+  
+  //Second order update
+  //double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
+  //	return h*eta_t*(label - prediction)/(1+h*eta_t*norm);
+  //}
 };
+
+class classic_squaredloss : public loss_function {
+public:
+  classic_squaredloss() {
+    
+  }
+  
+  double getLoss(double prediction, double label) {
+    double example_loss = (prediction - label) * (prediction - label);
+    return example_loss;
+  }
+  
+  double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
+    return h*eta_t*(label - prediction)/norm;
+  }
+};
+
 
 class hingeloss : public loss_function {
 public:
-	hingeloss() {
-
-	}
-
-	double getLoss(double prediction, double label) {
-		double e = 1 - label*prediction;
-		return (e > 0) ? e : 0;
-	}
-
-	double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
-		if(label*prediction >= label*label) return 0;
-		  double s1=(label*label-label*prediction)/(label*label*norm);
-		  double s2=eta_t*h;//Not norm invariant.
-		return label*(s1<s2 ? s1 : s2);
-	}
+  hingeloss() {
+    
+  }
+  
+  double getLoss(double prediction, double label) {
+    double e = 1 - label*prediction;
+    return (e > 0) ? e : 0;
+  }
+  
+  double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
+    if(label*prediction >= label*label) return 0;
+    double s1=(label*label-label*prediction)/(label*label);
+    double s2=eta_t*h;
+    return label * (s1<s2 ? s1 : s2)/norm;
+  }
 };
 
 class logloss : public loss_function {
 public:
-	logloss() {
-
-	}
-
-	double getLoss(double prediction, double label) {
-		return log(1 + exp(-label * prediction));
-	}
-
-  //Not norm invariant?
-	double getUpdate(double prediction, double label, double eta_t, double norm, float h) {
-    /* There's a simpler solution for this which involves approximating W(exp(x))-x */
-        double s,b,q;
-        double d = exp(label * prediction);
-        double c = eta_t * norm * h + label * prediction + d;
-        /* In general we want s = h - (W(exp(c))-d)/(eta_t*norm) where W is 
-         * the Lambert W function. The following is a good approximation:
-         */
-        if (c <= 1){
-            q = -0.915756*c+0.763451;
-            /* Safe-guard a large exponent */
-            b = q > 500 ? 0.45865 : 0.45865+1/(1+exp(q));
-            /* Safe-guard a large exponent */
-            q = b - c > 500 ? exp(c-b) : 1/(1+exp(b-c));
-            s = h-((1+exp(b-1))*q-d)/(eta_t*norm);
-        }
-        else{
-            b = log(c);
-            q = 0.997415 + 0.571902*b/(0.842524 + c);
-            s = (c/(c+q)*b - label * prediction)/(eta_t*norm);
-        }
-        return eta_t * label * s;
-	}
+  logloss() {
+    
+  }
+  
+  double getLoss(double prediction, double label) {
+    return log(1 + exp(-label * prediction));
+  }
+  
+  double getUpdate(double prediction, double label, double eta_t, double norm, float h) {
+    double b,l,q;
+    double d = exp(label * prediction);
+    double x = eta_t*h + label*prediction + d;
+    /* This piece of code is approximating W(exp(x))-x. 
+     * W is the Lambert W function.
+     * Faster/better approximations can be substituted here 
+     */
+    if (x >= 1){
+      l=log(x);
+      q=(2.16612+1.89678*x)/(2.16276+1.90021*x-l);
+      b=-x*l/(q+x);
+    }
+    else if(x<-7.010881832645721){
+      b=-x;
+    }
+    else{
+      b=0.566841-x*(0.637815-x*(0.0752909-x*(0.00122244+x*(0.00284082+x*(0.000413765+0.0000193232*x)))));
+    }
+    return -(label*b+prediction)/norm;
+  }
 };
 
 class quantileloss : public loss_function {
 public:
-	quantileloss(double &tau_) : tau(tau_) {
-	}
-
-	double getLoss(double prediction, double label) {
-		double e = label - prediction;
-		if(e > 0) {
-			return tau * e;
-		} else {
-			return -(1 - tau) * e;
-		}
-		
-	}
-
-	double getUpdate(double prediction, double label, double eta_t, double norm, float h) {
-		double s2;
-        double e = label - prediction;
-		if(e == 0) return 0;
-		double s1=eta_t*h;//not norm invariant
-		if(e > 0) {
-			s2=e/(norm*tau);
-			return tau*(s1<s2?s1:s2);
-		} else {
-			s2=-e/(norm*(1-tau));
-			return -(1 - tau)*(s1<s2?s1:s2);
-		}
-	}
-
-	double tau;
+  quantileloss(double &tau_) : tau(tau_) {
+  }
+  
+  double getLoss(double prediction, double label) {
+    double e = label - prediction;
+    if(e > 0) {
+      return tau * e;
+    } else {
+      return -(1 - tau) * e;
+    }
+    
+  }
+  
+  double getUpdate(double prediction, double label, double eta_t, double norm, float h) {
+    double s2;
+    double e = label - prediction;
+    if(e == 0) return 0;
+    double s1=eta_t*h;
+    if(e > 0) {
+      s2=e/tau;
+      return tau*(s1<s2?s1:s2)/norm;
+    } else {
+      s2=-e/(1-tau);
+      return -(1 - tau)*(s1<s2?s1:s2)/norm;
+    }
+  }
+  
+  double tau;
 };
 
 loss_function* getLossFunction(string funcName, double function_parameter) {
-	if(funcName.compare("squared") == 0) {
-		return new squaredloss();
-	} else if(funcName.compare("hinge") == 0) {
-		return new hingeloss();
-	} else if(funcName.compare("logistic") == 0) {
-		return new logloss();
-	} else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
-		return new quantileloss(function_parameter);
-	} else {
-	  cout << "Invalid loss function name: " << funcName << " Bailing!" << endl;
-	  exit(1);
-	}
+  if(funcName.compare("squared") == 0) {
+    return new squaredloss();
+  } else if(funcName.compare("classic") == 0){
+    return new classic_squaredloss();
+  } else if(funcName.compare("hinge") == 0) {
+    return new hingeloss();
+  } else if(funcName.compare("logistic") == 0) {
+    global.min_label = -100;
+    global.max_label = 100;
+    return new logloss();
+  } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
+    return new quantileloss(function_parameter);
+  } else {
+    cout << "Invalid loss function name: \'" << funcName << "\' Bailing!" << endl;
+    exit(1);
+  }
   cout << "end getLossFunction" << endl;
 }
