@@ -46,6 +46,7 @@ struct example // core example datatype.
   float global_weight;
 
   pthread_mutex_t lock; //thread coordination devices
+  pthread_cond_t finished_sum;//barrier associated with lock.
   size_t threads_to_finish;
   bool in_use; //in use or not (for the parser)
   bool done; //set to false by setup_example()

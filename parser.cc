@@ -643,6 +643,7 @@ void start_parser(size_t num_threads, parser* pf)
   for (size_t i = 0; i < ring_size; i++)
     {
       pthread_mutex_init(&examples[i].lock,NULL);
+      pthread_cond_init(&examples[i].finished_sum,NULL);
       examples[i].ld = calloc(1,pf->lp->label_size);
       examples[i].in_use = false;
     }
