@@ -153,10 +153,12 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
       regressor.close();
     }
   if (!initialized)
-    if(vm.count("noop") || vm.count("sendto"))
-      r.weight_vectors = NULL;
-    else
-      initialize_regressor(r);
+    {
+      if(vm.count("noop") || vm.count("sendto"))
+	r.weight_vectors = NULL;
+      else
+	initialize_regressor(r);
+    }
 }
 
 void free_regressor(regressor &r)

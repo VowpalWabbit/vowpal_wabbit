@@ -233,6 +233,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    }
 
 	  size_t id;
+	  cout << "file descriptor" << endl;
 	  really_read(f, &id, sizeof(id));
 	  if (!global.quiet)
 	    cerr << "id read = " << id << endl;
@@ -240,9 +241,14 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  if (id == 0)
 	    {
 	      par->label_sock = f;
-	      global.final_prediction_sink = f;
 	      global.print = binary_print_result;
 	    }
+	  if (id == 0 || (global.backprop && vm.count("multisource")))
+	    {
+	      int_pair pf = {f,id};
+	      push(global.final_prediction_sink,pf);
+	    }
+
 	  if (member(par->ids, id))
 	    {
 	      cout << "error, two inputs with same id! Exiting.  Use --unique_id <n> next time." << endl;
@@ -395,46 +401,6 @@ void generateGrams(size_t ngram, size_t skip_gram, example * &ex) {
     }
 }
 
-
-
-void print_update(example *ec)
-{
-  if (global.weighted_examples > global.dump_interval && !global.quiet)
-    {
-      label_data* ld = (label_data*) ec->ld;
-      fprintf(stderr, "%-10.6f %-10.6f %8lld %8.1f   %8.4f %8.4f %8lu\n",
-	      global.sum_loss/global.weighted_examples,
-	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
-	      global.example_number,
-	      global.weighted_examples,
-	      ld->label,
-	      ec->final_prediction,
-	      (long unsigned int)ec->num_features);
-      
-      global.sum_loss_since_last_dump = 0.0;
-      global.old_weighted_examples = global.weighted_examples;
-      global.dump_interval *= 2;
-    }
-}
-
-void output_and_account_example(example* ec)
-{
-  global.example_number++;
-  label_data* ld = (label_data*)ec->ld;
-  global.weighted_examples += ld->weight;
-  global.weighted_labels += ld->label * ld->weight;
-  global.total_features += ec->num_features;
-  global.sum_loss += ec->loss;
-  global.sum_loss_since_last_dump += ec->loss;
-  
-  global.print(global.raw_prediction, ec->partial_prediction, ec->tag);
-  
-  global.print(global.final_prediction_sink, ec->final_prediction, ec->tag);
-  
-  print_update(ec);
-
-}
-
 example* get_unused_example()
 {
   while (true)
@@ -519,7 +485,7 @@ feature* search(feature* begin, size_t value, feature* end)
 
 size_t example_count = 0;
 
-void setup_example(example* ae)
+void setup_example(parser* p, example* ae)
 {
   size_t num_threads = global.num_threads();
 
@@ -529,6 +495,7 @@ void setup_example(example* ae)
   ae->threads_to_finish = num_threads;	
   ae->done = false;
   ae->example_counter = ++example_count;
+  ae->global_weight = p->lp->get_weight(ae->ld);
 
   if (!ae->sorted && global.thread_bits > 0)
     unique_sort_features(ae);
@@ -579,7 +546,7 @@ void *main_parse_loop(void *in)
 
       int output = parse_atomic_example(p,ae);
       if (output) {	
-	setup_example(ae);
+	setup_example(p,ae);
 
 	pthread_mutex_lock(&examples_lock);
 	parsed_index++;
@@ -609,50 +576,51 @@ void *main_parse_loop(void *in)
 
 bool examples_to_finish()
 {
+  if (!done)
+    return true;
+  pthread_mutex_lock(&examples_lock);
   for(size_t i = 0; i < ring_size; i++)
     if (examples[i].in_use)
-      return true;
+      {
+	pthread_mutex_unlock(&examples_lock);
+	return true;
+      }
+  pthread_mutex_unlock(&examples_lock);
   return false;
 }
 
-void finish_example(example* ec)
+void free_example(example* ec)
 {
   pthread_mutex_lock(&examples_lock);
-  if (-- ec->threads_to_finish == 0)
-    {
-      output_and_account_example(ec);
-      ec->in_use = false;
-      pthread_cond_signal(&example_unused);
-      if (done)
-	pthread_cond_broadcast(&example_available);
-    }
-
+  ec->in_use = false;
+  pthread_cond_signal(&example_unused);
+  if (done)
+    pthread_cond_broadcast(&example_available);
   pthread_mutex_unlock(&examples_lock);
 }
 
 example* get_example(size_t thread_num)
 {
-  while (true) // busy wait until an example is acquired.
-    {
-      pthread_mutex_lock(&examples_lock);
+  pthread_mutex_lock(&examples_lock);
       
-      if (parsed_index != used_index[thread_num]) {
-	size_t ring_index = used_index[thread_num]++ % ring_size;
-	pthread_mutex_unlock(&examples_lock);
-	return examples + ring_index;
-      }
-      else {
-	if (!done || examples_to_finish()) {
-	  pthread_cond_wait(&example_available, &examples_lock);
-	  pthread_mutex_unlock(&examples_lock);
-	}
-	else 
-	  { 
-	    pthread_mutex_unlock(&examples_lock);
-	    return NULL;
-	  }
-      }
-    }
+  if (parsed_index != used_index[thread_num]) {
+    size_t ring_index = used_index[thread_num]++ % ring_size;
+    pthread_mutex_unlock(&examples_lock);
+    return examples + ring_index;
+  }
+  else {
+    if (!done)
+      pthread_cond_wait(&example_available, &examples_lock);
+    pthread_mutex_unlock(&examples_lock);
+    return NULL;
+  }
+}
+
+void make_example_available()
+{
+  pthread_mutex_lock(&examples_lock);
+  pthread_cond_broadcast(&example_available);
+  pthread_mutex_unlock(&examples_lock);
 }
 
 pthread_t parse_thread;
@@ -674,8 +642,10 @@ void start_parser(size_t num_threads, parser* pf)
   
   for (size_t i = 0; i < ring_size; i++)
     {
-      examples[i].lock = examples_lock;
+      pthread_mutex_init(&examples[i].lock,NULL);
+      pthread_cond_init(&examples[i].finished_sum,NULL);
       examples[i].ld = calloc(1,pf->lp->label_size);
+      examples[i].in_use = false;
     }
   pthread_create(&parse_thread, NULL, main_parse_loop, pf);
 }

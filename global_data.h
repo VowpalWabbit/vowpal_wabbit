@@ -14,10 +14,16 @@ using namespace std;
 
 extern string version;
 
+struct int_pair {
+  int fd;
+  int id;
+};
+
 struct global_data {
   size_t thread_bits; // log_2 of the number of threads.
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
+  bool backprop;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.
@@ -34,12 +40,12 @@ struct global_data {
   size_t length () { return 1 << num_bits; };
 
   //Prediction output
-  int final_prediction_sink; // set to send global predictions to.
+  v_array<int_pair> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.
   int local_prediction;  //file descriptor to send local prediction to.
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
 
-  void (*print)(int,float,v_array<char>);
+  void (*print)(int,float,float,v_array<char>);
   loss_function* loss;
 
   char* program_name;
@@ -54,13 +60,13 @@ struct global_data {
   double sum_loss_since_last_dump;
   float dump_interval;// when should I update for the user.
 
-  regressor reg;
+  regressor* reg;
 };
 extern pthread_mutex_t io;
 extern global_data global;
 extern void (*set_minmax)(double label);
-void print_result(int f, float res, v_array<char> tag);
-void binary_print_result(int f, float res, v_array<char> tag);
+void print_result(int f, float res, float weight, v_array<char> tag);
+void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(double label);
 
 const size_t ring_size = 1 << 11;

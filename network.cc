@@ -49,6 +49,7 @@ int open_socket(const char* host, size_t new_id)
       cerr << "can't connect to: " << host << ':' << port << endl;
       exit(1);
     }
-  write(sd, &new_id, sizeof(new_id));
+  if (write(sd, &new_id, sizeof(new_id)) < (int)sizeof(new_id))
+    cerr << "write failed!" << endl;
   return sd;
 }

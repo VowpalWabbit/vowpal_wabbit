@@ -67,5 +67,7 @@ void offset_train(regressor &reg, example* &ec, size_t thread_num, float update,
 void train_one_example_single_thread(regressor& r, example* ex, gd_vars& vars);
 void setup_gd(gd_thread_params t);
 void destroy_gd();
+void output_and_account_example(example* ec);
+void finish_example(example* ec);
 
 #endif

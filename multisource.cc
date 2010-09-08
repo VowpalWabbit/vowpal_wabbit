@@ -38,7 +38,24 @@ bool blocking_get_prediction(int sock, prediction &p)
   return ret;
 }
 
-void send_prediction(int sock, prediction p)
+bool blocking_get_global_prediction(int sock, global_prediction &p)
+{
+  int count = really_read(sock, &p, sizeof(p));
+  bool ret = (count == sizeof(p));
+  return ret;
+}
+
+void send_prediction(int sock, prediction &p)
+{
+  if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
+    {
+      cerr << "argh! bad write! " << endl;
+      perror(NULL);
+      exit(0);
+    }
+}
+
+void send_global_prediction(int sock, global_prediction p)
 {
   if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
     {

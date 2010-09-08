@@ -7,7 +7,6 @@
 struct label_data {
   double label;
   float weight;
-  bool undo;
 };
 
 struct feature {
@@ -44,8 +43,10 @@ struct example // core example datatype.
   float final_prediction;
   float loss;
   float eta_round;
+  float global_weight;
 
   pthread_mutex_t lock; //thread coordination devices
+  pthread_cond_t finished_sum;//barrier associated with lock.
   size_t threads_to_finish;
   bool in_use; //in use or not (for the parser)
   bool done; //set to false by setup_example()

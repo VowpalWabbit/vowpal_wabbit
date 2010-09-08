@@ -18,6 +18,7 @@ struct label_parser {
   void (*cache_label)(void*, io_buf& cache);
   size_t (*read_cached_label)(void*, io_buf& cache);
   void (*delete_label)(void*);
+  float (*get_weight)(void*);
   size_t label_size;
 };
 
@@ -49,12 +50,15 @@ parser* new_parser(const label_parser* lp);
 namespace po = boost::program_options;
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes);
 
+bool examples_to_finish();
+
 //parser control
 
 void start_parser(size_t num_threads, parser* pf);
 void end_parser(parser* pf);
 example* get_example(size_t thread_num);
-void finish_example(example* ec);
+void free_example(example* ec);
+void make_example_available();
 
 //source control functions
 bool inconsistent_cache(size_t numbits, io_buf& cache);
@@ -65,4 +69,5 @@ void set_compressed(parser* par);
 //NGrma functions
 void generateGrams(size_t ngram, size_t skip_gram, example * &ex);
 void generateGrams(size_t ngram, size_t skip_gram, v_array<feature> &atomics, size_t* indices);
+
 #endif
