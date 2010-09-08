@@ -112,8 +112,6 @@ void delay_example(example* ex, size_t count)
   if (global.backprop && global.local_prediction > 0)
     delay_count += count;
 
-  cout << "delay_count = " << delay_count << endl;
-
   if (delay_count == 0)
     {
       ex->threads_to_finish = 0;

@@ -126,7 +126,6 @@ void output_and_account_example(example* ec)
       } else {
 	w = 0.;
       }
-      cout << "printing prediction = " << ec->final_prediction << "\t" << w << "\t" << ec->global_weight << endl;
       global.print(f, ec->final_prediction, w*ec->global_weight, ec->tag);
     }
 
