@@ -58,6 +58,7 @@ void start_parser(size_t num_threads, parser* pf);
 void end_parser(parser* pf);
 example* get_example(size_t thread_num);
 void free_example(example* ec);
+void make_example_available();
 
 //source control functions
 bool inconsistent_cache(size_t numbits, io_buf& cache);

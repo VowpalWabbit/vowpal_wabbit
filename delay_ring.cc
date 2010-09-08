@@ -51,10 +51,11 @@ void destroy_delay_ring()
 bool thread_done(size_t thread)
 {
   bool ret;
+  if (examples_to_finish())
+    return false;
   pthread_mutex_lock(&delay);
   ret = (delay_indicies[thread] == local_index) 
-    && (!global.backprop || delay_indicies[thread+1+global.num_threads()] == global_index)
-    && !examples_to_finish();
+    && (!global.backprop || delay_indicies[thread+1+global.num_threads()] == global_index);
   pthread_mutex_unlock(&delay);
   return ret;
 }
@@ -151,17 +152,10 @@ void delay_global_example(example* ex, size_t count)
     }
   else
     {
-      //size_t index = global_index % ring_size;
-      
       pthread_mutex_lock(&delay);
-      /*
-      while (delay_ring[index] != NULL) {
-	cout << "delay ring not null, waiting..." << endl;
-	pthread_cond_wait(&delay_empty, &delay);
-      }
-      */
+
       global_index++;
-      pthread_cond_broadcast(&delay_nonempty);
       pthread_mutex_unlock(&delay);
+      make_example_available();
     }
 }

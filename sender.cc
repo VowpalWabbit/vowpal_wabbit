@@ -116,6 +116,7 @@ void* send_thread(void*)
         {
           label_data* ld = (label_data*)ec->ld;
           
+	  cout << "sending example" << endl;
           for (size_t i = 0; i < d_1; i++)
             for (size_t j = 0; j < d_2; j++)
               {
@@ -125,7 +126,7 @@ void* send_thread(void*)
               }
           delay_example(ec,0);
         }
-      else 
+      else if (!examples_to_finish())
         { //close our outputs to signal finishing.
           for (size_t i = 0; i < d_1; i++)
             {

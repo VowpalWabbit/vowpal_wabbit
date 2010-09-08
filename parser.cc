@@ -576,9 +576,16 @@ void *main_parse_loop(void *in)
 
 bool examples_to_finish()
 {
+  if (!done)
+    return true;
+  pthread_mutex_lock(&examples_lock);
   for(size_t i = 0; i < ring_size; i++)
     if (examples[i].in_use)
-      return true;
+      {
+	pthread_mutex_unlock(&examples_lock);
+	return true;
+      }
+  pthread_mutex_unlock(&examples_lock);
   return false;
 }
 
@@ -594,28 +601,26 @@ void free_example(example* ec)
 
 example* get_example(size_t thread_num)
 {
-  while (true) // busy wait until an example is acquired.
-    {
-      pthread_mutex_lock(&examples_lock);
+  pthread_mutex_lock(&examples_lock);
       
-      if (parsed_index != used_index[thread_num]) {
-	size_t ring_index = used_index[thread_num]++ % ring_size;
-	pthread_mutex_unlock(&examples_lock);
-	return examples + ring_index;
-      }
-      else {
-	//if (!done || examples_to_finish()) {
-	if (!done) {
-	  pthread_cond_wait(&example_available, &examples_lock);
-	  pthread_mutex_unlock(&examples_lock);
-	}
-	else 
-	  { 
-	    pthread_mutex_unlock(&examples_lock);
-	    return NULL;
-	  }
-      }
-    }
+  if (parsed_index != used_index[thread_num]) {
+    size_t ring_index = used_index[thread_num]++ % ring_size;
+    pthread_mutex_unlock(&examples_lock);
+    return examples + ring_index;
+  }
+  else {
+    if (!done)
+      pthread_cond_wait(&example_available, &examples_lock);
+    pthread_mutex_unlock(&examples_lock);
+    return NULL;
+  }
+}
+
+void make_example_available()
+{
+  pthread_mutex_lock(&examples_lock);
+  pthread_cond_broadcast(&example_available);
+  pthread_mutex_unlock(&examples_lock);
 }
 
 pthread_t parse_thread;

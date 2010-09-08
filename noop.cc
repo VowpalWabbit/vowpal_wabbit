@@ -8,8 +8,11 @@ void start_noop()
 {
   example* ec = NULL;
   
-  while ( (ec = get_example(0)) )
-    finish_example(ec);
+  while ( examples_to_finish()){
+    ec = get_example(0);
+    if (ec != NULL)
+      finish_example(ec);
+  }
 }
 
 void end_noop()
