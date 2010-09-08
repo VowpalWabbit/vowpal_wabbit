@@ -144,7 +144,7 @@ public:
 
 class quantileloss : public loss_function {
 public:
-  quantileloss(float &tau_) : tau(tau_) {
+  quantileloss(double &tau_) : tau(tau_) {
   }
   
   float getLoss(float prediction, float label) {
@@ -183,10 +183,10 @@ public:
     return (alternative - prediction)/(eta_t*v);
   }
   
-  float tau;
+  double tau;
 };
 
-loss_function* getLossFunction(string funcName, float function_parameter) {
+loss_function* getLossFunction(string funcName, double function_parameter) {
   if(funcName.compare("squared") == 0) {
     return new squaredloss();
   } else if(funcName.compare("classic") == 0){
@@ -198,9 +198,9 @@ loss_function* getLossFunction(string funcName, float function_parameter) {
     global.max_label = 100;
     return new logloss();
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
-      return new quantileloss(function_parameter);
+    return new quantileloss(function_parameter);
   } else {
-    cout << "Invalid loss function name: " << funcName << " Bailing!" << endl;
+    cout << "Invalid loss function name: \'" << funcName << "\' Bailing!" << endl;
     exit(1);
   }
   cout << "end getLossFunction" << endl;

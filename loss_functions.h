@@ -29,6 +29,6 @@ public :
 	virtual ~loss_function() {};
 };
 
-loss_function* getLossFunction(string funcName, float loss_parameter = 0);
+loss_function* getLossFunction(string funcName, double loss_parameter = 0);
 
 #endif /* LOSSFUNCTIONS_H_ */

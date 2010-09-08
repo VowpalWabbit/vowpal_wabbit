@@ -62,7 +62,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("testonly,t", "Ignore label information and just test")
     ("thread_bits", po::value<size_t>(&global.thread_bits)->default_value(0), "log_2 threads")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, hinge, logistic and quantile.")
-    ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
+    ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel")
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
     ("ngram", po::value<size_t>(), "Generate N grams")
@@ -186,9 +186,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   else
 	  loss_function = "squaredloss";
 
-  float loss_parameter = 0.0;
+  double loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
-    loss_parameter = vm["quantile_tau"].as<float>();
+    loss_parameter = vm["quantile_tau"].as<double>();
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
