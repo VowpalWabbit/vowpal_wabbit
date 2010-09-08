@@ -243,7 +243,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      par->label_sock = f;
 	      global.print = binary_print_result;
 	    }
-	  if (id == 0 || global.backprop)
+	  if (id == 0 || (global.backprop && vm.count("multisource")))
 	    {
 	      int_pair pf = {f,id};
 	      push(global.final_prediction_sink,pf);
