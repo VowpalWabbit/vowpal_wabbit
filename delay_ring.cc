@@ -8,7 +8,7 @@
 #include "parser.h"
 #include "gd.h"
 
-v_array<size_t> delay_indicies;//thread specific state.
+v_array<size_t> delay_indices;//thread specific state.
 
 v_array<example*> delay_ring;//delay_ring state & mutexes
 v_array<size_t> threads_to_use;
@@ -27,9 +27,9 @@ void initialize_delay_ring()
   size_t nt = global.num_threads()+mesg;
   if (global.backprop)
     nt += global.num_threads();
-  reserve(delay_indicies, nt);
+  reserve(delay_indices, nt);
   for (size_t i = 0; i < nt; i++)
-    delay_indicies[i] = 0;
+    delay_indices[i] = 0;
   reserve(delay_ring, ring_size);
   for (size_t i = 0; i < ring_size; i++)
     delay_ring[i] = NULL;
@@ -40,8 +40,8 @@ void initialize_delay_ring()
 
 void destroy_delay_ring()
 {
-  free(delay_indicies.begin);
-  delay_indicies.begin = NULL;
+  free(delay_indices.begin);
+  delay_indices.begin = NULL;
   free(delay_ring.begin);
   delay_ring.begin = NULL;
   free(threads_to_use.begin);
@@ -54,19 +54,19 @@ bool thread_done(size_t thread)
   if (examples_to_finish())
     return false;
   pthread_mutex_lock(&delay);
-  ret = (delay_indicies[thread] == local_index) 
-    && (!global.backprop || delay_indicies[thread+1+global.num_threads()] == global_index);
+  ret = (delay_indices[thread] == local_index) 
+    && (!global.backprop || delay_indices[thread+1+global.num_threads()] == global_index);
   pthread_mutex_unlock(&delay);
   return ret;
 }
 
 example* return_example(size_t thread)
 {
-  size_t index = delay_indicies[thread] % ring_size;
+  size_t index = delay_indices[thread] % ring_size;
   example* ret = delay_ring[index];
   
   pthread_mutex_lock(&delay);
-  delay_indicies[thread]++;
+  delay_indices[thread]++;
   pthread_mutex_unlock(&delay);
 
   pthread_mutex_lock(&ret->lock);
@@ -84,13 +84,13 @@ example* return_example(size_t thread)
 example* get_delay_example(size_t thread)
 {//nonblocking
   if (global.backprop && 
-      (delay_indicies[thread+1+global.num_threads()] 
+      (delay_indices[thread+1+global.num_threads()] 
        != global_index))
     {
       cout << "getting delayed global example" << endl;
       return return_example(thread+1+global.num_threads());
     }
-  else if (delay_indicies[thread] != local_index)
+  else if (delay_indices[thread] != local_index)
     return return_example(thread);
   else 
     return NULL;
@@ -98,7 +98,7 @@ example* get_delay_example(size_t thread)
 
 example* blocking_get_delay_example(size_t thread)
 {
-  size_t index = delay_indicies[thread] % ring_size;
+  size_t index = delay_indices[thread] % ring_size;
   pthread_mutex_lock(&delay);
   while(delay_ring[index] == NULL)
     pthread_cond_wait(&delay_nonempty, &delay);
@@ -133,7 +133,7 @@ void delay_example(example* ex, size_t count)
       local_index++;
       if (count == 0)
 	for (size_t i = 0; i < global.num_threads();i++)
-	  delay_indicies[i]++;
+	  delay_indices[i]++;
 
       pthread_cond_broadcast(&delay_nonempty);
       pthread_mutex_unlock(&delay);
