@@ -116,7 +116,6 @@ void* send_thread(void*)
         {
           label_data* ld = (label_data*)ec->ld;
           
-	  cout << "sending example" << endl;
           for (size_t i = 0; i < d_1; i++)
             for (size_t j = 0; j < d_2; j++)
               {

@@ -15,7 +15,6 @@ void* mesg_relay(void* v)
       ec->final_prediction = ps.p;
       ec->global_weight = ps.weight;
       label_data* ld = (label_data*)ec->ld;
-      cout << "received " << ps.p << "\t" << ps.weight << endl;
       
       ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
 
