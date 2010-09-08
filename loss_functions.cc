@@ -84,11 +84,11 @@ public:
 			return label*eta_t/((1+d)*norm);
 		}
 		x = eta_t + label*prediction + d;
-		w = wexp(x);
-		return -(label*b+prediction)/norm;
+		w = wexpmx(x);
+		return -(label*w+prediction)/norm;
 	}
 
-	inline float wexp(float x){
+	inline float wexpmx(float x){
 		float b,l,q;
 		/* This piece of code is approximating W(exp(x))-x. 
 		* W is the Lambert W function: W(z)*exp(W(z))=z.
