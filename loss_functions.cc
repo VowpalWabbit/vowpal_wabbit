@@ -17,14 +17,14 @@ public:
     
   }
   
-  double getLoss(double prediction, double label) {
-    double example_loss = (prediction - label) * (prediction - label);
+  float getLoss(float prediction, float label) {
+    float example_loss = (prediction - label) * (prediction - label);
     return example_loss;
   }
   
-  double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
-    eta_t*=h;
-    if (eta_t<1e-12){ 
+  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
+    eta_t *= h;
+    if (eta_t < 1e-6){ 
       /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t) 
        * with its first order Taylor expansion around 0
        * to avoid catastrophic cancellation.
@@ -34,10 +34,10 @@ public:
     return (label - prediction)*(1-exp(-eta_t))/norm;
   }
   
-  //Second order update
-  //double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
-  //	return h*eta_t*(label - prediction)/(1+h*eta_t*norm);
-  //}
+  float getRevertingWeight(float prediction, float eta_t){
+    float alternative = (prediction > 0.5) ? 0 : 1;
+    return log((alternative-prediction)/(alternative-0.5))/eta_t;
+  }
 };
 
 class classic_squaredloss : public loss_function {
@@ -46,13 +46,18 @@ public:
     
   }
   
-  double getLoss(double prediction, double label) {
-    double example_loss = (prediction - label) * (prediction - label);
+  float getLoss(float prediction, float label) {
+    float example_loss = (prediction - label) * (prediction - label);
     return example_loss;
   }
   
-  double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
+  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
     return h*eta_t*(label - prediction)/norm;
+  }
+  
+  float getRevertingWeight(float prediction, float eta_t){
+    float alternative = (prediction > 0.5) ? 0 : 1;
+    return log((alternative-prediction)/(alternative-0.5))/eta_t;
   }
 };
 
@@ -63,16 +68,20 @@ public:
     
   }
   
-  double getLoss(double prediction, double label) {
-    double e = 1 - label*prediction;
+  float getLoss(float prediction, float label) {
+    float e = 1 - label*prediction;
     return (e > 0) ? e : 0;
   }
   
-  double getUpdate(double prediction, double label,double eta_t, double norm, float h) {
+  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
     if(label*prediction >= label*label) return 0;
-    double s1=(label*label-label*prediction)/(label*label);
-    double s2=eta_t*h;
+    float s1=(label*label-label*prediction)/(label*label);
+    float s2=eta_t*h;
     return label * (s1<s2 ? s1 : s2)/norm;
+  }
+  
+  float getRevertingWeight(float prediction, float eta_t){
+    return fabs(prediction)/eta_t;
   }
 };
 
@@ -82,30 +91,54 @@ public:
     
   }
   
-  double getLoss(double prediction, double label) {
+  float getLoss(float prediction, float label) {
     return log(1 + exp(-label * prediction));
   }
   
-  double getUpdate(double prediction, double label, double eta_t, double norm, float h) {
-    double b,l,q;
-    double d = exp(label * prediction);
-    double x = eta_t*h + label*prediction + d;
+  float getUpdate(float prediction, float label, float eta_t, float norm, float h) {
+    float w,x;
+    float d = exp(label * prediction);
+    eta_t *= h;
+    if(eta_t < 1e-6){
+      /* As with squared loss, for small eta_t we replace the update
+       * with its first order Taylor expansion to avoid numerical problems
+       */
+      return label*eta_t/((1+d)*norm);
+    }
+    x = eta_t + label*prediction + d;
+    w = wexpmx(x);
+    return -(label*w+prediction)/norm;
+  }
+  
+  inline float wexpmx(float x){
+    float b,l,q;
     /* This piece of code is approximating W(exp(x))-x. 
-     * W is the Lambert W function.
-     * Faster/better approximations can be substituted here 
+     * W is the Lambert W function: W(z)*exp(W(z))=z.
+     * The absolute error of this approximation is less than 9e-5.
+     * Faster/better approximations can be substituted here.
      */
     if (x >= 1){
+      /* This part is essentially inequality 2.4 from the paper 
+       * INEQUALITIES ON THE LAMBERT W FUNCTION AND HYPERPOWER FUNCTION
+       * q has been worked out so that b is an estimate rather than a bound
+       */
       l=log(x);
       q=(2.16612+1.89678*x)/(2.16276+1.90021*x-l);
       b=-x*l/(q+x);
+    } else if(x>-2){
+      /* This comes from a Chebyshev approximation of the function in [-2,1] */
+      b=0.5671307552778-x*(0.63813443251+x*(-0.073778671124427+x*(0.001712349389983*x+0.0011058485512683)));
+    } else {
+      /* For smaller x, we fit a logistic. Since x<0 q cannot blow up. */
+      q=exp(1.00579*x +0.0186664);
+      b=q/(1+q)-x;
     }
-    else if(x<-7.010881832645721){
-      b=-x;
-    }
-    else{
-      b=0.566841-x*(0.637815-x*(0.0752909-x*(0.00122244+x*(0.00284082+x*(0.000413765+0.0000193232*x)))));
-    }
-    return -(label*b+prediction)/norm;
+    return b;
+  }
+  
+  float getRevertingWeight(float prediction, float eta_t){
+    float z = -fabs(prediction);
+    return (1-z-exp(z))/eta_t;
   }
 };
 
@@ -114,8 +147,8 @@ public:
   quantileloss(double &tau_) : tau(tau_) {
   }
   
-  double getLoss(double prediction, double label) {
-    double e = label - prediction;
+  float getLoss(float prediction, float label) {
+    float e = label - prediction;
     if(e > 0) {
       return tau * e;
     } else {
@@ -124,11 +157,11 @@ public:
     
   }
   
-  double getUpdate(double prediction, double label, double eta_t, double norm, float h) {
-    double s2;
-    double e = label - prediction;
+  float getUpdate(float prediction, float label, float eta_t, float norm, float h) {
+    float s2;
+    float e = label - prediction;
     if(e == 0) return 0;
-    double s1=eta_t*h;
+    float s1=eta_t*h;
     if(e > 0) {
       s2=e/tau;
       return tau*(s1<s2?s1:s2)/norm;
@@ -136,6 +169,18 @@ public:
       s2=-e/(1-tau);
       return -(1 - tau)*(s1<s2?s1:s2)/norm;
     }
+  }
+  
+  float getRevertingWeight(float prediction, float eta_t){
+    float alternative,v;
+    if(prediction > tau){
+      alternative = 0;
+      v = -(1-tau);
+    } else{
+      alternative = 1;
+      v = tau;
+    }
+    return (alternative - prediction)/(eta_t*v);
   }
   
   double tau;
