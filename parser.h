@@ -7,6 +7,7 @@ embodied in the content of this file are licensed under the BSD
 #ifndef SCE
 #define SCE
 
+
 #include "io.h"
 #include "global_data.h"
 #include "parse_primitives.h"
@@ -22,6 +23,8 @@ struct label_parser {
   size_t label_size;
 };
 
+typedef size_t (*hash_func_t)(substring, unsigned long);
+
 struct parser {
   v_array<substring> channels;//helper(s) for text parsing
   v_array<substring> words;
@@ -31,6 +34,7 @@ struct parser {
 
   io_buf* input; //Input source(s)
   int (*reader)(parser* p, void* ae);
+  hash_func_t hasher;
   bool resettable; //Whether or not the input can be reset.
   io_buf* output; //Where to output the cache.
   bool write_cache; 

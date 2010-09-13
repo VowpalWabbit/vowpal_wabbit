@@ -15,5 +15,6 @@ embodied in the content of this file are licensed under the BSD
 
 //example processing
 int read_features(parser* p, void* ex);
+hash_func_t getHasher(const string& s);
 
 #endif

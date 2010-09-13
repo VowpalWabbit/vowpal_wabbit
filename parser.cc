@@ -281,6 +281,9 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
   
   if (vm.count("data"))
     {
+      string hash_function("strings");
+      if(vm.count("hash")) 
+	hash_function = vm["hash"].as<string>();
       if (par->input->files.index() > 0)
 	{
 	  if (!quiet)
@@ -300,6 +303,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 		  exit(0);
 		}
 	      par->reader = read_features;
+	      par->hasher = getHasher(hash_function);
 	      par->resettable = par->write_cache;
 	    }
 	}
@@ -313,6 +317,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  }
 	  push(par->input->files,fileno(stdin));
 	  par->reader = read_features;
+	  par->hasher = getHasher(hash_function);
 	  par->resettable = par->write_cache;
 	}
     }
