@@ -86,6 +86,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
       regressor.read((char*)&local_thread_bits, sizeof(local_thread_bits));
       if (!initialized){
 	global.thread_bits = local_thread_bits;
+	global.partition_bits = global.thread_bits;
       }
       else 
 	if (local_thread_bits != global.thread_bits)

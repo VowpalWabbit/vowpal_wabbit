@@ -57,7 +57,10 @@ bool thread_done(size_t thread)
     return false;
   pthread_mutex_lock(&delay);
   ret = (delay_indices[thread] == local_index) 
-    && (!global.backprop || !global.delayed_global || delay_indices[thread+1+global.num_threads()] == global_index);
+    && (!(global.backprop || global.delayed_global) 
+	|| global.local_prediction <= 0
+	|| (delay_indices[thread+1+global.num_threads()] == global_index
+	    && global_index == local_index));
   pthread_mutex_unlock(&delay);
   return ret;
 }
@@ -88,10 +91,7 @@ example* get_delay_example(size_t thread)
   if ((global.backprop || global.delayed_global) && 
       (delay_indices[thread+1+global.num_threads()] 
        != global_index))
-    {
-      cout << "getting delayed global example" << endl;
-      return return_example(thread+1+global.num_threads());
-    }
+    return return_example(thread+1+global.num_threads());
   else if (delay_indices[thread] != local_index)
     return return_example(thread);
   else 

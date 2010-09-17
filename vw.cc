@@ -22,6 +22,7 @@ embodied in the content of this file are licensed under the BSD
 #include "sender.h"
 #include "delay_ring.h"
 #include "message_relay.h"
+#include "multisource.h"
 
 gd_vars* vw(int argc, char *argv[])
 {
@@ -59,12 +60,8 @@ gd_vars* vw(int argc, char *argv[])
     start_parser(num_threads, p);
     initialize_delay_ring();
 
-    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop) )
-      {
-	cout << "setting up relay" << endl;
-	setup_relay(vars);
-      }    
-
+    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.delayed_global) )
+      setup_relay(vars);
     if (vm.count("sendto"))
       {
 	setup_send();
@@ -81,9 +78,9 @@ gd_vars* vw(int argc, char *argv[])
 	destroy_gd();
       }
     
-    if (global.unique_id == 0 && global.local_prediction > 0)
+    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.delayed_global) )
       destroy_relay();
-    
+
     destroy_delay_ring();
     end_parser(p);
     vars->eta *= eta_decay;

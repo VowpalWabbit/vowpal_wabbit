@@ -55,12 +55,6 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   return cache_numbits;
 }
 
-void close_files(v_array<int>& files)
-{
-  while(files.index() > 0)
-    close(files.pop());
-}
-
 void reset_source(size_t numbits, parser* p)
 {
   io_buf* input = p->input;
@@ -233,7 +227,6 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    }
 
 	  size_t id;
-	  cout << "file descriptor" << endl;
 	  really_read(f, &id, sizeof(id));
 	  if (!global.quiet)
 	    cerr << "id read = " << id << endl;
@@ -506,22 +499,20 @@ size_t example_count = 0;
 
 void setup_example(parser* p, example* ae)
 {
-  size_t num_threads = global.num_threads();
-
   ae->partial_prediction = 0.;
   ae->num_features = 1;
   ae->total_sum_feat_sq = 1;
-  ae->threads_to_finish = num_threads;	
+  ae->threads_to_finish = global.num_threads();	
   ae->done = false;
   ae->example_counter = ++example_count;
   ae->global_weight = p->lp->get_weight(ae->ld);
 
-  if (!ae->sorted && global.thread_bits > 0)
+  if (!ae->sorted && global.partition_bits > 0)
     unique_sort_features(ae);
 
   //Should loop through the features to determine the boundaries
   size_t length = global.mask + 1;
-  size_t expert_size = length >> global.thread_bits; //#features/expert
+  size_t expert_size = length >> global.partition_bits; //#features/expert
   for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
     {
       //subsets is already erased just before parsing.

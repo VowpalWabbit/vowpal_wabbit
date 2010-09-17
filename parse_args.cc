@@ -101,6 +101,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   po::store(po::command_line_parser(argc, argv).
 	    options(desc).positional(p).run(), vm);
   po::notify(vm);
+
+  global.partition_bits = global.thread_bits;
   
   if (vm.count("help") || argc == 1) {
     /* upon direct query for help -- spit it out to stdout */
@@ -110,12 +112,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   
   if (vm.count("backprop")) {
       global.backprop = true;
-      cout << "enabling backprop" << endl;
+      cout << "enabling backprop updates" << endl;
   }
 
   if (vm.count("delayed_global")) {
       global.delayed_global = true;
-      cout << "enabling backprop" << endl;
+      cout << "enabling delayed_global updates" << endl;
   }
   
   if (vm.count("version") || argc == 1) {
@@ -258,7 +260,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("audit"))
     global.audit = true;
 
-  parse_send_args(vm, global.pairs, global.thread_bits);
+  parse_send_args(vm, global.pairs);
 
   if (vm.count("testonly"))
     {

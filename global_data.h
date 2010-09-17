@@ -21,6 +21,7 @@ struct int_pair {
 
 struct global_data {
   size_t thread_bits; // log_2 of the number of threads.
+  size_t partition_bits; // log_2 of the number of partitions of features.
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
   bool backprop;
@@ -38,6 +39,7 @@ struct global_data {
   double max_label;//maximum label encountered
 
   size_t num_threads () { return 1 << thread_bits; };
+  size_t num_partitions () { return 1 << partition_bits; };
   size_t length () { return 1 << num_bits; };
 
   //Prediction output

@@ -38,10 +38,13 @@ bool blocking_get_prediction(int sock, prediction &p)
   return ret;
 }
 
+size_t recv_count = 0;
 bool blocking_get_global_prediction(int sock, global_prediction &p)
 {
   int count = really_read(sock, &p, sizeof(p));
   bool ret = (count == sizeof(p));
+  if (ret)
+    recv_count++;
   return ret;
 }
 
@@ -55,14 +58,18 @@ void send_prediction(int sock, prediction &p)
     }
 }
 
+size_t send_count = 0;
+
 void send_global_prediction(int sock, global_prediction p)
 {
   if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
     {
-      cerr << "argh! bad write! " << endl;
+      cerr << "argh! bad global write! " << sock << endl;
       perror(NULL);
       exit(0);
     }
+  else
+    send_count++;
 }
 
 void reset(partial_example &ex)
@@ -70,6 +77,8 @@ void reset(partial_example &ex)
   ex.features.erase();
 }
 
+size_t num_finished = 0;
+  
 int receive_features(parser* p, void* ex)
 {
   example* ae = (example*)ex;
@@ -79,7 +88,7 @@ int receive_features(parser* p, void* ex)
   for (int* sock= input->files.begin; sock != input->files.end; sock++)
     FD_SET(*sock,&fds);
   
-  while (input->files.index() > 0)
+  while (input->files.index() > num_finished)
     {
       if (select(p->max_fd,&fds,NULL, NULL, NULL) == -1)
 	{
@@ -96,20 +105,7 @@ int receive_features(parser* p, void* ex)
 	      if (!blocking_get_prediction(sock, pre) )
 		{
 		  FD_CLR(sock, &fds);
-		  close(sock);
-		  memmove(input->files.begin+index,
-			  input->files.begin+index+1,
-			  (input->files.index() - index-1)*sizeof(int));
-		  input->files.pop();
-		  memmove(p->ids.begin+index, 
-			  p->ids.begin+index+1, 
-			  (p->ids.index() - index-1)*sizeof(size_t));
-		  p->ids.pop();
-		  memmove(p->counts.begin+index,
-			  p->counts.begin+index+1,
-			  (p->counts.index() - index-1)*sizeof(size_t));
-		  p->counts.pop();
-		  index--;
+		  num_finished++;
 		}
 	      else
 		{
