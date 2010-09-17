@@ -316,6 +316,8 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
 
       ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, vars.eta/pow(vars.t,vars.power_t), ec->total_sum_feat_sq, ld->weight);
     }
+  if (global.delayed_global)
+    ec->eta_round = 0;
 
   if (global.local_prediction > 0)
     {

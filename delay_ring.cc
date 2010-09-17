@@ -22,10 +22,12 @@ size_t mesg = 0;
 
 void initialize_delay_ring()
 {
-  if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop))
+  if (global.local_prediction > 0 && (global.unique_id == 0 
+				      || global.backprop
+				      || global.delayed_global))
     mesg = 1;
   size_t nt = global.num_threads()+mesg;
-  if (global.backprop)
+  if (global.backprop || global.delayed_global)
     nt += global.num_threads();
   reserve(delay_indices, nt);
   for (size_t i = 0; i < nt; i++)
@@ -55,7 +57,7 @@ bool thread_done(size_t thread)
     return false;
   pthread_mutex_lock(&delay);
   ret = (delay_indices[thread] == local_index) 
-    && (!global.backprop || delay_indices[thread+1+global.num_threads()] == global_index);
+    && (!global.backprop || !global.delayed_global || delay_indices[thread+1+global.num_threads()] == global_index);
   pthread_mutex_unlock(&delay);
   return ret;
 }
@@ -83,7 +85,7 @@ example* return_example(size_t thread)
 
 example* get_delay_example(size_t thread)
 {//nonblocking
-  if (global.backprop && 
+  if ((global.backprop || global.delayed_global) && 
       (delay_indices[thread+1+global.num_threads()] 
        != global_index))
     {
@@ -109,7 +111,8 @@ example* blocking_get_delay_example(size_t thread)
 void delay_example(example* ex, size_t count)
 {
   size_t delay_count = count+mesg;
-  if (global.backprop && global.local_prediction > 0)
+  if ((global.backprop || global.delayed_global) 
+      && global.local_prediction > 0)
     delay_count += count;
 
   if (delay_count == 0)
@@ -141,7 +144,8 @@ void delay_example(example* ex, size_t count)
 }
 
 void delay_global_example(example* ex, size_t count)
-{//only called by delayed backprop when there is training to do.
+{ //only called by delayed backprop or delayed_global when 
+  //there is training to do.
   if (count == 0)
     {
       ex->threads_to_finish = 0;

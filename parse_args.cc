@@ -38,6 +38,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
+    ("delayed_global", "Do delayed global updates")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
     ("version","Version information")
@@ -75,6 +76,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.weighted_examples = 0.;
   global.old_weighted_examples = 0.;
   global.backprop = false;
+  global.delayed_global = false;
   global.weighted_labels = 0.;
   global.total_features = 0;
   global.sum_loss = 0.0;
@@ -108,6 +110,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   
   if (vm.count("backprop")) {
       global.backprop = true;
+      cout << "enabling backprop" << endl;
+  }
+
+  if (vm.count("delayed_global")) {
+      global.delayed_global = true;
       cout << "enabling backprop" << endl;
   }
   
