@@ -319,7 +319,7 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
 
   if (global.local_prediction > 0)
     {
-      prediction pred={0};
+      prediction pred;
       pred.p = ec->final_prediction;
       if (global.training && ld->label != FLT_MAX)
         pred.p += ec->eta_round * ec->total_sum_feat_sq;
