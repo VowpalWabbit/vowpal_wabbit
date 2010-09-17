@@ -53,7 +53,7 @@ void destroy_delay_ring()
 bool thread_done(size_t thread)
 {
   bool ret;
-  if (examples_to_finish())
+  if (!parser_done())
     return false;
   pthread_mutex_lock(&delay);
   ret = (delay_indices[thread] == local_index) 

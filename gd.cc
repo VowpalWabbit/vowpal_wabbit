@@ -31,7 +31,7 @@ void* gd_thread(void *in)
 	  inline_train(reg, ec, thread_num, ec->eta_round);
 	  finish_example(ec);
 	}
-      else if ((ec = get_example(thread_num)) != NULL)//blocking operation.
+      else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
 	  if ( (ec->tag).end == (ec->tag).begin+4 
 	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))

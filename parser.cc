@@ -336,9 +336,21 @@ pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
 pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
 size_t parsed_index; // The index of the parsed example.
 size_t* used_index; // The index of the example currently used by thread i.
-bool done;
+bool done=false;
 v_array<size_t> random_nos;
 v_array<size_t> gram_mask;
+
+bool parser_done()
+{
+  if (done)
+    {
+      for (size_t i = 0; i < global.num_threads(); i++)
+	if (used_index[i] != parsed_index)
+	  return false;
+      return true;
+    }
+  return false;
+}
 
 void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& audits,
 	      size_t initial_length, v_array<size_t> &gram_mask, size_t skips)
@@ -579,21 +591,6 @@ void *main_parse_loop(void *in)
   p->name.begin = p->name.end = p->name.end_array = NULL;
 
   return NULL;
-}
-
-bool examples_to_finish()
-{
-  if (!done)
-    return true;
-  pthread_mutex_lock(&examples_lock);
-  for(size_t i = 0; i < ring_size; i++)
-    if (examples[i].in_use)
-      {
-	pthread_mutex_unlock(&examples_lock);
-	return true;
-      }
-  pthread_mutex_unlock(&examples_lock);
-  return false;
 }
 
 void free_example(example* ec)

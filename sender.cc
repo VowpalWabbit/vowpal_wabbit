@@ -110,10 +110,14 @@ void* send_thread(void*)
   v_array<char> null_tag;
   null_tag.erase();
 
+  bool finished = false;
+  int spin_count = 0;
   while ( true )
     {//this is a poor man's select operation.
-      if ((ec = get_example(0)) != NULL)//blocking operation.
+      if ((ec = get_example(0)) != NULL)//semiblocking operation.
         {
+	  if (finished) 
+	    cout << "NOT POSSIBLE! " << endl;
           label_data* ld = (label_data*)ec->ld;
           
           for (size_t i = 0; i < d_1; i++)
@@ -125,8 +129,10 @@ void* send_thread(void*)
               }
           delay_example(ec,0);
         }
-      else if (!examples_to_finish())
+      else if (!finished && parser_done())
         { //close our outputs to signal finishing.
+	  finished = true;
+	  cout << "cleaning up file descriptors" << endl;
           for (size_t i = 0; i < d_1; i++)
             {
               for (size_t j = 0; j < d_2; j++)
@@ -139,10 +145,15 @@ void* send_thread(void*)
               free(bufs[i].begin);
             }
           free(bufs.begin);
-          return NULL;
         }
+      else if (!finished)
+	spin_count++;
+      else
+	{
+	  cout << "spin_count = " << spin_count << endl;
+	  return NULL;
+	}
     }
-
   return NULL;
 }
 
