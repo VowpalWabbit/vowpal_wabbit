@@ -55,12 +55,6 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   return cache_numbits;
 }
 
-void close_files(v_array<int>& files)
-{
-  while(files.index() > 0)
-    close(files.pop());
-}
-
 void reset_source(size_t numbits, parser* p)
 {
   io_buf* input = p->input;
@@ -233,7 +227,6 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    }
 
 	  size_t id;
-	  cout << "file descriptor" << endl;
 	  really_read(f, &id, sizeof(id));
 	  if (!global.quiet)
 	    cerr << "id read = " << id << endl;
@@ -243,7 +236,9 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      par->label_sock = f;
 	      global.print = binary_print_result;
 	    }
-	  if (id == 0 || (global.backprop && vm.count("multisource")))
+	  if (id == 0 || 
+	      ((global.backprop || global.delayed_global) 
+	       && vm.count("multisource")))
 	    {
 	      int_pair pf = {f,id};
 	      push(global.final_prediction_sink,pf);
@@ -334,9 +329,21 @@ pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
 pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
 size_t parsed_index; // The index of the parsed example.
 size_t* used_index; // The index of the example currently used by thread i.
-bool done;
+bool done=false;
 v_array<size_t> random_nos;
 v_array<size_t> gram_mask;
+
+bool parser_done()
+{
+  if (done)
+    {
+      for (size_t i = 0; i < global.num_threads(); i++)
+	if (used_index[i] != parsed_index)
+	  return false;
+      return true;
+    }
+  return false;
+}
 
 void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& audits,
 	      size_t initial_length, v_array<size_t> &gram_mask, size_t skips)
@@ -492,22 +499,20 @@ size_t example_count = 0;
 
 void setup_example(parser* p, example* ae)
 {
-  size_t num_threads = global.num_threads();
-
   ae->partial_prediction = 0.;
   ae->num_features = 1;
   ae->total_sum_feat_sq = 1;
-  ae->threads_to_finish = num_threads;	
+  ae->threads_to_finish = global.num_threads();	
   ae->done = false;
   ae->example_counter = ++example_count;
   ae->global_weight = p->lp->get_weight(ae->ld);
 
-  if (!ae->sorted && global.thread_bits > 0)
+  if (!ae->sorted && global.partition_bits > 0)
     unique_sort_features(ae);
 
   //Should loop through the features to determine the boundaries
   size_t length = global.mask + 1;
-  size_t expert_size = length >> global.thread_bits; //#features/expert
+  size_t expert_size = length >> global.partition_bits; //#features/expert
   for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
     {
       //subsets is already erased just before parsing.
@@ -577,21 +582,6 @@ void *main_parse_loop(void *in)
   p->name.begin = p->name.end = p->name.end_array = NULL;
 
   return NULL;
-}
-
-bool examples_to_finish()
-{
-  if (!done)
-    return true;
-  pthread_mutex_lock(&examples_lock);
-  for(size_t i = 0; i < ring_size; i++)
-    if (examples[i].in_use)
-      {
-	pthread_mutex_unlock(&examples_lock);
-	return true;
-      }
-  pthread_mutex_unlock(&examples_lock);
-  return false;
 }
 
 void free_example(example* ec)

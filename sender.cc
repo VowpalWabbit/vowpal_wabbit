@@ -73,7 +73,7 @@ void open_sockets(vector<string>& hosts)
     }
 }
 
-void parse_send_args(po::variables_map& vm, vector<string> pairs, size_t& thread_bits)
+void parse_send_args(po::variables_map& vm, vector<string> pairs)
 {
   if (vm.count("sendto"))
     {      
@@ -87,7 +87,7 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs, size_t& thread
         }
 
       vector<string> hosts = vm["sendto"].as< vector<string> >();
-      thread_bits = max(thread_bits,find_split(hosts.size()));
+      global.partition_bits = find_split(hosts.size());
       open_sockets(hosts);
     }
 }
@@ -110,10 +110,13 @@ void* send_thread(void*)
   v_array<char> null_tag;
   null_tag.erase();
 
+  bool finished = false;
   while ( true )
     {//this is a poor man's select operation.
-      if ((ec = get_example(0)) != NULL)//blocking operation.
+      if ((ec = get_example(0)) != NULL)//semiblocking operation.
         {
+	  if (finished) 
+	    cout << "NOT POSSIBLE! " << endl;
           label_data* ld = (label_data*)ec->ld;
           
           for (size_t i = 0; i < d_1; i++)
@@ -125,8 +128,9 @@ void* send_thread(void*)
               }
           delay_example(ec,0);
         }
-      else if (!examples_to_finish())
+      else if (!finished && parser_done())
         { //close our outputs to signal finishing.
+	  finished = true;
           for (size_t i = 0; i < d_1; i++)
             {
               for (size_t j = 0; j < d_2; j++)
@@ -139,10 +143,12 @@ void* send_thread(void*)
               free(bufs[i].begin);
             }
           free(bufs.begin);
-          return NULL;
         }
+      else if (!finished)
+	;
+      else
+	return NULL;
     }
-
   return NULL;
 }
 

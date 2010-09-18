@@ -38,6 +38,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
+    ("delayed_global", "Do delayed global updates")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
     ("version","Version information")
@@ -75,6 +76,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.weighted_examples = 0.;
   global.old_weighted_examples = 0.;
   global.backprop = false;
+  global.delayed_global = false;
   global.weighted_labels = 0.;
   global.total_features = 0;
   global.sum_loss = 0.0;
@@ -99,6 +101,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   po::store(po::command_line_parser(argc, argv).
 	    options(desc).positional(p).run(), vm);
   po::notify(vm);
+
+  global.partition_bits = global.thread_bits;
   
   if (vm.count("help") || argc == 1) {
     /* upon direct query for help -- spit it out to stdout */
@@ -108,7 +112,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   
   if (vm.count("backprop")) {
       global.backprop = true;
-      cout << "enabling backprop" << endl;
+      cout << "enabling backprop updates" << endl;
+  }
+
+  if (vm.count("delayed_global")) {
+      global.delayed_global = true;
+      cout << "enabling delayed_global updates" << endl;
   }
   
   if (vm.count("version") || argc == 1) {
@@ -251,7 +260,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("audit"))
     global.audit = true;
 
-  parse_send_args(vm, global.pairs, global.thread_bits);
+  parse_send_args(vm, global.pairs);
 
   if (vm.count("testonly"))
     {

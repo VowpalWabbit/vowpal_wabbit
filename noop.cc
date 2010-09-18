@@ -8,7 +8,7 @@ void start_noop()
 {
   example* ec = NULL;
   
-  while ( examples_to_finish()){
+  while ( !parser_done()){
     ec = get_example(0);
     if (ec != NULL)
       finish_example(ec);
