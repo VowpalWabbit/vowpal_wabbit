@@ -28,6 +28,7 @@ struct example // core example datatype.
   void* ld;
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
+  float example_t;
 
   bool sorted;//Are the features sorted or not?
   v_array<size_t> indices;

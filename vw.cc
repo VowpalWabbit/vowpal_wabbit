@@ -60,7 +60,7 @@ gd_vars* vw(int argc, char *argv[])
     start_parser(num_threads, p);
     initialize_delay_ring();
 
-    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.delayed_global) )
+    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
       setup_relay(vars);
     if (vm.count("sendto"))
       {
@@ -78,7 +78,7 @@ gd_vars* vw(int argc, char *argv[])
 	destroy_gd();
       }
     
-    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.delayed_global) )
+    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
       destroy_relay();
 
     destroy_delay_ring();

@@ -238,7 +238,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      global.print = binary_print_result;
 	    }
 	  if (id == 0 || 
-	      ((global.backprop || global.delayed_global) 
+	      ((global.backprop || global.delayed_global || global.corrective) 
 	       && vm.count("multisource")))
 	    {
 	      int_pair pf = {f,id};
@@ -507,6 +507,8 @@ void setup_example(parser* p, example* ae)
   ae->done = false;
   ae->example_counter = ++example_count;
   ae->global_weight = p->lp->get_weight(ae->ld);
+  p->t += ae->global_weight;
+  ae->example_t = p->t;
 
   if (!ae->sorted && global.partition_bits > 0)
     unique_sort_features(ae);

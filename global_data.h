@@ -24,8 +24,11 @@ struct global_data {
   size_t partition_bits; // log_2 of the number of partitions of features.
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
+
   bool backprop;
+  bool corrective;
   bool delayed_global;
+
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.
