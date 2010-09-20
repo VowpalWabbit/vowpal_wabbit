@@ -31,6 +31,7 @@ struct parser {
   v_array<substring> name;
 
   const label_parser* lp;
+  float t;
 
   io_buf* input; //Input source(s)
   int (*reader)(parser* p, void* ae);

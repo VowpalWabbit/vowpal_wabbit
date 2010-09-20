@@ -9,6 +9,7 @@ embodied in the content of this file are licensed under the BSD
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <stdio.h>
+#include <assert.h>
 namespace po = boost::program_options;
 
 #include "parser.h"
@@ -237,7 +238,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      global.print = binary_print_result;
 	    }
 	  if (id == 0 || 
-	      ((global.backprop || global.delayed_global) 
+	      ((global.backprop || global.delayed_global || global.corrective) 
 	       && vm.count("multisource")))
 	    {
 	      int_pair pf = {f,id};
@@ -506,6 +507,8 @@ void setup_example(parser* p, example* ae)
   ae->done = false;
   ae->example_counter = ++example_count;
   ae->global_weight = p->lp->get_weight(ae->ld);
+  p->t += ae->global_weight;
+  ae->example_t = p->t;
 
   if (!ae->sorted && global.partition_bits > 0)
     unique_sort_features(ae);
@@ -587,6 +590,7 @@ void *main_parse_loop(void *in)
 void free_example(example* ec)
 {
   pthread_mutex_lock(&examples_lock);
+  assert(ec->in_use);
   ec->in_use = false;
   pthread_cond_signal(&example_unused);
   if (done)
@@ -600,6 +604,9 @@ example* get_example(size_t thread_num)
       
   if (parsed_index != used_index[thread_num]) {
     size_t ring_index = used_index[thread_num]++ % ring_size;
+    if (!(examples+ring_index)->in_use)
+      cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << " " << (examples+ring_index-1)->in_use << endl;
+    assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
     return examples + ring_index;
   }

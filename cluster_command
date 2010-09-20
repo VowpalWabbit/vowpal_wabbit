@@ -1,9 +1,17 @@
 #!/bin/sh
 killall vw
 # An example cluster command.  This just runs on one machine.
-export FLAGS='-l 20 --power_t 0.5 --daemon --predictto localhost:39525'
-./vw -l 20 --delayed_global --power_t 0.5 --multisource 2 --port 39525 --quiet &
+export FLAGS='-l 20 --delayed_global --power_t 0.5 --predictto localhost:39525 --daemon'
+./vw -l 20 --power_t 0.5 --delayed_global --multisource 2 --port 39525 -f master.reg > master.output 2>&1 &
 sleep 1
-./vw --delayed_global --port 39523 $FLAGS --quiet &
-./vw --delayed_global --port 39524 $FLAGS --quiet &
-./vw -d data --sendto localhost:39523 --sendto localhost:39524 
+./vw $FLAGS --port 39523 -f worker1.reg > worker1.output 2>&1 &
+./vw $FLAGS --port 39524 -f worker2.reg > worker2.output 2>&1 &
+sleep 1
+./vw -d train.data --sendto localhost:39523 --sendto localhost:39524 # > sender.output 2>&1
+echo "boo"
+./vw -t --multisource 2 --port 39525 -i master.reg >> master.output 2>&1 &
+sleep 1
+./vw -t --port 39523 --daemon --predictto localhost:39525 -i worker1.reg >> worker1.output 2>&1 &
+./vw -t --port 39524 --daemon --predictto localhost:39525 -i worker2.reg >> worker2.output 2>&1 &
+sleep 1
+./vw -d train.data --sendto localhost:39523 --sendto localhost:39524 # >> sender.output 2>&1

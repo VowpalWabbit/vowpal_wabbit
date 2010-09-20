@@ -10,7 +10,7 @@ int really_read(int sock, void* in, size_t count)
 {
   char* buf = (char*)in;
   size_t done = 0;
-  int r= 0;
+  int r = 0;
   while (done < count)
     {
       if ((r = read(sock,buf,count-done)) == 0)
@@ -85,9 +85,9 @@ int receive_features(parser* p, void* ex)
   io_buf* input = p->input;
   fd_set fds;
   FD_ZERO(&fds);
-  for (int* sock= input->files.begin; sock != input->files.end; sock++)
+  for (int* sock= input->files.begin; sock != input->files.end-num_finished; sock++)
     FD_SET(*sock,&fds);
-  
+
   while (input->files.index() > num_finished)
     {
       if (select(p->max_fd,&fds,NULL, NULL, NULL) == -1)
@@ -105,6 +105,15 @@ int receive_features(parser* p, void* ex)
 	      if (!blocking_get_prediction(sock, pre) )
 		{
 		  FD_CLR(sock, &fds);
+		  int swap_target = input->files.index()-num_finished-1;
+		  input->files[index]=input->files[swap_target];
+		  input->files[swap_target]=sock;
+		  int temp = p->ids[index];
+		  p->ids[index]=p->ids[swap_target];
+		  p->ids[swap_target] = temp;
+		  temp = p->counts[index];
+		  p->counts[index]=p->counts[swap_target];
+		  p->counts[swap_target] = temp;
 		  num_finished++;
 		}
 	      else

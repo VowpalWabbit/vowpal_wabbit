@@ -33,17 +33,19 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
+    ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
     ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
+    ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
     ("delayed_global", "Do delayed global updates")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
     ("version","Version information")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("initial_t", po::value<float>(&vars.t)->default_value(1.), "initial t value")
+    ("initial_t", po::value<float>(&(par->t))->default_value(1.), "initial t value")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
@@ -76,6 +78,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.weighted_examples = 0.;
   global.old_weighted_examples = 0.;
   global.backprop = false;
+  global.corrective = false;
   global.delayed_global = false;
   global.weighted_labels = 0.;
   global.total_features = 0;
@@ -113,6 +116,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("backprop")) {
       global.backprop = true;
       cout << "enabling backprop updates" << endl;
+  }
+
+  if (vm.count("corrective")) {
+      global.corrective = true;
+      cout << "enabling corrective updates" << endl;
   }
 
   if (vm.count("delayed_global")) {
@@ -209,7 +217,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
-  vars.eta *= pow(vars.t, vars.power_t);
+  vars.eta *= pow(par->t, vars.power_t);
   
   if (eta_decay_rate != default_decay && passes == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
@@ -224,7 +232,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     {
       cerr << "Num weight bits = " << global.num_bits << endl;
       cerr << "learning rate = " << vars.eta << endl;
-      cerr << "initial_t = " << vars.t << endl;
+      cerr << "initial_t = " << par->t << endl;
       cerr << "power_t = " << vars.power_t << endl;
       if (passes > 1)
 	cerr << "decay_learning_rate = " << eta_decay_rate << endl;

@@ -8,6 +8,7 @@ embodied in the content of this file are licensed under the BSD
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"
@@ -28,11 +29,13 @@ void* gd_thread(void *in)
     {//this is a poor man's select operation.
       if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
 	{
+	  //	  cout << "training with " << ec->eta_round << endl;
 	  inline_train(reg, ec, thread_num, ec->eta_round);
 	  finish_example(ec);
 	}
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
+	  assert(ec->in_use);
 	  if ( (ec->tag).end == (ec->tag).begin+4 
 	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))
 	    {
@@ -311,9 +314,8 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
   if (ld->label != FLT_MAX)
     {
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
-      vars.t += ld->weight;
       
-      ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, vars.eta/pow(vars.t,vars.power_t), ec->total_sum_feat_sq, ld->weight);
+      ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, vars.eta/pow(ec->example_t,vars.power_t), ec->total_sum_feat_sq, ld->weight);
     }
   if (global.delayed_global && global.local_prediction > 0)
     ec->eta_round = 0;
@@ -322,8 +324,9 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
     {
       prediction pred;
       pred.p = ec->final_prediction;
-      if (global.training && ld->label != FLT_MAX)
+      if (global.training && ld->label != FLT_MAX  && global.backprop)
         pred.p += ec->eta_round * ec->total_sum_feat_sq;
+      //      cout << "sending " << pred.p << "\t" << ec->final_prediction << endl;
       pred.example_number = ec->example_counter;
       send_prediction(global.local_prediction, pred);
       if (global.unique_id == 0)
