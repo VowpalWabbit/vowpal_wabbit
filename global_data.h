@@ -28,6 +28,7 @@ struct global_data {
   bool backprop;
   bool corrective;
   bool delayed_global;
+  float global_multiplier;
 
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1

@@ -39,6 +39,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
+    ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
     ("delayed_global", "Do delayed global updates")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")

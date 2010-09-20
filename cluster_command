@@ -1,17 +1,17 @@
 #!/bin/sh
 killall vw
 # An example cluster command.  This just runs on one machine.
-export FLAGS='-l 10 --corrective --predictto localhost:39525 --power_t 0.5'
-./vw -l 10 --power_t 0.5 --multisource 1 --port 39525 -f master.reg > master.output 2>&1 &
+export FLAGS='-l 20 --delayed_global --power_t 0.5 --predictto localhost:39525 --daemon'
+./vw -l 20 --power_t 0.5 --delayed_global --multisource 2 --port 39525 -f master.reg > master.output 2>&1 &
 sleep 1
-./vw $FLAGS -f worker1.reg --cache_file worker1train.cache #> worker1.output 2>&1 &
-#./vw $FLAGS --port 39524 -f worker2.reg > worker2.output 2>&1 &
-#sleep 1
-#./vw -d train.data --sendto localhost:39523 #--sendto localhost:39524 # > sender.output 2>&1
+./vw $FLAGS --port 39523 -f worker1.reg > worker1.output 2>&1 &
+./vw $FLAGS --port 39524 -f worker2.reg > worker2.output 2>&1 &
 sleep 1
-./vw -l 0 --multisource 1 --port 39525 -i master.reg >> master.output 2>&1 &
+./vw -d train.data --sendto localhost:39523 --sendto localhost:39524 # > sender.output 2>&1
+echo "boo"
+./vw -t --multisource 2 --port 39525 -i master.reg >> master.output 2>&1 &
 sleep 1
-./vw -l 0 --predictto localhost:39525 -d train.data -i worker1.reg # >> worker1.output 2>&1 &
-#./vw -t --port 39524 --daemon --predictto localhost:39525 -i worker2.reg >> worker2.output 2>&1 &
-#sleep 1
-#./vw -d test.data --sendto localhost:39523 #--sendto localhost:39524 >> sender.output 2>&1
+./vw -t --port 39523 --daemon --predictto localhost:39525 -i worker1.reg >> worker1.output 2>&1 &
+./vw -t --port 39524 --daemon --predictto localhost:39525 -i worker2.reg >> worker2.output 2>&1 &
+sleep 1
+./vw -d train.data --sendto localhost:39523 --sendto localhost:39524 # >> sender.output 2>&1
