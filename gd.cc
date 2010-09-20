@@ -8,6 +8,7 @@ embodied in the content of this file are licensed under the BSD
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"
@@ -33,6 +34,7 @@ void* gd_thread(void *in)
 	}
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
+	  assert(ec->in_use);
 	  if ( (ec->tag).end == (ec->tag).begin+4 
 	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))
 	    {

@@ -9,6 +9,7 @@ embodied in the content of this file are licensed under the BSD
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <stdio.h>
+#include <assert.h>
 namespace po = boost::program_options;
 
 #include "parser.h"
@@ -587,6 +588,7 @@ void *main_parse_loop(void *in)
 void free_example(example* ec)
 {
   pthread_mutex_lock(&examples_lock);
+  assert(ec->in_use);
   ec->in_use = false;
   pthread_cond_signal(&example_unused);
   if (done)
@@ -600,6 +602,9 @@ example* get_example(size_t thread_num)
       
   if (parsed_index != used_index[thread_num]) {
     size_t ring_index = used_index[thread_num]++ % ring_size;
+    if (!(examples+ring_index)->in_use)
+      cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << " " << (examples+ring_index-1)->in_use << endl;
+    assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
     return examples + ring_index;
   }

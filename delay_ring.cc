@@ -154,8 +154,8 @@ void delay_global_example(example* ex, size_t count)
     }
   else
     {
+      ex->threads_to_finish = count;
       pthread_mutex_lock(&delay);
-
       global_index++;
       pthread_mutex_unlock(&delay);
       make_example_available();

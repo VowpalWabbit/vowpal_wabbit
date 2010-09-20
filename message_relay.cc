@@ -30,7 +30,6 @@ void* mesg_relay(void* v)
 	}
       else
 	delay_global_example(ec,0);
-      finish_example(ec);
     }
   return NULL;
 }
