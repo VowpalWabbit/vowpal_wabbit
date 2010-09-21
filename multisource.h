@@ -5,9 +5,9 @@
 #include "parser.h"
 
 struct prediction {
-  float p;
   size_t example_number;
-};
+  float p;
+}__attribute__((packed));
 
 struct global_prediction {
   float p;

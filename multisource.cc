@@ -96,7 +96,7 @@ int receive_features(parser* p, void* ex)
 	  perror(NULL);
 	  exit (1);
 	}
-      for (int index = 0; index < (int)input->files.index(); index++)
+      for (int index = 0; index < (int)(input->files.index()-num_finished); index++)
 	{
 	  int sock = input->files[index];
 	  if (FD_ISSET(sock, &fds))
@@ -115,6 +115,7 @@ int receive_features(parser* p, void* ex)
 		  p->counts[index]=p->counts[swap_target];
 		  p->counts[swap_target] = temp;
 		  num_finished++;
+		  index--;
 		}
 	      else
 		{
