@@ -29,7 +29,6 @@ void* gd_thread(void *in)
     {//this is a poor man's select operation.
       if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
 	{
-	  //	  cout << "training with " << ec->eta_round << endl;
 	  inline_train(reg, ec, thread_num, ec->eta_round);
 	  finish_example(ec);
 	}
@@ -326,7 +325,6 @@ void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& re
       pred.p = ec->final_prediction;
       if (global.training && ld->label != FLT_MAX  && global.backprop)
         pred.p += ec->eta_round * ec->total_sum_feat_sq;
-      //      cout << "sending " << pred.p << "\t" << ec->final_prediction << endl;
       pred.example_number = ec->example_counter;
       send_prediction(global.local_prediction, pred);
       if (global.unique_id == 0)
