@@ -82,7 +82,6 @@ void print_offset_audit_quad(weight* weights, audit_data& page_feature, v_array<
 void print_offset_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, size_t offset)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index + offset;
-
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     cout << '\t' << ((halfhash + ele->weight_index) & mask) 
 	 << ':' << (ele->x*page_feature.x)
