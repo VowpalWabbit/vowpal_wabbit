@@ -263,7 +263,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  par->reader = receive_features;
 	  calloc_reserve(par->pes,ring_size);
 	  par->pes.end = par->pes.begin+ring_size;
-	  calloc_reserve(par->counts,ring_size);
+	  calloc_reserve(par->counts,source_count);
 	  par->counts.end = par->counts.begin+ring_size;
 	  par->finished_count = 0;
 	}

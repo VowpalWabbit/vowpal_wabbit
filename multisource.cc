@@ -38,13 +38,10 @@ bool blocking_get_prediction(int sock, prediction &p)
   return ret;
 }
 
-size_t recv_count = 0;
 bool blocking_get_global_prediction(int sock, global_prediction &p)
 {
   int count = really_read(sock, &p, sizeof(p));
   bool ret = (count == sizeof(p));
-  if (ret)
-    recv_count++;
   return ret;
 }
 
@@ -58,8 +55,6 @@ void send_prediction(int sock, prediction &p)
     }
 }
 
-size_t send_count = 0;
-
 void send_global_prediction(int sock, global_prediction p)
 {
   if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
@@ -68,8 +63,6 @@ void send_global_prediction(int sock, global_prediction p)
       perror(NULL);
       exit(0);
     }
-  else
-    send_count++;
 }
 
 void reset(partial_example &ex)
@@ -122,7 +115,7 @@ int receive_features(parser* p, void* ex)
 		  if (pre.example_number != ++ (p->counts[index]))
 		    cout << "count is off! " << pre.example_number << " != " << p->counts[index] << 
 		      " for source " << index << " prediction = " << pre.p << endl;
-		  if (pre.example_number == p->finished_count + ring_size - 1)
+		  if (pre.example_number == p->finished_count + ring_size)
 		    FD_CLR(sock,&fds);//this ones to far ahead, let the buffer fill for awhile.
 		  size_t ring_index = pre.example_number % p->pes.index();
 		  if (p->pes[ring_index].features.index() == 0)
@@ -152,7 +145,7 @@ int receive_features(parser* p, void* ex)
 		    }
 		}
 	    }
-	  else  if (p->counts[index] < p->finished_count + ring_size -1)
+	  else  if (p->counts[index] < p->finished_count + ring_size)
 	    FD_SET(sock,&fds);
 	}
     }

@@ -15,8 +15,6 @@ struct global_prediction {
 };
 
 const size_t multindex = 5;
-extern size_t send_count;
-extern size_t recv_count;
 
 int really_read(int sock, void* in, size_t count);
 int receive_features(parser* p, void* ex);

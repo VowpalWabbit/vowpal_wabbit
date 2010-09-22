@@ -90,9 +90,9 @@ example* return_example(size_t thread)
 example* get_delay_example(size_t thread)
 {//nonblocking
   if ((global.backprop || global.corrective || global.delayed_global) && 
-      (delay_indices[thread+1+global.num_threads()] 
+      (delay_indices[thread+mesg+global.num_threads()] 
        != global_index))
-    return return_example(thread+1+global.num_threads());
+    return return_example(thread+mesg+global.num_threads());
   else if (delay_indices[thread] != local_index)
     return return_example(thread);
   else 
