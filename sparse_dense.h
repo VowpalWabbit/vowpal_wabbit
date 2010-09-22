@@ -11,6 +11,9 @@ embodied in the content of this file are licensed under the BSD
 
 float sd_add(weight* weights, size_t mask, feature* begin, feature* end);
 
+float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, size_t offset);
+void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update);
+
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
                const v_array<feature> &second_part, size_t thread_mask);
 

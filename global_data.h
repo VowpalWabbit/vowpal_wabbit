@@ -46,6 +46,8 @@ struct global_data {
   size_t num_partitions () { return 1 << partition_bits; };
   size_t length () { return 1 << num_bits; };
 
+  size_t rank;
+
   //Prediction output
   v_array<int_pair> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.

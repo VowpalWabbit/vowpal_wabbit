@@ -61,6 +61,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
     ("quiet", "Don't output diagnostics")
+    ("random_regressor", "Initialize regressor with random values")
+    ("rank", po::value<size_t>(&global.rank)->default_value(0), "rank for matrix factorization.")
     ("raw_predictions,r", po::value< string >(), 
      "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send example to <hosts>")

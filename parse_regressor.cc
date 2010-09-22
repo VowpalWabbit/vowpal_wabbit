@@ -15,7 +15,7 @@ using namespace std;
 #include "loss_functions.h"
 #include "global_data.h"
 
-void initialize_regressor(regressor &r)
+void initialize_regressor(regressor &r, bool random)
 {
   size_t length = ((size_t)1) << global.num_bits;
   global.thread_mask = (length >> global.thread_bits) - 1;
@@ -24,6 +24,9 @@ void initialize_regressor(regressor &r)
   for (size_t i = 0; i < num_threads; i++)
     {
       r.weight_vectors[i] = (weight *)calloc(length/num_threads, sizeof(weight));
+      if (random)
+	for (size_t j = 0; j < length/num_threads; j++)
+	  r.weight_vectors[i][j] = drand48()/10 - 0.05;
       if (r.weight_vectors[i] == NULL)
         {
           cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
@@ -52,7 +55,11 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
      numbits.
   */
   bool initialized = false;
-  
+
+  bool random_reg = false;
+  if (vm.count("random_regressor"))
+    random_reg = true;
+
   for (size_t i = 0; i < regs.size(); i++)
     {
       ifstream regressor(regs[i].c_str());
@@ -109,7 +116,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
       if (!initialized)
 	{
 	  global.pairs = local_pairs;
-	  initialize_regressor(r);
+	  initialize_regressor(r, random_reg);
 	}
       else
 	if (local_pairs != global.pairs)
@@ -158,7 +165,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
       if(vm.count("noop") || vm.count("sendto"))
 	r.weight_vectors = NULL;
       else
-	initialize_regressor(r);
+	initialize_regressor(r, random_reg);
     }
 }
 

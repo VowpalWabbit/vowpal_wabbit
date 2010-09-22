@@ -16,6 +16,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_example.h"
 #include "parse_args.h"
 #include "gd.h"
+#include "gd_mf.h"
 #include "noop.h"
 #include "vw.h"
 #include "simple_label.h"
@@ -71,6 +72,11 @@ gd_vars* vw(int argc, char *argv[])
       {
 	start_noop();
 	end_noop();
+      }
+    else if (global.rank > 0)
+      {
+	setup_gd_mf(t);
+	destroy_gd_mf();
       }
     else
       {

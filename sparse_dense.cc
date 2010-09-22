@@ -23,6 +23,12 @@ float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, 
   return ret;
 }
 
+void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update)
+{
+  for (feature* f = begin; f!= end; f++)
+    weights[(f->weight_index + offset) & mask] += f->x * update;
+} 
+
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
                const v_array<feature> &second_part, size_t thread_mask)
 {
