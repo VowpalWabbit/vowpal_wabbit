@@ -5,6 +5,7 @@ embodied in the content of this file are licensed under the BSD
  */
 
 #include <math.h>
+#include <ctype.h>
 #include "parse_example.h"
 #include "hash.h"
 #include "cache.h"
@@ -13,9 +14,10 @@ embodied in the content of this file are licensed under the BSD
 size_t hashstring (substring s, unsigned long h)
 {
   size_t ret = h;
-  while (s.start != s.end)
-    if (*s.start > 47 && *s.start < 58)
-      ret = 10*ret + *(s.start++) - 48;
+  char *p = s.start;
+  while (p != s.end)
+    if (isdigit(*p))
+      ret = 10*ret + *(p++) - 48;
     else
       return uniform_hash((unsigned char *)s.start, s.end - s.start, h);
 

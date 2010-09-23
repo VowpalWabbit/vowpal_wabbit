@@ -303,7 +303,7 @@ void train(weight* weights, const v_array<feature> &features, float update)
       weights[j->weight_index] += update * j->x;
 }
 
-void local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& reg)
+void local_predict(example* ec, gd_vars& vars, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
 
@@ -357,7 +357,7 @@ float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
     }
   else // We are the last thread using this example.
     {
-      local_predict(ex, global.num_threads(),vars,r);
+      local_predict(ex, vars,r);
       ex->done = true;
 
       pthread_cond_broadcast(&ex->finished_sum);
@@ -381,7 +381,7 @@ float offset_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars
     pthread_cond_wait(&ex->finished_sum, &ex->lock);
   else // We are the last thread using this example.
     {
-      local_predict(ex, global.num_threads(),vars,r);
+      local_predict(ex, vars,r);
       pthread_cond_broadcast(&ex->finished_sum);
     }
   pthread_mutex_unlock(&ex->lock);
