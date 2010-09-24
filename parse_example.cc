@@ -179,6 +179,7 @@ int read_features(parser* p, void* ex)
 
       size_t word_hash = (p->hasher(p->name[0], channel_hash)) & mask;
       feature f = {v,word_hash};
+      ae->sum_feat_sq[index] += v*v;
       push(ae->atomics[index], f);
     }
 
