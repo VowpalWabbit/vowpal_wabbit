@@ -532,13 +532,7 @@ void setup_example(parser* p, example* ae)
 	  current += expert_size;
 	}
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
-    }
-  for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
-    { 
-        for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++){
-            ae->sum_feat_sq[*i] += j->x*j->x; 
-        }
-        ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
+      ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {

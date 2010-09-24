@@ -76,6 +76,7 @@ int read_cached_features(parser* p, void* ec)
       c+= sizeof(index);
       push(ae->indices, (size_t)index);
       v_array<feature>* ours = ae->atomics+index;
+      float* our_sum_feat_sq = ae->sum_feat_sq+index;
       size_t storage = *(size_t *)c;
       c += sizeof(size_t);
       p->input->set(c);
@@ -101,6 +102,7 @@ int read_cached_features(parser* p, void* ec)
 	      f.x = *(float *)c;
 	      c += sizeof(float);
 	    }
+	  *our_sum_feat_sq += f.x*f.x;
           size_t diff = f.weight_index >> 2;
           int32_t s_diff = ZigZagDecode(diff);
 	  if (s_diff < 0)
