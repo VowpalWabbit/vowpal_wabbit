@@ -24,7 +24,7 @@ public :
 	 * getUpdate evaluates the update scalar
 	 * The function return the update scalar
 	 */
-	virtual float getUpdate(float prediction, float label, float eta_t, float norm, float h) = 0;
+	virtual float getUpdate(float prediction, float label, float eta_t, float norm) = 0;
 	virtual float getRevertingWeight(float prediction, float eta_t) = 0;
 	virtual ~loss_function() {};
 };
