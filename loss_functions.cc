@@ -22,8 +22,7 @@ public:
     return example_loss;
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
-    eta_t *= h;
+  float getUpdate(float prediction, float label,float eta_t, float norm) {
     if (eta_t < 1e-6){ 
       /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t) 
        * with its first order Taylor expansion around 0
@@ -51,8 +50,8 @@ public:
     return example_loss;
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
-    return h*eta_t*(label - prediction)/norm;
+  float getUpdate(float prediction, float label,float eta_t, float norm) {
+    return eta_t*(label - prediction)/norm;
   }
   
   float getRevertingWeight(float prediction, float eta_t){
@@ -73,10 +72,10 @@ public:
     return (e > 0) ? e : 0;
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
+  float getUpdate(float prediction, float label,float eta_t, float norm) {
     if(label*prediction >= label*label) return 0;
     float s1=(label*label-label*prediction)/(label*label);
-    float s2=eta_t*h;
+    float s2=eta_t;
     return label * (s1<s2 ? s1 : s2)/norm;
   }
   
@@ -95,10 +94,9 @@ public:
     return log(1 + exp(-label * prediction));
   }
   
-  float getUpdate(float prediction, float label, float eta_t, float norm, float h) {
+  float getUpdate(float prediction, float label, float eta_t, float norm) {
     float w,x;
     float d = exp(label * prediction);
-    eta_t *= h;
     if(eta_t < 1e-6){
       /* As with squared loss, for small eta_t we replace the update
        * with its first order Taylor expansion to avoid numerical problems
@@ -157,11 +155,11 @@ public:
     
   }
   
-  float getUpdate(float prediction, float label, float eta_t, float norm, float h) {
+  float getUpdate(float prediction, float label, float eta_t, float norm) {
     float s2;
     float e = label - prediction;
     if(e == 0) return 0;
-    float s1=eta_t*h;
+    float s1=eta_t;
     if(e > 0) {
       s2=e/tau;
       return tau*(s1<s2?s1:s2)/norm;
