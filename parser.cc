@@ -648,35 +648,23 @@ void start_parser(size_t num_threads, parser* pf)
   done = false;
 
   if(global.ngram>1)
-  {
-    if(random_nos.index() < global.ngram)
-      for (size_t i = 0; i < global.ngram; i++)
-	push(random_nos, (size_t)rand());
-  }      
+    {
+      if(random_nos.index() < global.ngram)
+        for (size_t i = 0; i < global.ngram; i++)
+	  push(random_nos, (size_t)rand());
+    }      
 
   examples = (example*)calloc(ring_size, sizeof(example));
 
   for (size_t i = 0; i < ring_size; i++)
-  {
-    pthread_mutex_init(&examples[i].lock,NULL);
-    pthread_cond_init(&examples[i].finished_sum,NULL);
-    examples[i].ld = calloc(1,pf->lp->label_size);
-    examples[i].in_use = false;
-  }
+    {
+      pthread_mutex_init(&examples[i].lock,NULL);
+      pthread_cond_init(&examples[i].finished_sum,NULL);
+      examples[i].ld = calloc(1,pf->lp->label_size);
+      examples[i].in_use = false;
+    }
   pthread_create(&parse_thread, NULL, main_parse_loop, pf);
 }
-
-void reset_parser(size_t num_threads, parser* pf)
-{
-  parsed_index = 0;
-  for (size_t i = 0; i < ring_size; i++)
-  {
-    pthread_mutex_init(&examples[i].lock,NULL);
-    pthread_cond_init(&examples[i].finished_sum,NULL);
-    examples[i].in_use = false;
-  }
-}
-
 
 void end_parser(parser* pf)
 {
@@ -684,49 +672,49 @@ void end_parser(parser* pf)
   free(used_index);
 
   if(global.ngram > 1)
-  {
-    if(random_nos.begin != NULL) reserve(random_nos,0);
-    if(gram_mask.begin != NULL) reserve(gram_mask,0);
-  }
+    {
+      if(random_nos.begin != NULL) reserve(random_nos,0);
+      if(gram_mask.begin != NULL) reserve(gram_mask,0);
+    }
 
   for (size_t i = 0; i < ring_size; i++) 
-  {
-    pf->lp->delete_label(examples[i].ld);
-    if (examples[i].tag.end_array != examples[i].tag.begin)
     {
-      free(examples[i].tag.begin);
-      examples[i].tag.end_array = examples[i].tag.begin;
-    }
+      pf->lp->delete_label(examples[i].ld);
+      if (examples[i].tag.end_array != examples[i].tag.begin)
+	{
+	  free(examples[i].tag.begin);
+	  examples[i].tag.end_array = examples[i].tag.begin;
+	}
 
-    free(examples[i].ld);
-    for (size_t j = 0; j < 256; j++)
-    {
-      if (examples[i].atomics[j].begin != examples[i].atomics[j].end_array)
-	free(examples[i].atomics[j].begin);
-      if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end)
-      {
-	for (audit_data* temp = examples[i].audit_features[j].begin; 
-	    temp != examples[i].audit_features[j].end; temp++)
-	  if (temp->alloced) {
-	    free(temp->space);
-	    free(temp->feature);
-	    temp->alloced = false;
-	  }
-	free(examples[i].audit_features[j].begin);
-      }
-      if (examples[i].subsets[j].begin != examples[i].subsets[j].end_array)
-	free(examples[i].subsets[j].begin);
+      free(examples[i].ld);
+      for (size_t j = 0; j < 256; j++)
+	{
+	  if (examples[i].atomics[j].begin != examples[i].atomics[j].end_array)
+	    free(examples[i].atomics[j].begin);
+	  if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end)
+	    {
+	      for (audit_data* temp = examples[i].audit_features[j].begin; 
+		  temp != examples[i].audit_features[j].end; temp++)
+		if (temp->alloced) {
+		  free(temp->space);
+		  free(temp->feature);
+		  temp->alloced = false;
+		}
+	      free(examples[i].audit_features[j].begin);
+	    }
+	  if (examples[i].subsets[j].begin != examples[i].subsets[j].end_array)
+	    free(examples[i].subsets[j].begin);
+	}
+      free(examples[i].indices.begin);
     }
-    free(examples[i].indices.begin);
-  }
   free(examples);
 
   if (pf->pes.begin != NULL)
-  {
-    for (size_t i = 0; i < ring_size; i++)
-      free(pf->pes[i].features.begin);
-    free(pf->pes.begin);
-  }
+    {
+      for (size_t i = 0; i < ring_size; i++)
+	free(pf->pes[i].features.begin);
+      free(pf->pes.begin);
+    }
   if (pf->ids.begin != NULL)
     free(pf->ids.begin);
   if (pf->counts.begin != NULL)
