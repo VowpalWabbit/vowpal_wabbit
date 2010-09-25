@@ -117,7 +117,7 @@ void output_and_account_example(example* ec)
   global.sum_loss += ec->loss;
   global.sum_loss_since_last_dump += ec->loss;
   
-  //  global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
+  global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
   
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
@@ -199,12 +199,16 @@ void print_offset_features(regressor &reg, example* &ec, size_t offset)
 	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & thread_mask)  << ")" << ':' << f->x;
 
 	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
+	  if(global.adaptive)
+	    cout << '@' << weights[(f->weight_index+1 + offset) & thread_mask];
 	}
     else
       for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
 	{
 	  cout << '\t' << f->weight_index << ':' << f->x;
 	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
+	  if(global.adaptive)
+	    cout << '@' << weights[(f->weight_index+1 + offset) & thread_mask];
 	}
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
@@ -231,6 +235,29 @@ void one_pf_quad_update(weight* weights, feature& page_feature, v_array<feature>
     weights[(halfhash + ele->weight_index) & mask] += update * ele->x;
 }
 
+float InvSqrt(float x){
+  float xhalf = 0.5f * x;
+  int i = *(int*)&x; // store floating-point bits in integer
+  i = 0x5f3759d5 - (i >> 1); // initial guess for Newton's method
+  x = *(float*)&i; // convert new bits into float
+  x = x*(1.5f - xhalf*x*x); // One round of Newton's method
+  return x;
+}
+
+void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g)
+{
+  size_t halfhash = quadratic_constant * page_feature.weight_index;
+  float update2 = g * page_feature.x * page_feature.x;
+  update *= page_feature.x;
+  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
+    {
+      weight* w=&weights[(halfhash + ele->weight_index) & mask];
+      w[1] += update2 * ele->x * ele->x;
+      w[0] += update * ele->x*InvSqrt(w[1]);
+    }
+}
+
+
 void offset_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, size_t offset)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index + offset;
@@ -239,17 +266,54 @@ void offset_quad_update(weight* weights, feature& page_feature, v_array<feature>
     weights[(halfhash + ele->weight_index) & mask] += update * ele->x;
 }
 
+
+
 void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 {
-  if (fabs(update) > 0.)
+  if (fabs(update)>0.)
+  {
+    size_t thread_mask = global.thread_mask;
+    if (global.adaptive)
     {
+      label_data* ld = (label_data*)ec->ld;
+      float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+      //assert((g>0 && fabs(update)>0) || (g==0 && update==0));
       weight* weights = reg.weight_vectors[thread_num];
-      size_t thread_mask = global.thread_mask;
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      {
+	feature *f = ec->subsets[*i][thread_num];
+	for (; f != ec->subsets[*i][thread_num+1]; f++)
+	{
+	  weight* w = &weights[f->weight_index & thread_mask];
+	  w[1] += g * f->x * f->x;
+	  w[0] += update * f->x*InvSqrt(w[1]);
+	}
+      }
+      for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
+      {
+	if (ec->subsets[(int)(*i)[0]].index() > 0)
+	{
+	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
+	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
+	  for (; temp.begin != temp.end; temp.begin++)
+	    one_pf_quad_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update, g);
+	} 
+      }
+      if ( thread_num == 0 )
+      {
+	weight* w=&weights[constant & thread_mask]; //relies on constant being an even number 
+	w[1] += g;
+	w[0] += update*InvSqrt(w[1]);
+      }
+    } else {
+      weight* weights = reg.weight_vectors[thread_num];
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	{
 	  feature *f = ec->subsets[*i][thread_num];
-	  for (; f != ec->subsets[*i][thread_num+1]; f++)
+	  for (; f != ec->subsets[*i][thread_num+1]; f++){
 	    weights[f->weight_index & thread_mask] += update * f->x;
+	  }
 	}
       
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -267,6 +331,7 @@ void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
       if ( thread_num == 0 )
 	weights[constant & thread_mask] += update;
     }
+  }
 }  
 
 void offset_train(regressor &reg, example* &ec, size_t thread_num, float update, size_t offset)
@@ -313,7 +378,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
   if (ld->label != FLT_MAX)
     {
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
-      
+      //Using the euclidean norm is faster but probably not as good as the adaptive norm defined by the learning rates
       ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, vars.eta/pow(ec->example_t,vars.power_t)*ld->weight, ec->total_sum_feat_sq);
     }
   if (global.delayed_global && global.local_prediction > 0)

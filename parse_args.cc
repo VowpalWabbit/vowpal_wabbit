@@ -26,6 +26,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
+    ("adaptive", "use adaptive, individual learning rates.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(), 
      "number of bits in the feature table")
@@ -93,10 +94,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.print = print_result;
   global.min_label = 0.;
   global.max_label = 1.;
-
+  
+  global.adaptive = false;
   global.audit = false;
   global.reg = &r;
   
+
   po::positional_options_description p;
   
   po::variables_map vm;
@@ -112,7 +115,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cout << "\n" << desc << "\n";
     exit(0);
   }
-  
+
+  if (vm.count("adaptive")) {
+      global.adaptive = true;
+  }
+
   if (vm.count("backprop")) {
       global.backprop = true;
       cout << "enabling backprop updates" << endl;
