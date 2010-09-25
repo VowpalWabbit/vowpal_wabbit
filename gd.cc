@@ -379,7 +379,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     {
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
       //Using the euclidean norm is faster but probably not as good as the adaptive norm defined by the learning rates
-      ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, vars.eta/pow(ec->example_t,vars.power_t)*ld->weight, ec->total_sum_feat_sq);
+      ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, global.eta/pow(ec->example_t,vars.power_t)*ld->weight, ec->total_sum_feat_sq);
     }
   if (global.delayed_global && global.local_prediction > 0)
     ec->eta_round = 0;

@@ -20,17 +20,17 @@ void* mesg_relay(void* v)
       
       if (global.backprop)
 	{
-	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*vars->eta/pow(ec->example_t,vars->power_t)*ps.weight, ec->total_sum_feat_sq);
+	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*global.eta/pow(ec->example_t,vars->power_t)*ps.weight, ec->total_sum_feat_sq);
 	  delay_global_example(ec,global.num_threads());
 	}
       else if (global.delayed_global)
 	{
-	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*vars->eta/pow(ec->example_t,vars->power_t)*ld->weight, ec->total_sum_feat_sq);
+	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*global.eta/pow(ec->example_t,vars->power_t)*ld->weight, ec->total_sum_feat_sq);
 	  delay_global_example(ec,global.num_threads());
 	}
       else if (global.corrective)
 	{
-	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*vars->eta/pow(ec->example_t,vars->power_t)*ld->weight, ec->total_sum_feat_sq) - ec->eta_round;
+	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*global.eta/pow(ec->example_t,vars->power_t)*ld->weight, ec->total_sum_feat_sq) - ec->eta_round;
 	  delay_global_example(ec,global.num_threads());
 	}
       else

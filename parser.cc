@@ -555,6 +555,7 @@ void *main_parse_loop(void *in)
 {
   parser* p = (parser*) in;
   
+  size_t passes = global.numpasses;
   while(!done)
     {
       example* ae=get_unused_example();
@@ -571,8 +572,19 @@ void *main_parse_loop(void *in)
       }
       else
 	{
+	  passes -= 1;
+	  if (passes > 0)
+	    {
+	      global.eta *= global.eta_decay_rate;
+	      reset_source(global.num_bits, p);
+	    }
+	  else
+	    {
+	      pthread_mutex_lock(&examples_lock);
+	      done = true;
+	      pthread_mutex_unlock(&examples_lock);
+	    }
 	  pthread_mutex_lock(&examples_lock);
-	  done = true;
 	  ae->in_use = false;
 	  pthread_cond_broadcast(&example_available);
 	  pthread_mutex_unlock(&examples_lock);
@@ -603,7 +615,7 @@ void free_example(example* ec)
 example* get_example(size_t thread_num)
 {
   pthread_mutex_lock(&examples_lock);
-      
+
   if (parsed_index != used_index[thread_num]) {
     size_t ring_index = used_index[thread_num]++ % ring_size;
     if (!(examples+ring_index)->in_use)
@@ -634,25 +646,37 @@ void start_parser(size_t num_threads, parser* pf)
   used_index = (size_t*) calloc(num_threads, sizeof(size_t));
   parsed_index = 0;
   done = false;
-  
+
   if(global.ngram>1)
-    {
-      if(random_nos.index() < global.ngram)
-	for (size_t i = 0; i < global.ngram; i++)
-	  push(random_nos, (size_t)rand());
-    }      
-  
+  {
+    if(random_nos.index() < global.ngram)
+      for (size_t i = 0; i < global.ngram; i++)
+	push(random_nos, (size_t)rand());
+  }      
+
   examples = (example*)calloc(ring_size, sizeof(example));
-  
+
   for (size_t i = 0; i < ring_size; i++)
-    {
-      pthread_mutex_init(&examples[i].lock,NULL);
-      pthread_cond_init(&examples[i].finished_sum,NULL);
-      examples[i].ld = calloc(1,pf->lp->label_size);
-      examples[i].in_use = false;
-    }
+  {
+    pthread_mutex_init(&examples[i].lock,NULL);
+    pthread_cond_init(&examples[i].finished_sum,NULL);
+    examples[i].ld = calloc(1,pf->lp->label_size);
+    examples[i].in_use = false;
+  }
   pthread_create(&parse_thread, NULL, main_parse_loop, pf);
 }
+
+void reset_parser(size_t num_threads, parser* pf)
+{
+  parsed_index = 0;
+  for (size_t i = 0; i < ring_size; i++)
+  {
+    pthread_mutex_init(&examples[i].lock,NULL);
+    pthread_cond_init(&examples[i].finished_sum,NULL);
+    examples[i].in_use = false;
+  }
+}
+
 
 void end_parser(parser* pf)
 {
@@ -660,49 +684,49 @@ void end_parser(parser* pf)
   free(used_index);
 
   if(global.ngram > 1)
-    {
-      if(random_nos.begin != NULL) reserve(random_nos,0);
-      if(gram_mask.begin != NULL) reserve(gram_mask,0);
-    }
-  
-  for (size_t i = 0; i < ring_size; i++) 
-    {
-      pf->lp->delete_label(examples[i].ld);
-      if (examples[i].tag.end_array != examples[i].tag.begin)
-	{
-	  free(examples[i].tag.begin);
-	  examples[i].tag.end_array = examples[i].tag.begin;
-	}
+  {
+    if(random_nos.begin != NULL) reserve(random_nos,0);
+    if(gram_mask.begin != NULL) reserve(gram_mask,0);
+  }
 
-      free(examples[i].ld);
-      for (size_t j = 0; j < 256; j++)
-	{
-	  if (examples[i].atomics[j].begin != examples[i].atomics[j].end_array)
-	    free(examples[i].atomics[j].begin);
-	  if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end)
-	    {
-	      for (audit_data* temp = examples[i].audit_features[j].begin; 
-		   temp != examples[i].audit_features[j].end; temp++)
-		if (temp->alloced) {
-		  free(temp->space);
-		  free(temp->feature);
-		  temp->alloced = false;
-		}
-	      free(examples[i].audit_features[j].begin);
-	    }
-	  if (examples[i].subsets[j].begin != examples[i].subsets[j].end_array)
-	    free(examples[i].subsets[j].begin);
-	}
-      free(examples[i].indices.begin);
+  for (size_t i = 0; i < ring_size; i++) 
+  {
+    pf->lp->delete_label(examples[i].ld);
+    if (examples[i].tag.end_array != examples[i].tag.begin)
+    {
+      free(examples[i].tag.begin);
+      examples[i].tag.end_array = examples[i].tag.begin;
     }
+
+    free(examples[i].ld);
+    for (size_t j = 0; j < 256; j++)
+    {
+      if (examples[i].atomics[j].begin != examples[i].atomics[j].end_array)
+	free(examples[i].atomics[j].begin);
+      if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end)
+      {
+	for (audit_data* temp = examples[i].audit_features[j].begin; 
+	    temp != examples[i].audit_features[j].end; temp++)
+	  if (temp->alloced) {
+	    free(temp->space);
+	    free(temp->feature);
+	    temp->alloced = false;
+	  }
+	free(examples[i].audit_features[j].begin);
+      }
+      if (examples[i].subsets[j].begin != examples[i].subsets[j].end_array)
+	free(examples[i].subsets[j].begin);
+    }
+    free(examples[i].indices.begin);
+  }
   free(examples);
 
   if (pf->pes.begin != NULL)
-    {
-      for (size_t i = 0; i < ring_size; i++)
-	free(pf->pes[i].features.begin);
-      free(pf->pes.begin);
-    }
+  {
+    for (size_t i = 0; i < ring_size; i++)
+      free(pf->pes[i].features.begin);
+    free(pf->pes.begin);
+  }
   if (pf->ids.begin != NULL)
     free(pf->ids.begin);
   if (pf->counts.begin != NULL)

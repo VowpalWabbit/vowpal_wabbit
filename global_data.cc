@@ -14,8 +14,6 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag)
       global_prediction ps = {res, weight};
       send_global_prediction(f, ps);
     }
-  else
-    cout << "boo!" << endl;
 }
 
 void print_result(int f, float res, float weight, v_array<char> tag)

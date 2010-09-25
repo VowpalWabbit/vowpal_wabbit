@@ -18,8 +18,8 @@ embodied in the content of this file are licensed under the BSD
 const float default_decay = 1. / sqrt(2.);
 
 po::variables_map parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
-			     gd_vars& vars, float& eta_decay_rate,
-			     size_t &passes, regressor &r, parser* par,
+			     gd_vars& vars,
+			     regressor &r, parser* par,
 			     string& final_regressor_name)
 {
   vars.init();
@@ -37,7 +37,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
-    ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
+    ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
@@ -52,11 +52,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
     ("port", po::value<size_t>(),"port to listen on")
-    ("power_t", po::value<float>(&vars.power_t)->default_value(0.), "t power value")
+    ("power_t", po::value<float>(&vars.power_t)->default_value(0.5), "t power value")
     ("predictto", po::value< string > (), "host to send predictions to")
-    ("learning_rate,l", po::value<float>(&vars.eta)->default_value(0.1), 
+    ("learning_rate,l", po::value<float>(&global.eta)->default_value(10), 
      "Set Learning Rate")
-    ("passes", po::value<size_t>(&passes)->default_value(1), 
+    ("passes", po::value<size_t>(&global.numpasses)->default_value(1), 
      "Number of Training Passes")
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
@@ -224,25 +224,26 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
-  vars.eta *= pow(par->t, vars.power_t);
+  global.eta *= pow(par->t, vars.power_t);
   
-  if (eta_decay_rate != default_decay && passes == 1)
+  if (global.eta_decay_rate != default_decay && global.numpasses == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
-  if (pow(eta_decay_rate, passes) < 0.0001 )
-    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(eta_decay_rate, passes) 
+  if (pow(global.eta_decay_rate, global.numpasses) < 0.0001 )
+    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(global.eta_decay_rate, global.numpasses) 
 	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
   
-  parse_source_args(vm,par,global.quiet,passes);
+  parse_source_args(vm,par,global.quiet,global.numpasses);
+
 
   if (!global.quiet)
     {
       cerr << "Num weight bits = " << global.num_bits << endl;
-      cerr << "learning rate = " << vars.eta << endl;
+      cerr << "learning rate = " << global.eta << endl;
       cerr << "initial_t = " << par->t << endl;
       cerr << "power_t = " << vars.power_t << endl;
-      if (passes > 1)
-	cerr << "decay_learning_rate = " << eta_decay_rate << endl;
+      if (global.numpasses > 1)
+	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
     }
   
   if (vm.count("predictions")) {
@@ -287,7 +288,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     {
       global.training = true;
       if (!global.quiet)
-	cerr << "learning_rate set to " << vars.eta << endl;
+	cerr << "learning_rate set to " << global.eta << endl;
     }
 
   if (vm.count("predictto"))
