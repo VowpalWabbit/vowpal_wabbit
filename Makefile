@@ -1,6 +1,6 @@
 COMPILER = g++
-LIBS = -l boost_program_options -l pthread -l z
-#LIBS = -l boost_program_options-gcc34 -l pthread -l z
+#LIBS = -l boost_program_options -l pthread -l z
+LIBS = -l boost_program_options-gcc34 -l pthread -l z
 BOOST_INCLUDE = /usr/local/boost/include/boost-1_34_1
 BOOST_LIBRARY = /usr/local/boost/lib
 

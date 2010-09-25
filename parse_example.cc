@@ -17,7 +17,7 @@ size_t hashstring (substring s, unsigned long h)
   char *p = s.start;
   while (p != s.end)
     if (isdigit(*p))
-      ret = 10*ret + *(p++) - 48;
+      ret = 10*ret + *(p++) - '0';
     else
       return uniform_hash((unsigned char *)s.start, s.end - s.start, h);
 

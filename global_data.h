@@ -38,6 +38,7 @@ struct global_data {
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
+  bool adaptive;//Should I use adaptive individual learning rates?
   
   double min_label;//minimum label encountered
   double max_label;//maximum label encountered

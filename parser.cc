@@ -510,6 +510,14 @@ void setup_example(parser* p, example* ae)
   p->t += ae->global_weight;
   ae->example_t = p->t;
 
+  if(global.adaptive) //make room for learning rates
+    {
+      for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
+	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
+	  j->weight_index = (j->weight_index << 1) & global.mask;
+      ae->sorted = false;
+    }
+
   if (!ae->sorted && global.partition_bits > 0)
     unique_sort_features(ae);
 

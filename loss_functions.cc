@@ -37,6 +37,11 @@ public:
     float alternative = (prediction > 0.5) ? 0 : 1;
     return log((alternative-prediction)/(alternative-0.5))/eta_t;
   }
+  
+  float getSquareGrad(float prediction, float label) {
+    return (prediction - label) * (prediction - label);
+  }
+  
 };
 
 class classic_squaredloss : public loss_function {
@@ -58,6 +63,11 @@ public:
     float alternative = (prediction > 0.5) ? 0 : 1;
     return log((alternative-prediction)/(alternative-0.5))/eta_t;
   }
+
+  float getSquareGrad(float prediction, float label) {
+    return (prediction - label) * (prediction - label);
+  }
+
 };
 
 
@@ -81,6 +91,10 @@ public:
   
   float getRevertingWeight(float prediction, float eta_t){
     return fabs(prediction)/eta_t;
+  }
+
+  float getSquareGrad(float prediction, float label) {
+    return (label*prediction >= label*label) ? 0 : 1;
   }
 };
 
@@ -138,6 +152,12 @@ public:
     float z = -fabs(prediction);
     return (1-z-exp(z))/eta_t;
   }
+
+  float getSquareGrad(float prediction, float label) {
+    float d = 1./(1+exp(label * prediction));
+    return d*d;
+  }
+
 };
 
 class quantileloss : public loss_function {
@@ -179,6 +199,12 @@ public:
       v = tau;
     }
     return (alternative - prediction)/(eta_t*v);
+  }
+
+  float getSquareGrad(float prediction, float label) {
+    float e = label - prediction; 
+    if(e == 0) return 0;
+    return e > 0 ? tau*tau : (1-tau)*(1-tau);
   }
   
   double tau;
