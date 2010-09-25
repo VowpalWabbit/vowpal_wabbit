@@ -30,6 +30,7 @@ struct global_data {
   bool delayed_global;
   float global_multiplier;
 
+  size_t numpasses;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.
@@ -67,6 +68,8 @@ struct global_data {
   double sum_loss;
   double sum_loss_since_last_dump;
   float dump_interval;// when should I update for the user.
+  float eta;//learning rate control.
+  float eta_decay_rate;
 
   regressor* reg;
 };

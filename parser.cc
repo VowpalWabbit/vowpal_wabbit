@@ -555,6 +555,7 @@ void *main_parse_loop(void *in)
 {
   parser* p = (parser*) in;
   
+  size_t passes = global.numpasses;
   while(!done)
     {
       example* ae=get_unused_example();
@@ -571,8 +572,19 @@ void *main_parse_loop(void *in)
       }
       else
 	{
+	  passes -= 1;
+	  if (passes > 0)
+	    {
+	      global.eta *= global.eta_decay_rate;
+	      reset_source(global.num_bits, p);
+	    }
+	  else
+	    {
+	      pthread_mutex_lock(&examples_lock);
+	      done = true;
+	      pthread_mutex_unlock(&examples_lock);
+	    }
 	  pthread_mutex_lock(&examples_lock);
-	  done = true;
 	  ae->in_use = false;
 	  pthread_cond_broadcast(&example_available);
 	  pthread_mutex_unlock(&examples_lock);
@@ -603,7 +615,7 @@ void free_example(example* ec)
 example* get_example(size_t thread_num)
 {
   pthread_mutex_lock(&examples_lock);
-      
+
   if (parsed_index != used_index[thread_num]) {
     size_t ring_index = used_index[thread_num]++ % ring_size;
     if (!(examples+ring_index)->in_use)
@@ -634,16 +646,16 @@ void start_parser(size_t num_threads, parser* pf)
   used_index = (size_t*) calloc(num_threads, sizeof(size_t));
   parsed_index = 0;
   done = false;
-  
+
   if(global.ngram>1)
     {
       if(random_nos.index() < global.ngram)
-	for (size_t i = 0; i < global.ngram; i++)
+        for (size_t i = 0; i < global.ngram; i++)
 	  push(random_nos, (size_t)rand());
     }      
-  
+
   examples = (example*)calloc(ring_size, sizeof(example));
-  
+
   for (size_t i = 0; i < ring_size; i++)
     {
       pthread_mutex_init(&examples[i].lock,NULL);
@@ -664,7 +676,7 @@ void end_parser(parser* pf)
       if(random_nos.begin != NULL) reserve(random_nos,0);
       if(gram_mask.begin != NULL) reserve(gram_mask,0);
     }
-  
+
   for (size_t i = 0; i < ring_size; i++) 
     {
       pf->lp->delete_label(examples[i].ld);
@@ -682,7 +694,7 @@ void end_parser(parser* pf)
 	  if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end)
 	    {
 	      for (audit_data* temp = examples[i].audit_features[j].begin; 
-		   temp != examples[i].audit_features[j].end; temp++)
+		  temp != examples[i].audit_features[j].end; temp++)
 		if (temp->alloced) {
 		  free(temp->space);
 		  free(temp->feature);
