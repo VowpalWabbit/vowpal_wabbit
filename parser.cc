@@ -619,7 +619,7 @@ example* get_example(size_t thread_num)
   if (parsed_index != used_index[thread_num]) {
     size_t ring_index = used_index[thread_num]++ % ring_size;
     if (!(examples+ring_index)->in_use)
-      cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << " " << (examples+ring_index-1)->in_use << endl;
+      cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << endl;
     assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
     return examples + ring_index;

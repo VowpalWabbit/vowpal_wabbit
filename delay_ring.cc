@@ -144,21 +144,11 @@ void delay_example(example* ex, size_t count)
     }
 }
 
-void delay_global_example(example* ex, size_t count)
+void delay_global_example(example* ex)
 { //only called by delayed backprop or delayed_global when 
-  //there is training to do.
-  if (count == 0)
-    {
-      ex->threads_to_finish = 0;
-      output_and_account_example(ex);
-      free_example(ex);
-    }
-  else
-    {
-      ex->threads_to_finish = count;
-      pthread_mutex_lock(&delay);
-      global_index++;
-      pthread_mutex_unlock(&delay);
-      make_example_available();
-    }
+    //there is training to do.
+    pthread_mutex_lock(&delay);
+    global_index++;
+    pthread_mutex_unlock(&delay);
+    make_example_available();
 }
