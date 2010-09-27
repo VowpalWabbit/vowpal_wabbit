@@ -41,6 +41,7 @@ struct example // core example datatype.
   size_t num_features;//precomputed, cause it's fast&easy.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float partial_prediction;//shared data for prediction.
+  v_array<float> partial_predictions;
   float final_prediction;
   float loss;
   float eta_round;
