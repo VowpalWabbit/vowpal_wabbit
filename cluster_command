@@ -1,17 +1,40 @@
 #!/bin/sh
+set -x
+set -u
 killall vw
+set -e
+WORKERS=$1
+PASSES=$2
+RATE=$3
+DATA=$4
+TEST=$5
+GM=$6
+BASEPORT=39521
+SENDARGS=""
 # An example cluster command.  This just runs on one machine.
-export FLAGS='-l 20 --backprop --global_multiplier 10.0  --power_t 0.5 --predictto localhost:39525 --daemon'
-./vw -l 20 --power_t 0.5 --backprop --multisource 2 --port 39525 -f master.reg > master.output 2>&1 &
+export FLAGS="--global_multiplier $GM --backprop -l $RATE --power_t 0.5 --predictto localhost:39520 --daemon"
+./vw --backprop -l $RATE --power_t 0.5 --multisource $WORKERS --port 39520 -f /tmp/master.reg > /tmp/master.output 2>&1 &
 sleep 1
-./vw $FLAGS --port 39523 -f worker1.reg > worker1.output 2>&1 &
-./vw $FLAGS --port 39524 -f worker2.reg > worker2.output 2>&1 &
+for i in `seq $WORKERS`
+do
+./vw $FLAGS --port $((BASEPORT+i))  -f /tmp/worker${i}.reg > /tmp/worker${i}.output 2>&1 &
+SENDARGS="$SENDARGS --sendto localhost:$((BASEPORT+i))"
+done
+sleep 3
+./vw --hash all --cache_file /tmp/`basename $DATA`.cache -d $DATA $SENDARGS --passes $PASSES > /tmp/sender.output 2>&1
+
+
+
+
+export FLAGS="--global_multiplier $GM --predictto localhost:39520 --daemon"
+SENDARGS=""
+./vw -t --multisource $WORKERS --port 39520 -i /tmp/master.reg >> /tmp/master.output 2>&1 &
 sleep 1
-./vw -d train.data --sendto localhost:39523 --sendto localhost:39524 # > sender.output 2>&1
-echo "boo"
-./vw -t --multisource 2 --port 39525 -i master.reg >> master.output 2>&1 &
-sleep 1
-./vw -t --port 39523 --daemon --predictto localhost:39525 -i worker1.reg >> worker1.output 2>&1 &
-./vw -t --port 39524 --daemon --predictto localhost:39525 -i worker2.reg >> worker2.output 2>&1 &
-sleep 1
-./vw -d train.data --sendto localhost:39523 --sendto localhost:39524 # >> sender.output 2>&1
+for i in `seq $WORKERS`
+do
+./vw -t $FLAGS --port $((BASEPORT+i))  -i /tmp/worker${i}.reg >> /tmp/worker${i}.output 2>&1 &
+SENDARGS="$SENDARGS --sendto localhost:$((BASEPORT+i))"
+done
+sleep 3
+./vw  --hash all --cache_file /tmp/`basename $TEST`.cache  -d $TEST $SENDARGS -p /tmp/`basename $TEST`.preds >> /tmp/sender.output 2>&1
+

@@ -1,6 +1,6 @@
 COMPILER = g++
-LIBS = -l boost_program_options -l pthread -l z
-#LIBS = -l boost_program_options-gcc34 -l pthread -l z
+#LIBS = -l boost_program_options -l pthread -l z
+LIBS = -l boost_program_options-gcc34 -l pthread -l z
 BOOST_INCLUDE = /usr/local/boost/include/boost-1_34_1
 BOOST_LIBRARY = /usr/local/boost/lib
 
@@ -21,8 +21,8 @@ FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I
 BINARIES = vw
 MANPAGES = vw.1
 
-all:	$(BINARIES) $(MANPAGES)
-#all:	$(BINARIES)
+#all:	$(BINARIES) $(MANPAGES)
+all:	$(BINARIES)
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
