@@ -15,7 +15,7 @@ embodied in the content of this file are licensed under the BSD
 #include "network.h"
 #include "global_data.h"
 
-const float default_decay = 1. / sqrt(2.);
+const float default_decay = 1.;
 
 po::variables_map parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
 			     gd_vars& vars,
@@ -118,6 +118,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("adaptive")) {
       global.adaptive = true;
+      vars.power_t = 1.0;
   }
 
   if (vm.count("backprop")) {
