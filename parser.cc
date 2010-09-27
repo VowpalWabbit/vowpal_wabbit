@@ -182,14 +182,14 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
   if (vm.count("daemon") || vm.count("multisource"))
     {
-      int daemon = socket(PF_INET, SOCK_STREAM, 0);
-      if (daemon < 0) {
+      int sock = socket(PF_INET, SOCK_STREAM, 0);
+      if (sock < 0) {
 	cerr << "can't open socket!" << endl;
 	exit(1);
       }
 
       int on = 1;
-      if (setsockopt(daemon, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
+      if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
 	perror("setsockopt SO_REUSEADDR");
 
       sockaddr_in address;
@@ -200,9 +200,14 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	port = vm["port"].as<size_t>();
       address.sin_port = htons(port);
       
-      if (bind(daemon,(sockaddr*)&address, sizeof(address)) < 0)
+      if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
 	{
 	  cerr << "failure to bind!" << endl;
+	  exit(1);
+	}
+      if (daemon(1,1))
+	{
+	  cerr << "failure to background!" << endl;
 	  exit(1);
 	}
       int source_count = 1;
@@ -210,7 +215,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       if (vm.count("multisource"))
 	source_count = vm["multisource"].as<size_t>();
 
-      listen(daemon, source_count);
+      listen(sock, source_count);
 
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
@@ -220,7 +225,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	{
 	  if (!global.quiet)
 	    cerr << "calling accept" << endl;
-	  int f = accept(daemon,(sockaddr*)&client_address,&size);
+	  int f = accept(sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
 	      cerr << "bad client socket!" << endl;
