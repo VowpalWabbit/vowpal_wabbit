@@ -97,7 +97,19 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	    cout << "can't combine regressors trained with different numbers of threads!" << endl;
 	    exit (1);
 	  }
-
+      bool adaptive;
+      regressor.read((char*)&adaptive,sizeof(adaptive));
+      if (!initialized)
+	{
+	  global.adaptive = adaptive;
+	}
+      else
+	if (global.adaptive != adaptive)
+	  {
+	    cout << "can't combine regressors with per-feature learning rates and not" << endl;
+	    exit (1);
+	  }
+      
       int len;
       regressor.read((char *)&len, sizeof(len));
 
@@ -189,6 +201,7 @@ void dump_regressor(ofstream &o, regressor &r)
 
       o.write((char *)&global.num_bits, sizeof(global.num_bits));
       o.write((char *)&global.thread_bits, sizeof(global.thread_bits));
+      o.write((char *)&global.adaptive, sizeof(global.adaptive));
       int len = global.pairs.size();
       o.write((char *)&len, sizeof(len));
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
