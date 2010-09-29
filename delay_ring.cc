@@ -17,6 +17,7 @@ size_t global_index;
 pthread_mutex_t delay = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t delay_empty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t delay_nonempty = PTHREAD_COND_INITIALIZER;
+pthread_cond_t global_delay_nonempty = PTHREAD_COND_INITIALIZER;
 
 size_t mesg = 0;
 
@@ -57,7 +58,7 @@ bool thread_done(size_t thread)
   if (!parser_done())
     return false;
   pthread_mutex_lock(&delay);
-  ret = (delay_indices[thread] == local_index) 
+  ret = (delay_indices[thread] == local_index || global.delayed_global) 
     && (!(global.backprop || global.delayed_global || global.corrective) 
 	|| global.local_prediction <= 0
 	|| (delay_indices[thread+1+global.num_threads()] == global_index
@@ -88,14 +89,40 @@ example* return_example(size_t thread)
 }
 
 example* get_delay_example(size_t thread)
-{//nonblocking
-  if ((global.backprop || global.corrective || global.delayed_global) && 
-      (delay_indices[thread+mesg+global.num_threads()] 
-       != global_index))
-    return return_example(thread+mesg+global.num_threads());
-  else if (delay_indices[thread] != local_index)
-    return return_example(thread);
-  else 
+{//semiblocking
+  size_t global_offset = mesg+global.num_threads();
+
+  if ((global.backprop || global.corrective || global.delayed_global) 
+      && global.local_prediction > 0)
+    //we must do global training sometimes.
+    if (local_index > delay_indices[thread+global_offset] + (ring_size >> 1)
+	|| (parser_done() 
+	    && (local_index == delay_indices[thread] || global.delayed_global)))
+      //We want to do global training
+      {
+	if (delay_indices[thread+global_offset] == global_index && !parser_done())
+	  {//global update unavailable.
+	    pthread_mutex_lock(&delay);
+	    while (delay_indices[thread+global_offset] == global_index)
+	      pthread_cond_wait(&global_delay_nonempty, &delay);//Wait until global update available
+	    pthread_mutex_unlock(&delay);
+	  }
+	if (delay_indices[thread+global_offset] < global_index)
+	  {
+	    example *ret = return_example(thread+global_offset);
+	    ret->eta_round = ret->eta_global;
+	    ret->final_prediction = ret->global_prediction;
+	    return ret;
+	  }
+	else 
+	  return NULL;
+      }
+  if (delay_indices[thread] != local_index && (!global.delayed_global || global.local_prediction <= 0))
+    //local training available
+    {
+      return return_example(thread);
+    }
+  else
     return NULL;
 }
 
@@ -112,7 +139,7 @@ example* blocking_get_delay_example(size_t thread)
 void delay_example(example* ex, size_t count)
 {
   size_t delay_count = count+mesg;
-  if ((global.backprop || global.corrective || global.delayed_global) 
+  if ((global.backprop || global.corrective) 
       && global.local_prediction > 0)
     delay_count += count;
 
@@ -149,6 +176,6 @@ void delay_global_example(example* ex)
     //there is training to do.
     pthread_mutex_lock(&delay);
     global_index++;
+    pthread_cond_signal(&global_delay_nonempty);
     pthread_mutex_unlock(&delay);
-    make_example_available();
 }
