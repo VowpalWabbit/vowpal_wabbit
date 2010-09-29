@@ -577,12 +577,10 @@ void *main_parse_loop(void *in)
       }
       else
 	{
+	  reset_source(global.num_bits, p);
 	  passes -= 1;
 	  if (passes > 0)
-	    {
-	      global.eta *= global.eta_decay_rate;
-	      reset_source(global.num_bits, p);
-	    }
+	    global.eta *= global.eta_decay_rate;
 	  else
 	    {
 	      pthread_mutex_lock(&examples_lock);
