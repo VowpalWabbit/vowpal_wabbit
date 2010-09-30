@@ -277,6 +277,7 @@ void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
     {
       label_data* ld = (label_data*)ec->ld;
       float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+
       //assert((g>0 && fabs(update)>0) || (g==0 && update==0));
       weight* weights = reg.weight_vectors[thread_num];
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
