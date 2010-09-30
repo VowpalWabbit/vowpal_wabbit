@@ -45,6 +45,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
     ("version","Version information")
+    ("initially_one", "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&(par->t))->default_value(1.), "initial t value")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")

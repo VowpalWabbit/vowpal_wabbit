@@ -175,6 +175,16 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
       else
 	initialize_regressor(r);
     }
+  if (vm.count("initially_one"))
+    {
+      size_t num_threads = global.num_threads();
+      for (size_t i = 0; i < num_threads; i++)
+	{
+	  size_t length = ((size_t)1) << global.num_bits;
+	  for (size_t j = 0; j < length/num_threads; j++)
+	    r.weight_vectors[i][j] = 1.;
+	}
+    }
 }
 
 void free_regressor(regressor &r)

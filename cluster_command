@@ -13,7 +13,7 @@ BASEPORT=39521
 SENDARGS=""
 # An example cluster command.  This just runs on one machine.
 export FLAGS="--global_multiplier $GM --adaptive --delayed_global -l $RATE --power_t 0.5 --predictto localhost:39520 --daemon"
-./vw --adaptive --delayed_global -l $RATE --power_t 0.5 --multisource $WORKERS --port 39520 -f /tmp/master.reg > /tmp/master.output 2>&1 
+./vw --initially_one --adaptive --delayed_global -l 0 --power_t 0.5 --multisource $WORKERS --port 39520 -f /tmp/master.reg > /tmp/master.output 2>&1 
 for i in `seq $WORKERS`
 do
 ./vw $FLAGS --port $((BASEPORT+i)) -f /tmp/worker${i}.reg > /tmp/worker${i}.output 2>&1 
@@ -25,7 +25,7 @@ sync
 
 export FLAGS="--global_multiplier $GM --predictto localhost:39520 --daemon"
 SENDARGS=""
-./vw -l 0 --multisource $WORKERS --port 39520 -i /tmp/master.reg >> /tmp/master.output 2>&1 
+./vw -l 0 --audit --multisource $WORKERS --port 39520 -i /tmp/master.reg >> /tmp/master.output 2>&1 
 for i in `seq $WORKERS`
 do
 ./vw -l 0 $FLAGS --port $((BASEPORT+i)) -i /tmp/worker${i}.reg >> /tmp/worker${i}.output 2>&1 
