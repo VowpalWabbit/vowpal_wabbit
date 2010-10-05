@@ -30,6 +30,7 @@ struct global_data {
   bool delayed_global;
   float global_multiplier;
   float active_c0;
+  float initial_weight;
 
   size_t numpasses;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
