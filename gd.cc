@@ -368,12 +368,44 @@ void train(weight* weights, const v_array<feature> &features, float update)
       weights[j->weight_index] += update * j->x;
 }
 
+float get_active_coin_bias(float k, float l, float g, float c0)
+{
+  float b,sb,rs,sl;
+  b=c0*(log(k+1.)+0.0001)/(k+0.0001);
+  sb=sqrt(b);
+  if (l > 1.0) { l = 1.0; } else if (l < 0.0) { l = 0.0; } //loss should be in [0,1]
+  sl=sqrt(l)+sqrt(l+g);
+  if (g<=sb*sl+b)
+    return 1;
+  rs = (sl+sqrt(sl*sl+4*g))/(2*g);
+  return b*rs*rs;
+}
+
 void local_predict(example* ec, gd_vars& vars, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
 
   ec->final_prediction = 
     finalize_prediction(ec->partial_prediction);
+
+  if(global.active_simulation){
+    //first treat the example as unlabeled
+    float bias;
+    float revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(ec->example_t,vars.power_t));
+    float k = ec->example_t - ld->weight;
+    if (k<=1.)
+      bias=1.;
+    else{
+        float avg_loss = (global.sum_loss+0.5*k)/k; //Laplace estimate (sort of)
+        bias=get_active_coin_bias(k, avg_loss, revert_weight/k, global.active_c0);
+    }
+    if(drand48()<bias){
+      global.queries += 1;
+      ld->weight/=bias;
+    }
+    else //do not query => do not train
+      ld->label = FLT_MAX;
+  }
 
   if (ld->label != FLT_MAX)
     {

@@ -26,6 +26,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
+    ("active_simulation", "active learning simulation mode")
+    ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(), 
@@ -75,6 +77,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("skips", po::value<size_t>(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
 
 
+  global.queries = 0;
   global.example_number = 0;
   global.weighted_examples = 0.;
   global.old_weighted_examples = 0.;
@@ -97,6 +100,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   
   global.adaptive = false;
   global.audit = false;
+  global.active_simulation =false;
   global.reg = &r;
   
 
@@ -115,6 +119,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cout << "\n" << desc << "\n";
     exit(0);
   }
+  
+  if (vm.count("active_simulation")) 
+      global.active_simulation = true;
 
   if (vm.count("adaptive")) {
       global.adaptive = true;
@@ -205,6 +212,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     }
 
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
+
+  if (vm.count("active_c0"))
+    global.active_c0 = vm["active_c0"].as<float>();
 
   if (vm.count("min_prediction"))
     global.min_label = vm["min_prediction"].as<double>();
