@@ -221,7 +221,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     global.min_label = vm["min_prediction"].as<double>();
   if (vm.count("max_prediction"))
     global.max_label = vm["max_prediction"].as<double>();
-  if (vm.count("min_prediction") || vm.count("max_prediction"))
+  if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     set_minmax = noop_mm;
 
   string loss_function;
