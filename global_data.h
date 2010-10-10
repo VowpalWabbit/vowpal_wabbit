@@ -29,6 +29,8 @@ struct global_data {
   bool corrective;
   bool delayed_global;
   float global_multiplier;
+  float active_c0;
+  float initial_weight;
 
   size_t numpasses;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
@@ -36,9 +38,11 @@ struct global_data {
   vector<string> pairs; // pairs of features to cross.
   size_t ngram;//ngrams to generate.
   size_t skips;//skips in ngrams.
+  size_t queries;
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
+  bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
   
   double min_label;//minimum label encountered

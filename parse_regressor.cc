@@ -29,6 +29,9 @@ void initialize_regressor(regressor &r)
           cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
           exit (1);
         }
+      if (global.initial_weight != 0.)
+	for (size_t j = 0; j < length/num_threads; j++)
+	  r.weight_vectors[i][j] = global.initial_weight;
       if(global.adaptive)
         for (size_t j = 1; j < length/num_threads; j+=2)
 	  r.weight_vectors[i][j] = 1;

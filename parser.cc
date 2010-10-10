@@ -635,13 +635,6 @@ example* get_example(size_t thread_num)
   }
 }
 
-void make_example_available()
-{
-  pthread_mutex_lock(&examples_lock);
-  pthread_cond_broadcast(&example_available);
-  pthread_mutex_unlock(&examples_lock);
-}
-
 pthread_t parse_thread;
 
 void start_parser(size_t num_threads, parser* pf)

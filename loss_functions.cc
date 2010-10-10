@@ -34,8 +34,9 @@ public:
   }
   
   float getRevertingWeight(float prediction, float eta_t){
-    float alternative = (prediction > 0.5) ? 0 : 1;
-    return log((alternative-prediction)/(alternative-0.5))/eta_t;
+    float t = 0.5*(global.min_label+global.max_label);
+    float alternative = (prediction > t) ? global.min_label : global.max_label;
+    return log((alternative-prediction)/(alternative-t))/eta_t;
   }
   
   float getSquareGrad(float prediction, float label) {
@@ -60,8 +61,9 @@ public:
   }
   
   float getRevertingWeight(float prediction, float eta_t){
-    float alternative = (prediction > 0.5) ? 0 : 1;
-    return log((alternative-prediction)/(alternative-0.5))/eta_t;
+    float t = 0.5*(global.min_label+global.max_label);
+    float alternative = (prediction > t) ? global.min_label : global.max_label;
+    return (t-prediction)/((alternative-prediction)*eta_t);
   }
 
   float getSquareGrad(float prediction, float label) {
@@ -190,15 +192,13 @@ public:
   }
   
   float getRevertingWeight(float prediction, float eta_t){
-    float alternative,v;
-    if(prediction > tau){
-      alternative = 0;
+    float v,t;
+    t = 0.5*(global.min_label+global.max_label);
+    if(prediction > t)
       v = -(1-tau);
-    } else{
-      alternative = 1;
+     else
       v = tau;
-    }
-    return (alternative - prediction)/(eta_t*v);
+    return (t - prediction)/(eta_t*v);
   }
 
   float getSquareGrad(float prediction, float label) {
