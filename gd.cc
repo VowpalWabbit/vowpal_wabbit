@@ -100,7 +100,7 @@ void print_update(example *ec)
 	      ld->label,
 	      ec->final_prediction,
 	      (long unsigned int)ec->num_features);
-      
+     
       global.sum_loss_since_last_dump = 0.0;
       global.old_weighted_examples = global.weighted_examples;
       global.dump_interval *= 2;

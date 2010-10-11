@@ -521,6 +521,10 @@ void setup_example(parser* p, example* ae)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
 	  j->weight_index = (j->weight_index << 1) & global.mask;
       ae->sorted = false;
+      if (global.audit)
+	for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
+	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
+	    j->weight_index = (j->weight_index << 1) & global.mask;
     }
 
   if (!ae->sorted && global.partition_bits > 0)
