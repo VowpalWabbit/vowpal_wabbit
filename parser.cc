@@ -180,6 +180,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
   par->input->current = 0;
   parse_cache(vm, vm["data"].as<string>(), par, quiet);
 
+  string hash_function("strings");
+  if(vm.count("hash")) 
+    hash_function = vm["hash"].as<string>();
+
   if (vm.count("daemon") || vm.count("multisource"))
     {
       int sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -240,7 +244,8 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  if (id == 0)
 	    {
 	      par->label_sock = f;
-	      global.print = binary_print_result;
+	      if(!global.active)
+		global.print = binary_print_result;
 	    }
 	  if (id == 0 || 
 	      ((global.backprop || global.delayed_global || global.corrective) 
@@ -271,6 +276,11 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  calloc_reserve(par->counts,source_count);
 	  par->counts.end = par->counts.begin+ring_size;
 	  par->finished_count = 0;
+	}
+      else if(global.active)
+	{
+	  par->reader = read_features;
+	  par->hasher = getHasher(hash_function);
 	}
       else {
 	par->reader = read_cached_features;

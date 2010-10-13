@@ -42,6 +42,7 @@ struct global_data {
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
+  bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
   
@@ -66,6 +67,7 @@ struct global_data {
   //runtime accounting variables. 
   long long int example_number;
   double weighted_examples;
+  double weighted_unlabeled_examples;
   double old_weighted_examples;
   double weighted_labels;
   size_t total_features;

@@ -113,28 +113,40 @@ void print_update(example *ec)
     }
 }
 
+float query_decision(example*, float k);
+
 void output_and_account_example(example* ec)
 {
   global.example_number++;
   label_data* ld = (label_data*)ec->ld;
   global.weighted_examples += ld->weight;
-  global.weighted_labels += (ld->label == FLT_MAX ? 0.5*(global.min_label+global.max_label) : ld->label) * ld->weight;
+  global.weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
   global.total_features += ec->num_features;
   global.sum_loss += ec->loss;
   global.sum_loss_since_last_dump += ec->loss;
   
   global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
+
+  float ai=-1;
+  if(global.active && ld->label == FLT_MAX)
+    ai=query_decision(ec, global.weighted_unlabeled_examples);
+  global.weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
   
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
       int f = global.final_prediction_sink[i].fd;
-      float w;
-      if (global.reg->weight_vectors != NULL) {
-	w = global.reg->weight_vectors[0][global.final_prediction_sink[i].id];
-      } else {
-	w = 0.;
-      }
-      global.print(f, ec->final_prediction, w*ec->global_weight, ec->tag);
+      if(global.active)
+	global.print(f, ec->final_prediction, ai, ec->tag);
+      else
+	{
+	  float w;
+	  if (global.reg->weight_vectors != NULL) {
+	    w = global.reg->weight_vectors[0][global.final_prediction_sink[i].id];
+	  } else {
+	    w = 0.;
+	  }
+	  global.print(f, ec->final_prediction, w*ec->global_weight, ec->tag);
+	}
     }
   print_update(ec);
 }
@@ -388,17 +400,14 @@ float get_active_coin_bias(float k, float l, float g, float c0)
   return b*rs*rs;
 }
 
-float query_decision(example* ec, gd_vars& vars, regressor& reg)
+float query_decision(example* ec, float k)
 {
-  float bias, avg_loss, revert_weight;
-  label_data* ld = (label_data*)ec->ld;
-  float k = ec->example_t - ld->weight;
+  float bias, avg_loss;
   if (k<=1.)
     bias=1.;
   else{
-    revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(ec->example_t,vars.power_t));
     avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(global.queries+0.0001));
-    bias = get_active_coin_bias(k, avg_loss, revert_weight/k, global.active_c0);
+    bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, global.active_c0);
   }
   if(drand48()<bias)
     return 1./bias;
@@ -414,7 +423,9 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     finalize_prediction(ec->partial_prediction);
 
   if(global.active_simulation){
-    float importance = query_decision(ec, vars, reg);
+    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(ec->example_t,vars.power_t));
+    float k = ec->example_t - ld->weight;
+    float importance = query_decision(ec, k);
     if(importance > 0){
       global.queries += 1;
       ld->weight *= importance;
@@ -429,6 +440,9 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
       //Using the euclidean norm is faster but probably not as good as the adaptive norm defined by the learning rates
       ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, global.eta/pow(ec->example_t,vars.power_t)*ld->weight, ec->total_sum_feat_sq);
     }
+  else if(global.active)
+    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(ec->example_t,vars.power_t));
+
   if (global.delayed_global && global.local_prediction > 0)
     ec->eta_round = 0;
 
