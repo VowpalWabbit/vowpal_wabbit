@@ -388,6 +388,24 @@ float get_active_coin_bias(float k, float l, float g, float c0)
   return b*rs*rs;
 }
 
+float query_decision(example* ec, gd_vars& vars, regressor& reg)
+{
+  float bias, avg_loss, revert_weight;
+  label_data* ld = (label_data*)ec->ld;
+  float k = ec->example_t - ld->weight;
+  if (k<=1.)
+    bias=1.;
+  else{
+    revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(ec->example_t,vars.power_t));
+    avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(global.queries+0.0001));
+    bias = get_active_coin_bias(k, avg_loss, revert_weight/k, global.active_c0);
+  }
+  if(drand48()<bias)
+    return 1./bias;
+  else
+    return -1.;
+}
+
 void local_predict(example* ec, gd_vars& vars, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
@@ -396,19 +414,10 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     finalize_prediction(ec->partial_prediction);
 
   if(global.active_simulation){
-    //first treat the example as unlabeled
-    float bias;
-    float revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(ec->example_t,vars.power_t));
-    float k = ec->example_t - ld->weight;
-    if (k<=1.)
-      bias=1.;
-    else{
-        float avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(global.queries+0.0001));
-        bias=get_active_coin_bias(k, avg_loss, revert_weight/k, global.active_c0);
-    }
-    if(drand48()<bias){
+    float importance = query_decision(ec, vars, reg);
+    if(importance > 0){
       global.queries += 1;
-      ld->weight/=bias;
+      ld->weight *= importance;
     }
     else //do not query => do not train
       ld->label = FLT_MAX;
