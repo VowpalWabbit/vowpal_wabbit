@@ -26,7 +26,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
-    ("active", "active learning mode")
+    ("active_learning", "active learning mode")
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
@@ -127,7 +127,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("active_simulation")) 
       global.active_simulation = true;
  
-  if (vm.count("active") && !global.active_simulation)
+  if (vm.count("active_learning") && !global.active_simulation)
     global.active = true;
 
   if (vm.count("adaptive")) {

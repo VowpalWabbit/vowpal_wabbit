@@ -37,7 +37,7 @@ void print_result(int f, float res, float weight, v_array<char> tag)
       }
       if(global.active && weight >= 0)
 	{
-	  num = sprintf(temp, "%f ", weight);
+	  num = sprintf(temp, " %f", weight);
 	  t = write(f, temp, num);
 	  if (t != num)
 	    cerr << "write error" << endl;

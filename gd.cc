@@ -402,11 +402,12 @@ float get_active_coin_bias(float k, float l, float g, float c0)
 
 float query_decision(example* ec, float k)
 {
-  float bias, avg_loss;
+  float bias, avg_loss, weighted_queries;
   if (k<=1.)
     bias=1.;
   else{
-    avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(global.queries+0.0001));
+    weighted_queries = global.weighted_examples - global.weighted_unlabeled_examples;
+    avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
     bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, global.active_c0);
   }
   if(drand48()<bias)
