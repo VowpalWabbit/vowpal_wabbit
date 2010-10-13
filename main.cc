@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 		  cerr << endl << "best constant's loss = " << constant_loss;
 		cerr << endl << "total feature number = " << global.total_features;
 		if (global.active_simulation)
-		  cerr << endl << " total queries" << global.queries << endl;
+		  cerr << endl << "total queries = " << global.queries << endl;
 		cerr << endl;
 	}
 

@@ -94,7 +94,7 @@ void print_update(example *ec)
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
       if (ld->label == FLT_MAX)
-	strcpy(label_buf,"unlabeled");
+	strcpy(label_buf," unknown");
       else
 	sprintf(label_buf,"%8.4f",ld->label);
 
@@ -403,7 +403,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     if (k<=1.)
       bias=1.;
     else{
-        float avg_loss = (global.sum_loss+0.5*k)/k; //Laplace estimate (sort of)
+        float avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(global.queries+0.0001));
         bias=get_active_coin_bias(k, avg_loss, revert_weight/k, global.active_c0);
     }
     if(drand48()<bias){
