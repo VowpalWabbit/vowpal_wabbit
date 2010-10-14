@@ -21,8 +21,8 @@ FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I
 BINARIES = vw
 MANPAGES = vw.1
 
-#all:	$(BINARIES) $(MANPAGES)
-all:	$(BINARIES)
+all:	$(BINARIES) $(MANPAGES)
+#all:	$(BINARIES)
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
