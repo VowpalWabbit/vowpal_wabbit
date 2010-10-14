@@ -21,7 +21,7 @@ void print_result(int f, float res, float weight, v_array<char> tag)
   if (f >= 0)
     {
       char temp[30];
-      int num = sprintf(temp, "%f", res);
+      int num = sprintf(temp, "%f ", res);
       ssize_t t;
       t = write(f, temp, num);
       if (t != num) 
@@ -35,6 +35,13 @@ void print_result(int f, float res, float weight, v_array<char> tag)
 	if (t != (ssize_t) (sizeof(char)*tag.index()))
 	  cerr << "write error" << endl;
       }
+      if(global.active && weight >= 0)
+	{
+	  num = sprintf(temp, " %f", weight);
+	  t = write(f, temp, num);
+	  if (t != num)
+	    cerr << "write error" << endl;
+	}
       temp[0] = '\n';
       t = write(f, temp, 1);     
       if (t != 1) 

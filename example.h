@@ -46,6 +46,7 @@ struct example // core example datatype.
   float example_t;//sum of importance weights so far.
   float sum_feat_sq[256];//helper for total_sum_feat_sq.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
+  float revert_weight;
 
   pthread_mutex_t lock; //thread coordination devices
   pthread_cond_t finished_sum;//barrier associated with lock.
