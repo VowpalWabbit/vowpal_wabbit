@@ -62,6 +62,11 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
   for (size_t i = 0; i < regs.size(); i++)
     {
       ifstream regressor(regs[i].c_str());
+      if (!regressor.is_open())
+	{
+	  cout << "can't open " << regs[i].c_str() << endl << " ... exiting." << endl;
+	  exit(1);
+	}
 
       size_t v_length;
       regressor.read((char*)&v_length, sizeof(v_length));
