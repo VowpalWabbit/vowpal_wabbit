@@ -26,7 +26,6 @@ embodied in the content of this file are licensed under the BSD
 
 gd_vars* vw(int argc, char *argv[])
 {
-  ofstream final_regressor;
   string final_regressor_name;
 
   parser* p = new_parser(&simple_label);
@@ -80,13 +79,7 @@ gd_vars* vw(int argc, char *argv[])
   destroy_delay_ring();
   end_parser(p);
 
-  
-  if (final_regressor_name  != "")
-    {
-      final_regressor.open(final_regressor_name.c_str());
-      dump_regressor(final_regressor, regressor1);
-    }
-  finalize_regressor(final_regressor,regressor1);
+  finalize_regressor(final_regressor_name,regressor1);
   finalize_source(p);
   free(p);
   
