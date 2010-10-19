@@ -56,6 +56,14 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   return cache_numbits;
 }
 
+bool member(v_array<int_pair> fd_ids, int fd)
+{
+  for (size_t i = 0; i < fd_ids.index(); i++)
+    if (fd_ids[i].fd == fd)
+      return true;
+  return false;
+}
+
 void reset_source(size_t numbits, parser* p)
 {
   io_buf* input = p->input;
@@ -66,7 +74,12 @@ void reset_source(size_t numbits, parser* p)
       p->write_cache = false;
       p->output->close_file();
       rename(p->output->currentname.begin, p->output->finalname.begin);
-      input->close_files();
+      while(input->files.index() > 0)
+	{
+	  int fd = input->files.pop();
+	  if (!member(global.final_prediction_sink,fd))
+	    close(fd);
+	}
       input->open_file(p->output->finalname.begin,io_buf::READ); //pushing is merged into open_file
       p->reader = read_cached_features;
     }

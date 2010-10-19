@@ -11,8 +11,8 @@ void* mesg_relay(void* v)
   global_prediction ps;
   while (blocking_get_global_prediction(global.local_prediction,ps))
     {
-      example *ec = blocking_get_delay_example(global.num_threads());
-      if (global.backprop || global.delayed_global || global.corrective)
+      example *ec = blocking_get_delay_example(global.num_threads()); 
+     if (global.backprop || global.delayed_global || global.corrective)
 	ec->global_prediction = ps.p;
       else
 	ec->final_prediction = ps.p;
