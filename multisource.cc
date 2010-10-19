@@ -55,13 +55,11 @@ void send_prediction(int sock, prediction &p)
     }
 }
 
-int send_counter = 0;
 void send_global_prediction(int sock, global_prediction p)
 {
-  send_counter++;
   if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
     {
-      cerr << "argh! bad global write! " << sock << " on message " << send_counter << endl;
+      cerr << "argh! bad global write! " << sock << endl;
       perror(NULL);
       exit(0);
     }
