@@ -125,29 +125,16 @@ public:
   }
   
   inline float wexpmx(float x){
-    float b,l,q;
     /* This piece of code is approximating W(exp(x))-x. 
      * W is the Lambert W function: W(z)*exp(W(z))=z.
      * The absolute error of this approximation is less than 9e-5.
      * Faster/better approximations can be substituted here.
      */
-    if (x >= 1){
-      /* This part is essentially inequality 2.4 from the paper 
-       * INEQUALITIES ON THE LAMBERT W FUNCTION AND HYPERPOWER FUNCTION
-       * q has been worked out so that b is an estimate rather than a bound
-       */
-      l=log(x);
-      q=(2.16612+1.89678*x)/(2.16276+1.90021*x-l);
-      b=-x*l/(q+x);
-    } else if(x>-2){
-      /* This comes from a Chebyshev approximation of the function in [-2,1] */
-      b=0.5671307552778-x*(0.63813443251+x*(-0.073778671124427+x*(0.001712349389983*x+0.0011058485512683)));
-    } else {
-      /* For smaller x, we fit a logistic. Since x<0 q cannot blow up. */
-      q=exp(1.00579*x +0.0186664);
-      b=q/(1+q)-x;
-    }
-    return b;
+    double w = x>=1. ? 0.86*x+0.01 : exp(0.8*x-0.65); //initial guess
+    double r = x>=1. ? x-log(w)-w : 0.2*x+0.65-w; //residual
+    double t = 1.+w;
+    double u = 2.*t*(t+2.*r/3.); //magic
+    return w*(1.+r/t*(u-r)/(u-2.*r))-x; //more magic
   }
   
   float getRevertingWeight(float prediction, float eta_t){
