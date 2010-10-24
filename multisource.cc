@@ -18,7 +18,7 @@ int really_read(int sock, void* in, size_t count)
       else
 	if (r < 0)
 	  {
-	    cerr << "argh! bad read! " << endl;
+	    cerr << "argh! bad read! on message from " << sock << endl;
 	    perror(NULL);
 	    exit(0);
 	  }

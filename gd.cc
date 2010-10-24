@@ -39,11 +39,7 @@ void* gd_thread(void *in)
 	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))
 	    {
 	      if ((*(params->final_regressor_name)) != "") 
-		{
-		  ofstream tempOut;
-		  tempOut.open((*(params->final_regressor_name)).c_str());
-		  dump_regressor(tempOut, reg);
-		}
+		dump_regressor(*(params->final_regressor_name), reg);
 	      delay_example(ec,0);
 	    }
 	  else
