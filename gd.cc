@@ -402,7 +402,7 @@ float query_decision(example* ec, float k)
   if (k<=1.)
     bias=1.;
   else{
-    weighted_queries = global.weighted_examples - global.weighted_unlabeled_examples;
+    weighted_queries = global.initial_t + global.weighted_examples - global.weighted_unlabeled_examples;
     avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
     bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, global.active_c0);
   }
@@ -420,8 +420,8 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     finalize_prediction(ec->partial_prediction);
 
   if(global.active_simulation){
-    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(ec->example_t,vars.power_t));
     float k = ec->example_t - ld->weight;
+    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(k,vars.power_t));
     float importance = query_decision(ec, k);
     if(importance > 0){
       global.queries += 1;
@@ -431,14 +431,20 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
       ld->label = FLT_MAX;
   }
 
+  float t;
+  if(global.active)
+    t = global.weighted_unlabeled_examples;
+  else
+    t = ec->example_t;
+
   if (ld->label != FLT_MAX)
     {
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
       //Using the euclidean norm is faster but probably not as good as the adaptive norm defined by the learning rates
-      ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, global.eta/pow(ec->example_t,vars.power_t)*ld->weight, ec->total_sum_feat_sq);
+      ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, global.eta/pow(t,vars.power_t)*ld->weight, ec->total_sum_feat_sq);
     }
   else if(global.active)
-    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(ec->example_t,vars.power_t));
+    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(t,vars.power_t));
 
   if (global.delayed_global && global.local_prediction > 0)
     ec->eta_round = 0;

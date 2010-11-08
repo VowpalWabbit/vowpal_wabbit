@@ -82,7 +82,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.queries = 0;
   global.example_number = 0;
   global.weighted_examples = 0.;
-  global.weighted_unlabeled_examples = 0.;
   global.old_weighted_examples = 0.;
   global.backprop = false;
   global.corrective = false;
@@ -116,6 +115,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	    options(desc).positional(p).run(), vm);
   po::notify(vm);
 
+  global.weighted_unlabeled_examples = par->t;
+  global.initial_t = par->t;
   global.partition_bits = global.thread_bits;
   
   if (vm.count("help") || argc == 1) {
