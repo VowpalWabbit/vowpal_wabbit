@@ -66,6 +66,7 @@ struct global_data {
 
   //runtime accounting variables. 
   long long int example_number;
+  double initial_t;
   double weighted_examples;
   double weighted_unlabeled_examples;
   double old_weighted_examples;

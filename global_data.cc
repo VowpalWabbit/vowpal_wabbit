@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <stdio.h>
+#include <float.h>
 #include "global_data.h"
 #include "multisource.h"
 #include "message_relay.h"
@@ -52,7 +53,8 @@ void print_result(int f, float res, float weight, v_array<char> tag)
 void set_mm(double label)
 {
   global.min_label = min(global.min_label, label);
-  global.max_label = max(global.max_label, label);
+  if (label != FLT_MAX)
+    global.max_label = max(global.max_label, label);
 }
 
 void noop_mm(double label)
