@@ -169,9 +169,6 @@ float inline_predict(regressor &reg, example* &ec, size_t thread_num)
 	}
     }
   
-  if ( thread_num == 0 ) 
-    prediction += weights[constant & thread_mask];
-  
   return prediction;
 }
 
@@ -196,49 +193,45 @@ float inline_offset_predict(regressor &reg, example* &ec, size_t thread_num, siz
 	}
     }
 
-  if ( thread_num == 0 )
-    prediction += weights[(constant+offset) & thread_mask];
-
   return prediction;
 }
 
-void print_offset_features(regressor &reg, example* &ec, size_t offset)
+void print_features(regressor &reg, example* &ec)
 {
   weight* weights = reg.weight_vectors[0];
   size_t thread_mask = global.thread_mask;
+  size_t stride = global.stride;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-      for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+      for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f+=stride)
 	{
-	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & thread_mask)  << ")" << ':' << f->x;
-
-	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
+	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
+	  
+	  cout << ':' << weights[f->weight_index & thread_mask];
 	  if(global.adaptive)
-	    cout << '@' << weights[(f->weight_index+1 + offset) & thread_mask];
+	    cout << '@' << weights[(f->weight_index+1) & thread_mask];
 	}
     else
-      for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
+      for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f+=stride)
 	{
-	  cout << '\t' << f->weight_index << ':' << f->x;
-	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
+	  cout << '\t' << f->weight_index/stride << ':' << f->x;
+	  cout << ':' << weights[f->weight_index & thread_mask];
 	  if(global.adaptive)
-	    cout << '@' << weights[(f->weight_index+1 + offset) & thread_mask];
+	    cout << '@' << weights[(f->weight_index+1) & thread_mask];
 	}
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
       for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	print_offset_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask, offset);
+	print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask);
     else
       for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	print_offset_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask, offset);      
-
-  cout << "\tConstant:0:1:" << weights[(constant+offset) & global.thread_mask] << endl;
+	print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask);      
 }
 
-void print_audit_features(regressor &reg, example* ec, size_t offset)
+void print_audit_features(regressor &reg, example* ec)
 {
   print_result(fileno(stdout),ec->final_prediction,-1,ec->tag);
-  print_offset_features(reg, ec, offset);
+  print_features(reg, ec);
 }
 
 void one_pf_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update)
@@ -342,9 +335,6 @@ void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 		one_pf_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update);
 	    } 
 	}
-      
-      if ( thread_num == 0 )
-	weights[constant & thread_mask] += update;
     }
   }
 }  
@@ -370,9 +360,6 @@ void offset_train(regressor &reg, example* &ec, size_t thread_num, float update,
 		offset_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update, offset);
 	    } 
 	}
-      
-      if ( thread_num == 0 )
-	weights[(constant+offset) & thread_mask] += update;
     }
 }
 
@@ -468,7 +455,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     }
 
   if (global.audit)
-    print_audit_features(reg, ec, 0);
+    print_audit_features(reg, ec);
 }
 
 float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)

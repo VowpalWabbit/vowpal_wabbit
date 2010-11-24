@@ -19,6 +19,7 @@ namespace po = boost::program_options;
 #include "multisource.h"
 #include "comp_io.h"
 #include "unique_sort.h"
+#include "constant.h"
 
 parser* new_parser(const label_parser* lp)
 {
@@ -538,21 +539,24 @@ void setup_example(parser* p, example* ae)
   p->t += ae->global_weight;
   ae->example_t = p->t;
 
-  if(global.adaptive) //make room for learning rates
+  //add constant feature
+  size_t constant_namespace = 128;
+  push(ae->indices,constant_namespace);
+  feature temp = {1,constant};
+  push(ae->atomics[constant_namespace], temp);
+  
+  if(global.stride != 1) //make room for per-feature information.
     {
+      size_t stride = global.stride;
       for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-	  j->weight_index = (j->weight_index << 1) & global.mask;
-      ae->sorted = false;
+	  j->weight_index = (j->weight_index*stride) & global.mask;
       if (global.audit)
 	for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-	    j->weight_index = (j->weight_index << 1) & global.mask;
+	    j->weight_index = (j->weight_index*stride) & global.mask;
     }
-
-  if (!ae->sorted && global.partition_bits > 0)
-    unique_sort_features(ae);
-
+  
   //Should loop through the features to determine the boundaries
   size_t length = global.mask + 1;
   size_t expert_size = length >> global.partition_bits; //#features/expert

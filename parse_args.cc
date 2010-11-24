@@ -37,6 +37,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
+    ("conjugate_gradient", "use conjugate gradient based optimization")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
@@ -86,6 +87,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.backprop = false;
   global.corrective = false;
   global.delayed_global = false;
+  global.conjugate_gradient = false;
+  global.stride = 1;
   global.weighted_labels = 0.;
   global.total_features = 0;
   global.sum_loss = 0.0;
@@ -151,6 +154,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cout << "enabling delayed_global updates" << endl;
   }
   
+  if (vm.count("conjugate_gradient")) {
+    global.conjugate_gradient = true;
+    global.stride = 4;
+    cout << "enabling conjugate gradient based optimization" << endl;
+  }
+
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
     cout << version << "\n";

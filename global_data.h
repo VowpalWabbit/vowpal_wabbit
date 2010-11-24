@@ -32,6 +32,9 @@ struct global_data {
   float active_c0;
   float initial_weight;
 
+  bool conjugate_gradient;
+  size_t stride;
+
   size_t numpasses;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
