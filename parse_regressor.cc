@@ -19,7 +19,7 @@ using namespace std;
 void initialize_regressor(regressor &r)
 {
   size_t length = ((size_t)1) << global.num_bits;
-  global.thread_mask = (length >> global.thread_bits) - 1;
+  global.thread_mask = (global.stride * (length >> global.thread_bits)) - 1;
   size_t num_threads = global.num_threads();
   r.weight_vectors = (weight **)malloc(num_threads * sizeof(weight*));
   for (size_t i = 0; i < num_threads; i++)
