@@ -136,6 +136,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("adaptive")) {
       global.adaptive = true;
+      global.stride = 2;
       vars.power_t = 0.0;
   }
 

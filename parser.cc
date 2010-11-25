@@ -530,7 +530,6 @@ size_t example_count = 0;
 void setup_example(parser* p, example* ae)
 {
   ae->partial_prediction = 0.;
-  ae->num_features = 1;
   ae->total_sum_feat_sq = 1;
   ae->threads_to_finish = global.num_threads();	
   ae->done = false;
@@ -542,7 +541,7 @@ void setup_example(parser* p, example* ae)
   //add constant feature
   size_t constant_namespace = 128;
   push(ae->indices,constant_namespace);
-  feature temp = {1,constant};
+  feature temp = {1,constant & global.mask};
   push(ae->atomics[constant_namespace], temp);
   
   if(global.stride != 1) //make room for per-feature information.
@@ -550,23 +549,23 @@ void setup_example(parser* p, example* ae)
       size_t stride = global.stride;
       for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-	  j->weight_index = (j->weight_index*stride) & global.mask;
+	  j->weight_index = j->weight_index*stride;
       if (global.audit)
 	for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-	    j->weight_index = (j->weight_index*stride) & global.mask;
+	    j->weight_index = j->weight_index*stride;
     }
   
   //Should loop through the features to determine the boundaries
   size_t length = global.mask + 1;
-  size_t expert_size = length >> global.partition_bits; //#features/expert
+  size_t expert_size = global.stride*(length >> global.partition_bits); //#features/expert
   for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
     {
       //subsets is already erased just before parsing.
       feature* f = ae->atomics[*i].begin;
       push(ae->subsets[*i],f);
       size_t current = expert_size;
-      while (current <= length)
+      while (current <= length*global.stride)
 	{
 	  feature* ret = f;
 	  if (ae->atomics[*i].end > f)

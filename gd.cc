@@ -201,9 +201,10 @@ void print_features(regressor &reg, example* &ec)
   weight* weights = reg.weight_vectors[0];
   size_t thread_mask = global.thread_mask;
   size_t stride = global.stride;
+
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-      for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f+=stride)
+      for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	{
 	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
 	  
@@ -212,9 +213,12 @@ void print_features(regressor &reg, example* &ec)
 	    cout << '@' << weights[(f->weight_index+1) & thread_mask];
 	}
     else
-      for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f+=stride)
+      for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
 	{
-	  cout << '\t' << f->weight_index/stride << ':' << f->x;
+	  cout << '\t';
+	  if ( f->weight_index == (constant&global.mask)*stride)
+	    cout << "Constant:";
+	  cout << f->weight_index/stride << ':' << f->x;
 	  cout << ':' << weights[f->weight_index & thread_mask];
 	  if(global.adaptive)
 	    cout << '@' << weights[(f->weight_index+1) & thread_mask];
@@ -226,11 +230,14 @@ void print_features(regressor &reg, example* &ec)
     else
       for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
 	print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask);      
+  cout << endl;
 }
 
 void print_audit_features(regressor &reg, example* ec)
 {
+  fflush(stdout);
   print_result(fileno(stdout),ec->final_prediction,-1,ec->tag);
+  fflush(stdout);
   print_features(reg, ec);
 }
 

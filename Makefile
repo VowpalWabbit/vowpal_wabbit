@@ -66,7 +66,7 @@ vw-train: vw
 	@echo "TEST: vw training ..."
 	@rm -f test/train.dat.cache
 	@./vw -b 17 -l 20 --initial_t 128000 \
-	--power_t 1 -f test/t_r_temp -c --passes 2 -d test/train.dat --compressed --ngram 3 --skips 1 --thread_bits 10
+	--power_t 1 -f test/t_r_temp -c --passes 2 -d test/train.dat --compressed --ngram 3 --skips 1
 
 vw-test: vw-train
 	@echo
