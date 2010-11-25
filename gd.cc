@@ -271,7 +271,6 @@ void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array
     }
 }
 
-
 void offset_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, size_t offset)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index + offset;
@@ -314,12 +313,6 @@ void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 	  for (; temp.begin != temp.end; temp.begin++)
 	    one_pf_quad_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update, g);
 	} 
-      }
-      if ( thread_num == 0 )
-      {
-	weight* w=&weights[constant & thread_mask]; //relies on constant being an even number 
-	w[1] += g;
-	w[0] += update*InvSqrt(w[1]);
       }
     } else {
       weight* weights = reg.weight_vectors[thread_num];
