@@ -4,10 +4,11 @@ LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/local/boost/include/boost-1_34_1
 BOOST_LIBRARY = /usr/local/boost/lib
 
-ARCH = -march=nocona
+ARCH = -march=native
+OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
 
 # for normal fast execution.
-FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3
+FLAGS = -Wall $(ARCH) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE)
 
 # for parallelization
 #FLAGS = -Wall $(ARCH) -ffast-math -Wno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3 -fopenmp
