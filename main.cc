@@ -12,9 +12,8 @@ int main(int argc, char *argv[]) {
     drand48();
     gd_vars *vars = vw(argc, argv);
     
-
-	float weighted_labeled_examples = global.weighted_examples - global.weighted_unlabeled_examples;
-	float best_constant = global.weighted_labels / weighted_labeled_examples;
+    float weighted_labeled_examples = global.weighted_examples - global.weighted_unlabeled_examples;
+    float best_constant = (global.weighted_labels - global.initial_t) / weighted_labeled_examples;
 	float constant_loss = (best_constant*(1.0 - best_constant)*(1.0 - best_constant)
 			+ (1.0 - best_constant)*best_constant*best_constant);
 

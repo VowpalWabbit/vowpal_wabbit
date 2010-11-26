@@ -279,8 +279,6 @@ void offset_quad_update(weight* weights, feature& page_feature, v_array<feature>
     weights[(halfhash + ele->weight_index) & mask] += update * ele->x;
 }
 
-
-
 void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 {
   if (fabs(update)>0.)

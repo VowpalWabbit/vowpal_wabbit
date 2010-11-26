@@ -529,6 +529,7 @@ size_t example_count = 0;
 
 void setup_example(parser* p, example* ae)
 {
+  ae->pass = global.passes_complete;
   ae->partial_prediction = 0.;
   ae->total_sum_feat_sq = 1;
   ae->threads_to_finish = global.num_threads();	
@@ -590,7 +591,7 @@ void *main_parse_loop(void *in)
 {
   parser* p = (parser*) in;
   
-  size_t passes = global.numpasses;
+  global.passes_complete = 0;
   while(!done)
     {
       example* ae=get_unused_example();
@@ -608,8 +609,8 @@ void *main_parse_loop(void *in)
       else
 	{
 	  reset_source(global.num_bits, p);
-	  passes -= 1;
-	  if (passes > 0)
+	  global.passes_complete++;
+	  if (global.passes_complete < global.numpasses)
 	    global.eta *= global.eta_decay_rate;
 	  else
 	    {

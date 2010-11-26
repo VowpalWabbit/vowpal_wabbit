@@ -36,6 +36,7 @@ struct global_data {
   size_t stride;
 
   size_t numpasses;
+  size_t passes_complete;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.

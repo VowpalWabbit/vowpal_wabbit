@@ -12,7 +12,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"
-#include "gd.h"
+#include "cg.h"
 #include "cache.h"
 #include "multisource.h"
 #include "simple_label.h"
@@ -25,103 +25,101 @@ void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[3] += update * ele->x;
-    }
-}
-
-void quad_sd_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float update = g * page_feature.x * page_feature.x;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[3] += update * ele->x * ele->x;
+      w[1] += update * ele->x;
     }
 }
 
 // w[0] = weight
 // w[1] = accumulated first derivative
 // w[2] = step direction
-// w[3] = accumulated second derivative
+// w[3] = old first derivative
 
-bool gradient_pass;
-
-void cg_step(regressor& reg, example* &ec)
+float predict_and_gradient(regressor& reg, example* &ec)
 {
   float raw_prediction = inline_predict(reg,ec,0);
-  float final_prediciton = finalize_prediction(raw_prediction);
-  if (gradient_pass)
+  ec->final_prediction = finalize_prediction(raw_prediction);
+  label_data* ld = (label_data*)ec->ld;
+
+  ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+  float loss_grad = reg.loss->first_derivative(ec->final_prediction,ld->label);
+  
+  size_t thread_mask = global.thread_mask;
+  weight* weights = reg.weight_vectors[0];
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
-      float loss_grad = reg.loss->getfirstderivative(ec->final_prediction,ld->label);
-      
-      weight* weights = reg.weight_vectors[thread_num];
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      feature *f = ec->subsets[*i][0];
+      for (; f != ec->subsets[*i][1]; f++)
 	{
-	  feature *f = ec->subsets[*i][thread_num];
-	  for (; f != ec->subsets[*i][thread_num+1]; f++)
-	    {
-	      weight* w = &weights[f->weight_index & thread_mask];
-	      w[1] += loss_grad * f->x;
-	    }
-	}
-      for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-	{
-	  if (ec->subsets[(int)(*i)[0]].index() > 0)
-	    {
-	      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	      temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	      temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
-	      for (; temp.begin != temp.end; temp.begin++)
-		quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g);
-	    } 
+	  weight* w = &weights[f->weight_index & thread_mask];
+	  w[1] += loss_grad * f->x;
 	}
     }
-  else // in the second pass
+  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
-      float loss_sd = reg.loss->second_derivative(ec->final_prediction,ld->label);
-      
-      weight* weights = reg.weight_vectors[thread_num];
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      if (ec->subsets[(int)(*i)[0]].index() > 0)
 	{
-	  feature *f = ec->subsets[*i][thread_num];
-	  for (; f != ec->subsets[*i][thread_num+1]; f++)
-	    {
-	      weight* w = &weights[f->weight_index & thread_mask];
-	      w[1] += loss_sd * f->x * f->x;
-	    }
-	}
-      for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-	{
-	  if (ec->subsets[(int)(*i)[0]].index() > 0)
-	    {
-	      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	      temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	      temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
-	      for (; temp.begin != temp.end; temp.begin++)
-		quad_sd_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g);
-	    } 
-	}
+	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+	  temp.begin = ec->subsets[(int)(*i)[0]][0];
+	  temp.end = ec->subsets[(int)(*i)[0]][1];
+	  for (; temp.begin != temp.end; temp.begin++)
+	    quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, loss_grad);
+	} 
     }
+  return ec->final_prediction;
 }
 
-double derivative_magnitude(regressor& reg)
+float dot_with_direction(regressor& reg, example* &ec)
 {
-  double ret = 0.;
-  uint32_t length = 1 << global.num_bits;
-  size_t stride = global.stride;
-  for(uint32_t i = 0; i < length; i++)
-    ret += r.weight_vectors[0][stride*i+1]*r.weight_vectors[0][stride*i+1];
+  float ret = 0;
+  weight* weights = reg.weight_vectors[0];
+  size_t thread_mask = global.thread_mask;
+  weights +=2;//direction vector stored two advanced
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+    {
+      feature *f = ec->subsets[*i][0];
+      for (; f != ec->subsets[*i][1]; f++)
+	ret += weights[f->weight_index & thread_mask] * f->x;
+    }
+  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
+    {
+      if (ec->subsets[(int)(*i)[0]].index() > 0)
+	{
+	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+	  temp.begin = ec->subsets[(int)(*i)[0]][0];
+	  temp.end = ec->subsets[(int)(*i)[0]][1];
+	  for (; temp.begin != temp.end; temp.begin++)
+	    ret += one_pf_quad_predict(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask);
+	} 
+    }
   return ret;
 }
 
-double second_derivative_in_direction(regressor& reg)
-{
+double derivative_magnitude(regressor& reg)
+{//compute derivative magnitude & shift new derivative to old
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
   for(uint32_t i = 0; i < length; i++)
-    ret += r.weight_vectors[0][stride*i+3]*r.weight_vectors[0][stride*i+2]*r.weight_vectors[0][stride*i+2];
+    {
+      ret += weights[stride*i+1]*weights[stride*i+1];
+      weights[stride*i+3] = weights[stride*i+1];
+      weights[stride*i+1] = 0;
+    }
+  return ret;
+}
+
+double derivative_diff_mag(regressor& reg)
+{//compute the derivative difference
+  double ret = 0.;
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0] + 1;//shift by one for ease of indexing.
+  for(uint32_t i = 0; i < length; i++)
+    {
+      ret += weights[stride*i]*
+	(weights[stride*i] - weights[stride*i+2]);
+    }
   return ret;
 }
 
@@ -131,7 +129,7 @@ double derivative_in_direction(regressor& reg)
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   for(uint32_t i = 0; i < length; i++)
-    ret += r.weight_vectors[0][stride*i+1]*r.weight_vectors[0][stride*i+2];
+    ret += reg.weight_vectors[0][stride*i+3]*reg.weight_vectors[0][stride*i+2];
   return ret;
 }
 
@@ -140,7 +138,9 @@ void update_direction(regressor& reg, float old_portion)
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   for(uint32_t i = 0; i < length; i++)
-    r.weight_vectors[0][stride*i+2] = r.weight_vectors[0][stride*i+1] + old_portion * r.weight_vectors[0][stride*i+2];
+    {
+      reg.weight_vectors[0][stride*i+2] = reg.weight_vectors[0][stride*i+3] + old_portion * reg.weight_vectors[0][stride*i+2];
+    }
 }
 
 void update_weight(regressor& reg, float step_size)
@@ -148,61 +148,92 @@ void update_weight(regressor& reg, float step_size)
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   for(uint32_t i = 0; i < length; i++)
-    r.weight_vectors[0][stride*i] += step_size * r.weight_vectors[0][stride*i+2];
+    {
+      reg.weight_vectors[0][stride*i] += step_size * reg.weight_vectors[0][stride*i+2];
+    }
 }
 
 void setup_cg(gd_thread_params t)
 {
-  gd_thread_params* params = (gd_thread_params*) in;
-  regressor reg = params->reg;
-  size_t thread_num = params->thread_num;
+  regressor reg = t.reg;
+  size_t thread_num = 0;
   example* ec = NULL;
 
+  v_array<float> predictions;
+  size_t example_number=0;
+  double curvature=0.;
+
+  bool gradient_pass=true;
+ 
   double previous_d_mag;
-  gradient_pass = true;
   size_t current_pass = 0;
   while ( true )
-    {//this is a poor man's select operation.
+    {
       if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
 	  if (ec->pass != current_pass)//we need to do work on all features.
-	    if (gradient_pass) // We just finished computing all gradients
-	      {
-		float mix_frac;
-		if (current_pass == 0)
-		  {
-		    previous_d_mag = derivative_magnitude(reg);
+	    {
+	      if (gradient_pass) // We just finished computing all gradients
+		{
+		  example_number = 0;
+		  curvature = 0;
+		  float mix_frac = 0;
+		  if (current_pass != 0)
+		    mix_frac = derivative_diff_mag(reg) / previous_d_mag;
+		  if (mix_frac < 0 || isnan(mix_frac))
 		    mix_frac = 0;
-		  }
-		else
-		  {
-		    float new_d_mag = derivative_magnitude(reg);
-		    mix_frac = new_d_mag/previous_d_mag;
-		    previous_d_mag = new_d_mag;
-		  }
-		update_direction(reg, mix_frac);
-		gradient_pass = false;
-	      }
-	    else // just finished all second gradients
-	      {
-		float step_size = - derivative_in_direction(reg)/second_derivative_in_direction(reg);
-		update_weight(reg,step_size);
-	      }
-	  cg_step(reg,ec);
+		  float new_d_mag = derivative_magnitude(reg);
+		  previous_d_mag = new_d_mag;
+
+		  update_direction(reg, mix_frac);
+		  gradient_pass = false;//now start computing curvature
+		}
+	      else // just finished all second gradients
+		{
+		  float step_size = - derivative_in_direction(reg)/(max(curvature,1.));
+		  cout << "step_size = " << step_size << " curvature = " << curvature << endl;
+		  predictions.erase();
+		  update_weight(reg,step_size);
+		  gradient_pass = true;
+		}//now start computing derivatives.
+	      current_pass++;
+	    }
+	  if (gradient_pass)
+	    {
+	      float pred = predict_and_gradient(reg,ec);
+	      push(predictions,pred);
+	    }
+	  else //computing curvature
+	    {
+	      float d_dot_x = dot_with_direction(reg,ec);
+	      label_data* ld = (label_data*)ec->ld;
+	      ec->final_prediction = predictions[example_number];
+	      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;	      
+	      float sd = reg.loss->second_derivative(predictions[example_number++],ld->label);
+	      curvature += d_dot_x*d_dot_x*sd;
+	    }
 	  finish_example(ec);
 	}
       else if (thread_done(thread_num))
 	{
+	  if (example_number == predictions.index())//do one last update
+	    {
+	      float step_size = - derivative_in_direction(reg)/(max(curvature,1.));
+	      cout << "step_size = " << step_size << " curvature = " << curvature << endl;
+	      update_weight(reg,step_size);
+	    }
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
-	  return NULL;
+	  free(predictions.begin);
+	  return;
 	}
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
 
-  return NULL;
+  free(predictions.begin);
+  return;
 }
 
 void destroy_cg()
