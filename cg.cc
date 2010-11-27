@@ -200,7 +200,7 @@ void setup_cg(gd_thread_params t)
   double loss_sum = 0;
   float step_size = 0.;
  
-  double previous_d_mag;
+  double previous_d_mag=0;
   size_t current_pass = 0;
   double previous_loss_sum = 0;
   while ( true )

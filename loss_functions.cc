@@ -179,7 +179,9 @@ public:
 
   float second_derivative(float prediction, float label)
   {
-    return first_derivative(prediction,label)*first_derivative(prediction,-label);
+    float e = exp(label*prediction);
+    
+    return e/((1+e)*(1+e));
   }
 };
 
