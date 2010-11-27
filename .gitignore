@@ -5,3 +5,5 @@ bin
 vw
 .*
 vw.1
+*.cache
+*.tgz
