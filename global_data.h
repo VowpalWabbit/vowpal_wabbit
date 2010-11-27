@@ -33,6 +33,7 @@ struct global_data {
   float initial_weight;
 
   bool conjugate_gradient;
+  float regularization;
   size_t stride;
 
   size_t numpasses;

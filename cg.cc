@@ -37,11 +37,11 @@ void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &
 float predict_and_gradient(regressor& reg, example* &ec)
 {
   float raw_prediction = inline_predict(reg,ec,0);
-  ec->final_prediction = finalize_prediction(raw_prediction);
+  float fp = finalize_prediction(raw_prediction);
+  
   label_data* ld = (label_data*)ec->ld;
 
-  ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
-  float loss_grad = reg.loss->first_derivative(ec->final_prediction,ld->label);
+  float loss_grad = reg.loss->first_derivative(fp,ld->label);
   
   size_t thread_mask = global.thread_mask;
   weight* weights = reg.weight_vectors[0];
@@ -65,7 +65,7 @@ float predict_and_gradient(regressor& reg, example* &ec)
 	    quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, loss_grad);
 	} 
     }
-  return ec->final_prediction;
+  return fp;
 }
 
 float dot_with_direction(regressor& reg, example* &ec)
@@ -109,6 +109,27 @@ double derivative_magnitude(regressor& reg)
   return ret;
 }
 
+void zero_derivative(regressor& reg)
+{//compute derivative magnitude & shift new derivative to old
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
+  for(uint32_t i = 0; i < length; i++)
+    weights[stride*i+1] = 0;
+}
+
+double direction_magnitude(regressor& reg)
+{//compute direction magnitude
+  double ret = 0.;
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
+  for(uint32_t i = 0; i < length; i++)
+    ret += weights[stride*i+2]*weights[stride*i+2];
+  
+  return ret;
+}
+
 double derivative_diff_mag(regressor& reg)
 {//compute the derivative difference
   double ret = 0.;
@@ -120,6 +141,18 @@ double derivative_diff_mag(regressor& reg)
       ret += weights[stride*i]*
 	(weights[stride*i] - weights[stride*i+2]);
     }
+  return ret;
+}
+
+double add_regularization(regressor& reg,float regularization)
+{//compute the derivative difference
+  double ret = 0.;
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
+  for(uint32_t i = 0; i < length; i++)
+    weights[stride*i+1] += regularization*weights[stride*i];
+
   return ret;
 }
 
@@ -164,9 +197,12 @@ void setup_cg(gd_thread_params t)
   double curvature=0.;
 
   bool gradient_pass=true;
+  double loss_sum = 0;
+  float step_size = 0.;
  
   double previous_d_mag;
   size_t current_pass = 0;
+  double previous_loss_sum = 0;
   while ( true )
     {
       if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
@@ -175,24 +211,38 @@ void setup_cg(gd_thread_params t)
 	  if (ec->pass != current_pass)//we need to do work on all features.
 	    {
 	      if (gradient_pass) // We just finished computing all gradients
-		{
-		  example_number = 0;
-		  curvature = 0;
-		  float mix_frac = 0;
-		  if (current_pass != 0)
-		    mix_frac = derivative_diff_mag(reg) / previous_d_mag;
-		  if (mix_frac < 0 || isnan(mix_frac))
-		    mix_frac = 0;
-		  float new_d_mag = derivative_magnitude(reg);
-		  previous_d_mag = new_d_mag;
-
-		  update_direction(reg, mix_frac);
-		  gradient_pass = false;//now start computing curvature
-		}
+		if (current_pass > 0 && loss_sum > previous_loss_sum)
+		  {// we stepped to far last time, step back
+		    step_size *= 0.5;
+		    cout << "backstepping, new step_size = " << step_size << endl;
+		    update_weight(reg,- step_size);
+		    zero_derivative(reg);
+		    loss_sum = 0.;
+		  }
+		else
+		  {
+		    previous_loss_sum = loss_sum;
+		    loss_sum = 0.;
+		    if (global.regularization > 0.)
+		      add_regularization(reg,global.regularization*predictions.index());
+		    example_number = 0;
+		    curvature = 0;
+		    float mix_frac = 0;
+		    if (current_pass != 0)
+		      mix_frac = derivative_diff_mag(reg) / previous_d_mag;
+		    if (mix_frac < 0 || isnan(mix_frac))
+		      mix_frac = 0;
+		    float new_d_mag = derivative_magnitude(reg);
+		    previous_d_mag = new_d_mag;
+		    
+		    update_direction(reg, mix_frac);
+		    gradient_pass = false;//now start computing curvature
+		  }
 	      else // just finished all second gradients
 		{
-		  float step_size = - derivative_in_direction(reg)/(max(curvature,1.));
-		  cout << "step_size = " << step_size << " curvature = " << curvature << endl;
+		  if (global.regularization > 0.)
+		    curvature += global.regularization*direction_magnitude(reg)*predictions.index();
+		  step_size = - derivative_in_direction(reg)/(max(curvature,1.));
 		  predictions.erase();
 		  update_weight(reg,step_size);
 		  gradient_pass = true;
@@ -201,8 +251,13 @@ void setup_cg(gd_thread_params t)
 	    }
 	  if (gradient_pass)
 	    {
-	      float pred = predict_and_gradient(reg,ec);
-	      push(predictions,pred);
+	      ec->final_prediction = predict_and_gradient(reg,ec);
+	      
+	      label_data* ld = (label_data*)ec->ld;
+
+	      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+	      loss_sum += ec->loss;
+	      push(predictions,ec->final_prediction);
 	    }
 	  else //computing curvature
 	    {
@@ -220,7 +275,6 @@ void setup_cg(gd_thread_params t)
 	  if (example_number == predictions.index())//do one last update
 	    {
 	      float step_size = - derivative_in_direction(reg)/(max(curvature,1.));
-	      cout << "step_size = " << step_size << " curvature = " << curvature << endl;
 	      update_weight(reg,step_size);
 	    }
 	  if (global.local_prediction > 0)
