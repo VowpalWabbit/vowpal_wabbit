@@ -112,7 +112,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   
 
   po::positional_options_description p;
-  
+  // Be friendly: if -d was left out, treat positional param as data file
+  p.add("data", -1);
+ 
   po::variables_map vm;
 
   po::store(po::command_line_parser(argc, argv).
