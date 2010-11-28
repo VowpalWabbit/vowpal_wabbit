@@ -199,6 +199,7 @@ void setup_cg(gd_thread_params t)
   bool gradient_pass=true;
   double loss_sum = 0;
   float step_size = 0.;
+  double importance_weight_sum = 0.;
  
   double previous_d_mag=0;
   size_t current_pass = 0;
@@ -227,6 +228,7 @@ void setup_cg(gd_thread_params t)
 		      add_regularization(reg,global.regularization*predictions.index());
 		    example_number = 0;
 		    curvature = 0;
+		    importance_weight_sum = 0;
 		    float mix_frac = 0;
 		    if (current_pass != 0)
 		      mix_frac = derivative_diff_mag(reg) / previous_d_mag;
@@ -241,7 +243,7 @@ void setup_cg(gd_thread_params t)
 	      else // just finished all second gradients
 		{
 		  if (global.regularization > 0.)
-		    curvature += global.regularization*direction_magnitude(reg)*predictions.index();
+		    curvature += global.regularization*direction_magnitude(reg)*importance_weight_sum;
 		  step_size = - derivative_in_direction(reg)/(max(curvature,1.));
 		  predictions.erase();
 		  update_weight(reg,step_size);
@@ -267,6 +269,7 @@ void setup_cg(gd_thread_params t)
 	      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;	      
 	      float sd = reg.loss->second_derivative(predictions[example_number++],ld->label);
 	      curvature += d_dot_x*d_dot_x*sd*ld->weight;
+	      importance_weight_sum += ld->weight;
 	    }
 	  finish_example(ec);
 	}
