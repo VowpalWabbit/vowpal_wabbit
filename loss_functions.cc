@@ -115,7 +115,7 @@ public:
 
   float first_derivative(float prediction, float label)
   {
-    return (label*prediction >= label*label) ? 0 : 1;
+    return (label*prediction >= label*label) ? 0 : -label;
   }
 
   float second_derivative(float prediction, float label)
@@ -168,7 +168,7 @@ public:
 
   float first_derivative(float prediction, float label)
   {
-    float v = - 1./(1+exp(label * prediction));
+    float v = - label/(1+exp(label * prediction));
     return v;
   }
 
@@ -181,7 +181,7 @@ public:
   {
     float e = exp(label*prediction);
     
-    return e/((1+e)*(1+e));
+    return label*label*e/((1+e)*(1+e));
   }
 };
 
@@ -228,7 +228,7 @@ public:
   {
     float e = label - prediction; 
     if(e == 0) return 0;
-    return e > 0 ? tau : (1-tau);
+    return e > 0 ? -tau : (1-tau);
   }
 
   float getSquareGrad(float prediction, float label) {

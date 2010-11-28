@@ -41,7 +41,7 @@ float predict_and_gradient(regressor& reg, example* &ec)
   
   label_data* ld = (label_data*)ec->ld;
 
-  float loss_grad = reg.loss->first_derivative(fp,ld->label);
+  float loss_grad = reg.loss->first_derivative(fp,ld->label)*ld->weight;
   
   size_t thread_mask = global.thread_mask;
   weight* weights = reg.weight_vectors[0];
@@ -266,7 +266,7 @@ void setup_cg(gd_thread_params t)
 	      ec->final_prediction = predictions[example_number];
 	      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;	      
 	      float sd = reg.loss->second_derivative(predictions[example_number++],ld->label);
-	      curvature += d_dot_x*d_dot_x*sd;
+	      curvature += d_dot_x*d_dot_x*sd*ld->weight;
 	    }
 	  finish_example(ec);
 	}
