@@ -531,6 +531,7 @@ void setup_example(parser* p, example* ae)
 {
   ae->pass = global.passes_complete;
   ae->partial_prediction = 0.;
+  ae->num_features = 0;
   ae->total_sum_feat_sq = 1;
   ae->threads_to_finish = global.num_threads();	
   ae->done = false;
