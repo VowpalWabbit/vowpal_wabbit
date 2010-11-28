@@ -1,53 +1,38 @@
-Num weight bits = 24
-learning rate = 2.56e+06
-initial_t = 128000
-power_t = 1
-decay_learning_rate = 0.707107
-Warning: decay_learning_rate has no effect when there is only one pass
-using no cache
-Reading from stdin
-final_regressor = test/t_r_temp
-learning_rate set to 2.56e+06
-average	since	example	example	current	current	current
-loss	last	counter	weight	label	predict	features
-0.3926	0.3926	3	3	0	0.3032	57	
-0.31	0.2275	6	6	1	0.1897	31	
-0.2852	0.2553	11	11	0	0.6957	38	
-0.2845	0.2839	22	22	1	0.4427	88	
-0.3088	0.3331	44	44	0	0.3216	66	
-0.2803	0.2512	87	87	1	0.0781	61	
-0.2874	0.2945	174	1.7e+02	1	0.6602	26	
+Test suite for vw:
 
-finished run
-number of examples = 200
-weighted example sum = 200
-weighted label sum = 91
-average loss = 0.2873
-best constant's loss = 0.248
-total feature number = 15482
-Num weight bits = 24
-learning rate = 0.1
-initial_t = 1
-power_t = 0
-decay_learning_rate = 0.707107
-Warning: decay_learning_rate has no effect when there is only one pass
-using no cache
-predictions = test/t_p_out
-Reading from stdin
-only testing
-average	since	example	example	current	current	current
-loss	last	counter	weight	label	predict	features
-0.233	0.233	3	3	0	0.4552	62	
-0.2315	0.2301	6	6	0	0.3615	144	
-0.2524	0.2775	11	11	0	0.4932	56	
-0.2256	0.1987	22	22	0	0.5193	36	
-0.1768	0.1281	44	44	1	0.7838	34	
-0.17	0.1629	87	87	1	1	15	
+You may add arbitrary (train/test/varying-options) tests
+by adding data (train, test) files and their expected reference
+STDOUT and STDERRs
 
-finished run
-number of examples = 100
-weighted example sum = 100
-weighted label sum = 57
-average loss = 0.1507
-best constant's loss = 0.2451
-total feature number = 5069
+Test to run should be added below the __DATA__ section in RunTests
+
+Tests are separated by an empty line
+Each test is represented by a pair or triplet of items
+   1st item is the command to run, {VW} represents the vw executable
+   2nd item is the expected (reference file) standard output
+   3rd item is the expected (reference file) standard error
+file-names are relative to this (test) directory
+
+Examples:
+
+__DATA__
+# Test 1:
+{VW} -d train-sets/0001.dat -f models/0001.model
+    train-sets/ref/0001.stdout
+    train-sets/ref/0001.stderr
+
+# Test 2:
+{VW} -t train-sets/0001.dat -i models/0001.model
+    test-sets/ref/0001.stdout
+    test-sets/ref/0001.stderr
+
+# Test 3: without -d, training only
+{VW} train-sets/0002.dat    -f models/0002.model
+    train-sets/ref/0002.stdout
+    train-sets/ref/0002.stderr
+
+# Test 4: same, with -d
+{VW} -d train-sets/0002.dat    -f models/0002.model
+    train-sets/ref/0002.stdout
+    train-sets/ref/0002.stderr
+

@@ -1,0 +1,240 @@
+#!/usr/bin/perl -w
+#
+# Test suite for vw:
+#
+# You may add arbitrary (train/test/varying-options) tests
+# by adding data files and their expected reference STDOUT and STDERR
+#
+# See __DATA__ below for how to add more tests
+#
+use Getopt::Std;
+use vars qw($opt_d);
+
+my $VW;
+
+my @TrainSets = glob('train-sets/*.dat');
+my @TestSets = glob('test-sets/*.dat');
+
+sub usage(@) {
+    print STDERR @_, "\n" if (@_);
+
+    die "Usage: $0 [-v] [vw-executable]
+    By default will run against ../vw
+
+    Options:
+	-d  print detailed diff on failures
+";
+}
+
+#
+# which vw executable to test against
+#
+sub which_vw() {
+    if (@ARGV == 1) {
+	my $exe = $ARGV[0];
+	if (-x $exe) {
+	    printf STDERR "Testing vw: %s\n", $exe;
+	    return $exe;
+	} else {
+	    usage("argument $exe: not an executable");
+	}
+    } elsif (@ARGV == 0) {
+	foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
+	    my $exe = "$dir/vw";
+	    if (-x $exe) {
+		printf STDERR "Testing vw: %s\n", $exe;
+		return $exe;
+	    }
+	}
+    }
+    usage("can't find a 'vw' executable to test on");
+}
+
+sub init() {
+    $0 =~ s{.*/}{};
+    getopts('d') || usage();
+    $VW = which_vw();
+}
+
+sub trim_spaces($) {
+    my $str = shift;
+    $str =~ s/^\s+//;
+    $str =~ s/\s+$//;
+    $str;
+}
+
+# __DATA__ test counter
+my $TestNo = 0;
+
+sub next_test() {
+    my ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
+
+    $TestNo++;
+    while (! eof(DATA)) {
+	my $line = <DATA>;
+	last if (defined($line) && $line =~ /^\s*$/);
+
+	next if ($line =~ /^\s*#/);  # skip comment lines
+
+	if ($line =~ /{VW}/) {
+	    # The command line
+	    $cmd = trim_spaces($line);
+	    $cmd =~ s/{VW}/$VW/;
+	    if ($cmd =~ /\s-p\s+(\S+)/) {
+		# -p predict_file
+		$pred = $1;
+	    }
+	    next;
+	}
+	if ($line =~ m/\.stdout\b/) {
+	    $out_ref = trim_spaces($line);
+	    next;
+	}
+	if ($line =~ /\.stderr\b/) {
+	    $err_ref = trim_spaces($line);
+	    next;
+	}
+	if ($line =~ /\.predict\b/) {
+	    $pred_ref = trim_spaces($line);
+	    next;
+	}
+    }
+    if (eof(DATA) && !defined $cmd) {
+	return (undef, undef, undef, undef);
+    }
+
+    unless (defined $cmd) {
+	die "$0: test $TestNo: command is undefined\n";
+    }
+    unless (defined $out_ref) {
+	die "$0: test $TestNo: stdout ref: undefined\n";
+    }
+    unless (defined $err_ref) {
+	die "$0: test $TestNo: stderr ref: undefined\n";
+    }
+    # print STDERR "next_test: (\$cmd, $out_ref, $err_ref, $pred_ref, $pred)\n";
+    ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
+}
+
+sub diff($$) {
+    my ($outfile, $reffile) = @_;
+    system("diff $outfile $reffile >diff.tmp");
+    my $status = $? >> 8;
+    if (-s 'diff.tmp') {
+	if ($opt_d) {
+	    system("cat diff.tmp")
+	}
+    }
+    $status;
+}
+
+sub run_tests() {
+
+    print STDERR "If 'FAILED' - rerun with -d to see diff output\n"
+	unless ($opt_d);
+
+    my ($cmd, $out_ref, $err_ref, $pred_ref);
+    my ($outf, $errf, $predf);
+
+    mkdir('models', 0755) unless (-d 'models');
+
+    unlink(glob('*.tmp'));
+    unlink(glob('*.cache'));
+    unlink(glob('*/*.cache'));
+
+    while (($cmd, $out_ref, $err_ref, $pred_ref, $predf) = next_test()) {
+	last unless (defined $cmd);
+
+	($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
+
+	# run the test
+	system("($cmd) >$outf 2>$errf");
+	my $status = $? >> 8;
+	if ($status) {
+	    die "$0: test $TestNo: '$cmd' failed: status=$status\n";
+	}
+
+	# command succeded
+	# -- compare stdout
+	unless (-e $out_ref) {
+	    die "$0: test $TestNo: stdout ref: $out_ref: $!\n";
+	}
+
+	$status = diff($outf, $out_ref);
+	if ($status) {
+	    printf STDERR "%s: test %d: FAILED: stdout(%s) != ref(%s):\n",
+			  $0, $TestNo, $outf, $out_ref;
+	} else {
+	    print STDERR "$0: test $TestNo: stdout OK\n";
+	}
+
+	# -- compare stderr
+	unless (-e $err_ref) {
+	    die "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
+	}
+	$status = diff($errf, $err_ref);
+	if ($status) {
+	    printf STDERR "%s: test %d: FAILED: stderr(%s) != ref(%s):\n",
+			  $0, $TestNo, $errf, $err_ref;
+	} else {
+	    print STDERR "$0: test $TestNo: stderr OK\n";
+	}
+	# -- compare predict
+	next unless (defined $pred_ref);
+	$predf = 'predict.tmp' unless (defined $predf);
+	$status = diff($predf, $pred_ref);
+	if ($status) {
+	    printf STDERR "%s: test %d: FAILED: predict(%s) != ref(%s):\n",
+			  $0, $TestNo, $predf, $pred_ref;
+	} else {
+	    print STDERR "$0: test $TestNo: predict OK\n";
+	}
+    }
+}
+
+# --- main
+init();
+run_tests();
+
+# Add tests below the __DATA__ line
+#
+# Each test is a series of lines, terminated by an empty line (or EOF)
+#
+# Each test is comprised of:
+#   1st item is the command to run, {VW} represents the vw executable
+# The next (output) items are reference files to compare outputs to:
+#   2nd item is the expected (reference file) standard output
+#   3rd item is the expected (reference file) standard error
+#   4th (optional) item is reference prediction file
+# All filenames are relative to this directory
+# The temporary output file-names are implicit:
+#	 (stdout.tmp  stderr.tmp  predict.tmp)
+# Except: if -p ... appears in the command, it will be used as the predict file
+#
+__DATA__
+# Test 1:
+{VW} -b 17 -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 2 --compressed --ngram 3 --skips 1
+    train-sets/ref/0001.stdout
+    train-sets/ref/0001.stderr
+
+# Test 2: checking predictions as well
+{VW} -t train-sets/0001.dat -i models/0001.model -p 001.predict.tmp
+    test-sets/ref/0001.stdout
+    test-sets/ref/0001.stderr
+    pred-sets/ref/0001.predict
+
+# Test 3: without -d, training only
+{VW} train-sets/0002.dat    -f models/0002.model
+    train-sets/ref/0002.stdout
+    train-sets/ref/0002.stderr
+
+# Test 4: same, with -d
+{VW} -d train-sets/0002.dat    -f models/0002.model
+    train-sets/ref/0002.stdout
+    train-sets/ref/0002.stderr
+
+# Test 5: add bigrams, adaptive, and more (same input, different outputs)
+{VW} --initial_t 1 --power_t 0.5 --adaptive -q tr -f models/0002a.model train-sets/0002.dat
+    train-sets/ref/0002a.stdout
+    train-sets/ref/0002a.stderr
+

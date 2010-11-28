@@ -1,0 +1,36 @@
+creating quadratic features for pairs: tr 
+final_regressor = models/0002a.model
+using no cache
+Reading from train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0
+learning_rate set to 10
+average    since       example  example    current  current  current
+loss       last        counter   weight      label  predict features
+0.116985   0.116985          3      3.0     0.5498   0.3393       15
+0.072802   0.028618          6      6.0     0.2681   0.0000       15
+0.064328   0.054159         11     11.0     0.4315   0.0000       15
+0.041313   0.018298         22     22.0     0.5519   0.5597       15
+0.022418   0.003522         44     44.0     0.5514   0.6180       15
+0.014116   0.005621         87     87.0     0.5140   0.5066       15
+0.009419   0.004722        174    174.0     0.5596   0.5548       15
+0.006447   0.003475        348    348.0     0.5475   0.5501       15
+0.004132   0.001817        696    696.0     0.3421   0.3947       15
+0.002638   0.001144       1392   1392.0     0.4996   0.5066       15
+0.001607   0.000575       2784   2784.0     0.5090   0.5234       15
+0.001024   0.000442       5568   5568.0     0.6413   0.6181       15
+0.000809   0.000594      11135  11135.0     0.3869   0.4344       15
+0.000614   0.000418      22269  22269.0     0.5063   0.5065       15
+0.000633   0.000651      44537  44537.0     0.4905   0.4800       15
+
+finished run
+number of examples = 74746
+weighted example sum = 6.952e+04
+weighted label sum = 3.511e+04
+average loss = 0.0006521
+best constant = 0.5051
+best constant's loss = 0.25
+total feature number = 1121190
