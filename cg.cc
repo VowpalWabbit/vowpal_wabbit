@@ -277,6 +277,8 @@ void setup_cg(gd_thread_params t)
 	{
 	  if (example_number == predictions.index())//do one last update
 	    {
+	      if (global.regularization > 0.)
+		curvature += global.regularization*direction_magnitude(reg)*importance_weight_sum;
 	      float step_size = - derivative_in_direction(reg)/(max(curvature,1.));
 	      update_weight(reg,step_size);
 	    }
