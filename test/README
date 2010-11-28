@@ -1,38 +1,17 @@
 Test suite for vw:
+------------------
 
 You may add arbitrary (train/test/varying-options) tests
-by adding data (train, test) files and their expected reference
-STDOUT and STDERRs
+by adding:
+    1) Data (train, test, predict) files
+    2) vw command to run using the above data files
+    3) Expected (reference) STDOUT, STDERR, and predictions-file
+       for the command.
 
-Test to run should be added below the __DATA__ section in RunTests
+Additional tests can be added below the __DATA__ section in RunTests.
 
-Tests are separated by an empty line
-Each test is represented by a pair or triplet of items
-   1st item is the command to run, {VW} represents the vw executable
-   2nd item is the expected (reference file) standard output
-   3rd item is the expected (reference file) standard error
-file-names are relative to this (test) directory
+See the comment above __DATA__ in 'RunTests' for full details on
+how to add more tests or simply refer to the examples therein.
 
-Examples:
-
-__DATA__
-# Test 1:
-{VW} -d train-sets/0001.dat -f models/0001.model
-    train-sets/ref/0001.stdout
-    train-sets/ref/0001.stderr
-
-# Test 2:
-{VW} -t train-sets/0001.dat -i models/0001.model
-    test-sets/ref/0001.stdout
-    test-sets/ref/0001.stderr
-
-# Test 3: without -d, training only
-{VW} train-sets/0002.dat    -f models/0002.model
-    train-sets/ref/0002.stdout
-    train-sets/ref/0002.stderr
-
-# Test 4: same, with -d
-{VW} -d train-sets/0002.dat    -f models/0002.model
-    train-sets/ref/0002.stdout
-    train-sets/ref/0002.stderr
+--ariel
 

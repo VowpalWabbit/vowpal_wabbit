@@ -196,21 +196,36 @@ sub run_tests() {
 init();
 run_tests();
 
-# Add tests below the __DATA__ line
 #
+# Add tests below the __DATA__ line
 # Each test is a series of lines, terminated by an empty line (or EOF)
 #
 # Each test is comprised of:
-#   1st item is the command to run, {VW} represents the vw executable
-# The next (output) items are reference files to compare outputs to:
-#   2nd item is the expected (reference file) standard output
-#   3rd item is the expected (reference file) standard error
-#   4th (optional) item is reference prediction file
-# All filenames are relative to this directory
-# The temporary output file-names are implicit:
-#	 (stdout.tmp  stderr.tmp  predict.tmp)
-# Except: if -p ... appears in the command, it will be used as the predict file
+#   1st line-item is the command to run, {VW} represents the vw
+#   executable.
 #
+#   By default, 'vw' in the parent dir (../vw) is tested.
+#   To run against a different reference executable, just pass the
+#   executable as an argument to RunTests
+#
+# The next (output) line-items are reference files to compare outputs to:
+#    The expected (reference file) standard output
+#    The expected (reference file) standard error
+#    The expected (reference file) for predictions (-p ...) 
+#    [The above reference files can come in any order.
+#     Their 'type' is determined by their extensions:
+#            .stdout  .stderr  .predict
+#    ]
+#
+# All filenames are relative to this (test) directory
+#
+# The temporary output file-names (as opposed to the reference ones)
+# are implicit:
+#    (stdout.tmp  stderr.tmp  predict.tmp)
+# Except: if -p ... appears in the command, it will be used as the
+# (explicit) predictions file.
+#
+
 __DATA__
 # Test 1:
 {VW} -b 17 -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 2 --compressed --ngram 3 --skips 1
