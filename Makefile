@@ -59,20 +59,11 @@ active_interactor:	active_interactor.cc
 offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_dense.o parse_example.o parse_args.o gd.o parser.o offset_tree.o loss_functions.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
+.FORCE:
 
-test: vw vw-train vw-test
-	@echo $(UNAME)
-
-vw-train: vw
-	@echo "TEST: vw training ..."
-	@rm -f test/train.dat.cache
-	@./vw -b 17 -l 20 --initial_t 128000 \
-	--power_t 1 -f test/t_r_temp -c --passes 2 -d test/train.dat --compressed --ngram 3 --skips 1
-
-vw-test: vw-train
-	@echo
-	@echo "TEST: vw test only ..."
-	@cat test/test.dat | ./vw -t -i test/t_r_temp -p test/t_p_out
+test: .FORCE
+	@echo "vw running test-suite..."
+	@(cd test && ./RunTests)
 
 install: vw
 	cp $(BINARIES) ~/bin
