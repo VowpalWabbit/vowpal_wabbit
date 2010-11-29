@@ -8,7 +8,7 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d);
+use vars qw($opt_d $opt_c $opt_e $opt_o);
 
 my $VW;
 
@@ -22,7 +22,10 @@ sub usage(@) {
     By default will run against ../vw
 
     Options:
-	-d  print detailed diff on failures
+	-d  print diff output on diff-failure
+	-c  print commands before running them
+	-o  Overwrite reference file with new/different result
+	-e  Abort on first diff error
 ";
 }
 
@@ -52,7 +55,7 @@ sub which_vw() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('d') || usage();
+    getopts('cdeo') || usage();
     $VW = which_vw();
 }
 
@@ -121,8 +124,20 @@ sub diff($$) {
     system("diff $outfile $reffile >diff.tmp");
     my $status = $? >> 8;
     if (-s 'diff.tmp') {
+	# There's a difference
 	if ($opt_d) {
 	    system("cat diff.tmp")
+	}
+	if ($opt_o) {
+	    print STDERR "-o: overwriting reference:\n";
+
+	    print STDERR "\t$reffile -> $reffile.prev\n";
+	    rename($reffile, "$reffile.prev") ||
+		die "FATAL: rename($reffile, $reffile.prev): $!\n";
+
+	    print STDERR "\t$outfile -> $reffile\n";
+	    rename($outfile, $reffile) ||
+		die "FATAL: rename($outfile, $reffile): $!\n";
 	}
     }
     $status;
@@ -148,6 +163,7 @@ sub run_tests() {
 	($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
 
 	# run the test
+	print STDERR "($cmd) >$outf 2>$errf\n" if ($opt_c);
 	system("($cmd) >$outf 2>$errf");
 	my $status = $? >> 8;
 	if ($status) {
@@ -164,6 +180,7 @@ sub run_tests() {
 	if ($status) {
 	    printf STDERR "%s: test %d: FAILED: stdout(%s) != ref(%s):\n",
 			  $0, $TestNo, $outf, $out_ref;
+	    exit $status if ($opt_e);
 	} else {
 	    print STDERR "$0: test $TestNo: stdout OK\n";
 	}
@@ -176,6 +193,7 @@ sub run_tests() {
 	if ($status) {
 	    printf STDERR "%s: test %d: FAILED: stderr(%s) != ref(%s):\n",
 			  $0, $TestNo, $errf, $err_ref;
+	    exit $status if ($opt_e);
 	} else {
 	    print STDERR "$0: test $TestNo: stderr OK\n";
 	}
@@ -186,6 +204,7 @@ sub run_tests() {
 	if ($status) {
 	    printf STDERR "%s: test %d: FAILED: predict(%s) != ref(%s):\n",
 			  $0, $TestNo, $predf, $pred_ref;
+	    exit $status if ($opt_e);
 	} else {
 	    print STDERR "$0: test $TestNo: predict OK\n";
 	}
