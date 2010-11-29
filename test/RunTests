@@ -18,8 +18,9 @@ my @TestSets = glob('test-sets/*.dat');
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
 
-    die "Usage: $0 [-v] [vw-executable]
-    By default will run against ../vw
+    die "Usage: $0 [options] [vw-executable]
+    By default will run against the 1st 'vw' executable found in:
+        .  ..  \$PATH
 
     Options:
         -d  print diff output on diff-failure
