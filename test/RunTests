@@ -22,10 +22,10 @@ sub usage(@) {
     By default will run against ../vw
 
     Options:
-	-d  print diff output on diff-failure
-	-c  print commands before running them
-	-o  Overwrite reference file with new/different result
-	-e  Abort on first diff error
+        -d  print diff output on diff-failure
+        -c  print commands before running them
+        -o  Overwrite reference file with new/different result
+        -e  Abort on first diff error
 ";
 }
 
@@ -34,21 +34,21 @@ sub usage(@) {
 #
 sub which_vw() {
     if (@ARGV == 1) {
-	my $exe = $ARGV[0];
-	if (-x $exe) {
-	    printf STDERR "Testing vw: %s\n", $exe;
-	    return $exe;
-	} else {
-	    usage("argument $exe: not an executable");
-	}
+        my $exe = $ARGV[0];
+        if (-x $exe) {
+            printf STDERR "Testing vw: %s\n", $exe;
+            return $exe;
+        } else {
+            usage("argument $exe: not an executable");
+        }
     } elsif (@ARGV == 0) {
-	foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
-	    my $exe = "$dir/vw";
-	    if (-x $exe) {
-		printf STDERR "Testing vw: %s\n", $exe;
-		return $exe;
-	    }
-	}
+        foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
+            my $exe = "$dir/vw";
+            if (-x $exe) {
+            printf STDERR "Testing vw: %s\n", $exe;
+            return $exe;
+            }
+        }
     }
     usage("can't find a 'vw' executable to test on");
 }
@@ -74,46 +74,53 @@ sub next_test() {
 
     $TestNo++;
     while (! eof(DATA)) {
-	my $line = <DATA>;
-	last if (defined($line) && $line =~ /^\s*$/);
+        my $line = <DATA>;
+        last if (defined($line) && $line =~ /^\s*$/);
 
-	next if ($line =~ /^\s*#/);  # skip comment lines
+        next if ($line =~ /^\s*#/);  # skip comment lines
 
-	if ($line =~ /{VW}/) {
-	    # The command line
-	    $cmd = trim_spaces($line);
-	    $cmd =~ s/{VW}/$VW/;
-	    if ($cmd =~ /\s-p\s+(\S+)/) {
-		# -p predict_file
-		$pred = $1;
-	    }
-	    next;
-	}
-	if ($line =~ m/\.stdout\b/) {
-	    $out_ref = trim_spaces($line);
-	    next;
-	}
-	if ($line =~ /\.stderr\b/) {
-	    $err_ref = trim_spaces($line);
-	    next;
-	}
-	if ($line =~ /\.predict\b/) {
-	    $pred_ref = trim_spaces($line);
-	    next;
-	}
+        if ($line =~ /{VW}/) {
+            # The command line
+            $cmd = trim_spaces($line);
+            $cmd =~ s/{VW}/$VW/;
+            if ($cmd =~ /\s-p\s+(\S+)/) {
+                # -p predict_file
+                $pred = $1;
+            }
+            next;
+        }
+        if ($line =~ m/\.stdout\b/) {
+            $out_ref = trim_spaces($line);
+            next;
+        }
+        if ($line =~ /\.stderr\b/) {
+            $err_ref = trim_spaces($line);
+            next;
+        }
+        if ($line =~ /\.predict\b/) {
+            $pred_ref = trim_spaces($line);
+            next;
+        }
+        # if we get here it is some unrecognized pattern
+        printf STDERR "Unrecognized test spec line:\n\t%s\n", $line;
+        print STDERR "Test lines must match one of the following patterns:\n";
+        print STDERR "\tCommand to run:    {VW}\n";
+        print STDERR "\tstdout reference:  *.stdout\n";
+        print STDERR "\tstderr reference:  *.stderr\n";
+        print STDERR "\tpredict reference: *.predict\n";
     }
     if (eof(DATA) && !defined $cmd) {
-	return (undef, undef, undef, undef);
+        return (undef, undef, undef, undef);
     }
 
     unless (defined $cmd) {
-	die "$0: test $TestNo: command is undefined\n";
+        die "$0: test $TestNo: command is undefined\n";
     }
     unless (defined $out_ref) {
-	die "$0: test $TestNo: stdout ref: undefined\n";
+        die "$0: test $TestNo: stdout ref: undefined\n";
     }
     unless (defined $err_ref) {
-	die "$0: test $TestNo: stderr ref: undefined\n";
+        die "$0: test $TestNo: stderr ref: undefined\n";
     }
     # print STDERR "next_test: (\$cmd, $out_ref, $err_ref, $pred_ref, $pred)\n";
     ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
@@ -124,21 +131,21 @@ sub diff($$) {
     system("diff $outfile $reffile >diff.tmp");
     my $status = $? >> 8;
     if (-s 'diff.tmp') {
-	# There's a difference
-	if ($opt_d) {
-	    system("cat diff.tmp")
-	}
-	if ($opt_o) {
-	    print STDERR "-o: overwriting reference:\n";
+        # There's a difference
+        if ($opt_d) {
+            system("cat diff.tmp")
+        }
+        if ($opt_o) {
+            print STDERR "-o: overwriting reference:\n";
 
-	    print STDERR "\t$reffile -> $reffile.prev\n";
-	    rename($reffile, "$reffile.prev") ||
-		die "FATAL: rename($reffile, $reffile.prev): $!\n";
+            print STDERR "\t$reffile -> $reffile.prev\n";
+            rename($reffile, "$reffile.prev") ||
+                die "FATAL: rename($reffile, $reffile.prev): $!\n";
 
-	    print STDERR "\t$outfile -> $reffile\n";
-	    rename($outfile, $reffile) ||
-		die "FATAL: rename($outfile, $reffile): $!\n";
-	}
+            print STDERR "\t$outfile -> $reffile\n";
+            rename($outfile, $reffile) ||
+                die "FATAL: rename($outfile, $reffile): $!\n";
+        }
     }
     $status;
 }
@@ -158,56 +165,56 @@ sub run_tests() {
     unlink(glob('*/*.cache'));
 
     while (($cmd, $out_ref, $err_ref, $pred_ref, $predf) = next_test()) {
-	last unless (defined $cmd);
+        last unless (defined $cmd);
 
-	($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
+        ($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
 
-	# run the test
-	print STDERR "($cmd) >$outf 2>$errf\n" if ($opt_c);
-	system("($cmd) >$outf 2>$errf");
-	my $status = $? >> 8;
-	if ($status) {
-	    die "$0: test $TestNo: '$cmd' failed: status=$status\n";
-	}
+        # run the test
+        print STDERR "($cmd) >$outf 2>$errf\n" if ($opt_c);
+        system("($cmd) >$outf 2>$errf");
+        my $status = $? >> 8;
+        if ($status) {
+            die "$0: test $TestNo: '$cmd' failed: status=$status\n";
+        }
 
-	# command succeded
-	# -- compare stdout
-	unless (-e $out_ref) {
-	    die "$0: test $TestNo: stdout ref: $out_ref: $!\n";
-	}
+        # command succeded
+        # -- compare stdout
+        unless (-e $out_ref) {
+            die "$0: test $TestNo: stdout ref: $out_ref: $!\n";
+        }
 
-	$status = diff($outf, $out_ref);
-	if ($status) {
-	    printf STDERR "%s: test %d: FAILED: stdout(%s) != ref(%s):\n",
-			  $0, $TestNo, $outf, $out_ref;
-	    exit $status if ($opt_e);
-	} else {
-	    print STDERR "$0: test $TestNo: stdout OK\n";
-	}
+        $status = diff($outf, $out_ref);
+        if ($status) {
+            printf STDERR "%s: test %d: FAILED: stdout(%s) != ref(%s):\n",
+                $0, $TestNo, $outf, $out_ref;
+            exit $status if ($opt_e);
+        } else {
+            print STDERR "$0: test $TestNo: stdout OK\n";
+        }
 
-	# -- compare stderr
-	unless (-e $err_ref) {
-	    die "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
-	}
-	$status = diff($errf, $err_ref);
-	if ($status) {
-	    printf STDERR "%s: test %d: FAILED: stderr(%s) != ref(%s):\n",
-			  $0, $TestNo, $errf, $err_ref;
-	    exit $status if ($opt_e);
-	} else {
-	    print STDERR "$0: test $TestNo: stderr OK\n";
-	}
-	# -- compare predict
-	next unless (defined $pred_ref);
-	$predf = 'predict.tmp' unless (defined $predf);
-	$status = diff($predf, $pred_ref);
-	if ($status) {
-	    printf STDERR "%s: test %d: FAILED: predict(%s) != ref(%s):\n",
-			  $0, $TestNo, $predf, $pred_ref;
-	    exit $status if ($opt_e);
-	} else {
-	    print STDERR "$0: test $TestNo: predict OK\n";
-	}
+        # -- compare stderr
+        unless (-e $err_ref) {
+            die "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
+        }
+        $status = diff($errf, $err_ref);
+        if ($status) {
+            printf STDERR "%s: test %d: FAILED: stderr(%s) != ref(%s):\n",
+                $0, $TestNo, $errf, $err_ref;
+            exit $status if ($opt_e);
+        } else {
+            print STDERR "$0: test $TestNo: stderr OK\n";
+        }
+        # -- compare predict
+        next unless (defined $pred_ref);
+        $predf = 'predict.tmp' unless (defined $predf);
+        $status = diff($predf, $pred_ref);
+        if ($status) {
+            printf STDERR "%s: test %d: FAILED: predict(%s) != ref(%s):\n",
+                $0, $TestNo, $predf, $pred_ref;
+            exit $status if ($opt_e);
+        } else {
+            print STDERR "$0: test $TestNo: predict OK\n";
+        }
     }
 }
 
