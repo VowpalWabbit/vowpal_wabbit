@@ -160,7 +160,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   
   if (vm.count("conjugate_gradient")) {
     global.conjugate_gradient = true;
-    global.stride = 4;
+    global.stride = 8;
     cout << "enabling conjugate gradient based optimization" << endl;
   }
 

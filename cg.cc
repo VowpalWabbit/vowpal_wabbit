@@ -2,6 +2,9 @@
 Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
+
+The algorithm here is generally based on Jonathan Shewchuck's tutorial.
+
  */
 #include <fstream>
 #include <float.h>
@@ -29,10 +32,22 @@ void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &
     }
 }
 
+void quad_precond_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
+{
+  size_t halfhash = quadratic_constant * page_feature.weight_index;
+  float update = g * page_feature.x;
+  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
+    {
+      weight* w=&weights[(halfhash + ele->weight_index) & mask];
+      w[4] += update * ele->x * ele->x;
+    }
+}
+
 // w[0] = weight
 // w[1] = accumulated first derivative
 // w[2] = step direction
 // w[3] = old first derivative
+// w[4] = preconditioner
 
 float predict_and_gradient(regressor& reg, example* &ec)
 {
@@ -68,6 +83,35 @@ float predict_and_gradient(regressor& reg, example* &ec)
   return fp;
 }
 
+void update_preconditioner(regressor& reg, example* &ec)
+{
+  label_data* ld = (label_data*)ec->ld;
+  float curvature = reg.loss->second_derivative(ec->final_prediction,ld->label) * ld->weight;
+  
+  size_t thread_mask = global.thread_mask;
+  weight* weights = reg.weight_vectors[0];
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
+    {
+      feature *f = ec->subsets[*i][0];
+      for (; f != ec->subsets[*i][1]; f++)
+        {
+          weight* w = &weights[f->weight_index & thread_mask];
+          w[4] += f->x * f->x * curvature;
+        }
+    }
+  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)
+    {
+      if (ec->subsets[(int)(*i)[0]].index() > 0)
+        {
+          v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+          temp.begin = ec->subsets[(int)(*i)[0]][0];
+          temp.end = ec->subsets[(int)(*i)[0]][1];
+          for (; temp.begin != temp.end; temp.begin++)
+            quad_precond_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, curvature);
+        }
+    }
+}  
+
 float dot_with_direction(regressor& reg, example* &ec)
 {
   float ret = 0;
@@ -102,7 +146,7 @@ double derivative_magnitude(regressor& reg)
   weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
   for(uint32_t i = 0; i < length; i++)
     {
-      ret += weights[stride*i+1]*weights[stride*i+1];
+      ret += weights[stride*i+1]*weights[stride*i+1]*weights[stride*i+4];
       weights[stride*i+3] = weights[stride*i+1];
       weights[stride*i+1] = 0;
     }
@@ -123,7 +167,7 @@ double direction_magnitude(regressor& reg)
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
+  weight* weights = reg.weight_vectors[0];
   for(uint32_t i = 0; i < length; i++)
     ret += weights[stride*i+2]*weights[stride*i+2];
   
@@ -135,11 +179,11 @@ double derivative_diff_mag(regressor& reg)
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0] + 1;//shift by one for ease of indexing.
+  weight* weights = reg.weight_vectors[0];
   for(uint32_t i = 0; i < length; i++)
     {
-      ret += weights[stride*i]*
-	(weights[stride*i] - weights[stride*i+2]);
+      ret += weights[stride*i+1]*weights[stride*i+4]*
+	(weights[stride*i+1] - weights[stride*i+3]);
     }
   return ret;
 }
@@ -149,11 +193,23 @@ double add_regularization(regressor& reg,float regularization)
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
+  weight* weights = reg.weight_vectors[0];
   for(uint32_t i = 0; i < length; i++)
     weights[stride*i+1] += regularization*weights[stride*i];
 
   return ret;
+}
+
+void finalize_preconditioner(regressor& reg,float regularization)
+{
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];
+  for(uint32_t i = 0; i < length; i++) {
+    weights[stride*i+4] += regularization;
+    if (weights[stride*i+4] > 0)
+      weights[stride*i+4] = 1. / weights[stride*i+4];
+  }
 }
 
 double derivative_in_direction(regressor& reg)
@@ -170,9 +226,10 @@ void update_direction(regressor& reg, float old_portion)
 {
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];
   for(uint32_t i = 0; i < length; i++)
     {
-      reg.weight_vectors[0][stride*i+2] = reg.weight_vectors[0][stride*i+3] + old_portion * reg.weight_vectors[0][stride*i+2];
+      weights[stride*i+2] = weights[stride*i+3]*weights[stride*i+4] + old_portion * weights[stride*i+2];
     }
 }
 
@@ -211,6 +268,8 @@ void setup_cg(gd_thread_params t)
 	  assert(ec->in_use);
 	  if (ec->pass != current_pass)//we need to do work on all features.
 	    {
+	      if (current_pass == 0)
+		finalize_preconditioner(reg,global.regularization*importance_weight_sum);
 	      if (gradient_pass) // We just finished computing all gradients
 		if (current_pass > 0 && loss_sum > previous_loss_sum)
 		  {// we stepped to far last time, step back
@@ -225,10 +284,9 @@ void setup_cg(gd_thread_params t)
 		    previous_loss_sum = loss_sum;
 		    loss_sum = 0.;
 		    if (global.regularization > 0.)
-		      add_regularization(reg,global.regularization*predictions.index());
+		      add_regularization(reg,global.regularization*importance_weight_sum);
 		    example_number = 0;
 		    curvature = 0;
-		    importance_weight_sum = 0;
 		    float mix_frac = 0;
 		    if (current_pass != 0)
 		      mix_frac = derivative_diff_mag(reg) / previous_d_mag;
@@ -254,9 +312,13 @@ void setup_cg(gd_thread_params t)
 	  if (gradient_pass)
 	    {
 	      ec->final_prediction = predict_and_gradient(reg,ec);
-	      
+	      if (current_pass == 0)
+		{
+		  label_data* ld = (label_data*)ec->ld;
+		  importance_weight_sum += ld->weight;
+		  update_preconditioner(reg,ec);
+		}
 	      label_data* ld = (label_data*)ec->ld;
-
 	      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
 	      loss_sum += ec->loss;
 	      push(predictions,ec->final_prediction);
@@ -269,7 +331,6 @@ void setup_cg(gd_thread_params t)
 	      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;	      
 	      float sd = reg.loss->second_derivative(predictions[example_number++],ld->label);
 	      curvature += d_dot_x*d_dot_x*sd*ld->weight;
-	      importance_weight_sum += ld->weight;
 	    }
 	  finish_example(ec);
 	}
