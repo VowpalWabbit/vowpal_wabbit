@@ -194,9 +194,11 @@ double add_regularization(regressor& reg,float regularization)
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors[0];
-  for(uint32_t i = 0; i < length; i++)
+  for(uint32_t i = 0; i < length; i++) {
     weights[stride*i+1] += regularization*weights[stride*i];
-
+    ret += weights[stride*i]*weights[stride*i];
+  }
+  ret *= 0.5*regularization;
   return ret;
 }
 
@@ -271,38 +273,45 @@ void setup_cg(gd_thread_params t)
 	      if (current_pass == 0)
 		finalize_preconditioner(reg,global.regularization*importance_weight_sum);
 	      if (gradient_pass) // We just finished computing all gradients
-		if (current_pass > 0 && loss_sum > previous_loss_sum)
-		  {// we stepped to far last time, step back
-		    step_size *= 0.5;
-		    cout << "backstepping, new step_size = " << step_size << endl;
-		    update_weight(reg,- step_size);
-		    zero_derivative(reg);
-		    loss_sum = 0.;
-		  }
-		else
-		  {
-		    previous_loss_sum = loss_sum;
-		    loss_sum = 0.;
-		    if (global.regularization > 0.)
-		      add_regularization(reg,global.regularization*importance_weight_sum);
-		    example_number = 0;
-		    curvature = 0;
-		    float mix_frac = 0;
-		    if (current_pass != 0)
-		      mix_frac = derivative_diff_mag(reg) / previous_d_mag;
-		    if (mix_frac < 0 || isnan(mix_frac))
-		      mix_frac = 0;
-		    float new_d_mag = derivative_magnitude(reg);
-		    previous_d_mag = new_d_mag;
-		    
-		    update_direction(reg, mix_frac);
-		    gradient_pass = false;//now start computing curvature
-		  }
+		{
+		  if (global.regularization > 0.)
+		    loss_sum += add_regularization(reg,global.regularization*importance_weight_sum);
+		  if (current_pass > 0 && loss_sum > previous_loss_sum)
+		    {// we stepped to far last time, step back
+		      step_size *= 0.5;
+		      cout << "backstepping, new step_size = " << step_size << endl;
+		      update_weight(reg,- step_size);
+		      zero_derivative(reg);
+		      loss_sum = 0.;
+		    }
+		  else
+		    {
+		      previous_loss_sum = loss_sum;
+		      loss_sum = 0.;
+		      example_number = 0;
+		      curvature = 0;
+		      float mix_frac = 0;
+		      if (current_pass != 0)
+			mix_frac = derivative_diff_mag(reg) / previous_d_mag;
+		      if (mix_frac < 0 || isnan(mix_frac))
+			mix_frac = 0;
+		      float new_d_mag = derivative_magnitude(reg);
+		      previous_d_mag = new_d_mag;
+		      
+		      update_direction(reg, mix_frac);
+		      gradient_pass = false;//now start computing curvature
+		    }
+		}
 	      else // just finished all second gradients
 		{
 		  if (global.regularization > 0.)
 		    curvature += global.regularization*direction_magnitude(reg)*importance_weight_sum;
-		  step_size = - derivative_in_direction(reg)/(max(curvature,1.));
+		  if (curvature == 0.)
+		    {
+		      cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
+		      exit(1);
+		    }
+		  step_size = - derivative_in_direction(reg)/curvature;
 		  predictions.erase();
 		  update_weight(reg,step_size);
 		  gradient_pass = true;
@@ -340,6 +349,11 @@ void setup_cg(gd_thread_params t)
 	    {
 	      if (global.regularization > 0.)
 		curvature += global.regularization*direction_magnitude(reg)*importance_weight_sum;
+	      if (curvature == 0.)
+		{
+		  cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
+		  exit(1);
+		}
 	      float step_size = - derivative_in_direction(reg)/(max(curvature,1.));
 	      update_weight(reg,step_size);
 	    }
