@@ -22,7 +22,7 @@ void print_result(int f, float res, float weight, v_array<char> tag)
   if (f >= 0)
     {
       char temp[30];
-      int num = sprintf(temp, "%f ", res);
+      int num = sprintf(temp, "%f", res);
       ssize_t t;
       t = write(f, temp, num);
       if (t != num) 
