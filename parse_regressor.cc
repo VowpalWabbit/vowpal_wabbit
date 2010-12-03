@@ -11,6 +11,7 @@ using namespace std;
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
 #include "parse_regressor.h"
 #include "loss_functions.h"
 #include "global_data.h"
@@ -33,6 +34,24 @@ void initialize_regressor(regressor &r)
       if (global.initial_weight != 0.)
 	for (size_t j = 0; j < global.stride*length/num_threads; j+=global.stride)
 	  r.weight_vectors[i][j] = global.initial_weight;
+      if (global.random_weights)
+	for (size_t j = 0; j < length/num_threads; j++) {
+          r.weight_vectors[i][j] = -log(drand48());
+          r.weight_vectors[i][j] *= r.weight_vectors[i][j];
+          r.weight_vectors[i][j] *= r.weight_vectors[i][j];
+        }
+      if (global.lda)
+	{
+	  size_t stride = global.stride;
+
+          for (size_t j = 0; j < stride*length/num_threads; j+=stride)
+	    {
+	      for (size_t k = 0; k < global.lda; k++)
+		r.weight_vectors[i][j+k] *= (float)global.lda_D / (float)global.lda
+		  / global.length() * 200;
+	      r.weight_vectors[i][j+global.lda] = global.initial_t;
+	    }
+	}
       if(global.adaptive)
         for (size_t j = 1; j < global.stride*length/num_threads; j+=global.stride)
 	  r.weight_vectors[i][j] = 1;
@@ -160,9 +179,12 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	  regressor.read((char *)&w, sizeof(float));
 	  
 	  size_t num_threads = global.num_threads();
-	  if (regressor.good()) 
+	  if (regressor.good() && global.lda == 0) 
 	    r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
 	      = r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
+	  else
+	    r.weight_vectors[hash % num_threads][hash/num_threads] 
+	      = r.weight_vectors[hash % num_threads][hash/num_threads] + w;
 	}      
       regressor.close();
     }
@@ -222,12 +244,22 @@ void dump_regressor(string reg_name, regressor &r)
   size_t stride = global.stride;
   for(uint32_t i = 0; i < length; i++)
     {
-      weight v = r.weight_vectors[i%num_threads][stride*i/num_threads];
-      if (v != 0.)
-	{      
-	  io_temp.write_file(f,(char *)&i, sizeof (i));
-	  io_temp.write_file(f,(char *)&v, sizeof (v));
+      if (global.lda == 0)
+	{
+	  weight v = r.weight_vectors[i%num_threads][stride*i/num_threads];
+	  if (v != 0.)
+	    {      
+	      io_temp.write_file(f,(char *)&i, sizeof (i));
+	      io_temp.write_file(f,(char *)&v, sizeof (v));
+	    }
 	}
+      else
+	for (size_t k = 0; k < global.lda; k++)
+	  {
+	    weight v = r.weight_vectors[i%num_threads][(stride*i+k)/num_threads];
+	    io_temp.write_file(f,(char *)&i, sizeof (i));
+	    io_temp.write_file(f,(char *)&v, sizeof (v));
+	  }
     }
 
   rename(start_name.c_str(),reg_name.c_str());

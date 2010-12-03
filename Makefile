@@ -1,8 +1,8 @@
 COMPILER = g++
 LIBS = -l boost_program_options -l pthread -l z
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
-BOOST_INCLUDE = /usr/local/boost/include/boost-1_34_1
-BOOST_LIBRARY = /usr/local/boost/lib
+BOOST_INCLUDE = /usr/local/include
+BOOST_LIBRARY = /usr/local/lib
 
 ARCH = -march=native
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
@@ -22,8 +22,8 @@ FLAGS = -Wall $(ARCH) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE)
 BINARIES = vw
 MANPAGES = vw.1
 
-all:	$(BINARIES) $(MANPAGES)
-#all:	$(BINARIES)
+#all:	$(BINARIES) $(MANPAGES)
+all:	$(BINARIES)
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -50,7 +50,7 @@ gd.o:	 parse_example.h
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
-vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o  gd.o cg.o noop.o parser.o vw.o loss_functions.o sender.o main.o
+vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o lda.o cg.o noop.o parser.o vw.o loss_functions.o sender.o main.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 active_interactor:	active_interactor.cc

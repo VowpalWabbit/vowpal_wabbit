@@ -55,6 +55,8 @@ void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
                const v_array<feature> &second_part, size_t thread_mask);
 
+void print_audit_features(regressor &reg, example* ec);
+
 void train(weight* weights, const v_array<feature> &features, float update);
 
 void train_one_example(regressor& r, example* ex, size_t thread_num, gd_vars& vars);

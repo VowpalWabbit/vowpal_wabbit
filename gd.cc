@@ -133,6 +133,8 @@ void output_and_account_example(example* ec)
       int f = global.final_prediction_sink[i].fd;
       if(global.active)
 	global.print(f, ec->final_prediction, ai, ec->tag);
+      else if (global.lda > 0)
+	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
       else
 	{
 	  float w;
@@ -202,35 +204,52 @@ void print_features(regressor &reg, example* &ec)
   size_t thread_mask = global.thread_mask;
   size_t stride = global.stride;
 
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-      for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
-	{
-	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
-	  
-	  cout << ':' << weights[f->weight_index & thread_mask];
-	  if(global.adaptive)
-	    cout << '@' << weights[(f->weight_index+1) & thread_mask];
-	}
-    else
-      for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-	{
-	  cout << '\t';
-	  if ( f->weight_index == (constant&global.mask)*stride)
-	    cout << "Constant:";
-	  cout << f->weight_index/stride << ':' << f->x;
-	  cout << ':' << weights[f->weight_index & thread_mask];
-	  if(global.adaptive)
-	    cout << '@' << weights[(f->weight_index+1) & thread_mask];
-	}
-  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-    if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
-      for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask);
-    else
-      for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask);      
-  cout << endl;
+  if (global.lda > 0)
+    {
+      size_t count = 0;
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
+	count += ec->audit_features[*i].index() + ec->atomics[*i].index();
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+	for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+	  {
+	    cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index << ':' << f->x;
+	    for (size_t k = 0; k < global.lda; k++)
+	      cout << ':' << weights[(f->weight_index+k) & thread_mask];
+	  }
+      cout << " total of " << count << " features." << endl;
+    }
+  else
+    {
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+	    {
+	      cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
+	      
+	      cout << ':' << weights[f->weight_index & thread_mask];
+	      if(global.adaptive)
+		cout << '@' << weights[(f->weight_index+1) & thread_mask];
+	    }
+	else
+	  for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
+	    {
+	      cout << '\t';
+	      if ( f->weight_index == (constant&global.mask)*stride)
+		cout << "Constant:";
+	      cout << f->weight_index/stride << ':' << f->x;
+	      cout << ':' << weights[f->weight_index & thread_mask];
+	      if(global.adaptive)
+		cout << '@' << weights[(f->weight_index+1) & thread_mask];
+	    }
+      for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
+	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
+	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
+	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask);
+	else
+	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
+	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask);      
+      cout << endl;
+    }
 }
 
 void print_audit_features(regressor &reg, example* ec)

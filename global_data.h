@@ -50,9 +50,15 @@ struct global_data {
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
+  bool random_weights;
   
   double min_label;//minimum label encountered
   double max_label;//maximum label encountered
+
+  size_t lda;
+  float lda_alpha;
+  float lda_rho;
+  float lda_D;
 
   size_t num_threads () { return 1 << thread_bits; };
   size_t num_partitions () { return 1 << partition_bits; };
@@ -91,6 +97,7 @@ extern void (*set_minmax)(double label);
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(double label);
+void print_lda_result(int f, float* res, float weight, v_array<char> tag);
 
 const size_t ring_size = 1 << 11;
 
