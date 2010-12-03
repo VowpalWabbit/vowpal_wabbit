@@ -330,7 +330,7 @@ void start_lda(gd_thread_params t)
       if (thread_done(0))
 	{
 	  for (size_t i = 0; i < global.length(); i++) {
-	    weight* weights_for_w = & (weights[i*global.lda]);
+	    weight* weights_for_w = & (weights[i*global.stride]);
 	    float decay = decayfunc3(example_t, weights_for_w[global.lda], power_t);
 	    for (size_t k = 0; k < global.lda; k++)
 	      weights_for_w[k] *= decay;
