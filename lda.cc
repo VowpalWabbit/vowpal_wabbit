@@ -24,46 +24,6 @@ using namespace boost::math::policies;
 
 size_t max_w = 0;
 
-// // Ported from Tom Minka's lightspeed toolbox
-// float mydigamma(float x) 
-// {
-//   double large = 9.5;
-//   double d1 = -0.5772156649015328606065121;
-//   double pi = 3.14159265358979323846264338327950288419716939937510;
-//   double d2 = pi*pi/6.;
-//   double small = 1e-6;
-//   double s3 = 1./12.;
-//   double s4 = 1./120.;
-//   double s5 = 1./252.;
-//   double s6 = 1./240.;
-//   double s7 = 1./132.;
-//   double s8 = 691./32760.;
-//   double s9 = 1./12.;
-//   double s10 = 3617./8160.;
-
-//   double y = 0;
-
-//   if (x <= 0) {
-//     fprintf(stderr, "error --- passed nonpositive number to digamma()\n");
-//     exit(1);
-//   }
-  
-//   if (x <= small)
-//     return d1 - 1 / x + d2 * x;
-
-//   while(x < large) {
-//     y = y - 1 / x;
-//     x = x + 1;
-//   }
-
-//   double r = 1. / x;
-//   y = y + log(x) - 0.5 * r;
-//   r = r*r;
-//   y = y - r * (s3 - r * (s4 - r * (s5 - r * (s6 - r * s7))));
-
-//   return y;
-// }
-
 float mydigamma(float x) 
 {
   return boost::math::digamma(x);
@@ -319,7 +279,7 @@ void start_lda(gd_thread_params t)
 //           // print out all weights
 	  for (size_t k = 0; k < global.lda; k++) {
 	    for (size_t i = 0; i < global.length(); i++) {
-	      fprintf(stdout, "%0.3f ", weights[i + k] + global.lda_rho);
+	      fprintf(stdout, "%0.3f ", weights[i*global.stride + k] + global.lda_rho);
 	    }
 	    fprintf(stdout, "\n");
 	  }

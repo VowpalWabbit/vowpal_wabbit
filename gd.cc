@@ -212,7 +212,7 @@ void print_features(regressor &reg, example* &ec)
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	  {
-	    cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index << ':' << f->x;
+	    cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/global.stride << ':' << f->x;
 	    for (size_t k = 0; k < global.lda; k++)
 	      cout << ':' << weights[(f->weight_index+k) & thread_mask];
 	  }
