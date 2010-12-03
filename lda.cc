@@ -91,7 +91,7 @@ float find_cw(float* u_for_w, float* v)
   return 1.f / c_w;
 }
 
-void lda_loop(float* v,v_array<float>& u_kw,double* total_lambda,weight* weights,example* ec, float power_t)
+void lda_loop(float* v,weight* weights,example* ec, float power_t)
 {
   float new_gamma[global.lda];
   float old_gamma[global.lda];
@@ -105,42 +105,6 @@ void lda_loop(float* v,v_array<float>& u_kw,double* total_lambda,weight* weights
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
     num_words += ec->subsets[*i][1] - ec->subsets[*i][0];
 
-  u_kw.erase();
-  reserve(u_kw,num_words*global.lda);
-  
-  float digammas[global.lda];
-  float additional = (float)(global.length()) * global.lda_rho;
-  for (size_t i = 0; i<global.lda; i++)
-    {
-      digammas[i] = mydigamma(total_lambda[i] + additional);
-    }
-  size_t word_count = 0;
-  float words_in_document = 0;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
-    {
-      feature *f = ec->subsets[*i][0];
-
-      for (; f != ec->subsets[*i][1]; f++){
-	words_in_document += f->x;
-	float* u_for_w = u_kw.begin+(global.lda*word_count);
-	float* weights_for_w = &(weights[f->weight_index & global.thread_mask]);
-	float olddecay = decayfunc3(ec->example_t-1, weights_for_w[global.lda], power_t);
-	float decay = decayfunc3(ec->example_t, weights_for_w[global.lda], power_t);
-
-	weights_for_w[global.lda] = ec->example_t;
-	for (size_t k = 0; k < global.lda; k++)
-	  {
-	    total_lambda[k] -= weights_for_w[k] * olddecay;
-	    weights_for_w[k] *= decay;
-	    u_for_w[k] = weights_for_w[k] + global.lda_rho;
-	  }
-	expdigammify_2(u_for_w, digammas);
-	word_count++;
-      }
-    }
-
-  size_t numits = 0;
-
   do
     {
       memcpy(v,new_gamma,sizeof(float)*global.lda);
@@ -150,13 +114,13 @@ void lda_loop(float* v,v_array<float>& u_kw,double* total_lambda,weight* weights
       for (size_t k = 0; k<global.lda; k++)
 	new_gamma[k] = 0;
 
-      word_count = 0;
+      size_t word_count = 0;
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
 	{
 	  feature *f = ec->subsets[*i][0];
 	  for (; f != ec->subsets[*i][1]; f++)
 	    {
-	      float* u_for_w = &u_kw[word_count*global.lda];
+	      float* u_for_w = &weights[f->weight_index+global.lda+1];
 	      float c_w = find_cw(u_for_w,v);
 	      float xc_w = c_w * f->x;
 	      size_t max_k = global.lda;
@@ -169,7 +133,6 @@ void lda_loop(float* v,v_array<float>& u_kw,double* total_lambda,weight* weights
       for (size_t k =0; k<global.lda; k++) {
 	new_gamma[k] = new_gamma[k]*v[k]+global.lda_alpha;
       }
-      numits++;
     }
   while (average_diff(old_gamma, new_gamma) > 0.1);
 
@@ -178,60 +141,71 @@ void lda_loop(float* v,v_array<float>& u_kw,double* total_lambda,weight* weights
   memcpy(ec->topic_predictions.begin,new_gamma,global.lda*sizeof(float));
 }
 
-struct index_pair {
-  uint32_t feature;
+struct index_triple {
   uint32_t document;
+  feature f;
 };
 
-v_array<v_array<index_pair> > merge_set;
+v_array<v_array<index_triple> > merge_set;
 
-void merge(v_array<index_pair>& source, v_array<index_pair>& dest)
+void merge_pair(v_array<index_triple>& source, v_array<index_triple>& dest)
 {
-  size_t limit = source.index()+dest.index();
+  size_t dest_size = dest.index();
+  size_t limit = source.index()+dest_size;
   reserve(dest,limit);
-  memmove(dest.begin+source.index(),dest.begin,dest.index());
+  memmove(dest.begin+source.index(),dest.begin,dest_size*sizeof(index_triple));
   dest.end = dest.begin+limit;
+
   size_t old_index = source.index();
   size_t new_index = 0;
   
-  for (index_pair* s=source.begin; s != source.end; s++)
+  for (index_triple* s=source.begin; s != source.end; s++)
     {
-      while((old_index < limit) && (dest[old_index].feature < s->feature))
+      while((old_index < limit) && (dest[old_index].f.weight_index < s->f.weight_index))
 	dest[new_index++] = dest[old_index++];
       dest[new_index++] = *s;
     }
   source.erase();
 }
 
-void mergein(example* ec, size_t document)
+void merge()
 {
-  size_t num_words = 0;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
-    num_words += ec->subsets[*i][1] - ec->subsets[*i][0];
+  for (size_t j = merge_set.index()-1; j > 0;j--)
+    if (merge_set[j].index()*2 > merge_set[j-1].index())
+      {
+	merge_pair(merge_set[j], merge_set[j-1]);
+	merge_set.pop();
+      }
+    else
+      break;
+}
 
-  size_t limit = num_words+merge_set[0].index();
-  reserve(merge_set[0],limit);
-  index_pair* ordered_set=merge_set[0].begin;
-  memmove(ordered_set+num_words,ordered_set,merge_set[0].index());
-  merge_set[0].end = merge_set[0].begin+limit;
-  size_t old_index = num_words;
-  size_t new_index = 0;
+void merge_all()
+{
+  for (size_t j = merge_set.index()-1; j > 0;j--)
+    {
+      merge_pair(merge_set[j], merge_set[j-1]);
+      merge_set.pop();
+    }
+}
+
+void merge_in(example* ec, size_t document)
+{
+  size_t next_index = merge_set.index();
+  reserve(merge_set,next_index+ec->indices.index());
+  merge_set.end = merge_set.begin+next_index+ec->indices.index();
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
     {
       feature* f = ec->subsets[*i][0];
       for (; f != ec->subsets[*i][1]; f++)
 	{
-	  while(old_index < limit && ordered_set[old_index].feature < f->weight_index)
-	    ordered_set[new_index++] = ordered_set[old_index++];
-	  struct index_pair temp = {f->weight_index, document};
-	  ordered_set[new_index++] = temp;
+	  index_triple temp = {document,*f};
+	  push(merge_set[next_index], temp);
 	}
+      next_index++;
     }
-  for (size_t j = 1; j < merge_set.index();j++)
-    if (merge_set[j-1].index() > merge_set[j].index())
-      merge(merge_set[j-1],merge_set[j]);
-    else
-      break;
+
+  merge();
 }
 
 void start_lda(gd_thread_params t)
@@ -239,6 +213,7 @@ void start_lda(gd_thread_params t)
   regressor reg = t.reg;
   example* ec = NULL;
 
+  float power_t = t.vars->power_t;
   double total_lambda[global.lda];
   for (size_t k = 0; k < global.lda; k++)
     total_lambda[k] = 0;
@@ -247,16 +222,20 @@ void start_lda(gd_thread_params t)
 
   for (size_t i =0; i <= global.thread_mask;i+=stride)
     for (size_t k = 0; k < global.lda; k++)
-      {
-	total_lambda[k] += weights[i+k];
-      }
+      total_lambda[k] += weights[i+k];
 
-  v_array<float> u_kw;
+  double example_t = 0;
   while ( true )
     {
       float total_new[global.lda];
       for (size_t k = 0; k < global.lda; k++)
 	total_new[k] = 0.f;
+
+      while (merge_set.index() > 0)
+	{
+	  merge_set[merge_set.index()-1].erase();
+	  merge_set.pop();
+	}
 
       float eta = -1;
       float minuseta = -1;
@@ -265,73 +244,112 @@ void start_lda(gd_thread_params t)
       for (size_t d = 0; d < batch_size; d++)
 	{
 	  if ((ec = get_example(0)) != NULL)//semiblocking operation.
-	    examples[d] = ec;
+	    {
+	      examples[d] = ec;
+	      merge_in(ec,d);
+	    }
 	  else if (thread_done(0))
 	    batch_size = d;
 	  else 
 	    d--;
 	}
 
-      
+      merge_all(); //Now merge_set[0] contains everything.
 
-      float v[batch_size][global.lda];
+      example_t = (examples[0]->example_t - global.initial_t)/global.minibatch + global.initial_t;
+      eta = (global.eta*global.lda_D) / 
+	(pow(example_t, t.vars->power_t)*batch_size);
+      minuseta = decayfunc3(example_t, example_t-1, power_t);
       
+      float digammas[global.lda];
+      float additional = (float)(global.length()) * global.lda_rho;
+      for (size_t i = 0; i<global.lda; i++)
+	digammas[i] = mydigamma(total_lambda[i] + additional);
       
-
+      size_t last_weight_index = -1;
+      for (index_triple* s = merge_set[0].begin; s != merge_set[0].end; s++)
+	{
+	  if (last_weight_index == s->f.weight_index)
+	    continue;
+	  last_weight_index = s->f.weight_index;
+	  float* weights_for_w = &(weights[s->f.weight_index & global.thread_mask]);
+	  float olddecay = decayfunc3(example_t-1, weights_for_w[global.lda], power_t);
+	  float decay = decayfunc3(example_t, weights_for_w[global.lda], power_t);
+	  float* u_for_w = weights_for_w + global.lda+1;
+	    
+	  weights_for_w[global.lda] = example_t;
+	  for (size_t k = 0; k < global.lda; k++)
 	    {
-	      if (d == 0) {
-		size_t example_t = ec->example_t/global.minibatach;
-		eta = (global.eta*global.lda_D) / 
-		  (pow(example_t, t.vars->power_t)*global.minibatch);
-		minuseta = decayfunc3(example_t, example_t-1, t.vars->power_t);
-	      }
-
-	      lda_loop(v,u_kw,total_lambda,weights,ec,t.vars->power_t);
-	      size_t word_count=0;
-
-	      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
-		{
-		  feature* f = ec->subsets[*i][0];
-		  for (; f != ec->subsets[*i][1]; f++)
-		    {
-		      float* word_weights = &(weights[f->weight_index & global.thread_mask]);
-
-		      float* u_for_w = &u_kw[word_count*global.lda];
-		      float c_w = eta*find_cw(u_for_w,v)*f->x;
-
-		      for (size_t k =0; k<global.lda;k++)
-			{
-			  float new_value = minuseta*word_weights[k]
-			    + u_for_w[k]*v[k]*c_w;
-			  total_new[k] += new_value;
-			  word_weights[k] = new_value;
-			}
-		    }
-		}
-	      for (size_t k = 0; k < global.lda; k++) {
-		total_lambda[k] *= minuseta;
-		total_lambda[k] += total_new[k];
-	      }
-
-	      if (global.audit)
-		print_audit_features(reg, ec);
-	      finish_example(ec);
+	      total_lambda[k] -= weights_for_w[k] * olddecay;
+	      weights_for_w[k] *= decay;
+	      u_for_w[k] = weights_for_w[k] + global.lda_rho;
 	    }
-	  else if (thread_done(0))
-	    {
-	      for (size_t k = 0; k < global.lda; k++) {
-		for (size_t i = 0; i < global.length(); i++) {
-		  fprintf(stdout, "%0.3f ", weights[i*global.stride + k] + global.lda_rho);
-		}
-		fprintf(stdout, "\n");
-	      }
+	  expdigammify_2(u_for_w, digammas);
+	}
 
-	      if (global.local_prediction > 0)
-		shutdown(global.local_prediction, SHUT_WR);
-	      return;
+      float v[batch_size*global.lda];
+      
+      for (size_t d = 0; d < batch_size; d++)
+	lda_loop(&v[d*global.lda],weights,ec,t.vars->power_t);
+
+      for (index_triple* s = merge_set[0].begin; s != merge_set[0].end;)
+	{
+	  index_triple* next = s+1;
+	  while(next != merge_set[0].end && next->f.weight_index == s->f.weight_index)
+	    next++;
+
+	  float* word_weights = &(weights[s->f.weight_index & global.thread_mask]);
+	  for (size_t k = 0; k < global.lda; k++) {
+	    float new_value = minuseta*word_weights[k];
+	    total_new[k] += new_value;
+	    word_weights[k] = new_value;
+	  }
+
+	  for (; s != next; s++) {
+	    float* v_s = &v[s->document*global.lda];
+	    float* u_for_w = &weights[(s->f.weight_index & global.thread_mask) + global.lda + 1];
+	    float c_w = eta*find_cw(u_for_w, v_s)*s->f.x;
+	    for (size_t k = 0; k < global.lda; k++) {
+	      float new_value = u_for_w[k]*v_s[k]*c_w;
+	      total_new[k] += new_value;
+	      word_weights[k] += new_value;
 	    }
-	  else
-	    ;//busywait when we have predicted on all examples but not yet trained on all.
+	  }
+	}
+      for (size_t k = 0; k < global.lda; k++) {
+	total_lambda[k] *= minuseta;
+	total_lambda[k] += total_new[k];
+      }
+
+      for (size_t d = 0; d < batch_size; d++)
+	{
+	  if (global.audit)
+	    print_audit_features(reg, ec);
+	  finish_example(ec);
+	}
+      if (thread_done(0))
+	{
+	  for (size_t i = 0; i < global.length(); i++) {
+	    weight* weights_for_w = & (weights[i*global.lda]);
+	    float decay = decayfunc3(example_t, weights_for_w[global.lda], power_t);
+	    for (size_t k = 0; k < global.lda; k++)
+	      weights_for_w[k] *= decay;
+	  }
+
+	  for (size_t k = 0; k < global.lda; k++) {
+	    for (size_t i = 0; i < global.length(); i++) {
+	      fprintf(stdout, "%0.3f ", weights[i*global.stride + k] + global.lda_rho);
+	    }
+	    fprintf(stdout, "\n");
+	  }
+	  
+	  if (global.local_prediction > 0)
+	    shutdown(global.local_prediction, SHUT_WR);
+
+	  for (int i = 0; i < merge_set.end_array-merge_set.begin; i++)
+	    free(merge_set[i].begin);
+	  free(merge_set.begin);
+	  return;
 	}
     }
 }

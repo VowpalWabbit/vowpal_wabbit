@@ -57,6 +57,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("lda_alpha", po::value<float>(&global.lda_alpha)->default_value(0.1), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>(&global.lda_rho)->default_value(0.1), "Prior on sparsity of topic distributions")
     ("lda_D", po::value<float>(&global.lda_D)->default_value(10000.), "Number of documents")
+    ("minibatch", po::value<size_t>(&global.minibatch)->default_value(1), "Minibatch size, for LDA")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
@@ -241,7 +242,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("lda"))
     {
-      float temp = ceilf(logf((float)(global.lda+1)) / logf (2.f));
+      float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
       global.stride = powf(2,temp); 
       global.random_weights = true;
     }

@@ -713,6 +713,9 @@ void end_parser(parser* pf)
 	  free(examples[i].tag.begin);
 	  examples[i].tag.end_array = examples[i].tag.begin;
 	}
+      
+      if (global.lda > 0)
+	free(examples[i].topic_predictions.begin);
 
       free(examples[i].ld);
       for (size_t j = 0; j < 256; j++)
