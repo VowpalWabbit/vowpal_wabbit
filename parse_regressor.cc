@@ -36,9 +36,7 @@ void initialize_regressor(regressor &r)
 	  r.weight_vectors[i][j] = global.initial_weight;
       if (global.random_weights)
 	for (size_t j = 0; j < length/num_threads; j++) {
-          r.weight_vectors[i][j] = -log(drand48());
-          r.weight_vectors[i][j] *= r.weight_vectors[i][j];
-          r.weight_vectors[i][j] *= r.weight_vectors[i][j];
+          r.weight_vectors[i][j] = drand48() - 0.5;
         }
       if (global.lda)
 	{
@@ -46,9 +44,13 @@ void initialize_regressor(regressor &r)
 
           for (size_t j = 0; j < stride*length/num_threads; j+=stride)
 	    {
-	      for (size_t k = 0; k < global.lda; k++)
+	      for (size_t k = 0; k < global.lda; k++) {
+                r.weight_vectors[i][j+k] = -log(drand48());
+                r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
+                r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
 		r.weight_vectors[i][j+k] *= (float)global.lda_D / (float)global.lda
 		  / global.length() * 200;
+              }
 	      r.weight_vectors[i][j+global.lda] = global.initial_t;
 	    }
 	}
