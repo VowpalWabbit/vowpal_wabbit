@@ -145,7 +145,8 @@ void lda_loop(float* v,weight* weights,example* ec, float power_t)
   while (average_diff(old_gamma, new_gamma) > 0.1);
 
   ec->topic_predictions.erase();
-  reserve(ec->topic_predictions,global.lda);
+  if (ec->topic_predictions.end_array - ec->topic_predictions.begin < (int)global.lda)
+    reserve(ec->topic_predictions,global.lda);
   memcpy(ec->topic_predictions.begin,new_gamma,global.lda*sizeof(float));
 }
 
@@ -160,7 +161,8 @@ void merge_pair(v_array<index_triple>& source, v_array<index_triple>& dest)
 {
   size_t dest_size = dest.index();
   size_t limit = source.index()+dest_size;
-  reserve(dest,limit);
+  if (dest.end_array - dest.begin < (int)limit)
+    reserve(dest,limit);
   memmove(dest.begin+source.index(),dest.begin,dest_size*sizeof(index_triple));
   dest.end = dest.begin+limit;
 
@@ -217,12 +219,13 @@ void bubble_sort(feature* f0, feature*f1) {
 void merge_in(example* ec, size_t document)
 {
   size_t next_index = merge_set.index();
-  reserve(merge_set,next_index+ec->indices.index());
+  if ((int)(next_index + ec->indices.index()) > merge_set.end_array-merge_set.begin)
+    reserve(merge_set,next_index+ec->indices.index());
   merge_set.end = merge_set.begin+next_index+ec->indices.index();
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
     {
       feature* f = ec->subsets[*i][0];
-      bubble_sort(f, ec->subsets[*i][1]);
+      //bubble_sort(f, ec->subsets[*i][1]); use --sort_features
       for (; f != ec->subsets[*i][1]; f++)
 	{
 	  index_triple temp = {document,*f};
