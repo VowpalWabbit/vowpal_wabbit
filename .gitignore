@@ -9,3 +9,5 @@ vw.1
 *.tgz
 test/*.tmp
 test/models
+*.bak
+*.prev
