@@ -18,8 +18,9 @@ my @TestSets = glob('test-sets/*.dat');
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
 
-    die "Usage: $0 [-v] [vw-executable]
-    By default will run against ../vw
+    die "Usage: $0 [options] [vw-executable]
+    By default will run against the 1st 'vw' executable found in:
+        .  ..  \$PATH
 
     Options:
         -d  print diff output on diff-failure
@@ -35,11 +36,11 @@ sub usage(@) {
 sub which_vw() {
     if (@ARGV == 1) {
         my $exe = $ARGV[0];
-        if (-x $exe) {
+        if (-f $exe && -x $exe) {
             printf STDERR "Testing vw: %s\n", $exe;
             return $exe;
         } else {
-            usage("argument $exe: not an executable");
+            usage("$0: argument $exe: not an executable file");
         }
     } elsif (@ARGV == 0) {
         foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
@@ -174,13 +175,17 @@ sub run_tests() {
         system("($cmd) >$outf 2>$errf");
         my $status = $? >> 8;
         if ($status) {
-            die "$0: test $TestNo: '$cmd' failed: status=$status\n";
+            warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
+            exit $status if ($opt_e);
+            next;
         }
 
         # command succeded
         # -- compare stdout
         unless (-e $out_ref) {
-            die "$0: test $TestNo: stdout ref: $out_ref: $!\n";
+            warn "$0: test $TestNo: stdout ref: $out_ref: $!\n";
+            exit $status if ($opt_e);
+            next;
         }
 
         $status = diff($outf, $out_ref);
@@ -274,8 +279,27 @@ __DATA__
     train-sets/ref/0002.stdout
     train-sets/ref/0002.stderr
 
-# Test 5: add bigrams, adaptive, and more (same input, different outputs)
-{VW} --initial_t 1 --power_t 0.5 --adaptive -q tr -f models/0002a.model train-sets/0002.dat
+# Test 5: add -q .., adaptive, and more (same input, different outputs)
+{VW} --initial_t 1 --power_t 0.5 --adaptive -q Tf -q ff -f models/0002a.model train-sets/0002.dat
     train-sets/ref/0002a.stdout
     train-sets/ref/0002a.stderr
+
+# Test 6: run predictions on Test 4 model
+# Pretending the labels aren't there
+{VW} -t -i models/0002.model -d train-sets/0002.dat -p 0002b.predict
+    test-sets/ref/0002b.stdout
+    test-sets/ref/0002b.stderr
+    pred-sets/ref/0002b.predict
+
+# Test 7: using -q and multiple threads
+{VW} --adaptive -q ff --thread_bits 1 -f models/0002c.model train-sets/0002.dat
+    train-sets/ref/0002c.stdout
+    train-sets/ref/0002c.stderr
+
+# Test 8: predicts on test 7 model
+{VW} -t -i models/0002c.model -d train-sets/0002.dat -p 0002c.predict
+    test-sets/ref/0002c.stdout
+    test-sets/ref/0002c.stderr
+    pred-sets/ref/0002c.predict
+
 
