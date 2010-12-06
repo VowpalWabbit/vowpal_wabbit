@@ -248,7 +248,7 @@ void dump_regressor(string reg_name, regressor &r)
     {
       if (global.lda == 0)
 	{
-	  weight v = r.weight_vectors[i%num_threads][stride*i/num_threads];
+	  weight v = r.weight_vectors[i%num_threads][stride*(i/num_threads)];
 	  if (v != 0.)
 	    {      
 	      io_temp.write_file(f,(char *)&i, sizeof (i));

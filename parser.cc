@@ -451,12 +451,13 @@ example* get_unused_example()
       if (examples[parsed_index % ring_size].in_use == false)
 	{
 	  examples[parsed_index % ring_size].in_use = true;
-	  
 	  pthread_mutex_unlock(&examples_lock);
 	  return examples + (parsed_index % ring_size);
 	}
       else 
-	pthread_cond_wait(&example_unused, &examples_lock);
+	{
+	  pthread_cond_wait(&example_unused, &examples_lock);
+	}
       pthread_mutex_unlock(&examples_lock);
     }
 }
@@ -657,7 +658,7 @@ example* get_example(size_t thread_num)
       cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << endl;
     assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
-    return examples + ring_index;
+     return examples + ring_index;
   }
   else {
     if (!done)
