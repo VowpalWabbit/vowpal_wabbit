@@ -242,6 +242,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("lda"))
     {
+      par->sort_features = true;
       float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
       global.stride = powf(2,temp); 
       global.random_weights = true;
