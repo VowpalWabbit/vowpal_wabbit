@@ -475,35 +475,32 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     print_audit_features(reg, ec);
 }
 
-float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
+void predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
 {
   float prediction = inline_predict(r, ex, thread_num);
-  float final_pred = 0.;
 
   pthread_mutex_lock(&ex->lock);
 
   ex->partial_prediction += prediction;
-  if (--ex->threads_to_finish != 0)
-    {
-      while (!ex->done)
-	pthread_cond_wait(&ex->finished_sum, &ex->lock);
-      final_pred = ex->final_prediction;
-    }
-  else // We are the last thread using this example.
-    {
+  if (--ex->threads_to_finish == 0)
+    {//We are the last thread using this example
       local_predict(ex, vars,r);
       ex->done = true;
-
+      
       pthread_cond_broadcast(&ex->finished_sum);
-
+      
       if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
 	delay_example(ex,global.num_threads());
       else
 	delay_example(ex,0);
-      final_pred = ex->final_prediction;
+    }
+  else if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
+    //need to wait if there is training to do to keep example processing sequential
+    {
+      while (!ex->done)
+	pthread_cond_wait(&ex->finished_sum, &ex->lock);
     }
   pthread_mutex_unlock(&ex->lock);
-  return final_pred;
 }
 
 float offset_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars, size_t offset)
