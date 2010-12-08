@@ -72,14 +72,14 @@ void expdigammify(float* gamma)
     }
   sum = mydigamma(sum);
   for (size_t i = 0; i<global.lda; i++)
-    gamma[i] = exp(gamma[i] - sum);
+    gamma[i] = fmax(1e-10, exp(gamma[i] - sum));
 }
 
 void expdigammify_2(float* gamma, float* norm)
 {
   for (size_t i = 0; i<global.lda; i++)
     {
-      gamma[i] = exp(mydigamma(gamma[i]) - norm[i]);
+      gamma[i] = fmax(1e-10, exp(mydigamma(gamma[i]) - norm[i]));
     }
 }
 
@@ -161,7 +161,7 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
 	  feature *f = ec->subsets[*i][0];
 	  for (; f != ec->subsets[*i][1]; f++)
 	    {
-	      float* u_for_w = &weights[f->weight_index+global.lda+1];
+	      float* u_for_w = &weights[(f->weight_index&global.thread_mask)+global.lda+1];
 	      float c_w = find_cw(u_for_w,v);
 	      xc_w = c_w * f->x;
               score += -f->x*log(c_w);
@@ -183,6 +183,10 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
   if (ec->topic_predictions.end_array - ec->topic_predictions.begin < (int)global.lda)
     reserve(ec->topic_predictions,global.lda);
   memcpy(ec->topic_predictions.begin,new_gamma,global.lda*sizeof(float));
+
+//   for (size_t k = 0; k < global.lda; k++)
+//     fprintf(stderr, "%f\t", new_gamma[k]);
+//   fprintf(stderr, "\n");
 
   score += theta_kl(new_gamma);
 //   fprintf(stderr, "lda_loop score = %f\n", score/word_count);
@@ -244,17 +248,6 @@ void merge_all()
     }
 }
 
-void bubble_sort(feature* f0, feature*f1) {
-  for (; f0 < f1; f1--)
-    for (feature* f = f0+1; f < f1; f++)
-      if (f->weight_index < (f-1)->weight_index) {
-        feature temp = *f;
-        *f = *(f-1);
-        *(f-1) = temp;
-      }
-}
-
-// TODO: this doesn't work, because the features don't come in in order.
 void merge_in(example* ec, size_t document)
 {
   size_t next_index = merge_set.index();
@@ -264,7 +257,6 @@ void merge_in(example* ec, size_t document)
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
     {
       feature* f = ec->subsets[*i][0];
-      //bubble_sort(f, ec->subsets[*i][1]); use --sort_features
       for (; f != ec->subsets[*i][1]; f++)
 	{
 	  index_triple temp = {document,*f};
@@ -340,8 +332,9 @@ void start_lda(gd_thread_params t)
       
       float digammas[global.lda];
       float additional = (float)(global.length()) * global.lda_rho;
-      for (size_t i = 0; i<global.lda; i++)
+      for (size_t i = 0; i<global.lda; i++) {
 	digammas[i] = mydigamma(total_lambda[i] + additional);
+      }
       
       size_t last_weight_index = -1;
       for (index_triple* s = merge_set[0].begin; s != merge_set[0].end; s++)
@@ -351,11 +344,12 @@ void start_lda(gd_thread_params t)
 	  last_weight_index = s->f.weight_index;
 	  float* weights_for_w = &(weights[s->f.weight_index & global.thread_mask]);
 // 	  float decay = decayfunc4(example_t, weights_for_w[global.lda], power_t);
-          float decay = fmin(1.0, exp(decay_levels.last() - decay_levels.end[(int)(-example_t+weights_for_w[global.lda])]));
+          float decay = fmin(1.0, exp(decay_levels.end[-2] - decay_levels.end[(int)(-1-example_t+weights_for_w[global.lda])]));
 	  float* u_for_w = weights_for_w + global.lda+1;
 //           fprintf(stderr, "decay_levels.last() = %f, decay_levels.end[-1-%f+%f] = %f\n", decay_levels.last(), example_t, weights_for_w[global.lda], decay_levels.end[(int)(-1-example_t+weights_for_w[global.lda])]);
 //           fprintf(stderr, "decay = %f, example_t = %f, weights_for_w[global.lda] = %f\n", decay, example_t, weights_for_w[global.lda]);
 	    
+// 	  fprintf(stderr, "initial decaying %d (by %f)\n", s->f.weight_index/global.stride, decay);
 	  weights_for_w[global.lda] = example_t;
 	  for (size_t k = 0; k < global.lda; k++)
 	    {
@@ -370,6 +364,7 @@ void start_lda(gd_thread_params t)
       float score = 0;
       for (size_t d = 0; d < batch_size; d++)
 	score += lda_loop(&v[d*global.lda],weights,examples[d],t.vars->power_t);
+
       if (((int)(example_t-global.initial_t)*global.minibatch) % 256 == 0)
         fprintf(stderr, "mean score = %f\n", score / batch_size);
 
@@ -392,13 +387,17 @@ void start_lda(gd_thread_params t)
 	    for (size_t k = 0; k < global.lda; k++) {
 	      float new_value = u_for_w[k]*v_s[k]*c_w;
 	      total_new[k] += new_value;
-	      word_weights[k] += new_value;
+ 	      word_weights[k] += new_value;
 	    }
 	  }
+// 	  for (int k = 0; k < global.lda; k++)
+// 	    if (word_weights[k] < 10)
+// 	      fprintf(stderr, "word_weights[%d][%d] = %f   (norm = %f)\n", (next-1)->f.weight_index/global.stride, k, word_weights[k], total_lambda[k]);
 	}
       for (size_t k = 0; k < global.lda; k++) {
 	total_lambda[k] *= minuseta;
 	total_lambda[k] += total_new[k];
+// 	fprintf(stderr, "total_new[%d] = %f    /    %f\n", k, total_new[k], total_lambda[k]);
       }
 
       for (size_t d = 0; d < batch_size; d++)
