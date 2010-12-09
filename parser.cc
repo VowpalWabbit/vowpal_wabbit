@@ -577,6 +577,7 @@ void setup_example(parser* p, example* ae)
 	  f = ret;
 	  current += expert_size;
 	}
+      assert(f == ae->atomics[*i].end);
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
