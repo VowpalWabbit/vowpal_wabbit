@@ -45,7 +45,7 @@ void initialize_regressor(regressor &r)
           for (size_t j = 0; j < stride*length/num_threads; j+=stride)
 	    {
 	      for (size_t k = 0; k < global.lda; k++) {
-                r.weight_vectors[i][j+k] = -log(drand48());
+                r.weight_vectors[i][j+k] = -log(drand48()) + 1.0;
 //                 r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
 //                 r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
 		r.weight_vectors[i][j+k] *= (float)global.lda_D / (float)global.lda
