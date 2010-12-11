@@ -27,6 +27,8 @@ public :
 	virtual float getUpdate(float prediction, float label, float eta_t, float norm) = 0;
 	virtual float getRevertingWeight(float prediction, float eta_t) = 0;
 	virtual float getSquareGrad(float prediction, float label) = 0;
+	virtual float first_derivative(float prediction, float label) = 0;
+	virtual float second_derivative(float prediction, float label) = 0;
 	virtual ~loss_function() {};
 };
 

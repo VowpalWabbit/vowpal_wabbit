@@ -2,6 +2,7 @@
 #define EX_H
 
 #include <stdint.h>
+#include <pthread.h>
 #include "v_array.h"
 
 struct label_data {
@@ -36,7 +37,9 @@ struct example // core example datatype.
   
   v_array<feature*> subsets[256];// helper for fast example expansion
   size_t num_features;//precomputed, cause it's fast&easy.
+  size_t pass;
   float partial_prediction;//shared data for prediction.
+  v_array<float> topic_predictions;
   float final_prediction;
   float global_prediction;
   float loss;

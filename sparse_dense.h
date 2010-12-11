@@ -20,8 +20,8 @@ float one_pf_quad_predict(weight* weights, feature& page_feature, v_array<featur
 
 float offset_quad_predict(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, size_t offset);
 
-void print_offset_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, size_t mask, size_t offset);
-void print_offset_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, size_t offset);
+void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, size_t mask);
+void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask);
 
 float single_quad_weight(weight* weights, feature& page_feature, feature* offer_feature, size_t mask);
 

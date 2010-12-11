@@ -16,6 +16,8 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_example.h"
 #include "parse_args.h"
 #include "gd.h"
+#include "cg.h"
+#include "lda.h"
 #include "noop.h"
 #include "vw.h"
 #include "simple_label.h"
@@ -67,11 +69,21 @@ gd_vars* vw(int argc, char *argv[])
     start_noop();
     end_noop();
   }
+  else if (vm.count("conjugate_gradient"))
+    {
+      setup_cg(t);
+      destroy_cg();
+    }
+  else if (global.lda > 0)
+    {
+      start_lda(t);
+      end_lda();
+    }
   else
-  {
-    setup_gd(t);
-    destroy_gd();
-  }
+    {
+      setup_gd(t);
+      destroy_gd();
+    }
 
   if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
     destroy_relay();

@@ -118,10 +118,7 @@ example* get_delay_example(size_t thread)
 	  return NULL;
       }
   if (delay_indices[thread] != local_index && (!global.delayed_global || global.local_prediction <= 0))
-    //local training available
-    {
-      return return_example(thread);
-    }
+    return return_example(thread);
   else
     return NULL;
 }
@@ -145,7 +142,7 @@ void delay_example(example* ex, size_t count)
 
   if (delay_count == 0)
     {
-      ex->threads_to_finish = 0;
+      assert (ex->threads_to_finish == 0);
       output_and_account_example(ex);
       free_example(ex);
     }

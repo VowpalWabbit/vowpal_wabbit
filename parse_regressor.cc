@@ -11,6 +11,7 @@ using namespace std;
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
 #include "parse_regressor.h"
 #include "loss_functions.h"
 #include "global_data.h"
@@ -19,22 +20,42 @@ using namespace std;
 void initialize_regressor(regressor &r)
 {
   size_t length = ((size_t)1) << global.num_bits;
-  global.thread_mask = (length >> global.thread_bits) - 1;
+  global.thread_mask = (global.stride * (length >> global.thread_bits)) - 1;
   size_t num_threads = global.num_threads();
   r.weight_vectors = (weight **)malloc(num_threads * sizeof(weight*));
   for (size_t i = 0; i < num_threads; i++)
     {
-      r.weight_vectors[i] = (weight *)calloc(length/num_threads, sizeof(weight));
+      r.weight_vectors[i] = (weight *)calloc(global.stride*length/num_threads, sizeof(weight));
       if (r.weight_vectors[i] == NULL)
         {
           cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
           exit (1);
         }
       if (global.initial_weight != 0.)
-	for (size_t j = 0; j < length/num_threads; j++)
+	for (size_t j = 0; j < global.stride*length/num_threads; j+=global.stride)
 	  r.weight_vectors[i][j] = global.initial_weight;
+      if (global.random_weights)
+	for (size_t j = 0; j < length/num_threads; j++) {
+          r.weight_vectors[i][j] = drand48() - 0.5;
+        }
+      if (global.lda)
+	{
+	  size_t stride = global.stride;
+
+          for (size_t j = 0; j < stride*length/num_threads; j+=stride)
+	    {
+	      for (size_t k = 0; k < global.lda; k++) {
+                r.weight_vectors[i][j+k] = -log(drand48()) + 1.0;
+//                 r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
+//                 r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
+		r.weight_vectors[i][j+k] *= (float)global.lda_D / (float)global.lda
+		  / global.length() * 200;
+              }
+	      r.weight_vectors[i][j+global.lda] = global.initial_t;
+	    }
+	}
       if(global.adaptive)
-        for (size_t j = 1; j < length/num_threads; j+=2)
+        for (size_t j = 1; j < global.stride*length/num_threads; j+=global.stride)
 	  r.weight_vectors[i][j] = 1;
     }
 }
@@ -106,18 +127,6 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	    cout << "can't combine regressors trained with different numbers of threads!" << endl;
 	    exit (1);
 	  }
-      bool adaptive;
-      regressor.read((char*)&adaptive,sizeof(adaptive));
-      if (!initialized)
-	{
-	  global.adaptive = adaptive;
-	}
-      else
-	if (global.adaptive != adaptive)
-	  {
-	    cout << "can't combine regressors with per-feature learning rates and not" << endl;
-	    exit (1);
-	  }
       
       int len;
       regressor.read((char *)&len, sizeof(len));
@@ -163,6 +172,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	    cout << "can't combine regressors with different ngram features!" << endl;
 	    exit(1);
 	  }
+      size_t stride = global.stride;
       while (regressor.good())
 	{
 	  uint32_t hash;
@@ -171,7 +181,10 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	  regressor.read((char *)&w, sizeof(float));
 	  
 	  size_t num_threads = global.num_threads();
-	  if (regressor.good()) 
+	  if (regressor.good() && global.lda == 0) 
+	    r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
+	      = r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
+	  else
 	    r.weight_vectors[hash % num_threads][hash/num_threads] 
 	      = r.weight_vectors[hash % num_threads][hash/num_threads] + w;
 	}      
@@ -220,7 +233,6 @@ void dump_regressor(string reg_name, regressor &r)
   
   io_temp.write_file(f,(char *)&global.num_bits, sizeof(global.num_bits));
   io_temp.write_file(f,(char *)&global.thread_bits, sizeof(global.thread_bits));
-  io_temp.write_file(f,(char *)&global.adaptive, sizeof(global.adaptive));
   int len = global.pairs.size();
   io_temp.write_file(f,(char *)&len, sizeof(len));
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -231,14 +243,25 @@ void dump_regressor(string reg_name, regressor &r)
   
   uint32_t length = 1 << global.num_bits;
   size_t num_threads = global.num_threads();
+  size_t stride = global.stride;
   for(uint32_t i = 0; i < length; i++)
     {
-      weight v = r.weight_vectors[i%num_threads][i/num_threads];
-      if (v != 0.)
-	{      
-	  io_temp.write_file(f,(char *)&i, sizeof (i));
-	  io_temp.write_file(f,(char *)&v, sizeof (v));
+      if (global.lda == 0)
+	{
+	  weight v = r.weight_vectors[i%num_threads][stride*(i/num_threads)];
+	  if (v != 0.)
+	    {      
+	      io_temp.write_file(f,(char *)&i, sizeof (i));
+	      io_temp.write_file(f,(char *)&v, sizeof (v));
+	    }
 	}
+      else
+	for (size_t k = 0; k < global.lda; k++)
+	  {
+	    weight v = r.weight_vectors[i%num_threads][(stride*i+k)/num_threads];
+	    io_temp.write_file(f,(char *)&i, sizeof (i));
+	    io_temp.write_file(f,(char *)&v, sizeof (v));
+	  }
     }
 
   rename(start_name.c_str(),reg_name.c_str());

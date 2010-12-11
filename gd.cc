@@ -133,6 +133,8 @@ void output_and_account_example(example* ec)
       int f = global.final_prediction_sink[i].fd;
       if(global.active)
 	global.print(f, ec->final_prediction, ai, ec->tag);
+      else if (global.lda > 0)
+	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
       else
 	{
 	  float w;
@@ -169,9 +171,6 @@ float inline_predict(regressor &reg, example* &ec, size_t thread_num)
 	}
     }
   
-  if ( thread_num == 0 ) 
-    prediction += weights[constant & thread_mask];
-  
   return prediction;
 }
 
@@ -196,49 +195,69 @@ float inline_offset_predict(regressor &reg, example* &ec, size_t thread_num, siz
 	}
     }
 
-  if ( thread_num == 0 )
-    prediction += weights[(constant+offset) & thread_mask];
-
   return prediction;
 }
 
-void print_offset_features(regressor &reg, example* &ec, size_t offset)
+void print_features(regressor &reg, example* &ec)
 {
   weight* weights = reg.weight_vectors[0];
   size_t thread_mask = global.thread_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-      for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
-	{
-	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & thread_mask)  << ")" << ':' << f->x;
+  size_t stride = global.stride;
 
-	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
-	  if(global.adaptive)
-	    cout << '@' << weights[(f->weight_index+1 + offset) & thread_mask];
-	}
-    else
-      for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-	{
-	  cout << '\t' << f->weight_index << ':' << f->x;
-	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
-	  if(global.adaptive)
-	    cout << '@' << weights[(f->weight_index+1 + offset) & thread_mask];
-	}
-  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-    if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
-      for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	print_offset_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask, offset);
-    else
-      for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	print_offset_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask, offset);      
-
-  cout << "\tConstant:0:1:" << weights[(constant+offset) & global.thread_mask] << endl;
+  if (global.lda > 0)
+    {
+      size_t count = 0;
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
+	count += ec->audit_features[*i].index() + ec->atomics[*i].index();
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+	for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+	  {
+	    cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/global.stride << ':' << f->x;
+	    for (size_t k = 0; k < global.lda; k++)
+	      cout << ':' << weights[(f->weight_index+k) & thread_mask];
+	  }
+      cout << " total of " << count << " features." << endl;
+    }
+  else
+    {
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+	    {
+	      cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
+	      
+	      cout << ':' << weights[f->weight_index & thread_mask];
+	      if(global.adaptive)
+		cout << '@' << weights[(f->weight_index+1) & thread_mask];
+	    }
+	else
+	  for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
+	    {
+	      cout << '\t';
+	      if ( f->weight_index == (constant&global.mask)*stride)
+		cout << "Constant:";
+	      cout << f->weight_index/stride << ':' << f->x;
+	      cout << ':' << weights[f->weight_index & thread_mask];
+	      if(global.adaptive)
+		cout << '@' << weights[(f->weight_index+1) & thread_mask];
+	    }
+      for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
+	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
+	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
+	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask);
+	else
+	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
+	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask);      
+      cout << endl;
+    }
 }
 
-void print_audit_features(regressor &reg, example* ec, size_t offset)
+void print_audit_features(regressor &reg, example* ec)
 {
+  fflush(stdout);
   print_result(fileno(stdout),ec->final_prediction,-1,ec->tag);
-  print_offset_features(reg, ec, offset);
+  fflush(stdout);
+  print_features(reg, ec);
 }
 
 void one_pf_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update)
@@ -271,7 +290,6 @@ void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array
     }
 }
 
-
 void offset_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, size_t offset)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index + offset;
@@ -279,8 +297,6 @@ void offset_quad_update(weight* weights, feature& page_feature, v_array<feature>
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     weights[(halfhash + ele->weight_index) & mask] += update * ele->x;
 }
-
-
 
 void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 {
@@ -315,12 +331,6 @@ void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 	    one_pf_quad_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update, g);
 	} 
       }
-      if ( thread_num == 0 )
-      {
-	weight* w=&weights[constant & thread_mask]; //relies on constant being an even number 
-	w[1] += g;
-	w[0] += update*InvSqrt(w[1]);
-      }
     } else {
       weight* weights = reg.weight_vectors[thread_num];
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
@@ -342,9 +352,6 @@ void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 		one_pf_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update);
 	    } 
 	}
-      
-      if ( thread_num == 0 )
-	weights[constant & thread_mask] += update;
     }
   }
 }  
@@ -370,9 +377,6 @@ void offset_train(regressor &reg, example* &ec, size_t thread_num, float update,
 		offset_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update, offset);
 	    } 
 	}
-      
-      if ( thread_num == 0 )
-	weights[(constant+offset) & thread_mask] += update;
     }
 }
 
@@ -468,38 +472,35 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     }
 
   if (global.audit)
-    print_audit_features(reg, ec, 0);
+    print_audit_features(reg, ec);
 }
 
-float predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
+void predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
 {
   float prediction = inline_predict(r, ex, thread_num);
-  float final_pred = 0.;
 
   pthread_mutex_lock(&ex->lock);
 
   ex->partial_prediction += prediction;
-  if (--ex->threads_to_finish != 0)
-    {
-      while (!ex->done)
-	pthread_cond_wait(&ex->finished_sum, &ex->lock);
-      final_pred = ex->final_prediction;
-    }
-  else // We are the last thread using this example.
-    {
+  if (--ex->threads_to_finish == 0)
+    {//We are the last thread using this example
       local_predict(ex, vars,r);
       ex->done = true;
-
+      
       pthread_cond_broadcast(&ex->finished_sum);
-
+      
       if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
 	delay_example(ex,global.num_threads());
       else
 	delay_example(ex,0);
-      final_pred = ex->final_prediction;
+    }
+  else if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
+    //need to wait if there is training to do to keep example processing sequential
+    {
+      while (!ex->done)
+	pthread_cond_wait(&ex->finished_sum, &ex->lock);
     }
   pthread_mutex_unlock(&ex->lock);
-  return final_pred;
 }
 
 float offset_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars, size_t offset)

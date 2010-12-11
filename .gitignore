@@ -5,3 +5,9 @@ bin
 vw
 .*
 vw.1
+*.cache
+*.tgz
+test/*.tmp
+test/models
+*.bak
+*.prev

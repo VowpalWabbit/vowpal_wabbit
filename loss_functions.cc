@@ -42,7 +42,14 @@ public:
   float getSquareGrad(float prediction, float label) {
     return (prediction - label) * (prediction - label);
   }
-  
+  float first_derivative(float prediction, float label)
+  {
+    return 2. * (prediction-label);
+  }
+  float second_derivative(float prediction, float label)
+  {
+    return 2.;
+  } 
 };
 
 class classic_squaredloss : public loss_function {
@@ -69,7 +76,14 @@ public:
   float getSquareGrad(float prediction, float label) {
     return (prediction - label) * (prediction - label);
   }
-
+  float first_derivative(float prediction, float label)
+  {
+    return 2. * (prediction-label);
+  }
+  float second_derivative(float prediction, float label)
+  {
+    return 2.;
+  }
 };
 
 
@@ -96,7 +110,17 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    return (label*prediction >= label*label) ? 0 : 1;
+    return first_derivative(prediction,label);
+  }
+
+  float first_derivative(float prediction, float label)
+  {
+    return (label*prediction >= label*label) ? 0 : -label;
+  }
+
+  float second_derivative(float prediction, float label)
+  {
+    return 0.;
   }
 };
 
@@ -142,11 +166,23 @@ public:
     return (1-z-exp(z))/eta_t;
   }
 
+  float first_derivative(float prediction, float label)
+  {
+    float v = - label/(1+exp(label * prediction));
+    return v;
+  }
+
   float getSquareGrad(float prediction, float label) {
-    float d = 1./(1+exp(label * prediction));
+    float d = first_derivative(prediction,label);
     return d*d;
   }
 
+  float second_derivative(float prediction, float label)
+  {
+    float e = exp(label*prediction);
+    
+    return label*label*e/((1+e)*(1+e));
+  }
 };
 
 class quantileloss : public loss_function {
@@ -188,12 +224,23 @@ public:
     return (t - prediction)/(eta_t*v);
   }
 
-  float getSquareGrad(float prediction, float label) {
+  float first_derivative(float prediction, float label)
+  {
     float e = label - prediction; 
     if(e == 0) return 0;
-    return e > 0 ? tau*tau : (1-tau)*(1-tau);
+    return e > 0 ? -tau : (1-tau);
   }
-  
+
+  float getSquareGrad(float prediction, float label) {
+    float fd = first_derivative(prediction,label);
+    return fd*fd;
+  }
+
+  float second_derivative(float prediction, float label)
+  {
+    return 0.;
+  }
+
   double tau;
 };
 
