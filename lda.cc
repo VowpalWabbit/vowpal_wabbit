@@ -33,15 +33,15 @@ float mydigamma(float x)
 float decayfunc(float t, float old_t, float power_t) {
   float result = 1;
   for (float i = old_t+1; i <= t; i += 1)
-    result *= (1-pow(i, -power_t));
+    result *= (1-powf(i, -power_t));
   return result;
 }
 
 float decayfunc2(float t, float old_t, float power_t) 
 {
   float power_t_plus_one = 1. - power_t;
-  float arg =  - ( pow(t, power_t_plus_one) -
-                   pow(old_t, power_t_plus_one));
+  float arg =  - ( powf(t, power_t_plus_one) -
+                   powf(old_t, power_t_plus_one));
   return exp ( arg
                / power_t_plus_one);
 }
