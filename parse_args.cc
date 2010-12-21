@@ -50,6 +50,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
     ("version","Version information")
+    ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&(par->t))->default_value(1.), "initial t value")
@@ -237,6 +238,19 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	    }
 	  }
 	  cerr << endl;
+	}
+    }
+
+  if (vm.count("ignore"))
+    {
+      global.ignore = vm["ignore"].as< vector<unsigned char> >();
+      if (!global.quiet)
+	{
+	  cerr << "ignoring namespaces beginning with: ";
+	  for (vector<unsigned char>::iterator i = global.ignore.begin(); i != global.ignore.end();i++) 
+	    cerr << *i << " ";
+
+	  cerr << endl;	  
 	}
     }
 

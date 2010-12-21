@@ -542,6 +542,19 @@ void setup_example(parser* p, example* ae)
   p->t += ae->global_weight;
   ae->example_t = p->t;
 
+  if (! global.ignore.empty())
+    {
+      for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
+	for (vector<unsigned char>::iterator j = global.ignore.begin(); j != global.ignore.end();j++) 
+	  if (*i == *j)
+	    {//delete namespace
+	      ae->atomics[*i].erase();
+	      memmove(i,i+1,ae->indices.end - (i+1));
+	      ae->indices.end--;
+	      i--;
+	    }
+    }
+
   //add constant feature
   size_t constant_namespace = 128;
   push(ae->indices,constant_namespace);
