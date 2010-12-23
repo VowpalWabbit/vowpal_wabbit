@@ -1,0 +1,402 @@
+#!/usr/bin/perl -w
+#
+# Test suite for vw:
+#
+# You may add arbitrary (train/test/varying-options) tests
+# by adding data files and their expected reference STDOUT and STDERR
+#
+# See __DATA__ below for how to add more tests
+#
+use Getopt::Std;
+use vars qw($opt_d $opt_c $opt_e $opt_f $opt_o);
+
+my $Epsilon = 1e-4;
+
+my $VW;
+
+my @TrainSets = glob('train-sets/*.dat');
+my @TestSets = glob('test-sets/*.dat');
+
+sub usage(@) {
+    print STDERR @_, "\n" if (@_);
+
+    die "Usage: $0 [options] [vw-executable]
+    By default will run against the 1st 'vw' executable found in:
+        .  ..  \$PATH
+
+    Options:
+        -c  print commands before running them
+        -d  print diff output on diff-failure
+        -e  Abort on first diff error
+        -f  Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
+        -o  Overwrite reference file with new/different result
+";
+}
+
+#
+# which vw executable to test against
+#
+sub which_vw() {
+    if (@ARGV == 1) {
+        my $exe = $ARGV[0];
+        if (-f $exe && -x $exe) {
+            printf STDERR "Testing vw: %s\n", $exe;
+            return $exe;
+        } else {
+            usage("$0: argument $exe: not an executable file");
+        }
+    } elsif (@ARGV == 0) {
+        foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
+            my $exe = "$dir/vw";
+            if (-x $exe) {
+                printf STDERR "Testing vw: %s\n", $exe;
+                return $exe;
+            }
+        }
+    }
+    usage("can't find a 'vw' executable to test on");
+}
+
+sub init() {
+    $0 =~ s{.*/}{};
+    getopts('cdefo') || usage();
+    $VW = which_vw();
+}
+
+sub trim_spaces($) {
+    my $str = shift;
+    $str =~ s/^\s+//;
+    $str =~ s/\s+$//;
+    $str;
+}
+
+# __DATA__ test counter
+my $TestNo = 0;
+
+sub next_test() {
+    my ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
+
+    $TestNo++;
+    while (! eof(DATA)) {
+        my $line = <DATA>;
+        last if (defined($line) && $line =~ /^\s*$/);
+
+        next if ($line =~ /^\s*#/);  # skip comment lines
+
+        if ($line =~ /{VW}/) {
+            # The command line
+            $cmd = trim_spaces($line);
+            $cmd =~ s/{VW}/$VW/;
+            if ($cmd =~ /\s-p\s+(\S+)/) {
+                # -p predict_file
+                $pred = $1;
+            }
+            next;
+        }
+        if ($line =~ m/\.stdout\b/) {
+            $out_ref = trim_spaces($line);
+            next;
+        }
+        if ($line =~ /\.stderr\b/) {
+            $err_ref = trim_spaces($line);
+            next;
+        }
+        if ($line =~ /\.predict\b/) {
+            $pred_ref = trim_spaces($line);
+            next;
+        }
+        # if we get here it is some unrecognized pattern
+        printf STDERR "Unrecognized test spec line:\n\t%s\n", $line;
+        print STDERR "Test lines must match one of the following patterns:\n";
+        print STDERR "\tCommand to run:    {VW}\n";
+        print STDERR "\tstdout reference:  *.stdout\n";
+        print STDERR "\tstderr reference:  *.stderr\n";
+        print STDERR "\tpredict reference: *.predict\n";
+    }
+    if (eof(DATA) && !defined $cmd) {
+        return (undef, undef, undef, undef);
+    }
+
+    unless (defined $cmd) {
+        die "$0: test $TestNo: command is undefined\n";
+    }
+    unless (defined $out_ref) {
+        die "$0: test $TestNo: stdout ref: undefined\n";
+    }
+    unless (defined $err_ref) {
+        die "$0: test $TestNo: stderr ref: undefined\n";
+    }
+    # print STDERR "next_test: (\$cmd, $out_ref, $err_ref, $pred_ref, $pred)\n";
+    ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
+}
+
+#
+# If the difference is small (least significant digits of numbers)
+# treat it as ok. It may be a result of 32 vs 64 bit calculations.
+#
+use Scalar::Util qw(looks_like_number);
+
+sub lenient_array_compare($$) {
+    my ($w1_ref, $w2_ref) = @_;
+    my (@w1) = @$w1_ref;
+    my (@w2) = @$w2_ref;
+
+    # print STDERR "lenient_array_compare: (@w1) (@w2)\n";
+    return 1 if ($#w1 != $#w2); # arrays not of same size
+    my $nelem = scalar @w1;
+    for (my $i = 0; $i < $nelem; $i++) {
+        # print STDERR "\t$w1[$i] == $w2[$i] ?\n";
+        next if ($w1[$i] eq $w2[$i]);
+        # There's some difference, is it significant?
+        return 1 unless (looks_like_number($w1[$i]));        
+        return 1 unless (looks_like_number($w2[$i]));        
+        my $delta = $w1[$i] - $w2[$i];
+ 
+        return 1 if ($delta > $Epsilon);
+    }
+    # print STDERR "lenient_array_compare: no meaningful difference\n";
+    return 0; # no meaningful difference
+}
+
+sub diff_lenient_float($$) {
+    my ($outfile, $reffile) = @_;
+    my $status = 0;
+    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines';
+    my $tmpf = 'lenient-diff.tmp';
+    system("diff $diff_opts $outfile $reffile >$tmpf");
+    $status = $? >> 8;
+    if (-s $tmpf) {
+        # assume innocent till proven guilty
+        my $fuzzy_status = 0;
+        open(my $sdiff, $tmpf) || die "$0: diff_lenient_float: $tmpf: $!\n";
+        while (<$sdiff>) {
+            chomp;
+            my ($line1, $line2) = split(/\s+\|\s+/, $_);
+            # print STDERR "line1: $line1\n";
+            # print STDERR "line2: $line2\n";
+
+            # Break lines into tokens/words
+            my (@w1) = split(' ', $line1);
+            my (@w2) = split(' ', $line2);
+            if (lenient_array_compare(\@w1, \@w2) != 0) {
+                $fuzzy_status = 1;
+                last;
+            }
+        }
+        close $sdiff;
+        $status = $fuzzy_status;
+    }
+    $status;
+}
+
+sub diff($$) {
+    my ($outfile, $reffile) = @_;
+    my $status = 0;
+
+    # Special case, empty file w/o reference is not considered a failure.
+    # This is a most common case with stdout.
+    unless (-e $reffile) {
+        if (-s $outfile > 0) {
+            warn "$0: test $TestNo: stdout ref: $reffile: $!\n";
+            exit 1 if ($opt_e);
+            return 2 unless ($opt_o);
+        } else {
+            # Empty output without a ref is not considered a failure
+            if ($opt_o) {
+                print STDERR
+                  "$0: test $TestNo: -o: creating empty reference $reffile\n";
+                system("touch $reffile");
+            } else {
+                print STDERR
+                  "$0: test $TestNo: empty output with no reference: ignored.\n"
+            }
+            return 0;
+        }
+    }
+
+    # Actually run the diff
+    system("diff -N $outfile $reffile >diff.tmp");
+    $status = $? >> 8;
+    if (-s 'diff.tmp') {
+        if ($opt_d) {
+            system("cat diff.tmp")
+        }
+        # There's a difference, but is it meaningfull?
+        if ($opt_f && -e $outfile && -e $reffile &&
+            diff_lenient_float($outfile, $reffile) == 0) {
+
+            print STDERR "$0: test $TestNo: minor (<$Epsilon) precision differences ignored\n";
+            $status = 0;
+        }
+        if ($opt_o) {
+            print STDERR "-o: overwriting reference:\n";
+
+            if (-e $reffile) {
+                print STDERR "\t$reffile -> $reffile.prev\n";
+                rename($reffile, "$reffile.prev") ||
+                    die "FATAL: rename($reffile, $reffile.prev): $!\n";
+            }
+            print STDERR "\t$outfile -> $reffile\n";
+            rename($outfile, $reffile) ||
+                die "FATAL: rename($outfile, $reffile): $!\n";
+
+            $status = 0;
+        }
+    }
+    $status;
+}
+
+sub run_tests() {
+    print STDERR "$0: '-d' to see diff output\n"
+        unless ($opt_d);
+    print STDERR "$0: '-o' to force overwrite references\n"
+        unless ($opt_o);
+    print STDERR "$0: '-e' to abort on first failure\n"
+        unless ($opt_e);
+
+    my ($cmd, $out_ref, $err_ref, $pred_ref);
+    my ($outf, $errf, $predf);
+
+    mkdir('models', 0755) unless (-d 'models');
+
+    unlink(glob('*.tmp'));
+    unlink(glob('*.cache'));
+    unlink(glob('*/*.cache'));
+
+    while (($cmd, $out_ref, $err_ref, $pred_ref, $predf) = next_test()) {
+        last unless (defined $cmd);
+
+        ($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
+
+        # run the test
+        print STDERR "($cmd) >$outf 2>$errf\n" if ($opt_c);
+        system("($cmd) >$outf 2>$errf");
+        my $status = $? >> 8;
+        if ($status) {
+            warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
+            exit $status if ($opt_e);
+            next;
+        }
+
+        # command succeded
+        # -- compare stdout
+        $status = diff($outf, $out_ref);
+        if ($status) {
+            printf STDERR "%s: test %d: FAILED: stdout(%s) != ref(%s):\n",
+                $0, $TestNo, $outf, $out_ref;
+            exit $status if ($opt_e);
+        } else {
+            print STDERR "$0: test $TestNo: stdout OK\n";
+        }
+
+        # -- compare stderr
+        unless (-e $err_ref) {
+            print STDERR "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
+            exit 1 if ($opt_e);
+            next;
+        }
+        $status = diff($errf, $err_ref);
+        if ($status) {
+            printf STDERR "%s: test %d: FAILED: stderr(%s) != ref(%s):\n",
+                $0, $TestNo, $errf, $err_ref;
+            exit $status if ($opt_e);
+        } else {
+            print STDERR "$0: test $TestNo: stderr OK\n";
+        }
+        # -- compare predict
+        next unless (defined $pred_ref);
+        $predf = 'predict.tmp' unless (defined $predf);
+        $status = diff($predf, $pred_ref);
+        if ($status) {
+            printf STDERR "%s: test %d: FAILED: predict(%s) != ref(%s):\n",
+                $0, $TestNo, $predf, $pred_ref;
+            exit $status if ($opt_e);
+        } else {
+            print STDERR "$0: test $TestNo: predict OK\n";
+        }
+    }
+}
+
+# --- main
+init();
+run_tests();
+
+#
+# Add tests below the __DATA__ line
+# Each test is a series of lines, terminated by an empty line (or EOF)
+#
+# Each test is comprised of:
+#   1st line-item is the command to run, {VW} represents the vw
+#   executable.
+#
+#   By default, 'vw' in the parent dir (../vw) is tested.
+#   To run against a different reference executable, just pass the
+#   executable as an argument to RunTests
+#
+# The next (output) line-items are reference files to compare outputs to:
+#    The expected (reference file) standard output
+#    The expected (reference file) standard error
+#    The expected (reference file) for predictions (-p ...) 
+#    [The above reference files can come in any order.
+#     Their 'type' is determined by their extensions:
+#            .stdout  .stderr  .predict
+#    ]
+#
+# All filenames are relative to this (test) directory
+#
+# The temporary output file-names (as opposed to the reference ones)
+# are implicit:
+#    (stdout.tmp  stderr.tmp  predict.tmp)
+# Except: if -p ... appears in the command, it will be used as the
+# (explicit) predictions file.
+#
+
+__DATA__
+# Test 1:
+{VW} -b 17 -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 2 --compressed --ngram 3 --skips 1
+    train-sets/ref/0001.stdout
+    train-sets/ref/0001.stderr
+
+# Test 2: checking predictions as well
+{VW} -t train-sets/0001.dat -i models/0001.model -p 001.predict.tmp
+    test-sets/ref/0001.stdout
+    test-sets/ref/0001.stderr
+    pred-sets/ref/0001.predict
+
+# Test 3: without -d, training only
+{VW} train-sets/0002.dat    -f models/0002.model
+    train-sets/ref/0002.stdout
+    train-sets/ref/0002.stderr
+
+# Test 4: same, with -d
+{VW} -d train-sets/0002.dat    -f models/0002.model
+    train-sets/ref/0002.stdout
+    train-sets/ref/0002.stderr
+
+# Test 5: add -q .., adaptive, and more (same input, different outputs)
+{VW} --initial_t 1 --power_t 0.5 --adaptive -q Tf -q ff -f models/0002a.model train-sets/0002.dat
+    train-sets/ref/0002a.stdout
+    train-sets/ref/0002a.stderr
+
+# Test 6: run predictions on Test 4 model
+# Pretending the labels aren't there
+{VW} -t -i models/0002.model -d train-sets/0002.dat -p 0002b.predict
+    test-sets/ref/0002b.stdout
+    test-sets/ref/0002b.stderr
+    pred-sets/ref/0002b.predict
+
+# Test 7: using -q and multiple threads
+{VW} --adaptive -q ff --thread_bits 1 -f models/0002c.model train-sets/0002.dat
+    train-sets/ref/0002c.stdout
+    train-sets/ref/0002c.stderr
+
+# Test 8: predicts on test 7 model
+{VW} -t -i models/0002c.model -d train-sets/0002.dat -p 0002c.predict
+    test-sets/ref/0002c.stdout
+    test-sets/ref/0002c.stderr
+    pred-sets/ref/0002c.predict
+
+# Test 9: Run LDA with 100 topics on 1000 Wikipedia articles
+{VW} --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
+    train-sets/ref/wiki1K.stdout
+    train-sets/ref/wiki1K.stderr

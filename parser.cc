@@ -19,6 +19,7 @@ namespace po = boost::program_options;
 #include "multisource.h"
 #include "comp_io.h"
 #include "unique_sort.h"
+#include "constant.h"
 
 parser* new_parser(const label_parser* lp)
 {
@@ -450,12 +451,13 @@ example* get_unused_example()
       if (examples[parsed_index % ring_size].in_use == false)
 	{
 	  examples[parsed_index % ring_size].in_use = true;
-	  
 	  pthread_mutex_unlock(&examples_lock);
 	  return examples + (parsed_index % ring_size);
 	}
       else 
-	pthread_cond_wait(&example_unused, &examples_lock);
+	{
+	  pthread_cond_wait(&example_unused, &examples_lock);
+	}
       pthread_mutex_unlock(&examples_lock);
     }
 }
@@ -488,6 +490,7 @@ bool parse_atomic_example(parser* p, example *ae)
 
   ae->indices.erase();
   ae->tag.erase();
+  ae->sorted = false;
   if (p->reader(p,ae) <= 0)
     return false;
 
@@ -528,9 +531,10 @@ size_t example_count = 0;
 
 void setup_example(parser* p, example* ae)
 {
+  ae->pass = global.passes_complete;
   ae->partial_prediction = 0.;
-  ae->num_features = 1;
-  ae->total_sum_feat_sq = 1;
+  ae->num_features = 0;
+  ae->total_sum_feat_sq = 0;
   ae->threads_to_finish = global.num_threads();	
   ae->done = false;
   ae->example_counter = ++example_count;
@@ -538,31 +542,50 @@ void setup_example(parser* p, example* ae)
   p->t += ae->global_weight;
   ae->example_t = p->t;
 
-  if(global.adaptive) //make room for learning rates
+  if (! global.ignore.empty())
     {
       for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
+	for (vector<unsigned char>::iterator j = global.ignore.begin(); j != global.ignore.end();j++) 
+	  if (*i == *j)
+	    {//delete namespace
+	      ae->atomics[*i].erase();
+	      memmove(i,i+1,ae->indices.end - (i+1));
+	      ae->indices.end--;
+	      i--;
+	    }
+    }
+
+  //add constant feature
+  size_t constant_namespace = 128;
+  push(ae->indices,constant_namespace);
+  feature temp = {1,constant & global.mask};
+  push(ae->atomics[constant_namespace], temp);
+
+  // add constant feature to |x|^2
+  ae->total_sum_feat_sq += 1;
+  
+  if(global.stride != 1) //make room for per-feature information.
+    {
+      size_t stride = global.stride;
+      for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-	  j->weight_index = (j->weight_index << 1) & global.mask;
-      ae->sorted = false;
+	  j->weight_index = j->weight_index*stride;
       if (global.audit)
 	for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-	    j->weight_index = (j->weight_index << 1) & global.mask;
+	    j->weight_index = j->weight_index*stride;
     }
-
-  if (!ae->sorted && global.partition_bits > 0)
-    unique_sort_features(ae);
-
+  
   //Should loop through the features to determine the boundaries
   size_t length = global.mask + 1;
-  size_t expert_size = length >> global.partition_bits; //#features/expert
+  size_t expert_size = global.stride*(length >> global.partition_bits); //#features/expert
   for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
     {
       //subsets is already erased just before parsing.
       feature* f = ae->atomics[*i].begin;
       push(ae->subsets[*i],f);
       size_t current = expert_size;
-      while (current <= length)
+      while (current <= length*global.stride)
 	{
 	  feature* ret = f;
 	  if (ae->atomics[*i].end > f)
@@ -571,6 +594,7 @@ void setup_example(parser* p, example* ae)
 	  f = ret;
 	  current += expert_size;
 	}
+      assert(f == ae->atomics[*i].end);
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
@@ -604,7 +628,7 @@ void *main_parse_loop(void *in)
 {
   parser* p = (parser*) in;
   
-  size_t passes = global.numpasses;
+  global.passes_complete = 0;
   while(!done)
     {
       example* ae=get_unused_example();
@@ -622,8 +646,8 @@ void *main_parse_loop(void *in)
       else
 	{
 	  reset_source(global.num_bits, p);
-	  passes -= 1;
-	  if (passes > 0)
+	  global.passes_complete++;
+	  if (global.passes_complete < global.numpasses)
 	    global.eta *= global.eta_decay_rate;
 	  else
 	    {
@@ -669,7 +693,7 @@ example* get_example(size_t thread_num)
       cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << endl;
     assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
-    return examples + ring_index;
+     return examples + ring_index;
   }
   else {
     if (!done)
@@ -725,6 +749,9 @@ void end_parser(parser* pf)
 	  free(examples[i].tag.begin);
 	  examples[i].tag.end_array = examples[i].tag.begin;
 	}
+      
+      if (global.lda > 0)
+	free(examples[i].topic_predictions.begin);
 
       free(examples[i].ld);
       for (size_t j = 0; j < 256; j++)

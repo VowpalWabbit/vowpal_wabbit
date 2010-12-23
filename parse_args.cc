@@ -37,6 +37,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
+    ("conjugate_gradient", "use conjugate gradient based optimization")
+    ("regularization", po::value<float>(&global.regularization)->default_value(0.), "minimize weight magnitude")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
@@ -48,9 +50,15 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
     ("version","Version information")
+    ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&(par->t))->default_value(1.), "initial t value")
+    ("lda", po::value<size_t>(&global.lda), "Run lda with <int> topics")
+    ("lda_alpha", po::value<float>(&global.lda_alpha)->default_value(0.1), "Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>(&global.lda_rho)->default_value(0.1), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>(&global.lda_D)->default_value(10000.), "Number of documents")
+    ("minibatch", po::value<size_t>(&global.minibatch)->default_value(1), "Minibatch size, for LDA")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
@@ -66,9 +74,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
     ("quiet", "Don't output diagnostics")
-    ("random_regressor", "Initialize regressor with random values")
     ("rank", po::value<size_t>(&global.rank)->default_value(0), "rank for matrix factorization.")
     ("weight_decay", po::value<float>(&global.weight_decay)->default_value(0.), "weight decay.")
+    ("random_weights", po::value<bool>(&global.random_weights), "make initial weights random")
     ("raw_predictions,r", po::value< string >(), 
      "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send example to <hosts>")
@@ -89,6 +97,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.backprop = false;
   global.corrective = false;
   global.delayed_global = false;
+  global.conjugate_gradient = false;
+  global.stride = 1;
   global.weighted_labels = 0.;
   global.total_features = 0;
   global.sum_loss = 0.0;
@@ -102,6 +112,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.print = print_result;
   global.min_label = 0.;
   global.max_label = 1.;
+  global.lda =0;
+  global.random_weights = false;
   
   global.adaptive = false;
   global.audit = false;
@@ -111,7 +123,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   
 
   po::positional_options_description p;
-  
+  // Be friendly: if -d was left out, treat positional param as data file
+  p.add("data", -1);
+ 
   po::variables_map vm;
 
   po::store(po::command_line_parser(argc, argv).
@@ -136,6 +150,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("adaptive")) {
       global.adaptive = true;
+      global.stride = 2;
       vars.power_t = 0.0;
   }
 
@@ -154,6 +169,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cout << "enabling delayed_global updates" << endl;
   }
   
+  if (vm.count("conjugate_gradient")) {
+    global.conjugate_gradient = true;
+    global.stride = 8;
+    cout << "enabling conjugate gradient based optimization" << endl;
+  }
+
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
     cout << version << "\n";
@@ -222,6 +243,43 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
+  if (vm.count("ignore"))
+    {
+      global.ignore = vm["ignore"].as< vector<unsigned char> >();
+      if (!global.quiet)
+	{
+	  cerr << "ignoring namespaces beginning with: ";
+	  for (vector<unsigned char>::iterator i = global.ignore.begin(); i != global.ignore.end();i++) 
+	    cerr << *i << " ";
+
+	  cerr << endl;	  
+	}
+    }
+
+  // matrix factorization enabled
+  if (global.rank > 0) {
+    // store linear + 2*rank weights per index, round up to power of two
+    float temp = ceilf(logf((float)(global.rank*2+1)) / logf (2.f));
+    global.stride = powf(2,temp);
+    global.random_weights = true;
+  }
+
+  if (vm.count("lda"))
+    {
+      par->sort_features = true;
+      float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
+      global.stride = powf(2,temp); 
+      global.random_weights = true;
+    }
+
+  if (vm.count("lda") && global.eta > 1.)
+    {
+      cerr << "your learning rate is too high, setting it to 1" << endl;
+      global.eta = min(global.eta,1.f);
+    }
+  if (!vm.count("lda"))
+    global.eta *= pow(par->t, vars.power_t);
+
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
 
   if (vm.count("active_c0"))
@@ -246,7 +304,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
-  global.eta *= pow(par->t, vars.power_t);
+//   global.eta *= pow(par->t, vars.power_t);
   
   if (global.eta_decay_rate != default_decay && global.numpasses == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;

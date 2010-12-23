@@ -32,10 +32,18 @@ struct global_data {
   float active_c0;
   float initial_weight;
 
+  bool conjugate_gradient;
+  float regularization;
+  size_t stride;
+  
+  size_t minibatch;
+
   size_t numpasses;
+  size_t passes_complete;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.
+  vector<unsigned char> ignore;
   size_t ngram;//ngrams to generate.
   size_t skips;//skips in ngrams.
   size_t queries;
@@ -45,9 +53,15 @@ struct global_data {
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
+  bool random_weights;
   
   double min_label;//minimum label encountered
   double max_label;//maximum label encountered
+
+  size_t lda;
+  float lda_alpha;
+  float lda_rho;
+  float lda_D;
 
   size_t num_threads () { return 1 << thread_bits; };
   size_t num_partitions () { return 1 << partition_bits; };
@@ -89,6 +103,7 @@ extern void (*set_minmax)(double label);
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(double label);
+void print_lda_result(int f, float* res, float weight, v_array<char> tag);
 
 const size_t ring_size = 1 << 11;
 

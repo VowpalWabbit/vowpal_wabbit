@@ -57,7 +57,10 @@ template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
 
 template<class T> void reserve(v_array<T>& v, size_t length)
 {
+  size_t old_length = v.end_array-v.begin;
   v.begin = (T *)realloc(v.begin, sizeof(T) * length);
+  if (old_length < length)
+    bzero(v.begin+old_length,(length-old_length)*sizeof(T));
   v.end = v.begin;
   v.end_array = v.begin + length;
 }

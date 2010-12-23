@@ -1,0 +1,35 @@
+using no cache
+Reading from train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+predictions = 0002b.predict
+only testing
+average    since       example  example    current  current  current
+loss       last        counter   weight      label  predict features
+0.005280   0.005280          3      3.0     0.5498   0.4980       15
+0.024422   0.043564          6      6.0     0.2681   0.5630       15
+0.029264   0.035075         11     11.0     0.4315   0.5746       15
+0.034472   0.039680         22     22.0     0.5519   0.4345       15
+0.029364   0.024255         44     44.0     0.5514   0.4407       15
+0.025023   0.020582         87     87.0     0.5140   0.4737       15
+0.021851   0.018679        174    174.0     0.5596   0.4208       15
+0.017792   0.013732        348    348.0     0.5475   0.4447       15
+0.013938   0.010085        696    696.0     0.3421   0.5934       15
+0.013852   0.013767       1392   1392.0     0.4996   0.5301       15
+0.009574   0.005295       2784   2784.0     0.5090   0.4544       15
+0.007108   0.004643       5568   5568.0     0.6413   0.4209       15
+0.007086   0.007063      11135  11135.0     0.3869   0.4871       15
+0.008188   0.009290      22269  22269.0     0.5063   0.4558       15
+0.008477   0.008767      44537  44537.0     0.4905   0.5043       15
+
+finished run
+number of examples = 74746
+weighted example sum = 6.952e+04
+weighted label sum = 3.511e+04
+average loss = 0.007251
+best constant = 0.5051
+best constant's loss = 0.25
+total feature number = 1121190
