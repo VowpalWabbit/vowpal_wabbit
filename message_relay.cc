@@ -11,8 +11,11 @@ void* mesg_relay(void* v)
   global_prediction ps;
   while (blocking_get_global_prediction(global.local_prediction,ps))
     {
-      example *ec = blocking_get_delay_example(global.num_threads());
-      ec->final_prediction = ps.p;
+      example *ec = blocking_get_delay_example(global.num_threads()); 
+     if (global.backprop || global.delayed_global || global.corrective)
+	ec->global_prediction = ps.p;
+      else
+	ec->final_prediction = ps.p;
       ec->global_weight = ps.weight;
       label_data* ld = (label_data*)ec->ld;
 
@@ -20,21 +23,20 @@ void* mesg_relay(void* v)
       
       if (global.backprop)
 	{
-	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*vars->eta/pow(ec->example_t,vars->power_t), ec->total_sum_feat_sq, ps.weight);
-	  delay_global_example(ec,global.num_threads());
+	  ec->eta_global = global.reg->loss->getUpdate(ec->global_prediction, ld->label, global.global_multiplier*global.eta/pow(ec->example_t,vars->power_t)*ps.weight, ec->total_sum_feat_sq);
+	  delay_global_example(ec);
 	}
       else if (global.delayed_global)
 	{
-	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*vars->eta/pow(ec->example_t,vars->power_t), ec->total_sum_feat_sq, ld->weight);
-	  delay_global_example(ec,global.num_threads());
+	  ec->eta_global = global.reg->loss->getUpdate(ec->global_prediction, ld->label, global.global_multiplier*global.eta/pow(ec->example_t,vars->power_t)*ld->weight, ec->total_sum_feat_sq);
+	  delay_global_example(ec);
 	}
       else if (global.corrective)
 	{
-	  ec->eta_round = global.reg->loss->getUpdate(ec->final_prediction, ld->label, global.global_multiplier*vars->eta/pow(ec->example_t,vars->power_t), ec->total_sum_feat_sq, ld->weight) - ec->eta_round;
-	  delay_global_example(ec,global.num_threads());
+	  ec->eta_global = global.reg->loss->getUpdate(ec->global_prediction, ld->label, global.global_multiplier*global.eta/pow(ec->example_t,vars->power_t)*ld->weight, ec->total_sum_feat_sq) - ec->eta_round;
+	  delay_global_example(ec);
 	}
-      else
-	delay_global_example(ec,0);
+      finish_example(ec);
     }
   return NULL;
 }

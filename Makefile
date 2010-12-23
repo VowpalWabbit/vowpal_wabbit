@@ -6,7 +6,7 @@ BOOST_LIBRARY = /usr/lib64 #/usr/local/boost/lib
 ARCH = -march=nocona
 
 # for normal fast execution.
-#FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3
+FLAGS = -Wall $(ARCH) -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3
 
 # for parallelization
 #FLAGS = -Wall $(ARCH) -ffast-math -Wno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3 -fopenmp
@@ -15,7 +15,7 @@ ARCH = -march=nocona
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg -g
 
 # for valgrind
-FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
+#FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
 BINARIES = vw
 MANPAGES = vw.1
@@ -51,7 +51,10 @@ gd.o:	 parse_example.h
 vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o  gd.o gd_mf.o noop.o parser.o vw.o loss_functions.o sender.o main.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
-offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_dense.o parse_example.o parse_args.o gd.o gd_mf.o parser.o offset_tree.o loss_functions.o
+active_interactor:	active_interactor.cc
+	$(COMPILER) $(FLAGS) -o $@ $+
+
+offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_dense.o parse_example.o parse_args.o gd.o parser.o offset_tree.o loss_functions.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 

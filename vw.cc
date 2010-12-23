@@ -27,9 +27,6 @@ embodied in the content of this file are licensed under the BSD
 
 gd_vars* vw(int argc, char *argv[])
 {
-  size_t numpasses;
-  float eta_decay;
-  ofstream final_regressor;
   string final_regressor_name;
 
   parser* p = new_parser(&simple_label);
@@ -39,8 +36,8 @@ gd_vars* vw(int argc, char *argv[])
 
   po::options_description desc("VW options");
 
-  po::variables_map vm = parse_args(argc, argv, desc, *vars, eta_decay, 
-				    numpasses, regressor1, p, 
+  po::variables_map vm = parse_args(argc, argv, desc, *vars, 
+				    regressor1, p, 
 				    final_regressor_name);
 
   if (!global.quiet)
@@ -56,49 +53,39 @@ gd_vars* vw(int argc, char *argv[])
 
   size_t num_threads = global.num_threads();
   gd_thread_params t = {vars, num_threads, regressor1, &final_regressor_name};
-  
-  for (; numpasses > 0; numpasses--) {
-    start_parser(num_threads, p);
-    initialize_delay_ring();
 
-    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
-      setup_relay(vars);
-    if (vm.count("sendto"))
-      {
-	setup_send();
-	destroy_send();
-      }
-    else if (vm.count("noop"))
-      {
-	start_noop();
-	end_noop();
-      }
-    else if (global.rank > 0)
-      {
-	setup_gd_mf(t);
-	destroy_gd_mf();
-      }
-    else
-      {
-	setup_gd(t);
-	destroy_gd();
-      }
-    
-    if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
-      destroy_relay();
-
-    destroy_delay_ring();
-    end_parser(p);
-    vars->eta *= eta_decay;
-    reset_source(global.num_bits, p);
+  start_parser(num_threads, p);
+  initialize_delay_ring();
+  if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
+    setup_relay(vars);
+  if (vm.count("sendto"))
+  {
+    setup_send();
+    destroy_send();
   }
-  
-  if (final_regressor_name  != "")
-    {
-      final_regressor.open(final_regressor_name.c_str());
-      dump_regressor(final_regressor, regressor1);
-    }
-  finalize_regressor(final_regressor,regressor1);
+  else if (vm.count("noop"))
+  {
+    start_noop();
+    end_noop();
+  }
+  else if (global.rank > 0)
+  {
+      setup_gd_mf(t);
+      destroy_gd_mf();
+  }
+  else
+  {
+    setup_gd(t);
+    destroy_gd();
+  }
+
+  if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
+    destroy_relay();
+
+  destroy_delay_ring();
+  end_parser(p);
+
+  finalize_regressor(final_regressor_name,regressor1);
   finalize_source(p);
   free(p);
   

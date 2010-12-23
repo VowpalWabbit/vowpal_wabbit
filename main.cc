@@ -6,11 +6,15 @@ embodied in the content of this file are licensed under the BSD
 
 #include "vw.h"
 #include "gd.h"
+#include <stdlib.h>
 
 int main(int argc, char *argv[]) {
-	gd_vars *vars = vw(argc, argv);
+    drand48();
+    gd_vars *vars = vw(argc, argv);
+    
 
-	float best_constant = global.weighted_labels / global.weighted_examples;
+	float weighted_labeled_examples = global.weighted_examples - global.weighted_unlabeled_examples;
+	float best_constant = global.weighted_labels / weighted_labeled_examples;
 	float constant_loss = (best_constant*(1.0 - best_constant)*(1.0 - best_constant)
 			+ (1.0 - best_constant)*best_constant*best_constant);
 
@@ -26,6 +30,8 @@ int main(int argc, char *argv[]) {
 		if (global.min_label == 0. && global.max_label == 1. && best_constant < 1. && best_constant > 0.)
 		  cerr << endl << "best constant's loss = " << constant_loss;
 		cerr << endl << "total feature number = " << global.total_features;
+		if (global.active_simulation)
+		  cerr << endl << "total queries = " << global.queries << endl;
 		cerr << endl;
 	}
 

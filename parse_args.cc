@@ -15,17 +15,21 @@ embodied in the content of this file are licensed under the BSD
 #include "network.h"
 #include "global_data.h"
 
-const float default_decay = 1. / sqrt(2.);
+const float default_decay = 1.;
 
 po::variables_map parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
-			     gd_vars& vars, float& eta_decay_rate,
-			     size_t &passes, regressor &r, parser* par,
+			     gd_vars& vars,
+			     regressor &r, parser* par,
 			     string& final_regressor_name)
 {
   vars.init();
   global.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
+    ("active_learning", "active learning mode")
+    ("active_simulation", "active learning simulation mode")
+    ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
+    ("adaptive", "use adaptive, individual learning rates.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(), 
      "number of bits in the feature table")
@@ -36,7 +40,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
-    ("decay_learning_rate",    po::value<float>(&eta_decay_rate)->default_value(default_decay), 
+    ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
@@ -44,6 +48,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
     ("version","Version information")
+    ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_t", po::value<float>(&(par->t))->default_value(1.), "initial t value")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
@@ -51,11 +56,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
     ("port", po::value<size_t>(),"port to listen on")
-    ("power_t", po::value<float>(&vars.power_t)->default_value(0.), "t power value")
+    ("power_t", po::value<float>(&vars.power_t)->default_value(0.5), "t power value")
     ("predictto", po::value< string > (), "host to send predictions to")
-    ("learning_rate,l", po::value<float>(&vars.eta)->default_value(0.1), 
+    ("learning_rate,l", po::value<float>(&global.eta)->default_value(10), 
      "Set Learning Rate")
-    ("passes", po::value<size_t>(&passes)->default_value(1), 
+    ("passes", po::value<size_t>(&global.numpasses)->default_value(1), 
      "Number of Training Passes")
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
@@ -63,6 +68,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quiet", "Don't output diagnostics")
     ("random_regressor", "Initialize regressor with random values")
     ("rank", po::value<size_t>(&global.rank)->default_value(0), "rank for matrix factorization.")
+    ("weight_decay", po::value<float>(&global.weight_decay)->default_value(0.), "weight decay.")
     ("raw_predictions,r", po::value< string >(), 
      "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send example to <hosts>")
@@ -76,6 +82,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("skips", po::value<size_t>(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
 
 
+  global.queries = 0;
   global.example_number = 0;
   global.weighted_examples = 0.;
   global.old_weighted_examples = 0.;
@@ -95,10 +102,14 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.print = print_result;
   global.min_label = 0.;
   global.max_label = 1.;
-
+  
+  global.adaptive = false;
   global.audit = false;
+  global.active = false;
+  global.active_simulation =false;
   global.reg = &r;
   
+
   po::positional_options_description p;
   
   po::variables_map vm;
@@ -107,6 +118,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	    options(desc).positional(p).run(), vm);
   po::notify(vm);
 
+  global.weighted_unlabeled_examples = par->t;
+  global.initial_t = par->t;
   global.partition_bits = global.thread_bits;
   
   if (vm.count("help") || argc == 1) {
@@ -115,6 +128,17 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     exit(0);
   }
   
+  if (vm.count("active_simulation")) 
+      global.active_simulation = true;
+ 
+  if (vm.count("active_learning") && !global.active_simulation)
+    global.active = true;
+
+  if (vm.count("adaptive")) {
+      global.adaptive = true;
+      vars.power_t = 0.0;
+  }
+
   if (vm.count("backprop")) {
       global.backprop = true;
       cout << "enabling backprop updates" << endl;
@@ -200,11 +224,14 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
 
+  if (vm.count("active_c0"))
+    global.active_c0 = vm["active_c0"].as<float>();
+
   if (vm.count("min_prediction"))
     global.min_label = vm["min_prediction"].as<double>();
   if (vm.count("max_prediction"))
     global.max_label = vm["max_prediction"].as<double>();
-  if (vm.count("min_prediction") || vm.count("max_prediction"))
+  if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     set_minmax = noop_mm;
 
   string loss_function;
@@ -219,25 +246,26 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
-  vars.eta *= pow(par->t, vars.power_t);
+  global.eta *= pow(par->t, vars.power_t);
   
-  if (eta_decay_rate != default_decay && passes == 1)
+  if (global.eta_decay_rate != default_decay && global.numpasses == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
-  if (pow(eta_decay_rate, passes) < 0.0001 )
-    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(eta_decay_rate, passes) 
+  if (pow(global.eta_decay_rate, global.numpasses) < 0.0001 )
+    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(global.eta_decay_rate, global.numpasses) 
 	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
   
-  parse_source_args(vm,par,global.quiet,passes);
+  parse_source_args(vm,par,global.quiet,global.numpasses);
+
 
   if (!global.quiet)
     {
       cerr << "Num weight bits = " << global.num_bits << endl;
-      cerr << "learning rate = " << vars.eta << endl;
+      cerr << "learning rate = " << global.eta << endl;
       cerr << "initial_t = " << par->t << endl;
       cerr << "power_t = " << vars.power_t << endl;
-      if (passes > 1)
-	cerr << "decay_learning_rate = " << eta_decay_rate << endl;
+      if (global.numpasses > 1)
+	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
     }
   
   if (vm.count("predictions")) {
@@ -282,7 +310,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     {
       global.training = true;
       if (!global.quiet)
-	cerr << "learning_rate set to " << vars.eta << endl;
+	cerr << "learning_rate set to " << global.eta << endl;
     }
 
   if (vm.count("predictto"))

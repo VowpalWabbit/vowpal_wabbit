@@ -29,15 +29,22 @@ struct global_data {
   bool corrective;
   bool delayed_global;
   float global_multiplier;
+  float active_c0;
+  float initial_weight;
 
+  size_t numpasses;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.
   size_t ngram;//ngrams to generate.
   size_t skips;//skips in ngrams.
+  size_t queries;
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
+  bool active;
+  bool active_simulation;
+  bool adaptive;//Should I use adaptive individual learning rates?
   
   double min_label;//minimum label encountered
   double max_label;//maximum label encountered
@@ -61,13 +68,18 @@ struct global_data {
 
   //runtime accounting variables. 
   long long int example_number;
+  double initial_t;
   double weighted_examples;
+  double weighted_unlabeled_examples;
   double old_weighted_examples;
   double weighted_labels;
   size_t total_features;
   double sum_loss;
   double sum_loss_since_last_dump;
   float dump_interval;// when should I update for the user.
+  float eta;//learning rate control.
+  float eta_decay_rate;
+  float weight_decay;
 
   regressor* reg;
 };

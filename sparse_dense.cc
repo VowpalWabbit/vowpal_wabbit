@@ -6,6 +6,7 @@ embodied in the content of this file are licensed under the BSD
 
 #include "sparse_dense.h"
 #include "constant.h"
+#include <math.h>
 
 float sd_add(weight* weights, size_t mask, feature* begin, feature* end)
 {
@@ -23,10 +24,27 @@ float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, 
   return ret;
 }
 
+int print_bit = 0;
+
 void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update)
 {
-  for (feature* f = begin; f!= end; f++)
-    weights[(f->weight_index + offset) & mask] += f->x * update;
+  float mult = 1 - global.weight_decay;
+  float new_weight;
+  for (feature* f = begin; f!= end; f++) {
+    new_weight = mult * weights[(f->weight_index + offset) & mask] + f->x * update;
+    
+    if (print_bit || (isnan(new_weight) || ((f->weight_index + offset) & mask) == 127659601)) {
+      cout << "mult " << mult << ", ";
+      cout << "index " << ((f->weight_index + offset) & mask) << ", ";
+      cout << "weight " << weights[(f->weight_index + offset) & mask] << ", ";
+      cout << "f->x " << f->x << ", ";
+      cout << "update " << update << endl;
+
+      print_bit = !print_bit;
+    }
+      
+    weights[(f->weight_index + offset) & mask] = new_weight;
+  }
 } 
 
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 

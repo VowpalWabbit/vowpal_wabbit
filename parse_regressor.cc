@@ -14,6 +14,7 @@ using namespace std;
 #include "parse_regressor.h"
 #include "loss_functions.h"
 #include "global_data.h"
+#include "io.h"
 
 void initialize_regressor(regressor &r, bool random)
 {
@@ -32,6 +33,12 @@ void initialize_regressor(regressor &r, bool random)
           cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
           exit (1);
         }
+      if (global.initial_weight != 0.)
+	for (size_t j = 0; j < length/num_threads; j++)
+	  r.weight_vectors[i][j] = global.initial_weight;
+      if(global.adaptive)
+        for (size_t j = 1; j < length/num_threads; j+=2)
+	  r.weight_vectors[i][j] = 1;
     }
 }
 
@@ -63,6 +70,11 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
   for (size_t i = 0; i < regs.size(); i++)
     {
       ifstream regressor(regs[i].c_str());
+      if (!regressor.is_open())
+	{
+	  cout << "can't open " << regs[i].c_str() << endl << " ... exiting." << endl;
+	  exit(1);
+	}
 
       size_t v_length;
       regressor.read((char*)&v_length, sizeof(v_length));
@@ -101,7 +113,19 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	    cout << "can't combine regressors trained with different numbers of threads!" << endl;
 	    exit (1);
 	  }
-
+      bool adaptive;
+      regressor.read((char*)&adaptive,sizeof(adaptive));
+      if (!initialized)
+	{
+	  global.adaptive = adaptive;
+	}
+      else
+	if (global.adaptive != adaptive)
+	  {
+	    cout << "can't combine regressors with per-feature learning rates and not" << endl;
+	    exit (1);
+	  }
+      
       int len;
       regressor.read((char *)&len, sizeof(len));
 
@@ -180,44 +204,57 @@ void free_regressor(regressor &r)
     }
 }
 
-void dump_regressor(ofstream &o, regressor &r)
+void dump_regressor(string reg_name, regressor &r)
 {
-  if (o.is_open()) 
+  if (reg_name == string(""))
+    return;
+  string start_name = reg_name+string(".writing");
+  io_buf io_temp;
+
+  int f = io_temp.open_file(start_name.c_str(),io_buf::WRITE);
+  
+  if (f<0)
     {
-      size_t v_length = version.length()+1;
-      o.write((char*)&v_length, sizeof(v_length));
-      o.write(version.c_str(),v_length);
+      cout << "can't open: " << start_name << " for writing, exiting" << endl;
+      exit(1);
+    }
+  size_t v_length = version.length()+1;
+  io_temp.write_file(f,(char*)&v_length, sizeof(v_length));
+  io_temp.write_file(f,version.c_str(),v_length);
+  
+  io_temp.write_file(f,(char*)&global.min_label, sizeof(global.min_label));
+  io_temp.write_file(f,(char*)&global.max_label, sizeof(global.max_label));
+  
+  io_temp.write_file(f,(char *)&global.num_bits, sizeof(global.num_bits));
+  io_temp.write_file(f,(char *)&global.thread_bits, sizeof(global.thread_bits));
+  io_temp.write_file(f,(char *)&global.adaptive, sizeof(global.adaptive));
+  int len = global.pairs.size();
+  io_temp.write_file(f,(char *)&len, sizeof(len));
+  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
+    io_temp.write_file(f,i->c_str(),2);
 
-      o.write((char*)&global.min_label, sizeof(global.min_label));
-      o.write((char*)&global.max_label, sizeof(global.max_label));
-
-      o.write((char *)&global.num_bits, sizeof(global.num_bits));
-      o.write((char *)&global.thread_bits, sizeof(global.thread_bits));
-      int len = global.pairs.size();
-      o.write((char *)&len, sizeof(len));
-      for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-	o << (*i)[0] << (*i)[1];
-      o.write((char*)&global.ngram, sizeof(global.ngram));
-      o.write((char*)&global.skips, sizeof(global.skips));
-
-      uint32_t length = 1 << global.num_bits;
-      size_t num_threads = global.num_threads();
-      for(uint32_t i = 0; i < length; i++)
-	{
-	  weight v = r.weight_vectors[i%num_threads][i/num_threads];
-	  if (v != 0.)
-	    {      
-	      o.write((char *)&i, sizeof (i));
-	      o.write((char *)&v, sizeof (v));
-	    }
+  io_temp.write_file(f,(char*)&global.ngram, sizeof(global.ngram));
+  io_temp.write_file(f,(char*)&global.skips, sizeof(global.skips));
+  
+  uint32_t length = 1 << global.num_bits;
+  size_t num_threads = global.num_threads();
+  for(uint32_t i = 0; i < length; i++)
+    {
+      weight v = r.weight_vectors[i%num_threads][i/num_threads];
+      if (v != 0.)
+	{      
+	  io_temp.write_file(f,(char *)&i, sizeof (i));
+	  io_temp.write_file(f,(char *)&v, sizeof (v));
 	}
     }
 
-  o.close();
+  rename(start_name.c_str(),reg_name.c_str());
+
+  io_temp.close_file();
 }
 
-void finalize_regressor(ofstream &o, regressor &r)
+void finalize_regressor(string reg_name, regressor &r)
 {
-  dump_regressor(o,r);
+  dump_regressor(reg_name,r);
   free_regressor(r);
 }

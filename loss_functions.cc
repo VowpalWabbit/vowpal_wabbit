@@ -22,8 +22,9 @@ public:
     return example_loss;
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
-    eta_t *= h;
+  float getUpdate(float prediction, float label,float eta_t, float norm) {
+    norm = max(norm,0.1f);
+
     if (eta_t < 1e-6){ 
       /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t) 
        * with its first order Taylor expansion around 0
@@ -35,9 +36,15 @@ public:
   }
   
   float getRevertingWeight(float prediction, float eta_t){
-    float alternative = (prediction > 0.5) ? 0 : 1;
-    return log((alternative-prediction)/(alternative-0.5))/eta_t;
+    float t = 0.5*(global.min_label+global.max_label);
+    float alternative = (prediction > t) ? global.min_label : global.max_label;
+    return log((alternative-prediction)/(alternative-t))/eta_t;
   }
+  
+  float getSquareGrad(float prediction, float label) {
+    return (prediction - label) * (prediction - label);
+  }
+  
 };
 
 class classic_squaredloss : public loss_function {
@@ -51,14 +58,20 @@ public:
     return example_loss;
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
-    return h*eta_t*(label - prediction)/norm;
+  float getUpdate(float prediction, float label,float eta_t, float norm) {
+    return eta_t*(label - prediction)/norm;
   }
   
   float getRevertingWeight(float prediction, float eta_t){
-    float alternative = (prediction > 0.5) ? 0 : 1;
-    return log((alternative-prediction)/(alternative-0.5))/eta_t;
+    float t = 0.5*(global.min_label+global.max_label);
+    float alternative = (prediction > t) ? global.min_label : global.max_label;
+    return (t-prediction)/((alternative-prediction)*eta_t);
   }
+
+  float getSquareGrad(float prediction, float label) {
+    return (prediction - label) * (prediction - label);
+  }
+
 };
 
 
@@ -73,15 +86,19 @@ public:
     return (e > 0) ? e : 0;
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm, float h) {
+  float getUpdate(float prediction, float label,float eta_t, float norm) {
     if(label*prediction >= label*label) return 0;
     float s1=(label*label-label*prediction)/(label*label);
-    float s2=eta_t*h;
+    float s2=eta_t;
     return label * (s1<s2 ? s1 : s2)/norm;
   }
   
   float getRevertingWeight(float prediction, float eta_t){
     return fabs(prediction)/eta_t;
+  }
+
+  float getSquareGrad(float prediction, float label) {
+    return (label*prediction >= label*label) ? 0 : 1;
   }
 };
 
@@ -95,10 +112,9 @@ public:
     return log(1 + exp(-label * prediction));
   }
   
-  float getUpdate(float prediction, float label, float eta_t, float norm, float h) {
+  float getUpdate(float prediction, float label, float eta_t, float norm) {
     float w,x;
     float d = exp(label * prediction);
-    eta_t *= h;
     if(eta_t < 1e-6){
       /* As with squared loss, for small eta_t we replace the update
        * with its first order Taylor expansion to avoid numerical problems
@@ -111,35 +127,28 @@ public:
   }
   
   inline float wexpmx(float x){
-    float b,l,q;
     /* This piece of code is approximating W(exp(x))-x. 
      * W is the Lambert W function: W(z)*exp(W(z))=z.
      * The absolute error of this approximation is less than 9e-5.
      * Faster/better approximations can be substituted here.
      */
-    if (x >= 1){
-      /* This part is essentially inequality 2.4 from the paper 
-       * INEQUALITIES ON THE LAMBERT W FUNCTION AND HYPERPOWER FUNCTION
-       * q has been worked out so that b is an estimate rather than a bound
-       */
-      l=log(x);
-      q=(2.16612+1.89678*x)/(2.16276+1.90021*x-l);
-      b=-x*l/(q+x);
-    } else if(x>-2){
-      /* This comes from a Chebyshev approximation of the function in [-2,1] */
-      b=0.5671307552778-x*(0.63813443251+x*(-0.073778671124427+x*(0.001712349389983*x+0.0011058485512683)));
-    } else {
-      /* For smaller x, we fit a logistic. Since x<0 q cannot blow up. */
-      q=exp(1.00579*x +0.0186664);
-      b=q/(1+q)-x;
-    }
-    return b;
+    double w = x>=1. ? 0.86*x+0.01 : exp(0.8*x-0.65); //initial guess
+    double r = x>=1. ? x-log(w)-w : 0.2*x+0.65-w; //residual
+    double t = 1.+w;
+    double u = 2.*t*(t+2.*r/3.); //magic
+    return w*(1.+r/t*(u-r)/(u-2.*r))-x; //more magic
   }
   
   float getRevertingWeight(float prediction, float eta_t){
     float z = -fabs(prediction);
     return (1-z-exp(z))/eta_t;
   }
+
+  float getSquareGrad(float prediction, float label) {
+    float d = 1./(1+exp(label * prediction));
+    return d*d;
+  }
+
 };
 
 class quantileloss : public loss_function {
@@ -157,11 +166,11 @@ public:
     
   }
   
-  float getUpdate(float prediction, float label, float eta_t, float norm, float h) {
+  float getUpdate(float prediction, float label, float eta_t, float norm) {
     float s2;
     float e = label - prediction;
     if(e == 0) return 0;
-    float s1=eta_t*h;
+    float s1=eta_t;
     if(e > 0) {
       s2=e/tau;
       return tau*(s1<s2?s1:s2)/norm;
@@ -172,15 +181,19 @@ public:
   }
   
   float getRevertingWeight(float prediction, float eta_t){
-    float alternative,v;
-    if(prediction > tau){
-      alternative = 0;
+    float v,t;
+    t = 0.5*(global.min_label+global.max_label);
+    if(prediction > t)
       v = -(1-tau);
-    } else{
-      alternative = 1;
+     else
       v = tau;
-    }
-    return (alternative - prediction)/(eta_t*v);
+    return (t - prediction)/(eta_t*v);
+  }
+
+  float getSquareGrad(float prediction, float label) {
+    float e = label - prediction; 
+    if(e == 0) return 0;
+    return e > 0 ? tau*tau : (1-tau)*(1-tau);
   }
   
   double tau;

@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <stdio.h>
+#include <float.h>
 #include "global_data.h"
 #include "multisource.h"
 #include "message_relay.h"
@@ -14,8 +15,6 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag)
       global_prediction ps = {res, weight};
       send_global_prediction(f, ps);
     }
-  else
-    cout << "boo!" << endl;
 }
 
 void print_result(int f, float res, float weight, v_array<char> tag)
@@ -23,7 +22,7 @@ void print_result(int f, float res, float weight, v_array<char> tag)
   if (f >= 0)
     {
       char temp[30];
-      int num = sprintf(temp, "%f", res);
+      int num = sprintf(temp, "%f ", res);
       ssize_t t;
       t = write(f, temp, num);
       if (t != num) 
@@ -37,6 +36,13 @@ void print_result(int f, float res, float weight, v_array<char> tag)
 	if (t != (ssize_t) (sizeof(char)*tag.index()))
 	  cerr << "write error" << endl;
       }
+      if(global.active && weight >= 0)
+	{
+	  num = sprintf(temp, " %f", weight);
+	  t = write(f, temp, num);
+	  if (t != num)
+	    cerr << "write error" << endl;
+	}
       temp[0] = '\n';
       t = write(f, temp, 1);     
       if (t != 1) 
@@ -47,7 +53,8 @@ void print_result(int f, float res, float weight, v_array<char> tag)
 void set_mm(double label)
 {
   global.min_label = min(global.min_label, label);
-  global.max_label = max(global.max_label, label);
+  if (label != FLT_MAX)
+    global.max_label = max(global.max_label, label);
 }
 
 void noop_mm(double label)

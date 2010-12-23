@@ -16,7 +16,6 @@ void print_result(int f, float res, v_array<char> tag);
 
 struct gd_vars
 { 
-  float eta;//learning rate control.
   float power_t;
 
   gd_vars()
@@ -24,7 +23,6 @@ struct gd_vars
 
   void init()
   {
-    eta = 0.1;
     power_t = 0.;
   }
 };
