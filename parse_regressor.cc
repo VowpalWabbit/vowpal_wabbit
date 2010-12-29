@@ -106,6 +106,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
       size_t local_num_bits;
       regressor.read((char *)&local_num_bits, sizeof(local_num_bits));
       if (!initialized){
+	global.default_bits = false;
 	global.num_bits = local_num_bits;
       }
       else 
