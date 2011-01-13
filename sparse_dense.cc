@@ -26,17 +26,11 @@ float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, 
 
 void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update)
 {
-  float mult = 1 - global.weight_decay;
+  float mult = 1 - global.weight_decay_sparse;
   float new_weight;
   for (feature* f = begin; f!= end; f++) {
-    new_weight = mult * weights[(f->weight_index + offset) & mask] + f->x * update;
-    /*
-    cout << "mult " << mult << ", ";
-    cout << "index " << ((f->weight_index + offset) & mask) << ", ";
-    cout << "weight " << weights[(f->weight_index + offset) & mask] << ", ";
-    cout << "f->x " << f->x << ", ";
-    cout << "update " << update << endl;
-    */
+    // w <- eta*(y-yhat) + (1-lambda)w
+    new_weight = f->x * update + mult * weights[(f->weight_index + offset) & mask];
     weights[(f->weight_index + offset) & mask] = new_weight;
   }
 } 

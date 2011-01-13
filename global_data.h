@@ -94,6 +94,7 @@ struct global_data {
   float eta;//learning rate control.
   float eta_decay_rate;
   float weight_decay;
+  float weight_decay_sparse;
 
   regressor* reg;
 };

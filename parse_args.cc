@@ -76,6 +76,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quiet", "Don't output diagnostics")
     ("rank", po::value<size_t>(&global.rank)->default_value(0), "rank for matrix factorization.")
     ("weight_decay", po::value<float>(&global.weight_decay)->default_value(0.), "weight decay.")
+    ("weight_decay_sparse", po::value<float>(&global.weight_decay_sparse)->default_value(0.), "weight decay for sparse regularization.")
     ("random_weights", po::value<bool>(&global.random_weights), "make initial weights random")
     ("raw_predictions,r", po::value< string >(), 
      "File to output unnormalized predictions to")
