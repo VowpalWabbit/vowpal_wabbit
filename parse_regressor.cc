@@ -257,12 +257,22 @@ void dump_regressor(string reg_name, regressor &r)
 	    }
 	}
       else
-	for (size_t k = 0; k < global.lda; k++)
-	  {
-	    weight v = r.weight_vectors[i%num_threads][(stride*i+k)/num_threads];
-	    io_temp.write_file(f,(char *)&i, sizeof (i));
-	    io_temp.write_file(f,(char *)&v, sizeof (v));
-	  }
+	{
+	  int K;
+	  
+	  if (global.lda != 0)
+	    K = global.lda;
+	  else
+	    K = global.rank*2+1;
+	  
+	  for (size_t k = 0; k < K; k++)
+	    {
+	      weight v = r.weight_vectors[i%num_threads][(stride*i+k)/num_threads];
+	      uint32_t ndx = stride*i+k;
+	      io_temp.write_file(f,(char *)&ndx, sizeof (ndx));
+	      io_temp.write_file(f,(char *)&v, sizeof (v));
+	    }
+	}
     }
 
   rename(start_name.c_str(),reg_name.c_str());
