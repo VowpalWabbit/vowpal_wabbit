@@ -18,8 +18,8 @@ loss       last        counter   weight      label  predict features
 mean score = -9.034981
 0.000000   0.000000        174    174.0    unknown   0.0000       17
 0.000000   0.000000        348    348.0    unknown   0.0000        2
-mean score = -8.634850
-mean score = -8.261468
+mean score = -8.634851
+mean score = -8.261467
 0.000000   0.000000        696    696.0    unknown   0.0000      143
 mean score = -8.311677
 
