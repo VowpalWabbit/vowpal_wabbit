@@ -204,6 +204,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     {
       global.default_bits = false;
       global.num_bits = vm["bit_precision"].as< size_t>();
+      if (global.num_bits > 29)
+	{
+	  cout << "Only 29 or fewer bits allowed.  If this is a serious limit, speak up." << endl;
+	  exit(1);
+	}
     }
 
   if(vm.count("compressed")){

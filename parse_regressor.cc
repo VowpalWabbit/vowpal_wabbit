@@ -258,12 +258,10 @@ void dump_regressor(string reg_name, regressor &r)
 	}
       else
 	{
-	  int K;
+	  size_t K;
 	  
 	  if (global.lda != 0)
 	    K = global.lda;
-	  else
-	    K = global.rank*2+1;
 	  
 	  for (size_t k = 0; k < K; k++)
 	    {

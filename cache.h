@@ -9,7 +9,7 @@ embodied in the content of this file are licensed under the BSD
 
 #include "parse_example.h"
 
-const size_t int_size = 5;
+const size_t int_size = 6;
 const size_t char_size = 2;
 
 char* run_len_decode(char *p, size_t& i);
@@ -18,7 +18,7 @@ char* run_len_encode(char *p, size_t i);
 int read_cached_features(parser* p, void* ec);
 void cache_tag(io_buf& cache, v_array<char> tag);
 void cache_features(io_buf& cache, example* ae);
-void output_int(io_buf& cache, size_t s);
+void output_byte(io_buf& cache, unsigned char s);
 void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end);
 
 #endif
