@@ -292,7 +292,7 @@ void setup_cg(gd_thread_params t)
 		    {// we stepped to far last time, step back
 		      step_size *= 0.5;
 		      if (!global.quiet)
-			fprintf(stderr, "backstep\t%e\n", -step_size);
+			fprintf(stderr, "\t\t\t\tbackstep\t%e\n", -step_size);
 		      update_weight(reg,- step_size);
 		      zero_derivative(reg);
 		      loss_sum = 0.;
