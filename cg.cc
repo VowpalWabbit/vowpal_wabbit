@@ -263,6 +263,15 @@ void setup_cg(gd_thread_params t)
   double previous_d_mag=0;
   size_t current_pass = 0;
   double previous_loss_sum = 0;
+
+  if (!global.quiet)
+    {
+      const char * header_fmt = "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
+      fprintf(stderr, header_fmt,
+	      "avg. loss", "mix fraction", "curvature", "dir. magnitude", "step size", "d_mag*step/examples");
+      cerr.precision(5);
+    }
+
   while ( true )
     {
       if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
@@ -276,10 +285,14 @@ void setup_cg(gd_thread_params t)
 		{
 		  if (global.regularization > 0.)
 		    loss_sum += add_regularization(reg,global.regularization*importance_weight_sum);
+		  if (!global.quiet)
+		    fprintf(stderr, "%-f\t", loss_sum / importance_weight_sum);
+		    
 		  if (current_pass > 0 && loss_sum > previous_loss_sum)
 		    {// we stepped to far last time, step back
 		      step_size *= 0.5;
-		      cout << "backstepping, new step_size = " << step_size << endl;
+		      if (!global.quiet)
+			fprintf(stderr, "backstep\t%e\n", -step_size);
 		      update_weight(reg,- step_size);
 		      zero_derivative(reg);
 		      loss_sum = 0.;
@@ -298,20 +311,27 @@ void setup_cg(gd_thread_params t)
 		      float new_d_mag = derivative_magnitude(reg);
 		      previous_d_mag = new_d_mag;
 		      
+		      if (!global.quiet)
+			fprintf(stderr, "%f\t", mix_frac);
+		      
 		      update_direction(reg, mix_frac);
 		      gradient_pass = false;//now start computing curvature
 		    }
 		}
 	      else // just finished all second gradients
 		{
+		  float d_mag = direction_magnitude(reg);
 		  if (global.regularization > 0.)
-		    curvature += global.regularization*direction_magnitude(reg)*importance_weight_sum;
-		  if (curvature == 0.)
+		    curvature += global.regularization*d_mag*importance_weight_sum;
+		  float dd = derivative_in_direction(reg);
+		  if (curvature == 0. && dd != 0.)
 		    {
 		      cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
 		      exit(1);
 		    }
-		  step_size = - derivative_in_direction(reg)/curvature;
+		  step_size = - dd/curvature;
+		  if (!global.quiet)
+		    fprintf(stderr, "%-e\t%-e\t%-e\t%-f\n", curvature / importance_weight_sum, d_mag, step_size,d_mag*step_size/importance_weight_sum);
 		  predictions.erase();
 		  update_weight(reg,step_size);
 		  gradient_pass = true;
@@ -347,14 +367,18 @@ void setup_cg(gd_thread_params t)
 	{
 	  if (example_number == predictions.index())//do one last update
 	    {
+	      float d_mag = direction_magnitude(reg);
 	      if (global.regularization > 0.)
-		curvature += global.regularization*direction_magnitude(reg)*importance_weight_sum;
-	      if (curvature == 0.)
+		curvature += global.regularization*d_mag*importance_weight_sum;
+	      float dd = derivative_in_direction(reg);
+	      if (curvature == 0. && dd != 0.)
 		{
 		  cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
 		  exit(1);
 		}
-	      float step_size = - derivative_in_direction(reg)/(max(curvature,1.));
+	      float step_size = - dd/(max(curvature,1.));
+	      if (!global.quiet)
+		fprintf(stderr, "%-e\t%-e\t%-e\t%-f\n", curvature / importance_weight_sum, d_mag, step_size,d_mag*step_size/importance_weight_sum);
 	      update_weight(reg,step_size);
 	    }
 	  if (global.local_prediction > 0)

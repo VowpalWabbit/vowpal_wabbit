@@ -347,7 +347,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	}
     }
   if (passes > 1 && !par->resettable)
-    cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
+    {
+      cerr << global.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
+      exit(1);
+    }
   par->input->count = par->input->files.index();
   if (!quiet)
     cerr << "num sources = " << par->input->files.index() << endl;

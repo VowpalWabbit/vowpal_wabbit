@@ -170,7 +170,13 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("conjugate_gradient")) {
     global.conjugate_gradient = true;
     global.stride = 8;
-    cout << "enabling conjugate gradient based optimization" << endl;
+    if (!global.quiet)
+      cerr << "enabling conjugate gradient based optimization" << endl;
+    if (global.numpasses < 2)
+      {
+	cout << "you must make at least 2 passes to use conjugate gradient" << endl;
+	exit(1);
+      }
   }
 
   if (vm.count("version") || argc == 1) {
