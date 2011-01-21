@@ -25,6 +25,7 @@ void initialize_regressor(regressor &r)
   r.weight_vectors = (weight **)malloc(num_threads * sizeof(weight*));
   for (size_t i = 0; i < num_threads; i++)
     {
+      cout << "global.stride = " << global.stride << endl;
       r.weight_vectors[i] = (weight *)calloc(global.stride*length/num_threads, sizeof(weight));
       if (r.weight_vectors[i] == NULL)
         {
