@@ -189,6 +189,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if(vm.count("ngram")){
     global.ngram = vm["ngram"].as<size_t>();
     if(!vm.count("skip_gram")) cout << "You have chosen to generate " << global.ngram << "-grams" << endl;
+    if(vm.count("sort_features"))
+      {
+	cout << "ngram is incompatible with sort_features.  " << endl;
+	exit(1);
+      }
   }
   if(vm.count("skips"))
     {
