@@ -28,10 +28,17 @@ void* gd_mf_thread(void *in)
   size_t thread_num = params->thread_num;
   example* ec = NULL;
 
+  size_t current_pass = 0;
   while ( true )
     {//this is a poor man's select operation.
       if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
 	{
+
+	  if (ec->pass != current_pass) {
+	    global.eta *= global.eta_decay_rate;
+	    current_pass = ec->pass;
+	  }
+
 	  //cout << ec->eta_round << endl;
 	  mf_inline_train(*(params->vars), reg, ec, thread_num, ec->eta_round);
 	  finish_example(ec);
@@ -52,12 +59,14 @@ void* gd_mf_thread(void *in)
       else if (thread_done(thread_num))
 	{
 
-	  for (size_t i = 0; i < global.length(); i++) {
-	    weight* weights_for_w = & (reg.weight_vectors[thread_num][i*global.stride]);
-
-	    for (size_t k = 0; k <= 2*global.rank; k++)
-	      weights_for_w[k] *= pow(1 - global.weight_decay, global.weighted_examples);
-	  }
+	  // decay all weights by (1-lambda)^t if global.weight_decay is set
+	  if (global.weight_decay > 0)
+	    for (size_t i = 0; i < global.length(); i++) {
+	      weight* weights_for_w = & (reg.weight_vectors[thread_num][i*global.stride]);
+	      
+	      for (size_t k = 0; k <= 2*global.rank; k++)
+		weights_for_w[k] *= pow(1 - global.weight_decay, global.weighted_examples);
+	    }
 
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
@@ -137,6 +146,15 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
       // use topic_predictions for constant + linear update
       update = reg.loss->getUpdate(ec->topic_predictions[0], ld->label, global.eta/pow(ec->example_t,vars.power_t) / 3 * ld->weight, ec->total_sum_feat_sq);
 
+      cout << "ec->topic_predictions[0]: " << ec->topic_predictions[0] << endl;
+      cout << "ld->label: " << ld->label << endl;
+      cout << "global.eta: " << global.eta << endl;
+      cout << "power_t: " << vars.power_t << endl;
+      cout << "ld->weight: " << ld->weight << endl;
+      cout << "eta: " <<  global.eta/pow(ec->example_t,vars.power_t) / 3 * ld->weight << endl;
+      cout << "ec->total_sum_feat_sq: " << ec->total_sum_feat_sq << endl;
+      cout << "linear update: " << update << endl;
+
       // linear update
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	sd_offset_update(weights, thread_mask, ec->atomics[*i].begin, ec->atomics[*i].end, 0, update);
@@ -170,6 +188,9 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 	      // \eta (y-\hat{y}) * norm
 	      update = reg.loss->getUpdate(sum_topic_predictions, residual_label, global.eta/pow(ec->example_t,vars.power_t) / 3 * ld->weight, norm);
 
+	      cout << "left update: " << update << endl;
+
+
 	      // update l^k weights
 	      for (size_t k = 1; k <= global.rank; k++)
 		{
@@ -196,6 +217,8 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 	      norm = ec->sum_feat_sq[(int)(*i)[1]] * sum_lk_xl_sq;
 	      // \eta (y-\hat{y}) * norm
 	      update = reg.loss->getUpdate(sum_topic_predictions, residual_label, global.eta/pow(ec->example_t,vars.power_t) / 3 * ld->weight, norm);
+
+	      cout << "right update: " << update << endl;
 
 	      // update l^k weights
 	      for (size_t k = 1; k <= global.rank; k++)
