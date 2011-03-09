@@ -647,9 +647,15 @@ void *main_parse_loop(void *in)
 	{
 	  reset_source(global.num_bits, p);
 	  global.passes_complete++;
-	  if (global.passes_complete < global.numpasses)
+	  /*
+	  if (global.passes_complete < global.numpasses) {
+	    cout << "modifying global.eta from " << global.eta;
 	    global.eta *= global.eta_decay_rate;
+	    cout << " to " << global.eta << endl;
+	  }
 	  else
+	  */
+	  if (global.passes_complete == global.numpasses)
 	    {
 	      pthread_mutex_lock(&examples_lock);
 	      done = true;

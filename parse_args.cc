@@ -366,6 +366,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       if (!global.quiet)
 	cerr << "only testing" << endl;
       global.training = false;
+      global.weight_decay = 0;
     }
   else 
     {
