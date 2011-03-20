@@ -80,8 +80,8 @@ int read_cached_features(parser* p, void* ec)
       size_t storage = *(size_t *)c;
       c += sizeof(size_t);
       p->input->set(c);
-      total += storage;
-      if (buf_read(*input,c,storage) < storage) {
+      total += storage; 
+     if (buf_read(*input,c,storage) < storage) {
 	cerr << "truncated example! wanted: " << storage << " bytes" << endl;
 	return 0;
       }
@@ -104,6 +104,7 @@ int read_cached_features(parser* p, void* ec)
 	    }
 	  *our_sum_feat_sq += f.x*f.x;
           size_t diff = f.weight_index >> 2;
+
           int32_t s_diff = ZigZagDecode(diff);
 	  if (s_diff < 0)
 	    ae->sorted = false;
@@ -129,14 +130,17 @@ char* run_len_encode(char *p, size_t i)
   return p;
 }
 
-inline uint32_t ZigZagEncode(int32_t n) { return (n << 1) ^ (n >> 28); }
+inline uint32_t ZigZagEncode(int32_t n) { 
+  uint32_t ret = (n << 1) ^ (n >> 31);
+  return ret;
+}
 
-void output_int(io_buf& cache, size_t s)
+void output_byte(io_buf& cache, unsigned char s)
 {
   char *c;
   
-  buf_write(cache, c, int_size);
-  c = run_len_encode(c, s);
+  buf_write(cache, c, 1);
+  *(c++) = s;
   cache.set(c);
 }
 
@@ -191,7 +195,7 @@ void cache_tag(io_buf& cache, v_array<char> tag)
 void cache_features(io_buf& cache, example* ae)
 {
   cache_tag(cache,ae->tag);
-  output_int(cache, ae->indices.index());
+  output_byte(cache, ae->indices.index());
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end);
 }

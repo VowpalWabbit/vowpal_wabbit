@@ -347,7 +347,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	}
     }
   if (passes > 1 && !par->resettable)
-    cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
+    {
+      cerr << global.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
+      exit(1);
+    }
   par->input->count = par->input->files.index();
   if (!quiet)
     cerr << "num sources = " << par->input->files.index() << endl;
@@ -541,6 +544,19 @@ void setup_example(parser* p, example* ae)
   ae->global_weight = p->lp->get_weight(ae->ld);
   p->t += ae->global_weight;
   ae->example_t = p->t;
+
+  if (! global.ignore.empty())
+    {
+      for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
+	for (vector<unsigned char>::iterator j = global.ignore.begin(); j != global.ignore.end();j++) 
+	  if (*i == *j)
+	    {//delete namespace
+	      ae->atomics[*i].erase();
+	      memmove(i,i+1,ae->indices.end - (i+1));
+	      ae->indices.end--;
+	      i--;
+	    }
+    }
 
   //add constant feature
   size_t constant_namespace = 128;
