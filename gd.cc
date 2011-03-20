@@ -24,11 +24,18 @@ void* gd_thread(void *in)
   regressor reg = params->reg;
   size_t thread_num = params->thread_num;
   example* ec = NULL;
+  size_t current_pass = 0;
 
   while ( true )
     {//this is a poor man's select operation.
       if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
 	{
+	  if (ec->pass != current_pass)
+	    {
+	      global.eta *= global.eta_decay_rate;
+	      current_pass = ec->pass;
+	    }
+	  
 	  inline_train(reg, ec, thread_num, ec->eta_round);
 	  finish_example(ec);
 	}
@@ -301,14 +308,14 @@ void offset_quad_update(weight* weights, feature& page_feature, v_array<feature>
 void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
 {
   if (fabs(update)>0.)
-  {
-    size_t thread_mask = global.thread_mask;
-    if (global.adaptive)
     {
-      label_data* ld = (label_data*)ec->ld;
-      float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-
-      //assert((g>0 && fabs(update)>0) || (g==0 && update==0));
+      size_t thread_mask = global.thread_mask;
+      if (global.adaptive)
+	{
+	  label_data* ld = (label_data*)ec->ld;
+	  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+	  
+	  //assert((g>0 && fabs(update)>0) || (g==0 && update==0));
       weight* weights = reg.weight_vectors[thread_num];
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
       {

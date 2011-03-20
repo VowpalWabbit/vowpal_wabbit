@@ -630,9 +630,7 @@ void *main_parse_loop(void *in)
 	{
 	  reset_source(global.num_bits, p);
 	  global.passes_complete++;
-	  if (global.passes_complete < global.numpasses)
-	    global.eta *= global.eta_decay_rate;
-	  else
+	  if (global.passes_complete >= global.numpasses)
 	    {
 	      pthread_mutex_lock(&examples_lock);
 	      done = true;

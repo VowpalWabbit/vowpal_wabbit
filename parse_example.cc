@@ -13,7 +13,7 @@ embodied in the content of this file are licensed under the BSD
 
 size_t hashstring (substring s, unsigned long h)
 {
-  size_t ret = h;
+  size_t ret = 0;
   char *p = s.start;
   while (p != s.end)
     if (isdigit(*p))
@@ -21,7 +21,7 @@ size_t hashstring (substring s, unsigned long h)
     else
       return uniform_hash((unsigned char *)s.start, s.end - s.start, h);
 
-  return ret;
+  return ret + h;
 }
 
 size_t hashall (substring s, unsigned long h)
