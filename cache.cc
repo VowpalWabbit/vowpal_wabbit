@@ -41,6 +41,10 @@ size_t read_cached_tag(io_buf& cache, example* ae)
   return tag_size+sizeof(tag_size);
 }
 
+struct one_float {
+  float f;
+} __attribute__((packed));
+
 int read_cached_features(parser* p, void* ec)
 {
   example* ae = (example*)ec;
@@ -99,7 +103,7 @@ int read_cached_features(parser* p, void* ec)
 	  if (f.weight_index & neg_1) 
 	    f.x = -1.;
 	  else if (f.weight_index & general)	    {
-	      f.x = *(float *)c;
+	      f.x = ((one_float *)c)->f;
 	      c += sizeof(float);
 	    }
 	  *our_sum_feat_sq += f.x*f.x;
