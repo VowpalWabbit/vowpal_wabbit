@@ -257,13 +257,22 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
+  for (size_t i = 0; i < 256; i++)
+    global.ignore[i] = false;
+  global.ignore_some = false;
+
   if (vm.count("ignore"))
     {
-      global.ignore = vm["ignore"].as< vector<unsigned char> >();
+      vector<unsigned char> ignore = vm["ignore"].as< vector<unsigned char> >();
+      for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++) 
+	{
+	  global.ignore[*i] = true;
+	  global.ignore_some = true;
+	}
       if (!global.quiet)
 	{
 	  cerr << "ignoring namespaces beginning with: ";
-	  for (vector<unsigned char>::iterator i = global.ignore.begin(); i != global.ignore.end();i++) 
+	  for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++) 
 	    cerr << *i << " ";
 
 	  cerr << endl;	  
