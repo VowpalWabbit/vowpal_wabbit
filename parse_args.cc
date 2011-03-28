@@ -295,6 +295,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (!vm.count("lda"))
     global.eta *= pow(par->t, vars.power_t);
 
+  parse_source_args(vm,par,global.quiet,global.numpasses);
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
 
   if (vm.count("active_c0"))
@@ -328,7 +329,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(global.eta_decay_rate, global.numpasses) 
 	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
   
-  parse_source_args(vm,par,global.quiet,global.numpasses);
+  //parse_source_args(vm,par,global.quiet,global.numpasses);
 
 
   if (!global.quiet)
