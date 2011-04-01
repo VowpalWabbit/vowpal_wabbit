@@ -40,6 +40,10 @@ size_t cache_numbits(io_buf* buf, int filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+  if(v_length>29){
+      cerr << "cache version too long, cache file is probably invalid" << endl;
+      exit(1);
+  }
   char t[v_length];
   buf->read_file(filepointer,t,v_length);
   if (strcmp(t,version.c_str()) != 0)

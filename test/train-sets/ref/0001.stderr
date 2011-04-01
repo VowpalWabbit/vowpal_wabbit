@@ -1,7 +1,7 @@
-final_regressor = models/0001.model
 creating cache_file = train-sets/0001.dat.cache
 Reading from train-sets/0001.dat
 num sources = 1
+final_regressor = models/0001.model
 Num weight bits = 17
 learning rate = 2.56e+06
 initial_t = 128000
