@@ -64,6 +64,8 @@ struct global_data {
   float lda_rho;
   float lda_D;
 
+  string text_regressor_name;
+
   size_t num_threads () { return 1 << thread_bits; };
   size_t num_partitions () { return 1 << partition_bits; };
   size_t length () { return 1 << num_bits; };

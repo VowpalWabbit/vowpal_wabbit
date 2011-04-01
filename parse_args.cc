@@ -45,6 +45,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay), 
      "Set Decay factor for learning_rate between passes")
     ("final_regressor,f", po::value< string >(), "Final regressor")
+    ("readable_model", po::value< string >(), "Output human-readable final regressor")
     ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
     ("delayed_global", "Do delayed global updates")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
@@ -296,6 +297,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     global.eta *= pow(par->t, vars.power_t);
 
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
+  if (vm.count("readable_model"))
+    global.text_regressor_name = vm["readable_model"].as<string>();
 
   if (vm.count("active_c0"))
     global.active_c0 = vm["active_c0"].as<float>();
