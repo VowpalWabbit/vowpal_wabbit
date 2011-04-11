@@ -555,7 +555,7 @@ void setup_example(parser* p, example* ae)
 	if (global.ignore[*i])
 	  {//delete namespace
 	    ae->atomics[*i].erase();
-	    memmove(i,i+1,ae->indices.end - (i+1));
+	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(size_t));
 	    ae->indices.end--;
 	    i--;
 	  }
