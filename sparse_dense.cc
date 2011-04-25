@@ -68,26 +68,6 @@ float offset_quad_predict(weight* weights, feature& page_feature, v_array<featur
   return (prediction*page_feature.x);
 }
 
-void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, size_t mask)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-
-  for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
-    cout << '\t' << page_feature.space << '^' << page_feature.feature << '^' 
-	 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/global.stride) & mask)
-	 << ':' << ele->x*page_feature.x
-	 << ':' << weights[(halfhash + ele->weight_index) & mask];
-}
-
-void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    cout << '\t' << (((halfhash + ele->weight_index)/global.stride) & mask) 
-	 << ':' << (ele->x*page_feature.x)
-	 << ':' << weights[(halfhash + ele->weight_index) & mask];
-}
-
 float single_quad_weight(weight* weights, feature& page_feature, feature* offer_feature, size_t mask)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;

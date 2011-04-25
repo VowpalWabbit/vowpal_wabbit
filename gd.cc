@@ -4,6 +4,7 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 #include <fstream>
+#include <sstream>
 #include <float.h>
 #include <netdb.h>
 #include <string.h>
@@ -22,6 +23,7 @@ void* gd_thread(void *in)
 {
   gd_thread_params* params = (gd_thread_params*) in;
   regressor reg = params->reg;
+
   size_t thread_num = params->thread_num;
   example* ec = NULL;
   size_t current_pass = 0;
@@ -205,6 +207,49 @@ float inline_offset_predict(regressor &reg, example* &ec, size_t thread_num, siz
   return prediction;
 }
 
+struct string_value {
+  float v;
+  string s;
+  friend bool operator<(const string_value& first, const string_value& second);
+};
+
+bool operator<(const string_value& first, const string_value& second)
+{
+  return fabs(first.v) > fabs(second.v);
+}
+
+#include <algorithm>
+
+void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, size_t mask, vector<string_value>& features)
+{
+  size_t halfhash = quadratic_constant * page_feature.weight_index;
+
+  for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
+    {
+      ostringstream tempstream;
+      tempstream << '\t' << page_feature.space << '^' << page_feature.feature << '^' 
+		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/global.stride) & mask)
+		 << ':' << ele->x*page_feature.x
+		 << ':' << weights[(halfhash + ele->weight_index) & mask];
+      string_value sv = {weights[ele->weight_index & mask]*ele->x, tempstream.str()};
+      features.push_back(sv);
+    }
+}
+
+void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, vector<string_value>& features)
+{
+  size_t halfhash = quadratic_constant * page_feature.weight_index;
+  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
+    {
+      ostringstream tempstream;
+      cout << '\t' << (((halfhash + ele->weight_index)/global.stride) & mask) 
+	   << ':' << (ele->x*page_feature.x)
+	   << ':' << weights[(halfhash + ele->weight_index) & mask];
+      string_value sv = {weights[ele->weight_index & mask]*ele->x, tempstream.str()};
+      features.push_back(sv);
+    }
+}
+
 void print_features(regressor &reg, example* &ec)
 {
   weight* weights = reg.weight_vectors[0];
@@ -227,34 +272,45 @@ void print_features(regressor &reg, example* &ec)
     }
   else
     {
+      vector<string_value> features;
+      
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
 	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	    {
-	      cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
-	      
-	      cout << ':' << weights[f->weight_index & thread_mask];
+	      ostringstream tempstream;
+	      tempstream << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
+	      tempstream  << ':' << weights[f->weight_index & thread_mask];
 	      if(global.adaptive)
-		cout << '@' << weights[(f->weight_index+1) & thread_mask];
+		tempstream << '@' << weights[(f->weight_index+1) & thread_mask];
+	      string_value sv = {weights[f->weight_index & thread_mask]*f->x, tempstream.str()};
+	      features.push_back(sv);
 	    }
 	else
 	  for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
 	    {
-	      cout << '\t';
+	      ostringstream tempstream;
 	      if ( f->weight_index == (constant&global.mask)*stride)
-		cout << "Constant:";
-	      cout << f->weight_index/stride << ':' << f->x;
-	      cout << ':' << weights[f->weight_index & thread_mask];
+		tempstream << "Constant:";
+	      tempstream << f->weight_index/stride << ':' << f->x;
+	      tempstream << ':' << weights[f->weight_index & thread_mask];
 	      if(global.adaptive)
-		cout << '@' << weights[(f->weight_index+1) & thread_mask];
+		tempstream << '@' << weights[(f->weight_index+1) & thread_mask];
+	      string_value sv = {weights[f->weight_index & thread_mask]*f->x, tempstream.str()};
+	      features.push_back(sv);
 	    }
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
 	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
 	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask);
+	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask, features);
 	else
 	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask);      
+	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask, features);      
+
+      sort(features.begin(),features.end());
+
+      for (vector<string_value>::iterator sv = features.begin(); sv!= features.end(); sv++)
+	cout << '\t' << (*sv).s;
       cout << endl;
     }
 }
