@@ -144,7 +144,7 @@ double derivative_magnitude(regressor& reg, float* old_first_derivative)
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
+  weight* weights = reg.weight_vectors[0];
   for(uint32_t i = 0; i < length; i++)
     {
       ret += weights[stride*i+1]*weights[stride*i+1]*weights[stride*i+3];
@@ -155,10 +155,10 @@ double derivative_magnitude(regressor& reg, float* old_first_derivative)
 }
 
 void zero_derivative(regressor& reg)
-{//compute derivative magnitude & shift new derivative to old
+{//set derivative to 0.
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];//shift by one for ease of indexing.
+  weight* weights = reg.weight_vectors[0];
   for(uint32_t i = 0; i < length; i++)
     weights[stride*i+1] = 0;
 }
@@ -215,6 +215,20 @@ void finalize_preconditioner(regressor& reg,float regularization)
   }
 }
 
+void zero_state(regressor& reg, float* old_first_derivative)
+{
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];
+  for(uint32_t i = 0; i < length; i++) 
+    {
+      old_first_derivative[i] = 0;
+      weights[stride*i+1] = 0;
+      weights[stride*i+2] = 0;
+      weights[stride*i+3] = 0;
+    }
+}
+
 double derivative_in_direction(regressor& reg, float* old_first_derivative)
 {
   double ret = 0.;
@@ -230,10 +244,9 @@ void update_direction(regressor& reg, float old_portion, float* old_first_deriva
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors[0];
+  
   for(uint32_t i = 0; i < length; i++)
-    {
-      weights[stride*i+2] = old_first_derivative[i]*weights[stride*i+3] + old_portion * weights[stride*i+2];
-    }
+    weights[stride*i+2] = old_first_derivative[i]*weights[stride*i+3] + old_portion * weights[stride*i+2];
 }
 
 void update_weight(regressor& reg, float step_size)
@@ -241,9 +254,7 @@ void update_weight(regressor& reg, float step_size)
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   for(uint32_t i = 0; i < length; i++)
-    {
-      reg.weight_vectors[0][stride*i] += step_size * reg.weight_vectors[0][stride*i+2];
-    }
+    reg.weight_vectors[0][stride*i] += step_size * reg.weight_vectors[0][stride*i+2];
 }
 
 void setup_cg(gd_thread_params t)
@@ -293,14 +304,15 @@ void setup_cg(gd_thread_params t)
 		    
 		  if (current_pass > 0 && loss_sum > previous_loss_sum)
 		    {// we stepped to far last time, step back
-		      step_size *= 0.5;
+		      if (ec->pass != 0)
+			step_size *= 0.5;//new data incoming, undo the step entirely.
 		      if (!global.quiet)
 			fprintf(stderr, "\t\t\t\tbackstep\t%e\n", -step_size);
 		      update_weight(reg,- step_size);
 		      zero_derivative(reg);
 		      loss_sum = 0.;
 		    }
-		  else
+		  else if (ec->pass != 0)
 		    {
 		      previous_loss_sum = loss_sum;
 		      loss_sum = 0.;
@@ -337,9 +349,27 @@ void setup_cg(gd_thread_params t)
 		    fprintf(stderr, "%-e\t%-e\t%-e\t%-f\n", curvature / importance_weight_sum, d_mag, step_size,d_mag*step_size/importance_weight_sum);
 		  predictions.erase();
 		  update_weight(reg,step_size);
+
 		  gradient_pass = true;
 		}//now start computing derivatives.
-	      current_pass++;
+	      if (ec->pass == 0)//new examples incoming, reset everything.
+		{
+		  zero_state(reg,old_first_derivative);//set all except weights to 0.
+		  predictions.erase();
+
+		  example_number=0;
+		  curvature=0.;
+		  gradient_pass=true;
+		  loss_sum = 0;
+		  step_size = 0.;
+		  importance_weight_sum = 0.;
+ 
+		  previous_d_mag=0;
+		  current_pass = 0;
+		  previous_loss_sum = 0;
+		}
+	      else
+		current_pass++;
 	    }
 	  if (gradient_pass)
 	    {

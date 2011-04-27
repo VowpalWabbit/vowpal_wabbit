@@ -38,6 +38,7 @@ struct global_data {
   
   size_t minibatch;
 
+  size_t pass_length;
   size_t numpasses;
   size_t passes_complete;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.

@@ -615,24 +615,29 @@ void *main_parse_loop(void *in)
   parser* p = (parser*) in;
   
   global.passes_complete = 0;
+  size_t example_number = 0;
   while(!done)
     {
       example* ae=get_unused_example();
 
-      int output = parse_atomic_example(p,ae);
-      if (output) {	
+      if (example_number != global.pass_length && parse_atomic_example(p,ae)) {	
 	setup_example(p,ae);
-
+	example_number++;
 	pthread_mutex_lock(&examples_lock);
 	parsed_index++;
 	pthread_cond_broadcast(&example_available);
 	pthread_mutex_unlock(&examples_lock);
-
       }
       else
 	{
 	  reset_source(global.num_bits, p);
 	  global.passes_complete++;
+	  if (global.passes_complete == global.numpasses && example_number == global.pass_length)
+	    {
+	      global.passes_complete = 0;
+	      global.pass_length = global.pass_length*2+1;
+	    }
+	  example_number = 0;
 	  if (global.passes_complete >= global.numpasses)
 	    {
 	      pthread_mutex_lock(&examples_lock);
