@@ -252,8 +252,11 @@ loss_function* getLossFunction(string funcName, double function_parameter) {
   } else if(funcName.compare("hinge") == 0) {
     return new hingeloss();
   } else if(funcName.compare("logistic") == 0) {
-    global.min_label = -100;
-    global.max_label = 100;
+    if (set_minmax != noop_mm)
+      {
+	global.min_label = -100;
+	global.max_label = 100;
+      }
     return new logloss();
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
     return new quantileloss(function_parameter);
