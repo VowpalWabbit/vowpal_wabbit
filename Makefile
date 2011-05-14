@@ -66,7 +66,7 @@ test: .FORCE
 	@(cd test && ./RunTests ../vw)
 
 install: vw
-	cp $(BINARIES) ~/bin
+	cp $(BINARIES) ~/bin/
 
 clean:
 	rm -f  *.o $(BINARIES) *~ $(MANPAGES)
