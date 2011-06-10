@@ -146,6 +146,7 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
       // use topic_predictions for constant + linear update
       update = reg.loss->getUpdate(ec->topic_predictions[0], ld->label, global.eta/pow(ec->example_t,vars.power_t) / 3 * ld->weight, ec->total_sum_feat_sq);
 
+      /*
       cout << "ec->topic_predictions[0]: " << ec->topic_predictions[0] << endl;
       cout << "ld->label: " << ld->label << endl;
       cout << "global.eta: " << global.eta << endl;
@@ -154,6 +155,7 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
       cout << "eta: " <<  global.eta/pow(ec->example_t,vars.power_t) / 3 * ld->weight << endl;
       cout << "ec->total_sum_feat_sq: " << ec->total_sum_feat_sq << endl;
       cout << "linear update: " << update << endl;
+      */
 
       // linear update
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
@@ -185,11 +187,11 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 
 	      // |x_l|^2 \sum_k |r^k \cdot x_r|^2
 	      float norm = ec->sum_feat_sq[(int)(*i)[0]] * sum_rk_xr_sq;
+	      //float norm = 1;
 	      // \eta (y-\hat{y}) * norm
 	      update = reg.loss->getUpdate(sum_topic_predictions, residual_label, global.eta/pow(ec->example_t,vars.power_t) / 3 * ld->weight, norm);
 
-	      cout << "left update: " << update << endl;
-
+	      //cout << "left update: " << update << endl;
 
 	      // update l^k weights
 	      for (size_t k = 1; k <= global.rank; k++)
@@ -215,10 +217,11 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 
 	      // |x_r|^2 \sum_k |l^k \cdot x_l|^2
 	      norm = ec->sum_feat_sq[(int)(*i)[1]] * sum_lk_xl_sq;
+	      //norm = 1;
 	      // \eta (y-\hat{y}) * norm
 	      update = reg.loss->getUpdate(sum_topic_predictions, residual_label, global.eta/pow(ec->example_t,vars.power_t) / 3 * ld->weight, norm);
 
-	      cout << "right update: " << update << endl;
+	      //cout << "right update: " << update << endl;
 
 	      // update l^k weights
 	      for (size_t k = 1; k <= global.rank; k++)
