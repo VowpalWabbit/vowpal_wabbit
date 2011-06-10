@@ -14,6 +14,11 @@ embodied in the content of this file are licensed under the BSD
 size_t hashstring (substring s, unsigned long h)
 {
   size_t ret = 0;
+  //trim leading whitespace
+  for(; *(s.start) <= 0x20 && s.start < s.end; s.start++);
+  //trim trailing white space
+  for(; *(s.end-1) <= 0x20 && s.end > s.start; s.end--);
+
   char *p = s.start;
   while (p != s.end)
     if (isdigit(*p))
@@ -50,7 +55,7 @@ void feature_value(substring &s, v_array<substring>& name, float &v)
     v = 1.;
     break;
   case 2:
-    v = zero_copy_float_of_substring(name[1]);
+    v = float_of_substring(name[1]);
     if (isnan(v))
       {
 	cerr << "error NaN value for feature: ";

@@ -33,21 +33,26 @@ inline void print_substring(substring s)
 
 inline float float_of_substring(substring s)
 {
-  return atof(string(s.start, s.end-s.start).c_str());
-}
-
-inline float zero_copy_float_of_substring(substring s)
-{
-  char temp = *s.end;
-  *s.end = '\0';
-  float f = atof(s.start);
-  *s.end = temp;
+  char* endptr = s.end;
+  float f = strtof(s.start,&endptr);
+  if (endptr == s.start && s.start != s.end)
+    {
+      cout << "error: " << string(s.start, s.end-s.start).c_str() << " is not a float" << endl;
+      exit(1);
+    }
   return f;
 }
 
-inline double double_of_substring(substring s)
+inline float double_of_substring(substring s)
 {
-  return atof(string(s.start, s.end-s.start).c_str());
+  char* endptr = s.end;
+  float f = strtod(s.start,&endptr);
+  if (endptr == s.start && s.start != s.end)
+    {
+      cout << "error: " << string(s.start, s.end-s.start).c_str() << " is not a double" << endl;
+      exit(1);
+    }
+  return f;
 }
 
 inline int int_of_substring(substring s)

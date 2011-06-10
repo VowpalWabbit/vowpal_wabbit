@@ -42,7 +42,7 @@ gd_vars* vw(int argc, char *argv[])
 				    regressor1, p, 
 				    final_regressor_name);
 
-  if (!global.quiet)
+  if (!global.quiet && !vm.count("conjugate_gradient"))
     {
       const char * header_fmt = "%-10s %-10s %8s %8s %10s %8s %8s\n";
       fprintf(stderr, header_fmt,

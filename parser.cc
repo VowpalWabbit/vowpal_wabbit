@@ -40,6 +40,10 @@ size_t cache_numbits(io_buf* buf, int filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+  if(v_length>29){
+      cerr << "cache version too long, cache file is probably invalid" << endl;
+      exit(1);
+  }
   char t[v_length];
   buf->read_file(filepointer,t,v_length);
   if (strcmp(t,version.c_str()) != 0)
@@ -347,7 +351,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	}
     }
   if (passes > 1 && !par->resettable)
-    cerr << global.program_name << ": Warning only one pass will occur: try using --cache_file" << endl;  
+    {
+      cerr << global.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
+      exit(1);
+    }
   par->input->count = par->input->files.index();
   if (!quiet)
     cerr << "num sources = " << par->input->files.index() << endl;
@@ -542,17 +549,16 @@ void setup_example(parser* p, example* ae)
   p->t += ae->global_weight;
   ae->example_t = p->t;
 
-  if (! global.ignore.empty())
+  if (global.ignore_some)
     {
       for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
-	for (vector<unsigned char>::iterator j = global.ignore.begin(); j != global.ignore.end();j++) 
-	  if (*i == *j)
-	    {//delete namespace
-	      ae->atomics[*i].erase();
-	      memmove(i,i+1,ae->indices.end - (i+1));
-	      ae->indices.end--;
-	      i--;
-	    }
+	if (global.ignore[*i])
+	  {//delete namespace
+	    ae->atomics[*i].erase();
+	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(size_t));
+	    ae->indices.end--;
+	    i--;
+	  }
     }
 
   //add constant feature
@@ -629,33 +635,30 @@ void *main_parse_loop(void *in)
   parser* p = (parser*) in;
   
   global.passes_complete = 0;
+  size_t example_number = 0;
   while(!done)
     {
       example* ae=get_unused_example();
 
-      int output = parse_atomic_example(p,ae);
-      if (output) {	
+      if (example_number != global.pass_length && parse_atomic_example(p,ae)) {	
 	setup_example(p,ae);
-
+	example_number++;
 	pthread_mutex_lock(&examples_lock);
 	parsed_index++;
 	pthread_cond_broadcast(&example_available);
 	pthread_mutex_unlock(&examples_lock);
-
       }
       else
 	{
 	  reset_source(global.num_bits, p);
 	  global.passes_complete++;
-	  /*
-	  if (global.passes_complete < global.numpasses) {
-	    cout << "modifying global.eta from " << global.eta;
-	    global.eta *= global.eta_decay_rate;
-	    cout << " to " << global.eta << endl;
-	  }
-	  else
-	  */
-	  if (global.passes_complete == global.numpasses)
+	  if (global.passes_complete == global.numpasses && example_number == global.pass_length)
+	    {
+	      global.passes_complete = 0;
+	      global.pass_length = global.pass_length*2+1;
+	    }
+	  example_number = 0;
+	  if (global.passes_complete >= global.numpasses)
 	    {
 	      pthread_mutex_lock(&examples_lock);
 	      done = true;

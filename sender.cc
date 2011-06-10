@@ -94,7 +94,7 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs)
 
 void send_features(int i, int j, io_buf *b, example* ec)
 {
-  output_int(*b,ec->indices.index());
+  output_byte(*b,ec->indices.index());
   
   for (size_t* index = ec->indices.begin; index != ec->indices.end; index++)
     if (second_of_pair[*index])

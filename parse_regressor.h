@@ -24,6 +24,6 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 void initialize_regressor(regressor &r);
 
 void finalize_regressor(string reg_name, regressor &r);
-void dump_regressor(string reg_name, regressor &r);
+void dump_regressor(string reg_name, regressor &r, bool as_text=0);
 
 #endif

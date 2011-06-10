@@ -30,7 +30,7 @@ template<class T> inline void push(v_array<T>& v, const T &new_ele)
   if(v.end == v.end_array)
     {
       size_t old_length = v.end_array - v.begin;
-            size_t new_length = 2 * old_length + 3;
+      size_t new_length = 2 * old_length + 3;
       //      size_t new_length = old_length + 1;
       v.begin = (T *)realloc(v.begin,sizeof(T) * new_length);
       v.end = v.begin + old_length;
@@ -38,7 +38,6 @@ template<class T> inline void push(v_array<T>& v, const T &new_ele)
     }
   *(v.end++) = new_ele;
 }
-
 
 template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
 {

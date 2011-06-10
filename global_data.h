@@ -38,12 +38,14 @@ struct global_data {
   
   size_t minibatch;
 
+  size_t pass_length;
   size_t numpasses;
   size_t passes_complete;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   vector<string> pairs; // pairs of features to cross.
-  vector<unsigned char> ignore;
+  bool ignore_some;
+  bool ignore[256];//a set of namespaces to ignore
   size_t ngram;//ngrams to generate.
   size_t skips;//skips in ngrams.
   size_t queries;
@@ -62,6 +64,8 @@ struct global_data {
   float lda_alpha;
   float lda_rho;
   float lda_D;
+
+  string text_regressor_name;
 
   size_t num_threads () { return 1 << thread_bits; };
   size_t num_partitions () { return 1 << partition_bits; };
@@ -93,8 +97,6 @@ struct global_data {
   float dump_interval;// when should I update for the user.
   float eta;//learning rate control.
   float eta_decay_rate;
-  float weight_decay;
-  float weight_decay_sparse;
 
   regressor* reg;
 };
