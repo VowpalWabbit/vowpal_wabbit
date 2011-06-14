@@ -227,9 +227,11 @@ float mf_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
 {
   float prediction = mf_inline_predict(r, ex, thread_num);
 
+  ex->threads_to_finish = 0;
+
   ex->partial_prediction = prediction;
   mf_local_predict(ex, global.num_threads(),vars,r);
-  
+
   if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
     delay_example(ex,global.num_threads());
   else
