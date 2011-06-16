@@ -373,6 +373,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
       if (global.rank > 0)
 	cerr << "rank = " << global.rank << endl;
+      if (global.regularization > 0)
+	cerr << "regularization = " << global.regularization << endl;
     }
 
   if (vm.count("predictions")) {

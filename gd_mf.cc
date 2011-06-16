@@ -125,11 +125,15 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
       label_data* ld = (label_data*)ec->ld;
 
       // use final prediction to get update size
-      update = reg.loss->getUpdate(ec->final_prediction, ld->label, global.eta/pow(ec->example_t,vars.power_t) / 3. * ld->weight, 1.); //ec->total_sum_feat_sq);
+      // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
+      float eta_t = global.eta/pow(ec->example_t,vars.power_t) / 3. * ld->weight;
+      update = reg.loss->getUpdate(ec->final_prediction, ld->label, eta_t, 1.); //ec->total_sum_feat_sq);
+
+      float regularization = eta_t * global.regularization;
 
       // linear update
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-	sd_offset_update(weights, thread_mask, ec->atomics[*i].begin, ec->atomics[*i].end, 0, update);
+	sd_offset_update(weights, thread_mask, ec->atomics[*i].begin, ec->atomics[*i].end, 0, update, regularization);
       
       // quadratic update
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -140,19 +144,19 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 	      // update l^k weights
 	      for (size_t k = 1; k <= global.rank; k++)
 		{
-		  // (r^k \cdot x_r)
+		  // r^k \cdot x_r
 		  float r_dot_x = ec->topic_predictions[2*k];
-		  // update l^k with above
-		  sd_offset_update(weights, thread_mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k, update*r_dot_x);
+		  // l^k <- l^k + update * (r^k \cdot x_r) * x_l
+		  sd_offset_update(weights, thread_mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k, update*r_dot_x, regularization);
 		}
 
 	      // update r^k weights
 	      for (size_t k = 1; k <= global.rank; k++)
 		{
-		  // (l^k \cdot x_l)
+		  // l^k \cdot x_l
 		  float l_dot_x = ec->topic_predictions[2*k-1];
-		  // update r^k with above
-		  sd_offset_update(weights, thread_mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+global.rank, update*l_dot_x);
+		  // r^k <- r^k + update * (l^k \cdot x_l) * x_r
+		  sd_offset_update(weights, thread_mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+global.rank, update*l_dot_x, regularization);
 		}
 
 	    }
