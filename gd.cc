@@ -60,7 +60,7 @@ void* gd_thread(void *in)
 	    {
 	      uint32_t length = 1 << global.num_bits;
 	      size_t stride = global.stride;
-	      float gravity = global.l_1_regularization * update_sum;
+	      float gravity = global.l_1_regularization * global.update_sum;
 	      for(uint32_t i = 0; i < length; i++)
 		reg.weight_vectors[0][stride*i] = real_weight(reg.weight_vectors[0][stride*i],gravity);
 	    }
@@ -174,7 +174,7 @@ float inline_l1_predict(regressor &reg, example* &ec, size_t thread_num)
   size_t thread_mask = global.thread_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
-      prediction += sd_truncadd(weights,thread_mask,ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1], global.l_1_regularization * update_sum);
+      prediction += sd_truncadd(weights,thread_mask,ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1], global.l_1_regularization * global.update_sum);
     }
   
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -186,7 +186,7 @@ float inline_l1_predict(regressor &reg, example* &ec, size_t thread_num)
 	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
 	    prediction += one_pf_quad_predict_trunc(weights,*temp.begin,
-						    ec->atomics[(int)(*i)[1]],thread_mask);
+						    ec->atomics[(int)(*i)[1]],thread_mask, global.l_1_regularization * global.update_sum);
 	}
     }
   
@@ -259,13 +259,15 @@ void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_d
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
 
+  float gravity = global.l_1_regularization * global.update_sum;
+
   for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       ostringstream tempstream;
       tempstream << '\t' << page_feature.space << '^' << page_feature.feature << '^' 
 		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/global.stride) & mask)
 		 << ':' << ele->x*page_feature.x
-		 << ':' << weights[(halfhash + ele->weight_index) & mask];
+		 << ':' << real_weight(weights[(halfhash + ele->weight_index) & mask], gravity);
       string_value sv = {weights[ele->weight_index & mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
@@ -273,13 +275,14 @@ void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_d
 
 void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, vector<string_value>& features)
 {
+  float gravity = global.l_1_regularization * global.update_sum;
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       ostringstream tempstream;
       cout << '\t' << (((halfhash + ele->weight_index)/global.stride) & mask) 
 	   << ':' << (ele->x*page_feature.x)
-	   << ':' << weights[(halfhash + ele->weight_index) & mask];
+	   << ':' << real_weight(weights[(halfhash + ele->weight_index) & mask], gravity);
       string_value sv = {weights[ele->weight_index & mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
@@ -308,6 +311,8 @@ void print_features(regressor &reg, example* &ec)
   else
     {
       vector<string_value> features;
+
+      float gravity = global.l_1_regularization * global.update_sum;
       
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -315,7 +320,7 @@ void print_features(regressor &reg, example* &ec)
 	    {
 	      ostringstream tempstream;
 	      tempstream << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
-	      tempstream  << ':' << weights[f->weight_index & thread_mask];
+	      tempstream  << ':' << real_weight(weights[f->weight_index & thread_mask], gravity);
 	      if(global.adaptive)
 		tempstream << '@' << weights[(f->weight_index+1) & thread_mask];
 	      string_value sv = {weights[f->weight_index & thread_mask]*f->x, tempstream.str()};
@@ -328,7 +333,7 @@ void print_features(regressor &reg, example* &ec)
 	      if ( f->weight_index == (constant&global.mask)*stride)
 		tempstream << "Constant:";
 	      tempstream << f->weight_index/stride << ':' << f->x;
-	      tempstream << ':' << weights[f->weight_index & thread_mask];
+	      tempstream << ':' << real_weight(weights[f->weight_index & thread_mask], gravity);
 	      if(global.adaptive)
 		tempstream << '@' << weights[(f->weight_index+1) & thread_mask];
 	      string_value sv = {weights[f->weight_index & thread_mask]*f->x, tempstream.str()};
@@ -542,11 +547,13 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
   if (ld->label != FLT_MAX)
     {
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
-      
+      double update = global.eta/pow(t,vars.power_t)*ld->weight;
+
       if (global.adaptive)
-	ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, global.eta/pow(t,vars.power_t)*ld->weight, sqrt(ec->total_sum_feat_sq));
+	ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, sqrt(ec->total_sum_feat_sq));
       else
-	ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, global.eta/pow(t,vars.power_t)*ld->weight, ec->total_sum_feat_sq);
+	ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, ec->total_sum_feat_sq);
+      global.update_sum += update;
     }
   else if(global.active)
     ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(t,vars.power_t));

@@ -125,6 +125,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.print = print_result;
   global.min_label = 0.;
   global.max_label = 1.;
+  global.update_sum = 0.;
   global.lda =0;
   global.random_weights = false;
 
