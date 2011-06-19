@@ -9,6 +9,15 @@ embodied in the content of this file are licensed under the BSD
 
 #include "parse_example.h"
 
+inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
+
+inline float real_weight(float w,float gravity){
+  float wprime = 0.;
+  if (gravity < fabsf(w))
+    wprime = sign(w)*(fabsf(w) - gravity);
+  return wprime;
+}
+
 float sd_add(weight* weights, size_t mask, feature* begin, feature* end);
 float sd_truncadd(weight* weights, size_t mask, feature* begin, feature* end, float gravity);
 
