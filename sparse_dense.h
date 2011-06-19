@@ -7,6 +7,7 @@ embodied in the content of this file are licensed under the BSD
 #ifndef SPARSE_DENSE_VECTOR_H
 #define SPARSE_DENSE_VECTOR_H
 
+#include <math.h>
 #include "parse_example.h"
 
 inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
