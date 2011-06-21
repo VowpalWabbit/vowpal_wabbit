@@ -182,13 +182,16 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	  regressor.read((char *)&w, sizeof(float));
 	  
 	  size_t num_threads = global.num_threads();
-	  if (regressor.good() && global.lda == 0) 
-	    r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
-	      = r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
-	  else
-	    r.weight_vectors[hash % num_threads][hash/num_threads] 
-	      = r.weight_vectors[hash % num_threads][hash/num_threads] + w;
-	}      
+	  if (regressor.good())
+	    {
+	      if (global.lda == 0) 
+		r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
+		  = r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
+	      else
+		r.weight_vectors[hash % num_threads][hash/num_threads] 
+		  = r.weight_vectors[hash % num_threads][hash/num_threads] + w;
+	    }      
+	}
       regressor.close();
     }
   if (!initialized)
