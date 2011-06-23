@@ -316,6 +316,7 @@ void setup_cg(gd_thread_params t)
   node_socks socks;
   struct timeb t_start_global, t_end_global;
   double net_time = 0.0;
+  double prev_comm_time = 0.0;
   net_comm_time = 0.0;
   ftime(&t_start_global);
   
@@ -388,8 +389,9 @@ void setup_cg(gd_thread_params t)
 	      else // just finished all second gradients
 		{
 		  float d_mag = direction_magnitude(reg);
-		  if(global.master_location != "")
+		  if(global.master_location != "") {
 		    curvature = accumulate_scalar(socks, curvature);  //Accumulate curvatures
+		  }
 		  if (global.regularization > 0.)
 		    curvature += global.regularization*d_mag;
 		  float dd = derivative_in_direction(reg, old_first_derivative);
@@ -399,8 +401,11 @@ void setup_cg(gd_thread_params t)
 		      exit(1);
 		    }
 		  step_size = - dd/curvature;
-		  if (!global.quiet)
+		  if (!global.quiet) {
 		    fprintf(stderr, "%-e\t%-e\t%-e\t%-f\n", curvature, d_mag, step_size, 0.5*step_size*step_size*curvature);
+		    //fprintf(stdout, "Net comm. time is %f\n",net_comm_time - prev_comm_time);
+		  }
+		  prev_comm_time = net_comm_time;
 		  predictions.erase();
 		  update_weight(reg,step_size);
 
@@ -455,8 +460,9 @@ void setup_cg(gd_thread_params t)
 	  if (example_number == predictions.index())//do one last update
 	    {
 	      float d_mag = direction_magnitude(reg);
-	      if(global.master_location != "")
+	      if(global.master_location != "") {
 		curvature = accumulate_scalar(socks, curvature);  //Accumulate curvatures
+	      }
 	      if (global.regularization > 0.)
 		curvature += global.regularization*d_mag;
 	      float dd = derivative_in_direction(reg, old_first_derivative);
@@ -466,8 +472,10 @@ void setup_cg(gd_thread_params t)
 		  exit(1);
 		}
 	      float step_size = - dd/(max(curvature,1.));
-	      if (!global.quiet)
+	      if (!global.quiet) {
 		fprintf(stderr, "%-e\t%-e\t%-e\t%-f\n", curvature, d_mag, step_size, 0.5*step_size*step_size*curvature);
+		//fprintf(stdout, "Net comm. time is %f\n",net_comm_time - prev_comm_time);
+	      }
 	      update_weight(reg,step_size);
 	    }
 	  ftime(&t_end_global);
