@@ -28,6 +28,8 @@ embodied in the content of this file are licensed under the BSD
 
 gd_vars* vw(int argc, char *argv[])
 {
+  fprintf(stderr, "In VW\n");
+  fflush(stderr);
   string final_regressor_name;
 
   parser* p = new_parser(&simple_label);
@@ -40,7 +42,7 @@ gd_vars* vw(int argc, char *argv[])
   po::variables_map vm = parse_args(argc, argv, desc, *vars, 
 				    regressor1, p, 
 				    final_regressor_name);
-
+  
   if (!global.quiet && !vm.count("conjugate_gradient"))
     {
       const char * header_fmt = "%-10s %-10s %8s %8s %10s %8s %8s\n";
@@ -74,11 +76,6 @@ gd_vars* vw(int argc, char *argv[])
       setup_cg(t);
       destroy_cg();
     }
-  else if (global.lda > 0)
-    {
-      start_lda(t);
-      end_lda();
-    }
   else
     {
       setup_gd(t);
@@ -94,6 +91,6 @@ gd_vars* vw(int argc, char *argv[])
   finalize_regressor(final_regressor_name,regressor1);
   finalize_source(p);
   free(p);
-  
+  cerr<<"Done\n";
   return vars;
 }
