@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
   sockaddr_in address;
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = htonl(INADDR_ANY);
-  short unsigned int port = 39524;
+  short unsigned int port = 26543;
       
   address.sin_port = htons(port);
   if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
@@ -79,6 +79,8 @@ int main(int argc, char* argv[]) {
       cerr << "failure to bind!" << endl;
       exit(1);
     }
+  else
+    cerr <<"Master bound\n";
   if (daemon(1,1))
     {
       cerr << "failure to background!" << endl;

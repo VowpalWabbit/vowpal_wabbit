@@ -77,7 +77,7 @@ void all_reduce_init(string master_location, node_socks* socks)
   }
 
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
-  int port = 39524;
+  int port = 26543;
     
   int master_sock = sock_connect(master_ip, htons(port));
   int client_port, kid_count, parent_port;
