@@ -68,12 +68,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_pass_length", po::value<size_t>(&global.pass_length)->default_value((size_t)-1), "initial number of examples per pass")
     ("initial_t", po::value<float>(&(par->t))->default_value(1.), "initial t value")
-    ("l1", po::value<float>(&global.l_1_regularization)->default_value(0.), "l_1 regularization level")
     ("lda", po::value<size_t>(&global.lda), "Run lda with <int> topics")
     ("lda_alpha", po::value<float>(&global.lda_alpha)->default_value(0.1), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>(&global.lda_rho)->default_value(0.1), "Prior on sparsity of topic distributions")
     ("lda_D", po::value<float>(&global.lda_D)->default_value(10000.), "Number of documents")
     ("minibatch", po::value<size_t>(&global.minibatch)->default_value(1), "Minibatch size, for LDA")
+    ("master_location", po::value<string>(&global.master_location)->default_value(""), "Location of master for setting up spanning tree")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
@@ -125,7 +125,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.print = print_result;
   global.min_label = 0.;
   global.max_label = 1.;
-  global.update_sum = 0.;
   global.lda =0;
   global.random_weights = false;
 
@@ -144,6 +143,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   po::store(po::command_line_parser(argc, argv).
 	    options(desc).positional(p).run(), vm);
+  fprintf(stderr, "Stored\n");
+  fflush(stderr);
   po::notify(vm);
 
   global.weighted_unlabeled_examples = par->t;
@@ -237,7 +238,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	  exit(1);
 	}
     }
-
+  
+  fprintf(stderr, "Done with precision\n");
+  fflush(stderr);
   string data_filename = vm["data"].as<string>();
   if (vm.count("compressed") || ends_with(data_filename, ".gz"))
     set_compressed(par);
@@ -272,7 +275,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	  cerr << endl;
 	}
     }
-
+  fprintf(stderr, "Done with quadratic\n");
+  fflush(stderr);
   for (size_t i = 0; i < 256; i++)
     global.ignore[i] = false;
   global.ignore_some = false;
