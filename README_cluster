@@ -1,14 +1,20 @@
-This is a distributed implementation of Non-linear Conjugate
-Gradient. 
+The implementation of Non-linear (Preconditioned) Conjugate Gradient
+works on clusters (both Hadoop and otherwise) now.
 
 To build the code, run make.
+
+At a high level, the code operates by repeatedly executing something
+equivalent to the MPI AllReduce function---adding up floats from all
+nodes then broadcasting them back to each individual node.  In order
+to do this, a spanning tree over the nodes must be created.  This is
+done using the helper daemon 'allreduce_master'.
 
 ***********************************************************************
 
 To run the code on Hadoop clusters:
 
 Connect to the master node for the Hadoop cluster:
-./master.out <n>
+./allreduce_master <n>
 where <n> is the number of mappers you are going to launch.
 
 Start the map-reduce job using Hadoop streaming: 
@@ -19,9 +25,9 @@ vw -file runvw.sh -mapper 'runvw.sh <output> <master>' -reducer
 NONE
 
 where <output> is the directory on HDFS where you want the trained
-model to be saved and <master> is the hostname of the master node. The
-trained model is saved to the file <output>/model on HDFS and can be
-retreived by hadoop -get.
+model to be saved and <master> is the hostname of the gateway where
+allreduc_master runs. The trained model is saved to the file
+<output>/model on HDFS and can be retreived by hadoop -get.
 
 To modify the arguments to VW, edit the script runvw.sh. Arguments to
 hadoop can be directly added in the hadoop streaming command. 
@@ -31,19 +37,19 @@ hadoop can be directly added in the hadoop streaming command.
 To run the code on non-Hadoop clusters:
 
 Start the master job on one of the cluster nodes:
-./master.out <n>
-where <n> is the number of slaves you are going to launch.
+./allreduce_master <n>
+where <n> is the number of workers you are going to launch.
 
-Launch vw on each of the slave nodes: 
+Launch vw on each of the worker nodes: 
 
 ./vw --cache_file temp.cache -b 24 --conjugate_gradient --passes 4 -q
 up -q ua -q us -q pa -q ps -q as --loss_function=logistic
---regularization=0.0000001 --master_location <master> -d <input> -f
+--regularization=1 --master_location <master> -d <input> -f
 model
 
 where <master> is the hostname of the master node and <input> is a
-different input file to each of the slaves. The trained model is saved
-as the file model on the slave nodes.
+different input file to each of the slaves.  The trained model is saved
+as the file model on the worker nodes.
 
 ************************************************************************
 
@@ -62,7 +68,7 @@ script, feel free to mess around with them.
 
 #########################################################################
 
-master.cc: This is the master code which runs on the gateway. You
+allreduce_master.cc: This is the master code which runs on the gateway. You
 start it before the call to hadoop. The master takes as input the
 number of mappers it should expect to hear from, so you need to know
 this ahead of time based on the number of input files you have. The

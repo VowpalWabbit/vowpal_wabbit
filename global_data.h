@@ -36,6 +36,9 @@ struct global_data {
   float regularization;
   size_t stride;
   
+  float l_1_regularization;//the level of l_1 regularization to impose.
+  float update_sum;
+
   size_t minibatch;
 
   size_t pass_length;

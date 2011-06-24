@@ -1,3 +1,12 @@
+/*
+Copyright (c) 2011 Yahoo! Inc.  All rights reserved.  The copyrights
+embodied in the content of this file are licensed under the BSD
+(revised) open source license
+
+This implements the allreduce function of MPI.  Code primarily by
+Alekh Agarwal and John Langford, with help Olivier Chapelle.
+
+ */
 #include <iostream>
 #include <cstdio>
 #include <cmath>
@@ -384,20 +393,8 @@ void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
 
 void all_reduce(char* buffer, int n, node_socks socks) 
 {
-  //cout<<"Sum before reduce = "<<add((float*)buffer,n/sizeof(float))<<endl;
-  //cerr<<"before reduce ";
-  //printfloat((float*)buffer,n/sizeof(float));
-  //printchar(buffer,n);
   reduce(buffer, n, socks.parent, socks.children);
-  //cerr<<"Done reducing: sum = "<<add((float*)buffer,n/sizeof(float))<<endl;
-  //cout<<"after reduce ";
-  //printfloat((float*)buffer,n/sizeof(float));
-  //printchar(buffer,n);
   broadcast(buffer, n, socks.parent, socks.children);
-  //cout<<"after broadcast ";
-  //printfloat((float*)buffer,n/sizeof(float));
-  //printchar(buffer,n);
-  //cerr<<"Done broadcasting: sum = "<<add((float*)buffer,n/sizeof(float))<<endl;
 }
 
 void all_reduce_close(node_socks socks)

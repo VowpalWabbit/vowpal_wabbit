@@ -20,7 +20,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 # for valgrind
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
-BINARIES = vw
+BINARIES = vw allreduce_master
 MANPAGES = vw.1
 
 #all:	$(BINARIES) $(MANPAGES)
@@ -51,8 +51,11 @@ gd.o:	 parse_example.h
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
-vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o allreduce.o cg.o noop.o parser.o vw.o loss_functions.o sender.o main.o
-	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -static -o $@ $+ $(LIBS)
+allreduce_master: allreduce_master.o
+	$(COMPILER) $(FLAGS) -o $@ $+ 
+
+vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o allreduce.o lda.o cg.o noop.o parser.o vw.o loss_functions.o sender.o main.o
+	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 active_interactor:	active_interactor.cc
 	$(COMPILER) $(FLAGS) -o $@ $+
