@@ -6,8 +6,9 @@
 #include "v_array.h"
 
 struct label_data {
-  double label;
+  float label;
   float weight;
+  float initial;
 };
 
 struct feature {

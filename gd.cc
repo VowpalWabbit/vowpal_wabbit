@@ -168,7 +168,7 @@ void output_and_account_example(example* ec)
 
 float inline_l1_predict(regressor &reg, example* &ec, size_t thread_num)
 {
-  float prediction = 0.0;
+  float prediction = get_initial(ec->ld);
   
   weight* weights = reg.weight_vectors[thread_num];
   size_t thread_mask = global.thread_mask;
@@ -195,7 +195,7 @@ float inline_l1_predict(regressor &reg, example* &ec, size_t thread_num)
 
 float inline_predict(regressor &reg, example* &ec, size_t thread_num)
 {
-  float prediction = 0.0;
+  float prediction = get_initial(ec->ld);
 
   weight* weights = reg.weight_vectors[thread_num];
   size_t thread_mask = global.thread_mask;
@@ -220,7 +220,7 @@ float inline_predict(regressor &reg, example* &ec, size_t thread_num)
 
 float inline_offset_predict(regressor &reg, example* &ec, size_t thread_num, size_t offset)
 {
-  float prediction = 0.0;
+  float prediction = get_initial(ec->ld);
 
   weight* weights = reg.weight_vectors[thread_num];
   size_t thread_mask = global.thread_mask;
