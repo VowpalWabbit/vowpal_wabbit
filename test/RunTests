@@ -13,6 +13,7 @@ use vars qw($opt_d $opt_c $opt_e $opt_f $opt_o);
 my $Epsilon = 1e-4;
 
 my $VW;
+my $LDA;
 
 my @TrainSets = glob('train-sets/*.dat');
 my @TestSets = glob('test-sets/*.dat');
@@ -37,7 +38,7 @@ sub usage(@) {
 # which vw executable to test against
 #
 sub which_vw() {
-    if (@ARGV == 1) {
+    if (@ARGV == 1 || @ARGV == 2) {
         my $exe = $ARGV[0];
         if (-f $exe && -x $exe) {
             printf STDERR "Testing vw: %s\n", $exe;
@@ -57,10 +58,32 @@ sub which_vw() {
     usage("can't find a 'vw' executable to test on");
 }
 
+sub which_lda() {
+    if (@ARGV == 2) {
+        my $exe = $ARGV[1];
+        if (-f $exe && -x $exe) {
+            printf STDERR "Testing lda: %s\n", $exe;
+            return $exe;
+        } else {
+            usage("$0: argument $exe: not an executable file");
+        }
+    } elsif (@ARGV == 0 || @ARGV == 1) {
+        foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
+            my $exe = "$dir/lda";
+            if (-x $exe) {
+                printf STDERR "Testing lda: %s\n", $exe;
+                return $exe;
+            }
+        }
+    }
+    usage("can't find a 'lda' executable to test on");
+}
+
 sub init() {
     $0 =~ s{.*/}{};
     getopts('cdefo') || usage();
     $VW = which_vw();
+    $LDA = which_lda();
 }
 
 sub trim_spaces($) {
@@ -87,6 +110,16 @@ sub next_test() {
             # The command line
             $cmd = trim_spaces($line);
             $cmd =~ s/{VW}/$VW/;
+            if ($cmd =~ /\s-p\s+(\S+)/) {
+                # -p predict_file
+                $pred = $1;
+            }
+            next;
+        }
+        if ($line =~ /{LDA}/) {
+            # The command line
+            $cmd = trim_spaces($line);
+            $cmd =~ s/{LDA}/$LDA/;
             if ($cmd =~ /\s-p\s+(\S+)/) {
                 # -p predict_file
                 $pred = $1;
@@ -397,6 +430,6 @@ __DATA__
     pred-sets/ref/0002c.predict
 
 # Test 9: Run LDA with 100 topics on 1000 Wikipedia articles
-{VW} --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
+{LDA} --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr

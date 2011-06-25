@@ -111,6 +111,6 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(double label);
 void print_lda_result(int f, float* res, float weight, v_array<char> tag);
 
-const size_t ring_size = 1 << 6;
+const size_t ring_size = 1 << 8;
 
 #endif

@@ -74,12 +74,7 @@ gd_vars* vw(int argc, char *argv[])
       setup_cg(t);
       destroy_cg();
     }
-  else if (global.lda > 0)
-    {
-      start_lda(t);
-      end_lda();
-    }
-  else
+  else 
     {
       setup_gd(t);
       destroy_gd();

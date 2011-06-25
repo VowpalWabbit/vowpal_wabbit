@@ -20,7 +20,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 # for valgrind
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
-BINARIES = vw allreduce_master
+BINARIES = vw allreduce_master active_interactor lda
 MANPAGES = vw.1
 
 #all:	$(BINARIES) $(MANPAGES)
@@ -54,7 +54,10 @@ gd.o:	 parse_example.h
 allreduce_master: allreduce_master.o
 	$(COMPILER) $(FLAGS) -o $@ $+ 
 
-vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o allreduce.o lda.o cg.o noop.o parser.o vw.o loss_functions.o sender.o main.o
+vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o allreduce.o cg.o noop.o parser.o vw.o loss_functions.o sender.o main.o
+	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
+
+lda: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o lda_core.o noop.o parser.o loss_functions.o sender.o lda.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 active_interactor:	active_interactor.cc
@@ -67,7 +70,7 @@ offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_de
 
 test: .FORCE
 	@echo "vw running test-suite..."
-	@(cd test && ./RunTests ../vw)
+	@(cd test && ./RunTests ../vw ../lda)
 
 install: vw
 	cp $(BINARIES) /usr/local/bin
