@@ -7,9 +7,20 @@ embodied in the content of this file are licensed under the BSD
 #ifndef SPARSE_DENSE_VECTOR_H
 #define SPARSE_DENSE_VECTOR_H
 
+#include <math.h>
 #include "parse_example.h"
 
+inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
+
+inline float real_weight(float w,float gravity){
+  float wprime = 0.;
+  if (gravity < fabsf(w))
+    wprime = sign(w)*(fabsf(w) - gravity);
+  return wprime;
+}
+
 float sd_add(weight* weights, size_t mask, feature* begin, feature* end);
+float sd_truncadd(weight* weights, size_t mask, feature* begin, feature* end, float gravity);
 
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
                const v_array<feature> &second_part, size_t thread_mask);
@@ -17,6 +28,8 @@ void quadratic(v_array<feature> &f, const v_array<feature> &first_part,
 float one_of_quad_predict(v_array<feature> &page_features, feature& offer_feature, weight* weights, size_t mask);
 
 float one_pf_quad_predict(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask);
+
+float one_pf_quad_predict_trunc(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, float gravity);
 
 float offset_quad_predict(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, size_t offset);
 

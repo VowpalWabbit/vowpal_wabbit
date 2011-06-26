@@ -6,7 +6,7 @@
 #include "message_relay.h"
 
 global_data global;
-string version = "5.0";
+string version = "5.1";
 
 void binary_print_result(int f, float res, float weight, v_array<char> tag)
 {

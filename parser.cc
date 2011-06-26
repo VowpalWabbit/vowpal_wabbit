@@ -40,6 +40,10 @@ size_t cache_numbits(io_buf* buf, int filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
+  if(v_length>29){
+      cerr << "cache version too long, cache file is probably invalid" << endl;
+      exit(1);
+  }
   char t[v_length];
   buf->read_file(filepointer,t,v_length);
   if (strcmp(t,version.c_str()) != 0)
@@ -551,7 +555,7 @@ void setup_example(parser* p, example* ae)
 	if (global.ignore[*i])
 	  {//delete namespace
 	    ae->atomics[*i].erase();
-	    memmove(i,i+1,ae->indices.end - (i+1));
+	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(size_t));
 	    ae->indices.end--;
 	    i--;
 	  }
@@ -611,24 +615,29 @@ void *main_parse_loop(void *in)
   parser* p = (parser*) in;
   
   global.passes_complete = 0;
+  size_t example_number = 0;
   while(!done)
     {
       example* ae=get_unused_example();
 
-      int output = parse_atomic_example(p,ae);
-      if (output) {	
+      if (example_number != global.pass_length && parse_atomic_example(p,ae)) {	
 	setup_example(p,ae);
-
+	example_number++;
 	pthread_mutex_lock(&examples_lock);
 	parsed_index++;
 	pthread_cond_broadcast(&example_available);
 	pthread_mutex_unlock(&examples_lock);
-
       }
       else
 	{
 	  reset_source(global.num_bits, p);
 	  global.passes_complete++;
+	  if (global.passes_complete == global.numpasses && example_number == global.pass_length)
+	    {
+	      global.passes_complete = 0;
+	      global.pass_length = global.pass_length*2+1;
+	    }
+	  example_number = 0;
 	  if (global.passes_complete >= global.numpasses)
 	    {
 	      pthread_mutex_lock(&examples_lock);
@@ -732,6 +741,9 @@ void end_parser(parser* pf)
       
       if (global.lda > 0)
 	free(examples[i].topic_predictions.begin);
+
+      if (examples[i].G.begin != examples[i].G.end_array)
+	free(examples[i].G.begin);
 
       free(examples[i].ld);
       for (size_t j = 0; j < 256; j++)

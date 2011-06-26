@@ -6,6 +6,7 @@ embodied in the content of this file are licensed under the BSD
 
 #include "sparse_dense.h"
 #include "constant.h"
+#include <math.h>
 
 float sd_add(weight* weights, size_t mask, feature* begin, feature* end)
 {
@@ -15,11 +16,35 @@ float sd_add(weight* weights, size_t mask, feature* begin, feature* end)
   return ret;
 }
 
+float sd_truncadd(weight* weights, size_t mask, feature* begin, feature* end, float gravity)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++)
+    {
+      float w = weights[f->weight_index & mask];
+      float wprime = real_weight(w,gravity);
+      ret += wprime*f->x;
+    }
+  return ret;
+}
+
 float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, size_t offset)
 {
   float ret = 0.;
   for (feature* f = begin; f!= end; f++)
     ret += weights[(f->weight_index + offset) & mask] * f->x;
+  return ret;
+}
+
+float sd_offset_truncadd(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float gravity)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++)
+    {
+      float w = weights[(f->weight_index+offset) & mask];
+      float wprime = real_weight(w,gravity);
+      ret += wprime*f->x;
+    }
   return ret;
 }
 
@@ -57,6 +82,14 @@ float one_pf_quad_predict(weight* weights, feature& f, v_array<feature> &cross_f
     sd_offset_add(weights, mask, cross_features.begin, cross_features.end, halfhash);
 }
 
+float one_pf_quad_predict_trunc(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, float gravity)
+{
+  size_t halfhash = quadratic_constant * f.weight_index;
+  
+  return f.x * 
+    sd_offset_truncadd(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity);
+}
+
 float offset_quad_predict(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, size_t offset)
 {
   float prediction = 0.0;
@@ -66,26 +99,6 @@ float offset_quad_predict(weight* weights, feature& page_feature, v_array<featur
     prediction += weights[(halfhash + ele->weight_index) & mask] * ele->x;
 
   return (prediction*page_feature.x);
-}
-
-void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, size_t mask)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-
-  for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
-    cout << '\t' << page_feature.space << '^' << page_feature.feature << '^' 
-	 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/global.stride) & mask)
-	 << ':' << ele->x*page_feature.x
-	 << ':' << weights[(halfhash + ele->weight_index) & mask];
-}
-
-void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    cout << '\t' << (((halfhash + ele->weight_index)/global.stride) & mask) 
-	 << ':' << (ele->x*page_feature.x)
-	 << ':' << weights[(halfhash + ele->weight_index) & mask];
 }
 
 float single_quad_weight(weight* weights, feature& page_feature, feature* offer_feature, size_t mask)

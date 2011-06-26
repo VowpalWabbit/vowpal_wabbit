@@ -36,8 +36,12 @@ struct global_data {
   float regularization;
   size_t stride;
   
+  float l_1_regularization;//the level of l_1 regularization to impose.
+  float update_sum;
+
   size_t minibatch;
 
+  size_t pass_length;
   size_t numpasses;
   size_t passes_complete;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
@@ -63,6 +67,10 @@ struct global_data {
   float lda_alpha;
   float lda_rho;
   float lda_D;
+
+  string text_regressor_name;
+  
+  string master_location;
 
   size_t num_threads () { return 1 << thread_bits; };
   size_t num_partitions () { return 1 << partition_bits; };
@@ -103,6 +111,6 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(double label);
 void print_lda_result(int f, float* res, float weight, v_array<char> tag);
 
-const size_t ring_size = 1 << 11;
+const size_t ring_size = 1 << 8;
 
 #endif

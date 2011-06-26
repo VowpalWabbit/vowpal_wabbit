@@ -182,13 +182,16 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 	  regressor.read((char *)&w, sizeof(float));
 	  
 	  size_t num_threads = global.num_threads();
-	  if (regressor.good() && global.lda == 0) 
-	    r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
-	      = r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
-	  else
-	    r.weight_vectors[hash % num_threads][hash/num_threads] 
-	      = r.weight_vectors[hash % num_threads][hash/num_threads] + w;
-	}      
+	  if (regressor.good())
+	    {
+	      if (global.lda == 0) 
+		r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
+		  = r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
+	      else
+		r.weight_vectors[hash % num_threads][hash/num_threads] 
+		  = r.weight_vectors[hash % num_threads][hash/num_threads] + w;
+	    }      
+	}
       regressor.close();
     }
   if (!initialized)
@@ -211,7 +214,7 @@ void free_regressor(regressor &r)
     }
 }
 
-void dump_regressor(string reg_name, regressor &r)
+void dump_regressor(string reg_name, regressor &r, bool as_text)
 {
   if (reg_name == string(""))
     return;
@@ -226,21 +229,44 @@ void dump_regressor(string reg_name, regressor &r)
       exit(1);
     }
   size_t v_length = version.length()+1;
-  io_temp.write_file(f,(char*)&v_length, sizeof(v_length));
-  io_temp.write_file(f,version.c_str(),v_length);
+  if (!as_text) {
+    io_temp.write_file(f,(char*)&v_length, sizeof(v_length));
+    io_temp.write_file(f,version.c_str(),v_length);
   
-  io_temp.write_file(f,(char*)&global.min_label, sizeof(global.min_label));
-  io_temp.write_file(f,(char*)&global.max_label, sizeof(global.max_label));
+    io_temp.write_file(f,(char*)&global.min_label, sizeof(global.min_label));
+    io_temp.write_file(f,(char*)&global.max_label, sizeof(global.max_label));
   
-  io_temp.write_file(f,(char *)&global.num_bits, sizeof(global.num_bits));
-  io_temp.write_file(f,(char *)&global.thread_bits, sizeof(global.thread_bits));
-  int len = global.pairs.size();
-  io_temp.write_file(f,(char *)&len, sizeof(len));
-  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-    io_temp.write_file(f,i->c_str(),2);
+    io_temp.write_file(f,(char *)&global.num_bits, sizeof(global.num_bits));
+    io_temp.write_file(f,(char *)&global.thread_bits, sizeof(global.thread_bits));
+    int len = global.pairs.size();
+    io_temp.write_file(f,(char *)&len, sizeof(len));
+    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
+      io_temp.write_file(f,i->c_str(),2);
 
-  io_temp.write_file(f,(char*)&global.ngram, sizeof(global.ngram));
-  io_temp.write_file(f,(char*)&global.skips, sizeof(global.skips));
+    io_temp.write_file(f,(char*)&global.ngram, sizeof(global.ngram));
+    io_temp.write_file(f,(char*)&global.skips, sizeof(global.skips));
+  }
+  else {
+    char buff[512];
+    int len;
+    len = sprintf(buff, "Version %s\n", version.c_str());
+    io_temp.write_file(f, buff, len);
+    len = sprintf(buff, "Min label:%f max label:%f\n", global.min_label, global.max_label);
+    io_temp.write_file(f, buff, len);
+    len = sprintf(buff, "bits:%d thread_bits:%d\n", (int)global.num_bits, (int)global.thread_bits);
+    io_temp.write_file(f, buff, len);
+    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) {
+      len = sprintf(buff, "%s ", i->c_str());
+      io_temp.write_file(f, buff, len);
+    }
+    if (global.pairs.size() > 0)
+      {
+	len = sprintf(buff, "\n");
+	io_temp.write_file(f, buff, len);
+      }
+    len = sprintf(buff, "ngram:%d skips:%d\nindex:weight pairs:\n", (int)global.ngram, (int)global.skips);
+    io_temp.write_file(f, buff, len);
+  }
   
   uint32_t length = 1 << global.num_bits;
   size_t num_threads = global.num_threads();
@@ -251,9 +277,15 @@ void dump_regressor(string reg_name, regressor &r)
 	{
 	  weight v = r.weight_vectors[i%num_threads][stride*(i/num_threads)];
 	  if (v != 0.)
-	    {      
-	      io_temp.write_file(f,(char *)&i, sizeof (i));
-	      io_temp.write_file(f,(char *)&v, sizeof (v));
+	    {
+              if (!as_text) {
+                io_temp.write_file(f,(char *)&i, sizeof (i));
+                io_temp.write_file(f,(char *)&v, sizeof (v));
+              } else {
+                char buff[512];
+                int len = sprintf(buff, "%d:%f\n", i, v);
+                io_temp.write_file(f, buff, len);
+              }
 	    }
 	}
       else
@@ -263,13 +295,21 @@ void dump_regressor(string reg_name, regressor &r)
 	  if (global.lda != 0)
 	    K = global.lda;
 	  
-	  for (size_t k = 0; k < K; k++)
-	    {
-	      weight v = r.weight_vectors[i%num_threads][(stride*i+k)/num_threads];
-	      uint32_t ndx = stride*i+k;
-	      io_temp.write_file(f,(char *)&ndx, sizeof (ndx));
-	      io_temp.write_file(f,(char *)&v, sizeof (v));
-	    }
+          for (size_t k = 0; k < K; k++)
+            {
+              weight v = r.weight_vectors[i%num_threads][(stride*i+k)/num_threads];
+              uint32_t ndx = stride*i+k;
+              if (!as_text) {
+                io_temp.write_file(f,(char *)&ndx, sizeof (ndx));
+                io_temp.write_file(f,(char *)&v, sizeof (v));
+              } else {
+                char buff[512];
+                int len = sprintf(buff, "%f ", v + global.lda_rho);
+                io_temp.write_file(f, buff, len);
+              }
+            }
+          if (as_text)
+            io_temp.write_file(f, "\n", 1);
 	}
     }
 
@@ -280,6 +320,7 @@ void dump_regressor(string reg_name, regressor &r)
 
 void finalize_regressor(string reg_name, regressor &r)
 {
-  dump_regressor(reg_name,r);
+  dump_regressor(reg_name, r, 0);
+  dump_regressor(global.text_regressor_name, r, 1);
   free_regressor(r);
 }
