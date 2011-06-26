@@ -437,7 +437,7 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
     }
 }
 
-float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, v_array<float>& G)
+float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, v_array<float>& G, float& magx)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   float update2 = g * page_feature.x * page_feature.x;
@@ -449,15 +449,17 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
       float t = ele->x*InvSqrt(w[1]);
       push(G, t);      
       xGx += t * ele->x;
+      magx += fabsf(ele->x);
     }
   return xGx;
 }
 
-float compute_xGx(regressor &reg, example* &ec, size_t thread_num)
+float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
 {//We must traverse the features in _precisely_ the same order as during training.
   size_t thread_mask = global.thread_mask;
   label_data* ld = (label_data*)ec->ld;
   float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+  if (g==0) return 0.;
 
   float xGx = 0.;
   ec->G.erase();
@@ -472,6 +474,7 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num)
 	  float t = f->x*InvSqrt(w[1]);
 	  push(ec->G, t);
 	  xGx += t * f->x;
+	  magx += fabsf(f->x);
 	}
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -482,7 +485,7 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num)
 	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
 	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    xGx += xGx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g, ec->G);
+	    xGx += xGx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g, ec->G, magx);
 	} 
     }
   return xGx;
@@ -603,18 +606,21 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
   if (ld->label != FLT_MAX)
     {
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
-      double update = global.eta/pow(t,vars.power_t)*ld->weight;
-
+      
+      double update = 0.;
       if (global.adaptive)
 	{
-	  float xGx = compute_xGx(reg, ec, thread_num);
-	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update/sqrt(ec->total_sum_feat_sq), xGx);
-	  //	  cout << "delta_p = " << ec->eta_round * xGx << " update/sqrt " << update/sqrt(ec->total_sum_feat_sq) << endl;
+	  float magx = 0.;
+	  float xGx = compute_xGx(reg, ec, thread_num, magx);
+	  update = global.eta*xGx/magx;
+	  global.update_sum += update;
+	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, xGx);
 	}
       else
 	{
+	  update = global.eta/pow(t,vars.power_t)*ld->weight;
+	  
 	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, ec->total_sum_feat_sq);
-	  //	  cout << "delta_p = " << ec->eta_round * ec->total_sum_feat_sq << endl;
 	}
       global.update_sum += update;
     }
