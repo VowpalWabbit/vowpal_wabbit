@@ -172,6 +172,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       global.adaptive = true;
       global.stride = 2;
       vars.power_t = 0.0;
+      if (global.thread_bits != 0)
+	{
+	  cout << "adaptive code isn't correct with multiple learning cores" << endl;
+	  exit(1);
+	}
   }
 
   if (vm.count("backprop")) {

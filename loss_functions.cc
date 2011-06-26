@@ -32,7 +32,7 @@ public:
     }
     return (label - prediction)*(1-exp(-eta_t))/norm;
   }
-  
+
   float getRevertingWeight(float prediction, float eta_t){
     float t = 0.5*(global.min_label+global.max_label);
     float alternative = (prediction > t) ? global.min_label : global.max_label;
@@ -100,11 +100,11 @@ public:
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
     if(label*prediction >= label*label) return 0;
-    float s1=(label*label-label*prediction)/(label*label);
-    float s2=eta_t;
-    return label * (s1<s2 ? s1 : s2)/norm;
+    float err=(label*label-label*prediction)/(label*label);
+    float normal= eta_t;
+    return label * (normal < err ? normal : err)/norm;
   }
-  
+
   float getRevertingWeight(float prediction, float eta_t){
     return fabs(prediction)/eta_t;
   }
@@ -201,16 +201,15 @@ public:
   }
   
   float getUpdate(float prediction, float label, float eta_t, float norm) {
-    float s2;
-    float e = label - prediction;
-    if(e == 0) return 0;
-    float s1=eta_t;
-    if(e > 0) {
-      s2=e/tau;
-      return tau*(s1<s2?s1:s2)/norm;
+    float err = label - prediction;
+    if(err == 0) return 0;
+    float normal = eta_t;//base update size
+    if(err > 0) {
+      normal = tau*normal;
+      return tau*(normal < err ? normal : err) / norm;
     } else {
-      s2=-e/(1-tau);
-      return -(1 - tau)*(s1<s2?s1:s2)/norm;
+      normal = -(1-tau) * normal;
+      return ( normal < - err ?  normal : err) / norm;
     }
   }
   

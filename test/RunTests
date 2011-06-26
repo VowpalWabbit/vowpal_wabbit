@@ -419,7 +419,7 @@ __DATA__
     pred-sets/ref/0002b.predict
 
 # Test 7: using -q and multiple threads
-{VW} --adaptive -q ff --thread_bits 1 -f models/0002c.model train-sets/0002.dat
+{VW} --adaptive -q ff -f models/0002c.model train-sets/0002.dat
     train-sets/ref/0002c.stdout
     train-sets/ref/0002c.stderr
 
