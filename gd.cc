@@ -391,7 +391,8 @@ void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[0] += update * ec->G[ctr++];
+      float t = ele->x*InvSqrt(w[1]);
+      w[0] += update * t;
     }
 }
 
@@ -421,7 +422,8 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
       for (; f != ec->subsets[*i][thread_num+1]; f++)
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
-	  w[0] += update * ec->G[ctr++];
+	  float t = f->x*InvSqrt(w[1]);
+	  w[0] += update * t;
 	}
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -437,7 +439,7 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
     }
 }
 
-float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, v_array<float>& G, float& magx)
+float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float& magx)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   float update2 = g * page_feature.x * page_feature.x;
@@ -447,7 +449,6 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       w[1] += update2 * ele->x * ele->x;
       float t = ele->x*InvSqrt(w[1]);
-      push(G, t);      
       xGx += t * ele->x;
       magx += fabsf(ele->x);
     }
@@ -462,7 +463,7 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
   if (g==0) return 0.;
 
   float xGx = 0.;
-  ec->G.erase();
+  
   weight* weights = reg.weight_vectors[thread_num];
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -472,7 +473,6 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
 	  weight* w = &weights[f->weight_index & thread_mask];
 	  w[1] += g * f->x * f->x;
 	  float t = f->x*InvSqrt(w[1]);
-	  push(ec->G, t);
 	  xGx += t * f->x;
 	  magx += fabsf(f->x);
 	}
@@ -485,9 +485,10 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
 	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
 	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    xGx += xGx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g, ec->G, magx);
+	    xGx += xGx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g, magx);
 	} 
     }
+  
   return xGx;
 }
 

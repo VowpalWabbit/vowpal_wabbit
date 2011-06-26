@@ -742,9 +742,6 @@ void end_parser(parser* pf)
       if (global.lda > 0)
 	free(examples[i].topic_predictions.begin);
 
-      if (examples[i].G.begin != examples[i].G.end_array)
-	free(examples[i].G.begin);
-
       free(examples[i].ld);
       for (size_t j = 0; j < 256; j++)
 	{

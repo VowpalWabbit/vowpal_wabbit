@@ -4,10 +4,9 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-#include <stdlib.h>
-
 #ifndef VARRAY_H__
 #define VARRAY_H__
+#include <stdlib.h>
 
 template<class T> class v_array{
  public:
