@@ -58,6 +58,7 @@ struct global_data {
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
+  bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
   bool random_weights;
   
   double min_label;//minimum label encountered

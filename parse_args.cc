@@ -42,6 +42,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
+    ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
@@ -131,6 +132,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.random_weights = false;
 
   global.adaptive = false;
+  global.exact_adaptive_norm = false;
   global.audit = false;
   global.active = false;
   global.active_simulation =false;
@@ -170,6 +172,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("adaptive")) {
       global.adaptive = true;
+      if (vm.count("exact_adaptive_norm"))
+	global.exact_adaptive_norm = true;
       global.stride = 2;
       vars.power_t = 0.0;
       if (global.thread_bits != 0)

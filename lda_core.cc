@@ -94,7 +94,7 @@ fastdigamma (float x)
 #define mydigamma fastdigamma
 #define mylgamma fastlgamma
 
-#ifdef __SSE__
+#ifdef __SSE2__
 typedef float v4sf __attribute__ ((__vector_size__ (16)));
 typedef int v4si __attribute__ ((__vector_size__ (16)));
 typedef float v4sf_aligned __attribute__ ((__vector_size__ (16))) __attribute__
@@ -265,7 +265,7 @@ vexpdigammify_2(float*       gamma,
 #define myexpdigammify expdigammify
 #define myexpdigammify_2 expdigammify_2
 
-#endif // __SSE__
+#endif // __SSE2__
 
 } // end anonymous namespace
 

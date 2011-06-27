@@ -388,9 +388,12 @@ void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   update *= page_feature.x;
+  float update2 = g * page_feature.x * page_feature.x;
+
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
+      w[1] += update2 * ele->x * ele->x;
       float t = ele->x*InvSqrt(w[1]);
       w[0] += update * t;
     }
@@ -411,10 +414,9 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
 
   size_t thread_mask = global.thread_mask;
   label_data* ld = (label_data*)ec->ld;
-  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  
-  //assert((g>0 && fabs(update)>0) || (g==0 && update==0));
   weight* weights = reg.weight_vectors[thread_num];
+  
+  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   size_t ctr = 0;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -422,6 +424,7 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
       for (; f != ec->subsets[*i][thread_num+1]; f++)
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
+	  w[1] += g * f->x * f->x;
 	  float t = f->x*InvSqrt(w[1]);
 	  w[0] += update * t;
 	}
@@ -442,13 +445,12 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
 float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float& magx)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float update2 = g * page_feature.x * page_feature.x;
   float xGx = 0.;
+  float update2 = g * page_feature.x * page_feature.x;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[1] += update2 * ele->x * ele->x;
-      float t = ele->x*InvSqrt(w[1]);
+      float t = ele->x*InvSqrt(w[1] + update2 * ele->x * ele->x);
       xGx += t * ele->x;
       magx += fabsf(ele->x);
     }
@@ -471,8 +473,7 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
       for (; f != ec->subsets[*i][thread_num+1]; f++)
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
-	  w[1] += g * f->x * f->x;
-	  float t = f->x*InvSqrt(w[1]);
+	  float t = f->x*InvSqrt(w[1] + g * f->x * f->x);
 	  xGx += t * f->x;
 	  magx += fabsf(f->x);
 	}
@@ -609,7 +610,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
       
       double update = 0.;
-      if (global.adaptive)
+      if (global.adaptive && global.exact_adaptive_norm)
 	{
 	  float magx = 0.;
 	  float xGx = compute_xGx(reg, ec, thread_num, magx);
