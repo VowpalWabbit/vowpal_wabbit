@@ -94,14 +94,21 @@ fastdigamma (float x)
 #define mydigamma fastdigamma
 #define mylgamma fastlgamma
 
-#ifdef __SSE2__
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
 typedef float v4sf __attribute__ ((__vector_size__ (16)));
 typedef int v4si __attribute__ ((__vector_size__ (16)));
 typedef float v4sf_aligned __attribute__ ((__vector_size__ (16))) __attribute__
 ((aligned (16)));
 #define v4sf_dup_literal(x) ((v4sf) { x, x, x, x })
 #define v4si_dup_literal(x) ((v4si) { x, x, x, x })
-#define v4sf_index(x, i) (__builtin_ia32_vec_ext_v4sf (x, i))
+  //#define v4sf_index(x, i) (__builtin_ia32_vec_ext_v4sf (x, i))
+typedef union { v4sf f; float array[4]; } v4sfindexer;
+#define v4sf_index(x, i)                                \
+  ({                                                    \
+     v4sfindexer vx = { x };                            \
+     vx.array[i];                                       \
+  })
+
 #define v4sf_from_v4si __builtin_ia32_cvtdq2ps
 #define v4si_from_v4sf __builtin_ia32_cvttps2dq
 
