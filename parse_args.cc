@@ -170,7 +170,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("active_learning") && !global.active_simulation)
     global.active = true;
 
-  if (vm.count("adaptive")) {
+  if (vm.count("adaptive") || vm.count("exact_adaptive_norm")) {
       global.adaptive = true;
       if (vm.count("exact_adaptive_norm"))
 	global.exact_adaptive_norm = true;
