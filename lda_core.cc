@@ -364,7 +364,7 @@ float theta_kl(float* gamma)
   }
   float digammasum = mydigamma(gammasum);
   gammasum = mylgamma(gammasum);
-  float kl = -global.lda*mylgamma(global.lda_alpha);
+  float kl = -(global.lda*mylgamma(global.lda_alpha));
   kl += mylgamma(global.lda_alpha*global.lda) - gammasum;
   for (size_t k = 0; k < global.lda; k++) {
     Elogtheta[k] -= digammasum;
