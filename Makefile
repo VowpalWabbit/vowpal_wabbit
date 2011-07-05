@@ -6,7 +6,7 @@ BOOST_LIBRARY = /usr/local/lib
 
 ARCH = -march=nocona
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing 
-WARN_FLAGS = -Wall -Werror 
+WARN_FLAGS = -Wall #-Werror 
 
 # for normal fast execution.
 FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
