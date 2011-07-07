@@ -162,6 +162,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   po::variables_map vm;
 
   po::store(po::command_line_parser(argc, argv).
+	    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
 	    options(desc).positional(p).run(), vm);
   po::notify(vm);
 
