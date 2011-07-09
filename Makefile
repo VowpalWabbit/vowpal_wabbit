@@ -70,7 +70,7 @@ offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_de
 
 test: .FORCE
 	@echo "vw running test-suite..."
-	@(cd test && ./RunTests -f ../vw ../lda)
+	@(cd test && ./RunTests -f -E 0.001 ../vw ../lda)
 
 install: vw
 	cp $(BINARIES) /usr/local/bin
