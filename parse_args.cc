@@ -324,6 +324,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   parse_source_args(vm,par,global.quiet,global.numpasses);
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
+  global.mask = (1 << global.num_bits) - 1;
   if (vm.count("readable_model"))
     global.text_regressor_name = vm["readable_model"].as<string>();
 

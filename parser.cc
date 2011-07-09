@@ -176,7 +176,6 @@ void parse_cache(po::variables_map &vm, string source,
       }
     }
   
-  global.mask = (1 << global.num_bits) - 1;
   if (caches.size() == 0)
     {
       if (!quiet)
