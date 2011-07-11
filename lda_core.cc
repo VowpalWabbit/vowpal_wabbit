@@ -45,15 +45,15 @@ fastlog (float x)
 inline float
 fastpow2 (float p)
 {
-  union { float f; uint32_t i; } vp = { p };
-  int sign = (vp.i >> 31);
-  int w = p;
-  float z = p - w + sign;
-  union { uint32_t i; float f; } v = { (1 << 23) * (p + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z) };
+  float offset = (p < 0) ? 1.0f : 0.0f;
+  float clipp = (p < -126) ? -126.0f : p;
+  int w = clipp;
+  float z = clipp - w + offset;
+  union { uint32_t i; float f; } v = { (1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z) };
 
   return v.f;
 }
-
+ 
 inline float
 fastexp (float p)
 {
@@ -95,38 +95,44 @@ fastdigamma (float x)
 #define mylgamma fastlgamma
 
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-typedef float v4sf __attribute__ ((__vector_size__ (16)));
-typedef int v4si __attribute__ ((__vector_size__ (16)));
-typedef float v4sf_aligned __attribute__ ((__vector_size__ (16))) __attribute__
-((aligned (16)));
-#define v4sf_dup_literal(x) ((v4sf) { x, x, x, x })
-#define v4si_dup_literal(x) ((v4si) { x, x, x, x })
-  //#define v4sf_index(x, i) (__builtin_ia32_vec_ext_v4sf (x, i))
-typedef union { v4sf f; float array[4]; } v4sfindexer;
-#define v4sf_index(x, i)                                \
-  ({                                                    \
-     v4sfindexer vx = { x };                            \
-     vx.array[i];                                       \
-  })
 
-#define v4sf_from_v4si __builtin_ia32_cvtdq2ps
-#define v4si_from_v4sf __builtin_ia32_cvttps2dq
+#include <emmintrin.h>
+
+typedef __m128 v4sf;
+typedef __m128i v4si;
+
+#define v4si_to_v4sf _mm_cvtepi32_ps
+#define v4sf_to_v4si _mm_cvttps_epi32
+
+#define v4sfl(x) ((const v4sf) { (x), (x), (x), (x) })
+#define v2dil(x) ((const v4si) { (x), (x) })
+#define v4sil(x) v2dil((((unsigned long long) (x)) << 32) | (x))
+
+typedef union { v4sf f; float array[4]; } v4sfindexer;
+#define v4sf_index(_findx, _findi)      \
+  ({                                    \
+     v4sfindexer _findvx = { _findx } ; \
+     _findvx.array[_findi];             \
+  })
 
 inline v4sf
 vfastpow2 (const v4sf p)
 {
-  union { v4sf f; v4si i; } vp = { p };
-  v4si sign = __builtin_ia32_psrldi128 (vp.i, 31);
-  v4si w = v4si_from_v4sf (p);
-  v4sf z = p - v4sf_from_v4si (w) + v4sf_from_v4si (sign);
-  const v4sf c_121_2740838 = v4sf_dup_literal (121.2740838f);
-  const v4sf c_27_7280233 = v4sf_dup_literal (27.7280233f);
-  const v4sf c_4_84252568 = v4sf_dup_literal (4.84252568f);
-  const v4sf c_1_49012907 = v4sf_dup_literal (1.49012907f);
+  v4sf ltzero = _mm_cmplt_ps (p, v4sfl (0.0f));
+  v4sf offset = _mm_and_ps (ltzero, v4sfl (1.0f));
+  v4sf lt126 = _mm_cmplt_ps (p, v4sfl (-126.0f));
+  v4sf clipp = _mm_andnot_ps (lt126, p) + _mm_and_ps (lt126, v4sfl (-126.0f));
+  v4si w = v4sf_to_v4si (clipp);
+  v4sf z = clipp - v4si_to_v4sf (w) + offset;
+
+  const v4sf c_121_2740838 = v4sfl (121.2740838f);
+  const v4sf c_27_7280233 = v4sfl (27.7280233f);
+  const v4sf c_4_84252568 = v4sfl (4.84252568f);
+  const v4sf c_1_49012907 = v4sfl (1.49012907f);
   union { v4si i; v4sf f; } v = {
-    v4si_from_v4sf (
-      v4sf_dup_literal ((1 << 23)) *
-      (p + c_121_2740838 + c_27_7280233 / (c_4_84252568 - z) - c_1_49012907 * z)
+    v4sf_to_v4si (
+      v4sfl (1 << 23) * 
+      (clipp + c_121_2740838 + c_27_7280233 / (c_4_84252568 - z) - c_1_49012907 * z)
     )
   };
 
@@ -136,7 +142,8 @@ vfastpow2 (const v4sf p)
 inline v4sf
 vfastexp (const v4sf p)
 {
-  const v4sf c_invlog_2 = v4sf_dup_literal (1.442695040f);
+  const v4sf c_invlog_2 = v4sfl (1.442695040f);
+
   return vfastpow2 (c_invlog_2 * p);
 }
 
@@ -144,24 +151,24 @@ inline v4sf
 vfastlog2 (v4sf x)
 {
   union { v4sf f; v4si i; } vx = { x };
-  union { v4si i; v4sf f; } mx = {
-    (vx.i & v4si_dup_literal (0x007FFFFF)) | v4si_dup_literal ((0x7e << 23))
-  };
-  v4sf y = v4sf_from_v4si (vx.i);
-  y *= v4sf_dup_literal ((1.0f / (1 << 23)));
+  union { v4si i; v4sf f; } mx = { (vx.i & v4sil (0x007FFFFF)) | v4sil (0x3f000000) };
+  v4sf y = v4si_to_v4sf (vx.i);
+  y *= v4sfl (1.1920928955078125e-7f);
 
-  const v4sf c_124_22544637 = v4sf_dup_literal (124.22544637f);
-  const v4sf c_1_498030302 = v4sf_dup_literal (1.498030302f);
-  const v4sf c_1_725877999 = v4sf_dup_literal (1.72587999f);
-  const v4sf c_0_3520087068 = v4sf_dup_literal (0.3520887068f);
+  const v4sf c_124_22551499 = v4sfl (124.22551499f);
+  const v4sf c_1_498030302 = v4sfl (1.498030302f);
+  const v4sf c_1_725877999 = v4sfl (1.72587999f);
+  const v4sf c_0_3520087068 = v4sfl (0.3520887068f);
 
-  return y - c_124_22544637 - c_1_498030302 * mx.f - c_1_725877999 / (c_0_3520087068 + mx.f);
+  return y - c_124_22551499
+           - c_1_498030302 * mx.f 
+           - c_1_725877999 / (c_0_3520087068 + mx.f);
 }
 
 inline v4sf
 vfastlog (v4sf x)
-{ 
-  const v4sf c_0_69314718 = v4sf_dup_literal (0.69314718f);
+{
+  const v4sf c_0_69314718 = v4sfl (0.69314718f);
 
   return c_0_69314718 * vfastlog2 (x);
 }
@@ -169,16 +176,11 @@ vfastlog (v4sf x)
 inline v4sf
 vfastdigamma (v4sf x)
 {
-  const v4sf c_1_0 = v4sf_dup_literal (1.0f);
-  const v4sf c_2_0 = v4sf_dup_literal (2.0f);
-  const v4sf c_6_0 = v4sf_dup_literal (6.0f);
-  const v4sf c_12_0 = v4sf_dup_literal (12.0f);
-  const v4sf c_13_0 = v4sf_dup_literal (13.0f);
-  v4sf twopx = c_2_0 + x;
+  v4sf twopx = v4sfl (2.0f) + x;
   v4sf logterm = vfastlog (twopx);
 
-  return - (c_1_0 + c_2_0 * x) / (x * (c_1_0 + x))
-         - (c_13_0 + c_6_0 * x) / (c_12_0 * twopx * twopx)
+  return (v4sfl (-48.0f) + x * (v4sfl (-157.0f) + x * (v4sfl (-127.0f) - v4sfl (30.0f) * x))) /
+         (v4sfl (12.0f) * x * (v4sfl (1.0f) + x) * twopx * twopx)
          + logterm;
 }
 
@@ -187,7 +189,7 @@ vexpdigammify (float* gamma)
 {
   unsigned int n = global.lda;
   float extra_sum = 0.0f;
-  v4sf sum = v4sf_dup_literal (0.0f);
+  v4sf sum = v4sfl (0.0f);
   size_t i;
 
   for (i = 0; i < n && ((uintptr_t) (gamma + i)) % 16 > 0; ++i)
@@ -198,10 +200,10 @@ vexpdigammify (float* gamma)
 
   for (; i + 4 < n; i += 4)
     { 
-      v4sf arg = * (v4sf_aligned*) (gamma + i);
+      v4sf arg = _mm_load_ps (gamma + i);
       sum += arg;
       arg = vfastdigamma (arg);
-      * (v4sf_aligned*) (gamma + i) = arg;
+      _mm_store_ps (gamma + i, arg);
     }
 
   for (; i < n; ++i)
@@ -213,7 +215,7 @@ vexpdigammify (float* gamma)
   extra_sum += v4sf_index (sum, 0) + v4sf_index (sum, 1) +
                v4sf_index (sum, 2) + v4sf_index (sum, 3);
   extra_sum = fastdigamma (extra_sum);
-  sum = v4sf_dup_literal (extra_sum);
+  sum = v4sfl (extra_sum);
 
   for (i = 0; i < n && ((uintptr_t) (gamma + i)) % 16 > 0; ++i)
     { 
@@ -222,11 +224,11 @@ vexpdigammify (float* gamma)
 
   for (; i + 4 < n; i += 4)
     { 
-      v4sf arg = * (v4sf_aligned*) (gamma + i);
+      v4sf arg = _mm_load_ps (gamma + i);
       arg -= sum;
       arg = vfastexp (arg);
-      arg = __builtin_ia32_maxps (v4sf_dup_literal (1e-10f), arg);
-      * (v4sf_aligned*) (gamma + i) = arg;
+      arg = _mm_max_ps (v4sfl (1e-10f), arg);
+      _mm_store_ps (gamma + i, arg);
     }
 
   for (; i < n; ++i)
@@ -249,13 +251,13 @@ vexpdigammify_2(float*       gamma,
 
   for (; i + 4 < n; i += 4)
     {
-      v4sf arg = * (v4sf_aligned*) (gamma + i);
+      v4sf arg = _mm_load_ps (gamma + i);
       arg = vfastdigamma (arg);
-      v4sf vnorm = (v4sf) { norm[i], norm[i+1], norm[i+2], norm[i+3] };
+      v4sf vnorm = _mm_loadu_ps (norm + i);
       arg -= vnorm;
       arg = vfastexp (arg);
-      arg = __builtin_ia32_maxps (v4sf_dup_literal (1e-10f), arg);
-      * (v4sf_aligned*) (gamma + i) = arg;
+      arg = _mm_max_ps (v4sfl (1e-10f), arg);
+      _mm_store_ps (gamma + i, arg);
     }
 
   for (; i < n; ++i)
