@@ -591,7 +591,7 @@ void start_lda(gd_thread_params t)
 	    continue;
 	  last_weight_index = s->f.weight_index;
 	  float* weights_for_w = &(weights[s->f.weight_index & global.thread_mask]);
-          float decay = fmax(0.0, fmin(1.0, exp(decay_levels.end[-2] - decay_levels.end[(int)(-1-example_t+weights_for_w[global.lda])])));
+          float decay = fmin(1.0, exp(decay_levels.end[-2] - decay_levels.end[(int)(-1-example_t+weights_for_w[global.lda])]));
 	  float* u_for_w = weights_for_w + global.lda+1;
 
 	  weights_for_w[global.lda] = example_t;
@@ -647,7 +647,7 @@ void start_lda(gd_thread_params t)
 	{
 	  for (size_t i = 0; i < global.length(); i++) {
 	    weight* weights_for_w = & (weights[i*global.stride]);
-            float decay = fmax(0.0, fmin(1.0, exp(decay_levels.last() - decay_levels.end[(int)(-1-example_t+weights_for_w[global.lda])])));
+            float decay = fmin(1.0, exp(decay_levels.last() - decay_levels.end[(int)(-1-example_t+weights_for_w[global.lda])]));
 	    for (size_t k = 0; k < global.lda; k++) {
 	      weights_for_w[k] *= decay;
             }
