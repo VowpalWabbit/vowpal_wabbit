@@ -241,7 +241,7 @@ void finalize_preconditioner(regressor& reg,float regularization)
     }
   else
     for(uint32_t i = 0; i < length; i++) {
-      weights[stride*i+3] += regularization + reg.regularizers[0][i];
+      weights[stride*i+3] += regularization*reg.regularizers[0][i];
       if (weights[stride*i+3] > 0)
 	weights[stride*i+3] = 1. / weights[stride*i+3];
     }
