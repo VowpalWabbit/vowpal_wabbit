@@ -57,6 +57,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("daemon", "read data from port 39523")
     ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay),
      "Set Decay factor for learning_rate between passes")
+    ("input_feature_regularizer", po::value< string >(&global.per_feature_regularizer_input), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
     ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
@@ -80,6 +81,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
+    ("output_feature_regularizer", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
+    ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.5), "t power value")
     ("predictto", po::value< string > (), "host to send predictions to")
@@ -130,6 +133,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.update_sum = 0.;
   global.lda =0;
   global.random_weights = false;
+  global.per_feature_regularizer_input = "";
+  global.per_feature_regularizer_output = "";
+  global.per_feature_regularizer_text = "";
 
   global.adaptive = false;
   global.exact_adaptive_norm = false;

@@ -35,6 +35,9 @@ struct global_data {
   bool conjugate_gradient;
   float regularization;
   size_t stride;
+  string per_feature_regularizer_input;
+  string per_feature_regularizer_output;
+  string per_feature_regularizer_text;
   
   float l_1_regularization;//the level of l_1 regularization to impose.
   float update_sum;
