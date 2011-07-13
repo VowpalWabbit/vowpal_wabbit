@@ -345,9 +345,8 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
 	}
     }
 
-  rename(start_name.c_str(),reg_name.c_str());
-
   io_temp.close_file();
+  rename(start_name.c_str(),reg_name.c_str());
 }
 
 void finalize_regressor(string reg_name, regressor &r)
