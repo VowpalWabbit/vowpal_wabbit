@@ -177,16 +177,24 @@ void zero_preconditioner(regressor& reg)
     weights[stride*i+3] = 0;
 }
 
-double direction_magnitude(regressor& reg)
+double regularizer_direction_magnitude(regressor& reg, float regularizer)
 {//compute direction magnitude
   double ret = 0.;
+  
+  if (regularizer == 0.)
+    return ret;
+
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors[0];
-  for(uint32_t i = 0; i < length; i++)
-    ret += weights[stride*i+2]*weights[stride*i+2];
-  
-  return ret;
+  if (reg.regularizers == NULL)
+    for(uint32_t i = 0; i < length; i++)
+      ret += weights[stride*i+2]*weights[stride*i+2];
+  else
+    for(uint32_t i = 0; i < length; i++)
+      ret += reg.regularizers[0][i]*weights[stride*i+2]*weights[stride*i+2];
+
+  return ret*regularizer;
 }
 
 double derivative_diff_mag(regressor& reg, float* old_first_derivative)
@@ -252,9 +260,27 @@ void preconditioner_to_regularizer(regressor& reg, float regularization)
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors[0];
-  for(uint32_t i = 0; i < length; i++) {
-    reg.regularizers[0][i] = weights[stride*i+3] + regularization;
-  }
+  if (reg.regularizers == NULL)
+    {
+      size_t num_threads = global.num_threads();
+      reg.regularizers = (weight **)malloc(num_threads * sizeof(weight*));
+      for (size_t i = 0; i < num_threads; i++)
+	{
+	  if (reg.regularizers != NULL)
+	    reg.regularizers[i] = (weight *)calloc(length/num_threads, sizeof(weight));
+	  
+	  if ((reg.regularizers != NULL && reg.regularizers[i] == NULL))
+	    {
+	      cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
+	      exit (1);
+	    }
+	}
+      for(uint32_t i = 0; i < length; i++) 
+	reg.regularizers[0][i] = weights[stride*i+3] + regularization;
+    }
+  else
+    for(uint32_t i = 0; i < length; i++) 
+      reg.regularizers[0][i] = weights[stride*i+3] + regularization*reg.regularizers[0][i];
 }
 
 void zero_state(regressor& reg, float* old_first_derivative)
@@ -362,9 +388,9 @@ void setup_cg(gd_thread_params t)
 
   if (!global.quiet)
     {
-      const char * header_fmt = "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
+      const char * header_fmt = "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
       fprintf(stderr, header_fmt,
-	      "avg. loss", "mix fraction", "der. mag", "curvature", "dir. magnitude", "step size", "newt. decr.");
+	      "avg. loss", "mix fraction", "der. mag", "curvature", "step size", "newt. decr.");
       fflush(stderr);
       cerr.precision(5);
     }
@@ -432,12 +458,11 @@ void setup_cg(gd_thread_params t)
 		}
 	      else // just finished all second gradients
 		{
-		  float d_mag = direction_magnitude(reg);
 		  if(global.master_location != "") {
 		    curvature = accumulate_scalar(socks, curvature);  //Accumulate curvatures
 		  }
 		  if (global.regularization > 0.)
-		    curvature += global.regularization*d_mag;
+		    curvature += regularizer_direction_magnitude(reg,global.regularization);
 		  float dd = derivative_in_direction(reg, old_first_derivative);
 		  if (curvature == 0. && dd != 0.)
 		    {
@@ -446,7 +471,7 @@ void setup_cg(gd_thread_params t)
 		    }
 		  step_size = - dd/curvature;
 		  if (!global.quiet) {
-		    fprintf(stderr, "%-e\t%-e\t%-e\t%-f\n", curvature/importance_weight_sum, d_mag/importance_weight_sum, step_size, 0.5*step_size*step_size*curvature /importance_weight_sum);
+		    fprintf(stderr, "%-e\t%-e\t%-f\n", curvature/importance_weight_sum, step_size, 0.5*step_size*step_size*curvature /importance_weight_sum);
 		    //fprintf(stdout, "Net comm. time is %f\n",net_comm_time - prev_comm_time);
 		  }
 		  prev_comm_time = net_comm_time;
@@ -511,12 +536,11 @@ void setup_cg(gd_thread_params t)
 	{
 	  if (example_number == predictions.index())//do one last update
 	    {
-	      float d_mag = direction_magnitude(reg);
 	      if(global.master_location != "") {
 		curvature = accumulate_scalar(socks, curvature);  //Accumulate curvatures
 	      }
 	      if (global.regularization > 0.)
-		curvature += global.regularization*d_mag;
+		curvature += regularizer_direction_magnitude(reg,global.regularization);
 	      float dd = derivative_in_direction(reg, old_first_derivative);
 	      if (curvature == 0. && dd != 0.)
 		{
@@ -525,7 +549,7 @@ void setup_cg(gd_thread_params t)
 		}
 	      float step_size = - dd/(max(curvature,1.));
 	      if (!global.quiet) {
-		fprintf(stderr, "%-e\t%-e\t%-e\t%-f\n", curvature, d_mag, step_size, 0.5*step_size*step_size*curvature);
+		fprintf(stderr, "%-e\t%-e\t%-f\n", curvature, step_size, 0.5*step_size*step_size*curvature);
 		//fprintf(stdout, "Net comm. time is %f\n",net_comm_time - prev_comm_time);
 	      }
 	      update_weight(reg,step_size);
