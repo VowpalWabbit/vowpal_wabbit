@@ -355,7 +355,7 @@ float accumulate_scalar(node_socks socks, float local_sum) {
   return temp;
 }
 
-void setup_cg(gd_thread_params t)
+void setup_cg(gd_thread_params& t)
 {
   regressor reg = t.reg;
   size_t thread_num = 0;
@@ -574,6 +574,7 @@ void setup_cg(gd_thread_params t)
 	  free(predictions.begin);
 	  free(old_first_derivative);
 	  free(ec);
+	  t.reg = reg;
 	  return;
 	}
       else 
@@ -590,6 +591,7 @@ void setup_cg(gd_thread_params t)
   cerr<<"Net time spent = "<<(float)net_time/(float)1000<<"seconds\n";
   fflush(stderr);
 
+  t.reg = reg;
   return;
 }
 

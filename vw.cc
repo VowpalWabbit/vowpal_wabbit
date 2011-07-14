@@ -85,8 +85,8 @@ gd_vars* vw(int argc, char *argv[])
 
   destroy_delay_ring();
   end_parser(p);
-
-  finalize_regressor(final_regressor_name,regressor1);
+  
+  finalize_regressor(final_regressor_name,t.reg);
   finalize_source(p);
   free(p);
   return vars;

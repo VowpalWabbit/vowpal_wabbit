@@ -305,7 +305,9 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
 	{
 	  weight v;
 	  if (reg_vector)
-	    v = r.regularizers[i%num_threads][(i/num_threads)];
+	    {
+	      v = r.regularizers[i%num_threads][(i/num_threads)];
+	    }
 	  else
 	    v = r.weight_vectors[i%num_threads][stride*(i/num_threads)];
 	  if (v != 0.)
@@ -354,6 +356,6 @@ void finalize_regressor(string reg_name, regressor &r)
   dump_regressor(reg_name, r, false);
   dump_regressor(global.text_regressor_name, r, true);
   dump_regressor(global.per_feature_regularizer_output, r, false, true);
-  dump_regressor(global.per_feature_regularizer_output, r, true, true);
+  dump_regressor(global.per_feature_regularizer_text, r, true, true);
   free_regressor(r);
 }

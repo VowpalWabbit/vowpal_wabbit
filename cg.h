@@ -8,7 +8,7 @@ embodied in the content of this file are licensed under the BSD
 #define CG_H
 #include "gd.h"
 
-void setup_cg(gd_thread_params t);
+void setup_cg(gd_thread_params& t);
 void destroy_cg();
 
 #endif
