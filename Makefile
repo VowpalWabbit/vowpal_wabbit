@@ -43,6 +43,8 @@ sparse_dense.o:	 parse_example.h
 
 gd.o:	 parse_example.h
 
+gd_mf.o:	gd.h
+
 %.o:	 %.cc  %.h
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
