@@ -36,7 +36,7 @@ struct gd_thread_params
 };
 
 void print_audit_features(regressor &reg, example* ec, size_t offset);
-//float final_prediction(float ret, size_t num_features, float &norm);
+
 float finalize_prediction(float ret);
 
 void predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars);

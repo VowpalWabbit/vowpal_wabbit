@@ -1,7 +1,7 @@
 COMPILER = g++
 LIBS = -l boost_program_options -l pthread -l z
-BOOST_INCLUDE = /usr/include/boost #/usr/local/boost/include/boost-1_34_1
-BOOST_LIBRARY = /usr/lib64 #/usr/local/boost/lib
+BOOST_INCLUDE = /usr/local/include
+BOOST_LIBRARY = /usr/local/lib
 
 ARCH = -march=nocona
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing 
@@ -25,8 +25,8 @@ MANPAGES = vw.1
 #all:	$(BINARIES) $(MANPAGES)
 all:	$(BINARIES)
 
-#%.1:	%
-#	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
+%.1:	%
+	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
 
 vw.o:	 parse_example.h  parse_regressor.h  parse_args.h  parser.h
 

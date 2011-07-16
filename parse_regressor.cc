@@ -33,9 +33,13 @@ void initialize_regressor(regressor &r)
       r.weight_vectors[i] = (weight *)calloc(global.stride*length/num_threads, sizeof(weight));
 
       // random weight initialization for matrix factorization
-      if (global.random_weights && (global.rank > 0))
-	for (size_t j = 0; j < global.stride*length/num_threads; j++)
-	  r.weight_vectors[i][j] = (double) 0.1 * rand() / ((double) RAND_MAX + 1.0); //drand48()/10 - 0.05;
+      if (global.random_weights)
+	if (global.rank > 0)
+	  for (size_t j = 0; j < global.stride*length/num_threads; j++)
+	    r.weight_vectors[i][j] = (double) 0.1 * rand() / ((double) RAND_MAX + 1.0); //drand48()/10 - 0.05;
+        else
+	  for (size_t j = 0; j < length/num_threads; j++)
+	    r.weight_vectors[i][j] = drand48() - 0.5;
 
       if (r.regularizers != NULL)
 	r.regularizers[i] = (weight *)calloc(length/num_threads, sizeof(weight));

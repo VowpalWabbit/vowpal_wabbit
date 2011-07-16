@@ -23,7 +23,6 @@ public:
   }
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
-    norm = max(norm,0.1f);
 
     if (eta_t < 1e-6){ 
       /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t) 
