@@ -35,7 +35,13 @@ struct global_data {
   bool conjugate_gradient;
   float regularization;
   size_t stride;
+  string per_feature_regularizer_input;
+  string per_feature_regularizer_output;
+  string per_feature_regularizer_text;
   
+  float l_1_regularization;//the level of l_1 regularization to impose.
+  float update_sum;
+
   size_t minibatch;
 
   size_t pass_length;
@@ -55,6 +61,7 @@ struct global_data {
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
+  bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
   bool random_weights;
   
   double min_label;//minimum label encountered
@@ -66,6 +73,8 @@ struct global_data {
   float lda_D;
 
   string text_regressor_name;
+  
+  string master_location;
 
   size_t num_threads () { return 1 << thread_bits; };
   size_t num_partitions () { return 1 << partition_bits; };
@@ -108,6 +117,6 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(double label);
 void print_lda_result(int f, float* res, float weight, v_array<char> tag);
 
-const size_t ring_size = 1 << 11;
+const size_t ring_size = 1 << 8;
 
 #endif

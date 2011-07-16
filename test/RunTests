@@ -8,11 +8,12 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_c $opt_e $opt_f $opt_o);
+use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o);
 
 my $Epsilon = 1e-4;
 
 my $VW;
+my $LDA;
 
 my @TrainSets = glob('train-sets/*.dat');
 my @TestSets = glob('test-sets/*.dat');
@@ -25,11 +26,12 @@ sub usage(@) {
         .  ..  \$PATH
 
     Options:
-        -c  print commands before running them
-        -d  print diff output on diff-failure
-        -e  Abort on first diff error
-        -f  Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
-        -o  Overwrite reference file with new/different result
+        -c    print commands before running them
+        -d    print diff output on diff-failure
+        -e    Abort on first diff error
+        -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
+        -E<e> Set epsilon <e> for fuzzy floating-point compares (default $Epsilon)
+        -o    Overwrite reference file with new/different result
 ";
 }
 
@@ -37,7 +39,7 @@ sub usage(@) {
 # which vw executable to test against
 #
 sub which_vw() {
-    if (@ARGV == 1) {
+    if (@ARGV == 1 || @ARGV == 2) {
         my $exe = $ARGV[0];
         if (-f $exe && -x $exe) {
             printf STDERR "Testing vw: %s\n", $exe;
@@ -57,10 +59,33 @@ sub which_vw() {
     usage("can't find a 'vw' executable to test on");
 }
 
+sub which_lda() {
+    if (@ARGV == 2) {
+        my $exe = $ARGV[1];
+        if (-f $exe && -x $exe) {
+            printf STDERR "Testing lda: %s\n", $exe;
+            return $exe;
+        } else {
+            usage("$0: argument $exe: not an executable file");
+        }
+    } elsif (@ARGV == 0 || @ARGV == 1) {
+        foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
+            my $exe = "$dir/lda";
+            if (-x $exe) {
+                printf STDERR "Testing lda: %s\n", $exe;
+                return $exe;
+            }
+        }
+    }
+    usage("can't find a 'lda' executable to test on");
+}
+
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('cdefo') || usage();
+    getopts('cdefE:o') || usage();
+    $Epsilon = $opt_E if ($opt_E);
     $VW = which_vw();
+    $LDA = which_lda();
 }
 
 sub trim_spaces($) {
@@ -87,6 +112,16 @@ sub next_test() {
             # The command line
             $cmd = trim_spaces($line);
             $cmd =~ s/{VW}/$VW/;
+            if ($cmd =~ /\s-p\s+(\S+)/) {
+                # -p predict_file
+                $pred = $1;
+            }
+            next;
+        }
+        if ($line =~ /{LDA}/) {
+            # The command line
+            $cmd = trim_spaces($line);
+            $cmd =~ s/{LDA}/$LDA/;
             if ($cmd =~ /\s-p\s+(\S+)/) {
                 # -p predict_file
                 $pred = $1;
@@ -150,7 +185,7 @@ sub lenient_array_compare($$) {
         # There's some difference, is it significant?
         return 1 unless (looks_like_number($w1[$i]));        
         return 1 unless (looks_like_number($w2[$i]));        
-        my $delta = $w1[$i] - $w2[$i];
+        my $delta = abs($w1[$i] - $w2[$i]);
  
         return 1 if ($delta > $Epsilon);
     }
@@ -386,7 +421,7 @@ __DATA__
     pred-sets/ref/0002b.predict
 
 # Test 7: using -q and multiple threads
-{VW} --adaptive -q ff --thread_bits 1 -f models/0002c.model train-sets/0002.dat
+{VW} --adaptive -q ff -f models/0002c.model train-sets/0002.dat
     train-sets/ref/0002c.stdout
     train-sets/ref/0002c.stderr
 
@@ -397,6 +432,6 @@ __DATA__
     pred-sets/ref/0002c.predict
 
 # Test 9: Run LDA with 100 topics on 1000 Wikipedia articles
-{VW} --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
+{LDA} --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr

@@ -1,0 +1,115 @@
+The implementation of Non-linear (Preconditioned) Conjugate Gradient
+works on clusters (both Hadoop and otherwise) now.
+
+To build the code, run make.
+
+At a high level, the code operates by repeatedly executing something
+equivalent to the MPI AllReduce function---adding up floats from all
+nodes then broadcasting them back to each individual node.  In order
+to do this, a spanning tree over the nodes must be created.  This is
+done using the helper daemon 'allreduce_master'.
+
+***********************************************************************
+
+To run the code on Hadoop clusters:
+
+Connect to the master node for the Hadoop cluster:
+./allreduce_master <n>
+where <n> is the number of mappers you are going to launch.
+
+Start the map-reduce job using Hadoop streaming: 
+
+hadoop jar $HADOOP_HOME/hadoop-streaming.jar
+-Dmapred.job.map.memory.mb=2500 -input <input> -output <output> -file
+vw -file runvw.sh -mapper 'runvw.sh <output> <master>' -reducer
+NONE
+
+where <output> is the directory on HDFS where you want the trained
+model to be saved and <master> is the hostname of the gateway where
+allreduc_master runs. The trained model is saved to the file
+<output>/model on HDFS and can be retreived by hadoop -get.
+
+To modify the arguments to VW, edit the script runvw.sh. Arguments to
+hadoop can be directly added in the hadoop streaming command. 
+
+***********************************************************************
+
+To run the code on non-Hadoop clusters:
+
+Start the master job on one of the cluster nodes:
+./allreduce_master <n>
+where <n> is the number of workers you are going to launch.
+
+Launch vw on each of the worker nodes: 
+
+./vw --cache_file temp.cache -b 24 --conjugate_gradient --passes 4 -q
+up -q ua -q us -q pa -q ps -q as --loss_function=logistic
+--regularization=1 --master_location <master> -d <input> -f
+model
+
+where <master> is the hostname of the master node and <input> is a
+different input file to each of the slaves.  The trained model is saved
+as the file model on the worker nodes.
+
+************************************************************************
+
+The files you need to know about:
+
+runvw.sh: This is the mapper code. It takes as arguments:
+          
+The output directory. The trained model from the first mapper is
+stored as the file "model" in the output directory.
+
+The hostname of the cluster gateway, so that the mappers can connect
+to the gateway
+                    
+All the other standard VW options are currently hardcoded in the
+script, feel free to mess around with them.
+
+#########################################################################
+
+allreduce_master.cc: This is the master code which runs on the gateway. You
+start it before the call to hadoop. The master takes as input the
+number of mappers it should expect to hear from, so you need to know
+this ahead of time based on the number of input files you have. The
+master backgrounds itself after starting and listens for <n> incoming
+connections. The role of the master is to set up the topology on the
+mappers and then let them communicate amongst themselves.
+
+#########################################################################
+
+allreduce.h: This is the header file for the workers. It provides a
+struct socks, that contains a socket to the parent and sockets for up
+to two children. Also provides the following functions:
+
+all_reduce_init(string master_location, node_socks* socks): Takes as
+input the hostname of the master as a string, and a pointer to the
+struct socks which will be populated with the parent and children
+sockets at the end. This routine checks in with the master, gets the
+tree structure and sets up communication with the parent and the
+children for the rest of the algorithm.
+
+all_reduce(char* buffer, int n, node_socks socks): Performs AllReduce
+on the entries of buffer that is n bytes, with the parent and children
+specified in socks object. It is implicitly assumed that the buffer
+contains floats so that addition is defined on chunks of 4 bytes.
+
+all_reduce_close(node_socks socks): Closes the sockets at the end.
+
+The header also defines a constant const int buf_size which is the
+buffer size (in bytes) used for communication.
+                  
+#########################################################################
+
+allreduce.cc: This is the code for the workers. It implements the 
+routines described above. all_reduce is implemented as a combination of 
+reduce and broadcast routines. reduce reads data from children, adds it 
+with local data and passes it up to the parent with a call to pass_up. 
+broadcast receives data from parent, and passes it down to children with 
+a call to pass_down.
+
+#########################################################################
+
+cg.cc: Conjugate gradient code with appropriate calls to all_reduce 
+whenever communication is needed. Uses routines accumulate and 
+accumulate_scalar to reduce vectors and scalars resp.

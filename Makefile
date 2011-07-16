@@ -2,12 +2,15 @@ COMPILER = g++
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/include/boost #/usr/local/boost/include/boost-1_34_1
 BOOST_LIBRARY = /usr/lib64 #/usr/local/boost/lib
+#BOOST_INCLUDE = /homes/hofman/boost/
+#BOOST_LIBRARY = /homes/hofman/boost/stage/lib
 
-#ARCH = -march=native
-OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
+ARCH = -march=nocona
+OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing 
+WARN_FLAGS = -Wall #-Werror 
 
 # for normal fast execution.
-FLAGS = -Wall $(ARCH) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE)
+FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
 
 # for parallelization
 #FLAGS = -Wall $(ARCH) -ffast-math -Wno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3 -fopenmp
@@ -18,7 +21,7 @@ FLAGS = -Wall $(ARCH) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE)
 # for valgrind
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
-BINARIES = vw
+BINARIES = vw allreduce_master active_interactor lda
 MANPAGES = vw.1
 
 #all:	$(BINARIES) $(MANPAGES)
@@ -51,7 +54,13 @@ gd_mf.o:	gd.h
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
-vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o gd_mf.o cg.o noop.o parser.o vw.o loss_functions.o sender.o main.o
+allreduce_master: allreduce_master.o
+	$(COMPILER) $(FLAGS) -o $@ $+ 
+
+vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o gd_mf.o allreduce.o cg.o noop.o parser.o vw.o loss_functions.o sender.o main.o
+	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
+
+lda: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o lda_core.o noop.o parser.o loss_functions.o sender.o lda.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 active_interactor:	active_interactor.cc
@@ -64,7 +73,7 @@ offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_de
 
 test: .FORCE
 	@echo "vw running test-suite..."
-	@(cd test && ./RunTests ../vw)
+	@(cd test && ./RunTests -f -E 0.001 ../vw ../lda)
 
 install: vw
 	cp $(BINARIES) /usr/local/bin

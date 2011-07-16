@@ -42,6 +42,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
+    ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
@@ -50,12 +51,13 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
     ("conjugate_gradient", "use conjugate gradient based optimization")
-    ("regularization", po::value<float>(&global.regularization)->default_value(0.001), "minimize weight magnitude")
+    ("regularization", po::value<float>(&global.regularization)->default_value(1.0), "l_2 regularization for conjugate_gradient")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 39523")
     ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay),
      "Set Decay factor for learning_rate between passes")
+    ("input_feature_regularizer", po::value< string >(&global.per_feature_regularizer_input), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
     ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
@@ -68,15 +70,19 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_pass_length", po::value<size_t>(&global.pass_length)->default_value((size_t)-1), "initial number of examples per pass")
     ("initial_t", po::value<float>(&(par->t))->default_value(1.), "initial t value")
+    ("l1", po::value<float>(&global.l_1_regularization)->default_value(0.), "l_1 regularization level")
     ("lda", po::value<size_t>(&global.lda), "Run lda with <int> topics")
     ("lda_alpha", po::value<float>(&global.lda_alpha)->default_value(0.1), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>(&global.lda_rho)->default_value(0.1), "Prior on sparsity of topic distributions")
     ("lda_D", po::value<float>(&global.lda_D)->default_value(10000.), "Number of documents")
     ("minibatch", po::value<size_t>(&global.minibatch)->default_value(1), "Minibatch size, for LDA")
+    ("master_location", po::value<string>(&global.master_location)->default_value(""), "Location of master for setting up spanning tree")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
+    ("output_feature_regularizer", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
+    ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.5), "t power value")
     ("predictto", po::value< string > (), "host to send predictions to")
@@ -125,10 +131,15 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.print = print_result;
   global.min_label = 0.;
   global.max_label = 1.;
+  global.update_sum = 0.;
   global.lda =0;
   global.random_weights = false;
+  global.per_feature_regularizer_input = "";
+  global.per_feature_regularizer_output = "";
+  global.per_feature_regularizer_text = "";
 
   global.adaptive = false;
+  global.exact_adaptive_norm = false;
   global.audit = false;
   global.active = false;
   global.active_simulation =false;
@@ -155,16 +166,28 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     exit(0);
   }
 
+  if (vm.count("quiet"))
+    global.quiet = true;
+  else
+    global.quiet = false;
+
   if (vm.count("active_simulation"))
       global.active_simulation = true;
 
   if (vm.count("active_learning") && !global.active_simulation)
     global.active = true;
 
-  if (vm.count("adaptive")) {
+  if (vm.count("adaptive") || vm.count("exact_adaptive_norm")) {
       global.adaptive = true;
+      if (vm.count("exact_adaptive_norm"))
+	global.exact_adaptive_norm = true;
       global.stride = 2;
       vars.power_t = 0.0;
+      if (global.thread_bits != 0)
+	{
+	  cout << "adaptive code isn't correct with multiple learning cores" << endl;
+	  exit(1);
+	}
   }
 
   if (vm.count("backprop")) {
@@ -236,7 +259,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	  exit(1);
 	}
     }
-
+  
   string data_filename = vm["data"].as<string>();
   if (vm.count("compressed") || ends_with(data_filename, ".gz"))
     set_compressed(par);
@@ -248,10 +271,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cerr << "The system limits at 30 bits of precision!\n" << endl;
     exit(1);
   }
-  if (vm.count("quiet"))
-    global.quiet = true;
-  else
-    global.quiet = false;
 
   if (vm.count("quadratic"))
     {
@@ -318,8 +337,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (!vm.count("lda"))
     global.eta *= pow(par->t, vars.power_t);
 
-  parse_source_args(vm,par,global.quiet,global.numpasses);
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
+  parse_source_args(vm,par,global.quiet,global.numpasses);
   if (vm.count("readable_model"))
     global.text_regressor_name = vm["readable_model"].as<string>();
 

@@ -23,6 +23,10 @@ void initialize_regressor(regressor &r)
   global.thread_mask = (global.stride * (length >> global.thread_bits)) - 1;
   size_t num_threads = global.num_threads();
   r.weight_vectors = (weight **)malloc(num_threads * sizeof(weight*));
+  if (global.per_feature_regularizer_input != "")
+    r.regularizers = (weight **)malloc(num_threads * sizeof(weight*));
+  else
+    r.regularizers = NULL;
   for (size_t i = 0; i < num_threads; i++)
     {
       //r.weight_vectors[i] = (weight *)calloc(length/num_threads, sizeof(weight));
@@ -33,7 +37,9 @@ void initialize_regressor(regressor &r)
 	for (size_t j = 0; j < global.stride*length/num_threads; j++)
 	  r.weight_vectors[i][j] = (double) 0.1 * rand() / ((double) RAND_MAX + 1.0); //drand48()/10 - 0.05;
 
-      if (r.weight_vectors[i] == NULL)
+      if (r.regularizers != NULL)
+	r.regularizers[i] = (weight *)calloc(length/num_threads, sizeof(weight));
+      if (r.weight_vectors[i] == NULL || (r.regularizers != NULL && r.regularizers[i] == NULL))
         {
           cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
           exit (1);
@@ -63,6 +69,130 @@ void initialize_regressor(regressor &r)
     }
 }
 
+void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vector)
+{
+  ifstream source(file);
+  if (!source.is_open())
+    {
+      cout << "can't open " << file << endl << " ... exiting." << endl;
+      exit(1);
+    }
+  
+  size_t v_length;
+  source.read((char*)&v_length, sizeof(v_length));
+  char t[v_length];
+  source.read(t,v_length);
+  if (strcmp(t,version.c_str()) != 0)
+    {
+      cout << "source has possibly incompatible version!" << endl;
+      exit(1);
+    }
+  
+  source.read((char*)&global.min_label, sizeof(global.min_label));
+  source.read((char*)&global.max_label, sizeof(global.max_label));
+  
+  size_t local_num_bits;
+  source.read((char *)&local_num_bits, sizeof(local_num_bits));
+  if (!initialized){
+    if (global.default_bits != true && global.num_bits != local_num_bits)
+      {
+	cout << "Wrong number of bits for source!" << endl;
+	exit (1);
+      }
+    global.default_bits = false;
+    global.num_bits = local_num_bits;
+  }
+  else 
+    if (local_num_bits != global.num_bits)
+      {
+	cout << "can't combine sources with different feature number!" << endl;
+	exit (1);
+      }
+  
+  size_t local_thread_bits;
+  source.read((char*)&local_thread_bits, sizeof(local_thread_bits));
+  if (!initialized){
+    global.thread_bits = local_thread_bits;
+    global.partition_bits = global.thread_bits;
+  }
+  else 
+    if (local_thread_bits != global.thread_bits)
+      {
+	cout << "can't combine sources trained with different numbers of threads!" << endl;
+	exit (1);
+      }
+  
+  int len;
+  source.read((char *)&len, sizeof(len));
+  
+  vector<string> local_pairs;
+  for (; len > 0; len--)
+    {
+      char pair[2];
+      source.read(pair, sizeof(char)*2);
+      string temp(pair, 2);
+      local_pairs.push_back(temp);
+    }
+  if (!initialized)
+    {
+      global.pairs = local_pairs;
+      initialize_regressor(r);
+    }
+  else
+    if (local_pairs != global.pairs)
+      {
+	cout << "can't combine sources with different features!" << endl;
+	for (size_t i = 0; i < local_pairs.size(); i++)
+	  cout << local_pairs[i] << " " << local_pairs[i].size() << " ";
+	cout << endl;
+	for (size_t i = 0; i < global.pairs.size(); i++)
+	  cout << global.pairs[i] << " " << global.pairs[i].size() << " ";
+	cout << endl;
+	exit (1);
+      }
+  size_t local_ngram;
+  source.read((char*)&local_ngram, sizeof(local_ngram));
+  size_t local_skips;
+  source.read((char*)&local_skips, sizeof(local_skips));
+  if (!initialized)
+    {
+      global.ngram = local_ngram;
+      global.skips = local_skips;
+      initialized = true;
+    }
+  else
+    if (global.ngram != local_ngram || global.skips != local_skips)
+      {
+	cout << "can't combine sources with different ngram features!" << endl;
+	exit(1);
+      }
+  size_t stride = global.stride;
+  while (source.good())
+    {
+      uint32_t hash;
+      source.read((char *)&hash, sizeof(hash));
+      weight w = 0.;
+      source.read((char *)&w, sizeof(float));
+      
+      size_t num_threads = global.num_threads();
+      if (source.good())
+	{
+	  if (global.rank != 0)
+	      r.weight_vectors[hash % num_threads][hash/num_threads] = w;
+	  else if (global.lda == 0)
+	    if (reg_vector)
+	      r.regularizers[hash % num_threads][hash/num_threads] = w;
+	    else
+	      r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
+		= r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
+	  else
+	      r.weight_vectors[hash % num_threads][hash/num_threads] 
+		= r.weight_vectors[hash % num_threads][hash/num_threads] + w;
+	}      
+    }
+  source.close();
+}
+
 void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_regressor_name, bool quiet)
 {
   if (vm.count("final_regressor")) {
@@ -85,115 +215,11 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
   bool initialized = false;
 
   for (size_t i = 0; i < regs.size(); i++)
-    {
-      ifstream regressor(regs[i].c_str());
-      if (!regressor.is_open())
-	{
-	  cout << "can't open " << regs[i].c_str() << endl << " ... exiting." << endl;
-	  exit(1);
-	}
-
-      size_t v_length;
-      regressor.read((char*)&v_length, sizeof(v_length));
-      char t[v_length];
-      regressor.read(t,v_length);
-      if (strcmp(t,version.c_str()) != 0)
-	{
-	  cout << "regressor has possibly incompatible version!" << endl;
-	  exit(1);
-	}
-
-      regressor.read((char*)&global.min_label, sizeof(global.min_label));
-      regressor.read((char*)&global.max_label, sizeof(global.max_label));
-
-      size_t local_num_bits;
-      regressor.read((char *)&local_num_bits, sizeof(local_num_bits));
-      if (!initialized){
-	global.default_bits = false;
-	global.num_bits = local_num_bits;
-      }
-      else 
-	if (local_num_bits != global.num_bits)
-	  {
-	    cout << "can't combine regressors with different feature number!" << endl;
-	    exit (1);
-	  }
-
-      size_t local_thread_bits;
-      regressor.read((char*)&local_thread_bits, sizeof(local_thread_bits));
-      if (!initialized){
-	global.thread_bits = local_thread_bits;
-	global.partition_bits = global.thread_bits;
-      }
-      else 
-	if (local_thread_bits != global.thread_bits)
-	  {
-	    cout << "can't combine regressors trained with different numbers of threads!" << endl;
-	    exit (1);
-	  }
+    read_vector(regs[i].c_str(), r, initialized, false);
+  
+  if (global.per_feature_regularizer_input != "")
+    read_vector(global.per_feature_regularizer_input.c_str(), r, initialized, true);
       
-      int len;
-      regressor.read((char *)&len, sizeof(len));
-
-      vector<string> local_pairs;
-      for (; len > 0; len--)
-	{
-	  char pair[2];
-	  regressor.read(pair, sizeof(char)*2);
-	  string temp(pair, 2);
-	  local_pairs.push_back(temp);
-	}
-      if (!initialized)
-	{
-	  global.pairs = local_pairs;
-	  initialize_regressor(r);
-	}
-      else
-	if (local_pairs != global.pairs)
-	  {
-	    cout << "can't combine regressors with different features!" << endl;
-	    for (size_t i = 0; i < local_pairs.size(); i++)
-	      cout << local_pairs[i] << " " << local_pairs[i].size() << " ";
-	    cout << endl;
-	    for (size_t i = 0; i < global.pairs.size(); i++)
-	      cout << global.pairs[i] << " " << global.pairs[i].size() << " ";
-	    cout << endl;
-	    exit (1);
-	  }
-      size_t local_ngram;
-      regressor.read((char*)&local_ngram, sizeof(local_ngram));
-      size_t local_skips;
-      regressor.read((char*)&local_skips, sizeof(local_skips));
-      if (!initialized)
-	{
-	  global.ngram = local_ngram;
-	  global.skips = local_skips;
-	  initialized = true;
-	}
-      else
-	if (global.ngram != local_ngram || global.skips != local_skips)
-	  {
-	    cout << "can't combine regressors with different ngram features!" << endl;
-	    exit(1);
-	  }
-      size_t stride = global.stride;
-      while (regressor.good())
-	{
-	  uint32_t hash;
-	  regressor.read((char *)&hash, sizeof(hash));
-	  weight w = 0.;
-	  regressor.read((char *)&w, sizeof(float));
-	  
-	  size_t num_threads = global.num_threads();
-	  if (regressor.good() && global.lda == 0 && global.rank == 0) 
-	    r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
-	      = r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
-	  else
-	    r.weight_vectors[hash % num_threads][hash/num_threads] = w;
-	      //= r.weight_vectors[hash % num_threads][hash/num_threads] + w;
-	}      
-      regressor.close();
-    }
   if (!initialized)
     {
       if(vm.count("noop") || vm.count("sendto"))
@@ -212,9 +238,16 @@ void free_regressor(regressor &r)
 	  free(r.weight_vectors[i]);
       free(r.weight_vectors);
     }
+  if (r.regularizers != NULL)
+    {
+      for (size_t i = 0; i < global.num_threads(); i++)
+	if (r.regularizers[i] != NULL)
+	  free(r.regularizers[i]);
+      free(r.regularizers);
+    }
 }
 
-void dump_regressor(string reg_name, regressor &r, bool as_text)
+void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector)
 {
   if (reg_name == string(""))
     return;
@@ -275,7 +308,13 @@ void dump_regressor(string reg_name, regressor &r, bool as_text)
     {
       if ((global.lda == 0) && (global.rank == 0))
 	{
-	  weight v = r.weight_vectors[i%num_threads][stride*(i/num_threads)];
+	  weight v;
+	  if (reg_vector)
+	    {
+	      v = r.regularizers[i%num_threads][(i/num_threads)];
+	    }
+	  else
+	    v = r.weight_vectors[i%num_threads][stride*(i/num_threads)];
 	  if (v != 0.)
 	    {
               if (!as_text) {
@@ -319,14 +358,15 @@ void dump_regressor(string reg_name, regressor &r, bool as_text)
 	}
     }
 
-  rename(start_name.c_str(),reg_name.c_str());
-
   io_temp.close_file();
+  rename(start_name.c_str(),reg_name.c_str());
 }
 
 void finalize_regressor(string reg_name, regressor &r)
 {
-  dump_regressor(reg_name, r, 0);
-  dump_regressor(global.text_regressor_name, r, 1);
+  dump_regressor(reg_name, r, false);
+  dump_regressor(global.text_regressor_name, r, true);
+  dump_regressor(global.per_feature_regularizer_output, r, false, true);
+  dump_regressor(global.per_feature_regularizer_text, r, true, true);
   free_regressor(r);
 }
