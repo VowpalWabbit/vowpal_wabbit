@@ -2,8 +2,6 @@ COMPILER = g++
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/include/boost #/usr/local/boost/include/boost-1_34_1
 BOOST_LIBRARY = /usr/lib64 #/usr/local/boost/lib
-#BOOST_INCLUDE = /homes/hofman/boost/
-#BOOST_LIBRARY = /homes/hofman/boost/stage/lib
 
 ARCH = -march=nocona
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing 
