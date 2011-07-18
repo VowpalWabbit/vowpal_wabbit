@@ -399,7 +399,8 @@ void setup_cg(gd_thread_params& t)
 
   bool output_regularizer = false;
   if (global.per_feature_regularizer_output != "" || global.per_feature_regularizer_text != "") {
-    global.regularization = 1; // To make sure we are adding the regularization
+    if (reg.regularizers != NULL)
+      global.regularization = 1; // To make sure we are adding the regularization
     output_regularizer = true;
   }
 
