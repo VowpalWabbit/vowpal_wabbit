@@ -31,7 +31,7 @@ void initialize_regressor(regressor &r)
     {
       r.weight_vectors[i] = (weight *)calloc(global.stride*length/num_threads, sizeof(weight));
       if (r.regularizers != NULL)
-	r.regularizers[i] = (weight *)calloc(length/num_threads, sizeof(weight));
+	r.regularizers[i] = (weight *)calloc(2*length/num_threads, sizeof(weight));
       if (r.weight_vectors[i] == NULL || (r.regularizers != NULL && r.regularizers[i] == NULL))
         {
           cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
@@ -299,6 +299,8 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
   uint32_t length = 1 << global.num_bits;
   size_t num_threads = global.num_threads();
   size_t stride = global.stride;
+  if (reg_vector)
+    length *= 2;
   for(uint32_t i = 0; i < length; i++)
     {
       if (global.lda == 0)

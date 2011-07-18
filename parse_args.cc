@@ -81,7 +81,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
-    ("output_feature_regularizer", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
+    ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.5), "t power value")

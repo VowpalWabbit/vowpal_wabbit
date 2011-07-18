@@ -179,9 +179,9 @@ public:
 
   float second_derivative(float prediction, float label)
   {
-    float e = exp(label*prediction);
+    float p = 1 / (1+exp(label*prediction));
     
-    return label*label*e/((1+e)*(1+e));
+    return p*(1-p);
   }
 };
 
