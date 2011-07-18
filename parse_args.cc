@@ -47,6 +47,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
     ("backprop", "turn on delayed backprop")
+    ("bfgs", "use bfgs optimization")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
@@ -64,6 +65,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("delayed_global", "Do delayed global updates")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
+    ("hessian_on", "use second derivative in line search")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
@@ -79,6 +81,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("master_location", po::value<string>(&global.master_location)->default_value(""), "Location of master for setting up spanning tree")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
+    ("mem", po::value<int>(&global.m)->default_value(15), "memory in bfgs")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
@@ -113,9 +116,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.weighted_examples = 0.;
   global.old_weighted_examples = 0.;
   global.backprop = false;
+  global.bfgs = false;
   global.corrective = false;
   global.delayed_global = false;
   global.conjugate_gradient = false;
+  global.hessian_on = false;
   global.stride = 1;
   global.weighted_labels = 0.;
   global.total_features = 0;
@@ -213,6 +218,30 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       {
 	cout << "you must make at least 2 passes to use conjugate gradient" << endl;
 	exit(1);
+      }
+  }
+
+  if (vm.count("bfgs")) {
+    global.bfgs = true;
+    global.stride = 4;
+    if (!global.quiet) {
+       if (global.m>0)
+	 cerr << "enabling BFGS based optimization ";
+       else
+	 cerr << "enabling conjugate gradient optimization via BFGS ";
+       if (global.hessian_on)
+	 cerr << "with curvature calculation" << endl;
+       else
+	 cerr << "**without** curvature calculation" << endl;
+    }
+    if (global.numpasses < 2)
+      {
+	cout << "you must make at least 2 passes to use BFGS" << endl;
+	exit(1);
+      }
+    if (global.conjugate_gradient)
+      {
+	cout << "you cannot enable both conjugate gradient and BFGS" << endl;
       }
   }
 

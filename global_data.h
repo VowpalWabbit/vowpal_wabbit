@@ -34,6 +34,11 @@ struct global_data {
 
   bool conjugate_gradient;
   float regularization;
+
+  bool bfgs;
+  bool hessian_on;
+  int m;
+
   size_t stride;
   string per_feature_regularizer_input;
   string per_feature_regularizer_output;
