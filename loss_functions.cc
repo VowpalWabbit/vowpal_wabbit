@@ -23,6 +23,7 @@ public:
   }
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
+
     if (eta_t < 1e-6){ 
       /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t) 
        * with its first order Taylor expansion around 0

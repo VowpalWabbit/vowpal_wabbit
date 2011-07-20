@@ -1,6 +1,5 @@
 COMPILER = g++
 LIBS = -l boost_program_options -l pthread -l z
-#LIBS = -l boost_program_options-gcc34 -l pthread -l z
 BOOST_INCLUDE = /usr/local/include
 BOOST_LIBRARY = /usr/local/lib
 
@@ -45,6 +44,8 @@ sparse_dense.o:	 parse_example.h
 
 gd.o:	 parse_example.h
 
+gd_mf.o:	gd.h
+
 %.o:	 %.cc  %.h
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
@@ -54,7 +55,7 @@ gd.o:	 parse_example.h
 allreduce_master: allreduce_master.o
 	$(COMPILER) $(FLAGS) -o $@ $+ 
 
-vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o allreduce.o cg.o bfgs.o noop.o parser.o vw.o loss_functions.o sender.o main.o
+vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o gd_mf.o allreduce.o cg.o bfgs.o noop.o parser.o vw.o loss_functions.o sender.o main.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 lda: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o gd.o lda_core.o noop.o parser.o loss_functions.o sender.o lda.o

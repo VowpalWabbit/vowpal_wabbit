@@ -16,6 +16,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_example.h"
 #include "parse_args.h"
 #include "gd.h"
+#include "gd_mf.h"
 #include "cg.h"
 #include "bfgs.h"
 #include "lda.h"
@@ -61,15 +62,15 @@ gd_vars* vw(int argc, char *argv[])
   if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
     setup_relay(vars);
   if (vm.count("sendto"))
-  {
-    setup_send();
-    destroy_send();
-  }
+    {
+      setup_send();
+      destroy_send();
+    }
   else if (vm.count("noop"))
-  {
-    start_noop();
-    end_noop();
-  }
+    {
+      start_noop();
+      end_noop();
+    }
   else if (global.conjugate_gradient)
     {
       setup_cg(t);
@@ -79,6 +80,11 @@ gd_vars* vw(int argc, char *argv[])
     {
       BFGS::setup_bfgs(t);
       BFGS::destroy_bfgs();
+    }
+  else if (global.rank > 0)
+    {
+      setup_gd_mf(t);
+      destroy_gd_mf();
     }
   else 
     {

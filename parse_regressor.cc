@@ -29,7 +29,18 @@ void initialize_regressor(regressor &r)
     r.regularizers = NULL;
   for (size_t i = 0; i < num_threads; i++)
     {
+      //r.weight_vectors[i] = (weight *)calloc(length/num_threads, sizeof(weight));
       r.weight_vectors[i] = (weight *)calloc(global.stride*length/num_threads, sizeof(weight));
+
+      // random weight initialization for matrix factorization
+      if (global.random_weights)
+	if (global.rank > 0)
+	  for (size_t j = 0; j < global.stride*length/num_threads; j++)
+	    r.weight_vectors[i][j] = (double) 0.1 * rand() / ((double) RAND_MAX + 1.0); //drand48()/10 - 0.05;
+        else
+	  for (size_t j = 0; j < length/num_threads; j++)
+	    r.weight_vectors[i][j] = drand48() - 0.5;
+
       if (r.regularizers != NULL)
 	r.regularizers[i] = (weight *)calloc(2*length/num_threads, sizeof(weight));
       if (r.weight_vectors[i] == NULL || (r.regularizers != NULL && r.regularizers[i] == NULL))
@@ -40,10 +51,6 @@ void initialize_regressor(regressor &r)
       if (global.initial_weight != 0.)
 	for (size_t j = 0; j < global.stride*length/num_threads; j+=global.stride)
 	  r.weight_vectors[i][j] = global.initial_weight;
-      if (global.random_weights)
-	for (size_t j = 0; j < length/num_threads; j++) {
-          r.weight_vectors[i][j] = drand48() - 0.5;
-        }
       if (global.lda)
 	{
 	  size_t stride = global.stride;
@@ -174,7 +181,9 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       size_t num_threads = global.num_threads();
       if (source.good())
 	{
-	  if (global.lda == 0) 
+	  if (global.rank != 0)
+	      r.weight_vectors[hash % num_threads][hash/num_threads] = w;
+	  else if (global.lda == 0)
 	    if (reg_vector)
 	      r.regularizers[hash % num_threads][hash/num_threads] = w;
 	    else
@@ -208,7 +217,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
      numbits.
   */
   bool initialized = false;
-  
+
   for (size_t i = 0; i < regs.size(); i++)
     read_vector(regs[i].c_str(), r, initialized, false);
   
@@ -303,7 +312,7 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
     length *= 2;
   for(uint32_t i = 0; i < length; i++)
     {
-      if (global.lda == 0)
+      if ((global.lda == 0) && (global.rank == 0))
 	{
 	  weight v;
 	  if (reg_vector)
@@ -326,10 +335,10 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
 	}
       else
 	{
-	  size_t K;
-	  
-	  if (global.lda != 0)
-	    K = global.lda;
+	  size_t K = global.lda;
+
+	  if (global.rank != 0)
+	    K = global.rank*2+1;
 	  
           for (size_t k = 0; k < K; k++)
             {
@@ -340,7 +349,13 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
                 io_temp.write_file(f,(char *)&v, sizeof (v));
               } else {
                 char buff[512];
-                int len = sprintf(buff, "%f ", v + global.lda_rho);
+		int len;
+
+		if (global.rank != 0)
+		  len = sprintf(buff, "%f ", v);
+		else
+		  len = sprintf(buff, "%f ", v + global.lda_rho);
+
                 io_temp.write_file(f, buff, len);
               }
             }

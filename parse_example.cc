@@ -18,6 +18,7 @@ size_t hashstring (substring s, unsigned long h)
   for(; *(s.start) <= 0x20 && s.start < s.end; s.start++);
   //trim trailing white space
   for(; *(s.end-1) <= 0x20 && s.end > s.start; s.end--);
+
   char *p = s.start;
   while (p != s.end)
     if (isdigit(*p))

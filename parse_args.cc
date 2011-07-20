@@ -97,6 +97,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
     ("quiet", "Don't output diagnostics")
+    ("rank", po::value<size_t>(&global.rank)->default_value(0), "rank for matrix factorization.")
     ("random_weights", po::value<bool>(&global.random_weights), "make initial weights random")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
@@ -341,11 +342,19 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
+  // matrix factorization enabled
+  if (global.rank > 0) {
+    // store linear + 2*rank weights per index, round up to power of two
+    float temp = ceilf(logf((float)(global.rank*2+1)) / logf (2.f));
+    global.stride = 1 << (int) temp;
+    global.random_weights = true;
+  }
+
   if (vm.count("lda"))
     {
       par->sort_features = true;
       float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
-      global.stride = powf(2,temp);
+      global.stride = 1 << (int) temp;
       global.random_weights = true;
     }
 
@@ -381,6 +390,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   double loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<double>();
+
+  if (global.rank != 0) {
+    loss_function = "classic";
+    cerr << "Forcing classic squared loss for matrix factorization" << endl;
+  }
+
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
@@ -404,6 +419,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cerr << "power_t = " << vars.power_t << endl;
       if (global.numpasses > 1)
 	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
+      if (global.rank > 0)
+	cerr << "rank = " << global.rank << endl;
+      if (global.regularization > 0 && (global.conjugate_gradient || global.bfgs))
+	cerr << "regularization = " << global.regularization << endl;
     }
 
   if (vm.count("predictions")) {
