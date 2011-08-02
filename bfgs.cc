@@ -524,7 +524,7 @@ void setup_bfgs(gd_thread_params t)
 
   if (!global.quiet) 
     {
-      fprintf(stderr, "m = %d\nAllocated %dM for weights and mem\n", m, global.length()*(sizeof(float)*(2*m+BFGS_EXTRA)+sizeof(weight)*global.stride) >> 20);
+      fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, global.length()*(sizeof(float)*(2*m+BFGS_EXTRA)+sizeof(weight)*global.stride) >> 20);
     }
 
   node_socks socks;
@@ -572,7 +572,7 @@ void setup_bfgs(gd_thread_params t)
 		if (global.regularization > 0.)
 		  loss_sum += add_regularization(reg,global.regularization);
 		if (!global.quiet)
-		  fprintf(stderr, "%2d %-f\t", current_pass+1, loss_sum / importance_weight_sum);
+		  fprintf(stderr, "%2lu %-f\t", current_pass+1, loss_sum / importance_weight_sum);
 		
 		if (ec->pass != 0)
 		  {
@@ -597,7 +597,7 @@ void setup_bfgs(gd_thread_params t)
 		  if (global.regularization > 0.)
 		    loss_sum += add_regularization(reg,global.regularization);
 		  if (!global.quiet)
-		    fprintf(stderr, "%2d %-f\t", current_pass+1, loss_sum / importance_weight_sum);
+		    fprintf(stderr, "%2lu %-f\t", current_pass+1, loss_sum / importance_weight_sum);
 
 		  double new_step = wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum);
   /********************************************************************/
