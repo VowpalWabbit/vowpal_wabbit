@@ -270,7 +270,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	cout << "You can not skip unless ngram is > 1" << endl;
 	exit(1);
       }
-    cout << "You have chosen to generate " << global.skips << "-skip-" << global.ngram << "-grams" << endl;
+    cerr << "You have chosen to generate " << global.skips << "-skip-" << global.ngram << "-grams" << endl;
     if(global.skips > 4)
       {
       cout << "*********************************" << endl;
