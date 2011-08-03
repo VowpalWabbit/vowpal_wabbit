@@ -45,13 +45,10 @@ void* gd_mf_thread(void *in)
 	}
       else if ((ec = get_example(thread_num)) != NULL)//blocking operation.
 	{
-	  if ( ((ec->tag).begin != (ec->tag).end) 
-	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))
+	  if (command_example(ec, params))
 	    {
-	      if ((*(params->final_regressor_name)) != "") 
-		{
-		  dump_regressor(*(params->final_regressor_name), reg);
-		}
+	      ec->threads_to_finish--;
+	      delay_example(ec,0);
 	    }
 	  else
 	    mf_predict(reg,ec,thread_num,*(params->vars));
