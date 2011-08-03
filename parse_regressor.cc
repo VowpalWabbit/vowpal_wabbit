@@ -137,6 +137,39 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       string temp(pair, 2);
       local_pairs.push_back(temp);
     }
+
+
+  size_t local_rank;
+  source.read((char*)&local_rank, sizeof(local_rank));
+  size_t local_lda;
+  source.read((char*)&local_lda, sizeof(local_lda));
+  if (!initialized)
+    {
+      global.rank = local_rank;
+      global.lda = local_lda;
+      //initialized = true;
+    }
+  else
+    {
+      cout << "can't combine regressors" << endl;
+      exit(1);
+    }
+
+  if (global.rank > 0)
+    {
+      float temp = ceilf(logf((float)(global.rank*2+1)) / logf (2.f));
+      global.stride = 1 << (int) temp;
+      global.random_weights = true;
+    }
+  
+  if (global.lda > 0)
+    {
+      // par->sort_features = true;
+      float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
+      global.stride = 1 << (int) temp;
+      global.random_weights = true;
+    }
+
   if (!initialized)
     {
       global.pairs = local_pairs;
@@ -170,6 +203,7 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
 	cout << "can't combine sources with different ngram features!" << endl;
 	exit(1);
       }
+
   size_t stride = global.stride;
   while (source.good())
     {
@@ -280,6 +314,9 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
     for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
       io_temp.write_file(f,i->c_str(),2);
 
+    io_temp.write_file(f,(char*)&global.rank, sizeof(global.rank));
+    io_temp.write_file(f,(char*)&global.lda, sizeof(global.lda));
+
     io_temp.write_file(f,(char*)&global.ngram, sizeof(global.ngram));
     io_temp.write_file(f,(char*)&global.skips, sizeof(global.skips));
   }
@@ -302,6 +339,12 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
 	io_temp.write_file(f, buff, len);
       }
     len = sprintf(buff, "ngram:%d skips:%d\nindex:weight pairs:\n", (int)global.ngram, (int)global.skips);
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "rank:%d\n", (int)global.rank);
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "lda:%d\n", (int)global.lda);
     io_temp.write_file(f, buff, len);
   }
   
