@@ -30,8 +30,7 @@ size_t read_cached_tag(io_buf& cache, example* ae)
   if (buf_read(cache, c, sizeof(tag_size)) < sizeof(tag_size))
     return 0;
   tag_size = *(size_t*)c;
-  c += sizeof(tag_size);
-  
+  c += sizeof(tag_size);  
   cache.set(c);
   if (buf_read(cache, c, tag_size) < tag_size) 
     return 0;

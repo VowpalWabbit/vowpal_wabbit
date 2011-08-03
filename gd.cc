@@ -48,11 +48,9 @@ void* gd_thread(void *in)
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
-	  if ( (ec->tag).end == (ec->tag).begin+4 
-	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))
+	  if (command_example(ec, params))
 	    {
-	      if ((*(params->final_regressor_name)) != "") 
-		dump_regressor(*(params->final_regressor_name), reg);
+	      ec->threads_to_finish--;
 	      delay_example(ec,0);
 	    }
 	  else
@@ -77,6 +75,27 @@ void* gd_thread(void *in)
     }
 
   return NULL;
+}
+
+bool command_example(example* ec, gd_thread_params* params) {
+  if (ec->indices.index() > 1)
+    return false;
+
+  if (ec->tag.index() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
+    {
+      string final_regressor_name = *(params->final_regressor_name);
+
+      if ((ec->tag).index() >= 6 && (ec->tag)[4] == '_')
+	final_regressor_name = string(ec->tag.begin+5, (ec->tag).index()-5);
+
+      if (!global.quiet)
+	cerr << "saving regressor to " << final_regressor_name << endl;
+      dump_regressor(final_regressor_name, *(global.reg));
+
+      return true;
+    }
+
+  return false;
 }
 
 float finalize_prediction(float ret) 

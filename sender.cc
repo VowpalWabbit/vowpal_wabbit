@@ -128,7 +128,7 @@ void* send_thread(void*)
             for (size_t j = 0; j < d_2; j++)
               {
                 simple_label.cache_label(ld, *bufs[i][j]);//send label information.
-                cache_tag(*bufs[i][j], null_tag);
+                cache_tag(*bufs[i][j], ec->tag);
                 send_features(i,j,bufs[i][j],ec);
               }
           delay_example(ec,0);

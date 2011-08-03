@@ -68,4 +68,6 @@ void destroy_gd();
 void output_and_account_example(example* ec);
 void finish_example(example* ec);
 
+bool command_example(example*, gd_thread_params*);
+
 #endif
