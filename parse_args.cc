@@ -55,7 +55,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("regularization", po::value<float>(&global.regularization)->default_value(1.0), "l_2 regularization for conjugate_gradient")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
-    ("daemon", "read data from port 39523")
+    ("daemon", "read data from port 26542")
+    ("persistent", "persist process for daemon mode")
     ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay),
      "Set Decay factor for learning_rate between passes")
     ("input_feature_regularizer", po::value< string >(&global.per_feature_regularizer_input), "Per feature regularization input file")
@@ -130,6 +131,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.dump_interval = exp(1.);
   global.num_bits = 18;
   global.default_bits = true;
+  global.persistent = false;
   global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
   global.raw_prediction = -1;
   global.local_prediction = -1;
@@ -289,6 +291,13 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
   
+  if (vm.count("persistent")) {
+    global.persistent = true;
+
+    // allow each child to process up to 1e5 connections
+    global.numpasses = (size_t) 1e5;
+  }
+
   string data_filename = vm["data"].as<string>();
   if (vm.count("compressed") || ends_with(data_filename, ".gz"))
     set_compressed(par);

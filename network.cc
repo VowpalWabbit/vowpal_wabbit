@@ -15,7 +15,7 @@ using namespace std;
 int open_socket(const char* host, size_t new_id)
 {
   const char* colon = index(host,':');
-  short unsigned int port = 39524;
+  short unsigned int port = 26542;
   hostent* he;
   if (colon != NULL)
     {

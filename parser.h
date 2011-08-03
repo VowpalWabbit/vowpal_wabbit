@@ -48,8 +48,11 @@ struct parser {
   v_array<size_t> counts; //partial examples received from sources
   size_t finished_count;//the number of finished examples;
   int label_sock;
+  int bound_sock;
   int max_fd;
 };
+
+const size_t constant_namespace = 128;
 
 parser* new_parser(const label_parser* lp);
 #include <boost/program_options.hpp>

@@ -8,6 +8,9 @@
 global_data global;
 string version = "6.0";
 
+pthread_mutex_t output_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t output_done = PTHREAD_COND_INITIALIZER;
+
 void binary_print_result(int f, float res, float weight, v_array<char> tag)
 {
   if (f >= 0)
