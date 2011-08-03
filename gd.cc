@@ -134,7 +134,6 @@ float query_decision(example*, float k);
 
 void output_and_account_example(example* ec)
 {
-  global.example_number++;
   label_data* ld = (label_data*)ec->ld;
   global.weighted_examples += ld->weight;
   global.weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
@@ -167,6 +166,12 @@ void output_and_account_example(example* ec)
 	  global.print(f, ec->final_prediction, w*ec->global_weight, ec->tag);
 	}
     }
+
+  pthread_mutex_lock(&output_lock);
+  global.example_number++;
+  pthread_cond_signal(&output_done);
+  pthread_mutex_unlock(&output_lock);
+
   print_update(ec);
 }
 
