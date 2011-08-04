@@ -103,48 +103,50 @@ void reset_source(size_t numbits, parser* p)
       p->reader = read_cached_features;
     }
   if ( p->resettable == true )
-    if (global.persistent)
-      {
-	// wait for all predictions to be sent back to client
-	pthread_mutex_lock(&output_lock);
-	while (global.example_number != parsed_index)
-	  pthread_cond_wait(&output_done, &output_lock);
-	pthread_mutex_unlock(&output_lock);
-
-	// close socket, erase final prediction sink and socket
-	close(p->input->files[0]);
-	global.final_prediction_sink.erase();
-	p->input->files.erase();
-
-	sockaddr_in client_address;
-	socklen_t size = sizeof(client_address);
-	int f = accept(p->bound_sock,(sockaddr*)&client_address,&size);
-	if (f < 0)
-	  {
-	    cerr << "bad client socket!" << endl;
-	    exit (1);
-	  }
-	
-	size_t id;
-	really_read(f, &id, sizeof(id));
-	if (id != 0) {
-	  cerr << "id must be 0 (multisource not supported)" << endl;
-	  exit(1);
-	}
-
-	int_pair pf = {f,id};
-	push(global.final_prediction_sink,pf);
-	push(p->input->files,f);
-      }
-    else {
-      for (size_t i = 0; i < input->files.index();i++)
+    {
+      if (global.persistent)
 	{
-	  input->reset_file(input->files[i]);
-	  if (cache_numbits(input, input->files[i]) < numbits) {
-	    cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
+	  // wait for all predictions to be sent back to client
+	  pthread_mutex_lock(&output_lock);
+	  while (global.example_number != parsed_index)
+	    pthread_cond_wait(&output_done, &output_lock);
+	  pthread_mutex_unlock(&output_lock);
+	  
+	  // close socket, erase final prediction sink and socket
+	  close(p->input->files[0]);
+	  global.final_prediction_sink.erase();
+	  p->input->files.erase();
+	  
+	  sockaddr_in client_address;
+	  socklen_t size = sizeof(client_address);
+	  int f = accept(p->bound_sock,(sockaddr*)&client_address,&size);
+	  if (f < 0)
+	    {
+	      cerr << "bad client socket!" << endl;
+	      exit (1);
+	    }
+	  
+	  size_t id;
+	  really_read(f, &id, sizeof(id));
+	  if (id != 0) {
+	    cerr << "id must be 0 (multisource not supported)" << endl;
 	    exit(1);
 	  }
+	  
+	  int_pair pf = {f,id};
+	  push(global.final_prediction_sink,pf);
+	  push(p->input->files,f);
 	}
+      else {
+	for (size_t i = 0; i < input->files.index();i++)
+	  {
+	    input->reset_file(input->files[i]);
+	    if (cache_numbits(input, input->files[i]) < numbits) {
+	      cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
+	      exit(1);
+	    }
+	  }
+      }
     }
 }
 
