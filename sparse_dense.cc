@@ -48,6 +48,12 @@ float sd_offset_truncadd(weight* weights, size_t mask, feature* begin, feature* 
   return ret;
 }
 
+void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update, float regularization)
+{
+  for (feature* f = begin; f!= end; f++) 
+    weights[(f->weight_index + offset) & mask] += update * f->x - regularization * weights[(f->weight_index + offset) & mask];
+} 
+
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
                const v_array<feature> &second_part, size_t thread_mask)
 {

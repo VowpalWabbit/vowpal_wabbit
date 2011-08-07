@@ -37,7 +37,6 @@ struct example // core example datatype.
   v_array<audit_data> audit_features[256];
   
   v_array<feature*> subsets[256];// helper for fast example expansion
-  v_array<float> G;//temporary storage for the metric
 
   size_t num_features;//precomputed, cause it's fast&easy.
   size_t pass;

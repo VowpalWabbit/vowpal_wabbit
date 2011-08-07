@@ -94,13 +94,18 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs)
 
 void send_features(int i, int j, io_buf *b, example* ec)
 {
-  output_byte(*b,ec->indices.index());
+  // note: subtracting 1 b/c not sending constant
+  output_byte(*b,ec->indices.index()-1);
   
-  for (size_t* index = ec->indices.begin; index != ec->indices.end; index++)
+  for (size_t* index = ec->indices.begin; index != ec->indices.end; index++) {
+    if (*index == constant_namespace)
+      continue;
+    
     if (second_of_pair[*index])
       output_features(*b, *index, ec->subsets[*index][j*d_1], ec->subsets[*index][(j+1)*d_1]);
     else
       output_features(*b, *index, ec->subsets[*index][i*d_2], ec->subsets[*index][(i+1)*d_2]);
+  }
   b->flush();
 }
 
@@ -123,7 +128,7 @@ void* send_thread(void*)
             for (size_t j = 0; j < d_2; j++)
               {
                 simple_label.cache_label(ld, *bufs[i][j]);//send label information.
-                cache_tag(*bufs[i][j], null_tag);
+                cache_tag(*bufs[i][j], ec->tag);
                 send_features(i,j,bufs[i][j],ec);
               }
           delay_example(ec,0);

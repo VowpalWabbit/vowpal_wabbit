@@ -16,7 +16,9 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_example.h"
 #include "parse_args.h"
 #include "gd.h"
+#include "gd_mf.h"
 #include "cg.h"
+#include "bfgs.h"
 #include "lda.h"
 #include "noop.h"
 #include "vw.h"
@@ -41,7 +43,7 @@ gd_vars* vw(int argc, char *argv[])
 				    regressor1, p, 
 				    final_regressor_name);
   
-  if (!global.quiet && !vm.count("conjugate_gradient"))
+  if (!global.quiet && !global.conjugate_gradient && !global.bfgs)
     {
       const char * header_fmt = "%-10s %-10s %8s %8s %10s %8s %8s\n";
       fprintf(stderr, header_fmt,
@@ -60,19 +62,29 @@ gd_vars* vw(int argc, char *argv[])
   if (global.local_prediction > 0 && (global.unique_id == 0 || global.backprop || global.corrective || global.delayed_global) )
     setup_relay(vars);
   if (vm.count("sendto"))
-  {
-    setup_send();
-    destroy_send();
-  }
+    {
+      setup_send();
+      destroy_send();
+    }
   else if (vm.count("noop"))
-  {
-    start_noop();
-    end_noop();
-  }
-  else if (vm.count("conjugate_gradient"))
+    {
+      start_noop();
+      end_noop();
+    }
+  else if (global.conjugate_gradient)
     {
       setup_cg(t);
       destroy_cg();
+    }
+  else if (global.bfgs)
+    {
+      BFGS::setup_bfgs(t);
+      BFGS::destroy_bfgs();
+    }
+  else if (global.rank > 0)
+    {
+      setup_gd_mf(t);
+      destroy_gd_mf();
     }
   else 
     {
@@ -85,8 +97,8 @@ gd_vars* vw(int argc, char *argv[])
 
   destroy_delay_ring();
   end_parser(p);
-
-  finalize_regressor(final_regressor_name,regressor1);
+  
+  finalize_regressor(final_regressor_name,t.reg);
   finalize_source(p);
   free(p);
   return vars;

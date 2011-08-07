@@ -48,11 +48,9 @@ void* gd_thread(void *in)
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
-	  if ( (ec->tag).end == (ec->tag).begin+4 
-	       && ((ec->tag)[0] == 's')&&((ec->tag)[1] == 'a')&&((ec->tag)[2] == 'v')&&((ec->tag)[3] == 'e'))
+	  if (command_example(ec, params))
 	    {
-	      if ((*(params->final_regressor_name)) != "") 
-		dump_regressor(*(params->final_regressor_name), reg);
+	      ec->threads_to_finish--;
 	      delay_example(ec,0);
 	    }
 	  else
@@ -77,6 +75,27 @@ void* gd_thread(void *in)
     }
 
   return NULL;
+}
+
+bool command_example(example* ec, gd_thread_params* params) {
+  if (ec->indices.index() > 1)
+    return false;
+
+  if (ec->tag.index() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
+    {
+      string final_regressor_name = *(params->final_regressor_name);
+
+      if ((ec->tag).index() >= 6 && (ec->tag)[4] == '_')
+	final_regressor_name = string(ec->tag.begin+5, (ec->tag).index()-5);
+
+      if (!global.quiet)
+	cerr << "saving regressor to " << final_regressor_name << endl;
+      dump_regressor(final_regressor_name, *(global.reg));
+
+      return true;
+    }
+
+  return false;
 }
 
 float finalize_prediction(float ret) 
@@ -106,7 +125,7 @@ void finish_example(example* ec)
 
 void print_update(example *ec)
 {
-  if (global.weighted_examples > global.dump_interval && !global.quiet && !global.conjugate_gradient)
+  if (global.weighted_examples > global.dump_interval && !global.quiet && !global.conjugate_gradient && !global.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
@@ -134,7 +153,6 @@ float query_decision(example*, float k);
 
 void output_and_account_example(example* ec)
 {
-  global.example_number++;
   label_data* ld = (label_data*)ec->ld;
   global.weighted_examples += ld->weight;
   global.weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
@@ -167,6 +185,12 @@ void output_and_account_example(example* ec)
 	  global.print(f, ec->final_prediction, w*ec->global_weight, ec->tag);
 	}
     }
+
+  pthread_mutex_lock(&output_lock);
+  global.example_number++;
+  pthread_cond_signal(&output_done);
+  pthread_mutex_unlock(&output_lock);
+
   print_update(ec);
 }
 
@@ -388,10 +412,14 @@ void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   update *= page_feature.x;
+  float update2 = g * page_feature.x * page_feature.x;
+
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[0] += update * ec->G[ctr++];
+      w[1] += update2 * ele->x * ele->x;
+      float t = ele->x*InvSqrt(w[1]);
+      w[0] += update * t;
     }
 }
 
@@ -410,10 +438,9 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
 
   size_t thread_mask = global.thread_mask;
   label_data* ld = (label_data*)ec->ld;
-  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  
-  //assert((g>0 && fabs(update)>0) || (g==0 && update==0));
   weight* weights = reg.weight_vectors[thread_num];
+  
+  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   size_t ctr = 0;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -421,7 +448,9 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
       for (; f != ec->subsets[*i][thread_num+1]; f++)
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
-	  w[0] += update * ec->G[ctr++];
+	  w[1] += g * f->x * f->x;
+	  float t = f->x*InvSqrt(w[1]);
+	  w[0] += update * t;
 	}
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -437,17 +466,15 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
     }
 }
 
-float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, v_array<float>& G, float& magx)
+float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float& magx)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float update2 = g * page_feature.x * page_feature.x;
   float xGx = 0.;
+  float update2 = g * page_feature.x * page_feature.x;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[1] += update2 * ele->x * ele->x;
-      float t = ele->x*InvSqrt(w[1]);
-      push(G, t);      
+      float t = ele->x*InvSqrt(w[1] + update2 * ele->x * ele->x);
       xGx += t * ele->x;
       magx += fabsf(ele->x);
     }
@@ -462,7 +489,7 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
   if (g==0) return 0.;
 
   float xGx = 0.;
-  ec->G.erase();
+  
   weight* weights = reg.weight_vectors[thread_num];
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -470,9 +497,7 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
       for (; f != ec->subsets[*i][thread_num+1]; f++)
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
-	  w[1] += g * f->x * f->x;
-	  float t = f->x*InvSqrt(w[1]);
-	  push(ec->G, t);
+	  float t = f->x*InvSqrt(w[1] + g * f->x * f->x);
 	  xGx += t * f->x;
 	  magx += fabsf(f->x);
 	}
@@ -485,9 +510,10 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
 	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
 	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    xGx += xGx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g, ec->G, magx);
+	    xGx += xGx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g, magx);
 	} 
     }
+  
   return xGx;
 }
 
@@ -608,7 +634,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
       
       double update = 0.;
-      if (global.adaptive)
+      if (global.adaptive && global.exact_adaptive_norm)
 	{
 	  float magx = 0.;
 	  float xGx = compute_xGx(reg, ec, thread_num, magx);

@@ -42,10 +42,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
+    ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
     ("backprop", "turn on delayed backprop")
+    ("bfgs", "use bfgs optimization")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
@@ -53,15 +55,18 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("regularization", po::value<float>(&global.regularization)->default_value(1.0), "l_2 regularization for conjugate_gradient")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
-    ("daemon", "read data from port 39523")
+    ("daemon", "read data from port 26542")
+    ("persistent", "persist process for daemon mode")
     ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay),
      "Set Decay factor for learning_rate between passes")
+    ("input_feature_regularizer", po::value< string >(&global.per_feature_regularizer_input), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
     ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
     ("delayed_global", "Do delayed global updates")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
+    ("hessian_on", "use second derivative in line search")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
@@ -77,8 +82,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("master_location", po::value<string>(&global.master_location)->default_value(""), "Location of master for setting up spanning tree")
     ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
+    ("mem", po::value<int>(&global.m)->default_value(15), "memory in bfgs")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noop","do no learning")
+    ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
+    ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.5), "t power value")
     ("predictto", po::value< string > (), "host to send predictions to")
@@ -90,6 +98,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
     ("quiet", "Don't output diagnostics")
+    ("rank", po::value<size_t>(&global.rank)->default_value(0), "rank for matrix factorization.")
     ("random_weights", po::value<bool>(&global.random_weights), "make initial weights random")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
@@ -109,9 +118,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.weighted_examples = 0.;
   global.old_weighted_examples = 0.;
   global.backprop = false;
+  global.bfgs = false;
   global.corrective = false;
   global.delayed_global = false;
   global.conjugate_gradient = false;
+  global.hessian_on = false;
   global.stride = 1;
   global.weighted_labels = 0.;
   global.total_features = 0;
@@ -120,6 +131,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.dump_interval = exp(1.);
   global.num_bits = 18;
   global.default_bits = true;
+  global.persistent = false;
   global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
   global.raw_prediction = -1;
   global.local_prediction = -1;
@@ -129,8 +141,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.update_sum = 0.;
   global.lda =0;
   global.random_weights = false;
+  global.per_feature_regularizer_input = "";
+  global.per_feature_regularizer_output = "";
+  global.per_feature_regularizer_text = "";
 
   global.adaptive = false;
+  global.exact_adaptive_norm = false;
   global.audit = false;
   global.active = false;
   global.active_simulation =false;
@@ -168,8 +184,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("active_learning") && !global.active_simulation)
     global.active = true;
 
-  if (vm.count("adaptive")) {
+  if (vm.count("adaptive") || vm.count("exact_adaptive_norm")) {
       global.adaptive = true;
+      if (vm.count("exact_adaptive_norm"))
+	global.exact_adaptive_norm = true;
       global.stride = 2;
       vars.power_t = 0.0;
       if (global.thread_bits != 0)
@@ -206,6 +224,30 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       }
   }
 
+  if (vm.count("bfgs")) {
+    global.bfgs = true;
+    global.stride = 4;
+    if (!global.quiet) {
+       if (global.m>0)
+	 cerr << "enabling BFGS based optimization ";
+       else
+	 cerr << "enabling conjugate gradient optimization via BFGS ";
+       if (global.hessian_on)
+	 cerr << "with curvature calculation" << endl;
+       else
+	 cerr << "**without** curvature calculation" << endl;
+    }
+    if (global.numpasses < 2)
+      {
+	cout << "you must make at least 2 passes to use BFGS" << endl;
+	exit(1);
+      }
+    if (global.conjugate_gradient)
+      {
+	cout << "you cannot enable both conjugate gradient and BFGS" << endl;
+      }
+  }
+
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
     cout << version << "\n";
@@ -215,10 +257,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if(vm.count("ngram")){
     global.ngram = vm["ngram"].as<size_t>();
-    if(!vm.count("skip_gram")) cout << "You have chosen to generate " << global.ngram << "-grams" << endl;
+    if(!vm.count("skip_gram")) cerr << "You have chosen to generate " << global.ngram << "-grams" << endl;
     if(vm.count("sort_features"))
       {
-	cout << "ngram is incompatible with sort_features.  " << endl;
+	cerr << "ngram is incompatible with sort_features.  " << endl;
 	exit(1);
       }
   }
@@ -230,7 +272,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	cout << "You can not skip unless ngram is > 1" << endl;
 	exit(1);
       }
-    cout << "You have chosen to generate " << global.skips << "-skip-" << global.ngram << "-grams" << endl;
+    cerr << "You have chosen to generate " << global.skips << "-skip-" << global.ngram << "-grams" << endl;
     if(global.skips > 4)
       {
       cout << "*********************************" << endl;
@@ -249,6 +291,13 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
   
+  if (vm.count("persistent")) {
+    global.persistent = true;
+
+    // allow each child to process up to 1e5 connections
+    global.numpasses = (size_t) 1e5;
+  }
+
   string data_filename = vm["data"].as<string>();
   if (vm.count("compressed") || ends_with(data_filename, ".gz"))
     set_compressed(par);
@@ -302,11 +351,19 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
 
+  // matrix factorization enabled
+  if (global.rank > 0) {
+    // store linear + 2*rank weights per index, round up to power of two
+    float temp = ceilf(logf((float)(global.rank*2+1)) / logf (2.f));
+    global.stride = 1 << (int) temp;
+    global.random_weights = true;
+  }
+
   if (vm.count("lda"))
     {
       par->sort_features = true;
       float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
-      global.stride = powf(2,temp);
+      global.stride = 1 << (int) temp;
       global.random_weights = true;
     }
 
@@ -318,8 +375,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (!vm.count("lda"))
     global.eta *= pow(par->t, vars.power_t);
 
-  parse_source_args(vm,par,global.quiet,global.numpasses);
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
+  parse_source_args(vm,par,global.quiet,global.numpasses);
   if (vm.count("readable_model"))
     global.text_regressor_name = vm["readable_model"].as<string>();
 
@@ -342,6 +399,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   double loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<double>();
+
+  if (global.rank != 0) {
+    loss_function = "classic";
+    cerr << "Forcing classic squared loss for matrix factorization" << endl;
+  }
+
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
@@ -350,9 +413,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (global.eta_decay_rate != default_decay && global.numpasses == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
-  if (pow(global.eta_decay_rate, global.numpasses) < 0.0001 )
+  if (pow((double)global.eta_decay_rate, (double)global.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(global.eta_decay_rate, global.numpasses)
-	 << " adjust to --decay_learning_rate larger to avoid this." << endl;
+	 << " adjust --decay_learning_rate larger to avoid this." << endl;
 
   //parse_source_args(vm,par,global.quiet,global.numpasses);
 
@@ -365,6 +428,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cerr << "power_t = " << vars.power_t << endl;
       if (global.numpasses > 1)
 	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
+      if (global.rank > 0)
+	cerr << "rank = " << global.rank << endl;
+      if (global.regularization > 0 && (global.conjugate_gradient || global.bfgs))
+	cerr << "regularization = " << global.regularization << endl;
     }
 
   if (vm.count("predictions")) {

@@ -25,6 +25,8 @@ struct global_data {
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
 
+  bool persistent; 
+
   bool backprop;
   bool corrective;
   bool delayed_global;
@@ -34,7 +36,15 @@ struct global_data {
 
   bool conjugate_gradient;
   float regularization;
+
+  bool bfgs;
+  bool hessian_on;
+  int m;
+
   size_t stride;
+  string per_feature_regularizer_input;
+  string per_feature_regularizer_output;
+  string per_feature_regularizer_text;
   
   float l_1_regularization;//the level of l_1 regularization to impose.
   float update_sum;
@@ -58,6 +68,7 @@ struct global_data {
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
+  bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
   bool random_weights;
   
   double min_label;//minimum label encountered
@@ -76,6 +87,8 @@ struct global_data {
   size_t num_partitions () { return 1 << partition_bits; };
   size_t length () { return 1 << num_bits; };
 
+  size_t rank;
+
   //Prediction output
   v_array<int_pair> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.
@@ -88,7 +101,7 @@ struct global_data {
   char* program_name;
 
   //runtime accounting variables. 
-  long long int example_number;
+  unsigned long long example_number;
   double initial_t;
   double weighted_examples;
   double weighted_unlabeled_examples;
@@ -112,5 +125,8 @@ void noop_mm(double label);
 void print_lda_result(int f, float* res, float weight, v_array<char> tag);
 
 const size_t ring_size = 1 << 8;
+
+extern pthread_mutex_t output_lock;
+extern pthread_cond_t output_done;
 
 #endif

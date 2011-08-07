@@ -4,11 +4,15 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-#ifndef CG_H
-#define CG_H
+#ifndef BFGS_H
+#define BFGS_H
 #include "gd.h"
 
-void setup_cg(gd_thread_params& t);
-void destroy_cg();
+namespace BFGS {
+
+void setup_bfgs(gd_thread_params t);
+void destroy_bfgs();
+
+}
 
 #endif

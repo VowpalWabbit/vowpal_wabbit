@@ -71,7 +71,7 @@ int main(int argc, char* argv[]){
         port=atoi(argv[2]);
     }
     if(port <= 1024 || port==(unsigned short)(~0)){
-        port = 39524;
+        port = 26542;
     }
     
     s=open_socket(host, port);
