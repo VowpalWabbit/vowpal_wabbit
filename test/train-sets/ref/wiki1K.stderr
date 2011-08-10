@@ -9,15 +9,15 @@ power_t = 0.5
 learning_rate set to 1
 average    since       example  example    current  current  current
 loss       last        counter   weight      label  predict features
-10.329180  10.329180         3      3.0    unknown   0.0000       38
-10.431981  10.534781         6      6.0    unknown   0.0000       14
-10.358605  10.270554        11     11.0    unknown   0.0000       32
-10.432511  10.506417        22     22.0    unknown   0.0000        2
-10.429072  10.425633        44     44.0    unknown   0.0000      166
-10.431149  10.433274        87     87.0    unknown   0.0000       29
-10.035670  9.640191        174    174.0    unknown   0.0000       17
-9.429762   8.823855        348    348.0    unknown   0.0000        2
-8.996539   8.563316        696    696.0    unknown   0.0000      143
+10.329271  10.329271         3      3.0    unknown   0.0000       38
+10.432073  10.534876         6      6.0    unknown   0.0000       14
+10.358699  10.270650        11     11.0    unknown   0.0000       32
+10.432603  10.506508        22     22.0    unknown   0.0000        2
+10.429164  10.425725        44     44.0    unknown   0.0000      166
+10.431238  10.433359        87     87.0    unknown   0.0000       29
+10.035759  9.640280        174    174.0    unknown   0.0000       17
+9.429971   8.824184        348    348.0    unknown   0.0000        2
+8.996685   8.563400        696    696.0    unknown   0.0000      143
 
 finished run
 number of examples = 1000

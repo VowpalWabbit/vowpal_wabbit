@@ -262,7 +262,10 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
   if (!initialized)
     {
       if(vm.count("noop") || vm.count("sendto"))
-	r.weight_vectors = NULL;
+	{
+	  r.weight_vectors = NULL;
+	  r.regularizers = NULL;
+	}
       else
 	initialize_regressor(r);
     }
