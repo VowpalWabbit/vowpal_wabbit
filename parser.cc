@@ -7,6 +7,9 @@ embodied in the content of this file are licensed under the BSD
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
+#include <signal.h>
+#include <unistd.h>
+#include <fstream>
 
 #include <netdb.h>
 #include <boost/program_options.hpp>
@@ -34,6 +37,13 @@ unsigned long long* used_index; // The index of the example currently used by th
 bool done=false;
 v_array<size_t> random_nos;
 v_array<size_t> gram_mask;
+
+bool got_sigterm = false;
+
+void handle_sigterm (int)
+{
+  got_sigterm = true;
+}
 
 parser* new_parser(const label_parser* lp)
 {
@@ -292,6 +302,19 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  cerr << "failure to background!" << endl;
 	  exit(1);
 	}
+      // write pid file
+      if (vm.count("pid_file"))
+	{
+	  ofstream pid_file;
+	  pid_file.open(vm["pid_file"].as<string>().c_str());
+	  if (!pid_file.is_open())
+	    {
+	      cerr << "error writing pid file" << endl;
+	      exit(1);
+	    }
+	  pid_file << getpid() << endl;
+	  pid_file.close();
+	}
 
       if (global.persistent)
 	{
@@ -320,11 +343,27 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 		goto child;
 	    }
 
+	  // install signal handler so we can kill children when killed
+	  {
+	    struct sigaction sa;
+	    // specifically don't set SA_RESTART in sa.sa_flags, so that
+	    // waitid will be interrupted by SIGTERM with handler installed
+	    memset(&sa, 0, sizeof(sa));
+	    sa.sa_handler = handle_sigterm;
+	    sigaction(SIGTERM, &sa, NULL);
+	  }
+
 	  while (true)
 	    {
 	      // wait for child to change state; if finished, then respawn
 	      siginfo_t sig;
 	      waitid(P_ALL,0,&sig,WEXITED);
+	      if (got_sigterm)
+		{
+		  for (size_t i = 0; i < num_children; i++)
+		    kill(children[i], SIGTERM);
+		  exit(0);
+		}
 	      for (size_t i = 0; i < num_children; i++)
 		if (sig.si_pid == children[i])
 		  {

@@ -57,6 +57,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 26542")
     ("persistent", "persist process for daemon mode")
+    ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
     ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay),
      "Set Decay factor for learning_rate between passes")
     ("input_feature_regularizer", po::value< string >(&global.per_feature_regularizer_input), "Per feature regularization input file")
