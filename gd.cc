@@ -10,6 +10,11 @@ embodied in the content of this file are licensed under the BSD
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+#include <xmmintrin.h>
+#endif
+
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"
@@ -418,7 +423,15 @@ void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       w[1] += update2 * ele->x * ele->x;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      float t;
+      __m128 eta = _mm_load_ss(&w[1]);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&t, eta);
+      t *= ele->x;
+#else
       float t = ele->x*InvSqrt(w[1]);
+#endif
       w[0] += update * t;
     }
 }
@@ -449,7 +462,15 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
 	  w[1] += g * f->x * f->x;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      float t;
+      __m128 eta = _mm_load_ss(&w[1]);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&t, eta);
+      t *= f->x;
+#else
 	  float t = f->x*InvSqrt(w[1]);
+#endif
 	  w[0] += update * t;
 	}
     }
@@ -474,7 +495,15 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      float m = w[1] + update2 * ele->x * ele->x;
+      __m128 eta = _mm_load_ss(&m);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&m, eta);
+      float t = ele->x * m;
+#else
       float t = ele->x*InvSqrt(w[1] + update2 * ele->x * ele->x);
+#endif
       xGx += t * ele->x;
       magx += fabsf(ele->x);
     }
@@ -497,7 +526,15 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
       for (; f != ec->subsets[*i][thread_num+1]; f++)
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      float m = w[1] + g * f->x * f->x;
+      __m128 eta = _mm_load_ss(&m);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&m, eta);
+      float t = f->x * m;
+#else
 	  float t = f->x*InvSqrt(w[1] + g * f->x * f->x);
+#endif
 	  xGx += t * f->x;
 	  magx += fabsf(f->x);
 	}
