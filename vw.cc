@@ -108,7 +108,7 @@ gd_vars* vw(int argc, char *argv[])
   free(p);
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
-  if(!global.quiet)
+  if(!global.quiet && global.master_location != "")
     cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
   return vars;
 }

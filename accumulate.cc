@@ -8,11 +8,12 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 
  */
 
-#include "accumulate.h"
-#include "global_data.h"
 #include <iostream>
 #include <sys/timeb.h>
 #include <cmath>
+#include <stdint.h>
+#include "accumulate.h"
+#include "global_data.h"
    
 using namespace std;
 
