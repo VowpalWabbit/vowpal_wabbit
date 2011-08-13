@@ -319,6 +319,11 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       if (global.persistent)
 	{
 	  // weights will be shared across processes, accessible to children
+
+	  //For macs
+#ifndef MAP_ANONYMOUS
+# define MAP_ANONYMOUS MAP_ANON
+#endif
 	  float* shared_weights = 
 	    (float*)mmap(0,global.stride * global.length() * sizeof(float), 
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
