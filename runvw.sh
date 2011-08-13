@@ -8,8 +8,8 @@ echo $1 > /dev/stderr
 #./vw -b 24 --cache_file temp.cache --passes 20 --regularization=1 -d /dev/stdin -f tempmodel --master_location $2 --bfgs --mem 5 
 #./vw -b 24 --cache_file temp.cache --passes 10 --regularization=1 --loss_function=logistic -d /dev/stdin -f tempmodel --master_location $2 --bfgs --mem 5 
 #./vw -b 24 --cache_file temp.cache --passes 1 -d /dev/stdin -i tempmodel -t
-gdcmd="./vw -q aq -b 20 --cache_file temp.cache --passes 1 --regularization=1 --adaptive --exact_adaptive_norm -d /dev/stdin -f tempmodel --master_location $master --loss_function=logistic" 
-bfgscmd="./vw -q aq -b 20 --cache_file temp.cache --bfgs --mem 5 --passes 20 --regularization=1 --master_location $master -f model -i tempmodel --loss_function=logistic"
+gdcmd="./vw -b 24 --cache_file temp.cache --passes 1 --regularization=1 --adaptive --exact_adaptive_norm -d /dev/stdin -f tempmodel --master_location $master --loss_function=logistic" 
+bfgscmd="./vw -b 24 --cache_file temp.cache --bfgs --mem 5 --passes 20 --regularization=1 --master_location $master -f model -i tempmodel --loss_function=logistic"
 if [ "$mapper" == '000000' ]
 then
     $gdcmd > mapperout 2>&1
