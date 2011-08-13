@@ -153,7 +153,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.active = false;
   global.active_simulation =false;
   global.reg = &r;
-  global.numnodes = 1;
 
 
   po::positional_options_description p;

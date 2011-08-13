@@ -61,16 +61,11 @@ void* gd_thread(void *in)
 	  if (ec->pass != current_pass && global.master_location != "")
 	    {
 	      if(global.master_location != "") {
-		if(params->socks == 0) {
-		  node_socks socks;
-		  global.numnodes = all_reduce_init(global.master_location, &socks);
-		  params->socks = &socks;
-		}
 		if(global.adaptive)
 		  //accumulate_avg(*(params->socks), params->reg, 0);	      
-		  accumulate_weighted_avg(*(params->socks), params->reg);
+		  accumulate_weighted_avg(global.master_location, params->reg);
 		else 
-		  accumulate_avg(*(params->socks), params->reg, 0);	      
+		  accumulate_avg(global.master_location, params->reg, 0);	      
 	      }
 	    }
 
@@ -93,16 +88,11 @@ void* gd_thread(void *in)
 		reg.weight_vectors[0][stride*i] = real_weight(reg.weight_vectors[0][stride*i],gravity);
 	    }
 	  if(global.master_location != "") {
-	    if(params->socks == 0) {
-	      node_socks socks;
-	      global.numnodes = all_reduce_init(global.master_location, &socks);
-	      params->socks = &socks;
-	    }
 	    if(global.adaptive)
 	      //  accumulate_avg(*(params->socks), params->reg, 0);	      
-	      accumulate_weighted_avg(*(params->socks), params->reg);
+	      accumulate_weighted_avg(global.master_location, params->reg);
 	    else 
-	      accumulate_avg(*(params->socks), params->reg, 0);	      
+	      accumulate_avg(global.master_location, params->reg, 0);	      
 	  }
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);

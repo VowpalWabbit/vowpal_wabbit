@@ -20,7 +20,7 @@ using namespace std;
 struct timeb t_start, t_end;
 double net_comm_time = 0.;
 
-void accumulate(node_socks socks, regressor& reg, size_t o) {
+void accumulate(string master_location, regressor& reg, size_t o) {
   ftime(&t_start);
   uint32_t length = 1 << global.num_bits; //This is size of gradient
   size_t stride = global.stride;
@@ -31,7 +31,7 @@ void accumulate(node_socks socks, regressor& reg, size_t o) {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce((char*)local_grad, length*sizeof(float), socks);
+  all_reduce((char*)local_grad, length*sizeof(float), master_location);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i];
@@ -41,31 +41,32 @@ void accumulate(node_socks socks, regressor& reg, size_t o) {
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
 }
 
-float accumulate_scalar(node_socks socks, float local_sum) {
+float accumulate_scalar(string master_location, float local_sum) {
   ftime(&t_start);
   float temp = local_sum;
-  all_reduce((char*)&temp, sizeof(float), socks);
+  all_reduce((char*)&temp, sizeof(float), master_location);
   ftime(&t_end);
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   return temp;
 }
 
-void accumulate_avg(node_socks socks, regressor& reg, size_t o) {
-  cerr<<"Accumulating average "<<global.numnodes<<" "<<endl;
+void accumulate_avg(string master_location, regressor& reg, size_t o) {
   uint32_t length = 1 << global.num_bits; //This is size of gradient
   size_t stride = global.stride;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vectors[0];
   ftime(&t_start);
+  float numnodes = 1.;
+  all_reduce((char*)&numnodes, sizeof(float), master_location);
   for(uint32_t i = 0;i < length;i++) 
     {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce((char*)local_grad, length*sizeof(float), socks);
+  all_reduce((char*)local_grad, length*sizeof(float), master_location);
   for(uint32_t i = 0;i < length;i++) 
     {
-      weights[stride*i+o] = local_grad[i]/(float)global.numnodes;
+      weights[stride*i+o] = local_grad[i]/numnodes;
     }
   ftime(&t_end);
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
@@ -86,8 +87,7 @@ float min_elem(float* arr, int length) {
   return min;
 }
 
-void accumulate_weighted_avg(node_socks socks, regressor& reg) {
-  cerr<<"Accumulating weighted average "<<global.numnodes<<" "<<endl;
+void accumulate_weighted_avg(string master_location, regressor& reg) {
   if(!global.adaptive) {
     cerr<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
@@ -102,15 +102,7 @@ void accumulate_weighted_avg(node_socks socks, regressor& reg) {
   for(uint32_t i = 0;i < length;i++) 
     local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]-1);
   
-  all_reduce((char*)local_weights, length*sizeof(float), socks);
-  float max = 0, min = 1;
-  for(uint32_t i = 0;i < length;i++)
-    if(local_weights[i] > 0) {
-      float ratio = sqrt(weights[stride*i+1]*weights[stride*i+1]-1)/local_weights[i];
-      if(ratio > max) max = ratio;
-      if(ratio > 1. && ratio < min) min = ratio;
-    }
-  cerr<<"Max = "<<max<<" Min = "<<min<<endl;
+  all_reduce((char*)local_weights, length*sizeof(float), master_location);
 
   for(uint32_t i = 0;i < length;i++) 
     if(local_weights[i] > 0)
@@ -118,11 +110,15 @@ void accumulate_weighted_avg(node_socks socks, regressor& reg) {
     else
       local_param[i] = 0;
 
-  all_reduce((char*)local_param, length*sizeof(float), socks);
+  all_reduce((char*)local_param, length*sizeof(float), master_location);
   for(uint32_t i = 0;i < length;i++) 
       weights[stride*i] = local_param[i];
   ftime(&t_end);
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   delete[] local_param;
   delete[] local_weights;
+}
+
+double get_comm_time() {
+  return net_comm_time;
 }

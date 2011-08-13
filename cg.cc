@@ -348,13 +348,10 @@ void setup_cg(gd_thread_params& t)
 
   float* old_first_derivative = (float*) malloc(sizeof(float)*global.length());
 
-  node_socks socks;
   struct timeb t_start_global, t_end_global;
   double net_time = 0.0;
   ftime(&t_start_global);
   
-  if(global.master_location != "")
-    all_reduce_init(global.master_location, &socks);
 
   if (!global.quiet)
     {
@@ -383,16 +380,16 @@ void setup_cg(gd_thread_params& t)
 		{
 		  if(global.master_location != "")
 		    {
-		      accumulate(socks, reg, 3); //Accumulate preconditioner
-		      importance_weight_sum = accumulate_scalar(socks, importance_weight_sum);
+		      accumulate(global.master_location, reg, 3); //Accumulate preconditioner
+		      importance_weight_sum = accumulate_scalar(global.master_location, importance_weight_sum);
 		    }
 		  finalize_preconditioner(reg,global.regularization);
 		}
 	      if (gradient_pass) // We just finished computing all gradients
 		{
 		  if(global.master_location != "") {
-		    loss_sum = accumulate_scalar(socks, loss_sum);  //Accumulate loss_sums
-		    accumulate(socks, reg, 1); //Accumulate gradients from all nodes
+		    loss_sum = accumulate_scalar(global.master_location, loss_sum);  //Accumulate loss_sums
+		    accumulate(global.master_location, reg, 1); //Accumulate gradients from all nodes
 		  }
 		  if (global.regularization > 0.)
 		    loss_sum += add_regularization(reg,global.regularization);
@@ -432,7 +429,7 @@ void setup_cg(gd_thread_params& t)
 	      else // just finished all second gradients
 		{
 		  if(global.master_location != "") {
-		    curvature = accumulate_scalar(socks, curvature);  //Accumulate curvatures
+		    curvature = accumulate_scalar(global.master_location, curvature);  //Accumulate curvatures
 		  }
 		  if (global.regularization > 0.)
 		    curvature += regularizer_direction_magnitude(reg,global.regularization);
@@ -512,7 +509,7 @@ void setup_cg(gd_thread_params& t)
 	  if (example_number == predictions.index())//do one last update
 	    {
 	      if(global.master_location != "") {
-		curvature = accumulate_scalar(socks, curvature);  //Accumulate curvatures
+		curvature = accumulate_scalar(global.master_location, curvature);  //Accumulate curvatures
 	      }
 	      if (global.regularization > 0.)
 		curvature += regularizer_direction_magnitude(reg,global.regularization);
@@ -533,7 +530,7 @@ void setup_cg(gd_thread_params& t)
 	  if (output_regularizer)//need to accumulate and place the regularizer.
 	    {
 	      if(global.master_location != "")
-		accumulate(socks, reg, 3); //Accumulate preconditioner
+		accumulate(global.master_location, reg, 3); //Accumulate preconditioner
 	      preconditioner_to_regularizer(reg,global.regularization);
 	    }
 	  ftime(&t_end_global);
@@ -545,8 +542,6 @@ void setup_cg(gd_thread_params& t)
 	    }
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
-	  if(global.master_location != "")
-	    all_reduce_close(socks);
 	  free(predictions.begin);
 	  free(old_first_derivative);
 	  free(ec);
@@ -557,8 +552,6 @@ void setup_cg(gd_thread_params& t)
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
   
-  if(global.master_location != "")
-    all_reduce_close(socks);
   free(predictions.begin);
   free(old_first_derivative);
   ftime(&t_end_global);

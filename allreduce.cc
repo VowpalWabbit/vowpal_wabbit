@@ -24,6 +24,9 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "allreduce.h"
 
 using namespace std;
+string current_master="";
+
+node_socks socks;
 
 float add(float* arr, int n) {
   float sum = 0.0;
@@ -76,7 +79,7 @@ int sock_connect(uint32_t ip, int port) {
 }
 
 
-int all_reduce_init(string master_location, node_socks* socks) 
+int all_reduce_init(string master_location)
 {
   struct hostent* master = gethostbyname(master_location.c_str());
     
@@ -84,6 +87,7 @@ int all_reduce_init(string master_location, node_socks* socks)
     cerr << "can't resolve hostname: " << master_location << endl;
     exit(1);
   }
+  current_master = master_location;
 
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
   int port = 26543;
@@ -102,24 +106,6 @@ int all_reduce_init(string master_location, node_socks* socks)
   if(read(master_sock, &parent_port, sizeof(parent_port)) < (int)sizeof(parent_port))
     cerr << "read failed!" << endl;
 
-  cerr<<"Received info "<<ntohs(client_port)<<" "<<kid_count<<" ";
-  if (parent_ip != (uint32_t)-1)
-    {
-      uint32_t pip = ntohl(parent_ip);
-      char* pp = (char*)&pip;
-	
-      for (size_t i = 0; i < 4; i++)
-	{
-	  cerr << (int)pp[i] << ".";
-	}
-      cerr <<" "<<ntohs(parent_port)<<endl;
-
-    }
-  else
-    {
-      cerr << " noparent noport " << endl;
-    }
-
   int sock = -1;
   if(kid_count > 0) {
     sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -136,28 +122,9 @@ int all_reduce_init(string master_location, node_socks* socks)
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_port = client_port;
 
-    cerr<<"Client port is "<<ntohs(client_port)<<endl;
     if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
       {
-	cerr << "failure to bind!" << endl;
-	cerr<<"Received info "<<ntohs(client_port)<<" "<<kid_count<<" ";
-	if (parent_ip != (uint32_t)-1)
-	  {
-	    uint32_t pip = ntohl(parent_ip);
-	    char* pp = (char*)&pip;
-	      
-	    for (size_t i = 0; i < 4; i++)
-	      {
-		cerr << (int)pp[i] << ".";
-	      }
-	    cerr <<" "<<ntohs(parent_port)<<endl;
-	      
-	  }
-	else
-	  {
-	    cerr << " noparent noport " << endl;
-	  }
-	  
+	cerr << "failure to bind!" << endl;	  
 	exit(1);
       }
       
@@ -165,7 +132,6 @@ int all_reduce_init(string master_location, node_socks* socks)
   }
   int done = 1;
 
-  cerr<<"Writing to master\n";
   if(write(master_sock, &done, sizeof(done)) < (int)sizeof(done))
     cerr << "write failed!" << endl;
   
@@ -176,31 +142,27 @@ int all_reduce_init(string master_location, node_socks* socks)
     
   //int parent_sock;
   if(parent_ip != (uint32_t)-1) 
-    socks->parent = sock_connect(parent_ip, parent_port);
+    socks.parent = sock_connect(parent_ip, parent_port);
   else
-    socks->parent = -1;
+    socks.parent = -1;
     
-  cerr<<" Connected to parent\n";
 
-  socks->children[0] = -1; socks->children[1] = -1;
+  socks.children[0] = -1; socks.children[1] = -1;
 
   
-  cerr<<"Kid count is "<<kid_count<<endl;
 
   for (int i = 0; i < kid_count; i++)
     {
       sockaddr_in child_address;
       socklen_t size = sizeof(child_address);
-      cerr << "calling accept" << endl;
       int f = accept(sock,(sockaddr*)&child_address,&size);
       if (f < 0)
 	{
 	  cerr << "bad client socket!" << endl;
 	  exit (1);
 	}
-      socks->children[i] = f;
+      socks.children[i] = f;
     }
-  cerr<<" Connected to kids, sock = " << sock << "\n";
 
   if (kid_count > 0)
     close(sock);
@@ -391,19 +353,24 @@ void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
     }
 }
 
-void all_reduce(char* buffer, int n, node_socks socks) 
+void all_reduce(char* buffer, int n, string master_location) 
 {
+  if(master_location != current_master) 
+    all_reduce_init(master_location);
+    
   reduce(buffer, n, socks.parent, socks.children);
   broadcast(buffer, n, socks.parent, socks.children);
 }
 
-void all_reduce_close(node_socks socks)
+node_socks::~node_socks()
 {
-  if(socks.parent != -1)
-    close(socks.parent);
-  if(socks.children[0] != -1) 
-    close(socks.children[0]);
-  if(socks.children[1] != -1)
-    close(socks.children[1]);  
+  if(current_master != "") {
+    if(this->parent != -1)
+      close(this->parent);
+    if(this->children[0] != -1) 
+      close(this->children[0]);
+    if(this->children[1] != -1)
+      close(this->children[1]);  
+  }
 }
 

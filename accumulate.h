@@ -15,9 +15,10 @@ This implements various accumulate functions building on top of allreduce.
 
 using namespace std;
 
-void accumulate(node_socks socks, regressor& reg, size_t o);
-float accumulate_scalar(node_socks socks, float local_sum);
-void accumulate_weighted_avg(node_socks socks, regressor& reg);
-void accumulate_avg(node_socks socks, regressor& reg, size_t o);
+void accumulate(string master_location, regressor& reg, size_t o);
+float accumulate_scalar(string master_location, float local_sum);
+void accumulate_weighted_avg(string master_location, regressor& reg);
+void accumulate_avg(string master_location, regressor& reg, size_t o);
+double get_comm_time();
 
 #endif
