@@ -22,9 +22,8 @@ tutorial.
 #include "delay_ring.h"
 #include "allreduce.h"
 #include <sys/timeb.h>
+#include "accumulate.h"
 
-struct timeb t_start, t_end;
-double net_comm_time = 0.0;
 
 void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {
@@ -327,35 +326,6 @@ void update_weight(regressor& reg, float step_size)
     reg.weight_vectors[0][stride*i] += step_size * reg.weight_vectors[0][stride*i+2];
 }
 
-void accumulate(node_socks socks, regressor& reg, size_t o) {
-  ftime(&t_start);
-  uint32_t length = 1 << global.num_bits; //This is size of gradient
-  size_t stride = global.stride;
-  float* local_grad = new float[length];
-  weight* weights = reg.weight_vectors[0];
-  for(uint32_t i = 0;i < length;i++) 
-    {
-      local_grad[i] = weights[stride*i+o];
-    }
-
-  all_reduce((char*)local_grad, length*sizeof(float), socks);
-  for(uint32_t i = 0;i < length;i++) 
-    {
-      weights[stride*i+o] = local_grad[i];
-    }
-  delete[] local_grad;
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
-}
-
-float accumulate_scalar(node_socks socks, float local_sum) {
-  ftime(&t_start);
-  float temp = local_sum;
-  all_reduce((char*)&temp, sizeof(float), socks);
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
-  return temp;
-}
 
 void setup_cg(gd_thread_params& t)
 {
@@ -381,8 +351,6 @@ void setup_cg(gd_thread_params& t)
   node_socks socks;
   struct timeb t_start_global, t_end_global;
   double net_time = 0.0;
-  double prev_comm_time = 0.0;
-  net_comm_time = 0.0;
   ftime(&t_start_global);
   
   if(global.master_location != "")
@@ -390,9 +358,9 @@ void setup_cg(gd_thread_params& t)
 
   if (!global.quiet)
     {
-      const char * header_fmt = "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
+      const char * header_fmt = "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
       fprintf(stderr, header_fmt,
-	      "avg. loss", "mix fraction", "der. mag", "curvature", "step size", "newt. decr.");
+	      "avg. loss", "mix fraction", "der. mag", "curvature", "dir. magnitude", "step size", "newt. decr.", "wolfe ratio");
       fflush(stderr);
       cerr.precision(5);
     }
@@ -476,10 +444,12 @@ void setup_cg(gd_thread_params& t)
 		    }
 		  step_size = - dd/curvature;
 		  if (!global.quiet) {
-		    fprintf(stderr, "%-e\t%-e\t%-f\n", curvature/importance_weight_sum, step_size, 0.5*step_size*step_size*curvature /importance_weight_sum);
+		    //fprintf(stderr, "%-e\t%-e\t%-e\t%-f\t%-f\n", curvature/importance_weight_sum, d_mag/importance_weight_sum, step_size, 0.5*step_size*step_size*curvature /importance_weight_sum, dd/previous_d_mag);
+		    fprintf(stderr, "%-e\t%-e\t%-e\t%-f\t%-f\n", curvature/importance_weight_sum, 0.0, step_size, 0.5*step_size*step_size*curvature /importance_weight_sum, dd/previous_d_mag);
 		    //fprintf(stdout, "Net comm. time is %f\n",net_comm_time - prev_comm_time);
+
 		  }
-		  prev_comm_time = net_comm_time;
+		  //prev_comm_time = net_comm_time;
 		  predictions.erase();
 		  update_weight(reg,step_size);
 
@@ -554,7 +524,8 @@ void setup_cg(gd_thread_params& t)
 		}
 	      float step_size = - dd/(max(curvature,1.));
 	      if (!global.quiet) {
-		fprintf(stderr, "%-e\t%-e\t%-f\n", curvature, step_size, 0.5*step_size*step_size*curvature/importance_weight_sum);
+		//fprintf(stderr, "%-e\t%-e\t%-e\t%-f\t%-f\n", curvature/importance_weight_sum, d_mag/importance_weight_sum, step_size/importance_weight_sum, 0.5*step_size*step_size*curvature/importance_weight_sum, dd/previous_d_mag);
+		fprintf(stderr, "%-e\t%-e\t%-e\t%-f\t%-f\n", curvature/importance_weight_sum, 0.0, step_size/importance_weight_sum, 0.5*step_size*step_size*curvature/importance_weight_sum, dd/previous_d_mag);
 		//fprintf(stdout, "Net comm. time is %f\n",net_comm_time - prev_comm_time);
 	      }
 	      update_weight(reg,step_size);
@@ -569,7 +540,7 @@ void setup_cg(gd_thread_params& t)
 	  net_time += (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 	  if (!global.quiet)
 	    {
-	      cerr<<"Net time spent in communication = "<<(float)net_comm_time/(float)1000<<" seconds\n";
+	      //cerr<<"Net time spent in communication = "<<(float)net_comm_time/(float)1000<<" seconds\n";
 	      cerr<<"Net time spent = "<<(float)net_time/(float)1000<<" seconds\n";
 	    }
 	  if (global.local_prediction > 0)
@@ -592,9 +563,9 @@ void setup_cg(gd_thread_params& t)
   free(old_first_derivative);
   ftime(&t_end_global);
   net_time += (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-  cerr<<"Net time spent in communication = "<<(float)net_comm_time/(float)1000<<"seconds\n";
-  cerr<<"Net time spent = "<<(float)net_time/(float)1000<<"seconds\n";
-  fflush(stderr);
+  //cerr<<"Net time spent in communication = "<<(float)net_comm_time/(float)1000<<"seconds\n";
+  if(!global.quiet)
+    cerr<<"Net time spent = "<<(float)net_time/(float)1000<<"seconds\n";
 
   t.reg = reg;
   return;

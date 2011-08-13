@@ -123,6 +123,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.corrective = false;
   global.delayed_global = false;
   global.conjugate_gradient = false;
+  global.bfgs = false;
   global.hessian_on = false;
   global.stride = 1;
   global.weighted_labels = 0.;
@@ -152,6 +153,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.active = false;
   global.active_simulation =false;
   global.reg = &r;
+  global.numnodes = 1;
 
 
   po::positional_options_description p;
@@ -228,6 +230,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("bfgs")) {
     global.bfgs = true;
     global.stride = 4;
+    if (vm.count("hessian_on")) {
+      global.hessian_on = true;
+    }
     if (!global.quiet) {
        if (global.m>0)
 	 cerr << "enabling BFGS based optimization ";
@@ -246,8 +251,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     if (global.conjugate_gradient)
       {
 	cout << "you cannot enable both conjugate gradient and BFGS" << endl;
+	exit(1);
       }
   }
+
 
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
@@ -375,7 +382,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     }
   if (!vm.count("lda"))
     global.eta *= pow(par->t, vars.power_t);
-
+  
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
   parse_source_args(vm,par,global.quiet,global.numpasses);
   if (vm.count("readable_model"))
@@ -396,7 +403,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	  loss_function = vm["loss_function"].as<string>();
   else
 	  loss_function = "squaredloss";
-
   double loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<double>();

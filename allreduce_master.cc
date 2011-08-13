@@ -72,13 +72,15 @@ void fail_write(int fd, const void* buf, size_t count)
 }
 
 int main(int argc, char* argv[]) {
-  if (argc != 2)
+  if (argc != 3)
     {
-      cout << "usage: allreduce_master <n>" << endl;
+      cout << "usage: allreduce_master <numnodes> <numrounds>" << endl;
       exit(0);
     }
 
   int source_count = atoi(argv[1]);
+  int numrounds = atoi(argv[2]);
+  cerr<<"Master "<<source_count<<numrounds<<endl;
 
   int sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
@@ -108,68 +110,69 @@ int main(int argc, char* argv[]) {
       exit(1);
     }
       
-  listen(sock, source_count);
+  for(int round = 0;round < numrounds;round++) {
+    listen(sock, source_count);
 
-  sockaddr_in client_address;
-  client client_sockets[source_count];
-  socklen_t size = sizeof(client_address);
-  
-  for (int i = 0; i < source_count; i++)
-    {
-      int f = accept(sock,(sockaddr*)&client_address,&size);
-      if (f < 0)
-	{
-	  cerr << "bad client socket!" << endl;
-	  exit (1);
-	}
-      client_sockets[i].client_ip = client_address.sin_addr.s_addr;
-      client_sockets[i].socket = f;
-    }
-  qsort(client_sockets, source_count, sizeof(client), socket_sort);
-  int client_ports[source_count];
-  client_ports[0] = htons(port+1);
-  for(int i = 1;i < source_count;i++) {
-    if(client_sockets[i].client_ip == client_sockets[i-1].client_ip) 
-      client_ports[i] = htons(ntohs(client_ports[i-1])+1);
-    else
-      client_ports[i] = htons(port+1);
-  }
-
-  int parent[source_count];
-  int kid_count[source_count];
-
-  int root = build_tree(parent, kid_count, source_count, 0);
-  parent[root] = -1;
-
-
-  for (int i = 0; i < source_count; i++)
-    {
-      fail_write(client_sockets[i].socket, &client_ports[i], sizeof(client_ports[i]));
-      fail_write(client_sockets[i].socket, &kid_count[i], sizeof(kid_count[i]));
-      if (parent[i] >= 0)
-	{
-	  fail_write(client_sockets[i].socket, &client_sockets[parent[i]].client_ip, sizeof(client_sockets[parent[i]].client_ip));
-	  fail_write(client_sockets[i].socket, &client_ports[parent[i]], sizeof(client_ports[parent[i]]));
-	}
+    sockaddr_in client_address;
+    client client_sockets[source_count];
+    socklen_t size = sizeof(client_address);
+    
+    for (int i = 0; i < source_count; i++)
+      {
+	int f = accept(sock,(sockaddr*)&client_address,&size);
+	if (f < 0)
+	  {
+	    cerr << "bad client socket!" << endl;
+	    exit (1);
+	  }
+	client_sockets[i].client_ip = client_address.sin_addr.s_addr;
+	client_sockets[i].socket = f;
+      }
+    qsort(client_sockets, source_count, sizeof(client), socket_sort);
+    int client_ports[source_count];
+    client_ports[0] = htons(port+1);
+    for(int i = 1;i < source_count;i++) {
+      if(client_sockets[i].client_ip == client_sockets[i-1].client_ip) 
+	client_ports[i] = htons(ntohs(client_ports[i-1])+1);
       else
-	{
-	  int bogus = -1;
-	  uint32_t bogus2 = -1;
-	  fail_write(client_sockets[i].socket, &bogus2, sizeof(bogus2));
-	  fail_write(client_sockets[i].socket, &bogus, sizeof(bogus));
-	}
+	client_ports[i] = htons(port+1);
     }
 
-  for(int i = 0;i < source_count;i++) {
-    int done;
-    if(read(client_sockets[i].socket, &done, sizeof(done)) < (int) sizeof(done)) 
-      cerr<<" Read failed for node "<<i<<endl;
-  }
-  cout<<"Finished reading at master\n";
-  for(int i = 0;i < source_count;i++) {
-    int done = 1;
-    if(write(client_sockets[i].socket, &done, sizeof(done)) < (int) sizeof(done)) 
-      cerr<<" Write failed\n";
-    close(client_sockets[i].socket);
+    int parent[source_count];
+    int kid_count[source_count];
+
+    int root = build_tree(parent, kid_count, source_count, 0);
+    parent[root] = -1;
+
+
+    for (int i = 0; i < source_count; i++)
+      {
+	fail_write(client_sockets[i].socket, &client_ports[i], sizeof(client_ports[i]));
+	fail_write(client_sockets[i].socket, &kid_count[i], sizeof(kid_count[i]));
+	if (parent[i] >= 0)
+	  {
+	    fail_write(client_sockets[i].socket, &client_sockets[parent[i]].client_ip, sizeof(client_sockets[parent[i]].client_ip));
+	    fail_write(client_sockets[i].socket, &client_ports[parent[i]], sizeof(client_ports[parent[i]]));
+	  }
+	else
+	  {
+	    int bogus = -1;
+	    uint32_t bogus2 = -1;
+	    fail_write(client_sockets[i].socket, &bogus2, sizeof(bogus2));
+	    fail_write(client_sockets[i].socket, &bogus, sizeof(bogus));
+	  }
+      }
+
+    for(int i = 0;i < source_count;i++) {
+      int done = 0;
+      if(read(client_sockets[i].socket, &done, sizeof(done)) < (int) sizeof(done)) 
+	cerr<<" Read failed for node "<<i<<" read "<<done<<endl;
+    }
+    cout<<"Finished reading at master\n";
+    for(int i = 0;i < source_count;i++) {
+      if(write(client_sockets[i].socket, &source_count, sizeof(source_count)) < (int) sizeof(source_count)) 
+	cerr<<" Write failed\n";
+      close(client_sockets[i].socket);
+    }
   }
 }

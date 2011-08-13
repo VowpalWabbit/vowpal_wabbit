@@ -779,9 +779,10 @@ void setup_bfgs(gd_thread_params t)
 
   ftime(&t_end_global);
   net_time += (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-  cerr<<"Net time spent in communication = "<<(float)net_comm_time/(float)1000<<"seconds\n";
-  cerr<<"Net time spent = "<<(float)net_time/(float)1000<<"seconds\n";
-  fflush(stderr);
+  if(!global.quiet) { 
+    cerr<<"Net time spent in communication = "<<(float)net_comm_time/(float)1000<<"seconds\n";
+    cerr<<"Net time spent = "<<(float)net_time/(float)1000<<"seconds\n";
+  }
 
   return;
 }

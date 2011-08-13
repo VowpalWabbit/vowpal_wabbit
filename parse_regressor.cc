@@ -82,6 +82,7 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       cout << "can't open " << file << endl << " ... exiting." << endl;
       exit(1);
     }
+
   
   size_t v_length;
   source.read((char*)&v_length, sizeof(v_length));
@@ -243,7 +244,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
     final_regressor_name = "";
 
   vector<string> regs;
-  if (vm.count("initial_regressor"))
+  if (vm.count("initial_regressor") || vm.count("i"))
     regs = vm["initial_regressor"].as< vector<string> >();
   
   /* 

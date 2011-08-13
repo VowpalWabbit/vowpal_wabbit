@@ -23,6 +23,8 @@ embodied in the content of this file are licensed under the BSD
 #include "multisource.h"
 #include "simple_label.h"
 #include "delay_ring.h"
+#include "allreduce.h"
+#include "accumulate.h"
 
 void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, float update);
 
@@ -35,10 +37,12 @@ void* gd_thread(void *in)
   example* ec = NULL;
   size_t current_pass = 0;
 
+  
   while ( true )
     {//this is a poor man's select operation.
       if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
 	{
+
 	  if (ec->pass != current_pass)
 	    {
 	      global.eta *= global.eta_decay_rate;
@@ -53,6 +57,23 @@ void* gd_thread(void *in)
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
+
+	  if (ec->pass != current_pass && global.master_location != "")
+	    {
+	      if(global.master_location != "") {
+		if(params->socks == 0) {
+		  node_socks socks;
+		  global.numnodes = all_reduce_init(global.master_location, &socks);
+		  params->socks = &socks;
+		}
+		if(global.adaptive)
+		  //accumulate_avg(*(params->socks), params->reg, 0);	      
+		  accumulate_weighted_avg(*(params->socks), params->reg);
+		else 
+		  accumulate_avg(*(params->socks), params->reg, 0);	      
+	      }
+	    }
+
 	  if (command_example(ec, params))
 	    {
 	      ec->threads_to_finish--;
@@ -71,6 +92,18 @@ void* gd_thread(void *in)
 	      for(uint32_t i = 0; i < length; i++)
 		reg.weight_vectors[0][stride*i] = real_weight(reg.weight_vectors[0][stride*i],gravity);
 	    }
+	  if(global.master_location != "") {
+	    if(params->socks == 0) {
+	      node_socks socks;
+	      global.numnodes = all_reduce_init(global.master_location, &socks);
+	      params->socks = &socks;
+	    }
+	    if(global.adaptive)
+	      //  accumulate_avg(*(params->socks), params->reg, 0);	      
+	      accumulate_weighted_avg(*(params->socks), params->reg);
+	    else 
+	      accumulate_avg(*(params->socks), params->reg, 0);	      
+	  }
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
 	  return NULL;
@@ -78,7 +111,6 @@ void* gd_thread(void *in)
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
-
   return NULL;
 }
 

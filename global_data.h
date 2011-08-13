@@ -42,6 +42,8 @@ struct global_data {
   int m;
 
   size_t stride;
+
+
   string per_feature_regularizer_input;
   string per_feature_regularizer_output;
   string per_feature_regularizer_text;
@@ -115,6 +117,7 @@ struct global_data {
   float eta_decay_rate;
 
   regressor* reg;
+  int numnodes; // number of nodes in distributed architecture
 };
 extern pthread_mutex_t io;
 extern global_data global;

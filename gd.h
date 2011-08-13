@@ -11,6 +11,7 @@ embodied in the content of this file are licensed under the BSD
 #include "example.h"
 #include "parse_regressor.h"
 #include "parser.h"
+#include "allreduce.h"
 
 void print_result(int f, float res, v_array<char> tag);
 
@@ -33,6 +34,7 @@ struct gd_thread_params
   size_t thread_num;
   regressor reg;
   string* final_regressor_name;
+  node_socks* socks;
 };
 
 void print_audit_features(regressor &reg, example* ec, size_t offset);

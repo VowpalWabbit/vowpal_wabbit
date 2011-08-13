@@ -76,7 +76,7 @@ int sock_connect(uint32_t ip, int port) {
 }
 
 
-void all_reduce_init(string master_location, node_socks* socks) 
+int all_reduce_init(string master_location, node_socks* socks) 
 {
   struct hostent* master = gethostbyname(master_location.c_str());
     
@@ -91,6 +91,8 @@ void all_reduce_init(string master_location, node_socks* socks)
   int master_sock = sock_connect(master_ip, htons(port));
   int client_port, kid_count, parent_port;
   uint32_t parent_ip;
+  int numnodes;
+
   if(read(master_sock, &client_port, sizeof(client_port)) < (int)sizeof(client_port))
     cerr << "read failed!" << endl;
   if(read(master_sock, &kid_count, sizeof(kid_count)) < (int)sizeof(kid_count))
@@ -163,16 +165,12 @@ void all_reduce_init(string master_location, node_socks* socks)
   }
   int done = 1;
 
+  cerr<<"Writing to master\n";
   if(write(master_sock, &done, sizeof(done)) < (int)sizeof(done))
     cerr << "write failed!" << endl;
   
-  if(read(master_sock, &done, sizeof(done)) < (int)sizeof(done))
+  if(read(master_sock, &numnodes, sizeof(done)) < (int)sizeof(done))
     cerr << "read failed!" << endl;
-  if(done != 1) {
-    cerr<< "Catastrophe\n";
-    exit(1);
-  }
-    
     
   close(master_sock);
     
@@ -206,6 +204,8 @@ void all_reduce_init(string master_location, node_socks* socks)
 
   if (kid_count > 0)
     close(sock);
+
+  return numnodes;
     
 }
 

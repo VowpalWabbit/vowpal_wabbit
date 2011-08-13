@@ -27,6 +27,8 @@ embodied in the content of this file are licensed under the BSD
 #include "delay_ring.h"
 #include "message_relay.h"
 #include "multisource.h"
+#include "allreduce.h"
+#include <sys/timeb.h>
 
 gd_vars* vw(int argc, char *argv[])
 {
@@ -34,14 +36,16 @@ gd_vars* vw(int argc, char *argv[])
 
   parser* p = new_parser(&simple_label);
   regressor regressor1;
-
+  
   gd_vars *vars = (gd_vars*) malloc(sizeof(gd_vars));
 
   po::options_description desc("VW options");
-
+  
   po::variables_map vm = parse_args(argc, argv, desc, *vars, 
 				    regressor1, p, 
 				    final_regressor_name);
+  struct timeb t_start, t_end;
+  ftime(&t_start);
   
   if (!global.quiet && !global.conjugate_gradient && !global.bfgs)
     {
@@ -55,7 +59,7 @@ gd_vars* vw(int argc, char *argv[])
     }
 
   size_t num_threads = global.num_threads();
-  gd_thread_params t = {vars, num_threads, regressor1, &final_regressor_name};
+  gd_thread_params t = {vars, num_threads, regressor1, &final_regressor_name, 0};
 
   start_parser(num_threads, p);
   initialize_delay_ring();
@@ -67,6 +71,7 @@ gd_vars* vw(int argc, char *argv[])
       destroy_send();
     }
   else if (vm.count("noop"))
+
     {
       start_noop();
       end_noop();
@@ -101,5 +106,9 @@ gd_vars* vw(int argc, char *argv[])
   finalize_regressor(final_regressor_name,t.reg);
   finalize_source(p);
   free(p);
+  ftime(&t_end);
+  double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
+  if(!global.quiet)
+    cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
   return vars;
 }
