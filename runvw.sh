@@ -13,9 +13,8 @@ bfgscmd="./vw -b 24 --cache_file temp.cache --bfgs --mem 5 --passes 20 --regular
 if [ "$mapper" == '000000' ]
 then
     $gdcmd > mapperout 2>&1
-    #$bfgscmd >> mapperout 2>&1
-    #outfile=$out_directory/model
-    outfile=$out_directory/tempmodel
+    $bfgscmd >> mapperout 2>&1
+    outfile=$out_directory/model
     mapperfile=$out_directory/mapperout
     found=`hadoop fs -lsr | grep $out_directory | grep mapperout`
     if [ "$found" != "" ]
@@ -32,5 +31,5 @@ then
     hadoop fs -put mapperout $mapperfile
 else
     $gdcmd
-    #$bfgscmd
+    $bfgscmd
 fi

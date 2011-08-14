@@ -599,11 +599,12 @@ void setup_bfgs(gd_thread_params t)
 			gradient_pass = false;//now start computing curvature
 		      }
 		      else {
+			float d_mag = direction_magnitude(reg);
 			step_size = 1.0;
 			ftime(&t_end_global);
 			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!global.quiet)
-			  fprintf(stderr, "\t\t\t\t(revise)\t%e\t(new/old = %.1f)\t\t%f\n", new_step, new_step/step_size,(net_time/1000.));
+			  fprintf(stderr, "%-10s\t%-e\t%-e\t\t%f\n", "", d_mag, step_size,(net_time/1000.));
 			predictions.erase();
 			update_weight(reg, step_size);		     		      
 		      }
