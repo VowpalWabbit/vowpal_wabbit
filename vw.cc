@@ -12,14 +12,16 @@ embodied in the content of this file are licensed under the BSD
 #include <time.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/timeb.h>
 #include "parse_regressor.h"
 #include "parse_example.h"
 #include "parse_args.h"
 #include "gd.h"
 #include "gd_mf.h"
+#include "lda_core.h"
 #include "cg.h"
 #include "bfgs.h"
-#include "lda.h"
+#include "lda_core.h"
 #include "noop.h"
 #include "vw.h"
 #include "simple_label.h"
@@ -28,7 +30,6 @@ embodied in the content of this file are licensed under the BSD
 #include "message_relay.h"
 #include "multisource.h"
 #include "allreduce.h"
-#include <sys/timeb.h>
 
 gd_vars* vw(int argc, char *argv[])
 {
@@ -90,6 +91,11 @@ gd_vars* vw(int argc, char *argv[])
     {
       setup_gd_mf(t);
       destroy_gd_mf();
+    } 
+  else if (global.lda > 0)
+    {
+      start_lda(t);
+      end_lda();
     }
   else 
     {

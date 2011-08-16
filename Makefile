@@ -22,7 +22,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 # for valgrind
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
-BINARIES = vw allreduce_master active_interactor lda
+BINARIES = vw allreduce_master active_interactor
 MANPAGES = vw.1
 
 #all:	$(BINARIES) $(MANPAGES)
@@ -55,13 +55,10 @@ gd_mf.o:	gd.h
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
-allreduce_master: allreduce_master.o
-	$(COMPILER) $(FLAGS) -o $@ $+ 
+allreduce_master: 
+	cd cluster; make; cd ..
 
-vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o allreduce.o accumulate.o gd.o gd_mf.o cg.o bfgs.o noop.o parser.o vw.o loss_functions.o sender.o main.o
-	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
-
-lda: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o allreduce.o accumulate.o gd.o lda_core.o noop.o parser.o loss_functions.o sender.o lda.o
+vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o allreduce.o accumulate.o gd.o lda_core.o gd_mf.o cg.o bfgs.o noop.o parser.o vw.o loss_functions.o sender.o main.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
 
 active_interactor:	active_interactor.cc
@@ -74,10 +71,10 @@ offset_tree: 	hash.o io.o parse_regressor.o parse_primitives.o cache.o sparse_de
 
 test: .FORCE
 	@echo "vw running test-suite..."
-	@(cd test && ./RunTests -f -E 0.001 ../vw ../lda)
+	@(cd test && ./RunTests -f -E 0.001 ../vw ../vw)
 
 install: vw
 	cp $(BINARIES) /usr/local/bin
 
 clean:
-	rm -f  *.o $(BINARIES) *~ $(MANPAGES)
+	rm -f  *.o $(BINARIES) *~ $(MANPAGES); cd cluster; make clean; cd ..

@@ -1,5 +1,6 @@
-The implementation of Non-linear (Preconditioned) Conjugate Gradient
-works on clusters (both Hadoop and otherwise) now.
+The implementation of Non-linear (Preconditioned) Conjugate Gradient,
+LBFGS, online learning, and adaptive online elarning works on clusters
+(both Hadoop and otherwise) now.
 
 To build the code, run make.
 
@@ -14,8 +15,9 @@ done using the helper daemon 'allreduce_master'.
 To run the code on Hadoop clusters:
 
 Connect to the master node for the Hadoop cluster:
-./allreduce_master <n>
-where <n> is the number of mappers you are going to launch.
+./allreduce_master <n> <m>
+where <n> is the number of mappers you are going to launch and <m> is 
+the number of spanning trees it should setup.
 
 Start the map-reduce job using Hadoop streaming: 
 
@@ -31,6 +33,9 @@ allreduc_master runs. The trained model is saved to the file
 
 To modify the arguments to VW, edit the script runvw.sh. Arguments to
 hadoop can be directly added in the hadoop streaming command. 
+
+See the 'mapscript.sh' which uses 'runvw.sh' for an advanced example
+of running VW in a Hadoop enviornmnent.
 
 ***********************************************************************
 
@@ -80,21 +85,13 @@ mappers and then let them communicate amongst themselves.
 
 allreduce.h: This is the header file for the workers. It provides a
 struct socks, that contains a socket to the parent and sockets for up
-to two children. Also provides the following functions:
+to two children. Also provides the following function:
 
-all_reduce_init(string master_location, node_socks* socks): Takes as
-input the hostname of the master as a string, and a pointer to the
-struct socks which will be populated with the parent and children
-sockets at the end. This routine checks in with the master, gets the
-tree structure and sets up communication with the parent and the
-children for the rest of the algorithm.
-
-all_reduce(char* buffer, int n, node_socks socks): Performs AllReduce
-on the entries of buffer that is n bytes, with the parent and children
-specified in socks object. It is implicitly assumed that the buffer
-contains floats so that addition is defined on chunks of 4 bytes.
-
-all_reduce_close(node_socks socks): Closes the sockets at the end.
+void all_reduce(char* buffer, int n, string master_location): Performs
+AllReduce on the entries of buffer that is n bytes, with the parent
+and children specified in socks object. It is implicitly assumed that
+the buffer contains floats so that addition is defined on chunks of 4
+bytes.
 
 The header also defines a constant const int buf_size which is the
 buffer size (in bytes) used for communication.
@@ -110,6 +107,6 @@ a call to pass_down.
 
 #########################################################################
 
-cg.cc: Conjugate gradient code with appropriate calls to all_reduce 
-whenever communication is needed. Uses routines accumulate and 
+cg.cc, gd.cc, lbfgs.cc: learning algorithms which use all_reduce
+whenever communication is needed. Uses routines accumulate and
 accumulate_scalar to reduce vectors and scalars resp.

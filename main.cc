@@ -9,8 +9,6 @@ embodied in the content of this file are licensed under the BSD
 #include <stdlib.h>
 
 int main(int argc, char *argv[]) {
-  srand48(100001);
-  drand48();
   gd_vars *vars = vw(argc, argv);
   
   float weighted_labeled_examples = global.weighted_examples - global.weighted_unlabeled_examples;

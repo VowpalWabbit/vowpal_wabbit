@@ -13,7 +13,7 @@ embodied in the content of this file are licensed under the BSD
 #include "constant.h"
 #include "sparse_dense.h"
 #include "gd.h"
-#include "lda.h"
+#include "lda_core.h"
 #include "cache.h"
 #include "multisource.h"
 #include "simple_label.h"
