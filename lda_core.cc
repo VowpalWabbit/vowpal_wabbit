@@ -350,9 +350,12 @@ void expdigammify_2(float* gamma, float* norm)
 float average_diff(float* oldgamma, float* newgamma)
 {
   float sum = 0.;
-  for (size_t i = 0; i<global.lda; i++)
+  float normalizer = 0.;
+  for (size_t i = 0; i<global.lda; i++) {
     sum += fabsf(oldgamma[i] - newgamma[i]);
-  return sum;
+    normalizer += newgamma[i];
+  }
+  return sum / normalizer;
 }
 
 // Returns E_q[log p(\theta)] - E_q[log q(\theta)].
@@ -436,11 +439,10 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
               doc_length += f->x;
 	    }
 	}
-      for (size_t k =0; k<global.lda; k++) {
+      for (size_t k =0; k<global.lda; k++)
 	new_gamma[k] = new_gamma[k]*v[k]+global.lda_alpha;
-      }
     }
-  while (average_diff(old_gamma, new_gamma) > 0.1);
+  while (average_diff(old_gamma, new_gamma) > 0.001);
 
   ec->topic_predictions.erase();
   if (ec->topic_predictions.end_array - ec->topic_predictions.begin < (int)global.lda)
