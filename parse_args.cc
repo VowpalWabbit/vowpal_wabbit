@@ -420,7 +420,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
   if (pow((double)global.eta_decay_rate, (double)global.numpasses) < 0.0001 )
-    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow(global.eta_decay_rate, global.numpasses)
+    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)global.eta_decay_rate, (double)global.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
 
   //parse_source_args(vm,par,global.quiet,global.numpasses);
