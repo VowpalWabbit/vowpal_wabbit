@@ -363,16 +363,18 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  while (true)
 	    {
 	      // wait for child to change state; if finished, then respawn
-	      siginfo_t sig;
-	      waitid(P_ALL,0,&sig,WEXITED);
+	      int status;
+	      pid_t pid = wait(&status);
 	      if (got_sigterm)
 		{
 		  for (size_t i = 0; i < num_children; i++)
 		    kill(children[i], SIGTERM);
 		  exit(0);
 		}
+	      if (pid < 0)
+		continue;
 	      for (size_t i = 0; i < num_children; i++)
-		if (sig.si_pid == children[i])
+		if (pid == children[i])
 		  {
 		    if ((children[i]=fork()) == 0)
 		      goto child;
