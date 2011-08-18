@@ -38,7 +38,7 @@ inline float float_of_substring(substring s)
   if (endptr == s.start && s.start != s.end)
     {
       cout << "error: " << string(s.start, s.end-s.start).c_str() << " is not a float" << endl;
-      exit(1);
+      f = 0;
     }
   return f;
 }
@@ -50,7 +50,7 @@ inline float double_of_substring(substring s)
   if (endptr == s.start && s.start != s.end)
     {
       cout << "error: " << string(s.start, s.end-s.start).c_str() << " is not a double" << endl;
-      exit(1);
+      f = 0;
     }
   return f;
 }
