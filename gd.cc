@@ -698,7 +698,6 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 	  float magx = 0.;
 	  float xGx = compute_xGx(reg, ec, thread_num, magx);
 	  update = global.eta*xGx/magx;
-	  global.update_sum += update;
 	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, xGx);
 	}
       else
