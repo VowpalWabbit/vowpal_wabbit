@@ -141,6 +141,7 @@ void update_preconditioner(regressor& reg, example* &ec)
     }
 }  
 
+
 float dot_with_direction(regressor& reg, example* &ec)
 {
   float ret = 0;
@@ -176,6 +177,35 @@ void zero_derivative(regressor& reg)
     weights[stride*i+1] = 0;
 }
 
+void zero_preconditioner(regressor& reg)
+{//set derivative to 0.
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];
+  for(uint32_t i = 0; i < length; i++)
+    weights[stride*i+3] = 0;
+}
+
+double regularizer_direction_magnitude(regressor& reg, float regularizer)
+{//compute direction magnitude
+  double ret = 0.;
+  
+  if (regularizer == 0.)
+    return ret;
+
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];
+  if (reg.regularizers == NULL)
+    for(uint32_t i = 0; i < length; i++)
+      ret += regularizer*weights[stride*i+2]*weights[stride*i+2];
+  else
+    for(uint32_t i = 0; i < length; i++) 
+      ret += reg.regularizers[0][2*i]*weights[stride*i+2]*weights[stride*i+2];
+
+  return ret;
+}
+
 double direction_magnitude(regressor& reg)
 {//compute direction magnitude
   double ret = 0.;
@@ -200,18 +230,22 @@ void bfgs_iter_start(regressor&reg, float* mem, int& lastj, double importance_we
   weight* w = reg.weight_vectors[0];
 
   double g1_Hg1 = 0.;
+  double g1_g1 = 0.;
   
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
     mem[2*m+BFGS_XT] = w[BFGS_W_XT];
     mem[2*m+BFGS_GT] = w[BFGS_W_GT];
     g1_Hg1 += w[BFGS_W_GT] * w[BFGS_W_GT] * w[BFGS_W_COND];
+    g1_g1 += w[BFGS_W_GT] * w[BFGS_W_GT];
     w[BFGS_W_DIR] = -w[BFGS_W_COND]*w[BFGS_W_GT];
     w[BFGS_W_GT] = 0;
   }
   lastj = 0;
   old_gamma = 1.;
   if (!global.quiet)
-    fprintf(stderr, "%-10e\t%-10s\t%-10s\t%-10s\t", g1_Hg1/importance_weight_sum, "", "", "");
+    fprintf(stderr, "%-10e\t%-10e\t%-10s\t%-10s\t%-10s\t",
+	    g1_g1/(importance_weight_sum*importance_weight_sum),
+	    g1_Hg1/importance_weight_sum, "", "", "");
 }
 
 void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int& lastj)
@@ -365,11 +399,13 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
   double g0_d = 0.;
   double g1_d = 0.;
   double g1_Hg1 = 0.;
+  double g1_g1 = 0.;
   
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
     g0_d += mem[2*m+BFGS_GT] * w[BFGS_W_DIR];
     g1_d += w[BFGS_W_GT] * w[BFGS_W_DIR];
     g1_Hg1 += w[BFGS_W_GT] * w[BFGS_W_GT] * w[BFGS_W_COND];
+    g1_g1 += w[BFGS_W_GT] * w[BFGS_W_GT];
   }
   
   double wolfe1 = (loss_sum-previous_loss_sum)/(step*g0_d);
@@ -380,13 +416,12 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
   bool violated = false;
   if (new_step_cross<0. || new_step_cross>1. || isnan(new_step_cross)) {
     violated = true;
-    fprintf(stderr,"\n\nconvexity violated; possibly numerical accuracy reached\n\n%-13s\t","");
     new_step_cross = new_step_simple;
   }
 
   
   if (!global.quiet)
-    fprintf(stderr, "%-e\t%s%-f\t%-f\t", g1_Hg1/importance_weight_sum, violated ? "*" : " ", wolfe1, wolfe2);
+    fprintf(stderr, "%-10e\t%-10e\t%s%-10f\t%-10f\t", g1_g1/(importance_weight_sum*importance_weight_sum), g1_Hg1/importance_weight_sum, violated ? "*" : " ", wolfe1, wolfe2);
   return new_step_cross;
 }
 
@@ -397,11 +432,21 @@ double add_regularization(regressor& reg,float regularization)
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors[0];
-  for(uint32_t i = 0; i < length; i++) {
-    weights[stride*i+1] += regularization*weights[stride*i];
-    ret += weights[stride*i]*weights[stride*i];
-  }
-  ret *= 0.5*regularization;
+  if (reg.regularizers == NULL)
+    {
+      for(uint32_t i = 0; i < length; i++) {
+	weights[stride*i+1] += regularization*weights[stride*i];
+	ret += 0.5*regularization*weights[stride*i]*weights[stride*i];
+      }
+    }
+  else
+    {
+      for(uint32_t i = 0; i < length; i++) {
+	weight delta_weight = weights[stride*i] - reg.regularizers[0][2*i+1];
+	weights[stride*i+1] += reg.regularizers[0][2*i]*delta_weight;
+	ret += 0.5*reg.regularizers[0][2*i]*delta_weight*delta_weight;
+      }
+    }
   return ret;
 }
 
@@ -410,11 +455,49 @@ void finalize_preconditioner(regressor& reg,float regularization)
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors[0];
-  for(uint32_t i = 0; i < length; i++) {
-    weights[stride*i+3] += regularization;
-    if (weights[stride*i+3] > 0)
-      weights[stride*i+3] = 1. / weights[stride*i+3];
-  }
+
+  if (reg.regularizers == NULL)
+    for(uint32_t i = 0; i < length; i++) {
+      weights[stride*i+3] += regularization;
+      if (weights[stride*i+3] > 0)
+	weights[stride*i+3] = 1. / weights[stride*i+3];
+    }
+  else
+    for(uint32_t i = 0; i < length; i++) {
+      weights[stride*i+3] += reg.regularizers[0][2*i];
+      if (weights[stride*i+3] > 0)
+	weights[stride*i+3] = 1. / weights[stride*i+3];
+    }
+}
+
+void preconditioner_to_regularizer(regressor& reg, float regularization)
+{
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors[0];
+  if (reg.regularizers == NULL)
+    {
+      size_t num_threads = global.num_threads();
+      reg.regularizers = (weight **)malloc(num_threads * sizeof(weight*));
+      for (size_t i = 0; i < num_threads; i++)
+	{
+	  if (reg.regularizers != NULL)
+	    reg.regularizers[i] = (weight *)calloc(2*length/num_threads, sizeof(weight));
+	  
+	  if ((reg.regularizers != NULL && reg.regularizers[i] == NULL))
+	    {
+	      cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
+	      exit (1);
+	    }
+	}
+      for(uint32_t i = 0; i < length; i++) 
+	reg.regularizers[0][2*i] = weights[stride*i+3] + regularization;
+    }
+  else
+    for(uint32_t i = 0; i < length; i++) 
+      reg.regularizers[0][2*i] = weights[stride*i+3] + reg.regularizers[0][2*i];
+  for(uint32_t i = 0; i < length; i++) 
+    reg.regularizers[0][2*i+1] = weights[stride*i];
 }
 
 void zero_state(regressor& reg)
@@ -468,7 +551,7 @@ void update_weight_mem(regressor& reg, float* mem, float step_size)
     w[BFGS_W_XT] = mem[2*m+BFGS_XT] + step_size * w[BFGS_W_DIR];
 }
 
-void setup_bfgs(gd_thread_params t)
+void setup_bfgs(gd_thread_params& t)
 {
   regressor reg = t.reg;
   size_t thread_num = 0;
@@ -483,7 +566,6 @@ void setup_bfgs(gd_thread_params t)
   float step_size = 0.;
   double importance_weight_sum = 0.;
  
-  double previous_d_mag=0;
   size_t current_pass = 0;
   double previous_loss_sum = 0;
 
@@ -495,7 +577,7 @@ void setup_bfgs(gd_thread_params t)
 
   if (!global.quiet) 
     {
-      fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, global.length()*(sizeof(float)*(2*m+BFGS_EXTRA)+sizeof(weight)*global.stride) >> 20);
+      fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)global.length()*(sizeof(float)*(2*m+BFGS_EXTRA)+sizeof(weight)*global.stride) >> 20);
     }
 
   struct timeb t_start_global, t_end_global;
@@ -504,12 +586,17 @@ void setup_bfgs(gd_thread_params t)
   
   if (!global.quiet)
     {
-      const char * header_fmt = "%2s %-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%s\n";
+      const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
       fprintf(stderr, header_fmt,
-	      "##", "avg. loss", "der. mag.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size", "newt. decr.", "time");
+	      "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size", "time");
       cerr.precision(5);
     }
 
+  bool output_regularizer = false;
+  if (reg.regularizers != NULL)
+      global.regularization = 1; // To make sure we are adding the regularization
+  output_regularizer =  (global.per_feature_regularizer_output != "" || global.per_feature_regularizer_text != "");
+  
   while ( true )
     {
       if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
@@ -538,17 +625,14 @@ void setup_bfgs(gd_thread_params t)
 		if (global.regularization > 0.)
 		  loss_sum += add_regularization(reg,global.regularization);
 		if (!global.quiet)
-		  fprintf(stderr, "%2lu %-f\t", current_pass+1, loss_sum / importance_weight_sum);
+		  fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 		
-		if (ec->pass != 0)
-		  {
-		    previous_loss_sum = loss_sum;
-		    loss_sum = 0.;
-		    example_number = 0;
-		    curvature = 0;
-		    bfgs_iter_start(reg, mem, lastj, importance_weight_sum);		     		     
-		    gradient_pass = false;//now start computing curvature
-		  }
+		previous_loss_sum = loss_sum;
+		loss_sum = 0.;
+		example_number = 0;
+		curvature = 0;
+		bfgs_iter_start(reg, mem, lastj, importance_weight_sum);		     		     
+		gradient_pass = false;//now start computing curvature
 	      }
 
   /********************************************************************/
@@ -563,7 +647,7 @@ void setup_bfgs(gd_thread_params t)
 		  if (global.regularization > 0.)
 		    loss_sum += add_regularization(reg,global.regularization);
 		  if (!global.quiet)
-		    fprintf(stderr, "%2lu %-f\t", current_pass+1, loss_sum / importance_weight_sum);
+		    fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 
 		  double new_step = wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum);
   /********************************************************************/
@@ -571,23 +655,25 @@ void setup_bfgs(gd_thread_params t)
   /********************************************************************/ 
 		  if (current_pass > 0 && loss_sum > previous_loss_sum)
 		    {// we stepped too far last time, step back
+		      ftime(&t_end_global);
+		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		      if (!global.quiet)
-			fprintf(stderr, "\t\t\t\t(revise)\t%e\t(new/old = %.1f)\n", new_step, new_step/step_size);
-		      if (ec->pass != 0) {
+			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
+				"","",new_step/step_size,
+				new_step,
+				net_time/1000.);
 			predictions.erase();
 			update_weight_mem(reg,mem,new_step);
 			step_size = new_step;
 			zero_derivative(reg);
 			loss_sum = 0.;
-		      }
 		    }
 
   /********************************************************************/
-  /* B2) LINE SEARCH SUCCESSFUL (& NO WARM RESTART): ******************/
+  /* B2) LINE SEARCH SUCCESSFUL                      ******************/
   /*     DETERMINE NEXT SEARCH DIRECTION             ******************/
   /********************************************************************/ 
-		  else if (ec->pass != 0)
-		    {
+		  else {
 		      previous_loss_sum = loss_sum;
 		      loss_sum = 0.;
 		      example_number = 0;
@@ -604,7 +690,7 @@ void setup_bfgs(gd_thread_params t)
 			ftime(&t_end_global);
 			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!global.quiet)
-			  fprintf(stderr, "%-10s\t%-e\t%-e\t\t%f\n", "", d_mag, step_size,(net_time/1000.));
+			  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 			predictions.erase();
 			update_weight(reg, step_size);		     		      
 		      }
@@ -619,9 +705,8 @@ void setup_bfgs(gd_thread_params t)
 		  if(global.master_location != "") {
 		    curvature = accumulate_scalar(global.master_location, curvature);  //Accumulate curvatures
 		  }
-		  float d_mag = direction_magnitude(reg);
 		  if (global.regularization > 0.)
-		    curvature += global.regularization*d_mag;
+		    curvature += regularizer_direction_magnitude(reg,global.regularization);
 		  float dd = derivative_in_direction(reg, mem);
 		  if (curvature == 0. && dd != 0.)
 		    {
@@ -629,38 +714,24 @@ void setup_bfgs(gd_thread_params t)
 		      exit(1);
 		    }
 		  step_size = - dd/curvature;
+		  float d_mag = direction_magnitude(reg);
 
 		  predictions.erase();
 		  update_weight(reg,step_size);
 		  ftime(&t_end_global);
 		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		  if (!global.quiet)
-		    fprintf(stderr, "%-10e\t%-e\t%-e\t%-f\t%f\n", curvature / importance_weight_sum, d_mag, step_size,
-			    0.5*step_size*step_size*curvature/importance_weight_sum,(net_time/1000.));
+		    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
 		  gradient_pass = true;
 		}//now start computing derivatives.
 	      
+	      current_pass++;
+	      
   /********************************************************************/
-  /* NEW EXAMPLES INCOMING (in doubling): WARM RESTART ****************/
+  /* IN THE LAST PASS CALCULATE THE DIAGONAL OF THE HESSIAN ***********/
   /********************************************************************/ 
-	      if (ec->pass == 0)//new examples incoming, reset everything.
-		{
-		  zero_state(reg);//set all except weights to 0.
-		  predictions.erase();
-
-		  example_number=0;
-		  curvature=0.;
-		  gradient_pass=true;
-		  loss_sum = 0;
-		  step_size = 0.;
-		  importance_weight_sum = 0.;
- 
-		  previous_d_mag=0;
-		  current_pass = 0;
-		  previous_loss_sum = 0;
-		}
-	      else
-		current_pass++;
+	      if (output_regularizer && current_pass == global.numpasses - 1)
+		zero_preconditioner(reg);
 	  }
   /********************************************************************/
   /* PROCESS AN EXAMPLE: DISTINGUISH CASES ****************************/
@@ -695,6 +766,10 @@ void setup_bfgs(gd_thread_params t)
 	      float sd = reg.loss->second_derivative(predictions[example_number++],ld->label);
 	      curvature += d_dot_x*d_dot_x*sd*ld->weight;
 	    }
+	  if (output_regularizer && current_pass == global.numpasses -1)
+	    {
+	      update_preconditioner(reg,ec);//w[3]
+	    }
 	  finish_example(ec);
 	}
 
@@ -703,54 +778,56 @@ void setup_bfgs(gd_thread_params t)
   /********************************************************************/ 
      else if (thread_done(thread_num))
 	{
-	  if (example_number == predictions.index())//do one last update
+	  if (example_number == predictions.index() && gradient_pass)//do one last update
 	    {
-	      if(global.master_location != "") {
-		curvature = accumulate_scalar(global.master_location, curvature);  //Accumulate curvatures
-	      }
-	      float d_mag = direction_magnitude(reg);
-	      if (global.regularization > 0.)
-		curvature += global.regularization*d_mag;
-	      float dd = derivative_in_direction(reg, mem);
-	      if (curvature == 0. && dd != 0.)
-		{
-		  cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
-		  exit(1);
-		}
-	      float step_size = - dd/(max(curvature,1.));
-	      if (!global.quiet)
-		fprintf(stderr, "%-e\t%-e\t%-e\t%-f\n", curvature / importance_weight_sum, d_mag, step_size,d_mag*step_size/importance_weight_sum);
-	      update_weight(reg,step_size);
+		  if(global.master_location != "") {
+		    loss_sum = accumulate_scalar(global.master_location, loss_sum);  //Accumulate loss_sums
+		    accumulate(global.master_location, reg, 1); //Accumulate gradients from all nodes
+		  }
+		  if (global.regularization > 0.)
+		    loss_sum += add_regularization(reg,global.regularization);
+		  if (!global.quiet)
+		    fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
+
+		  wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum);
+		  if (current_pass > 0 && loss_sum > previous_loss_sum)
+		    {// current weight does not decrease loss
+		      if (!global.quiet)
+			fprintf(stderr, "\t\t\t\t\t(revise)\t%-e", 0.0);
+		      predictions.erase();
+		      update_weight_mem(reg,mem,0.0);
+		    }
 	    }
-	  ftime(&t_end_global);
-	  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 	  if (!global.quiet)
-	    {
-	      cerr<<"Net time spent in communication = "<<get_comm_time()/(float)1000<<" seconds\n";
-	      cerr<<"Net time spent = "<<(float)net_time/(float)1000<<" seconds\n";
-	    }
-	  if (global.local_prediction > 0)
-	    shutdown(global.local_prediction, SHUT_WR);
-	  free(predictions.begin);
-	  return;
+	    fprintf(stderr, "\n");
+	  break;
 	}
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
 
+  if (output_regularizer)//need to accumulate and place the regularizer.
+    {
+      if(global.master_location != "")
+	accumulate(global.master_location, reg, 3); //Accumulate preconditioner
+      preconditioner_to_regularizer(reg,global.regularization);
+    }
+  ftime(&t_end_global);
+  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+  if (!global.quiet)
+    {
+      cerr<<"Net time spent in communication = "<<get_comm_time()/(float)1000<<" seconds\n";
+      cerr<<"Net time spent = "<<(float)net_time/(float)1000<<" seconds\n";
+    }
+
+  if (global.local_prediction > 0)
+    shutdown(global.local_prediction, SHUT_WR);
   free(predictions.begin);
   free(mem);
   free(rho);
   free(alpha);
-
-  ftime(&t_end_global);
-  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-  if(!global.quiet) { 
-    cerr<<"Net time spent in communication = "<<get_comm_time()/(float)1000<<"seconds\n";
-    cerr<<"Net time spent = "<<(float)net_time/(float)1000<<"seconds\n";
-  }
-
-  return;
+  free(ec);
+  t.reg = reg;
 }
 
 void destroy_bfgs()
