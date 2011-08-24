@@ -65,7 +65,7 @@ void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &
 void quad_precond_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float update = g * page_feature.x;
+  float update = g * page_feature.x * page_feature.x;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
