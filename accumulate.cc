@@ -31,7 +31,7 @@ void accumulate(string master_location, regressor& reg, size_t o) {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce((char*)local_grad, length*sizeof(float), master_location);
+  all_reduce((char*)local_grad, length*sizeof(float), master_location, global.unique_id);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i];
@@ -44,7 +44,7 @@ void accumulate(string master_location, regressor& reg, size_t o) {
 float accumulate_scalar(string master_location, float local_sum) {
   ftime(&t_start);
   float temp = local_sum;
-  all_reduce((char*)&temp, sizeof(float), master_location);
+  all_reduce((char*)&temp, sizeof(float), master_location, global.unique_id);
   ftime(&t_end);
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   return temp;
@@ -57,13 +57,13 @@ void accumulate_avg(string master_location, regressor& reg, size_t o) {
   weight* weights = reg.weight_vectors[0];
   ftime(&t_start);
   float numnodes = 1.;
-  all_reduce((char*)&numnodes, sizeof(float), master_location);
+  all_reduce((char*)&numnodes, sizeof(float), master_location, global.unique_id);
   for(uint32_t i = 0;i < length;i++) 
     {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce((char*)local_grad, length*sizeof(float), master_location);
+  all_reduce((char*)local_grad, length*sizeof(float), master_location, global.unique_id);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i]/numnodes;
@@ -102,7 +102,7 @@ void accumulate_weighted_avg(string master_location, regressor& reg) {
   for(uint32_t i = 0;i < length;i++) 
     local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]-1);
   
-  all_reduce((char*)local_weights, length*sizeof(float), master_location);
+  all_reduce((char*)local_weights, length*sizeof(float), master_location, global.unique_id);
 
   for(uint32_t i = 0;i < length;i++) 
     if(local_weights[i] > 0)
@@ -110,7 +110,7 @@ void accumulate_weighted_avg(string master_location, regressor& reg) {
     else
       local_param[i] = 0;
 
-  all_reduce((char*)local_param, length*sizeof(float), master_location);
+  all_reduce((char*)local_param, length*sizeof(float), master_location, global.unique_id);
   for(uint32_t i = 0;i < length;i++) 
       weights[stride*i] = local_param[i];
   ftime(&t_end);

@@ -23,6 +23,7 @@ using namespace std;
 struct client {
   uint32_t client_ip;
   int socket;
+	size_t unique_id;
 };
 
 static int socket_sort(const void* s1, const void* s2) {
@@ -125,9 +126,28 @@ int main(int argc, char* argv[]) {
 	    cerr << "bad client socket!" << endl;
 	    exit (1);
 	  }
-	client_sockets[i].client_ip = client_address.sin_addr.s_addr;
-	client_sockets[i].socket = f;
-      }
+	size_t mapper_id = 0;
+	if (read(f, &mapper_id, sizeof(mapper_id)) != sizeof(mapper_id))
+		{
+			cerr << "unique id read failed, exiting" << endl;
+			exit(1);
+		}
+	int ok = true;
+	for (int j = 0; j < i; j++)
+		if (client_sockets[j].unique_id == mapper_id && mapper_id != ((size_t)0)-1)
+			ok = false;
+        cerr << mapper_id << " " << ok << endl;
+	fail_write(f,&ok, sizeof(ok));
+
+	if (ok)
+		{
+			client_sockets[i].client_ip = client_address.sin_addr.s_addr;
+			client_sockets[i].socket = f;
+			client_sockets[i].unique_id = mapper_id;
+		}
+        else
+           i--;
+      }	
     qsort(client_sockets, source_count, sizeof(client), socket_sort);
     int client_ports[source_count];
     client_ports[0] = htons(port+1);

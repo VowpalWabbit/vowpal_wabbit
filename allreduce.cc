@@ -79,7 +79,7 @@ int sock_connect(uint32_t ip, int port) {
 }
 
 
-int all_reduce_init(string master_location)
+int all_reduce_init(string master_location, size_t unique_id)
 {
   struct hostent* master = gethostbyname(master_location.c_str());
     
@@ -93,6 +93,17 @@ int all_reduce_init(string master_location)
   int port = 26543;
     
   int master_sock = sock_connect(master_ip, htons(port));
+
+  if(write(master_sock, &unique_id, sizeof(unique_id)) < (int)sizeof(unique_id))
+    cerr << "write failed!" << endl; 
+  int ok;
+  if (read(master_sock, &ok, sizeof(ok)) < (int)sizeof(ok))
+    cerr << "read failed!" << endl;
+  if (!ok) {
+    cerr << "mapper already connected" << endl;
+    exit(1);
+  }
+
   int client_port, kid_count, parent_port;
   uint32_t parent_ip;
   int numnodes;
@@ -353,10 +364,10 @@ void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
     }
 }
 
-void all_reduce(char* buffer, int n, string master_location) 
+void all_reduce(char* buffer, int n, string master_location, size_t unique_id) 
 {
   if(master_location != current_master) 
-    all_reduce_init(master_location);
+    all_reduce_init(master_location, unique_id);
     
   reduce(buffer, n, socks.parent, socks.children);
   broadcast(buffer, n, socks.parent, socks.children);
