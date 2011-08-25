@@ -13,7 +13,7 @@ bfgscmd="./vw -b 24 --unique_id $mapper --cache_file temp.cache --bfgs --mem 5 -
 if [ "$mapper" == '000000' ]
 then
     $gdcmd > mapperout 2>&1
-    if [ $? -neq 0 ] 
+    if [ $? -ne 0 ] 
     then
        exit 1
     fi 
@@ -35,7 +35,7 @@ then
     hadoop fs -put mapperout $mapperfile
 else
     $gdcmd
-    if [ $? -neq 0 ]    
+    if [ $? -ne 0 ]    
     then
        exit 1
     fi
