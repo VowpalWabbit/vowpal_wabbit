@@ -478,6 +478,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       if (!global.quiet)
 	cerr << "only testing" << endl;
       global.training = false;
+      if (global.lda > 0)
+        global.eta = 0;
     }
   else
     {
