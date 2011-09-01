@@ -31,6 +31,8 @@ embodied in the content of this file are licensed under the BSD
 #include "multisource.h"
 #include "allreduce.h"
 
+using namespace std;
+
 gd_vars* vw(int argc, char *argv[])
 {
   string final_regressor_name;

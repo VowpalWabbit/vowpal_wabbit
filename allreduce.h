@@ -17,11 +17,8 @@ struct node_socks {
   ~node_socks();
 };
 
-  
-using namespace std;
-
 const int buf_size = 1<<18;
 
-void all_reduce(char* buffer, int n, string master_location, size_t unique_id);
+void all_reduce(char* buffer, int n, std::string master_location, size_t unique_id);
 
 #endif

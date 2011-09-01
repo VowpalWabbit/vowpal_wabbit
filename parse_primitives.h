@@ -9,7 +9,6 @@ embodied in the content of this file are licensed under the BSD
 
 #include "v_array.h"
 #include<iostream>
-using namespace std;
 
 struct substring {
   char *start;
@@ -28,7 +27,7 @@ inline char* safe_index(char *start, char v, char *max)
 
 inline void print_substring(substring s)
 {
-  cout.write(s.start,s.end - s.start);
+  std::cout.write(s.start,s.end - s.start);
 }
 
 inline float float_of_substring(substring s)
@@ -37,7 +36,7 @@ inline float float_of_substring(substring s)
   float f = strtof(s.start,&endptr);
   if (endptr == s.start && s.start != s.end)
     {
-      cout << "error: " << string(s.start, s.end-s.start).c_str() << " is not a float" << endl;
+      std::cout << "error: " << std::string(s.start, s.end-s.start).c_str() << " is not a float" << std::endl;
       f = 0;
     }
   return f;
@@ -49,7 +48,7 @@ inline float double_of_substring(substring s)
   float f = strtod(s.start,&endptr);
   if (endptr == s.start && s.start != s.end)
     {
-      cout << "error: " << string(s.start, s.end-s.start).c_str() << " is not a double" << endl;
+      std::cout << "error: " << std::string(s.start, s.end-s.start).c_str() << " is not a double" << std::endl;
       f = 0;
     }
   return f;
@@ -57,12 +56,12 @@ inline float double_of_substring(substring s)
 
 inline int int_of_substring(substring s)
 {
-   return atoi(string(s.start, s.end-s.start).c_str());
+  return atoi(std::string(s.start, s.end-s.start).c_str());
 }
 
 inline unsigned long ulong_of_substring(substring s)
 {
-  return strtoul(string(s.start, s.end-s.start).c_str(),NULL,10);
+  return strtoul(std::string(s.start, s.end-s.start).c_str(),NULL,10);
 }
 
 inline unsigned long ss_length(substring s)

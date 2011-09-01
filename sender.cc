@@ -10,6 +10,8 @@
 #include "multisource.h"
 #include "delay_ring.h"
 
+using namespace std;
+
 pthread_t* thread;
 size_t d_1;
 size_t d_2;

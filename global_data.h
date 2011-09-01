@@ -10,9 +10,7 @@ embodied in the content of this file are licensed under the BSD
 #include "v_array.h"
 #include "parse_regressor.h"
 
-using namespace std;
-
-extern string version;
+extern std::string version;
 
 struct int_pair {
   int fd;
@@ -44,9 +42,9 @@ struct global_data {
   size_t stride;
 
 
-  string per_feature_regularizer_input;
-  string per_feature_regularizer_output;
-  string per_feature_regularizer_text;
+  std::string per_feature_regularizer_input;
+  std::string per_feature_regularizer_output;
+  std::string per_feature_regularizer_text;
   
   float l_1_regularization;//the level of l_1 regularization to impose.
   float update_sum;
@@ -58,7 +56,7 @@ struct global_data {
   size_t passes_complete;
   size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
-  vector<string> pairs; // pairs of features to cross.
+  std::vector<std::string> pairs; // pairs of features to cross.
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
   size_t ngram;//ngrams to generate.
@@ -81,9 +79,9 @@ struct global_data {
   float lda_rho;
   float lda_D;
 
-  string text_regressor_name;
+  std::string text_regressor_name;
   
-  string master_location;
+  std::string master_location;
 
   size_t num_threads () { return 1 << thread_bits; };
   size_t num_partitions () { return 1 << partition_bits; };

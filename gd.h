@@ -33,7 +33,7 @@ struct gd_thread_params
   gd_vars* vars;
   size_t thread_num;
   regressor reg;
-  string* final_regressor_name;
+  std::string* final_regressor_name;
   node_socks* socks;
 };
 

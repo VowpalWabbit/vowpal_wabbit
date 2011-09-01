@@ -8,6 +8,8 @@ embodied in the content of this file are licensed under the BSD
 #include "gd.h"
 #include <stdlib.h>
 
+using namespace std;
+
 int main(int argc, char *argv[]) {
   gd_vars *vars = vw(argc, argv);
   

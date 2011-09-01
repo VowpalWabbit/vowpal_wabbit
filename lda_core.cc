@@ -49,7 +49,7 @@ fastpow2 (float p)
   float clipp = (p < -126) ? -126.0f : p;
   int w = clipp;
   float z = clipp - w + offset;
-  union { uint32_t i; float f; } v = { (1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z) };
+  union { uint32_t i; float f; } v = { (uint32_t)((1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z)) };
 
   return v.f;
 }
@@ -515,7 +515,7 @@ void merge_in(example* ec, size_t document)
       feature* f = ec->subsets[*i][0];
       for (; f != ec->subsets[*i][1]; f++)
 	{
-	  index_triple temp = {document,*f};
+	  index_triple temp = {(uint32_t)document,*f};
 	  push(merge_set[next_index], temp);
 	}
       next_index++;

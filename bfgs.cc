@@ -23,6 +23,8 @@ Implementation by Miro Dudik.
 #include "delay_ring.h"
 #include "accumulate.h"
 
+using namespace std;
+
 #define BFGS_EXTRA 4
 #define BFGS_XT 0
 #define BFGS_GT 1

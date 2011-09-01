@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <stdio.h>
 
+using namespace std;
+
 int really_read(int sock, void* in, size_t count)
 {
   char* buf = (char*)in;
@@ -122,7 +124,7 @@ int receive_features(parser* p, void* ex)
 		    p->pes[ring_index].example_number = pre.example_number;
 		  if (p->pes[ring_index].example_number != (int)pre.example_number)
 		    cerr << "Error, example " << p->pes[ring_index].example_number << " != " << pre.example_number << endl;
-		  feature f = {pre.p, p->ids[index]};
+		  feature f = {pre.p, (uint32_t)p->ids[index]};
 		  push(p->pes[ring_index].features, f);
 		  if (sock == p->label_sock) // The label source
 		    {

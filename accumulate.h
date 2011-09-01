@@ -13,12 +13,10 @@ This implements various accumulate functions building on top of allreduce.
 #include "allreduce.h"
 #include "global_data.h"
 
-using namespace std;
-
-void accumulate(string master_location, regressor& reg, size_t o);
-float accumulate_scalar(string master_location, float local_sum);
-void accumulate_weighted_avg(string master_location, regressor& reg);
-void accumulate_avg(string master_location, regressor& reg, size_t o);
+void accumulate(std::string master_location, regressor& reg, size_t o);
+float accumulate_scalar(std::string master_location, float local_sum);
+void accumulate_weighted_avg(std::string master_location, regressor& reg);
+void accumulate_avg(std::string master_location, regressor& reg, size_t o);
 double get_comm_time();
 
 #endif

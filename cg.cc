@@ -12,6 +12,7 @@ tutorial.
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <sys/timeb.h>
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"
@@ -21,9 +22,9 @@ tutorial.
 #include "simple_label.h"
 #include "delay_ring.h"
 #include "allreduce.h"
-#include <sys/timeb.h>
 #include "accumulate.h"
 
+using namespace std;
 
 void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {

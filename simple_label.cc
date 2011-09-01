@@ -3,6 +3,8 @@
 #include "simple_label.h"
 #include "cache.h"
 
+using namespace std;
+
 char* bufread_simple_label(label_data* ld, char* c)
 {
   ld->label = *(float *)c;

@@ -15,6 +15,7 @@ embodied in the content of this file are licensed under the BSD
 #include "network.h"
 #include "global_data.h"
 
+using namespace std;
 //
 // Does string end with a certain substring?
 //

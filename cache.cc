@@ -7,6 +7,8 @@ embodied in the content of this file are licensed under the BSD
 #include "cache.h"
 #include "unique_sort.h"
 
+using namespace std;
+
 size_t neg_1 = 1;
 size_t general = 2;
 

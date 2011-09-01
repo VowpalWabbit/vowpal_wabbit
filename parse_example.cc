@@ -11,6 +11,8 @@ embodied in the content of this file are licensed under the BSD
 #include "cache.h"
 #include "unique_sort.h"
 
+using namespace std;
+
 size_t hashstring (substring s, unsigned long h)
 {
   size_t ret = 0;
@@ -183,7 +185,7 @@ int read_features(parser* p, void* ex)
       v *= channel_v;
 
       size_t word_hash = (p->hasher(p->name[0], channel_hash)) & mask;
-      feature f = {v,word_hash};
+      feature f = {v,(uint32_t)word_hash};
       ae->sum_feat_sq[index] += v*v;
       push(ae->atomics[index], f);
     }

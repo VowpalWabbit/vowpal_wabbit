@@ -26,6 +26,8 @@ embodied in the content of this file are licensed under the BSD
 #include "allreduce.h"
 #include "accumulate.h"
 
+using namespace std;
+
 void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, float update);
 
 void* gd_thread(void *in)

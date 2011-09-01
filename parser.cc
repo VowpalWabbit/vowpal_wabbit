@@ -65,14 +65,14 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
   if(v_length>29){
-      cerr << "cache version too long, cache file is probably invalid" << endl;
-      exit(1);
+    std::cerr << "cache version too long, cache file is probably invalid" << std::endl;
+    exit(1);
   }
   char t[v_length];
   buf->read_file(filepointer,t,v_length);
   if (strcmp(t,version.c_str()) != 0)
     {
-      cout << "cache has possibly incompatible version, rebuilding" << endl;
+      std::cout << "cache has possibly incompatible version, rebuilding" << std::endl;
       return 0;
     }
   
@@ -132,18 +132,18 @@ void reset_source(size_t numbits, parser* p)
 	  int f = accept(p->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
-	      cerr << "bad client socket!" << endl;
+	      std::cerr << "bad client socket!" << std::endl;
 	      exit (1);
 	    }
 	  
 	  size_t id;
 	  really_read(f, &id, sizeof(id));
 	  if (id != 0) {
-	    cerr << "id must be 0 (multisource not supported)" << endl;
+	    std::cerr << "id must be 0 (multisource not supported)" << std::endl;
 	    exit(1);
 	  }
 	  
-	  int_pair pf = {f,id};
+	  int_pair pf = {f,(int)id};
 	  push(global.final_prediction_sink,pf);
 	  push(p->input->files,f);
 	}
@@ -152,7 +152,7 @@ void reset_source(size_t numbits, parser* p)
 	  {
 	    input->reset_file(input->files[i]);
 	    if (cache_numbits(input, input->files[i]) < numbits) {
-	      cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
+	      std::cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
 	      exit(1);
 	    }
 	  }
@@ -168,21 +168,21 @@ void finalize_source(parser* p)
   delete p->output;
 }
 
-void make_write_cache(size_t numbits, parser* par, string &newname, 
+void make_write_cache(size_t numbits, parser* par, std::string &newname, 
 		      bool quiet)
 {
   io_buf* output = par->output;
   if (output->files.index() != 0){
-    cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
+    std::cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << std::endl;
     return;
   }
 
-  string temp = newname+string(".writing");
+  std::string temp = newname+std::string(".writing");
   push_many(output->currentname,temp.c_str(),temp.length()+1);
   
   int f = output->open_file(temp.c_str(), io_buf::WRITE);
   if (f == -1) {
-    cerr << "can't create cache file !" << endl;
+    std::cerr << "can't create cache file !" << std::endl;
     return;
   }
 
@@ -196,17 +196,17 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
   push_many(output->finalname,newname.c_str(),newname.length()+1);
   par->write_cache = true;
   if (!quiet)
-    cerr << "creating cache_file = " << newname << endl;
+    std::cerr << "creating cache_file = " << newname << std::endl;
 }
 
-void parse_cache(po::variables_map &vm, string source,
+void parse_cache(po::variables_map &vm, std::string source,
 		 parser* par, bool quiet)
 {
-  vector<string> caches;
+  std::vector<std::string> caches;
   if (vm.count("cache_file"))
-    caches = vm["cache_file"].as< vector<string> >();
+    caches = vm["cache_file"].as< std::vector<std::string> >();
   if (vm.count("cache"))
-    caches.push_back(source+string(".cache"));
+    caches.push_back(source+std::string(".cache"));
 
   par->write_cache = false;
 
@@ -225,7 +225,7 @@ void parse_cache(po::variables_map &vm, string source,
 	}
 	else {
 	  if (!quiet)
-	    cerr << "using cache_file = " << caches[i].c_str() << endl;
+	    std::cerr << "using cache_file = " << caches[i].c_str() << std::endl;
 	  par->reader = read_cached_features;
 	  if (c == global.num_bits)
 	    par->sorted_cache = true;
@@ -240,7 +240,7 @@ void parse_cache(po::variables_map &vm, string source,
   if (caches.size() == 0)
     {
       if (!quiet)
-	cerr << "using no cache" << endl;
+	std::cerr << "using no cache" << std::endl;
       reserve(par->output->space,0);
     }
 }
@@ -262,17 +262,17 @@ bool member(v_array<size_t> ids, size_t id)
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes)
 {
   par->input->current = 0;
-  parse_cache(vm, vm["data"].as<string>(), par, quiet);
+  parse_cache(vm, vm["data"].as<std::string>(), par, quiet);
 
-  string hash_function("strings");
+  std::string hash_function("strings");
   if(vm.count("hash")) 
-    hash_function = vm["hash"].as<string>();
+    hash_function = vm["hash"].as<std::string>();
 
   if (vm.count("daemon") || vm.count("multisource") || global.persistent)
     {
       par->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
       if (par->bound_sock < 0) {
-	cerr << "can't open socket!" << endl;
+	std::cerr << "can't open socket!" << std::endl;
 	exit(1);
       }
 
@@ -289,9 +289,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       address.sin_port = htons(port);
 
       // attempt to bind to socket
-      if (bind(par->bound_sock,(sockaddr*)&address, sizeof(address)) < 0)
+      int ret = bind(par->bound_sock,(sockaddr*)&address, sizeof(address));
+      if ( ret < 0 )
 	{
-	  cerr << "failure to bind!" << endl;
+	  std::cerr << "failure to bind!" << std::endl;
 	  exit(1);
 	}
       int source_count = 1;
@@ -305,20 +306,20 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       // background process
       if (daemon(1,1))
 	{
-	  cerr << "failure to background!" << endl;
+	  std::cerr << "failure to background!" << std::endl;
 	  exit(1);
 	}
       // write pid file
       if (vm.count("pid_file"))
 	{
-	  ofstream pid_file;
-	  pid_file.open(vm["pid_file"].as<string>().c_str());
+	  std::ofstream pid_file;
+	  pid_file.open(vm["pid_file"].as<std::string>().c_str());
 	  if (!pid_file.is_open())
 	    {
-	      cerr << "error writing pid file" << endl;
+	      std::cerr << "error writing pid file" << std::endl;
 	      exit(1);
 	    }
-	  pid_file << getpid() << endl;
+	  pid_file << getpid() << std::endl;
 	  pid_file.close();
 	}
 
@@ -392,19 +393,19 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       for (int i = 0; i < source_count; i++)
 	{
 	  if (!global.quiet)
-	    cerr << "calling accept" << endl;
+	    std::cerr << "calling accept" << std::endl;
 	  int f = accept(par->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
-	      cerr << "bad client socket!" << endl;
+	      std::cerr << "bad client socket!" << std::endl;
 	      exit (1);
 	    }
 
 	  size_t id;
 	  really_read(f, &id, sizeof(id));
 	  if (!global.quiet)
-	    cerr << "id read = " << id << endl;
-	  min_id = min (min_id, (size_t)id);
+	    std::cerr << "id read = " << id << std::endl;
+	  min_id = std::min (min_id, (size_t)id);
 	  if (id == 0)
 	    {
 	      par->label_sock = f;
@@ -415,20 +416,20 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      ((global.backprop || global.delayed_global || global.corrective) 
 	       && vm.count("multisource")))
 	    {
-	      int_pair pf = {f,id};
+	      int_pair pf = {f,(int)id};
 	      push(global.final_prediction_sink,pf);
 	    }
 
 	  if (member(par->ids, id))
 	    {
-	      cout << "error, two inputs with same id! Exiting.  Use --unique_id <n> next time." << endl;
+	      std::cout << "error, two inputs with same id! Exiting.  Use --unique_id <n> next time." << std::endl;
 	      exit(1);
 	    }
 	  push(par->ids,id);
 	  push(par->input->files,f);
-	  par->max_fd = max(f, par->max_fd);
+	  par->max_fd = std::max(f, par->max_fd);
 	  if (!global.quiet)
-	    cerr << "reading data from port " << port << endl;
+	    std::cerr << "reading data from port " << port << std::endl;
 	}
       global.unique_id = min_id;
       par->max_fd++;
@@ -456,25 +457,25 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
   
   if (vm.count("data"))
     {
-      string hash_function("strings");
+      std::string hash_function("strings");
       if(vm.count("hash")) 
-	hash_function = vm["hash"].as<string>();
+	hash_function = vm["hash"].as<std::string>();
       if (par->input->files.index() > 0)
 	{
 	  if (!quiet)
-	    cerr << "ignoring text input in favor of cache input" << endl;
+	    std::cerr << "ignoring text input in favor of cache input" << std::endl;
 	}
       else
 	{
-	  string temp = vm["data"].as< string >();
+	  std::string temp = vm["data"].as< std::string >();
 	  if (temp.length() != 0)
 	    {
 	      if (!quiet)
-		cerr << "Reading from " << temp << endl;
+		std::cerr << "Reading from " << temp << std::endl;
 	      int f = par->input->open_file(temp.c_str(), io_buf::READ);
 	      if (f == -1)
 		{
-		  cerr << "can't open " << temp << ", bailing!" << endl;
+		  std::cerr << "can't open " << temp << ", bailing!" << std::endl;
 		  exit(0);
 		}
 	      par->reader = read_features;
@@ -485,9 +486,9 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       if (par->input->files.index() == 0)// Default to stdin
 	{
 	  if (!quiet)
-	    cerr << "Reading from stdin" << endl;
+	    std::cerr << "Reading from stdin" << std::endl;
 	  if (vm.count("compressed")){
-	    cerr << "Compressed source can't be read from stdin." << endl << "Directly use the compressed source with -d option";
+	    std::cerr << "Compressed source can't be read from stdin." << std::endl << "Directly use the compressed source with -d option";
 	    exit(0);
 	  }
 	  push(par->input->files,fileno(stdin));
@@ -502,12 +503,12 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 
   if (passes > 1 && !par->resettable)
     {
-      cerr << global.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
+      std::cerr << global.program_name << ": need a cache file for multiple passes: try using --cache_file" << std::endl;  
       exit(1);
     }
   par->input->count = par->input->files.index();
   if (!quiet)
-    cerr << "num sources = " << par->input->files.index() << endl;
+    std::cerr << "num sources = " << par->input->files.index() << std::endl;
 }
 
 bool parser_done()
@@ -533,17 +534,17 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.index(); n++)
 	    new_index += random_nos[n]* atomics[i+gram_mask[n]].weight_index;
-	  feature f = {1.,new_index & global.mask};
+	  feature f = {1.,(uint32_t)(new_index & global.mask)};
 	  push(atomics,f);
 	  if (global.audit)
 	    {
-	      string feature_name(audits[i].feature);
+	      std::string feature_name(audits[i].feature);
 	      for (size_t n = 1; n < gram_mask.index(); n++)
 		{
-		  feature_name += string("^");
-		  feature_name += string(audits[i+gram_mask[n]].feature);
+		  feature_name += std::string("^");
+		  feature_name += std::string(audits[i+gram_mask[n]].feature);
 		}
-	      string feature_space = string(audits[i].space);
+	      std::string feature_space = std::string(audits[i].space);
 	      
 	      audit_data a_feature = {NULL,NULL,new_index & global.mask, 1., true};
 	      a_feature.space = (char*)malloc(feature_space.length()+1);
@@ -703,7 +704,7 @@ void setup_example(parser* p, example* ae)
 
   //add constant feature
   push(ae->indices,constant_namespace);
-  feature temp = {1,constant & global.mask};
+  feature temp = {1,(uint32_t) (constant & global.mask)};
   push(ae->atomics[constant_namespace], temp);
   
   if(global.stride != 1) //make room for per-feature information.
@@ -743,7 +744,7 @@ void setup_example(parser* p, example* ae)
 
 
   if (global.rank == 0)                                                                                                                                        
-    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)                                                                                                                       
+    for (std::vector<std::string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)                                                                                                                       
       {                                                                                                                                                                                                        
        ae->num_features                                                                                                                                                                                         
          += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)                                                                                                                                   
@@ -753,7 +754,7 @@ void setup_example(parser* p, example* ae)
 
       }                                                                                                                                                                                                        
   else                                                                                                                                                                                                         
-    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)                                                                                                                       
+    for (std::vector<std::string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)                                                                                                                       
       {                                                                                                                                                                                                        
        ae->num_features                                                                                                                                                                                         
          += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)                                                                                                                                   
@@ -835,7 +836,7 @@ example* get_example(size_t thread_num)
   if (parsed_index != used_index[thread_num]) {
     size_t ring_index = used_index[thread_num]++ % ring_size;
     if (!(examples+ring_index)->in_use)
-      cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << endl;
+      std::cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << std::endl;
     assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
      return examples + ring_index;
