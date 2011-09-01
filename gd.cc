@@ -49,6 +49,7 @@ void* gd_thread(void *in)
 	    {
 	      global.eta *= global.eta_decay_rate;
 	      current_pass = ec->pass;
+	      save_predictor(*(params->final_regressor_name), current_pass);
 	    }
 	  if (global.adaptive)
 	    adaptive_inline_train(reg,ec,thread_num, ec->eta_round);

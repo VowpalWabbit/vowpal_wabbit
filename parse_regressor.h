@@ -26,5 +26,6 @@ void initialize_regressor(regressor &r);
 
 void finalize_regressor(std::string reg_name, regressor &r);
 void dump_regressor(std::string reg_name, regressor &r, bool as_text=0, bool reg_vector=0);
+void save_predictor(std::string reg_name, size_t current_pass);
 
 #endif

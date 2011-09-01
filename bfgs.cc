@@ -515,32 +515,33 @@ void zero_state(regressor& reg)
     }
 }
 
-double derivative_in_direction(regressor& reg, float* mem)
-{
-  int m = global.m;
+  double derivative_in_direction(regressor& reg, float* mem)
+  {
+    int m = global.m;
   int mem_stride = 2*m+BFGS_EXTRA;
   
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* w = reg.weight_vectors[0];
-
+  
   for(uint32_t i = 0; i < length; i++, w+=stride, mem+=mem_stride)
     ret += mem[2*m+BFGS_GT]*w[BFGS_W_DIR];
   return ret;
 }
+  
+  void update_weight(string& reg_name, regressor& reg, float step_size, size_t current_pass)
+  {
+    uint32_t length = 1 << global.num_bits;
+    size_t stride = global.stride;
+    weight* w = reg.weight_vectors[0];
+    
+    for(uint32_t i = 0; i < length; i++, w+=stride)
+      w[BFGS_W_XT] += step_size * w[BFGS_W_DIR];
+    save_predictor(reg_name, current_pass);
+  }
 
-void update_weight(regressor& reg, float step_size)
-{
-  uint32_t length = 1 << global.num_bits;
-  size_t stride = global.stride;
-  weight* w = reg.weight_vectors[0];
-
-  for(uint32_t i = 0; i < length; i++, w+=stride)
-    w[BFGS_W_XT] += step_size * w[BFGS_W_DIR];
-}
-
-void update_weight_mem(regressor& reg, float* mem, float step_size)
+  void update_weight_mem(string& reg_name, regressor& reg, float* mem, float step_size, size_t current_pass)
 {
   int m = global.m;
   int mem_stride = 2*m+BFGS_EXTRA;
@@ -551,6 +552,7 @@ void update_weight_mem(regressor& reg, float* mem, float step_size)
 
   for(uint32_t i = 0; i < length; i++, w+=stride, mem+=mem_stride)
     w[BFGS_W_XT] = mem[2*m+BFGS_XT] + step_size * w[BFGS_W_DIR];
+  save_predictor(reg_name, current_pass);
 }
 
 void setup_bfgs(gd_thread_params& t)
@@ -665,7 +667,7 @@ void setup_bfgs(gd_thread_params& t)
 				new_step,
 				net_time/1000.);
 			predictions.erase();
-			update_weight_mem(reg,mem,new_step);
+			update_weight_mem(*(t.final_regressor_name), reg,mem,new_step, current_pass);
 			step_size = new_step;
 			zero_derivative(reg);
 			loss_sum = 0.;
@@ -694,7 +696,7 @@ void setup_bfgs(gd_thread_params& t)
 			if (!global.quiet)
 			  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 			predictions.erase();
-			update_weight(reg, step_size);		     		      
+			update_weight(*(t.final_regressor_name), reg, step_size, current_pass);		     		      
 		      }
 		    }
 		}
@@ -719,7 +721,7 @@ void setup_bfgs(gd_thread_params& t)
 		  float d_mag = direction_magnitude(reg);
 
 		  predictions.erase();
-		  update_weight(reg,step_size);
+		  update_weight(*(t.final_regressor_name),reg,step_size, current_pass);
 		  ftime(&t_end_global);
 		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		  if (!global.quiet)
@@ -797,7 +799,7 @@ void setup_bfgs(gd_thread_params& t)
 		      if (!global.quiet)
 			fprintf(stderr, "\t\t\t\t\t(revise)\t%-e", 0.0);
 		      predictions.erase();
-		      update_weight_mem(reg,mem,0.0);
+		      update_weight_mem(*(t.final_regressor_name),reg,mem,0.0, current_pass);
 		    }
 	    }
 	  if (!global.quiet)

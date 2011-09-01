@@ -24,7 +24,7 @@ struct global_data {
   bool default_bits;
 
   bool persistent; 
-
+  bool save_per_pass;
   bool backprop;
   bool corrective;
   bool delayed_global;
