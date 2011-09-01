@@ -180,7 +180,7 @@ int read_features(parser* p, void* ex)
       }
  
     for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
-      float v;
+      float v = 0.;
       feature_value(*i, p->name, v);
       v *= channel_v;
 
@@ -196,7 +196,7 @@ int read_features(parser* p, void* ex)
     if (audit)
       {
 	for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
-	  float v;
+	  float v = 0.;
 	  feature_value(*i, p->name, v);
 	  v *= channel_v;
 
