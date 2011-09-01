@@ -103,6 +103,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("random_weights", po::value<bool>(&global.random_weights), "make initial weights random")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
+    ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send example to <hosts>")
     ("testonly,t", "Ignore label information and just test")
     ("thread_bits", po::value<size_t>(&global.thread_bits)->default_value(0), "log_2 threads")
@@ -154,6 +155,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.active_simulation =false;
   global.reg = &r;
 
+  global.save_per_pass = false;
 
   po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
@@ -387,7 +389,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   parse_source_args(vm,par,global.quiet,global.numpasses);
   if (vm.count("readable_model"))
     global.text_regressor_name = vm["readable_model"].as<string>();
-
+  
+  if (vm.count("active_c0"))
+    global.active_c0 = vm["active_c0"].as<float>();
+  
   if (vm.count("active_c0"))
     global.active_c0 = vm["active_c0"].as<float>();
 
