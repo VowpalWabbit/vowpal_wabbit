@@ -31,7 +31,7 @@ void accumulate(string master_location, regressor& reg, size_t o) {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce((char*)local_grad, length*sizeof(float), master_location, global.unique_id);
+  all_reduce((char*)local_grad, length*sizeof(float), master_location, global.unique_id, global.total, global.node);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i];
@@ -44,7 +44,7 @@ void accumulate(string master_location, regressor& reg, size_t o) {
 float accumulate_scalar(string master_location, float local_sum) {
   ftime(&t_start);
   float temp = local_sum;
-  all_reduce((char*)&temp, sizeof(float), master_location, global.unique_id);
+  all_reduce((char*)&temp, sizeof(float), master_location, global.unique_id, global.total, global.node);
   ftime(&t_end);
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   return temp;
@@ -57,13 +57,13 @@ void accumulate_avg(string master_location, regressor& reg, size_t o) {
   weight* weights = reg.weight_vectors[0];
   ftime(&t_start);
   float numnodes = 1.;
-  all_reduce((char*)&numnodes, sizeof(float), master_location, global.unique_id);
+  all_reduce((char*)&numnodes, sizeof(float), master_location, global.unique_id, global.total, global.node);
   for(uint32_t i = 0;i < length;i++) 
     {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce((char*)local_grad, length*sizeof(float), master_location, global.unique_id);
+  all_reduce((char*)local_grad, length*sizeof(float), master_location, global.unique_id, global.total, global.node);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i]/numnodes;
@@ -95,27 +95,27 @@ void accumulate_weighted_avg(string master_location, regressor& reg) {
   uint32_t length = 1 << global.num_bits; //This is size of gradient
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors[0];
-  float* local_param = new float[length];
   float* local_weights = new float[length];
 
   ftime(&t_start);
   for(uint32_t i = 0;i < length;i++) 
     local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]-1);
   
-  all_reduce((char*)local_weights, length*sizeof(float), master_location, global.unique_id);
+  all_reduce((char*)local_weights, length*sizeof(float), master_location, global.unique_id, global.total, global.node);
 
   for(uint32_t i = 0;i < length;i++) 
-    if(local_weights[i] > 0)
-      local_param[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]-1)*weights[stride*i]/local_weights[i];
-    else
-      local_param[i] = 0;
+    if(local_weights[i] > 0) {
+      float ratio = sqrt(weights[stride*i+1]*weights[stride*i+1]-1)/local_weights[i];
+      weights[stride*i] *= ratio;
+      weights[stride*i+1] *= ratio;
+    }
+    else 
+      weights[stride*i] = 0; 
 
-  all_reduce((char*)local_param, length*sizeof(float), master_location, global.unique_id);
-  for(uint32_t i = 0;i < length;i++) 
-      weights[stride*i] = local_param[i];
+  all_reduce((char*)weights, 2*length*sizeof(float), master_location, global.unique_id, global.total, global.node);
+
   ftime(&t_end);
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
-  delete[] local_param;
   delete[] local_weights;
 }
 

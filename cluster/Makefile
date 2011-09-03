@@ -7,7 +7,7 @@ BOOST_INCLUDE = /usr/include
 BOOST_LIBRARY = /usr/local/lib
 
 ARCH = -march=nocona 
-OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing 
+OPTIM_FLAGS = -std=c++0x -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing 
 WARN_FLAGS = -Wall #-Werror 
 
 # for normal fast execution.
@@ -22,7 +22,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 # for valgrind
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
-BINARIES = allreduce_master
+BINARIES = spanning_tree
 
 all:	$(BINARIES)
 
@@ -35,7 +35,7 @@ all:	$(BINARIES)
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
-allreduce_master: allreduce_master.o
+spanning_tree: spanning_tree.o
 	$(COMPILER) $(FLAGS) -o $@ $+ 
 
 .FORCE:

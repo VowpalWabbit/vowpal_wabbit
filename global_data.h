@@ -94,6 +94,8 @@ struct global_data {
   int raw_prediction; // file descriptors for text output.
   int local_prediction;  //file descriptor to send local prediction to.
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
+  size_t total; //total number of nodes
+  size_t node; //node id number
 
   void (*print)(int,float,float,v_array<char>);
   loss_function* loss;

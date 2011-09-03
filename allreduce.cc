@@ -79,7 +79,7 @@ int sock_connect(uint32_t ip, int port) {
 }
 
 
-int all_reduce_init(string master_location, size_t unique_id)
+void all_reduce_init(string master_location, size_t unique_id, size_t total, size_t node)
 {
   struct hostent* master = gethostbyname(master_location.c_str());
     
@@ -96,6 +96,10 @@ int all_reduce_init(string master_location, size_t unique_id)
 
   if(write(master_sock, &unique_id, sizeof(unique_id)) < (int)sizeof(unique_id))
     cerr << "write failed!" << endl; 
+  if(write(master_sock, &total, sizeof(total)) < (int)sizeof(total))
+    cerr << "write failed!" << endl; 
+  if(write(master_sock, &node, sizeof(node)) < (int)sizeof(node))
+    cerr << "write failed!" << endl; 
   int ok;
   if (read(master_sock, &ok, sizeof(ok)) < (int)sizeof(ok))
     cerr << "read failed!" << endl;
@@ -104,51 +108,55 @@ int all_reduce_init(string master_location, size_t unique_id)
     exit(1);
   }
 
-  int client_port, kid_count, parent_port;
+  int kid_count, parent_port;
   uint32_t parent_ip;
-  int numnodes;
 
-  if(read(master_sock, &client_port, sizeof(client_port)) < (int)sizeof(client_port))
-    cerr << "read failed!" << endl;
   if(read(master_sock, &kid_count, sizeof(kid_count)) < (int)sizeof(kid_count))
-    cerr << "read failed!" << endl;
-  if(read(master_sock, &parent_ip, sizeof(parent_ip)) < (int)sizeof(parent_ip))
-    cerr << "read failed!" << endl;
-  if(read(master_sock, &parent_port, sizeof(parent_port)) < (int)sizeof(parent_port))
     cerr << "read failed!" << endl;
 
   int sock = -1;
+  short unsigned int netport = htons(26544);
   if(kid_count > 0) {
     sock = socket(PF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
       cerr << "can't open socket!" << endl;
       exit(1);
     }
-      
+    
     int on = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
       perror("setsockopt SO_REUSEADDR");
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
-    address.sin_port = client_port;
+    address.sin_port = netport;
 
-    if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
+    while(bind(sock,(sockaddr*)&address, sizeof(address)) < 0) 
       {
-	cerr << "failure to bind!" << endl;	  
-	exit(1);
+	if (errno == EADDRINUSE)
+	  {
+	    netport = htons(ntohs(netport)+1);
+	    address.sin_port = netport;
+	  }
+	else
+	  {
+	    cerr << "failure to bind!" << endl;
+	    exit(1);
+	  }
       }
-      
+    
     listen(sock, kid_count);
   }
-  int done = 1;
-
-  if(write(master_sock, &done, sizeof(done)) < (int)sizeof(done))
+  
+  if(write(master_sock, &netport, sizeof(netport)) < (int)sizeof(netport))
     cerr << "write failed!" << endl;
   
-  if(read(master_sock, &numnodes, sizeof(done)) < (int)sizeof(done))
+  if(read(master_sock, &parent_ip, sizeof(parent_ip)) < (int)sizeof(parent_ip))
     cerr << "read failed!" << endl;
-    
+  if(read(master_sock, &parent_port, sizeof(parent_port)) < (int)sizeof(parent_port))
+    cerr << "read failed!" << endl;
+
+  
   close(master_sock);
     
   //int parent_sock;
@@ -157,10 +165,7 @@ int all_reduce_init(string master_location, size_t unique_id)
   else
     socks.parent = -1;
     
-
   socks.children[0] = -1; socks.children[1] = -1;
-
-  
 
   for (int i = 0; i < kid_count; i++)
     {
@@ -177,9 +182,6 @@ int all_reduce_init(string master_location, size_t unique_id)
 
   if (kid_count > 0)
     close(sock);
-
-  return numnodes;
-    
 }
 
 void addbufs(float* buf1, float* buf2, int n) {
@@ -364,10 +366,10 @@ void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
     }
 }
 
-void all_reduce(char* buffer, int n, string master_location, size_t unique_id) 
+void all_reduce(char* buffer, int n, string master_location, size_t unique_id, size_t total, size_t node) 
 {
   if(master_location != current_master) 
-    all_reduce_init(master_location, unique_id);
+    all_reduce_init(master_location, unique_id, total, node);
     
   reduce(buffer, n, socks.parent, socks.children);
   broadcast(buffer, n, socks.parent, socks.children);

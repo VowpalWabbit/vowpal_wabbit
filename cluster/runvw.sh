@@ -1,15 +1,10 @@
-out_directory=$1
-master=$2
 mapper=`printenv mapred_task_id | cut -d "_" -f 5`
 echo $mapper > /dev/stderr
 rm -f temp.cache
 echo 'Starting training' > /dev/stderr
 echo $1 > /dev/stderr
-#./vw -b 24 --cache_file temp.cache --passes 20 --regularization=1 -d /dev/stdin -f tempmodel --master_location $2 --bfgs --mem 5 
-#./vw -b 24 --cache_file temp.cache --passes 10 --regularization=1 --loss_function=logistic -d /dev/stdin -f tempmodel --master_location $2 --bfgs --mem 5 
-#./vw -b 24 --cache_file temp.cache --passes 1 -d /dev/stdin -i tempmodel -t
-gdcmd="./vw -b 24 --unique_id $mapper --cache_file temp.cache --passes 1 --regularization=1 --adaptive --exact_adaptive_norm -d /dev/stdin -f tempmodel --master_location $master --loss_function=logistic" 
-bfgscmd="./vw -b 24 --unique_id $mapper --cache_file temp.cache --bfgs --mem 5 --passes 20 --regularization=1 --master_location $master -f model -i tempmodel --loss_function=logistic"
+gdcmd="./vw -b 24 --total $mapred_map_tasks --node $mapper --unique_id 0$mapred_job_id --cache_file temp.cache --passes 1 --regularization=1 --adaptive --exact_adaptive_norm -d /dev/stdin -f tempmodel --master_location $mapreduce_job_submithost --loss_function=logistic" 
+bfgscmd="./vw -b 24 --total $mapred_map_tasks --node $mapper --unique_id 1$mapred_job_id --cache_file temp.cache --bfgs --mem 5 --passes 20 --regularization=1 --master_location $mapreduce_job_submithost -f model -i tempmodel --loss_function=logistic"
 if [ "$mapper" == '000000' ]
 then
     $gdcmd > mapperout 2>&1
@@ -18,14 +13,14 @@ then
        exit 1
     fi 
     $bfgscmd >> mapperout 2>&1
-    outfile=$out_directory/model
-    mapperfile=$out_directory/mapperout
-    found=`hadoop fs -lsr | grep $out_directory | grep mapperout`
+    outfile=$mapred_output_dir/model
+    mapperfile=$mapred_output_dir/mapperout
+    found=`hadoop fs -lsr | grep $mapred_output_dir | grep mapperout`
     if [ "$found" != "" ]
     then
 	hadoop fs -rmr $mapperfile
     fi
-    found=`hadoop fs -lsr | grep $out_directory | grep model`
+    found=`hadoop fs -lsr | grep $mapred_output_dir | grep model`
     if [ "$found" != "" ]
     then
 	hadoop fs -rmr $outfile
