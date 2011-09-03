@@ -3,16 +3,31 @@ Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
 embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
-
+#include <stdlib.h>
 #include "vw.h"
 #include "gd.h"
-#include <stdlib.h>
+#include "accumulate.h"
 
 using namespace std;
 
 int main(int argc, char *argv[]) {
   gd_vars *vars = vw(argc, argv);
-  
+
+  if(global.master_location != "") {
+    float loss = global.sum_loss;
+    global.sum_loss = (double)accumulate_scalar(global.master_location, loss);
+    float weighted_examples = global.weighted_examples;
+    global.weighted_examples = (double)accumulate_scalar(global.master_location, weighted_examples);
+    float weighted_labels = global.weighted_labels;
+    global.weighted_labels = (double)accumulate_scalar(global.master_location, weighted_labels);
+    float weighted_unlabeled_examples = global.weighted_unlabeled_examples;
+    global.weighted_unlabeled_examples = (double)accumulate_scalar(global.master_location, weighted_unlabeled_examples);
+    float example_number = global.example_number;
+    global.example_number = (unsigned long long)accumulate_scalar(global.master_location, example_number);
+    float total_features = global.total_features;
+    global.total_features = (unsigned long long)accumulate_scalar(global.master_location, total_features);
+  }
+
   float weighted_labeled_examples = global.weighted_examples - global.weighted_unlabeled_examples;
   float best_constant = (global.weighted_labels - global.initial_t) / weighted_labeled_examples;
   float constant_loss = (best_constant*(1.0 - best_constant)*(1.0 - best_constant)

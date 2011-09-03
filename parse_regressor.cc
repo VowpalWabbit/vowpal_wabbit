@@ -292,7 +292,7 @@ void free_regressor(regressor &r)
 
 void save_predictor(string reg_name, size_t current_pass)
 {
-  if(global.save_per_pass) {
+   if(global.save_per_pass) {
     char* filename = new char[reg_name.length()+4];
     sprintf(filename,"%s.%lu",reg_name.c_str(),current_pass);
     dump_regressor(string(filename), *(global.reg));

@@ -394,8 +394,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("active_c0"))
     global.active_c0 = vm["active_c0"].as<float>();
   
-  if (vm.count("active_c0"))
-    global.active_c0 = vm["active_c0"].as<float>();
+  if (vm.count("save_per_pass"))
+    global.save_per_pass = true;
 
   if (vm.count("min_prediction"))
     global.min_label = vm["min_prediction"].as<double>();
