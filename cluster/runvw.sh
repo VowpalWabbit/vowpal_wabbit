@@ -1,10 +1,12 @@
+#!/bin/bash
 mapper=`printenv mapred_task_id | cut -d "_" -f 5`
 echo $mapper > /dev/stderr
 rm -f temp.cache
 echo 'Starting training' > /dev/stderr
 echo $1 > /dev/stderr
-gdcmd="./vw -b 24 --total $mapred_map_tasks --node $mapper --unique_id 0$mapred_job_id --cache_file temp.cache --passes 1 --regularization=1 --adaptive --exact_adaptive_norm -d /dev/stdin -f tempmodel --master_location $mapreduce_job_submithost --loss_function=logistic" 
-bfgscmd="./vw -b 24 --total $mapred_map_tasks --node $mapper --unique_id 1$mapred_job_id --cache_file temp.cache --bfgs --mem 5 --passes 20 --regularization=1 --master_location $mapreduce_job_submithost -f model -i tempmodel --loss_function=logistic"
+gdcmd="./vw -b 24 --total $mapred_map_tasks --node $mapper --unique_id $mapred_job_id --cache_file temp.cache --passes 1 --regularization=1 --adaptive --exact_adaptive_norm -d /dev/stdin -f tempmodel --span_server $mapreduce_job_submithost --loss_function=logistic" 
+RANDOM=$mapred_job_id #seed pseudorandom number generator to create new nonce.
+bfgscmd="./vw -b 24 --total $mapred_map_tasks --node $mapper --unique_id $RANDOM --cache_file temp.cache --bfgs --mem 5 --passes 20 --regularization=1 --span_server $mapreduce_job_submithost -f model -i tempmodel --loss_function=logistic"
 if [ "$mapper" == '000000' ]
 then
     $gdcmd > mapperout 2>&1
