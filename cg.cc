@@ -379,18 +379,18 @@ void setup_cg(gd_thread_params& t)
 	    {
 	      if (current_pass == 0)
 		{
-		  if(global.master_location != "")
+		  if(global.span_server != "")
 		    {
-		      accumulate(global.master_location, reg, 3); //Accumulate preconditioner
-		      importance_weight_sum = accumulate_scalar(global.master_location, importance_weight_sum);
+		      accumulate(global.span_server, reg, 3); //Accumulate preconditioner
+		      importance_weight_sum = accumulate_scalar(global.span_server, importance_weight_sum);
 		    }
 		  finalize_preconditioner(reg,global.regularization);
 		}
 	      if (gradient_pass) // We just finished computing all gradients
 		{
-		  if(global.master_location != "") {
-		    loss_sum = accumulate_scalar(global.master_location, loss_sum);  //Accumulate loss_sums
-		    accumulate(global.master_location, reg, 1); //Accumulate gradients from all nodes
+		  if(global.span_server != "") {
+		    loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
+		    accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
 		  }
 		  if (global.regularization > 0.)
 		    loss_sum += add_regularization(reg,global.regularization);
@@ -429,8 +429,8 @@ void setup_cg(gd_thread_params& t)
 		}
 	      else // just finished all second gradients
 		{
-		  if(global.master_location != "") {
-		    curvature = accumulate_scalar(global.master_location, curvature);  //Accumulate curvatures
+		  if(global.span_server != "") {
+		    curvature = accumulate_scalar(global.span_server, curvature);  //Accumulate curvatures
 		  }
 		  if (global.regularization > 0.)
 		    curvature += regularizer_direction_magnitude(reg,global.regularization);
@@ -509,8 +509,8 @@ void setup_cg(gd_thread_params& t)
 	{
 	  if (example_number == predictions.index())//do one last update
 	    {
-	      if(global.master_location != "") {
-		curvature = accumulate_scalar(global.master_location, curvature);  //Accumulate curvatures
+	      if(global.span_server != "") {
+		curvature = accumulate_scalar(global.span_server, curvature);  //Accumulate curvatures
 	      }
 	      if (global.regularization > 0.)
 		curvature += regularizer_direction_magnitude(reg,global.regularization);
@@ -530,8 +530,8 @@ void setup_cg(gd_thread_params& t)
 	    }
 	  if (output_regularizer)//need to accumulate and place the regularizer.
 	    {
-	      if(global.master_location != "")
-		accumulate(global.master_location, reg, 3); //Accumulate preconditioner
+	      if(global.span_server != "")
+		accumulate(global.span_server, reg, 3); //Accumulate preconditioner
 	      preconditioner_to_regularizer(reg,global.regularization);
 	    }
 	  ftime(&t_end_global);

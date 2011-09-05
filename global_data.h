@@ -81,7 +81,7 @@ struct global_data {
 
   std::string text_regressor_name;
   
-  std::string master_location;
+  std::string span_server;
 
   size_t num_threads () { return 1 << thread_bits; };
   size_t num_partitions () { return 1 << partition_bits; };

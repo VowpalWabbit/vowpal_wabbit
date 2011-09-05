@@ -78,6 +78,19 @@ int sock_connect(uint32_t ip, int port) {
   return sock;
 }
 
+int getsock()
+{
+  int sock = socket(PF_INET, SOCK_STREAM, 0);
+  if (sock < 0) {
+      cerr << "can't open socket!" << endl;
+      exit(1);
+    }
+    
+    int on = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
+      perror("setsockopt SO_REUSEADDR");
+    return sock;
+}
 
 void all_reduce_init(string master_location, size_t unique_id, size_t total, size_t node)
 {
@@ -102,59 +115,63 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
     cerr << "write failed!" << endl; 
   int ok;
   if (read(master_sock, &ok, sizeof(ok)) < (int)sizeof(ok))
-    cerr << "read failed!" << endl;
+    cerr << "read 1 failed!" << endl;
   if (!ok) {
     cerr << "mapper already connected" << endl;
     exit(1);
   }
 
-  int kid_count, parent_port;
+  uint16_t kid_count;
+  uint16_t parent_port;
   uint32_t parent_ip;
 
   if(read(master_sock, &kid_count, sizeof(kid_count)) < (int)sizeof(kid_count))
-    cerr << "read failed!" << endl;
+    cerr << "read 2 failed!" << endl;
 
   int sock = -1;
   short unsigned int netport = htons(26544);
   if(kid_count > 0) {
-    sock = socket(PF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-      cerr << "can't open socket!" << endl;
-      exit(1);
-    }
-    
-    int on = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
-      perror("setsockopt SO_REUSEADDR");
+    sock = getsock();
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_port = netport;
 
-    while(bind(sock,(sockaddr*)&address, sizeof(address)) < 0) 
+    bool listening = false;
+    while(!listening)
       {
-	if (errno == EADDRINUSE)
-	  {
-	    netport = htons(ntohs(netport)+1);
-	    address.sin_port = netport;
-	  }
+	if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
+	  if (errno == EADDRINUSE)
+	    {
+	      netport = htons(ntohs(netport)+1);
+	      address.sin_port = netport;
+	    }
+	  else
+	    {
+	      perror("Bind failed ");
+	      exit(1);
+	    }
 	else
-	  {
-	    cerr << "failure to bind!" << endl;
-	    exit(1);
-	  }
+	  if (listen(sock, kid_count) < 0)
+	    {
+	      perror("listen failed! ");
+	      close(sock);
+	      sock = getsock();
+	    }
+	  else
+	    {
+	      listening = true;
+	    }
       }
-    
-    listen(sock, kid_count);
   }
   
   if(write(master_sock, &netport, sizeof(netport)) < (int)sizeof(netport))
     cerr << "write failed!" << endl;
   
   if(read(master_sock, &parent_ip, sizeof(parent_ip)) < (int)sizeof(parent_ip))
-    cerr << "read failed!" << endl;
+    cerr << "read 3 failed!" << endl;
   if(read(master_sock, &parent_port, sizeof(parent_port)) < (int)sizeof(parent_port))
-    cerr << "read failed!" << endl;
+    cerr << "read 4 failed!" << endl;
 
   
   close(master_sock);

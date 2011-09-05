@@ -16,6 +16,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <unordered_map>
 
@@ -38,7 +39,7 @@ static int socket_sort(const void* s1, const void* s2) {
   return socket1->client_ip - socket2->client_ip;
 }
 
-int build_tree(int*  parent, int* kid_count, int source_count, int offset) {
+int build_tree(int*  parent, uint16_t* kid_count, int source_count, int offset) {
 
   if(source_count == 1) {
     kid_count[offset] = 0;
@@ -78,9 +79,9 @@ void fail_write(int fd, const void* buf, size_t count)
 }
 
 int main(int argc, char* argv[]) {
-  if (argc != 3)
+  if (argc > 2)
     {
-      cout << "usage: allreduce_master <numnodes> <numrounds>" << endl;
+      cout << "usage: spanning_tree [pid_file]" << endl;
       exit(0);
     }
 
@@ -110,6 +111,19 @@ int main(int argc, char* argv[]) {
     {
       cerr << "failure to background!" << endl;
       exit(1);
+    }
+
+  if (argc == 2)
+    {	  
+      ofstream pid_file;
+      pid_file.open(argv[1]);
+      if (!pid_file.is_open())
+	{
+	  cerr << "error writing pid file" << endl;
+	  exit(1);
+	}
+      pid_file << getpid() << endl;
+      pid_file.close();
     }
   
   unordered_map<int, partial> partial_nodesets;
@@ -145,13 +159,19 @@ int main(int argc, char* argv[]) {
 	exit(1);
       }
 
+    int ok = true;
+    if ( id >= total ) 
+      {
+	cout << "invalid id! " << endl;
+	ok = false;
+      }
     partial partial_nodeset;
     
     if (partial_nodesets.find(nonce) == partial_nodesets.end() )
       {
 	partial_nodeset.nodes = (client*) calloc(total, sizeof(client));
 	for (size_t i = 0; i < total; i++)
-	  partial_nodeset.nodes[i].client_ip = -1;
+	  partial_nodeset.nodes[i].client_ip = (uint32_t)-1;
 	partial_nodeset.filled = 0;
       }    
     else {
@@ -159,8 +179,7 @@ int main(int argc, char* argv[]) {
       partial_nodesets.erase(nonce);
     }
 
-    int ok = true;
-    if (partial_nodeset.nodes[id].client_ip != (uint32_t)-1)
+    if (ok && partial_nodeset.nodes[id].client_ip != (uint32_t)-1)
       ok = false;
     fail_write(f,&ok, sizeof(ok));
 
@@ -170,8 +189,8 @@ int main(int argc, char* argv[]) {
 	partial_nodeset.nodes[id].socket = f;
 	partial_nodeset.filled++;
       }
-    if (partial_nodeset.filled != total)
-      {//Need to wait for more connections
+    if (partial_nodeset.filled != total) //Need to wait for more connections
+      {
 	partial_nodesets[nonce] = partial_nodeset;
       }
     else
@@ -179,14 +198,16 @@ int main(int argc, char* argv[]) {
 	qsort(partial_nodeset.nodes, total, sizeof(client), socket_sort);
 	
 	int parent[total];
-	int kid_count[total];
+	uint16_t kid_count[total];
 	
 	int root = build_tree(parent, kid_count, total, 0);
 	parent[root] = -1;
 	
 	for (size_t i = 0; i < total; i++)
-	  fail_write(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
-	
+	  {
+	    fail_write(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
+	  }	
+
 	uint16_t client_ports[total];
 
 	for(size_t i = 0;i < total;i++) {

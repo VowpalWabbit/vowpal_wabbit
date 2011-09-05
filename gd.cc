@@ -61,14 +61,14 @@ void* gd_thread(void *in)
 	{
 	  assert(ec->in_use);
 
-	  if (ec->pass != current_pass && global.master_location != "")
+	  if (ec->pass != current_pass && global.span_server != "")
 	    {
-	      if(global.master_location != "") {
+	      if(global.span_server != "") {
 		if(global.adaptive)
 		  //accumulate_avg(*(params->socks), params->reg, 0);	      
-		  accumulate_weighted_avg(global.master_location, params->reg);
+		  accumulate_weighted_avg(global.span_server, params->reg);
 		else 
-		  accumulate_avg(global.master_location, params->reg, 0);	      
+		  accumulate_avg(global.span_server, params->reg, 0);	      
 	      }
 	    }
 
@@ -90,12 +90,12 @@ void* gd_thread(void *in)
 	      for(uint32_t i = 0; i < length; i++)
 		reg.weight_vectors[0][stride*i] = real_weight(reg.weight_vectors[0][stride*i],gravity);
 	    }
-	  if(global.master_location != "") {
+	  if(global.span_server != "") {
 	    if(global.adaptive)
 	      //  accumulate_avg(*(params->socks), params->reg, 0);	      
-	      accumulate_weighted_avg(global.master_location, params->reg);
+	      accumulate_weighted_avg(global.span_server, params->reg);
 	    else 
-	      accumulate_avg(global.master_location, params->reg, 0);	      
+	      accumulate_avg(global.span_server, params->reg, 0);	      
 	  }
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
