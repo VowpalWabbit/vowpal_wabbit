@@ -34,8 +34,8 @@ example* examples;//A Ring of examples.
 pthread_mutex_t examples_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
 pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
-unsigned long long parsed_index; // The index of the parsed example.
-unsigned long long* used_index; // The index of the example currently used by thread i.
+uint64_t parsed_index; // The index of the parsed example.
+uint64_t* used_index; // The index of the example currently used by thread i.
 bool done=false;
 v_array<size_t> random_nos;
 v_array<size_t> gram_mask;
@@ -854,7 +854,7 @@ pthread_t parse_thread;
 
 void start_parser(size_t num_threads, parser* pf)
 {
-  used_index = (unsigned long long*) calloc(num_threads, sizeof(unsigned long long));
+  used_index = (uint64_t*) calloc(num_threads, sizeof(unsigned long long));
   parsed_index = 0;
   done = false;
 

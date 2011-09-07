@@ -106,7 +106,7 @@ typedef __m128i v4si;
 
 #define v4sfl(x) ((const v4sf) { (x), (x), (x), (x) })
 #define v2dil(x) ((const v4si) { (x), (x) })
-#define v4sil(x) v2dil((((unsigned long long) (x)) << 32) | (x))
+#define v4sil(x) v2dil((((uint64_t) (x)) << 32) | (x))
 
 typedef union { v4sf f; float array[4]; } v4sfindexer;
 #define v4sf_index(_findx, _findi)      \

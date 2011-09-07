@@ -18,7 +18,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include <unordered_map>
+#include <map>
 
 using namespace std;
 
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
       pid_file.close();
     }
   
-  unordered_map<int, partial> partial_nodesets;
+  map<int, partial> partial_nodesets;
   
   while(true) {
     listen(sock, 1024);

@@ -7,7 +7,7 @@ BOOST_INCLUDE = /usr/include
 BOOST_LIBRARY = /usr/local/lib
 
 ARCH = -march=nocona 
-OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing -std=c++0x
+OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
 WARN_FLAGS = -Wall #-Werror 
 
 # for normal fast execution.

@@ -23,9 +23,9 @@ int main(int argc, char *argv[]) {
     float weighted_unlabeled_examples = global.weighted_unlabeled_examples;
     global.weighted_unlabeled_examples = (double)accumulate_scalar(global.span_server, weighted_unlabeled_examples);
     float example_number = global.example_number;
-    global.example_number = (unsigned long long)accumulate_scalar(global.span_server, example_number);
+    global.example_number = (uint64_t)accumulate_scalar(global.span_server, example_number);
     float total_features = global.total_features;
-    global.total_features = (unsigned long long)accumulate_scalar(global.span_server, total_features);
+    global.total_features = (uint64_t)accumulate_scalar(global.span_server, total_features);
   }
 
   float weighted_labeled_examples = global.weighted_examples - global.weighted_unlabeled_examples;

@@ -7,6 +7,7 @@ embodied in the content of this file are licensed under the BSD
 #ifndef GLOBAL_DATA_H
 #define GLOBAL_DATA_H
 #include <vector>
+#include <stdint.h>
 #include "v_array.h"
 #include "parse_regressor.h"
 
@@ -103,13 +104,13 @@ struct global_data {
   char* program_name;
 
   //runtime accounting variables. 
-  unsigned long long example_number;
+  uint64_t example_number;
   double initial_t;
   double weighted_examples;
   double weighted_unlabeled_examples;
   double old_weighted_examples;
   double weighted_labels;
-  size_t total_features;
+  uint64_t total_features;
   double sum_loss;
   double sum_loss_since_last_dump;
   float dump_interval;// when should I update for the user.
