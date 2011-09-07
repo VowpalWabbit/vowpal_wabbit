@@ -416,7 +416,7 @@ void setup_cg(gd_thread_params& t)
 		      float mix_frac = 0;
 		      if (current_pass != 0)
 			mix_frac = derivative_diff_mag(reg, old_first_derivative) / previous_d_mag;
-		      if (mix_frac < 0 || ::isnan(mix_frac))
+		      if (mix_frac < 0 || (::isnan)(mix_frac))
 			mix_frac = 0;
 		      float new_d_mag = derivative_magnitude(reg, old_first_derivative);
 		      previous_d_mag = new_d_mag;

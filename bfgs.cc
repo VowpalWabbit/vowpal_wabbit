@@ -281,7 +281,7 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
     double beta = g_Hy/g_Hg;
     double gamma = (global.hessian_on) ? 1.0 : y_s/y_Hy;
 
-    if (beta<0. || ::isnan(beta))
+    if (beta<0. || (::isnan)(beta))
       beta = 0.;
     if (y_s <= 0. || y_Hy <= 0.) {
       cout << "your curvature is not positive, something wrong.  Try adding regularization" << endl;
@@ -416,7 +416,7 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
   double new_step_cross  = 0.5*(loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
   bool violated = false;
-  if (new_step_cross<0. || new_step_cross>1. || ::isnan(new_step_cross)) {
+  if (new_step_cross<0. || new_step_cross>1. || (::isnan)(new_step_cross)) {
     violated = true;
     new_step_cross = new_step_simple;
   }

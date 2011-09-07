@@ -220,8 +220,11 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
 	  if (global.rank != 0)
 	      r.weight_vectors[hash % num_threads][hash/num_threads] = w;
 	  else if (global.lda == 0)
-	    if (reg_vector)
+	    if (reg_vector) {
 	      r.regularizers[hash % num_threads][hash/num_threads] = w;
+	      if (hash%2 == 1) // This is the prior mean; previous element was prior variance
+		r.weight_vectors[(hash/2) % num_threads][(hash/2*stride)/num_threads] = w;
+	    }
 	    else
 	      r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
 		= r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
