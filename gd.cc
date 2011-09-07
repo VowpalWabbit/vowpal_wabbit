@@ -130,7 +130,7 @@ bool command_example(example* ec, gd_thread_params* params) {
 
 float finalize_prediction(float ret) 
 {
-  if (isnan(ret))
+  if (::isnan(ret))
     return 0.5;
   if ( ret > global.max_label )
     return global.max_label;
