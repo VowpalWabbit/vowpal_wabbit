@@ -854,7 +854,7 @@ pthread_t parse_thread;
 
 void start_parser(size_t num_threads, parser* pf)
 {
-  used_index = (uint64_t*) calloc(num_threads, sizeof(unsigned long long));
+  used_index = (uint64_t*) calloc(num_threads, sizeof(uint64_t));
   parsed_index = 0;
   done = false;
 
