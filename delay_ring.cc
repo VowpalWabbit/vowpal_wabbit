@@ -34,10 +34,10 @@ void initialize_delay_ring()
   reserve(delay_indices, nt);
   for (size_t i = 0; i < nt; i++)
     delay_indices[i] = 0;
-  reserve(delay_ring, ring_size);
-  for (size_t i = 0; i < ring_size; i++)
+  reserve(delay_ring, global.ring_size);
+  for (size_t i = 0; i < global.ring_size; i++)
     delay_ring[i] = NULL;
-  reserve(threads_to_use, ring_size);
+  reserve(threads_to_use, global.ring_size);
   local_index = 0;
   global_index = 0;
 }
@@ -69,7 +69,7 @@ bool thread_done(size_t thread)
 
 example* return_example(size_t thread)
 {
-  size_t index = delay_indices[thread] % ring_size;
+  size_t index = delay_indices[thread] % global.ring_size;
   example* ret = delay_ring[index];
   
   pthread_mutex_lock(&delay);
@@ -95,7 +95,7 @@ example* get_delay_example(size_t thread)
   if ((global.backprop || global.corrective || global.delayed_global) 
       && global.local_prediction > 0)
     //we must do global training sometimes.
-    if (local_index > delay_indices[thread+global_offset] + (ring_size >> 1)
+    if (local_index > delay_indices[thread+global_offset] + (global.ring_size >> 1)
 	|| (parser_done() 
 	    && (local_index == delay_indices[thread] || global.delayed_global)))
       //We want to do global training
@@ -125,7 +125,7 @@ example* get_delay_example(size_t thread)
 
 example* blocking_get_delay_example(size_t thread)
 {
-  size_t index = delay_indices[thread] % ring_size;
+  size_t index = delay_indices[thread] % global.ring_size;
   pthread_mutex_lock(&delay);
   while(delay_ring[index] == NULL)
     pthread_cond_wait(&delay_nonempty, &delay);
@@ -148,7 +148,7 @@ void delay_example(example* ex, size_t count)
     }
   else
     {
-      size_t index = local_index % ring_size;
+      size_t index = local_index % global.ring_size;
       
       pthread_mutex_lock(&delay);
       while (delay_ring[index] != NULL)

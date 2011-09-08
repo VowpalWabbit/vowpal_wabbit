@@ -437,10 +437,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       if(vm.count("multisource"))
 	{
 	  par->reader = receive_features;
-	  calloc_reserve(par->pes,ring_size);
-	  par->pes.end = par->pes.begin+ring_size;
+	  calloc_reserve(par->pes,global.ring_size);
+	  par->pes.end = par->pes.begin+global.ring_size;
 	  calloc_reserve(par->counts,source_count);
-	  par->counts.end = par->counts.begin+ring_size;
+	  par->counts.end = par->counts.begin+global.ring_size;
 	  par->finished_count = 0;
 	}
       else if(global.active)
@@ -597,11 +597,11 @@ example* get_unused_example()
   while (true)
     {
       pthread_mutex_lock(&examples_lock);
-      if (examples[parsed_index % ring_size].in_use == false)
+      if (examples[parsed_index % global.ring_size].in_use == false)
 	{
-	  examples[parsed_index % ring_size].in_use = true;
+	  examples[parsed_index % global.ring_size].in_use = true;
 	  pthread_mutex_unlock(&examples_lock);
-	  return examples + (parsed_index % ring_size);
+	  return examples + (parsed_index % global.ring_size);
 	}
       else 
 	{
@@ -835,7 +835,7 @@ example* get_example(size_t thread_num)
   pthread_mutex_lock(&examples_lock);
 
   if (parsed_index != used_index[thread_num]) {
-    size_t ring_index = used_index[thread_num]++ % ring_size;
+    size_t ring_index = used_index[thread_num]++ % global.ring_size;
     if (!(examples+ring_index)->in_use)
       cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << endl;
     assert((examples+ring_index)->in_use);
@@ -865,9 +865,9 @@ void start_parser(size_t num_threads, parser* pf)
 	  push(random_nos, (size_t)rand());
     }      
 
-  examples = (example*)calloc(ring_size, sizeof(example));
+  examples = (example*)calloc(global.ring_size, sizeof(example));
 
-  for (size_t i = 0; i < ring_size; i++)
+  for (size_t i = 0; i < global.ring_size; i++)
     {
       pthread_mutex_init(&examples[i].lock,NULL);
       pthread_cond_init(&examples[i].finished_sum,NULL);
@@ -888,7 +888,7 @@ void end_parser(parser* pf)
       if(gram_mask.begin != NULL) reserve(gram_mask,0);
     }
 
-  for (size_t i = 0; i < ring_size; i++) 
+  for (size_t i = 0; i < global.ring_size; i++) 
     {
       pf->lp->delete_label(examples[i].ld);
       if (examples[i].tag.end_array != examples[i].tag.begin)
@@ -925,7 +925,7 @@ void end_parser(parser* pf)
 
   if (pf->pes.begin != NULL)
     {
-      for (size_t i = 0; i < ring_size; i++)
+      for (size_t i = 0; i < global.ring_size; i++)
 	free(pf->pes[i].features.begin);
       free(pf->pes.begin);
     }

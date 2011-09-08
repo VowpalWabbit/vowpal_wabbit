@@ -4,6 +4,7 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 #include <fstream>
+#include <vector>
 #include <float.h>
 #include <netdb.h>
 #include <string.h>
@@ -454,75 +455,14 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
   return score / doc_length;
 }
 
-struct index_triple {
+class index_feature {
+public:
   uint32_t document;
   feature f;
+  bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
-v_array<v_array<index_triple> > merge_set;
-
-void merge_pair(v_array<index_triple>& source, v_array<index_triple>& dest)
-{
-  size_t dest_size = dest.index();
-  size_t limit = source.index()+dest_size;
-  if (dest.end_array - dest.begin < (int)limit)
-    reserve(dest,limit);
-  memmove(dest.begin+source.index(),dest.begin,dest_size*sizeof(index_triple));
-  dest.end = dest.begin+limit;
-
-  size_t old_index = source.index();
-  size_t new_index = 0;
-  
-  for (index_triple* s=source.begin; s != source.end; s++)
-    {
-      while((old_index < limit) && (dest[old_index].f.weight_index < s->f.weight_index)) {
-	dest[new_index++] = dest[old_index++];
-      }
-      dest[new_index++] = *s;
-    }
-  source.erase();
-}
-
-void merge()
-{
-  for (size_t j = merge_set.index()-1; j > 0;j--)
-    if (merge_set[j].index()*2 > merge_set[j-1].index())
-      {
-	merge_pair(merge_set[j], merge_set[j-1]);
-	merge_set.pop();
-      }
-    else
-      break;
-}
-
-void merge_all()
-{
-  for (size_t j = merge_set.index()-1; j > 0;j--)
-    {
-      merge_pair(merge_set[j], merge_set[j-1]);
-      merge_set.pop();
-    }
-}
-
-void merge_in(example* ec, size_t document)
-{
-  size_t next_index = merge_set.index();
-  if ((int)(next_index + ec->indices.index()) > merge_set.end_array-merge_set.begin)
-    reserve(merge_set,next_index+ec->indices.index());
-  merge_set.end = merge_set.begin+next_index+ec->indices.index();
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
-    {
-      feature* f = ec->subsets[*i][0];
-      for (; f != ec->subsets[*i][1]; f++)
-	{
-	  index_triple temp = {(uint32_t)document,*f};
-	  push(merge_set[next_index], temp);
-	}
-      next_index++;
-    }
-
-  merge();
-}
+std::vector<index_feature> sorted_features;
 
 void start_lda(gd_thread_params t)
 {
@@ -550,11 +490,7 @@ void start_lda(gd_thread_params t)
       for (size_t k = 0; k < global.lda; k++)
 	total_new[k] = 0.f;
 
-      while (merge_set.index() > 0)
-	{
-	  merge_set[merge_set.index()-1].erase();
-	  merge_set.pop();
-	}
+      sorted_features.resize(0);
 
       float eta = -1;
       float minuseta = -1;
@@ -565,7 +501,13 @@ void start_lda(gd_thread_params t)
 	  if ((ec = get_example(0)) != NULL)//semiblocking operation.
 	    {
 	      examples[d] = ec;
-	      merge_in(ec,d);
+              for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
+                feature* f = ec->subsets[*i][0];
+                for (; f != ec->subsets[*i][1]; f++) {
+                  index_feature temp = {(uint32_t)d, *f};
+                  sorted_features.push_back(temp);
+                }
+              }
 	    }
 	  else if (thread_done(0))
 	    batch_size = d;
@@ -573,7 +515,7 @@ void start_lda(gd_thread_params t)
 	    d--;
 	}
 
-      merge_all(); //Now merge_set[0] contains everything.
+      sort(sorted_features.begin(), sorted_features.end());
 
       eta = global.eta * powf(example_t, -t.vars->power_t);
       minuseta = 1.0 - eta;
@@ -587,7 +529,7 @@ void start_lda(gd_thread_params t)
       }
       
       size_t last_weight_index = -1;
-      for (index_triple* s = merge_set[0].begin; s != merge_set[0].end; s++)
+      for (index_feature* s = &sorted_features[0]; s <= &sorted_features.back(); s++)
 	{
 	  if (last_weight_index == s->f.weight_index)
 	    continue;
@@ -617,10 +559,10 @@ void start_lda(gd_thread_params t)
           finish_example(examples[d]);
 	}
 
-      for (index_triple* s = merge_set[0].begin; s != merge_set[0].end;)
+      for (index_feature* s = &sorted_features[0]; s <= &sorted_features.back();)
 	{
-	  index_triple* next = s+1;
-	  while(next != merge_set[0].end && next->f.weight_index == s->f.weight_index)
+	  index_feature* next = s+1;
+	  while(next <= &sorted_features.back() && next->f.weight_index == s->f.weight_index)
 	    next++;
 
 	  float* word_weights = &(weights[s->f.weight_index & global.thread_mask]);
@@ -658,9 +600,6 @@ void start_lda(gd_thread_params t)
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
 
-	  for (int i = 0; i < merge_set.end_array-merge_set.begin; i++)
-	    free(merge_set[i].begin);
-	  free(merge_set.begin);
 	  return;
 	}
     }

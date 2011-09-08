@@ -117,7 +117,7 @@ int receive_features(parser* p, void* ex)
 		  if (pre.example_number != ++ (p->counts[index]))
 		    cout << "count is off! " << pre.example_number << " != " << p->counts[index] << 
 		      " for source " << index << " prediction = " << pre.p << endl;
-		  if (pre.example_number == p->finished_count + ring_size)
+		  if (pre.example_number == p->finished_count + global.ring_size)
 		    FD_CLR(sock,&fds);//this ones to far ahead, let the buffer fill for awhile.
 		  size_t ring_index = pre.example_number % p->pes.index();
 		  if (p->pes[ring_index].features.index() == 0)
@@ -147,7 +147,7 @@ int receive_features(parser* p, void* ex)
 		    }
 		}
 	    }
-	  else  if (p->counts[index] < p->finished_count + ring_size)
+	  else  if (p->counts[index] < p->finished_count + global.ring_size)
 	    FD_SET(sock,&fds);
 	}
     }

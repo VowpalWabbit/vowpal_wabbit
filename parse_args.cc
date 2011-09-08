@@ -28,6 +28,16 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
+size_t next_pow2(size_t x) {
+  int i = 0;
+  x = x > 0 ? x - 1 : 0;
+  while (x > 0) {
+    x >>= 1;
+    i++;
+  }
+  return 1 << i;
+}
+
 const float default_decay = 1.;
 
 po::variables_map parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
@@ -152,6 +162,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.per_feature_regularizer_input = "";
   global.per_feature_regularizer_output = "";
   global.per_feature_regularizer_text = "";
+  global.ring_size = 1 << 8;
 
   global.adaptive = false;
   global.exact_adaptive_norm = false;
@@ -387,8 +398,14 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cerr << "your learning rate is too high, setting it to 1" << endl;
       global.eta = min(global.eta,1.f);
     }
-  if (!vm.count("lda"))
+  if (!vm.count("lda")) 
     global.eta *= pow(par->t, vars.power_t);
+
+  if (vm.count("minibatch")) {
+    size_t minibatch2 = next_pow2(global.minibatch);
+    global.ring_size = global.ring_size > minibatch2 ? global.ring_size : minibatch2;
+    fprintf(stderr, "global.ring_size = %d, minibatch2 = %d, global.minibatch = %d\n", global.ring_size, minibatch2, global.minibatch);
+  }
   
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
   parse_source_args(vm,par,global.quiet,global.numpasses);

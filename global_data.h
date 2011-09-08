@@ -51,6 +51,7 @@ struct global_data {
   float update_sum;
 
   size_t minibatch;
+  size_t ring_size;
 
   size_t pass_length;
   size_t numpasses;
@@ -126,8 +127,6 @@ void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(double label);
 void print_lda_result(int f, float* res, float weight, v_array<char> tag);
-
-const size_t ring_size = 1 << 8;
 
 extern pthread_mutex_t output_lock;
 extern pthread_cond_t output_done;
