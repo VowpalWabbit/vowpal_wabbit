@@ -167,7 +167,7 @@ void print_update(example *ec)
       fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
 	      global.sum_loss/global.weighted_examples,
 	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
-	      global.example_number,
+	      (long int)global.example_number,
 	      global.weighted_examples,
 	      label_buf,
 	      ec->final_prediction,
