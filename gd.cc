@@ -155,7 +155,7 @@ void finish_example(example* ec)
 
 void print_update(example *ec)
 {
-  if (global.weighted_examples > global.dump_interval && !global.quiet && !global.conjugate_gradient && !global.bfgs)
+  if (global.weighted_examples > global.dump_interval && !global.quiet && !global.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];

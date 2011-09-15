@@ -63,7 +63,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
     ("conjugate_gradient", "use conjugate gradient based optimization")
-    ("regularization", po::value<float>(&global.regularization)->default_value(1.0), "l_2 regularization for conjugate_gradient")
+    ("regularization", po::value<float>(&global.regularization)->default_value(1.0), "l_2 regularization for bfgs")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "read data from port 26542")
@@ -138,7 +138,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.bfgs = false;
   global.corrective = false;
   global.delayed_global = false;
-  global.conjugate_gradient = false;
   global.bfgs = false;
   global.hessian_on = false;
   global.stride = 1;
@@ -232,43 +231,26 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       global.delayed_global = true;
       cout << "enabling delayed_global updates" << endl;
   }
-
-  if (vm.count("conjugate_gradient")) {
-    global.conjugate_gradient = true;
-    global.stride = 4;
-    if (!global.quiet)
-      cerr << "enabling conjugate gradient based optimization" << endl;
-    if (global.numpasses < 2)
-      {
-	cout << "you must make at least 2 passes to use conjugate gradient" << endl;
-	exit(1);
-      }
-  }
-
-  if (vm.count("bfgs")) {
+  
+  if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     global.bfgs = true;
     global.stride = 4;
     if (vm.count("hessian_on") || global.m==0) {
       global.hessian_on = true;
     }
     if (!global.quiet) {
-       if (global.m>0)
-	 cerr << "enabling BFGS based optimization ";
-       else
-	 cerr << "enabling conjugate gradient optimization via BFGS ";
-       if (global.hessian_on)
-	 cerr << "with curvature calculation" << endl;
-       else
-	 cerr << "**without** curvature calculation" << endl;
+      if (global.m>0)
+	cerr << "enabling BFGS based optimization ";
+      else
+	cerr << "enabling conjugate gradient optimization via BFGS ";
+      if (global.hessian_on)
+	cerr << "with curvature calculation" << endl;
+      else
+	cerr << "**without** curvature calculation" << endl;
     }
     if (global.numpasses < 2)
       {
 	cout << "you must make at least 2 passes to use BFGS" << endl;
-	exit(1);
-      }
-    if (global.conjugate_gradient)
-      {
-	cout << "you cannot enable both conjugate gradient and BFGS" << endl;
 	exit(1);
       }
   }
@@ -404,7 +386,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(global.minibatch);
     global.ring_size = global.ring_size > minibatch2 ? global.ring_size : minibatch2;
-    fprintf(stderr, "global.ring_size = %d, minibatch2 = %d, global.minibatch = %d\n", global.ring_size, minibatch2, global.minibatch);
+    fprintf(stderr, "global.ring_size = %d, minibatch2 = %d, global.minibatch = %d\n", (int)global.ring_size, (int)minibatch2, (int)global.minibatch);
   }
   
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
@@ -464,7 +446,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
       if (global.rank > 0)
 	cerr << "rank = " << global.rank << endl;
-      if (global.regularization > 0 && (global.conjugate_gradient || global.bfgs))
+      if (global.regularization > 0 && global.bfgs)
 	cerr << "regularization = " << global.regularization << endl;
     }
 

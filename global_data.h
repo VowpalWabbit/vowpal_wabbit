@@ -33,7 +33,6 @@ struct global_data {
   float active_c0;
   float initial_weight;
 
-  bool conjugate_gradient;
   float regularization;
 
   bool bfgs;

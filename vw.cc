@@ -19,7 +19,6 @@ embodied in the content of this file are licensed under the BSD
 #include "gd.h"
 #include "gd_mf.h"
 #include "lda_core.h"
-#include "cg.h"
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
@@ -50,7 +49,7 @@ gd_vars* vw(int argc, char *argv[])
   struct timeb t_start, t_end;
   ftime(&t_start);
   
-  if (!global.quiet && !global.conjugate_gradient && !global.bfgs)
+  if (!global.quiet && !global.bfgs)
     {
       const char * header_fmt = "%-10s %-10s %8s %8s %10s %8s %8s\n";
       fprintf(stderr, header_fmt,
@@ -78,11 +77,6 @@ gd_vars* vw(int argc, char *argv[])
     {
       start_noop();
       end_noop();
-    }
-  else if (global.conjugate_gradient)
-    {
-      setup_cg(t);
-      destroy_cg();
     }
   else if (global.bfgs)
     {
