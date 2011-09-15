@@ -25,21 +25,23 @@ Implementation by Miro Dudik.
 
 using namespace std;
 
-#define BFGS_EXTRA 4
-#define BFGS_XT 0
-#define BFGS_GT 1
-#define BFGS_QR 2
+#define CG_EXTRA 1
 
-#define BFGS_W_XT 0
-#define BFGS_W_GT 1
-#define BFGS_W_DIR 2
-#define BFGS_W_COND 3
+#define MEM_GT 0
+#define MEM_XT 1
+#define MEM_YT 0
+#define MEM_ST 1
+
+#define W_XT 0
+#define W_GT 1
+#define W_DIR 2
+#define W_COND 3
 
 /********************************************************************/
 /* mem & w definition ***********************************************/
 /********************************************************************/ 
-// mem[2*i] = s_t
-// mem[2*i+1] = y_t
+// mem[2*i] = y_t
+// mem[2*i+1] = s_t
 //
 // w[0] = weight
 // w[1] = accumulated first derivative
@@ -52,6 +54,11 @@ namespace BFGS
 
 struct timeb t_start, t_end;
 double net_comm_time = 0.0;
+
+struct timeb t_start_global, t_end_global;
+double net_time;
+
+int mem_stride = 0;
 
 void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {
@@ -220,13 +227,8 @@ double direction_magnitude(regressor& reg)
   return ret;
 }
 
-double old_gamma;
-
-void bfgs_iter_start(regressor&reg, float* mem, int& lastj, double importance_weight_sum)
+  void bfgs_iter_start(regressor&reg, float* mem, int& lastj, double importance_weight_sum, int&origin)
 {
-  int m = global.m;
-  int mem_stride = 2*m+BFGS_EXTRA;
-  
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* w = reg.weight_vectors[0];
@@ -234,27 +236,25 @@ void bfgs_iter_start(regressor&reg, float* mem, int& lastj, double importance_we
   double g1_Hg1 = 0.;
   double g1_g1 = 0.;
   
+  origin = 0;
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    mem[2*m+BFGS_XT] = w[BFGS_W_XT];
-    mem[2*m+BFGS_GT] = w[BFGS_W_GT];
-    g1_Hg1 += w[BFGS_W_GT] * w[BFGS_W_GT] * w[BFGS_W_COND];
-    g1_g1 += w[BFGS_W_GT] * w[BFGS_W_GT];
-    w[BFGS_W_DIR] = -w[BFGS_W_COND]*w[BFGS_W_GT];
-    w[BFGS_W_GT] = 0;
+    if (global.m>0)
+      mem[(MEM_XT+origin)%mem_stride] = w[W_XT]; 
+    mem[(MEM_GT+origin)%mem_stride] = w[W_GT];
+    g1_Hg1 += w[W_GT] * w[W_GT] * w[W_COND];
+    g1_g1 += w[W_GT] * w[W_GT];
+    w[W_DIR] = -w[W_COND]*w[W_GT];
+    w[W_GT] = 0;
   }
   lastj = 0;
-  old_gamma = 1.;
   if (!global.quiet)
     fprintf(stderr, "%-10e\t%-10e\t%-10s\t%-10s\t%-10s\t",
 	    g1_g1/(importance_weight_sum*importance_weight_sum),
 	    g1_Hg1/importance_weight_sum, "", "", "");
 }
 
-void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int& lastj)
-{
-  int m = global.m;
-  int mem_stride = 2*m+BFGS_EXTRA;
-  
+  void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int& lastj, int &origin)
+{  
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* w = reg.weight_vectors[0];
@@ -263,42 +263,31 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
   float* w0 = w;
 
   // implement conjugate gradient
-  if (m==0) {
+  if (global.m==0) {
     double g_Hy = 0.;
     double g_Hg = 0.;
-    double y_s = 0.;
-    double y_Hy = 0.;
     double y = 0.;
   
     for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-      y = w[BFGS_W_GT]-mem[BFGS_GT];
-      g_Hy += w[BFGS_W_GT] * w[BFGS_W_COND] * y;
-      g_Hg += mem[BFGS_GT] * w[BFGS_W_COND] * mem[BFGS_GT];
-      y_s += y * (w[BFGS_W_XT]-mem[BFGS_XT]);
-      y_Hy += y * w[BFGS_W_COND] * y;
+      y = w[W_GT]-mem[(MEM_GT+origin)%mem_stride];
+      g_Hy += w[W_GT] * w[W_COND] * y;
+      g_Hg += mem[(MEM_GT+origin)%mem_stride] * w[W_COND] * mem[(MEM_GT+origin)%mem_stride];
     }
 
     double beta = g_Hy/g_Hg;
-    double gamma = (global.hessian_on) ? 1.0 : y_s/y_Hy;
 
     if (beta<0. || (::isnan)(beta))
       beta = 0.;
-    if (y_s <= 0. || y_Hy <= 0.) {
-      cout << "your curvature is not positive, something wrong.  Try adding regularization" << endl;
-      exit(1);
-    }
       
     mem = mem0;
     w = w0;
     for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-      mem[BFGS_XT] = w[BFGS_W_XT];
-      mem[BFGS_GT] = w[BFGS_W_GT];
+      mem[(MEM_GT+origin)%mem_stride] = w[W_GT];
 
-      w[BFGS_W_DIR] *= gamma*beta/old_gamma;
-      w[BFGS_W_DIR] -= gamma*w[BFGS_W_COND]*w[BFGS_W_GT];
-      w[BFGS_W_GT] = 0;
+      w[W_DIR] *= beta;
+      w[W_DIR] -= w[W_COND]*w[W_GT];
+      w[W_GT] = 0;
     }
-    old_gamma = gamma;
     if (!global.quiet)
       fprintf(stderr, "%f\t", beta);
     return;
@@ -313,12 +302,12 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
   double s_q = 0.;
   
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    mem[0] = w[BFGS_W_XT] - mem[2*m+BFGS_XT];
-    mem[1] = w[BFGS_W_GT] - mem[2*m+BFGS_GT];
-    mem[2*m+BFGS_QR] = w[BFGS_GT];
-    y_s += mem[1]*mem[0];
-    y_Hy += mem[1]*mem[1]*w[BFGS_W_COND];
-    s_q += mem[0]*w[BFGS_W_GT];  
+    mem[(MEM_YT+origin)%mem_stride] = w[W_GT] - mem[(MEM_GT+origin)%mem_stride];
+    mem[(MEM_ST+origin)%mem_stride] = w[W_XT] - mem[(MEM_XT+origin)%mem_stride];
+    w[W_DIR] = w[W_GT];
+    y_s += mem[(MEM_YT+origin)%mem_stride]*mem[(MEM_ST+origin)%mem_stride];
+    y_Hy += mem[(MEM_YT+origin)%mem_stride]*mem[(MEM_YT+origin)%mem_stride]*w[W_COND];
+    s_q += mem[(MEM_ST+origin)%mem_stride]*w[W_GT];  
   }
   
   if (y_s <= 0. || y_Hy <= 0.) {
@@ -334,9 +323,10 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
     alpha[j] = rho[j] * s_q;
     s_q = 0.;
     mem = mem0;
-    for(uint32_t i = 0; i < length; i++, mem+=mem_stride) {
-      mem[2*m+BFGS_QR] -= alpha[j]*mem[2*j+1];
-      s_q += mem[2*j+2]*mem[2*m+BFGS_QR];
+    w = w0;
+    for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
+      w[W_DIR] -= alpha[j]*mem[(2*j+MEM_YT+origin)%mem_stride];
+      s_q += mem[(2*j+2+MEM_ST+origin)%mem_stride]*w[W_DIR];
     }
   }
 
@@ -345,9 +335,9 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
   mem = mem0;
   w = w0;
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    mem[2*m+BFGS_QR] -= alpha[lastj]*mem[2*lastj+1];
-    mem[2*m+BFGS_QR] *= gamma*w[BFGS_W_COND];
-    y_r += mem[2*lastj+1]*mem[2*m+BFGS_QR];
+    w[W_DIR] -= alpha[lastj]*mem[(2*lastj+MEM_YT+origin)%mem_stride];
+    w[W_DIR] *= gamma*w[W_COND];
+    y_r += mem[(2*lastj+MEM_YT+origin)%mem_stride]*w[W_DIR];
   }
 
   double coef_j;
@@ -356,9 +346,10 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
     coef_j = alpha[j] - rho[j] * y_r;
     y_r = 0.;
     mem = mem0;
-    for(uint32_t i = 0; i < length; i++, mem+=mem_stride) {
-      mem[2*m+BFGS_QR] += coef_j*mem[2*j];
-      y_r += mem[2*j-1]*mem[2*m+BFGS_QR];
+    w = w0;
+    for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
+      w[W_DIR] += coef_j*mem[(2*j+MEM_ST+origin)%mem_stride];
+      y_r += mem[(2*j-2+MEM_YT+origin)%mem_stride]*w[W_DIR];
     }
   }
 
@@ -366,7 +357,7 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
   mem = mem0;
   w = w0;
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    w[BFGS_W_DIR] = -mem[2*m+BFGS_QR]-coef_j*mem[0];
+    w[W_DIR] = -w[W_DIR]-coef_j*mem[(MEM_ST+origin)%mem_stride];
   }
   
   /*********************
@@ -375,25 +366,18 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
 
   mem = mem0;
   w = w0;
-  lastj = (lastj<m-1) ? lastj+1 : m-1;
+  lastj = (lastj<global.m-1) ? lastj+1 : global.m-1;
+  origin = (origin+mem_stride-2)%mem_stride;
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    for (int j=lastj; j>0; j--) {
-      mem[2*j]   = mem[2*j-2];
-      mem[2*j+1] = mem[2*j-1];
-    }
-    mem[2*m+BFGS_XT] = w[BFGS_W_XT];
-    mem[2*m+BFGS_GT] = w[BFGS_W_GT];
-    w[BFGS_W_GT] = 0;
+    mem[(MEM_GT+origin)%mem_stride] = w[W_GT];
+    mem[(MEM_XT+origin)%mem_stride] = w[W_XT];
+    w[W_GT] = 0;
   }
   for (int j=lastj; j>0; j--)
     rho[j] = rho[j-1];
 }
 
-
-double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_loss_sum, double step, double importance_weight_sum) {
-  int m = global.m;
-  int mem_stride = 2*m+BFGS_EXTRA;
-  
+double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_loss_sum, double step, double importance_weight_sum, int &origin) { 
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* w = reg.weight_vectors[0];
@@ -404,19 +388,19 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
   double g1_g1 = 0.;
   
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    g0_d += mem[2*m+BFGS_GT] * w[BFGS_W_DIR];
-    g1_d += w[BFGS_W_GT] * w[BFGS_W_DIR];
-    g1_Hg1 += w[BFGS_W_GT] * w[BFGS_W_GT] * w[BFGS_W_COND];
-    g1_g1 += w[BFGS_W_GT] * w[BFGS_W_GT];
+    g0_d += mem[(MEM_GT+origin)%mem_stride] * w[W_DIR];
+    g1_d += w[W_GT] * w[W_DIR];
+    g1_Hg1 += w[W_GT] * w[W_GT] * w[W_COND];
+    g1_g1 += w[W_GT] * w[W_GT];
   }
   
   double wolfe1 = (loss_sum-previous_loss_sum)/(step*g0_d);
   double wolfe2 = g1_d/g0_d;
   double new_step_simple = 0.5*step;
-  double new_step_cross  = 0.5*(loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
+  double new_step_cross  = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
   bool violated = false;
-  if (new_step_cross<0. || new_step_cross>1. || (::isnan)(new_step_cross)) {
+  if (new_step_cross<0. || new_step_cross>step || (::isnan)(new_step_cross)) {
     violated = true;
     new_step_cross = new_step_simple;
   }
@@ -515,18 +499,15 @@ void zero_state(regressor& reg)
     }
 }
 
-  double derivative_in_direction(regressor& reg, float* mem)
-  {
-    int m = global.m;
-  int mem_stride = 2*m+BFGS_EXTRA;
-  
+double derivative_in_direction(regressor& reg, float* mem, int &origin)
+  {  
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* w = reg.weight_vectors[0];
   
   for(uint32_t i = 0; i < length; i++, w+=stride, mem+=mem_stride)
-    ret += mem[2*m+BFGS_GT]*w[BFGS_W_DIR];
+    ret += mem[(MEM_GT+origin)%mem_stride]*w[W_DIR];
   return ret;
 }
   
@@ -537,22 +518,105 @@ void zero_state(regressor& reg)
     weight* w = reg.weight_vectors[0];
     
     for(uint32_t i = 0; i < length; i++, w+=stride)
-      w[BFGS_W_XT] += step_size * w[BFGS_W_DIR];
+      w[W_XT] += step_size * w[W_DIR];
     save_predictor(reg_name, current_pass);
   }
 
-  void update_weight_mem(string& reg_name, regressor& reg, float* mem, float step_size, size_t current_pass)
-{
-  int m = global.m;
-  int mem_stride = 2*m+BFGS_EXTRA;
-  
-  uint32_t length = 1 << global.num_bits;
-  size_t stride = global.stride;
-  weight* w = reg.weight_vectors[0];
 
-  for(uint32_t i = 0; i < length; i++, w+=stride, mem+=mem_stride)
-    w[BFGS_W_XT] = mem[2*m+BFGS_XT] + step_size * w[BFGS_W_DIR];
-  save_predictor(reg_name, current_pass);
+void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regressor_name,
+                     double &loss_sum, double &importance_weight_sum, float &step_size, double &previous_loss_sum,
+		     size_t &current_pass, double &curvature, float* mem, v_array<float> &predictions,
+		     size_t &example_number, double* rho, double* alpha, int &lastj, int &origin) {
+
+  /********************************************************************/
+  /* B) GRADIENT CALCULATED *******************************************/
+  /********************************************************************/ 
+	      if (gradient_pass) // We just finished computing all gradients
+		{
+		  if(global.span_server != "") {
+		    loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
+		    accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
+		  }
+		  if (global.regularization > 0.)
+		    loss_sum += add_regularization(reg,global.regularization);
+		  if (!global.quiet)
+		    fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
+
+		  double new_step = wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin);
+  /********************************************************************/
+  /* B1) LINE SEARCH FAILED *******************************************/
+  /********************************************************************/ 
+		  if (current_pass > 0 && loss_sum > previous_loss_sum)
+		    {// we stepped too far last time, step back
+		      ftime(&t_end_global);
+		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		      if (!global.quiet)
+			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
+				"","",new_step/step_size,
+				new_step,
+				net_time/1000.);
+			predictions.erase();
+			update_weight(final_regressor_name, reg, -step_size+new_step, current_pass);		     		      			
+			step_size = new_step;
+			zero_derivative(reg);
+			loss_sum = 0.;
+		    }
+
+  /********************************************************************/
+  /* B2) LINE SEARCH SUCCESSFUL                      ******************/
+  /*     DETERMINE NEXT SEARCH DIRECTION             ******************/
+  /********************************************************************/ 
+		  else {
+		      previous_loss_sum = loss_sum;
+		      loss_sum = 0.;
+		      example_number = 0;
+		      curvature = 0;
+
+		      bfgs_iter_middle(reg, mem, rho, alpha, lastj, origin);
+
+		      if (global.hessian_on) {
+			gradient_pass = false;//now start computing curvature
+		      }
+		      else {
+			float d_mag = direction_magnitude(reg);
+			step_size = 1.0;
+			ftime(&t_end_global);
+			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+			if (!global.quiet)
+			  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+			predictions.erase();
+			update_weight(final_regressor_name, reg, step_size, current_pass);		     		      
+		      }
+		    }
+		}
+
+  /********************************************************************/
+  /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
+  /********************************************************************/ 
+	      else // just finished all second gradients
+		{
+		  if(global.span_server != "") {
+		    curvature = accumulate_scalar(global.span_server, curvature);  //Accumulate curvatures
+		  }
+		  if (global.regularization > 0.)
+		    curvature += regularizer_direction_magnitude(reg,global.regularization);
+		  float dd = derivative_in_direction(reg, mem, origin);
+		  if (curvature == 0. && dd != 0.)
+		    {
+		      cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
+		      exit(1);
+		    }
+		  step_size = - dd/curvature;
+		  float d_mag = direction_magnitude(reg);
+
+		  predictions.erase();
+		  update_weight(final_regressor_name ,reg,step_size, current_pass);
+		  ftime(&t_end_global);
+		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		  if (!global.quiet)
+		    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
+		  gradient_pass = true;
+		}//now start computing derivatives.
 }
 
 void setup_bfgs(gd_thread_params& t)
@@ -574,18 +638,18 @@ void setup_bfgs(gd_thread_params& t)
   double previous_loss_sum = 0;
 
   int m = global.m;
-  float* mem = (float*) malloc(sizeof(float)*global.length()*(2*m+BFGS_EXTRA));
+  mem_stride = (m==0) ? CG_EXTRA : 2*m;
+  float* mem = (float*) malloc(sizeof(float)*global.length()*(mem_stride));
   double* rho = (double*) malloc(sizeof(double)*m);
   double* alpha = (double*) malloc(sizeof(double)*m);
-  int lastj = 0;
+  int lastj = 0, origin = 0;
 
   if (!global.quiet) 
     {
-      fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)global.length()*(sizeof(float)*(2*m+BFGS_EXTRA)+sizeof(weight)*global.stride) >> 20);
+      fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)global.length()*(sizeof(float)*(mem_stride)+sizeof(weight)*global.stride) >> 20);
     }
 
-  struct timeb t_start_global, t_end_global;
-  double net_time = 0.0;
+  net_time = 0.0;
   ftime(&t_start_global);
   
   if (!global.quiet)
@@ -635,100 +699,15 @@ void setup_bfgs(gd_thread_params& t)
 		loss_sum = 0.;
 		example_number = 0;
 		curvature = 0;
-		bfgs_iter_start(reg, mem, lastj, importance_weight_sum);		     		     
+		bfgs_iter_start(reg, mem, lastj, importance_weight_sum, origin);		     		     
 		gradient_pass = false;//now start computing curvature
 	      }
+	      else
+		work_on_weights(gradient_pass, reg, *(t.final_regressor_name),
+                     loss_sum, importance_weight_sum, step_size, previous_loss_sum,
+		     current_pass, curvature, mem, predictions,
+				example_number, rho, alpha, lastj, origin);
 
-  /********************************************************************/
-  /* B) NOT FIRST PASS, GRADIENT CALCULATED ***************************/
-  /********************************************************************/ 
-	      else if (gradient_pass) // We just finished computing all gradients
-		{
-		  if(global.span_server != "") {
-		    loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
-		    accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
-		  }
-		  if (global.regularization > 0.)
-		    loss_sum += add_regularization(reg,global.regularization);
-		  if (!global.quiet)
-		    fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
-
-		  double new_step = wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum);
-  /********************************************************************/
-  /* B1) LINE SEARCH FAILED *******************************************/
-  /********************************************************************/ 
-		  if (current_pass > 0 && loss_sum > previous_loss_sum)
-		    {// we stepped too far last time, step back
-		      ftime(&t_end_global);
-		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-		      if (!global.quiet)
-			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
-				"","",new_step/step_size,
-				new_step,
-				net_time/1000.);
-			predictions.erase();
-			update_weight_mem(*(t.final_regressor_name), reg,mem,new_step, current_pass);
-			step_size = new_step;
-			zero_derivative(reg);
-			loss_sum = 0.;
-		    }
-
-  /********************************************************************/
-  /* B2) LINE SEARCH SUCCESSFUL                      ******************/
-  /*     DETERMINE NEXT SEARCH DIRECTION             ******************/
-  /********************************************************************/ 
-		  else {
-		      previous_loss_sum = loss_sum;
-		      loss_sum = 0.;
-		      example_number = 0;
-		      curvature = 0;
-
-		      bfgs_iter_middle(reg, mem, rho, alpha, lastj);
-
-		      if (global.hessian_on) {
-			gradient_pass = false;//now start computing curvature
-		      }
-		      else {
-			float d_mag = direction_magnitude(reg);
-			step_size = 1.0;
-			ftime(&t_end_global);
-			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-			if (!global.quiet)
-			  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
-			predictions.erase();
-			update_weight(*(t.final_regressor_name), reg, step_size, current_pass);		     		      
-		      }
-		    }
-		}
-
-  /********************************************************************/
-  /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
-  /********************************************************************/ 
-	      else // just finished all second gradients
-		{
-		  if(global.span_server != "") {
-		    curvature = accumulate_scalar(global.span_server, curvature);  //Accumulate curvatures
-		  }
-		  if (global.regularization > 0.)
-		    curvature += regularizer_direction_magnitude(reg,global.regularization);
-		  float dd = derivative_in_direction(reg, mem);
-		  if (curvature == 0. && dd != 0.)
-		    {
-		      cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
-		      exit(1);
-		    }
-		  step_size = - dd/curvature;
-		  float d_mag = direction_magnitude(reg);
-
-		  predictions.erase();
-		  update_weight(*(t.final_regressor_name),reg,step_size, current_pass);
-		  ftime(&t_end_global);
-		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-		  if (!global.quiet)
-		    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
-		  gradient_pass = true;
-		}//now start computing derivatives.
-	      
 	      current_pass++;
 	      
   /********************************************************************/
@@ -782,26 +761,11 @@ void setup_bfgs(gd_thread_params& t)
   /********************************************************************/ 
      else if (thread_done(thread_num))
 	{
-	  if (example_number == predictions.index() && gradient_pass)//do one last update
-	    {
-		  if(global.span_server != "") {
-		    loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
-		    accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
-		  }
-		  if (global.regularization > 0.)
-		    loss_sum += add_regularization(reg,global.regularization);
-		  if (!global.quiet)
-		    fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
-
-		  wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum);
-		  if (current_pass > 0 && loss_sum > previous_loss_sum)
-		    {// current weight does not decrease loss
-		      if (!global.quiet)
-			fprintf(stderr, "\t\t\t\t\t(revise)\t%-e", 0.0);
-		      predictions.erase();
-		      update_weight_mem(*(t.final_regressor_name),reg,mem,0.0, current_pass);
-		    }
-	    }
+	  if (current_pass != 0)
+	    work_on_weights(gradient_pass, reg, *(t.final_regressor_name),
+			    loss_sum, importance_weight_sum, step_size, previous_loss_sum,
+			    current_pass, curvature, mem, predictions,
+			    example_number, rho, alpha, lastj, origin);
 	  if (!global.quiet)
 	    fprintf(stderr, "\n");
 	  break;

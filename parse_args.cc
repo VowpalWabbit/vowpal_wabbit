@@ -248,7 +248,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("bfgs")) {
     global.bfgs = true;
     global.stride = 4;
-    if (vm.count("hessian_on")) {
+    if (vm.count("hessian_on") || global.m==0) {
       global.hessian_on = true;
     }
     if (!global.quiet) {
