@@ -22,7 +22,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 # for valgrind
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
-BINARIES = vw allreduce_master active_interactor
+BINARIES = vw spanning_tree active_interactor
 MANPAGES = vw.1
 
 #all:	$(BINARIES) $(MANPAGES)
@@ -42,8 +42,10 @@ depend:
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
-allreduce_master: 
-	cd cluster; make; cd ..
+export
+
+spanning_tree: 
+	cd cluster; $(MAKE); cd ..
 
 vw: hash.o  global_data.o delay_ring.o message_relay.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o multisource.o sparse_dense.o  network.o parse_args.o allreduce.o accumulate.o gd.o lda_core.o gd_mf.o bfgs.o noop.o parser.o vw.o loss_functions.o sender.o main.o
 	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
@@ -61,7 +63,7 @@ test: .FORCE
 	@(cd test && ./RunTests -f -E 0.001 ../vw ../vw)
 
 install: vw
-	cp $(BINARIES) /usr/local/bin
+	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
 
 clean:
-	rm -f  *.o $(BINARIES) *~ $(MANPAGES); cd cluster; make clean; cd ..
+	rm -f  *.o $(BINARIES) *~ $(MANPAGES); cd cluster; $(MAKE) clean; cd ..

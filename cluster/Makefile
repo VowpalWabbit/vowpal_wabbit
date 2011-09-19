@@ -1,33 +1,4 @@
-COMPILER = g++
-LIBS = -l boost_program_options -l pthread -l z
-
-#LIBS = -l boost_program_options-gcc34 -l pthread -l z
-BOOST_INCLUDE = /usr/include
-#BOOST_INCLUDE = /usr/local/include
-BOOST_LIBRARY = /usr/local/lib
-
-ARCH = -march=nocona 
-OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing 
-WARN_FLAGS = -Wall #-Werror 
-
-# for normal fast execution.
-FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
-
-# for parallelization
-#FLAGS = -Wall $(ARCH) -ffast-math -Wno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3 -fopenmp
-
-# for profiling
-#FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg -g
-
-# for valgrind
-#FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
-
-BINARIES = spanning_tree
-
-all:	$(BINARIES)
-
-%.1:	%
-	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
+all:	spanning_tree
 
 %.o:	 %.cc  %.h
 	$(COMPILER) $(FLAGS) -c $< -o $@
@@ -38,13 +9,7 @@ all:	$(BINARIES)
 spanning_tree: spanning_tree.o
 	$(COMPILER) $(FLAGS) -o $@ $+ 
 
-.FORCE:
-
-test: .FORCE
-	@echo "vw running test-suite..."
-	@(cd test && ./RunTests -f -E 0.001 ../vw ../lda)
-
-install: allreduce_master
+install: spanning_tree
 	cp $(BINARIES) /usr/local/bin
 
 clean:
