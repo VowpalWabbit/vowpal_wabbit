@@ -26,28 +26,15 @@ BINARIES = vw allreduce_master active_interactor
 MANPAGES = vw.1
 
 #all:	$(BINARIES) $(MANPAGES)
-all:	$(BINARIES)
+all:	depend $(BINARIES)
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
 
-vw.o:	 parse_example.h  parse_regressor.h  parse_args.h  parser.h
+depend:	
+	gcc -MM *.cc > depend
 
-offset_tree.o:	parse_example.h parse_regressor.h parse_args.h parser.h
-
-parse_args.o:	 parse_regressor.h  parse_example.h  io.h  comp_io.h gd.h
-
-parse_example.o:  io.h  comp_io.h  parse_example.cc  parser.h
-
-sender.o: parse_example.h
-
-cache.o:	 parser.h
-
-sparse_dense.o:	 parse_example.h
-
-gd.o:	 parse_example.h
-
-gd_mf.o:	gd.h
+-include depend
 
 %.o:	 %.cc  %.h
 	$(COMPILER) $(FLAGS) -c $< -o $@
