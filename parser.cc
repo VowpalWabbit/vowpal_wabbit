@@ -703,10 +703,12 @@ void setup_example(parser* p, example* ae)
 	  }
     }
 
-  //add constant feature
-  push(ae->indices,constant_namespace);
-  feature temp = {1,(uint32_t) (constant & global.mask)};
-  push(ae->atomics[constant_namespace], temp);
+  if (global.add_constant) {
+    //add constant feature
+    push(ae->indices,constant_namespace);
+    feature temp = {1,(uint32_t) (constant & global.mask)};
+    push(ae->atomics[constant_namespace], temp);
+  }
   
   if(global.stride != 1) //make room for per-feature information.
     {

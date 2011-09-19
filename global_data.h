@@ -71,6 +71,7 @@ struct global_data {
   bool adaptive;//Should I use adaptive individual learning rates?
   bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
   bool random_weights;
+  bool add_constant;
   
   double min_label;//minimum label encountered
   double max_label;//maximum label encountered

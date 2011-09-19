@@ -495,9 +495,11 @@ void start_lda(gd_thread_params t)
       float eta = -1;
       float minuseta = -1;
       example* examples[global.minibatch];
+      int doc_lengths[global.minibatch];
       size_t batch_size = global.minibatch;
       for (size_t d = 0; d < batch_size; d++)
 	{
+          doc_lengths[d] = 0;
 	  if ((ec = get_example(0)) != NULL)//semiblocking operation.
 	    {
 	      examples[d] = ec;
@@ -506,6 +508,7 @@ void start_lda(gd_thread_params t)
                 for (; f != ec->subsets[*i][1]; f++) {
                   index_feature temp = {(uint32_t)d, *f};
                   sorted_features.push_back(temp);
+                  doc_lengths[d] += f->x;
                 }
               }
 	    }
@@ -554,8 +557,11 @@ void start_lda(gd_thread_params t)
           float score = lda_loop(&v[d*global.lda], weights, examples[d],t.vars->power_t);
           if (global.audit)
 	    print_audit_features(reg, examples[d]);
-          global.sum_loss -= score;
-          global.sum_loss_since_last_dump -= score;
+          // If the doc is empty, give it loss of 0.
+          if (doc_lengths[d] > 0) {
+            global.sum_loss -= score;
+            global.sum_loss_since_last_dump -= score;
+          }
           finish_example(examples[d]);
 	}
 

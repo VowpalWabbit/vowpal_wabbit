@@ -96,6 +96,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
     ("mem", po::value<int>(&global.m)->default_value(15), "memory in bfgs")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
+    ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
@@ -156,7 +157,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.min_label = 0.;
   global.max_label = 1.;
   global.update_sum = 0.;
-  global.lda =0;
+  global.lda = 0;
   global.random_weights = false;
   global.per_feature_regularizer_input = "";
   global.per_feature_regularizer_output = "";
@@ -164,6 +165,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.ring_size = 1 << 8;
 
   global.adaptive = false;
+  global.add_constant = true;
   global.exact_adaptive_norm = false;
   global.audit = false;
   global.active = false;
@@ -367,12 +369,16 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     global.random_weights = true;
   }
 
+  if (vm.count("noconstant"))
+    global.add_constant = false;
+
   if (vm.count("lda"))
     {
       par->sort_features = true;
       float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
       global.stride = 1 << (int) temp;
       global.random_weights = true;
+      global.add_constant = false;
     }
 
   if (vm.count("lda") && global.eta > 1.)
@@ -386,7 +392,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(global.minibatch);
     global.ring_size = global.ring_size > minibatch2 ? global.ring_size : minibatch2;
-    fprintf(stderr, "global.ring_size = %d, minibatch2 = %d, global.minibatch = %d\n", (int)global.ring_size, (int)minibatch2, (int)global.minibatch);
   }
   
   parse_regressor_args(vm, r, final_regressor_name, global.quiet);
