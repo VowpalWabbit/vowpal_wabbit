@@ -374,13 +374,15 @@ float average_diff(float* oldgamma, float* newgamma)
   return sum / normalizer;
 }
 
+v_array<float> Elogtheta;
+
 // Returns E_q[log p(\theta)] - E_q[log q(\theta)].
 float theta_kl(float* gamma)
 {
-  float Elogtheta[global.lda];
   float gammasum = 0;
+  Elogtheta.erase();
   for (size_t k = 0; k < global.lda; k++) {
-    Elogtheta[k] = mydigamma(gamma[k]);
+    push(Elogtheta, mydigamma(gamma[k]));
     gammasum += gamma[k];
   }
   float digammasum = mydigamma(gammasum);
@@ -405,6 +407,8 @@ float find_cw(float* u_for_w, float* v)
   return 1.f / c_w;
 }
 
+v_array<float> new_gamma;
+v_array<float> old_gamma;
 // Returns an estimate of the part of the variational bound that
 // doesn't have to do with beta for the entire corpus for the current
 // setting of lambda based on the document passed in. The value is
@@ -412,13 +416,13 @@ float find_cw(float* u_for_w, float* v)
 // used as a (possibly very noisy) estimate of held-out likelihood.
 float lda_loop(float* v,weight* weights,example* ec, float power_t)
 {
-  float new_gamma[global.lda];
-  float old_gamma[global.lda];
+  new_gamma.erase();
+  old_gamma.erase();
   
   for (size_t i = 0; i < global.lda; i++)
     {
-      new_gamma[i] = 1.;
-      old_gamma[i] = 0.;
+      push(new_gamma, 1.f);
+      push(old_gamma, 0.f);
     }
   size_t num_words =0;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
@@ -429,11 +433,11 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
   float doc_length = 0;
   do
     {
-      memcpy(v,new_gamma,sizeof(float)*global.lda);
+      memcpy(v,new_gamma.begin,sizeof(float)*global.lda);
       myexpdigammify(v);
 
-      memcpy(old_gamma,new_gamma,sizeof(float)*global.lda);
-      memset(new_gamma,0,sizeof(float)*global.lda);
+      memcpy(old_gamma.begin,new_gamma.begin,sizeof(float)*global.lda);
+      memset(new_gamma.begin,0,sizeof(float)*global.lda);
 
       score = 0;
       size_t word_count = 0;
@@ -458,14 +462,14 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
       for (size_t k =0; k<global.lda; k++)
 	new_gamma[k] = new_gamma[k]*v[k]+global.lda_alpha;
     }
-  while (average_diff(old_gamma, new_gamma) > 0.001);
+  while (average_diff(old_gamma.begin, new_gamma.begin) > 0.001);
 
   ec->topic_predictions.erase();
   if (ec->topic_predictions.end_array - ec->topic_predictions.begin < (int)global.lda)
     reserve(ec->topic_predictions,global.lda);
-  memcpy(ec->topic_predictions.begin,new_gamma,global.lda*sizeof(float));
+  memcpy(ec->topic_predictions.begin,new_gamma.begin,global.lda*sizeof(float));
 
-  score += theta_kl(new_gamma);
+  score += theta_kl(new_gamma.begin);
 
   return score / doc_length;
 }
@@ -484,10 +488,18 @@ void start_lda(gd_thread_params t)
   regressor reg = t.reg;
   example* ec = NULL;
 
-  double total_lambda[global.lda];
+  v_array<float> total_lambda;
+  v_array<float> total_new;
+  v_array<example* > examples;
+  v_array<int> doc_lengths;
+  v_array<float> digammas;
+  v_array<float> v;
+  reserve(v, global.lda*global.minibatch);
+  
+  total_lambda.erase();
 
   for (size_t k = 0; k < global.lda; k++)
-    total_lambda[k] = 0;
+    push(total_lambda, 0.f);
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors[0];
 
@@ -496,28 +508,28 @@ void start_lda(gd_thread_params t)
       total_lambda[k] += weights[i+k];
 
   v_array<float> decay_levels;
-  push(decay_levels, (float)0);
+  push(decay_levels, 0.f);
   double example_t = global.initial_t;
   while ( true )
     {
       example_t++;
-      float total_new[global.lda];
+      total_new.erase();
       for (size_t k = 0; k < global.lda; k++)
-	total_new[k] = 0.f;
+	push(total_new, 0.f);
 
       sorted_features.resize(0);
 
       float eta = -1;
       float minuseta = -1;
-      example* examples[global.minibatch];
-      int doc_lengths[global.minibatch];
+      examples.erase();
+      doc_lengths.erase();
       size_t batch_size = global.minibatch;
       for (size_t d = 0; d < batch_size; d++)
 	{
-          doc_lengths[d] = 0;
+          push(doc_lengths, 0);
 	  if ((ec = get_example(0)) != NULL)//semiblocking operation.
 	    {
-	      examples[d] = ec;
+	      push(examples, ec);
               for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
                 feature* f = ec->subsets[*i][0];
                 for (; f != ec->subsets[*i][1]; f++) {
@@ -540,10 +552,10 @@ void start_lda(gd_thread_params t)
       eta *= global.lda_D / batch_size;
       push(decay_levels, decay_levels.last() + log(minuseta));
 
-      float digammas[global.lda];
+      digammas.erase();
       float additional = (float)(global.length()) * global.lda_rho;
       for (size_t i = 0; i<global.lda; i++) {
-	digammas[i] = mydigamma(total_lambda[i] + additional);
+	push(digammas,mydigamma(total_lambda[i] + additional));
       }
       
       size_t last_weight_index = -1;
@@ -562,10 +574,10 @@ void start_lda(gd_thread_params t)
 	      weights_for_w[k] *= decay;
 	      u_for_w[k] = weights_for_w[k] + global.lda_rho;
 	    }
-	  myexpdigammify_2(u_for_w, digammas);
+	  myexpdigammify_2(u_for_w, digammas.begin);
 	}
 
-      float v[batch_size*global.lda];
+      v.erase();
 
       for (size_t d = 0; d < batch_size; d++)
 	{
