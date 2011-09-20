@@ -105,18 +105,33 @@ typedef __m128i v4si;
 #define v4si_to_v4sf _mm_cvtepi32_ps
 #define v4sf_to_v4si _mm_cvttps_epi32
 
-#define v4sfl(x) ((const v4sf) { (x), (x), (x), (x) })
-#define v2dil(x) ((const v4si) { (x), (x) })
-#define v4sil(x) v2dil((((uint64_t) (x)) << 32) | (x))
+static inline float
+v4sf_index (const v4sf x,
+            unsigned int i)
+{
+  union { v4sf f; float array[4]; } tmp = { x };
 
-typedef union { v4sf f; float array[4]; } v4sfindexer;
-#define v4sf_index(_findx, _findi)      \
-  ({                                    \
-     v4sfindexer _findvx = { _findx } ; \
-     _findvx.array[_findi];             \
-  })
+  return tmp.array[i];
+}
 
-inline v4sf
+static inline const v4sf
+v4sfl (float x)
+{
+  union { float array[4]; v4sf f; } tmp = { { x, x, x, x } };
+
+  return tmp.f;
+}
+
+static inline const v4si
+v4sil (uint32_t x)
+{
+  uint64_t wide = (((uint64_t) x) << 32) | x;
+  union { uint64_t array[2]; v4si f; } tmp = { { wide, wide } };
+
+  return tmp.f;
+}
+
+static inline v4sf
 vfastpow2 (const v4sf p)
 {
   v4sf ltzero = _mm_cmplt_ps (p, v4sfl (0.0f));
