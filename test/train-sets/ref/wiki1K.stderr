@@ -9,20 +9,20 @@ power_t = 0.5
 learning_rate set to 1
 average    since       example  example    current  current  current
 loss       last        counter   weight      label  predict features
-10.302291  10.302291         3      3.0    unknown   0.0000       38
-10.418567  10.534842         6      6.0    unknown   0.0000       14
-10.348166  10.263686        11     11.0    unknown   0.0000       32
-10.414862  10.481557        22     22.0    unknown   0.0000        2
-10.418417  10.421973        44     44.0    unknown   0.0000      166
-10.419863  10.421343        87     87.0    unknown   0.0000       29
-10.024435  9.629007        174    174.0    unknown   0.0000       17
-9.420492   8.816549        348    348.0    unknown   0.0000        2
-8.983823   8.547154        696    696.0    unknown   0.0000      143
+10.309790  10.309790         3      3.0    unknown   0.0000       37
+10.403957  10.498124         6      6.0    unknown   0.0000       13
+10.387892  10.368614        11     11.0    unknown   0.0000       31
+10.568033  10.748175        22     22.0    unknown   0.0000        1
+10.465211  10.362388        44     44.0    unknown   0.0000      165
+10.458941  10.452525        87     87.0    unknown   0.0000       28
+10.071766  9.684592        174    174.0    unknown   0.0000       16
+9.542827   9.013887        348    348.0    unknown   0.0000        1
+9.052180   8.561534        696    696.0    unknown   0.0000      142
 
 finished run
 number of examples = 1000
 weighted example sum = 1000
 weighted label sum = 0
-average loss = 8.784
+average loss = 8.841
 best constant = 1
-total feature number = 87919
+total feature number = 86919
