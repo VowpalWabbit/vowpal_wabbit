@@ -197,8 +197,8 @@ int main(int argc, char* argv[]) {
       {//Time to make the spanning tree
 	qsort(partial_nodeset.nodes, total, sizeof(client), socket_sort);
 	
-	int parent[total];
-	uint16_t kid_count[total];
+	int* parent = (int*)calloc(total,sizeof(int));	
+	uint16_t* kid_count = (uint16_t*)calloc(total,sizeof(uint16_t));
 	
 	int root = build_tree(parent, kid_count, total, 0);
 	parent[root] = -1;
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
 	    fail_write(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
 	  }	
 
-	uint16_t client_ports[total];
+	uint16_t* client_ports=(uint16_t*)calloc(total,sizeof(uint16_t));
 
 	for(size_t i = 0;i < total;i++) {
 	  int done = 0;

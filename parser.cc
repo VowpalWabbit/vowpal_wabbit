@@ -62,6 +62,8 @@ void set_compressed(parser* par){
   par->output = new comp_io_buf;
 }
 
+v_array<char> t;
+
 size_t cache_numbits(io_buf* buf, int filepointer)
 {
   size_t v_length;
@@ -70,15 +72,18 @@ size_t cache_numbits(io_buf* buf, int filepointer)
     cerr << "cache version too long, cache file is probably invalid" << endl;
     exit(1);
   }
-  char t[v_length];
-  buf->read_file(filepointer,t,v_length);
-  if (strcmp(t,version.c_str()) != 0)
+  t.erase();
+  if (t.index() < v_length)
+    reserve(t,v_length);
+  
+  buf->read_file(filepointer,t.begin,v_length);
+  if (strcmp(t.begin,version.c_str()) != 0)
     {
       cout << "cache has possibly incompatible version, rebuilding" << endl;
       return 0;
     }
   
-  int total = sizeof(size_t);
+  const int total = sizeof(size_t);
   char* p[total];
   if (buf->read_file(filepointer, p, total) < total) 
     return true;
@@ -342,7 +347,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    }
 
 	  // create children
-	  size_t num_children = 10;
+	  const size_t num_children = 10;
 	  int children[num_children];
 	  for (size_t i = 0; i < num_children; i++)
 	    {

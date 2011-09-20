@@ -73,6 +73,8 @@ void reset(partial_example &ex)
 }
 
 size_t num_finished = 0;
+
+v_array<char> c;
   
 int receive_features(parser* p, void* ex)
 {
@@ -130,9 +132,11 @@ int receive_features(parser* p, void* ex)
 		    {
 		      label_data ld;
 		      size_t len = sizeof(ld.label)+sizeof(ld.weight);
-		      char c[len];
-		      really_read(sock,c,len);
-		      bufread_simple_label(&(p->pes[ring_index].ld), c);
+		      c.erase();
+		      if (c.index() < len)
+			reserve(c,len);
+		      really_read(sock,c.begin,len);
+		      bufread_simple_label(&(p->pes[ring_index].ld), c.begin);
 		    }
 
 		  if( p->pes[ring_index].features.index() == input->count )

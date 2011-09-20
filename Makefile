@@ -9,7 +9,7 @@ BOOST_INCLUDE = /usr/include
 BOOST_LIBRARY = /usr/local/lib
 
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
-WARN_FLAGS = -Wall #-Werror 
+WARN_FLAGS = -Wall -pedantic #-Werror 
 
 # for normal fast execution.
 FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE

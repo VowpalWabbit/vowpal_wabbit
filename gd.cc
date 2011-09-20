@@ -727,7 +727,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
       send_prediction(global.local_prediction, pred);
       if (global.unique_id == 0)
 	{
-	  size_t len = sizeof(ld->label) + sizeof(ld->weight);
+	  const size_t len = sizeof(ld->label) + sizeof(ld->weight);
 	  char c[len];
 	  bufcache_simple_label(ld,c);
 	  if (write(global.local_prediction,c,len) < (int)len)

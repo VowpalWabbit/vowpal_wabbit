@@ -20,10 +20,8 @@ int open_socket(const char* host, size_t new_id)
   if (colon != NULL)
     {
       port = atoi(colon+1);
-      char hostname[colon-host+1];
-      strncpy(hostname, host, colon-host);
-      hostname[colon-host]='\0';
-      he = gethostbyname(hostname);
+      string hostname(host,colon-host);
+      he = gethostbyname(hostname.c_str());
     }
   else
     he = gethostbyname(host);

@@ -74,6 +74,8 @@ void initialize_regressor(regressor &r)
     }
 }
 
+v_array<char> temp;
+
 void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vector)
 {
   ifstream source(file);
@@ -86,9 +88,11 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
   
   size_t v_length;
   source.read((char*)&v_length, sizeof(v_length));
-  char t[v_length];
-  source.read(t,v_length);
-  if (strcmp(t,version.c_str()) != 0)
+  temp.erase();
+  if (temp.index() < v_length)
+    reserve(temp, v_length);
+  source.read(temp.begin,v_length);
+  if (strcmp(temp.begin,version.c_str()) != 0)
     {
       cout << "source has possibly incompatible version!" << endl;
       exit(1);
