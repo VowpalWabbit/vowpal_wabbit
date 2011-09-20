@@ -32,7 +32,7 @@ all:	depend $(BINARIES)
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
 
-depend:	
+depend:	*.cc
 	gcc -MM *.cc > depend
 
 -include depend
