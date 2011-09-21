@@ -64,7 +64,7 @@ void open_sockets(vector<string>& hosts)
       for (size_t j = 0; j< d_2; j++)
         {
           size_t number = j + d_2*i;
-          int sd = open_socket(hosts[number].c_str(), new_id);
+          int sd = open_socket(hosts[number].c_str());
           if (new_id == 0)
             global.local_prediction = sd;
           new_id++;

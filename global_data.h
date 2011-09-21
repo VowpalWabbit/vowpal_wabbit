@@ -24,7 +24,9 @@ struct global_data {
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
 
-  bool persistent; 
+  bool daemon; 
+  size_t num_children;
+
   bool save_per_pass;
   bool backprop;
   bool corrective;
@@ -92,7 +94,7 @@ struct global_data {
   size_t rank;
 
   //Prediction output
-  v_array<int_pair> final_prediction_sink; // set to send global predictions to.
+  v_array<size_t> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.
   int local_prediction;  //file descriptor to send local prediction to.
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.

@@ -199,20 +199,14 @@ void output_and_account_example(example* ec)
   
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
-      int f = global.final_prediction_sink[i].fd;
+      int f = global.final_prediction_sink[i];
       if(global.active)
 	global.print(f, ec->final_prediction, ai, ec->tag);
       else if (global.lda > 0)
 	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
       else
 	{
-	  float w;
-	  if (global.reg->weight_vectors != NULL) {
-	    w = global.reg->weight_vectors[0][global.final_prediction_sink[i].id];
-	  } else {
-	    w = 0.;
-	  }
-	  global.print(f, ec->final_prediction, w*ec->global_weight, ec->tag);
+	  global.print(f, ec->final_prediction, 0, ec->tag);
 	}
     }
 

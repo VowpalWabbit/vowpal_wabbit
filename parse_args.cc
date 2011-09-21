@@ -66,8 +66,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("regularization", po::value<float>(&global.regularization)->default_value(1.0), "l_2 regularization for bfgs")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
-    ("daemon", "read data from port 26542")
-    ("persistent", "persist process for daemon mode")
+    ("daemon", "persistent daemon mode on port 26542")
+    ("num_children", po::value<size_t>(&global.num_children)->default_value(10), "number of children for persistent daemon mode")
     ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
     ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay),
      "Set Decay factor for learning_rate between passes")
@@ -149,7 +149,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.dump_interval = exp(1.);
   global.num_bits = 18;
   global.default_bits = true;
-  global.persistent = false;
+  global.daemon = false;
   global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
   global.raw_prediction = -1;
   global.local_prediction = -1;
@@ -301,8 +301,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
     }
   
-  if (vm.count("persistent")) {
-    global.persistent = true;
+  if (vm.count("daemon") || vm.count("pid_file")) {
+    global.daemon = true;
 
     // allow each child to process up to 1e5 connections
     global.numpasses = (size_t) 1e5;
@@ -460,16 +460,15 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
       {
-	int_pair pf = {1,0};
-	push(global.final_prediction_sink,pf);//stdout
+	push(global.final_prediction_sink, (size_t) 1);//stdout
       }
     else
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	int_pair pf = {fileno(fopen(fstr,"w")),0};
-	if (pf.fd < 0)
+	int f = fileno(fopen(fstr,"w"));
+	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
-	push(global.final_prediction_sink,pf);
+	push(global.final_prediction_sink, (size_t) f);
       }
   }
 
@@ -506,7 +505,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     {
       if (!global.quiet)
 	cerr << "predictto = " << vm["predictto"].as< string >() << endl;
-      global.local_prediction = open_socket(vm["predictto"].as< string > ().c_str(), global.unique_id);
+      global.local_prediction = open_socket(vm["predictto"].as< string > ().c_str());
     }
 
   return vm;

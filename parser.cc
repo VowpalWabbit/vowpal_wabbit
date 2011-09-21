@@ -92,10 +92,10 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   return cache_numbits;
 }
 
-bool member(v_array<int_pair> fd_ids, int fd)
+bool member(v_array<size_t> ids, size_t id)
 {
-  for (size_t i = 0; i < fd_ids.index(); i++)
-    if (fd_ids[i].fd == fd)
+  for (size_t i = 0; i < ids.index(); i++)
+    if (ids[i] == id)
       return true;
   return false;
 }
@@ -113,7 +113,7 @@ void reset_source(size_t numbits, parser* p)
       while(input->files.index() > 0)
 	{
 	  int fd = input->files.pop();
-	  if (!member(global.final_prediction_sink,fd))
+	  if (!member(global.final_prediction_sink, (size_t) fd))
 	    close(fd);
 	}
       input->open_file(p->output->finalname.begin,io_buf::READ); //pushing is merged into open_file
@@ -121,7 +121,7 @@ void reset_source(size_t numbits, parser* p)
     }
   if ( p->resettable == true )
     {
-      if (global.persistent)
+      if (global.daemon)
 	{
 	  // wait for all predictions to be sent back to client
 	  pthread_mutex_lock(&output_lock);
@@ -143,16 +143,18 @@ void reset_source(size_t numbits, parser* p)
 	      exit (1);
 	    }
 	  
-	  size_t id;
-	  really_read(f, &id, sizeof(id));
-	  if (id != 0) {
-	    cerr << "id must be 0 (multisource not supported)" << endl;
-	    exit(1);
-	  }
+	  // note: breaking cluster parallel online learning by dropping support for id
 	  
-	  int_pair pf = {f,(int)id};
-	  push(global.final_prediction_sink,pf);
+	  push(global.final_prediction_sink, (size_t) f);
 	  push(p->input->files,f);
+
+	  if (isbinary(*(p->input))) {
+	    p->reader = read_cached_features;
+	    global.print = binary_print_result;
+	  } else {
+	    p->reader = read_features;
+	    global.print = print_result;
+	  }
 	}
       else {
 	for (size_t i = 0; i < input->files.index();i++)
@@ -252,14 +254,6 @@ void parse_cache(po::variables_map &vm, string source,
     }
 }
 
-bool member(v_array<size_t> ids, size_t id)
-{
-  for (size_t i = 0; i < ids.index(); i++)
-    if (ids[i] == id)
-      return true;
-  return false;
-}
-
 //For macs
 #ifndef MAP_ANONYMOUS
 # define MAP_ANONYMOUS MAP_ANON
@@ -275,7 +269,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
   if(vm.count("hash")) 
     hash_function = vm["hash"].as<string>();
 
-  if (vm.count("daemon") || vm.count("multisource") || global.persistent)
+  if (vm.count("multisource") || global.daemon)
     {
       par->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
       if (par->bound_sock < 0) {
@@ -329,7 +323,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  pid_file.close();
 	}
 
-      if (global.persistent)
+      if (global.daemon)
 	{
 	  // weights will be shared across processes, accessible to children
 
@@ -347,8 +341,9 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    }
 
 	  // create children
-	  const size_t num_children = 10;
-	  int children[num_children];
+	  size_t num_children = global.num_children;
+	  v_array<int> children;
+	  reserve(children, num_children);
 	  for (size_t i = 0; i < num_children; i++)
 	    {
 	      // fork() returns pid if parent, 0 if child
@@ -395,49 +390,25 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       par->max_fd = 0;
-      size_t min_id = INT_MAX;
-      for (int i = 0; i < source_count; i++)
+      if (!global.quiet)
+	cerr << "calling accept" << endl;
+      int f = accept(par->bound_sock,(sockaddr*)&client_address,&size);
+      if (f < 0)
 	{
-	  if (!global.quiet)
-	    cerr << "calling accept" << endl;
-	  int f = accept(par->bound_sock,(sockaddr*)&client_address,&size);
-	  if (f < 0)
-	    {
-	      cerr << "bad client socket!" << endl;
-	      exit (1);
-	    }
-
-	  size_t id;
-	  really_read(f, &id, sizeof(id));
-	  if (!global.quiet)
-	    cerr << "id read = " << id << endl;
-	  min_id = min (min_id, (size_t)id);
-	  if (id == 0)
-	    {
-	      par->label_sock = f;
-	      if(!global.active)
-		global.print = binary_print_result;
-	    }
-	  if (id == 0 || 
-	      ((global.backprop || global.delayed_global || global.corrective) 
-	       && vm.count("multisource")))
-	    {
-	      int_pair pf = {f,(int)id};
-	      push(global.final_prediction_sink,pf);
-	    }
-
-	  if (member(par->ids, id))
-	    {
-	      cout << "error, two inputs with same id! Exiting.  Use --unique_id <n> next time." << endl;
-	      exit(1);
-	    }
-	  push(par->ids,id);
-	  push(par->input->files,f);
-	  par->max_fd = max(f, par->max_fd);
-	  if (!global.quiet)
-	    cerr << "reading data from port " << port << endl;
+	  cerr << "bad client socket!" << endl;
+	  exit (1);
 	}
-      global.unique_id = min_id;
+      
+      par->label_sock = f;
+      global.print = print_result;
+      
+      push(global.final_prediction_sink, (size_t) f);
+      
+      push(par->input->files,f);
+      par->max_fd = max(f, par->max_fd);
+      if (!global.quiet)
+	cerr << "reading data from port " << port << endl;
+
       par->max_fd++;
       if(vm.count("multisource"))
 	{
@@ -454,7 +425,14 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  par->hasher = getHasher(hash_function);
 	}
       else {
-	par->reader = read_cached_features;
+	if (isbinary(*(par->input))) {
+	  par->reader = read_cached_features;
+	  global.print = binary_print_result;
+	} else {
+	  par->reader = read_features;
+	  
+	}
+	par->hasher = getHasher(hash_function);
 	par->sorted_cache = true;
       }
 
@@ -505,7 +483,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
     }
 
   // allow reset source if we have a cache or if in persistent mode
-  par->resettable = par->resettable || global.persistent;
+  par->resettable = par->resettable || global.daemon;
 
   if (passes > 1 && !par->resettable)
     {
@@ -936,8 +914,6 @@ void end_parser(parser* pf)
 	free(pf->pes[i].features.begin);
       free(pf->pes.begin);
     }
-  if (pf->ids.begin != NULL)
-    free(pf->ids.begin);
   if (pf->counts.begin != NULL)
     free(pf->counts.begin);
 }

@@ -12,7 +12,7 @@
 
 using namespace std;
 
-int open_socket(const char* host, size_t new_id)
+int open_socket(const char* host)
 {
   const char* colon = index(host,':');
   short unsigned int port = 26542;
@@ -47,7 +47,8 @@ int open_socket(const char* host, size_t new_id)
       cerr << "can't connect to: " << host << ':' << port << endl;
       exit(1);
     }
-  if (write(sd, &new_id, sizeof(new_id)) < (int)sizeof(new_id))
+  char id = '\0';
+  if (write(sd, &id, sizeof(id)) < (int)sizeof(id))
     cerr << "write failed!" << endl;
   return sd;
 }
