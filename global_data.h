@@ -108,6 +108,7 @@ struct global_data {
 
   //runtime accounting variables. 
   uint64_t example_number;
+  uint64_t parsed_examples; // The index of the parsed example.
   double initial_t;
   double weighted_examples;
   double weighted_unlabeled_examples;
