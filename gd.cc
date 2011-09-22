@@ -44,7 +44,6 @@ void* gd_thread(void *in)
     {//this is a poor man's select operation.
       if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
 	{
-
 	  if (ec->pass != current_pass)
 	    {
 	      global.eta *= global.eta_decay_rate;
@@ -60,7 +59,6 @@ void* gd_thread(void *in)
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
-
 	  if (ec->pass != current_pass && global.span_server != "")
 	    {
 	      if(global.span_server != "") {
@@ -145,7 +143,6 @@ void finish_example(example* ec)
   if (-- ec->threads_to_finish == 0)
     {
       pthread_mutex_unlock(&ec->lock);
-
       output_and_account_example(ec);
       free_example(ec);
     }
@@ -205,9 +202,7 @@ void output_and_account_example(example* ec)
       else if (global.lda > 0)
 	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
       else
-	{
-	  global.print(f, ec->final_prediction, 0, ec->tag);
-	}
+	global.print(f, ec->final_prediction, 0, ec->tag);
     }
 
   pthread_mutex_lock(&output_lock);

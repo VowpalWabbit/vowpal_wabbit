@@ -436,10 +436,10 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	par->sorted_cache = true;
       }
 
-      par->resettable = par->write_cache;
+      par->resettable = par->write_cache || global.daemon;
     }
   
-  if (vm.count("data"))
+  else if (vm.count("data"))
     {
       string hash_function("strings");
       if(vm.count("hash")) 
@@ -481,9 +481,6 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  par->resettable = par->write_cache;
 	}
     }
-
-  // allow reset source if we have a cache or if in persistent mode
-  par->resettable = par->resettable || global.daemon;
 
   if (passes > 1 && !par->resettable)
     {
