@@ -124,7 +124,7 @@ void reset_source(size_t numbits, parser* p)
 	{
 	  // wait for all predictions to be sent back to client
 	  pthread_mutex_lock(&output_lock);
-	  while (global.example_number != global.parsed_examples)
+	  while (global.sd->example_number != global.sd->parsed_examples)
 	    pthread_cond_wait(&output_done, &output_lock);
 	  pthread_mutex_unlock(&output_lock);
 	  
@@ -325,7 +325,6 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       if (global.daemon)
 	{
 	  // weights will be shared across processes, accessible to children
-
 	  float* shared_weights = 
 	    (float*)mmap(0,global.stride * global.length() * sizeof(float), 
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
@@ -338,6 +337,13 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	      free(global.reg->weight_vectors[i]);
 	      global.reg->weight_vectors[i] = dest;
 	    }
+
+	  // learning state to be shared across children
+	  shared_data* sd = (shared_data *)mmap(0,sizeof(shared_data),
+			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
+	  memcpy(sd, global.sd, sizeof(shared_data));
+	  free(global.sd);
+	  global.sd = sd;
 
 	  // create children
 	  size_t num_children = global.num_children;
@@ -496,7 +502,7 @@ bool parser_done()
   if (done)
     {
       for (size_t i = 0; i < global.num_threads(); i++)
-	if (used_index[i] != global.parsed_examples)
+	if (used_index[i] != global.sd->parsed_examples)
 	  return false;
       return true;
     }
@@ -576,11 +582,11 @@ example* get_unused_example()
   while (true)
     {
       pthread_mutex_lock(&examples_lock);
-      if (examples[global.parsed_examples % global.ring_size].in_use == false)
+      if (examples[global.sd->parsed_examples % global.ring_size].in_use == false)
 	{
-	  examples[global.parsed_examples % global.ring_size].in_use = true;
+	  examples[global.sd->parsed_examples % global.ring_size].in_use = true;
 	  pthread_mutex_unlock(&examples_lock);
-	  return examples + (global.parsed_examples % global.ring_size);
+	  return examples + (global.sd->parsed_examples % global.ring_size);
 	}
       else 
 	{
@@ -663,10 +669,10 @@ void setup_example(parser* p, example* ae)
   ae->total_sum_feat_sq = 1;
   ae->threads_to_finish = global.num_threads();	
   ae->done = false;
-  ae->example_counter = global.parsed_examples + 1;
+  ae->example_counter = global.sd->parsed_examples + 1;
   ae->global_weight = p->lp->get_weight(ae->ld);
-  p->t += ae->global_weight;
-  ae->example_t = p->t;
+  global.sd->t += ae->global_weight;
+  ae->example_t = global.sd->t;
 
   if (global.ignore_some)
     {
@@ -761,7 +767,7 @@ void *main_parse_loop(void *in)
 	setup_example(p,ae);
 	example_number++;
 	pthread_mutex_lock(&examples_lock);
-	global.parsed_examples++;
+	global.sd->parsed_examples++;
 	pthread_cond_broadcast(&example_available);
 	pthread_mutex_unlock(&examples_lock);
       }
@@ -813,10 +819,10 @@ example* get_example(size_t thread_num)
 {
   pthread_mutex_lock(&examples_lock);
 
-  if (global.parsed_examples != used_index[thread_num]) {
+  if (global.sd->parsed_examples != used_index[thread_num]) {
     size_t ring_index = used_index[thread_num]++ % global.ring_size;
     if (!(examples+ring_index)->in_use)
-      cout << used_index[thread_num] << " " << global.parsed_examples << " " << thread_num << " " << ring_index << endl;
+      cout << used_index[thread_num] << " " << global.sd->parsed_examples << " " << thread_num << " " << ring_index << endl;
     assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
      return examples + ring_index;
@@ -834,7 +840,7 @@ pthread_t parse_thread;
 void start_parser(size_t num_threads, parser* pf)
 {
   used_index = (uint64_t*) calloc(num_threads, sizeof(uint64_t));
-  global.parsed_examples = 0;
+  global.sd->parsed_examples = 0;
   done = false;
 
   if(global.ngram>1)

@@ -18,7 +18,29 @@ struct int_pair {
   int id;
 };
 
+struct shared_data {
+  size_t queries;
+
+  uint64_t parsed_examples; // The index of the parsed example.
+  uint64_t example_number;
+  uint64_t total_features;
+
+  double t;
+  double weighted_examples;
+  double weighted_unlabeled_examples;
+  double old_weighted_examples;
+  double weighted_labels;
+  double sum_loss;
+  double sum_loss_since_last_dump;
+  float dump_interval;// when should I update for the user.
+  double update_sum;
+  double min_label;//minimum label encountered
+  double max_label;//maximum label encountered
+};
+
 struct global_data {
+  shared_data* sd;
+
   size_t thread_bits; // log_2 of the number of threads.
   size_t partition_bits; // log_2 of the number of partitions of features.
   size_t num_bits; // log_2 of the number of features.
@@ -49,7 +71,6 @@ struct global_data {
   std::string per_feature_regularizer_text;
   
   float l_1_regularization;//the level of l_1 regularization to impose.
-  float update_sum;
 
   size_t minibatch;
   size_t ring_size;
@@ -64,7 +85,6 @@ struct global_data {
   bool ignore[256];//a set of namespaces to ignore
   size_t ngram;//ngrams to generate.
   size_t skips;//skips in ngrams.
-  size_t queries;
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
@@ -75,9 +95,6 @@ struct global_data {
   bool random_weights;
   bool add_constant;
   
-  double min_label;//minimum label encountered
-  double max_label;//maximum label encountered
-
   size_t lda;
   float lda_alpha;
   float lda_rho;
@@ -107,17 +124,7 @@ struct global_data {
   char* program_name;
 
   //runtime accounting variables. 
-  uint64_t example_number;
-  uint64_t parsed_examples; // The index of the parsed example.
   double initial_t;
-  double weighted_examples;
-  double weighted_unlabeled_examples;
-  double old_weighted_examples;
-  double weighted_labels;
-  uint64_t total_features;
-  double sum_loss;
-  double sum_loss_since_last_dump;
-  float dump_interval;// when should I update for the user.
   float eta;//learning rate control.
   float eta_decay_rate;
 

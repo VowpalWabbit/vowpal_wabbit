@@ -84,7 +84,7 @@ void* gd_thread(void *in)
 	    {
 	      uint32_t length = 1 << global.num_bits;
 	      size_t stride = global.stride;
-	      float gravity = global.l_1_regularization * global.update_sum;
+	      float gravity = global.l_1_regularization * global.sd->update_sum;
 	      for(uint32_t i = 0; i < length; i++)
 		reg.weight_vectors[0][stride*i] = real_weight(reg.weight_vectors[0][stride*i],gravity);
 	    }
@@ -130,10 +130,10 @@ float finalize_prediction(float ret)
 {
   if ( (::isnan)(ret))
     return 0.5;
-  if ( ret > global.max_label )
-    return global.max_label;
-  if (ret < global.min_label)
-    return global.min_label;
+  if ( ret > global.sd->max_label )
+    return global.sd->max_label;
+  if (ret < global.sd->min_label)
+    return global.sd->min_label;
   return ret;
 }
 
@@ -152,7 +152,7 @@ void finish_example(example* ec)
 
 void print_update(example *ec)
 {
-  if (global.weighted_examples > global.dump_interval && !global.quiet && !global.bfgs)
+  if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
@@ -162,17 +162,17 @@ void print_update(example *ec)
 	sprintf(label_buf,"%8.4f",ld->label);
 
       fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
-	      global.sum_loss/global.weighted_examples,
-	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
-	      (long int)global.example_number,
-	      global.weighted_examples,
+	      global.sd->sum_loss/global.sd->weighted_examples,
+	      global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
+	      (long int)global.sd->example_number,
+	      global.sd->weighted_examples,
 	      label_buf,
 	      ec->final_prediction,
 	      (long unsigned int)ec->num_features);
      
-      global.sum_loss_since_last_dump = 0.0;
-      global.old_weighted_examples = global.weighted_examples;
-      global.dump_interval *= 2;
+      global.sd->sum_loss_since_last_dump = 0.0;
+      global.sd->old_weighted_examples = global.sd->weighted_examples;
+      global.sd->dump_interval *= 2;
     }
 }
 
@@ -181,18 +181,18 @@ float query_decision(example*, float k);
 void output_and_account_example(example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
-  global.weighted_examples += ld->weight;
-  global.weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-  global.total_features += ec->num_features;
-  global.sum_loss += ec->loss;
-  global.sum_loss_since_last_dump += ec->loss;
+  global.sd->weighted_examples += ld->weight;
+  global.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
+  global.sd->total_features += ec->num_features;
+  global.sd->sum_loss += ec->loss;
+  global.sd->sum_loss_since_last_dump += ec->loss;
   
   global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
 
   float ai=-1;
   if(global.active && ld->label == FLT_MAX)
-    ai=query_decision(ec, global.weighted_unlabeled_examples);
-  global.weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
+    ai=query_decision(ec, global.sd->weighted_unlabeled_examples);
+  global.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
   
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
@@ -206,7 +206,7 @@ void output_and_account_example(example* ec)
     }
 
   pthread_mutex_lock(&output_lock);
-  global.example_number++;
+  global.sd->example_number++;
   pthread_cond_signal(&output_done);
   pthread_mutex_unlock(&output_lock);
 
@@ -221,7 +221,7 @@ float inline_l1_predict(regressor &reg, example* &ec, size_t thread_num)
   size_t thread_mask = global.thread_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
-      prediction += sd_truncadd(weights,thread_mask,ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1], global.l_1_regularization * global.update_sum);
+      prediction += sd_truncadd(weights,thread_mask,ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1], global.l_1_regularization * global.sd->update_sum);
     }
   
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -233,7 +233,7 @@ float inline_l1_predict(regressor &reg, example* &ec, size_t thread_num)
 	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
 	    prediction += one_pf_quad_predict_trunc(weights,*temp.begin,
-						    ec->atomics[(int)(*i)[1]],thread_mask, global.l_1_regularization * global.update_sum);
+						    ec->atomics[(int)(*i)[1]],thread_mask, global.l_1_regularization * global.sd->update_sum);
 	}
     }
   
@@ -306,7 +306,7 @@ void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_d
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
 
-  float gravity = global.l_1_regularization * global.update_sum;
+  float gravity = global.l_1_regularization * global.sd->update_sum;
 
   for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
@@ -322,7 +322,7 @@ void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_d
 
 void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, vector<string_value>& features)
 {
-  float gravity = global.l_1_regularization * global.update_sum;
+  float gravity = global.l_1_regularization * global.sd->update_sum;
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
@@ -359,7 +359,7 @@ void print_features(regressor &reg, example* &ec)
     {
       vector<string_value> features;
 
-      float gravity = global.l_1_regularization * global.update_sum;
+      float gravity = global.l_1_regularization * global.sd->update_sum;
       
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -645,8 +645,8 @@ float query_decision(example* ec, float k)
   if (k<=1.)
     bias=1.;
   else{
-    weighted_queries = global.initial_t + global.weighted_examples - global.weighted_unlabeled_examples;
-    avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
+    weighted_queries = global.initial_t + global.sd->weighted_examples - global.sd->weighted_unlabeled_examples;
+    avg_loss = global.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
     bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, global.active_c0);
   }
   if(drand48()<bias)
@@ -667,7 +667,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
     ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(k,vars.power_t));
     float importance = query_decision(ec, k);
     if(importance > 0){
-      global.queries += 1;
+      global.sd->queries += 1;
       ld->weight *= importance;
     }
     else //do not query => do not train
@@ -676,7 +676,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 
   float t;
   if(global.active)
-    t = global.weighted_unlabeled_examples;
+    t = global.sd->weighted_unlabeled_examples;
   else
     t = ec->example_t;
 
@@ -698,7 +698,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 	  
 	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, ec->total_sum_feat_sq);
 	}
-      global.update_sum += update;
+      global.sd->update_sum += update;
     }
   else if(global.active)
     ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(t,vars.power_t));
