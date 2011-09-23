@@ -276,7 +276,7 @@ double direction_magnitude(regressor& reg)
 
     double beta = g_Hy/g_Hg;
 
-    if (beta<0. || (::isnan)(beta))
+    if (beta<0. || isnan(beta))
       beta = 0.;
       
     mem = mem0;
@@ -400,7 +400,7 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
   double new_step_cross  = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
   bool violated = false;
-  if (new_step_cross<0. || new_step_cross>step || (::isnan)(new_step_cross)) {
+  if (new_step_cross<0. || new_step_cross>step || isnan(new_step_cross)) {
     violated = true;
     new_step_cross = new_step_simple;
   }
