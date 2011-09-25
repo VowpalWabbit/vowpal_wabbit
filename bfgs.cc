@@ -90,9 +90,16 @@ void quad_precond_update(weight* weights, feature& page_feature, v_array<feature
 float predict_and_gradient(regressor& reg, example* &ec)
 {
   float raw_prediction = inline_predict(reg,ec,0);
-  float fp = finalize_prediction(raw_prediction);
+  float fp = raw_prediction;
+
+  if ( isnan(raw_prediction))
+    {
+      cout << "you have a NAN!!!!!" << endl;
+      fp = 0.;
+    }
   
   label_data* ld = (label_data*)ec->ld;
+  set_minmax(ld->label);
 
   float loss_grad = reg.loss->first_derivative(fp,ld->label)*ld->weight;
   

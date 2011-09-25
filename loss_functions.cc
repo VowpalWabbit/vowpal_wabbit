@@ -18,8 +18,23 @@ public:
   }
   
   float getLoss(float prediction, float label) {
-    float example_loss = (prediction - label) * (prediction - label);
-    return example_loss;
+    if (prediction <= global.max_label && prediction >= global.min_label)
+      {
+	float example_loss = (prediction - label) * (prediction - label);
+	return example_loss;
+      }
+    else if (prediction < global.min_label)
+      if (label == global.min_label)
+	return 0.;
+      else
+	return (label - global.min_label) * (label - global.min_label) 
+	  + 2. * (label-global.min_label) * (global.min_label - prediction);
+    else 
+      if (label == global.max_label)
+	return 0.;
+      else
+	return (global.max_label - label) * (global.max_label - label) 
+	  + 2. * (global.max_label - label) * (prediction - global.max_label);
   }
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
@@ -45,11 +60,20 @@ public:
   }
   float first_derivative(float prediction, float label)
   {
+    if (prediction < global.min_label)
+      prediction = global.min_label;
+    else if (prediction > global.max_label)
+      prediction = global.max_label;
     return 2. * (prediction-label);
   }
   float second_derivative(float prediction, float label)
   {
-    return 2.;
+    if (prediction <= global.max_label && prediction >= global.min_label)
+      return 2.;
+    else if (prediction < global.min_label)
+      return 2. * (label - global.min_label);
+    else 
+      return 2. * (global.max_label - label);
   } 
 };
 
