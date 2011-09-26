@@ -267,7 +267,7 @@ public:
 };
 
 loss_function* getLossFunction(string funcName, double function_parameter) {
-  if(funcName.compare("squared") == 0) {
+  if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0) {
     return new squaredloss();
   } else if(funcName.compare("classic") == 0){
     return new classic_squaredloss();
