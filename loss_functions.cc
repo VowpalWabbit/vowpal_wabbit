@@ -70,10 +70,8 @@ public:
   {
     if (prediction <= global.max_label && prediction >= global.min_label)
       return 2.;
-    else if (prediction < global.min_label)
-      return 2. * (label - global.min_label);
     else 
-      return 2. * (global.max_label - label);
+      return 0.;
   } 
 };
 
