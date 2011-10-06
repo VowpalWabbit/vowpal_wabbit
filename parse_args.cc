@@ -143,6 +143,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.sd->update_sum = 0.;
   global.sd->min_label = 0.;
   global.sd->max_label = 1.;
+  global.local_example_number = 0;
   global.backprop = false;
   global.bfgs = false;
   global.corrective = false;

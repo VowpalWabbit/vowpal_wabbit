@@ -206,9 +206,11 @@ void output_and_account_example(example* ec)
     }
 
   pthread_mutex_lock(&output_lock);
-  global.sd->example_number++;
+  global.local_example_number++;
   pthread_cond_signal(&output_done);
   pthread_mutex_unlock(&output_lock);
+
+  global.sd->example_number++;
 
   print_update(ec);
 }

@@ -21,7 +21,6 @@ struct int_pair {
 struct shared_data {
   size_t queries;
 
-  uint64_t parsed_examples; // The index of the parsed example.
   uint64_t example_number;
   uint64_t total_features;
 
@@ -74,6 +73,9 @@ struct global_data {
 
   size_t minibatch;
   size_t ring_size;
+
+  uint64_t parsed_examples; // The index of the parsed example.
+  uint64_t local_example_number; 
 
   size_t pass_length;
   size_t numpasses;
