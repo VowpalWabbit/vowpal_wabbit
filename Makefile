@@ -4,14 +4,12 @@ LIBS = -l boost_program_options -l pthread -l z
 ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
-#BOOST_INCLUDE = /usr/include
+BOOST_INCLUDE = /usr/include
 #BOOST_INCLUDE = /usr/local/include
-#BOOST_LIBRARY = /usr/local/lib
-BOOST_INCLUDE = /homes/hofman/boost
-BOOST_LIBRARY = /homes/hofman/boost/stage/lib
+BOOST_LIBRARY = /usr/local/lib
 
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
-WARN_FLAGS = -Wall #-pedantic #-Werror 
+WARN_FLAGS = -Wall -pedantic #-Werror 
 
 # for normal fast execution.
 FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
@@ -23,7 +21,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg -g
 
 # for valgrind
-FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
+#FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
 BINARIES = vw spanning_tree active_interactor
 MANPAGES = vw.1
