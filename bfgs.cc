@@ -90,9 +90,16 @@ void quad_precond_update(weight* weights, feature& page_feature, v_array<feature
 float predict_and_gradient(regressor& reg, example* &ec)
 {
   float raw_prediction = inline_predict(reg,ec,0);
-  float fp = finalize_prediction(raw_prediction);
+  float fp = raw_prediction;
+
+  if ( isnan(raw_prediction))
+    {
+      cout << "you have a NAN!!!!!" << endl;
+      fp = 0.;
+    }
   
   label_data* ld = (label_data*)ec->ld;
+  set_minmax(ld->label);
 
   float loss_grad = reg.loss->first_derivative(fp,ld->label)*ld->weight;
   
@@ -276,7 +283,7 @@ double direction_magnitude(regressor& reg)
 
     double beta = g_Hy/g_Hg;
 
-    if (beta<0. || (::isnan)(beta))
+    if (beta<0. || isnan(beta))
       beta = 0.;
       
     mem = mem0;
@@ -400,7 +407,7 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
   double new_step_cross  = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
   bool violated = false;
-  if (new_step_cross<0. || new_step_cross>step || (::isnan)(new_step_cross)) {
+  if (new_step_cross<0. || new_step_cross>step || isnan(new_step_cross)) {
     violated = true;
     new_step_cross = new_step_simple;
   }

@@ -18,8 +18,23 @@ public:
   }
   
   float getLoss(float prediction, float label) {
-    float example_loss = (prediction - label) * (prediction - label);
-    return example_loss;
+    if (prediction <= global.sd->max_label && prediction >= global.sd->min_label)
+      {
+	float example_loss = (prediction - label) * (prediction - label);
+	return example_loss;
+      }
+    else if (prediction < global.sd->min_label)
+      if (label == global.sd->min_label)
+	return 0.;
+      else
+	return (label - global.sd->min_label) * (label - global.sd->min_label) 
+	  + 2. * (label-global.sd->min_label) * (global.sd->min_label - prediction);
+    else 
+      if (label == global.sd->max_label)
+	return 0.;
+      else
+	return (global.sd->max_label - label) * (global.sd->max_label - label) 
+	  + 2. * (global.sd->max_label - label) * (prediction - global.sd->max_label);
   }
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
@@ -45,11 +60,18 @@ public:
   }
   float first_derivative(float prediction, float label)
   {
+    if (prediction < global.sd->min_label)
+      prediction = global.sd->min_label;
+    else if (prediction > global.sd->max_label)
+      prediction = global.sd->max_label;
     return 2. * (prediction-label);
   }
   float second_derivative(float prediction, float label)
   {
-    return 2.;
+    if (prediction <= global.sd->max_label && prediction >= global.sd->min_label)
+      return 2.;
+    else 
+      return 0.;
   } 
 };
 
@@ -245,7 +267,7 @@ public:
 };
 
 loss_function* getLossFunction(string funcName, double function_parameter) {
-  if(funcName.compare("squared") == 0) {
+  if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0) {
     return new squaredloss();
   } else if(funcName.compare("classic") == 0){
     return new classic_squaredloss();

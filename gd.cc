@@ -128,12 +128,16 @@ bool command_example(example* ec, gd_thread_params* params) {
 
 float finalize_prediction(float ret) 
 {
-  if ( (::isnan)(ret))
-    return 0.5;
+  if ( isnan(ret))
+    {
+      cout << "you have a NAN!!!!!" << endl;
+      return 0.;
+    }
   if ( ret > global.sd->max_label )
     return global.sd->max_label;
   if (ret < global.sd->min_label)
     return global.sd->min_label;
+
   return ret;
 }
 
@@ -660,6 +664,8 @@ float query_decision(example* ec, float k)
 void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num)
 {
   label_data* ld = (label_data*)ec->ld;
+
+  set_minmax(ld->label);
 
   ec->final_prediction = 
     finalize_prediction(ec->partial_prediction);

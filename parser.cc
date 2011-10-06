@@ -825,7 +825,8 @@ example* get_example(size_t thread_num)
       cout << used_index[thread_num] << " " << global.parsed_examples << " " << thread_num << " " << ring_index << endl;
     assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
-     return examples + ring_index;
+    
+    return examples + ring_index;
   }
   else {
     if (!done)
