@@ -47,6 +47,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 {
   vars.init();
   global.program_name = argv[0];
+  global.sd = (shared_data *) malloc(sizeof(shared_data));
   // Declare the supported options.
   desc.add_options()
     ("active_learning", "active learning mode")
@@ -84,7 +85,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_pass_length", po::value<size_t>(&global.pass_length)->default_value((size_t)-1), "initial number of examples per pass")
-    ("initial_t", po::value<float>(&(par->t))->default_value(1.), "initial t value")
+    ("initial_t", po::value<double>(&(global.sd->t))->default_value(1.), "initial t value")
     ("l1", po::value<float>(&global.l_1_regularization)->default_value(0.), "l_1 regularization level")
     ("lda", po::value<size_t>(&global.lda), "Run lda with <int> topics")
     ("lda_alpha", po::value<float>(&global.lda_alpha)->default_value(0.1), "Prior on sparsity of per-document topic weights")
@@ -92,8 +93,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("lda_D", po::value<float>(&global.lda_D)->default_value(10000.), "Number of documents")
     ("minibatch", po::value<size_t>(&global.minibatch)->default_value(1), "Minibatch size, for LDA")
     ("span_server", po::value<string>(&global.span_server)->default_value(""), "Location of server for setting up spanning tree")
-    ("min_prediction", po::value<double>(&global.min_label), "Smallest prediction to output")
-    ("max_prediction", po::value<double>(&global.max_label), "Largest prediction to output")
+    ("min_prediction", po::value<double>(&global.sd->min_label), "Smallest prediction to output")
+    ("max_prediction", po::value<double>(&global.sd->max_label), "Largest prediction to output")
     ("mem", po::value<int>(&global.m)->default_value(15), "memory in bfgs")
     ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noconstant", "Don't add a constant feature")
@@ -130,11 +131,19 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("ngram", po::value<size_t>(), "Generate N grams")
     ("skips", po::value<size_t>(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
 
-
-  global.queries = 0;
-  global.example_number = 0;
-  global.weighted_examples = 0.;
-  global.old_weighted_examples = 0.;
+  global.sd->queries = 0;
+  global.sd->example_number = 0;
+  global.sd->weighted_examples = 0.;
+  global.sd->old_weighted_examples = 0.;
+  global.sd->weighted_labels = 0.;
+  global.sd->total_features = 0;
+  global.sd->sum_loss = 0.0;
+  global.sd->sum_loss_since_last_dump = 0.0;
+  global.sd->dump_interval = exp(1.);
+  global.sd->update_sum = 0.;
+  global.sd->min_label = 0.;
+  global.sd->max_label = 1.;
+  global.local_example_number = 0;
   global.backprop = false;
   global.bfgs = false;
   global.corrective = false;
@@ -142,11 +151,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.bfgs = false;
   global.hessian_on = false;
   global.stride = 1;
-  global.weighted_labels = 0.;
-  global.total_features = 0;
-  global.sum_loss = 0.0;
-  global.sum_loss_since_last_dump = 0.0;
-  global.dump_interval = exp(1.);
   global.num_bits = 18;
   global.default_bits = true;
   global.daemon = false;
@@ -154,9 +158,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.raw_prediction = -1;
   global.local_prediction = -1;
   global.print = print_result;
-  global.min_label = 0.;
-  global.max_label = 1.;
-  global.update_sum = 0.;
   global.lda = 0;
   global.random_weights = false;
   global.per_feature_regularizer_input = "";
@@ -185,8 +186,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	    options(desc).positional(p).run(), vm);
   po::notify(vm);
 
-  global.weighted_unlabeled_examples = par->t;
-  global.initial_t = par->t;
+  global.sd->weighted_unlabeled_examples = global.sd->t;
+  global.initial_t = global.sd->t;
   global.partition_bits = global.thread_bits;
 
   if (vm.count("help") || argc == 1) {
@@ -387,7 +388,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       global.eta = min(global.eta,1.f);
     }
   if (!vm.count("lda")) 
-    global.eta *= pow(par->t, vars.power_t);
+    global.eta *= pow(global.sd->t, vars.power_t);
 
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(global.minibatch);
@@ -406,9 +407,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     global.save_per_pass = true;
 
   if (vm.count("min_prediction"))
-    global.min_label = vm["min_prediction"].as<double>();
+    global.sd->min_label = vm["min_prediction"].as<double>();
   if (vm.count("max_prediction"))
-    global.max_label = vm["max_prediction"].as<double>();
+    global.sd->max_label = vm["max_prediction"].as<double>();
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     set_minmax = noop_mm;
 
@@ -429,7 +430,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   r.loss = getLossFunction(loss_function, loss_parameter);
   global.loss = r.loss;
 
-//   global.eta *= pow(par->t, vars.power_t);
+//   global.eta *= pow(global.sd->t, vars.power_t);
 
   if (global.eta_decay_rate != default_decay && global.numpasses == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
@@ -445,7 +446,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     {
       cerr << "Num weight bits = " << global.num_bits << endl;
       cerr << "learning rate = " << global.eta << endl;
-      cerr << "initial_t = " << par->t << endl;
+      cerr << "initial_t = " << global.sd->t << endl;
       cerr << "power_t = " << vars.power_t << endl;
       if (global.numpasses > 1)
 	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;

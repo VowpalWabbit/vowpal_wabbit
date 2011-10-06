@@ -98,8 +98,8 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       exit(1);
     }
   
-  source.read((char*)&global.min_label, sizeof(global.min_label));
-  source.read((char*)&global.max_label, sizeof(global.max_label));
+  source.read((char*)&global.sd->min_label, sizeof(global.sd->min_label));
+  source.read((char*)&global.sd->max_label, sizeof(global.sd->max_label));
   
   size_t local_num_bits;
   source.read((char *)&local_num_bits, sizeof(local_num_bits));
@@ -326,8 +326,8 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
     io_temp.write_file(f,(char*)&v_length, sizeof(v_length));
     io_temp.write_file(f,version.c_str(),v_length);
   
-    io_temp.write_file(f,(char*)&global.min_label, sizeof(global.min_label));
-    io_temp.write_file(f,(char*)&global.max_label, sizeof(global.max_label));
+    io_temp.write_file(f,(char*)&global.sd->min_label, sizeof(global.sd->min_label));
+    io_temp.write_file(f,(char*)&global.sd->max_label, sizeof(global.sd->max_label));
   
     io_temp.write_file(f,(char *)&global.num_bits, sizeof(global.num_bits));
     io_temp.write_file(f,(char *)&global.thread_bits, sizeof(global.thread_bits));
@@ -347,7 +347,7 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
     int len;
     len = sprintf(buff, "Version %s\n", version.c_str());
     io_temp.write_file(f, buff, len);
-    len = sprintf(buff, "Min label:%f max label:%f\n", global.min_label, global.max_label);
+    len = sprintf(buff, "Min label:%f max label:%f\n", global.sd->min_label, global.sd->max_label);
     io_temp.write_file(f, buff, len);
     len = sprintf(buff, "bits:%d thread_bits:%d\n", (int)global.num_bits, (int)global.thread_bits);
     io_temp.write_file(f, buff, len);
