@@ -94,9 +94,9 @@ void print_lda_result(int f, float* res, float weight, v_array<char> tag)
 
 void set_mm(double label)
 {
-  global.min_label = min(global.min_label, label);
+  global.sd->min_label = min(global.sd->min_label, label);
   if (label != FLT_MAX)
-    global.max_label = max(global.max_label, label);
+    global.sd->max_label = max(global.sd->max_label, label);
 }
 
 void noop_mm(double label)
