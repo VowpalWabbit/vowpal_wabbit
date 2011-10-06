@@ -11,6 +11,8 @@ embodied in the content of this file are licensed under the BSD
 #include "cache.h"
 #include "unique_sort.h"
 
+using namespace std;
+
 size_t hashstring (substring s, unsigned long h)
 {
   size_t ret = 0;
@@ -56,7 +58,7 @@ void feature_value(substring &s, v_array<substring>& name, float &v)
     break;
   case 2:
     v = float_of_substring(name[1]);
-    if (isnan(v))
+    if ( isnan(v))
       {
 	cerr << "error NaN value for feature: ";
 	cerr.write(name[0].start, name[0].end - name[0].start);
@@ -178,12 +180,12 @@ int read_features(parser* p, void* ex)
       }
  
     for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
-      float v;
+      float v = 0.;
       feature_value(*i, p->name, v);
       v *= channel_v;
 
       size_t word_hash = (p->hasher(p->name[0], channel_hash)) & mask;
-      feature f = {v,word_hash};
+      feature f = {v,(uint32_t)word_hash};
       ae->sum_feat_sq[index] += v*v;
       push(ae->atomics[index], f);
     }
@@ -194,7 +196,7 @@ int read_features(parser* p, void* ex)
     if (audit)
       {
 	for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
-	  float v;
+	  float v = 0.;
 	  feature_value(*i, p->name, v);
 	  v *= channel_v;
 

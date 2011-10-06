@@ -8,7 +8,6 @@ embodied in the content of this file are licensed under the BSD
 #define LOSSFUNCTIONS_H_
 
 #include <string>
-using namespace std;
 
 class loss_function {
 
@@ -32,6 +31,6 @@ public :
 	virtual ~loss_function() {};
 };
 
-loss_function* getLossFunction(string funcName, double loss_parameter = 0);
+loss_function* getLossFunction(std::string funcName, double loss_parameter = 0);
 
 #endif /* LOSSFUNCTIONS_H_ */

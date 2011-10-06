@@ -15,8 +15,6 @@ embodied in the content of this file are licensed under the BSD
 #define O_LARGEFILE 0
 #endif
 
-using namespace std;
-
 class io_buf {
  public:
   v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values.
@@ -54,7 +52,7 @@ class io_buf {
       break;
 
     default:
-      cerr << "Unknown file operation. Something other than READ/WRITE specified" << endl;
+      std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
       ret = -1;
     }
     return ret;
@@ -104,7 +102,7 @@ class io_buf {
 
   virtual void flush() {
     if (write_file(files[0], space.begin, space.index()) != (int) space.index())
-      cerr << "error, failed to write example\n";
+      std::cerr << "error, failed to write example\n";
     space.end = space.begin; fsync(files[0]); }
 
   virtual bool close_file(){
@@ -122,5 +120,6 @@ class io_buf {
 
 void buf_write(io_buf &o, char* &pointer, int n);
 unsigned int buf_read(io_buf &i, char* &pointer, int n);
+bool isbinary(io_buf &i);
 size_t readto(io_buf &i, char* &pointer, char terminal);
 #endif

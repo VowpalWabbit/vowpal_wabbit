@@ -34,13 +34,14 @@ void initialize_regressor(regressor &r)
 
       // random weight initialization for matrix factorization
       if (global.random_weights)
-	if (global.rank > 0)
-	  for (size_t j = 0; j < global.stride*length/num_threads; j++)
-	    r.weight_vectors[i][j] = (double) 0.1 * rand() / ((double) RAND_MAX + 1.0); //drand48()/10 - 0.05;
-        else
-	  for (size_t j = 0; j < length/num_threads; j++)
-	    r.weight_vectors[i][j] = drand48() - 0.5;
-
+	{
+	  if (global.rank > 0)
+	    for (size_t j = 0; j < global.stride*length/num_threads; j++)
+	      r.weight_vectors[i][j] = (double) 0.1 * rand() / ((double) RAND_MAX + 1.0); //drand48()/10 - 0.05;
+	  else
+	    for (size_t j = 0; j < length/num_threads; j++)
+	      r.weight_vectors[i][j] = drand48() - 0.5;
+	}
       if (r.regularizers != NULL)
 	r.regularizers[i] = (weight *)calloc(2*length/num_threads, sizeof(weight));
       if (r.weight_vectors[i] == NULL || (r.regularizers != NULL && r.regularizers[i] == NULL))
@@ -73,6 +74,8 @@ void initialize_regressor(regressor &r)
     }
 }
 
+v_array<char> temp;
+
 void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vector)
 {
   ifstream source(file);
@@ -81,12 +84,15 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       cout << "can't open " << file << endl << " ... exiting." << endl;
       exit(1);
     }
+
   
   size_t v_length;
   source.read((char*)&v_length, sizeof(v_length));
-  char t[v_length];
-  source.read(t,v_length);
-  if (strcmp(t,version.c_str()) != 0)
+  temp.erase();
+  if (temp.index() < v_length)
+    reserve(temp, v_length);
+  source.read(temp.begin,v_length);
+  if (strcmp(temp.begin,version.c_str()) != 0)
     {
       cout << "source has possibly incompatible version!" << endl;
       exit(1);
@@ -218,8 +224,11 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
 	  if (global.rank != 0)
 	      r.weight_vectors[hash % num_threads][hash/num_threads] = w;
 	  else if (global.lda == 0)
-	    if (reg_vector)
+	    if (reg_vector) {
 	      r.regularizers[hash % num_threads][hash/num_threads] = w;
+	      if (hash%2 == 1) // This is the prior mean; previous element was prior variance
+		r.weight_vectors[(hash/2) % num_threads][(hash/2*stride)/num_threads] = w;
+	    }
 	    else
 	      r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
 		= r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
@@ -242,7 +251,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
     final_regressor_name = "";
 
   vector<string> regs;
-  if (vm.count("initial_regressor"))
+  if (vm.count("initial_regressor") || vm.count("i"))
     regs = vm["initial_regressor"].as< vector<string> >();
   
   /* 
@@ -261,7 +270,10 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
   if (!initialized)
     {
       if(vm.count("noop") || vm.count("sendto"))
-	r.weight_vectors = NULL;
+	{
+	  r.weight_vectors = NULL;
+	  r.regularizers = NULL;
+	}
       else
 	initialize_regressor(r);
     }
@@ -284,6 +296,16 @@ void free_regressor(regressor &r)
       free(r.regularizers);
     }
 }
+
+void save_predictor(string reg_name, size_t current_pass)
+{
+   if(global.save_per_pass) {
+    char* filename = new char[reg_name.length()+4];
+    sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
+    dump_regressor(string(filename), *(global.reg));
+    delete filename;
+  }
+}  
 
 void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector)
 {

@@ -63,7 +63,7 @@ void quadratic(v_array<feature> &f, const v_array<feature> &first_part,
       float i_value = i->x;
       for (feature* ele = second_part.begin; ele != second_part.end; ele++) {
         size_t quad_index = (halfhash+ele->weight_index) & thread_mask;
-        feature temp = {i_value * ele->x, quad_index};
+        feature temp = {i_value * ele->x, (uint32_t)quad_index};
         push(f, temp);
       }
     }

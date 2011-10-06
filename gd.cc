@@ -10,6 +10,11 @@ embodied in the content of this file are licensed under the BSD
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+#include <xmmintrin.h>
+#endif
+
 #include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"
@@ -18,6 +23,10 @@ embodied in the content of this file are licensed under the BSD
 #include "multisource.h"
 #include "simple_label.h"
 #include "delay_ring.h"
+#include "allreduce.h"
+#include "accumulate.h"
+
+using namespace std;
 
 void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, float update);
 
@@ -30,6 +39,7 @@ void* gd_thread(void *in)
   example* ec = NULL;
   size_t current_pass = 0;
 
+  
   while ( true )
     {//this is a poor man's select operation.
       if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
@@ -37,6 +47,7 @@ void* gd_thread(void *in)
 	  if (ec->pass != current_pass)
 	    {
 	      global.eta *= global.eta_decay_rate;
+	      save_predictor(*(params->final_regressor_name), current_pass);
 	      current_pass = ec->pass;
 	    }
 	  if (global.adaptive)
@@ -48,6 +59,17 @@ void* gd_thread(void *in)
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
+	  if (ec->pass != current_pass && global.span_server != "")
+	    {
+	      if(global.span_server != "") {
+		if(global.adaptive)
+		  //accumulate_avg(*(params->socks), params->reg, 0);	      
+		  accumulate_weighted_avg(global.span_server, params->reg);
+		else 
+		  accumulate_avg(global.span_server, params->reg, 0);	      
+	      }
+	    }
+
 	  if (command_example(ec, params))
 	    {
 	      ec->threads_to_finish--;
@@ -66,6 +88,13 @@ void* gd_thread(void *in)
 	      for(uint32_t i = 0; i < length; i++)
 		reg.weight_vectors[0][stride*i] = real_weight(reg.weight_vectors[0][stride*i],gravity);
 	    }
+	  if(global.span_server != "") {
+	    if(global.adaptive)
+	      //  accumulate_avg(*(params->socks), params->reg, 0);	      
+	      accumulate_weighted_avg(global.span_server, params->reg);
+	    else 
+	      accumulate_avg(global.span_server, params->reg, 0);	      
+	  }
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
 	  return NULL;
@@ -73,7 +102,6 @@ void* gd_thread(void *in)
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
-
   return NULL;
 }
 
@@ -100,8 +128,11 @@ bool command_example(example* ec, gd_thread_params* params) {
 
 float finalize_prediction(float ret) 
 {
-  if (isnan(ret))
-    return 0.5;
+  if ( isnan(ret))
+    {
+      cout << "you have a NAN!!!!!" << endl;
+      return 0.;
+    }
   if ( ret > global.max_label )
     return global.max_label;
   if (ret < global.min_label)
@@ -115,7 +146,6 @@ void finish_example(example* ec)
   if (-- ec->threads_to_finish == 0)
     {
       pthread_mutex_unlock(&ec->lock);
-
       output_and_account_example(ec);
       free_example(ec);
     }
@@ -125,7 +155,7 @@ void finish_example(example* ec)
 
 void print_update(example *ec)
 {
-  if (global.weighted_examples > global.dump_interval && !global.quiet && !global.conjugate_gradient && !global.bfgs)
+  if (global.weighted_examples > global.dump_interval && !global.quiet && !global.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
@@ -134,10 +164,10 @@ void print_update(example *ec)
       else
 	sprintf(label_buf,"%8.4f",ld->label);
 
-      fprintf(stderr, "%-10.6f %-10.6f %8lld %8.1f   %s %8.4f %8lu\n",
+      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
 	      global.sum_loss/global.weighted_examples,
 	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
-	      global.example_number,
+	      (long int)global.example_number,
 	      global.weighted_examples,
 	      label_buf,
 	      ec->final_prediction,
@@ -169,21 +199,13 @@ void output_and_account_example(example* ec)
   
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
-      int f = global.final_prediction_sink[i].fd;
+      int f = global.final_prediction_sink[i];
       if(global.active)
 	global.print(f, ec->final_prediction, ai, ec->tag);
       else if (global.lda > 0)
 	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
       else
-	{
-	  float w;
-	  if (global.reg->weight_vectors != NULL) {
-	    w = global.reg->weight_vectors[0][global.final_prediction_sink[i].id];
-	  } else {
-	    w = 0.;
-	  }
-	  global.print(f, ec->final_prediction, w*ec->global_weight, ec->tag);
-	}
+	global.print(f, ec->final_prediction, 0, ec->tag);
     }
 
   pthread_mutex_lock(&output_lock);
@@ -418,7 +440,15 @@ void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       w[1] += update2 * ele->x * ele->x;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      float t;
+      __m128 eta = _mm_load_ss(&w[1]);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&t, eta);
+      t *= ele->x;
+#else
       float t = ele->x*InvSqrt(w[1]);
+#endif
       w[0] += update * t;
     }
 }
@@ -449,7 +479,15 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
 	  w[1] += g * f->x * f->x;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      float t;
+      __m128 eta = _mm_load_ss(&w[1]);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&t, eta);
+      t *= f->x;
+#else
 	  float t = f->x*InvSqrt(w[1]);
+#endif
 	  w[0] += update * t;
 	}
     }
@@ -474,7 +512,15 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      float m = w[1] + update2 * ele->x * ele->x;
+      __m128 eta = _mm_load_ss(&m);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&m, eta);
+      float t = ele->x * m;
+#else
       float t = ele->x*InvSqrt(w[1] + update2 * ele->x * ele->x);
+#endif
       xGx += t * ele->x;
       magx += fabsf(ele->x);
     }
@@ -497,7 +543,15 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
       for (; f != ec->subsets[*i][thread_num+1]; f++)
 	{
 	  weight* w = &weights[f->weight_index & thread_mask];
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      float m = w[1] + g * f->x * f->x;
+      __m128 eta = _mm_load_ss(&m);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&m, eta);
+      float t = f->x * m;
+#else
 	  float t = f->x*InvSqrt(w[1] + g * f->x * f->x);
+#endif
 	  xGx += t * f->x;
 	  magx += fabsf(f->x);
 	}
@@ -608,6 +662,8 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 {
   label_data* ld = (label_data*)ec->ld;
 
+  set_minmax(ld->label);
+
   ec->final_prediction = 
     finalize_prediction(ec->partial_prediction);
 
@@ -639,7 +695,6 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 	  float magx = 0.;
 	  float xGx = compute_xGx(reg, ec, thread_num, magx);
 	  update = global.eta*xGx/magx;
-	  global.update_sum += update;
 	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, xGx);
 	}
       else
@@ -666,7 +721,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
       send_prediction(global.local_prediction, pred);
       if (global.unique_id == 0)
 	{
-	  size_t len = sizeof(ld->label) + sizeof(ld->weight);
+	  const size_t len = sizeof(ld->label) + sizeof(ld->weight);
 	  char c[len];
 	  bufcache_simple_label(ld,c);
 	  if (write(global.local_prediction,c,len) < (int)len)

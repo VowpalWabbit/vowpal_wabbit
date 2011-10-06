@@ -5,6 +5,8 @@
 #include "multisource.h"
 #include "message_relay.h"
 
+using namespace std;
+
 global_data global;
 string version = "6.0";
 

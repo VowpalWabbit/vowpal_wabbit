@@ -10,7 +10,7 @@ embodied in the content of this file are licensed under the BSD
 
 namespace BFGS {
 
-void setup_bfgs(gd_thread_params t);
+void setup_bfgs(gd_thread_params& t);
 void destroy_bfgs();
 
 }

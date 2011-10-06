@@ -10,6 +10,8 @@
 #include "multisource.h"
 #include "delay_ring.h"
 
+using namespace std;
+
 pthread_t* thread;
 size_t d_1;
 size_t d_2;
@@ -62,7 +64,7 @@ void open_sockets(vector<string>& hosts)
       for (size_t j = 0; j< d_2; j++)
         {
           size_t number = j + d_2*i;
-          int sd = open_socket(hosts[number].c_str(), new_id);
+          int sd = open_socket(hosts[number].c_str());
           if (new_id == 0)
             global.local_prediction = sd;
           new_id++;
@@ -123,7 +125,7 @@ void* send_thread(void*)
 	  if (finished) 
 	    cout << "NOT POSSIBLE! " << endl;
           label_data* ld = (label_data*)ec->ld;
-          
+          set_minmax(ld->label);
           for (size_t i = 0; i < d_1; i++)
             for (size_t j = 0; j < d_2; j++)
               {

@@ -17,6 +17,8 @@ embodied in the content of this file are licensed under the BSD
 #include "simple_label.h"
 #include "delay_ring.h"
 
+using namespace std;
+
 void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_num, float update);
 void mf_local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& reg);
 float mf_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars);
@@ -211,6 +213,7 @@ void mf_print_audit_features(regressor &reg, example* ec, size_t offset)
 void mf_local_predict(example* ec, size_t mf_num_threads, gd_vars& vars, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
+  set_minmax(ld->label);
 
   ec->final_prediction = finalize_prediction(ec->partial_prediction);
 

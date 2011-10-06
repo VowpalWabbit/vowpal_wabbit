@@ -70,7 +70,7 @@ sub which_lda() {
         }
     } elsif (@ARGV == 0 || @ARGV == 1) {
         foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
-            my $exe = "$dir/lda";
+            my $exe = "$dir/vw";
             if (-x $exe) {
                 printf STDERR "Testing lda: %s\n", $exe;
                 return $exe;

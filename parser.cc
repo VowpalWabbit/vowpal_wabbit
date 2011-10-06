@@ -8,6 +8,10 @@ embodied in the content of this file are licensed under the BSD
 #include <sys/mman.h>
 #include <sys/wait.h>
 
+#include <signal.h>
+#include <unistd.h>
+#include <fstream>
+
 #include <netdb.h>
 #include <boost/program_options.hpp>
 #include <netinet/tcp.h>
@@ -25,15 +29,24 @@ namespace po = boost::program_options;
 #include "unique_sort.h"
 #include "constant.h"
 
+using namespace std;
+
 example* examples;//A Ring of examples.
 pthread_mutex_t examples_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
 pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
-unsigned long long parsed_index; // The index of the parsed example.
-unsigned long long* used_index; // The index of the example currently used by thread i.
+uint64_t parsed_index; // The index of the parsed example.
+uint64_t* used_index; // The index of the example currently used by thread i.
 bool done=false;
 v_array<size_t> random_nos;
 v_array<size_t> gram_mask;
+
+bool got_sigterm = false;
+
+void handle_sigterm (int)
+{
+  got_sigterm = true;
+}
 
 parser* new_parser(const label_parser* lp)
 {
@@ -50,23 +63,28 @@ void set_compressed(parser* par){
   par->output = new comp_io_buf;
 }
 
+v_array<char> t;
+
 size_t cache_numbits(io_buf* buf, int filepointer)
 {
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
   if(v_length>29){
-      cerr << "cache version too long, cache file is probably invalid" << endl;
-      exit(1);
+    cerr << "cache version too long, cache file is probably invalid" << endl;
+    exit(1);
   }
-  char t[v_length];
-  buf->read_file(filepointer,t,v_length);
-  if (strcmp(t,version.c_str()) != 0)
+  t.erase();
+  if (t.index() < v_length)
+    reserve(t,v_length);
+  
+  buf->read_file(filepointer,t.begin,v_length);
+  if (strcmp(t.begin,version.c_str()) != 0)
     {
       cout << "cache has possibly incompatible version, rebuilding" << endl;
       return 0;
     }
   
-  int total = sizeof(size_t);
+  const int total = sizeof(size_t);
   char* p[total];
   if (buf->read_file(filepointer, p, total) < total) 
     return true;
@@ -75,10 +93,10 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   return cache_numbits;
 }
 
-bool member(v_array<int_pair> fd_ids, int fd)
+bool member(v_array<size_t> ids, size_t id)
 {
-  for (size_t i = 0; i < fd_ids.index(); i++)
-    if (fd_ids[i].fd == fd)
+  for (size_t i = 0; i < ids.index(); i++)
+    if (ids[i] == id)
       return true;
   return false;
 }
@@ -96,55 +114,59 @@ void reset_source(size_t numbits, parser* p)
       while(input->files.index() > 0)
 	{
 	  int fd = input->files.pop();
-	  if (!member(global.final_prediction_sink,fd))
+	  if (!member(global.final_prediction_sink, (size_t) fd))
 	    close(fd);
 	}
       input->open_file(p->output->finalname.begin,io_buf::READ); //pushing is merged into open_file
       p->reader = read_cached_features;
     }
   if ( p->resettable == true )
-    if (global.persistent)
-      {
-	// wait for all predictions to be sent back to client
-	pthread_mutex_lock(&output_lock);
-	while (global.example_number != parsed_index)
-	  pthread_cond_wait(&output_done, &output_lock);
-	pthread_mutex_unlock(&output_lock);
-
-	// close socket, erase final prediction sink and socket
-	close(p->input->files[0]);
-	global.final_prediction_sink.erase();
-	p->input->files.erase();
-
-	sockaddr_in client_address;
-	socklen_t size = sizeof(client_address);
-	int f = accept(p->bound_sock,(sockaddr*)&client_address,&size);
-	if (f < 0)
-	  {
-	    cerr << "bad client socket!" << endl;
-	    exit (1);
-	  }
-	
-	size_t id;
-	really_read(f, &id, sizeof(id));
-	if (id != 0) {
-	  cerr << "id must be 0 (multisource not supported)" << endl;
-	  exit(1);
-	}
-
-	int_pair pf = {f,id};
-	push(global.final_prediction_sink,pf);
-	push(p->input->files,f);
-      }
-    else {
-      for (size_t i = 0; i < input->files.index();i++)
+    {
+      if (global.daemon)
 	{
-	  input->reset_file(input->files[i]);
-	  if (cache_numbits(input, input->files[i]) < numbits) {
-	    cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
-	    exit(1);
+	  // wait for all predictions to be sent back to client
+	  pthread_mutex_lock(&output_lock);
+	  while (global.example_number != parsed_index)
+	    pthread_cond_wait(&output_done, &output_lock);
+	  pthread_mutex_unlock(&output_lock);
+	  
+	  // close socket, erase final prediction sink and socket
+	  close(p->input->files[0]);
+	  global.final_prediction_sink.erase();
+	  p->input->files.erase();
+	  
+	  sockaddr_in client_address;
+	  socklen_t size = sizeof(client_address);
+	  int f = accept(p->bound_sock,(sockaddr*)&client_address,&size);
+	  if (f < 0)
+	    {
+	      cerr << "bad client socket!" << endl;
+	      exit (1);
+	    }
+	  
+	  // note: breaking cluster parallel online learning by dropping support for id
+	  
+	  push(global.final_prediction_sink, (size_t) f);
+	  push(p->input->files,f);
+
+	  if (isbinary(*(p->input))) {
+	    p->reader = read_cached_features;
+	    global.print = binary_print_result;
+	  } else {
+	    p->reader = read_features;
+	    global.print = print_result;
 	  }
 	}
+      else {
+	for (size_t i = 0; i < input->files.index();i++)
+	  {
+	    input->reset_file(input->files[i]);
+	    if (cache_numbits(input, input->files[i]) < numbits) {
+	      cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
+	      exit(1);
+	    }
+	  }
+      }
     }
 }
 
@@ -233,13 +255,11 @@ void parse_cache(po::variables_map &vm, string source,
     }
 }
 
-bool member(v_array<size_t> ids, size_t id)
-{
-  for (size_t i = 0; i < ids.index(); i++)
-    if (ids[i] == id)
-      return true;
-  return false;
-}
+//For macs
+#ifndef MAP_ANONYMOUS
+# define MAP_ANONYMOUS MAP_ANON
+#endif
+
 
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes)
 {
@@ -250,7 +270,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
   if(vm.count("hash")) 
     hash_function = vm["hash"].as<string>();
 
-  if (vm.count("daemon") || vm.count("multisource") || global.persistent)
+  if (vm.count("multisource") || global.daemon)
     {
       par->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
       if (par->bound_sock < 0) {
@@ -271,7 +291,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       address.sin_port = htons(port);
 
       // attempt to bind to socket
-      if (bind(par->bound_sock,(sockaddr*)&address, sizeof(address)) < 0)
+      if ( ::bind(par->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
 	{
 	  cerr << "failure to bind!" << endl;
 	  exit(1);
@@ -290,10 +310,24 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  cerr << "failure to background!" << endl;
 	  exit(1);
 	}
+      // write pid file
+      if (vm.count("pid_file"))
+	{
+	  ofstream pid_file;
+	  pid_file.open(vm["pid_file"].as<string>().c_str());
+	  if (!pid_file.is_open())
+	    {
+	      cerr << "error writing pid file" << endl;
+	      exit(1);
+	    }
+	  pid_file << getpid() << endl;
+	  pid_file.close();
+	}
 
-      if (global.persistent)
+      if (global.daemon)
 	{
 	  // weights will be shared across processes, accessible to children
+
 	  float* shared_weights = 
 	    (float*)mmap(0,global.stride * global.length() * sizeof(float), 
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
@@ -308,8 +342,9 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    }
 
 	  // create children
-	  size_t num_children = 10;
-	  int children[num_children];
+	  size_t num_children = global.num_children;
+	  v_array<int> children;
+	  reserve(children, num_children);
 	  for (size_t i = 0; i < num_children; i++)
 	    {
 	      // fork() returns pid if parent, 0 if child
@@ -318,13 +353,31 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 		goto child;
 	    }
 
+	  // install signal handler so we can kill children when killed
+	  {
+	    struct sigaction sa;
+	    // specifically don't set SA_RESTART in sa.sa_flags, so that
+	    // waitid will be interrupted by SIGTERM with handler installed
+	    memset(&sa, 0, sizeof(sa));
+	    sa.sa_handler = handle_sigterm;
+	    sigaction(SIGTERM, &sa, NULL);
+	  }
+
 	  while (true)
 	    {
 	      // wait for child to change state; if finished, then respawn
-	      siginfo_t sig;
-	      waitid(P_ALL,0,&sig,WEXITED);
+	      int status;
+	      pid_t pid = wait(&status);
+	      if (got_sigterm)
+		{
+		  for (size_t i = 0; i < num_children; i++)
+		    kill(children[i], SIGTERM);
+		  exit(0);
+		}
+	      if (pid < 0)
+		continue;
 	      for (size_t i = 0; i < num_children; i++)
-		if (sig.si_pid == children[i])
+		if (pid == children[i])
 		  {
 		    if ((children[i]=fork()) == 0)
 		      goto child;
@@ -338,57 +391,33 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       par->max_fd = 0;
-      size_t min_id = INT_MAX;
-      for (int i = 0; i < source_count; i++)
+      if (!global.quiet)
+	cerr << "calling accept" << endl;
+      int f = accept(par->bound_sock,(sockaddr*)&client_address,&size);
+      if (f < 0)
 	{
-	  if (!global.quiet)
-	    cerr << "calling accept" << endl;
-	  int f = accept(par->bound_sock,(sockaddr*)&client_address,&size);
-	  if (f < 0)
-	    {
-	      cerr << "bad client socket!" << endl;
-	      exit (1);
-	    }
-
-	  size_t id;
-	  really_read(f, &id, sizeof(id));
-	  if (!global.quiet)
-	    cerr << "id read = " << id << endl;
-	  min_id = min (min_id, (size_t)id);
-	  if (id == 0)
-	    {
-	      par->label_sock = f;
-	      if(!global.active)
-		global.print = binary_print_result;
-	    }
-	  if (id == 0 || 
-	      ((global.backprop || global.delayed_global || global.corrective) 
-	       && vm.count("multisource")))
-	    {
-	      int_pair pf = {f,id};
-	      push(global.final_prediction_sink,pf);
-	    }
-
-	  if (member(par->ids, id))
-	    {
-	      cout << "error, two inputs with same id! Exiting.  Use --unique_id <n> next time." << endl;
-	      exit(1);
-	    }
-	  push(par->ids,id);
-	  push(par->input->files,f);
-	  par->max_fd = max(f, par->max_fd);
-	  if (!global.quiet)
-	    cerr << "reading data from port " << port << endl;
+	  cerr << "bad client socket!" << endl;
+	  exit (1);
 	}
-      global.unique_id = min_id;
+      
+      par->label_sock = f;
+      global.print = print_result;
+      
+      push(global.final_prediction_sink, (size_t) f);
+      
+      push(par->input->files,f);
+      par->max_fd = max(f, par->max_fd);
+      if (!global.quiet)
+	cerr << "reading data from port " << port << endl;
+
       par->max_fd++;
       if(vm.count("multisource"))
 	{
 	  par->reader = receive_features;
-	  calloc_reserve(par->pes,ring_size);
-	  par->pes.end = par->pes.begin+ring_size;
+	  calloc_reserve(par->pes,global.ring_size);
+	  par->pes.end = par->pes.begin+global.ring_size;
 	  calloc_reserve(par->counts,source_count);
-	  par->counts.end = par->counts.begin+ring_size;
+	  par->counts.end = par->counts.begin+global.ring_size;
 	  par->finished_count = 0;
 	}
       else if(global.active)
@@ -397,14 +426,21 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  par->hasher = getHasher(hash_function);
 	}
       else {
-	par->reader = read_cached_features;
+	if (isbinary(*(par->input))) {
+	  par->reader = read_cached_features;
+	  global.print = binary_print_result;
+	} else {
+	  par->reader = read_features;
+	  
+	}
+	par->hasher = getHasher(hash_function);
 	par->sorted_cache = true;
       }
 
-      par->resettable = par->write_cache;
+      par->resettable = par->write_cache || global.daemon;
     }
   
-  if (vm.count("data"))
+  else if (vm.count("data"))
     {
       string hash_function("strings");
       if(vm.count("hash")) 
@@ -447,9 +483,6 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	}
     }
 
-  // allow reset source if we have a cache or if in persistent mode
-  par->resettable = par->resettable || global.persistent;
-
   if (passes > 1 && !par->resettable)
     {
       cerr << global.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
@@ -483,7 +516,7 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.index(); n++)
 	    new_index += random_nos[n]* atomics[i+gram_mask[n]].weight_index;
-	  feature f = {1.,new_index & global.mask};
+	  feature f = {1.,(uint32_t)(new_index & global.mask)};
 	  push(atomics,f);
 	  if (global.audit)
 	    {
@@ -545,11 +578,11 @@ example* get_unused_example()
   while (true)
     {
       pthread_mutex_lock(&examples_lock);
-      if (examples[parsed_index % ring_size].in_use == false)
+      if (examples[parsed_index % global.ring_size].in_use == false)
 	{
-	  examples[parsed_index % ring_size].in_use = true;
+	  examples[parsed_index % global.ring_size].in_use = true;
 	  pthread_mutex_unlock(&examples_lock);
-	  return examples + (parsed_index % ring_size);
+	  return examples + (parsed_index % global.ring_size);
 	}
       else 
 	{
@@ -651,10 +684,12 @@ void setup_example(parser* p, example* ae)
 	  }
     }
 
-  //add constant feature
-  push(ae->indices,constant_namespace);
-  feature temp = {1,constant & global.mask};
-  push(ae->atomics[constant_namespace], temp);
+  if (global.add_constant) {
+    //add constant feature
+    push(ae->indices,constant_namespace);
+    feature temp = {1,(uint32_t) (constant & global.mask)};
+    push(ae->atomics[constant_namespace], temp);
+  }
   
   if(global.stride != 1) //make room for per-feature information.
     {
@@ -783,12 +818,13 @@ example* get_example(size_t thread_num)
   pthread_mutex_lock(&examples_lock);
 
   if (parsed_index != used_index[thread_num]) {
-    size_t ring_index = used_index[thread_num]++ % ring_size;
+    size_t ring_index = used_index[thread_num]++ % global.ring_size;
     if (!(examples+ring_index)->in_use)
       cout << used_index[thread_num] << " " << parsed_index << " " << thread_num << " " << ring_index << endl;
     assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
-     return examples + ring_index;
+    
+    return examples + ring_index;
   }
   else {
     if (!done)
@@ -802,7 +838,7 @@ pthread_t parse_thread;
 
 void start_parser(size_t num_threads, parser* pf)
 {
-  used_index = (unsigned long long*) calloc(num_threads, sizeof(unsigned long long));
+  used_index = (uint64_t*) calloc(num_threads, sizeof(uint64_t));
   parsed_index = 0;
   done = false;
 
@@ -813,9 +849,9 @@ void start_parser(size_t num_threads, parser* pf)
 	  push(random_nos, (size_t)rand());
     }      
 
-  examples = (example*)calloc(ring_size, sizeof(example));
+  examples = (example*)calloc(global.ring_size, sizeof(example));
 
-  for (size_t i = 0; i < ring_size; i++)
+  for (size_t i = 0; i < global.ring_size; i++)
     {
       pthread_mutex_init(&examples[i].lock,NULL);
       pthread_cond_init(&examples[i].finished_sum,NULL);
@@ -836,7 +872,7 @@ void end_parser(parser* pf)
       if(gram_mask.begin != NULL) reserve(gram_mask,0);
     }
 
-  for (size_t i = 0; i < ring_size; i++) 
+  for (size_t i = 0; i < global.ring_size; i++) 
     {
       pf->lp->delete_label(examples[i].ld);
       if (examples[i].tag.end_array != examples[i].tag.begin)
@@ -873,12 +909,10 @@ void end_parser(parser* pf)
 
   if (pf->pes.begin != NULL)
     {
-      for (size_t i = 0; i < ring_size; i++)
+      for (size_t i = 0; i < global.ring_size; i++)
 	free(pf->pes[i].features.begin);
       free(pf->pes.begin);
     }
-  if (pf->ids.begin != NULL)
-    free(pf->ids.begin);
   if (pf->counts.begin != NULL)
     free(pf->counts.begin);
 }

@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <stdio.h>
 
+using namespace std;
+
 int really_read(int sock, void* in, size_t count)
 {
   char* buf = (char*)in;
@@ -71,6 +73,8 @@ void reset(partial_example &ex)
 }
 
 size_t num_finished = 0;
+
+v_array<char> c;
   
 int receive_features(parser* p, void* ex)
 {
@@ -115,22 +119,24 @@ int receive_features(parser* p, void* ex)
 		  if (pre.example_number != ++ (p->counts[index]))
 		    cout << "count is off! " << pre.example_number << " != " << p->counts[index] << 
 		      " for source " << index << " prediction = " << pre.p << endl;
-		  if (pre.example_number == p->finished_count + ring_size)
+		  if (pre.example_number == p->finished_count + global.ring_size)
 		    FD_CLR(sock,&fds);//this ones to far ahead, let the buffer fill for awhile.
 		  size_t ring_index = pre.example_number % p->pes.index();
 		  if (p->pes[ring_index].features.index() == 0)
 		    p->pes[ring_index].example_number = pre.example_number;
 		  if (p->pes[ring_index].example_number != (int)pre.example_number)
 		    cerr << "Error, example " << p->pes[ring_index].example_number << " != " << pre.example_number << endl;
-		  feature f = {pre.p, p->ids[index]};
+		  feature f = {pre.p, (uint32_t)p->ids[index]};
 		  push(p->pes[ring_index].features, f);
 		  if (sock == p->label_sock) // The label source
 		    {
 		      label_data ld;
 		      size_t len = sizeof(ld.label)+sizeof(ld.weight);
-		      char c[len];
-		      really_read(sock,c,len);
-		      bufread_simple_label(&(p->pes[ring_index].ld), c);
+		      c.erase();
+		      if (c.index() < len)
+			reserve(c,len);
+		      really_read(sock,c.begin,len);
+		      bufread_simple_label(&(p->pes[ring_index].ld), c.begin);
 		    }
 
 		  if( p->pes[ring_index].features.index() == input->count )
@@ -145,7 +151,7 @@ int receive_features(parser* p, void* ex)
 		    }
 		}
 	    }
-	  else  if (p->counts[index] < p->finished_count + ring_size)
+	  else  if (p->counts[index] < p->finished_count + global.ring_size)
 	    FD_SET(sock,&fds);
 	}
     }

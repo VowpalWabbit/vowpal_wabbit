@@ -20,11 +20,12 @@ struct regressor {
   loss_function *loss;
 };
 
-void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_regressor_name, bool quiet);
+void parse_regressor_args(po::variables_map& vm, regressor& r, std::string& final_regressor_name, bool quiet);
 
 void initialize_regressor(regressor &r);
 
-void finalize_regressor(string reg_name, regressor &r);
-void dump_regressor(string reg_name, regressor &r, bool as_text=0, bool reg_vector=0);
+void finalize_regressor(std::string reg_name, regressor &r);
+void dump_regressor(std::string reg_name, regressor &r, bool as_text=0, bool reg_vector=0);
+void save_predictor(std::string reg_name, size_t current_pass);
 
 #endif
