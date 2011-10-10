@@ -23,7 +23,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 # for valgrind
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
-BINARIES = vw spanning_tree active_interactor
+BINARIES = vw active_interactor
 MANPAGES = vw.1
 
 #all:	$(BINARIES) $(MANPAGES)
@@ -63,7 +63,7 @@ test: .FORCE
 	@echo "vw running test-suite..."
 	@(cd test && ./RunTests -f -E 0.001 ../vw ../vw)
 
-install: vw
+install: $(BINARIES)
 	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
 
 clean:
