@@ -730,28 +730,23 @@ void setup_example(parser* p, example* ae)
     }
 
 
-  if (global.rank == 0)                                                                                                                                        
-    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)                                                                                                                       
-      {                                                                                                                                                                                                        
-       ae->num_features                                                                                                                                                                                         
-         += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)                                                                                                                                   
-         *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin);                                                                                                                                    
-
-       ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
-
-      }                                                                                                                                                                                                        
-  else                                                                                                                                                                                                         
-    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)                                                                                                                       
-      {                                                                                                                                                                                                        
-       ae->num_features                                                                                                                                                                                         
-         += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)                                                                                                                                   
-         *global.rank;                                                                                                                                                                                          
-       ae->num_features                                                                                                                                                                                         
-         += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)                                                                                                                                   
-         *global.rank;                                                                                                                                                                                         
+  if (global.rank == 0)                                                                        
+    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)
+      {
+	ae->num_features 
+	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
+	  *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin);
+	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
+      }
+  else
+    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)
+      {
+	ae->num_features
+	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * global.rank;
+	ae->num_features
+	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
+	  *global.rank;
       }                                                                 
-
-
 }
 
 void *main_parse_loop(void *in)

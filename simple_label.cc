@@ -1,4 +1,5 @@
 #include <float.h>
+#include <math.h>
 
 #include "simple_label.h"
 #include "cache.h"
@@ -9,6 +10,8 @@ char* bufread_simple_label(label_data* ld, char* c)
 {
   ld->label = *(float *)c;
   c += sizeof(ld->label);
+  if (global.binary_label && fabs(ld->label) != 1.f)
+    cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
   ld->weight = *(float *)c;
   c += sizeof(ld->weight);
   ld->initial = *(float *)c;
@@ -94,5 +97,7 @@ void parse_simple_label(void* v, v_array<substring>& words)
     cerr << "malformed example!\n";
     cerr << "words.index() = " << words.index() << endl;
   }
+  if (global.binary_label && fabs(ld->label) != 1.f)
+    cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
 }
 

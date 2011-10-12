@@ -166,6 +166,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.per_feature_regularizer_text = "";
   global.ring_size = 1 << 8;
   global.nonormalize = false;
+  global.binary_label = false;
 
   global.adaptive = false;
   global.add_constant = true;

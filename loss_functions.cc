@@ -272,12 +272,14 @@ loss_function* getLossFunction(string funcName, double function_parameter) {
   } else if(funcName.compare("classic") == 0){
     return new classic_squaredloss();
   } else if(funcName.compare("hinge") == 0) {
+    global.binary_label = true;
     return new hingeloss();
   } else if(funcName.compare("logistic") == 0) {
     if (set_minmax != noop_mm)
       {
 	global.sd->min_label = -100;
 	global.sd->max_label = 100;
+	global.binary_label = true;
       }
     return new logloss();
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
