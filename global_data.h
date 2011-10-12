@@ -96,7 +96,8 @@ struct global_data {
   bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
   bool random_weights;
   bool add_constant;
-  
+  bool nonormalize;
+
   size_t lda;
   float lda_alpha;
   float lda_rho;

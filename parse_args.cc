@@ -64,6 +64,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
     ("conjugate_gradient", "use conjugate gradient based optimization")
+    ("nonormalize", "Do not normalize online updates")
     ("regularization", po::value<float>(&global.regularization)->default_value(1.0), "l_2 regularization for bfgs")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
@@ -164,6 +165,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.per_feature_regularizer_output = "";
   global.per_feature_regularizer_text = "";
   global.ring_size = 1 << 8;
+  global.nonormalize = false;
 
   global.adaptive = false;
   global.add_constant = true;
@@ -210,7 +212,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("adaptive") || vm.count("exact_adaptive_norm")) {
       global.adaptive = true;
       if (vm.count("exact_adaptive_norm"))
-	global.exact_adaptive_norm = true;
+	{
+	  global.exact_adaptive_norm = true;
+	  if (vm.count("nonormalize"))
+	    cout << "Options don't make sense.  You can't use an exact norm and not normalize." << endl;
+	}
       global.stride = 2;
       vars.power_t = 0.0;
       if (global.thread_bits != 0)
@@ -372,6 +378,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("noconstant"))
     global.add_constant = false;
+
+  if (vm.count("nonormalize"))
+    global.nonormalize = true;
 
   if (vm.count("lda"))
     {
