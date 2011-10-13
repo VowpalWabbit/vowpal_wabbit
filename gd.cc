@@ -706,7 +706,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 	  float norm = ec->total_sum_feat_sq;
 	  if (global.nonormalize)
 	    norm = 1.;
-	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, 1);
+	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, norm);
 	}
       global.sd->update_sum += update;
     }
