@@ -398,7 +398,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       global.eta = min(global.eta,1.f);
     }
   if (!vm.count("lda")) 
-    global.eta *= pow(global.sd->t, vars.power_t);
+    global.eta *= pow(global.sd->t, (double)vars.power_t);
 
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(global.minibatch);
