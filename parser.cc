@@ -523,7 +523,7 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
 	    new_index += random_nos[n]* atomics[i+gram_mask[n]].weight_index;
 	  feature f = {1.,(uint32_t)(new_index & global.mask)};
 	  push(atomics,f);
-	  if (global.audit)
+	  if (global.audit && audits.index() >= initial_length)
 	    {
 	      string feature_name(audits[i].feature);
 	      for (size_t n = 1; n < gram_mask.index(); n++)
