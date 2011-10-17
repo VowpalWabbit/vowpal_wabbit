@@ -37,7 +37,6 @@ pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
 pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
 uint64_t* used_index; // The index of the example currently used by thread i.
 bool done=false;
-v_array<size_t> random_nos;
 v_array<size_t> gram_mask;
 
 bool got_sigterm = false;
@@ -520,7 +519,7 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
 	{
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.index(); n++)
-	    new_index += random_nos[n]* atomics[i+gram_mask[n]].weight_index;
+	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
 	  feature f = {1.,(uint32_t)(new_index & global.mask)};
 	  push(atomics,f);
 	  if (global.audit && audits.index() >= initial_length)
@@ -840,13 +839,6 @@ void start_parser(size_t num_threads, parser* pf)
   global.parsed_examples = 0;
   done = false;
 
-  if(global.ngram>1)
-    {
-      if(random_nos.index() < global.ngram)
-        for (size_t i = 0; i < global.ngram; i++)
-	  push(random_nos, (size_t)rand());
-    }      
-
   examples = (example*)calloc(global.ring_size, sizeof(example));
 
   for (size_t i = 0; i < global.ring_size; i++)
@@ -866,7 +858,6 @@ void end_parser(parser* pf)
 
   if(global.ngram > 1)
     {
-      if(random_nos.begin != NULL) reserve(random_nos,0);
       if(gram_mask.begin != NULL) reserve(gram_mask,0);
     }
 
