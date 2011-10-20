@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
     }
   
   free(vars);
+  free(global.sd);
   
   return 0;
 }

@@ -61,10 +61,10 @@ void set_compressed(parser* par){
   par->output = new comp_io_buf;
 }
 
-v_array<char> t;
-
 size_t cache_numbits(io_buf* buf, int filepointer)
 {
+  v_array<char> t;
+
   size_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
   if(v_length>29){
@@ -79,13 +79,17 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   if (strcmp(t.begin,version.c_str()) != 0)
     {
       cout << "cache has possibly incompatible version, rebuilding" << endl;
+      free(t.begin);
       return 0;
     }
+  free(t.begin);
   
   const int total = sizeof(size_t);
   char* p[total];
   if (buf->read_file(filepointer, p, total) < total) 
-    return true;
+    {
+      return true;
+    }
 
   size_t cache_numbits = *(size_t *)p;
   return cache_numbits;
@@ -895,6 +899,15 @@ void end_parser(parser* pf)
       free(examples[i].indices.begin);
     }
   free(examples);
+  
+  io_buf* output = pf->output;
+  if (output != NULL)
+    {
+      if (output->finalname.begin != NULL)
+	free(output->finalname.begin);
+      if (output->currentname.begin != NULL)
+	free(output->currentname.begin);
+    }
 
   if (pf->pes.begin != NULL)
     {
