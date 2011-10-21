@@ -90,16 +90,9 @@ void quad_precond_update(weight* weights, feature& page_feature, v_array<feature
 float predict_and_gradient(regressor& reg, example* &ec)
 {
   float raw_prediction = inline_predict(reg,ec,0);
-  float fp = raw_prediction;
-
-  if ( isnan(raw_prediction))
-    {
-      cout << "you have a NAN!!!!!" << endl;
-      fp = 0.;
-    }
+  float fp = finalize_prediction(raw_prediction);
   
   label_data* ld = (label_data*)ec->ld;
-  set_minmax(ld->label);
 
   float loss_grad = reg.loss->first_derivative(fp,ld->label)*ld->weight;
   
@@ -283,7 +276,7 @@ double direction_magnitude(regressor& reg)
 
     double beta = g_Hy/g_Hg;
 
-    if (beta<0. || isnan(beta))
+    if (beta<0. || (::isnan)(beta))
       beta = 0.;
       
     mem = mem0;
@@ -407,7 +400,7 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
   double new_step_cross  = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
   bool violated = false;
-  if (new_step_cross<0. || new_step_cross>step || isnan(new_step_cross)) {
+  if (new_step_cross<0. || new_step_cross>step || (::isnan)(new_step_cross)) {
     violated = true;
     new_step_cross = new_step_simple;
   }
@@ -544,8 +537,8 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
 		    loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
 		    accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
 		  }
-		  if (global.regularization > 0.)
-		    loss_sum += add_regularization(reg,global.regularization);
+		  if (global.l2_regularization > 0.)
+		    loss_sum += add_regularization(reg,global.l2_regularization);
 		  if (!global.quiet)
 		    fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 
@@ -605,8 +598,8 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
 		  if(global.span_server != "") {
 		    curvature = accumulate_scalar(global.span_server, curvature);  //Accumulate curvatures
 		  }
-		  if (global.regularization > 0.)
-		    curvature += regularizer_direction_magnitude(reg,global.regularization);
+		  if (global.l2_regularization > 0.)
+		    curvature += regularizer_direction_magnitude(reg,global.l2_regularization);
 		  float dd = derivative_in_direction(reg, mem, origin);
 		  if (curvature == 0. && dd != 0.)
 		    {
@@ -669,7 +662,7 @@ void setup_bfgs(gd_thread_params& t)
 
   bool output_regularizer = false;
   if (reg.regularizers != NULL)
-      global.regularization = 1; // To make sure we are adding the regularization
+      global.l2_regularization = 1; // To make sure we are adding the regularization
   output_regularizer =  (global.per_feature_regularizer_output != "" || global.per_feature_regularizer_text != "");
   
   while ( true )
@@ -692,13 +685,13 @@ void setup_bfgs(gd_thread_params& t)
 		    accumulate(global.span_server, reg, 3); //Accumulate preconditioner
 		    importance_weight_sum = accumulate_scalar(global.span_server, importance_weight_sum);
 		  }
-		finalize_preconditioner(reg,global.regularization);
+		finalize_preconditioner(reg,global.l2_regularization);
 		if(global.span_server != "") {
 		  loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
 		  accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
 		}
-		if (global.regularization > 0.)
-		  loss_sum += add_regularization(reg,global.regularization);
+		if (global.l2_regularization > 0.)
+		  loss_sum += add_regularization(reg,global.l2_regularization);
 		if (!global.quiet)
 		  fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 		
@@ -785,7 +778,7 @@ void setup_bfgs(gd_thread_params& t)
     {
       if(global.span_server != "")
 	accumulate(global.span_server, reg, 3); //Accumulate preconditioner
-      preconditioner_to_regularizer(reg,global.regularization);
+      preconditioner_to_regularizer(reg,global.l2_regularization);
     }
   ftime(&t_end_global);
   net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 

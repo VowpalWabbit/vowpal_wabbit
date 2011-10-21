@@ -128,7 +128,7 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
       float eta_t = global.eta/pow(ec->example_t,vars.power_t) / 3. * ld->weight;
       update = reg.loss->getUpdate(ec->final_prediction, ld->label, eta_t, 1.); //ec->total_sum_feat_sq);
 
-      float regularization = eta_t * global.regularization;
+      float regularization = eta_t * global.l2_regularization;
 
       // linear update
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
@@ -213,7 +213,6 @@ void mf_print_audit_features(regressor &reg, example* ec, size_t offset)
 void mf_local_predict(example* ec, size_t mf_num_threads, gd_vars& vars, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
-  set_minmax(ld->label);
 
   ec->final_prediction = finalize_prediction(ec->partial_prediction);
 

@@ -58,7 +58,7 @@ void feature_value(substring &s, v_array<substring>& name, float &v)
     break;
   case 2:
     v = float_of_substring(name[1]);
-    if ( isnan(v))
+    if ( (::isnan)(v))
       {
 	cerr << "error NaN value for feature: ";
 	cerr.write(name[0].start, name[0].end - name[0].start);

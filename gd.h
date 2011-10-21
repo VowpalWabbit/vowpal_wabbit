@@ -47,7 +47,7 @@ float inline_predict(regressor &reg, example* &ec, size_t thread_num);
 
 float one_of_quad_predict(v_array<feature> &page_features, feature& offer_feature, weight* weights, size_t mask);
 
-float one_pf_quad_predict(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask);
+float one_pf_quad_predict(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, int mode, float gravity);
 
 float single_quad_weight(weight* weights, feature& page_feature, feature* offer_feature, size_t mask);
 
@@ -71,5 +71,7 @@ void output_and_account_example(example* ec);
 void finish_example(example* ec);
 
 bool command_example(example*, gd_thread_params*);
+
+void sync_weights(regressor *reg);
 
 #endif

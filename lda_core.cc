@@ -586,8 +586,8 @@ void start_lda(gd_thread_params t)
 	    print_audit_features(reg, examples[d]);
           // If the doc is empty, give it loss of 0.
           if (doc_lengths[d] > 0) {
-            global.sd->sum_loss -= score;
-            global.sd->sum_loss_since_last_dump -= score;
+            global.sum_loss -= score;
+            global.sum_loss_since_last_dump -= score;
           }
           finish_example(examples[d]);
 	}

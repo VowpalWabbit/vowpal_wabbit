@@ -39,13 +39,15 @@ void* gd_thread(void *in)
   example* ec = NULL;
   size_t current_pass = 0;
 
-  
   while ( true )
     {//this is a poor man's select operation.
       if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
 	{
+
 	  if (ec->pass != current_pass)
 	    {
+	      if (global.save_per_pass)
+		sync_weights(&reg);
 	      global.eta *= global.eta_decay_rate;
 	      save_predictor(*(params->final_regressor_name), current_pass);
 	      current_pass = ec->pass;
@@ -55,10 +57,18 @@ void* gd_thread(void *in)
 	  else
 	    inline_train(reg, ec, thread_num, ec->eta_round);
 	  finish_example(ec);
+
+	  // synchronization to ensure numerical stability (for L2) and sufficient reset (for L1)
+	  if ( (global.contraction_prod_minimum > 0. && global.contraction_prod < global.contraction_prod_minimum)
+	       || (global.gravity_sum_maximum > 0. && global.gravity_sum > global.gravity_sum_maximum) ) {
+	    sync_weights(&reg);
+	  }
+
 	}
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
+
 	  if (ec->pass != current_pass && global.span_server != "")
 	    {
 	      if(global.span_server != "") {
@@ -80,14 +90,7 @@ void* gd_thread(void *in)
 	}
       else if (thread_done(thread_num))
 	{
-	  if (global.l_1_regularization > 0.)
-	    {
-	      uint32_t length = 1 << global.num_bits;
-	      size_t stride = global.stride;
-	      float gravity = global.l_1_regularization * global.sd->update_sum;
-	      for(uint32_t i = 0; i < length; i++)
-		reg.weight_vectors[0][stride*i] = real_weight(reg.weight_vectors[0][stride*i],gravity);
-	    }
+	  sync_weights(&reg);
 	  if(global.span_server != "") {
 	    if(global.adaptive)
 	      //  accumulate_avg(*(params->socks), params->reg, 0);	      
@@ -103,6 +106,18 @@ void* gd_thread(void *in)
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
   return NULL;
+}
+
+void sync_weights(regressor *reg) {
+  // lihong: remove the following debug message
+  cerr << "sync_weights with global.contraction_prod = " << global.contraction_prod
+       << " and example_number = " << global.example_number << endl;
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  for(uint32_t i = 0; i < length && global.regularization_mode; i++)
+    reg->weight_vectors[0][stride*i] = real_weight(reg->weight_vectors[0][stride*i], global.regularization_mode);
+  global.gravity_sum = 0.;
+  global.contraction_prod = 1.;
 }
 
 bool command_example(example* ec, gd_thread_params* params) {
@@ -128,16 +143,12 @@ bool command_example(example* ec, gd_thread_params* params) {
 
 float finalize_prediction(float ret) 
 {
-  if ( isnan(ret))
-    {
-      cout << "you have a NAN!!!!!" << endl;
-      return 0.;
-    }
-  if ( ret > global.sd->max_label )
-    return global.sd->max_label;
-  if (ret < global.sd->min_label)
-    return global.sd->min_label;
-
+  if ( (::isnan)(ret))
+    return 0.5;
+  if ( ret > global.max_label )
+    return global.max_label;
+  if (ret < global.min_label)
+    return global.min_label;
   return ret;
 }
 
@@ -147,6 +158,7 @@ void finish_example(example* ec)
   if (-- ec->threads_to_finish == 0)
     {
       pthread_mutex_unlock(&ec->lock);
+
       output_and_account_example(ec);
       free_example(ec);
     }
@@ -154,9 +166,21 @@ void finish_example(example* ec)
     pthread_mutex_unlock(&ec->lock);
 }
 
+// computes the squared L2-norm of the weights
+double reg_norm_sq () {
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  double norm_sq = 0.0;
+  for(uint32_t i = 0; i < length; i++) {
+    float w = real_weight(global.reg->weight_vectors[0][stride*i], global.regularization_mode);
+    norm_sq += w * w;
+  }
+  return norm_sq;
+}
+
 void print_update(example *ec)
 {
-  if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
+  if (global.weighted_examples > global.dump_interval && !global.quiet && !global.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
@@ -165,18 +189,21 @@ void print_update(example *ec)
       else
 	sprintf(label_buf,"%8.4f",ld->label);
 
-      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
-	      global.sd->sum_loss/global.sd->weighted_examples,
-	      global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
-	      (long int)global.sd->example_number,
-	      global.sd->weighted_examples,
+      // lihong: remove last two columns
+      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu %10.6f %10.6f\n",
+	      global.sum_loss/global.weighted_examples,
+	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples),
+	      (long int)global.example_number,
+	      global.weighted_examples,
 	      label_buf,
 	      ec->final_prediction,
-	      (long unsigned int)ec->num_features);
-     
-      global.sd->sum_loss_since_last_dump = 0.0;
-      global.sd->old_weighted_examples = global.sd->weighted_examples;
-      global.sd->dump_interval *= 2;
+	      (long unsigned int)ec->num_features,
+	      global.sum_loss_since_last_dump / (global.weighted_examples - global.old_weighted_examples) + global.l2_regularization * reg_norm_sq() * 0.5,
+	      global.contraction_prod);
+
+      global.sum_loss_since_last_dump = 0.0;
+      global.old_weighted_examples = global.weighted_examples;
+      global.dump_interval *= 2;
     }
 }
 
@@ -185,75 +212,56 @@ float query_decision(example*, float k);
 void output_and_account_example(example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
-  global.sd->weighted_examples += ld->weight;
-  global.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-  global.sd->total_features += ec->num_features;
-  global.sd->sum_loss += ec->loss;
-  global.sd->sum_loss_since_last_dump += ec->loss;
+  global.weighted_examples += ld->weight;
+  global.weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
+  global.total_features += ec->num_features;
+  global.sum_loss += ec->loss;
+  global.sum_loss_since_last_dump += ec->loss;
   
   global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
 
   float ai=-1;
   if(global.active && ld->label == FLT_MAX)
-    ai=query_decision(ec, global.sd->weighted_unlabeled_examples);
-  global.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
+    ai=query_decision(ec, global.weighted_unlabeled_examples);
+  global.weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
   
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
-      int f = global.final_prediction_sink[i];
+      int f = global.final_prediction_sink[i].fd;
       if(global.active)
 	global.print(f, ec->final_prediction, ai, ec->tag);
       else if (global.lda > 0)
 	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
       else
-	global.print(f, ec->final_prediction, 0, ec->tag);
+	{
+	  float w;
+	  if (global.reg->weight_vectors != NULL) {
+	    w = global.reg->weight_vectors[0][global.final_prediction_sink[i].id];
+	  } else {
+	    w = 0.;
+	  }
+	  global.print(f, ec->final_prediction, w*ec->global_weight, ec->tag);
+	}
     }
 
   pthread_mutex_lock(&output_lock);
-  global.local_example_number++;
+  global.example_number++;
   pthread_cond_signal(&output_done);
   pthread_mutex_unlock(&output_lock);
 
-  global.sd->example_number++;
-
   print_update(ec);
-}
-
-float inline_l1_predict(regressor &reg, example* &ec, size_t thread_num)
-{
-  float prediction = get_initial(ec->ld);
-  
-  weight* weights = reg.weight_vectors[thread_num];
-  size_t thread_mask = global.thread_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      prediction += sd_truncadd(weights,thread_mask,ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1], global.l_1_regularization * global.sd->update_sum);
-    }
-  
-  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-    {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += one_pf_quad_predict_trunc(weights,*temp.begin,
-						    ec->atomics[(int)(*i)[1]],thread_mask, global.l_1_regularization * global.sd->update_sum);
-	}
-    }
-  
-  return prediction;
 }
 
 float inline_predict(regressor &reg, example* &ec, size_t thread_num)
 {
   float prediction = get_initial(ec->ld);
-
+  
   weight* weights = reg.weight_vectors[thread_num];
   size_t thread_mask = global.thread_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add(weights,thread_mask,ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1]);
+
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
+    prediction += sd_add(weights, thread_mask, ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1], 1);
+  }
   
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
@@ -263,8 +271,7 @@ float inline_predict(regressor &reg, example* &ec, size_t thread_num)
 	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
 	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += one_pf_quad_predict(weights,*temp.begin,
-					      ec->atomics[(int)(*i)[1]],thread_mask);
+	    prediction += one_pf_quad_predict(weights,*temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, 1);
 	}
     }
   
@@ -312,15 +319,13 @@ void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_d
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
 
-  float gravity = global.l_1_regularization * global.sd->update_sum;
-
   for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       ostringstream tempstream;
       tempstream << '\t' << page_feature.space << '^' << page_feature.feature << '^' 
 		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/global.stride) & mask)
 		 << ':' << ele->x*page_feature.x
-		 << ':' << real_weight(weights[(halfhash + ele->weight_index) & mask], gravity);
+		 << ':' << real_weight(weights[(halfhash + ele->weight_index) & mask], global.regularization_mode);
       string_value sv = {weights[ele->weight_index & mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
@@ -328,14 +333,13 @@ void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_d
 
 void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, vector<string_value>& features)
 {
-  float gravity = global.l_1_regularization * global.sd->update_sum;
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       ostringstream tempstream;
       cout << '\t' << (((halfhash + ele->weight_index)/global.stride) & mask) 
 	   << ':' << (ele->x*page_feature.x)
-	   << ':' << real_weight(weights[(halfhash + ele->weight_index) & mask], gravity);
+	   << ':' << real_weight(weights[(halfhash + ele->weight_index) & mask], global.regularization_mode);
       string_value sv = {weights[ele->weight_index & mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
@@ -365,15 +369,13 @@ void print_features(regressor &reg, example* &ec)
     {
       vector<string_value> features;
 
-      float gravity = global.l_1_regularization * global.sd->update_sum;
-      
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
 	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	    {
 	      ostringstream tempstream;
 	      tempstream << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
-	      tempstream  << ':' << real_weight(weights[f->weight_index & thread_mask], gravity);
+	      tempstream  << ':' << real_weight(weights[f->weight_index & thread_mask], global.regularization_mode);
 	      if(global.adaptive)
 		tempstream << '@' << weights[(f->weight_index+1) & thread_mask];
 	      string_value sv = {weights[f->weight_index & thread_mask]*f->x, tempstream.str()};
@@ -386,7 +388,7 @@ void print_features(regressor &reg, example* &ec)
 	      if ( f->weight_index == (constant&global.mask)*stride)
 		tempstream << "Constant:";
 	      tempstream << f->weight_index/stride << ':' << f->x;
-	      tempstream << ':' << real_weight(weights[f->weight_index & thread_mask], gravity);
+	      tempstream << ':' << real_weight(weights[f->weight_index & thread_mask], global.regularization_mode);
 	      if(global.adaptive)
 		tempstream << '@' << weights[(f->weight_index+1) & thread_mask];
 	      string_value sv = {weights[f->weight_index & thread_mask]*f->x, tempstream.str()};
@@ -651,8 +653,8 @@ float query_decision(example* ec, float k)
   if (k<=1.)
     bias=1.;
   else{
-    weighted_queries = global.initial_t + global.sd->weighted_examples - global.sd->weighted_unlabeled_examples;
-    avg_loss = global.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
+    weighted_queries = global.initial_t + global.weighted_examples - global.weighted_unlabeled_examples;
+    avg_loss = global.sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
     bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, global.active_c0);
   }
   if(drand48()<bias)
@@ -665,17 +667,14 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 {
   label_data* ld = (label_data*)ec->ld;
 
-  set_minmax(ld->label);
-
-  ec->final_prediction = 
-    finalize_prediction(ec->partial_prediction);
+  ec->final_prediction = finalize_prediction(ec->partial_prediction * global.contraction_prod);
 
   if(global.active_simulation){
     float k = ec->example_t - ld->weight;
     ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(k,vars.power_t));
     float importance = query_decision(ec, k);
     if(importance > 0){
-      global.sd->queries += 1;
+      global.queries += 1;
       ld->weight *= importance;
     }
     else //do not query => do not train
@@ -684,7 +683,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 
   float t;
   if(global.active)
-    t = global.sd->weighted_unlabeled_examples;
+    t = global.weighted_unlabeled_examples;
   else
     t = ec->example_t;
 
@@ -693,29 +692,48 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
       
       double update = 0.;
-      if (global.adaptive && global.exact_adaptive_norm)
-	{
-	  float magx = 0.;
-	  float xGx = compute_xGx(reg, ec, thread_num, magx);
-	  update = global.eta*xGx/magx;
-	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, xGx);
-	}
-      else
-	{
-	  update = global.eta/pow(t,vars.power_t)*ld->weight;
-	  float norm = ec->total_sum_feat_sq;
-	  if (global.nonormalize)
-	    norm = 1.;
-	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, norm);
-	}
-      global.sd->update_sum += update;
+      float norm = 0.;
+      if (global.adaptive && global.exact_adaptive_norm) {
+	float magx = 0.;
+	norm = compute_xGx(reg, ec, thread_num, magx);
+	update = global.eta * norm / magx;
+      } else {
+	norm = ec->total_sum_feat_sq;
+	update = global.eta / pow(t,vars.power_t) * ld->weight;
+      }
+
+      // lihong: L2 for SGD, for debug only
+      if (global.training)
+	global.contraction_prod *= (1. - global.l2_regularization * update);
+
+      ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, update, norm) / global.contraction_prod;
+      
+      // L1 or L2 regularization updates come here.
+      if (0 && global.training && global.regularization_mode && fabs(ec->eta_round) > 1e-8) {  //lihong: remove '0 &&'
+  
+	double dev1 = reg.loss->first_derivative(ec->final_prediction, ld->label);
+	double eta_bar = (fabs(dev1) > 1e-8) ? (-ec->eta_round / dev1) : 0.0;
+
+	 // first attempt of l2, which does not consider example weights.
+	 //if (global.l_2_regularization * update / norm < 0.5 && global.l_2_regularization > 0.)
+	 //global.contraction_prod *= (1. - global.l_2_regularization * update / norm);
+	 //
+	 // second attempt of l2, motivated by section 3.3 of the UAI paper
+	 if (fabs(dev1) > 1e-8)
+	   global.contraction_prod /= (1. + global.l2_regularization * eta_bar * norm);
+	 
+	 // first attempt of l1:
+	 // global.update_sum += update / norm;
+	 // second attempt of l1 (john's suggestion):
+	 global.gravity_sum += eta_bar * sqrt(norm) * global.l1_regularization;
+      }
     }
   else if(global.active)
     ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(t,vars.power_t));
-
+  
   if (global.delayed_global && global.local_prediction > 0)
     ec->eta_round = 0;
-
+  
   if (global.local_prediction > 0)
     {
       prediction pred;
@@ -741,11 +759,13 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
 void predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
 {
   float prediction;
+  prediction = inline_predict(r, ex, thread_num);
+  /*
   if (global.l_1_regularization != 0.)
     prediction = inline_l1_predict(r,ex,thread_num);
   else
     prediction = inline_predict(r, ex, thread_num);
-
+  */
   pthread_mutex_lock(&ex->lock);
 
   ex->partial_prediction += prediction;
