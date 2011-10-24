@@ -65,8 +65,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("nonormalize", "Do not normalize online updates")
-    ("l1", po::value<float>(&global.l1_lambda)->default_value(1.0), "l_1 lambda")
-    ("l2", po::value<float>(&global.l2_lambda)->default_value(1.0), "l_2 lambda")
+    ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
+    ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
@@ -529,7 +529,13 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   }
   global.reg_mode += (global.l1_lambda > 0.) ? 1 : 0;
   global.reg_mode += (global.l2_lambda > 0.) ? 2 : 0;
-  cerr << "regularization mode is " << global.reg_mode << endl;
+  if (!global.quiet)
+    {
+      if (global.reg_mode %2)
+	cerr << "using l1 regularization" << endl;
+      if (global.reg_mode > 1)
+	cerr << "using l2 regularization" << endl;
+    }
 
   return vm;
 }
