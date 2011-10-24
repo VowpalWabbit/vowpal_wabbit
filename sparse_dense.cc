@@ -8,51 +8,46 @@ embodied in the content of this file are licensed under the BSD
 #include "constant.h"
 #include <math.h>
 
-float sd_add(weight* weights, size_t mask, feature* begin, feature* end, int mode)
+float sd_add(weight* weights, size_t mask, feature* begin, feature* end)
 {
   float ret = 0.;
   for (feature* f = begin; f!= end; f++)
-    ret += real_weight(weights[f->weight_index & mask], mode) * f->x;
+    ret += weights[f->weight_index & mask] * f->x;
   return ret;
 }
 
-/*
 float sd_truncadd(weight* weights, size_t mask, feature* begin, feature* end, float gravity)
 {
   float ret = 0.;
   for (feature* f = begin; f!= end; f++)
     {
       float w = weights[f->weight_index & mask];
-      float wprime = real_weight(w, 1, gravity);
+      float wprime = real_weight(w,gravity);
       ret += wprime*f->x;
     }
   return ret;
 }
-*/
 
-float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, int mode)
+float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, size_t offset)
 {
   float ret = 0.;
   for (feature* f = begin; f!= end; f++)
-    ret += real_weight(weights[(f->weight_index + offset) & mask], mode) * f->x;
+    ret += weights[(f->weight_index + offset) & mask] * f->x;
   return ret;
 }
 
-/*
 float sd_offset_truncadd(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float gravity)
 {
   float ret = 0.;
   for (feature* f = begin; f!= end; f++)
     {
       float w = weights[(f->weight_index+offset) & mask];
-      float wprime = real_weight(w, 1, gravity);
+      float wprime = real_weight(w,gravity);
       ret += wprime*f->x;
     }
   return ret;
 }
-*/
 
-// TODO(lihong): what does this function do (regarding the role of argument 'regularization')?
 void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update, float regularization)
 {
   for (feature* f = begin; f!= end; f++) 
@@ -85,13 +80,14 @@ float one_of_quad_predict(v_array<feature> &page_features, feature& offer_featur
   return prediction * offer_feature.x;
 }
 
-float one_pf_quad_predict(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, int mode)
+float one_pf_quad_predict(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask)
 {
   size_t halfhash = quadratic_constant * f.weight_index;
-  return f.x * sd_offset_add(weights, mask, cross_features.begin, cross_features.end, halfhash, mode);
+  
+  return f.x * 
+    sd_offset_add(weights, mask, cross_features.begin, cross_features.end, halfhash);
 }
 
-/*
 float one_pf_quad_predict_trunc(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, float gravity)
 {
   size_t halfhash = quadratic_constant * f.weight_index;
@@ -99,7 +95,6 @@ float one_pf_quad_predict_trunc(weight* weights, feature& f, v_array<feature> &c
   return f.x * 
     sd_offset_truncadd(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity);
 }
-*/
 
 float offset_quad_predict(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, size_t offset)
 {

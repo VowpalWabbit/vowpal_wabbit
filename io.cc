@@ -37,6 +37,18 @@ unsigned int buf_read(io_buf &i, char* &pointer, int n)
     }
 }
 
+bool isbinary(io_buf &i) {
+  if (i.endloaded == i.space.end)
+    if (i.fill(i.files[i.current]) <= 0)
+      return false;
+
+  bool ret = (*i.space.end == 0);
+  if (ret)
+    i.space.end++;
+
+  return ret;
+}
+
 size_t readto(io_buf &i, char* &pointer, char terminal)
 {//Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
   pointer = i.space.end;

@@ -18,13 +18,36 @@ struct int_pair {
   int id;
 };
 
+struct shared_data {
+  size_t queries;
+
+  uint64_t example_number;
+  uint64_t total_features;
+
+  double t;
+  double weighted_examples;
+  double weighted_unlabeled_examples;
+  double old_weighted_examples;
+  double weighted_labels;
+  double sum_loss;
+  double sum_loss_since_last_dump;
+  float dump_interval;// when should I update for the user.
+  double update_sum;
+  double min_label;//minimum label encountered
+  double max_label;//maximum label encountered
+};
+
 struct global_data {
+  shared_data* sd;
+
   size_t thread_bits; // log_2 of the number of threads.
   size_t partition_bits; // log_2 of the number of partitions of features.
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
 
-  bool persistent; 
+  bool daemon; 
+  size_t num_children;
+
   bool save_per_pass;
   bool backprop;
   bool corrective;
@@ -32,6 +55,8 @@ struct global_data {
   float global_multiplier;
   float active_c0;
   float initial_weight;
+
+  float regularization;
 
   bool bfgs;
   bool hessian_on;
@@ -44,16 +69,13 @@ struct global_data {
   std::string per_feature_regularizer_output;
   std::string per_feature_regularizer_text;
   
-  float l1_regularization;//the level of l_1 regularization to impose.
-  double gravity_sum;
-  double gravity_sum_maximum;
-  float l2_regularization;//the level of l_2 regularization to impose.
-  double contraction_prod;
-  double contraction_prod_minimum;
-  int regularization_mode;
+  float l_1_regularization;//the level of l_1 regularization to impose.
 
   size_t minibatch;
   size_t ring_size;
+
+  uint64_t parsed_examples; // The index of the parsed example.
+  uint64_t local_example_number; 
 
   size_t pass_length;
   size_t numpasses;
@@ -65,7 +87,6 @@ struct global_data {
   bool ignore[256];//a set of namespaces to ignore
   size_t ngram;//ngrams to generate.
   size_t skips;//skips in ngrams.
-  size_t queries;
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
@@ -75,9 +96,8 @@ struct global_data {
   bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
   bool random_weights;
   bool add_constant;
-  
-  double min_label;//minimum label encountered
-  double max_label;//maximum label encountered
+  bool nonormalize;
+  bool binary_label;
 
   size_t lda;
   float lda_alpha;
@@ -95,7 +115,7 @@ struct global_data {
   size_t rank;
 
   //Prediction output
-  v_array<int_pair> final_prediction_sink; // set to send global predictions to.
+  v_array<size_t> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.
   int local_prediction;  //file descriptor to send local prediction to.
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
@@ -108,16 +128,7 @@ struct global_data {
   char* program_name;
 
   //runtime accounting variables. 
-  uint64_t example_number;
   double initial_t;
-  double weighted_examples;
-  double weighted_unlabeled_examples;
-  double old_weighted_examples;
-  double weighted_labels;
-  uint64_t total_features;
-  double sum_loss;
-  double sum_loss_since_last_dump;
-  float dump_interval;// when should I update for the user.
   float eta;//learning rate control.
   float eta_decay_rate;
 
@@ -130,6 +141,9 @@ void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(double label);
 void print_lda_result(int f, float* res, float weight, v_array<char> tag);
+
+extern pthread_mutex_t output_lock;
+extern pthread_cond_t output_done;
 
 extern pthread_mutex_t output_lock;
 extern pthread_cond_t output_done;
