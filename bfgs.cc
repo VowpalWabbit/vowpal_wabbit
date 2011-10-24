@@ -544,8 +544,8 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
 		    loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
 		    accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
 		  }
-		  if (global.regularization > 0.)
-		    loss_sum += add_regularization(reg,global.regularization);
+		  if (global.l2_lambda > 0.)
+		    loss_sum += add_regularization(reg,global.l2_lambda);
 		  if (!global.quiet)
 		    fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 
@@ -605,8 +605,8 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
 		  if(global.span_server != "") {
 		    curvature = accumulate_scalar(global.span_server, curvature);  //Accumulate curvatures
 		  }
-		  if (global.regularization > 0.)
-		    curvature += regularizer_direction_magnitude(reg,global.regularization);
+		  if (global.l2_lambda > 0.)
+		    curvature += regularizer_direction_magnitude(reg,global.l2_lambda);
 		  float dd = derivative_in_direction(reg, mem, origin);
 		  if (curvature == 0. && dd != 0.)
 		    {
@@ -669,7 +669,7 @@ void setup_bfgs(gd_thread_params& t)
 
   bool output_regularizer = false;
   if (reg.regularizers != NULL)
-      global.regularization = 1; // To make sure we are adding the regularization
+      global.l2_lambda = 1; // To make sure we are adding the regularization
   output_regularizer =  (global.per_feature_regularizer_output != "" || global.per_feature_regularizer_text != "");
   
   while ( true )
@@ -692,13 +692,13 @@ void setup_bfgs(gd_thread_params& t)
 		    accumulate(global.span_server, reg, 3); //Accumulate preconditioner
 		    importance_weight_sum = accumulate_scalar(global.span_server, importance_weight_sum);
 		  }
-		finalize_preconditioner(reg,global.regularization);
+		finalize_preconditioner(reg,global.l2_lambda);
 		if(global.span_server != "") {
 		  loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
 		  accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
 		}
-		if (global.regularization > 0.)
-		  loss_sum += add_regularization(reg,global.regularization);
+		if (global.l2_lambda > 0.)
+		  loss_sum += add_regularization(reg,global.l2_lambda);
 		if (!global.quiet)
 		  fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 		
@@ -785,7 +785,7 @@ void setup_bfgs(gd_thread_params& t)
     {
       if(global.span_server != "")
 	accumulate(global.span_server, reg, 3); //Accumulate preconditioner
-      preconditioner_to_regularizer(reg,global.regularization);
+      preconditioner_to_regularizer(reg, global.l2_lambda);
     }
   ftime(&t_end_global);
   net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 

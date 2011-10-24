@@ -128,7 +128,7 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
       float eta_t = global.eta/pow(ec->example_t,vars.power_t) / 3. * ld->weight;
       update = reg.loss->getUpdate(ec->final_prediction, ld->label, eta_t, 1.); //ec->total_sum_feat_sq);
 
-      float regularization = eta_t * global.regularization;
+      float regularization = eta_t * global.l2_lambda;
 
       // linear update
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 

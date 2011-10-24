@@ -72,4 +72,6 @@ void finish_example(example* ec);
 
 bool command_example(example*, gd_thread_params*);
 
+void sync_weights(regressor *reg);
+
 #endif

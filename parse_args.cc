@@ -65,7 +65,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("nonormalize", "Do not normalize online updates")
-    ("regularization", po::value<float>(&global.regularization)->default_value(1.0), "l_2 regularization for bfgs")
+    ("l1", po::value<float>(&global.l1_lambda)->default_value(1.0), "l_1 lambda")
+    ("l2", po::value<float>(&global.l2_lambda)->default_value(1.0), "l_2 lambda")
     ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
@@ -87,7 +88,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_pass_length", po::value<size_t>(&global.pass_length)->default_value((size_t)-1), "initial number of examples per pass")
     ("initial_t", po::value<double>(&(global.sd->t))->default_value(1.), "initial t value")
-    ("l1", po::value<float>(&global.l_1_regularization)->default_value(0.), "l_1 regularization level")
     ("lda", po::value<size_t>(&global.lda), "Run lda with <int> topics")
     ("lda_alpha", po::value<float>(&global.lda_alpha)->default_value(0.1), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>(&global.lda_rho)->default_value(0.1), "Prior on sparsity of topic distributions")
@@ -141,9 +141,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.sd->sum_loss = 0.0;
   global.sd->sum_loss_since_last_dump = 0.0;
   global.sd->dump_interval = exp(1.);
-  global.sd->update_sum = 0.;
+  global.sd->gravity = 0.;
+  global.sd->contraction = 1.;
   global.sd->min_label = 0.;
   global.sd->max_label = 1.;
+  global.reg_mode = 0;
   global.local_example_number = 0;
   global.backprop = false;
   global.bfgs = false;
@@ -462,8 +464,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
       if (global.rank > 0)
 	cerr << "rank = " << global.rank << endl;
-      if (global.regularization > 0 && global.bfgs)
-	cerr << "regularization = " << global.regularization << endl;
     }
 
   if (vm.count("predictions")) {
@@ -518,6 +518,18 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	cerr << "predictto = " << vm["predictto"].as< string >() << endl;
       global.local_prediction = open_socket(vm["predictto"].as< string > ().c_str());
     }
+
+  if (global.l1_lambda < 0.) {
+    cerr << "l1_lambda should be nonnegative: resetting from " << global.l1_lambda << " to 0" << endl;
+    global.l1_lambda = 0.;
+  }
+  if (global.l2_lambda < 0.) {
+    cerr << "l2_lambda should be nonnegative: resetting from " << global.l2_lambda << " to 0" << endl;
+    global.l2_lambda = 0.;
+  }
+  global.reg_mode += (global.l1_lambda > 0.) ? 1 : 0;
+  global.reg_mode += (global.l2_lambda > 0.) ? 2 : 0;
+  cerr << "regularization mode is " << global.reg_mode << endl;
 
   return vm;
 }

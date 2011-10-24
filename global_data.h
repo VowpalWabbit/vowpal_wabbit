@@ -32,7 +32,8 @@ struct shared_data {
   double sum_loss;
   double sum_loss_since_last_dump;
   float dump_interval;// when should I update for the user.
-  double update_sum;
+  double gravity;
+  double contraction;
   double min_label;//minimum label encountered
   double max_label;//maximum label encountered
 };
@@ -56,8 +57,6 @@ struct global_data {
   float active_c0;
   float initial_weight;
 
-  float regularization;
-
   bool bfgs;
   bool hessian_on;
   int m;
@@ -69,7 +68,9 @@ struct global_data {
   std::string per_feature_regularizer_output;
   std::string per_feature_regularizer_text;
   
-  float l_1_regularization;//the level of l_1 regularization to impose.
+  float l1_lambda; //the level of l_1 regularization to impose.
+  float l2_lambda; //the level of l_2 regularization to impose.
+  int reg_mode;
 
   size_t minibatch;
   size_t ring_size;
