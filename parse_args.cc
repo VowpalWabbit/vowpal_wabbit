@@ -377,6 +377,16 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     float temp = ceilf(logf((float)(global.rank*2+1)) / logf (2.f));
     global.stride = 1 << (int) temp;
     global.random_weights = true;
+    if (vm.count("adaptive") || vm.count("exact_adaptive_norm"))
+      {
+	cerr << "adaptive is not implemented for matrix factorization" << endl;
+	exit (1);
+      }
+    if (vm.count("bfgs") || vm.count("conjugate_gradient"))
+      {
+	cerr << "bfgs is not implemented for matrix factorization" << endl;
+	exit (1);
+      }	
   }
 
   if (vm.count("noconstant"))
