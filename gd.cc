@@ -57,6 +57,8 @@ void* gd_thread(void *in)
 	  else
 	    inline_train(reg, ec, thread_num, ec->eta_round);
 	  finish_example(ec);
+	  if (global.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+	    sync_weights(&reg);
 	}
       else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
 	{
@@ -101,6 +103,8 @@ void* gd_thread(void *in)
 }
 
 void sync_weights(regressor *reg) {
+  if (global.sd->gravity == 0. && global.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
+    return;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   for(uint32_t i = 0; i < length && global.reg_mode; i++)
