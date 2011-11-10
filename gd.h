@@ -7,6 +7,10 @@ embodied in the content of this file are licensed under the BSD
 #ifndef GD_H
 #define GD_H
 
+#ifdef __FreeBSD__
+#include <sys/socket.h>
+#endif
+
 #include <math.h>
 #include "example.h"
 #include "parse_regressor.h"

@@ -1,15 +1,22 @@
 COMPILER = g++
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), FreeBSD)
+LIBS = -l boost_program_options	-l pthread -l z -l compat
+BOOST_INCLUDE = /usr/local/include
+BOOST_LIBRARY = /usr/local/lib
+else
 LIBS = -l boost_program_options -l pthread -l z
+BOOST_INCLUDE = /usr/include
+BOOST_LIBRARY = /usr/local/lib
+endif
 
 ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
-BOOST_INCLUDE = /usr/include
-#BOOST_INCLUDE = /usr/local/include
-BOOST_LIBRARY = /usr/local/lib
 
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
-WARN_FLAGS = -Wall -pedantic #-Werror 
+WARN_FLAGS = -Wall # -pedantic -Werror 
 
 # for normal fast execution.
 FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE

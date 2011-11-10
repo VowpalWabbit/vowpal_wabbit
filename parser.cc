@@ -14,6 +14,11 @@ embodied in the content of this file are licensed under the BSD
 
 #include <netdb.h>
 #include <boost/program_options.hpp>
+
+#ifdef __FreeBSD__
+#include <netinet/in.h>
+#endif
+
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <stdio.h>
