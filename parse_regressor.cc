@@ -59,12 +59,12 @@ void initialize_regressor(regressor &r)
           for (size_t j = 0; j < stride*length/num_threads; j+=stride)
 	    {
 	      for (size_t k = 0; k < global.lda; k++) {
-                r.weight_vectors[i][j+k] = -log(drand48()) + 1.0;
-//                 r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
-//                 r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
-		r.weight_vectors[i][j+k] *= (float)global.lda_D / (float)global.lda
-		  / global.length() * 200;
-              }
+		if (global.random_weights) {
+		  r.weight_vectors[i][j+k] = -log(drand48()) + 1.0;
+		  r.weight_vectors[i][j+k] *= (float)global.lda_D / (float)global.lda
+		    / global.length() * 200;
+		}
+	      }
 	      r.weight_vectors[i][j+global.lda] = global.initial_t;
 	    }
 	}
@@ -173,7 +173,7 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       // par->sort_features = true;
       float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
       global.stride = 1 << (int) temp;
-      global.random_weights = true;
+      global.random_weights = false;
     }
 
   if (!initialized)
@@ -223,18 +223,17 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
 	{
 	  if (global.rank != 0)
 	      r.weight_vectors[hash % num_threads][hash/num_threads] = w;
-	  else if (global.lda == 0)
-	    if (reg_vector) {
-	      r.regularizers[hash % num_threads][hash/num_threads] = w;
-	      if (hash%2 == 1) // This is the prior mean; previous element was prior variance
-		r.weight_vectors[(hash/2) % num_threads][(hash/2*stride)/num_threads] = w;
-	    }
+	  else 
+	    if (global.lda == 0)
+	      if (reg_vector) {
+		r.regularizers[hash % num_threads][hash/num_threads] = w;
+		if (hash%2 == 1) // This is the prior mean; previous element was prior variance
+		  r.weight_vectors[(hash/2) % num_threads][(hash/2*stride)/num_threads] = w;
+	      }
+	      else
+		r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] = w;
 	    else
-	      r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
-		= r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
-	  else
-	      r.weight_vectors[hash % num_threads][hash/num_threads] 
-		= r.weight_vectors[hash % num_threads][hash/num_threads] + w;
+	      r.weight_vectors[hash % num_threads][hash/num_threads] = w;
 	}      
     }
   source.close();
