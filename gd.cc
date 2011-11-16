@@ -65,7 +65,6 @@ void* gd_thread(void *in)
 	    {
 	      if(global.span_server != "") {
 		if(global.adaptive)
-		  //accumulate_avg(*(params->socks), params->reg, 0);	      
 		  accumulate_weighted_avg(global.span_server, params->reg);
 		else 
 		  accumulate_avg(global.span_server, params->reg, 0);	      
@@ -85,7 +84,6 @@ void* gd_thread(void *in)
 	  sync_weights(&reg);
 	  if(global.span_server != "") {
 	    if(global.adaptive)
-	      //  accumulate_avg(*(params->socks), params->reg, 0);	      
 	      accumulate_weighted_avg(global.span_server, params->reg);
 	    else 
 	      accumulate_avg(global.span_server, params->reg, 0);	      

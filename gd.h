@@ -34,7 +34,6 @@ struct gd_thread_params
   size_t thread_num;
   regressor reg;
   std::string* final_regressor_name;
-  node_socks* socks;
 };
 
 void print_audit_features(regressor &reg, example* ec, size_t offset);

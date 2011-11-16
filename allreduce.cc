@@ -24,6 +24,15 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include "allreduce.h"
 
 using namespace std;
+
+struct node_socks {
+  int parent;
+  int children[2];
+  ~node_socks();
+};
+
+const int buf_size = 1<<16;
+
 string current_master="";
 
 node_socks socks;

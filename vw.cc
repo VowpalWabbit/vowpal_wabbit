@@ -61,7 +61,7 @@ gd_vars* vw(int argc, char *argv[])
     }
 
   size_t num_threads = global.num_threads();
-  gd_thread_params t = {vars, num_threads, regressor1, &final_regressor_name, 0};
+  gd_thread_params t = {vars, num_threads, regressor1, &final_regressor_name};
 
   start_parser(num_threads, p);
   initialize_delay_ring();
