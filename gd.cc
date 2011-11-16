@@ -714,15 +714,10 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
   else if(global.active)
     ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(t,vars.power_t));
 
-  if (global.delayed_global && global.local_prediction > 0)
-    ec->eta_round = 0;
-
   if (global.local_prediction > 0)
     {
       prediction pred;
       pred.p = ec->final_prediction;
-      if (global.training && ld->label != FLT_MAX  && global.backprop)
-        pred.p += ec->eta_round * ec->total_sum_feat_sq;
       pred.example_number = ec->example_counter;
       send_prediction(global.local_prediction, pred);
       if (global.unique_id == 0)

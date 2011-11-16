@@ -58,7 +58,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
-    ("backprop", "turn on delayed backprop")
     ("bfgs", "use bfgs optimization")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
@@ -67,7 +66,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
     ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
-    ("corrective", "turn on corrective updates")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
     ("num_children", po::value<size_t>(&global.num_children)->default_value(10), "number of children for persistent daemon mode")
@@ -78,7 +76,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
     ("global_multiplier", po::value<float>(&global.global_multiplier)->default_value(1.0), "Global update multiplier")
-    ("delayed_global", "Do delayed global updates")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("help,h","Output Arguments")
     ("hessian_on", "use second derivative in line search")
@@ -97,7 +94,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("min_prediction", po::value<double>(&global.sd->min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.sd->max_label), "Largest prediction to output")
     ("mem", po::value<int>(&global.m)->default_value(15), "memory in bfgs")
-    ("multisource", po::value<size_t>(), "multiple sources for daemon input")
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
@@ -147,10 +143,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.sd->max_label = 1.;
   global.reg_mode = 0;
   global.local_example_number = 0;
-  global.backprop = false;
-  global.bfgs = false;
-  global.corrective = false;
-  global.delayed_global = false;
   global.bfgs = false;
   global.hessian_on = false;
   global.stride = 1;
@@ -229,21 +221,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
   }
 
-  if (vm.count("backprop")) {
-      global.backprop = true;
-      cout << "enabling backprop updates" << endl;
-  }
-
-  if (vm.count("corrective")) {
-      global.corrective = true;
-      cout << "enabling corrective updates" << endl;
-  }
-
-  if (vm.count("delayed_global")) {
-      global.delayed_global = true;
-      cout << "enabling delayed_global updates" << endl;
-  }
-  
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     global.bfgs = true;
     global.stride = 4;
