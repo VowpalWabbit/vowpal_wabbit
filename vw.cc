@@ -35,6 +35,7 @@ using namespace std;
 gd_vars* vw(int argc, char *argv[])
 {
   string final_regressor_name;
+  srand48(0);
 
   parser* p = new_parser(&simple_label);
   regressor regressor1;
