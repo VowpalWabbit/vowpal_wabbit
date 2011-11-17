@@ -1,3 +1,7 @@
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#endif
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
