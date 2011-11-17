@@ -27,7 +27,6 @@ embodied in the content of this file are licensed under the BSD
 #include "sender.h"
 #include "delay_ring.h"
 #include "message_relay.h"
-#include "multisource.h"
 #include "allreduce.h"
 
 using namespace std;

@@ -61,10 +61,4 @@ struct example // core example datatype.
   bool done; //set to false by setup_example()
 };
 
-struct partial_example { //used by the multisource parser
-  int example_number;
-  label_data ld;
-  v_array<feature> features;
-};
-
 #endif

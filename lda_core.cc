@@ -16,7 +16,6 @@ embodied in the content of this file are licensed under the BSD
 #include "gd.h"
 #include "lda_core.h"
 #include "cache.h"
-#include "multisource.h"
 #include "simple_label.h"
 #include "delay_ring.h"
 

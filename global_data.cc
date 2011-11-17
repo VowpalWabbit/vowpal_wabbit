@@ -1,8 +1,8 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <float.h>
+#include <iostream>
 #include "global_data.h"
-#include "multisource.h"
 #include "message_relay.h"
 
 using namespace std;
@@ -12,6 +12,26 @@ string version = "6.0";
 
 pthread_mutex_t output_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t output_done = PTHREAD_COND_INITIALIZER;
+
+void send_global_prediction(int sock, global_prediction p)
+{
+  if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
+    {
+      cerr << "argh! bad global write! " << sock << endl;
+      perror(NULL);
+      exit(0);
+    }
+}
+
+void send_prediction(int sock, prediction &p)
+{
+  if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
+    {
+      cerr << "argh! bad write! " << endl;
+      perror(NULL);
+      exit(0);
+    }
+}
 
 void binary_print_result(int f, float res, float weight, v_array<char> tag)
 {

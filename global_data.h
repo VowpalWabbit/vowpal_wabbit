@@ -132,11 +132,23 @@ struct global_data {
 
   regressor* reg;
 };
+
+struct global_prediction {
+  float p;
+  float weight;
+};
+
+struct prediction {
+  size_t example_number;
+  float p;
+}__attribute__((packed));
+
 extern pthread_mutex_t io;
 extern global_data global;
 extern void (*set_minmax)(double label);
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
+void send_prediction(int sock, prediction &p);
 void noop_mm(double label);
 void print_lda_result(int f, float* res, float weight, v_array<char> tag);
 

@@ -7,7 +7,6 @@
 #include "vw.h"
 #include "simple_label.h"
 #include "network.h"
-#include "multisource.h"
 #include "delay_ring.h"
 
 using namespace std;

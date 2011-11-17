@@ -18,7 +18,6 @@ Implementation by Miro Dudik.
 #include "sparse_dense.h"
 #include "bfgs.h"
 #include "cache.h"
-#include "multisource.h"
 #include "simple_label.h"
 #include "delay_ring.h"
 #include "accumulate.h"

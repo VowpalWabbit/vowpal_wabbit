@@ -24,7 +24,6 @@ namespace po = boost::program_options;
 #include "parse_example.h"
 #include "cache.h"
 #include "gd.h"
-#include "multisource.h"
 #include "comp_io.h"
 #include "unique_sort.h"
 #include "constant.h"
@@ -271,8 +270,8 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
   string hash_function("strings");
   if(vm.count("hash")) 
     hash_function = vm["hash"].as<string>();
-
-  if (vm.count("multisource") || global.daemon)
+  
+  if (global.daemon)
     {
       par->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
       if (par->bound_sock < 0) {
@@ -300,9 +299,6 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	}
       int source_count = 1;
       
-      if (vm.count("multisource"))
-	source_count = vm["multisource"].as<size_t>();
-
       // listen on socket
       listen(par->bound_sock, source_count);
 
@@ -419,16 +415,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	cerr << "reading data from port " << port << endl;
 
       par->max_fd++;
-      if(vm.count("multisource"))
-	{
-	  par->reader = receive_features;
-	  calloc_reserve(par->pes,global.ring_size);
-	  par->pes.end = par->pes.begin+global.ring_size;
-	  calloc_reserve(par->counts,source_count);
-	  par->counts.end = par->counts.begin+global.ring_size;
-	  par->finished_count = 0;
-	}
-      else if(global.active)
+      if(global.active)
 	{
 	  par->reader = read_features;
 	  par->hasher = getHasher(hash_function);
@@ -909,12 +896,6 @@ void end_parser(parser* pf)
 	free(output->currentname.begin);
     }
 
-  if (pf->pes.begin != NULL)
-    {
-      for (size_t i = 0; i < global.ring_size; i++)
-	free(pf->pes[i].features.begin);
-      free(pf->pes.begin);
-    }
   if (pf->counts.begin != NULL)
     free(pf->counts.begin);
 }
