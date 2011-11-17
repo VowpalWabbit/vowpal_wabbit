@@ -16,7 +16,11 @@ ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
 
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
-WARN_FLAGS = -Wall # -pedantic -Werror 
+ifeq ($(UNAME), FreeBSD)
+WARN_FLAGS = -Wall
+else
+WARN_FLAGS = -Wall -pedantic
+endif
 
 # for normal fast execution.
 FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
