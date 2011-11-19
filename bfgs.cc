@@ -88,7 +88,7 @@ void quad_precond_update(weight* weights, feature& page_feature, v_array<feature
 
 float predict_and_gradient(regressor& reg, example* &ec)
 {
-  float raw_prediction = inline_predict(reg,ec,0);
+  float raw_prediction = inline_predict(reg,ec);
   float fp = finalize_prediction(raw_prediction);
 
   label_data* ld = (label_data*)ec->ld;
@@ -96,26 +96,24 @@ float predict_and_gradient(regressor& reg, example* &ec)
 
   float loss_grad = reg.loss->first_derivative(fp,ld->label)*ld->weight;
   
-  size_t thread_mask = global.thread_mask;
-  weight* weights = reg.weight_vectors[0];
+  size_t mask = global.mask;
+  weight* weights = reg.weight_vectors;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
-      feature *f = ec->subsets[*i][0];
-      for (; f != ec->subsets[*i][1]; f++)
+      feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++)
 	{
-	  weight* w = &weights[f->weight_index & thread_mask];
+	  weight* w = &weights[f->weight_index & mask];
 	  w[1] += loss_grad * f->x;
 	}
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][0];
-	  temp.end = ec->subsets[(int)(*i)[0]][1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, loss_grad);
+	    quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, loss_grad);
 	} 
     }
   return fp;
@@ -126,26 +124,24 @@ void update_preconditioner(regressor& reg, example* &ec)
   label_data* ld = (label_data*)ec->ld;
   float curvature = reg.loss->second_derivative(ec->final_prediction,ld->label) * ld->weight;
   
-  size_t thread_mask = global.thread_mask;
-  weight* weights = reg.weight_vectors[0];
+  size_t mask = global.mask;
+  weight* weights = reg.weight_vectors;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
     {
-      feature *f = ec->subsets[*i][0];
-      for (; f != ec->subsets[*i][1]; f++)
+      feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++)
         {
-          weight* w = &weights[f->weight_index & thread_mask];
+          weight* w = &weights[f->weight_index & mask];
           w[3] += f->x * f->x * curvature;
         }
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)
     {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
         {
           v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-          temp.begin = ec->subsets[(int)(*i)[0]][0];
-          temp.end = ec->subsets[(int)(*i)[0]][1];
           for (; temp.begin != temp.end; temp.begin++)
-            quad_precond_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, curvature);
+            quad_precond_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, curvature);
         }
     }
 }  
@@ -154,24 +150,22 @@ void update_preconditioner(regressor& reg, example* &ec)
 float dot_with_direction(regressor& reg, example* &ec)
 {
   float ret = 0;
-  weight* weights = reg.weight_vectors[0];
-  size_t thread_mask = global.thread_mask;
+  weight* weights = reg.weight_vectors;
+  size_t mask = global.mask;
   weights +=2;//direction vector stored two advanced
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
-      feature *f = ec->subsets[*i][0];
-      for (; f != ec->subsets[*i][1]; f++)
-	ret += weights[f->weight_index & thread_mask] * f->x;
+      feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++)
+	ret += weights[f->weight_index & mask] * f->x;
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][0];
-	  temp.end = ec->subsets[(int)(*i)[0]][1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    ret += one_pf_quad_predict(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask);
+	    ret += one_pf_quad_predict(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask);
 	} 
     }
   return ret;
@@ -181,7 +175,7 @@ void zero_derivative(regressor& reg)
 {//set derivative to 0.
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
   for(uint32_t i = 0; i < length; i++)
     weights[stride*i+1] = 0;
 }
@@ -190,7 +184,7 @@ void zero_preconditioner(regressor& reg)
 {//set derivative to 0.
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
   for(uint32_t i = 0; i < length; i++)
     weights[stride*i+3] = 0;
 }
@@ -204,13 +198,13 @@ double regularizer_direction_magnitude(regressor& reg, float regularizer)
 
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
   if (reg.regularizers == NULL)
     for(uint32_t i = 0; i < length; i++)
       ret += regularizer*weights[stride*i+2]*weights[stride*i+2];
   else
     for(uint32_t i = 0; i < length; i++) 
-      ret += reg.regularizers[0][2*i]*weights[stride*i+2]*weights[stride*i+2];
+      ret += reg.regularizers[2*i]*weights[stride*i+2]*weights[stride*i+2];
 
   return ret;
 }
@@ -220,7 +214,7 @@ double direction_magnitude(regressor& reg)
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
   for(uint32_t i = 0; i < length; i++)
     ret += weights[stride*i+2]*weights[stride*i+2];
   
@@ -231,7 +225,7 @@ double direction_magnitude(regressor& reg)
 {
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* w = reg.weight_vectors[0];
+  weight* w = reg.weight_vectors;
 
   double g1_Hg1 = 0.;
   double g1_g1 = 0.;
@@ -257,7 +251,7 @@ double direction_magnitude(regressor& reg)
 {  
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* w = reg.weight_vectors[0];
+  weight* w = reg.weight_vectors;
   
   float* mem0 = mem;
   float* w0 = w;
@@ -380,7 +374,7 @@ double direction_magnitude(regressor& reg)
 double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_loss_sum, double step, double importance_weight_sum, int &origin) { 
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* w = reg.weight_vectors[0];
+  weight* w = reg.weight_vectors;
   
   double g0_d = 0.;
   double g1_d = 0.;
@@ -417,7 +411,7 @@ double add_regularization(regressor& reg,float regularization)
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
   if (reg.regularizers == NULL)
     {
       for(uint32_t i = 0; i < length; i++) {
@@ -428,9 +422,9 @@ double add_regularization(regressor& reg,float regularization)
   else
     {
       for(uint32_t i = 0; i < length; i++) {
-	weight delta_weight = weights[stride*i] - reg.regularizers[0][2*i+1];
-	weights[stride*i+1] += reg.regularizers[0][2*i]*delta_weight;
-	ret += 0.5*reg.regularizers[0][2*i]*delta_weight*delta_weight;
+	weight delta_weight = weights[stride*i] - reg.regularizers[2*i+1];
+	weights[stride*i+1] += reg.regularizers[2*i]*delta_weight;
+	ret += 0.5*reg.regularizers[2*i]*delta_weight*delta_weight;
       }
     }
   return ret;
@@ -440,7 +434,7 @@ void finalize_preconditioner(regressor& reg,float regularization)
 {
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
 
   if (reg.regularizers == NULL)
     for(uint32_t i = 0; i < length; i++) {
@@ -450,7 +444,7 @@ void finalize_preconditioner(regressor& reg,float regularization)
     }
   else
     for(uint32_t i = 0; i < length; i++) {
-      weights[stride*i+3] += reg.regularizers[0][2*i];
+      weights[stride*i+3] += reg.regularizers[2*i];
       if (weights[stride*i+3] > 0)
 	weights[stride*i+3] = 1. / weights[stride*i+3];
     }
@@ -460,37 +454,32 @@ void preconditioner_to_regularizer(regressor& reg, float regularization)
 {
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
   if (reg.regularizers == NULL)
     {
-      size_t num_threads = global.num_threads();
-      reg.regularizers = (weight **)malloc(num_threads * sizeof(weight*));
-      for (size_t i = 0; i < num_threads; i++)
+      if (reg.regularizers != NULL)
+	reg.regularizers = (weight *)calloc(2*length, sizeof(weight));
+      
+      if (reg.regularizers != NULL)
 	{
-	  if (reg.regularizers != NULL)
-	    reg.regularizers[i] = (weight *)calloc(2*length/num_threads, sizeof(weight));
-	  
-	  if ((reg.regularizers != NULL && reg.regularizers[i] == NULL))
-	    {
-	      cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
-	      exit (1);
-	    }
+	  cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
+	  exit (1);
 	}
       for(uint32_t i = 0; i < length; i++) 
-	reg.regularizers[0][2*i] = weights[stride*i+3] + regularization;
+	reg.regularizers[2*i] = weights[stride*i+3] + regularization;
     }
   else
     for(uint32_t i = 0; i < length; i++) 
-      reg.regularizers[0][2*i] = weights[stride*i+3] + reg.regularizers[0][2*i];
+      reg.regularizers[2*i] = weights[stride*i+3] + reg.regularizers[2*i];
   for(uint32_t i = 0; i < length; i++) 
-    reg.regularizers[0][2*i+1] = weights[stride*i];
+    reg.regularizers[2*i+1] = weights[stride*i];
 }
 
 void zero_state(regressor& reg)
 {
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
   for(uint32_t i = 0; i < length; i++) 
     {
       weights[stride*i+1] = 0;
@@ -504,7 +493,7 @@ double derivative_in_direction(regressor& reg, float* mem, int &origin)
   double ret = 0.;
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
-  weight* w = reg.weight_vectors[0];
+  weight* w = reg.weight_vectors;
   
   for(uint32_t i = 0; i < length; i++, w+=stride, mem+=mem_stride)
     ret += mem[(MEM_GT+origin)%mem_stride]*w[W_DIR];
@@ -515,7 +504,7 @@ double derivative_in_direction(regressor& reg, float* mem, int &origin)
   {
     uint32_t length = 1 << global.num_bits;
     size_t stride = global.stride;
-    weight* w = reg.weight_vectors[0];
+    weight* w = reg.weight_vectors;
     
     for(uint32_t i = 0; i < length; i++, w+=stride)
       w[W_XT] += step_size * w[W_DIR];
@@ -622,7 +611,6 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
 void setup_bfgs(gd_thread_params& t)
 {
   regressor reg = t.reg;
-  size_t thread_num = 0;
   example* ec = NULL;
 
   v_array<float> predictions;
@@ -667,7 +655,7 @@ void setup_bfgs(gd_thread_params& t)
   
   while ( true )
     {
-      if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
+      if ((ec = get_example()) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
  
@@ -759,7 +747,7 @@ void setup_bfgs(gd_thread_params& t)
   /********************************************************************/
   /* PROCESS THE FINAL EXAMPLE ****************************************/
   /********************************************************************/ 
-     else if (thread_done(thread_num))
+     else if (thread_done())
 	{
 	  if (current_pass != 0)
 	    work_on_weights(gradient_pass, reg, *(t.final_regressor_name),

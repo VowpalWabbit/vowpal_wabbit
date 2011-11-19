@@ -60,10 +60,9 @@ gd_vars* vw(int argc, char *argv[])
       cerr.precision(5);
     }
 
-  size_t num_threads = global.num_threads();
-  gd_thread_params t = {vars, num_threads, regressor1, &final_regressor_name};
+  gd_thread_params t = {vars, regressor1, &final_regressor_name};
 
-  start_parser(num_threads, p);
+  start_parser(p);
   initialize_delay_ring();
 
   if (vm.count("sendto"))

@@ -9,7 +9,7 @@ void start_noop()
   example* ec = NULL;
   
   while ( !parser_done()){
-    ec = get_example(0);
+    ec = get_example();
     if (ec != NULL)
       finish_example(ec);
   }

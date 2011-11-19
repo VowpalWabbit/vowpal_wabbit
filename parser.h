@@ -61,9 +61,9 @@ bool examples_to_finish();
 
 //parser control
 
-void start_parser(size_t num_threads, parser* pf);
+void start_parser(parser* pf);
 void end_parser(parser* pf);
-example* get_example(size_t thread_num);
+example* get_example();
 void free_example(example* ec);
 void make_example_available();
 bool parser_done();

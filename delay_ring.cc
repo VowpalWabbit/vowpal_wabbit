@@ -23,7 +23,7 @@ size_t mesg = 0;
 
 void initialize_delay_ring()
 {
-  size_t nt = global.num_threads()+mesg;
+  size_t nt = 1+mesg;
   reserve(delay_indices, nt);
   for (size_t i = 0; i < nt; i++)
     delay_indices[i] = 0;
@@ -45,27 +45,26 @@ void destroy_delay_ring()
   threads_to_use.begin = NULL;
 }
 
-bool thread_done(size_t thread)
+bool thread_done()
 {
   bool ret;
   if (!parser_done())
     return false;
   pthread_mutex_lock(&delay);
-  ret = delay_indices[thread] == local_index;
+  ret = delay_indices[0] == local_index;
   pthread_mutex_unlock(&delay);
   return ret;
 }
 
-example* return_example(size_t thread)
+example* return_example()
 {
-  size_t index = delay_indices[thread] % global.ring_size;
+  size_t index = delay_indices[0] % global.ring_size;
   example* ret = delay_ring[index];
   
   pthread_mutex_lock(&delay);
-  delay_indices[thread]++;
+  delay_indices[0]++;
   pthread_mutex_unlock(&delay);
 
-  pthread_mutex_lock(&ret->lock);
   if (--threads_to_use[index] == 0) 
     {
       pthread_mutex_lock(&delay);
@@ -73,26 +72,15 @@ example* return_example(size_t thread)
       pthread_cond_broadcast(&delay_empty);
       pthread_mutex_unlock(&delay);
     }
-  pthread_mutex_unlock(&ret->lock);
   return ret;
 }
 
-example* get_delay_example(size_t thread)
+example* get_delay_example()
 {//semiblocking
-  if (delay_indices[thread] != local_index)
-    return return_example(thread);
+  if (delay_indices[0] != local_index)
+    return return_example();
   else
     return NULL;
-}
-
-example* blocking_get_delay_example(size_t thread)
-{
-  size_t index = delay_indices[thread] % global.ring_size;
-  pthread_mutex_lock(&delay);
-  while(delay_ring[index] == NULL)
-    pthread_cond_wait(&delay_nonempty, &delay);
-  pthread_mutex_unlock(&delay);
-  return return_example(thread);
 }
 
 void delay_example(example* ex, size_t count)
@@ -101,7 +89,6 @@ void delay_example(example* ex, size_t count)
 
   if (delay_count == 0)
     {
-      assert (ex->threads_to_finish == 0);
       output_and_account_example(ex);
       free_example(ex);
     }
@@ -115,12 +102,10 @@ void delay_example(example* ex, size_t count)
 
       delay_ring[index] = ex;
       threads_to_use[index] = delay_count;
-      ex->threads_to_finish = delay_count;
       
       local_index++;
       if (count == 0)
-	for (size_t i = 0; i < global.num_threads();i++)
-	  delay_indices[i]++;
+	delay_indices[0]++;
 
       pthread_cond_broadcast(&delay_nonempty);
       pthread_mutex_unlock(&delay);

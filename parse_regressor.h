@@ -14,8 +14,8 @@ namespace po = boost::program_options;
 typedef float weight;
 
 struct regressor {
-  weight** weight_vectors;
-  weight** regularizers;
+  weight* weight_vectors;
+  weight* regularizers;
 
   loss_function *loss;
 };

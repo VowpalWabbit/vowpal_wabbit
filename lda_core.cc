@@ -425,7 +425,7 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
     }
   size_t num_words =0;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
-    num_words += ec->subsets[*i][1] - ec->subsets[*i][0];
+    num_words += ec->atomics[*i].end - ec->atomics[*i].begin;
 
   float xc_w = 0;
   float score = 0;
@@ -443,10 +443,10 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
       doc_length = 0;
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
 	{
-	  feature *f = ec->subsets[*i][0];
-	  for (; f != ec->subsets[*i][1]; f++)
+	  feature *f = ec->atomics[*i].begin;
+	  for (; f != ec->atomics[*i].end; f++)
 	    {
-	      float* u_for_w = &weights[(f->weight_index&global.thread_mask)+global.lda+1];
+	      float* u_for_w = &weights[(f->weight_index&global.mask)+global.lda+1];
 	      float c_w = find_cw(u_for_w,v);
 	      xc_w = c_w * f->x;
               score += -f->x*log(c_w);
@@ -500,9 +500,9 @@ void start_lda(gd_thread_params t)
   for (size_t k = 0; k < global.lda; k++)
     push(total_lambda, 0.f);
   size_t stride = global.stride;
-  weight* weights = reg.weight_vectors[0];
+  weight* weights = reg.weight_vectors;
 
-  for (size_t i =0; i <= global.thread_mask;i+=stride)
+  for (size_t i =0; i <= global.mask;i+=stride)
     for (size_t k = 0; k < global.lda; k++)
       total_lambda[k] += weights[i+k];
 
@@ -526,19 +526,19 @@ void start_lda(gd_thread_params t)
       for (size_t d = 0; d < batch_size; d++)
 	{
           push(doc_lengths, 0);
-	  if ((ec = get_example(0)) != NULL)//semiblocking operation.
+	  if ((ec = get_example()) != NULL)//semiblocking operation.
 	    {
 	      push(examples, ec);
               for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
-                feature* f = ec->subsets[*i][0];
-                for (; f != ec->subsets[*i][1]; f++) {
+                feature* f = ec->atomics[*i].begin;
+                for (; f != ec->atomics[*i].end; f++) {
                   index_feature temp = {(uint32_t)d, *f};
                   sorted_features.push_back(temp);
                   doc_lengths[d] += f->x;
                 }
               }
 	    }
-	  else if (thread_done(0))
+	  else if (thread_done())
 	    batch_size = d;
 	  else
 	    d--;
@@ -563,7 +563,7 @@ void start_lda(gd_thread_params t)
 	  if (last_weight_index == s->f.weight_index)
 	    continue;
 	  last_weight_index = s->f.weight_index;
-	  float* weights_for_w = &(weights[s->f.weight_index & global.thread_mask]);
+	  float* weights_for_w = &(weights[s->f.weight_index & global.mask]);
           float decay = fmin(1.0, exp(decay_levels.end[-2] - decay_levels.end[(int)(-1-example_t+weights_for_w[global.lda])]));
 	  float* u_for_w = weights_for_w + global.lda+1;
 
@@ -597,7 +597,7 @@ void start_lda(gd_thread_params t)
 	  while(next <= &sorted_features.back() && next->f.weight_index == s->f.weight_index)
 	    next++;
 
-	  float* word_weights = &(weights[s->f.weight_index & global.thread_mask]);
+	  float* word_weights = &(weights[s->f.weight_index & global.mask]);
 	  for (size_t k = 0; k < global.lda; k++) {
 	    float new_value = minuseta*word_weights[k];
 	    word_weights[k] = new_value;
@@ -605,7 +605,7 @@ void start_lda(gd_thread_params t)
 
 	  for (; s != next; s++) {
 	    float* v_s = &v[s->document*global.lda];
-	    float* u_for_w = &weights[(s->f.weight_index & global.thread_mask) + global.lda + 1];
+	    float* u_for_w = &weights[(s->f.weight_index & global.mask) + global.lda + 1];
 	    float c_w = eta*find_cw(u_for_w, v_s)*s->f.x;
 	    for (size_t k = 0; k < global.lda; k++) {
 	      float new_value = u_for_w[k]*v_s[k]*c_w;
@@ -619,7 +619,7 @@ void start_lda(gd_thread_params t)
 	total_lambda[k] += total_new[k];
       }
 
-      if (thread_done(0))
+      if (thread_done())
 	{
 	  for (size_t i = 0; i < global.length(); i++) {
 	    weight* weights_for_w = & (weights[i*global.stride]);

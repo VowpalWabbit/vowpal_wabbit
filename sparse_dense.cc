@@ -47,14 +47,14 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 } 
 
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
-               const v_array<feature> &second_part, size_t thread_mask)
+               const v_array<feature> &second_part, size_t mask)
 {
   for (feature* i = first_part.begin; i != first_part.end; i++)
     {
       size_t halfhash = quadratic_constant * i->weight_index;
       float i_value = i->x;
       for (feature* ele = second_part.begin; ele != second_part.end; ele++) {
-        size_t quad_index = (halfhash+ele->weight_index) & thread_mask;
+        size_t quad_index = (halfhash+ele->weight_index) & mask;
         feature temp = {i_value * ele->x, (uint32_t)quad_index};
         push(f, temp);
       }

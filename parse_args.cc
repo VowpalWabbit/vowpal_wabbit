@@ -116,7 +116,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send example to <hosts>")
     ("testonly,t", "Ignore label information and just test")
-    ("thread_bits", po::value<size_t>(&global.thread_bits)->default_value(0), "log_2 threads")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
 
@@ -185,7 +184,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   global.sd->weighted_unlabeled_examples = global.sd->t;
   global.initial_t = global.sd->t;
-  global.partition_bits = global.thread_bits;
 
   if (vm.count("help") || argc == 1) {
     /* upon direct query for help -- spit it out to stdout */
@@ -214,11 +212,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	}
       global.stride = 2;
       vars.power_t = 0.0;
-      if (global.thread_bits != 0)
-	{
-	  cout << "adaptive code isn't correct with multiple learning cores" << endl;
-	  exit(1);
-	}
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {

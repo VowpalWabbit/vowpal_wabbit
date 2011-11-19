@@ -87,6 +87,7 @@ public:
     if(files.index()>0){
       fil = gz_files[files.pop()];
       gzclose(fil);
+      free(gz_files.begin);
       return true;
     }
     return false;

@@ -41,8 +41,6 @@ struct shared_data {
 struct global_data {
   shared_data* sd;
 
-  size_t thread_bits; // log_2 of the number of threads.
-  size_t partition_bits; // log_2 of the number of partitions of features.
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
 
@@ -78,7 +76,6 @@ struct global_data {
   size_t pass_length;
   size_t numpasses;
   size_t passes_complete;
-  size_t thread_mask; // 1 << num_bits >> thread_bits - 1.
   size_t mask; // 1 << num_bits -1
   std::vector<std::string> pairs; // pairs of features to cross.
   bool ignore_some;
@@ -106,8 +103,6 @@ struct global_data {
   
   std::string span_server;
 
-  size_t num_threads () { return 1 << thread_bits; };
-  size_t num_partitions () { return 1 << partition_bits; };
   size_t length () { return 1 << num_bits; };
 
   size_t rank;

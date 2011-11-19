@@ -18,21 +18,20 @@ embodied in the content of this file are licensed under the BSD
 
 using namespace std;
 
-void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_num, float update);
-void mf_local_predict(example* ec, size_t num_threads, gd_vars& vars, regressor& reg);
-float mf_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars);
+void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, float update);
+void mf_local_predict(example* ec, gd_vars& vars, regressor& reg);
+float mf_predict(regressor& r, example* ex, gd_vars& vars);
 
 void* gd_mf_thread(void *in)
 {
   gd_thread_params* params = (gd_thread_params*) in;
   regressor reg = params->reg;
-  size_t thread_num = params->thread_num;
   example* ec = NULL;
 
   size_t current_pass = 0;
   while ( true )
     {//this is a poor man's select operation.
-      if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
+      if ((ec = get_delay_example()) != NULL)//nonblocking
 	{
 
 	  if (ec->pass != current_pass) {
@@ -41,20 +40,19 @@ void* gd_mf_thread(void *in)
 	  }
 
 	  //cout << ec->eta_round << endl;
-	  mf_inline_train(*(params->vars), reg, ec, thread_num, ec->eta_round);
+	  mf_inline_train(*(params->vars), reg, ec, ec->eta_round);
 	  finish_example(ec);
 	}
-      else if ((ec = get_example(thread_num)) != NULL)//blocking operation.
+      else if ((ec = get_example()) != NULL)//blocking operation.
 	{
 	  if (command_example(ec, params))
 	    {
-	      ec->threads_to_finish--;
 	      delay_example(ec,0);
 	    }
 	  else
-	    mf_predict(reg,ec,thread_num,*(params->vars));
+	    mf_predict(reg,ec,*(params->vars));
 	}
-      else if (thread_done(thread_num))
+      else if (thread_done())
 	{
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
@@ -67,12 +65,12 @@ void* gd_mf_thread(void *in)
   return NULL;
 }
 
-float mf_inline_predict(regressor &reg, example* &ec, size_t thread_num)
+float mf_inline_predict(regressor &reg, example* &ec)
 {
   float prediction = 0.0;
 
-  weight* weights = reg.weight_vectors[thread_num];
-  size_t thread_mask = global.thread_mask;
+  weight* weights = reg.weight_vectors;
+  size_t mask = global.mask;
 
   // clear stored predictions
   ec->topic_predictions.erase();
@@ -80,7 +78,7 @@ float mf_inline_predict(regressor &reg, example* &ec, size_t thread_num)
   float linear_prediction = 0;
   // linear terms
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    linear_prediction += sd_add(weights,thread_mask,ec->atomics[*i].begin, ec->atomics[*i].end);
+    linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -97,10 +95,10 @@ float mf_inline_predict(regressor &reg, example* &ec, size_t thread_num)
 	    {
 	      // x_l * l^k
 	      // l^k is from index+1 to index+global.rank
-	      float x_dot_l = sd_offset_add(weights, thread_mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+	      float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
 	      // x_r * r^k
 	      // r^k is from index+global.rank+1 to index+2*global.rank
-	      float x_dot_r = sd_offset_add(weights, thread_mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+global.rank);
+	      float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+global.rank);
 
 	      prediction += x_dot_l * x_dot_r;
 
@@ -116,10 +114,10 @@ float mf_inline_predict(regressor &reg, example* &ec, size_t thread_num)
   return prediction;
 }
 
-void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_num, float update)
+void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, float update)
 {
-      weight* weights = reg.weight_vectors[thread_num];
-      size_t thread_mask = global.thread_mask;
+      weight* weights = reg.weight_vectors;
+      size_t mask = global.mask;
       label_data* ld = (label_data*)ec->ld;
 
       // use final prediction to get update size
@@ -131,7 +129,7 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 
       // linear update
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-	sd_offset_update(weights, thread_mask, ec->atomics[*i].begin, ec->atomics[*i].end, 0, update, regularization);
+	sd_offset_update(weights, mask, ec->atomics[*i].begin, ec->atomics[*i].end, 0, update, regularization);
       
       // quadratic update
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -145,7 +143,7 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 		  // r^k \cdot x_r
 		  float r_dot_x = ec->topic_predictions[2*k];
 		  // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-		  sd_offset_update(weights, thread_mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k, update*r_dot_x, regularization);
+		  sd_offset_update(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k, update*r_dot_x, regularization);
 		}
 
 	      // update r^k weights
@@ -154,7 +152,7 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 		  // l^k \cdot x_l
 		  float l_dot_x = ec->topic_predictions[2*k-1];
 		  // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-		  sd_offset_update(weights, thread_mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+global.rank, update*l_dot_x, regularization);
+		  sd_offset_update(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+global.rank, update*l_dot_x, regularization);
 		}
 
 	    }
@@ -163,21 +161,21 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, size_t thread_
 
 void mf_print_offset_features(regressor &reg, example* &ec, size_t offset)
 {
-  weight* weights = reg.weight_vectors[0];
-  size_t thread_mask = global.thread_mask;
+  weight* weights = reg.weight_vectors;
+  size_t mask = global.mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
       for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	{
-	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & thread_mask)  << ")" << ':' << f->x;
+	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & mask)  << ")" << ':' << f->x;
 
-	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
+	  cout << ':' << weights[(f->weight_index + offset) & mask];
 	}
     else
       for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
 	{
 	  cout << '\t' << f->weight_index << ':' << f->x;
-	  cout << ':' << weights[(f->weight_index + offset) & thread_mask];
+	  cout << ':' << weights[(f->weight_index + offset) & mask];
 	}
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     if (ec->atomics[(int)(*i)[0]].index() > 0 && ec->atomics[(int)(*i)[1]].index() > 0)
@@ -188,15 +186,15 @@ void mf_print_offset_features(regressor &reg, example* &ec, size_t offset)
 	    for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f!= ec->audit_features[(int)(*i)[0]].end; f++)
 	      for (audit_data* f2 = ec->audit_features[(int)(*i)[1]].begin; f2!= ec->audit_features[(int)(*i)[1]].end; f2++)
 		{
-		  cout << '\t' << f->space << k << '^' << f->feature << ':' << ((f->weight_index+k)&thread_mask) 
-		       <<"(" << ((f->weight_index + offset +k) & thread_mask)  << ")" << ':' << f->x;
-		  cout << ':' << weights[(f->weight_index + offset + k) & thread_mask];
+		  cout << '\t' << f->space << k << '^' << f->feature << ':' << ((f->weight_index+k)&mask) 
+		       <<"(" << ((f->weight_index + offset +k) & mask)  << ")" << ':' << f->x;
+		  cout << ':' << weights[(f->weight_index + offset + k) & mask];
 
-		  cout << ':' << f2->space << k << '^' << f2->feature << ':' << ((f2->weight_index+k)&thread_mask) 
-		       <<"(" << ((f2->weight_index + offset +k) & thread_mask)  << ")" << ':' << f2->x;
-		  cout << ':' << weights[(f2->weight_index + offset + k) & thread_mask];
+		  cout << ':' << f2->space << k << '^' << f2->feature << ':' << ((f2->weight_index+k)&mask) 
+		       <<"(" << ((f2->weight_index + offset +k) & mask)  << ")" << ':' << f2->x;
+		  cout << ':' << weights[(f2->weight_index + offset + k) & mask];
 
-		  cout << ':' <<  weights[(f->weight_index + offset + k) & thread_mask] * weights[(f2->weight_index + offset + k) & thread_mask];
+		  cout << ':' <<  weights[(f->weight_index + offset + k) & mask] * weights[(f2->weight_index + offset + k) & mask];
 
 		}
 	  }
@@ -209,7 +207,7 @@ void mf_print_audit_features(regressor &reg, example* ec, size_t offset)
   mf_print_offset_features(reg, ec, offset);
 }
 
-void mf_local_predict(example* ec, size_t mf_num_threads, gd_vars& vars, regressor& reg)
+void mf_local_predict(example* ec, gd_vars& vars, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
   set_minmax(ld->label);
@@ -226,17 +224,15 @@ void mf_local_predict(example* ec, size_t mf_num_threads, gd_vars& vars, regress
 
 }
 
-float mf_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
+float mf_predict(regressor& r, example* ex, gd_vars& vars)
 {
-  float prediction = mf_inline_predict(r, ex, thread_num);
-
-  ex->threads_to_finish = 0;
+  float prediction = mf_inline_predict(r, ex);
 
   ex->partial_prediction = prediction;
-  mf_local_predict(ex, global.num_threads(),vars,r);
+  mf_local_predict(ex, vars,r);
 
   if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
-    delay_example(ex,global.num_threads());
+    delay_example(ex,1);
   else
     delay_example(ex,0);
   
@@ -249,7 +245,6 @@ size_t mf_num_mf_threads;
 
 void setup_gd_mf(gd_thread_params t)
 {
-  mf_num_mf_threads = t.thread_num;
   mf_threads = (pthread_t*)calloc(mf_num_mf_threads,sizeof(pthread_t));
   mf_passers = (gd_thread_params**)calloc(mf_num_mf_threads,sizeof(gd_thread_params*));
 
@@ -257,7 +252,6 @@ void setup_gd_mf(gd_thread_params t)
     {
       mf_passers[i] = (gd_thread_params*)calloc(1, sizeof(gd_thread_params));
       *(mf_passers[i]) = t;
-      mf_passers[i]->thread_num = i;
       pthread_create(&mf_threads[i], NULL, gd_mf_thread, (void *) mf_passers[i]);
     }
 }

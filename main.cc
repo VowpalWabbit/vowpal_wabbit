@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
   
   free(vars);
   free(global.sd);
+  delete global.loss;
   
   return 0;
 }

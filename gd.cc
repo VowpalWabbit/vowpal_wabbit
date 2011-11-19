@@ -27,21 +27,20 @@ embodied in the content of this file are licensed under the BSD
 
 using namespace std;
 
-void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, float update);
+void adaptive_inline_train(regressor &reg, example* &ec, float update);
 
 void* gd_thread(void *in)
 {
   gd_thread_params* params = (gd_thread_params*) in;
   regressor reg = params->reg;
 
-  size_t thread_num = params->thread_num;
   example* ec = NULL;
   size_t current_pass = 0;
 
   
   while ( true )
     {//this is a poor man's select operation.
-      if ((ec = get_delay_example(thread_num)) != NULL)//nonblocking
+      if ((ec = get_delay_example()) != NULL)//nonblocking
 	{
 	  if (ec->pass != current_pass)
 	    {
@@ -52,14 +51,14 @@ void* gd_thread(void *in)
 	      current_pass = ec->pass;
 	    }
 	  if (global.adaptive)
-	    adaptive_inline_train(reg,ec,thread_num, ec->eta_round);
+	    adaptive_inline_train(reg,ec,ec->eta_round);
 	  else
-	    inline_train(reg, ec, thread_num, ec->eta_round);
+	    inline_train(reg, ec, ec->eta_round);
 	  finish_example(ec);
 	  if (global.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(&reg);
 	}
-      else if ((ec = get_example(thread_num)) != NULL)//semiblocking operation.
+      else if ((ec = get_example()) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
 	  if (ec->pass != current_pass && global.span_server != "")
@@ -73,14 +72,11 @@ void* gd_thread(void *in)
 	    }
 
 	  if (command_example(ec, params))
-	    {
-	      ec->threads_to_finish--;
-	      delay_example(ec,0);
-	    }
+	    delay_example(ec,0);
 	  else
-	    predict(reg,ec,thread_num,*(params->vars));
+	    predict(reg,ec,*(params->vars));
 	}
-      else if (thread_done(thread_num))
+      else if (thread_done())
 	{
 	  sync_weights(&reg);
 	  if(global.span_server != "") {
@@ -105,7 +101,7 @@ void sync_weights(regressor *reg) {
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   for(uint32_t i = 0; i < length && global.reg_mode; i++)
-    reg->weight_vectors[0][stride*i] = trunc_weight(reg->weight_vectors[0][stride*i], global.sd->gravity) * global.sd->contraction;
+    reg->weight_vectors[stride*i] = trunc_weight(reg->weight_vectors[stride*i], global.sd->gravity) * global.sd->contraction;
   global.sd->gravity = 0.;
   global.sd->contraction = 1.;
 }
@@ -148,15 +144,8 @@ float finalize_prediction(float ret)
 
 void finish_example(example* ec)
 {
-  pthread_mutex_lock(&ec->lock);
-  if (-- ec->threads_to_finish == 0)
-    {
-      pthread_mutex_unlock(&ec->lock);
-      output_and_account_example(ec);
-      free_example(ec);
-    }
-  else
-    pthread_mutex_unlock(&ec->lock);
+  output_and_account_example(ec);
+  free_example(ec);
 }
 
 void print_update(example *ec)
@@ -224,77 +213,49 @@ void output_and_account_example(example* ec)
   print_update(ec);
 }
 
-float inline_predict_trunc(regressor &reg, example* &ec, size_t thread_num)
+float inline_predict_trunc(regressor &reg, example* &ec)
 {
   float prediction = get_initial(ec->ld);
   
-  weight* weights = reg.weight_vectors[thread_num];
-  size_t thread_mask = global.thread_mask;
+  weight* weights = reg.weight_vectors;
+  size_t mask = global.mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-      prediction += sd_add_trunc(weights,thread_mask,ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1], global.sd->gravity);
+    prediction += sd_add_trunc(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, global.sd->gravity);
   
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
 	    prediction += one_pf_quad_predict_trunc(weights, *temp.begin,
-						    ec->atomics[(int)(*i)[1]], thread_mask, global.sd->gravity);
+						    ec->atomics[(int)(*i)[1]], mask, global.sd->gravity);
 	}
     }
   
   return prediction;
 }
 
-float inline_predict(regressor &reg, example* &ec, size_t thread_num)
+float inline_predict(regressor &reg, example* &ec)
 {
   float prediction = get_initial(ec->ld);
 
-  weight* weights = reg.weight_vectors[thread_num];
-  size_t thread_mask = global.thread_mask;
+  weight* weights = reg.weight_vectors;
+  size_t mask = global.mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add(weights,thread_mask,ec->subsets[*i][thread_num], ec->subsets[*i][thread_num+1]);
+    prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
   
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
 	    prediction += one_pf_quad_predict(weights,*temp.begin,
-					      ec->atomics[(int)(*i)[1]],thread_mask);
+					      ec->atomics[(int)(*i)[1]],mask);
 	}
     }
   
-  return prediction;
-}
-
-float inline_offset_predict(regressor &reg, example* &ec, size_t thread_num, size_t offset)
-{
-  float prediction = get_initial(ec->ld);
-
-  weight* weights = reg.weight_vectors[thread_num];
-  size_t thread_mask = global.thread_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    for (feature *f = ec->subsets[*i][thread_num]; f != ec->subsets[*i][thread_num+1]; f++)
-      prediction += weights[(f->weight_index + offset) & thread_mask] * f->x;
-  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-    {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += offset_quad_predict(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, offset);
-	}
-    }
-
   return prediction;
 }
 
@@ -343,8 +304,8 @@ void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_
 
 void print_features(regressor &reg, example* &ec)
 {
-  weight* weights = reg.weight_vectors[0];
-  size_t thread_mask = global.thread_mask;
+  weight* weights = reg.weight_vectors;
+  size_t mask = global.mask;
   size_t stride = global.stride;
 
   if (global.lda > 0)
@@ -357,7 +318,7 @@ void print_features(regressor &reg, example* &ec)
 	  {
 	    cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/global.stride << ':' << f->x;
 	    for (size_t k = 0; k < global.lda; k++)
-	      cout << ':' << weights[(f->weight_index+k) & thread_mask];
+	      cout << ':' << weights[(f->weight_index+k) & mask];
 	  }
       cout << " total of " << count << " features." << endl;
     }
@@ -371,10 +332,10 @@ void print_features(regressor &reg, example* &ec)
 	    {
 	      ostringstream tempstream;
 	      tempstream << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
-	      tempstream  << ':' << trunc_weight(weights[f->weight_index & thread_mask], global.sd->gravity) * global.sd->contraction;
+	      tempstream  << ':' << trunc_weight(weights[f->weight_index & mask], global.sd->gravity) * global.sd->contraction;
 	      if(global.adaptive)
-		tempstream << '@' << weights[(f->weight_index+1) & thread_mask];
-	      string_value sv = {weights[f->weight_index & thread_mask]*f->x, tempstream.str()};
+		tempstream << '@' << weights[(f->weight_index+1) & mask];
+	      string_value sv = {weights[f->weight_index & mask]*f->x, tempstream.str()};
 	      features.push_back(sv);
 	    }
 	else
@@ -384,19 +345,19 @@ void print_features(regressor &reg, example* &ec)
 	      if ( f->weight_index == (constant&global.mask)*stride)
 		tempstream << "Constant:";
 	      tempstream << f->weight_index/stride << ':' << f->x;
-	      tempstream << ':' << trunc_weight(weights[f->weight_index & thread_mask], global.sd->gravity) * global.sd->contraction;
+	      tempstream << ':' << trunc_weight(weights[f->weight_index & mask], global.sd->gravity) * global.sd->contraction;
 	      if(global.adaptive)
-		tempstream << '@' << weights[(f->weight_index+1) & thread_mask];
-	      string_value sv = {weights[f->weight_index & thread_mask]*f->x, tempstream.str()};
+		tempstream << '@' << weights[(f->weight_index+1) & mask];
+	      string_value sv = {weights[f->weight_index & mask]*f->x, tempstream.str()};
 	      features.push_back(sv);
 	    }
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
 	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
 	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.thread_mask, features);
+	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.mask, features);
 	else
 	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.thread_mask, features);      
+	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.mask, features);      
 
       sort(features.begin(),features.end());
 
@@ -462,23 +423,23 @@ void offset_quad_update(weight* weights, feature& page_feature, v_array<feature>
     weights[(halfhash + ele->weight_index) & mask] += update * ele->x;
 }
 
-void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
+void adaptive_inline_train(regressor &reg, example* &ec, float update)
 {
   if (fabs(update) == 0.)
     return;
 
-  size_t thread_mask = global.thread_mask;
+  size_t mask = global.mask;
   label_data* ld = (label_data*)ec->ld;
-  weight* weights = reg.weight_vectors[thread_num];
+  weight* weights = reg.weight_vectors;
   
   float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   size_t ctr = 0;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
-      feature *f = ec->subsets[*i][thread_num];
-      for (; f != ec->subsets[*i][thread_num+1]; f++)
+      feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++)
 	{
-	  weight* w = &weights[f->weight_index & thread_mask];
+	  weight* w = &weights[f->weight_index & mask];
 	  w[1] += g * f->x * f->x;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
       float t;
@@ -494,13 +455,11 @@ void adaptive_inline_train(regressor &reg, example* &ec, size_t thread_num, floa
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    one_pf_quad_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update, g, ec, ctr);
+	    one_pf_quad_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, ctr);
 	} 
     }
 }
@@ -528,22 +487,22 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
   return xGx;
 }
 
-float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
+float compute_xGx(regressor &reg, example* &ec, float& magx)
 {//We must traverse the features in _precisely_ the same order as during training.
-  size_t thread_mask = global.thread_mask;
+  size_t mask = global.mask;
   label_data* ld = (label_data*)ec->ld;
   float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   if (g==0) return 0.;
 
   float xGx = 0.;
   
-  weight* weights = reg.weight_vectors[thread_num];
+  weight* weights = reg.weight_vectors;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
-      feature *f = ec->subsets[*i][thread_num];
-      for (; f != ec->subsets[*i][thread_num+1]; f++)
+      feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++)
 	{
-	  weight* w = &weights[f->weight_index & thread_mask];
+	  weight* w = &weights[f->weight_index & mask];
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
       float m = w[1] + g * f->x * f->x;
       __m128 eta = _mm_load_ss(&m);
@@ -559,67 +518,39 @@ float compute_xGx(regressor &reg, example* &ec, size_t thread_num, float& magx)
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    xGx += xGx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, g, magx);
+	    xGx += xGx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, magx);
 	} 
     }
   
   return xGx;
 }
 
-void inline_train(regressor &reg, example* &ec, size_t thread_num, float update)
+void inline_train(regressor &reg, example* &ec, float update)
 {
   if (fabs(update) == 0.)
     return;
-  size_t thread_mask = global.thread_mask;
-  weight* weights = reg.weight_vectors[thread_num];
+  size_t mask = global.mask;
+  weight* weights = reg.weight_vectors;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
-      feature *f = ec->subsets[*i][thread_num];
-      for (; f != ec->subsets[*i][thread_num+1]; f++){
-	weights[f->weight_index & thread_mask] += update * f->x;
+      feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++){
+	weights[f->weight_index & mask] += update * f->x;
       }
     }
   
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
-      if (ec->subsets[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	  temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    one_pf_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update);
+	    one_pf_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update);
 	} 
-    }
-}
-
-void offset_train(regressor &reg, example* &ec, size_t thread_num, float update, size_t offset)
-{
-  if (fabs(update) > 0.)
-    {
-      weight* weights = reg.weight_vectors[thread_num];
-      size_t thread_mask = global.thread_mask;
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-	for (feature *f = ec->subsets[*i][thread_num]; f != ec->subsets[*i][thread_num+1]; f++)
-	  weights[(f->weight_index+offset) & thread_mask] += update * f->x;
-      
-      for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
-	{
-	  if (ec->subsets[(int)(*i)[0]].index() > 0)
-	    {
-	      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	      temp.begin = ec->subsets[(int)(*i)[0]][thread_num];
-	      temp.end = ec->subsets[(int)(*i)[0]][thread_num+1];
-	      for (; temp.begin != temp.end; temp.begin++)
-		offset_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], thread_mask, update, offset);
-	    } 
-	}
     }
 }
 
@@ -659,7 +590,7 @@ float query_decision(example* ec, float k)
     return -1.;
 }
 
-void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num)
+void local_predict(example* ec, gd_vars& vars, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
 
@@ -693,7 +624,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
       float norm;
       if (global.adaptive && global.exact_adaptive_norm) {
 	float magx = 0.;
-	norm = compute_xGx(reg, ec, thread_num, magx);
+	norm = compute_xGx(reg, ec, magx);
 	eta_t = global.eta * norm / magx;
       } else {
 	eta_t = global.eta / pow(t,vars.power_t) * ld->weight;
@@ -733,100 +664,51 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg, size_t thread_num
     print_audit_features(reg, ec);
 }
 
-void predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
+void predict(regressor& r, example* ex, gd_vars& vars)
 {
   float prediction;
   if (global.reg_mode % 2)
-    prediction = inline_predict_trunc(r, ex,thread_num);
+    prediction = inline_predict_trunc(r, ex);
   else
-    prediction = inline_predict(r, ex, thread_num);
-
-  pthread_mutex_lock(&ex->lock);
+    prediction = inline_predict(r, ex);
 
   ex->partial_prediction += prediction;
-  if (--ex->threads_to_finish == 0)
-    {//We are the last thread using this example
-      local_predict(ex, vars,r, thread_num);
-      ex->done = true;
-      
-      pthread_cond_broadcast(&ex->finished_sum);
-      
-      if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
-	delay_example(ex,global.num_threads());
-      else
-	delay_example(ex,0);
-    }
-  else if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
-    //need to wait if there is training to do to keep example processing sequential
-    {
-      while (!ex->done)
-	pthread_cond_wait(&ex->finished_sum, &ex->lock);
-    }
-  pthread_mutex_unlock(&ex->lock);
+
+  local_predict(ex, vars,r);
+  ex->done = true;
+  
+  if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
+    delay_example(ex,1);
+  else
+    delay_example(ex,0);
+
 }
 
-/*
-float offset_predict(regressor& r, example* ex, size_t thread_num, gd_vars& vars, size_t offset)
-{
-  float prediction = inline_offset_predict(r, ex, thread_num, offset);
-  pthread_mutex_lock(&ex->lock);
-  ex->partial_prediction += prediction;
-  if (--ex->threads_to_finish != 0) 
-    pthread_cond_wait(&ex->finished_sum, &ex->lock);
-  else // We are the last thread using this example.
-    {
-      local_predict(ex, vars,r);
-      pthread_cond_broadcast(&ex->finished_sum);
-    }
-  pthread_mutex_unlock(&ex->lock);
-  return ex->final_prediction;
-  }*/
-
 // trains regressor r on one example ex.
-void train_one_example(regressor& r, example* ex, size_t thread_num, gd_vars& vars)
+void train_one_example(regressor& r, example* ex, gd_vars& vars)
 {
-  predict(r,ex,thread_num,vars);
+  predict(r,ex,vars);
   label_data* ld = (label_data*) ex->ld;
   if (ld->label != FLT_MAX && global.training) 
-    inline_train(r, ex, thread_num, ex->eta_round);
+    inline_train(r, ex, ex->eta_round);
 }
-/*
-// trains regressor r on one example ex.
-void train_offset_example(regressor& r, example* ex, size_t thread_num, gd_vars& vars, size_t offset)
-{
-  offset_predict(r,ex,thread_num,vars,offset);
-  label_data* ld = (label_data*) ex->ld;
-  if (ld->label != FLT_MAX && global.training) 
-    offset_train(r, ex, thread_num, ex->eta_round, offset);
-    }*/
 
-pthread_t* threads;
-gd_thread_params** passers;
-size_t num_threads;
+pthread_t* thread;
+gd_thread_params* passers;
 
 void setup_gd(gd_thread_params t)
 {
-  num_threads = t.thread_num;
-  threads = (pthread_t*)calloc(num_threads,sizeof(pthread_t));
-  passers = (gd_thread_params**)calloc(num_threads,sizeof(gd_thread_params*));
+  thread = (pthread_t*)calloc(1,sizeof(pthread_t));
+  passers = (gd_thread_params*)calloc(1, sizeof(gd_thread_params));
+  *passers = t;
 
-  for (size_t i = 0; i < num_threads; i++)
-    {
-      passers[i] = (gd_thread_params*)calloc(1, sizeof(gd_thread_params));
-      *(passers[i]) = t;
-      passers[i]->thread_num = i;
-      pthread_create(&threads[i], NULL, gd_thread, (void *) passers[i]);
-    }
+  pthread_create(thread, NULL, gd_thread, (void *) passers);
 }
 
 void destroy_gd()
 {
-  for (size_t i = 0; i < num_threads; i++) 
-    {
-      pthread_join(threads[i], NULL);
-      free(passers[i]);
-    }
-  free(threads);
+  pthread_join(*thread, NULL);
   free(passers);
+  free(thread);
 }
 
