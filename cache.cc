@@ -50,7 +50,7 @@ int read_cached_features(parser* p, void* ec)
 {
   example* ae = (example*)ec;
   ae->sorted = p->sorted_cache;
-  size_t mask = global.mask;
+  size_t mask = global.parse_mask;
   io_buf* input = p->input;
 
   size_t total = p->lp->read_cached_label(ae->ld, *input);

@@ -218,7 +218,7 @@ float inline_predict_trunc(regressor &reg, example* &ec)
   float prediction = get_initial(ec->ld);
   
   weight* weights = reg.weight_vectors;
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add_trunc(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, global.sd->gravity);
   
@@ -241,7 +241,7 @@ float inline_predict(regressor &reg, example* &ec)
   float prediction = get_initial(ec->ld);
 
   weight* weights = reg.weight_vectors;
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
   
@@ -305,7 +305,7 @@ void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_
 void print_features(regressor &reg, example* &ec)
 {
   weight* weights = reg.weight_vectors;
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   size_t stride = global.stride;
 
   if (global.lda > 0)
@@ -342,7 +342,7 @@ void print_features(regressor &reg, example* &ec)
 	  for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
 	    {
 	      ostringstream tempstream;
-	      if ( f->weight_index == (constant&global.mask)*stride)
+	      if ( f->weight_index == ((constant*stride)&global.weight_mask))
 		tempstream << "Constant:";
 	      tempstream << f->weight_index/stride << ':' << f->x;
 	      tempstream << ':' << trunc_weight(weights[f->weight_index & mask], global.sd->gravity) * global.sd->contraction;
@@ -354,10 +354,10 @@ void print_features(regressor &reg, example* &ec)
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
 	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
 	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.mask, features);
+	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.weight_mask, features);
 	else
 	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.mask, features);      
+	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.weight_mask, features);      
 
       sort(features.begin(),features.end());
 
@@ -428,7 +428,7 @@ void adaptive_inline_train(regressor &reg, example* &ec, float update)
   if (fabs(update) == 0.)
     return;
 
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   label_data* ld = (label_data*)ec->ld;
   weight* weights = reg.weight_vectors;
   
@@ -489,7 +489,7 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
 
 float compute_xGx(regressor &reg, example* &ec, float& magx)
 {//We must traverse the features in _precisely_ the same order as during training.
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   label_data* ld = (label_data*)ec->ld;
   float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   if (g==0) return 0.;
@@ -533,7 +533,7 @@ void inline_train(regressor &reg, example* &ec, float update)
 {
   if (fabs(update) == 0.)
     return;
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   weight* weights = reg.weight_vectors;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {

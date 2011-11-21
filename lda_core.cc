@@ -446,7 +446,7 @@ float lda_loop(float* v,weight* weights,example* ec, float power_t)
 	  feature *f = ec->atomics[*i].begin;
 	  for (; f != ec->atomics[*i].end; f++)
 	    {
-	      float* u_for_w = &weights[(f->weight_index&global.mask)+global.lda+1];
+	      float* u_for_w = &weights[(f->weight_index&global.weight_mask)+global.lda+1];
 	      float c_w = find_cw(u_for_w,v);
 	      xc_w = c_w * f->x;
               score += -f->x*log(c_w);
@@ -502,7 +502,7 @@ void start_lda(gd_thread_params t)
   size_t stride = global.stride;
   weight* weights = reg.weight_vectors;
 
-  for (size_t i =0; i <= global.mask;i+=stride)
+  for (size_t i =0; i <= global.weight_mask;i+=stride)
     for (size_t k = 0; k < global.lda; k++)
       total_lambda[k] += weights[i+k];
 
@@ -563,7 +563,7 @@ void start_lda(gd_thread_params t)
 	  if (last_weight_index == s->f.weight_index)
 	    continue;
 	  last_weight_index = s->f.weight_index;
-	  float* weights_for_w = &(weights[s->f.weight_index & global.mask]);
+	  float* weights_for_w = &(weights[s->f.weight_index & global.weight_mask]);
           float decay = fmin(1.0, exp(decay_levels.end[-2] - decay_levels.end[(int)(-1-example_t+weights_for_w[global.lda])]));
 	  float* u_for_w = weights_for_w + global.lda+1;
 
@@ -597,7 +597,7 @@ void start_lda(gd_thread_params t)
 	  while(next <= &sorted_features.back() && next->f.weight_index == s->f.weight_index)
 	    next++;
 
-	  float* word_weights = &(weights[s->f.weight_index & global.mask]);
+	  float* word_weights = &(weights[s->f.weight_index & global.weight_mask]);
 	  for (size_t k = 0; k < global.lda; k++) {
 	    float new_value = minuseta*word_weights[k];
 	    word_weights[k] = new_value;
@@ -605,7 +605,7 @@ void start_lda(gd_thread_params t)
 
 	  for (; s != next; s++) {
 	    float* v_s = &v[s->document*global.lda];
-	    float* u_for_w = &weights[(s->f.weight_index & global.mask) + global.lda + 1];
+	    float* u_for_w = &weights[(s->f.weight_index & global.weight_mask) + global.lda + 1];
 	    float c_w = eta*find_cw(u_for_w, v_s)*s->f.x;
 	    for (size_t k = 0; k < global.lda; k++) {
 	      float new_value = u_for_w[k]*v_s[k]*c_w;

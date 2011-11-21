@@ -252,7 +252,7 @@ void parse_cache(po::variables_map &vm, string source,
       }
     }
   
-  global.mask = (global.stride *(1 << global.num_bits)) - 1;
+  global.parse_mask = (1 << global.num_bits) - 1;
   if (caches.size() == 0)
     {
       if (!quiet)
@@ -512,7 +512,7 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.index(); n++)
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
-	  feature f = {1.,(uint32_t)(new_index & global.mask)};
+	  feature f = {1.,(uint32_t)(new_index & global.parse_mask)};
 	  push(atomics,f);
 	  if (global.audit && audits.index() >= initial_length)
 	    {
@@ -524,7 +524,7 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
 		}
 	      string feature_space = string(audits[i].space);
 	      
-	      audit_data a_feature = {NULL,NULL,new_index & global.mask, 1., true};
+	      audit_data a_feature = {NULL,NULL,new_index & global.parse_mask, 1., true};
 	      a_feature.space = (char*)malloc(feature_space.length()+1);
 	      strcpy(a_feature.space, feature_space.c_str());
 	      a_feature.feature = (char*)malloc(feature_name.length()+1);
@@ -661,7 +661,7 @@ void setup_example(parser* p, example* ae)
   if (global.add_constant) {
     //add constant feature
     push(ae->indices,constant_namespace);
-    feature temp = {1,(uint32_t) (constant & global.mask)};
+    feature temp = {1,(uint32_t) (constant & global.parse_mask)};
     push(ae->atomics[constant_namespace], temp);
   }
   

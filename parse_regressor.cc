@@ -20,6 +20,7 @@ using namespace std;
 void initialize_regressor(regressor &r)
 {
   size_t length = ((size_t)1) << global.num_bits;
+  global.weight_mask = (global.stride * length) - 1;
   r.weight_vectors = (weight *)calloc(global.stride*length, sizeof(weight));
   if (r.weight_vectors == NULL)
     {

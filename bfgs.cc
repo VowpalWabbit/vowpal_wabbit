@@ -96,7 +96,7 @@ float predict_and_gradient(regressor& reg, example* &ec)
 
   float loss_grad = reg.loss->first_derivative(fp,ld->label)*ld->weight;
   
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   weight* weights = reg.weight_vectors;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -124,7 +124,7 @@ void update_preconditioner(regressor& reg, example* &ec)
   label_data* ld = (label_data*)ec->ld;
   float curvature = reg.loss->second_derivative(ec->final_prediction,ld->label) * ld->weight;
   
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   weight* weights = reg.weight_vectors;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
     {
@@ -151,7 +151,7 @@ float dot_with_direction(regressor& reg, example* &ec)
 {
   float ret = 0;
   weight* weights = reg.weight_vectors;
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   weights +=2;//direction vector stored two advanced
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {

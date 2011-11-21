@@ -136,7 +136,7 @@ int read_features(parser* p, void* ex)
       p->lp->parse_label(ae->ld, p->words);
     }
   
-  size_t mask = global.mask;
+  size_t mask = global.parse_mask;
   bool audit = global.audit;
   for (substring* i = feature_start; i != p->channels.end; i++) {
     substring channel = *i;

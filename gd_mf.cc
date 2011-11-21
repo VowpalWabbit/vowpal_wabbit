@@ -70,7 +70,7 @@ float mf_inline_predict(regressor &reg, example* &ec)
   float prediction = 0.0;
 
   weight* weights = reg.weight_vectors;
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
 
   // clear stored predictions
   ec->topic_predictions.erase();
@@ -117,7 +117,7 @@ float mf_inline_predict(regressor &reg, example* &ec)
 void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, float update)
 {
       weight* weights = reg.weight_vectors;
-      size_t mask = global.mask;
+      size_t mask = global.weight_mask;
       label_data* ld = (label_data*)ec->ld;
 
       // use final prediction to get update size
@@ -162,7 +162,7 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, float update)
 void mf_print_offset_features(regressor &reg, example* &ec, size_t offset)
 {
   weight* weights = reg.weight_vectors;
-  size_t mask = global.mask;
+  size_t mask = global.weight_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
       for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)

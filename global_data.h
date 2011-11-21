@@ -76,7 +76,8 @@ struct global_data {
   size_t pass_length;
   size_t numpasses;
   size_t passes_complete;
-  size_t mask; // 1 << num_bits -1
+  size_t parse_mask; // 1 << num_bits -1
+  size_t weight_mask; // (stride*(1 << num_bits) -1)
   std::vector<std::string> pairs; // pairs of features to cross.
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
