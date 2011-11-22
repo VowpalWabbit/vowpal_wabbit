@@ -17,7 +17,6 @@ embodied in the content of this file are licensed under the BSD
 #include "lda_core.h"
 #include "cache.h"
 #include "simple_label.h"
-#include "delay_ring.h"
 
 #define MINEIRO_SPECIAL
 #ifdef MINEIRO_SPECIAL
@@ -538,7 +537,7 @@ void start_lda(gd_thread_params t)
                 }
               }
 	    }
-	  else if (thread_done())
+	  else if (parser_done())
 	    batch_size = d;
 	  else
 	    d--;
@@ -619,7 +618,7 @@ void start_lda(gd_thread_params t)
 	total_lambda[k] += total_new[k];
       }
 
-      if (thread_done())
+      if (parser_done())
 	{
 	  for (size_t i = 0; i < global.length(); i++) {
 	    weight* weights_for_w = & (weights[i*global.stride]);

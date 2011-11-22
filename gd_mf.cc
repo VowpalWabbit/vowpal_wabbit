@@ -14,7 +14,6 @@ embodied in the content of this file are licensed under the BSD
 #include "gd.h"
 #include "cache.h"
 #include "simple_label.h"
-#include "delay_ring.h"
 
 using namespace std;
 
@@ -30,29 +29,22 @@ void* gd_mf_thread(void *in)
 
   size_t current_pass = 0;
   while ( true )
-    {//this is a poor man's select operation.
-      if ((ec = get_delay_example()) != NULL)//nonblocking
+    {
+      if ((ec = get_example()) != NULL)//blocking operation.
 	{
-
 	  if (ec->pass != current_pass) {
 	    global.eta *= global.eta_decay_rate;
 	    current_pass = ec->pass;
 	  }
-
-	  //cout << ec->eta_round << endl;
-	  mf_inline_train(*(params->vars), reg, ec, ec->eta_round);
+	  if (!command_example(ec, params))
+	    {
+	      mf_predict(reg,ec,*(params->vars));
+	      if (global.training && ((label_data*)(ec->ld))->label != FLT_MAX)
+		mf_inline_train(*(params->vars), reg, ec, ec->eta_round);
+	    }
 	  finish_example(ec);
 	}
-      else if ((ec = get_example()) != NULL)//blocking operation.
-	{
-	  if (command_example(ec, params))
-	    {
-	      delay_example(ec,0);
-	    }
-	  else
-	    mf_predict(reg,ec,*(params->vars));
-	}
-      else if (thread_done())
+      else if (parser_done())
 	{
 	  if (global.local_prediction > 0)
 	    shutdown(global.local_prediction, SHUT_WR);
@@ -231,11 +223,6 @@ float mf_predict(regressor& r, example* ex, gd_vars& vars)
   ex->partial_prediction = prediction;
   mf_local_predict(ex, vars,r);
 
-  if (global.training && ((label_data*)(ex->ld))->label != FLT_MAX)
-    delay_example(ex,1);
-  else
-    delay_example(ex,0);
-  
   return ex->final_prediction;
 }
 

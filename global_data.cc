@@ -3,7 +3,6 @@
 #include <float.h>
 #include <iostream>
 #include "global_data.h"
-#include "message_relay.h"
 
 using namespace std;
 

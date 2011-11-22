@@ -19,7 +19,6 @@ Implementation by Miro Dudik.
 #include "bfgs.h"
 #include "cache.h"
 #include "simple_label.h"
-#include "delay_ring.h"
 #include "accumulate.h"
 
 using namespace std;
@@ -747,7 +746,7 @@ void setup_bfgs(gd_thread_params& t)
   /********************************************************************/
   /* PROCESS THE FINAL EXAMPLE ****************************************/
   /********************************************************************/ 
-     else if (thread_done())
+     else if (parser_done())
 	{
 	  if (current_pass != 0)
 	    work_on_weights(gradient_pass, reg, *(t.final_regressor_name),

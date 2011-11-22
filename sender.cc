@@ -7,7 +7,6 @@
 #include "vw.h"
 #include "simple_label.h"
 #include "network.h"
-#include "delay_ring.h"
 
 using namespace std;
 io_buf* buf;
@@ -60,7 +59,7 @@ void setup_send()
 	  simple_label.cache_label(ld, *buf);//send label information.
 	  cache_tag(*buf, ec->tag);
 	  send_features(buf,ec);
-          delay_example(ec,0);
+          finish_example(ec);
         }
       else if (!finished && parser_done())
         { //close our outputs to signal finishing.

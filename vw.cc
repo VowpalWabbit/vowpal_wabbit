@@ -25,8 +25,6 @@ embodied in the content of this file are licensed under the BSD
 #include "vw.h"
 #include "simple_label.h"
 #include "sender.h"
-#include "delay_ring.h"
-#include "message_relay.h"
 #include "allreduce.h"
 
 using namespace std;
@@ -63,7 +61,6 @@ gd_vars* vw(int argc, char *argv[])
   gd_thread_params t = {vars, regressor1, &final_regressor_name};
 
   start_parser(p);
-  initialize_delay_ring();
 
   if (vm.count("sendto"))
     {
@@ -97,7 +94,6 @@ gd_vars* vw(int argc, char *argv[])
       destroy_gd();
     }
 
-  destroy_delay_ring();
   end_parser(p);
   
   finalize_regressor(final_regressor_name,t.reg);
