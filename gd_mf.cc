@@ -45,11 +45,7 @@ void* gd_mf_thread(void *in)
 	  finish_example(ec);
 	}
       else if (parser_done())
-	{
-	  if (global.local_prediction > 0)
-	    shutdown(global.local_prediction, SHUT_WR);
-	  return NULL;
-	}
+	return NULL;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }

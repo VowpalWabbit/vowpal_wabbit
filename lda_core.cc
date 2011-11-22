@@ -628,9 +628,6 @@ void start_lda(gd_thread_params t)
             }
 	  }
 
-	  if (global.local_prediction > 0)
-	    shutdown(global.local_prediction, SHUT_WR);
-
 	  return;
 	}
     }

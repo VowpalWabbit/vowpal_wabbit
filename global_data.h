@@ -111,7 +111,6 @@ struct global_data {
   //Prediction output
   v_array<size_t> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.
-  int local_prediction;  //file descriptor to send local prediction to.
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
   size_t total; //total number of nodes
   size_t node; //node id number
@@ -129,27 +128,14 @@ struct global_data {
   regressor* reg;
 };
 
-struct global_prediction {
-  float p;
-  float weight;
-};
-
-struct prediction {
-  size_t example_number;
-  float p;
-}__attribute__((packed));
-
 extern pthread_mutex_t io;
 extern global_data global;
 extern void (*set_minmax)(double label);
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
-void send_prediction(int sock, prediction &p);
 void noop_mm(double label);
 void print_lda_result(int f, float* res, float weight, v_array<char> tag);
-
-extern pthread_mutex_t output_lock;
-extern pthread_cond_t output_done;
+void get_prediction(int sock, float& res, float& weight);
 
 extern pthread_mutex_t output_lock;
 extern pthread_cond_t output_done;

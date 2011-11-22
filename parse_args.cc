@@ -100,7 +100,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
     ("power_t", po::value<float>(&vars.power_t)->default_value(0.5), "t power value")
-    ("predictto", po::value< string > (), "host to send predictions to")
     ("learning_rate,l", po::value<float>(&global.eta)->default_value(10),
      "Set Learning Rate")
     ("passes", po::value<size_t>(&global.numpasses)->default_value(1),
@@ -150,7 +149,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.daemon = false;
   global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
   global.raw_prediction = -1;
-  global.local_prediction = -1;
   global.print = print_result;
   global.lda = 0;
   global.random_weights = false;
@@ -490,13 +488,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       global.training = true;
       if (!global.quiet)
 	cerr << "learning_rate set to " << global.eta << endl;
-    }
-
-  if (vm.count("predictto"))
-    {
-      if (!global.quiet)
-	cerr << "predictto = " << vm["predictto"].as< string >() << endl;
-      global.local_prediction = open_socket(vm["predictto"].as< string > ().c_str());
     }
 
   if (global.l1_lambda < 0.) {

@@ -83,8 +83,6 @@ void* gd_thread(void *in)
 	    else 
 	      accumulate_avg(global.span_server, params->reg, 0);	      
 	  }
-	  if (global.local_prediction > 0)
-	    shutdown(global.local_prediction, SHUT_WR);
 	  return NULL;
 	}
       else 
@@ -645,22 +643,6 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
     }
   else if(global.active)
     ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(t,vars.power_t));
-
-  if (global.local_prediction > 0)
-    {
-      prediction pred;
-      pred.p = ec->final_prediction;
-      pred.example_number = ec->example_counter;
-      send_prediction(global.local_prediction, pred);
-      if (global.unique_id == 0)
-	{
-	  const size_t len = sizeof(ld->label) + sizeof(ld->weight);
-	  char c[len];
-	  bufcache_simple_label(ld,c);
-	  if (write(global.local_prediction,c,len) < (int)len)
-	    cerr << "uhoh" << endl;
-	}
-    }
 
   if (global.audit)
     print_audit_features(reg, ec);

@@ -11,10 +11,11 @@
 using namespace std;
 io_buf* buf;
 
+int sd = -1;
+
 void open_sockets(string host)
 {
-  int sd = open_socket(host.c_str());
-  global.local_prediction = sd;
+  sd = open_socket(host.c_str());
   buf = new io_buf();
   push(buf->files,sd);
 }
@@ -47,32 +48,50 @@ void setup_send()
   v_array<char> null_tag;
   null_tag.erase();
 
-  bool finished = false;
+  example** delay_ring = (example**) calloc(global.ring_size, sizeof(example*));
+  size_t sent_index =0;
+  size_t received_index=0;
+
+  bool parser_finished = false;
   while ( true )
     {//this is a poor man's select operation.
-      if ((ec = get_example()) != NULL)//semiblocking operation.
+      if (received_index + global.ring_size == sent_index || (parser_finished & (received_index != sent_index)))
+	{
+	  float res, weight;
+	  get_prediction(sd,res,weight);
+	  
+	  ec=delay_ring[received_index++ % global.ring_size];
+	  label_data* ld = (label_data*)ec->ld;
+	  
+	  ec->final_prediction = res;
+	  
+	  ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+	  
+	  finish_example(ec);
+	}
+      else if ((ec = get_example()) != NULL)//semiblocking operation.
         {
-	  if (finished) 
-	    cout << "NOT POSSIBLE! " << endl;
           label_data* ld = (label_data*)ec->ld;
           set_minmax(ld->label);
 	  simple_label.cache_label(ld, *buf);//send label information.
 	  cache_tag(*buf, ec->tag);
 	  send_features(buf,ec);
-          finish_example(ec);
+	  delay_ring[sent_index++ % global.ring_size] = ec;
         }
-      else if (!finished && parser_done())
+      else if (parser_done())
         { //close our outputs to signal finishing.
-	  finished = true;
-	  buf->flush();
-	  shutdown(buf->files[0],SHUT_WR);
-	  free(buf->files.begin);
-	  free(buf->space.begin);
-        }
-      else if (!finished)
+	  parser_finished = true;
+	  if (received_index == sent_index)
+	    {
+	      shutdown(buf->files[0],SHUT_WR);
+	      free(buf->files.begin);
+	      free(buf->space.begin);
+	      free(delay_ring);
+	      return;
+	    }
+	}
+      else 
 	;
-      else
-	return;
     }
   return;
 }

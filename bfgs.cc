@@ -775,8 +775,6 @@ void setup_bfgs(gd_thread_params& t)
       cerr<<"Net time spent = "<<(float)net_time/(float)1000<<" seconds\n";
     }
 
-  if (global.local_prediction > 0)
-    shutdown(global.local_prediction, SHUT_WR);
   free(predictions.begin);
   free(mem);
   free(rho);
