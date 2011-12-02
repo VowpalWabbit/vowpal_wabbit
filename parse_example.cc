@@ -17,23 +17,23 @@ size_t hashstring (substring s, unsigned long h)
 {
   size_t ret = 0;
   //trim leading whitespace
-  for(; *(s.start) <= 0x20 && s.start < s.end; s.start++);
+  for(; *(s.begin) <= 0x20 && s.begin < s.end; s.begin++);
   //trim trailing white space
-  for(; *(s.end-1) <= 0x20 && s.end > s.start; s.end--);
+  for(; *(s.end-1) <= 0x20 && s.end > s.begin; s.end--);
 
-  char *p = s.start;
+  char *p = s.begin;
   while (p != s.end)
     if (isdigit(*p))
       ret = 10*ret + *(p++) - '0';
     else
-      return uniform_hash((unsigned char *)s.start, s.end - s.start, h);
+      return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
 
   return ret + h;
 }
 
 size_t hashall (substring s, unsigned long h)
 {
-  return uniform_hash((unsigned char *)s.start, s.end - s.start, h);
+  return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
 }
 
 hash_func_t getHasher(const string& s){
@@ -61,14 +61,14 @@ void feature_value(substring &s, v_array<substring>& name, float &v)
     if ( isnan(v))
       {
 	cerr << "error NaN value for feature: ";
-	cerr.write(name[0].start, name[0].end - name[0].start);
+	cerr.write(name[0].begin, name[0].end - name[0].begin);
 	cerr << " terminating." << endl;
 	exit(1);
       }
     break;
   default:
     cerr << "example with a wierd name.  What is ";
-    cerr.write(s.start, s.end - s.start);
+    cerr.write(s.begin, s.end - s.begin);
     cerr << "\n";
   }
 }
@@ -89,9 +89,9 @@ template<class T> void copy_v_array(v_array<T>& old, v_array<T>& new_va)
 
 char* c_string_of_substring(substring s)
 {
-  size_t len = s.end - s.start+1;
+  size_t len = s.end - s.begin+1;
   char* ret = (char *)calloc(len,sizeof(char));
-  memcpy(ret,s.start,len-1);
+  memcpy(ret,s.begin,len-1);
   return ret;
 }
 
@@ -122,18 +122,18 @@ int read_features(parser* p, void* ex)
   else 
     {
       substring label_space = p->channels[0];
-      char* tab_location = safe_index(label_space.start, '\t', label_space.end);
+      char* tab_location = safe_index(label_space.begin, '\t', label_space.end);
       if (tab_location != label_space.end)
-	label_space.start = tab_location+1;
+	label_space.begin = tab_location+1;
       
       tokenize(' ',label_space,p->words);
-      if (p->words.index() > 0 && (p->words.last().end == label_space.end || *(p->words.last().start)=='\'') ) //The last field is a tag, so record and strip it off
+      if (p->words.index() > 0 && (p->words.last().end == label_space.end || *(p->words.last().begin)=='\'') ) //The last field is a tag, so record and strip it off
 	{
 	  substring tag = p->words.pop();
-	  if (*tag.start == '\'')
-	    tag.start++;
+	  if (*tag.begin == '\'')
+	    tag.begin++;
 	  
-	  push_many(ae->tag, tag.start, tag.end - tag.start);
+	  push_many(ae->tag, tag.begin, tag.end - tag.begin);
 	}
       
       p->lp->parse_label(ae->ld, p->words);
@@ -154,13 +154,13 @@ int read_features(parser* p, void* ex)
     size_t index = 0;
     bool new_index = false;
     size_t feature_offset = 0;
-    if (channel.start[0] != ' ')//we have a nonanonymous namespace
+    if (channel.begin[0] != ' ')//we have a nonanonymous namespace
       {
 	feature_offset++;
 	feature_value(p->words[0], p->name, channel_v);
 
 	if (p->name.index() > 0) {
-	  index = (unsigned char)(*p->name[0].start);
+	  index = (unsigned char)(*p->name[0].begin);
 	  if (ae->atomics[index].begin == ae->atomics[index].end)
 	    new_index = true;
 	}

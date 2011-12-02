@@ -9,20 +9,20 @@ embodied in the content of this file are licensed under the BSD
 void tokenize(char delim, substring s, v_array<substring>& ret)
 {
   ret.erase();
-  char *last = s.start;
-  for (; s.start != s.end; s.start++) {
-    if (*s.start == delim) {
-      if (s.start != last)
+  char *last = s.begin;
+  for (; s.begin != s.end; s.begin++) {
+    if (*s.begin == delim) {
+      if (s.begin != last)
 	{
-	  substring temp = {last,s.start};
+	  substring temp = {last,s.begin};
 	  push(ret, temp);
 	}
-      last = s.start+1;
+      last = s.begin+1;
     }
   }
-  if (s.start != last)
+  if (s.begin != last)
     {
-      substring final = {last, s.start};
+      substring final = {last, s.begin};
       push(ret, final);
     }
 }
