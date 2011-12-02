@@ -12,23 +12,40 @@ done using the helper daemon 'allreduce_master'.
 
 ***********************************************************************
 
+To run the code on non-Hadoop clusters, the script 'single_machine'
+has the simplest possible invocation.
+
+In general: start the span server on one of the cluster nodes:
+./spanning_tree 
+
+Launch vw on each of the worker nodes: 
+
+./vw --span_server <location> --total <t> --node <n> --unique_id <u> -d <file>
+
+where: 
+<location> is the host running spanning_tree
+<t> is the total number of nodes
+<n> is the node id number
+<u> is a number shared by all nodes in the process
+<file> is the input source file for that node
+
+***********************************************************************
+
 To run the code on Hadoop clusters:
 
-Connect to the master node for the Hadoop cluster:
-./allreduce_master <n> <m>
-where <n> is the number of mappers you are going to launch and <m> is 
-the number of spanning trees it should setup.
+Connect to the span server node for the Hadoop cluster:
+./spanning_tree
 
 Start the map-reduce job using Hadoop streaming: 
 
 hadoop jar $HADOOP_HOME/hadoop-streaming.jar
 -Dmapred.job.map.memory.mb=2500 -input <input> -output <output> -file
-vw -file runvw.sh -mapper 'runvw.sh <output> <master>' -reducer
+vw -file runvw.sh -mapper 'runvw.sh <output> <span_server>' -reducer
 NONE
 
 where <output> is the directory on HDFS where you want the trained
-model to be saved and <master> is the hostname of the gateway where
-allreduc_master runs. The trained model is saved to the file
+model to be saved and <span_server> is the hostname of the gateway where
+spanning_tree runs. The trained model is saved to the file
 <output>/model on HDFS and can be retreived by hadoop -get.
 
 To modify the arguments to VW, edit the script runvw.sh. Arguments to
@@ -36,25 +53,6 @@ hadoop can be directly added in the hadoop streaming command.
 
 See the 'mapscript.sh' which uses 'runvw.sh' for an advanced example
 of running VW in a Hadoop enviornmnent.
-
-***********************************************************************
-
-To run the code on non-Hadoop clusters:
-
-Start the master job on one of the cluster nodes:
-./allreduce_master <n>
-where <n> is the number of workers you are going to launch.
-
-Launch vw on each of the worker nodes: 
-
-./vw --cache_file temp.cache -b 24 --conjugate_gradient --passes 4 -q
-up -q ua -q us -q pa -q ps -q as --loss_function=logistic
---regularization=1 --master_location <master> -d <input> -f
-model
-
-where <master> is the hostname of the master node and <input> is a
-different input file to each of the slaves.  The trained model is saved
-as the file model on the worker nodes.
 
 ************************************************************************
 
@@ -73,33 +71,20 @@ script, feel free to mess around with them.
 
 #########################################################################
 
-allreduce_master.cc: This is the master code which runs on the gateway. You
-start it before the call to hadoop. The master takes as input the
-number of mappers it should expect to hear from, so you need to know
-this ahead of time based on the number of input files you have. The
-master backgrounds itself after starting and listens for <n> incoming
-connections. The role of the master is to set up the topology on the
-mappers and then let them communicate amongst themselves.
+spanning_tree.cc: This is the span server code which runs on the
+gateway. You start it before the call to hadoop.  The span server
+backgrounds itself after starting and listens for incoming
+connections. It sets up the topology on the mappers and then let them
+communicate amongst themselves.
 
 #########################################################################
 
-allreduce.h: This is the header file for the workers. It provides a
-struct socks, that contains a socket to the parent and sockets for up
-to two children. Also provides the following function:
+allreduce.h: This is the header file for the nodes. 
 
-void all_reduce(char* buffer, int n, string master_location): Performs
-AllReduce on the entries of buffer that is n bytes, with the parent
-and children specified in socks object. It is implicitly assumed that
-the buffer contains floats so that addition is defined on chunks of 4
-bytes.
-
-The header also defines a constant const int buf_size which is the
-buffer size (in bytes) used for communication.
-                  
 #########################################################################
 
-allreduce.cc: This is the code for the workers. It implements the 
-routines described above. all_reduce is implemented as a combination of 
+allreduce.cc: This is the code for doing allreduce. It implement the 
+routine described above. all_reduce is implemented as a combination of 
 reduce and broadcast routines. reduce reads data from children, adds it 
 with local data and passes it up to the parent with a call to pass_up. 
 broadcast receives data from parent, and passes it down to children with 
