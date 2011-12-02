@@ -392,13 +392,13 @@ void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
     }
 }
 
-void all_reduce(char* buffer, int n, string master_location, size_t unique_id, size_t total, size_t node) 
+void all_reduce(float* buffer, int n, string master_location, size_t unique_id, size_t total, size_t node) 
 {
   if(master_location != current_master) 
     all_reduce_init(master_location, unique_id, total, node);
     
-  reduce(buffer, n, socks.parent, socks.children);
-  broadcast(buffer, n, socks.parent, socks.children);
+  reduce((char*)buffer, n*sizeof(float), socks.parent, socks.children);
+  broadcast((char*)buffer, n*sizeof(float), socks.parent, socks.children);
 }
 
 node_socks::~node_socks()

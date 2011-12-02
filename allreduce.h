@@ -11,6 +11,6 @@ This implements the allreduce function of MPI.
 #define ALLREDUCE_H
 #include <string>
 
-void all_reduce(char* buffer, int n, std::string master_location, size_t unique_id, size_t total, size_t node);
+void all_reduce(float* buffer, int n, std::string master_location, size_t unique_id, size_t total, size_t node);
 
 #endif
