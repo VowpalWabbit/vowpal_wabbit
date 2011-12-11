@@ -20,6 +20,7 @@ Implementation by Miro Dudik.
 #include "cache.h"
 #include "simple_label.h"
 #include "accumulate.h"
+#include <exception>
 
 using namespace std;
 
@@ -34,6 +35,18 @@ using namespace std;
 #define W_GT 1
 #define W_DIR 2
 #define W_COND 3
+
+class curv_exception: public exception
+{ 
+public:
+  virtual const char* what() const throw()
+  {
+    return "Zero or negative curvature detected.\n"
+      "To increase curvature you can increase regularization or rescale features.\n"
+      "It is also very likely that you have reached numerical accuracy\n"
+      "and further decrease in the objective cannot be reliably detected.\n";
+  }
+} curv_ex;
 
 /********************************************************************/
 /* mem & w definition ***********************************************/
@@ -246,7 +259,7 @@ double direction_magnitude(regressor& reg)
 	    g1_Hg1/importance_weight_sum, "", "", "");
 }
 
-  void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int& lastj, int &origin)
+  void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int& lastj, int &origin) throw (curv_exception)
 {  
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
@@ -290,6 +303,7 @@ double direction_magnitude(regressor& reg)
       fprintf(stderr, "%-10s\t","");
   }
 
+  // implement bfgs
   double y_s = 0.;
   double y_Hy = 0.;
   double s_q = 0.;
@@ -303,10 +317,8 @@ double direction_magnitude(regressor& reg)
     s_q += mem[(MEM_ST+origin)%mem_stride]*w[W_GT];  
   }
   
-  if (y_s <= 0. || y_Hy <= 0.) {
-    cout << "your curvature is not positive, something wrong.  Try adding regularization" << endl;
-    exit(1);
-  }
+  if (y_s <= 0. || y_Hy <= 0.)
+    throw curv_ex;
 
   rho[0] = 1/y_s;
   
@@ -370,7 +382,7 @@ double direction_magnitude(regressor& reg)
     rho[j] = rho[j-1];
 }
 
-double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_loss_sum, double step, double importance_weight_sum, int &origin) { 
+double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_loss_sum, double step, double importance_weight_sum, int &origin) throw (curv_exception) { 
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* w = reg.weight_vectors;
@@ -389,18 +401,17 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
   
   double wolfe1 = (loss_sum-previous_loss_sum)/(step*g0_d);
   double wolfe2 = g1_d/g0_d;
-  double new_step_simple = 0.5*step;
   double new_step_cross  = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
-  bool violated = false;
-  if (new_step_cross<0. || new_step_cross>step || isnan(new_step_cross)) {
-    violated = true;
-    new_step_cross = new_step_simple;
+  if (step==0. || new_step_cross<0. || new_step_cross>step || isnan(new_step_cross)) {
+    if (!global.quiet)
+      fprintf(stderr, "%10s\t%10s\t%s%10s\t%10s\t", "", "", " ", "", "");
+    throw curv_ex;
+    // as an alternative to throw: return 0.5*step
   }
 
-  
   if (!global.quiet)
-    fprintf(stderr, "%-10e\t%-10e\t%s%-10f\t%-10f\t", g1_g1/(importance_weight_sum*importance_weight_sum), g1_Hg1/importance_weight_sum, violated ? "*" : " ", wolfe1, wolfe2);
+    fprintf(stderr, "%-10e\t%-10e\t%s%-10f\t%-10f\t", g1_g1/(importance_weight_sum*importance_weight_sum), g1_Hg1/importance_weight_sum, " ", wolfe1, wolfe2);
   return new_step_cross;
 }
 
@@ -514,7 +525,7 @@ double derivative_in_direction(regressor& reg, float* mem, int &origin)
 void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regressor_name,
                      double &loss_sum, double &importance_weight_sum, float &step_size, double &previous_loss_sum,
 		     size_t &current_pass, double &curvature, float* mem, v_array<float> &predictions,
-		     size_t &example_number, double* rho, double* alpha, int &lastj, int &origin) {
+		     size_t &example_number, double* rho, double* alpha, int &lastj, int &origin, size_t &final_pass) {
 
   /********************************************************************/
   /* B) GRADIENT CALCULATED *******************************************/
@@ -528,19 +539,30 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
 		  if (global.l2_lambda > 0.)
 		    loss_sum += add_regularization(reg,global.l2_lambda);
 		  if (!global.quiet)
-		    fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
+		    fprintf(stderr, "%2lu %-e\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 
-		  double new_step = wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin);
+		  double new_step = 0.0;
+		  try {
+		    new_step = wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin);
+		  }
+		  catch (curv_exception e) {
+		    if (step_size!=0.)
+		      fprintf(stdout, "\nIn wolfe_eval: %s", e.what());
+		    if (final_pass>current_pass+1)
+		      final_pass = current_pass+1;
+		  }
+
   /********************************************************************/
   /* B1) LINE SEARCH FAILED *******************************************/
   /********************************************************************/ 
-		  if (current_pass > 0 && loss_sum > previous_loss_sum)
-		    {// we stepped too far last time, step back
+		  if (new_step==0.0 || current_pass > 0 && loss_sum > previous_loss_sum)
+		    {// curvature violated, or we stepped too far last time: step back
 		      ftime(&t_end_global);
 		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		      float ratio = (step_size==0.) ? 0. : new_step/step_size;
 		      if (!global.quiet)
 			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
-				"","",new_step/step_size,
+				"","",ratio,
 				new_step,
 				net_time/1000.);
 			predictions.erase();
@@ -555,19 +577,35 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
   /*     DETERMINE NEXT SEARCH DIRECTION             ******************/
   /********************************************************************/ 
 		  else {
+		    if (current_pass>0) {
+		      double rel_decrease = (previous_loss_sum-loss_sum)/previous_loss_sum;
+		      if (!isnan(rel_decrease) && rel_decrease<global.rel_threshold && current_pass+1<final_pass) {
+			fprintf(stdout, "\nTermination condition reached: decrease in loss less than %.3f%%.\n"
+				"If you want to optimize further, decrease termination threshold.\n", global.rel_threshold*100.0);
+			final_pass=current_pass+1;
+		      }
+		    }
 		      previous_loss_sum = loss_sum;
 		      loss_sum = 0.;
 		      example_number = 0;
 		      curvature = 0;
+		      step_size = 1.0;
 
+		      try {
 		      bfgs_iter_middle(reg, mem, rho, alpha, lastj, origin);
+		      }
+		      catch (curv_exception e) {
+			fprintf(stdout, "In bfgs_iter_middle: %s", e.what());
+			step_size=0.0;
+			if (final_pass>current_pass+1)
+			  final_pass = current_pass+1;
+		      }
 
 		      if (global.hessian_on) {
 			gradient_pass = false;//now start computing curvature
 		      }
 		      else {
 			float d_mag = direction_magnitude(reg);
-			step_size = 1.0;
 			ftime(&t_end_global);
 			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!global.quiet)
@@ -617,6 +655,7 @@ void setup_bfgs(gd_thread_params& t)
   double curvature=0.;
 
   bool gradient_pass=true;
+  size_t final_pass=global.numpasses-1;
   double loss_sum = 0;
   float step_size = 0.;
   double importance_weight_sum = 0.;
@@ -658,11 +697,15 @@ void setup_bfgs(gd_thread_params& t)
 	{
 	  assert(ec->in_use);
  
+	  if (ec->pass>final_pass) {
+	    finish_example(ec);
+	    continue;
+	  }
+	    
  /********************************************************************/
   /* FINISHED A PASS OVER EXAMPLES: DISTINGUISH CASES *****************/
   /********************************************************************/ 
 	  if (ec->pass != current_pass) {
-
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/ 
@@ -680,7 +723,7 @@ void setup_bfgs(gd_thread_params& t)
 		if (global.l2_lambda > 0.)
 		  loss_sum += add_regularization(reg,global.l2_lambda);
 		if (!global.quiet)
-		  fprintf(stderr, "%2lu %-f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
+		  fprintf(stderr, "%2lu %-e\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 		
 		previous_loss_sum = loss_sum;
 		loss_sum = 0.;
@@ -693,14 +736,13 @@ void setup_bfgs(gd_thread_params& t)
 		work_on_weights(gradient_pass, reg, *(t.final_regressor_name),
                      loss_sum, importance_weight_sum, step_size, previous_loss_sum,
 		     current_pass, curvature, mem, predictions,
-				example_number, rho, alpha, lastj, origin);
+			      example_number, rho, alpha, lastj, origin, final_pass);
 
 	      current_pass++;
-	      
   /********************************************************************/
   /* IN THE LAST PASS CALCULATE THE DIAGONAL OF THE HESSIAN ***********/
   /********************************************************************/ 
-	      if (output_regularizer && current_pass == global.numpasses - 1)
+	    if (output_regularizer && current_pass==final_pass)
 		zero_preconditioner(reg);
 	  }
   /********************************************************************/
@@ -736,7 +778,7 @@ void setup_bfgs(gd_thread_params& t)
 	      float sd = reg.loss->second_derivative(predictions[example_number++],ld->label);
 	      curvature += d_dot_x*d_dot_x*sd*ld->weight;
 	    }
-	  if (output_regularizer && current_pass == global.numpasses -1)
+	  if (output_regularizer && current_pass==final_pass)
 	    {
 	      update_preconditioner(reg,ec);//w[3]
 	    }
@@ -752,7 +794,7 @@ void setup_bfgs(gd_thread_params& t)
 	    work_on_weights(gradient_pass, reg, *(t.final_regressor_name),
 			    loss_sum, importance_weight_sum, step_size, previous_loss_sum,
 			    current_pass, curvature, mem, predictions,
-			    example_number, rho, alpha, lastj, origin);
+			    example_number, rho, alpha, lastj, origin, final_pass);
 	  if (!global.quiet)
 	    fprintf(stderr, "\n");
 	  break;

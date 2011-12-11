@@ -73,6 +73,8 @@ struct global_data {
   uint64_t parsed_examples; // The index of the parsed example.
   uint64_t local_example_number; 
 
+  float rel_threshold; // termination threshold
+
   size_t pass_length;
   size_t numpasses;
   size_t passes_complete;

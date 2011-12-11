@@ -104,6 +104,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
      "Set Learning Rate")
     ("passes", po::value<size_t>(&global.numpasses)->default_value(1),
      "Number of Training Passes")
+    ("termination", po::value<float>(&global.rel_threshold)->default_value(0.001),
+     "Termination threshold")
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
