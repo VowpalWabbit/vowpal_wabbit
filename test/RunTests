@@ -409,7 +409,7 @@ __DATA__
     train-sets/ref/0002.stderr
 
 # Test 5: add -q .., adaptive, and more (same input, different outputs)
-{VW} --initial_t 1 --power_t 0.5 --adaptive -q Tf -q ff -f models/0002a.model train-sets/0002.dat
+{VW} --initial_t 1 --power_t 0 --adaptive -q Tf -q ff -f models/0002a.model train-sets/0002.dat
     train-sets/ref/0002a.stdout
     train-sets/ref/0002a.stderr
 
@@ -421,7 +421,7 @@ __DATA__
     pred-sets/ref/0002b.predict
 
 # Test 7: using -q and multiple threads
-{VW} --adaptive -q ff -f models/0002c.model train-sets/0002.dat
+{VW} --power_t 0 --adaptive -q ff -f models/0002c.model train-sets/0002.dat
     train-sets/ref/0002c.stdout
     train-sets/ref/0002c.stderr
 

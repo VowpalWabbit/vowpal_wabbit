@@ -555,7 +555,7 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
   /********************************************************************/
   /* B1) LINE SEARCH FAILED *******************************************/
   /********************************************************************/ 
-		  if (new_step==0.0 || current_pass > 0 && loss_sum > previous_loss_sum)
+		  if (new_step==0.0 || (current_pass > 0 && loss_sum > previous_loss_sum))
 		    {// curvature violated, or we stepped too far last time: step back
 		      ftime(&t_end_global);
 		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 

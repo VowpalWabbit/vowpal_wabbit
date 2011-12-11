@@ -211,7 +211,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 	    cout << "Options don't make sense.  You can't use an exact norm and not normalize." << endl;
 	}
       global.stride = 2;
-      vars.power_t = 0.0;
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {

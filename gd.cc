@@ -27,6 +27,7 @@ embodied in the content of this file are licensed under the BSD
 using namespace std;
 
 void adaptive_inline_train(regressor &reg, example* &ec, float update);
+void general_adaptive_train(regressor &reg, example* &ec, float update, float power_t);
 
 void* gd_thread(void *in)
 {
@@ -64,7 +65,10 @@ void* gd_thread(void *in)
 	      if (ec->eta_round != 0.)
 		{
 		  if (global.adaptive)
-		    adaptive_inline_train(reg,ec,ec->eta_round);
+		    if (params->vars->power_t == 0.5 || !global.exact_adaptive_norm)
+		      adaptive_inline_train(reg,ec,ec->eta_round);
+		    else
+		      general_adaptive_train(reg,ec,ec->eta_round,params->vars->power_t);
 		  else
 		    inline_train(reg, ec, ec->eta_round);
 		  if (global.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
@@ -388,7 +392,7 @@ float InvSqrt(float x){
   return x;
 }
 
-void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, size_t& ctr)
+void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   update *= page_feature.x;
@@ -429,7 +433,6 @@ void adaptive_inline_train(regressor &reg, example* &ec, float update)
   weight* weights = reg.weight_vectors;
   
   float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  size_t ctr = 0;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature *f = ec->atomics[*i].begin;
@@ -455,10 +458,58 @@ void adaptive_inline_train(regressor &reg, example* &ec, float update)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    one_pf_quad_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, ctr);
+	    one_pf_quad_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec);
 	} 
     }
 }
+
+void quad_general_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, float power_t)
+{
+  size_t halfhash = quadratic_constant * page_feature.weight_index;
+  update *= page_feature.x;
+  float update2 = g * page_feature.x * page_feature.x;
+  
+  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
+    {
+      weight* w=&weights[(halfhash + ele->weight_index) & mask];
+      w[1] += update2 * ele->x * ele->x;
+      float t = ele->x*pow(w[1],-power_t);
+      w[0] += update * t;
+    }
+}
+
+void general_adaptive_train(regressor &reg, example* &ec, float update, float power_t)
+{
+  if (fabs(update) == 0.)
+    return;
+  
+  size_t mask = global.weight_mask;
+  label_data* ld = (label_data*)ec->ld;
+  weight* weights = reg.weight_vectors;
+  
+  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+    {
+      feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++)
+	{
+	  weight* w = &weights[f->weight_index & mask];
+	  w[1] += g * f->x * f->x;
+	  float t = f->x*pow(w[1],-power_t);
+	  w[0] += update * t;
+	}
+    }
+  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
+    {
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
+	{
+	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+	  for (; temp.begin != temp.end; temp.begin++)
+	    quad_general_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, power_t);
+	} 
+    }
+}
+
 
 float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float& magx)
 {
@@ -480,6 +531,53 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
       xGx += t * ele->x;
       magx += fabsf(ele->x);
     }
+  return xGx;
+}
+
+float xGx_general_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float power_t)
+{
+  size_t halfhash = quadratic_constant * page_feature.weight_index;
+  float xGx = 0.;
+  float update2 = g * page_feature.x * page_feature.x;
+  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
+    {
+      weight* w=&weights[(halfhash + ele->weight_index) & mask];
+      float t = ele->x*pow(w[1] + update2 * ele->x * ele->x,- power_t);
+      xGx += t * ele->x;
+    }
+  return xGx;
+}
+
+float compute_general_xGx(regressor &reg, example* &ec, float power_t)
+{//We must traverse the features in _precisely_ the same order as during training.
+  size_t mask = global.weight_mask;
+  label_data* ld = (label_data*)ec->ld;
+  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+  if (g==0) return 0.;
+
+  float xGx = 0.;
+  
+  weight* weights = reg.weight_vectors;
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+    {
+      feature *f = ec->atomics[*i].begin;
+      for (; f != ec->atomics[*i].end; f++)
+	{
+	  weight* w = &weights[f->weight_index & mask];
+	  float t = f->x*pow(w[1] + g * f->x * f->x,- power_t);
+	  xGx += t * f->x;
+	}
+    }
+  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
+    {
+      if (ec->atomics[(int)(*i)[0]].index() > 0)
+	{
+	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+	  for (; temp.begin != temp.end; temp.begin++)
+	    xGx += xGx_general_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, power_t);
+	} 
+    }
+  
   return xGx;
 }
 
@@ -623,7 +721,11 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	  float norm;
 	  if (global.adaptive && global.exact_adaptive_norm) {
 	    float magx = 0.;
-	    norm = compute_xGx(reg, ec, magx);
+	    if (vars.power_t == 0.5)
+	      norm = compute_xGx(reg, ec, magx);
+	    else 
+	      norm = compute_general_xGx(reg,ec, vars.power_t);
+	    magx = pow(ec->total_sum_feat_sq, 1. - vars.power_t);
 	    eta_t = global.eta * norm / magx;
 	  } else {
 	    eta_t = global.eta / pow(t,vars.power_t) * ld->weight;
