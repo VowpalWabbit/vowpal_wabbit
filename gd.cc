@@ -534,7 +534,7 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
   return xGx;
 }
 
-float xGx_general_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float power_t)
+float xGx_general_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float power_t, float& magx)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   float xGx = 0.;
@@ -544,11 +544,12 @@ float xGx_general_quad(weight* weights, feature& page_feature, v_array<feature> 
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       float t = ele->x*powf(w[1] + update2 * ele->x * ele->x,- power_t);
       xGx += t * ele->x;
+      magx += fabsf(ele->x);
     }
   return xGx;
 }
 
-float compute_general_xGx(regressor &reg, example* &ec, float power_t)
+float compute_general_xGx(regressor &reg, example* &ec, float power_t, float& magx)
 {//We must traverse the features in _precisely_ the same order as during training.
   size_t mask = global.weight_mask;
   label_data* ld = (label_data*)ec->ld;
@@ -566,6 +567,7 @@ float compute_general_xGx(regressor &reg, example* &ec, float power_t)
 	  weight* w = &weights[f->weight_index & mask];
 	  float t = f->x*powf(w[1] + g * f->x * f->x,- power_t);
 	  xGx += t * f->x;
+	  magx += fabsf(f->x);
 	}
     }
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -574,9 +576,11 @@ float compute_general_xGx(regressor &reg, example* &ec, float power_t)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
-	    xGx += xGx_general_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, power_t);
+	    xGx += xGx_general_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, power_t, magx);
 	} 
     }
+  
+  magx = powf(magx,-2*power_t);
   
   return xGx;
 }
@@ -724,8 +728,9 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	    if (vars.power_t == 0.5)
 	      norm = compute_xGx(reg, ec, magx);
 	    else 
-	      norm = compute_general_xGx(reg,ec, vars.power_t);
-	    magx = powf(ec->total_sum_feat_sq, 1. - vars.power_t);
+	      norm = compute_general_xGx(reg,ec, vars.power_t, magx);
+	    if (!global.l1normalize)
+	      magx = powf(ec->total_sum_feat_sq, 1. - vars.power_t);
 	    eta_t = global.eta * norm / magx;
 	  } else {
 	    eta_t = global.eta / powf(t,vars.power_t) * ld->weight;
