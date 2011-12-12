@@ -473,7 +473,7 @@ void quad_general_adaptive_update(weight* weights, feature& page_feature, v_arra
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       w[1] += update2 * ele->x * ele->x;
-      float t = ele->x*pow(w[1],-power_t);
+      float t = ele->x*powf(w[1],-power_t);
       w[0] += update * t;
     }
 }
@@ -495,7 +495,7 @@ void general_adaptive_train(regressor &reg, example* &ec, float update, float po
 	{
 	  weight* w = &weights[f->weight_index & mask];
 	  w[1] += g * f->x * f->x;
-	  float t = f->x*pow(w[1],-power_t);
+	  float t = f->x*powf(w[1],-power_t);
 	  w[0] += update * t;
 	}
     }
@@ -542,7 +542,7 @@ float xGx_general_quad(weight* weights, feature& page_feature, v_array<feature> 
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      float t = ele->x*pow(w[1] + update2 * ele->x * ele->x,- power_t);
+      float t = ele->x*powf(w[1] + update2 * ele->x * ele->x,- power_t);
       xGx += t * ele->x;
     }
   return xGx;
@@ -564,7 +564,7 @@ float compute_general_xGx(regressor &reg, example* &ec, float power_t)
       for (; f != ec->atomics[*i].end; f++)
 	{
 	  weight* w = &weights[f->weight_index & mask];
-	  float t = f->x*pow(w[1] + g * f->x * f->x,- power_t);
+	  float t = f->x*powf(w[1] + g * f->x * f->x,- power_t);
 	  xGx += t * f->x;
 	}
     }
@@ -694,7 +694,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 
   if(global.active_simulation){
     float k = ec->example_t - ld->weight;
-    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(k,vars.power_t));
+    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/powf(k,vars.power_t));
     float importance = query_decision(ec, k);
     if(importance > 0){
       global.sd->queries += 1;
@@ -725,10 +725,10 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	      norm = compute_xGx(reg, ec, magx);
 	    else 
 	      norm = compute_general_xGx(reg,ec, vars.power_t);
-	    magx = pow(ec->total_sum_feat_sq, 1. - vars.power_t);
+	    magx = powf(ec->total_sum_feat_sq, 1. - vars.power_t);
 	    eta_t = global.eta * norm / magx;
 	  } else {
-	    eta_t = global.eta / pow(t,vars.power_t) * ld->weight;
+	    eta_t = global.eta / powf(t,vars.power_t) * ld->weight;
 	    norm = global.nonormalize ? 1. : ec->total_sum_feat_sq;
 	  }
 	  
@@ -744,7 +744,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	}
     }
   else if(global.active)
-    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/pow(t,vars.power_t));
+    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/powf(t,vars.power_t));
 
   if (global.audit)
     print_audit_features(reg, ec);
