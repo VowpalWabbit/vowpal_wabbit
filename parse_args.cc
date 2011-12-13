@@ -50,6 +50,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.sd = (shared_data *) malloc(sizeof(shared_data));
   // Declare the supported options.
   desc.add_options()
+    ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
     ("active_learning", "active learning mode")
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
@@ -76,7 +77,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
-    ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
     ("hessian_on", "use second derivative in line search")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
