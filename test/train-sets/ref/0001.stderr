@@ -9,7 +9,6 @@ learning rate = 2.56e+06
 initial_t = 128000
 power_t = 1
 decay_learning_rate = 1
-learning_rate set to 2.56e+06
 average    since       example  example    current  current  current
 loss       last        counter   weight      label  predict features
 1.000000   1.000000          3      3.0     0.0000   1.0000      326

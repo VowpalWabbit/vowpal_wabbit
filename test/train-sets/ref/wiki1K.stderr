@@ -6,7 +6,6 @@ Num weight bits = 13
 learning rate = 1
 initial_t = 1
 power_t = 0.5
-learning_rate set to 1
 average    since       example  example    current  current  current
 loss       last        counter   weight      label  predict features
 10.276554  10.276554         3      3.0    unknown   0.0000       37
