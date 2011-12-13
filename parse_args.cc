@@ -485,11 +485,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
         global.eta = 0;
     }
   else
-    {
-      global.training = true;
-      if (!global.quiet)
-	cerr << "learning_rate set to " << global.eta << endl;
-    }
+    global.training = true;
 
   if (global.l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << global.l1_lambda << " to 0" << endl;
