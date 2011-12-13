@@ -95,7 +95,6 @@ struct global_data {
   bool random_weights;
   bool add_constant;
   bool nonormalize;
-  bool l1normalize;
   bool binary_label;
 
   size_t lda;

@@ -64,7 +64,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("compressed", "use gzip format whenever appropriate. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported if this option is on")
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("nonormalize", "Do not normalize online updates")
-    ("l1normalize", "Normalize online updates with l1 of feature values")
     ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
     ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
     ("data,d", po::value< string >()->default_value(""), "Example Set")
@@ -160,7 +159,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.per_feature_regularizer_text = "";
   global.ring_size = 1 << 8;
   global.nonormalize = false;
-  global.l1normalize = false;
   global.binary_label = false;
 
   global.adaptive = false;
@@ -365,9 +363,6 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("nonormalize"))
     global.nonormalize = true;
-
-  if (vm.count("l1normalize"))
-    global.l1normalize = true;
 
   if (vm.count("lda"))
     {
