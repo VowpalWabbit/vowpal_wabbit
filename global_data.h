@@ -48,7 +48,6 @@ struct global_data {
   size_t num_children;
 
   bool save_per_pass;
-  float global_multiplier;
   float active_c0;
   float initial_weight;
 
