@@ -99,8 +99,8 @@ int main(int argc, char* argv[]){
         }
         buf[ret]='\0';
         toks=&buf[0];
-        ptok=strsep(&toks," ");
-        ttok=strsep(&toks," ");
+        strsep(&toks," ");
+        strsep(&toks," ");
         itok=strsep(&toks,"\n");
         if(itok==NULL || itok[0]=='\0'){
             continue;
