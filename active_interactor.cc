@@ -57,7 +57,7 @@ int recvall(int s, char* buf, int n){
 
 int main(int argc, char* argv[]){
     char buf[256]; 
-    char* toks,*ptok,*ttok,*itok;
+    char* toks,*itok;
     const char* host="localhost";
     unsigned short port=~0;
     ssize_t pos;
