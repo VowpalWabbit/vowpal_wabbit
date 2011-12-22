@@ -7,6 +7,8 @@ embodied in the content of this file are licensed under the BSD
 #include "cache.h"
 #include "unique_sort.h"
 
+using namespace std;
+
 size_t neg_1 = 1;
 size_t general = 2;
 
@@ -48,7 +50,7 @@ int read_cached_features(parser* p, void* ec)
 {
   example* ae = (example*)ec;
   ae->sorted = p->sorted_cache;
-  size_t mask = global.mask;
+  size_t mask = global.parse_mask;
   io_buf* input = p->input;
 
   size_t total = p->lp->read_cached_label(ae->ld, *input);

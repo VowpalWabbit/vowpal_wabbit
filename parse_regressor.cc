@@ -20,59 +20,61 @@ using namespace std;
 void initialize_regressor(regressor &r)
 {
   size_t length = ((size_t)1) << global.num_bits;
-  global.thread_mask = (global.stride * (length >> global.thread_bits)) - 1;
-  size_t num_threads = global.num_threads();
-  r.weight_vectors = (weight **)malloc(num_threads * sizeof(weight*));
+  global.weight_mask = (global.stride * length) - 1;
+  r.weight_vectors = (weight *)calloc(global.stride*length, sizeof(weight));
+  if (r.weight_vectors == NULL)
+    {
+      cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
+      exit (1);
+    }
+  
   if (global.per_feature_regularizer_input != "")
-    r.regularizers = (weight **)malloc(num_threads * sizeof(weight*));
+    {
+      r.regularizers = (weight *)calloc(2*length, sizeof(weight));
+      if (r.regularizers == NULL)
+	{
+	  cerr << global.program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
+	  exit (1);
+	}
+    }
   else
     r.regularizers = NULL;
-  for (size_t i = 0; i < num_threads; i++)
+
+  // random weight initialization for matrix factorization
+  if (global.random_weights)
     {
-      //r.weight_vectors[i] = (weight *)calloc(length/num_threads, sizeof(weight));
-      r.weight_vectors[i] = (weight *)calloc(global.stride*length/num_threads, sizeof(weight));
-
-      // random weight initialization for matrix factorization
-      if (global.random_weights)
-	{
-	  if (global.rank > 0)
-	    for (size_t j = 0; j < global.stride*length/num_threads; j++)
-	      r.weight_vectors[i][j] = (double) 0.1 * rand() / ((double) RAND_MAX + 1.0); //drand48()/10 - 0.05;
-	  else
-	    for (size_t j = 0; j < length/num_threads; j++)
-	      r.weight_vectors[i][j] = drand48() - 0.5;
-	}
-      if (r.regularizers != NULL)
-	r.regularizers[i] = (weight *)calloc(2*length/num_threads, sizeof(weight));
-      if (r.weight_vectors[i] == NULL || (r.regularizers != NULL && r.regularizers[i] == NULL))
-        {
-          cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
-          exit (1);
-        }
-      if (global.initial_weight != 0.)
-	for (size_t j = 0; j < global.stride*length/num_threads; j+=global.stride)
-	  r.weight_vectors[i][j] = global.initial_weight;
-      if (global.lda)
-	{
-	  size_t stride = global.stride;
-
-          for (size_t j = 0; j < stride*length/num_threads; j+=stride)
-	    {
-	      for (size_t k = 0; k < global.lda; k++) {
-                r.weight_vectors[i][j+k] = -log(drand48()) + 1.0;
-//                 r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
-//                 r.weight_vectors[i][j+k] *= r.weight_vectors[i][j+k];
-		r.weight_vectors[i][j+k] *= (float)global.lda_D / (float)global.lda
-		  / global.length() * 200;
-              }
-	      r.weight_vectors[i][j+global.lda] = global.initial_t;
-	    }
-	}
-      if(global.adaptive)
-        for (size_t j = 1; j < global.stride*length/num_threads; j+=global.stride)
-	  r.weight_vectors[i][j] = 1;
+      if (global.rank > 0)
+	for (size_t j = 0; j < global.stride*length; j++)
+	  r.weight_vectors[j] = (double) 0.1 * drand48(); 
+      else
+	for (size_t j = 0; j < length; j++)
+	  r.weight_vectors[j] = drand48() - 0.5;
     }
+  if (global.initial_weight != 0.)
+    for (size_t j = 0; j < global.stride*length; j+=global.stride)
+      r.weight_vectors[j] = global.initial_weight;
+  if (global.lda)
+    {
+      size_t stride = global.stride;
+      
+      for (size_t j = 0; j < stride*length; j+=stride)
+	{
+	  for (size_t k = 0; k < global.lda; k++) {
+	    if (global.random_weights) {
+	      r.weight_vectors[j+k] = -log(drand48()) + 1.0;
+	      r.weight_vectors[j+k] *= (float)global.lda_D / (float)global.lda
+		/ global.length() * 200;
+	    }
+	  }
+	  r.weight_vectors[j+global.lda] = global.initial_t;
+	}
+    }
+  if(global.adaptive)
+    for (size_t j = 1; j < global.stride*length; j+=global.stride)
+      r.weight_vectors[j] = 1;
 }
+
+v_array<char> temp;
 
 void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vector)
 {
@@ -82,19 +84,22 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       cout << "can't open " << file << endl << " ... exiting." << endl;
       exit(1);
     }
+
   
   size_t v_length;
   source.read((char*)&v_length, sizeof(v_length));
-  char t[v_length];
-  source.read(t,v_length);
-  if (strcmp(t,version.c_str()) != 0)
+  temp.erase();
+  if (temp.index() < v_length)
+    reserve(temp, v_length);
+  source.read(temp.begin,v_length);
+  if (strcmp(temp.begin,version.c_str()) != 0)
     {
       cout << "source has possibly incompatible version!" << endl;
       exit(1);
     }
   
-  source.read((char*)&global.min_label, sizeof(global.min_label));
-  source.read((char*)&global.max_label, sizeof(global.max_label));
+  source.read((char*)&global.sd->min_label, sizeof(global.sd->min_label));
+  source.read((char*)&global.sd->max_label, sizeof(global.sd->max_label));
   
   size_t local_num_bits;
   source.read((char *)&local_num_bits, sizeof(local_num_bits));
@@ -111,19 +116,6 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
     if (local_num_bits != global.num_bits)
       {
 	cout << "can't combine sources with different feature number!" << endl;
-	exit (1);
-      }
-  
-  size_t local_thread_bits;
-  source.read((char*)&local_thread_bits, sizeof(local_thread_bits));
-  if (!initialized){
-    global.thread_bits = local_thread_bits;
-    global.partition_bits = global.thread_bits;
-  }
-  else 
-    if (local_thread_bits != global.thread_bits)
-      {
-	cout << "can't combine sources trained with different numbers of threads!" << endl;
 	exit (1);
       }
   
@@ -168,7 +160,7 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       // par->sort_features = true;
       float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
       global.stride = 1 << (int) temp;
-      global.random_weights = true;
+      global.random_weights = false;
     }
 
   if (!initialized)
@@ -213,20 +205,21 @@ void read_vector(const char* file, regressor& r, bool& initialized, bool reg_vec
       weight w = 0.;
       source.read((char *)&w, sizeof(float));
       
-      size_t num_threads = global.num_threads();
       if (source.good())
 	{
 	  if (global.rank != 0)
-	      r.weight_vectors[hash % num_threads][hash/num_threads] = w;
-	  else if (global.lda == 0)
-	    if (reg_vector)
-	      r.regularizers[hash % num_threads][hash/num_threads] = w;
+	    r.weight_vectors[hash] = w;
+	  else 
+	    if (global.lda == 0)
+	      if (reg_vector) {
+		r.regularizers[hash] = w;
+		if (hash%2 == 1) // This is the prior mean; previous element was prior variance
+		  r.weight_vectors[(hash/2*stride)] = w;
+	      }
+	      else
+		r.weight_vectors[hash*stride] = w;
 	    else
-	      r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] 
-		= r.weight_vectors[hash % num_threads][(hash*stride)/num_threads] + w;
-	  else
-	      r.weight_vectors[hash % num_threads][hash/num_threads] 
-		= r.weight_vectors[hash % num_threads][hash/num_threads] + w;
+	      r.weight_vectors[hash] = w;
 	}      
     }
   source.close();
@@ -243,7 +236,7 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
     final_regressor_name = "";
 
   vector<string> regs;
-  if (vm.count("initial_regressor"))
+  if (vm.count("initial_regressor") || vm.count("i"))
     regs = vm["initial_regressor"].as< vector<string> >();
   
   /* 
@@ -262,7 +255,10 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
   if (!initialized)
     {
       if(vm.count("noop") || vm.count("sendto"))
-	r.weight_vectors = NULL;
+	{
+	  r.weight_vectors = NULL;
+	  r.regularizers = NULL;
+	}
       else
 	initialize_regressor(r);
     }
@@ -271,20 +267,20 @@ void parse_regressor_args(po::variables_map& vm, regressor& r, string& final_reg
 void free_regressor(regressor &r)
 {
   if (r.weight_vectors != NULL)
-    {
-      for (size_t i = 0; i < global.num_threads(); i++)
-	if (r.weight_vectors[i] != NULL)
-	  free(r.weight_vectors[i]);
-      free(r.weight_vectors);
-    }
+    free(r.weight_vectors);
   if (r.regularizers != NULL)
-    {
-      for (size_t i = 0; i < global.num_threads(); i++)
-	if (r.regularizers[i] != NULL)
-	  free(r.regularizers[i]);
-      free(r.regularizers);
-    }
+    free(r.regularizers);
 }
+
+void save_predictor(string reg_name, size_t current_pass)
+{
+   if(global.save_per_pass) {
+    char* filename = new char[reg_name.length()+4];
+    sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
+    dump_regressor(string(filename), *(global.reg));
+    delete filename;
+  }
+}  
 
 void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector)
 {
@@ -305,11 +301,10 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
     io_temp.write_file(f,(char*)&v_length, sizeof(v_length));
     io_temp.write_file(f,version.c_str(),v_length);
   
-    io_temp.write_file(f,(char*)&global.min_label, sizeof(global.min_label));
-    io_temp.write_file(f,(char*)&global.max_label, sizeof(global.max_label));
+    io_temp.write_file(f,(char*)&global.sd->min_label, sizeof(global.sd->min_label));
+    io_temp.write_file(f,(char*)&global.sd->max_label, sizeof(global.sd->max_label));
   
     io_temp.write_file(f,(char *)&global.num_bits, sizeof(global.num_bits));
-    io_temp.write_file(f,(char *)&global.thread_bits, sizeof(global.thread_bits));
     int len = global.pairs.size();
     io_temp.write_file(f,(char *)&len, sizeof(len));
     for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
@@ -326,9 +321,9 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
     int len;
     len = sprintf(buff, "Version %s\n", version.c_str());
     io_temp.write_file(f, buff, len);
-    len = sprintf(buff, "Min label:%f max label:%f\n", global.min_label, global.max_label);
+    len = sprintf(buff, "Min label:%f max label:%f\n", global.sd->min_label, global.sd->max_label);
     io_temp.write_file(f, buff, len);
-    len = sprintf(buff, "bits:%d thread_bits:%d\n", (int)global.num_bits, (int)global.thread_bits);
+    len = sprintf(buff, "bits:%d\n", (int)global.num_bits);
     io_temp.write_file(f, buff, len);
     for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) {
       len = sprintf(buff, "%s ", i->c_str());
@@ -350,7 +345,6 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
   }
   
   uint32_t length = 1 << global.num_bits;
-  size_t num_threads = global.num_threads();
   size_t stride = global.stride;
   if (reg_vector)
     length *= 2;
@@ -360,11 +354,9 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
 	{
 	  weight v;
 	  if (reg_vector)
-	    {
-	      v = r.regularizers[i%num_threads][(i/num_threads)];
-	    }
+	    v = r.regularizers[i];
 	  else
-	    v = r.weight_vectors[i%num_threads][stride*(i/num_threads)];
+	    v = r.weight_vectors[stride*i];
 	  if (v != 0.)
 	    {
               if (!as_text) {
@@ -386,7 +378,7 @@ void dump_regressor(string reg_name, regressor &r, bool as_text, bool reg_vector
 	  
           for (size_t k = 0; k < K; k++)
             {
-              weight v = r.weight_vectors[i%num_threads][(stride*i+k)/num_threads];
+              weight v = r.weight_vectors[stride*i+k];
               uint32_t ndx = stride*i+k;
               if (!as_text) {
                 io_temp.write_file(f,(char *)&ndx, sizeof (ndx));

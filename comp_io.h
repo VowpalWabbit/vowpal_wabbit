@@ -48,7 +48,7 @@ public:
       break;
 
     default:
-      cerr << "Unknown file operation. Something other than READ/WRITE specified" << endl;
+      std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
       ret = -1;
     }
     return ret;
@@ -78,7 +78,7 @@ public:
   virtual void flush()
   {
     if (write_file(files[0], space.begin, space.index()) != (int) ((space.index())))
-      cerr << "error, failed to write to cache\n";
+      std::cerr << "error, failed to write to cache\n";
     space.end = space.begin;
   }
 
@@ -87,6 +87,7 @@ public:
     if(files.index()>0){
       fil = gz_files[files.pop()];
       gzclose(fil);
+      free(gz_files.begin);
       return true;
     }
     return false;

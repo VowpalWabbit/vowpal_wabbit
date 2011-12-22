@@ -25,6 +25,18 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 
 using namespace std;
 
+struct node_socks {
+  int parent;
+  int children[2];
+  ~node_socks();
+};
+
+const int buf_size = 1<<16;
+
+string current_master="";
+
+node_socks socks;
+
 float add(float* arr, int n) {
   float sum = 0.0;
   for(int i = 0;i < n;i++)
@@ -75,8 +87,21 @@ int sock_connect(uint32_t ip, int port) {
   return sock;
 }
 
+int getsock()
+{
+  int sock = socket(PF_INET, SOCK_STREAM, 0);
+  if (sock < 0) {
+      cerr << "can't open socket!" << endl;
+      exit(1);
+    }
+    
+    int on = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
+      perror("setsockopt SO_REUSEADDR");
+    return sock;
+}
 
-void all_reduce_init(string master_location, node_socks* socks) 
+void all_reduce_init(string master_location, size_t unique_id, size_t total, size_t node)
 {
   struct hostent* master = gethostbyname(master_location.c_str());
     
@@ -84,129 +109,105 @@ void all_reduce_init(string master_location, node_socks* socks)
     cerr << "can't resolve hostname: " << master_location << endl;
     exit(1);
   }
+  current_master = master_location;
 
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
   int port = 26543;
     
   int master_sock = sock_connect(master_ip, htons(port));
-  int client_port, kid_count, parent_port;
+
+  if(write(master_sock, &unique_id, sizeof(unique_id)) < (int)sizeof(unique_id))
+    cerr << "write failed!" << endl; 
+  if(write(master_sock, &total, sizeof(total)) < (int)sizeof(total))
+    cerr << "write failed!" << endl; 
+  if(write(master_sock, &node, sizeof(node)) < (int)sizeof(node))
+    cerr << "write failed!" << endl; 
+  int ok;
+  if (read(master_sock, &ok, sizeof(ok)) < (int)sizeof(ok))
+    cerr << "read 1 failed!" << endl;
+  if (!ok) {
+    cerr << "mapper already connected" << endl;
+    exit(1);
+  }
+
+  uint16_t kid_count;
+  uint16_t parent_port;
   uint32_t parent_ip;
-  if(read(master_sock, &client_port, sizeof(client_port)) < (int)sizeof(client_port))
-    cerr << "read failed!" << endl;
+
   if(read(master_sock, &kid_count, sizeof(kid_count)) < (int)sizeof(kid_count))
-    cerr << "read failed!" << endl;
-  if(read(master_sock, &parent_ip, sizeof(parent_ip)) < (int)sizeof(parent_ip))
-    cerr << "read failed!" << endl;
-  if(read(master_sock, &parent_port, sizeof(parent_port)) < (int)sizeof(parent_port))
-    cerr << "read failed!" << endl;
-
-  cerr<<"Received info "<<ntohs(client_port)<<" "<<kid_count<<" ";
-  if (parent_ip != (uint32_t)-1)
-    {
-      uint32_t pip = ntohl(parent_ip);
-      char* pp = (char*)&pip;
-	
-      for (size_t i = 0; i < 4; i++)
-	{
-	  cerr << (int)pp[i] << ".";
-	}
-      cerr <<" "<<ntohs(parent_port)<<endl;
-
-    }
-  else
-    {
-      cerr << " noparent noport " << endl;
-    }
+    cerr << "read 2 failed!" << endl;
 
   int sock = -1;
+  short unsigned int netport = htons(26544);
   if(kid_count > 0) {
-    sock = socket(PF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-      cerr << "can't open socket!" << endl;
-      exit(1);
-    }
-      
-    int on = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
-      perror("setsockopt SO_REUSEADDR");
+    sock = getsock();
     sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
-    address.sin_port = client_port;
+    address.sin_port = netport;
 
-    cerr<<"Client port is "<<ntohs(client_port)<<endl;
-    if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
+    bool listening = false;
+    while(!listening)
       {
-	cerr << "failure to bind!" << endl;
-	cerr<<"Received info "<<ntohs(client_port)<<" "<<kid_count<<" ";
-	if (parent_ip != (uint32_t)-1)
-	  {
-	    uint32_t pip = ntohl(parent_ip);
-	    char* pp = (char*)&pip;
-	      
-	    for (size_t i = 0; i < 4; i++)
-	      {
-		cerr << (int)pp[i] << ".";
-	      }
-	    cerr <<" "<<ntohs(parent_port)<<endl;
-	      
-	  }
+	if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
+	  if (errno == EADDRINUSE)
+	    {
+	      netport = htons(ntohs(netport)+1);
+	      address.sin_port = netport;
+	    }
+	  else
+	    {
+	      perror("Bind failed ");
+	      exit(1);
+	    }
 	else
-	  {
-	    cerr << " noparent noport " << endl;
-	  }
-	  
-	exit(1);
+	  if (listen(sock, kid_count) < 0)
+	    {
+	      perror("listen failed! ");
+	      close(sock);
+	      sock = getsock();
+	    }
+	  else
+	    {
+	      listening = true;
+	    }
       }
-      
-    listen(sock, kid_count);
   }
-  int done = 1;
-
-  if(write(master_sock, &done, sizeof(done)) < (int)sizeof(done))
+  
+  if(write(master_sock, &netport, sizeof(netport)) < (int)sizeof(netport))
     cerr << "write failed!" << endl;
   
-  if(read(master_sock, &done, sizeof(done)) < (int)sizeof(done))
-    cerr << "read failed!" << endl;
-  if(done != 1) {
-    cerr<< "Catastrophe\n";
-    exit(1);
-  }
-    
-    
+  if(read(master_sock, &parent_ip, sizeof(parent_ip)) < (int)sizeof(parent_ip))
+    cerr << "read 3 failed!" << endl;
+  if(read(master_sock, &parent_port, sizeof(parent_port)) < (int)sizeof(parent_port))
+    cerr << "read 4 failed!" << endl;
+
+  
   close(master_sock);
     
   //int parent_sock;
   if(parent_ip != (uint32_t)-1) 
-    socks->parent = sock_connect(parent_ip, parent_port);
+    socks.parent = sock_connect(parent_ip, parent_port);
   else
-    socks->parent = -1;
+    socks.parent = -1;
     
-  cerr<<" Connected to parent\n";
-
-  socks->children[0] = -1; socks->children[1] = -1;
-
-  
-  cerr<<"Kid count is "<<kid_count<<endl;
+  socks.children[0] = -1; socks.children[1] = -1;
 
   for (int i = 0; i < kid_count; i++)
     {
       sockaddr_in child_address;
       socklen_t size = sizeof(child_address);
-      cerr << "calling accept" << endl;
       int f = accept(sock,(sockaddr*)&child_address,&size);
       if (f < 0)
 	{
 	  cerr << "bad client socket!" << endl;
 	  exit (1);
 	}
-      socks->children[i] = f;
+      socks.children[i] = f;
     }
-  cerr<<" Connected to kids, sock = " << sock << "\n";
 
   if (kid_count > 0)
     close(sock);
-    
 }
 
 void addbufs(float* buf1, float* buf2, int n) {
@@ -391,19 +392,24 @@ void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
     }
 }
 
-void all_reduce(char* buffer, int n, node_socks socks) 
+void all_reduce(float* buffer, int n, string master_location, size_t unique_id, size_t total, size_t node) 
 {
-  reduce(buffer, n, socks.parent, socks.children);
-  broadcast(buffer, n, socks.parent, socks.children);
+  if(master_location != current_master) 
+    all_reduce_init(master_location, unique_id, total, node);
+    
+  reduce((char*)buffer, n*sizeof(float), socks.parent, socks.children);
+  broadcast((char*)buffer, n*sizeof(float), socks.parent, socks.children);
 }
 
-void all_reduce_close(node_socks socks)
+node_socks::~node_socks()
 {
-  if(socks.parent != -1)
-    close(socks.parent);
-  if(socks.children[0] != -1) 
-    close(socks.children[0]);
-  if(socks.children[1] != -1)
-    close(socks.children[1]);  
+  if(current_master != "") {
+    if(this->parent != -1)
+      close(this->parent);
+    if(this->children[0] != -1) 
+      close(this->children[0]);
+    if(this->children[1] != -1)
+      close(this->children[1]);  
+  }
 }
 

@@ -57,7 +57,7 @@ int recvall(int s, char* buf, int n){
 
 int main(int argc, char* argv[]){
     char buf[256]; 
-    char* toks,*ptok,*ttok,*itok;
+    char* toks,*itok;
     const char* host="localhost";
     unsigned short port=~0;
     ssize_t pos;
@@ -99,8 +99,8 @@ int main(int argc, char* argv[]){
         }
         buf[ret]='\0';
         toks=&buf[0];
-        ptok=strsep(&toks," ");
-        ttok=strsep(&toks," ");
+        strsep(&toks," ");
+        strsep(&toks," ");
         itok=strsep(&toks,"\n");
         if(itok==NULL || itok[0]=='\0'){
             continue;

@@ -1,3 +1,7 @@
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#endif
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -12,7 +16,7 @@
 
 using namespace std;
 
-int open_socket(const char* host, size_t new_id)
+int open_socket(const char* host)
 {
   const char* colon = index(host,':');
   short unsigned int port = 26542;
@@ -20,10 +24,8 @@ int open_socket(const char* host, size_t new_id)
   if (colon != NULL)
     {
       port = atoi(colon+1);
-      char hostname[colon-host+1];
-      strncpy(hostname, host, colon-host);
-      hostname[colon-host]='\0';
-      he = gethostbyname(hostname);
+      string hostname(host,colon-host);
+      he = gethostbyname(hostname.c_str());
     }
   else
     he = gethostbyname(host);
@@ -49,7 +51,8 @@ int open_socket(const char* host, size_t new_id)
       cerr << "can't connect to: " << host << ':' << port << endl;
       exit(1);
     }
-  if (write(sd, &new_id, sizeof(new_id)) < (int)sizeof(new_id))
+  char id = '\0';
+  if (write(sd, &id, sizeof(id)) < (int)sizeof(id))
     cerr << "write failed!" << endl;
   return sd;
 }
