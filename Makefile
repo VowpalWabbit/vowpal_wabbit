@@ -2,11 +2,11 @@ COMPILER = g++
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), FreeBSD)
-LIBS = -l boost_program_options	-l pthread -l z -l compat
+LIBS = -l boost_program_options	-l pthread -l z -l compat -l allreduce
 BOOST_INCLUDE = /usr/local/include
 BOOST_LIBRARY = /usr/local/lib
 else
-LIBS = -l boost_program_options -l pthread -l z
+LIBS = -l boost_program_options -l pthread -l z -l allreduce
 BOOST_INCLUDE = /usr/include
 BOOST_LIBRARY = /usr/local/lib
 endif
@@ -24,9 +24,6 @@ endif
 
 # for normal fast execution.
 FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
-
-# for parallelization
-#FLAGS = -Wall $(ARCH) -ffast-math -Wno-strict-aliasing -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -O3 -fopenmp
 
 # for profiling
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg -g
@@ -54,13 +51,16 @@ depend:	*.cc
 %.o:	 %.cc
 	$(COMPILER) $(FLAGS) -c $< -o $@
 
+liballreduce.a:	allreduce.o
+	ar rcs $@ $<
+
 export
 
 spanning_tree: 
 	cd cluster; $(MAKE); cd ..
 
-vw: hash.o  global_data.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o sparse_dense.o  network.o parse_args.o allreduce.o accumulate.o gd.o lda_core.o gd_mf.o bfgs.o noop.o parser.o vw.o loss_functions.o sender.o main.o
-	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -o $@ $+ $(LIBS)
+vw: hash.o  global_data.o io.o parse_regressor.o  parse_primitives.o unique_sort.o cache.o simple_label.o parse_example.o sparse_dense.o  network.o parse_args.o accumulate.o gd.o lda_core.o gd_mf.o bfgs.o noop.o parser.o vw.o loss_functions.o sender.o main.o liballreduce.a
+	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -L. -o $@ $+ $(LIBS)
 
 active_interactor:	active_interactor.cc
 	$(COMPILER) $(FLAGS) -o $@ $+
