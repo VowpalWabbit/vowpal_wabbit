@@ -1,3 +1,5 @@
+src/stamp-*
+Makefile
 config.guess
 config.status
 config.sub
@@ -17,6 +19,5 @@ test/models
 .libs
 .deps
 autom4te.cache/
-configure
 src/active_interactor
 src/vw
