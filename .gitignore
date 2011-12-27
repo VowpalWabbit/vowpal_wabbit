@@ -1,8 +1,6 @@
 src/stamp-*
 Makefile
-config.guess
 config.status
-config.sub
 test/*.predict
 *.log
 *.o
