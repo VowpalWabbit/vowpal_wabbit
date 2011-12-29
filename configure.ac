@@ -58,5 +58,6 @@ fi
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
+ cluster/Makefile
 ])
 AC_OUTPUT

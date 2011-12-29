@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src cluster
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 

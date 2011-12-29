@@ -201,7 +201,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = src
+SUBDIRS = src cluster
 ACLOCAL_AMFLAGS = -I acinclude.d
 all: all-recursive
 

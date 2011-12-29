@@ -19,3 +19,4 @@ test/models
 autom4te.cache/
 src/active_interactor
 src/vw
+cluster/spanning_tree
