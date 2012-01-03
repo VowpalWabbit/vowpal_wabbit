@@ -1,5 +1,3 @@
-HEADERDIR = vowpalwabbit
-
 SUBDIRS = vowpalwabbit cluster
 
 ACLOCAL_AMFLAGS = -I acinclude.d
