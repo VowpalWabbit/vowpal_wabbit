@@ -1,6 +1,6 @@
 AC_INIT([vowpal_wabbit], [6.1], [jl@hunch.net])
 AC_DEFINE([PACKAGE_URL],["https://github.com/JohnLangford/vowpal_wabbit"],[project url])
-AM_CONFIG_HEADER(src/config.h)
+AM_CONFIG_HEADER(vowpalwabbit/config.h)
 AM_INIT_AUTOMAKE()
 
 AC_CONFIG_MACRO_DIR([acinclude.d])
@@ -57,7 +57,7 @@ fi
 
 AC_CONFIG_FILES([
  Makefile
- src/Makefile
+ vowpalwabbit/Makefile
  cluster/Makefile
 ])
 AC_OUTPUT

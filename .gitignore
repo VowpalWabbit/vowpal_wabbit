@@ -1,4 +1,6 @@
-src/stamp-*
+*.la
+*.lo
+vowpalwabbit/stamp-*
 Makefile
 config.status
 test/*.predict
@@ -17,6 +19,6 @@ test/models
 .libs
 .deps
 autom4te.cache/
-src/active_interactor
-src/vw
+vowpalwabbit/active_interactor
+vowpalwabbit/vw
 cluster/spanning_tree

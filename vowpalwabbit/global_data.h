@@ -142,3 +142,4 @@ extern pthread_mutex_t output_lock;
 extern pthread_cond_t output_done;
 
 #endif
+extern std::string test;

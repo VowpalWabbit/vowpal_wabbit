@@ -1961,7 +1961,7 @@ cat >>confdefs.h <<\_ACEOF
 #define PACKAGE_URL "https://github.com/JohnLangford/vowpal_wabbit"
 _ACEOF
 
-ac_config_headers="$ac_config_headers src/config.h"
+ac_config_headers="$ac_config_headers vowpalwabbit/config.h"
 
 am__api_version='1.10'
 
@@ -16977,7 +16977,7 @@ if $profile ; then
   CPPFLAGS="$CPPCLAGS -pg -g"
 fi
 
-ac_config_files="$ac_config_files Makefile src/Makefile cluster/Makefile"
+ac_config_files="$ac_config_files Makefile vowpalwabbit/Makefile cluster/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -17919,11 +17919,11 @@ cat >>$CONFIG_STATUS <<\_ACEOF
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "src/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/config.h" ;;
+    "vowpalwabbit/config.h") CONFIG_HEADERS="$CONFIG_HEADERS vowpalwabbit/config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+    "vowpalwabbit/Makefile") CONFIG_FILES="$CONFIG_FILES vowpalwabbit/Makefile" ;;
     "cluster/Makefile") CONFIG_FILES="$CONFIG_FILES cluster/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

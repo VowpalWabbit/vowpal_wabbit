@@ -49,7 +49,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude.d/ax_boost_base.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/src/config.h
+CONFIG_HEADER = $(top_builddir)/vowpalwabbit/config.h
 CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
@@ -57,7 +57,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_spanning_tree_OBJECTS = spanning_tree.$(OBJEXT)
 spanning_tree_OBJECTS = $(am_spanning_tree_OBJECTS)
 spanning_tree_LDADD = $(LDADD)
-DEFAULT_INCLUDES = -I. -I$(top_builddir)/src
+DEFAULT_INCLUDES = -I. -I$(top_builddir)/vowpalwabbit
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
