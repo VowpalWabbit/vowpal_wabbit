@@ -1,3 +1,4 @@
+config.h
 *.la
 *.lo
 vowpalwabbit/stamp-*

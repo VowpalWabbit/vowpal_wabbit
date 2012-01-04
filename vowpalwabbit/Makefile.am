@@ -17,3 +17,25 @@ ACLOCAL_AMFLAGS = -I acinclude.d
 
 INCLUDES = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS}
 AM_LDFLAGS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTHREAD_LIBS}
+
+AM_CXXFLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64
+
+if NITPICK
+AM_CXXFLAGS += -Wextra -Wundef -Wshadow -Wunsafe-loop-optimizations -Wconversion -Wmissing-format-attribute
+AM_CXXFLAGS += -Wredundant-decls -ansi -Wmissing-noreturn
+endif
+
+if PARALLELIZE
+AM_CXXFLAGS += -Wno-strict-aliasing -fopenmp
+endif
+
+if PROFILE
+AM_CXXFLAGS += -pg -g
+endif
+
+if FREEBSD
+AM_CXXFLAGS += -l compat -Wall
+else
+AM_CXXFLAGS += -Wall -pedantic
+endif
+
