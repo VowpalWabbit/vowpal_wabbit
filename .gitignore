@@ -1,3 +1,11 @@
+config.h
+*.la
+*.lo
+vowpalwabbit/stamp-*
+Makefile
+config.status
+test/*.predict
+*.log
 *.o
 *.a
 t_*
@@ -9,5 +17,9 @@ vw.1
 *.tgz
 test/*.tmp
 test/models
-*.bak
-*.prev
+.libs
+.deps
+autom4te.cache/
+vowpalwabbit/active_interactor
+vowpalwabbit/vw
+cluster/spanning_tree

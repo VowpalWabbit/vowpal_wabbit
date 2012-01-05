@@ -3,11 +3,12 @@
 #include <float.h>
 #include <iostream>
 #include "global_data.h"
+#include "config.h"
 
 using namespace std;
 
 global_data global;
-string version = "6.1";
+string version = PACKAGE_VERSION;
 
 pthread_mutex_t output_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t output_done = PTHREAD_COND_INITIALIZER;

@@ -11,11 +11,10 @@ Alternatively, the very latest version is available here:
 git clone git://github.com/JohnLangford/vowpal_wabbit.git
 
 You should be able to build it on posix systems with:
+./configure
 make
 (make test)
 make install
-
-If 'make' fails, you are probably missing the dependency on boost program options.  Intall it and try again.
 
 Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.  
