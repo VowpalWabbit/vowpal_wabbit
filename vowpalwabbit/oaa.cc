@@ -145,9 +145,9 @@ example* get_oaa_example()
   if (current_example == NULL)
     return NULL;
   if (counter == 1)
-    {
-      oaa_label_data = (oaa_data*)current_example->ld;
-    }
+    oaa_label_data = (oaa_data*)current_example->ld;
+  else
+    current_example->partial_prediction = 0.;
   if (oaa_label_data->label == counter)
     simple_temp.label = 1;
   else
