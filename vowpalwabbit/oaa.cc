@@ -101,7 +101,7 @@ void parse_oaa_flag(size_t s)
   global.return_example = return_oaa_example;
   k = s;
   counter = 1;
-  increment = global.length()/k;
+  increment = (global.length()/k) * global.stride;
 }
 
 void return_oaa_example(example* ec)
@@ -133,6 +133,13 @@ void update_indicies(example* ec, size_t amount)
       feature* end = ec->atomics[*i].end;
       for (feature* f = ec->atomics[*i].begin; f!= end; f++)
 	f->weight_index += amount;
+    }
+  if (global.audit)
+    {
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+	    f->weight_index += amount;
     }
 }
 
