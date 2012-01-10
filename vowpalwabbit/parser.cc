@@ -50,10 +50,9 @@ void handle_sigterm (int)
   got_sigterm = true;
 }
 
-parser* new_parser(const label_parser* lp)
+parser* new_parser()
 {
   parser* ret = (parser*) calloc(1,sizeof(parser));
-  ret->lp = lp;
   ret->input = new io_buf;
   ret->output = new io_buf;
   return ret;
@@ -624,7 +623,7 @@ bool parse_atomic_example(parser* p, example *ae)
 
   if (p->write_cache) 
     {
-      p->lp->cache_label(ae->ld,*(p->output));
+      global.lp->cache_label(ae->ld,*(p->output));
       cache_features(*(p->output), ae);
     }
 
@@ -642,7 +641,7 @@ void setup_example(parser* p, example* ae)
   ae->total_sum_feat_sq = 1;
   ae->done = false;
   ae->example_counter = global.parsed_examples + 1;
-  ae->global_weight = p->lp->get_weight(ae->ld);
+  ae->global_weight = global.lp->get_weight(ae->ld);
   global.sd->t += ae->global_weight;
   ae->example_t = global.sd->t;
 
@@ -755,6 +754,11 @@ void *main_parse_loop(void *in)
 
 void free_example(example* ec)
 {
+  pthread_mutex_lock(&output_lock);
+  global.local_example_number++;
+  pthread_cond_signal(&output_done);
+  pthread_mutex_unlock(&output_lock);
+
   pthread_mutex_lock(&examples_lock);
   assert(ec->in_use);
   ec->in_use = false;
@@ -779,9 +783,13 @@ example* get_example()
   }
   else {
     if (!done)
-      pthread_cond_wait(&example_available, &examples_lock);
-    pthread_mutex_unlock(&examples_lock);
-    return NULL;
+      {
+	pthread_cond_wait(&example_available, &examples_lock);
+	pthread_mutex_unlock(&examples_lock);
+	return get_example();
+      }
+    else 
+      return NULL;
   }
 }
 
@@ -797,7 +805,7 @@ void start_parser(parser* pf)
 
   for (size_t i = 0; i < global.ring_size; i++)
     {
-      examples[i].ld = calloc(1,pf->lp->label_size);
+      examples[i].ld = calloc(1,global.lp->label_size);
       examples[i].in_use = false;
     }
   pthread_create(&parse_thread, NULL, main_parse_loop, pf);
@@ -814,7 +822,7 @@ void end_parser(parser* pf)
 
   for (size_t i = 0; i < global.ring_size; i++) 
     {
-      pf->lp->delete_label(examples[i].ld);
+      global.lp->delete_label(examples[i].ld);
       if (examples[i].tag.end_array != examples[i].tag.begin)
 	{
 	  free(examples[i].tag.begin);

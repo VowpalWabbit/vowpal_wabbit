@@ -525,7 +525,7 @@ void start_lda(gd_thread_params t)
       for (size_t d = 0; d < batch_size; d++)
 	{
           push(doc_lengths, 0);
-	  if ((ec = get_example()) != NULL)//semiblocking operation.
+	  if ((ec = global.get_example()) != NULL)//semiblocking operation.
 	    {
 	      push(examples, ec);
               for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {

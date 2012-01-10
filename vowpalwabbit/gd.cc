@@ -40,7 +40,7 @@ void* gd_thread(void *in)
   
   while ( true )
     {//this is a poor man's select operation.
-      if ((ec = get_example()) != NULL)//semiblocking operation.
+      if ((ec = global.get_example()) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
 	  if (ec->pass != current_pass)
@@ -145,7 +145,7 @@ float finalize_prediction(float ret)
 void finish_example(example* ec)
 {
   output_and_account_example(ec);
-  free_example(ec);
+  global.return_example(ec);
 }
 
 void print_update(example *ec)
@@ -187,11 +187,12 @@ void output_and_account_example(example* ec)
   
   global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
 
-  float ai=-1;
+  float ai=-1; 
   if(global.active && ld->label == FLT_MAX)
     ai=query_decision(ec, global.sd->weighted_unlabeled_examples);
   global.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
   
+  //must abstract the following
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
       int f = global.final_prediction_sink[i];
@@ -202,11 +203,6 @@ void output_and_account_example(example* ec)
       else
 	global.print(f, ec->final_prediction, 0, ec->tag);
     }
-
-  pthread_mutex_lock(&output_lock);
-  global.local_example_number++;
-  pthread_cond_signal(&output_done);
-  pthread_mutex_unlock(&output_lock);
 
   global.sd->example_number++;
 
@@ -712,7 +708,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
   if (ld->label != FLT_MAX)
     {
       ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
-      
+
       if (global.training)
 	{
 	  double eta_t;

@@ -7,12 +7,24 @@ embodied in the content of this file are licensed under the BSD
 #ifndef PP
 #define PP
 
-#include "v_array.h"
 #include<iostream>
+#include "v_array.h"
+#include "io.h"
 
 struct substring {
   char *begin;
   char *end;
+};
+
+struct label_parser {
+  void (*default_label)(void*);
+  void (*parse_label)(void*, v_array<substring>&);
+  void (*cache_label)(void*, io_buf& cache);
+  size_t (*read_cached_label)(void*, io_buf& cache);
+  void (*delete_label)(void*);
+  float (*get_weight)(void*);
+  float (*get_initial)(void*);
+  size_t label_size;
 };
 
 //chop up the string into a v_array of substring.

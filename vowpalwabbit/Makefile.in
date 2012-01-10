@@ -42,9 +42,8 @@ bin_PROGRAMS = vw$(EXEEXT) active_interactor$(EXEEXT)
 @NITPICK_TRUE@	-Wmissing-format-attribute -Wredundant-decls \
 @NITPICK_TRUE@	-ansi -Wmissing-noreturn
 @PARALLELIZE_TRUE@am__append_2 = -Wno-strict-aliasing -fopenmp
-@PROFILE_TRUE@am__append_3 = -pg -g
-@FREEBSD_TRUE@am__append_4 = -l compat -Wall
-@FREEBSD_FALSE@am__append_5 = -Wall -pedantic
+@FREEBSD_TRUE@am__append_3 = -l compat -Wall
+@FREEBSD_FALSE@am__append_4 = -Wall -pedantic
 subdir = vowpalwabbit
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in
@@ -99,7 +98,7 @@ active_interactor_LDADD = $(LDADD)
 am_vw_OBJECTS = hash.$(OBJEXT) global_data.$(OBJEXT) io.$(OBJEXT) \
 	parse_regressor.$(OBJEXT) parse_primitives.$(OBJEXT) \
 	unique_sort.$(OBJEXT) cache.$(OBJEXT) simple_label.$(OBJEXT) \
-	parse_example.$(OBJEXT) sparse_dense.$(OBJEXT) \
+	oaa.$(OBJEXT) parse_example.$(OBJEXT) sparse_dense.$(OBJEXT) \
 	network.$(OBJEXT) parse_args.$(OBJEXT) accumulate.$(OBJEXT) \
 	gd.$(OBJEXT) lda_core.$(OBJEXT) gd_mf.$(OBJEXT) bfgs.$(OBJEXT) \
 	noop.$(OBJEXT) parser.$(OBJEXT) vw.$(OBJEXT) \
@@ -185,7 +184,6 @@ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
-PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PTHREAD_CC = @PTHREAD_CC@
@@ -257,7 +255,7 @@ lib_LTLIBRARIES = liballreduce.la
 liballreduce_la_SOURCES = allreduce.cc
 include_HEADERS = allreduce.h
 vw_SOURCES = hash.cc global_data.cc io.cc parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc \
-	simple_label.cc parse_example.cc sparse_dense.cc network.cc parse_args.cc accumulate.cc \
+	simple_label.cc oaa.cc parse_example.cc sparse_dense.cc network.cc parse_args.cc accumulate.cc \
 	gd.cc lda_core.cc gd_mf.cc bfgs.cc noop.cc parser.cc vw.cc loss_functions.cc sender.cc main.cc
 
 vw_LDADD = allreduce.o
@@ -266,10 +264,13 @@ active_interactor_SOURCES = active_interactor.cc
 ACLOCAL_AMFLAGS = -I acinclude.d
 INCLUDES = ${BOOST_CPPFLAGS} ${ZLIB_CPPFLAGS} ${PTHREAD_CFLAGS}
 AM_LDFLAGS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTHREAD_LIBS}
-AM_CXXFLAGS = -O3 -fomit-frame-pointer -ffast-math \
-	-fno-strict-aliasing -D_FILE_OFFSET_BITS=64 $(am__append_1) \
-	$(am__append_2) $(am__append_3) $(am__append_4) \
-	$(am__append_5)
+@PROFILE_FALSE@AM_CXXFLAGS = -O3 -fomit-frame-pointer -ffast-math \
+@PROFILE_FALSE@	-fno-strict-aliasing -D_FILE_OFFSET_BITS=64 \
+@PROFILE_FALSE@	$(am__append_1) $(am__append_2) $(am__append_3) \
+@PROFILE_FALSE@	$(am__append_4)
+@PROFILE_TRUE@AM_CXXFLAGS = -pg -g -D_FILE_OFFSET_BITS=64 \
+@PROFILE_TRUE@	$(am__append_1) $(am__append_2) $(am__append_3) \
+@PROFILE_TRUE@	$(am__append_4)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -426,6 +427,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/network.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noop.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oaa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_args.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_primitives.Po@am__quote@

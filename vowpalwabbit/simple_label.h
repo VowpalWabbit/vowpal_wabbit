@@ -3,10 +3,20 @@
 
 #include "io.h"
 #include "parse_primitives.h"
-#include "parser.h"
+#include "global_data.h"
+#include "example.h"
+
+struct label_data {
+  float label;
+  float weight;
+  float initial;
+};
 
 char* bufread_simple_label(label_data* ld, char* c);
 char* bufcache_simple_label(label_data* ld, char* c);
+
+void return_simple_example(example* ec);
+example* get_simple_example();
 
 size_t read_cached_simple_label(void* v, io_buf& cache);
 void cache_simple_label(void* v, io_buf& cache);

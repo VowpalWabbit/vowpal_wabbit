@@ -4,6 +4,7 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
+#include <strings.h>
 #include "parse_primitives.h"
 
 void tokenize(char delim, substring s, v_array<substring>& ret)

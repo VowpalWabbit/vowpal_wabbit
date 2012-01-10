@@ -5,12 +5,6 @@
 #include <pthread.h>
 #include "v_array.h"
 
-struct label_data {
-  float label;
-  float weight;
-  float initial;
-};
-
 struct feature {
   float x;
   uint32_t weight_index;

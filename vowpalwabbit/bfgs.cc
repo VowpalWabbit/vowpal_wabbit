@@ -693,7 +693,7 @@ void setup_bfgs(gd_thread_params& t)
   
   while ( true )
     {
-      if ((ec = get_example()) != NULL)//semiblocking operation.
+      if ((ec = global.get_example()) != NULL)//semiblocking operation.
 	{
 	  assert(ec->in_use);
  

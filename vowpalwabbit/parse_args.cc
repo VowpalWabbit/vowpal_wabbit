@@ -14,6 +14,7 @@ embodied in the content of this file are licensed under the BSD
 #include "sender.h"
 #include "network.h"
 #include "global_data.h"
+#include "oaa.h"
 
 using namespace std;
 //
@@ -95,6 +96,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("mem", po::value<int>(&global.m)->default_value(15), "memory in bfgs")
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
+    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
@@ -140,6 +142,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.sd->contraction = 1.;
   global.sd->min_label = 0.;
   global.sd->max_label = 1.;
+  global.lp = (label_parser*)malloc(sizeof(label_parser));
+  *(global.lp) = simple_label;
+  global.get_example = get_simple_example;
+  global.return_example = return_simple_example;
   global.reg_mode = 0;
   global.local_example_number = 0;
   global.bfgs = false;
@@ -405,13 +411,16 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   string loss_function;
   if(vm.count("loss_function"))
-	  loss_function = vm["loss_function"].as<string>();
+    loss_function = vm["loss_function"].as<string>();
   else
-	  loss_function = "squaredloss";
+    loss_function = "squaredloss";
   double loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<double>();
 
+  if(vm.count("oaa"))
+    parse_oaa_flag(vm["oaa"].as<size_t>());
+  
   if (global.rank != 0) {
     loss_function = "classic";
     cerr << "Forcing classic squared loss for matrix factorization" << endl;

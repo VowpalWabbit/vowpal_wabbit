@@ -10,6 +10,10 @@ embodied in the content of this file are licensed under the BSD
 #include <stdint.h>
 #include "v_array.h"
 #include "parse_regressor.h"
+#include "parse_primitives.h"
+#include "comp_io.h"
+#include "simple_label.h"
+#include "example.h"
 
 extern std::string version;
 
@@ -40,6 +44,10 @@ struct shared_data {
 
 struct global_data {
   shared_data* sd;
+
+  label_parser* lp;
+  example* (*get_example)();
+  void (*return_example)(example*);
 
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;

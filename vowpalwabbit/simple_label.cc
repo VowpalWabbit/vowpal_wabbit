@@ -101,3 +101,12 @@ void parse_simple_label(void* v, v_array<substring>& words)
     cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
 }
 
+void return_simple_example(example* ec)
+{
+  free_example(ec);
+}
+
+example* get_simple_example()
+{
+  return get_example();
+}

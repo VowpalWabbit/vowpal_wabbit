@@ -13,25 +13,12 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_primitives.h"
 #include "example.h"
 
-struct label_parser {
-  void (*default_label)(void*);
-  void (*parse_label)(void*, v_array<substring>&);
-  void (*cache_label)(void*, io_buf& cache);
-  size_t (*read_cached_label)(void*, io_buf& cache);
-  void (*delete_label)(void*);
-  float (*get_weight)(void*);
-  float (*get_initial)(void*);
-  size_t label_size;
-};
-
 typedef size_t (*hash_func_t)(substring, unsigned long);
 
 struct parser {
   v_array<substring> channels;//helper(s) for text parsing
   v_array<substring> words;
   v_array<substring> name;
-
-  const label_parser* lp;
 
   io_buf* input; //Input source(s)
   int (*reader)(parser* p, void* ae);
@@ -52,7 +39,7 @@ struct parser {
 
 const size_t constant_namespace = 128;
 
-parser* new_parser(const label_parser* lp);
+parser* new_parser();
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes);

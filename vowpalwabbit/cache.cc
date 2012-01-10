@@ -53,7 +53,7 @@ int read_cached_features(parser* p, void* ec)
   size_t mask = global.parse_mask;
   io_buf* input = p->input;
 
-  size_t total = p->lp->read_cached_label(ae->ld, *input);
+  size_t total = global.lp->read_cached_label(ae->ld, *input);
   if (total == 0)
     return 0;
   if (read_cached_tag(*input,ae) == 0)

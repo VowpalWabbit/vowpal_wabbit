@@ -23,7 +23,6 @@ embodied in the content of this file are licensed under the BSD
 #include "lda_core.h"
 #include "noop.h"
 #include "vw.h"
-#include "simple_label.h"
 #include "sender.h"
 #include "allreduce.h"
 
@@ -34,7 +33,7 @@ gd_vars* vw(int argc, char *argv[])
   string final_regressor_name;
   srand48(0);
 
-  parser* p = new_parser(&simple_label);
+  parser* p = new_parser();
   regressor regressor1;
   
   gd_vars *vars = (gd_vars*) malloc(sizeof(gd_vars));

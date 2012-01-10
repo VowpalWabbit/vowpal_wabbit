@@ -115,7 +115,7 @@ int read_features(parser* p, void* ex)
   substring example = {line, line + num_chars};
 
   tokenize('|', example, p->channels);
-  p->lp->default_label(ae->ld);
+  global.lp->default_label(ae->ld);
   substring* feature_start = &(p->channels[1]);
   if (*line == '|')
     feature_start = &(p->channels[0]);
@@ -136,7 +136,7 @@ int read_features(parser* p, void* ex)
 	  push_many(ae->tag, tag.begin, tag.end - tag.begin);
 	}
       
-      p->lp->parse_label(ae->ld, p->words);
+      global.lp->parse_label(ae->ld, p->words);
     }
   
   size_t mask = global.parse_mask;
