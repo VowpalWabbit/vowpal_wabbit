@@ -723,7 +723,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	    eta_t = global.eta * norm / magx;
 	  } else {
 	    eta_t = global.eta / powf(t,vars.power_t) * ld->weight;
-	    norm = global.nonormalize ? 1. : ec->total_sum_feat_sq;
+	    if (global.nonormalize) eta_t *= ec->total_sum_feat_sq;
 	  }
 	  
 	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm) / global.sd->contraction;
