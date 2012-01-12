@@ -240,7 +240,6 @@ float inline_predict(regressor &reg, example* &ec)
   size_t mask = global.weight_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
-  
   for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
     {
       if (ec->atomics[(int)(*i)[0]].index() > 0)
@@ -581,7 +580,7 @@ float compute_xGx(regressor &reg, example* &ec)
   size_t mask = global.weight_mask;
   label_data* ld = (label_data*)ec->ld;
   float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  if (g==0) return 0.;
+  if (g==0) return 1.;
 
   float xGx = 0.;
   
