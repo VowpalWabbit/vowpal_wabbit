@@ -723,11 +723,13 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	    eta_t = global.eta * norm / magx;
 	  } else {
 	    eta_t = global.eta / powf(t,vars.power_t) * ld->weight;
-	    if (global.nonormalize) eta_t *= ec->total_sum_feat_sq;
+	    if (global.nonormalize) 
+	      eta_t *= ec->total_sum_feat_sq;
+	    else
+	      norm = ec->total_sum_feat_sq;
 	  }
-	  
 	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm) / global.sd->contraction;
-	  
+
 	  if (global.reg_mode && fabs(ec->eta_round) > 1e-8) {
 	    double dev1 = reg.loss->first_derivative(ec->final_prediction, ld->label);
 	    double eta_bar = (fabs(dev1) > 1e-8) ? (-ec->eta_round / dev1) : 0.0;
