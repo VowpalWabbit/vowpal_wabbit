@@ -547,7 +547,7 @@ float compute_general_xGx(regressor &reg, example* &ec, float power_t)
   size_t mask = global.weight_mask;
   label_data* ld = (label_data*)ec->ld;
   float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  if (g==0) return 0.;
+  if (g==0) return 1.;
 
   float xGx = 0.;
   
