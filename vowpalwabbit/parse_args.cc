@@ -15,6 +15,7 @@ embodied in the content of this file are licensed under the BSD
 #include "network.h"
 #include "global_data.h"
 #include "oaa.h"
+#include "csoaa.h"
 
 using namespace std;
 //
@@ -65,6 +66,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
     ("conjugate_gradient", "use conjugate gradient based optimization")
+    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
     ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
@@ -420,6 +422,9 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if(vm.count("oaa"))
     parse_oaa_flag(vm["oaa"].as<size_t>());
+
+  if(vm.count("csoaa"))
+    parse_csoaa_flag(vm["csoaa"].as<size_t>());
   
   if (global.rank != 0) {
     loss_function = "classic";

@@ -634,7 +634,10 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	  } else {
 	    eta_t = global.eta / powf(t,vars.power_t) * ld->weight;
 	    if (global.nonormalize) 
-	      eta_t *= ec->total_sum_feat_sq;
+	      {
+		norm = 1.;
+		eta_t *= ec->total_sum_feat_sq;
+	      }
 	    else
 	      norm = ec->total_sum_feat_sq;
 	  }
