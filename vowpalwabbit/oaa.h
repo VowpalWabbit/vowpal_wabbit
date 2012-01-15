@@ -11,9 +11,6 @@ struct oaa_data {
   float weight;
 };
 
-char* bufread_oaa_label(oaa_data* ld, char* c);
-char* bufcache_oaa_label(oaa_data* ld, char* c);
-
 void parse_oaa_flag(size_t s);
 void return_oaa_example(example* ec);
 example* get_oaa_example();

@@ -1,5 +1,6 @@
 #include <float.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "oaa.h"
 #include "simple_label.h"
@@ -93,6 +94,8 @@ oaa_data* oaa_label_data;
 size_t increment=0;
 size_t counter = 0;
 example* current_example=NULL;
+size_t label = 0;
+float score = INT_MIN;
 
 void parse_oaa_flag(size_t s)
 {
@@ -104,6 +107,54 @@ void parse_oaa_flag(size_t s)
   increment = (global.length()/k) * global.stride;
 }
 
+void print_oaa_update(example *ec)
+{
+  if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
+    {
+      oaa_data* ld = (oaa_data*) ec->ld;
+      char label_buf[32];
+      if (ld->label == INT_MAX)
+	strcpy(label_buf," unknown");
+      else
+	sprintf(label_buf,"%8i",ld->label);
+
+      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8i %8lu\n",
+	      global.sd->sum_loss/global.sd->weighted_examples,
+	      global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
+	      (long int)global.sd->example_number,
+	      global.sd->weighted_examples,
+	      label_buf,
+	      label,
+	      (long unsigned int)ec->num_features);
+     
+      global.sd->sum_loss_since_last_dump = 0.0;
+      global.sd->old_weighted_examples = global.sd->weighted_examples;
+      global.sd->dump_interval *= 2;
+    }
+}
+
+void output_oaa_example(example* ec)
+{
+  oaa_data* ld = (oaa_data*)ec->ld;
+  global.sd->weighted_examples += ld->weight;
+  global.sd->total_features += ec->num_features;
+  size_t loss = 1;
+  if (ld->label == label)
+    loss = 0;
+  global.sd->sum_loss += loss;
+  global.sd->sum_loss_since_last_dump += loss;
+  
+  for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
+    {
+      int f = global.final_prediction_sink[i];
+      global.print(f, label, 0, ec->tag);
+    }
+  
+  global.sd->example_number++;
+
+  print_oaa_update(ec);
+}
+
 void return_oaa_example(example* ec)
 {
   if (ec==NULL)
@@ -111,10 +162,17 @@ void return_oaa_example(example* ec)
       free_example(ec);
       current_example = NULL;
       counter = 1;
+      return;
+    }
+  if (ec->partial_prediction > score)
+    {
+      score = ec->partial_prediction;
+      label = counter;
     }
   if (counter == k)
     {
       ec->ld = oaa_label_data;
+      output_oaa_example(ec);
       free_example(ec);
       current_example = NULL;
       counter = 1;
@@ -148,11 +206,16 @@ example* get_oaa_example()
   if (current_example == NULL) {
     current_example=get_example();
   }
-  
   if (current_example == NULL)
     return NULL;
   if (counter == 1)
-    oaa_label_data = (oaa_data*)current_example->ld;
+    {
+      oaa_label_data = (oaa_data*)current_example->ld;
+      if (oaa_label_data->label > k)
+	cerr << "warning: label " << oaa_label_data->label << " is greater than " << k << endl;
+      label = 0;
+      score = INT_MIN;
+    }
   else
     current_example->partial_prediction = 0.;
   if (oaa_label_data->label == counter)

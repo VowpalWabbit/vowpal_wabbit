@@ -144,70 +144,10 @@ float finalize_prediction(float ret)
 
 void finish_example(example* ec)
 {
-  output_and_account_example(ec);
   global.return_example(ec);
 }
 
-void print_update(example *ec)
-{
-  if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
-    {
-      label_data* ld = (label_data*) ec->ld;
-      char label_buf[32];
-      if (ld->label == FLT_MAX)
-	strcpy(label_buf," unknown");
-      else
-	sprintf(label_buf,"%8.4f",ld->label);
-
-      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
-	      global.sd->sum_loss/global.sd->weighted_examples,
-	      global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
-	      (long int)global.sd->example_number,
-	      global.sd->weighted_examples,
-	      label_buf,
-	      ec->final_prediction,
-	      (long unsigned int)ec->num_features);
-     
-      global.sd->sum_loss_since_last_dump = 0.0;
-      global.sd->old_weighted_examples = global.sd->weighted_examples;
-      global.sd->dump_interval *= 2;
-    }
-}
-
 float query_decision(example*, float k);
-
-void output_and_account_example(example* ec)
-{
-  label_data* ld = (label_data*)ec->ld;
-  global.sd->weighted_examples += ld->weight;
-  global.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-  global.sd->total_features += ec->num_features;
-  global.sd->sum_loss += ec->loss;
-  global.sd->sum_loss_since_last_dump += ec->loss;
-  
-  global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
-
-  float ai=-1; 
-  if(global.active && ld->label == FLT_MAX)
-    ai=query_decision(ec, global.sd->weighted_unlabeled_examples);
-  global.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
-  
-  //must abstract the following
-  for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
-    {
-      int f = global.final_prediction_sink[i];
-      if(global.active)
-	global.print(f, ec->final_prediction, ai, ec->tag);
-      else if (global.lda > 0)
-	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
-      else
-	global.print(f, ec->final_prediction, 0, ec->tag);
-    }
-
-  global.sd->example_number++;
-
-  print_update(ec);
-}
 
 float inline_predict_trunc(regressor &reg, example* &ec)
 {
@@ -648,35 +588,6 @@ void train(weight* weights, const v_array<feature> &features, float update)
       weights[j->weight_index] += update * j->x;
 }
 
-float get_active_coin_bias(float k, float l, float g, float c0)
-{
-  float b,sb,rs,sl;
-  b=c0*(log(k+1.)+0.0001)/(k+0.0001);
-  sb=sqrt(b);
-  if (l > 1.0) { l = 1.0; } else if (l < 0.0) { l = 0.0; } //loss should be in [0,1]
-  sl=sqrt(l)+sqrt(l+g);
-  if (g<=sb*sl+b)
-    return 1;
-  rs = (sl+sqrt(sl*sl+4*g))/(2*g);
-  return b*rs*rs;
-}
-
-float query_decision(example* ec, float k)
-{
-  float bias, avg_loss, weighted_queries;
-  if (k<=1.)
-    bias=1.;
-  else{
-    weighted_queries = global.initial_t + global.sd->weighted_examples - global.sd->weighted_unlabeled_examples;
-    avg_loss = global.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
-    bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, global.active_c0);
-  }
-  if(drand48()<bias)
-    return 1./bias;
-  else
-    return -1.;
-}
-
 void local_predict(example* ec, gd_vars& vars, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
@@ -723,7 +634,10 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	  } else {
 	    eta_t = global.eta / powf(t,vars.power_t) * ld->weight;
 	    if (global.nonormalize) 
-	      eta_t *= ec->total_sum_feat_sq;
+	      {
+		norm = 1.;
+		eta_t *= ec->total_sum_feat_sq;
+	      }
 	    else
 	      norm = ec->total_sum_feat_sq;
 	  }
