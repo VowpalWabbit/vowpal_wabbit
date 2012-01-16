@@ -16,6 +16,7 @@ embodied in the content of this file are licensed under the BSD
 #include "global_data.h"
 #include "oaa.h"
 #include "csoaa.h"
+#include "sequence.h"
 
 using namespace std;
 //
@@ -119,6 +120,14 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
      "File to output unnormalized predictions to")
     ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
+    ("sequence", po::value<size_t>(), "Do sequence prediction with <k> labels per element")
+    ("sequence_history", po::value<size_t>(), "Prediction history length for sequences")
+    ("sequence_bigrams", "enable bigrams on prediction history")
+    ("sequence_features", po::value<size_t>(), "create history predictions x features")
+    ("sequence_bigram_features", "enable history bigrams for sequence_features")
+    ("sequence_rollout", po::value<size_t>(), "maximum rollout length")
+    ("sequence_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
+    ("sequence_beta", po::value<float>(), "interpolation rate for policies")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
@@ -420,11 +429,19 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<double>();
 
+  example* (*gf)() = get_example;
+  void (*rf)(example*) = free_example;
+
+  if(vm.count("sequence"))
+    parse_sequence_args(vm, &gf, &rf);
+
   if(vm.count("oaa"))
-    parse_oaa_flag(vm["oaa"].as<size_t>(), get_example, free_example);
+    parse_oaa_flag(vm["oaa"].as<size_t>(), gf, rf);
 
   if(vm.count("csoaa"))
-    parse_csoaa_flag(vm["csoaa"].as<size_t>(), get_example, free_example);
+    parse_csoaa_flag(vm["csoaa"].as<size_t>(), gf, rf);
+  else if (vm.count("sequence"))
+    parse_csoaa_flag(vm["sequence"].as<size_t>(), gf, rf);
   
   if (global.rank != 0) {
     loss_function = "classic";
