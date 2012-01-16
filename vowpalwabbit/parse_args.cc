@@ -421,10 +421,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     loss_parameter = vm["quantile_tau"].as<double>();
 
   if(vm.count("oaa"))
-    parse_oaa_flag(vm["oaa"].as<size_t>());
+    parse_oaa_flag(vm["oaa"].as<size_t>(), get_example, free_example);
 
   if(vm.count("csoaa"))
-    parse_csoaa_flag(vm["csoaa"].as<size_t>());
+    parse_csoaa_flag(vm["csoaa"].as<size_t>(), get_example, free_example);
   
   if (global.rank != 0) {
     loss_function = "classic";

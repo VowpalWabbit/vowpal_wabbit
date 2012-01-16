@@ -91,6 +91,8 @@ size_t csoaa_counter = 0;
 example* csoaa_current_example=NULL;
 size_t csoaa_prediction = 1;
 float csoaa_score = INT_MAX;
+example* (*csoaa_gf)();
+void (*csoaa_rf)(example*);
 
 void parse_csoaa_label(void* v, v_array<substring>& words)
 {
@@ -104,16 +106,6 @@ void parse_csoaa_label(void* v, v_array<substring>& words)
 
   for (size_t i = 0; i < words.index(); i++)
     push(ld->costs, float_of_substring(words[0]));
-}
-
-void parse_csoaa_flag(size_t s)
-{
-  *(global.lp) = csoaa_label;
-  global.get_example = get_csoaa_example;
-  global.return_example = return_csoaa_example;
-  csoaa_k = s;
-  csoaa_counter = 1;
-  csoaa_increment = (global.length()/csoaa_k) * global.stride;
 }
 
 void print_csoaa_update(example *ec)
@@ -193,7 +185,7 @@ void return_csoaa_example(example* ec)
       ec->ld = csoaa_label_data;
       output_csoaa_example(ec);
       ec->final_prediction = csoaa_prediction;
-      free_example(ec);
+      csoaa_rf(ec);
       csoaa_current_example = NULL;
       csoaa_counter = 1;
     }
@@ -209,7 +201,7 @@ void update_indicies(example* ec, size_t amount);
 example* get_csoaa_example()
 {
   if (csoaa_current_example == NULL) {
-    csoaa_current_example=get_example();
+    csoaa_current_example=csoaa_gf();
   }
   if (csoaa_current_example == NULL)
     return NULL;
@@ -236,4 +228,16 @@ example* get_csoaa_example()
   if (csoaa_counter != 1)
     update_indicies(csoaa_current_example, csoaa_increment);
   return csoaa_current_example;
+}
+
+void parse_csoaa_flag(size_t s, example* (*get_function)(), void (*return_function)(example*) )
+{
+  *(global.lp) = csoaa_label;
+  global.get_example = get_csoaa_example;
+  csoaa_gf = get_function;
+  global.return_example = return_csoaa_example;
+  csoaa_rf = return_function;
+  csoaa_k = s;
+  csoaa_counter = 1;
+  csoaa_increment = (global.length()/csoaa_k) * global.stride;
 }

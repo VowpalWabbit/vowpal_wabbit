@@ -96,16 +96,8 @@ size_t counter = 0;
 example* current_example=NULL;
 size_t prediction = 1;
 float score = INT_MIN;
-
-void parse_oaa_flag(size_t s)
-{
-  *(global.lp) = oaa_label;
-  global.get_example = get_oaa_example;
-  global.return_example = return_oaa_example;
-  k = s;
-  counter = 1;
-  increment = (global.length()/k) * global.stride;
-}
+example* (*gf)();
+void (*rf)(example*);
 
 void print_oaa_update(example *ec)
 {
@@ -174,7 +166,7 @@ void return_oaa_example(example* ec)
       ec->ld = oaa_label_data;
       output_oaa_example(ec);
       ec->final_prediction = prediction;
-      free_example(ec);
+      rf(ec);
       current_example = NULL;
       counter = 1;
     }
@@ -205,7 +197,7 @@ void update_indicies(example* ec, size_t amount)
 example* get_oaa_example()
 {
   if (current_example == NULL) {
-    current_example=get_example();
+    current_example=gf();
   }
   if (current_example == NULL)
     return NULL;
@@ -229,4 +221,16 @@ example* get_oaa_example()
   if (counter != 1)
     update_indicies(current_example, increment);
   return current_example;
+}
+
+void parse_oaa_flag(size_t s, example* (*get_function)(), void (*return_function)(example*) )
+{
+  *(global.lp) = oaa_label;
+  global.get_example = get_oaa_example;
+  gf = get_function;
+  global.return_example = return_oaa_example;
+  rf = return_function;
+  k = s;
+  counter = 1;
+  increment = (global.length()/k) * global.stride;
 }
