@@ -111,7 +111,7 @@ bool command_example(example* ec, gd_thread_params* params) {
     return false;
 
   if (ec->tag.index() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
-    {
+    {//save state
       string final_regressor_name = *(params->final_regressor_name);
 
       if ((ec->tag).index() >= 6 && (ec->tag)[4] == '_')
