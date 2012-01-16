@@ -1,0 +1,2 @@
+To get John's changes:
+  git pull git://github.com/JohnLangford/vowpal_wabbit.git master
