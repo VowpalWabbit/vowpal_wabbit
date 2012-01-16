@@ -10,9 +10,7 @@ struct csoaa_data {
   v_array<float> costs;
 };
 
-void parse_csoaa_flag(size_t s);
-void return_csoaa_example(example* ec);
-example* get_csoaa_example();
+void parse_csoaa_flag(size_t s, example* (*get_function)(), void (*return_function)(example*) );
 
 size_t read_cached_csoaa_label(void* v, io_buf& cache);
 void cache_csoaa_label(void* v, io_buf& cache);
