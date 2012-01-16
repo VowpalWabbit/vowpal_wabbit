@@ -71,12 +71,17 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
 	  i.endloaded = i.space.begin+left;
 	  pointer = i.endloaded;
 	}
-      if (i.fill(i.files[i.current]) > 0)// more bytes are read.
+      if (i.current < i.files.index() && i.fill(i.files[i.current]) > 0)// more bytes are read.
 	return readto(i,pointer,terminal);
       else if (++i.current < i.files.index())  //no more bytes, so go to next file.
 	return readto(i,pointer,terminal);
-      else //no more bytes to read, return nothing.
-	return 0;
+      else //no more bytes to read, return everything we have.
+	{
+	  size_t n = pointer - i.space.end;
+	  i.space.end = pointer;
+	  pointer -= n;
+	  return n;
+	}
     }
 }
 

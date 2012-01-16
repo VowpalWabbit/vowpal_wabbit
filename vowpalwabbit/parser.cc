@@ -615,7 +615,7 @@ bool parse_atomic_example(parser* p, example *ae)
   ae->indices.erase();
   ae->tag.erase();
   ae->sorted = false;
-  if (p->reader(p,ae) < 0)
+  if (p->reader(p,ae) <= 0)
     return false;
 
   if(p->sort_features && ae->sorted == false)
@@ -788,8 +788,10 @@ example* get_example()
 	pthread_mutex_unlock(&examples_lock);
 	return get_example();
       }
-    else 
+    else {
+      pthread_mutex_unlock(&examples_lock);
       return NULL;
+    }
   }
 }
 

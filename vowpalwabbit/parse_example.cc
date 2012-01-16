@@ -109,10 +109,10 @@ int read_features(parser* p, void* ex)
   example* ae = (example*)ex;
   char *line=NULL;
   int num_chars = readto(*(p->input), line, '\n');
-  num_chars--;
-  if (num_chars <= 0)
+  if (num_chars <= 1)
     return num_chars;
-  
+  if (line[num_chars-1] == '\n')
+    num_chars--;
   substring example = {line, line + num_chars};
 
   tokenize('|', example, p->channels);
