@@ -133,7 +133,7 @@ void print_csoaa_update(example *ec)
 	      (long int)global.sd->example_number,
 	      global.sd->weighted_examples,
 	      label_buf,
-	      csoaa_prediction,
+	      (int)csoaa_prediction,
 	      (long unsigned int)ec->num_features);
      
       global.sd->sum_loss_since_last_dump = 0.0;
@@ -192,6 +192,7 @@ void return_csoaa_example(example* ec)
     {
       ec->ld = csoaa_label_data;
       output_csoaa_example(ec);
+      ec->final_prediction = csoaa_prediction;
       free_example(ec);
       csoaa_current_example = NULL;
       csoaa_counter = 1;

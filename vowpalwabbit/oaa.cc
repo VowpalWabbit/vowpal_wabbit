@@ -94,7 +94,7 @@ oaa_data* oaa_label_data;
 size_t increment=0;
 size_t counter = 0;
 example* current_example=NULL;
-size_t label = 0;
+size_t prediction = 1;
 float score = INT_MIN;
 
 void parse_oaa_flag(size_t s)
@@ -124,7 +124,7 @@ void print_oaa_update(example *ec)
 	      (long int)global.sd->example_number,
 	      global.sd->weighted_examples,
 	      label_buf,
-	      label,
+	      (int)prediction,
 	      (long unsigned int)ec->num_features);
      
       global.sd->sum_loss_since_last_dump = 0.0;
@@ -139,7 +139,7 @@ void output_oaa_example(example* ec)
   global.sd->weighted_examples += ld->weight;
   global.sd->total_features += ec->num_features;
   size_t loss = 1;
-  if (ld->label == label)
+  if (ld->label == prediction)
     loss = 0;
   global.sd->sum_loss += loss;
   global.sd->sum_loss_since_last_dump += loss;
@@ -147,7 +147,7 @@ void output_oaa_example(example* ec)
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
       int f = global.final_prediction_sink[i];
-      global.print(f, label, 0, ec->tag);
+      global.print(f, prediction, 0, ec->tag);
     }
   
   global.sd->example_number++;
@@ -167,12 +167,13 @@ void return_oaa_example(example* ec)
   if (ec->partial_prediction > score)
     {
       score = ec->partial_prediction;
-      label = counter;
+      prediction = counter;
     }
   if (counter == k)
     {
       ec->ld = oaa_label_data;
       output_oaa_example(ec);
+      ec->final_prediction = prediction;
       free_example(ec);
       current_example = NULL;
       counter = 1;
@@ -211,9 +212,9 @@ example* get_oaa_example()
   if (counter == 1)
     {
       oaa_label_data = (oaa_data*)current_example->ld;
-      if (oaa_label_data->label > k)
+      if (oaa_label_data->label > k && oaa_label_data->label != (uint32_t)-1)
 	cerr << "warning: label " << oaa_label_data->label << " is greater than " << k << endl;
-      label = 0;
+      prediction = 1;
       score = INT_MIN;
     }
   else
