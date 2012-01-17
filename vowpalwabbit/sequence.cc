@@ -317,8 +317,11 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
 
 void allocate_required_memory()
 {
-  if (ec_seq == NULL)
+  if (ec_seq == NULL) {
     ec_seq = (example**)malloc_or_die(sizeof(example*) * global.ring_size);
+    for (size_t i=0; i<global.ring_size; i++)
+      ec_seq[i] = NULL;
+  }
 
   if (pred_seq == NULL)
     pred_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
