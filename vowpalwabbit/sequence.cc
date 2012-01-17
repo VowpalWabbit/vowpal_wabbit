@@ -197,16 +197,27 @@ int hcache_all_equal()
   return 1;
 }
 
+inline size_t get_label(example* ec)
+{
+  return ((oaa_data*)ec->ld)->label;
+}
+
+inline float get_weight(example* ec)
+{
+  return ((oaa_data*)ec->ld)->weight;
+}
+
 inline int example_is_newline(example* ec)
 {
-  // TODO
-  return 0;
+  // if only index is constant namespace or no index
+  return ((ec->indices.index() == 0) || 
+          ((ec->indices.index() == 1) &&
+           (ec->indices.last() == constant_namespace)));
 }
 
 inline int example_is_test(example* ec)
 {
-  // TODO
-  return 0;
+  return (get_label(ec) == (uint32_t)-1);
 }
 
 inline void clear_history(history h)
@@ -216,17 +227,6 @@ inline void clear_history(history h)
 }
 
 
-size_t get_label(example* ec)
-{
-  // TODO: john?
-  return 0;
-}
-
-float get_weight(example* ec)
-{
-  // TODO: john?
-  return 1.;
-}
 
 void generate_training_example(example *ec, size_t label, float* loss)
 {
@@ -248,6 +248,14 @@ size_t predict(example *ec, history h, int policy)
 
 int random_policy(int allow_optimal, int allow_current)
 {
+  if ((sequence_beta <= 0) || (sequence_beta >= 1)) {
+    if (allow_current) return (int)current_policy;
+    if (current_policy > 0) return (((int)current_policy)-1);
+    if (allow_optimal) return -1;
+    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
+    return (int)current_policy;
+  }
+
   int num_valid_policies = (int)current_policy + allow_optimal + allow_current;
   int pid = -1;
 
@@ -318,8 +326,11 @@ void allocate_required_memory()
   if (policy_seq == NULL)
     policy_seq = (int*)malloc_or_die(sizeof(int) * global.ring_size);
 
-  if (all_histories == NULL)
+  if (all_histories == NULL) {
     all_histories = (history*)malloc_or_die(sizeof(history) * sequence_k);
+    for (size_t i=0; i<sequence_k; i++)
+      all_histories[i] = (history)malloc_or_die(sizeof(size_t) * history_length);
+  }
 
   if (hcache == NULL)
     hcache = (history_item*)malloc_or_die(sizeof(history_item) * sequence_k);
@@ -336,10 +347,14 @@ void free_required_memory()
   free(ec_seq);          ec_seq          = NULL;
   free(pred_seq);        pred_seq        = NULL;
   free(policy_seq);      policy_seq      = NULL;
-  free(all_histories);   all_histories   = NULL;
   free(hcache);          hcache          = NULL;
   free(loss_vector);     loss_vector     = NULL;
   free(current_history); current_history = NULL;
+
+  for (size_t i=0; i<sequence_k; i++)
+    free(all_histories[i]);
+
+  free(all_histories);   all_histories   = NULL;
 }
 
 int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
@@ -395,8 +410,10 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
   // start learning
   clear_history(current_history);
-  for (size_t i=0; i<sequence_k; i++)
-    clear_history(hcache[i].predictions);
+  for (size_t i=0; i<sequence_k; i++) {
+    clear_history(all_histories[i]);
+    hcache[i].predictions = NULL;
+  }
 
   // predict the first one
   pred_seq[0] = predict(ec_seq[0], current_history, policy_seq[0]);
