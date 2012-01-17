@@ -19,10 +19,12 @@ uint32_t history_constant = 8290741;
 
 history   current_history;
 
-example**     ec_seq = NULL;
-size_t*       policy_seq = NULL;
+example**     ec_seq        = NULL;
+size_t*       pred_seq      = NULL;
+size_t*       policy_seq    = NULL;
 history*      all_histories = NULL;
-history_item* hcache = NULL;
+history_item* hcache        = NULL;
+float*        loss_vector   = NULL;
 
 #define sort_hcache() qsort(hcache, sequence_k, sizeof(history_item), order_history_item)
 
@@ -214,9 +216,18 @@ inline void clear_history(history h)
     h[t] = 0;
 }
 
-size_t predict(example *ec, size_t policy)
+void generate_training_example(example *ec, float* loss)
 {
-  return 1;
+  // use policy current_policy
+  // TODO: do something
+}
+
+size_t predict(example *ec, history h, size_t policy)
+{
+  add_history_to_example(ec, h);
+  size_t yhat = 1; // TODO: predict(ec, policy);
+  remove_history_from_example(ec);
+  return yhat;
 }
 
 int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
@@ -235,8 +246,7 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
       }
     }
 
-    add_history_to_example(ec, current_history);
-    yhat = predict(ec, policy);
+    yhat = predict(ec, current_history, policy);
     append_history(current_history, yhat);
     ec = get_example();
   }
@@ -261,6 +271,9 @@ void allocate_required_memory()
   if (ec_seq == NULL)
     ec_seq = (example**)malloc_or_die(sizeof(example*) * global.ring_size);
 
+  if (pred_seq == NULL)
+    pred_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
+
   if (policy_seq == NULL)
     policy_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
 
@@ -269,14 +282,19 @@ void allocate_required_memory()
 
   if (hcache == NULL)
     hcache = (history_item*)malloc_or_die(sizeof(history_item) * sequence_k);
+
+  if (loss_vector == NULL)
+    loss_vector = (float*)malloc_or_die(sizeof(float) * sequence_k);
 }
 
 void free_required_memory()
 {
   free(ec_seq);         ec_seq        = NULL;
+  free(pred_seq);       pred_seq      = NULL;
   free(policy_seq);     policy_seq    = NULL;
   free(all_histories);  all_histories = NULL;
   free(hcache);         hcache        = NULL;
+  free(loss_vector);    loss_vector   = NULL;
 }
 
 int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
@@ -325,20 +343,18 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
   // we've now read in all the examples up to n, time to pick some
   // policies; policy -1 is optimal policy
-  for (size_t i=0; i<n; i++)
+  for (size_t i=0; i<n; i++) {
     policy_seq[i] = (size_t)(rand() * (float)(current_policy + 1)) - 1;
+    pred_seq[i] = -1;
+  }
 
   // start learning
   clear_history(current_history);
-
   for (size_t i=0; i<sequence_k; i++)
     clear_history(hcache[i].predictions);
 
   // predict the first one
-  add_history_to_example(ec_seq[0], current_history);
-  size_t yhat = predict(ec_seq[0], policy_seq[0]);
-  remove_history_from_example(ec_seq[0]);
-  ec_seq[0]->final_prediction = (float)yhat;
+  pred_seq[0] = predict(ec_seq[0], current_history, policy_seq[0]);
 
   size_t last_new = -1;
   int prediction_matches_history = 0;
@@ -364,7 +380,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
             goto NOT_REALLY_NEW;
           }
 
-          prediction_matches_history  = (t2 == t+1) && (last_prediction(hcache[i].predictions) == (size_t)ec_seq[t]->final_prediction);
+          prediction_matches_history  = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
 
           hcache[i].predictions       = hcache[last_new].predictions;
           hcache[i].predictions_hash  = hcache[last_new].predictions_hash;
@@ -374,28 +390,47 @@ NOT_REALLY_NEW:
           // compute new
           last_new = i;
 
-          prediction_matches_history = (t2 == t+1) && (last_prediction(hcache[i].predictions) == (size_t)ec_seq[t]->final_prediction);
-          add_history_to_example(ec_seq[t2], hcache[i].predictions);
-          size_t yhat = predict(ec_seq[t2], policy_seq[t2]);
-          remove_history_from_example(ec_seq[t2]);
+          prediction_matches_history = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
+          size_t yhat = predict(ec_seq[t2], hcache[i].predictions, policy_seq[t2]);
           append_history_item(hcache[i], yhat);
           hcache[i].loss += get_weight(ec_seq[t2]) * (float)(yhat != get_label(ec_seq[t2]));
         }
 
         if (prediction_matches_history) // this is what we would have predicted
-          ec_seq[t+1]->final_prediction = (float)last_prediction(hcache[i].predictions);
+          pred_seq[t+1] = last_prediction(hcache[i].predictions);
       }
 
       if (hcache_all_equal())
         break;
     }
-    if ((sequence_rollout == 0) && (t < n-1)) {
-      append_history(current_history, (size_t)ec_seq[t]->final_prediction);
-      add_history_to_example(ec_seq[t+1], current_history);
-      yhat = predict(ec_seq[t+1], policy_seq[t+1]);
-      remove_history_from_example(ec_seq[t+1]);
-      ec_seq[t+1]->final_prediction = (float)yhat;
+
+    if (pred_seq[t] < 0) {
+      std::cerr << "internal error (bug): did not find actual predicted path; defaulting to 1" << std::endl;
+      pred_seq[t] = 1;
     }
+
+
+    // generate the training example
+    float min_loss = hcache[0].loss;
+    size_t best_label = 0;
+    for (size_t i=1; i < sequence_k; i++)
+      if (hcache[i].loss < min_loss) {
+        min_loss = hcache[i].loss;
+        best_label = i;
+      }
+
+    for (size_t i=0; i < sequence_k; i++)
+      loss_vector[i] = hcache[i].loss - min_loss;
+
+    add_history_to_example(ec_seq[t], current_history);
+    generate_training_example(ec_seq[t], loss_vector);
+    remove_history_from_example(ec_seq[t]);
+
+    // udpate state
+    append_history(current_history, pred_seq[t]);
+    if ((sequence_rollout == 0) && (t < n-1))
+      pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1]);
+
   }
 
   return 1;
