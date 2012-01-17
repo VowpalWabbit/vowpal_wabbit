@@ -1,3 +1,4 @@
+#include <math.h>
 #include "io.h"
 #include "sequence.h"
 #include "parser.h"
@@ -21,7 +22,7 @@ history   current_history;
 
 example**     ec_seq        = NULL;
 size_t*       pred_seq      = NULL;
-size_t*       policy_seq    = NULL;
+int*          policy_seq    = NULL;
 history*      all_histories = NULL;
 history_item* hcache        = NULL;
 float*        loss_vector   = NULL;
@@ -216,18 +217,68 @@ inline void clear_history(history h)
     h[t] = 0;
 }
 
-void generate_training_example(example *ec, float* loss)
+
+size_t get_label(example* ec)
+{
+  // TODO: john?
+  return 0;
+}
+
+float get_weight(example* ec)
+{
+  // TODO: john?
+  return 1.;
+}
+
+void generate_training_example(example *ec, size_t label, float* loss)
 {
   // use policy current_policy
   // TODO: do something
 }
 
-size_t predict(example *ec, history h, size_t policy)
+size_t predict(example *ec, history h, int policy)
 {
-  add_history_to_example(ec, h);
-  size_t yhat = 1; // TODO: predict(ec, policy);
-  remove_history_from_example(ec);
-  return yhat;
+  if (policy == -1) { // this is the optimal policy!
+    return get_label(ec);
+  } else {
+    add_history_to_example(ec, h);
+    size_t yhat = 1; // TODO: predict(ec, policy);
+    remove_history_from_example(ec);
+    return yhat;
+  }
+}
+
+int random_policy(int allow_optimal, int allow_current)
+{
+  int num_valid_policies = (int)current_policy + allow_optimal + allow_current;
+  int pid = -1;
+
+  if (num_valid_policies == 0) {
+    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
+    return (int)current_policy;
+  } else if (num_valid_policies == 1) {
+    pid = 0;
+  } else {
+    float r = rand();
+    pid = 0;
+    if (r > sequence_beta) {
+      r -= sequence_beta;
+      while ((r > 0) && (pid < num_valid_policies-1)) {
+        pid ++;
+        r -= sequence_beta * pow(1. - sequence_beta, (float)pid);
+      }
+    }
+  }
+
+  // figure out which policy pid refers to
+  if (allow_optimal && (pid == num_valid_policies-1))
+    return -1; // this is the optimal policy
+  
+  pid = (int)current_policy - pid;
+  if (!allow_current)
+    pid--;
+
+  return pid;
 }
 
 int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
@@ -237,7 +288,7 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
   clear_history(current_history);
 
   while ((ec != NULL) && (! example_is_newline(ec))) {
-    size_t policy = (size_t)(rand() * (float)(current_policy));
+    int policy = random_policy(0, 0);
 
     if (! example_is_test(ec)) {
       if (!warned) {
@@ -254,18 +305,6 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
   return (ec != NULL);
 }
 
-size_t get_label(example* ec)
-{
-  // TODO: john?
-  return 0;
-}
-
-float get_weight(example* ec)
-{
-  // TODO: john?
-  return 1.;
-}
-
 void allocate_required_memory()
 {
   if (ec_seq == NULL)
@@ -275,7 +314,7 @@ void allocate_required_memory()
     pred_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
 
   if (policy_seq == NULL)
-    policy_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
+    policy_seq = (int*)malloc_or_die(sizeof(int) * global.ring_size);
 
   if (all_histories == NULL)
     all_histories = (history*)malloc_or_die(sizeof(history) * sequence_k);
@@ -344,7 +383,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
   // we've now read in all the examples up to n, time to pick some
   // policies; policy -1 is optimal policy
   for (size_t i=0; i<n; i++) {
-    policy_seq[i] = (size_t)(rand() * (float)(current_policy + 1)) - 1;
+    policy_seq[i] = random_policy(1, 0);
     pred_seq[i] = -1;
   }
 
@@ -423,7 +462,7 @@ NOT_REALLY_NEW:
       loss_vector[i] = hcache[i].loss - min_loss;
 
     add_history_to_example(ec_seq[t], current_history);
-    generate_training_example(ec_seq[t], loss_vector);
+    generate_training_example(ec_seq[t], min_loss, loss_vector);
     remove_history_from_example(ec_seq[t]);
 
     // udpate state
