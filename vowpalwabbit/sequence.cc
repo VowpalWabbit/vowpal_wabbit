@@ -4,21 +4,19 @@
 #include "parser.h"
 #include "constant.h"
 
-size_t sequence_history=1;
-bool sequence_bigrams = false;
-size_t sequence_features = 0;
-bool sequence_bigram_features = false;
-size_t sequence_rollout = 256;
+size_t sequence_history           = 1;
+bool   sequence_bigrams           = false;
+size_t sequence_features          = 0;
+bool   sequence_bigram_features   = false;
+size_t sequence_rollout           = 256;
 size_t sequence_passes_per_policy = 1;
-float sequence_beta = 0.5;
-size_t sequence_k=2;
-size_t history_length = 1;
-size_t current_policy = 0;
+float  sequence_beta              = 0.5;
+size_t sequence_k                 = 2;
+size_t history_length             = 1;
+size_t current_policy             = 0;
 
-uint32_t history_constant = 8290741;
-
-
-history   current_history;
+uint32_t      history_constant    = 8290741;
+history       current_history     = NULL;
 
 example**     ec_seq        = NULL;
 size_t*       pred_seq      = NULL;
@@ -285,6 +283,10 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
 {
   size_t yhat = 0;
   int warned = 0;
+
+  if (current_history == NULL)
+    current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
+
   clear_history(current_history);
 
   while ((ec != NULL) && (! example_is_newline(ec))) {
@@ -324,16 +326,20 @@ void allocate_required_memory()
 
   if (loss_vector == NULL)
     loss_vector = (float*)malloc_or_die(sizeof(float) * sequence_k);
+
+  if (current_history == NULL)
+    current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
 }
 
 void free_required_memory()
 {
-  free(ec_seq);         ec_seq        = NULL;
-  free(pred_seq);       pred_seq      = NULL;
-  free(policy_seq);     policy_seq    = NULL;
-  free(all_histories);  all_histories = NULL;
-  free(hcache);         hcache        = NULL;
-  free(loss_vector);    loss_vector   = NULL;
+  free(ec_seq);          ec_seq          = NULL;
+  free(pred_seq);        pred_seq        = NULL;
+  free(policy_seq);      policy_seq      = NULL;
+  free(all_histories);   all_histories   = NULL;
+  free(hcache);          hcache          = NULL;
+  free(loss_vector);     loss_vector     = NULL;
+  free(current_history); current_history = NULL;
 }
 
 int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
