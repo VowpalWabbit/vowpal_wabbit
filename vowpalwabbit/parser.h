@@ -37,6 +37,7 @@ struct parser {
   int max_fd;
 };
 
+const size_t history_namespace  = 127;
 const size_t constant_namespace = 128;
 
 parser* new_parser();
