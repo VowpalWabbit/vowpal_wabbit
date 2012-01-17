@@ -287,6 +287,25 @@ int random_policy(int allow_optimal, int allow_current)
   return pid;
 }
 
+size_t read_example_this_loop  = 0;
+size_t read_example_last_id    = 0;
+int    read_example_ring_error = 0;
+
+example* safe_get_example() {
+  if (read_example_this_loop == global.ring_size) {
+    std::cerr << "warning: length of sequence at " << read_example_last_id << " exceeds ring size; breaking apart" << std::endl;
+    read_example_ring_error = 1;
+    return NULL;
+  }
+  read_example_ring_error = 0;
+  example* ec = get_example();
+  if (ec == NULL)
+    return NULL;
+  read_example_this_loop++;
+  read_example_last_id = ec->example_counter;
+  return ec;
+}
+
 int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
 {
   size_t yhat = 0;
@@ -309,10 +328,10 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
 
     yhat = predict(ec, current_history, policy);
     append_history(current_history, yhat);
-    ec = get_example();
+    ec = safe_get_example();
   }
 
-  return (ec != NULL);
+  return ((ec != NULL) || read_example_ring_error);
 }
 
 void allocate_required_memory()
@@ -362,8 +381,10 @@ void free_required_memory()
 
 int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 {
-  example *cur_ec = get_example();
-  if (cur_ec == NULL) {
+  read_example_this_loop = 0;
+
+  example *cur_ec = safe_get_example();
+  if ((cur_ec == NULL) && (!read_example_ring_error)) {
     // TODO: john this is EOF, what should we do?
     free_required_memory();
     return 0;
@@ -371,8 +392,8 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
   // skip initial newlines
   while (example_is_newline(cur_ec)) {
-    cur_ec = get_example();
-    if (cur_ec == NULL) {
+    cur_ec = safe_get_example();
+    if ((cur_ec == NULL) && (!read_example_ring_error)) {
       // TODO: john this is EOF, what should we do?
       free_required_memory();
       return 0;
@@ -388,9 +409,6 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
   size_t n = 0;
   int skip_this_one = 0;
   while ((cur_ec != NULL) && (! example_is_newline(cur_ec))) {
-    // TODO: check to see if n is too big and fail if so
-    // john: what happens???
-
     if (example_is_test(cur_ec) && !skip_this_one) {
       std::cerr << "warning: mix of train and test data in sequence prediction at " << cur_ec->example_counter << "; skipping" << std::endl;
       skip_this_one = 1;
@@ -398,7 +416,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
     ec_seq[n] = cur_ec;
     n++;
-    cur_ec = get_example();
+    cur_ec = safe_get_example();
   }
 
   if (skip_this_one)
