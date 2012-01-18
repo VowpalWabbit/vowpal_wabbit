@@ -1,2 +1,5 @@
 To get John's changes:
   git pull git://github.com/JohnLangford/vowpal_wabbit.git master
+
+To enable use of valgrind, do:
+  ./configure --enable-profiling

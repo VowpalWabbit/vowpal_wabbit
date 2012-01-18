@@ -474,6 +474,7 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
 {
   size_t yhat = 0;
   int warned = 0;
+  CSOAA::label* old_cost_label;
 
   if (current_history == NULL)
     current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
@@ -490,9 +491,13 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
       }
     }
 
+    old_cost_label = (CSOAA::label*)ec->ld;
     yhat = predict(ec, current_history, policy);
+    ec->ld = old_cost_label;
+
     std::cerr << "predict returned " << yhat << std::endl;
     append_history(current_history, yhat);
+
     ec = safe_get_example(0);
   }
 
@@ -578,9 +583,11 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
   // we've now read in all the examples up to n, time to pick some
   // policies; policy -1 is optimal policy
+  v_array<CSOAA::label*> old_cost_labels;
   for (size_t i=0; i<n; i++) {
     policy_seq[i] = random_policy(1, 0);
     pred_seq[i] = -1;
+    push(old_cost_labels, (CSOAA::label*)ec_seq[i]->ld);
   }
 
   // start learning
@@ -690,6 +697,10 @@ NOT_REALLY_NEW:
       pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1]);
 
   }
+
+  for (size_t i=0; i<n; i++)
+    ec_seq[i]->ld = (void*)old_cost_labels[i];
+  free(old_cost_labels.begin);
 
   return 1;
 }
