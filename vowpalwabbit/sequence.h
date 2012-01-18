@@ -13,5 +13,7 @@ struct history_item {
 };
 
 void parse_sequence_args(po::variables_map& vm, example* (**gf)(), void (**rf)(example*));
+void drive_sequence();
+
 
 #endif

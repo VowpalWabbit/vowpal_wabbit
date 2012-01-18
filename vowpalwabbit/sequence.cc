@@ -14,6 +14,8 @@ size_t sequence_rollout           = 256;
 size_t sequence_passes_per_policy = 1;
 float  sequence_beta              = 0.5;
 size_t sequence_k                 = 2;
+float  sequence_rollout_prob      = 1.;
+
 size_t history_length             = 1;
 size_t current_policy             = 0;
 size_t total_number_of_policies   = 1;
@@ -74,6 +76,8 @@ void parse_sequence_args(po::variables_map& vm, example* (**gf)(), void (**rf)(e
     sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
   if (vm.count("sequence_beta"))
     sequence_beta = vm["sequence_beta"].as<float>();
+  if (vm.count("sequence_rollout_prob"))
+    sequence_beta = vm["sequence_rollout_prob"].as<float>();
 
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
   total_number_of_policies = global.numpasses / sequence_passes_per_policy;
@@ -304,6 +308,7 @@ inline void clear_history(history h)
 
 void add_policy_offset(example *ec, size_t policy)
 {
+  // TODO john: there is a weird thing that happens here if we just learn one policy cf feature overlapping...
   size_t amount = (policy * global.length() / sequence_k / total_number_of_policies) * global.stride;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
     feature* end = ec->atomics[*i].end;
@@ -501,27 +506,20 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
   read_example_this_loop = 0;
 
   example *cur_ec = safe_get_example();
-  if ((cur_ec == NULL) && (!read_example_ring_error)) {
-    // TODO: john this is EOF, what should we do?
-    free_required_memory();
+  if ((cur_ec == NULL) && (!read_example_ring_error))
     return 0;
-  }
 
   // skip initial newlines
   while (example_is_newline(cur_ec)) {
     cur_ec = safe_get_example();
-    if ((cur_ec == NULL) && (!read_example_ring_error)) {
-      // TODO: john this is EOF, what should we do?
-      free_required_memory();
+    if ((cur_ec == NULL) && (!read_example_ring_error))
       return 0;
-    }
   }
 
   if (example_is_test(cur_ec))
     return run_test(cur_ec);
 
   // we know we're training
-  allocate_required_memory();
 
   size_t n = 0;
   int skip_this_one = 0;
@@ -637,3 +635,33 @@ NOT_REALLY_NEW:
   return 1;
 }
  
+
+void drive_sequence()
+{
+  size_t passes_since_new_policy = 0;
+  
+  global.cs_initialize();
+  allocate_required_memory();
+
+  while (true) {
+    int more_to_go = process_next_example_sequence();
+    if (!more_to_go) { // we've reached the end of the file
+      if (parser_done()) // we're done learning
+        break;
+
+      // we've hit the end, we may need to switch policies
+      passes_since_new_policy++;
+      if (passes_since_new_policy >= sequence_passes_per_policy) {
+        passes_since_new_policy = 0;
+        current_policy++;
+        if (current_policy > total_number_of_policies) {
+          std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
+          current_policy = total_number_of_policies;
+        }
+      }
+    }
+  }
+
+  free_required_memory();
+  global.cs_finish();
+}
