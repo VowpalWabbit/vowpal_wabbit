@@ -544,8 +544,10 @@ po::variables_map parse_args(int argc, char *argv[],
   else if (vm.count("sequence"))
     CSOAA::parse_flag(vm["sequence"].as<size_t>());
 
-  if(vm.count("sequence"))
+  if(vm.count("sequence")) {
     parse_sequence_args(vm);
+    global.driver = drive_sequence;
+  }
 
   return vm;
 }

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include "gd.h"
 #include "io.h"
 #include "sequence.h"
 #include "parser.h"
@@ -44,15 +45,12 @@ void* malloc_or_die(size_t size)
   return data;
 }
 
-example* sequence_get()
+void print_history(history h)
 {
-  example* ec = get_example();
-  return ec;
-}
-
-void sequence_return(example* ec)
-{
-  free_example(ec);
+  std::cerr << "[ ";
+  for (size_t t=0; t<sequence_history; t++)
+    std::cerr << h[t] << " ";
+  std::cerr << "]" << std::endl;
 }
 
 void parse_sequence_args(po::variables_map& vm)
@@ -86,9 +84,13 @@ void parse_sequence_args(po::variables_map& vm)
 
 inline void append_history(history h, uint32_t p)
 {
+  std::cerr << "append_history(h, " << ((size_t)p) << "); hl=" << history_length << std::endl << "  h = ";
+  print_history(h);
   for (size_t i=0; i<history_length-1; i++)
     h[i] = h[i+1];
-  h[history_length-1] = p;
+  h[history_length-1] = (size_t)p;
+    std::cerr << "  h'= ";
+    print_history(h);
 }
 
 void append_history_item(history_item hi, uint32_t p)
@@ -147,9 +149,12 @@ void remove_history_from_example(example* ec)
 
 std::string audit_feature_space("history");
 
+
 void add_history_to_example(example* ec, history h)
 {
   size_t v0, v;
+
+  print_history(h);
 
   for (size_t t=1; t<=sequence_history; t++) {
     v0 = (h[history_length-t] * quadratic_constant + history_constant) * quadratic_constant + t + history_constant;
@@ -305,7 +310,6 @@ inline void clear_history(history h)
 
 void add_policy_offset(example *ec, size_t policy)
 {
-  // TODO john: there is a weird thing that happens here if we just learn one policy cf feature overlapping...
   size_t amount = (policy * global.length() / sequence_k / total_number_of_policies) * global.stride;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
     feature* end = ec->atomics[*i].end;
@@ -349,27 +353,36 @@ void generate_training_example(example *ec, history h, size_t label, v_array<flo
   ec->ld = (void*)&ld;
   global.cs_learn(ec);
 
+  std::cerr << "generating example, costs = [";
+  for (float*c=costs.begin; c!=costs.end; c++)
+    std::cerr << " " << *c;
+  std::cerr << " ]" << std::endl;
+  std::cerr << "h = ";
+  print_history(h);
+  print_audit_features(global.reg, ec);
+
   remove_policy_offset(ec, current_policy);
   remove_history_from_example(ec);
 }
 
 size_t predict(example *ec, history h, int policy)
 {
-  if (policy == -1) { // this is the optimal policy!
-    return get_label(ec);
-  } else {
+  size_t yhat;
+  if (policy == -1) // this is the optimal policy!
+    yhat = get_label(ec);
+  else {
     add_history_to_example(ec, h);
     add_policy_offset(ec, policy);
 
     ec->ld = (void*)&empty_costs;
     global.cs_learn(ec);
-    size_t yhat = (size_t)ec->final_prediction;
+    yhat = (size_t)ec->final_prediction;
 
     remove_policy_offset(ec, policy);
     remove_history_from_example(ec);
-
-    return yhat;
   }
+  std::cerr << "predict returning " << yhat << std::endl;
+  return yhat;
 }
 
 int random_policy(int allow_optimal, int allow_current)
@@ -416,6 +429,8 @@ int random_policy(int allow_optimal, int allow_current)
 size_t read_example_this_loop  = 0;
 size_t read_example_last_id    = 0;
 int    read_example_ring_error = 0;
+size_t read_example_last_pass  = 0;
+int    read_example_should_warn_eof = 1;
 
 example* safe_get_example() {
   if (read_example_this_loop == global.ring_size) {
@@ -427,8 +442,14 @@ example* safe_get_example() {
   example* ec = get_example();
   if (ec == NULL)
     return NULL;
+
   read_example_this_loop++;
   read_example_last_id = ec->example_counter;
+
+  if (ec->pass != read_example_last_pass) {
+    read_example_last_pass = ec->pass;
+  }
+
   return ec;
 }
 
@@ -453,6 +474,7 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
     }
 
     yhat = predict(ec, current_history, policy);
+    std::cerr << "predict returned " << yhat << std::endl;
     append_history(current_history, yhat);
     ec = safe_get_example();
   }
@@ -546,6 +568,9 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
   // start learning
   clear_history(current_history);
+  std::cerr << "current_history ==> ";
+  print_history(current_history);
+
   for (size_t i=0; i<sequence_k; i++) {
     clear_history(all_histories[i]);
     hcache[i].predictions = NULL;
@@ -563,16 +588,18 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
       clear_history(all_histories[i]);
       hcache[i].predictions = all_histories[i];
       hcache[i].predictions_hash = 0;
-      hcache[i].loss = get_weight(ec_seq[t]) * (float)(i != get_label(ec_seq[t]));
+      hcache[i].loss = get_weight(ec_seq[t]) * (float)((i+1) != get_label(ec_seq[t]));
       hcache[i].same = 0;
-      append_history_item(hcache[i], i);
+      std::cerr << "initialize adding " << (i+1) << " / sequence_k=" << sequence_k << std::endl;
+      append_history_item(hcache[i], i+1);
     }
 
     size_t end_pos = (n < t+1+sequence_rollout) ? n : (t+1+sequence_rollout);
+    std::cerr << "t=" << t << ", end_pos=" << end_pos << std::endl;
     for (size_t t2=t+1; t2<end_pos; t2++) {
-      sort_hcache_and_mark_equality();
-      if (hcache_all_equal())
-        break;
+      //      sort_hcache_and_mark_equality();
+      //      if (hcache_all_equal())
+      //        break;
       for (size_t i=0; i < sequence_k; i++) {
         prediction_matches_history = 0;
         if (hcache[i].same) {
@@ -583,6 +610,10 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
           }
 
           prediction_matches_history  = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
+          if (t2 == t+1) {
+            std::cerr << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << std::endl;
+            print_history(hcache[i].predictions);
+          }
 
           hcache[i].predictions       = hcache[last_new].predictions;
           hcache[i].predictions_hash  = hcache[last_new].predictions_hash;
@@ -593,19 +624,26 @@ NOT_REALLY_NEW:
           last_new = i;
 
           prediction_matches_history = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
+          if (t2 == t+1) {
+            std::cerr << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << std::endl;
+            print_history(hcache[i].predictions);
+          }
+
           size_t yhat = predict(ec_seq[t2], hcache[i].predictions, policy_seq[t2]);
           append_history_item(hcache[i], yhat);
           hcache[i].loss += get_weight(ec_seq[t2]) * (float)(yhat != get_label(ec_seq[t2]));
         }
         hcache[i].same = 0;
 
-        if (prediction_matches_history) // this is what we would have predicted
+        if (prediction_matches_history) { // this is what we would have predicted
           pred_seq[t+1] = last_prediction(hcache[i].predictions);
+          std::cerr << "setting pred_seq[" << (t+1) << "] to " << last_prediction(hcache[i].predictions) << std::endl;
+        }
       }
     }
 
-    if (pred_seq[t] < 0) {
-      std::cerr << "internal error (bug): did not find actual predicted path; defaulting to 1" << std::endl;
+    if ((pred_seq[t] <= 0) | (pred_seq[t] > sequence_k)) {
+      std::cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << std::endl;
       pred_seq[t] = 1;
     }
 
@@ -619,6 +657,7 @@ NOT_REALLY_NEW:
         best_label = i;
       }
 
+    std::cerr << "sequence_k = " << sequence_k << std::endl;
     loss_vector.erase();
     for (size_t i=0; i < sequence_k; i++)
       push(loss_vector, hcache[i].loss - min_loss);
@@ -626,7 +665,10 @@ NOT_REALLY_NEW:
     generate_training_example(ec_seq[t], current_history, min_loss, loss_vector);
 
     // update state
+    std::cerr << "pred_seq[" << t << "] = " << pred_seq[t] << std::endl;
     append_history(current_history, pred_seq[t]);
+    std::cerr << "current_history ==> ";
+    print_history(current_history);
     if ((sequence_rollout == 0) && (t < n-1))
       pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1]);
 
@@ -664,4 +706,5 @@ void drive_sequence()
 
   free_required_memory();
   global.cs_finish();
+  std::cerr << "done!" << std::endl;
 }
