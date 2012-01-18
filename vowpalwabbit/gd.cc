@@ -112,7 +112,6 @@ bool command_example(example* ec) {
 
       return true;
     }
-
   return false;
 }
 
@@ -140,7 +139,7 @@ float query_decision(example*, float k);
 
 float inline_predict_trunc(regressor &reg, example* &ec)
 {
-  float prediction = get_initial(ec->ld);
+  float prediction = global.lp->get_initial(ec->ld);
   
   weight* weights = reg.weight_vectors;
   size_t mask = global.weight_mask;
@@ -163,7 +162,7 @@ float inline_predict_trunc(regressor &reg, example* &ec)
 
 float inline_predict(regressor &reg, example* &ec)
 {
-  float prediction = get_initial(ec->ld);
+  float prediction = global.lp->get_initial(ec->ld);
 
   weight* weights = reg.weight_vectors;
   size_t mask = global.weight_mask;

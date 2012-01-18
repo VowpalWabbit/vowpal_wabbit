@@ -19,9 +19,13 @@ struct audit_data {
   bool alloced;
 };
 
+typedef float simple_prediction;
+
 struct example // core example datatype.
 {
   void* ld;
+  simple_prediction final_prediction;
+
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
 
@@ -34,7 +38,6 @@ struct example // core example datatype.
   size_t pass;
   float partial_prediction;//shared data for prediction.
   v_array<float> topic_predictions;
-  float final_prediction;
   float loss;
   float eta_round;
   float eta_global;

@@ -9,11 +9,13 @@
 namespace OAA
 {
 
-struct oaa_data {
-  uint32_t label;
-  float weight;
-};
-
+  struct mc_label {
+    uint32_t label;
+    float weight;
+  };
+  
+  typedef uint32_t prediction_t;
+ 
 void parse_oaa_flag(size_t s);
 
 size_t read_cached_oaa_label(void* v, io_buf& cache);
@@ -26,7 +28,7 @@ float oaa_initial(void* v);
 const label_parser oaa_label = {default_oaa_label, parse_oaa_label, 
 				cache_oaa_label, read_cached_oaa_label, 
 				delete_oaa_label, get_weight, get_initial, 
-				sizeof(oaa_data)};
+				sizeof(mc_label)};
 
 void update_indicies(example* ec, size_t amount);
 

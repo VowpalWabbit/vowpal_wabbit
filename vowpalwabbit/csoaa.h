@@ -23,7 +23,7 @@ float weight(void* v);
 float initial(void* v);
 const label_parser csoaa_label = {default_label, parse_label, 
 				cache_label, read_cached_label, 
-				delete_label, get_weight, get_initial, 
+				delete_label, weight, initial, 
 				sizeof(label)};
 
 }
