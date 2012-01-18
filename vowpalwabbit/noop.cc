@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "gd.h"
 
-void start_noop()
+void drive_noop()
 {
   example* ec = NULL;
   
@@ -15,6 +15,3 @@ void start_noop()
   }
 }
 
-void end_noop()
-{
-}

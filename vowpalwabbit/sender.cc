@@ -42,7 +42,7 @@ void send_features(io_buf *b, example* ec)
   b->flush();
 }
 
-void setup_send()
+void drive_send()
 {
   example* ec = NULL;
   v_array<char> null_tag;
@@ -94,8 +94,4 @@ void setup_send()
 	;
     }
   return;
-}
-
-void destroy_send()
-{
 }

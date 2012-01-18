@@ -17,6 +17,10 @@ embodied in the content of this file are licensed under the BSD
 #include "oaa.h"
 #include "csoaa.h"
 #include "sequence.h"
+#include "bfgs.h"
+#include "lda_core.h"
+#include "noop.h"
+#include "gd_mf.h"
 
 using namespace std;
 //
@@ -43,12 +47,10 @@ size_t next_pow2(size_t x) {
 
 const float default_decay = 1.;
 
-po::variables_map parse_args(int argc, char *argv[], boost::program_options::options_description& desc,
-			     gd_vars& vars,
-			     regressor &r, parser* par,
-			     string& final_regressor_name)
+po::variables_map parse_args(int argc, char *argv[], 
+			     boost::program_options::options_description& desc,
+			     parser* par)
 {
-  vars.init();
   global.program_name = argv[0];
   global.sd = (shared_data *) malloc(sizeof(shared_data));
   // Declare the supported options.
@@ -103,7 +105,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
-    ("power_t", po::value<float>(&vars.power_t)->default_value(0.5), "t power value")
+    ("power_t", po::value<float>(&global.power_t)->default_value(0.5), "t power value")
     ("learning_rate,l", po::value<float>(&global.eta)->default_value(10),
      "Set Learning Rate")
     ("passes", po::value<size_t>(&global.numpasses)->default_value(1),
@@ -165,6 +167,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.num_bits = 18;
   global.default_bits = true;
   global.daemon = false;
+
+  global.driver = drive_gd;
   global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
   global.raw_prediction = -1;
   global.print = print_result;
@@ -183,7 +187,8 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   global.audit = false;
   global.active = false;
   global.active_simulation =false;
-  global.reg = &r;
+  global.reg.weight_vectors = NULL;
+  global.reg.regularizers = NULL;
 
   global.save_per_pass = false;
 
@@ -230,6 +235,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
+    global.driver = BFGS::drive_bfgs;
     global.bfgs = true;
     global.stride = 4;
     if (vm.count("hessian_on") || global.m==0) {
@@ -382,6 +388,7 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   if (vm.count("lda"))
     {
+      global.driver = drive_lda;
       par->sort_features = true;
       float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
       global.stride = 1 << (int) temp;
@@ -395,14 +402,14 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
       global.eta = min(global.eta,1.f);
     }
   if (!vm.count("lda")) 
-    global.eta *= pow(global.sd->t, (double)vars.power_t);
+    global.eta *= pow(global.sd->t, (double)global.power_t);
 
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(global.minibatch);
     global.ring_size = global.ring_size > minibatch2 ? global.ring_size : minibatch2;
   }
-  
-  parse_regressor_args(vm, r, final_regressor_name, global.quiet);
+
+  parse_regressor_args(vm, global.reg, global.final_regressor_name, global.quiet);
   parse_source_args(vm,par,global.quiet,global.numpasses);
   if (vm.count("readable_model"))
     global.text_regressor_name = vm["readable_model"].as<string>();
@@ -431,7 +438,10 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
 
   example* (*gf)() = get_example;
   void (*rf)(example*) = free_example;
-
+  
+  if (vm.count("noop"))
+    global.driver = drive_noop;
+  
   if(vm.count("sequence"))
     parse_sequence_args(vm, &gf, &rf);
 
@@ -444,14 +454,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     parse_csoaa_flag(vm["sequence"].as<size_t>(), gf, rf);
   
   if (global.rank != 0) {
+    global.driver = drive_gd_mf;
     loss_function = "classic";
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
   }
 
-  r.loss = getLossFunction(loss_function, loss_parameter);
-  global.loss = r.loss;
-
-//   global.eta *= pow(global.sd->t, vars.power_t);
+  global.loss = getLossFunction(loss_function, loss_parameter);
 
   if (global.eta_decay_rate != default_decay && global.numpasses == 1)
     cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
@@ -460,15 +468,12 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)global.eta_decay_rate, (double)global.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
 
-  //parse_source_args(vm,par,global.quiet,global.numpasses);
-
-
   if (!global.quiet)
     {
       cerr << "Num weight bits = " << global.num_bits << endl;
       cerr << "learning rate = " << global.eta << endl;
       cerr << "initial_t = " << global.sd->t << endl;
-      cerr << "power_t = " << vars.power_t << endl;
+      cerr << "power_t = " << global.power_t << endl;
       if (global.numpasses > 1)
 	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
       if (global.rank > 0)
@@ -504,7 +509,11 @@ po::variables_map parse_args(int argc, char *argv[], boost::program_options::opt
   if (vm.count("audit"))
     global.audit = true;
 
-  parse_send_args(vm, global.pairs);
+  if (vm.count("sendto"))
+    {
+      global.driver = drive_send;
+      parse_send_args(vm, global.pairs);
+    }
 
   if (vm.count("testonly"))
     {

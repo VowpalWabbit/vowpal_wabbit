@@ -16,8 +16,6 @@ typedef float weight;
 struct regressor {
   weight* weight_vectors;
   weight* regularizers;
-
-  loss_function *loss;
 };
 
 void parse_regressor_args(po::variables_map& vm, regressor& r, std::string& final_regressor_name, bool quiet);

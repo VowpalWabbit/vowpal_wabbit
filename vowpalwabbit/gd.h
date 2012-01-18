@@ -19,31 +19,11 @@ embodied in the content of this file are licensed under the BSD
 
 void print_result(int f, float res, v_array<char> tag);
 
-struct gd_vars
-{ 
-  float power_t;
-
-  gd_vars()
-  {};
-
-  void init()
-  {
-    power_t = 0.;
-  }
-};
-
-struct gd_thread_params
-{
-  gd_vars* vars;
-  regressor reg;
-  std::string* final_regressor_name;
-};
-
 void print_audit_features(regressor &reg, example* ec, size_t offset);
 
 float finalize_prediction(float ret);
 
-void predict(regressor& r, example* ex, gd_vars& vars);
+void predict(regressor& r, example* ex);
 
 float inline_predict(regressor &reg, example* &ec);
 
@@ -62,17 +42,16 @@ void print_audit_features(regressor &reg, example* ec);
 
 void train(weight* weights, const v_array<feature> &features, float update);
 
-void train_one_example(regressor& r, example* ex, gd_vars& vars);
-void train_offset_example(regressor& r, example* ex, gd_vars& vars, size_t offset);
-void compute_update(example* ec, gd_vars& vars);
+void train_one_example(regressor& r, example* ex);
+void train_offset_example(regressor& r, example* ex, size_t offset);
+void compute_update(example* ec);
 void offset_train(regressor &reg, example* &ec, float update, size_t offset);
-void train_one_example_single_thread(regressor& r, example* ex, gd_vars& vars);
-void setup_gd(gd_thread_params t);
-void destroy_gd();
+void train_one_example_single_thread(regressor& r, example* ex);
+void drive_gd();
 void output_and_account_example(example* ec);
 void finish_example(example* ec);
 
-bool command_example(example*, gd_thread_params*);
+bool command_example(example* ec);
 
 void sync_weights(regressor *reg);
 

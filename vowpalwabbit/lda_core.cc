@@ -481,9 +481,9 @@ public:
 
 std::vector<index_feature> sorted_features;
 
-void start_lda(gd_thread_params t)
+void drive_lda()
 {
-  regressor reg = t.reg;
+  regressor reg = global.reg;
   example* ec = NULL;
 
   v_array<float> total_lambda;
@@ -545,7 +545,7 @@ void start_lda(gd_thread_params t)
 
       sort(sorted_features.begin(), sorted_features.end());
 
-      eta = global.eta * powf(example_t, -t.vars->power_t);
+      eta = global.eta * powf(example_t, - global.power_t);
       minuseta = 1.0 - eta;
       eta *= global.lda_D / batch_size;
       push(decay_levels, decay_levels.last() + log(minuseta));
@@ -579,7 +579,7 @@ void start_lda(gd_thread_params t)
 
       for (size_t d = 0; d < batch_size; d++)
 	{
-          float score = lda_loop(&v[d*global.lda], weights, examples[d],t.vars->power_t);
+          float score = lda_loop(&v[d*global.lda], weights, examples[d],global.power_t);
           if (global.audit)
 	    print_audit_features(reg, examples[d]);
           // If the doc is empty, give it loss of 0.
@@ -633,7 +633,3 @@ void start_lda(gd_thread_params t)
     }
 }
 
-void end_lda()
-{
-  
-}

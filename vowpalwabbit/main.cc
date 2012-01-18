@@ -11,7 +11,7 @@ embodied in the content of this file are licensed under the BSD
 using namespace std;
 
 int main(int argc, char *argv[]) {
-  gd_vars *vars = vw(argc, argv);
+  vw(argc, argv);
 
   if(global.span_server != "") {
     float loss = global.sd->sum_loss;
@@ -50,7 +50,6 @@ int main(int argc, char *argv[]) {
       cerr << endl;
     }
   
-  free(vars);
   free(global.sd);
   free(global.lp);
   delete global.loss;

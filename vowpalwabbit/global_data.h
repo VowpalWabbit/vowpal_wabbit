@@ -48,6 +48,7 @@ struct global_data {
   label_parser* lp;
   example* (*get_example)();
   void (*return_example)(example*);
+  void (*driver)();
 
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
@@ -72,6 +73,7 @@ struct global_data {
   
   float l1_lambda; //the level of l_1 regularization to impose.
   float l2_lambda; //the level of l_2 regularization to impose.
+  float power_t;//the power on learning rate decay.
   int reg_mode;
 
   size_t minibatch;
@@ -134,7 +136,8 @@ struct global_data {
   float eta;//learning rate control.
   float eta_decay_rate;
 
-  regressor* reg;
+  std::string final_regressor_name;
+  regressor reg;
 };
 
 extern pthread_mutex_t io;

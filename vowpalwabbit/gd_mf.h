@@ -13,7 +13,6 @@ embodied in the content of this file are licensed under the BSD
 #include "parser.h"
 #include "gd.h"
 
-void setup_gd_mf(gd_thread_params t);
-void destroy_gd_mf();
+void drive_gd_mf();
 
 #endif

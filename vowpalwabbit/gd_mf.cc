@@ -17,41 +17,9 @@ embodied in the content of this file are licensed under the BSD
 
 using namespace std;
 
-void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, float update);
-void mf_local_predict(example* ec, gd_vars& vars, regressor& reg);
-float mf_predict(regressor& r, example* ex, gd_vars& vars);
-
-void* gd_mf_thread(void *in)
-{
-  gd_thread_params* params = (gd_thread_params*) in;
-  regressor reg = params->reg;
-  example* ec = NULL;
-
-  size_t current_pass = 0;
-  while ( true )
-    {
-      if ((ec = get_example()) != NULL)//blocking operation.
-	{
-	  if (ec->pass != current_pass) {
-	    global.eta *= global.eta_decay_rate;
-	    current_pass = ec->pass;
-	  }
-	  if (!command_example(ec, params))
-	    {
-	      mf_predict(reg,ec,*(params->vars));
-	      if (global.training && ((label_data*)(ec->ld))->label != FLT_MAX)
-		mf_inline_train(*(params->vars), reg, ec, ec->eta_round);
-	    }
-	  finish_example(ec);
-	}
-      else if (parser_done())
-	return NULL;
-      else 
-	;//busywait when we have predicted on all examples but not yet trained on all.
-    }
-
-  return NULL;
-}
+void mf_inline_train(regressor &reg, example* &ec, float update);
+void mf_local_predict(example* ec, regressor& reg);
+float mf_predict(regressor& r, example* ex);
 
 float mf_inline_predict(regressor &reg, example* &ec)
 {
@@ -102,7 +70,7 @@ float mf_inline_predict(regressor &reg, example* &ec)
   return prediction;
 }
 
-void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, float update)
+void mf_inline_train(regressor &reg, example* &ec, float update)
 {
       weight* weights = reg.weight_vectors;
       size_t mask = global.weight_mask;
@@ -110,8 +78,8 @@ void mf_inline_train(gd_vars& vars, regressor &reg, example* &ec, float update)
 
       // use final prediction to get update size
       // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-      float eta_t = global.eta/pow(ec->example_t,vars.power_t) / 3. * ld->weight;
-      update = reg.loss->getUpdate(ec->final_prediction, ld->label, eta_t, 1.); //ec->total_sum_feat_sq);
+      float eta_t = global.eta/pow(ec->example_t,global.power_t) / 3. * ld->weight;
+      update = global.loss->getUpdate(ec->final_prediction, ld->label, eta_t, 1.); //ec->total_sum_feat_sq);
 
       float regularization = eta_t * global.l2_lambda;
 
@@ -195,7 +163,7 @@ void mf_print_audit_features(regressor &reg, example* ec, size_t offset)
   mf_print_offset_features(reg, ec, offset);
 }
 
-void mf_local_predict(example* ec, gd_vars& vars, regressor& reg)
+void mf_local_predict(example* ec, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
   set_minmax(ld->label);
@@ -204,7 +172,7 @@ void mf_local_predict(example* ec, gd_vars& vars, regressor& reg)
 
   if (ld->label != FLT_MAX)
     {
-      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+      ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
     }
 
   if (global.audit)
@@ -212,41 +180,41 @@ void mf_local_predict(example* ec, gd_vars& vars, regressor& reg)
 
 }
 
-float mf_predict(regressor& r, example* ex, gd_vars& vars)
+float mf_predict(regressor& r, example* ex)
 {
   float prediction = mf_inline_predict(r, ex);
 
   ex->partial_prediction = prediction;
-  mf_local_predict(ex, vars,r);
+  mf_local_predict(ex, r);
 
   return ex->final_prediction;
 }
 
-pthread_t* mf_threads;
-gd_thread_params** mf_passers;
-size_t mf_num_mf_threads;
-
-void setup_gd_mf(gd_thread_params t)
+void drive_gd_mf()
 {
-  mf_threads = (pthread_t*)calloc(mf_num_mf_threads,sizeof(pthread_t));
-  mf_passers = (gd_thread_params**)calloc(mf_num_mf_threads,sizeof(gd_thread_params*));
-
-  for (size_t i = 0; i < mf_num_mf_threads; i++)
+  regressor reg = global.reg;
+  example* ec = NULL;
+  
+  size_t current_pass = 0;
+  while ( true )
     {
-      mf_passers[i] = (gd_thread_params*)calloc(1, sizeof(gd_thread_params));
-      *(mf_passers[i]) = t;
-      pthread_create(&mf_threads[i], NULL, gd_mf_thread, (void *) mf_passers[i]);
+      if ((ec = get_example()) != NULL)//blocking operation.
+	{
+	  if (ec->pass != current_pass) {
+	    global.eta *= global.eta_decay_rate;
+	    current_pass = ec->pass;
+	  }
+	  if (!command_example(ec))
+	    {
+	      mf_predict(reg,ec);
+	      if (global.training && ((label_data*)(ec->ld))->label != FLT_MAX)
+		mf_inline_train(reg, ec, ec->eta_round);
+	    }
+	  finish_example(ec);
+	}
+      else if (parser_done())
+	return;
+      else 
+	;//busywait when we have predicted on all examples but not yet trained on all.
     }
 }
-
-void destroy_gd_mf()
-{
-  for (size_t i = 0; i < mf_num_mf_threads; i++) 
-    {
-      pthread_join(mf_threads[i], NULL);
-      free(mf_passers[i]);
-    }
-  free(mf_threads);
-  free(mf_passers);
-}
-
