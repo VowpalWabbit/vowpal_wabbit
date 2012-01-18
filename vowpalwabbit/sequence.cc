@@ -4,6 +4,7 @@
 #include "sequence.h"
 #include "parser.h"
 #include "constant.h"
+#include "oaa.h"
 #include "csoaa.h"
 
 size_t sequence_history           = 1;
@@ -277,12 +278,12 @@ int hcache_all_equal()
 
 inline size_t get_label(example* ec)
 {
-  return ((oaa_data*)ec->ld)->label;
+  return ((OAA::oaa_data*)ec->ld)->label;
 }
 
 inline float get_weight(example* ec)
 {
-  return ((oaa_data*)ec->ld)->weight;
+  return ((OAA::oaa_data*)ec->ld)->weight;
 }
 
 inline int example_is_newline(example* ec)
@@ -343,10 +344,13 @@ csoaa_data empty_costs = { v_array<float>() };
 void generate_training_example(example *ec, history h, size_t label, v_array<float>costs)
 {
   csoaa_data ld = { costs };
+
   add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
+
   ec->ld = (void*)&ld;
-  // TODO: push this example down the stack!
+  global.cs_learn(ec);
+
   remove_policy_offset(ec, current_policy);
   remove_history_from_example(ec);
 }
@@ -360,7 +364,7 @@ size_t predict(example *ec, history h, int policy)
     add_policy_offset(ec, policy);
 
     ec->ld = (void*)&empty_costs;
-    // TODO: make the prediction
+    global.cs_learn(ec);
     size_t yhat = (size_t)ec->final_prediction;
 
     remove_policy_offset(ec, policy);
