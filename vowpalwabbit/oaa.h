@@ -14,7 +14,7 @@ struct oaa_data {
   float weight;
 };
 
-void parse_oaa_flag(size_t s, example* (*get_function)(), void (*return_function)(example*) );
+void parse_oaa_flag(size_t s);
 
 size_t read_cached_oaa_label(void* v, io_buf& cache);
 void cache_oaa_label(void* v, io_buf& cache);

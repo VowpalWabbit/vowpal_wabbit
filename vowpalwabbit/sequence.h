@@ -3,6 +3,6 @@
 
 #include "oaa.h"
 
-void parse_sequence_args(po::variables_map& vm, example* (**gf)(), void (**rf)(example*));
+void parse_sequence_args(po::variables_map& vm);
 
 #endif

@@ -21,11 +21,9 @@ void sequence_return(example* ec)
   free_example(ec);
 }
 
-void parse_sequence_args(po::variables_map& vm, example* (**gf)(), void (**rf)(example*))
+void parse_sequence_args(po::variables_map& vm)
 {
   *(global.lp)=OAA::oaa_label;
-  *gf = sequence_get;
-  *rf = sequence_return;
   sequence_k = vm["sequence"].as<size_t>();
 
   if (vm.count("sequence_bigrams"))
