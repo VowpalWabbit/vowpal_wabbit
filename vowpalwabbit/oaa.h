@@ -6,6 +6,9 @@
 #include "global_data.h"
 #include "example.h"
 
+namespace OAA
+{
+
 struct oaa_data {
   uint32_t label;
   float weight;
@@ -24,5 +27,9 @@ const label_parser oaa_label = {default_oaa_label, parse_oaa_label,
 				cache_oaa_label, read_cached_oaa_label, 
 				delete_oaa_label, get_weight, get_initial, 
 				sizeof(oaa_data)};
+
+void update_indicies(example* ec, size_t amount);
+
+}
 
 #endif

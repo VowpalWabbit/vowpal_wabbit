@@ -10,8 +10,10 @@ embodied in the content of this file are licensed under the BSD
 
 namespace BFGS {
 
-void setup_bfgs(gd_thread_params& t);
-void destroy_bfgs();
+  void drive_bfgs();
+  void initializer();
+  void finish();
+  void learn(example* ec);
 
 }
 

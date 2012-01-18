@@ -6,4 +6,4 @@ embodied in the content of this file are licensed under the BSD
 
 #include "gd.h"
 
-gd_vars* vw(int argc, char *argv[]);
+void vw(int argc, char *argv[]);

@@ -29,70 +29,59 @@ using namespace std;
 void adaptive_inline_train(regressor &reg, example* &ec, float update);
 void general_adaptive_train(regressor &reg, example* &ec, float update, float power_t);
 
-void* gd_thread(void *in)
+size_t gd_current_pass = 0;
+
+void learn_gd(example* ec)
 {
-  gd_thread_params* params = (gd_thread_params*) in;
-  regressor reg = params->reg;
-
-  example* ec = NULL;
-  size_t current_pass = 0;
-
-  
-  while ( true )
-    {//this is a poor man's select operation.
-      if ((ec = global.get_example()) != NULL)//semiblocking operation.
-	{
-	  assert(ec->in_use);
-	  if (ec->pass != current_pass)
-	    {
-	      if(global.span_server != "") {
-		if(global.adaptive)
-		  accumulate_weighted_avg(global.span_server, params->reg);
-		else 
-		  accumulate_avg(global.span_server, params->reg, 0);	      
-	      }
-
-	      if (global.save_per_pass)
-		sync_weights(&reg);
-	      global.eta *= global.eta_decay_rate;
-	      save_predictor(*(params->final_regressor_name), current_pass);
-	      current_pass = ec->pass;
-	    }
-	  
-	  if (!command_example(ec, params))
-	    {
-	      predict(reg,ec,*(params->vars));
-	      if (ec->eta_round != 0.)
-		{
-		  if (global.adaptive)
-		    if (params->vars->power_t == 0.5 || !global.exact_adaptive_norm)
-		      adaptive_inline_train(reg,ec,ec->eta_round);
-		    else
-		      general_adaptive_train(reg,ec,ec->eta_round,params->vars->power_t);
-		  else
-		    inline_train(reg, ec, ec->eta_round);
-		  if (global.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-		    sync_weights(&reg);
-		  
-		}
-	    }
-	  finish_example(ec);
-	}
-      else if (parser_done())
-	{
-	  sync_weights(&reg);
-	  if(global.span_server != "") {
-	    if(global.adaptive)
-	      accumulate_weighted_avg(global.span_server, params->reg);
-	    else 
-	      accumulate_avg(global.span_server, params->reg, 0);	      
-	  }
-	  return NULL;
-	}
-      else 
-	;//busywait when we have predicted on all examples but not yet trained on all.
+  assert(ec->in_use);
+  if (ec->pass != gd_current_pass)
+    {
+      if(global.span_server != "") {
+	if(global.adaptive)
+	  accumulate_weighted_avg(global.span_server, global.reg);
+	else 
+	  accumulate_avg(global.span_server, global.reg, 0);	      
+      }
+      
+      if (global.save_per_pass)
+	sync_weights(&global.reg);
+      global.eta *= global.eta_decay_rate;
+      save_predictor(global.final_regressor_name, gd_current_pass);
+      gd_current_pass = ec->pass;
     }
-  return NULL;
+  
+  if (!command_example(ec))
+    {
+      predict(global.reg,ec);
+      if (ec->eta_round != 0.)
+	{
+	  if (global.adaptive)
+	    if (global.power_t == 0.5 || !global.exact_adaptive_norm)
+	      adaptive_inline_train(global.reg,ec,ec->eta_round);
+	    else
+	      general_adaptive_train(global.reg,ec,ec->eta_round,global.power_t);
+	  else
+	    inline_train(global.reg, ec, ec->eta_round);
+	  if (global.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+	    sync_weights(&global.reg);
+	  
+	}
+    }
+}
+
+void initialize_gd()
+{
+}
+
+void finish_gd()
+{
+  sync_weights(&global.reg);
+  if(global.span_server != "") {
+    if(global.adaptive)
+      accumulate_weighted_avg(global.span_server, global.reg);
+    else 
+      accumulate_avg(global.span_server, global.reg, 0);	      
+  }
 }
 
 void sync_weights(regressor *reg) {
@@ -106,20 +95,20 @@ void sync_weights(regressor *reg) {
   global.sd->contraction = 1.;
 }
 
-bool command_example(example* ec, gd_thread_params* params) {
+bool command_example(example* ec) {
   if (ec->indices.index() > 1)
     return false;
 
   if (ec->tag.index() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
     {//save state
-      string final_regressor_name = *(params->final_regressor_name);
+      string final_regressor_name = global.final_regressor_name;
 
       if ((ec->tag).index() >= 6 && (ec->tag)[4] == '_')
 	final_regressor_name = string(ec->tag.begin+5, (ec->tag).index()-5);
 
       if (!global.quiet)
 	cerr << "saving regressor to " << final_regressor_name << endl;
-      dump_regressor(final_regressor_name, *(global.reg));
+      dump_regressor(final_regressor_name, global.reg);
 
       return true;
     }
@@ -144,7 +133,7 @@ float finalize_prediction(float ret)
 
 void finish_example(example* ec)
 {
-  global.return_example(ec);
+  return_simple_example(ec);
 }
 
 float query_decision(example*, float k);
@@ -367,7 +356,7 @@ void adaptive_inline_train(regressor &reg, example* &ec, float update)
   label_data* ld = (label_data*)ec->ld;
   weight* weights = reg.weight_vectors;
   
-  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+  float g = global.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature *f = ec->atomics[*i].begin;
@@ -422,7 +411,7 @@ void general_adaptive_train(regressor &reg, example* &ec, float update, float po
   label_data* ld = (label_data*)ec->ld;
   weight* weights = reg.weight_vectors;
   
-  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+  float g = global.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature *f = ec->atomics[*i].begin;
@@ -486,7 +475,7 @@ float compute_general_xGx(regressor &reg, example* &ec, float power_t)
 {//We must traverse the features in _precisely_ the same order as during training.
   size_t mask = global.weight_mask;
   label_data* ld = (label_data*)ec->ld;
-  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+  float g = global.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   if (g==0) return 1.;
 
   float xGx = 0.;
@@ -519,7 +508,7 @@ float compute_xGx(regressor &reg, example* &ec)
 {//We must traverse the features in _precisely_ the same order as during training.
   size_t mask = global.weight_mask;
   label_data* ld = (label_data*)ec->ld;
-  float g = reg.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+  float g = global.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   if (g==0) return 1.;
 
   float xGx = 0.;
@@ -588,7 +577,7 @@ void train(weight* weights, const v_array<feature> &features, float update)
       weights[j->weight_index] += update * j->x;
 }
 
-void local_predict(example* ec, gd_vars& vars, regressor& reg)
+void local_predict(example* ec, regressor& reg)
 {
   label_data* ld = (label_data*)ec->ld;
 
@@ -598,7 +587,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 
   if(global.active_simulation){
     float k = ec->example_t - ld->weight;
-    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/powf(k,vars.power_t));
+    ec->revert_weight = global.loss->getRevertingWeight(ec->final_prediction, global.eta/powf(k,global.power_t));
     float importance = query_decision(ec, k);
     if(importance > 0){
       global.sd->queries += 1;
@@ -617,7 +606,7 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
   ec->eta_round = 0;
   if (ld->label != FLT_MAX)
     {
-      ec->loss = reg.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+      ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
 
       if (global.training)
 	{
@@ -625,14 +614,14 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	  float norm;
 	  if (global.adaptive && global.exact_adaptive_norm) {
 	    float magx = 0.;
-	    if (vars.power_t == 0.5)
+	    if (global.power_t == 0.5)
 	      norm = compute_xGx(reg, ec);
 	    else 
-	      norm = compute_general_xGx(reg,ec, vars.power_t);
-	    magx = powf(ec->total_sum_feat_sq, 1. - vars.power_t);
+	      norm = compute_general_xGx(reg,ec, global.power_t);
+	    magx = powf(ec->total_sum_feat_sq, 1. - global.power_t);
 	    eta_t = global.eta * norm / magx;
 	  } else {
-	    eta_t = global.eta / powf(t,vars.power_t) * ld->weight;
+	    eta_t = global.eta / powf(t,global.power_t) * ld->weight;
 	    if (global.nonormalize) 
 	      {
 		norm = 1.;
@@ -641,10 +630,10 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	    else
 	      norm = ec->total_sum_feat_sq;
 	  }
-	  ec->eta_round = reg.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm) / global.sd->contraction;
+	  ec->eta_round = global.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm) / global.sd->contraction;
 
 	  if (global.reg_mode && fabs(ec->eta_round) > 1e-8) {
-	    double dev1 = reg.loss->first_derivative(ec->final_prediction, ld->label);
+	    double dev1 = global.loss->first_derivative(ec->final_prediction, ld->label);
 	    double eta_bar = (fabs(dev1) > 1e-8) ? (-ec->eta_round / dev1) : 0.0;
 	    if (fabs(dev1) > 1e-8)
 	      global.sd->contraction /= (1. + global.l2_lambda * eta_bar * norm);
@@ -653,13 +642,13 @@ void local_predict(example* ec, gd_vars& vars, regressor& reg)
 	}
     }
   else if(global.active)
-    ec->revert_weight = reg.loss->getRevertingWeight(ec->final_prediction, global.eta/powf(t,vars.power_t));
+    ec->revert_weight = global.loss->getRevertingWeight(ec->final_prediction, global.eta/powf(t,global.power_t));
 
   if (global.audit)
     print_audit_features(reg, ec);
 }
 
-void predict(regressor& r, example* ex, gd_vars& vars)
+void predict(regressor& r, example* ex)
 {
   float prediction;
   if (global.reg_mode % 2)
@@ -669,35 +658,36 @@ void predict(regressor& r, example* ex, gd_vars& vars)
 
   ex->partial_prediction += prediction;
 
-  local_predict(ex, vars,r);
+  local_predict(ex, r);
   ex->done = true;
 }
 
 // trains regressor r on one example ex.
-void train_one_example(regressor& r, example* ex, gd_vars& vars)
+void train_one_example(regressor& r, example* ex)
 {
-  predict(r,ex,vars);
+  predict(r,ex);
   label_data* ld = (label_data*) ex->ld;
   if (ld->label != FLT_MAX && global.training) 
     inline_train(r, ex, ex->eta_round);
 }
 
-pthread_t* thread;
-gd_thread_params* passers;
-
-void setup_gd(gd_thread_params t)
+void drive_gd()
 {
-  thread = (pthread_t*)calloc(1,sizeof(pthread_t));
-  passers = (gd_thread_params*)calloc(1, sizeof(gd_thread_params));
-  *passers = t;
-
-  pthread_create(thread, NULL, gd_thread, (void *) passers);
+  example* ec = NULL;
+  
+  while ( true )
+    {
+      if ((ec = get_example()) != NULL)//semiblocking operation.
+	{
+	  learn_gd(ec);
+	  finish_example(ec);
+	}
+      else if (parser_done())
+	{
+	  finish_gd();
+	  return;
+	}
+      else 
+	;//busywait when we have predicted on all examples but not yet trained on all.
+    }
 }
-
-void destroy_gd()
-{
-  pthread_join(*thread, NULL);
-  free(passers);
-  free(thread);
-}
-

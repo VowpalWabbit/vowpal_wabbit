@@ -28,21 +28,15 @@ embodied in the content of this file are licensed under the BSD
 
 using namespace std;
 
-gd_vars* vw(int argc, char *argv[])
+void vw(int argc, char *argv[])
 {
-  string final_regressor_name;
   srand48(0);
 
   parser* p = new_parser();
-  regressor regressor1;
   
-  gd_vars *vars = (gd_vars*) malloc(sizeof(gd_vars));
-
   po::options_description desc("VW options");
   
-  po::variables_map vm = parse_args(argc, argv, desc, *vars, 
-				    regressor1, p, 
-				    final_regressor_name);
+  po::variables_map vm = parse_args(argc, argv, desc, p);
   struct timeb t_start, t_end;
   ftime(&t_start);
   
@@ -57,50 +51,17 @@ gd_vars* vw(int argc, char *argv[])
       cerr.precision(5);
     }
 
-  gd_thread_params t = {vars, regressor1, &final_regressor_name};
-
   start_parser(p);
 
-  if (vm.count("sendto"))
-    {
-      setup_send();
-      destroy_send();
-    }
-  else if (vm.count("noop"))
-
-    {
-      start_noop();
-      end_noop();
-    }
-  else if (global.bfgs)
-    {
-      BFGS::setup_bfgs(t);
-      BFGS::destroy_bfgs();
-    }
-  else if (global.rank > 0)
-    {
-      setup_gd_mf(t);
-      destroy_gd_mf();
-    } 
-  else if (global.lda > 0)
-    {
-      start_lda(t);
-      end_lda();
-    }
-  else 
-    {
-      setup_gd(t);
-      destroy_gd();
-    }
+  global.driver();
 
   end_parser(p);
   
-  finalize_regressor(final_regressor_name,t.reg);
+  finalize_regressor(global.final_regressor_name,global.reg);
   finalize_source(p);
   free(p);
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   if(!global.quiet && global.span_server != "")
     cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
-  return vars;
 }
