@@ -15,7 +15,7 @@ size_t sequence_rollout           = 256;
 size_t sequence_passes_per_policy = 1;
 float  sequence_beta              = 0.5;
 size_t sequence_k                 = 2;
-float  sequence_rollout_prob      = 1.;
+//float  sequence_rollout_prob      = 1.;
 
 size_t history_length             = 1;
 size_t current_policy             = 0;
@@ -75,8 +75,8 @@ void parse_sequence_args(po::variables_map& vm, example* (**gf)(), void (**rf)(e
     sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
   if (vm.count("sequence_beta"))
     sequence_beta = vm["sequence_beta"].as<float>();
-  if (vm.count("sequence_rollout_prob"))
-    sequence_beta = vm["sequence_rollout_prob"].as<float>();
+  //  if (vm.count("sequence_rollout_prob"))
+  //    sequence_beta = vm["sequence_rollout_prob"].as<float>();
 
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
   total_number_of_policies = global.numpasses / sequence_passes_per_policy;
