@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <math.h>
 #include "io.h"
 #include "sequence.h"
@@ -14,6 +15,7 @@ float  sequence_beta              = 0.5;
 size_t sequence_k                 = 2;
 size_t history_length             = 1;
 size_t current_policy             = 0;
+size_t total_number_of_policies   = 1;
 
 uint32_t      history_constant    = 8290741;
 history       current_history     = NULL;
@@ -24,6 +26,8 @@ int*          policy_seq    = NULL;
 history*      all_histories = NULL;
 history_item* hcache        = NULL;
 float*        loss_vector   = NULL;
+
+size_t        max_string_length = 8;
 
 #define sort_hcache() qsort(hcache, sequence_k, sizeof(history_item), order_history_item)
 
@@ -72,6 +76,11 @@ void parse_sequence_args(po::variables_map& vm, example* (**gf)(), void (**rf)(e
     sequence_beta = vm["sequence_beta"].as<float>();
 
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
+  total_number_of_policies = global.numpasses / sequence_passes_per_policy;
+
+  max_string_length = max((int)(ceil( log10((float)history_length+1) )),
+                          (int)(ceil( log10((float)sequence_k+1) ))) + 1;
+
 }
 
 inline void append_history(history h, uint32_t p)
@@ -134,17 +143,30 @@ void remove_history_from_example(example* ec)
   ec->indices.decr();
 }
 
+std::string audit_feature_space("history");
+
 void add_history_to_example(example* ec, history h)
 {
   size_t v0, v;
 
   for (size_t t=1; t<=sequence_history; t++) {
-    v0 = h[history_length-t] * quadratic_constant + history_constant;
+    v0 = (h[history_length-t] * quadratic_constant + history_constant) * quadratic_constant + t + history_constant;
 
     // add the basic history features
     feature temp = {1, (uint32_t) ( v0 & global.parse_mask )};
     push(ec->atomics[history_namespace], temp);
     ec->sum_feat_sq[history_namespace] ++;
+
+    if (global.audit) {
+      audit_data a_feature = { NULL, NULL, (uint32_t)(v0 & global.parse_mask), 1., true };
+      a_feature.space = (char*)malloc_or_die(sizeof(char) * (audit_feature_space.length()+1));
+      strcpy(a_feature.space, audit_feature_space.c_str());
+
+      a_feature.feature = (char*)malloc_or_die(sizeof(char) * (5 + 2*max_string_length));
+      sprintf(a_feature.feature, "ug@%d=%d", t, h[history_length-t]);
+
+      push(ec->audit_features[history_namespace], a_feature);
+    }
 
     // add the bigram features
     if ((t > 1) && sequence_bigrams) {
@@ -154,30 +176,75 @@ void add_history_to_example(example* ec, history h)
       feature temp = {1, (uint32_t) ( v0 & global.parse_mask )};
       push(ec->atomics[history_namespace], temp);
       ec->sum_feat_sq[history_namespace] ++;
+
+      if (global.audit) {
+        audit_data a_feature = { NULL, NULL, (uint32_t)(v0 & global.parse_mask), 1., true };
+        a_feature.space = (char*)malloc_or_die(sizeof(char) * (audit_feature_space.length()+1));
+        strcpy(a_feature.space, audit_feature_space.c_str());
+
+        a_feature.feature = (char*)malloc_or_die(sizeof(char) * (6 + 3*max_string_length));
+        sprintf(a_feature.feature, "bg@%d=%d-%d", t, h[history_length-t], h[history_length-t+1]);
+
+        push(ec->audit_features[history_namespace], a_feature);
+      }
+
     }
   }
 
+  std::string fstring;
+
   if (sequence_features > 0) {
     for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
+      int feature_index = 0;
       for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++) {
+
+        if (global.audit) {
+          fstring = std::string(ec->audit_features[*i][feature_index].feature);
+          feature_index++;
+        }
+
         v = (f->weight_index + history_constant) * quadratic_constant;
 
         for (size_t t=1; t<=sequence_features; t++) {
-          v0 = h[history_length-t] + history_constant;
+          v0 = (t + 237894) * quadratic_constant + h[history_length-t] + history_constant;
           
           // add the history/feature pair
           feature temp = {1, (uint32_t) ( (v + v0) & global.parse_mask )};
           push(ec->atomics[history_namespace], temp);
           ec->sum_feat_sq[history_namespace] ++;
 
+          if (global.audit) {
+            audit_data a_feature = { NULL, NULL, (uint32_t)((v+v0) & global.parse_mask), 1., true };
+            a_feature.space = (char*)malloc_or_die(sizeof(char) * (audit_feature_space.length()+1));
+            strcpy(a_feature.space, audit_feature_space.c_str());
+
+            a_feature.feature = (char*)malloc_or_die(sizeof(char) * (7 + 2*max_string_length + fstring.length()));
+            sprintf(a_feature.feature, "ug+f@%d=%d=%s", t, h[history_length-t], fstring.c_str());
+
+            push(ec->audit_features[history_namespace], a_feature);
+          }
+
+
           // add the bigram
           if ((t > 0) && sequence_bigram_features) {
             v0 *= quadratic_constant;
-            v0 += h[history_length-1-t] + history_constant;
+            v0 += h[history_length-t+1] + history_constant;
 
             feature temp = {1, (uint32_t) ( (v + v0) & global.parse_mask )};
             push(ec->atomics[history_namespace], temp);
             ec->sum_feat_sq[history_namespace] ++;
+
+            if (global.audit) {
+              audit_data a_feature = { NULL, NULL, (uint32_t)((v+v0) & global.parse_mask), 1., true };
+              a_feature.space = (char*)malloc_or_die(sizeof(char) * (audit_feature_space.length()+1));
+              strcpy(a_feature.space, audit_feature_space.c_str());
+
+              a_feature.feature = (char*)malloc_or_die(sizeof(char) * (8 + 3*max_string_length + fstring.length()));
+              sprintf(a_feature.feature, "bg+f@%d-%d=%d=%s", t, h[history_length-t], h[history_length-t+1], fstring.c_str());
+
+              push(ec->audit_features[history_namespace], a_feature);
+            }
+
           }
         }
       }
@@ -226,12 +293,44 @@ inline void clear_history(history h)
     h[t] = 0;
 }
 
+void add_policy_offset(example *ec, size_t policy)
+{
+  size_t amount = (policy * global.length() / sequence_k / total_number_of_policies) * global.stride;
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
+    feature* end = ec->atomics[*i].end;
+    for (feature* f = ec->atomics[*i].begin; f!= end; f++)
+      f->weight_index += amount;
+  }
+  if (global.audit) {
+    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+          f->weight_index += amount;
+  }
+}
+
+void remove_policy_offset(example *ec, size_t policy)
+{
+  size_t amount = (policy * global.length() / sequence_k / total_number_of_policies) * global.stride;
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
+    feature* end = ec->atomics[*i].end;
+    for (feature* f = ec->atomics[*i].begin; f!= end; f++)
+      f->weight_index -= amount;
+  }
+  if (global.audit) {
+    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+          f->weight_index -= amount;
+  }
+}
 
 
 void generate_training_example(example *ec, size_t label, float* loss)
 {
-  // use policy current_policy
+  add_policy_offset(ec, current_policy);
   // TODO: do something
+  remove_policy_offset(ec, current_policy);
 }
 
 size_t predict(example *ec, history h, int policy)
@@ -240,7 +339,9 @@ size_t predict(example *ec, history h, int policy)
     return get_label(ec);
   } else {
     add_history_to_example(ec, h);
-    size_t yhat = 1; // TODO: predict(ec, policy);
+    add_policy_offset(ec, policy);
+    size_t yhat = 1; // TODO: predict(ec)
+    remove_policy_offset(ec, policy);
     remove_history_from_example(ec);
     return yhat;
   }
