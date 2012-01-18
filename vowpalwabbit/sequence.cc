@@ -4,6 +4,7 @@
 #include "sequence.h"
 #include "parser.h"
 #include "constant.h"
+#include "csoaa.h"
 
 size_t sequence_history           = 1;
 bool   sequence_bigrams           = false;
@@ -25,7 +26,8 @@ size_t*       pred_seq      = NULL;
 int*          policy_seq    = NULL;
 history*      all_histories = NULL;
 history_item* hcache        = NULL;
-float*        loss_vector   = NULL;
+
+v_array<float> loss_vector  = v_array<float>();
 
 size_t        max_string_length = 8;
 
@@ -326,10 +328,14 @@ void remove_policy_offset(example *ec, size_t policy)
 }
 
 
-void generate_training_example(example *ec, size_t label, float* loss)
+csoaa_data empty_costs = { v_array<float>() };
+
+void generate_training_example(example *ec, size_t label, v_array<float>costs)
 {
+  csoaa_data ld = { costs };
   add_policy_offset(ec, current_policy);
-  // TODO: do something
+  ec->ld = (void*)&ld;
+  // TODO: push this example down the stack!
   remove_policy_offset(ec, current_policy);
 }
 
@@ -340,9 +346,14 @@ size_t predict(example *ec, history h, int policy)
   } else {
     add_history_to_example(ec, h);
     add_policy_offset(ec, policy);
-    size_t yhat = 1; // TODO: predict(ec)
+
+    ec->ld = (void*)&empty_costs;
+    // TODO: make the prediction
+    size_t yhat = (size_t)ec->final_prediction;
+
     remove_policy_offset(ec, policy);
     remove_history_from_example(ec);
+
     return yhat;
   }
 }
@@ -458,9 +469,6 @@ void allocate_required_memory()
   if (hcache == NULL)
     hcache = (history_item*)malloc_or_die(sizeof(history_item) * sequence_k);
 
-  if (loss_vector == NULL)
-    loss_vector = (float*)malloc_or_die(sizeof(float) * sequence_k);
-
   if (current_history == NULL)
     current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
 }
@@ -471,7 +479,6 @@ void free_required_memory()
   free(pred_seq);        pred_seq        = NULL;
   free(policy_seq);      policy_seq      = NULL;
   free(hcache);          hcache          = NULL;
-  free(loss_vector);     loss_vector     = NULL;
   free(current_history); current_history = NULL;
 
   for (size_t i=0; i<sequence_k; i++)
@@ -603,8 +610,9 @@ NOT_REALLY_NEW:
         best_label = i;
       }
 
+    loss_vector.erase();
     for (size_t i=0; i < sequence_k; i++)
-      loss_vector[i] = hcache[i].loss - min_loss;
+      push(loss_vector, hcache[i].loss - min_loss);
 
     add_history_to_example(ec_seq[t], current_history);
     generate_training_example(ec_seq[t], min_loss, loss_vector);
