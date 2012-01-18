@@ -281,12 +281,12 @@ int hcache_all_equal()
 
 inline size_t get_label(example* ec)
 {
-  return ((OAA::oaa_data*)ec->ld)->label;
+  return ((OAA::mc_label*)ec->ld)->label;
 }
 
 inline float get_weight(example* ec)
 {
-  return ((OAA::oaa_data*)ec->ld)->weight;
+  return ((OAA::mc_label*)ec->ld)->weight;
 }
 
 inline int example_is_newline(example* ec)
@@ -376,12 +376,12 @@ size_t predict(example *ec, history h, int policy)
 
     ec->ld = (void*)&empty_costs;
     global.cs_learn(ec);
-    yhat = (size_t)ec->final_prediction;
+    yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
 
     remove_policy_offset(ec, policy);
     remove_history_from_example(ec);
   }
-  std::cerr << "predict returning " << yhat << std::endl;
+  std::cerr << "predict[" << policy << "] returning " << yhat << std::endl;
   return yhat;
 }
 
@@ -431,8 +431,9 @@ size_t read_example_last_id    = 0;
 int    read_example_ring_error = 0;
 size_t read_example_last_pass  = 0;
 int    read_example_should_warn_eof = 1;
+size_t passes_since_new_policy = 0;
 
-example* safe_get_example() {
+example* safe_get_example(int allow_past_eof) {
   if (read_example_this_loop == global.ring_size) {
     std::cerr << "warning: length of sequence at " << read_example_last_id << " exceeds ring size; breaking apart" << std::endl;
     read_example_ring_error = 1;
@@ -448,6 +449,22 @@ example* safe_get_example() {
 
   if (ec->pass != read_example_last_pass) {
     read_example_last_pass = ec->pass;
+
+    if ((!allow_past_eof) && read_example_should_warn_eof) {
+      std::cerr << "warning: sequence data does not end in empty example; please fix your data" << std::endl;
+      read_example_should_warn_eof = 0;
+    }
+
+    // we've hit the end, we may need to switch policies
+    passes_since_new_policy++;
+    if (passes_since_new_policy >= sequence_passes_per_policy) {
+      passes_since_new_policy = 0;
+      current_policy++;
+      if (current_policy > total_number_of_policies) {
+        std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
+        current_policy = total_number_of_policies;
+      }
+    }
   }
 
   return ec;
@@ -476,7 +493,7 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
     yhat = predict(ec, current_history, policy);
     std::cerr << "predict returned " << yhat << std::endl;
     append_history(current_history, yhat);
-    ec = safe_get_example();
+    ec = safe_get_example(0);
   }
 
   return ((ec != NULL) || read_example_ring_error);
@@ -527,13 +544,13 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 {
   read_example_this_loop = 0;
 
-  example *cur_ec = safe_get_example();
+  example *cur_ec = safe_get_example(1);
   if ((cur_ec == NULL) && (!read_example_ring_error))
     return 0;
 
   // skip initial newlines
   while (example_is_newline(cur_ec)) {
-    cur_ec = safe_get_example();
+    cur_ec = safe_get_example(1);
     if ((cur_ec == NULL) && (!read_example_ring_error))
       return 0;
   }
@@ -553,7 +570,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
     ec_seq[n] = cur_ec;
     n++;
-    cur_ec = safe_get_example();
+    cur_ec = safe_get_example(0);
   }
 
   if (skip_this_one)
@@ -680,28 +697,13 @@ NOT_REALLY_NEW:
 
 void drive_sequence()
 {
-  size_t passes_since_new_policy = 0;
-  
   global.cs_initialize();
   allocate_required_memory();
 
   while (true) {
-    int more_to_go = process_next_example_sequence();
-    if (!more_to_go) { // we've reached the end of the file
-      if (parser_done()) // we're done learning
-        break;
-
-      // we've hit the end, we may need to switch policies
-      passes_since_new_policy++;
-      if (passes_since_new_policy >= sequence_passes_per_policy) {
-        passes_since_new_policy = 0;
-        current_policy++;
-        if (current_policy > total_number_of_policies) {
-          std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
-          current_policy = total_number_of_policies;
-        }
-      }
-    }
+    process_next_example_sequence();
+    if (parser_done()) // we're done learning
+      break;
   }
 
   free_required_memory();
