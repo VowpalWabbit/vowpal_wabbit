@@ -337,11 +337,11 @@ void remove_policy_offset(example *ec, size_t policy)
 }
 
 
-csoaa_data empty_costs = { v_array<float>() };
+CSOAA::label empty_costs = { v_array<float>() };
 
 void generate_training_example(example *ec, history h, size_t label, v_array<float>costs)
 {
-  csoaa_data ld = { costs };
+  CSOAA::label ld = { costs };
 
   add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
