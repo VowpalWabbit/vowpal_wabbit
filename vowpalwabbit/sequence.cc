@@ -55,7 +55,7 @@ void print_history(history h)
 
 void parse_sequence_args(po::variables_map& vm)
 {
-  *(global.lp)=OAA::oaa_label;
+  *(global.lp)=OAA::mc_label_parser;
   sequence_k = vm["sequence"].as<size_t>();
 
   if (vm.count("sequence_bigrams"))

@@ -15,22 +15,22 @@ namespace OAA
   };
   
   typedef uint32_t prediction_t;
- 
-void parse_oaa_flag(size_t s);
-
-size_t read_cached_oaa_label(void* v, io_buf& cache);
-void cache_oaa_label(void* v, io_buf& cache);
-void default_oaa_label(void* v);
-void parse_oaa_label(void* v, v_array<substring>& words);
-void delete_oaa_label(void* v);
-float oaa_weight(void* v);
-float oaa_initial(void* v);
-const label_parser oaa_label = {default_oaa_label, parse_oaa_label, 
-				cache_oaa_label, read_cached_oaa_label, 
-				delete_oaa_label, get_weight, get_initial, 
-				sizeof(mc_label)};
-
-void update_indicies(example* ec, size_t amount);
+  
+  void parse_oaa_flag(size_t s);
+  
+  size_t read_cached_label(void* v, io_buf& cache);
+  void cache_label(void* v, io_buf& cache);
+  void default_label(void* v);
+  void parse_label(void* v, v_array<substring>& words);
+  void delete_label(void* v);
+  float weight(void* v);
+  float initial(void* v);
+  const label_parser mc_label_parser = {default_label, parse_label, 
+					cache_label, read_cached_label, 
+					delete_label, weight, initial, 
+					sizeof(mc_label)};
+  
+  void update_indicies(example* ec, size_t amount);
 
 }
 
