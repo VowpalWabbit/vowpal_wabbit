@@ -8,6 +8,8 @@
 
 using namespace std;
 
+namespace OAA {
+
 char* bufread_oaa_label(oaa_data* ld, char* c)
 {
   ld->label = *(uint32_t *)c;
@@ -89,15 +91,8 @@ void parse_oaa_label(void* v, v_array<substring>& words)
 }
 
 size_t k=0;
-label_data simple_temp;
-oaa_data* oaa_label_data;
 size_t increment=0;
-size_t counter = 0;
-example* current_example=NULL;
-size_t prediction = 1;
-float score = INT_MIN;
-example* (*gf)();
-void (*rf)(example*);
+size_t total_increment=0;
 
 void print_oaa_update(example *ec)
 {
@@ -116,7 +111,7 @@ void print_oaa_update(example *ec)
 	      (long int)global.sd->example_number,
 	      global.sd->weighted_examples,
 	      label_buf,
-	      (int)prediction,
+	      (int)ec->final_prediction,
 	      (long unsigned int)ec->num_features);
      
       global.sd->sum_loss_since_last_dump = 0.0;
@@ -131,7 +126,7 @@ void output_oaa_example(example* ec)
   global.sd->weighted_examples += ld->weight;
   global.sd->total_features += ec->num_features;
   size_t loss = 1;
-  if (ld->label == prediction)
+  if (ld->label == ec->final_prediction)
     loss = 0;
   global.sd->sum_loss += loss;
   global.sd->sum_loss_since_last_dump += loss;
@@ -139,42 +134,12 @@ void output_oaa_example(example* ec)
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
       int f = global.final_prediction_sink[i];
-      global.print(f, prediction, 0, ec->tag);
+      global.print(f, ec->final_prediction, 0, ec->tag);
     }
   
   global.sd->example_number++;
 
   print_oaa_update(ec);
-}
-
-void return_oaa_example(example* ec)
-{
-  if (ec==NULL)
-    {
-      free_example(ec);
-      current_example = NULL;
-      counter = 1;
-      return;
-    }
-  if (ec->partial_prediction > score)
-    {
-      score = ec->partial_prediction;
-      prediction = counter;
-    }
-  if (counter == k)
-    {
-      ec->ld = oaa_label_data;
-      output_oaa_example(ec);
-      ec->final_prediction = prediction;
-      rf(ec);
-      current_example = NULL;
-      counter = 1;
-    }
-  else
-    {
-      counter++;
-      current_example = ec;
-    }
 }
 
 void update_indicies(example* ec, size_t amount)
@@ -194,43 +159,68 @@ void update_indicies(example* ec, size_t amount)
     }
 }
 
-example* get_oaa_example()
+void mc_learn(example* ec)
 {
-  if (current_example == NULL) {
-    current_example=gf();
-  }
-  if (current_example == NULL)
-    return NULL;
-  if (counter == 1)
-    {
-      oaa_label_data = (oaa_data*)current_example->ld;
-      if (oaa_label_data->label > k && oaa_label_data->label != (uint32_t)-1)
-	cerr << "warning: label " << oaa_label_data->label << " is greater than " << k << endl;
-      prediction = 1;
-      score = INT_MIN;
-    }
-  else
-    current_example->partial_prediction = 0.;
-  if (oaa_label_data->label == counter)
-    simple_temp.label = 1;
-  else
-    simple_temp.label = -1;
+  oaa_data* oaa_label_data = (oaa_data*)ec->ld;
+  size_t prediction = 1;
+  float score = INT_MIN;
   
-  simple_temp.weight = oaa_label_data->weight;
-  current_example->ld = &simple_temp;
-  if (counter != 1)
-    update_indicies(current_example, increment);
-  return current_example;
+  if (oaa_label_data->label > k && oaa_label_data->label != (uint32_t)-1)
+    cerr << "warning: label " << oaa_label_data->label << " is greater than " << k << endl;
+  label_data simple_temp;
+
+  for (size_t i = 1; i <= k; i++)
+    {
+      if (oaa_label_data->label == i)
+	simple_temp.label = 1;
+      else
+	simple_temp.label = -1;
+      simple_temp.weight = oaa_label_data->weight;
+      ec->ld = &simple_temp;
+      if (i != 0)
+	update_indicies(ec, increment);
+      global.learn(ec);
+      if (ec->partial_prediction > score)
+	{
+	  score = ec->partial_prediction;
+	  prediction = i;
+	}
+      ec->partial_prediction = 0.;
+    }
+  ec->ld = oaa_label_data;
+  ec->final_prediction = prediction;
+  update_indicies(ec, -total_increment);
+  output_oaa_example(ec);
+}
+
+void initialize()
+{
+}
+
+void drive_oaa()
+{
+  example* ec = NULL;
+  while ( true )
+    {
+      if ((ec = get_example()) != NULL)//semiblocking operation.
+	mc_learn(ec);
+      else if (parser_done())
+	return;
+      else 
+	;
+    }
 }
 
 void parse_oaa_flag(size_t s, example* (*get_function)(), void (*return_function)(example*) )
 {
   *(global.lp) = oaa_label;
-  global.get_example = get_oaa_example;
-  gf = get_function;
-  global.return_example = return_oaa_example;
-  rf = return_function;
   k = s;
-  counter = 1;
+  global.driver = drive_oaa;
+  global.mc_initialize = initialize;
+  global.mc_learn = mc_learn;
+  global.mc_finish = initialize;
   increment = (global.length()/k) * global.stride;
+  total_increment = increment*(k-1);
+}
+
 }

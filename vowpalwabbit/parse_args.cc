@@ -157,8 +157,6 @@ po::variables_map parse_args(int argc, char *argv[],
   global.sd->max_label = 1.;
   global.lp = (label_parser*)malloc(sizeof(label_parser));
   *(global.lp) = simple_label;
-  global.get_example = get_simple_example;
-  global.return_example = return_simple_example;
   global.reg_mode = 0;
   global.local_example_number = 0;
   global.bfgs = false;
@@ -169,6 +167,10 @@ po::variables_map parse_args(int argc, char *argv[],
   global.daemon = false;
 
   global.driver = drive_gd;
+  global.initialize = initialize_gd;
+  global.learn = learn_gd;
+  global.finish = finish_gd;
+
   global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
   global.raw_prediction = -1;
   global.print = print_result;
@@ -236,6 +238,10 @@ po::variables_map parse_args(int argc, char *argv[],
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     global.driver = BFGS::drive_bfgs;
+    global.initialize = BFGS::initializer;
+    global.finish = BFGS::finish;
+    global.learn = BFGS::learn;
+
     global.bfgs = true;
     global.stride = 4;
     if (vm.count("hessian_on") || global.m==0) {
@@ -446,7 +452,7 @@ po::variables_map parse_args(int argc, char *argv[],
     parse_sequence_args(vm, &gf, &rf);
 
   if(vm.count("oaa"))
-    parse_oaa_flag(vm["oaa"].as<size_t>(), gf, rf);
+    OAA::parse_oaa_flag(vm["oaa"].as<size_t>(), gf, rf);
 
   if(vm.count("csoaa"))
     parse_csoaa_flag(vm["csoaa"].as<size_t>(), gf, rf);

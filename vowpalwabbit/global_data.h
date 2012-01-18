@@ -46,9 +46,20 @@ struct global_data {
   shared_data* sd;
 
   label_parser* lp;
-  example* (*get_example)();
-  void (*return_example)(example*);
+
   void (*driver)();
+
+  void (*initialize)();
+  void (*learn)(example*);
+  void (*finish)();
+
+  void (*cs_initialize)();
+  void (*cs_learn)(example*);
+  void (*cs_finish)();
+
+  void (*mc_initialize)();
+  void (*mc_learn)(example*);
+  void (*mc_finish)();
 
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;

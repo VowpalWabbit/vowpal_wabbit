@@ -666,7 +666,7 @@ int lastj = 0, origin = 0;
 
 bool output_regularizer = false;
 
-void bfgs_learn(example* ec)
+void learn(example* ec)
 {
   assert(ec->in_use);
   
@@ -788,7 +788,7 @@ void finish()
   free(alpha);
 }
 
-void bfgs_initializer()
+void initializer()
 {
   mem_stride = (m==0) ? CG_EXTRA : 2*m;
   mem = (float*) malloc(sizeof(float)*global.length()*(mem_stride));
@@ -818,12 +818,12 @@ void bfgs_initializer()
 
 void drive_bfgs()
 {
-  bfgs_initializer();
+  initializer();
   example* ec = NULL;
   while ( true )
     {
-      if ((ec = global.get_example()) != NULL)//semiblocking operation.
-	bfgs_learn(ec);
+      if ((ec = get_example()) != NULL)//semiblocking operation.
+	learn(ec);
      else if (parser_done())
 	{
 	  finish();

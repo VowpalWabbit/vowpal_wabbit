@@ -525,7 +525,7 @@ void drive_lda()
       for (size_t d = 0; d < batch_size; d++)
 	{
           push(doc_lengths, 0);
-	  if ((ec = global.get_example()) != NULL)//semiblocking operation.
+	  if ((ec = get_example()) != NULL)//semiblocking operation.
 	    {
 	      push(examples, ec);
               for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {

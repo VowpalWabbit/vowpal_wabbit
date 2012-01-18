@@ -31,7 +31,7 @@ void general_adaptive_train(regressor &reg, example* &ec, float update, float po
 
 size_t gd_current_pass = 0;
 
-void learn(example* ec)
+void learn_gd(example* ec)
 {
   assert(ec->in_use);
   if (ec->pass != gd_current_pass)
@@ -69,7 +69,11 @@ void learn(example* ec)
     }
 }
 
-void finish_learning()
+void initialize_gd()
+{
+}
+
+void finish_gd()
 {
   sync_weights(&global.reg);
   if(global.span_server != "") {
@@ -129,7 +133,7 @@ float finalize_prediction(float ret)
 
 void finish_example(example* ec)
 {
-  global.return_example(ec);
+  return_simple_example(ec);
 }
 
 float query_decision(example*, float k);
@@ -673,14 +677,14 @@ void drive_gd()
   
   while ( true )
     {
-      if ((ec = global.get_example()) != NULL)//semiblocking operation.
+      if ((ec = get_example()) != NULL)//semiblocking operation.
 	{
-	  learn(ec);
+	  learn_gd(ec);
 	  finish_example(ec);
 	}
       else if (parser_done())
 	{
-	  finish_learning();
+	  finish_gd();
 	  return;
 	}
       else 
