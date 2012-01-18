@@ -16,6 +16,7 @@ size_t sequence_rollout           = 256;
 size_t sequence_passes_per_policy = 1;
 float  sequence_beta              = 0.5;
 size_t sequence_k                 = 2;
+size_t sequence_gamma             = 1.;
 //float  sequence_rollout_prob      = 1.;
 
 size_t history_length             = 1;
@@ -35,11 +36,13 @@ v_array<float> loss_vector  = v_array<float>();
 
 size_t        max_string_length = 8;
 
+using namespace std;
+
 void* malloc_or_die(size_t size)
 {
   void* data = malloc(size);
   if (data == NULL) {
-    std::cerr << "internal error: memory allocation failed; dying!" << std::endl;
+    cerr << "internal error: memory allocation failed; dying!" << endl;
     exit(-1);
   }
   return data;
@@ -47,10 +50,10 @@ void* malloc_or_die(size_t size)
 
 void print_history(history h)
 {
-  std::cerr << "[ ";
-  for (size_t t=0; t<sequence_history; t++)
-    std::cerr << h[t] << " ";
-  std::cerr << "]" << std::endl;
+  cerr << "[ ";
+  for (size_t t=0; t<history_length; t++)
+    cerr << h[t] << " ";
+  cerr << "]" << endl;
 }
 
 void parse_sequence_args(po::variables_map& vm)
@@ -63,6 +66,8 @@ void parse_sequence_args(po::variables_map& vm)
   if (vm.count("sequence_bigram_features"))
     sequence_bigrams = true;
 
+  if (vm.count("sequence_history"))
+    sequence_history = vm["sequence_history"].as<size_t>();
   if (vm.count("sequence_features"))
     sequence_features = vm["sequence_features"].as<size_t>();
   if (vm.count("sequence_rollout"))
@@ -71,6 +76,8 @@ void parse_sequence_args(po::variables_map& vm)
     sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
   if (vm.count("sequence_beta"))
     sequence_beta = vm["sequence_beta"].as<float>();
+  if (vm.count("sequence_gamma"))
+    sequence_beta = vm["sequence_gamma"].as<float>();
   //  if (vm.count("sequence_rollout_prob"))
   //    sequence_beta = vm["sequence_rollout_prob"].as<float>();
 
@@ -84,12 +91,12 @@ void parse_sequence_args(po::variables_map& vm)
 
 inline void append_history(history h, uint32_t p)
 {
-  std::cerr << "append_history(h, " << ((size_t)p) << "); hl=" << history_length << std::endl << "  h = ";
+  cerr << "append_history(h, " << ((size_t)p) << "); history_length=" << history_length << endl << "  h = ";
   print_history(h);
   for (size_t i=0; i<history_length-1; i++)
     h[i] = h[i+1];
   h[history_length-1] = (size_t)p;
-    std::cerr << "  h'= ";
+    cerr << "  h'= ";
     print_history(h);
 }
 
@@ -131,12 +138,12 @@ inline int cache_item_same_as_before(size_t i)
 void remove_history_from_example(example* ec)
 {
   if (ec->indices.index() == 0) {
-    std::cerr << "internal error (bug): trying to remove history, but there are no namespaces!" << std::endl;
+    cerr << "internal error (bug): trying to remove history, but there are no namespaces!" << endl;
     return;
   }
 
   if (ec->indices.last() != history_namespace) {
-    std::cerr << "internal error (bug): trying to remove history, but either it wasn't added, or something was added after and not removed!" << std::endl;
+    cerr << "internal error (bug): trying to remove history, but either it wasn't added, or something was added after and not removed!" << endl;
     return;
   }
 
@@ -144,10 +151,12 @@ void remove_history_from_example(example* ec)
   ec->total_sum_feat_sq -= ec->sum_feat_sq[history_namespace];
   ec->sum_feat_sq[history_namespace] = 0;
   ec->atomics[history_namespace].erase();
+  if (global.audit)
+    ec->audit_features[history_namespace].erase();
   ec->indices.decr();
 }
 
-std::string audit_feature_space("history");
+string audit_feature_space("history");
 
 
 void add_history_to_example(example* ec, history h)
@@ -190,7 +199,7 @@ void add_history_to_example(example* ec, history h)
         strcpy(a_feature.space, audit_feature_space.c_str());
 
         a_feature.feature = (char*)malloc_or_die(sizeof(char) * (6 + 3*max_string_length));
-        sprintf(a_feature.feature, "bg@%d=%d-%d", t, h[history_length-t], h[history_length-t+1]);
+        sprintf(a_feature.feature, "bg@%d=%d-%d", t-1, h[history_length-t], h[history_length-t+1]);
 
         push(ec->audit_features[history_namespace], a_feature);
       }
@@ -198,7 +207,7 @@ void add_history_to_example(example* ec, history h)
     }
   }
 
-  std::string fstring;
+  string fstring;
 
   if (sequence_features > 0) {
     for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
@@ -206,7 +215,12 @@ void add_history_to_example(example* ec, history h)
       for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++) {
 
         if (global.audit) {
-          fstring = std::string(ec->audit_features[*i][feature_index].feature);
+          if (!ec->audit_features[*i].index() >= feature_index) {
+            char buf[32];
+            sprintf(buf, "{%d}", f->weight_index);
+            fstring = string(buf);
+          } else 
+            fstring = string(ec->audit_features[*i][feature_index].feature);
           feature_index++;
         }
 
@@ -247,7 +261,7 @@ void add_history_to_example(example* ec, history h)
               strcpy(a_feature.space, audit_feature_space.c_str());
 
               a_feature.feature = (char*)malloc_or_die(sizeof(char) * (8 + 3*max_string_length + fstring.length()));
-              sprintf(a_feature.feature, "bg+f@%d-%d=%d=%s", t, h[history_length-t], h[history_length-t+1], fstring.c_str());
+              sprintf(a_feature.feature, "bg+f@%d-%d=%d=%s", t-1, h[history_length-t], h[history_length-t+1], fstring.c_str());
 
               push(ec->audit_features[history_namespace], a_feature);
             }
@@ -279,15 +293,19 @@ int hcache_all_equal()
   return 1;
 }
 
+/*
 inline size_t get_label(example* ec)
 {
   return ((OAA::mc_label*)ec->ld)->label;
 }
-
-inline float get_weight(example* ec)
+*/
+ /*
+inline float hal_get_weight(example* ec)
 {
+  //return 1;
   return ((OAA::mc_label*)ec->ld)->weight;
 }
+ */
 
 inline int example_is_newline(example* ec)
 {
@@ -299,7 +317,7 @@ inline int example_is_newline(example* ec)
 
 inline int example_is_test(example* ec)
 {
-  return (get_label(ec) == (uint32_t)-1);
+  return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
 }
 
 inline void clear_history(history h)
@@ -353,11 +371,11 @@ void generate_training_example(example *ec, history h, size_t label, v_array<flo
   ec->ld = (void*)&ld;
   global.cs_learn(ec);
 
-  std::cerr << "generating example, costs = [";
+  cerr << "generating example, costs = [";
   for (float*c=costs.begin; c!=costs.end; c++)
-    std::cerr << " " << *c;
-  std::cerr << " ]" << std::endl;
-  std::cerr << "h = ";
+    cerr << " " << *c;
+  cerr << " ]" << endl;
+  cerr << "h = ";
   print_history(h);
   print_audit_features(global.reg, ec);
 
@@ -365,11 +383,11 @@ void generate_training_example(example *ec, history h, size_t label, v_array<flo
   remove_history_from_example(ec);
 }
 
-size_t predict(example *ec, history h, int policy)
+size_t predict(example *ec, history h, int policy, size_t truth)
 {
   size_t yhat;
   if (policy == -1) // this is the optimal policy!
-    yhat = get_label(ec);
+    yhat = truth;
   else {
     add_history_to_example(ec, h);
     add_policy_offset(ec, policy);
@@ -381,7 +399,7 @@ size_t predict(example *ec, history h, int policy)
     remove_policy_offset(ec, policy);
     remove_history_from_example(ec);
   }
-  std::cerr << "predict[" << policy << "] returning " << yhat << std::endl;
+  cerr << "predict[" << policy << "] returning " << yhat << endl;
   return yhat;
 }
 
@@ -391,7 +409,7 @@ int random_policy(int allow_optimal, int allow_current)
     if (allow_current) return (int)current_policy;
     if (current_policy > 0) return (((int)current_policy)-1);
     if (allow_optimal) return -1;
-    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
+    cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
     return (int)current_policy;
   }
 
@@ -399,12 +417,12 @@ int random_policy(int allow_optimal, int allow_current)
   int pid = -1;
 
   if (num_valid_policies == 0) {
-    std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
+    cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
     return (int)current_policy;
   } else if (num_valid_policies == 1) {
     pid = 0;
   } else {
-    float r = rand();
+    float r = drand48();
     pid = 0;
     if (r > sequence_beta) {
       r -= sequence_beta;
@@ -433,10 +451,39 @@ size_t read_example_last_pass  = 0;
 int    read_example_should_warn_eof = 1;
 size_t passes_since_new_policy = 0;
 
+void print_update(bool wasKnown, long unsigned int seq_num_features)
+{
+  //  if (!(global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)) 
+  //    return;
+
+  char label_buf[32];
+  if (!wasKnown)
+    sprintf(label_buf,"unknown");
+  else
+    sprintf(label_buf,"known  ");
+
+  //  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %5i... %8lu\n",
+  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s [%2i%2i%2i%2i%2i%2i] %8lu\n",
+          global.sd->sum_loss/global.sd->weighted_examples,
+          global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
+          (long int)global.sd->example_number,
+          global.sd->weighted_examples,
+          label_buf,
+          //pred_seq[0],
+          pred_seq[0],pred_seq[1],pred_seq[2],pred_seq[3],pred_seq[4],pred_seq[5],
+          seq_num_features);
+     
+  global.sd->sum_loss_since_last_dump = 0.0;
+  global.sd->old_weighted_examples = global.sd->weighted_examples;
+  global.sd->dump_interval *= 2;
+}
+
 example* safe_get_example(int allow_past_eof) {
+  cerr << "read_example_this_loop=" << read_example_this_loop << ", ring_size=" << global.ring_size << endl;
   if (read_example_this_loop == global.ring_size) {
-    std::cerr << "warning: length of sequence at " << read_example_last_id << " exceeds ring size; breaking apart" << std::endl;
+    cerr << "warning: length of sequence at " << read_example_last_id << " exceeds ring size; breaking apart" << endl;
     read_example_ring_error = 1;
+    read_example_this_loop = 0;
     return NULL;
   }
   read_example_ring_error = 0;
@@ -451,7 +498,7 @@ example* safe_get_example(int allow_past_eof) {
     read_example_last_pass = ec->pass;
 
     if ((!allow_past_eof) && read_example_should_warn_eof) {
-      std::cerr << "warning: sequence data does not end in empty example; please fix your data" << std::endl;
+      cerr << "warning: sequence data does not end in empty example; please fix your data" << endl;
       read_example_should_warn_eof = 0;
     }
 
@@ -461,7 +508,7 @@ example* safe_get_example(int allow_past_eof) {
       passes_since_new_policy = 0;
       current_policy++;
       if (current_policy > total_number_of_policies) {
-        std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
+        cerr << "internal error (bug): too many policies; not advancing" << endl;
         current_policy = total_number_of_policies;
       }
     }
@@ -474,7 +521,8 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
 {
   size_t yhat = 0;
   int warned = 0;
-  CSOAA::label* old_cost_label;
+  int seq_num_features = 0;
+  OAA::mc_label* old_label;
 
   if (current_history == NULL)
     current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
@@ -483,23 +531,30 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
 
   while ((ec != NULL) && (! example_is_newline(ec))) {
     int policy = random_policy(0, 0);
+    old_label = (OAA::mc_label*)ec->ld;
+
+    seq_num_features += ec->num_features;
+    global.sd->weighted_examples += old_label->weight;
+    global.sd->total_features += ec->num_features;
 
     if (! example_is_test(ec)) {
       if (!warned) {
-        std::cerr << "warning: mix of train and test data in sequence prediction at " << ec->example_counter << "; assuming all test" << std::endl;
+        cerr << "warning: mix of train and test data in sequence prediction at " << ec->example_counter << "; assuming all test" << endl;
         warned = 1;
       }
     }
 
-    old_cost_label = (CSOAA::label*)ec->ld;
-    yhat = predict(ec, current_history, policy);
-    ec->ld = old_cost_label;
+    yhat = predict(ec, current_history, policy, -1);
+    ec->ld = old_label;
 
-    std::cerr << "predict returned " << yhat << std::endl;
+    cerr << "predict returned " << yhat << endl;
     append_history(current_history, yhat);
 
     ec = safe_get_example(0);
   }
+
+  global.sd->example_number++;
+  print_update(0, seq_num_features);
 
   return ((ec != NULL) || read_example_ring_error);
 }
@@ -547,16 +602,16 @@ void free_required_memory()
 
 int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 {
-  read_example_this_loop = 0;
+  int seq_num_features = 0;
 
   example *cur_ec = safe_get_example(1);
-  if ((cur_ec == NULL) && (!read_example_ring_error))
+  if ((cur_ec == NULL)) // && (!read_example_ring_error))
     return 0;
 
   // skip initial newlines
   while (example_is_newline(cur_ec)) {
     cur_ec = safe_get_example(1);
-    if ((cur_ec == NULL) && (!read_example_ring_error))
+    if (cur_ec == NULL) // && (!read_example_ring_error))
       return 0;
   }
 
@@ -564,12 +619,13 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
     return run_test(cur_ec);
 
   // we know we're training
+  cerr << "=======================================================================================" << endl;
 
   size_t n = 0;
   int skip_this_one = 0;
   while ((cur_ec != NULL) && (! example_is_newline(cur_ec))) {
     if (example_is_test(cur_ec) && !skip_this_one) {
-      std::cerr << "warning: mix of train and test data in sequence prediction at " << cur_ec->example_counter << "; skipping" << std::endl;
+      cerr << "warning: mix of train and test data in sequence prediction at " << cur_ec->example_counter << "; skipping" << endl;
       skip_this_one = 1;
     }
 
@@ -583,26 +639,46 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
   // we've now read in all the examples up to n, time to pick some
   // policies; policy -1 is optimal policy
-  v_array<CSOAA::label*> old_cost_labels;
-  for (size_t i=0; i<n; i++) {
-    policy_seq[i] = random_policy(1, 0);
-    pred_seq[i] = -1;
-    push(old_cost_labels, (CSOAA::label*)ec_seq[i]->ld);
+  clear_history(current_history);
+  v_array<OAA::mc_label*> true_labels;
+  for (size_t t=0; t<n; t++) {
+    policy_seq[t] = (current_policy == 0) ? 0 : random_policy(0, 0);
+    push(true_labels, (OAA::mc_label*)ec_seq[t]->ld);
+
+    seq_num_features += ec_seq[t]->num_features;
+    global.sd->weighted_examples += true_labels[t]->weight;
+    global.sd->total_features += ec_seq[t]->num_features;
+
+    // predict everything and accumulate loss
+    pred_seq[t] = predict(ec_seq[t], current_history, policy_seq[t], true_labels[t]->label);
+    append_history(current_history, pred_seq[t]);
+    if (pred_seq[t] != true_labels[t]->label) { // wrong
+      global.sd->sum_loss += true_labels[t]->weight;
+      global.sd->sum_loss_since_last_dump += true_labels[t]->weight;
+    }
+
+    // allow us to use the optimal policy
+    if (random_policy(1,0) == -1)
+      policy_seq[t] = -1;
   }
+
+  global.sd->example_number++;
+  print_update(1, seq_num_features);
+
+  for (size_t t=0; t<n; t++) {
+    pred_seq[t] = -1;
+  }
+
 
   // start learning
   clear_history(current_history);
-  std::cerr << "current_history ==> ";
-  print_history(current_history);
+  pred_seq[0] = predict(ec_seq[0], current_history, policy_seq[0], true_labels[0]->label);
 
   for (size_t i=0; i<sequence_k; i++) {
     clear_history(all_histories[i]);
     hcache[i].predictions = NULL;
     hcache[i].same = 0;
   }
-
-  // predict the first one
-  pred_seq[0] = predict(ec_seq[0], current_history, policy_seq[0]);
 
   size_t last_new = -1;
   int prediction_matches_history = 0;
@@ -612,15 +688,17 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
       clear_history(all_histories[i]);
       hcache[i].predictions = all_histories[i];
       hcache[i].predictions_hash = 0;
-      hcache[i].loss = get_weight(ec_seq[t]) * (float)((i+1) != get_label(ec_seq[t]));
+      hcache[i].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
       hcache[i].same = 0;
-      std::cerr << "initialize adding " << (i+1) << " / sequence_k=" << sequence_k << std::endl;
+      cerr << "initialize t=" << t << ": adding " << (i+1) << " / sequence_k=" << sequence_k << ", lab=" << true_labels[t]->label << ", loss=" << hcache[i].loss << endl;
       append_history_item(hcache[i], i+1);
     }
 
     size_t end_pos = (n < t+1+sequence_rollout) ? n : (t+1+sequence_rollout);
-    std::cerr << "t=" << t << ", end_pos=" << end_pos << std::endl;
+    cerr << "t=" << t << ", end_pos=" << end_pos << endl;
+    float gamma = 1;
     for (size_t t2=t+1; t2<end_pos; t2++) {
+      gamma *= sequence_gamma;
       //      sort_hcache_and_mark_equality();
       //      if (hcache_all_equal())
       //        break;
@@ -629,19 +707,19 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
         if (hcache[i].same) {
           // copy from the previous cache
           if (last_new < 0) {
-            std::cerr << "internal error (bug): sequence histories match, but no new items; skipping" << std::endl;
+            cerr << "internal error (bug): sequence histories match, but no new items; skipping" << endl;
             goto NOT_REALLY_NEW;
           }
 
           prediction_matches_history  = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
           if (t2 == t+1) {
-            std::cerr << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << std::endl;
+            cerr << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << endl;
             print_history(hcache[i].predictions);
           }
 
           hcache[i].predictions       = hcache[last_new].predictions;
           hcache[i].predictions_hash  = hcache[last_new].predictions_hash;
-          hcache[i].loss             += get_weight(ec_seq[t2]) * (float)(last_prediction(hcache[last_new].predictions) != get_label(ec_seq[t2]));
+          hcache[i].loss             += gamma * true_labels[t2]->weight * (float)(last_prediction(hcache[last_new].predictions) != true_labels[t2]->label);
         } else {
 NOT_REALLY_NEW:
           // compute new
@@ -649,25 +727,25 @@ NOT_REALLY_NEW:
 
           prediction_matches_history = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
           if (t2 == t+1) {
-            std::cerr << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << std::endl;
+            cerr << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << endl;
             print_history(hcache[i].predictions);
           }
 
-          size_t yhat = predict(ec_seq[t2], hcache[i].predictions, policy_seq[t2]);
+          size_t yhat = predict(ec_seq[t2], hcache[i].predictions, policy_seq[t2], true_labels[t2]->label);
           append_history_item(hcache[i], yhat);
-          hcache[i].loss += get_weight(ec_seq[t2]) * (float)(yhat != get_label(ec_seq[t2]));
+          hcache[i].loss += gamma * true_labels[t2]->weight * (float)(yhat != true_labels[t2]->label);
         }
         hcache[i].same = 0;
 
         if (prediction_matches_history) { // this is what we would have predicted
           pred_seq[t+1] = last_prediction(hcache[i].predictions);
-          std::cerr << "setting pred_seq[" << (t+1) << "] to " << last_prediction(hcache[i].predictions) << std::endl;
+          cerr << "setting pred_seq[" << (t+1) << "] to " << last_prediction(hcache[i].predictions) << endl;
         }
       }
     }
 
     if ((pred_seq[t] <= 0) | (pred_seq[t] > sequence_k)) {
-      std::cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << std::endl;
+      cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
       pred_seq[t] = 1;
     }
 
@@ -681,7 +759,7 @@ NOT_REALLY_NEW:
         best_label = i;
       }
 
-    std::cerr << "sequence_k = " << sequence_k << std::endl;
+    cerr << "sequence_k = " << sequence_k << endl;
     loss_vector.erase();
     for (size_t i=0; i < sequence_k; i++)
       push(loss_vector, hcache[i].loss - min_loss);
@@ -689,18 +767,18 @@ NOT_REALLY_NEW:
     generate_training_example(ec_seq[t], current_history, min_loss, loss_vector);
 
     // update state
-    std::cerr << "pred_seq[" << t << "] = " << pred_seq[t] << std::endl;
+    cerr << "pred_seq[" << t << "] = " << pred_seq[t] << endl;
     append_history(current_history, pred_seq[t]);
-    std::cerr << "current_history ==> ";
+    cerr << "current_history ==> ";
     print_history(current_history);
     if ((sequence_rollout == 0) && (t < n-1))
-      pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1]);
+      pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1], true_labels[t+1]->label);
 
   }
 
   for (size_t i=0; i<n; i++)
-    ec_seq[i]->ld = (void*)old_cost_labels[i];
-  free(old_cost_labels.begin);
+    ec_seq[i]->ld = (void*)true_labels[i];
+  free(true_labels.begin);
 
   return 1;
 }
@@ -711,6 +789,7 @@ void drive_sequence()
   global.cs_initialize();
   allocate_required_memory();
 
+  read_example_this_loop = 0;
   while (true) {
     process_next_example_sequence();
     if (parser_done()) // we're done learning
@@ -719,5 +798,5 @@ void drive_sequence()
 
   free_required_memory();
   global.cs_finish();
-  std::cerr << "done!" << std::endl;
+  cerr << "done!" << endl;
 }

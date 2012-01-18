@@ -196,7 +196,7 @@ void output_example(example* ec)
     ec->ld = cost_label;
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
     OAA::update_indicies(ec, -total_increment);
-    output_example(ec);
+    //output_example(ec);
   }
 
   void initialize()

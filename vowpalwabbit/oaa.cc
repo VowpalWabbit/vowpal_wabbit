@@ -191,7 +191,7 @@ void learn(example* ec)
   ec->ld = mc_label_data;
   *(prediction_t*)&(ec->final_prediction) = prediction;
   update_indicies(ec, -total_increment);
-  output_example(ec);
+  //output_example(ec);
 }
 
 void initialize()
