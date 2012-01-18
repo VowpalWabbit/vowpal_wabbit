@@ -79,7 +79,7 @@ void parse_sequence_args(po::variables_map& vm, example* (**gf)(), void (**rf)(e
   //    sequence_beta = vm["sequence_rollout_prob"].as<float>();
 
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
-  total_number_of_policies = global.numpasses / sequence_passes_per_policy;
+  total_number_of_policies = (int)ceil(((float)global.numpasses) / ((float)sequence_passes_per_policy));
 
   max_string_length = max((int)(ceil( log10((float)history_length+1) )),
                           (int)(ceil( log10((float)sequence_k+1) ))) + 1;
@@ -627,7 +627,7 @@ NOT_REALLY_NEW:
 
     generate_training_example(ec_seq[t], current_history, min_loss, loss_vector);
 
-    // udpate state
+    // update state
     append_history(current_history, pred_seq[t]);
     if ((sequence_rollout == 0) && (t < n-1))
       pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1]);
