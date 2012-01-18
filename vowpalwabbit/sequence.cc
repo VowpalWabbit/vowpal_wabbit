@@ -337,13 +337,15 @@ void remove_policy_offset(example *ec, size_t policy)
 
 csoaa_data empty_costs = { v_array<float>() };
 
-void generate_training_example(example *ec, size_t label, v_array<float>costs)
+void generate_training_example(example *ec, history h, size_t label, v_array<float>costs)
 {
   csoaa_data ld = { costs };
+  add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
   ec->ld = (void*)&ld;
   // TODO: push this example down the stack!
   remove_policy_offset(ec, current_policy);
+  remove_history_from_example(ec);
 }
 
 size_t predict(example *ec, history h, int policy)
@@ -587,7 +589,6 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
           hcache[i].predictions       = hcache[last_new].predictions;
           hcache[i].predictions_hash  = hcache[last_new].predictions_hash;
           hcache[i].loss             += get_weight(ec_seq[t2]) * (float)(last_prediction(hcache[last_new].predictions) != get_label(ec_seq[t2]));
-          hcache[i].same              = 1;
         } else {
 NOT_REALLY_NEW:
           // compute new
@@ -597,8 +598,8 @@ NOT_REALLY_NEW:
           size_t yhat = predict(ec_seq[t2], hcache[i].predictions, policy_seq[t2]);
           append_history_item(hcache[i], yhat);
           hcache[i].loss += get_weight(ec_seq[t2]) * (float)(yhat != get_label(ec_seq[t2]));
-          hcache[i].same = 0;
         }
+        hcache[i].same = 0;
 
         if (prediction_matches_history) // this is what we would have predicted
           pred_seq[t+1] = last_prediction(hcache[i].predictions);
@@ -624,9 +625,7 @@ NOT_REALLY_NEW:
     for (size_t i=0; i < sequence_k; i++)
       push(loss_vector, hcache[i].loss - min_loss);
 
-    add_history_to_example(ec_seq[t], current_history);
-    generate_training_example(ec_seq[t], min_loss, loss_vector);
-    remove_history_from_example(ec_seq[t]);
+    generate_training_example(ec_seq[t], current_history, min_loss, loss_vector);
 
     // udpate state
     append_history(current_history, pred_seq[t]);
