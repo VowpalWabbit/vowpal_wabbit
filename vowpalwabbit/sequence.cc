@@ -206,7 +206,7 @@ void add_history_to_example(example* ec, history h)
         v = (f->weight_index + history_constant) * quadratic_constant;
 
         for (size_t t=1; t<=sequence_features; t++) {
-          v0 = (t + 237894) * quadratic_constant + h[history_length-t] + history_constant;
+          v0 = (t + constant) * quadratic_constant + h[history_length-t] + history_constant;
           
           // add the history/feature pair
           feature temp = {1, (uint32_t) ( (v + v0) & global.parse_mask )};
