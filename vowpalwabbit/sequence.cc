@@ -31,8 +31,6 @@ v_array<float> loss_vector  = v_array<float>();
 
 size_t        max_string_length = 8;
 
-#define sort_hcache() qsort(hcache, sequence_k, sizeof(history_item), order_history_item)
-
 void* malloc_or_die(size_t size)
 {
   void* data = malloc(size);
@@ -100,6 +98,7 @@ void append_history_item(history_item hi, uint32_t p)
   for (size_t i=0; i<history_length; i++)
     hash = (hash + hi.predictions[i]) * history_constant;
   hi.predictions_hash = hash;
+  hi.same = 0;
 }
 
 inline size_t last_prediction(history h)
@@ -258,10 +257,18 @@ void add_history_to_example(example* ec, history h)
   ec->num_features += ec->atomics[history_namespace].index();
 }
 
+
+void sort_hcache_and_mark_equality()
+{
+  qsort(hcache, sequence_k, sizeof(history_item), order_history_item);
+  for (size_t i=1; i<sequence_k; i++)
+    hcache[i].same = (order_history_item(&hcache[i], &hcache[i-1]) != 0);
+}
+
 int hcache_all_equal()
 {
   for (size_t i=1; i<sequence_k; i++)
-    if (order_history_item(&hcache[i], &hcache[i-1]) != 0)
+    if (!hcache[i].same)
       return 0;
   return 1;
 }
@@ -542,6 +549,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
   for (size_t i=0; i<sequence_k; i++) {
     clear_history(all_histories[i]);
     hcache[i].predictions = NULL;
+    hcache[i].same = 0;
   }
 
   // predict the first one
@@ -556,15 +564,18 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
       hcache[i].predictions = all_histories[i];
       hcache[i].predictions_hash = 0;
       hcache[i].loss = get_weight(ec_seq[t]) * (float)(i != get_label(ec_seq[t]));
+      hcache[i].same = 0;
       append_history_item(hcache[i], i);
     }
 
     size_t end_pos = (n < t+1+sequence_rollout) ? n : (t+1+sequence_rollout);
     for (size_t t2=t+1; t2<end_pos; t2++) {
-      sort_hcache();
+      sort_hcache_and_mark_equality();
+      if (hcache_all_equal())
+        break;
       for (size_t i=0; i < sequence_k; i++) {
         prediction_matches_history = 0;
-        if (cache_item_same_as_before(i)) {
+        if (hcache[i].same) {
           // copy from the previous cache
           if (last_new < 0) {
             std::cerr << "internal error (bug): sequence histories match, but no new items; skipping" << std::endl;
@@ -576,6 +587,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
           hcache[i].predictions       = hcache[last_new].predictions;
           hcache[i].predictions_hash  = hcache[last_new].predictions_hash;
           hcache[i].loss             += get_weight(ec_seq[t2]) * (float)(last_prediction(hcache[last_new].predictions) != get_label(ec_seq[t2]));
+          hcache[i].same              = 1;
         } else {
 NOT_REALLY_NEW:
           // compute new
@@ -585,14 +597,12 @@ NOT_REALLY_NEW:
           size_t yhat = predict(ec_seq[t2], hcache[i].predictions, policy_seq[t2]);
           append_history_item(hcache[i], yhat);
           hcache[i].loss += get_weight(ec_seq[t2]) * (float)(yhat != get_label(ec_seq[t2]));
+          hcache[i].same = 0;
         }
 
         if (prediction_matches_history) // this is what we would have predicted
           pred_seq[t+1] = last_prediction(hcache[i].predictions);
       }
-
-      if (hcache_all_equal())
-        break;
     }
 
     if (pred_seq[t] < 0) {
