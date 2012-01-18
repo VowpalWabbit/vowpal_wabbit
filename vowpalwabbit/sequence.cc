@@ -151,8 +151,16 @@ void remove_history_from_example(example* ec)
   ec->total_sum_feat_sq -= ec->sum_feat_sq[history_namespace];
   ec->sum_feat_sq[history_namespace] = 0;
   ec->atomics[history_namespace].erase();
-  if (global.audit)
+  if (global.audit) {
+    if (ec->audit_features[history_namespace].begin != ec->audit_features[history_namespace].end) {
+      for (audit_data *f = ec->audit_features[history_namespace].begin; f != ec->audit_features[history_namespace].end; f++) {
+        free(f->space);
+        free(f->feature);
+      }
+    }
+
     ec->audit_features[history_namespace].erase();
+  }
   ec->indices.decr();
 }
 
