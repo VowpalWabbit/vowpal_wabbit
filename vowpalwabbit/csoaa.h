@@ -6,22 +6,25 @@
 #include "global_data.h"
 #include "example.h"
 
-struct csoaa_data {
+namespace CSOAA {
+
+struct label {
   v_array<float> costs;
 };
 
-void parse_csoaa_flag(size_t s, example* (*get_function)(), void (*return_function)(example*) );
+void parse_flag(size_t s);
 
-size_t read_cached_csoaa_label(void* v, io_buf& cache);
-void cache_csoaa_label(void* v, io_buf& cache);
-void default_csoaa_label(void* v);
-void parse_csoaa_label(void* v, v_array<substring>& words);
-void delete_csoaa_label(void* v);
-float csoaa_weight(void* v);
-float csoaa_initial(void* v);
-const label_parser csoaa_label = {default_csoaa_label, parse_csoaa_label, 
-				cache_csoaa_label, read_cached_csoaa_label, 
-				delete_csoaa_label, get_weight, get_initial, 
-				sizeof(csoaa_data)};
+size_t read_cached_label(void* v, io_buf& cache);
+void cache_label(void* v, io_buf& cache);
+void default_label(void* v);
+void parse_label(void* v, v_array<substring>& words);
+void delete_label(void* v);
+float weight(void* v);
+float initial(void* v);
+const label_parser csoaa_label = {default_label, parse_label, 
+				cache_label, read_cached_label, 
+				delete_label, get_weight, get_initial, 
+				sizeof(label)};
 
+}
 #endif

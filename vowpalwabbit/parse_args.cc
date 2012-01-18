@@ -442,22 +442,8 @@ po::variables_map parse_args(int argc, char *argv[],
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<double>();
 
-  example* (*gf)() = get_example;
-  void (*rf)(example*) = free_example;
-  
   if (vm.count("noop"))
     global.driver = drive_noop;
-  
-  if(vm.count("sequence"))
-    parse_sequence_args(vm, &gf, &rf);
-
-  if(vm.count("oaa"))
-    OAA::parse_oaa_flag(vm["oaa"].as<size_t>(), gf, rf);
-
-  if(vm.count("csoaa"))
-    parse_csoaa_flag(vm["csoaa"].as<size_t>(), gf, rf);
-  else if (vm.count("sequence"))
-    parse_csoaa_flag(vm["sequence"].as<size_t>(), gf, rf);
   
   if (global.rank != 0) {
     global.driver = drive_gd_mf;
@@ -549,6 +535,17 @@ po::variables_map parse_args(int argc, char *argv[],
       if (global.reg_mode > 1)
 	cerr << "using l2 regularization" << endl;
     }
+
+  if(vm.count("oaa"))
+    OAA::parse_oaa_flag(vm["oaa"].as<size_t>());
+
+  if(vm.count("csoaa"))
+    CSOAA::parse_flag(vm["csoaa"].as<size_t>());
+  else if (vm.count("sequence"))
+    CSOAA::parse_flag(vm["sequence"].as<size_t>());
+
+  if(vm.count("sequence"))
+    parse_sequence_args(vm);
 
   return vm;
 }

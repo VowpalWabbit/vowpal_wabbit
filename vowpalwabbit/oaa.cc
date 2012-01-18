@@ -159,7 +159,7 @@ void update_indicies(example* ec, size_t amount)
     }
 }
 
-void mc_learn(example* ec)
+void learn(example* ec)
 {
   oaa_data* oaa_label_data = (oaa_data*)ec->ld;
   size_t prediction = 1;
@@ -195,30 +195,40 @@ void mc_learn(example* ec)
 
 void initialize()
 {
+  global.initialize();
+}
+
+void finalize()
+{
+  global.finish();
 }
 
 void drive_oaa()
 {
   example* ec = NULL;
+  initialize();
   while ( true )
     {
       if ((ec = get_example()) != NULL)//semiblocking operation.
-	mc_learn(ec);
+	learn(ec);
       else if (parser_done())
-	return;
+	{
+	  finalize();
+	  return;
+	}
       else 
 	;
     }
 }
 
-void parse_oaa_flag(size_t s, example* (*get_function)(), void (*return_function)(example*) )
+void parse_oaa_flag(size_t s)
 {
   *(global.lp) = oaa_label;
   k = s;
   global.driver = drive_oaa;
   global.mc_initialize = initialize;
-  global.mc_learn = mc_learn;
-  global.mc_finish = initialize;
+  global.mc_learn = learn;
+  global.mc_finish = finalize;
   increment = (global.length()/k) * global.stride;
   total_increment = increment*(k-1);
 }
