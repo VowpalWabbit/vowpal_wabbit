@@ -101,7 +101,7 @@ void parse_label(void* v, v_array<substring>& words)
     }
 
   for (size_t i = 0; i < words.index(); i++)
-    push(ld->costs, float_of_substring(words[0]));
+    push(ld->costs, float_of_substring(words[i]));
 }
 
 void print_update(example *ec)
@@ -121,7 +121,7 @@ void print_update(example *ec)
 	      (long int)global.sd->example_number,
 	      global.sd->weighted_examples,
 	      label_buf,
-	      (int)ec->final_prediction,
+	      *(OAA::prediction_t*)&ec->final_prediction,
 	      (long unsigned int)ec->num_features);
      
       global.sd->sum_loss_since_last_dump = 0.0;
@@ -138,7 +138,7 @@ void output_example(example* ec)
   float loss = 0.;
   if (ld->costs.index() == k)
     {//need to compute exact loss
-      float chosen_loss = ld->costs[ec->final_prediction];
+      float chosen_loss = ld->costs[*(OAA::prediction_t*)&ec->final_prediction -1];
       float min = INT_MAX;
       for (size_t i = 0; i < k; i++)
 	{
@@ -154,7 +154,7 @@ void output_example(example* ec)
   for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
     {
       int f = global.final_prediction_sink[i];
-      global.print(f, ec->final_prediction, 0, ec->tag);
+      global.print(f, *(OAA::prediction_t*)&ec->final_prediction, 0, ec->tag);
     }
   
   global.sd->example_number++;
@@ -171,9 +171,10 @@ void output_example(example* ec)
     for (size_t i = 1; i <= k; i++)
       {
 	label_data simple_temp;
+	simple_temp.initial = 0.;
 	if (cost_label->costs.index() == k)
 	  {
-	    simple_temp.label = cost_label->costs[i];
+	    simple_temp.label = cost_label->costs[i-1];
 	    simple_temp.weight = 1.;
 	  }
 	else
@@ -184,16 +185,16 @@ void output_example(example* ec)
 	ec->ld = &simple_temp;
 	if (i != 1)
 	  OAA::update_indicies(ec, increment);
+	ec->partial_prediction = 0.;
 	global.learn(ec);
 	if (ec->partial_prediction < score)
 	  {
 	    score = ec->partial_prediction;
 	    prediction = i;
 	  }
-	ec->partial_prediction = 0.;
       }
     ec->ld = cost_label;
-    ec->final_prediction = prediction;
+    *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
     OAA::update_indicies(ec, -total_increment);
     output_example(ec);
   }
