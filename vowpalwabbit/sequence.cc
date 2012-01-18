@@ -118,14 +118,18 @@ inline size_t last_prediction(history h)
 
 int order_history_item(const void* a, const void* b)
 {
-  int j = ((history_item*)a)->predictions_hash - ((history_item*)b)->predictions_hash;
-  if (j != 0)
-    return j;
+  if (((history_item*)a)->predictions_hash < ((history_item*)b)->predictions_hash)
+    return -1;
+  else if (((history_item*)a)->predictions_hash < ((history_item*)b)->predictions_hash)
+    return  1;
   else
     for (size_t i=history_length-1; i>=0; i--) {
-      j = ((history_item*)a)->predictions[i] - ((history_item*)b)->predictions[i];
-      if (j != 0)
-        return j;
+      if (((history_item*)a)->predictions[i] < ((history_item*)b)->predictions[i])
+        return -1;
+      else if (((history_item*)a)->predictions[i] > ((history_item*)b)->predictions[i])
+        return  1;
+      else
+        return 0;
     }
   return 0;
 }
@@ -289,8 +293,14 @@ void add_history_to_example(example* ec, history h)
 void sort_hcache_and_mark_equality()
 {
   qsort(hcache, sequence_k, sizeof(history_item), order_history_item);
-  for (size_t i=1; i<sequence_k; i++)
-    hcache[i].same = (order_history_item(&hcache[i], &hcache[i-1]) != 0);
+  hcache[0].same = 0;
+  for (size_t i=1; i<sequence_k; i++) {
+    int order = order_history_item(&hcache[i], &hcache[i-1]);
+    hcache[i].same = (order == 0);
+    cerr << ">> checking sameness " << i << " is " << hcache[i].same << " (order = " << order << ")" << endl;
+    print_history(hcache[i-1].predictions);
+    print_history(hcache[i].predictions);
+  }
 }
 
 int hcache_all_equal()
@@ -707,9 +717,9 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
     float gamma = 1;
     for (size_t t2=t+1; t2<end_pos; t2++) {
       gamma *= sequence_gamma;
-      //      sort_hcache_and_mark_equality();
-      //      if (hcache_all_equal())
-      //        break;
+      sort_hcache_and_mark_equality();
+      if (hcache_all_equal())
+        break;
       for (size_t i=0; i < sequence_k; i++) {
         prediction_matches_history = 0;
         if (hcache[i].same) {
