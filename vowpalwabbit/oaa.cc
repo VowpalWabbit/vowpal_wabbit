@@ -10,7 +10,7 @@ using namespace std;
 
 namespace OAA {
 
-char* bufread_oaa_label(mc_label* ld, char* c)
+char* bufread_label(mc_label* ld, char* c)
 {
   ld->label = *(uint32_t *)c;
   c += sizeof(ld->label);
@@ -19,30 +19,30 @@ char* bufread_oaa_label(mc_label* ld, char* c)
   return c;
 }
 
-size_t read_cached_oaa_label(void* v, io_buf& cache)
+size_t read_cached_label(void* v, io_buf& cache)
 {
   mc_label* ld = (mc_label*) v;
   char *c;
   size_t total = sizeof(ld->label)+sizeof(ld->weight);
   if (buf_read(cache, c, total) < total) 
     return 0;
-  c = bufread_oaa_label(ld,c);
+  c = bufread_label(ld,c);
 
   return total;
 }
 
-float oaa_weight(void* v)
+float weight(void* v)
 {
   mc_label* ld = (mc_label*) v;
   return ld->weight;
 }
 
-float oaa_initial(void* v)
+float initial(void* v)
 {
   return 0.;
 }
 
-char* bufcache_oaa_label(mc_label* ld, char* c)
+char* bufcache_label(mc_label* ld, char* c)
 {
   *(uint32_t *)c = ld->label;
   c += sizeof(ld->label);
@@ -51,26 +51,26 @@ char* bufcache_oaa_label(mc_label* ld, char* c)
   return c;
 }
 
-void cache_oaa_label(void* v, io_buf& cache)
+void cache_label(void* v, io_buf& cache)
 {
   char *c;
   mc_label* ld = (mc_label*) v;
   buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight));
-  c = bufcache_oaa_label(ld,c);
+  c = bufcache_label(ld,c);
 }
 
-void default_oaa_label(void* v)
+void default_label(void* v)
 {
   mc_label* ld = (mc_label*) v;
   ld->label = -1;
   ld->weight = 1.;
 }
 
-void delete_oaa_label(void* v)
+void delete_label(void* v)
 {
 }
 
-void parse_oaa_label(void* v, v_array<substring>& words)
+void parse_label(void* v, v_array<substring>& words)
 {
   mc_label* ld = (mc_label*)v;
 
@@ -94,7 +94,7 @@ size_t k=0;
 size_t increment=0;
 size_t total_increment=0;
 
-void print_oaa_update(example *ec)
+void print_update(example *ec)
 {
   if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
     {
@@ -120,7 +120,7 @@ void print_oaa_update(example *ec)
     }
 }
 
-void output_oaa_example(example* ec)
+void output_example(example* ec)
 {
   mc_label* ld = (mc_label*)ec->ld;
   global.sd->weighted_examples += ld->weight;
@@ -139,7 +139,7 @@ void output_oaa_example(example* ec)
   
   global.sd->example_number++;
 
-  print_oaa_update(ec);
+  print_update(ec);
 }
 
 void update_indicies(example* ec, size_t amount)
@@ -161,21 +161,22 @@ void update_indicies(example* ec, size_t amount)
 
 void learn(example* ec)
 {
-  mc_label* oaa_label_data = (mc_label*)ec->ld;
+  mc_label* mc_label_data = (mc_label*)ec->ld;
   size_t prediction = 1;
   float score = INT_MIN;
   
-  if (oaa_label_data->label > k && oaa_label_data->label != (uint32_t)-1)
-    cerr << "warning: label " << oaa_label_data->label << " is greater than " << k << endl;
-  label_data simple_temp;
-
+  if (mc_label_data->label > k && mc_label_data->label != (uint32_t)-1)
+    cerr << "warning: label " << mc_label_data->label << " is greater than " << k << endl;
+  
   for (size_t i = 1; i <= k; i++)
     {
-      if (oaa_label_data->label == i)
+      label_data simple_temp;
+      simple_temp.initial = 0.;
+      if (mc_label_data->label == i)
 	simple_temp.label = 1;
       else
 	simple_temp.label = -1;
-      simple_temp.weight = oaa_label_data->weight;
+      simple_temp.weight = mc_label_data->weight;
       ec->ld = &simple_temp;
       if (i != 0)
 	update_indicies(ec, increment);
@@ -187,10 +188,10 @@ void learn(example* ec)
 	}
       ec->partial_prediction = 0.;
     }
-  ec->ld = oaa_label_data;
+  ec->ld = mc_label_data;
   *(prediction_t*)&(ec->final_prediction) = prediction;
   update_indicies(ec, -total_increment);
-  output_oaa_example(ec);
+  output_example(ec);
 }
 
 void initialize()
@@ -223,7 +224,7 @@ void drive_oaa()
 
 void parse_oaa_flag(size_t s)
 {
-  *(global.lp) = oaa_label;
+  *(global.lp) = mc_label_parser;
   k = s;
   global.driver = drive_oaa;
   global.mc_initialize = initialize;
