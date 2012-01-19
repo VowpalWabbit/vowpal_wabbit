@@ -1,3 +1,35 @@
+/*
+This is an implementation of the Searn algorithm, specialized to
+sequence labeling.  It is based on:
+
+  @article{daume09searn,
+    author =       {Hal {Daum\'e III} and John Langford and Daniel Marcu},
+    title =        {Search-based Structured Prediction},
+    year =         {2009},
+    booktitle =    {Machine Learning Journal (MLJ)},
+    abstract =     {
+      We present Searn, an algorithm for integrating search and
+      learning to solve complex structured prediction problems such
+      as those that occur in natural language, speech, computational
+      biology, and vision.  Searn is a meta-algorithm that transforms
+      these complex problems into simple classification problems to which
+      any binary classifier may be applied.  Unlike current algorithms for
+      structured learning that require decomposition of both the loss
+      function and the feature functions over the predicted structure,
+      Searn is able to learn prediction functions for any loss
+      function and any class of features.  Moreover, Searn comes
+      with a strong, natural theoretical guarantee: good performance on the
+      derived classification problems implies good performance on the
+      structured prediction problem.
+    },
+    keywords = {sp nlp ml},
+    url = {http://pub.hal3.name/#daume09searn}
+  }
+
+It was initially implemented by Hal Daume III, while visiting Yahoo!
+Email questions/comments to me@hal3.name.
+*/
+
 #include <iostream>
 #include <stdio.h>
 #include <math.h>
