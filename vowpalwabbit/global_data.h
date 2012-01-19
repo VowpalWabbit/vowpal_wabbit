@@ -56,6 +56,7 @@ struct global_data {
   void (*cs_initialize)();
   void (*cs_learn)(example*);
   void (*cs_finish)();
+  uint32_t k;
 
   void (*mc_initialize)();
   void (*mc_learn)(example*);
@@ -164,4 +165,3 @@ extern pthread_mutex_t output_lock;
 extern pthread_cond_t output_done;
 
 #endif
-extern std::string test;

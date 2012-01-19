@@ -826,7 +826,7 @@ void drive_bfgs()
           learn(ec);
           finish_example(ec);
         }
-     else if (parser_done())
+      else if (parser_done())
 	{
 	  finish();
 	  return;

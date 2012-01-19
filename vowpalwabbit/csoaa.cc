@@ -86,7 +86,6 @@ void delete_label(void* v)
     free (ld->costs.begin);
 }
 
-size_t k=0;
 size_t increment=0;
 size_t total_increment=0;
 
@@ -94,10 +93,10 @@ void parse_label(void* v, v_array<substring>& words)
 {
   label* ld = (label*)v;
 
-  if(words.index() != 0 && words.index() != k)
+  if(words.index() != 0 && words.index() != global.k)
     {
       cerr << "malformed example!\n";
-      cerr << "#costs = " << words.index() << " but " << k << " or 0 required" << endl;
+      cerr << "#costs = " << words.index() << " but " << global.k << " or 0 required" << endl;
     }
 
   for (size_t i = 0; i < words.index(); i++)
@@ -136,11 +135,11 @@ void output_example(example* ec)
   global.sd->weighted_examples += 1.;
   global.sd->total_features += ec->num_features;
   float loss = 0.;
-  if (ld->costs.index() == k)
+  if (ld->costs.index() == global.k)
     {//need to compute exact loss
       float chosen_loss = ld->costs[*(OAA::prediction_t*)&ec->final_prediction -1];
       float min = INT_MAX;
-      for (size_t i = 0; i < k; i++)
+      for (size_t i = 0; i < global.k; i++)
 	{
 	  if (ld->costs[i] < min)
 	    min = ld->costs[i];
@@ -168,11 +167,11 @@ void output_example(example* ec)
     float prediction = 1;
     float score = INT_MAX;
     
-    for (size_t i = 1; i <= k; i++)
+    for (size_t i = 1; i <= global.k; i++)
       {
 	label_data simple_temp;
 	simple_temp.initial = 0.;
-	if (cost_label->costs.index() == k)
+	if (cost_label->costs.index() == global.k)
 	  {
 	    simple_temp.label = cost_label->costs[i-1];
 	    simple_temp.weight = 1.;
@@ -229,14 +228,14 @@ void drive_csoaa()
 
 void parse_flag(size_t s)
 {
-  *(global.lp) = csoaa_label;
-  k = s;
+  *(global.lp) = cs_label_parser;
+  global.k = s;
   global.driver = drive_csoaa;
   global.cs_initialize = initialize;
   global.cs_learn = learn;
   global.cs_finish = finalize;
-  increment = (global.length()/k) * global.stride;
-  total_increment = increment*(k-1);
+  increment = (global.length()/global.k) * global.stride;
+  total_increment = increment*(global.k-1);
 }
 
 }
