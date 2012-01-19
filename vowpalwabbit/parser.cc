@@ -839,7 +839,8 @@ void end_parser(parser* pf)
 	{
 	  if (examples[i].atomics[j].begin != examples[i].atomics[j].end_array)
 	    free(examples[i].atomics[j].begin);
-	  if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end)
+
+	  if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end_array)
 	    {
 	      for (audit_data* temp = examples[i].audit_features[j].begin; 
 		  temp != examples[i].audit_features[j].end; temp++)
