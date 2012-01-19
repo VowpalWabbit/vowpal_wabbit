@@ -755,7 +755,6 @@ void learn(example* ec)
     {
       update_preconditioner(global.reg,ec);//w[3]
     }
-  finish_example(ec);
 }
 
 void finish()
@@ -822,8 +821,11 @@ void drive_bfgs()
   example* ec = NULL;
   while ( true )
     {
-      if ((ec = get_example()) != NULL)//semiblocking operation.
-	learn(ec);
+      if ((ec = get_example()) != NULL) //semiblocking operation.
+        { 
+          learn(ec);
+          finish_example(ec);
+        }
      else if (parser_done())
 	{
 	  finish();
