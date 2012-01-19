@@ -12,6 +12,8 @@
 bool OPTIMIZE_SHARED_HISTORIES    = 1;
 bool PRINT_UPDATE_EVERY_EXAMPLE   = 0;
 
+#define PRINT_LEN 21
+
 size_t sequence_history           = 1;
 bool   sequence_bigrams           = false;
 size_t sequence_features          = 0;
@@ -35,6 +37,7 @@ size_t*       pred_seq      = NULL;
 int*          policy_seq    = NULL;
 history*      all_histories = NULL;
 history_item* hcache        = NULL;
+v_array<OAA::mc_label*> true_labels = v_array<OAA::mc_label*>();
 
 v_array<float> loss_vector  = v_array<float>();
 
@@ -141,7 +144,11 @@ void free_required_memory()
     free(all_histories[i]);
 
   free(all_histories);   all_histories   = NULL;
+
+  true_labels.erase();
+  free(true_labels.begin);
 }
+
 
 /********************************************************************************************
  *** OUTPUTTING FUNCTIONS
@@ -163,27 +170,44 @@ size_t read_example_last_pass  = 0;
 int    read_example_should_warn_eof = 1;
 size_t passes_since_new_policy = 0;
 
+
 void print_update(bool wasKnown, long unsigned int seq_num_features)
 {
   if (!(global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)) {
     if (!PRINT_UPDATE_EVERY_EXAMPLE) return;
   }
 
-  char label_buf[32];
-  if (!wasKnown)
-    sprintf(label_buf,"unknown");
-  else
-    sprintf(label_buf,"known  ");
+  char true_label[PRINT_LEN];
+  char pred_label[PRINT_LEN];
+  for (size_t i=0; i<PRINT_LEN-1; i++) {
+    true_label[i] = ' ';
+    pred_label[i] = ' ';
+  }
+  true_label[PRINT_LEN-1] = 0;
+  pred_label[PRINT_LEN-1] = 0;
+
+  int num_len = (int)ceil(log10f((float)sequence_k)+1);
+  int pos = 0;
+  int i = 0;
+  while (pos < PRINT_LEN-num_len-1) {
+    if (true_labels.begin+i == true_labels.end) { break; }
+    int numspr = sprintf(true_label+pos, "%d", true_labels[i]->label);
+    true_label[pos+numspr] = ' ';
+    numspr = sprintf(pred_label+pos, "%d", pred_seq[i]);
+    pred_label[pos+numspr] = ' ';
+
+    pos += num_len + 1;
+    i++;
+  }
 
   //  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %5i... %8lu\n",
-  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s [%2i%2i%2i%2i%2i%2i] %8lu\n",
+  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu\n",
           global.sd->sum_loss/global.sd->weighted_examples,
           global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
           (long int)global.sd->example_number,
           global.sd->weighted_examples,
-          label_buf,
-          //pred_seq[0],
-          pred_seq[0],pred_seq[1],pred_seq[2],pred_seq[3],pred_seq[4],pred_seq[5],
+          true_label,
+          pred_label,
           seq_num_features);
      
   global.sd->sum_loss_since_last_dump = 0.0;
@@ -710,7 +734,7 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
   // we've now read in all the examples up to n, time to pick some
   // policies; policy -1 is optimal policy
   clear_history(current_history);
-  v_array<OAA::mc_label*> true_labels;
+  true_labels.erase();
   for (size_t t=0; t<n; t++) {
     policy_seq[t] = (current_policy == 0) ? 0 : random_policy(0, 0);
     push(true_labels, (OAA::mc_label*)ec_seq[t]->ld);
@@ -735,9 +759,14 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
   global.sd->example_number++;
   print_update(1, seq_num_features);
 
+  bool all_policies_optimal = true;
+  //clog << "policy_seq = [ ";
   for (size_t t=0; t<n; t++) {
     pred_seq[t] = -1;
+    if (policy_seq[t] >= 0) all_policies_optimal = false;
+    //clog << policy_seq[t] << " ";
   }
+  //clog << "]" << endl;
 
 
   // start learning
@@ -767,6 +796,8 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
     }
 
     size_t end_pos = (n < t+1+sequence_rollout) ? n : (t+1+sequence_rollout);
+    // special case first iteration
+    //if (all_policies_optimal) end_pos = t+1;
     //clog << "t=" << t << ", end_pos=" << end_pos << endl;
     float gamma = 1;
     for (size_t t2=t+1; t2<end_pos; t2++) {
@@ -859,9 +890,6 @@ NOT_REALLY_NEW:
   }
   if (cur_ec != NULL)
     free_example(cur_ec);
-
-  free(true_labels.begin);
-
 
   return ret_val;
 }
