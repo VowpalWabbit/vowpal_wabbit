@@ -52,7 +52,7 @@ struct history_item {
 };
 
 bool OPTIMIZE_SHARED_HISTORIES    = 1;
-bool PRINT_UPDATE_EVERY_EXAMPLE   = 0;
+bool PRINT_UPDATE_EVERY_EXAMPLE   = 1;
 
 #define PRINT_LEN 21
 
@@ -586,9 +586,10 @@ void generate_training_example(example *ec, history h, v_array<float>costs)
   add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
 
-  // clog << "costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]" << endl; simple_print_example_features(ec);
+  clog << "before train: costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]\t"; simple_print_example_features(ec);
   ec->ld = (void*)&ld;
   global.cs_learn(ec);
+  clog << " after train: costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]\t"; simple_print_example_features(ec);
 
   remove_history_from_example(ec);
   remove_policy_offset(ec, current_policy);
@@ -604,8 +605,10 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     add_policy_offset(ec, policy);
 
     ec->ld = (void*)&empty_costs;
+    clog << "before test: "; simple_print_example_features(ec);
     global.cs_learn(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
+    clog << " after test: " << yhat << endl;
 
     remove_history_from_example(ec);
     remove_policy_offset(ec, policy);
@@ -787,6 +790,7 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
   }
 
   // start learning
+  clog << "===================================================================" << endl;
   clear_history(current_history);
   pred_seq[0] = predict(ec_seq[0], current_history, policy_seq[0], true_labels[0]->label);
 
