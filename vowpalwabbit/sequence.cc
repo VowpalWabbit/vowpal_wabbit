@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdio.h>
 #include <math.h>
 #include "gd.h"
@@ -7,6 +8,8 @@
 #include "constant.h"
 #include "oaa.h"
 #include "csoaa.h"
+
+bool OPTIMIZE_SHARED_HISTORIES    = 1;
 
 size_t sequence_history           = 1;
 bool   sequence_bigrams           = false;
@@ -50,10 +53,11 @@ void* malloc_or_die(size_t size)
 
 void print_history(history h)
 {
-  cerr << "[ ";
-  for (size_t t=0; t<history_length; t++)
-    cerr << h[t] << " ";
-  cerr << "]" << endl;
+  //clog << "[ ";
+  for (size_t t=0; t<history_length; t++) {
+    //clog << h[t] << " ";
+  }
+  //clog << "]" << endl;
 }
 
 void parse_sequence_args(po::variables_map& vm)
@@ -91,12 +95,12 @@ void parse_sequence_args(po::variables_map& vm)
 
 inline void append_history(history h, uint32_t p)
 {
-  cerr << "append_history(h, " << ((size_t)p) << "); history_length=" << history_length << endl << "  h = ";
+  //clog << "append_history(h, " << ((size_t)p) << "); history_length=" << history_length << endl << "  h = ";
   print_history(h);
   for (size_t i=0; i<history_length-1; i++)
     h[i] = h[i+1];
   h[history_length-1] = (size_t)p;
-    cerr << "  h'= ";
+    //clog << "  h'= ";
     print_history(h);
 }
 
@@ -297,7 +301,7 @@ void sort_hcache_and_mark_equality()
   for (size_t i=1; i<sequence_k; i++) {
     int order = order_history_item(&hcache[i], &hcache[i-1]);
     hcache[i].same = (order == 0);
-    cerr << ">> checking sameness " << i << " is " << hcache[i].same << " (order = " << order << ")" << endl;
+    //clog << ">> checking sameness " << i << " is " << hcache[i].same << " (order = " << order << ")" << endl;
     print_history(hcache[i-1].predictions);
     print_history(hcache[i].predictions);
   }
@@ -310,20 +314,6 @@ int hcache_all_equal()
       return 0;
   return 1;
 }
-
-/*
-inline size_t get_label(example* ec)
-{
-  return ((OAA::mc_label*)ec->ld)->label;
-}
-*/
- /*
-inline float hal_get_weight(example* ec)
-{
-  //return 1;
-  return ((OAA::mc_label*)ec->ld)->weight;
-}
- */
 
 inline int example_is_newline(example* ec)
 {
@@ -379,6 +369,7 @@ void remove_policy_offset(example *ec, size_t policy)
 
 CSOAA::label empty_costs = { v_array<float>() };
 
+
 void generate_training_example(example *ec, history h, size_t label, v_array<float>costs)
 {
   CSOAA::label ld = { costs };
@@ -389,13 +380,13 @@ void generate_training_example(example *ec, history h, size_t label, v_array<flo
   ec->ld = (void*)&ld;
   global.cs_learn(ec);
 
-  cerr << "generating example, costs = [";
+  //clog << "generating example, costs = [";
   for (float*c=costs.begin; c!=costs.end; c++)
-    cerr << " " << *c;
-  cerr << " ]" << endl;
-  cerr << "h = ";
+    //clog << " " << *c;
+  //clog << " ]" << endl;
+  //clog << "h = ";
   print_history(h);
-  print_audit_features(global.reg, ec);
+  //clog_print_audit_features(ec);
 
   remove_policy_offset(ec, current_policy);
   remove_history_from_example(ec);
@@ -417,7 +408,7 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     remove_policy_offset(ec, policy);
     remove_history_from_example(ec);
   }
-  cerr << "predict[" << policy << "] returning " << yhat << endl;
+  //clog << "predict[" << policy << "] returning " << yhat << endl;
   return yhat;
 }
 
@@ -471,8 +462,8 @@ size_t passes_since_new_policy = 0;
 
 void print_update(bool wasKnown, long unsigned int seq_num_features)
 {
-  //  if (!(global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)) 
-  //    return;
+  if (!(global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)) 
+    return;
 
   char label_buf[32];
   if (!wasKnown)
@@ -496,8 +487,10 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
   global.sd->dump_interval *= 2;
 }
 
+bool warned_about_class_overage = false;
+
 example* safe_get_example(int allow_past_eof) {
-  cerr << "read_example_this_loop=" << read_example_this_loop << ", ring_size=" << global.ring_size << endl;
+  //clog << "read_example_this_loop=" << read_example_this_loop << ", ring_size=" << global.ring_size << endl;
   if (read_example_this_loop == global.ring_size) {
     cerr << "warning: length of sequence at " << read_example_last_id << " exceeds ring size; breaking apart" << endl;
     read_example_ring_error = 1;
@@ -530,6 +523,15 @@ example* safe_get_example(int allow_past_eof) {
         current_policy = total_number_of_policies;
       }
     }
+  }
+
+  size_t y = ((OAA::mc_label*)ec->ld)->label;
+  if (y > sequence_k) {
+    if (!warned_about_class_overage) {
+      cerr << "warning: specified " << sequence_k << " classes, but found class " << y << "; replacing with " << sequence_k << endl;
+      warned_about_class_overage = true;
+    }
+    ((OAA::mc_label*)ec->ld)->label = sequence_k;
   }
 
   return ec;
@@ -565,7 +567,7 @@ int run_test(example* ec)  // returns 0 if eof, otherwise returns 1
     yhat = predict(ec, current_history, policy, -1);
     ec->ld = old_label;
 
-    cerr << "predict returned " << yhat << endl;
+    //clog << "predict returned " << yhat << endl;
     append_history(current_history, yhat);
 
     ec = safe_get_example(0);
@@ -641,7 +643,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
     return run_test(cur_ec);
 
   // we know we're training
-  cerr << "=======================================================================================" << endl;
+  //clog << "=======================================================================================" << endl;
 
   size_t n = 0;
   int skip_this_one = 0;
@@ -714,21 +716,23 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
       hcache[i].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
       hcache[i].same = 0;
       hcache[i].original_label = i;
-      cerr << "initialize t=" << t << ": adding " << (i+1) << " / sequence_k=" << sequence_k << ", lab=" << true_labels[t]->label << ", loss=" << hcache[i].loss << endl;
+      //clog << "initialize t=" << t << ": adding " << (i+1) << " / sequence_k=" << sequence_k << ", lab=" << true_labels[t]->label << ", loss=" << hcache[i].loss << endl;
       append_history_item(hcache[i], i+1);
     }
 
     size_t end_pos = (n < t+1+sequence_rollout) ? n : (t+1+sequence_rollout);
-    cerr << "t=" << t << ", end_pos=" << end_pos << endl;
+    //clog << "t=" << t << ", end_pos=" << end_pos << endl;
     float gamma = 1;
     for (size_t t2=t+1; t2<end_pos; t2++) {
       gamma *= sequence_gamma;
-      sort_hcache_and_mark_equality();
-      //if (hcache_all_equal())
-        //  break;
+      if (OPTIMIZE_SHARED_HISTORIES) {
+        sort_hcache_and_mark_equality();
+        if (hcache_all_equal())
+          break;
+      }
       for (size_t i=0; i < sequence_k; i++) {
         prediction_matches_history = 0;
-        if (0 && hcache[i].same) {
+        if (OPTIMIZE_SHARED_HISTORIES && hcache[i].same) {
           // copy from the previous cache
           if (last_new < 0) {
             cerr << "internal error (bug): sequence histories match, but no new items; skipping" << endl;
@@ -737,7 +741,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
 
           prediction_matches_history  = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
           if (t2 == t+1) {
-            cerr << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << endl;
+            //clog << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << endl;
             print_history(hcache[i].predictions);
           }
 
@@ -751,7 +755,7 @@ NOT_REALLY_NEW:
 
           prediction_matches_history = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
           if (t2 == t+1) {
-            cerr << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << endl;
+            //clog << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << endl;
             print_history(hcache[i].predictions);
           }
 
@@ -763,12 +767,12 @@ NOT_REALLY_NEW:
 
         if (prediction_matches_history) { // this is what we would have predicted
           pred_seq[t+1] = last_prediction(hcache[i].predictions);
-          cerr << "setting pred_seq[" << (t+1) << "] to " << last_prediction(hcache[i].predictions) << endl;
+          //clog << "setting pred_seq[" << (t+1) << "] to " << last_prediction(hcache[i].predictions) << endl;
         }
       }
     }
 
-    if ((pred_seq[t] <= 0) | (pred_seq[t] > sequence_k)) {
+    if ((pred_seq[t] <= 0) || (pred_seq[t] > sequence_k)) {
       cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
       pred_seq[t] = 1;
     }
@@ -783,16 +787,16 @@ NOT_REALLY_NEW:
         best_label = i;
       }
 
-    cerr << "sequence_k = " << sequence_k << endl;
+    //clog << "sequence_k = " << sequence_k << endl;
     for (size_t i=0; i < sequence_k; i++) 
       *(loss_vector.begin + hcache[i].original_label) = hcache[i].loss - min_loss;
 
     generate_training_example(ec_seq[t], current_history, min_loss, loss_vector);
 
     // update state
-    cerr << "pred_seq[" << t << "] = " << pred_seq[t] << endl;
+    //clog << "pred_seq[" << t << "] = " << pred_seq[t] << endl;
     append_history(current_history, pred_seq[t]);
-    cerr << "current_history ==> ";
+    //clog << "current_history ==> ";
     print_history(current_history);
     if ((sequence_rollout == 0) && (t < n-1))
       pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1], true_labels[t+1]->label);
@@ -821,7 +825,7 @@ void drive_sequence()
 
   free_required_memory();
   global.cs_finish();
-  cerr << "done!" << endl;
+  //clog << "done!" << endl;
 }
 
 /*
@@ -834,19 +838,4 @@ buffer ring is broken miserably.
 
 position-based history features?
 
-why does error go up later on?  because you have training data like 
-
-  1 3 2 1 4 3
-
-eventually predicts 1 3 2 _2_ 4 3
-
-in the previous iteration, it make the usual training examples with
-costs given as:
-
- 1: [ 0 1 1 1 ]
- 3: [ 2 0 1 2 ]
- 2: [ 1 0 1 1 ]
- 1: [ 2 0 1 1 ]
- 4: [ 1 1 1 0 ]
- 3: [ 1 1 0 1 ]
 */

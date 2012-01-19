@@ -13,6 +13,8 @@ struct history_item {
   bool     same;
 };
 
+#define clog_print_audit_features(ec) { print_audit_features(global.reg, ec); }
+
 void parse_sequence_args(po::variables_map& vm);
 void drive_sequence();
 
