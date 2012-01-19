@@ -670,10 +670,8 @@ void learn(example* ec)
 {
   assert(ec->in_use);
   
-  if (ec->pass>final_pass) {
-    finish_example(ec);
+  if (ec->pass>final_pass) 
     return;
-  }
   
   /********************************************************************/
   /* FINISHED A PASS OVER EXAMPLES: DISTINGUISH CASES *****************/
