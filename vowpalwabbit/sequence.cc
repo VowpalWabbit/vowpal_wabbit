@@ -234,12 +234,17 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
   int num_len = (int)ceil(log10f((float)sequence_k)+1);
   int pos = 0;
   int i = 0;
+  int numspr = 0; int strlen;
   while (pos < PRINT_LEN-num_len-1) {
     if (true_labels.begin+i == true_labels.end) { break; }
-    int numspr = sprintf(true_label+pos, "%d", true_labels[i]->label);
-    true_label[pos+numspr] = ' ';
-    numspr = sprintf(pred_label+pos, "%d", pred_seq[i]);
-    pred_label[pos+numspr] = ' ';
+
+    strlen = num_len - (int)ceil(log10f((float)true_labels[i]->label+1));
+    numspr = sprintf(true_label+pos+strlen, "%d", true_labels[i]->label);
+    true_label[pos+numspr+strlen] = ' ';
+
+    strlen = num_len - (int)ceil(log10f((float)pred_seq[i]+1));
+    numspr = sprintf(pred_label+pos+strlen, "%d", pred_seq[i]);
+    pred_label[pos+numspr+strlen] = ' ';
 
     pos += num_len + 1;
     i++;
@@ -953,6 +958,14 @@ NOT_REALLY_NEW:
 
 void drive_sequence()
 {
+  const char * header_fmt = "%-10s %-10s %8s %8s %24s %22s %8s\n";
+  fprintf(stderr, header_fmt,
+          "average", "since", "sequence", "example",
+          "current label", "current predicted", "current");
+  fprintf(stderr, header_fmt,
+          "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features");
+  cerr.precision(5);
+
   global.cs_initialize();
   allocate_required_memory();
 

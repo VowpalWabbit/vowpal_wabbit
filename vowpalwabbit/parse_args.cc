@@ -165,6 +165,7 @@ po::variables_map parse_args(int argc, char *argv[],
   global.local_example_number = 0;
   global.bfgs = false;
   global.hessian_on = false;
+  global.sequence = false;
   global.stride = 1;
   global.num_bits = 18;
   global.default_bits = true;
@@ -560,6 +561,7 @@ po::variables_map parse_args(int argc, char *argv[],
   if(vm.count("sequence")) {
     parse_sequence_args(vm);
     global.driver = drive_sequence;
+    global.sequence = true;
   }
 
   return vm;

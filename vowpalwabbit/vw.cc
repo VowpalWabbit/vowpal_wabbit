@@ -40,7 +40,7 @@ void vw(int argc, char *argv[])
   struct timeb t_start, t_end;
   ftime(&t_start);
   
-  if (!global.quiet && !global.bfgs)
+  if (!global.quiet && !global.bfgs && !global.sequence)
     {
       const char * header_fmt = "%-10s %-10s %8s %8s %10s %8s %8s\n";
       fprintf(stderr, header_fmt,

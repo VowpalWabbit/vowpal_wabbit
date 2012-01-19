@@ -76,6 +76,8 @@ struct global_data {
   bool hessian_on;
   int m;
 
+  bool sequence;
+
   size_t stride;
 
 
