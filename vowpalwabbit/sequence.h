@@ -9,6 +9,7 @@ struct history_item {
   history  predictions;
   uint32_t predictions_hash;
   float    loss;
+  size_t   original_label;
   bool     same;
 };
 

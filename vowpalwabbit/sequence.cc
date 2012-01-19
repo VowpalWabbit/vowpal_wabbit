@@ -696,6 +696,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
     clear_history(all_histories[i]);
     hcache[i].predictions = NULL;
     hcache[i].same = 0;
+    hcache[i].original_label = 0;
   }
 
   size_t last_new = -1;
@@ -708,6 +709,7 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
       hcache[i].predictions_hash = 0;
       hcache[i].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
       hcache[i].same = 0;
+      hcache[i].original_label = i;
       cerr << "initialize t=" << t << ": adding " << (i+1) << " / sequence_k=" << sequence_k << ", lab=" << true_labels[t]->label << ", loss=" << hcache[i].loss << endl;
       append_history_item(hcache[i], i+1);
     }
@@ -718,11 +720,11 @@ int process_next_example_sequence()  // returns 0 if EOF, otherwise returns 1
     for (size_t t2=t+1; t2<end_pos; t2++) {
       gamma *= sequence_gamma;
       sort_hcache_and_mark_equality();
-      if (hcache_all_equal())
-        break;
+      //if (hcache_all_equal())
+        //  break;
       for (size_t i=0; i < sequence_k; i++) {
         prediction_matches_history = 0;
-        if (hcache[i].same) {
+        if (0 && hcache[i].same) {
           // copy from the previous cache
           if (last_new < 0) {
             cerr << "internal error (bug): sequence histories match, but no new items; skipping" << endl;
@@ -779,8 +781,11 @@ NOT_REALLY_NEW:
 
     cerr << "sequence_k = " << sequence_k << endl;
     loss_vector.erase();
-    for (size_t i=0; i < sequence_k; i++)
-      push(loss_vector, hcache[i].loss - min_loss);
+    for (size_t i=0; i < sequence_k; i++) 
+      push(loss_vector, (float)0.);
+    for (size_t i=0; i < sequence_k; i++) 
+      *(loss_vector.begin + hcache[i].original_label) = hcache[i].loss - min_loss;
+    //      push(loss_vector, hcache[i].loss); //  - min_loss);
 
     generate_training_example(ec_seq[t], current_history, min_loss, loss_vector);
 
@@ -818,3 +823,30 @@ void drive_sequence()
   global.cs_finish();
   cerr << "done!" << endl;
 }
+
+/*
+TODO john:
+
+memory allocation bug in --audit ==> run valgrind, it has to do with
+the arrays themselves or something like that.
+
+buffer ring is broken miserably.
+
+position-based history features?
+
+why does error go up later on?  because you have training data like 
+
+  1 3 2 1 4 3
+
+eventually predicts 1 3 2 _2_ 4 3
+
+in the previous iteration, it make the usual training examples with
+costs given as:
+
+ 1: [ 0 1 1 1 ]
+ 3: [ 2 0 1 2 ]
+ 2: [ 1 0 1 1 ]
+ 1: [ 2 0 1 1 ]
+ 4: [ 1 1 1 0 ]
+ 3: [ 1 1 0 1 ]
+*/
