@@ -179,7 +179,7 @@ void output_example(example* ec)
 	  }
 	else
 	  {
-	    simple_temp.label = 0.;
+	    simple_temp.label = FLT_MAX;
 	    simple_temp.weight = 0.;
 	  }
 	ec->ld = &simple_temp;
