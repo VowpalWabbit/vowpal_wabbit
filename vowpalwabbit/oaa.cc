@@ -211,7 +211,10 @@ void drive_oaa()
   while ( true )
     {
       if ((ec = get_example()) != NULL)//semiblocking operation.
-	learn(ec);
+	{
+	  learn(ec);
+	  free_example(ec);
+	}
       else if (parser_done())
 	{
 	  finalize();
