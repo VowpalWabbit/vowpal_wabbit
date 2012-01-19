@@ -585,6 +585,10 @@ void allocate_required_memory()
       ec_seq[i] = NULL;
   }
 
+  loss_vector.erase();
+  for (size_t i=0; i < sequence_k; i++) 
+    push(loss_vector, (float)0.);
+
   if (pred_seq == NULL)
     pred_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
 
@@ -780,12 +784,8 @@ NOT_REALLY_NEW:
       }
 
     cerr << "sequence_k = " << sequence_k << endl;
-    loss_vector.erase();
-    for (size_t i=0; i < sequence_k; i++) 
-      push(loss_vector, (float)0.);
     for (size_t i=0; i < sequence_k; i++) 
       *(loss_vector.begin + hcache[i].original_label) = hcache[i].loss - min_loss;
-    //      push(loss_vector, hcache[i].loss); //  - min_loss);
 
     generate_training_example(ec_seq[t], current_history, min_loss, loss_vector);
 
