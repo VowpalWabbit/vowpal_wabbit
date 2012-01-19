@@ -195,7 +195,6 @@ uint32_t test(example* ec)
     if (cost_label->costs.index() > 0)
       train(ec);
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
-    CSOAA::output_example(ec);
   }
 
   void initialize()
@@ -217,6 +216,7 @@ void drive_wap()
       if ((ec = get_example()) != NULL)//semiblocking operation.
 	{
 	  learn(ec);
+          CSOAA::output_example(ec);
 	  free_example(ec);
 	}
       else if (parser_done())

@@ -555,10 +555,13 @@ po::variables_map parse_args(int argc, char *argv[],
 
   if(vm.count("csoaa"))
     CSOAA::parse_flag(vm["csoaa"].as<size_t>());
-  else if (vm.count("sequence"))
-    CSOAA::parse_flag(vm["sequence"].as<size_t>());
 
-  if(vm.count("sequence")) {
+  if (vm.count("sequence")) {
+    if (vm.count("wap")) {
+      // do nothing, WAP is already initialized
+    } else
+      CSOAA::parse_flag(vm["sequence"].as<size_t>());  // default to CSOAA unless wap is specified
+
     parse_sequence_args(vm);
     global.driver = drive_sequence;
     global.sequence = true;
