@@ -41,6 +41,10 @@ size_t        max_string_length = 8;
 
 using namespace std;
 
+/********************************************************************************************
+ *** GENERIC HELPER FUNCTIONS
+ ********************************************************************************************/
+
 void* malloc_or_die(size_t size)
 {
   void* data = malloc(size);
@@ -51,6 +55,97 @@ void* malloc_or_die(size_t size)
   return data;
 }
 
+int random_policy(int allow_optimal, int allow_current)
+{
+  if ((sequence_beta <= 0) || (sequence_beta >= 1)) {
+    if (allow_current) return (int)current_policy;
+    if (current_policy > 0) return (((int)current_policy)-1);
+    if (allow_optimal) return -1;
+    cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
+    return (int)current_policy;
+  }
+
+  int num_valid_policies = (int)current_policy + allow_optimal + allow_current;
+  int pid = -1;
+
+  if (num_valid_policies == 0) {
+    cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
+    return (int)current_policy;
+  } else if (num_valid_policies == 1) {
+    pid = 0;
+  } else {
+    float r = drand48();
+    pid = 0;
+    if (r > sequence_beta) {
+      r -= sequence_beta;
+      while ((r > 0) && (pid < num_valid_policies-1)) {
+        pid ++;
+        r -= sequence_beta * pow(1. - sequence_beta, (float)pid);
+      }
+    }
+  }
+
+  // figure out which policy pid refers to
+  if (allow_optimal && (pid == num_valid_policies-1))
+    return -1; // this is the optimal policy
+  
+  pid = (int)current_policy - pid;
+  if (!allow_current)
+    pid--;
+
+  return pid;
+}
+
+
+void allocate_required_memory()
+{
+  if (ec_seq == NULL) {
+    ec_seq = (example**)malloc_or_die(sizeof(example*) * global.ring_size);
+    for (size_t i=0; i<global.ring_size; i++)
+      ec_seq[i] = NULL;
+  }
+
+  loss_vector.erase();
+  for (size_t i=0; i < sequence_k; i++) 
+    push(loss_vector, (float)0.);
+
+  if (pred_seq == NULL)
+    pred_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
+
+  if (policy_seq == NULL)
+    policy_seq = (int*)malloc_or_die(sizeof(int) * global.ring_size);
+
+  if (all_histories == NULL) {
+    all_histories = (history*)malloc_or_die(sizeof(history) * sequence_k);
+    for (size_t i=0; i<sequence_k; i++)
+      all_histories[i] = (history)malloc_or_die(sizeof(size_t) * history_length);
+  }
+
+  if (hcache == NULL)
+    hcache = (history_item*)malloc_or_die(sizeof(history_item) * sequence_k);
+
+  if (current_history == NULL)
+    current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
+}
+
+void free_required_memory()
+{
+  free(ec_seq);          ec_seq          = NULL;
+  free(pred_seq);        pred_seq        = NULL;
+  free(policy_seq);      policy_seq      = NULL;
+  free(hcache);          hcache          = NULL;
+  free(current_history); current_history = NULL;
+
+  for (size_t i=0; i<sequence_k; i++)
+    free(all_histories[i]);
+
+  free(all_histories);   all_histories   = NULL;
+}
+
+/********************************************************************************************
+ *** OUTPUTTING FUNCTIONS
+ ********************************************************************************************/
+
 void print_history(history h)
 {
   clog << "[ ";
@@ -60,38 +155,44 @@ void print_history(history h)
   clog << "]" << endl;
 }
 
-void parse_sequence_args(po::variables_map& vm)
+size_t read_example_this_loop  = 0;
+size_t read_example_last_id    = 0;
+int    read_example_ring_error = 0;
+size_t read_example_last_pass  = 0;
+int    read_example_should_warn_eof = 1;
+size_t passes_since_new_policy = 0;
+
+void print_update(bool wasKnown, long unsigned int seq_num_features)
 {
-  *(global.lp)=OAA::mc_label_parser;
-  sequence_k = vm["sequence"].as<size_t>();
+  if (!(global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)) 
+    return;
 
-  if (vm.count("sequence_bigrams"))
-    sequence_bigrams = true;
-  if (vm.count("sequence_bigram_features"))
-    sequence_bigrams = true;
+  char label_buf[32];
+  if (!wasKnown)
+    sprintf(label_buf,"unknown");
+  else
+    sprintf(label_buf,"known  ");
 
-  if (vm.count("sequence_history"))
-    sequence_history = vm["sequence_history"].as<size_t>();
-  if (vm.count("sequence_features"))
-    sequence_features = vm["sequence_features"].as<size_t>();
-  if (vm.count("sequence_rollout"))
-    sequence_rollout = vm["sequence_rollout"].as<size_t>();
-  if (vm.count("sequence_passes_per_policy"))
-    sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
-  if (vm.count("sequence_beta"))
-    sequence_beta = vm["sequence_beta"].as<float>();
-  if (vm.count("sequence_gamma"))
-    sequence_beta = vm["sequence_gamma"].as<float>();
-  //  if (vm.count("sequence_rollout_prob"))
-  //    sequence_beta = vm["sequence_rollout_prob"].as<float>();
-
-  history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
-  total_number_of_policies = (int)ceil(((float)global.numpasses) / ((float)sequence_passes_per_policy));
-
-  max_string_length = max((int)(ceil( log10((float)history_length+1) )),
-                          (int)(ceil( log10((float)sequence_k+1) ))) + 1;
-
+  //  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %5i... %8lu\n",
+  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s [%2i%2i%2i%2i%2i%2i] %8lu\n",
+          global.sd->sum_loss/global.sd->weighted_examples,
+          global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
+          (long int)global.sd->example_number,
+          global.sd->weighted_examples,
+          label_buf,
+          //pred_seq[0],
+          pred_seq[0],pred_seq[1],pred_seq[2],pred_seq[3],pred_seq[4],pred_seq[5],
+          seq_num_features);
+     
+  global.sd->sum_loss_since_last_dump = 0.0;
+  global.sd->old_weighted_examples = global.sd->weighted_examples;
+  global.sd->dump_interval *= 2;
 }
+
+
+/********************************************************************************************
+ *** HISTORY MANIPULATION
+ ********************************************************************************************/
 
 inline void append_history(history h, uint32_t p)
 {
@@ -143,6 +244,54 @@ inline int cache_item_same_as_before(size_t i)
   return (i > 0) && (order_history_item(&hcache[i], &hcache[i-1]) == 0);
 }
 
+
+void sort_hcache_and_mark_equality()
+{
+  qsort(hcache, sequence_k, sizeof(history_item), order_history_item);
+  hcache[0].same = 0;
+  for (size_t i=1; i<sequence_k; i++) {
+    int order = order_history_item(&hcache[i], &hcache[i-1]);
+    hcache[i].same = (order == 0);
+    clog << ">> checking sameness " << i << " is " << hcache[i].same << " (order = " << order << ")" << endl;
+    print_history(hcache[i-1].predictions);
+    print_history(hcache[i].predictions);
+  }
+}
+
+int hcache_all_equal()
+{
+  for (size_t i=1; i<sequence_k; i++)
+    if (!hcache[i].same)
+      return 0;
+  return 1;
+}
+
+
+inline void clear_history(history h)
+{
+  for (size_t t=0; t<history_length; t++)
+    h[t] = 0;
+}
+
+/********************************************************************************************
+ *** EXAMPLE MANIPULATION
+ ********************************************************************************************/
+
+inline int example_is_newline(example* ec)
+{
+  // if only index is constant namespace or no index
+  return ((ec->indices.index() == 0) || 
+          ((ec->indices.index() == 1) &&
+           (ec->indices.last() == constant_namespace)));
+}
+
+inline int example_is_test(example* ec)
+{
+  return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
+}
+
+string audit_feature_space("history");
+
 void remove_history_from_example(example* ec)
 {
   if (ec->indices.index() == 0) {
@@ -171,8 +320,6 @@ void remove_history_from_example(example* ec)
   }
   ec->indices.decr();
 }
-
-string audit_feature_space("history");
 
 
 void add_history_to_example(example* ec, history h)
@@ -293,47 +440,6 @@ void add_history_to_example(example* ec, history h)
   ec->num_features += ec->atomics[history_namespace].index();
 }
 
-
-void sort_hcache_and_mark_equality()
-{
-  qsort(hcache, sequence_k, sizeof(history_item), order_history_item);
-  hcache[0].same = 0;
-  for (size_t i=1; i<sequence_k; i++) {
-    int order = order_history_item(&hcache[i], &hcache[i-1]);
-    hcache[i].same = (order == 0);
-    clog << ">> checking sameness " << i << " is " << hcache[i].same << " (order = " << order << ")" << endl;
-    print_history(hcache[i-1].predictions);
-    print_history(hcache[i].predictions);
-  }
-}
-
-int hcache_all_equal()
-{
-  for (size_t i=1; i<sequence_k; i++)
-    if (!hcache[i].same)
-      return 0;
-  return 1;
-}
-
-inline int example_is_newline(example* ec)
-{
-  // if only index is constant namespace or no index
-  return ((ec->indices.index() == 0) || 
-          ((ec->indices.index() == 1) &&
-           (ec->indices.last() == constant_namespace)));
-}
-
-inline int example_is_test(example* ec)
-{
-  return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
-}
-
-inline void clear_history(history h)
-{
-  for (size_t t=0; t<history_length; t++)
-    h[t] = 0;
-}
-
 void add_policy_offset(example *ec, size_t policy)
 {
   size_t amount = (policy * global.length() / sequence_k / total_number_of_policies) * global.stride;
@@ -367,9 +473,47 @@ void remove_policy_offset(example *ec, size_t policy)
 }
 
 
+
+
+
+/********************************************************************************************
+ *** INTERFACE TO VW
+ ********************************************************************************************/
+
+void parse_sequence_args(po::variables_map& vm)
+{
+  *(global.lp)=OAA::mc_label_parser;
+  sequence_k = vm["sequence"].as<size_t>();
+
+  if (vm.count("sequence_bigrams"))
+    sequence_bigrams = true;
+  if (vm.count("sequence_bigram_features"))
+    sequence_bigrams = true;
+
+  if (vm.count("sequence_history"))
+    sequence_history = vm["sequence_history"].as<size_t>();
+  if (vm.count("sequence_features"))
+    sequence_features = vm["sequence_features"].as<size_t>();
+  if (vm.count("sequence_rollout"))
+    sequence_rollout = vm["sequence_rollout"].as<size_t>();
+  if (vm.count("sequence_passes_per_policy"))
+    sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
+  if (vm.count("sequence_beta"))
+    sequence_beta = vm["sequence_beta"].as<float>();
+  if (vm.count("sequence_gamma"))
+    sequence_beta = vm["sequence_gamma"].as<float>();
+  //  if (vm.count("sequence_rollout_prob"))
+  //    sequence_beta = vm["sequence_rollout_prob"].as<float>();
+
+  history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
+  total_number_of_policies = (int)ceil(((float)global.numpasses) / ((float)sequence_passes_per_policy));
+
+  max_string_length = max((int)(ceil( log10((float)history_length+1) )),
+                          (int)(ceil( log10((float)sequence_k+1) ))) + 1;
+
+}
+
 CSOAA::label empty_costs = { v_array<float>() };
-
-
 void generate_training_example(example *ec, history h, size_t label, v_array<float>costs)
 {
   CSOAA::label ld = { costs };
@@ -410,81 +554,6 @@ size_t predict(example *ec, history h, int policy, size_t truth)
   }
   clog << "predict[" << policy << "] returning " << yhat << endl;
   return yhat;
-}
-
-int random_policy(int allow_optimal, int allow_current)
-{
-  if ((sequence_beta <= 0) || (sequence_beta >= 1)) {
-    if (allow_current) return (int)current_policy;
-    if (current_policy > 0) return (((int)current_policy)-1);
-    if (allow_optimal) return -1;
-    cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
-    return (int)current_policy;
-  }
-
-  int num_valid_policies = (int)current_policy + allow_optimal + allow_current;
-  int pid = -1;
-
-  if (num_valid_policies == 0) {
-    cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
-    return (int)current_policy;
-  } else if (num_valid_policies == 1) {
-    pid = 0;
-  } else {
-    float r = drand48();
-    pid = 0;
-    if (r > sequence_beta) {
-      r -= sequence_beta;
-      while ((r > 0) && (pid < num_valid_policies-1)) {
-        pid ++;
-        r -= sequence_beta * pow(1. - sequence_beta, (float)pid);
-      }
-    }
-  }
-
-  // figure out which policy pid refers to
-  if (allow_optimal && (pid == num_valid_policies-1))
-    return -1; // this is the optimal policy
-  
-  pid = (int)current_policy - pid;
-  if (!allow_current)
-    pid--;
-
-  return pid;
-}
-
-size_t read_example_this_loop  = 0;
-size_t read_example_last_id    = 0;
-int    read_example_ring_error = 0;
-size_t read_example_last_pass  = 0;
-int    read_example_should_warn_eof = 1;
-size_t passes_since_new_policy = 0;
-
-void print_update(bool wasKnown, long unsigned int seq_num_features)
-{
-  if (!(global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)) 
-    return;
-
-  char label_buf[32];
-  if (!wasKnown)
-    sprintf(label_buf,"unknown");
-  else
-    sprintf(label_buf,"known  ");
-
-  //  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %5i... %8lu\n",
-  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s [%2i%2i%2i%2i%2i%2i] %8lu\n",
-          global.sd->sum_loss/global.sd->weighted_examples,
-          global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
-          (long int)global.sd->example_number,
-          global.sd->weighted_examples,
-          label_buf,
-          //pred_seq[0],
-          pred_seq[0],pred_seq[1],pred_seq[2],pred_seq[3],pred_seq[4],pred_seq[5],
-          seq_num_features);
-     
-  global.sd->sum_loss_since_last_dump = 0.0;
-  global.sd->old_weighted_examples = global.sd->weighted_examples;
-  global.sd->dump_interval *= 2;
 }
 
 bool warned_about_class_overage = false;
@@ -583,51 +652,6 @@ int run_test(example* ec) // returns 1 if get_example ACTUALLY returned NULL; ot
   print_update(0, seq_num_features);
 
   return ((ec == NULL) && !read_example_ring_error);
-}
-
-void allocate_required_memory()
-{
-  if (ec_seq == NULL) {
-    ec_seq = (example**)malloc_or_die(sizeof(example*) * global.ring_size);
-    for (size_t i=0; i<global.ring_size; i++)
-      ec_seq[i] = NULL;
-  }
-
-  loss_vector.erase();
-  for (size_t i=0; i < sequence_k; i++) 
-    push(loss_vector, (float)0.);
-
-  if (pred_seq == NULL)
-    pred_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
-
-  if (policy_seq == NULL)
-    policy_seq = (int*)malloc_or_die(sizeof(int) * global.ring_size);
-
-  if (all_histories == NULL) {
-    all_histories = (history*)malloc_or_die(sizeof(history) * sequence_k);
-    for (size_t i=0; i<sequence_k; i++)
-      all_histories[i] = (history)malloc_or_die(sizeof(size_t) * history_length);
-  }
-
-  if (hcache == NULL)
-    hcache = (history_item*)malloc_or_die(sizeof(history_item) * sequence_k);
-
-  if (current_history == NULL)
-    current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
-}
-
-void free_required_memory()
-{
-  free(ec_seq);          ec_seq          = NULL;
-  free(pred_seq);        pred_seq        = NULL;
-  free(policy_seq);      policy_seq      = NULL;
-  free(hcache);          hcache          = NULL;
-  free(current_history); current_history = NULL;
-
-  for (size_t i=0; i<sequence_k; i++)
-    free(all_histories[i]);
-
-  free(all_histories);   all_histories   = NULL;
 }
 
 int process_next_example_sequence()  // returns 1 if get_example ACTUALLY returned NULL, otherwise returns 0
@@ -827,7 +851,7 @@ void drive_sequence()
   read_example_this_loop = 0;
   while (true) {
     int got_null = process_next_example_sequence();
-    if (got_null || parser_done()) // we're done learning
+    if (parser_done()) // we're done learning
       break;
   }
 
