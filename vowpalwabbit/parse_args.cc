@@ -16,6 +16,7 @@ embodied in the content of this file are licensed under the BSD
 #include "global_data.h"
 #include "oaa.h"
 #include "csoaa.h"
+#include "wap.h"
 #include "sequence.h"
 #include "bfgs.h"
 #include "lda_core.h"
@@ -70,6 +71,7 @@ po::variables_map parse_args(int argc, char *argv[],
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
+    ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
     ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
@@ -170,6 +172,7 @@ po::variables_map parse_args(int argc, char *argv[],
   global.initialize = initialize_gd;
   global.learn = learn_gd;
   global.finish = finish_gd;
+  global.k = 0;
 
   global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
   global.raw_prediction = -1;
@@ -538,6 +541,9 @@ po::variables_map parse_args(int argc, char *argv[],
 
   if(vm.count("oaa"))
     OAA::parse_oaa_flag(vm["oaa"].as<size_t>());
+
+  if(vm.count("wap"))
+    WAP::parse_flag(vm["wap"].as<size_t>());
 
   if(vm.count("csoaa"))
     CSOAA::parse_flag(vm["csoaa"].as<size_t>());
