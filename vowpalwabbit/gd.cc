@@ -601,13 +601,13 @@ void local_predict(example* ec, regressor& reg)
     t = global.sd->weighted_unlabeled_examples;
   else
     t = ec->example_t;
-  
+
   ec->eta_round = 0;
   if (ld->label != FLT_MAX)
     {
       ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
 
-      if (global.training)
+      if (global.training && ec->loss > 0.)
 	{
 	  double eta_t;
 	  float norm;
@@ -618,7 +618,7 @@ void local_predict(example* ec, regressor& reg)
 	    else 
 	      norm = compute_general_xGx(reg,ec, global.power_t);
 	    magx = powf(ec->total_sum_feat_sq, 1. - global.power_t);
-	    eta_t = global.eta * norm / magx;
+	    eta_t = global.eta * norm / magx * ld->weight;
 	  } else {
 	    eta_t = global.eta / powf(t,global.power_t) * ld->weight;
 	    if (global.nonormalize) 

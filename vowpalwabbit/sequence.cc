@@ -228,6 +228,19 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
   global.sd->dump_interval *= 2;
 }
 
+void simple_print_example_features(example *ec)
+{
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+    {
+      feature* end = ec->atomics[*i].end;
+      for (feature* f = ec->atomics[*i].begin; f!= end; f++) {
+        cerr << "\t" << f->weight_index << ":" << f->x << ":" << global.reg.weight_vectors[f->weight_index & global.weight_mask];
+      }
+    }
+  cerr << endl;
+}
+
+
 
 /********************************************************************************************
  *** HISTORY MANIPULATION
@@ -235,19 +248,22 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
 
 inline void append_history(history h, uint32_t p)
 {
-  for (size_t i=0; i<history_length-1; i++)
-    h[i] = h[i+1];
-  h[history_length-1] = (size_t)p;
+  for (size_t i=1; i<history_length; i++)
+    h[i-1] = h[i];
+  if (history_length > 0)
+    h[history_length-1] = (size_t)p;
 }
 
 void append_history_item(history_item hi, uint32_t p)
 {
-  int old_val = hi.predictions[0];
-  hi.predictions_hash -= old_val * constant_pow_history_length;
-  hi.predictions_hash += p;
-  hi.predictions_hash *= quadratic_constant;
+  if (history_length > 0) {
+    int old_val = hi.predictions[0];
+    hi.predictions_hash -= old_val * constant_pow_history_length;
+    hi.predictions_hash += p;
+    hi.predictions_hash *= quadratic_constant;
+    append_history(hi.predictions, p);
+  }
 
-  append_history(hi.predictions, p);
   hi.same = 0;
 }
 
@@ -364,17 +380,17 @@ void add_history_to_example(example* ec, history h)
 {
   size_t v0, v;
 
-  print_history(h);
+  //print_history(h);
 
   for (size_t t=1; t<=sequence_history; t++) {
     v0 = (h[history_length-t] * quadratic_constant + t) * quadratic_constant + history_constant;
 
     // add the basic history features
-    feature temp = {1, (uint32_t) ( v0 & global.parse_mask )};
+    feature temp = {1., (uint32_t) ( (2*v0) & global.parse_mask )};
     push(ec->atomics[history_namespace], temp);
 
     if (global.audit) {
-      audit_data a_feature = { NULL, NULL, (uint32_t)(v0 & global.parse_mask), 1., true };
+      audit_data a_feature = { NULL, NULL, (uint32_t)((2*v0) & global.parse_mask), 1., true };
       a_feature.space = (char*)calloc_or_die(audit_feature_space.length()+1, sizeof(char));
       strcpy(a_feature.space, audit_feature_space.c_str());
 
@@ -388,11 +404,11 @@ void add_history_to_example(example* ec, history h)
     if ((t > 1) && sequence_bigrams) {
       v0 = ((v0 - history_constant) * quadratic_constant + h[history_length-t+1]) * quadratic_constant + history_constant;
 
-      feature temp = {1, (uint32_t) ( v0 & global.parse_mask )};
+      feature temp = {1., (uint32_t) ( (2*v0) & global.parse_mask )};
       push(ec->atomics[history_namespace], temp);
 
       if (global.audit) {
-        audit_data a_feature = { NULL, NULL, (uint32_t)(v0 & global.parse_mask), 1., true };
+        audit_data a_feature = { NULL, NULL, (uint32_t)((2*v0) & global.parse_mask), 1., true };
         a_feature.space = (char*)calloc_or_die(audit_feature_space.length()+1, sizeof(char));
         strcpy(a_feature.space, audit_feature_space.c_str());
 
@@ -429,11 +445,11 @@ void add_history_to_example(example* ec, history h)
           v0 = (h[history_length-t] * quadratic_constant + t) * quadratic_constant;
           
           // add the history/feature pair
-          feature temp = {1, (uint32_t) ( (v0 + v) & global.parse_mask )};
+          feature temp = {1., (uint32_t) ( (2*(v0 + v)) & global.parse_mask )};
           push(ec->atomics[history_namespace], temp);
 
           if (global.audit) {
-            audit_data a_feature = { NULL, NULL, (uint32_t)((v+v0) & global.parse_mask), 1., true };
+            audit_data a_feature = { NULL, NULL, (uint32_t)((2*(v+v0)) & global.parse_mask), 1., true };
             a_feature.space = (char*)calloc_or_die(audit_feature_space.length()+1, sizeof(char));
             strcpy(a_feature.space, audit_feature_space.c_str());
 
@@ -449,11 +465,11 @@ void add_history_to_example(example* ec, history h)
             //          ((h * q + t) * q + h') * q + f + hc
             v0 = (v0 + h[history_length-t+1]) * quadratic_constant;
 
-            feature temp = {1, (uint32_t) ( (v + v0) & global.parse_mask )};
+            feature temp = {1., (uint32_t) ( (2*(v + v0)) & global.parse_mask )};
             push(ec->atomics[history_namespace], temp);
 
             if (global.audit) {
-              audit_data a_feature = { NULL, NULL, (uint32_t)((v+v0) & global.parse_mask), 1., true };
+              audit_data a_feature = { NULL, NULL, (uint32_t)((2*(v+v0)) & global.parse_mask), 1., true };
               a_feature.space = (char*)calloc_or_die(audit_feature_space.length()+1, sizeof(char));
               strcpy(a_feature.space, audit_feature_space.c_str());
 
@@ -526,6 +542,7 @@ void parse_sequence_args(po::variables_map& vm)
   }
 
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
+  //clog << "history length = " << history_length << endl;
   constant_pow_history_length = 1;
   for (size_t i=0; i < history_length; i++)
     constant_pow_history_length *= quadratic_constant;
@@ -545,16 +562,21 @@ void generate_training_example(example *ec, history h, v_array<float>costs)
   add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
 
+  //clog << "costs = [";
+  for (float*c=costs.begin; c!=costs.end; c++)
+    //clog << " " << *c;
+  //clog << " ]" << endl;
+
+  //clog << "generating example" << endl;
+  //simple_print_example_features(ec);
+
   ec->ld = (void*)&ld;
   global.cs_learn(ec);
 
-  //clog << "generating example, costs = [";
-  //  for (float*c=costs.begin; c!=costs.end; c++)
-    //clog << " " << *c;
-  //clog << " ]" << endl;
-  //clog << "h = ";
-  //  print_history(h);
+  //clog << "h = "; print_history(h);
   //clog_print_audit_features(ec);
+  //simple_print_example_features(ec);
+  //clog << endl;
 
   remove_history_from_example(ec);
   remove_policy_offset(ec, current_policy);
@@ -569,6 +591,7 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     add_history_to_example(ec, h);
     add_policy_offset(ec, policy);
 
+    //clog << "predicting example" << endl;
     ec->ld = (void*)&empty_costs;
     global.cs_learn(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
