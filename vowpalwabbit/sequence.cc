@@ -9,6 +9,16 @@
 #include "oaa.h"
 #include "csoaa.h"
 
+typedef uint32_t* history;  // histories have the most recent prediction at the END
+
+struct history_item {
+  history  predictions;
+  uint32_t predictions_hash;
+  float    loss;
+  size_t   original_label;
+  bool     same;
+};
+
 bool OPTIMIZE_SHARED_HISTORIES    = 1;
 bool PRINT_UPDATE_EVERY_EXAMPLE   = 0;
 
@@ -29,6 +39,8 @@ size_t history_length             = 1;
 size_t current_policy             = 0;
 size_t total_number_of_policies   = 1;
 
+size_t constant_pow_history_length = 0;
+
 uint32_t      history_constant    = 8290741;
 history       current_history     = NULL;
 
@@ -43,15 +55,16 @@ v_array<float> loss_vector  = v_array<float>();
 
 size_t        max_string_length = 8;
 
+
 using namespace std;
 
 /********************************************************************************************
  *** GENERIC HELPER FUNCTIONS
  ********************************************************************************************/
 
-void* malloc_or_die(size_t size)
+void* calloc_or_die(size_t nmemb, size_t size)
 {
-  void* data = malloc(size);
+  void* data = calloc(nmemb, size);
   if (data == NULL) {
     cerr << "internal error: memory allocation failed; dying!" << endl;
     exit(-1);
@@ -61,7 +74,7 @@ void* malloc_or_die(size_t size)
 
 int random_policy(int allow_optimal, int allow_current)
 {
-  if ((sequence_beta <= 0) || (sequence_beta >= 1)) {
+  if (sequence_beta >= 1) {
     if (allow_current) return (int)current_policy;
     if (current_policy > 0) return (((int)current_policy)-1);
     if (allow_optimal) return -1;
@@ -104,7 +117,7 @@ int random_policy(int allow_optimal, int allow_current)
 void allocate_required_memory()
 {
   if (ec_seq == NULL) {
-    ec_seq = (example**)malloc_or_die(sizeof(example*) * global.ring_size);
+    ec_seq = (example**)calloc_or_die(global.ring_size, sizeof(example*));
     for (size_t i=0; i<global.ring_size; i++)
       ec_seq[i] = NULL;
   }
@@ -114,22 +127,22 @@ void allocate_required_memory()
     push(loss_vector, (float)0.);
 
   if (pred_seq == NULL)
-    pred_seq = (size_t*)malloc_or_die(sizeof(size_t) * global.ring_size);
+    pred_seq = (size_t*)calloc_or_die(global.ring_size, sizeof(size_t));
 
   if (policy_seq == NULL)
-    policy_seq = (int*)malloc_or_die(sizeof(int) * global.ring_size);
+    policy_seq = (int*)calloc_or_die(global.ring_size, sizeof(int));
 
   if (all_histories == NULL) {
-    all_histories = (history*)malloc_or_die(sizeof(history) * sequence_k);
+    all_histories = (history*)calloc_or_die(sequence_k, sizeof(history));
     for (size_t i=0; i<sequence_k; i++)
-      all_histories[i] = (history)malloc_or_die(sizeof(size_t) * history_length);
+      all_histories[i] = (history)calloc_or_die(history_length, sizeof(size_t));
   }
 
   if (hcache == NULL)
-    hcache = (history_item*)malloc_or_die(sizeof(history_item) * sequence_k);
+    hcache = (history_item*)calloc_or_die(sequence_k, sizeof(history_item));
 
   if (current_history == NULL)
-    current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
+    current_history = (history)calloc_or_die(history_length, sizeof(uint32_t));
 }
 
 void free_required_memory()
@@ -222,23 +235,19 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
 
 inline void append_history(history h, uint32_t p)
 {
-  //clog << "append_history(h, " << ((size_t)p) << "); history_length=" << history_length << endl << "  h = ";
-  print_history(h);
   for (size_t i=0; i<history_length-1; i++)
     h[i] = h[i+1];
   h[history_length-1] = (size_t)p;
-    //clog << "  h'= ";
-    print_history(h);
 }
 
 void append_history_item(history_item hi, uint32_t p)
 {
-  // TODO: make this more efficient by being smart about the hash
+  int old_val = hi.predictions[0];
+  hi.predictions_hash -= old_val * constant_pow_history_length;
+  hi.predictions_hash += p;
+  hi.predictions_hash *= quadratic_constant;
+
   append_history(hi.predictions, p);
-  uint32_t hash = 1;
-  for (size_t i=0; i<history_length; i++)
-    hash = (hash + hi.predictions[i]) * history_constant;
-  hi.predictions_hash = hash;
   hi.same = 0;
 }
 
@@ -279,8 +288,8 @@ void sort_hcache_and_mark_equality()
     int order = order_history_item(&hcache[i], &hcache[i-1]);
     hcache[i].same = (order == 0);
     //clog << ">> checking sameness " << i << " is " << hcache[i].same << " (order = " << order << ")" << endl;
-    print_history(hcache[i-1].predictions);
-    print_history(hcache[i].predictions);
+    //print_history(hcache[i-1].predictions);
+    //print_history(hcache[i].predictions);
   }
 }
 
@@ -358,19 +367,18 @@ void add_history_to_example(example* ec, history h)
   print_history(h);
 
   for (size_t t=1; t<=sequence_history; t++) {
-    v0 = (h[history_length-t] * quadratic_constant + history_constant) * quadratic_constant + t + history_constant;
+    v0 = (h[history_length-t] * quadratic_constant + t) * quadratic_constant + history_constant;
 
     // add the basic history features
     feature temp = {1, (uint32_t) ( v0 & global.parse_mask )};
     push(ec->atomics[history_namespace], temp);
-    ec->sum_feat_sq[history_namespace] ++;
 
     if (global.audit) {
       audit_data a_feature = { NULL, NULL, (uint32_t)(v0 & global.parse_mask), 1., true };
-      a_feature.space = (char*)malloc_or_die(sizeof(char) * (audit_feature_space.length()+1));
+      a_feature.space = (char*)calloc_or_die(audit_feature_space.length()+1, sizeof(char));
       strcpy(a_feature.space, audit_feature_space.c_str());
 
-      a_feature.feature = (char*)malloc_or_die(sizeof(char) * (5 + 2*max_string_length));
+      a_feature.feature = (char*)calloc_or_die(5 + 2*max_string_length, sizeof(char));
       sprintf(a_feature.feature, "ug@%d=%d", t, h[history_length-t]);
 
       push(ec->audit_features[history_namespace], a_feature);
@@ -378,19 +386,17 @@ void add_history_to_example(example* ec, history h)
 
     // add the bigram features
     if ((t > 1) && sequence_bigrams) {
-      v0 *= quadratic_constant;
-      v0 += h[history_length-t+1] * quadratic_constant + history_constant;
+      v0 = ((v0 - history_constant) * quadratic_constant + h[history_length-t+1]) * quadratic_constant + history_constant;
 
       feature temp = {1, (uint32_t) ( v0 & global.parse_mask )};
       push(ec->atomics[history_namespace], temp);
-      ec->sum_feat_sq[history_namespace] ++;
 
       if (global.audit) {
         audit_data a_feature = { NULL, NULL, (uint32_t)(v0 & global.parse_mask), 1., true };
-        a_feature.space = (char*)malloc_or_die(sizeof(char) * (audit_feature_space.length()+1));
+        a_feature.space = (char*)calloc_or_die(audit_feature_space.length()+1, sizeof(char));
         strcpy(a_feature.space, audit_feature_space.c_str());
 
-        a_feature.feature = (char*)malloc_or_die(sizeof(char) * (6 + 3*max_string_length));
+        a_feature.feature = (char*)calloc_or_die(6 + 3*max_string_length, sizeof(char));
         sprintf(a_feature.feature, "bg@%d=%d-%d", t-1, h[history_length-t], h[history_length-t+1]);
 
         push(ec->audit_features[history_namespace], a_feature);
@@ -416,22 +422,22 @@ void add_history_to_example(example* ec, history h)
           feature_index++;
         }
 
-        v = (f->weight_index + history_constant) * quadratic_constant;
+        v = f->weight_index + history_constant;
 
         for (size_t t=1; t<=sequence_features; t++) {
-          v0 = (t + constant) * quadratic_constant + h[history_length-t] + history_constant;
+          //          ((h * q + t) * q) + f + hc
+          v0 = (h[history_length-t] * quadratic_constant + t) * quadratic_constant;
           
           // add the history/feature pair
-          feature temp = {1, (uint32_t) ( (v + v0) & global.parse_mask )};
+          feature temp = {1, (uint32_t) ( (v0 + v) & global.parse_mask )};
           push(ec->atomics[history_namespace], temp);
-          ec->sum_feat_sq[history_namespace] ++;
 
           if (global.audit) {
             audit_data a_feature = { NULL, NULL, (uint32_t)((v+v0) & global.parse_mask), 1., true };
-            a_feature.space = (char*)malloc_or_die(sizeof(char) * (audit_feature_space.length()+1));
+            a_feature.space = (char*)calloc_or_die(audit_feature_space.length()+1, sizeof(char));
             strcpy(a_feature.space, audit_feature_space.c_str());
 
-            a_feature.feature = (char*)malloc_or_die(sizeof(char) * (7 + 2*max_string_length + fstring.length()));
+            a_feature.feature = (char*)calloc_or_die(8 + 2*max_string_length + fstring.length(), sizeof(char));
             sprintf(a_feature.feature, "ug+f@%d=%d=%s", t, h[history_length-t], fstring.c_str());
 
             push(ec->audit_features[history_namespace], a_feature);
@@ -440,20 +446,19 @@ void add_history_to_example(example* ec, history h)
 
           // add the bigram
           if ((t > 0) && sequence_bigram_features) {
-            v0 *= quadratic_constant;
-            v0 += h[history_length-t+1] + history_constant;
+            //          ((h * q + t) * q + h') * q + f + hc
+            v0 = (v0 + h[history_length-t+1]) * quadratic_constant;
 
             feature temp = {1, (uint32_t) ( (v + v0) & global.parse_mask )};
             push(ec->atomics[history_namespace], temp);
-            ec->sum_feat_sq[history_namespace] ++;
 
             if (global.audit) {
               audit_data a_feature = { NULL, NULL, (uint32_t)((v+v0) & global.parse_mask), 1., true };
-              a_feature.space = (char*)malloc_or_die(sizeof(char) * (audit_feature_space.length()+1));
+              a_feature.space = (char*)calloc_or_die(audit_feature_space.length()+1, sizeof(char));
               strcpy(a_feature.space, audit_feature_space.c_str());
 
-              a_feature.feature = (char*)malloc_or_die(sizeof(char) * (8 + 3*max_string_length + fstring.length()));
-              sprintf(a_feature.feature, "bg+f@%d-%d=%d=%s", t-1, h[history_length-t], h[history_length-t+1], fstring.c_str());
+              a_feature.feature = (char*)calloc_or_die(9 + 3*max_string_length + fstring.length(), sizeof(char));
+              sprintf(a_feature.feature, "bg+f@%d=%d-%d=%s", t-1, h[history_length-t], h[history_length-t+1], fstring.c_str());
 
               push(ec->audit_features[history_namespace], a_feature);
             }
@@ -465,6 +470,7 @@ void add_history_to_example(example* ec, history h)
   }
 
   push(ec->indices, history_namespace);
+  ec->sum_feat_sq[history_namespace] += ec->atomics[history_namespace].index();
   ec->total_sum_feat_sq += ec->sum_feat_sq[history_namespace];
   ec->num_features += ec->atomics[history_namespace].index();
 }
@@ -472,33 +478,13 @@ void add_history_to_example(example* ec, history h)
 void add_policy_offset(example *ec, size_t policy)
 {
   size_t amount = (policy * global.length() / sequence_k / total_number_of_policies) * global.stride;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
-    feature* end = ec->atomics[*i].end;
-    for (feature* f = ec->atomics[*i].begin; f!= end; f++)
-      f->weight_index += amount;
-  }
-  if (global.audit) {
-    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
-          f->weight_index += amount;
-  }
+  OAA::update_indicies(ec, amount);
 }
 
 void remove_policy_offset(example *ec, size_t policy)
 {
   size_t amount = (policy * global.length() / sequence_k / total_number_of_policies) * global.stride;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
-    feature* end = ec->atomics[*i].end;
-    for (feature* f = ec->atomics[*i].begin; f!= end; f++)
-      f->weight_index -= amount;
-  }
-  if (global.audit) {
-    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
-          f->weight_index -= amount;
-  }
+  OAA::update_indicies(ec, -amount);
 }
 
 
@@ -534,7 +520,16 @@ void parse_sequence_args(po::variables_map& vm)
   //  if (vm.count("sequence_rollout_prob"))
   //    sequence_beta = vm["sequence_rollout_prob"].as<float>();
 
+  if (sequence_beta <= 0) {
+    sequence_beta = 0.5;
+    cerr << "warning: sequence_beta set to a value <= 0; resetting to 0.5" << endl;
+  }
+
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
+  constant_pow_history_length = 1;
+  for (size_t i=0; i < history_length; i++)
+    constant_pow_history_length *= quadratic_constant;
+
   total_number_of_policies = (int)ceil(((float)global.numpasses) / ((float)sequence_passes_per_policy));
 
   max_string_length = max((int)(ceil( log10((float)history_length+1) )),
@@ -543,7 +538,7 @@ void parse_sequence_args(po::variables_map& vm)
 }
 
 CSOAA::label empty_costs = { v_array<float>() };
-void generate_training_example(example *ec, history h, size_t label, v_array<float>costs)
+void generate_training_example(example *ec, history h, v_array<float>costs)
 {
   CSOAA::label ld = { costs };
 
@@ -554,15 +549,15 @@ void generate_training_example(example *ec, history h, size_t label, v_array<flo
   global.cs_learn(ec);
 
   //clog << "generating example, costs = [";
-  for (float*c=costs.begin; c!=costs.end; c++)
+  //  for (float*c=costs.begin; c!=costs.end; c++)
     //clog << " " << *c;
   //clog << " ]" << endl;
   //clog << "h = ";
-  print_history(h);
+  //  print_history(h);
   //clog_print_audit_features(ec);
 
-  remove_policy_offset(ec, current_policy);
   remove_history_from_example(ec);
+  remove_policy_offset(ec, current_policy);
 }
 
 size_t predict(example *ec, history h, int policy, size_t truth)
@@ -578,8 +573,8 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     global.cs_learn(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
 
-    remove_policy_offset(ec, policy);
     remove_history_from_example(ec);
+    remove_policy_offset(ec, policy);
   }
   //clog << "predict[" << policy << "] returning " << yhat << endl;
   return yhat;
@@ -647,8 +642,8 @@ int run_test(example* ec) // returns 1 if get_example ACTUALLY returned NULL; ot
   int seq_num_features = 0;
   OAA::mc_label* old_label;
 
-  if (current_history == NULL)
-    current_history = (history)malloc_or_die(sizeof(uint32_t) * history_length);
+  //  if (current_history == NULL)
+  //    current_history = (history)calloc_or_die(history_length, sizeof(uint32_t));
 
   clear_history(current_history);
 
@@ -744,7 +739,7 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
     global.sd->total_features += ec_seq[t]->num_features;
 
     // predict everything and accumulate loss
-    pred_seq[t] = predict(ec_seq[t], current_history, policy_seq[t], true_labels[t]->label);
+    pred_seq[t] = predict(ec_seq[t], current_history, policy_seq[t], -1);
     append_history(current_history, pred_seq[t]);
     if (pred_seq[t] != true_labels[t]->label) { // wrong
       global.sd->sum_loss += true_labels[t]->weight;
@@ -760,25 +755,15 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
   print_update(1, seq_num_features);
 
   bool all_policies_optimal = true;
-  //clog << "policy_seq = [ ";
   for (size_t t=0; t<n; t++) {
-    pred_seq[t] = -1;
     if (policy_seq[t] >= 0) all_policies_optimal = false;
-    //clog << policy_seq[t] << " ";
+    pred_seq[0] = -1;
   }
-  //clog << "]" << endl;
-
 
   // start learning
   clear_history(current_history);
   pred_seq[0] = predict(ec_seq[0], current_history, policy_seq[0], true_labels[0]->label);
 
-  for (size_t i=0; i<sequence_k; i++) {
-    clear_history(all_histories[i]);
-    hcache[i].predictions = NULL;
-    hcache[i].same = 0;
-    hcache[i].original_label = 0;
-  }
 
   size_t last_new = -1;
   int prediction_matches_history = 0;
@@ -786,6 +771,8 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
     // we're making examples at position t
     for (size_t i=0; i<sequence_k; i++) {
       clear_history(all_histories[i]);
+      // NOTE: have to keep all_histories and hcache[i].predictions
+      // seperate to avoid copy by value versus copy by pointer issues
       hcache[i].predictions = all_histories[i];
       hcache[i].predictions_hash = 0;
       hcache[i].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
@@ -795,10 +782,23 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
       append_history_item(hcache[i], i+1);
     }
 
+
     size_t end_pos = (n < t+1+sequence_rollout) ? n : (t+1+sequence_rollout);
-    // special case first iteration
+
+    // so we can break early, figure out when the position AFTER the LAST non-optimal policy
+    // this is the position AFTER which we can stop
+    if (all_policies_optimal)
+      end_pos = t+1;
+    else
+      while (end_pos >= t+1) {
+        if (policy_seq[end_pos-1] >= 0)
+          break;
+        end_pos--;
+      }
+
     //if (all_policies_optimal) end_pos = t+1;
     //clog << "t=" << t << ", end_pos=" << end_pos << endl;
+    bool entered_rollout = false;
     float gamma = 1;
     for (size_t t2=t+1; t2<end_pos; t2++) {
       gamma *= sequence_gamma;
@@ -807,6 +807,7 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
         if (hcache_all_equal())
           break;
       }
+      entered_rollout = true;
       for (size_t i=0; i < sequence_k; i++) {
         prediction_matches_history = 0;
         if (OPTIMIZE_SHARED_HISTORIES && hcache[i].same) {
@@ -819,7 +820,7 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
           prediction_matches_history  = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
           if (t2 == t+1) {
             //clog << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << endl;
-            print_history(hcache[i].predictions);
+            //print_history(hcache[i].predictions);
           }
 
           hcache[i].predictions       = hcache[last_new].predictions;
@@ -833,7 +834,7 @@ NOT_REALLY_NEW:
           prediction_matches_history = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
           if (t2 == t+1) {
             //clog << "prediction_matches_history: lp=" << last_prediction(hcache[i].predictions) << " and pred_seq=" << pred_seq[t] << " ==> " << prediction_matches_history << endl;
-            print_history(hcache[i].predictions);
+            //print_history(hcache[i].predictions);
           }
 
           size_t yhat = predict(ec_seq[t2], hcache[i].predictions, policy_seq[t2], true_labels[t2]->label);
@@ -849,7 +850,7 @@ NOT_REALLY_NEW:
       }
     }
 
-    if ((pred_seq[t] <= 0) || (pred_seq[t] > sequence_k)) {
+    if (entered_rollout && ((pred_seq[t] <= 0) || (pred_seq[t] > sequence_k))) {
       cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
       pred_seq[t] = 1;
     }
@@ -857,25 +858,25 @@ NOT_REALLY_NEW:
 
     // generate the training example
     float min_loss = hcache[0].loss;
-    size_t best_label = 0;
+    //size_t best_label = 0;
     for (size_t i=1; i < sequence_k; i++)
       if (hcache[i].loss < min_loss) {
         min_loss = hcache[i].loss;
-        best_label = i;
+        //best_label = i;
       }
 
     //clog << "sequence_k = " << sequence_k << endl;
     for (size_t i=0; i < sequence_k; i++) 
       *(loss_vector.begin + hcache[i].original_label) = hcache[i].loss - min_loss;
 
-    generate_training_example(ec_seq[t], current_history, min_loss, loss_vector);
+    generate_training_example(ec_seq[t], current_history, loss_vector);
 
     // update state
     //clog << "pred_seq[" << t << "] = " << pred_seq[t] << endl;
     append_history(current_history, pred_seq[t]);
     //clog << "current_history ==> ";
-    print_history(current_history);
-    if ((sequence_rollout == 0) && (t < n-1))
+    //print_history(current_history);
+    if ((!entered_rollout) && (t < n-1))
       pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1], true_labels[t+1]->label);
 
   }
@@ -903,7 +904,7 @@ void drive_sequence()
   read_example_this_loop = 0;
   while (true) {
     int got_null = process_next_example_sequence();
-    if (parser_done()) // we're done learning
+    if (got_null && parser_done()) // we're done learning
       break;
   }
 
@@ -915,13 +916,8 @@ void drive_sequence()
 /*
 TODO john:
 
-memory allocation bug in --audit ==> run valgrind, it has to do with
-the arrays themselves or something like that.
-
 position-based history features?
 
 oaa/csoaa should maybe warn on too-large-classid
-
-allow users to change ring_size
 
 */

@@ -131,6 +131,7 @@ po::variables_map parse_args(int argc, char *argv[],
     ("sequence_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
     ("sequence_beta", po::value<float>(), "interpolation rate for policies")
     ("sequence_gamma", po::value<float>(), "discount rate for policies")
+    ("sequence_max_length", po::value<size_t>(), "maximum length of sequences (default 256)")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
@@ -414,6 +415,11 @@ po::variables_map parse_args(int argc, char *argv[],
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(global.minibatch);
     global.ring_size = global.ring_size > minibatch2 ? global.ring_size : minibatch2;
+  }
+
+  if (vm.count("sequence_max_length")) {
+    size_t maxlen = vm["sequence_max_length"].as<size_t>();
+    global.ring_size = (global.ring_size > maxlen) ? global.ring_size : maxlen;
   }
 
   parse_regressor_args(vm, global.reg, global.final_regressor_name, global.quiet);
