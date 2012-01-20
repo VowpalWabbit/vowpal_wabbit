@@ -265,7 +265,7 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
     true_label[pos+numspr+strlen] = ' ';
 
     strlen = num_len - (int)ceil(log10f((float)pred_seq[i]+1));
-    numspr = sprintf(pred_label+pos+strlen, "%d", pred_seq[i]);
+    numspr = sprintf(pred_label+pos+strlen, "%d", (int)pred_seq[i]);
     pred_label[pos+numspr+strlen] = ' ';
 
     pos += num_len + 1;
@@ -283,8 +283,8 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
           true_label,
           pred_label,
           seq_num_features,
-          read_example_last_pass,
-          current_policy);
+          (int)read_example_last_pass,
+          (int)current_policy);
   //          net_time);
      
   global.sd->sum_loss_since_last_dump = 0.0;
@@ -454,7 +454,7 @@ void add_history_to_example(example* ec, history h)
       strcpy(a_feature.space, audit_feature_space.c_str());
 
       a_feature.feature = (char*)calloc_or_die(5 + 2*max_string_length, sizeof(char));
-      sprintf(a_feature.feature, "ug@%d=%d", t, h[history_length-t]);
+      sprintf(a_feature.feature, "ug@%d=%d", (int)t, (int)h[history_length-t]);
 
       push(ec->audit_features[history_namespace], a_feature);
     }
@@ -472,7 +472,7 @@ void add_history_to_example(example* ec, history h)
         strcpy(a_feature.space, audit_feature_space.c_str());
 
         a_feature.feature = (char*)calloc_or_die(6 + 3*max_string_length, sizeof(char));
-        sprintf(a_feature.feature, "bg@%d=%d-%d", t-1, h[history_length-t], h[history_length-t+1]);
+        sprintf(a_feature.feature, "bg@%d=%d-%d", (int)t-1, (int)h[history_length-t], (int)h[history_length-t+1]);
 
         push(ec->audit_features[history_namespace], a_feature);
       }
@@ -512,7 +512,7 @@ void add_history_to_example(example* ec, history h)
             strcpy(a_feature.space, audit_feature_space.c_str());
 
             a_feature.feature = (char*)calloc_or_die(8 + 2*max_string_length + fstring.length(), sizeof(char));
-            sprintf(a_feature.feature, "ug+f@%d=%d=%s", t, h[history_length-t], fstring.c_str());
+            sprintf(a_feature.feature, "ug+f@%d=%d=%s", (int)t, (int)h[history_length-t], fstring.c_str());
 
             push(ec->audit_features[history_namespace], a_feature);
           }
@@ -531,7 +531,7 @@ void add_history_to_example(example* ec, history h)
               strcpy(a_feature.space, audit_feature_space.c_str());
 
               a_feature.feature = (char*)calloc_or_die(9 + 3*max_string_length + fstring.length(), sizeof(char));
-              sprintf(a_feature.feature, "bg+f@%d=%d-%d=%s", t-1, h[history_length-t], h[history_length-t+1], fstring.c_str());
+              sprintf(a_feature.feature, "bg+f@%d=%d-%d=%s", (int)t-1, (int)h[history_length-t], (int)h[history_length-t+1], fstring.c_str());
 
               push(ec->audit_features[history_namespace], a_feature);
             }
