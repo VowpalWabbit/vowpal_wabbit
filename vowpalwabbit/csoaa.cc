@@ -44,14 +44,7 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
 
 size_t read_cached_label(void* v, io_buf& cache)
 {
-  label* ld = (label*) v;
-  char *c;
-  size_t total = sizeof(uint32_t);
-  if (buf_read(cache, c, total) < total) 
-    return 0;
-  c = bufread_label(ld,c, cache);
-
-  return total;
+  return 0;
 }
 
 float weight(void* v)
@@ -86,15 +79,10 @@ void cache_label(void* v, io_buf& cache)
 
 void default_label(void* v)
 {
-  label* ld = (label*) v;
-  ld->costs.erase();
 }
 
 void delete_label(void* v)
 {
-  label* ld = (label*) v;
-  if (ld->costs.begin != NULL)
-    free (ld->costs.begin);
 }
 
 size_t increment=0;

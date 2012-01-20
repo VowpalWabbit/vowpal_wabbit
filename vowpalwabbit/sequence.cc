@@ -50,6 +50,7 @@ struct history_item {
   float    loss;
   size_t   original_label;
   bool     same;
+  bool     alive;  // false if this isn't a valid transition
 };
 
 bool PRINT_DEBUG_INFO             = 0;
@@ -70,6 +71,9 @@ float  sequence_beta              = 0.5;
 size_t sequence_k                 = 2;
 size_t sequence_gamma             = 1.;
 
+bool   all_transitions_allowed    = true;
+bool** valid_transition           = NULL;
+
 size_t history_length             = 1;
 size_t current_policy             = 0;
 size_t read_example_last_pass     = 0;
@@ -87,7 +91,10 @@ history*      all_histories = NULL;
 history_item* hcache        = NULL;
 v_array<OAA::mc_label*> true_labels = v_array<OAA::mc_label*>();
 
-v_array<float> loss_vector  = v_array<float>();
+CSOAA::label empty_costs = { v_array<feature>() };
+v_array<feature> loss_vector  = v_array<feature>();
+v_array<CSOAA::label> transition_prediction_costs = v_array<CSOAA::label>();
+
 
 size_t        max_string_length = 8;
 
@@ -106,6 +113,37 @@ void* calloc_or_die(size_t nmemb, size_t size)
     exit(-1);
   }
   return data;
+}
+
+void read_transition_file(const char* filename)
+{
+  if (valid_transition == NULL) {
+    valid_transition = (bool**)calloc_or_die(sizeof(bool*), sequence_k+1);
+    for (size_t i=0; i<=sequence_k; i++)   // this is FROM, identified by line number; k+1 total lines for INITIAL transition
+      valid_transition[i] = (bool*)calloc_or_die(sizeof(bool), sequence_k);
+  }
+
+  for (size_t i=0; i<=sequence_k; i++)
+    for (size_t j=0; j<sequence_k; j++)
+      valid_transition[i][j] = true;
+
+  FILE *f = fopen(filename, "r");
+  if (f == NULL) {
+    cerr << "warning: could not read file " << filename << "; assuming all transitions are valid" << endl;
+    return;
+  }
+  for (size_t i=0; i<=sequence_k; i++) {   // this is FROM, identified by line number; k+1 total lines for INITIAL transition
+    for (size_t j=0; j<sequence_k; j++) {   // this is TO, identified by col number; k total columns
+      int allow;
+      int n = fscanf(NULL, "%d", &allow);
+      if (n == 0) {
+        cerr << "warning: could not read transitions; assuming all remaining are valid after " << i << "," << (j+1) << endl;
+        return;
+      }
+      valid_transition[i][j] = (allow > 0);
+    }
+  }
+  fclose(f);
 }
 
 int random_policy(int allow_optimal, int allow_current)
@@ -159,8 +197,6 @@ void allocate_required_memory()
   }
 
   loss_vector.erase();
-  for (size_t i=0; i < sequence_k; i++) 
-    push(loss_vector, (float)0.);
 
   if (pred_seq == NULL)
     pred_seq = (size_t*)calloc_or_die(global.ring_size, sizeof(size_t));
@@ -191,6 +227,13 @@ void free_required_memory()
 
   for (size_t i=0; i<sequence_k; i++)
     free(all_histories[i]);
+
+  if (!all_transitions_allowed) {
+    for (size_t i=0; i<sequence_k+1; i++)
+      free(valid_transition[i]);
+    free(valid_transition);
+    valid_transition = NULL;
+  }
 
   free(all_histories);   all_histories   = NULL;
 
@@ -336,17 +379,25 @@ inline size_t last_prediction(history h)
   return h[history_length-1];
 }
 
-int order_history_item(const void* a, const void* b)
+int order_history_item(const void* a, const void* b)  // put dead items at end
 {
-  if (((history_item*)a)->predictions_hash < ((history_item*)b)->predictions_hash)
+  history_item *ha = (history_item*)a;
+  history_item *hb = (history_item*)b;
+  if (ha->alive && !hb->alive)
     return -1;
-  else if (((history_item*)a)->predictions_hash < ((history_item*)b)->predictions_hash)
+  else if (!ha->alive && hb->alive)
+    return 1;
+  else if (!ha->alive && !hb->alive)
+    return 0;
+  else if (ha->predictions_hash < hb->predictions_hash)
+    return -1;
+  else if (ha->predictions_hash < hb->predictions_hash)
     return  1;
   else
     for (size_t i=history_length-1; i>=0; i--) {
-      if (((history_item*)a)->predictions[i] < ((history_item*)b)->predictions[i])
+      if (ha->predictions[i] < hb->predictions[i])
         return -1;
-      else if (((history_item*)a)->predictions[i] > ((history_item*)b)->predictions[i])
+      else if (ha->predictions[i] > hb->predictions[i])
         return  1;
       else
         return 0;
@@ -370,11 +421,13 @@ void sort_hcache_and_mark_equality()
   }
 }
 
-int hcache_all_equal()
+int hcache_all_equal_or_dead()
 {
-  for (size_t i=1; i<sequence_k; i++)
-    if (!hcache[i].same)
-      return 0;
+  if (!hcache[0].alive) return 1;
+  for (size_t i=1; i<sequence_k; i++) {
+    if (!hcache[i].alive) return 1;
+    if (!hcache[i].same)  return 0;
+  }
   return 1;
 }
 
@@ -596,7 +649,15 @@ void parse_sequence_args(po::variables_map& vm)
     cerr << "warning: sequence_beta set to a value <= 0; resetting to 0.5" << endl;
   }
 
+  if (vm.count("sequence_transition_file")) {
+    all_transitions_allowed = false;
+    read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
+  }
+
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
+  if (!all_transitions_allowed && (history_length == 0))
+    history_length = 1;
+
   constant_pow_history_length = 1;
   for (size_t i=0; i < history_length; i++)
     constant_pow_history_length *= quadratic_constant;
@@ -608,18 +669,17 @@ void parse_sequence_args(po::variables_map& vm)
 
 }
 
-CSOAA::label empty_costs = { v_array<float>() };
-void generate_training_example(example *ec, history h, v_array<float>costs)
+void generate_training_example(example *ec, history h, v_array<feature>costs)
 {
   CSOAA::label ld = { costs };
 
   add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
 
-  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]\t"; simple_print_example_features(ec);}
+  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << " ]\t"; simple_print_example_features(ec);}
   ec->ld = (void*)&ld;
   global.cs_learn(ec);
-  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]\t"; simple_print_example_features(ec);}
+  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << " ]\t"; simple_print_example_features(ec);}
 
   remove_history_from_example(ec);
   remove_policy_offset(ec, current_policy);
@@ -634,7 +694,11 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     add_history_to_example(ec, h);
     add_policy_offset(ec, policy);
 
-    ec->ld = (void*)&empty_costs;
+    if (all_transitions_allowed)
+      ec->ld = (void*)&empty_costs;
+    else
+      ec->ld = (void*)&transition_prediction_costs[last_prediction(h)];
+
     if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(ec);}
     global.cs_learn(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
@@ -843,10 +907,10 @@ void process_next_example_sequence()
       hcache[i].predictions_hash = 0;
       hcache[i].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
       hcache[i].same = 0;
+      hcache[i].alive = valid_transition[last_prediction(current_history)][i];
       hcache[i].original_label = i;
       append_history_item(hcache[i], i+1);
     }
-
 
     size_t end_pos = (n < t+1+sequence_rollout) ? n : (t+1+sequence_rollout);
 
@@ -867,11 +931,13 @@ void process_next_example_sequence()
       gamma *= sequence_gamma;
       if (OPTIMIZE_SHARED_HISTORIES) {
         sort_hcache_and_mark_equality();
-        if (hcache_all_equal())
+        if (hcache_all_equal_or_dead())
           break;
       }
       entered_rollout = true;
       for (size_t i=0; i < sequence_k; i++) {
+        if (!hcache[i].alive) { break; }  // we hit the dead rollouts!
+
         prediction_matches_history = 0;
         if (OPTIMIZE_SHARED_HISTORIES && hcache[i].same) {
           // copy from the previous cache
@@ -909,16 +975,21 @@ NOT_REALLY_NEW:
       pred_seq[t] = 1;
     }
 
-
     // generate the training example
     float min_loss = hcache[0].loss;
     for (size_t i=1; i < sequence_k; i++)
       if (hcache[i].loss < min_loss)
         min_loss = hcache[i].loss;
 
-    for (size_t i=0; i < sequence_k; i++) 
-      *(loss_vector.begin + hcache[i].original_label) = hcache[i].loss - min_loss;
-
+    loss_vector.erase();
+    for (size_t i=0; i<sequence_k; i++) {
+      if (hcache[i].alive) {
+        size_t lab  = hcache[i].original_label;
+        size_t cost = hcache[i].loss - min_loss;
+        feature temp  = { cost, lab };
+        push(loss_vector, temp);
+      }
+    }
     generate_training_example(ec_seq[t], current_history, loss_vector);
 
     // update state
