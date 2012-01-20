@@ -33,7 +33,7 @@ Email questions/comments to me@hal3.name.
 #include <iostream>
 #include <stdio.h>
 #include <math.h>
-#include <sys/timeb.h>
+// #include <sys/timeb.h>
 #include "gd.h"
 #include "io.h"
 #include "sequence.h"
@@ -58,7 +58,7 @@ bool OPTIMIZE_SHARED_HISTORIES    = 1;
 
 #define PRINT_LEN 21
 
-struct timeb t_start_global;
+// struct timeb t_start_global;
 
 size_t sequence_history           = 1;
 bool   sequence_bigrams           = false;
@@ -72,6 +72,7 @@ size_t sequence_gamma             = 1.;
 
 size_t history_length             = 1;
 size_t current_policy             = 0;
+size_t read_example_last_pass     = 0;
 size_t total_number_of_policies   = 1;
 
 size_t constant_pow_history_length = 0;
@@ -202,6 +203,27 @@ void free_required_memory()
  *** OUTPUTTING FUNCTIONS
  ********************************************************************************************/
 
+void global_print_label(example *ec, size_t label)
+{
+  for (size_t i=0; i<global.final_prediction_sink.index(); i++) {
+    int f = global.final_prediction_sink[i];
+    global.print(f, label, 0., ec->tag);
+  }
+}
+
+void global_print_newline()
+{
+  char temp[1];
+  temp[0] = '\n';
+  for (size_t i=0; i<global.final_prediction_sink.index(); i++) {
+    int f = global.final_prediction_sink[i];
+    ssize_t t = write(f, temp, 1);
+    if (t != 1)
+      cerr << "write error" << endl;
+  }
+}
+
+
 void print_history(history h)
 {
   clog << "[ ";
@@ -212,7 +234,6 @@ void print_history(history h)
 
 size_t read_example_this_loop  = 0;
 size_t read_example_last_id    = 0;
-size_t read_example_last_pass  = 0;
 int    read_example_should_warn_eof = 1;
 size_t passes_since_new_policy = 0;
 
@@ -251,10 +272,10 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
     i++;
   }
 
-  timeb t_end_global;
-  ftime(&t_end_global);
-  int net_time = (int) (t_end_global.time - t_start_global.time);
-  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu %8d\n",
+  //  timeb t_end_global;
+  //  ftime(&t_end_global);
+  //  int net_time = (int) (t_end_global.time - t_start_global.time);
+  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu %5d %5d\n",
           global.sd->sum_loss/global.sd->weighted_examples,
           global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
           (long int)global.sd->example_number,
@@ -262,7 +283,9 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
           true_label,
           pred_label,
           seq_num_features,
-          net_time);
+          read_example_last_pass,
+          current_policy);
+  //          net_time);
      
   global.sd->sum_loss_since_last_dump = 0.0;
   global.sd->old_weighted_examples = global.sd->weighted_examples;
@@ -703,6 +726,8 @@ void run_test(example* ec)
     }
 
     yhat = predict(ec, current_history, policy, -1);
+    global_print_label(ec, yhat);
+
     ec->ld = old_label;
 
     append_history(current_history, yhat);
@@ -710,8 +735,10 @@ void run_test(example* ec)
     free_example(ec);
     ec = safe_get_example(0);
   }
-  if (ec != NULL)
+  if (ec != NULL) {
     free_example(ec);
+    global_print_newline();
+  }
 
   global.sd->example_number++;
   print_update(0, seq_num_features);
@@ -728,6 +755,7 @@ void process_next_example_sequence()
 
   // skip initial newlines
   while (example_is_newline(cur_ec)) {
+    global_print_newline();
     free_example(cur_ec);
     cur_ec = safe_get_example(1);
     if (cur_ec == NULL)
@@ -775,6 +803,7 @@ void process_next_example_sequence()
 
     // predict everything and accumulate loss
     pred_seq[t] = predict(ec_seq[t], current_history, policy_seq[t], -1);
+    global_print_label(ec_seq[t], pred_seq[t]);
     append_history(current_history, pred_seq[t]);
     if (pred_seq[t] != true_labels[t]->label) { // incorrect prediction
       global.sd->sum_loss += true_labels[t]->weight;
@@ -785,6 +814,7 @@ void process_next_example_sequence()
     if (random_policy(1,0) == -1)
       policy_seq[t] = -1;
   }
+  global_print_newline();
 
   global.sd->example_number++;
   print_update(1, seq_num_features);
@@ -912,18 +942,18 @@ NOT_REALLY_NEW:
 
 void drive_sequence()
 {
-  const char * header_fmt = "%-10s %-10s %8s %8s %24s %22s %8s %8s\n";
+  const char * header_fmt = "%-10s %-10s %8s %8s %24s %22s %8s %5s %5s\n";
   fprintf(stderr, header_fmt,
           "average", "since", "sequence", "example",
-          "current label", "current predicted", "current", "total");
+          "current label", "current predicted", "current", "cur", "cur");
   fprintf(stderr, header_fmt,
-          "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features", "time (s)");
+          "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features", "pass", "pol");
   cerr.precision(5);
 
   global.cs_initialize();
   allocate_required_memory();
 
-  ftime(&t_start_global);
+  //  ftime(&t_start_global);
   read_example_this_loop = 0;
   while (true) {
     process_next_example_sequence();

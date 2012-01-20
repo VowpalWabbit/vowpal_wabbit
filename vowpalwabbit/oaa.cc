@@ -191,7 +191,6 @@ void learn(example* ec)
   ec->ld = mc_label_data;
   *(prediction_t*)&(ec->final_prediction) = prediction;
   update_indicies(ec, -total_increment);
-  //output_example(ec);
 }
 
 void initialize()
@@ -213,6 +212,7 @@ void drive_oaa()
       if ((ec = get_example()) != NULL)//semiblocking operation.
 	{
 	  learn(ec);
+          output_example(ec);
 	  free_example(ec);
 	}
       else if (parser_done())

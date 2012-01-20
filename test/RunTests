@@ -23,7 +23,7 @@ sub usage(@) {
 
     die "Usage: $0 [options] [vw-executable]
     By default will run against the 1st 'vw' executable found in:
-        .  ..  \$PATH
+        .  ..  ../vowpalwabbit  \$PATH
 
     Options:
         -c    print commands before running them
@@ -48,7 +48,7 @@ sub which_vw() {
             usage("$0: argument $exe: not an executable file");
         }
     } elsif (@ARGV == 0) {
-        foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
+        foreach my $dir ('.', '..', '../vowpalwabbit', split(':', $ENV{PATH})) {
             my $exe = "$dir/vw";
             if (-x $exe) {
                 printf STDERR "Testing vw: %s\n", $exe;
@@ -69,7 +69,7 @@ sub which_lda() {
             usage("$0: argument $exe: not an executable file");
         }
     } elsif (@ARGV == 0 || @ARGV == 1) {
-        foreach my $dir ('.', '..', split(':', $ENV{PATH})) {
+        foreach my $dir ('.', '..', '../vowpalwabbit', split(':', $ENV{PATH})) {
             my $exe = "$dir/vw";
             if (-x $exe) {
                 printf STDERR "Testing lda: %s\n", $exe;
@@ -431,7 +431,18 @@ __DATA__
     test-sets/ref/0002c.stderr
     pred-sets/ref/0002c.predict
 
-# Test 9: Run LDA with 100 topics on 1000 Wikipedia articles
+# Test 9: Run sequence on seq_small for 12 passes, 4 passes per policy
+{VW} -c -d train-sets/seq_small --passes 12 --sequence_passes_per_policy 4 --sequence 4 && rm -f train-sets/seq_small.cache
+    train-sets/ref/seq_small.stdout
+    train-sets/ref/seq_small.stderr
+
+# Test 10: Run LDA with 100 topics on 1000 Wikipedia articles
 {LDA} --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr
+
+# Test 11: Run sequence (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 2 --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1 && rm -f train-sets/wsj_small.dat.gz.cache
+    train-sets/ref/wsj_small.dat.stdout
+    train-sets/ref/wsj_small.dat.stderr
+
