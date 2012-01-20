@@ -9,7 +9,7 @@
 namespace CSOAA {
   
   struct label {
-    v_array<float> costs;
+    v_array<feature> costs;
   };
   
   void parse_flag(size_t s);
