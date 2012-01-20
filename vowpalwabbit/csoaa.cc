@@ -10,6 +10,17 @@
 using namespace std;
 
 namespace CSOAA {
+
+bool is_test_label(label* ld)
+{
+  if (ld->costs.index() == 0)
+    return true;
+  float cost_0 = ld->costs[0].x;
+  for (size_t i=1; i<ld->costs.index(); i++)
+    if (cost_0 != ld->costs[i].x)
+      return false;
+  return true;
+}
   
 char* bufread_label(label* ld, char* c, io_buf& cache)
 {
@@ -87,8 +98,10 @@ void delete_label(void* v)
 }
 
 size_t increment=0;
-size_t total_increment=0;
 v_array<substring> name;
+
+  void feature_value(substring &s, v_array<substring>& name, float &v);
+  size_t hashstring (substring s, unsigned long h);
 
 void parse_label(void* v, v_array<substring>& words)
 {
@@ -100,11 +113,18 @@ void parse_label(void* v, v_array<substring>& words)
       feature_value(words[i], name, f.x);
       
       size_t index = 0;
-      if (name.index() = 2)
-	index = hashstring(p->name[0], 0);
+      if (name.index() == 1 || name.index() == 2)
+	{
+	  index = hashstring(name[0], 0);
+	  if (index < 1 || index > global.k)
+	    cerr << "invalid cost specification: " << index << endl;
+	}
       else 
 	cerr << "malformed cost specification!" << endl;
-
+      
+      if (name.index() == 1)
+	f.x = FLT_MAX;
+      
       push(ld->costs, f);
     }
 }
@@ -115,7 +135,7 @@ void print_update(example *ec)
     {
       label* ld = (label*) ec->ld;
       char label_buf[32];
-      if (ld->costs.index() == 0)
+      if (is_test_label(ld))
 	strcpy(label_buf," unknown");
       else
 	sprintf(label_buf," known");
@@ -141,15 +161,21 @@ void output_example(example* ec)
   global.sd->weighted_examples += 1.;
   global.sd->total_features += ec->num_features;
   float loss = 0.;
-  if (ld->costs.index() == global.k)
+  if (!is_test_label(ld))
     {//need to compute exact loss
-      float chosen_loss = ld->costs[*(OAA::prediction_t*)&ec->final_prediction -1];
-      float min = INT_MAX;
-      for (size_t i = 0; i < global.k; i++)
-	{
-	  if (ld->costs[i] < min)
-	    min = ld->costs[i];
-	}
+      size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
+
+      float chosen_loss = FLT_MAX;
+      float min = FLT_MAX;
+      for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
+        if (cl->weight_index == pred)
+          chosen_loss = cl->x;
+        if (cl->x < min)
+          min = cl->x;
+      }
+      if (chosen_loss == FLT_MAX)
+        cerr << "warning: csoaa predicted an invalid class" << endl;
+
       loss = chosen_loss - min;
     }
 
@@ -170,27 +196,37 @@ void output_example(example* ec)
 
   void learn(example* ec)
   {
-    label* cost_label = (label*)ec->ld;
+    label* ld = (label*)ec->ld;
     float prediction = 1;
     float score = FLT_MAX;
+    size_t current_increment = 0;
     
-    for (size_t i = 1; i <= global.k; i++)
+    for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
+	if (cl->x == FLT_MAX) //we didn't have any label information.
+	  continue;
+
+        size_t i = cl->weight_index;
+	
 	label_data simple_temp;
 	simple_temp.initial = 0.;
-	if (cost_label->costs.index() == global.k)
-	  {
-	    simple_temp.label = cost_label->costs[i-1];
-	    simple_temp.weight = 1.;
-	  }
-	else
+	if (is_test_label(ld))
 	  {
 	    simple_temp.label = FLT_MAX;
 	    simple_temp.weight = 0.;
 	  }
+	else
+	  {
+	    simple_temp.label = cl->x;
+	    simple_temp.weight = 1.;
+	  }
 	ec->ld = &simple_temp;
-	if (i != 1)
-	  OAA::update_indicies(ec, increment);
+
+        size_t desired_increment = increment * (i-1);
+        if (desired_increment != current_increment) {
+	  OAA::update_indicies(ec, desired_increment - current_increment);
+          current_increment = desired_increment;
+        }
 	ec->partial_prediction = 0.;
 
 	global.learn(ec);
@@ -200,9 +236,10 @@ void output_example(example* ec)
 	    prediction = i;
 	  }
       }
-    ec->ld = cost_label;
+    ec->ld = ld;
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
-    OAA::update_indicies(ec, -total_increment);
+    if (current_increment != 0)
+      OAA::update_indicies(ec, -current_increment);
   }
 
   void initialize()
@@ -212,6 +249,8 @@ void output_example(example* ec)
 
 void finalize()
 {
+  if (name.begin != NULL)
+    free(name.begin);
   global.finish();
 }
 
@@ -246,7 +285,6 @@ void parse_flag(size_t s)
   global.cs_learn = learn;
   global.cs_finish = finalize;
   increment = (global.length()/global.k) * global.stride;
-  total_increment = increment*(global.k-1);
 }
 
 }

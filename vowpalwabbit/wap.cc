@@ -92,76 +92,78 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
   ec->total_sum_feat_sq /= 2;
 }
 
-  struct float_index 
+  struct float_feature
   {
     float v;
-    float c;
-    uint32_t i;
+    feature ci;
   };
   int fi_compare(const void *e1, const void* e2)
   {
-    float_index* fi1 = (float_index*)e1;
-    float_index* fi2 = (float_index*)e2;
-    if (fi1->c > fi2->c)
+    float_feature* fi1 = (float_feature*)e1;
+    float_feature* fi2 = (float_feature*)e2;
+    if (fi1->ci.x > fi2->ci.x)
       return 1;
-    else if (fi1->c < fi2->c)
+    else if (fi1->ci.x < fi2->ci.x)
       return -1;
     else
       return 0;
   }
   int fi_compare_i(const void *e1, const void* e2)
   {
-    float_index* fi1 = (float_index*)e1;
-    float_index* fi2 = (float_index*)e2;
-    if (fi1->i > fi2->i)
+    float_feature* fi1 = (float_feature*)e1;
+    float_feature* fi2 = (float_feature*)e2;
+    if (fi1->ci.weight_index > fi2->ci.weight_index)
       return 1;
-    else if (fi1->i < fi2->i)
+    else if (fi1->ci.weight_index < fi2->ci.weight_index)
       return -1;
     else
       return 0;
   }
-  v_array<float_index> vs;
+  v_array<float_feature> vs;
 
 void train(example* ec)
 {
-  CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
+  CSOAA::label* ld = (CSOAA::label*)ec->ld;
+  
+  feature* j = ld->costs.begin; 
+  for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
+    if (cl->x != FLT_MAX)
+      *j++ = *cl;
+  ld->costs.end = j;
   
   float score = FLT_MAX;
   vs.erase();
-  for (size_t i = 0; i < global.k; i++)
+  for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
     {
-      float_index temp = {0., cost_label->costs[i], i};
-      if (temp.c < score)
-	score = temp.c;
+      float_feature temp = {0., *cl};
+      if (temp.ci.x < score)
+	score = temp.ci.x;
       push(vs, temp);
     }
   
-  qsort(vs.begin, vs.index(), sizeof(float_index), fi_compare);
+  qsort(vs.begin, vs.index(), sizeof(float_feature), fi_compare);
   
-  for (size_t i = 0; i < global.k; i++)
+  for (size_t i = 0; i < ld->costs.index(); i++)
     {
-      vs[i].c -= score;
+      vs[i].ci.x -= score;
       if (i == 0)
 	vs[i].v = 0.;
       else
-	vs[i].v = vs[i-1].v + (vs[i].c-vs[i-1].c) / (float)i;
-
-      //cerr << "vs[" << i << "] = " << vs[i].v << endl;
+	vs[i].v = vs[i-1].v + (vs[i].ci.x-vs[i-1].ci.x) / (float)i;
     }
   
-  qsort(vs.begin, vs.index(), sizeof(float_index), fi_compare_i);
+  qsort(vs.begin, vs.index(), sizeof(float_feature), fi_compare_i);
 
-  for (size_t i = 1; i <= global.k; i++)
-    for (size_t j = i+1; j <= global.k; j++)
+  for (size_t i = 0; i < ld->costs.index(); i++)
+    for (size_t j = i+1; j < ld->costs.index(); j++)
       {
-        //cerr << i << " vs " << j << endl;
 	label_data simple_temp;
-	simple_temp.weight = fabsf(vs[i-1].v - vs[j-1].v);
+	simple_temp.weight = fabsf(vs[i].v - vs[j].v);
 	if (simple_temp.weight > 1e-5)
 	  {
 	    simple_temp.initial = 0.;
 	    
-	    if (vs[i-1].v < vs[j-1].v)
+	    if (vs[i].v < vs[j].v)
 	      simple_temp.label = 1;
 	    else
 	      simple_temp.label = -1;
@@ -169,16 +171,17 @@ void train(example* ec)
 	    ec->ld = &simple_temp;
 	    
 	    ec->partial_prediction = 0.;
-	    mirror_features(ec,(i-1)*increment, (j-1)*increment);
+	    uint32_t myi = vs[i].ci.weight_index;
+	    uint32_t myj = vs[j].ci.weight_index;
 
-            //cerr << "label = " << simple_temp.label << ", weight = " << simple_temp.weight << endl;
+	    mirror_features(ec,(myi-1)*increment, (myj-1)*increment);
 
 	    global.learn(ec);
-	    unmirror_features(ec,(i-1)*increment, (j-1)*increment);
+	    unmirror_features(ec,(myi-1)*increment, (myj-1)*increment);
 	  }
       }
   
-  ec->ld = cost_label;
+  ec->ld = ld;
 }
 
 uint32_t test(example* ec)
@@ -186,24 +189,50 @@ uint32_t test(example* ec)
   uint32_t prediction = 1;
   float score = FLT_MIN;
   
-  for(size_t i = 1; i <= global.k; i++)
+  CSOAA::label* cost_label = (CSOAA::label*)ec->ld; 
+
+  if (cost_label->costs.index() > 0)
+    for (size_t i = 0; i < cost_label->costs.index(); i++)
+      {
+	label_data simple_temp;
+	simple_temp.initial = 0.;
+	simple_temp.weight = 0.;
+	simple_temp.label = FLT_MAX;
+	uint32_t myi = cost_label->costs[i].weight_index;
+	if (myi!= 1)
+	  OAA::update_indicies(ec, increment*(myi-1));
+	ec->partial_prediction = 0.;
+	ec->ld = &simple_temp;
+	global.learn(ec);
+	if (myi != 1)
+	  OAA::update_indicies(ec, -increment*(myi-1));
+	if (ec->partial_prediction > score)
+	  {
+	    score = ec->partial_prediction;
+	    prediction = myi;
+	  }
+      }
+  else
     {
-      label_data simple_temp;
-      simple_temp.initial = 0.;
-      simple_temp.weight = 0.;
-      simple_temp.label = FLT_MAX;
-      if (i!= 1)
-	OAA::update_indicies(ec, increment);
-      ec->partial_prediction = 0.;
-      ec->ld = &simple_temp;
-      global.learn(ec);
-      if (ec->partial_prediction > score)
+      for(size_t i = 1; i <= global.k; i++)
 	{
-	  score = ec->partial_prediction;
-	  prediction = i;
+	  label_data simple_temp;
+	  simple_temp.initial = 0.;
+	  simple_temp.weight = 0.;
+	  simple_temp.label = FLT_MAX;
+	  if (i!= 1)
+	    OAA::update_indicies(ec, increment);
+	  ec->partial_prediction = 0.;
+	  ec->ld = &simple_temp;
+	  global.learn(ec);
+	  if (ec->partial_prediction > score)
+	    {
+	      score = ec->partial_prediction;
+	      prediction = i;
+	    }
 	}
+      OAA::update_indicies(ec, -total_increment);  
     }
-  OAA::update_indicies(ec, -total_increment);  
   return prediction;
 }
 
