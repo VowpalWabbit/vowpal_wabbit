@@ -212,7 +212,6 @@ void print_history(history h)
 
 size_t read_example_this_loop  = 0;
 size_t read_example_last_id    = 0;
-int    read_example_ring_error = 0;
 size_t read_example_last_pass  = 0;
 int    read_example_should_warn_eof = 1;
 size_t passes_since_new_policy = 0;
@@ -625,23 +624,24 @@ size_t predict(example *ec, history h, int policy, size_t truth)
 }
 
 bool warned_about_class_overage = false;
+bool got_null = false;
 
 // safe_get_example(allow_past_eof)
 // reads the next example and returns it.
 //
-// however, returns NULL if one of the following holds:
-//   * reading another example would push us past the ring size (in which case, read_example_ring_error is set to 1)
-//   * get_example returns NULL (who knows why that would happen)
+// returns NULL if we don't get a real example (either got null or end of ring)
+// returns example otherwise
 example* safe_get_example(int allow_past_eof) {
+  got_null = false;
   if (read_example_this_loop == global.ring_size) {
     cerr << "warning: length of sequence at " << read_example_last_id << " exceeds ring size; breaking apart" << endl;
-    read_example_ring_error = 1;
     return NULL;
   }
-  read_example_ring_error = 0;
   example* ec = get_example();
-  if (ec == NULL)
+  if (ec == NULL) {
+    got_null = true;
     return NULL;
+  }
 
   read_example_this_loop++;
   read_example_last_id = ec->example_counter;
@@ -678,7 +678,7 @@ example* safe_get_example(int allow_past_eof) {
   return ec;
 }
 
-int run_test(example* ec) // returns 1 if get_example ACTUALLY returned NULL; otherwise returns 0
+void run_test(example* ec)
 {
   size_t yhat = 0;
   int warned = 0;
@@ -715,29 +715,29 @@ int run_test(example* ec) // returns 1 if get_example ACTUALLY returned NULL; ot
 
   global.sd->example_number++;
   print_update(0, seq_num_features);
-
-  return ((ec == NULL) && !read_example_ring_error);
 }
 
-int process_next_example_sequence()  // returns 1 if get_example ACTUALLY returned NULL, otherwise returns 0
+void process_next_example_sequence()
 {
   int seq_num_features = 0;
   read_example_this_loop = 0;
 
   example *cur_ec = safe_get_example(1);
   if (cur_ec == NULL)
-    return (!read_example_ring_error);
+    return;
 
   // skip initial newlines
   while (example_is_newline(cur_ec)) {
     free_example(cur_ec);
     cur_ec = safe_get_example(1);
     if (cur_ec == NULL)
-      return (!read_example_ring_error);
+      return;
   }
 
-  if (example_is_test(cur_ec))
-    return run_test(cur_ec);
+  if (example_is_test(cur_ec)) {
+    run_test(cur_ec);
+    return;
+  }
 
   // we know we're training
   size_t n = 0;
@@ -753,14 +753,12 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
     cur_ec = safe_get_example(0);
   }
 
-  int ret_val = !read_example_ring_error;
-
   if (skip_this_one) {
     for (size_t i=0; i<n; i++)
       free_example(ec_seq[n]);
     if (cur_ec != NULL)
       free_example(cur_ec);
-    return ret_val;
+    return;
   }
 
   // we've now read in all the examples up to n, time to pick some
@@ -909,8 +907,6 @@ NOT_REALLY_NEW:
 
   if (cur_ec != NULL)
     free_example(cur_ec);
-
-  return ret_val;
 }
  
 
@@ -930,11 +926,10 @@ void drive_sequence()
   ftime(&t_start_global);
   read_example_this_loop = 0;
   while (true) {
-    int got_null = process_next_example_sequence();
+    process_next_example_sequence();
     if (got_null && parser_done()) // we're done learning
       break;
   }
-
   free_required_memory();
   global.cs_finish();
 }

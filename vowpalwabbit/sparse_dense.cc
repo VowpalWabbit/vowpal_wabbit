@@ -11,8 +11,9 @@ embodied in the content of this file are licensed under the BSD
 float sd_add(weight* weights, size_t mask, feature* begin, feature* end)
 {
   float ret = 0.;
-  for (feature* f = begin; f!= end; f++)
+  for (feature* f = begin; f!= end; f++) {
     ret += weights[f->weight_index & mask] * f->x;
+  }
   return ret;
 }
 

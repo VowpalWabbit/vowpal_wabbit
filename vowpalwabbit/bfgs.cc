@@ -98,10 +98,20 @@ void quad_precond_update(weight* weights, feature& page_feature, v_array<feature
 // w[2] = step direction
 // w[3] = preconditioner
 
+bool test_example(example* ec)
+{
+  return ((label_data*)ec->ld)->label == FLT_MAX;
+}
+
+  float bfgs_predict(regressor& reg, example* &ec)
+  {
+    ec->partial_prediction = inline_predict(reg,ec);
+    return finalize_prediction(ec->partial_prediction);
+  }
+
 float predict_and_gradient(regressor& reg, example* &ec)
 {
-  float raw_prediction = inline_predict(reg,ec);
-  float fp = finalize_prediction(raw_prediction);
+  float fp = bfgs_predict(reg,ec);
 
   label_data* ld = (label_data*)ec->ld;
   set_minmax(ld->label);
@@ -610,7 +620,7 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
 			ftime(&t_end_global);
 			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!global.quiet)
-			  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+                          fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 			predictions.erase();
 			update_weight(final_regressor_name, reg, step_size, current_pass);		     		      
 		      }
@@ -628,20 +638,23 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
 		  if (global.l2_lambda > 0.)
 		    curvature += regularizer_direction_magnitude(reg,global.l2_lambda);
 		  float dd = derivative_in_direction(reg, mem, origin);
-		  if (curvature == 0. && dd != 0.)
-		    {
-		      cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
-		      exit(1);
-		    }
-		  step_size = - dd/curvature;
+		  if (curvature == 0.) 
+                    if (dd != 0.)
+                      {
+                        cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
+                        exit(1);
+                      }
+                    else
+                      step_size = 0.;
+                  else
+                    step_size = - dd/curvature;
 		  float d_mag = direction_magnitude(reg);
-
 		  predictions.erase();
 		  update_weight(final_regressor_name ,reg,step_size, current_pass);
 		  ftime(&t_end_global);
 		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		  if (!global.quiet)
-		    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
+                    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
 		  gradient_pass = true;
 		}//now start computing derivatives.
 }
@@ -725,32 +738,40 @@ void learn(example* ec)
   /********************************************************************/
   /* I) GRADIENT CALCULATION ******************************************/
   /********************************************************************/ 
-  if (gradient_pass)
+  if (test_example(ec))
     {
-      ec->final_prediction = predict_and_gradient(global.reg,ec);//w[0] & w[1]
-      if (current_pass == 0)
-	{
-	  label_data* ld = (label_data*)ec->ld;
-	  importance_weight_sum += ld->weight;
-	  update_preconditioner(global.reg,ec);//w[3]
-	}
-      label_data* ld = (label_data*)ec->ld;
-      ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
-      loss_sum += ec->loss;
-      push(predictions,ec->final_prediction);
+      ec->final_prediction = bfgs_predict(global.reg,ec);//w[0]
     }
+  else
+    if (gradient_pass)
+      {
+        ec->final_prediction = predict_and_gradient(global.reg,ec);//w[0] & w[1]
+        if (current_pass == 0)
+          {
+            label_data* ld = (label_data*)ec->ld;
+            importance_weight_sum += ld->weight;
+            update_preconditioner(global.reg,ec);//w[3]
+          }
+        label_data* ld = (label_data*)ec->ld;
+        ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+        loss_sum += ec->loss;
+        push(predictions,ec->final_prediction);
+      }
   /********************************************************************/
   /* II) CURVATURE CALCULATION ****************************************/
   /********************************************************************/ 
-  else //computing curvature
-    {
-      float d_dot_x = dot_with_direction(global.reg,ec);//w[2]
-      label_data* ld = (label_data*)ec->ld;
-      ec->final_prediction = predictions[example_number];
-      ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;	      
-      float sd = global.loss->second_derivative(predictions[example_number++],ld->label);
-      curvature += d_dot_x*d_dot_x*sd*ld->weight;
-    }
+    else //computing curvature
+      {
+        float d_dot_x = dot_with_direction(global.reg,ec);//w[2]
+        label_data* ld = (label_data*)ec->ld;
+        if (example_number >= predictions.index())//Make things safe in case example source is strange.
+          example_number = predictions.index()-1;
+        ec->final_prediction = predictions[example_number];
+        ec->partial_prediction = predictions[example_number];
+        ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;	      
+        float sd = global.loss->second_derivative(predictions[example_number++],ld->label);
+        curvature += d_dot_x*d_dot_x*sd*ld->weight;
+      }
   if (output_regularizer && current_pass==final_pass)
     {
       update_preconditioner(global.reg,ec);//w[3]

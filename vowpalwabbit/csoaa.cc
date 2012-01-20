@@ -161,11 +161,12 @@ void output_example(example* ec)
   print_update(ec);
 }
 
+
   void learn(example* ec)
   {
     label* cost_label = (label*)ec->ld;
     float prediction = 1;
-    float score = INT_MAX;
+    float score = FLT_MAX;
     
     for (size_t i = 1; i <= global.k; i++)
       {
@@ -185,6 +186,7 @@ void output_example(example* ec)
 	if (i != 1)
 	  OAA::update_indicies(ec, increment);
 	ec->partial_prediction = 0.;
+
 	global.learn(ec);
 	if (ec->partial_prediction < score)
 	  {
