@@ -33,6 +33,7 @@ Email questions/comments to me@hal3.name.
 #include <iostream>
 #include <stdio.h>
 #include <math.h>
+#include <sys/timeb.h>
 #include "gd.h"
 #include "io.h"
 #include "sequence.h"
@@ -51,10 +52,13 @@ struct history_item {
   bool     same;
 };
 
+bool PRINT_DEBUG_INFO             = 0;
+bool PRINT_UPDATE_EVERY_EXAMPLE   = 0;
 bool OPTIMIZE_SHARED_HISTORIES    = 1;
-bool PRINT_UPDATE_EVERY_EXAMPLE   = 1;
 
 #define PRINT_LEN 21
+
+struct timeb t_start_global;
 
 size_t sequence_history           = 1;
 bool   sequence_bigrams           = false;
@@ -248,14 +252,18 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
     i++;
   }
 
-  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu\n",
+  timeb t_end_global;
+  ftime(&t_end_global);
+  int net_time = (int) (t_end_global.time - t_start_global.time);
+  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu %8d\n",
           global.sd->sum_loss/global.sd->weighted_examples,
           global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
           (long int)global.sd->example_number,
           global.sd->weighted_examples,
           true_label,
           pred_label,
-          seq_num_features);
+          seq_num_features,
+          net_time);
      
   global.sd->sum_loss_since_last_dump = 0.0;
   global.sd->old_weighted_examples = global.sd->weighted_examples;
@@ -586,10 +594,10 @@ void generate_training_example(example *ec, history h, v_array<float>costs)
   add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
 
-  clog << "before train: costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]\t"; simple_print_example_features(ec);
+  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]\t"; simple_print_example_features(ec);}
   ec->ld = (void*)&ld;
   global.cs_learn(ec);
-  clog << " after train: costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]\t"; simple_print_example_features(ec);
+  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (float*c=costs.begin; c!=costs.end; c++) clog << " " << *c; clog << " ]\t"; simple_print_example_features(ec);}
 
   remove_history_from_example(ec);
   remove_policy_offset(ec, current_policy);
@@ -605,10 +613,10 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     add_policy_offset(ec, policy);
 
     ec->ld = (void*)&empty_costs;
-    clog << "before test: "; simple_print_example_features(ec);
+    if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(ec);}
     global.cs_learn(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
-    clog << " after test: " << yhat << endl;
+    if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << endl;}
 
     remove_history_from_example(ec);
     remove_policy_offset(ec, policy);
@@ -790,7 +798,7 @@ int process_next_example_sequence()  // returns 1 if get_example ACTUALLY return
   }
 
   // start learning
-  clog << "===================================================================" << endl;
+  if (PRINT_DEBUG_INFO) {clog << "===================================================================" << endl;}
   clear_history(current_history);
   pred_seq[0] = predict(ec_seq[0], current_history, policy_seq[0], true_labels[0]->label);
 
@@ -908,17 +916,18 @@ NOT_REALLY_NEW:
 
 void drive_sequence()
 {
-  const char * header_fmt = "%-10s %-10s %8s %8s %24s %22s %8s\n";
+  const char * header_fmt = "%-10s %-10s %8s %8s %24s %22s %8s %8s\n";
   fprintf(stderr, header_fmt,
           "average", "since", "sequence", "example",
-          "current label", "current predicted", "current");
+          "current label", "current predicted", "current", "total");
   fprintf(stderr, header_fmt,
-          "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features");
+          "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features", "time (s)");
   cerr.precision(5);
 
   global.cs_initialize();
   allocate_required_memory();
 
+  ftime(&t_start_global);
   read_example_this_loop = 0;
   while (true) {
     int got_null = process_next_example_sequence();
