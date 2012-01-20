@@ -659,7 +659,6 @@ double importance_weight_sum = 0.;
 size_t current_pass = 0;
 double previous_loss_sum = 0;
 
-int m = global.m;
 float* mem;
 double* rho;
 double* alpha;
