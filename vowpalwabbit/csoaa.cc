@@ -195,7 +195,6 @@ void output_example(example* ec)
     ec->ld = cost_label;
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
     OAA::update_indicies(ec, -total_increment);
-    //output_example(ec);
   }
 
   void initialize()
@@ -217,6 +216,7 @@ void drive_csoaa()
       if ((ec = get_example()) != NULL)//semiblocking operation.
 	{
 	  learn(ec);
+          output_example(ec);
 	  free_example(ec);
 	}
       else if (parser_done())

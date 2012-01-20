@@ -3,3 +3,4 @@ To get John's changes:
 
 To enable use of valgrind, do:
   ./configure --enable-profiling
+To do fancy learning, do --exact_adaptive_norm --power_t 1 or --exact_adaptive_norm --power_t 0.5

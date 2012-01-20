@@ -20,6 +20,7 @@ void mirror_features(example* ec, size_t offset1, size_t offset2)
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       size_t original_length = ec->atomics[*i].index();
+      //cerr << "original_length = " << original_length << endl;
       for (size_t j = 0; j < original_length; j++)
 	{
 	  feature* f = &ec->atomics[*i][j];
@@ -28,13 +29,14 @@ void mirror_features(example* ec, size_t offset1, size_t offset2)
 	  push(ec->atomics[*i], temp);
 	}
       ec->sum_feat_sq[*i] *= 2;
+      //cerr << "final_length = " << ec->atomics[*i].index() << endl;
     }
   if (global.audit)
     {
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
 	  {
-	    size_t original_length = ec->atomics[*i].index();
+	    size_t original_length = ec->audit_features[*i].index();
 	    for (size_t j = 0; j < original_length; j++)
 	      {
 		audit_data* f = &ec->audit_features[*i][j];
@@ -45,16 +47,18 @@ void mirror_features(example* ec, size_t offset1, size_t offset2)
 		    strcpy(new_space, f->space);
 		  }
 		char* new_feature = (char*)calloc(strlen(f->feature)+2,sizeof(char));
-		strcpy(new_feature+1, f->space);
+		strcpy(new_feature+1, f->feature);
 		*new_feature = '-';
-		audit_data temp = {new_space, new_feature, - f->x, f->weight_index + offset2, true};
+		audit_data temp = {new_space, new_feature, f->weight_index + offset2, - f->x, true};
 		f->weight_index += offset1;
 		push(ec->audit_features[*i], temp);
 	      }
+            //cerr << "final_length = " << ec->audit_features[*i].index() << endl;
 	  }
     }
   ec->num_features *= 2;
   ec->total_sum_feat_sq *= 2;
+  //cerr << "total_sum_feat_sq = " << ec->total_sum_feat_sq << endl;
 }
 
 void unmirror_features(example* ec, size_t offset1, size_t offset2)
@@ -105,6 +109,17 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
     else
       return 0;
   }
+  int fi_compare_i(const void *e1, const void* e2)
+  {
+    float_index* fi1 = (float_index*)e1;
+    float_index* fi2 = (float_index*)e2;
+    if (fi1->i > fi2->i)
+      return 1;
+    else if (fi1->i < fi2->i)
+      return -1;
+    else
+      return 0;
+  }
   v_array<float_index> vs;
 
 void train(example* ec)
@@ -130,18 +145,23 @@ void train(example* ec)
 	vs[i].v = 0.;
       else
 	vs[i].v = vs[i-1].v + (vs[i].c-vs[i-1].c) / (float)i;
+
+      //cerr << "vs[" << i << "] = " << vs[i].v << endl;
     }
   
+  qsort(vs.begin, vs.index(), sizeof(float_index), fi_compare_i);
+
   for (size_t i = 1; i <= global.k; i++)
     for (size_t j = i+1; j <= global.k; j++)
       {
+        //cerr << i << " vs " << j << endl;
 	label_data simple_temp;
 	simple_temp.weight = fabsf(vs[i-1].v - vs[j-1].v);
 	if (simple_temp.weight > 1e-5)
 	  {
 	    simple_temp.initial = 0.;
 	    
-	    if (vs[i-1].i < vs[j-1].i)
+	    if (vs[i-1].v < vs[j-1].v)
 	      simple_temp.label = 1;
 	    else
 	      simple_temp.label = -1;
@@ -150,6 +170,9 @@ void train(example* ec)
 	    
 	    ec->partial_prediction = 0.;
 	    mirror_features(ec,(i-1)*increment, (j-1)*increment);
+
+            //cerr << "label = " << simple_temp.label << ", weight = " << simple_temp.weight << endl;
+
 	    global.learn(ec);
 	    unmirror_features(ec,(i-1)*increment, (j-1)*increment);
 	  }

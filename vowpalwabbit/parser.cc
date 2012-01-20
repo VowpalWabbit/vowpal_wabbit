@@ -638,7 +638,7 @@ void setup_example(parser* p, example* ae)
   ae->pass = global.passes_complete;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
-  ae->total_sum_feat_sq = 1;
+  ae->total_sum_feat_sq = 0;
   ae->done = false;
   ae->example_counter = global.parsed_examples + 1;
   ae->global_weight = global.lp->get_weight(ae->ld);
@@ -662,6 +662,7 @@ void setup_example(parser* p, example* ae)
     push(ae->indices,constant_namespace);
     feature temp = {1,(uint32_t) (constant & global.parse_mask)};
     push(ae->atomics[constant_namespace], temp);
+    ae->total_sum_feat_sq++;
   }
   
   if(global.stride != 1) //make room for per-feature information.
