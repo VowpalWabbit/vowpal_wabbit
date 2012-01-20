@@ -24,34 +24,12 @@ bool is_test_label(label* ld)
   
 char* bufread_label(label* ld, char* c, io_buf& cache)
 {
-  uint32_t num = *(uint32_t *)c;
-  c += sizeof(uint32_t);
-  size_t total = sizeof(float)*num;
-  if (buf_read(cache, c, total) < total) 
-    {
-      cout << "error in demarshal of cost data" << endl;
-      return c;
-    }
-  for (uint32_t i = 0; i<num; i++)
-    {
-      float temp = *(float *)c;
-      c += sizeof(float);
-      push(ld->costs, temp);
-    }
-  
-  return c;
+  return 0;
 }
 
 size_t read_cached_label(void* v, io_buf& cache)
 {
-  label* ld = (label*) v;
-  char *c;
-  size_t total = sizeof(uint32_t);
-  if (buf_read(cache, c, total) < total) 
-    return 0;
-  c = bufread_label(ld,c, cache);
-
-  return total;
+  return 0;
 }
 
 float weight(void* v)
@@ -66,51 +44,25 @@ float initial(void* v)
 
 char* bufcache_label(label* ld, char* c)
 {
-  *(uint32_t *)c = ld->costs.index();
-  c += sizeof(uint32_t);
-  for (size_t i = 0; i< ld->costs.index(); i++)
-    {
-      *(float *)c = ld->costs[i];
-      c += sizeof(float);
-    }
-  return c;
+  return 0;
 }
 
 void cache_label(void* v, io_buf& cache)
 {
-  char *c;
-  label* ld = (label*) v;
-  buf_write(cache, c, sizeof(uint32_t)+sizeof(float)*ld->costs.index());
-  bufcache_label(ld,c);
 }
 
 void default_label(void* v)
 {
-  label* ld = (label*) v;
-  ld->costs.erase();
 }
 
 void delete_label(void* v)
 {
-  label* ld = (label*) v;
-  if (ld->costs.begin != NULL)
-    free (ld->costs.begin);
 }
 
 size_t increment=0;
 
 void parse_label(void* v, v_array<substring>& words)
 {
-  label* ld = (label*)v;
-
-  if(words.index() != 0 && words.index() != global.k)
-    {
-      cerr << "malformed example!\n";
-      cerr << "#costs = " << words.index() << " but " << global.k << " or 0 required" << endl;
-    }
-
-  for (size_t i = 0; i < words.index(); i++)
-    push(ld->costs, float_of_substring(words[i]));
 }
 
 void print_update(example *ec)
