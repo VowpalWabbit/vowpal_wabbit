@@ -259,7 +259,7 @@ double direction_magnitude(regressor& reg)
 	    g1_Hg1/importance_weight_sum, "", "", "");
 }
 
-  void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int& lastj, int &origin) throw (curv_exception)
+void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int& lastj, int &origin) throw (curv_exception)
 {  
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
@@ -530,6 +530,7 @@ void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regresso
   /********************************************************************/
   /* B) GRADIENT CALCULATED *******************************************/
   /********************************************************************/ 
+  
 	      if (gradient_pass) // We just finished computing all gradients
 		{
 		  if(global.span_server != "") {
@@ -704,10 +705,12 @@ void learn(example* ec)
       gradient_pass = false;//now start computing curvature
     }
     else
-      work_on_weights(gradient_pass, global.reg, global.final_regressor_name,
+      {
+	work_on_weights(gradient_pass, global.reg, global.final_regressor_name,
 		      loss_sum, importance_weight_sum, step_size, previous_loss_sum,
 		      current_pass, curvature, mem, predictions,
 		      example_number, rho, alpha, lastj, origin, final_pass);
+      }
     
     current_pass++;
     /********************************************************************/
@@ -787,6 +790,8 @@ void finish()
 
 void initializer()
 {
+  int m = global.m;
+
   mem_stride = (m==0) ? CG_EXTRA : 2*m;
   mem = (float*) malloc(sizeof(float)*global.length()*(mem_stride));
   rho = (double*) malloc(sizeof(double)*m);
