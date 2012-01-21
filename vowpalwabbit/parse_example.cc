@@ -118,11 +118,15 @@ int read_features(parser* p, void* ex)
   tokenize('|', example, p->channels);
   global.lp->default_label(ae->ld);
   substring* feature_start = &(p->channels[1]);
+
+  substring label_space = p->channels[0];
   if (*line == '|')
-    feature_start = &(p->channels[0]);
-  else 
     {
-      substring label_space = p->channels[0];
+      feature_start = &(p->channels[0]);
+      p->words.erase();
+    }
+  else
+    {
       char* tab_location = safe_index(label_space.begin, '\t', label_space.end);
       if (tab_location != label_space.end)
 	label_space.begin = tab_location+1;
@@ -136,10 +140,9 @@ int read_features(parser* p, void* ex)
 	  
 	  push_many(ae->tag, tag.begin, tag.end - tag.begin);
 	}
-      
-      global.lp->parse_label(ae->ld, p->words);
     }
-  
+  global.lp->parse_label(ae->ld, p->words);
+
   size_t mask = global.parse_mask;
   bool audit = global.audit;
   for (substring* i = feature_start; i != p->channels.end; i++) {

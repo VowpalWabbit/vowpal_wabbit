@@ -13,7 +13,6 @@ using namespace std;
 namespace WAP {
   
   size_t increment=0;
-  size_t total_increment=0;
 
 void mirror_features(example* ec, size_t offset1, size_t offset2)
 {
@@ -191,47 +190,25 @@ uint32_t test(example* ec)
   
   CSOAA::label* cost_label = (CSOAA::label*)ec->ld; 
 
-  if (cost_label->costs.index() > 0)
-    for (size_t i = 0; i < cost_label->costs.index(); i++)
-      {
-	label_data simple_temp;
-	simple_temp.initial = 0.;
-	simple_temp.weight = 0.;
-	simple_temp.label = FLT_MAX;
-	uint32_t myi = cost_label->costs[i].weight_index;
-	if (myi!= 1)
-	  OAA::update_indicies(ec, increment*(myi-1));
-	ec->partial_prediction = 0.;
-	ec->ld = &simple_temp;
-	global.learn(ec);
-	if (myi != 1)
-	  OAA::update_indicies(ec, -increment*(myi-1));
-	if (ec->partial_prediction > score)
-	  {
-	    score = ec->partial_prediction;
-	    prediction = myi;
-	  }
-      }
-  else
+  for (size_t i = 0; i < cost_label->costs.index(); i++)
     {
-      for(size_t i = 1; i <= global.k; i++)
+      label_data simple_temp;
+      simple_temp.initial = 0.;
+      simple_temp.weight = 0.;
+      simple_temp.label = FLT_MAX;
+      uint32_t myi = cost_label->costs[i].weight_index;
+      if (myi!= 1)
+	OAA::update_indicies(ec, increment*(myi-1));
+      ec->partial_prediction = 0.;
+      ec->ld = &simple_temp;
+      global.learn(ec);
+      if (myi != 1)
+	OAA::update_indicies(ec, -increment*(myi-1));
+      if (ec->partial_prediction > score)
 	{
-	  label_data simple_temp;
-	  simple_temp.initial = 0.;
-	  simple_temp.weight = 0.;
-	  simple_temp.label = FLT_MAX;
-	  if (i!= 1)
-	    OAA::update_indicies(ec, increment);
-	  ec->partial_prediction = 0.;
-	  ec->ld = &simple_temp;
-	  global.learn(ec);
-	  if (ec->partial_prediction > score)
-	    {
-	      score = ec->partial_prediction;
-	      prediction = i;
-	    }
+	  score = ec->partial_prediction;
+	  prediction = myi;
 	}
-      OAA::update_indicies(ec, -total_increment);  
     }
   return prediction;
 }
@@ -290,6 +267,5 @@ void parse_flag(size_t s)
   global.cs_learn = learn;
   global.cs_finish = finalize;
   increment = (global.length()/global.k) * global.stride;
-  total_increment = increment*(global.k-1);
 }
 }

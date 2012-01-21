@@ -87,7 +87,6 @@ void delete_label(void* v)
 }
 
 size_t increment=0;
-size_t total_increment=0;
 v_array<substring> name;
 
 void parse_label(void* v, v_array<substring>& words)
@@ -113,6 +112,15 @@ void parse_label(void* v, v_array<substring>& words)
 	f.x = FLT_MAX;
       
       push(ld->costs, f);
+    }
+
+  if (words.index() == 0)
+    {
+      for (size_t i = 1; i <= global.k; i++)
+	{
+	  feature f = {f.x, i};
+	  push(ld->costs, f);
+	}
     }
 }
 
@@ -188,41 +196,23 @@ void output_example(example* ec)
     float score = FLT_MAX;
     size_t current_increment = 0;
 
-    if (is_test_label(ld))
-      {
-	for (size_t i = 1; i <= global.k; i++)
-	  {
-	    label_data simple_temp;
-	    simple_temp.initial = 0.;
-	    simple_temp.label = FLT_MAX;
-	    simple_temp.weight = 0.;
-	    
-	    ec->ld = &simple_temp;
-	    
-	    if (i!= 1)
-	      OAA::update_indicies(ec, increment);
-	    ec->partial_prediction = 0.;
-	    
-	    global.learn(ec);
-	    
-	    if (ec->partial_prediction < score)
-	      {
-		score = ec->partial_prediction;
-		prediction = i;
-	      }
-	  }
-	OAA::update_indicies(ec, -total_increment);  
-      }
-
-
     for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
         size_t i = cl->weight_index;
 	
 	label_data simple_temp;
 	simple_temp.initial = 0.;
-	simple_temp.label = cl->x;
-	simple_temp.weight = 1.;
+
+	if (cl->x == FLT_MAX)
+	  {
+	    simple_temp.label = FLT_MAX;
+	    simple_temp.weight = 0.;
+	  }
+	else
+	  {
+	    simple_temp.label = cl->x;
+	    simple_temp.weight = 1.;
+	  }
 
 	ec->ld = &simple_temp;
 
@@ -289,7 +279,6 @@ void parse_flag(size_t s)
   global.cs_learn = learn;
   global.cs_finish = finalize;
   increment = (global.length()/global.k) * global.stride;
-  total_increment = increment * (global.k - 1);
 }
 
 }
