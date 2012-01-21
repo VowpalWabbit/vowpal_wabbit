@@ -8,6 +8,8 @@
 #include "oaa.h"
 
 using namespace std;
+void feature_value(substring &s, v_array<substring>& name, float &v);
+size_t hashstring (substring s, unsigned long h);
 
 namespace CSOAA {
 
@@ -15,9 +17,8 @@ bool is_test_label(label* ld)
 {
   if (ld->costs.index() == 0)
     return true;
-  float cost_0 = ld->costs[0].x;
-  for (size_t i=1; i<ld->costs.index(); i++)
-    if (cost_0 != ld->costs[i].x)
+  for (size_t i=0; i<ld->costs.index(); i++)
+    if (FLT_MAX != ld->costs[i].x)
       return false;
   return true;
 }
@@ -86,10 +87,8 @@ void delete_label(void* v)
 }
 
 size_t increment=0;
+size_t total_increment=0;
 v_array<substring> name;
-
-  void feature_value(substring &s, v_array<substring>& name, float &v);
-  size_t hashstring (substring s, unsigned long h);
 
 void parse_label(void* v, v_array<substring>& words)
 {
@@ -100,12 +99,12 @@ void parse_label(void* v, v_array<substring>& words)
       feature f;
       feature_value(words[i], name, f.x);
       
-      size_t index = 0;
+      f.weight_index = 0;
       if (name.index() == 1 || name.index() == 2)
 	{
-	  index = hashstring(name[0], 0);
-	  if (index < 1 || index > global.k)
-	    cerr << "invalid cost specification: " << index << endl;
+	  f.weight_index = hashstring(name[0], 0);
+	  if (f.weight_index < 1 || f.weight_index > global.k)
+	    cerr << "invalid cost specification: " << f.weight_index << endl;
 	}
       else 
 	cerr << "malformed cost specification!" << endl;
@@ -188,26 +187,43 @@ void output_example(example* ec)
     float prediction = 1;
     float score = FLT_MAX;
     size_t current_increment = 0;
-    
+
+    if (is_test_label(ld))
+      {
+	for (size_t i = 1; i <= global.k; i++)
+	  {
+	    label_data simple_temp;
+	    simple_temp.initial = 0.;
+	    simple_temp.label = FLT_MAX;
+	    simple_temp.weight = 0.;
+	    
+	    ec->ld = &simple_temp;
+	    
+	    if (i!= 1)
+	      OAA::update_indicies(ec, increment);
+	    ec->partial_prediction = 0.;
+	    
+	    global.learn(ec);
+	    
+	    if (ec->partial_prediction < score)
+	      {
+		score = ec->partial_prediction;
+		prediction = i;
+	      }
+	  }
+	OAA::update_indicies(ec, -total_increment);  
+      }
+
+
     for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
-	if (cl->x == FLT_MAX) //we didn't have any label information.
-	  continue;
-
         size_t i = cl->weight_index;
 	
 	label_data simple_temp;
 	simple_temp.initial = 0.;
-	if (is_test_label(ld))
-	  {
-	    simple_temp.label = FLT_MAX;
-	    simple_temp.weight = 0.;
-	  }
-	else
-	  {
-	    simple_temp.label = cl->x;
-	    simple_temp.weight = 1.;
-	  }
+	simple_temp.label = cl->x;
+	simple_temp.weight = 1.;
+
 	ec->ld = &simple_temp;
 
         size_t desired_increment = increment * (i-1);
@@ -273,6 +289,7 @@ void parse_flag(size_t s)
   global.cs_learn = learn;
   global.cs_finish = finalize;
   increment = (global.length()/global.k) * global.stride;
+  total_increment = increment * (global.k - 1);
 }
 
 }
