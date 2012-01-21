@@ -31,6 +31,7 @@ Email questions/comments to me@hal3.name.
 */
 
 #include <iostream>
+#include <float.h>
 #include <stdio.h>
 #include <math.h>
 // #include <sys/timeb.h>
@@ -91,7 +92,7 @@ history*      all_histories = NULL;
 history_item* hcache        = NULL;
 v_array<OAA::mc_label*> true_labels = v_array<OAA::mc_label*>();
 
-CSOAA::label empty_costs = { v_array<feature>() };
+CSOAA::label testall_costs = { v_array<feature>() };
 v_array<feature> loss_vector  = v_array<feature>();
 v_array<CSOAA::label> transition_prediction_costs = v_array<CSOAA::label>();
 
@@ -126,24 +127,27 @@ void read_transition_file(const char* filename)
   for (size_t i=0; i<=sequence_k; i++)
     for (size_t j=0; j<sequence_k; j++)
       valid_transition[i][j] = true;
-
-  FILE *f = fopen(filename, "r");
-  if (f == NULL) {
-    cerr << "warning: could not read file " << filename << "; assuming all transitions are valid" << endl;
-    return;
-  }
-  for (size_t i=0; i<=sequence_k; i++) {   // this is FROM, identified by line number; k+1 total lines for INITIAL transition
-    for (size_t j=0; j<sequence_k; j++) {   // this is TO, identified by col number; k total columns
-      int allow;
-      int n = fscanf(NULL, "%d", &allow);
-      if (n == 0) {
-        cerr << "warning: could not read transitions; assuming all remaining are valid after " << i << "," << (j+1) << endl;
-        return;
+  
+  if (filename[0] != '\0')
+    {
+      FILE *f = fopen(filename, "r");
+      if (f == NULL) {
+	cerr << "warning: could not read file " << filename << "; assuming all transitions are valid" << endl;
+	return;
       }
-      valid_transition[i][j] = (allow > 0);
+      for (size_t i=0; i<=sequence_k; i++) {   // this is FROM, identified by line number; k+1 total lines for INITIAL transition
+	for (size_t j=0; j<sequence_k; j++) {   // this is TO, identified by col number; k total columns
+	  int allow;
+	  int n = fscanf(NULL, "%d", &allow);
+	  if (n == 0) {
+	    cerr << "warning: could not read transitions; assuming all remaining are valid after " << i << "," << (j+1) << endl;
+	    return;
+	  }
+	  valid_transition[i][j] = (allow > 0);
+	}
+      }
+      fclose(f);
     }
-  }
-  fclose(f);
 }
 
 int random_policy(int allow_optimal, int allow_current)
@@ -215,6 +219,12 @@ void allocate_required_memory()
 
   if (current_history == NULL)
     current_history = (history)calloc_or_die(history_length, sizeof(uint32_t));
+
+  for (size_t i = 1; i <= global.k; i++)
+    {
+      feature f = {FLT_MAX, i};
+      push(testall_costs.costs, f);
+    }
 }
 
 void free_required_memory()
@@ -239,6 +249,9 @@ void free_required_memory()
 
   true_labels.erase();
   free(true_labels.begin);
+
+  if (testall_costs.costs.begin != NULL)
+    free(testall_costs.costs.begin);
 }
 
 
@@ -653,6 +666,8 @@ void parse_sequence_args(po::variables_map& vm)
     all_transitions_allowed = false;
     read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
   }
+  else
+    read_transition_file("");
 
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
   if (!all_transitions_allowed && (history_length == 0))
@@ -695,7 +710,7 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     add_policy_offset(ec, policy);
 
     if (all_transitions_allowed)
-      ec->ld = (void*)&empty_costs;
+      ec->ld = (void*)&testall_costs;
     else
       ec->ld = (void*)&transition_prediction_costs[last_prediction(h)];
 
@@ -1024,13 +1039,13 @@ void drive_sequence()
   global.cs_initialize();
   allocate_required_memory();
 
-  //  ftime(&t_start_global);
   read_example_this_loop = 0;
   while (true) {
     process_next_example_sequence();
     if (got_null && parser_done()) // we're done learning
       break;
   }
+
   free_required_memory();
   global.cs_finish();
 }
