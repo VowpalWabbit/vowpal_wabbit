@@ -36,17 +36,11 @@ using namespace std;
 #define W_DIR 2
 #define W_COND 3
 
-class curv_exception: public exception
-{ 
-public:
-  virtual const char* what() const throw()
-  {
-    return "Zero or negative curvature detected.\n"
-      "To increase curvature you can increase regularization or rescale features.\n"
-      "It is also very likely that you have reached numerical accuracy\n"
-      "and further decrease in the objective cannot be reliably detected.\n";
-  }
-} curv_ex;
+#define LEARN_OK 0
+#define LEARN_CURV 1
+#define LEARN_CONV 2
+
+class curv_exception: public exception {} curv_ex;
 
 /********************************************************************/
 /* mem & w definition ***********************************************/
@@ -63,13 +57,76 @@ namespace BFGS
 
 {
 
+double wolfe1_bound = 0.01;
+
 struct timeb t_start, t_end;
 double net_comm_time = 0.0;
 
 struct timeb t_start_global, t_end_global;
 double net_time;
 
-int mem_stride = 0;
+v_array<float> predictions;
+size_t example_number=0;
+size_t current_pass = 0;
+
+  // default transition behavior
+bool first_hessian_on=false;
+bool backstep_on=false; 
+
+  // set by initializer
+int mem_stride;
+bool output_regularizer;
+float* mem;
+double* rho;
+double* alpha;
+
+  // the below needs to be included when resetting, in addition to preconditioner and derivative
+  int lastj, origin;
+  double loss_sum, previous_loss_sum;
+  float step_size;
+  double importance_weight_sum;
+  double curvature;
+
+  // first pass specification
+  bool first_pass=true;
+bool gradient_pass=true;
+bool preconditioner_pass=true;
+
+const char* curv_message = "Zero or negative curvature detected.\n"
+      "To increase curvature you can increase regularization or rescale features.\n"
+      "It is also possible that you have reached numerical accuracy\n"
+      "and further decrease in the objective cannot be reliably detected.\n";
+
+void zero_derivative(regressor& reg)
+{//set derivative to 0.
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors;
+  for(uint32_t i = 0; i < length; i++)
+    weights[stride*i+1] = 0;
+}
+
+void zero_preconditioner(regressor& reg)
+{//set derivative to 0.
+  uint32_t length = 1 << global.num_bits;
+  size_t stride = global.stride;
+  weight* weights = reg.weight_vectors;
+  for(uint32_t i = 0; i < length; i++)
+    weights[stride*i+3] = 0;
+}
+
+void reset_state()
+  {
+    lastj = origin = 0;
+    loss_sum = previous_loss_sum = 0.;
+    importance_weight_sum = 0.;
+    curvature = 0.;
+    first_pass = true;
+    gradient_pass = true;
+    preconditioner_pass = true;
+    zero_derivative(global.reg);
+    zero_preconditioner(global.reg);
+  }
 
 void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {
@@ -191,24 +248,6 @@ float dot_with_direction(regressor& reg, example* &ec)
 	} 
     }
   return ret;
-}
-
-void zero_derivative(regressor& reg)
-{//set derivative to 0.
-  uint32_t length = 1 << global.num_bits;
-  size_t stride = global.stride;
-  weight* weights = reg.weight_vectors;
-  for(uint32_t i = 0; i < length; i++)
-    weights[stride*i+1] = 0;
-}
-
-void zero_preconditioner(regressor& reg)
-{//set derivative to 0.
-  uint32_t length = 1 << global.num_bits;
-  size_t stride = global.stride;
-  weight* weights = reg.weight_vectors;
-  for(uint32_t i = 0; i < length; i++)
-    weights[stride*i+3] = 0;
 }
 
 double regularizer_direction_magnitude(regressor& reg, float regularizer)
@@ -392,7 +431,7 @@ void bfgs_iter_middle(regressor&reg, float* mem, double* rho, double* alpha, int
     rho[j] = rho[j-1];
 }
 
-double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_loss_sum, double step, double importance_weight_sum, int &origin) throw (curv_exception) { 
+double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_loss_sum, double step_size, double importance_weight_sum, int &origin, double& wolfe1) { 
   uint32_t length = 1 << global.num_bits;
   size_t stride = global.stride;
   weight* w = reg.weight_vectors;
@@ -409,20 +448,13 @@ double wolfe_eval(regressor& reg, float* mem, double loss_sum, double previous_l
     g1_g1 += w[W_GT] * w[W_GT];
   }
   
-  double wolfe1 = (loss_sum-previous_loss_sum)/(step*g0_d);
+  wolfe1 = (loss_sum-previous_loss_sum)/(step_size*g0_d);
   double wolfe2 = g1_d/g0_d;
-  double new_step_cross  = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
-
-  if (step==0. || new_step_cross<0. || new_step_cross>step || isnan(new_step_cross)) {
-    if (!global.quiet)
-      fprintf(stderr, "%10s\t%10s\t%s%10s\t%10s\t", "", "", " ", "", "");
-    throw curv_ex;
-    // as an alternative to throw: return 0.5*step
-  }
+  // double new_step_cross = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
   if (!global.quiet)
     fprintf(stderr, "%-10e\t%-10e\t%s%-10f\t%-10f\t", g1_g1/(importance_weight_sum*importance_weight_sum), g1_Hg1/importance_weight_sum, " ", wolfe1, wolfe2);
-  return new_step_cross;
+  return 0.5*step_size;
 }
 
 
@@ -531,169 +563,13 @@ double derivative_in_direction(regressor& reg, float* mem, int &origin)
     save_predictor(reg_name, current_pass);
   }
 
-
-void work_on_weights(bool &gradient_pass, regressor &reg, string &final_regressor_name,
-                     double &loss_sum, double &importance_weight_sum, float &step_size, double &previous_loss_sum,
-		     size_t &current_pass, double &curvature, float* mem, v_array<float> &predictions,
-		     size_t &example_number, double* rho, double* alpha, int &lastj, int &origin, size_t &final_pass) {
+int process_pass() {
+  int status = LEARN_OK;
 
   /********************************************************************/
-  /* B) GRADIENT CALCULATED *******************************************/
+  /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/ 
-  
-	      if (gradient_pass) // We just finished computing all gradients
-		{
-		  if(global.span_server != "") {
-		    loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
-		    accumulate(global.span_server, reg, 1); //Accumulate gradients from all nodes
-		  }
-		  if (global.l2_lambda > 0.)
-		    loss_sum += add_regularization(reg,global.l2_lambda);
-		  if (!global.quiet)
-		    fprintf(stderr, "%2lu %-e\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
-
-		  double new_step = 0.0;
-		  try {
-		    new_step = wolfe_eval(reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin);
-		  }
-		  catch (curv_exception e) {
-		    if (step_size!=0.)
-		      fprintf(stdout, "\nIn wolfe_eval: %s", e.what());
-		    if (final_pass>current_pass+1)
-		      final_pass = current_pass+1;
-		  }
-
-  /********************************************************************/
-  /* B1) LINE SEARCH FAILED *******************************************/
-  /********************************************************************/ 
-		  if (new_step==0.0 || (current_pass > 0 && loss_sum > previous_loss_sum))
-		    {// curvature violated, or we stepped too far last time: step back
-		      ftime(&t_end_global);
-		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-		      float ratio = (step_size==0.) ? 0. : new_step/step_size;
-		      if (!global.quiet)
-			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
-				"","",ratio,
-				new_step,
-				net_time/1000.);
-			predictions.erase();
-			update_weight(final_regressor_name, reg, -step_size+new_step, current_pass);		     		      			
-			step_size = new_step;
-			zero_derivative(reg);
-			loss_sum = 0.;
-		    }
-
-  /********************************************************************/
-  /* B2) LINE SEARCH SUCCESSFUL                      ******************/
-  /*     DETERMINE NEXT SEARCH DIRECTION             ******************/
-  /********************************************************************/ 
-		  else {
-		    if (current_pass>0) {
-		      double rel_decrease = (previous_loss_sum-loss_sum)/previous_loss_sum;
-		      if (!isnan(rel_decrease) && rel_decrease<global.rel_threshold && current_pass+1<final_pass) {
-			fprintf(stdout, "\nTermination condition reached: decrease in loss less than %.3f%%.\n"
-				"If you want to optimize further, decrease termination threshold.\n", global.rel_threshold*100.0);
-			final_pass=current_pass+1;
-		      }
-		    }
-		      previous_loss_sum = loss_sum;
-		      loss_sum = 0.;
-		      example_number = 0;
-		      curvature = 0;
-		      step_size = 1.0;
-
-		      try {
-		      bfgs_iter_middle(reg, mem, rho, alpha, lastj, origin);
-		      }
-		      catch (curv_exception e) {
-			fprintf(stdout, "In bfgs_iter_middle: %s", e.what());
-			step_size=0.0;
-			if (final_pass>current_pass+1)
-			  final_pass = current_pass+1;
-		      }
-
-		      if (global.hessian_on) {
-			gradient_pass = false;//now start computing curvature
-		      }
-		      else {
-			float d_mag = direction_magnitude(reg);
-			ftime(&t_end_global);
-			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-			if (!global.quiet)
-                          fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
-			predictions.erase();
-			update_weight(final_regressor_name, reg, step_size, current_pass);		     		      
-		      }
-		    }
-		}
-
-  /********************************************************************/
-  /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
-  /********************************************************************/ 
-	      else // just finished all second gradients
-		{
-		  if(global.span_server != "") {
-		    curvature = accumulate_scalar(global.span_server, curvature);  //Accumulate curvatures
-		  }
-		  if (global.l2_lambda > 0.)
-		    curvature += regularizer_direction_magnitude(reg,global.l2_lambda);
-		  float dd = derivative_in_direction(reg, mem, origin);
-		  if (curvature == 0.) 
-                    if (dd != 0.)
-                      {
-                        cout << "your curvature is 0, something wrong.  Try adding regularization" << endl;
-                        exit(1);
-                      }
-                    else
-                      step_size = 0.;
-                  else
-                    step_size = - dd/curvature;
-		  float d_mag = direction_magnitude(reg);
-		  predictions.erase();
-		  update_weight(final_regressor_name ,reg,step_size, current_pass);
-		  ftime(&t_end_global);
-		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-		  if (!global.quiet)
-                    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
-		  gradient_pass = true;
-		}//now start computing derivatives.
-}
-
-v_array<float> predictions;
-size_t example_number=0;
-double curvature=0.;
-
-bool gradient_pass=true;
-size_t final_pass=global.numpasses-1;
-double loss_sum = 0;
-float step_size = 0.;
-double importance_weight_sum = 0.;
- 
-size_t current_pass = 0;
-double previous_loss_sum = 0;
-
-float* mem;
-double* rho;
-double* alpha;
-int lastj = 0, origin = 0;
-
-bool output_regularizer = false;
-
-void learn(example* ec)
-{
-  assert(ec->in_use);
-  
-  if (ec->pass>final_pass) 
-    return;
-  
-  /********************************************************************/
-  /* FINISHED A PASS OVER EXAMPLES: DISTINGUISH CASES *****************/
-  /********************************************************************/ 
-  if (ec->pass != current_pass) {
-    /********************************************************************/
-    /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
-    /********************************************************************/ 
-    if (current_pass == 0) {
+    if (first_pass) {
       if(global.span_server != "")
 	{
 	  accumulate(global.span_server, global.reg, 3); //Accumulate preconditioner
@@ -713,78 +589,208 @@ void learn(example* ec)
       loss_sum = 0.;
       example_number = 0;
       curvature = 0;
-      bfgs_iter_start(global.reg, mem, lastj, importance_weight_sum, origin);		     		     
-      gradient_pass = false;//now start computing curvature
+      bfgs_iter_start(global.reg, mem, lastj, importance_weight_sum, origin);
+      if (first_hessian_on) {
+	gradient_pass = false;//now start computing curvature
+      }
+      else {
+	step_size = 0.5;
+	float d_mag = direction_magnitude(global.reg);
+	ftime(&t_end_global);
+	net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+	if (!global.quiet)
+	  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+	predictions.erase();
+	update_weight(global.final_regressor_name, global.reg, step_size, current_pass);		     		           }
     }
     else
-      {
-	work_on_weights(gradient_pass, global.reg, global.final_regressor_name,
-		      loss_sum, importance_weight_sum, step_size, previous_loss_sum,
-		      current_pass, curvature, mem, predictions,
-		      example_number, rho, alpha, lastj, origin, final_pass);
-      }
-    
-    current_pass++;
-    /********************************************************************/
-    /* IN THE LAST PASS CALCULATE THE DIAGONAL OF THE HESSIAN ***********/
-    /********************************************************************/ 
-    if (output_regularizer && current_pass==final_pass)
-      zero_preconditioner(global.reg);
-  }
   /********************************************************************/
-  /* PROCESS AN EXAMPLE: DISTINGUISH CASES ****************************/
+  /* B) GRADIENT CALCULATED *******************************************/
   /********************************************************************/ 
+	      if (gradient_pass) // We just finished computing all gradients
+		{
+		  if(global.span_server != "") {
+		    loss_sum = accumulate_scalar(global.span_server, loss_sum);  //Accumulate loss_sums
+		    accumulate(global.span_server, global.reg, 1); //Accumulate gradients from all nodes
+		  }
+		  if (global.l2_lambda > 0.)
+		    loss_sum += add_regularization(global.reg,global.l2_lambda);
+		  if (!global.quiet)
+		    fprintf(stderr, "%2lu %-e\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
+
+		  double wolfe1;
+		  double new_step = wolfe_eval(global.reg, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin, wolfe1);
+
+  /********************************************************************/
+  /* B0) DERIVATIVE ZERO: MINIMUM FOUND *******************************/
+  /********************************************************************/ 
+		  if (isnan(wolfe1))
+		    {
+		      fprintf(stderr, "\n");
+		      fprintf(stdout, "Derivative 0 detected.\n");
+		      step_size=0.0;
+		      status = LEARN_CONV;
+		    }
+  /********************************************************************/
+  /* B1) LINE SEARCH FAILED *******************************************/
+  /********************************************************************/ 
+		  else if (backstep_on && (wolfe1<wolfe1_bound || loss_sum > previous_loss_sum))
+		    {// curvature violated, or we stepped too far last time: step back
+		      ftime(&t_end_global);
+		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		      float ratio = (step_size==0.) ? 0. : new_step/step_size;
+		      if (!global.quiet)
+			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
+				"","",ratio,
+				new_step,
+				net_time/1000.);
+			predictions.erase();
+			update_weight(global.final_regressor_name, global.reg, -step_size+new_step, current_pass);		     		      			
+			step_size = new_step;
+			zero_derivative(global.reg);
+			loss_sum = 0.;
+		    }
+
+  /********************************************************************/
+  /* B2) LINE SEARCH SUCCESSFUL OR DISABLED          ******************/
+  /*     DETERMINE NEXT SEARCH DIRECTION             ******************/
+  /********************************************************************/ 
+		  else {
+		      double rel_decrease = (previous_loss_sum-loss_sum)/previous_loss_sum;
+		      if (!isnan(rel_decrease) && backstep_on && fabs(rel_decrease)<global.rel_threshold) {
+			fprintf(stdout, "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
+				"If you want to optimize further, decrease termination threshold.\n", current_pass+1, global.rel_threshold*100.0);
+			status = LEARN_CONV;
+		      }
+		      previous_loss_sum = loss_sum;
+		      loss_sum = 0.;
+		      example_number = 0;
+		      curvature = 0;
+		      step_size = 1.0;
+
+		      try {
+		      bfgs_iter_middle(global.reg, mem, rho, alpha, lastj, origin);
+		      }
+		      catch (curv_exception e) {
+			fprintf(stdout, "In bfgs_iter_middle: %s", curv_message);
+			step_size=0.0;
+			status = LEARN_CURV;
+		      }
+
+		      if (global.hessian_on) {
+			gradient_pass = false;//now start computing curvature
+		      }
+		      else {
+			float d_mag = direction_magnitude(global.reg);
+			ftime(&t_end_global);
+			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+			if (!global.quiet)
+			  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+			predictions.erase();
+			update_weight(global.final_regressor_name, global.reg, step_size, current_pass);		     		      
+		      }
+		    }
+		}
+
+  /********************************************************************/
+  /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
+  /********************************************************************/ 
+	      else // just finished all second gradients
+		{
+		  if(global.span_server != "") {
+		    curvature = accumulate_scalar(global.span_server, curvature);  //Accumulate curvatures
+		  }
+		  if (global.l2_lambda > 0.)
+		    curvature += regularizer_direction_magnitude(global.reg,global.l2_lambda);
+		  float dd = derivative_in_direction(global.reg, mem, origin);
+		  if (curvature == 0. && dd != 0.)
+		    {
+		      fprintf(stdout, "%s", curv_message);
+		      step_size=0.0;
+		      status = LEARN_CURV;
+		    }
+		  else if ( dd == 0.)
+		    {
+		      fprintf(stdout, "Derivative 0 detected.\n");
+		      step_size=0.0;
+		      status = LEARN_CONV;
+		    }
+		  else
+		    step_size = - dd/curvature;
+		  
+		  float d_mag = direction_magnitude(global.reg);
+
+		  predictions.erase();
+		  update_weight(global.final_regressor_name ,global.reg,step_size, current_pass);
+		  ftime(&t_end_global);
+		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		  if (!global.quiet)
+		    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
+		  gradient_pass = true;
+		}//now start computing derivatives.    
+    current_pass++;
+    first_pass = false;
+    preconditioner_pass = false;
+    return status;
+}
+
+ void process_example(example *ec)
+ {
+  label_data* ld = (label_data*)ec->ld;
+  if (first_pass)
+    importance_weight_sum += ld->weight;
   
   /********************************************************************/
   /* I) GRADIENT CALCULATION ******************************************/
   /********************************************************************/ 
-  if (test_example(ec))
+  if (gradient_pass)
     {
-      ec->final_prediction = bfgs_predict(global.reg,ec);//w[0]
+      ec->final_prediction = predict_and_gradient(global.reg,ec);//w[0] & w[1]
+      ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+      loss_sum += ec->loss;
+      push(predictions,ec->final_prediction);
     }
-  else
-    if (gradient_pass)
-      {
-        ec->final_prediction = predict_and_gradient(global.reg,ec);//w[0] & w[1]
-        if (current_pass == 0)
-          {
-            label_data* ld = (label_data*)ec->ld;
-            importance_weight_sum += ld->weight;
-            update_preconditioner(global.reg,ec);//w[3]
-          }
-        label_data* ld = (label_data*)ec->ld;
-        ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
-        loss_sum += ec->loss;
-        push(predictions,ec->final_prediction);
-      }
   /********************************************************************/
   /* II) CURVATURE CALCULATION ****************************************/
   /********************************************************************/ 
-    else //computing curvature
-      {
-        float d_dot_x = dot_with_direction(global.reg,ec);//w[2]
-        label_data* ld = (label_data*)ec->ld;
-        if (example_number >= predictions.index())//Make things safe in case example source is strange.
-          example_number = predictions.index()-1;
-        ec->final_prediction = predictions[example_number];
-        ec->partial_prediction = predictions[example_number];
-        ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;	      
-        float sd = global.loss->second_derivative(predictions[example_number++],ld->label);
-        curvature += d_dot_x*d_dot_x*sd*ld->weight;
-      }
-  if (output_regularizer && current_pass==final_pass)
+  else //computing curvature
     {
-      update_preconditioner(global.reg,ec);//w[3]
+      float d_dot_x = dot_with_direction(global.reg,ec);//w[2]
+      if (example_number >= predictions.index())//Make things safe in case example source is strange.
+	example_number = predictions.index()-1;
+      ec->final_prediction = predictions[example_number];
+      ec->partial_prediction = predictions[example_number];
+      ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;	      
+      float sd = global.loss->second_derivative(predictions[example_number++],ld->label);
+      curvature += d_dot_x*d_dot_x*sd*ld->weight;
     }
+  
+  if (preconditioner_pass)
+    update_preconditioner(global.reg,ec);//w[3]
+ }
+
+void learn(example* ec)
+{
+  assert(ec->in_use);
+  if (ec->pass != current_pass) {
+    int status = process_pass();
+    if (status != LEARN_OK)
+      reset_state();
+    else if (output_regularizer && current_pass==global.numpasses-1) {
+      zero_preconditioner(global.reg);
+      preconditioner_pass = true;
+    }
+  }
+  if (test_example(ec))
+    ec->final_prediction = bfgs_predict(global.reg,ec);//w[0]
+  else
+    process_example(ec);
 }
 
 void finish()
 {
   if (current_pass != 0)
-    work_on_weights(gradient_pass, global.reg, global.final_regressor_name,
-		    loss_sum, importance_weight_sum, step_size, previous_loss_sum,
-		    current_pass, curvature, mem, predictions,
-		    example_number, rho, alpha, lastj, origin, final_pass);
+    process_pass();
   if (!global.quiet)
     fprintf(stderr, "\n");
 
@@ -836,20 +842,41 @@ void initializer()
   if (global.reg.regularizers != NULL)
       global.l2_lambda = 1; // To make sure we are adding the regularization
   output_regularizer =  (global.per_feature_regularizer_output != "" || global.per_feature_regularizer_text != "");
+  reset_state();
 }
 
 void drive_bfgs()
 {
   initializer();
   example* ec = NULL;
+
+  size_t final_pass=global.numpasses-1;
+  first_hessian_on = true;
+  backstep_on = true;
+
   while ( true )
     {
-      if ((ec = get_example()) != NULL) //semiblocking operation.
-        { 
-          learn(ec);
-          finish_example(ec);
-        }
-      else if (parser_done())
+      if ((ec = get_example()) != NULL)//semiblocking operation.
+	{
+	  assert(ec->in_use);	  
+
+	  if (ec->pass<=final_pass) {
+	    if (ec->pass != current_pass) {
+	      int status = process_pass();
+	      if (status != LEARN_OK && final_pass>current_pass) {
+		final_pass = current_pass;
+	      }
+	      if (output_regularizer && current_pass==final_pass) {
+		zero_preconditioner(global.reg);
+		preconditioner_pass = true;
+	      }
+	    }
+	    process_example(ec);
+	  }
+
+	  finish_example(ec);
+	}
+     else if (parser_done())
 	{
 	  finish();
 	  return;
