@@ -994,7 +994,6 @@ void process_next_example_sequence() throw (my_exception)
   if (PRINT_DEBUG_INFO) {clog << "===================================================================" << endl;}
   clear_history(current_history);
 
-
   size_t last_new = -1;
   int prediction_matches_history = 0;
   for (size_t t=0; t<n; t++) {
