@@ -195,7 +195,7 @@ bool operator<(const string_value& first, const string_value& second)
 
 #include <algorithm>
 
-void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, size_t mask, vector<string_value>& features)
+void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, vector<string_value>& features)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
 
@@ -203,24 +203,24 @@ void print_audit_quad(weight* weights, audit_data& page_feature, v_array<audit_d
     {
       ostringstream tempstream;
       tempstream << '\t' << page_feature.space << '^' << page_feature.feature << '^' 
-		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/global.stride) & mask)
+		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/global.stride) & global.parse_mask)
 		 << ':' << ele->x*page_feature.x
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & mask], global.sd->gravity) * global.sd->contraction;
-      string_value sv = {weights[ele->weight_index & mask]*ele->x, tempstream.str()};
+		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & global.weight_mask], global.sd->gravity) * global.sd->contraction;
+      string_value sv = {weights[ele->weight_index & global.weight_mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
 }
 
-void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, vector<string_value>& features)
+void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, vector<string_value>& features)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       ostringstream tempstream;
-      cout << '\t' << (((halfhash + ele->weight_index)/global.stride) & mask) 
+      cout << '\t' << (((halfhash + ele->weight_index)/global.stride) & global.parse_mask) 
 	   << ':' << (ele->x*page_feature.x)
-	   << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & mask], global.sd->gravity) * global.sd->contraction;
-      string_value sv = {weights[ele->weight_index & mask]*ele->x, tempstream.str()};
+	   << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & global.weight_mask], global.sd->gravity) * global.sd->contraction;
+      string_value sv = {weights[ele->weight_index & global.weight_mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
 }
@@ -228,7 +228,6 @@ void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_
 void print_features(regressor &reg, example* &ec)
 {
   weight* weights = reg.weight_vectors;
-  size_t mask = global.weight_mask;
   size_t stride = global.stride;
 
   if (global.lda > 0)
@@ -239,9 +238,9 @@ void print_features(regressor &reg, example* &ec)
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	  {
-	    cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index/global.stride << ':' << f->x;
+	    cout << '\t' << f->space << '^' << f->feature << ':' << (f->weight_index/global.stride & global.parse_mask) << ':' << f->x;
 	    for (size_t k = 0; k < global.lda; k++)
-	      cout << ':' << weights[(f->weight_index+k) & mask];
+	      cout << ':' << weights[(f->weight_index+k) & global.weight_mask];
 	  }
       cout << " total of " << count << " features." << endl;
     }
@@ -254,11 +253,11 @@ void print_features(regressor &reg, example* &ec)
 	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	    {
 	      ostringstream tempstream;
-	      tempstream << f->space << '^' << f->feature << ':' << f->weight_index/stride << ':' << f->x;
-	      tempstream  << ':' << trunc_weight(weights[f->weight_index & mask], global.sd->gravity) * global.sd->contraction;
+	      tempstream << f->space << '^' << f->feature << ':' << (f->weight_index/stride & global.parse_mask) << ':' << f->x;
+	      tempstream  << ':' << trunc_weight(weights[f->weight_index & global.weight_mask], global.sd->gravity) * global.sd->contraction;
 	      if(global.adaptive)
-		tempstream << '@' << weights[(f->weight_index+1) & mask];
-	      string_value sv = {weights[f->weight_index & mask]*f->x, tempstream.str()};
+		tempstream << '@' << weights[(f->weight_index+1) & global.weight_mask];
+	      string_value sv = {weights[f->weight_index & global.weight_mask]*f->x, tempstream.str()};
 	      features.push_back(sv);
 	    }
 	else
@@ -267,20 +266,20 @@ void print_features(regressor &reg, example* &ec)
 	      ostringstream tempstream;
 	      if ( f->weight_index == ((constant*stride)&global.weight_mask))
 		tempstream << "Constant:";
-	      tempstream << f->weight_index/stride << ':' << f->x;
-	      tempstream << ':' << trunc_weight(weights[f->weight_index & mask], global.sd->gravity) * global.sd->contraction;
+	      tempstream << (f->weight_index/stride & global.parse_mask) << ':' << f->x;
+	      tempstream << ':' << trunc_weight(weights[f->weight_index & global.weight_mask], global.sd->gravity) * global.sd->contraction;
 	      if(global.adaptive)
-		tempstream << '@' << weights[(f->weight_index+1) & mask];
-	      string_value sv = {weights[f->weight_index & mask]*f->x, tempstream.str()};
+		tempstream << '@' << weights[(f->weight_index+1) & global.weight_mask];
+	      string_value sv = {weights[f->weight_index & global.weight_mask]*f->x, tempstream.str()};
 	      features.push_back(sv);
 	    }
       for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) 
 	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
 	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], global.weight_mask, features);
+	    print_audit_quad(weights, *f, ec->audit_features[(int)(*i)[1]], features);
 	else
 	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], global.weight_mask, features);      
+	    print_quad(weights, *f, ec->atomics[(int)(*i)[1]], features);      
 
       sort(features.begin(),features.end());
 
