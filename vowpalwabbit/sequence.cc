@@ -45,8 +45,6 @@ Email questions/comments to me@hal3.name.
 
 typedef uint32_t* history;  // histories have the most recent prediction at the END
 
-class my_exception: public std::exception {} my_ex;
-
 struct history_item {
   history  predictions;
   uint32_t predictions_hash;
@@ -328,8 +326,8 @@ size_t read_example_last_id    = 0;
 int    read_example_should_warn_eof = 1;
 size_t passes_since_new_policy = 0;
 
-
-void show_big_number(long unsigned int *out, char *out_c, size_t in)
+/*
+void show_big_number(uintmax_t *out, char *out_c, uintmax_t in)
 {
   if (in < 1000) {
     *out = in;
@@ -350,10 +348,11 @@ void show_big_number(long unsigned int *out, char *out_c, size_t in)
     *out = in/1000000000000000;
     *out_c = 'e';
   } else {
-    *out = (long unsigned int)in;
+    *out = (uintmax_t)in;
     *out_c = ' ';
   }
 }
+*/
 
 void print_update(bool wasKnown, long unsigned int seq_num_features)
 {
@@ -389,15 +388,15 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
     i++;
   }
 
-  long unsigned int pred_made, ex_gen;
+  /*long unsigned int pred_made, ex_gen;
   char pred_made_c, ex_gen_c;
   show_big_number(&pred_made, &pred_made_c, total_predictions_made);
-  show_big_number(&ex_gen   , &ex_gen_c   , total_examples_generated);
+  show_big_number(&ex_gen   , &ex_gen_c   , total_examples_generated); */
 
   //  timeb t_end_global;
   //  ftime(&t_end_global);
   //  int net_time = (int) (t_end_global.time - t_start_global.time);
-  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu %5d %5d %9lu%c %9lu%c\n",
+  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu %5d %5d %10lu %10lu\n",
           global.sd->sum_loss/global.sd->weighted_examples,
           global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
           (long int)global.sd->example_number,
@@ -407,8 +406,8 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
           seq_num_features,
           (int)read_example_last_pass,
           (int)current_policy,
-          pred_made, pred_made_c,
-          ex_gen, ex_gen_c);
+          (long unsigned int)total_predictions_made,
+          (long unsigned int)total_examples_generated);
   //          net_time);
      
   global.sd->sum_loss_since_last_dump = 0.0;
@@ -480,7 +479,7 @@ int order_history_item(const void* a, const void* b)  // put dead items at end
     return -1;
   else if (ha->predictions_hash < hb->predictions_hash)
     return  1;
-  else
+  else if (history_length > 0)
     for (size_t i=history_length-1; i>=0; i--) {
       if (ha->predictions[i] < hb->predictions[i])
         return -1;
@@ -777,7 +776,7 @@ void generate_training_example(example *ec, history h, v_array<feature>costs)
   remove_policy_offset(ec, current_policy);
 }
 
-size_t predict(example *ec, history h, int policy, size_t truth) throw (my_exception)
+size_t predict(example *ec, history h, int policy, size_t truth)
 {
   size_t yhat;
   if (policy == -1) // this is the optimal policy!
@@ -802,7 +801,8 @@ size_t predict(example *ec, history h, int policy, size_t truth) throw (my_excep
     remove_policy_offset(ec, policy);
   }
   if ((yhat <= 0) || (yhat > sequence_k)) {
-    throw my_ex;
+    clog << "internal error (bug): predict is returning an invalid class -- replacing with 1" << endl;
+    return 1;
   }
   return yhat;
 }
@@ -905,7 +905,7 @@ void run_test(example* ec)
   print_update(0, seq_num_features);
 }
 
-void process_next_example_sequence() throw (my_exception)
+void process_next_example_sequence()
 {
   int seq_num_features = 0;
   read_example_this_loop = 0;
@@ -1066,14 +1066,16 @@ NOT_REALLY_NEW:
 
         if (prediction_matches_history) { // this is what we would have predicted
           pred_seq[t+1] = last_prediction(hcache[i].predictions);
-          if ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k)) throw my_ex;
+          if ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k)) {
+            cerr << "internal error (bug): last_prediction is returning an invalid prediction; replacing with 1" << endl;
+            pred_seq[t+1] = 1;
+          }
         }
       }
     }
 
     if (entered_rollout && ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k))) {
       cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
-      throw my_ex;
       pred_seq[t] = 1;
     }
 
@@ -1099,7 +1101,6 @@ NOT_REALLY_NEW:
 
     if ((!entered_rollout) && (t < n-1)) {
       pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1], true_labels[t+1]->label);
-      if ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k)) throw my_ex;
     }
   }
 
