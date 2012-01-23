@@ -437,12 +437,17 @@ __DATA__
     train-sets/ref/wiki1K.stderr
 
 # Test 10: Run sequence on seq_small for 12 passes, 4 passes per policy
-#{VW} -c -d train-sets/seq_small --passes 12 --sequence_passes_per_policy 4 --sequence 4 && rm -f train-sets/seq_small.cache
-#    train-sets/ref/seq_small.stdout
-#    train-sets/ref/seq_small.stderr
-#
+{VW} -c -d train-sets/seq_small --passes 12 --sequence_passes_per_policy 4 --sequence 4 && rm -f train-sets/seq_small.cache
+    train-sets/ref/seq_small.stdout
+    train-sets/ref/seq_small.stderr
+
 # Test 11: Run sequence (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-#{VW} -c -d train-sets/wsj_small.dat.gz --passes 2 --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1 && rm -f train-sets/wsj_small.dat.gz.cache
-#    train-sets/ref/wsj_small.dat.stdout
-#    train-sets/ref/wsj_small.dat.stderr
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 2 --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1 && rm -f train-sets/wsj_small.dat.gz.cache
+    train-sets/ref/wsj_small.dat.stdout
+    train-sets/ref/wsj_small.dat.stderr
+
+# Test 12: Run sequence (wap) on wsj_small for 1 passes, current policy, limited transitions
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 1 --sequence_allow_current_policy --sequence 45 --wap 45 --sequence_transition_file train-sets/wsj.train.tm2 && rm -f train-sets/wsj_small.dat.gz.cache
+    train-sets/ref/wsj_small-tm.dat.stdout
+    train-sets/ref/wsj_small-tm.dat.stderr
 
