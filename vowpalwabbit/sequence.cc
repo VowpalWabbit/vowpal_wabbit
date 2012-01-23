@@ -45,6 +45,8 @@ Email questions/comments to me@hal3.name.
 
 typedef uint32_t* history;  // histories have the most recent prediction at the END
 
+class my_exception: public std::exception {} my_ex;
+
 struct history_item {
   history  predictions;
   uint32_t predictions_hash;
@@ -71,6 +73,7 @@ size_t sequence_passes_per_policy = 1;
 float  sequence_beta              = 0.5;
 size_t sequence_k                 = 2;
 size_t sequence_gamma             = 1.;
+bool   sequence_allow_current_policy = false;
 
 bool   all_transitions_allowed    = true;
 bool** valid_transition           = NULL;
@@ -81,6 +84,9 @@ size_t read_example_last_pass     = 0;
 size_t total_number_of_policies   = 1;
 
 size_t constant_pow_history_length = 0;
+
+size_t total_predictions_made     = 0;
+size_t total_examples_generated   = 0;
 
 uint32_t      history_constant    = 8290741;
 history       current_history     = NULL;
@@ -118,6 +124,31 @@ void* calloc_or_die(size_t nmemb, size_t size)
 
 void read_transition_file(const char* filename)
 {
+  FILE *f = fopen(filename, "r");
+  if (f == NULL) {
+    cerr << "warning: could not read file " << filename << "; assuming all transitions are valid" << endl;
+    return;
+  }
+  int rd;
+  int n = fscanf(f, "%d", &rd);
+  if (n == 0) {
+    cerr << "warning: could not read transitions final; assuming all valid" << endl;
+    all_transitions_allowed = true;
+    fclose(f);
+    return;
+  }
+  if (rd < (int)sequence_k) {
+    cerr << "warning: number of classes in transition file (" << rd << ") is too small (need " << sequence_k << "); assuming all valid" << endl;
+    all_transitions_allowed = true;
+    fclose(f);
+    return;
+  }
+  int file_k = rd;
+  if (rd > (int)sequence_k) {
+    cerr << "warning: number of classes in transition file (" << rd << ") is too big; reading a subset" << endl;
+  }
+
+  all_transitions_allowed = false;
   if (valid_transition == NULL) {
     valid_transition = (bool**)calloc_or_die(sizeof(bool*), sequence_k+1);
     for (size_t i=0; i<=sequence_k; i++)   // this is FROM, identified by line number; k+1 total lines for INITIAL transition
@@ -128,39 +159,43 @@ void read_transition_file(const char* filename)
     for (size_t j=0; j<sequence_k; j++)
       valid_transition[i][j] = true;
   
-  if (filename[0] != '\0')
-    {
-      FILE *f = fopen(filename, "r");
-      if (f == NULL) {
-	cerr << "warning: could not read file " << filename << "; assuming all transitions are valid" << endl;
-	return;
+  transition_prediction_costs.erase();
+  for (int i=0; i<=file_k; i++)  {   // this is FROM, identified by line number; k+1 total lines for INITIAL transition
+    v_array<feature> this_costs = v_array<feature>();
+    for (int j=0; j<file_k; j++) {   // this is TO, identified by col number; k total columns
+      n = fscanf(f, "%d", &rd);
+      if (n == 0) {
+        cerr << "warning: could not read transitions; assuming all remaining are valid after " << i << "," << (j+1) << endl;
+        return;
       }
-      for (size_t i=0; i<=sequence_k; i++) {   // this is FROM, identified by line number; k+1 total lines for INITIAL transition
-	for (size_t j=0; j<sequence_k; j++) {   // this is TO, identified by col number; k total columns
-	  int allow;
-	  int n = fscanf(NULL, "%d", &allow);
-	  if (n == 0) {
-	    cerr << "warning: could not read transitions; assuming all remaining are valid after " << i << "," << (j+1) << endl;
-	    return;
-	  }
-	  valid_transition[i][j] = (allow > 0);
-	}
+      if ((i <= (int)sequence_k) && (j < (int)sequence_k)) {
+        valid_transition[i][j] = (rd > 0);
+        if (valid_transition[i][j]) {
+          feature feat = { FLT_MAX, j+1 };
+          push(this_costs, feat);
+        }
       }
-      fclose(f);
     }
+    if (i <= (int)sequence_k) {
+      CSOAA::label label = { this_costs };
+      push(transition_prediction_costs, label);
+    }
+  }
+  fclose(f);
+
 }
 
-int random_policy(int allow_optimal, int allow_current)
+int random_policy(int allow_optimal)
 {
   if (sequence_beta >= 1) {
-    if (allow_current) return (int)current_policy;
+    if (sequence_allow_current_policy) return (int)current_policy;
     if (current_policy > 0) return (((int)current_policy)-1);
     if (allow_optimal) return -1;
     cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << endl;
     return (int)current_policy;
   }
 
-  int num_valid_policies = (int)current_policy + allow_optimal + allow_current;
+  int num_valid_policies = (int)current_policy + allow_optimal + sequence_allow_current_policy;
   int pid = -1;
 
   if (num_valid_policies == 0) {
@@ -185,7 +220,7 @@ int random_policy(int allow_optimal, int allow_current)
     return -1; // this is the optimal policy
   
   pid = (int)current_policy - pid;
-  if (!allow_current)
+  if (!sequence_allow_current_policy)
     pid--;
 
   return pid;
@@ -294,6 +329,32 @@ int    read_example_should_warn_eof = 1;
 size_t passes_since_new_policy = 0;
 
 
+void show_big_number(long unsigned int *out, char *out_c, size_t in)
+{
+  if (in < 1000) {
+    *out = in;
+    *out_c = ' ';
+  } else if (in < 1000000) {
+    *out = in/1000;
+    *out_c = 'k';
+  } else if (in < 1000000000) {
+    *out = in/1000000;
+    *out_c = 'm';
+  } else if (in < 1000000000000) {
+    *out = in/1000000000;
+    *out_c = 'g';
+  } else if (in < 1000000000000000) {
+    *out = in/1000000000000;
+    *out_c = 'p';
+  } else if (in < 1000000000000000000) {
+    *out = in/1000000000000000;
+    *out_c = 'e';
+  } else {
+    *out = (long unsigned int)in;
+    *out_c = ' ';
+  }
+}
+
 void print_update(bool wasKnown, long unsigned int seq_num_features)
 {
   if (!(global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)) {
@@ -328,10 +389,15 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
     i++;
   }
 
+  long unsigned int pred_made, ex_gen;
+  char pred_made_c, ex_gen_c;
+  show_big_number(&pred_made, &pred_made_c, total_predictions_made);
+  show_big_number(&ex_gen   , &ex_gen_c   , total_examples_generated);
+
   //  timeb t_end_global;
   //  ftime(&t_end_global);
   //  int net_time = (int) (t_end_global.time - t_start_global.time);
-  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu %5d %5d\n",
+  fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   [%s] [%s] %8lu %5d %5d %9lu%c %9lu%c\n",
           global.sd->sum_loss/global.sd->weighted_examples,
           global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
           (long int)global.sd->example_number,
@@ -340,7 +406,9 @@ void print_update(bool wasKnown, long unsigned int seq_num_features)
           pred_label,
           seq_num_features,
           (int)read_example_last_pass,
-          (int)current_policy);
+          (int)current_policy,
+          pred_made, pred_made_c,
+          ex_gen, ex_gen_c);
   //          net_time);
      
   global.sd->sum_loss_since_last_dump = 0.0;
@@ -360,7 +428,13 @@ void simple_print_example_features(example *ec)
   cerr << endl;
 }
 
-
+void simple_print_costs(CSOAA::label *c)
+{
+  for (feature *f = c->costs.begin; f != c->costs.end; f++) {
+    clog << "\t" << f->weight_index << ":" << f->x;
+  }
+  clog << endl;
+}
 
 /********************************************************************************************
  *** HISTORY MANIPULATION
@@ -643,6 +717,8 @@ void parse_sequence_args(po::variables_map& vm)
     sequence_bigrams = true;
   if (vm.count("sequence_bigram_features"))
     sequence_bigrams = true;
+  if (vm.count("sequence_allow_current_policy"))
+    sequence_allow_current_policy = true;
 
   if (vm.count("sequence_history"))
     sequence_history = vm["sequence_history"].as<size_t>();
@@ -667,7 +743,7 @@ void parse_sequence_args(po::variables_map& vm)
     read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
   }
   else
-    read_transition_file("");
+    all_transitions_allowed = true;
 
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
   if (!all_transitions_allowed && (history_length == 0))
@@ -691,16 +767,17 @@ void generate_training_example(example *ec, history h, v_array<feature>costs)
   add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
 
-  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << " ]\t"; simple_print_example_features(ec);}
+  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(ec);}
   ec->ld = (void*)&ld;
+  total_examples_generated++;
   global.cs_learn(ec);
-  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << " ]\t"; simple_print_example_features(ec);}
+  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(ec);}
 
   remove_history_from_example(ec);
   remove_policy_offset(ec, current_policy);
 }
 
-size_t predict(example *ec, history h, int policy, size_t truth)
+size_t predict(example *ec, history h, int policy, size_t truth) throw (my_exception)
 {
   size_t yhat;
   if (policy == -1) // this is the optimal policy!
@@ -714,13 +791,17 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     else
       ec->ld = (void*)&transition_prediction_costs[last_prediction(h)];
 
-    if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(ec);}
+    if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(ec); clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
+    total_predictions_made++;
     global.cs_learn(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
-    if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << endl;}
+    if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
 
     remove_history_from_example(ec);
     remove_policy_offset(ec, policy);
+  }
+  if ((yhat <= 0) || (yhat > sequence_k)) {
+    throw my_ex;
   }
   return yhat;
 }
@@ -790,7 +871,7 @@ void run_test(example* ec)
   clear_history(current_history);
 
   while ((ec != NULL) && (! example_is_newline(ec))) {
-    int policy = random_policy(0, 0);
+    int policy = random_policy(0);
     old_label = (OAA::mc_label*)ec->ld;
 
     seq_num_features += ec->num_features;
@@ -823,7 +904,7 @@ void run_test(example* ec)
   print_update(0, seq_num_features);
 }
 
-void process_next_example_sequence()
+void process_next_example_sequence() throw (my_exception)
 {
   int seq_num_features = 0;
   read_example_this_loop = 0;
@@ -873,7 +954,7 @@ void process_next_example_sequence()
   clear_history(current_history);
   true_labels.erase();
   for (size_t t=0; t<n; t++) {
-    policy_seq[t] = (current_policy == 0) ? 0 : random_policy(0, 0);
+    policy_seq[t] = (current_policy == 0) ? 0 : random_policy(0);
     push(true_labels, (OAA::mc_label*)ec_seq[t]->ld);
 
     seq_num_features += ec_seq[t]->num_features;
@@ -890,7 +971,7 @@ void process_next_example_sequence()
     }
 
     // allow us to use the optimal policy
-    if (random_policy(1,0) == -1)
+    if (random_policy(1) == -1)
       policy_seq[t] = -1;
   }
   global_print_newline();
@@ -901,7 +982,7 @@ void process_next_example_sequence()
   bool all_policies_optimal = true;
   for (size_t t=0; t<n; t++) {
     if (policy_seq[t] >= 0) all_policies_optimal = false;
-    pred_seq[0] = -1;
+    pred_seq[t] = -1;
   }
 
   // start learning
@@ -922,7 +1003,7 @@ void process_next_example_sequence()
       hcache[i].predictions_hash = 0;
       hcache[i].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
       hcache[i].same = 0;
-      hcache[i].alive = valid_transition[last_prediction(current_history)][i];
+      hcache[i].alive = all_transitions_allowed || valid_transition[last_prediction(current_history)][i] || (i+1==pred_seq[t]);
       hcache[i].original_label = i;
       append_history_item(hcache[i], i+1);
     }
@@ -981,12 +1062,14 @@ NOT_REALLY_NEW:
 
         if (prediction_matches_history) { // this is what we would have predicted
           pred_seq[t+1] = last_prediction(hcache[i].predictions);
+          if ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k)) throw my_ex;
         }
       }
     }
 
-    if (entered_rollout && ((pred_seq[t] <= 0) || (pred_seq[t] > sequence_k))) {
+    if (entered_rollout && ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k))) {
       cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
+      throw my_ex;
       pred_seq[t] = 1;
     }
 
@@ -1001,7 +1084,7 @@ NOT_REALLY_NEW:
       if (hcache[i].alive) {
         size_t lab  = hcache[i].original_label;
         size_t cost = hcache[i].loss - min_loss;
-        feature temp  = { cost, lab };
+        feature temp  = { cost, lab+1 };
         push(loss_vector, temp);
       }
     }
@@ -1010,8 +1093,10 @@ NOT_REALLY_NEW:
     // update state
     append_history(current_history, pred_seq[t]);
 
-    if ((!entered_rollout) && (t < n-1))
+    if ((!entered_rollout) && (t < n-1)) {
       pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1], true_labels[t+1]->label);
+      if ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k)) throw my_ex;
+    }
   }
 
   for (size_t i=0; i<n; i++)
@@ -1028,12 +1113,12 @@ NOT_REALLY_NEW:
 
 void drive_sequence()
 {
-  const char * header_fmt = "%-10s %-10s %8s %8s %24s %22s %8s %5s %5s\n";
+  const char * header_fmt = "%-10s %-10s %8s %8s %24s %22s %8s %5s %5s %10s %10s\n";
   fprintf(stderr, header_fmt,
           "average", "since", "sequence", "example",
-          "current label", "current predicted", "current", "cur", "cur");
+          "current label", "current predicted", "current", "cur", "cur", "predic.", "examples");
   fprintf(stderr, header_fmt,
-          "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features", "pass", "pol");
+          "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features", "pass", "pol", "made", "gener.");
   cerr.precision(5);
 
   global.cs_initialize();
