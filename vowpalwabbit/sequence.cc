@@ -796,6 +796,7 @@ size_t predict(example *ec, history h, int policy, size_t truth) throw (my_excep
     global.cs_learn(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
     if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
+    
 
     remove_history_from_example(ec);
     remove_policy_offset(ec, policy);

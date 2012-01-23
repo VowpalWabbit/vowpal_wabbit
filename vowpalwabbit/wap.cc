@@ -123,7 +123,8 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
 void train(example* ec)
 {
   CSOAA::label* ld = (CSOAA::label*)ec->ld;
-  
+
+  feature* old_end = ld->costs.end;
   feature* j = ld->costs.begin; 
   for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
     if (cl->x != FLT_MAX)
@@ -179,7 +180,8 @@ void train(example* ec)
 	    unmirror_features(ec,(myi-1)*increment, (myj-1)*increment);
 	  }
       }
-  
+
+  ld->costs.end = old_end;
   ec->ld = ld;
 }
 
