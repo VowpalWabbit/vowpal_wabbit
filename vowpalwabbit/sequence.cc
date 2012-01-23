@@ -982,13 +982,17 @@ void process_next_example_sequence() throw (my_exception)
   bool all_policies_optimal = true;
   for (size_t t=0; t<n; t++) {
     if (policy_seq[t] >= 0) all_policies_optimal = false;
-    pred_seq[t] = -1;
+    if (t == 0) {
+      if (policy_seq[0] == -1)
+        pred_seq[0] = true_labels[0]->label;
+    } else {
+      pred_seq[t] = -1;
+    }
   }
 
   // start learning
   if (PRINT_DEBUG_INFO) {clog << "===================================================================" << endl;}
   clear_history(current_history);
-  pred_seq[0] = predict(ec_seq[0], current_history, policy_seq[0], true_labels[0]->label);
 
 
   size_t last_new = -1;
