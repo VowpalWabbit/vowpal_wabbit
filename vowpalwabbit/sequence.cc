@@ -72,6 +72,7 @@ float  sequence_beta              = 0.5;
 size_t sequence_k                 = 2;
 size_t sequence_gamma             = 1.;
 bool   sequence_allow_current_policy = false;
+bool   sequence_training_transitions = false;
 
 bool   all_transitions_allowed    = true;
 bool** valid_transition           = NULL;
@@ -737,9 +738,18 @@ void parse_sequence_args(po::variables_map& vm)
     cerr << "warning: sequence_beta set to a value <= 0; resetting to 0.5" << endl;
   }
 
-  if (vm.count("sequence_transition_file")) {
+  if (vm.count("sequence_training_transitions")) {
+    sequence_training_transitions = true;
     all_transitions_allowed = false;
-    read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
+  }
+
+  if (vm.count("sequence_transition_file")) {
+    if (sequence_training_transitions)
+      cerr << "cannot use both --sequence_training_transitions and --sequence_transition_file; ignoring file" << endl;
+    else {
+      all_transitions_allowed = false;
+      read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
+    }
   }
   else
     all_transitions_allowed = true;
