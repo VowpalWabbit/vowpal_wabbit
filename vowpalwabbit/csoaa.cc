@@ -45,7 +45,14 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
 
 size_t read_cached_label(void* v, io_buf& cache)
 {
-  return 0;
+  label* ld = (label*) v;
+  char *c;
+  size_t total = sizeof(uint32_t);
+  if (buf_read(cache, c, total) < total) 
+    return 0;
+  c = bufread_label(ld,c, cache);
+  
+  return total;
 }
 
 float weight(void* v)
