@@ -120,6 +120,9 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
   }
   v_array<float_feature> vs;
 
+  void (*base_learner)(example*) = NULL;
+  void (*base_finish)() = NULL;
+
 void train(example* ec)
 {
   CSOAA::label* ld = (CSOAA::label*)ec->ld;
@@ -176,7 +179,7 @@ void train(example* ec)
 
 	    mirror_features(ec,(myi-1)*increment, (myj-1)*increment);
 
-	    global.learn(ec);
+	    base_learner(ec);
 	    unmirror_features(ec,(myi-1)*increment, (myj-1)*increment);
 	  }
       }
@@ -203,7 +206,7 @@ uint32_t test(example* ec)
 	OAA::update_indicies(ec, increment*(myi-1));
       ec->partial_prediction = 0.;
       ec->ld = &simple_temp;
-      global.learn(ec);
+      base_learner(ec);
       if (myi != 1)
 	OAA::update_indicies(ec, -increment*(myi-1));
       if (ec->partial_prediction > score)
@@ -228,31 +231,25 @@ uint32_t test(example* ec)
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
   }
 
-  void initialize()
+void finish()
 {
-  global.initialize();
-}
-
-void finalize()
-{
-  global.finish();
+  base_finish();
 }
 
 void drive_wap()
 {
   example* ec = NULL;
-  initialize();
   while ( true )
     {
       if ((ec = get_example()) != NULL)//semiblocking operation.
 	{
-	  learn(ec);
+	  base_learner(ec);
           CSOAA::output_example(ec);
 	  free_example(ec);
 	}
       else if (parser_done())
 	{
-	  finalize();
+	  finish();
 	  return;
 	}
       else 
@@ -260,14 +257,14 @@ void drive_wap()
     }
 }
 
-void parse_flag(size_t s)
+ void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
+
 {
   *(global.lp) = CSOAA::cs_label_parser;
   global.k = s;
   global.driver = drive_wap;
-  global.cs_initialize = initialize;
-  global.cs_learn = learn;
-  global.cs_finish = finalize;
+  base_learner = base_l;
+  base_finish = base_f;
   increment = (global.length()/global.k) * global.stride;
 }
 }

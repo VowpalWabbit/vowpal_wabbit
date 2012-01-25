@@ -195,6 +195,8 @@ void output_example(example* ec)
   print_update(ec);
 }
 
+  void (*base_learner)(example*) = NULL;
+  void (*base_finish)() = NULL;
 
   void learn(example* ec)
   {
@@ -230,7 +232,7 @@ void output_example(example* ec)
         }
 	ec->partial_prediction = 0.;
 
-	global.learn(ec);
+	base_learner(ec);
 	if (ec->partial_prediction < score)
 	  {
 	    score = ec->partial_prediction;
@@ -243,22 +245,16 @@ void output_example(example* ec)
       OAA::update_indicies(ec, -current_increment);
   }
 
-  void initialize()
-{
-  global.initialize();
-}
-
-void finalize()
+void finish()
 {
   if (name.begin != NULL)
     free(name.begin);
-  global.finish();
+  base_finish();
 }
 
 void drive_csoaa()
 {
   example* ec = NULL;
-  initialize();
   while ( true )
     {
       if ((ec = get_example()) != NULL)//semiblocking operation.
@@ -269,7 +265,7 @@ void drive_csoaa()
 	}
       else if (parser_done())
 	{
-	  finalize();
+	  finish();
 	  return;
 	}
       else 
@@ -277,14 +273,13 @@ void drive_csoaa()
     }
 }
 
-void parse_flag(size_t s)
+  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
 {
   *(global.lp) = cs_label_parser;
   global.k = s;
   global.driver = drive_csoaa;
-  global.cs_initialize = initialize;
-  global.cs_learn = learn;
-  global.cs_finish = finalize;
+  base_learner = base_l;
+  base_finish = base_f;
   increment = (global.length()/global.k) * global.stride;
 }
 
