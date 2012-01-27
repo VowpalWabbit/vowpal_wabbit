@@ -572,12 +572,20 @@ po::variables_map parse_args(int argc, char *argv[],
     }
 
   if(vm.count("csoaa_ldf")) {
+    if (global.add_constant) {
+      cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
+      global.add_constant = false;
+    }
     CSOAA_LDF::parse_flags(0, base_learner, base_finish);
     cs_learner = CSOAA_LDF::learn;
     cs_finish  = CSOAA_LDF::finish;
   }
 
   if(vm.count("wap_ldf")) {
+    if (global.add_constant) {
+      cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
+      global.add_constant = false;
+    }
     WAP_LDF::parse_flags(0, base_learner, base_finish);
     cs_learner = WAP_LDF::learn;
     cs_finish  = WAP_LDF::finish;
