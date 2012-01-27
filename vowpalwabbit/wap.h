@@ -18,8 +18,10 @@ namespace WAP {
 namespace WAP_LDF {
   typedef OAA::mc_label label;
   
-  void parse_flag(size_t s);
+  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
   void global_print_newline();
+  void learn(example* ec);
+  void finish();
 
   const label_parser cs_label_parser = CSOAA_LDF::cs_label_parser;
 }

@@ -289,6 +289,9 @@ namespace CSOAA_LDF {
   v_array<example*> ec_seq = v_array<example*>();
   size_t read_example_this_loop = 0;
 
+  void (*base_learner)(example*) = NULL;
+  void (*base_finish)() = NULL;
+
   void do_actual_learning()
   {
     if (ec_seq.index() <= 0) return;  // nothing to do
@@ -317,7 +320,7 @@ namespace CSOAA_LDF {
       }
 
       ec->ld = &simple_label;
-      global.learn(ec); // make a prediction
+      base_learner(ec); // make a prediction
       push(predictions, ec->partial_prediction);
       if (ec->partial_prediction < min_score) {
         min_score = ec->partial_prediction;
@@ -340,7 +343,7 @@ namespace CSOAA_LDF {
       simple_label.weight = 1.;
       ec->ld = &simple_label;
       ec->partial_prediction = 0.;
-      global.learn(ec);
+      base_learner(ec);
 
       // fill in test predictions
       *(OAA::prediction_t*)&(ec->final_prediction) = (prediction == ld->label) ? 1 : 0;
@@ -349,6 +352,8 @@ namespace CSOAA_LDF {
       // restore label
       ec->ld = ld;
     }
+    predictions.erase();
+    free(predictions.begin);
   }
 
   void output_example(example* ec)
@@ -394,42 +399,35 @@ namespace CSOAA_LDF {
     }
   }
 
-  void initialize()
-  {
-    global.initialize();
-  }
-
-  void finalize()
+  void finish()
   {
     clear_seq(true);
     if (ec_seq.begin != NULL)
       free(ec_seq.begin);
-    global.finish();
+    base_finish();
   }
 
   void drive_csoaa_ldf()
   {
     example* ec = NULL;
-    initialize();
     read_example_this_loop = 0;
     while (true) {
       if ((ec = get_example()) != NULL) { // semiblocking operation
         learn(ec);
       } else if (parser_done()) {
         do_actual_learning();
-        finalize();
+        finish();
         return;
       }
     }
   }
 
-  void parse_flag(size_t s)
+  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
   {
     *(global.lp) = OAA::mc_label_parser;
     global.driver = drive_csoaa_ldf;
-    global.cs_initialize = initialize;
-    global.cs_learn = learn;
-    global.cs_finish = finalize;
+    base_learner = base_l;
+    base_finish = base_f;
   }
 
   void global_print_newline()

@@ -274,68 +274,158 @@ namespace WAP_LDF {
   v_array<example*> ec_seq = v_array<example*>();
   size_t read_example_this_loop = 0;
 
+  void (*base_learner)(example*) = NULL;
+  void (*base_finish)() = NULL;
+
+  float test(example* ec)
+  {
+    label *ld = (label*)ec->ld;
+    label_data simple_temp;
+    simple_temp.initial = 0.;
+    simple_temp.weight = 0.;
+    simple_temp.label = FLT_MAX;
+    ec->partial_prediction = 0.;
+    ec->ld = &simple_temp;
+    base_learner(ec);
+    ec->ld = ld;
+    return ec->partial_prediction;
+  }
+
+  void subtract_example(example *ec, example *ecsub)
+  {
+    float norm_sq = 0.;
+    size_t num_f = 0;
+    for (size_t* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
+      int feature_index = 0;
+      for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
+        feature temp = { -f->x, (uint32_t) (f->weight_index & global.parse_mask) };
+        push(ec->atomics[wap_ldf_namespace], temp);
+        norm_sq += f->x * f->x;
+        num_f ++;
+
+        if (global.audit) {
+          if (! (ecsub->audit_features[*i].index() >= feature_index)) {
+            audit_data b_feature = ecsub->audit_features[*i][feature_index];
+            audit_data a_feature = { NULL, NULL, (uint32_t) (f->weight_index & global.parse_mask), -f->x, false };
+            a_feature.space = b_feature.space;
+            a_feature.feature = b_feature.feature;
+            push(ec->audit_features[wap_ldf_namespace], a_feature);
+            feature_index++;
+          }
+        }
+      }
+    }
+    push(ec->indices, wap_ldf_namespace);
+    ec->sum_feat_sq[wap_ldf_namespace] = norm_sq;
+    ec->total_sum_feat_sq += norm_sq;
+    ec->num_features += num_f;
+  }
+
+  void unsubtract_example(example *ec)
+  {
+    if (ec->indices.index() == 0) {
+      cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << endl;
+      return;
+    }
+    
+    if (ec->indices.last() != wap_ldf_namespace) {
+      cerr << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added after and not removed!" << endl;
+      return;
+    }
+
+    ec->num_features -= ec->atomics[wap_ldf_namespace].index();
+    ec->total_sum_feat_sq -= ec->sum_feat_sq[wap_ldf_namespace];
+    ec->sum_feat_sq[wap_ldf_namespace] = 0;
+    ec->atomics[wap_ldf_namespace].erase();
+    if (global.audit) {
+      if (ec->audit_features[wap_ldf_namespace].begin != ec->audit_features[wap_ldf_namespace].end) {
+        for (audit_data *f = ec->audit_features[wap_ldf_namespace].begin; f != ec->audit_features[wap_ldf_namespace].end; f++) {
+          if (f->alloced) {
+            free(f->space);
+            free(f->feature);
+            f->alloced = false;
+          }
+        }
+      }
+
+      ec->audit_features[wap_ldf_namespace].erase();
+    }
+    ec->indices.decr();
+  }
+    
+
+
   void do_actual_learning()
   {
     if (ec_seq.index() <= 0) return;  // nothing to do
 
-    /*
     int K = ec_seq.index();
     float min_cost = FLT_MAX;
     v_array<float> predictions = v_array<float>();
-    float min_score = FLT_MAX;
+    float max_score = FLT_MIN;
     size_t prediction = 0;
     float prediction_cost = 0.;
-    bool isTest = example_is_test(*ec_seq.begin);
+    bool isTest = CSOAA_LDF::example_is_test(*ec_seq.begin);
     for (int k=0; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
 
-      label_data simple_label;
-      simple_label.initial = 0.;
-      simple_label.label = FLT_MAX;
-      simple_label.weight = 0.;
-
       if (ld->weight < min_cost) 
         min_cost = ld->weight;
-      if (example_is_test(ec) != isTest) {
+      if (CSOAA_LDF::example_is_test(ec) != isTest) {
         isTest = true;
         cerr << "warning: got mix of train/test data; assuming test" << endl;
       }
 
-      ec->ld = &simple_label;
-      global.learn(ec); // make a prediction
-      push(predictions, ec->partial_prediction);
-      if (ec->partial_prediction < min_score) {
-        min_score = ec->partial_prediction;
+      float pred  = test(ec);
+
+      push(predictions, pred);
+      if (pred > max_score) {
+        max_score = pred;
         prediction = ld->label;
         prediction_cost = ld->weight;
       }
-
-      ec->ld = ld;
     }
     prediction_cost -= min_cost;
+
     // do actual learning
+    for (int k1=0; k1<K; k1++) {
+      example *ec1 = ec_seq.begin[k1];
+      label   *ld1 = (label*)ec1->ld;
+      for (int k2=k1+1; k2<K; k2++) {
+        example *ec2 = ec_seq.begin[k2];
+        label   *ld2 = (label*)ec2->ld;
+
+        if (fabs(ld1->weight - ld2->weight) < 1e-6)
+          continue;
+
+        // learn
+        label_data simple_label;
+        simple_label.initial = 0.;
+        simple_label.label = (ld1->weight < ld2->weight) ? 1.0 : -1.0;
+        simple_label.weight = 1.;
+        ec1->ld = &simple_label;
+        ec1->partial_prediction = 0.;
+        subtract_example(ec1, ec2);
+        base_learner(ec1);
+        unsubtract_example(ec1);
+        ec1->ld = ld1;
+      }
+      
+      // fill in partial predictions
+      ec1->partial_prediction = predictions.begin[k1];
+      
+      // restore label
+    }
+    predictions.erase();
+    free(predictions.begin);
+
+    // fill in test predictions
     for (int k=0; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
-
-      // learn
-      label_data simple_label;
-      simple_label.initial = 0.;
-      simple_label.label = ld->weight;
-      simple_label.weight = 1.;
-      ec->ld = &simple_label;
-      ec->partial_prediction = 0.;
-      global.learn(ec);
-
-      // fill in test predictions
       *(OAA::prediction_t*)&(ec->final_prediction) = (prediction == ld->label) ? 1 : 0;
-      ec->partial_prediction = predictions.begin[k];
-      
-      // restore label
-      ec->ld = ld;
     }
-    */
   }
 
   void clear_seq(bool output)
@@ -360,42 +450,35 @@ namespace WAP_LDF {
     }
   }
 
-  void initialize()
-  {
-    global.initialize();
-  }
-
-  void finalize()
+  void finish()
   {
     clear_seq(true);
     if (ec_seq.begin != NULL)
       free(ec_seq.begin);
-    global.finish();
+    base_finish();
   }
 
   void drive_wap_ldf()
   {
     example* ec = NULL;
-    initialize();
     read_example_this_loop = 0;
     while (true) {
       if ((ec = get_example()) != NULL) { // semiblocking operation
         learn(ec);
       } else if (parser_done()) {
         do_actual_learning();
-        finalize();
+        finish();
         return;
       }
     }
   }
 
-  void parse_flag(size_t s)
+  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
   {
     *(global.lp) = OAA::mc_label_parser;
     global.driver = drive_wap_ldf;
-    global.cs_initialize = initialize;
-    global.cs_learn = learn;
-    global.cs_finish = finalize;
+    base_learner = base_l;
+    base_finish = base_f;
   }
 
 }

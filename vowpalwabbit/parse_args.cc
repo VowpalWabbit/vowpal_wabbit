@@ -73,6 +73,7 @@ po::variables_map parse_args(int argc, char *argv[],
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", "Use one-against-all multiclass learning with label dependent features")
+    ("wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features")
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
     ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
@@ -570,11 +571,21 @@ po::variables_map parse_args(int argc, char *argv[],
       cs_finish = WAP::finish;
     }
 
+  if(vm.count("csoaa_ldf")) {
+    CSOAA_LDF::parse_flags(0, base_learner, base_finish);
+    cs_learner = CSOAA_LDF::learn;
+    cs_finish  = CSOAA_LDF::finish;
+  }
+
+  if(vm.count("wap_ldf")) {
+    WAP_LDF::parse_flags(0, base_learner, base_finish);
+    cs_learner = WAP_LDF::learn;
+    cs_finish  = WAP_LDF::finish;
+  }
+
+
   if(vm.count("csoaa"))
     CSOAA::parse_flags(vm["csoaa"].as<size_t>(), base_learner, base_finish);
-
-  if(vm.count("csoaa_ldf"))
-    CSOAA_LDF::parse_flag(0);
 
   if (vm.count("sequence")) {
     if (vm.count("wap")) 

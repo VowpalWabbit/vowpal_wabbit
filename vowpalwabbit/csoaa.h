@@ -48,7 +48,9 @@ namespace CSOAA_LDF {
     return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
   }
 
-  void parse_flag(size_t s);
+  void learn(example* ec);
+  void finish();
+  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
   void global_print_newline();
   void output_example(example* ec);
 
