@@ -2,6 +2,7 @@
 
 DESTDIR=/tmp/dev_dist_vw
 echo "Checking out git repo to $DESTDIR"
+rm -rf $DESTDIR
 git clone https://github.com/JohnLangford/vowpal_wabbit.git $DESTDIR
 
 cd $DESTDIR
@@ -15,13 +16,14 @@ make dist
 FNAME=$(ls vowpal_wabbit-*.tar.gz)
 mv $FNAME /tmp
 
+echo "Adding all files for dev distro"
 git checkout releases
-git rm *
+rm -rf *
 mv /tmp/$FNAME .
 tar -zxvf $FNAME
+rm $FNAME
 git add vowpal_wabbit-*
 VDATE=$VERSION-$(date +%Y-%m-%d-%H-%M)
-git add *
 git commit -m "added version $VDATE files"
 git push origin releases
 
