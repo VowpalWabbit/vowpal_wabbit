@@ -175,9 +175,6 @@ po::variables_map parse_args(int argc, char *argv[],
   global.daemon = false;
 
   global.driver = drive_gd;
-  global.initialize = initialize_gd;
-  global.learn = learn_gd;
-  global.finish = finish_gd;
   global.k = 0;
 
   global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
@@ -244,13 +241,16 @@ po::variables_map parse_args(int argc, char *argv[],
 	}
       global.stride = 2;
   }
-
+  
+  void (*base_learner)(example*) = learn_gd;
+  void (*base_finish)() = finish_gd;
+  
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     global.driver = BFGS::drive_bfgs;
-    global.initialize = BFGS::initializer;
-    global.finish = BFGS::finish;
-    global.learn = BFGS::learn;
-
+    base_learner = BFGS::learn;
+    base_finish = BFGS::finish;
+    BFGS::initializer();
+    
     global.bfgs = true;
     global.stride = 4;
     if (vm.count("hessian_on") || global.m==0) {
@@ -550,25 +550,39 @@ po::variables_map parse_args(int argc, char *argv[],
 	cerr << "using l2 regularization" << endl;
     }
 
+  void (*mc_learner)(example*) = NULL;
+  void (*mc_finish)() = NULL;
+
   if(vm.count("oaa"))
-    OAA::parse_oaa_flag(vm["oaa"].as<size_t>());
+    {
+      OAA::parse_flags(vm["oaa"].as<size_t>(), base_learner, base_finish);
+      mc_learner = OAA::learn;
+      mc_finish = OAA::finish;
+    }
+
+  void (*cs_learner)(example*) = CSOAA::learn;
+  void (*cs_finish)() = CSOAA::finish;
 
   if(vm.count("wap"))
-    WAP::parse_flag(vm["wap"].as<size_t>());
+    {
+      WAP::parse_flags(vm["wap"].as<size_t>(), base_learner, base_finish);
+      cs_learner = WAP::learn;
+      cs_finish = WAP::finish;
+    }
 
   if(vm.count("csoaa"))
-    CSOAA::parse_flag(vm["csoaa"].as<size_t>());
+    CSOAA::parse_flags(vm["csoaa"].as<size_t>(), base_learner, base_finish);
 
   if(vm.count("csoaa_ldf"))
     CSOAA_LDF::parse_flag(0);
 
   if (vm.count("sequence")) {
-    if (vm.count("wap")) {
-      // do nothing, WAP is already initialized
-    } else
-      CSOAA::parse_flag(vm["sequence"].as<size_t>());  // default to CSOAA unless wap is specified
+    if (vm.count("wap")) 
+      ;
+    else
+      CSOAA::parse_flags(vm["sequence"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
 
-    parse_sequence_args(vm);
+    parse_sequence_args(vm, cs_learner, cs_finish);
     global.driver = drive_sequence;
     global.sequence = true;
   }

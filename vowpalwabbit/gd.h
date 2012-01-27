@@ -50,7 +50,6 @@ void train_one_example_single_thread(regressor& r, example* ex);
 void drive_gd();
 void finish_gd();
 void learn_gd(example* ec);
-void initialize_gd();
 
 void output_and_account_example(example* ec);
 void finish_example(example* ec);

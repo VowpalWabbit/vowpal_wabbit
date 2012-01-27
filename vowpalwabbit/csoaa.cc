@@ -45,7 +45,14 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
 
 size_t read_cached_label(void* v, io_buf& cache)
 {
-  return 0;
+  label* ld = (label*) v;
+  char *c;
+  size_t total = sizeof(uint32_t);
+  if (buf_read(cache, c, total) < total) 
+    return 0;
+  c = bufread_label(ld,c, cache);
+  
+  return total;
 }
 
 float weight(void* v)
@@ -187,6 +194,8 @@ void output_example(example* ec)
   print_update(is_test_label((label*)ec->ld), ec);
 }
 
+  void (*base_learner)(example*) = NULL;
+  void (*base_finish)() = NULL;
 
   void learn(example* ec)
   {
@@ -222,7 +231,7 @@ void output_example(example* ec)
         }
 	ec->partial_prediction = 0.;
 
-	global.learn(ec);
+	base_learner(ec);
 	if (ec->partial_prediction < score)
 	  {
 	    score = ec->partial_prediction;
@@ -235,22 +244,16 @@ void output_example(example* ec)
       OAA::update_indicies(ec, -current_increment);
   }
 
-  void initialize()
-{
-  global.initialize();
-}
-
-void finalize()
+void finish()
 {
   if (name.begin != NULL)
     free(name.begin);
-  global.finish();
+  base_finish();
 }
 
 void drive_csoaa()
 {
   example* ec = NULL;
-  initialize();
   while ( true )
     {
       if ((ec = get_example()) != NULL)//semiblocking operation.
@@ -261,7 +264,7 @@ void drive_csoaa()
 	}
       else if (parser_done())
 	{
-	  finalize();
+	  finish();
 	  return;
 	}
       else 
@@ -269,14 +272,13 @@ void drive_csoaa()
     }
 }
 
-void parse_flag(size_t s)
+  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
 {
   *(global.lp) = cs_label_parser;
   global.k = s;
   global.driver = drive_csoaa;
-  global.cs_initialize = initialize;
-  global.cs_learn = learn;
-  global.cs_finish = finalize;
+  base_learner = base_l;
+  base_finish = base_f;
   increment = (global.length()/global.k) * global.stride;
 }
 

@@ -159,6 +159,9 @@ void update_indicies(example* ec, size_t amount)
     }
 }
 
+  void (*base_learner)(example*) = NULL;
+  void (*base_finish)() = NULL;
+
 void learn(example* ec)
 {
   mc_label* mc_label_data = (mc_label*)ec->ld;
@@ -180,7 +183,7 @@ void learn(example* ec)
       ec->ld = &simple_temp;
       if (i != 0)
 	update_indicies(ec, increment);
-      global.learn(ec);
+      base_learner(ec);
       if (ec->partial_prediction > score)
 	{
 	  score = ec->partial_prediction;
@@ -193,20 +196,14 @@ void learn(example* ec)
   update_indicies(ec, -total_increment);
 }
 
-void initialize()
+void finish()
 {
-  global.initialize();
-}
-
-void finalize()
-{
-  global.finish();
+  base_finish();
 }
 
 void drive_oaa()
 {
   example* ec = NULL;
-  initialize();
   while ( true )
     {
       if ((ec = get_example()) != NULL)//semiblocking operation.
@@ -217,7 +214,7 @@ void drive_oaa()
 	}
       else if (parser_done())
 	{
-	  finalize();
+	  finish();
 	  return;
 	}
       else 
@@ -225,14 +222,13 @@ void drive_oaa()
     }
 }
 
-void parse_oaa_flag(size_t s)
+  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
 {
   *(global.lp) = mc_label_parser;
   k = s;
   global.driver = drive_oaa;
-  global.mc_initialize = initialize;
-  global.mc_learn = learn;
-  global.mc_finish = finalize;
+  base_learner = base_l;
+  base_finish = base_f;
   increment = (global.length()/k) * global.stride;
   total_increment = increment*(k-1);
 }

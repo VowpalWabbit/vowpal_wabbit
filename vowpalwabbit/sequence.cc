@@ -684,8 +684,13 @@ void remove_policy_offset(example *ec, size_t policy)
  *** INTERFACE TO VW
  ********************************************************************************************/
 
-void parse_sequence_args(po::variables_map& vm)
+  void (*base_learner)(example*) = NULL;
+  void (*base_finish)() = NULL;
+
+void parse_sequence_args(po::variables_map& vm, void (*base_l)(example*), void (*base_f)())
 {
+  base_learner = base_l;
+  base_finish = base_f;
   *(global.lp)=OAA::mc_label_parser;
   sequence_k = vm["sequence"].as<size_t>();
 
@@ -755,7 +760,7 @@ void generate_training_example(example *ec, history h, v_array<feature>costs)
   if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(ec);}
   ec->ld = (void*)&ld;
   total_examples_generated++;
-  global.cs_learn(ec);
+  base_learner(ec);
   if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(ec);}
 
   remove_history_from_example(ec);
@@ -778,7 +783,7 @@ size_t predict(example *ec, history h, int policy, size_t truth)
 
     if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(ec); clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
     total_predictions_made++;
-    global.cs_learn(ec);
+    base_learner(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
     if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
     
@@ -1112,7 +1117,6 @@ void drive_sequence()
           "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features", "pass", "pol", "made", "gener.");
   cerr.precision(5);
 
-  global.cs_initialize();
   allocate_required_memory();
 
   read_example_this_loop = 0;
@@ -1121,9 +1125,9 @@ void drive_sequence()
     if (got_null && parser_done()) // we're done learning
       break;
   }
-
+  
   free_required_memory();
-  global.cs_finish();
+  base_finish();
 }
 
 /*

@@ -49,18 +49,7 @@ struct global_data {
 
   void (*driver)();
 
-  void (*initialize)();
-  void (*learn)(example*);
-  void (*finish)();
-
-  void (*cs_initialize)();
-  void (*cs_learn)(example*);
-  void (*cs_finish)();
   uint32_t k;
-
-  void (*mc_initialize)();
-  void (*mc_learn)(example*);
-  void (*mc_finish)();
 
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;

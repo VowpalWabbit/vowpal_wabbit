@@ -69,10 +69,6 @@ void learn_gd(example* ec)
     }
 }
 
-void initialize_gd()
-{
-}
-
 void finish_gd()
 {
   sync_weights(&global.reg);

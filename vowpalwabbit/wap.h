@@ -9,9 +9,10 @@
 #include "csoaa.h"
 
 namespace WAP {
-  
-  void parse_flag(size_t s);
-  
+  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
+  void learn(example* ec);
+  void finish();
+
 }
 
 namespace WAP_LDF {
