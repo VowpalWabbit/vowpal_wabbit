@@ -5,6 +5,8 @@
 #include "parse_primitives.h"
 #include "global_data.h"
 #include "example.h"
+#include "oaa.h"
+#include "parser.h"
 
 namespace CSOAA {
   
@@ -27,4 +29,31 @@ namespace CSOAA {
 					delete_label, weight, initial, 
 					sizeof(label)};
 }
+
+namespace CSOAA_LDF {
+  typedef OAA::mc_label label;
+
+  inline int example_is_newline(example* ec)
+  {
+    // if only index is constant namespace or no index
+    return ((ec->indices.index() == 0) || 
+            ((ec->indices.index() == 1) &&
+             (ec->indices.last() == constant_namespace)));
+  }
+
+  inline int example_is_test(example* ec)
+  {
+    return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
+  }
+
+  void parse_flag(size_t s);
+  void global_print_newline();
+  void output_example(example* ec);
+
+  const label_parser cs_label_parser = {OAA::default_label, OAA::parse_label, 
+					OAA::cache_label, OAA::read_cached_label, 
+					OAA::delete_label, OAA::weight, OAA::initial, 
+					sizeof(label)};
+}
+
 #endif

@@ -72,6 +72,7 @@ po::variables_map parse_args(int argc, char *argv[],
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
+    ("csoaa_ldf", "Use one-against-all multiclass learning with label dependent features")
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
     ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
@@ -557,6 +558,9 @@ po::variables_map parse_args(int argc, char *argv[],
 
   if(vm.count("csoaa"))
     CSOAA::parse_flag(vm["csoaa"].as<size_t>());
+
+  if(vm.count("csoaa_ldf"))
+    CSOAA_LDF::parse_flag(0);
 
   if (vm.count("sequence")) {
     if (vm.count("wap")) {

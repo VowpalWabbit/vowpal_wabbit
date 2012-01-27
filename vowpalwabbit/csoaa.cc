@@ -124,13 +124,12 @@ void parse_label(void* v, v_array<substring>& words)
     }
 }
 
-void print_update(example *ec)
+void print_update(bool is_test, example *ec)
 {
   if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
     {
-      label* ld = (label*) ec->ld;
       char label_buf[32];
-      if (is_test_label(ld))
+      if (is_test)
 	strcpy(label_buf," unknown");
       else
 	sprintf(label_buf," known");
@@ -185,7 +184,7 @@ void output_example(example* ec)
   
   global.sd->example_number++;
 
-  print_update(ec);
+  print_update(is_test_label((label*)ec->ld), ec);
 }
 
 
@@ -280,5 +279,167 @@ void parse_flag(size_t s)
   global.cs_finish = finalize;
   increment = (global.length()/global.k) * global.stride;
 }
+
+}
+
+namespace CSOAA_LDF {
+
+  v_array<example*> ec_seq = v_array<example*>();
+  size_t read_example_this_loop = 0;
+
+  void do_actual_learning()
+  {
+    if (ec_seq.index() <= 0) return;  // nothing to do
+
+    int K = ec_seq.index();
+    float min_cost = FLT_MAX;
+    v_array<float> predictions = v_array<float>();
+    float min_score = FLT_MAX;
+    size_t prediction = 0;
+    float prediction_cost = 0.;
+    bool isTest = example_is_test(*ec_seq.begin);
+    for (int k=0; k<K; k++) {
+      example *ec = ec_seq.begin[k];
+      label   *ld = (label*)ec->ld;
+
+      label_data simple_label;
+      simple_label.initial = 0.;
+      simple_label.label = FLT_MAX;
+      simple_label.weight = 0.;
+
+      if (ld->weight < min_cost) 
+        min_cost = ld->weight;
+      if (example_is_test(ec) != isTest) {
+        isTest = true;
+        cerr << "warning: got mix of train/test data; assuming test" << endl;
+      }
+
+      ec->ld = &simple_label;
+      global.learn(ec); // make a prediction
+      push(predictions, ec->partial_prediction);
+      if (ec->partial_prediction < min_score) {
+        min_score = ec->partial_prediction;
+        prediction = ld->label;
+        prediction_cost = ld->weight;
+      }
+
+      ec->ld = ld;
+    }
+    prediction_cost -= min_cost;
+    // do actual learning
+    for (int k=0; k<K; k++) {
+      example *ec = ec_seq.begin[k];
+      label   *ld = (label*)ec->ld;
+
+      // learn
+      label_data simple_label;
+      simple_label.initial = 0.;
+      simple_label.label = ld->weight;
+      simple_label.weight = 1.;
+      ec->ld = &simple_label;
+      ec->partial_prediction = 0.;
+      global.learn(ec);
+
+      // fill in test predictions
+      *(OAA::prediction_t*)&(ec->final_prediction) = (prediction == ld->label) ? 1 : 0;
+      ec->partial_prediction = predictions.begin[k];
+      
+      // restore label
+      ec->ld = ld;
+    }
+  }
+
+  void output_example(example* ec)
+  {
+    label* ld = (label*)ec->ld;
+    global.sd->weighted_examples += 1.;
+    global.sd->total_features += ec->num_features;
+    float loss = 0.;
+    if (!example_is_test(ec) && (ec->final_prediction == 1))
+      loss = ld->weight;
+    global.sd->sum_loss += loss;
+    global.sd->sum_loss_since_last_dump += loss;
+
+    for (size_t i = 0; i<global.final_prediction_sink.index(); i++) {
+      int f = global.final_prediction_sink[i];
+      global.print(f, *(OAA::prediction_t*)&ec->final_prediction, 0, ec->tag);
+    }
+  
+    global.sd->example_number++;
+
+    CSOAA::print_update(example_is_test(ec), ec);
+  }
+
+  void clear_seq(bool output)
+  {
+    if (ec_seq.index() > 0) 
+      for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
+        if (output)
+          output_example(*ecc);
+        free_example(*ecc);
+      }
+    ec_seq.erase();
+  }
+
+  void learn(example *ec) {
+    // TODO: break long examples
+    if (example_is_newline(ec)) {
+      do_actual_learning();
+      clear_seq(true);
+      global_print_newline();
+    } else {
+      push(ec_seq, ec);
+    }
+  }
+
+  void initialize()
+  {
+    global.initialize();
+  }
+
+  void finalize()
+  {
+    clear_seq(true);
+    if (ec_seq.begin != NULL)
+      free(ec_seq.begin);
+    global.finish();
+  }
+
+  void drive_csoaa_ldf()
+  {
+    example* ec = NULL;
+    initialize();
+    read_example_this_loop = 0;
+    while (true) {
+      if ((ec = get_example()) != NULL) { // semiblocking operation
+        learn(ec);
+      } else if (parser_done()) {
+        do_actual_learning();
+        finalize();
+        return;
+      }
+    }
+  }
+
+  void parse_flag(size_t s)
+  {
+    *(global.lp) = OAA::mc_label_parser;
+    global.driver = drive_csoaa_ldf;
+    global.cs_initialize = initialize;
+    global.cs_learn = learn;
+    global.cs_finish = finalize;
+  }
+
+  void global_print_newline()
+  {
+    char temp[1];
+    temp[0] = '\n';
+    for (size_t i=0; i<global.final_prediction_sink.index(); i++) {
+      int f = global.final_prediction_sink[i];
+      ssize_t t = write(f, temp, 1);
+      if (t != 1)
+        std::cerr << "write error" << std::endl;
+    }
+  }
 
 }

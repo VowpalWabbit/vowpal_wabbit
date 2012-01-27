@@ -301,18 +301,6 @@ void global_print_label(example *ec, size_t label)
   }
 }
 
-void global_print_newline()
-{
-  char temp[1];
-  temp[0] = '\n';
-  for (size_t i=0; i<global.final_prediction_sink.index(); i++) {
-    int f = global.final_prediction_sink[i];
-    ssize_t t = write(f, temp, 1);
-    if (t != 1)
-      cerr << "write error" << endl;
-  }
-}
-
 
 void print_history(history h)
 {
@@ -529,18 +517,6 @@ inline void clear_history(history h)
  *** EXAMPLE MANIPULATION
  ********************************************************************************************/
 
-inline int example_is_newline(example* ec)
-{
-  // if only index is constant namespace or no index
-  return ((ec->indices.index() == 0) || 
-          ((ec->indices.index() == 1) &&
-           (ec->indices.last() == constant_namespace)));
-}
-
-inline int example_is_test(example* ec)
-{
-  return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
-}
 
 string audit_feature_space("history");
 
@@ -881,7 +857,7 @@ void run_test(example* ec)
 
   clear_history(current_history);
 
-  while ((ec != NULL) && (! example_is_newline(ec))) {
+  while ((ec != NULL) && (! CSOAA_LDF::example_is_newline(ec))) {
     int policy = random_policy(0);
     old_label = (OAA::mc_label*)ec->ld;
 
@@ -889,7 +865,7 @@ void run_test(example* ec)
     global.sd->weighted_examples += old_label->weight;
     global.sd->total_features += ec->num_features;
 
-    if (! example_is_test(ec)) {
+    if (! CSOAA_LDF::example_is_test(ec)) {
       if (!warned) {
         cerr << "warning: mix of train and test data in sequence prediction at " << ec->example_counter << "; assuming all test" << endl;
         warned = 1;
@@ -908,7 +884,7 @@ void run_test(example* ec)
   }
   if (ec != NULL) {
     free_example(ec);
-    global_print_newline();
+    CSOAA_LDF::global_print_newline();
   }
 
   global.sd->example_number++;
@@ -925,15 +901,15 @@ void process_next_example_sequence()
     return;
 
   // skip initial newlines
-  while (example_is_newline(cur_ec)) {
-    global_print_newline();
+  while (CSOAA_LDF::example_is_newline(cur_ec)) {
+    CSOAA_LDF::global_print_newline();
     free_example(cur_ec);
     cur_ec = safe_get_example(1);
     if (cur_ec == NULL)
       return;
   }
 
-  if (example_is_test(cur_ec)) {
+  if (CSOAA_LDF::example_is_test(cur_ec)) {
     run_test(cur_ec);
     return;
   }
@@ -941,8 +917,8 @@ void process_next_example_sequence()
   // we know we're training
   size_t n = 0;
   int skip_this_one = 0;
-  while ((cur_ec != NULL) && (! example_is_newline(cur_ec))) {
-    if (example_is_test(cur_ec) && !skip_this_one) {
+  while ((cur_ec != NULL) && (! CSOAA_LDF::example_is_newline(cur_ec))) {
+    if (CSOAA_LDF::example_is_test(cur_ec) && !skip_this_one) {
       cerr << "warning: mix of train and test data in sequence prediction at " << cur_ec->example_counter << "; skipping" << endl;
       skip_this_one = 1;
     }
@@ -985,7 +961,7 @@ void process_next_example_sequence()
     if (random_policy(1) == -1)
       policy_seq[t] = -1;
   }
-  global_print_newline();
+  CSOAA_LDF::global_print_newline();
 
   global.sd->example_number++;
   print_update(1, seq_num_features);

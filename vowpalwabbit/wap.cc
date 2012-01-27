@@ -271,3 +271,134 @@ void parse_flag(size_t s)
   increment = (global.length()/global.k) * global.stride;
 }
 }
+
+namespace WAP_LDF {
+
+  v_array<example*> ec_seq = v_array<example*>();
+  size_t read_example_this_loop = 0;
+
+  void do_actual_learning()
+  {
+    if (ec_seq.index() <= 0) return;  // nothing to do
+
+    /*
+    int K = ec_seq.index();
+    float min_cost = FLT_MAX;
+    v_array<float> predictions = v_array<float>();
+    float min_score = FLT_MAX;
+    size_t prediction = 0;
+    float prediction_cost = 0.;
+    bool isTest = example_is_test(*ec_seq.begin);
+    for (int k=0; k<K; k++) {
+      example *ec = ec_seq.begin[k];
+      label   *ld = (label*)ec->ld;
+
+      label_data simple_label;
+      simple_label.initial = 0.;
+      simple_label.label = FLT_MAX;
+      simple_label.weight = 0.;
+
+      if (ld->weight < min_cost) 
+        min_cost = ld->weight;
+      if (example_is_test(ec) != isTest) {
+        isTest = true;
+        cerr << "warning: got mix of train/test data; assuming test" << endl;
+      }
+
+      ec->ld = &simple_label;
+      global.learn(ec); // make a prediction
+      push(predictions, ec->partial_prediction);
+      if (ec->partial_prediction < min_score) {
+        min_score = ec->partial_prediction;
+        prediction = ld->label;
+        prediction_cost = ld->weight;
+      }
+
+      ec->ld = ld;
+    }
+    prediction_cost -= min_cost;
+    // do actual learning
+    for (int k=0; k<K; k++) {
+      example *ec = ec_seq.begin[k];
+      label   *ld = (label*)ec->ld;
+
+      // learn
+      label_data simple_label;
+      simple_label.initial = 0.;
+      simple_label.label = ld->weight;
+      simple_label.weight = 1.;
+      ec->ld = &simple_label;
+      ec->partial_prediction = 0.;
+      global.learn(ec);
+
+      // fill in test predictions
+      *(OAA::prediction_t*)&(ec->final_prediction) = (prediction == ld->label) ? 1 : 0;
+      ec->partial_prediction = predictions.begin[k];
+      
+      // restore label
+      ec->ld = ld;
+    }
+    */
+  }
+
+  void clear_seq(bool output)
+  {
+    if (ec_seq.index() > 0) 
+      for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
+        if (output)
+          CSOAA_LDF::output_example(*ecc);
+        free_example(*ecc);
+      }
+    ec_seq.erase();
+  }
+
+  void learn(example *ec) {
+    // TODO: break long examples
+    if (CSOAA_LDF::example_is_newline(ec)) {
+      do_actual_learning();
+      clear_seq(true);
+      CSOAA_LDF::global_print_newline();
+    } else {
+      push(ec_seq, ec);
+    }
+  }
+
+  void initialize()
+  {
+    global.initialize();
+  }
+
+  void finalize()
+  {
+    clear_seq(true);
+    if (ec_seq.begin != NULL)
+      free(ec_seq.begin);
+    global.finish();
+  }
+
+  void drive_wap_ldf()
+  {
+    example* ec = NULL;
+    initialize();
+    read_example_this_loop = 0;
+    while (true) {
+      if ((ec = get_example()) != NULL) { // semiblocking operation
+        learn(ec);
+      } else if (parser_done()) {
+        do_actual_learning();
+        finalize();
+        return;
+      }
+    }
+  }
+
+  void parse_flag(size_t s)
+  {
+    *(global.lp) = OAA::mc_label_parser;
+    global.driver = drive_wap_ldf;
+    global.cs_initialize = initialize;
+    global.cs_learn = learn;
+    global.cs_finish = finalize;
+  }
+
+}
