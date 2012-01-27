@@ -389,7 +389,12 @@ namespace CSOAA_LDF {
   }
 
   void learn(example *ec) {
-    // TODO: break long examples
+    if (ec_seq.index() >= global.ring_size - 2) { // give some wiggle room
+      cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
+      do_actual_learning();
+      clear_seq(true);
+    }
+
     if (example_is_newline(ec)) {
       do_actual_learning();
       clear_seq(true);
