@@ -419,7 +419,7 @@ void simple_print_example_features(example *ec)
 void simple_print_costs(CSOAA::label *c)
 {
   for (CSOAA::wclass *f = c->costs.begin; f != c->costs.end; f++) {
-    clog << "\t" << f->weight_index << ":" << f->x;
+    clog << "\t" << f->weight_index << ":" << f->x << "::" << f->partial_prediction;
   }
   clog << endl;
 }
