@@ -27,7 +27,7 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
 {
   uint32_t num = *(uint32_t *)c;
   c += sizeof(uint32_t);
-  size_t total = sizeof(feature)*num;
+  size_t total = sizeof(wclass)*num;
   if (buf_read(cache, c, total) < total) 
     {
       cout << "error in demarshal of cost data" << endl;
@@ -35,8 +35,8 @@ char* bufread_label(label* ld, char* c, io_buf& cache)
     }
   for (uint32_t i = 0; i<num; i++)
     {
-      feature temp = *(feature *)c;
-      c += sizeof(feature);
+      wclass temp = *(wclass *)c;
+      c += sizeof(wclass);
       push(ld->costs, temp);
     }
   
@@ -71,8 +71,8 @@ char* bufcache_label(label* ld, char* c)
   c += sizeof(uint32_t);
   for (size_t i = 0; i< ld->costs.index(); i++)
     {
-      *(feature *)c = ld->costs[i];
-      c += sizeof(feature);
+      *(wclass *)c = ld->costs[i];
+      c += sizeof(wclass);
     }
   return c;
 }
@@ -81,7 +81,7 @@ void cache_label(void* v, io_buf& cache)
 {
   char *c;
   label* ld = (label*) v;
-  buf_write(cache, c, sizeof(uint32_t)+sizeof(feature)*ld->costs.index());
+  buf_write(cache, c, sizeof(uint32_t)+sizeof(wclass)*ld->costs.index());
   bufcache_label(ld,c);
 }
 
@@ -102,7 +102,7 @@ void parse_label(void* v, v_array<substring>& words)
 
   for (size_t i = 0; i < words.index(); i++)
     {
-      feature f;
+      wclass f;
       feature_value(words[i], name, f.x);
       
       f.weight_index = 0;
@@ -125,7 +125,7 @@ void parse_label(void* v, v_array<substring>& words)
     {
       for (size_t i = 1; i <= global.k; i++)
 	{
-	  feature f = {f.x, i};
+	  wclass f = {f.x, i, 0.};
 	  push(ld->costs, f);
 	}
     }
@@ -168,7 +168,7 @@ void output_example(example* ec)
 
       float chosen_loss = FLT_MAX;
       float min = FLT_MAX;
-      for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
+      for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
         if (cl->weight_index == pred)
           chosen_loss = cl->x;
         if (cl->x < min)
@@ -204,7 +204,7 @@ void output_example(example* ec)
     float score = FLT_MAX;
     size_t current_increment = 0;
 
-    for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
+    for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
         size_t i = cl->weight_index;
 	
@@ -232,6 +232,7 @@ void output_example(example* ec)
 	ec->partial_prediction = 0.;
 
 	base_learner(ec);
+        cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score)
 	  {
 	    score = ec->partial_prediction;

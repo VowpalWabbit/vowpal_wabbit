@@ -54,7 +54,7 @@ struct history_item {
   bool     alive;  // false if this isn't a valid transition
 };
 
-bool PRINT_DEBUG_INFO             = 0;
+bool PRINT_DEBUG_INFO             = 1;
 bool PRINT_UPDATE_EVERY_EXAMPLE   = 0;
 bool OPTIMIZE_SHARED_HISTORIES    = 1;
 
@@ -97,8 +97,8 @@ history*      all_histories = NULL;
 history_item* hcache        = NULL;
 v_array<OAA::mc_label*> true_labels = v_array<OAA::mc_label*>();
 
-CSOAA::label testall_costs = { v_array<feature>() };
-v_array<feature> loss_vector  = v_array<feature>();
+CSOAA::label testall_costs = { v_array<CSOAA::wclass>() };
+v_array<CSOAA::wclass> loss_vector  = v_array<CSOAA::wclass>();
 v_array<CSOAA::label> transition_prediction_costs = v_array<CSOAA::label>();
 
 
@@ -160,7 +160,7 @@ void read_transition_file(const char* filename)
   
   transition_prediction_costs.erase();
   for (int i=0; i<=file_k; i++)  {   // this is FROM, identified by line number; k+1 total lines for INITIAL transition
-    v_array<feature> this_costs = v_array<feature>();
+    v_array<CSOAA::wclass> this_costs = v_array<CSOAA::wclass>();
     for (int j=0; j<file_k; j++) {   // this is TO, identified by col number; k total columns
       n = fscanf(f, "%d", &rd);
       if (n == 0) {
@@ -170,7 +170,7 @@ void read_transition_file(const char* filename)
       if ((i <= (int)sequence_k) && (j < (int)sequence_k)) {
         valid_transition[i][j] = (rd > 0);
         if (valid_transition[i][j]) {
-          feature feat = { FLT_MAX, j+1 };
+          CSOAA::wclass feat = { FLT_MAX, j+1, 0. };
           push(this_costs, feat);
         }
       }
@@ -256,7 +256,7 @@ void allocate_required_memory()
 
   for (size_t i = 1; i <= global.k; i++)
     {
-      feature f = {FLT_MAX, i};
+      CSOAA::wclass f = {FLT_MAX, i, 0.};
       push(testall_costs.costs, f);
     }
 }
@@ -418,7 +418,7 @@ void simple_print_example_features(example *ec)
 
 void simple_print_costs(CSOAA::label *c)
 {
-  for (feature *f = c->costs.begin; f != c->costs.end; f++) {
+  for (CSOAA::wclass *f = c->costs.begin; f != c->costs.end; f++) {
     clog << "\t" << f->weight_index << ":" << f->x;
   }
   clog << endl;
@@ -750,18 +750,18 @@ void parse_sequence_args(po::variables_map& vm, void (*base_l)(example*), void (
 
 }
 
-void generate_training_example(example *ec, history h, v_array<feature>costs)
+void generate_training_example(example *ec, history h, v_array<CSOAA::wclass>costs)
 {
   CSOAA::label ld = { costs };
 
   add_history_to_example(ec, h);
   add_policy_offset(ec, current_policy);
 
-  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(ec);}
+  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(ec);}
   ec->ld = (void*)&ld;
   total_examples_generated++;
   base_learner(ec);
-  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(ec);}
+  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << "::" << c->partial_prediction; clog << " ]\t"; simple_print_example_features(ec);}
 
   remove_history_from_example(ec);
   remove_policy_offset(ec, current_policy);
@@ -781,12 +781,11 @@ size_t predict(example *ec, history h, int policy, size_t truth)
     else
       ec->ld = (void*)&transition_prediction_costs[last_prediction(h)];
 
-    if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(ec); clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
+    if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(ec);clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
     total_predictions_made++;
     base_learner(ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
-    if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
-    
+    if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << ", pp=" << ec->partial_prediction << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
 
     remove_history_from_example(ec);
     remove_policy_offset(ec, policy);
@@ -1081,7 +1080,7 @@ NOT_REALLY_NEW:
       if (hcache[i].alive) {
         size_t lab  = hcache[i].original_label;
         size_t cost = hcache[i].loss - min_loss;
-        feature temp  = { cost, lab+1 };
+        CSOAA::wclass temp  = { cost, lab+1, 0. };
         push(loss_vector, temp);
       }
     }

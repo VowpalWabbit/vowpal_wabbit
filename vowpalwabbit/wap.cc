@@ -91,15 +91,15 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
   ec->total_sum_feat_sq /= 2;
 }
 
-  struct float_feature
+  struct float_wclass
   {
     float v;
-    feature ci;
+    CSOAA::wclass ci;
   };
   int fi_compare(const void *e1, const void* e2)
   {
-    float_feature* fi1 = (float_feature*)e1;
-    float_feature* fi2 = (float_feature*)e2;
+    float_wclass* fi1 = (float_wclass*)e1;
+    float_wclass* fi2 = (float_wclass*)e2;
     if (fi1->ci.x > fi2->ci.x)
       return 1;
     else if (fi1->ci.x < fi2->ci.x)
@@ -109,8 +109,8 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
   }
   int fi_compare_i(const void *e1, const void* e2)
   {
-    float_feature* fi1 = (float_feature*)e1;
-    float_feature* fi2 = (float_feature*)e2;
+    float_wclass* fi1 = (float_wclass*)e1;
+    float_wclass* fi2 = (float_wclass*)e2;
     if (fi1->ci.weight_index > fi2->ci.weight_index)
       return 1;
     else if (fi1->ci.weight_index < fi2->ci.weight_index)
@@ -118,7 +118,7 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
     else
       return 0;
   }
-  v_array<float_feature> vs;
+  v_array<float_wclass> vs;
 
   void (*base_learner)(example*) = NULL;
   void (*base_finish)() = NULL;
@@ -127,24 +127,24 @@ void train(example* ec)
 {
   CSOAA::label* ld = (CSOAA::label*)ec->ld;
 
-  feature* old_end = ld->costs.end;
-  feature* j = ld->costs.begin; 
-  for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
+  CSOAA::wclass* old_end = ld->costs.end;
+  CSOAA::wclass* j = ld->costs.begin; 
+  for (CSOAA::wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
     if (cl->x != FLT_MAX)
       *j++ = *cl;
   ld->costs.end = j;
   
   float score = FLT_MAX;
   vs.erase();
-  for (feature *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
+  for (CSOAA::wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
     {
-      float_feature temp = {0., *cl};
+      float_wclass temp = {0., *cl};
       if (temp.ci.x < score)
 	score = temp.ci.x;
       push(vs, temp);
     }
   
-  qsort(vs.begin, vs.index(), sizeof(float_feature), fi_compare);
+  qsort(vs.begin, vs.index(), sizeof(float_wclass), fi_compare);
   
   for (size_t i = 0; i < ld->costs.index(); i++)
     {
@@ -155,7 +155,7 @@ void train(example* ec)
 	vs[i].v = vs[i-1].v + (vs[i].ci.x-vs[i-1].ci.x) / (float)i;
     }
   
-  qsort(vs.begin, vs.index(), sizeof(float_feature), fi_compare_i);
+  qsort(vs.begin, vs.index(), sizeof(float_wclass), fi_compare_i);
 
   for (size_t i = 0; i < ld->costs.index(); i++)
     for (size_t j = i+1; j < ld->costs.index(); j++)
@@ -296,7 +296,7 @@ namespace WAP_LDF {
     float norm_sq = 0.;
     size_t num_f = 0;
     for (size_t* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
-      int feature_index = 0;
+      size_t feature_index = 0;
       for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
         feature temp = { -f->x, (uint32_t) (f->weight_index & global.parse_mask) };
         push(ec->atomics[wap_ldf_namespace], temp);

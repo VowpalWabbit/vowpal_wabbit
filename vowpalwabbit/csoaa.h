@@ -9,9 +9,17 @@
 #include "parser.h"
 
 namespace CSOAA {
+
+  struct wclass {  // names are for compatibility with 'feature'
+    float x;  // the cost of this class
+    uint32_t weight_index;  // the index of this class
+    float partial_prediction;  // a partial prediction: new!
+    bool operator==(wclass j){return weight_index == j.weight_index;}
+  };
+
   
   struct label {
-    v_array<feature> costs;
+    v_array<wclass> costs;
   };
   
   void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
