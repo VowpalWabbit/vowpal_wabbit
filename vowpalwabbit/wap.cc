@@ -214,7 +214,7 @@ uint32_t test(example* ec)
 	  score = ec->partial_prediction;
 	  prediction = myi;
 	}
-      cost_label->costs[i].partial_prediction = ec->partial_prediction;
+      cost_label->costs[i].partial_prediction = -ec->partial_prediction;
     }
   return prediction;
 }

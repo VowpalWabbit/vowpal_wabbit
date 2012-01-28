@@ -266,6 +266,52 @@ void clear_seq()
   ec_seq.erase();
 }
 
+
+history_item* beam = NULL;
+
+void print_beam(size_t last_time)
+{
+  if (beam == NULL) return;
+  size_t sz = sequence_beam * global.k;
+  clog << "........................................................................................................" << endl;
+  for (size_t k=0; k<sz; k++) {
+    if (k < sequence_beam) clog << "*"; else clog << " ";
+    clog << " " << k << "\t" << beam[k].pred_score << "\t" << (beam[k].alive ? "alive" : "dead") << "\t" << (beam[k].same ? "same" : "diff") << "\t|";
+
+    for (size_t t=0; t<last_time; t++) {
+      clog << " " << beam[k].total_predictions[t];
+    }
+
+    clog << " |" << endl;
+  }
+  clog << "........................................................................................................" << endl;
+}
+    
+
+void initialize_beam()
+{
+  if (beam != NULL) return;
+  size_t sz = sequence_beam * global.k;
+  beam = (history_item*)calloc_or_die(sz, sizeof(history_item));
+  for (size_t k=0; k<sz; k++) {
+    beam[k].predictions       = (history)calloc_or_die(history_length, sizeof(size_t));
+    beam[k].total_predictions = (history)calloc_or_die(global.ring_size, sizeof(size_t));
+  }
+}
+
+void free_beam()
+{
+  size_t sz = sequence_beam * global.k;
+  if (beam != NULL) {
+    for (size_t k=0; k<sz; k++) {
+      free(beam[k].predictions);
+      free(beam[k].total_predictions);
+    }
+    free(beam);
+    beam = NULL;
+  }
+}
+
 void free_required_memory()
 {
   clear_seq();
@@ -294,6 +340,8 @@ void free_required_memory()
 
   if (testall_costs.costs.begin != NULL)
     free(testall_costs.costs.begin);
+
+  free_beam();
 }
 
 
@@ -774,31 +822,6 @@ size_t predict(example *ec, history h, int policy, size_t truth)
 
 bool warned_about_class_overage = false;
 
-history_item* beam = NULL;
-
-void initialize_beam()
-{
-  if (beam != NULL) return;
-  size_t sz = sequence_beam * global.k;
-  beam = (history_item*)calloc_or_die(sz, sizeof(history_item));
-  for (size_t k=0; k<sz; k++) {
-    beam[k].predictions       = (history)calloc_or_die(history_length, sizeof(size_t));
-    beam[k].total_predictions = (history)calloc_or_die(global.ring_size, sizeof(size_t));
-  }
-}
-
-void free_beam()
-{
-  size_t sz = sequence_beam * global.k;
-  for (size_t k=0; k<sz; k++) {
-    free(beam[k].predictions);
-    free(beam[k].total_predictions);
-  }
-  free(beam);
-  beam = NULL;
-}
-
-/*
 void run_test_beam()
 {
   size_t n = ec_seq.index();
@@ -818,33 +841,37 @@ void run_test_beam()
 
   OAA::mc_label* old_label;
 
-  for (size_t i=0; i<n; i++) {
-    int policy = random_policy(0);
+  for (size_t t=0; t<n; t++) {
+    old_label = (OAA::mc_label*)ec_seq[t]->ld;
+
     size_t idx = sequence_beam; // start writing at K and then wrap back around at the end
     for (size_t k=0; k<sequence_beam; k++) {
       if (! beam[k].alive)
         break;  // the rest are guaranteed to be dead
 
       // make a prediction
-      old_label = (OAA::mc_label*)ec_seq[i]->ld;
-      predict(ec_seq[i], beam[k].predictions, policy, -1);
-      ec_seq[i]->ld = old_label;
+      predict(ec_seq[t], beam[k].predictions, policy_seq[t], -1);
 
       // add to new beam
-      CSOAA::label *costs = (CSOAA::label*)ec_seq[i]->ld;
+      CSOAA::label *costs = (CSOAA::label*)ec_seq[t]->ld;
       for (CSOAA::wclass *wc = costs->costs.begin; wc != costs->costs.end; wc++) {
         size_t yhat = wc->weight_index;
         float  pp   = wc->partial_prediction;
+
         if (idx%sz == k)
           append_history_item(beam[k], yhat);
-        else
+        else {
+          memcpy(beam[idx % sz].total_predictions, beam[k].total_predictions, t * sizeof(size_t));
           assign_append_history_item(beam[idx % sz], beam[k], yhat);
+        }
         beam[idx % sz].same = false;
         beam[idx % sz].alive = true;
         beam[idx % sz].pred_score = beam[k].pred_score + pp;
-        beam[idx % sz].total_predictions[i] = yhat;
+        beam[idx % sz].total_predictions[t] = yhat;
         idx++;
       }
+
+      ec_seq[t]->ld = old_label;
     }
     // fill in the rest
     for (; idx % sz != sequence_beam; idx++) {
@@ -870,59 +897,41 @@ void run_test_beam()
   // the top scoring output should be in beam[0]; TODO: this could be
   // more efficient by jumping out of the previous loop early and not
   // storing everything!
-  for (size_t i=0; i<n; i++) {
-    global_print_label(ec_seq[i], beam[0].total_predictions[i]);
-  }
+  for (size_t t=0; t<n; t++)
+    pred_seq[t] = beam[0].total_predictions[t];
 }
-*/
 
-
-void run_test(bool do_printing)
+void run_test()
 {
-  size_t yhat = 0;
-  size_t seq_num_features = 0;
   OAA::mc_label* old_label;
 
   clear_history(current_history);
   for (size_t t=0; t<ec_seq.index(); t++) {
-    policy_seq[t] = (current_policy == 0) ? 0 : random_policy(0);
     old_label = (OAA::mc_label*)ec_seq[t]->ld;
-
-    seq_num_features += ec_seq[t]->num_features;
-    global.sd->weighted_examples += old_label->weight;
-    global.sd->total_features += ec_seq[t]->num_features;
-
-    yhat = predict(ec_seq[t], current_history, policy_seq[t], -1);
-    if (do_printing) global_print_label(ec_seq[t], yhat);
-    pred_seq[t] = yhat;
-
+    pred_seq[t] = predict(ec_seq[t], current_history, policy_seq[t], -1);
+    append_history(current_history, pred_seq[t]);
     ec_seq[t]->ld = old_label;
-
-    append_history(current_history, yhat);
   }
+}
 
+void run_test_common_init()
+{
+  for (size_t t=0; t<ec_seq.index(); t++)
+    policy_seq[t] = (current_policy == 0) ? 0 : random_policy(0);
+}
+
+void run_test_common_final(bool do_printing)
+{
+  size_t seq_num_features = 0;
+  for (size_t t=0; t<ec_seq.index(); t++) {
+    if (do_printing) global_print_label(ec_seq[t], pred_seq[t]);
+    seq_num_features += ec_seq[t]->num_features;
+  }
   if (do_printing) print_update(seq_num_features);
 }
 
-void do_actual_learning()
+void run_train_common_init()
 {
-  if (ec_seq.index() <= 0) return; // nothing to do
-
-  if (CSOAA_LDF::example_is_test(*ec_seq.begin)) {
-    run_test(true);
-    return;
-  }
-
-  // should be training
-  for (example **ec = ec_seq.begin; ec != ec_seq.end; ec++) {
-    if (CSOAA_LDF::example_is_test(*ec)) {
-      cerr << "warning: mix of train and test data in sequence prediction at " << (*ec)->example_counter << "; skipping" << endl;
-      return;
-    }
-  }
-
-  run_test(false);
-
   size_t n = ec_seq.index();
   size_t seq_num_features = 0;
   clear_history(current_history);
@@ -930,13 +939,16 @@ void do_actual_learning()
   for (size_t t=0; t<n; t++) {
     push(true_labels, (OAA::mc_label*)ec_seq[t]->ld);
 
+    seq_num_features             += ec_seq[t]->num_features;
+    global.sd->total_features    += ec_seq[t]->num_features;
+    global.sd->weighted_examples += true_labels[t]->weight;
+
     if (pred_seq[t] != true_labels[t]->label) { // incorrect prediction
       global.sd->sum_loss += true_labels[t]->weight;
       global.sd->sum_loss_since_last_dump += true_labels[t]->weight;
     }
 
     global_print_label(ec_seq[t], pred_seq[t]);
-    seq_num_features += ec_seq[t]->num_features;
 
     // allow us to use the optimal policy for the future
     if (random_policy(1) == -1)
@@ -944,7 +956,16 @@ void do_actual_learning()
   }
   global.sd->example_number++;
   print_update(seq_num_features);
+}
 
+void run_train_common_final()
+{
+}
+
+
+void run_train()
+{
+  size_t n = ec_seq.index();
   bool all_policies_optimal = true;
   for (size_t t=0; t<n; t++) {
     if (policy_seq[t] >= 0) all_policies_optimal = false;
@@ -1075,6 +1096,38 @@ NOT_REALLY_NEW:
   for (size_t i=0; i<n; i++)
     ec_seq[i]->ld = (void*)true_labels[i];
 }
+
+void run_train_beam()
+{
+  run_train();
+}
+
+void do_actual_learning()
+{
+  if (ec_seq.index() <= 0) return; // nothing to do
+
+  bool any_train = false;
+  bool any_test  = false;
+
+  for (example **ec = ec_seq.begin; ec != ec_seq.end; ec++)
+    if (CSOAA_LDF::example_is_test(*ec)) { any_test = true; }
+    else { any_train = true; }
+
+  if (any_train && any_test)
+    cerr << "warning: mix of train and test data in sequence prediction at " << ec_seq[0]->example_counter << "; treating as test" << endl;
+
+  run_test_common_init();
+  if (sequence_beam == 1) run_test();
+  else                    run_test_beam();
+  run_test_common_final(any_test);
+
+  if (! any_test) {
+    run_train_common_init();
+    if (sequence_beam == 1) run_train();
+    else                    run_train_beam();
+    run_train_common_final();
+  }
+}
  
 
 
@@ -1127,6 +1180,8 @@ void parse_sequence_args(po::variables_map& vm, void (*base_l)(example*), void (
       cerr << "cannot have --sequence_beam < 1; resetting to 1" << endl;
       sequence_beam = 1;
     }
+    if (sequence_beam >= 1)
+      initialize_beam();
   }
 
   history_length = ( sequence_history > sequence_features ) ? sequence_history : sequence_features;
