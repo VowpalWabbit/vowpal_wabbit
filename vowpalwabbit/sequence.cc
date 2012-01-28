@@ -54,7 +54,7 @@ struct history_item {
   bool     alive;  // false if this isn't a valid transition
 };
 
-bool PRINT_DEBUG_INFO             = 1;
+bool PRINT_DEBUG_INFO             = 0;
 bool PRINT_UPDATE_EVERY_EXAMPLE   = 0;
 bool OPTIMIZE_SHARED_HISTORIES    = 1;
 
