@@ -138,6 +138,7 @@ po::variables_map parse_args(int argc, char *argv[],
     ("sequence_max_length", po::value<size_t>(), "maximum length of sequences (default 256)")
     ("sequence_transition_file", po::value<string>(), "read valid transitions from file (default all valid)")
     ("sequence_allow_current_policy", "allow sequence labeling to use the current policy")
+    ("sequence_beam", "set the beam size for sequence prediction (default: 1 == greedy)")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
