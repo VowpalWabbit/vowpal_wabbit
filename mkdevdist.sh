@@ -3,7 +3,7 @@
 DESTDIR=/tmp/dev_dist_vw
 echo "Checking out git repo to $DESTDIR"
 rm -rf $DESTDIR
-git clone https://github.com/JohnLangford/vowpal_wabbit.git $DESTDIR
+git clone . $DESTDIR
 
 cd $DESTDIR
 sh autogen.sh
@@ -17,6 +17,7 @@ FNAME=$(ls vowpal_wabbit-*.tar.gz)
 mv $FNAME /tmp
 
 echo "Adding all files for dev distro"
+git branch releases
 git checkout releases
 rm -rf *
 mv /tmp/$FNAME .
