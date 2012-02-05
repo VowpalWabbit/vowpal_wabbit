@@ -1,4 +1,7 @@
 hash.o: hash.cc
+global_data.o: global_data.cc global_data.h v_array.h parse_regressor.h \
+ loss_functions.h parse_primitives.h io.h comp_io.h simple_label.h \
+ example.h config.h
 io.o: io.cc io.h v_array.h
 parse_regressor.o: parse_regressor.cc parse_regressor.h loss_functions.h \
  global_data.h v_array.h parse_primitives.h io.h comp_io.h simple_label.h \

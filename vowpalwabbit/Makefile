@@ -11,7 +11,7 @@ config.h:
 
 vw_SOURCES = $(shell grep vw_SOURCES Makefile.am | cut -d '=' -f 2)
 
-depend:	$(vw_SOURCES)
+depend:	$(vw_SOURCES) config.h
 	gcc -MM $(vw_SOURCES) > depend
 
 -include depend
