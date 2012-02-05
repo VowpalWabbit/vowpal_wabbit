@@ -1,68 +1,80 @@
-accumulate.o: accumulate.cc accumulate.h allreduce.h global_data.h \
-  v_array.h parse_regressor.h loss_functions.h
-active_interactor.o: active_interactor.cc
-allreduce.o: allreduce.cc allreduce.h
-bfgs.o: bfgs.cc parse_example.h io.h v_array.h parse_regressor.h \
-  loss_functions.h parse_primitives.h parser.h global_data.h example.h \
-  constant.h sparse_dense.h bfgs.h gd.h allreduce.h cache.h \
-  simple_label.h accumulate.h
-cache.o: cache.cc cache.h parse_example.h io.h v_array.h \
-  parse_regressor.h loss_functions.h parse_primitives.h parser.h \
-  global_data.h example.h unique_sort.h
-gd.o: gd.cc parse_example.h io.h v_array.h parse_regressor.h \
-  loss_functions.h parse_primitives.h parser.h global_data.h example.h \
-  constant.h sparse_dense.h gd.h allreduce.h cache.h simple_label.h \
-  accumulate.h
-gd_mf.o: gd_mf.cc parse_example.h io.h v_array.h parse_regressor.h \
-  loss_functions.h parse_primitives.h parser.h global_data.h example.h \
-  constant.h sparse_dense.h gd.h allreduce.h cache.h simple_label.h
-global_data.o: global_data.cc global_data.h v_array.h parse_regressor.h \
-  loss_functions.h
 hash.o: hash.cc
 io.o: io.cc io.h v_array.h
-lda_core.o: lda_core.cc parse_example.h io.h v_array.h parse_regressor.h \
-  loss_functions.h parse_primitives.h parser.h global_data.h example.h \
-  constant.h sparse_dense.h gd.h allreduce.h lda_core.h cache.h \
-  simple_label.h
-loss_functions.o: loss_functions.cc loss_functions.h global_data.h \
-  v_array.h parse_regressor.h
-main.o: main.cc vw.h gd.h example.h v_array.h parse_regressor.h \
-  loss_functions.h parser.h io.h global_data.h parse_primitives.h \
-  allreduce.h accumulate.h
-network.o: network.cc
-noop.o: noop.cc example.h v_array.h parser.h io.h global_data.h \
-  parse_regressor.h loss_functions.h parse_primitives.h gd.h allreduce.h
-offset_tree.o: offset_tree.cc parse_regressor.h loss_functions.h \
-  parse_example.h io.h v_array.h parse_primitives.h parser.h \
-  global_data.h example.h parse_args.h gd.h allreduce.h hash.h cache.h
-parse_args.o: parse_args.cc cache.h parse_example.h io.h v_array.h \
-  parse_regressor.h loss_functions.h parse_primitives.h parser.h \
-  global_data.h example.h parse_args.h gd.h allreduce.h sender.h \
-  network.h
-parse_example.o: parse_example.cc parse_example.h io.h v_array.h \
-  parse_regressor.h loss_functions.h parse_primitives.h parser.h \
-  global_data.h example.h hash.h cache.h unique_sort.h
-parse_primitives.o: parse_primitives.cc parse_primitives.h v_array.h
 parse_regressor.o: parse_regressor.cc parse_regressor.h loss_functions.h \
-  global_data.h v_array.h io.h
-parser.o: parser.cc parser.h io.h v_array.h global_data.h \
-  parse_regressor.h loss_functions.h parse_primitives.h example.h \
-  parse_example.h cache.h gd.h allreduce.h comp_io.h unique_sort.h \
-  constant.h
-sender.o: sender.cc io.h v_array.h parse_args.h gd.h example.h \
-  parse_regressor.h loss_functions.h parser.h global_data.h \
-  parse_primitives.h allreduce.h cache.h parse_example.h vw.h \
-  simple_label.h network.h
-simple_label.o: simple_label.cc simple_label.h io.h v_array.h \
-  parse_primitives.h parser.h global_data.h parse_regressor.h \
-  loss_functions.h example.h cache.h parse_example.h
-sparse_dense.o: sparse_dense.cc sparse_dense.h parse_example.h io.h \
-  v_array.h parse_regressor.h loss_functions.h parse_primitives.h \
-  parser.h global_data.h example.h constant.h
+ global_data.h v_array.h parse_primitives.h io.h comp_io.h simple_label.h \
+ example.h
+parse_primitives.o: parse_primitives.cc parse_primitives.h v_array.h io.h
 unique_sort.o: unique_sort.cc unique_sort.h parser.h io.h v_array.h \
-  global_data.h parse_regressor.h loss_functions.h parse_primitives.h \
-  example.h
+ global_data.h parse_regressor.h loss_functions.h parse_primitives.h \
+ comp_io.h simple_label.h example.h
+cache.o: cache.cc cache.h parse_example.h io.h v_array.h \
+ parse_regressor.h loss_functions.h parse_primitives.h parser.h \
+ global_data.h comp_io.h simple_label.h example.h unique_sort.h
+simple_label.o: simple_label.cc simple_label.h io.h v_array.h \
+ parse_primitives.h global_data.h parse_regressor.h loss_functions.h \
+ comp_io.h example.h cache.h parse_example.h parser.h
+oaa.o: oaa.cc oaa.h io.h v_array.h parse_primitives.h global_data.h \
+ parse_regressor.h loss_functions.h comp_io.h simple_label.h example.h \
+ cache.h parse_example.h parser.h
+csoaa.o: csoaa.cc csoaa.h io.h v_array.h parse_primitives.h global_data.h \
+ parse_regressor.h loss_functions.h comp_io.h simple_label.h example.h \
+ oaa.h parser.h cache.h parse_example.h
+wap.o: wap.cc wap.h io.h v_array.h parse_primitives.h global_data.h \
+ parse_regressor.h loss_functions.h comp_io.h simple_label.h example.h \
+ oaa.h csoaa.h parser.h cache.h parse_example.h
+sequence.o: sequence.cc gd.h example.h v_array.h parse_regressor.h \
+ loss_functions.h parser.h io.h global_data.h parse_primitives.h \
+ comp_io.h simple_label.h allreduce.h sequence.h oaa.h constant.h csoaa.h
+parse_example.o: parse_example.cc parse_example.h io.h v_array.h \
+ parse_regressor.h loss_functions.h parse_primitives.h parser.h \
+ global_data.h comp_io.h simple_label.h example.h hash.h cache.h \
+ unique_sort.h
+sparse_dense.o: sparse_dense.cc sparse_dense.h parse_example.h io.h \
+ v_array.h parse_regressor.h loss_functions.h parse_primitives.h parser.h \
+ global_data.h comp_io.h simple_label.h example.h constant.h
+network.o: network.cc
+parse_args.o: parse_args.cc cache.h parse_example.h io.h v_array.h \
+ parse_regressor.h loss_functions.h parse_primitives.h parser.h \
+ global_data.h comp_io.h simple_label.h example.h parse_args.h gd.h \
+ allreduce.h sender.h network.h oaa.h csoaa.h wap.h sequence.h bfgs.h \
+ lda_core.h noop.h gd_mf.h
+accumulate.o: accumulate.cc accumulate.h allreduce.h global_data.h \
+ v_array.h parse_regressor.h loss_functions.h parse_primitives.h io.h \
+ comp_io.h simple_label.h example.h
+gd.o: gd.cc parse_example.h io.h v_array.h parse_regressor.h \
+ loss_functions.h parse_primitives.h parser.h global_data.h comp_io.h \
+ simple_label.h example.h constant.h sparse_dense.h gd.h allreduce.h \
+ cache.h accumulate.h
+lda_core.o: lda_core.cc parse_example.h io.h v_array.h parse_regressor.h \
+ loss_functions.h parse_primitives.h parser.h global_data.h comp_io.h \
+ simple_label.h example.h constant.h sparse_dense.h gd.h allreduce.h \
+ lda_core.h cache.h
+gd_mf.o: gd_mf.cc parse_example.h io.h v_array.h parse_regressor.h \
+ loss_functions.h parse_primitives.h parser.h global_data.h comp_io.h \
+ simple_label.h example.h constant.h sparse_dense.h gd.h allreduce.h \
+ cache.h
+bfgs.o: bfgs.cc parse_example.h io.h v_array.h parse_regressor.h \
+ loss_functions.h parse_primitives.h parser.h global_data.h comp_io.h \
+ simple_label.h example.h constant.h sparse_dense.h bfgs.h gd.h \
+ allreduce.h cache.h accumulate.h
+noop.o: noop.cc example.h v_array.h parser.h io.h global_data.h \
+ parse_regressor.h loss_functions.h parse_primitives.h comp_io.h \
+ simple_label.h gd.h allreduce.h
+parser.o: parser.cc parser.h io.h v_array.h global_data.h \
+ parse_regressor.h loss_functions.h parse_primitives.h comp_io.h \
+ simple_label.h example.h parse_example.h cache.h gd.h allreduce.h \
+ unique_sort.h constant.h
 vw.o: vw.cc parse_regressor.h loss_functions.h parse_example.h io.h \
-  v_array.h parse_primitives.h parser.h global_data.h example.h \
-  parse_args.h gd.h allreduce.h gd_mf.h lda_core.h bfgs.h noop.h vw.h \
-  simple_label.h sender.h
+ v_array.h parse_primitives.h parser.h global_data.h comp_io.h \
+ simple_label.h example.h parse_args.h gd.h allreduce.h gd_mf.h \
+ lda_core.h bfgs.h noop.h vw.h sender.h
+loss_functions.o: loss_functions.cc loss_functions.h global_data.h \
+ v_array.h parse_regressor.h parse_primitives.h io.h comp_io.h \
+ simple_label.h example.h
+sender.o: sender.cc io.h v_array.h parse_args.h gd.h example.h \
+ parse_regressor.h loss_functions.h parser.h global_data.h \
+ parse_primitives.h comp_io.h simple_label.h allreduce.h cache.h \
+ parse_example.h vw.h network.h
+main.o: main.cc vw.h gd.h example.h v_array.h parse_regressor.h \
+ loss_functions.h parser.h io.h global_data.h parse_primitives.h \
+ comp_io.h simple_label.h allreduce.h accumulate.h
