@@ -318,7 +318,7 @@ po::variables_map parse_args(int argc, char *argv[],
 	}
     }
   
-  if (vm.count("daemon") || vm.count("pid_file")) {
+  if (vm.count("daemon") || vm.count("pid_file") || vm.count("port")) {
     global.daemon = true;
 
     // allow each child to process up to 1e5 connections
