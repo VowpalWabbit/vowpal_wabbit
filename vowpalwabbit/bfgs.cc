@@ -115,7 +115,7 @@ void zero_preconditioner(regressor& reg)
     weights[stride*i+3] = 0;
 }
 
-void reset_state()
+void reset_state( bool zero)
   {
     lastj = origin = 0;
     loss_sum = previous_loss_sum = 0.;
@@ -124,8 +124,11 @@ void reset_state()
     first_pass = true;
     gradient_pass = true;
     preconditioner_pass = true;
-    zero_derivative(global.reg);
-    zero_preconditioner(global.reg);
+    if (zero)
+      {
+	zero_derivative(global.reg);
+	zero_preconditioner(global.reg);
+      }
   }
 
 void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
@@ -775,7 +778,7 @@ void learn(example* ec)
   if (ec->pass != current_pass) {
     int status = process_pass();
     if (status != LEARN_OK)
-      reset_state();
+      reset_state(true);
     else if (output_regularizer && current_pass==global.numpasses-1) {
       zero_preconditioner(global.reg);
       preconditioner_pass = true;
@@ -802,11 +805,6 @@ void finish()
     }
   ftime(&t_end_global);
   net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-  if (!global.quiet)
-    {
-      cerr<<"Net time spent in communication = "<<get_comm_time()/(float)1000<<" seconds\n";
-      cerr<<"Net time spent = "<<(float)net_time/(float)1000<<" seconds\n";
-    }
 
   free(predictions.begin);
   free(mem);
@@ -842,12 +840,11 @@ void initializer()
   if (global.reg.regularizers != NULL)
       global.l2_lambda = 1; // To make sure we are adding the regularization
   output_regularizer =  (global.per_feature_regularizer_output != "" || global.per_feature_regularizer_text != "");
-  reset_state();
+  reset_state(false);
 }
 
 void drive_bfgs()
 {
-  initializer();
   example* ec = NULL;
 
   size_t final_pass=global.numpasses-1;

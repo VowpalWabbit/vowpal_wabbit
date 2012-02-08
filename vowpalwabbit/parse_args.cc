@@ -250,10 +250,10 @@ po::variables_map parse_args(int argc, char *argv[],
     global.driver = BFGS::drive_bfgs;
     base_learner = BFGS::learn;
     base_finish = BFGS::finish;
-    BFGS::initializer();
-    
     global.bfgs = true;
     global.stride = 4;
+    BFGS::initializer();
+    
     if (vm.count("hessian_on") || global.m==0) {
       global.hessian_on = true;
     }
