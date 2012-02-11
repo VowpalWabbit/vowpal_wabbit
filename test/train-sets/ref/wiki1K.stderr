@@ -8,20 +8,20 @@ initial_t = 1
 power_t = 0.5
 average    since       example  example    current  current  current
 loss       last        counter   weight      label  predict features
-10.276478  10.276478         3      3.0    unknown   0.0000       37
-10.341616  10.406754         6      6.0    unknown   0.0000       13
-10.311178  10.274652        11     11.0    unknown   0.0000       31
-10.451924  10.592670        22     22.0    unknown   0.0000        1
-10.439171  10.426419        44     44.0    unknown   0.0000      165
-10.459728  10.480762        87     87.0    unknown   0.0000       28
-10.093427  9.727127        174    174.0    unknown   0.0000       16
-9.566332   9.039237        348    348.0    unknown   0.0000        1
-9.066709   8.567086        696    696.0    unknown   0.0000      142
+10.276554  10.276554         3      3.0    unknown   0.0000       37
+10.341707  10.406860         6      6.0    unknown   0.0000       13
+10.311271  10.274747        11     11.0    unknown   0.0000       31
+10.452018  10.592765        22     22.0    unknown   0.0000        1
+10.439266  10.426514        44     44.0    unknown   0.0000      165
+10.459824  10.480861        87     87.0    unknown   0.0000       28
+10.093528  9.727232        174    174.0    unknown   0.0000       16
+9.566372   9.039215        348    348.0    unknown   0.0000        1
+9.066570   8.566769        696    696.0    unknown   0.0000      142
 
 finished run
 number of examples = 1000
 weighted example sum = 1000
 weighted label sum = 0
-average loss = 8.856
+average loss = 8.855
 best constant = 1
 total feature number = 86919
