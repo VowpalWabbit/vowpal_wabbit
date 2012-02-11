@@ -252,7 +252,6 @@ po::variables_map parse_args(int argc, char *argv[],
     base_finish = BFGS::finish;
     global.bfgs = true;
     global.stride = 4;
-    BFGS::initializer();
     
     if (vm.count("hessian_on") || global.m==0) {
       global.hessian_on = true;
@@ -550,6 +549,10 @@ po::variables_map parse_args(int argc, char *argv[],
       if (global.reg_mode > 1)
 	cerr << "using l2 regularization" << endl;
     }
+
+  if (global.bfgs) {
+    BFGS::initializer();
+  }
 
   void (*mc_learner)(example*) = NULL;
   void (*mc_finish)() = NULL;
