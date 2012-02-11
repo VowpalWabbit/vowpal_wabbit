@@ -296,7 +296,7 @@ namespace WAP_LDF {
     float norm_sq = 0.;
     size_t num_f = 0;
     for (size_t* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
-      int feature_index = 0;
+      size_t feature_index = 0;
       for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
         feature temp = { -f->x, (uint32_t) (f->weight_index & global.parse_mask) };
         push(ec->atomics[wap_ldf_namespace], temp);
