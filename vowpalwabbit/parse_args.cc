@@ -106,6 +106,8 @@ po::variables_map parse_args(int argc, char *argv[],
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
+    //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    //("errors", po::value<size_t>(), "Errors allowed in an error correcting tournament")
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")

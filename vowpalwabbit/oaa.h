@@ -33,7 +33,7 @@ namespace OAA
 					sizeof(mc_label)};
   
   void update_indicies(example* ec, size_t amount);
-
+  void output_example(example* ec);
 }
 
 #endif
