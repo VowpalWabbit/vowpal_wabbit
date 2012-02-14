@@ -11,8 +11,8 @@ using l2 regularization
 m = 7
 Allocated 72M for weights and mem
 ## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 	time      
- 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.151
- 3 0.000000e+00	0.000000e+00	0.000000e+00	 -nan      	-nan      	
+ 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.258
+ 3 0.000000e+00	0.000000e+00	0.000000e+00	 nan       	nan       	
 
 
 finished run

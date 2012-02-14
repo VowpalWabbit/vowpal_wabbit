@@ -333,11 +333,6 @@ po::variables_map parse_args(int argc, char *argv[],
   if(vm.count("sort_features"))
     par->sort_features = true;
 
-  if (global.num_bits > 30) {
-    cerr << "The system limits at 30 bits of precision!\n" << endl;
-    exit(1);
-  }
-
   if (vm.count("quadratic"))
     {
       global.pairs = vm["quadratic"].as< vector<string> >();
