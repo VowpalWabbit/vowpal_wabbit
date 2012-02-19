@@ -312,9 +312,9 @@ po::variables_map parse_args(int argc, char *argv[],
     {
       global.default_bits = false;
       global.num_bits = vm["bit_precision"].as< size_t>();
-      if (global.num_bits > 29)
+      if (global.num_bits > sizeof(size_t)*8 - 3)
 	{
-	  cout << "Only 29 or fewer bits allowed.  If this is a serious limit, speak up." << endl;
+	  cout << "Only " << sizeof(size_t) - 3 << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
 	  exit(1);
 	}
     }
