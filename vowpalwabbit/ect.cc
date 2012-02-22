@@ -15,9 +15,8 @@ This is not working yet (more to do).
 #include <pthread.h>
 #include <time.h>
 #include <boost/program_options.hpp>
-#include "oaa.h"
+#include "ect.h"
 #include "parser.h"
-#include "hash.h"
 
 using namespace std;
 
@@ -25,31 +24,25 @@ namespace ECT
 {
   int k = 1;
   size_t errors = 0;
-  struct circuit {
-    //At each round, the maximum number participating in each tournament.
-    // level 0 = first round, entry 1 = first single elimination tournament.
-    v_array< v_array< size_t > > tournament_counts; 
-    
-    //Derived from tournament_counts, the number of pairs in each tournament.
-    v_array< v_array< size_t > > pairs; 
-    
-    //Derived from pairs, the sum of pairs in all tournaments at that level.
-    v_array<size_t> total_pairs;
 
-    //Derived from total_pairs, the sum of total_pairs up to this depth.
-    v_array<size_t> cumulative_pairs;
-    
-    v_array<int> final_rounds; //The final rounds of each tournament. 
-    // round number is one larger than the entrants round number and equal to 
-    // the exit round number.
-    size_t tree_height; //The height of the final tournament.
-
-    v_array<size_t> final_counts;//The number of tournaments at each level in the final tournament.
-    v_array<size_t> final_pairs;//The number of pairs at each level in the final tournament.
-    v_array<size_t> final_cumulative_pairs;//The cumulative number of pairs at each level in the final tournament.
-  };
-  circuit c;
-  v_array<size_t> tournaments_won;
+  //At each round, the maximum number participating in each tournament.
+  // level 0 = first round, entry 1 = first single elimination tournament.
+  v_array< v_array< size_t > > tournament_counts; 
+  
+  //Derived from tournament_counts, the number of pairs in each tournament.
+  v_array< v_array< size_t > > pairs; 
+  
+  //The sum of pairs in all tournaments up to this depth.
+  v_array<size_t> cumulative_pairs;
+  size_t last_pair;
+  
+  v_array<int> final_rounds; //The final rounds of each tournament. 
+  // round number is one larger than the entrants round number and equal to 
+  // the exit round number.
+  size_t tree_height; //The height of the final tournament.
+  
+  size_t increment = 0;
+  v_array<bool> tournaments_won;
 
 bool exists(v_array<size_t> db)
 {
@@ -69,7 +62,7 @@ bool exists(v_array<size_t> db)
     return 31;
   }
   
-void create_circuit(size_t max_label, size_t eliminations, circuit& c)
+void create_circuit(size_t max_label, size_t eliminations)
 {
   v_array<size_t> first_round;
   v_array<size_t> first_pair;
@@ -86,18 +79,17 @@ void create_circuit(size_t max_label, size_t eliminations, circuit& c)
       push(first_round, (size_t)0);  
       push(first_pair, (size_t)0);
     }
-  push(c.tournament_counts, first_round);
-  push(c.pairs, first_pair);
-  push(c.total_pairs, first_pair[0]);
-  push(c.cumulative_pairs, c.total_pairs[0]);
+  push(tournament_counts, first_round);
+  push(pairs, first_pair);
+  push(cumulative_pairs, first_pair[0]);
 
   int depth = 0;
-  while(exists(c.tournament_counts[depth]))
+  while(exists(tournament_counts[depth]))
     {
-      size_t total_pairs = 0;
+      size_t pair_sum = 0;
       v_array<size_t> new_round;
       v_array<size_t> new_pairs;
-      v_array<size_t> old_round = c.tournament_counts[depth];
+      v_array<size_t> old_round = tournament_counts[depth];
       for (size_t i = 1; i < old_round.index(); i++)
 	{
 	  size_t count = 0;
@@ -109,74 +101,65 @@ void create_circuit(size_t max_label, size_t eliminations, circuit& c)
 	    count += prev/2;
 	  int old = old_round[i];
 	  if (old == 2 && prev == 0)
-	    push(c.final_rounds, depth-1);
+	    push(final_rounds, depth-1);
 	  else
 	    count += (old+1)/2;
 	  push(new_round, count);
 	  push(new_pairs, new_round[i]/2);
-	  total_pairs += new_pairs[i];
+	  pair_sum += new_pairs[i];
 	}
-      push(c.tournament_counts, new_round);
-      push(c.pairs, new_pairs);
-      push(c.total_pairs, total_pairs);
-      push(c.cumulative_pairs, c.total_pairs[depth]);
+      push(tournament_counts, new_round);
+      push(pairs, new_pairs);
+      push(cumulative_pairs, pair_sum + cumulative_pairs[depth]);
       depth++;
     }
+  last_pair = cumulative_pairs.last();
 
-  c.tree_height = final_depth(eliminations);
-
-  depth=0;
-  while (eliminations > 1)
-    {
-      eliminations = (eliminations+1)/2;
-      push(c.final_counts, eliminations);
-      push(c.final_pairs, eliminations/2);
-    }
+  tree_height = final_depth(eliminations);
+  increment = global.length() / (last_pair + errors) * global.stride;
 }
 
 struct node {
   size_t label;// From leaves, starts as actual label
-  size_t eliminations;// Starts at 1
+  size_t tournament;// Starts at 0
   size_t depth;// Starts at 0 at the leaves
 };
 
-void leaf_to_root(node& current, bool right, circuit& c)
+void leaf_to_root(node& current, bool right)
 {
-  v_array<size_t> round = c.tournament_counts[current.depth];
+  v_array<size_t> round = tournament_counts[current.depth];
 
   bool won = (((current.label % 2) == 1) && right) || (((current.label % 2) == 0) && !right);
-  bool last_round = round[current.eliminations] == 1 && round[current.eliminations-1] == (size_t)-1;
+  bool last_round = round[current.tournament] == 1 && round[current.tournament-1] == (size_t)-1;
 
   if (last_round)
     {
-      if (won)
-	{
-	  push(tournaments_won, current.eliminations);
-	}
-      current.eliminations++;
+      push(tournaments_won, won);
+      current.tournament++;
     }
   else if (won)
     {
-      int num_losers = (round[current.eliminations-1]+1) / 2;
-      if (round[current.eliminations - 1] == 1 
-	  && current.eliminations > 1 && round[current.eliminations-2] == (size_t)-1)
+      int num_losers = (round[current.tournament-1]+1) / 2;
+      if (round[current.tournament - 1] == 1 
+	  && current.tournament > 1 && round[current.tournament-2] == (size_t)-1)
 	num_losers = 2;
       current.label = num_losers + current.label / 2;
     }
   else 
     {
-      current.eliminations++;
+      push(tournaments_won, false);
+      current.tournament++;
       current.label = current.label / 2;
     }
   current.depth++;
 }
 
-bool bye_to_root(node& current, circuit& c)
+bool bye_to_root(node& current)
 {
-  if (current.label == c.tournament_counts[current.depth][current.eliminations] 
+  if (current.label == tournament_counts[current.depth][current.tournament] 
       && current.label %2 == 0)
     {
-      current.label = c.tournament_counts[current.depth+1][current.eliminations];
+      current.label = tournament_counts[current.depth+1][current.tournament];
       current.depth++;
       return true;
     }
@@ -184,25 +167,25 @@ bool bye_to_root(node& current, circuit& c)
     return false;
 }
 
-void root_to_leaf(node& current, bool right, circuit& c)
+void root_to_leaf(node& current, bool right)
 {
-  v_array<size_t> prev = c.tournament_counts[current.depth - 1];
+  v_array<size_t> prev = tournament_counts[current.depth - 1];
   
-  if (current.label < 2 && prev[current.eliminations-1] == 1 
-      && c.tournament_counts[current.depth][current.eliminations-1] == (size_t)-1)
+  if (current.label < 2 && prev[current.tournament-1] == 1 
+      && tournament_counts[current.depth][current.tournament-1] == (size_t)-1)
     {
-      current.eliminations--;
+      current.tournament--;
     }
   else
     {
-      size_t num_losers = (prev[current.eliminations-1]+1) / 2;
-      if (prev[current.eliminations - 1] == 1 && current.eliminations > 1 
-	  && prev[current.eliminations - 2] == (size_t)-1)
+      size_t num_losers = (prev[current.tournament-1]+1) / 2;
+      if (prev[current.tournament - 1] == 1 && current.tournament > 1 
+	  && prev[current.tournament - 2] == (size_t)-1)
 	num_losers = 2;
 
       if (current.label < num_losers)
 	{
-	  current.eliminations--;
+	  current.tournament--;
 	  current.label = current.label * 2 + (right ? 0 : 1);
 	}
       else
@@ -211,12 +194,12 @@ void root_to_leaf(node& current, bool right, circuit& c)
   current.depth--;
 }
 
-bool bye_to_leaf(node& current, circuit& c)
+bool bye_to_leaf(node& current)
 {
-  if (current.label == c.tournament_counts[current.depth][current.eliminations]
-      && (c.tournament_counts[current.depth-1][current.eliminations] % 2 == 0))
+  if (current.label == tournament_counts[current.depth][current.tournament]
+      && (tournament_counts[current.depth-1][current.tournament] % 2 == 0))
     {
-      current.label = c.tournament_counts[current.depth-1][current.eliminations];
+      current.label = tournament_counts[current.depth-1][current.tournament];
       current.depth--;
       return true;
     }
@@ -233,59 +216,59 @@ size_t get_bit(size_t label, size_t bitNum)
 void (*base_learner)(example*) = NULL;
 void (*base_finish)() = NULL;
 
-struct final_node {
-  int label;
-  int level;
-};
-
 int ect_predict(example* ec)
 {
-  size_t new_label = 0;
+  size_t final_winner = 0;
 
   //Binary final elimination tournament first
   label_data simple_temp = {FLT_MAX,0.,0.};
   ec->ld = & simple_temp;
 
-  for (size_t i = c.tree_height-1; i >= 0; i--)
+  for (size_t i = tree_height-1; i >= 0; i--)
     {
-      if ((new_label | (1 << i)) <= errors)
+      if ((final_winner | (1 << i)) <= errors)
 	{// a real choice exists
 	  uint32_t offset = 0;
-	  if (i != c.tree_height-1)
-	    {
-	      final_node temp = {new_label,i};
-	      offset = uniform_hash(&temp,sizeof(temp),0);
-	      OAA::update_indicies(ec,offset);
-	      ec->partial_prediction = 0;
-	    }
+
+	  size_t problem_number = last_pair + (final_winner | (1 << i)) - 1; //This is unique.
+	  
+	  offset = problem_number*increment;
+	  
+	  OAA::update_indicies(ec,offset);
+	  ec->partial_prediction = 0;
 
 	  base_learner(ec);
 
-	  if (i != c.tree_height-1)
-	    OAA::update_indicies(ec,-offset);
+	  OAA::update_indicies(ec,-offset);
 
 	  if (ec->final_prediction > 0.)
-	    new_label = new_label | (1 << i);
+	    final_winner = final_winner | (1 << i);
 	}
     }
   
-  node current = {0, new_label+1, c.final_rounds[new_label]};
+  node current = {0, final_winner, final_rounds[final_winner]};
   while (current.depth > 0)
     {
-      if (bye_to_leaf(current,c))
+      if (bye_to_leaf(current))//nothing to do.
 	;
       else
 	{
-	  node current2 = current;
-	  current2.label = current2.label/2;
-	  current2.depth--;
-	  uint32_t offset = uniform_hash(&current2,sizeof(current2),0);
+	  size_t problem_number;
+	  if (current.depth-1 != 0)
+	    problem_number += cumulative_pairs[current.depth-1];
+	  size_t i = 0;
+	  while(i < current.tournament)
+	    problem_number += pairs[current.depth][i++];
+	  problem_number += current.label/2;
+	  
+	  size_t offset = problem_number*increment;
+
 	  ec->partial_prediction = 0;
 	  OAA::update_indicies(ec,offset);
 	  base_learner(ec);
 	  float pred = ec->final_prediction;
 	  OAA::update_indicies(ec,-offset);
-	  root_to_leaf(current, pred > 0., c);
+	  root_to_leaf(current, pred > 0.);
 	}
     }
 
@@ -304,91 +287,91 @@ void ect_train(example* ec)
 {
   OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
   
-  node current = {mc->label, 1, 0};
-  
+  node current = {mc->label, 0, 0};
+
+  label_data simple_temp = {1.,mc->weight,0.};
+
   tournaments_won.erase();
-  while(current.eliminations < (size_t) c.tournament_counts[0].index())
+  while(current.tournament < (size_t) tournament_counts[0].index())
     {
-      if (bye_to_root(current,c))
+      if (bye_to_root(current))
 	;
       else
 	{
-	  label_data simple_temp = {(2 * current.label % 2) - 1, mc->weight, 0.};
+	  simple_temp.label = (2 * current.label % 2) - 1;
+	  ec->ld = &simple_temp;
 	  
-	  node current2 = current;
-	  current2.label = current2.label/2;
-	  uint32_t offset = uniform_hash(&current2,sizeof(current2),0);
+	  size_t problem_number = 0;
+	  if (current.depth != 0)
+	    problem_number += cumulative_pairs[current.depth-1];
+	  size_t i = 0;
+	  while(i < current.tournament)
+	    problem_number += pairs[current.depth][i++];
+	  problem_number += current.label/2;
+	  
+	  size_t offset = problem_number*increment;
+	  
 	  OAA::update_indicies(ec,offset);
 
 	  ec->partial_prediction = 0;
 	  base_learner(ec);
 	  simple_temp.weight = 0.;
 	  ec->partial_prediction = 0;
-	  base_learner(ec);
+	  base_learner(ec);//inefficient, we should extract final prediction exactly.
 	  float pred = ec->final_prediction;
 	  OAA::update_indicies(ec,-offset);
-	  leaf_to_root(current, pred > 0., c);
+	  leaf_to_root(current, pred > 0.);
 	}
     }
   
-  int depth = 0;
-  while (tournaments_won.index() > 0)
+  //tournaments_won is a bit vector determining which tournaments the label won.
+
+  for (size_t i = 0; i < tree_height; i++)
     {
-      size_t cur_pos = 0;
-      int insert_pos = 0;
-      float weight = mc->weight;
-
-      while (cur_pos < tournaments_won.index())
+      for (size_t j = 0; j < tournaments_won.index()/2; j++)
 	{
-	  size_t label = tournaments_won[cur_pos];
-	  if ((label | (1 << depth)) <= c.tournament_counts[0][1]) // not a bye
+	  bool left = tournaments_won[j*2];
+	  bool right = tournaments_won[j*2+1];
+	  if (left == right)//no query to do
+	    tournaments_won[j] = left;
+	  else //query to do
 	    {
-	      if (get_bit(label,depth) == 1 || ((cur_pos < tournaments_won.index()-1) && (label+1 != tournaments_won[cur_pos+1])))
-		{
-		  label &= ~(1 << depth);
-		  final_node temp = { label, depth };
-		  uint32_t offset = uniform_hash(&temp, sizeof(temp), 0);
-		  OAA::update_indicies(ec,offset);
-
-		  label_data simple_temp = {(2*get_bit(label,depth) % 2) - 1, weight, 0.};
-		  ec->ld = &simple_temp;
-
-		  ec->partial_prediction = 0;
-		  base_learner(ec);
-		  ec->partial_prediction = 0.;
-		  simple_temp.weight = 0.;
-		  base_learner(ec);
-		  OAA::update_indicies(ec,-offset);
-		  if ((ec->final_prediction > 0.) == (get_bit(label, depth) == 1))
-		    {
-		      tournaments_won[insert_pos] = label;
-		      insert_pos++;
-		    }
-		  
-		  if ((cur_pos < tournaments_won.index()-1) && (label+1 != tournaments_won[cur_pos+1]))
-		    cur_pos++;
-		}
+	      size_t label;
+	      if (left) 
+		label = -1;
+	      else
+		label = 1;
+	      simple_temp.label = label;
+	      ec->ld = & simple_temp;
+	      
+	      size_t problem_number = last_pair + j*(1 << (i+1)) + (1 << i) -1;
+	      
+	      size_t offset = problem_number*increment;
+	      
+	      OAA::update_indicies(ec,offset);
+	      ec->partial_prediction = 0;
+	      
+	      base_learner(ec);
+	      
+	      OAA::update_indicies(ec,-offset);
+	      
+	      if (ec->final_prediction > 0.)
+		tournaments_won[j] = right;
+	      else
+		tournaments_won[j] = left;
 	    }
-	  else // a bye
-	    {
-	      label &= ~(1 << depth);
-	      tournaments_won[insert_pos] = label;
-	      insert_pos++;
-	    } 
-
-	  cur_pos++;
+	  if (tournaments_won.index() %2 == 1)
+	    tournaments_won[tournaments_won.index()/2] = tournaments_won[tournaments_won.index()-1];
+	  tournaments_won.end = tournaments_won.begin+(1+tournaments_won.index())/2;
 	}
-
-      tournaments_won.end = tournaments_won.begin+insert_pos;
-      depth++;
-      weight *= 2.;
-    }
+      }
 }
 
 void learn(example* ec)
 {
   OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
   int new_label = ect_predict(ec);
+  ec->ld = mc;
   
   if (mc->label != (uint32_t)-1 && global.training)
     ect_train(ec);
@@ -398,6 +381,24 @@ void learn(example* ec)
 
 void finish()
 {
+  for (size_t i = 0; i < tournament_counts.index(); i++)
+    if (tournament_counts[i].begin != tournament_counts[i].end)
+      free(tournament_counts[i].begin);
+  if (tournament_counts.begin != tournament_counts.end)
+    free(tournament_counts.begin);
+
+  for (size_t i = 0; i < pairs.index(); i++)
+    if (pairs[i].begin != pairs[i].end)
+      free(pairs[i].begin);
+  if (pairs.begin != pairs.end)
+    free(pairs.begin);
+
+  if (cumulative_pairs.begin != cumulative_pairs.end)
+    free(cumulative_pairs.begin);
+
+  if (tournaments_won.begin != tournaments_won.end)
+    free(tournaments_won.begin);
+
   base_finish();
 }
 
@@ -431,7 +432,7 @@ void parse_flags(size_t s, size_t e, void (*base_l)(example*), void (*base_f)())
   base_learner = base_l;
   base_finish = base_f;
 
-  create_circuit(k, errors+1, c);
+  create_circuit(k, errors+1);
 }
 
 }

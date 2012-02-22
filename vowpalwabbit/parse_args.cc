@@ -15,6 +15,7 @@ embodied in the content of this file are licensed under the BSD
 #include "network.h"
 #include "global_data.h"
 #include "oaa.h"
+#include "ect.h"
 #include "csoaa.h"
 #include "wap.h"
 #include "sequence.h"
@@ -106,8 +107,8 @@ po::variables_map parse_args(int argc, char *argv[],
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
-    //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
-    //("errors", po::value<size_t>(), "Errors allowed in an error correcting tournament")
+    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    ("errors", po::value<size_t>()->default_value(0), "Errors allowed in an error correcting tournament")
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
@@ -559,6 +560,12 @@ po::variables_map parse_args(int argc, char *argv[],
       OAA::parse_flags(vm["oaa"].as<size_t>(), base_learner, base_finish);
       mc_learner = OAA::learn;
       mc_finish = OAA::finish;
+    }
+  else if (vm.count("ect"))
+    {
+      ECT::parse_flags(vm["ect"].as<size_t>(), vm["errors"].as<size_t>(), base_learner, base_finish);
+      mc_learner = ECT::learn;
+      mc_finish = ECT::finish;
     }
 
   void (*cs_learner)(example*) = CSOAA::learn;
