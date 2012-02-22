@@ -227,28 +227,30 @@ int ect_predict(example* ec)
   label_data simple_temp = {FLT_MAX,0.,0.};
   ec->ld = & simple_temp;
 
-  for (size_t i = tree_height-1; i >= 0; i--)
+  for (size_t i = tree_height-1; i != (size_t)0 -1; i--)
     {
+      cout << "i = " << i << endl;
       if ((final_winner | (1 << i)) <= errors)
 	{// a real choice exists
 	  uint32_t offset = 0;
-
+	  
 	  size_t problem_number = last_pair + (final_winner | (1 << i)) - 1; //This is unique.
 	  
 	  offset = problem_number*increment;
 	  
 	  OAA::update_indicies(ec,offset);
 	  ec->partial_prediction = 0;
-
+	  
 	  base_learner(ec);
-
+	  
 	  OAA::update_indicies(ec,-offset);
-
+	  
 	  if (ec->final_prediction > 0.)
 	    final_winner = final_winner | (1 << i);
 	}
     }
   
+  cout << "finished, final_winner = " << final_winner << " round = " << final_rounds[final_winner] << endl;
   node current = {0, final_winner, final_rounds[final_winner]};
   while (current.depth > 0)
     {
@@ -256,14 +258,15 @@ int ect_predict(example* ec)
 	;
       else
 	{
-	  size_t problem_number;
+	  size_t problem_number = 0;
 	  if (current.depth-1 != 0)
 	    problem_number += cumulative_pairs[current.depth-1];
 	  size_t i = 0;
 	  while(i < current.tournament)
 	    problem_number += pairs[current.depth][i++];
 	  problem_number += current.label/2;
-	  
+
+	  cout << "problem_number = " << problem_number << endl;
 	  size_t offset = problem_number*increment;
 
 	  ec->partial_prediction = 0;
@@ -372,10 +375,10 @@ void ect_train(example* ec)
 
 void learn(example* ec)
 {
-  /*  OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
+  OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
   int new_label = ect_predict(ec);
   ec->ld = mc;
-  
+  /*
   if (mc->label != (uint32_t)-1 && global.training)
     ect_train(ec);
   ec->ld = mc;
