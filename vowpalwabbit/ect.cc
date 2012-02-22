@@ -66,19 +66,17 @@ void create_circuit(size_t max_label, size_t eliminations)
 {
   v_array<size_t> first_round;
   v_array<size_t> first_pair;
-
+  
   if (max_label > 1)
     push(first_round, max_label);
   else
     push(first_round, (size_t)0);
 
+  for (size_t i = 1; i <= errors; i++)
+    push(first_round, (size_t)0);
+
   push(first_pair, first_round[0]/2);
 
-  for (size_t i = 1; i < eliminations; i++)
-    {
-      push(first_round, (size_t)0);  
-      push(first_pair, (size_t)0);
-    }
   push(tournament_counts, first_round);
   push(pairs, first_pair);
   push(cumulative_pairs, first_pair[0]);
@@ -90,15 +88,20 @@ void create_circuit(size_t max_label, size_t eliminations)
       v_array<size_t> new_round;
       v_array<size_t> new_pairs;
       v_array<size_t> old_round = tournament_counts[depth];
-      for (size_t i = 1; i < old_round.index(); i++)
+      
+      for (size_t i = 0; i < old_round.index(); i++)
 	{
 	  size_t count = 0;
-	  size_t prev = old_round[i-1];
+	  size_t prev = 0; 
+	  if (i != 0)
+	    prev = old_round[i-1];
+
 	  if (prev == 2 && (i == 1 || (i > 1 && old_round[i-2] == 0)))
 	    //last tournament finished
 	    count += 2;
 	  else
 	    count += prev/2;
+
 	  int old = old_round[i];
 	  if (old == 2 && prev == 0)
 	    push(final_rounds, depth-1);
@@ -113,7 +116,7 @@ void create_circuit(size_t max_label, size_t eliminations)
       push(cumulative_pairs, pair_sum + cumulative_pairs[depth]);
       depth++;
     }
-  last_pair = cumulative_pairs.last();
+  last_pair = (errors+1)*(k-1); // every single tournament has k-1 pairs.
 
   tree_height = final_depth(eliminations);
   increment = global.length() / (last_pair + errors) * global.stride;
@@ -369,14 +372,14 @@ void ect_train(example* ec)
 
 void learn(example* ec)
 {
-  OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
+  /*  OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
   int new_label = ect_predict(ec);
   ec->ld = mc;
   
   if (mc->label != (uint32_t)-1 && global.training)
     ect_train(ec);
   ec->ld = mc;
-  ec->final_prediction = new_label;
+  ec->final_prediction = new_label;*/
 }
 
 void finish()
