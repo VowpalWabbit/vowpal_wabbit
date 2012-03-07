@@ -202,6 +202,7 @@ void drive_gd_mf()
 	{
 	  if (ec->pass != current_pass) {
 	    global.eta *= global.eta_decay_rate;
+	    save_predictor(global.final_regressor_name, current_pass);
 	    current_pass = ec->pass;
 	  }
 	  if (!command_example(ec))
