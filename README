@@ -2,30 +2,30 @@ This is the vowpal wabbit fast online learning code.  It is Copyright
 (c) 2009 Yahoo! Inc, and released for use under the BSD (revised) open
 source license.
 
-Contributing authors are John Langford (Primary), Lihong Li, Alex
-Strehl, and Shubham Chopra, and Gordon Rios.  This is the second VW
-release, and our intention is to create an open source project this
-time.
+You can download the latest version from here:
 
-Checked into github with clone URL:
-git://github.com/JohnLangford/vowpal_wabbit.git
+https://github.com/JohnLangford/vowpal_wabbit/archives/master
 
-To get the code install git -- in a clean directory:
+Alternatively, the very latest version is available here:
 
 git clone git://github.com/JohnLangford/vowpal_wabbit.git
 
-Gordon created a tag for the completely stock initial distribution '2.3'
-so to check out that original release and create a branch based on it:
+You should be able to build it on most systems with:
+make
+(make test)
 
-git checkout 2.3
-git checkout -b from-2.3
+If that fails, you try:
+./autogen.sh
+./configure
+make
+(make test)
+make install
 
-Or, in one command:
+Note that ./autogen.sh requires automake.  On OSX, this implies installing 'glibtools'
 
-git checkout -b from-2.3 2.3
+Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
+for the tutorial, command line options, etc.  
 
-Swicegood, Travis. Pragmatic Version Control with Git. 2008. (p. 102)
-
-Alternatively, the code can be downloaded directly from github:
-
-http://github.com/gparker/vowpal_wabbit/downloads
+The 'cluster' directory has it's own documentation for cluster
+parallel use, and the examples at the end of test/Runtests give some
+example flags.
