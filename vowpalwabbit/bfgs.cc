@@ -512,10 +512,9 @@ void preconditioner_to_regularizer(regressor& reg, float regularization)
   weight* weights = reg.weight_vectors;
   if (reg.regularizers == NULL)
     {
-      if (reg.regularizers != NULL)
-	reg.regularizers = (weight *)calloc(2*length, sizeof(weight));
+      reg.regularizers = (weight *)calloc(2*length, sizeof(weight));
       
-      if (reg.regularizers != NULL)
+      if (reg.regularizers == NULL)
 	{
 	  cerr << global.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
 	  exit (1);
@@ -792,7 +791,7 @@ void learn(example* ec)
 
 void finish()
 {
-  if (current_pass != 0)
+  if (current_pass != 0 && !output_regularizer)
     process_pass();
   if (!global.quiet)
     fprintf(stderr, "\n");
