@@ -7,6 +7,7 @@ embodied in the content of this file are licensed under the BSD
 #ifndef VARRAY_H__
 #define VARRAY_H__
 #include <stdlib.h>
+#include <string.h>
 
 template<class T> class v_array{
  public:
@@ -62,7 +63,7 @@ template<class T> void reserve(v_array<T>& v, size_t length)
   size_t old_length = v.end_array-v.begin;
   v.begin = (T *)realloc(v.begin, sizeof(T) * length);
   if (old_length < length)
-    bzero(v.begin+old_length,(length-old_length)*sizeof(T));
+    memset(v.begin+old_length, 0, (length-old_length)*sizeof(T));
   v.end = v.begin;
   v.end_array = v.begin + length;
 }
