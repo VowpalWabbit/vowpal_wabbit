@@ -91,6 +91,7 @@ po::variables_map parse_args(int argc, char *argv[],
     ("hessian_on", "use second derivative in line search")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
+    ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
     ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_pass_length", po::value<size_t>(&global.pass_length)->default_value((size_t)-1), "initial number of examples per pass")
@@ -359,16 +360,39 @@ po::variables_map parse_args(int argc, char *argv[],
 
   if (vm.count("ignore"))
     {
+      global.ignore_some = true;
+
       vector<unsigned char> ignore = vm["ignore"].as< vector<unsigned char> >();
       for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
 	{
 	  global.ignore[*i] = true;
-	  global.ignore_some = true;
 	}
       if (!global.quiet)
 	{
 	  cerr << "ignoring namespaces beginning with: ";
 	  for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
+	    cerr << *i << " ";
+
+	  cerr << endl;
+	}
+    }
+
+  if (vm.count("keep"))
+    {
+      for (size_t i = 0; i < 256; i++)
+        global.ignore[i] = true;
+
+      global.ignore_some = true;
+
+      vector<unsigned char> keep = vm["keep"].as< vector<unsigned char> >();
+      for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
+	{
+	  global.ignore[*i] = false;
+	}
+      if (!global.quiet)
+	{
+	  cerr << "using namespaces beginning with: ";
+	  for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
 	    cerr << *i << " ";
 
 	  cerr << endl;
