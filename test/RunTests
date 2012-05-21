@@ -437,7 +437,7 @@ __DATA__
     train-sets/ref/cs_test.ldf.csoaa.stderr
     train-sets/ref/cs_test.ldf.csoaa.predict
 
-# Test 10: label-dependent features with csoaa
+# Test 10: label-dependent features with wap
 {VW} -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --wap_ldf && rm -f train-sets/cs_test.ldf.cache
     train-sets/ref/cs_test.ldf.wap.stdout
     train-sets/ref/cs_test.ldf.wap.stderr
