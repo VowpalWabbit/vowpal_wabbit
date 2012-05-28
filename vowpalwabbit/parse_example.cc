@@ -16,10 +16,10 @@ using namespace std;
 size_t hashstring (substring s, unsigned long h)
 {
   size_t ret = 0;
-  //trim leading whitespace
-  for(; *(s.begin) <= 0x20 && s.begin < s.end; s.begin++);
-  //trim trailing white space
-  for(; *(s.end-1) <= 0x20 && s.end > s.begin; s.end--);
+  //trim leading whitespace but not UTF-8
+  for(; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin) >= 0; s.begin++);
+  //trim trailing white space but not UTF-8
+  for(; s.end > s.begin && *(s.end-1) <= 0x20 && (int)*(s.end-1) >=0; s.end--);
 
   char *p = s.begin;
   while (p != s.end)

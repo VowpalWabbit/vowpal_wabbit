@@ -10,11 +10,18 @@ Alternatively, the very latest version is available here:
 
 git clone git://github.com/JohnLangford/vowpal_wabbit.git
 
-You should be able to build it on posix systems with:
+You should be able to build it on most systems with:
+make
+(make test)
+
+If that fails, you try:
+./autogen.sh
 ./configure
 make
 (make test)
 make install
+
+Note that ./autogen.sh requires automake.  On OSX, this implies installing 'glibtools'
 
 Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.  

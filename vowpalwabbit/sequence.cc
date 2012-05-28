@@ -216,7 +216,7 @@ int random_policy(int allow_optimal)
       r -= sequence_beta;
       while ((r > 0) && (pid < num_valid_policies-1)) {
         pid ++;
-        r -= sequence_beta * pow(1. - sequence_beta, (float)pid);
+        r -= sequence_beta * powf(1. - sequence_beta, (float)pid);
       }
     }
   }

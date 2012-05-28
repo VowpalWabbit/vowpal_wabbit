@@ -15,6 +15,7 @@ embodied in the content of this file are licensed under the BSD
 #include "network.h"
 #include "global_data.h"
 #include "oaa.h"
+#include "ect.h"
 #include "csoaa.h"
 #include "wap.h"
 #include "sequence.h"
@@ -90,6 +91,7 @@ po::variables_map parse_args(int argc, char *argv[],
     ("hessian_on", "use second derivative in line search")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
+    ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
     ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_pass_length", po::value<size_t>(&global.pass_length)->default_value((size_t)-1), "initial number of examples per pass")
@@ -106,6 +108,8 @@ po::variables_map parse_args(int argc, char *argv[],
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
+    //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    //("errors", po::value<size_t>()->default_value(0), "Errors allowed in an error correcting tournament")
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
@@ -251,10 +255,9 @@ po::variables_map parse_args(int argc, char *argv[],
     global.driver = BFGS::drive_bfgs;
     base_learner = BFGS::learn;
     base_finish = BFGS::finish;
-    BFGS::initializer();
-    
     global.bfgs = true;
     global.stride = 4;
+    
     if (vm.count("hessian_on") || global.m==0) {
       global.hessian_on = true;
     }
@@ -312,14 +315,14 @@ po::variables_map parse_args(int argc, char *argv[],
     {
       global.default_bits = false;
       global.num_bits = vm["bit_precision"].as< size_t>();
-      if (global.num_bits > 29)
+      if (global.num_bits > sizeof(size_t)*8 - 3)
 	{
-	  cout << "Only 29 or fewer bits allowed.  If this is a serious limit, speak up." << endl;
+	  cout << "Only " << sizeof(size_t) - 3 << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
 	  exit(1);
 	}
     }
   
-  if (vm.count("daemon") || vm.count("pid_file")) {
+  if (vm.count("daemon") || vm.count("pid_file") || vm.count("port")) {
     global.daemon = true;
 
     // allow each child to process up to 1e5 connections
@@ -332,11 +335,6 @@ po::variables_map parse_args(int argc, char *argv[],
 
   if(vm.count("sort_features"))
     par->sort_features = true;
-
-  if (global.num_bits > 30) {
-    cerr << "The system limits at 30 bits of precision!\n" << endl;
-    exit(1);
-  }
 
   if (vm.count("quadratic"))
     {
@@ -363,16 +361,39 @@ po::variables_map parse_args(int argc, char *argv[],
 
   if (vm.count("ignore"))
     {
+      global.ignore_some = true;
+
       vector<unsigned char> ignore = vm["ignore"].as< vector<unsigned char> >();
       for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
 	{
 	  global.ignore[*i] = true;
-	  global.ignore_some = true;
 	}
       if (!global.quiet)
 	{
 	  cerr << "ignoring namespaces beginning with: ";
 	  for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
+	    cerr << *i << " ";
+
+	  cerr << endl;
+	}
+    }
+
+  if (vm.count("keep"))
+    {
+      for (size_t i = 0; i < 256; i++)
+        global.ignore[i] = true;
+
+      global.ignore_some = true;
+
+      vector<unsigned char> keep = vm["keep"].as< vector<unsigned char> >();
+      for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
+	{
+	  global.ignore[*i] = false;
+	}
+      if (!global.quiet)
+	{
+	  cerr << "using namespaces beginning with: ";
+	  for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
 	    cerr << *i << " ";
 
 	  cerr << endl;
@@ -552,6 +573,10 @@ po::variables_map parse_args(int argc, char *argv[],
 	cerr << "using l2 regularization" << endl;
     }
 
+  if (global.bfgs) {
+    BFGS::initializer();
+  }
+
   void (*mc_learner)(example*) = NULL;
   void (*mc_finish)() = NULL;
 
@@ -560,6 +585,12 @@ po::variables_map parse_args(int argc, char *argv[],
       OAA::parse_flags(vm["oaa"].as<size_t>(), base_learner, base_finish);
       mc_learner = OAA::learn;
       mc_finish = OAA::finish;
+    }
+  else if (vm.count("ect"))
+    {
+      ECT::parse_flags(vm["ect"].as<size_t>(), vm["errors"].as<size_t>(), base_learner, base_finish);
+      mc_learner = ECT::learn;
+      mc_finish = ECT::finish;
     }
 
   void (*cs_learner)(example*) = CSOAA::learn;

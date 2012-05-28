@@ -458,7 +458,17 @@ __DATA__
     train-sets/ref/wsj_small-tm.dat.stdout
     train-sets/ref/wsj_small-tm.dat.stderr
 
-# Test 14: Run LDA with 100 topics on 1000 Wikipedia articles
+# Test 14: LBFGS on zero derivative input
+{VW} -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 && rm -f train-sets/zero.dat.cache
+    train-sets/ref/zero.stdout
+    train-sets/ref/zero.stderr
+
+# Test 15: LBFGS early termination
+{VW} -c -d train-sets/rcv1_small.dat --loss_function=logistic -b 20 --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 && rm -f train-sets/rcv1_small.dat.cache
+    train-sets/ref/rcv1_small.stdout
+    train-sets/ref/rcv1_small.stderr
+
+# Test 16: Run LDA with 100 topics on 1000 Wikipedia articles
 {LDA} --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr
