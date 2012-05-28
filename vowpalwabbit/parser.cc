@@ -26,6 +26,7 @@ embodied in the content of this file are licensed under the BSD
 namespace po = boost::program_options;
 
 #include "parser.h"
+#include "global_data.h"
 #include "parse_example.h"
 #include "cache.h"
 #include "gd.h"

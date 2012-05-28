@@ -47,10 +47,10 @@ size_t next_pow2(size_t x) {
   return 1 << i;
 }
 
-po::variables_map parse_args(int argc, char *argv[], 
-			     boost::program_options::options_description& desc,
-			     parser* par)
+void parse_args(int argc, char *argv[], parser* par)
 {
+  po::options_description desc("VW options");
+  
   global.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
@@ -565,7 +565,5 @@ po::variables_map parse_args(int argc, char *argv[],
     global.driver = drive_sequence;
     global.sequence = true;
   }
-
-  return vm;
 }
 

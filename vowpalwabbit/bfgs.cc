@@ -661,7 +661,7 @@ int process_pass() {
 		      double rel_decrease = (previous_loss_sum-loss_sum)/previous_loss_sum;
 		      if (!isnan(rel_decrease) && backstep_on && fabs(rel_decrease)<global.rel_threshold) {
 			fprintf(stdout, "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
-				"If you want to optimize further, decrease termination threshold.\n", current_pass+1, global.rel_threshold*100.0);
+				"If you want to optimize further, decrease termination threshold.\n", (long int)current_pass+1, global.rel_threshold*100.0);
 			status = LEARN_CONV;
 		      }
 		      previous_loss_sum = loss_sum;

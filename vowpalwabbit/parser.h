@@ -9,7 +9,6 @@ embodied in the content of this file are licensed under the BSD
 
 
 #include "io.h"
-#include "global_data.h"
 #include "parse_primitives.h"
 #include "example.h"
 

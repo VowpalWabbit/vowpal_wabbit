@@ -1,4 +1,5 @@
 #include "unique_sort.h"
+#include "global_data.h"
 
 int order_features(const void* first, const void* second)
 {

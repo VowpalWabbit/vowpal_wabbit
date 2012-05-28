@@ -4,7 +4,6 @@
 #include "io.h"
 #include "parse_args.h"
 #include "cache.h"
-#include "vw.h"
 #include "simple_label.h"
 #include "network.h"
 

@@ -10,6 +10,7 @@ embodied in the content of this file are licensed under the BSD
 #include "hash.h"
 #include "cache.h"
 #include "unique_sort.h"
+#include "global_data.h"
 
 using namespace std;
 

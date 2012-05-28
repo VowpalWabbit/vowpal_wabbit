@@ -11,8 +11,6 @@ embodied in the content of this file are licensed under the BSD
 namespace po = boost::program_options;
 #include "gd.h"
 
-po::variables_map parse_args(int argc, char *argv[], 
-			     boost::program_options::options_description& desc,
-			     parser* p);
+void parse_args(int argc, char *argv[], parser* p);
 
 #endif
