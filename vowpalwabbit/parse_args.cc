@@ -47,20 +47,17 @@ size_t next_pow2(size_t x) {
   return 1 << i;
 }
 
-const float default_decay = 1.;
-
 po::variables_map parse_args(int argc, char *argv[], 
 			     boost::program_options::options_description& desc,
 			     parser* par)
 {
   global.program_name = argv[0];
-  global.sd = (shared_data *) malloc(sizeof(shared_data));
   // Declare the supported options.
   desc.add_options()
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
     ("active_learning", "active learning mode")
     ("active_simulation", "active learning simulation mode")
-    ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
+    ("active_mellowness", po::value<float>(&global.active_c0), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
     ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
     ("audit,a", "print weights of features")
@@ -76,13 +73,13 @@ po::variables_map parse_args(int argc, char *argv[],
     ("csoaa_ldf", "Use one-against-all multiclass learning with label dependent features")
     ("wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features")
     ("nonormalize", "Do not normalize online updates")
-    ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
-    ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
-    ("data,d", po::value< string >()->default_value(""), "Example Set")
+    ("l1", po::value<float>(&global.l1_lambda), "l_1 lambda")
+    ("l2", po::value<float>(&global.l2_lambda), "l_2 lambda")
+    ("data,d", po::value< string >(), "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
-    ("num_children", po::value<size_t>(&global.num_children)->default_value(10), "number of children for persistent daemon mode")
+    ("num_children", po::value<size_t>(&global.num_children), "number of children for persistent daemon mode")
     ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
-    ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay),
+    ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate),
      "Set Decay factor for learning_rate between passes")
     ("input_feature_regularizer", po::value< string >(&global.per_feature_regularizer_input), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
@@ -92,19 +89,19 @@ po::variables_map parse_args(int argc, char *argv[],
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
-    ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
+    ("initial_weight", po::value<float>(&global.initial_weight), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("initial_pass_length", po::value<size_t>(&global.pass_length)->default_value((size_t)-1), "initial number of examples per pass")
-    ("initial_t", po::value<double>(&(global.sd->t))->default_value(1.), "initial t value")
+    ("initial_pass_length", po::value<size_t>(&global.pass_length), "initial number of examples per pass")
+    ("initial_t", po::value<double>(&(global.sd->t)), "initial t value")
     ("lda", po::value<size_t>(&global.lda), "Run lda with <int> topics")
-    ("lda_alpha", po::value<float>(&global.lda_alpha)->default_value(0.1), "Prior on sparsity of per-document topic weights")
-    ("lda_rho", po::value<float>(&global.lda_rho)->default_value(0.1), "Prior on sparsity of topic distributions")
-    ("lda_D", po::value<float>(&global.lda_D)->default_value(10000.), "Number of documents")
-    ("minibatch", po::value<size_t>(&global.minibatch)->default_value(1), "Minibatch size, for LDA")
-    ("span_server", po::value<string>(&global.span_server)->default_value(""), "Location of server for setting up spanning tree")
+    ("lda_alpha", po::value<float>(&global.lda_alpha), "Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>(&global.lda_rho), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>(&global.lda_D), "Number of documents")
+    ("minibatch", po::value<size_t>(&global.minibatch), "Minibatch size, for LDA")
+    ("span_server", po::value<string>(&global.span_server), "Location of server for setting up spanning tree")
     ("min_prediction", po::value<double>(&global.sd->min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&global.sd->max_label), "Largest prediction to output")
-    ("mem", po::value<int>(&global.m)->default_value(15), "memory in bfgs")
+    ("mem", po::value<int>(&global.m), "memory in bfgs")
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
@@ -113,18 +110,15 @@ po::variables_map parse_args(int argc, char *argv[],
     ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
-    ("power_t", po::value<float>(&global.power_t)->default_value(0.5), "t power value")
-    ("learning_rate,l", po::value<float>(&global.eta)->default_value(10),
-     "Set Learning Rate")
-    ("passes", po::value<size_t>(&global.numpasses)->default_value(1),
-     "Number of Training Passes")
-    ("termination", po::value<float>(&global.rel_threshold)->default_value(0.001),
-     "Termination threshold")
+    ("power_t", po::value<float>(&global.power_t), "t power value")
+    ("learning_rate,l", po::value<float>(&global.eta), "Set Learning Rate")
+    ("passes", po::value<size_t>(&global.numpasses),"Number of Training Passes")
+    ("termination", po::value<float>(&global.rel_threshold),"Termination threshold")
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
     ("quiet", "Don't output diagnostics")
-    ("rank", po::value<size_t>(&global.rank)->default_value(0), "rank for matrix factorization.")
+    ("rank", po::value<size_t>(&global.rank), "rank for matrix factorization.")
     ("random_weights", po::value<bool>(&global.random_weights), "make initial weights random")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
@@ -146,64 +140,13 @@ po::variables_map parse_args(int argc, char *argv[],
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
 
-    ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel jobs")
-    ("total", po::value<size_t>(&global.total)->default_value(1),"total number of nodes used in cluster parallel job")    
-    ("node", po::value<size_t>(&global.node)->default_value(0),"node number in cluster parallel job")    
+    ("unique_id", po::value<size_t>(&global.unique_id),"unique id used for cluster parallel jobs")
+    ("total", po::value<size_t>(&global.total),"total number of nodes used in cluster parallel job")    
+    ("node", po::value<size_t>(&global.node),"node number in cluster parallel job")    
 
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
     ("ngram", po::value<size_t>(), "Generate N grams")
     ("skips", po::value<size_t>(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
-
-  global.sd->queries = 0;
-  global.sd->example_number = 0;
-  global.sd->weighted_examples = 0.;
-  global.sd->old_weighted_examples = 0.;
-  global.sd->weighted_labels = 0.;
-  global.sd->total_features = 0;
-  global.sd->sum_loss = 0.0;
-  global.sd->sum_loss_since_last_dump = 0.0;
-  global.sd->dump_interval = exp(1.);
-  global.sd->gravity = 0.;
-  global.sd->contraction = 1.;
-  global.sd->min_label = 0.;
-  global.sd->max_label = 1.;
-  global.lp = (label_parser*)malloc(sizeof(label_parser));
-  *(global.lp) = simple_label;
-  global.reg_mode = 0;
-  global.local_example_number = 0;
-  global.bfgs = false;
-  global.hessian_on = false;
-  global.sequence = false;
-  global.stride = 1;
-  global.num_bits = 18;
-  global.default_bits = true;
-  global.daemon = false;
-
-  global.driver = drive_gd;
-  global.k = 0;
-
-  global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
-  global.raw_prediction = -1;
-  global.print = print_result;
-  global.lda = 0;
-  global.random_weights = false;
-  global.per_feature_regularizer_input = "";
-  global.per_feature_regularizer_output = "";
-  global.per_feature_regularizer_text = "";
-  global.ring_size = 1 << 8;
-  global.nonormalize = false;
-  global.binary_label = false;
-
-  global.adaptive = false;
-  global.add_constant = true;
-  global.exact_adaptive_norm = false;
-  global.audit = false;
-  global.active = false;
-  global.active_simulation =false;
-  global.reg.weight_vectors = NULL;
-  global.reg.regularizers = NULL;
-
-  global.save_per_pass = false;
 
   po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
@@ -456,9 +399,6 @@ po::variables_map parse_args(int argc, char *argv[],
   if (vm.count("readable_model"))
     global.text_regressor_name = vm["readable_model"].as<string>();
   
-  if (vm.count("active_c0"))
-    global.active_c0 = vm["active_c0"].as<float>();
-  
   if (vm.count("save_per_pass"))
     global.save_per_pass = true;
 
@@ -488,9 +428,6 @@ po::variables_map parse_args(int argc, char *argv[],
   }
 
   global.loss = getLossFunction(loss_function, loss_parameter);
-
-  if (global.eta_decay_rate != default_decay && global.numpasses == 1)
-    cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
 
   if (pow((double)global.eta_decay_rate, (double)global.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)global.eta_decay_rate, (double)global.numpasses)

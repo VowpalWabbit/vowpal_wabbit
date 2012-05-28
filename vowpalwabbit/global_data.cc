@@ -2,12 +2,14 @@
 #include <stdio.h>
 #include <float.h>
 #include <iostream>
+#include <math.h>
+#include "gd.h"
 #include "global_data.h"
 #include "config.h"
 
 using namespace std;
 
-global_data global;
+vw global;
 string version = PACKAGE_VERSION;
 
 pthread_mutex_t output_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -154,3 +156,82 @@ void noop_mm(double label)
 
 void (*set_minmax)(double label) = set_mm;
 
+vw::vw()
+{
+  global.sd = (shared_data *) malloc(sizeof(shared_data));
+  global.sd->queries = 0;
+  global.sd->example_number = 0;
+  global.sd->weighted_examples = 0.;
+  global.sd->old_weighted_examples = 0.;
+  global.sd->weighted_labels = 0.;
+  global.sd->total_features = 0;
+  global.sd->sum_loss = 0.0;
+  global.sd->sum_loss_since_last_dump = 0.0;
+  global.sd->dump_interval = exp(1.);
+  global.sd->gravity = 0.;
+  global.sd->contraction = 1.;
+  global.sd->min_label = 0.;
+  global.sd->max_label = 1.;
+  global.sd->t = 1.;
+  global.lp = (label_parser*)malloc(sizeof(label_parser));
+  *(global.lp) = simple_label;
+  global.reg_mode = 0;
+  global.local_example_number = 0;
+  global.bfgs = false;
+  global.hessian_on = false;
+  global.sequence = false;
+  global.stride = 1;
+  global.num_bits = 18;
+  global.default_bits = true;
+  global.daemon = false;
+  global.num_children = 10;
+  global.lda_alpha = 0.1;
+  global.lda_rho = 0.1;
+  global.lda_D = 10000.;
+  global.minibatch = 1;
+  global.span_server = "";
+  global.m = 15; 
+
+  global.driver = drive_gd;
+  global.k = 0;
+  
+  global.power_t = 0.5;
+  global.eta = 10;
+  global.numpasses = 1;
+  global.rel_threshold = 0.001;
+  global.rank = 0;
+
+  global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
+  global.raw_prediction = -1;
+  global.print = print_result;
+  global.lda = 0;
+  global.random_weights = false;
+  global.per_feature_regularizer_input = "";
+  global.per_feature_regularizer_output = "";
+  global.per_feature_regularizer_text = "";
+  global.ring_size = 1 << 8;
+  global.nonormalize = false;
+  global.binary_label = false;
+  global.l1_lambda = 0.0;
+  global.l2_lambda = 0.0;
+
+  global.eta_decay_rate = 1.0;
+  global.initial_weight = 0.0;
+
+  global.unique_id = 0;
+  global.total = 1;
+  global.node = 0;
+  
+  global.adaptive = false;
+  global.add_constant = true;
+  global.exact_adaptive_norm = false;
+  global.audit = false;
+  global.active = false;
+  global.active_c0 = 8.;
+  global.active_simulation = false;
+  global.reg.weight_vectors = NULL;
+  global.reg.regularizers = NULL;
+  global.pass_length = (size_t)-1;
+
+  global.save_per_pass = false;
+}

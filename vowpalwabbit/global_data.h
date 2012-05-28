@@ -17,11 +17,6 @@ embodied in the content of this file are licensed under the BSD
 
 extern std::string version;
 
-struct int_pair {
-  int fd;
-  int id;
-};
-
 struct shared_data {
   size_t queries;
 
@@ -42,7 +37,7 @@ struct shared_data {
   double max_label;//maximum label encountered
 };
 
-struct global_data {
+struct vw {
   shared_data* sd;
 
   label_parser* lp;
@@ -68,7 +63,6 @@ struct global_data {
   bool sequence;
 
   size_t stride;
-
 
   std::string per_feature_regularizer_input;
   std::string per_feature_regularizer_output;
@@ -141,10 +135,12 @@ struct global_data {
 
   std::string final_regressor_name;
   regressor reg;
+
+  vw();
 };
 
 extern pthread_mutex_t io;
-extern global_data global;
+extern vw global;
 extern void (*set_minmax)(double label);
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
