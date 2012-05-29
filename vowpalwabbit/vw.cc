@@ -24,11 +24,11 @@ int main(int argc, char *argv[])
 {
   srand48(0);
 
-  parse_args(argc, argv);
+  vw all = parse_args(argc, argv);
   struct timeb t_start, t_end;
   ftime(&t_start);
   
-  if (!global.quiet && !global.bfgs && !global.sequence)
+  if (!all.quiet && !all.bfgs && !all.sequence)
     {
       const char * header_fmt = "%-10s %-10s %8s %8s %10s %8s %8s\n";
       fprintf(stderr, header_fmt,
@@ -39,60 +39,60 @@ int main(int argc, char *argv[])
       cerr.precision(5);
     }
 
-  start_parser(global.p);
+  start_parser(all);
 
-  global.driver();
+  all.driver(&all);
 
-  end_parser(global.p);
+  end_parser(all);
   
-  finalize_regressor(global.final_regressor_name,global.reg);
-  finalize_source(global.p);
-  free(global.p);
+  finalize_regressor(all, all.final_regressor_name);
+  finalize_source(all.p);
+  free(all.p);
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
-  if(!global.quiet && global.span_server != "")
+  if(!all.quiet && all.span_server != "")
     cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
 
-  if(global.span_server != "") {
-    float loss = global.sd->sum_loss;
-    global.sd->sum_loss = (double)accumulate_scalar(global.span_server, loss);
-    float weighted_examples = global.sd->weighted_examples;
-    global.sd->weighted_examples = (double)accumulate_scalar(global.span_server, weighted_examples);
-    float weighted_labels = global.sd->weighted_labels;
-    global.sd->weighted_labels = (double)accumulate_scalar(global.span_server, weighted_labels);
-    float weighted_unlabeled_examples = global.sd->weighted_unlabeled_examples;
-    global.sd->weighted_unlabeled_examples = (double)accumulate_scalar(global.span_server, weighted_unlabeled_examples);
-    float example_number = global.sd->example_number;
-    global.sd->example_number = (uint64_t)accumulate_scalar(global.span_server, example_number);
-    float total_features = global.sd->total_features;
-    global.sd->total_features = (uint64_t)accumulate_scalar(global.span_server, total_features);
+  if(all.span_server != "") {
+    float loss = all.sd->sum_loss;
+    all.sd->sum_loss = (double)accumulate_scalar(all, all.span_server, loss);
+    float weighted_examples = all.sd->weighted_examples;
+    all.sd->weighted_examples = (double)accumulate_scalar(all, all.span_server, weighted_examples);
+    float weighted_labels = all.sd->weighted_labels;
+    all.sd->weighted_labels = (double)accumulate_scalar(all, all.span_server, weighted_labels);
+    float weighted_unlabeled_examples = all.sd->weighted_unlabeled_examples;
+    all.sd->weighted_unlabeled_examples = (double)accumulate_scalar(all, all.span_server, weighted_unlabeled_examples);
+    float example_number = all.sd->example_number;
+    all.sd->example_number = (uint64_t)accumulate_scalar(all, all.span_server, example_number);
+    float total_features = all.sd->total_features;
+    all.sd->total_features = (uint64_t)accumulate_scalar(all, all.span_server, total_features);
   }
 
-  float weighted_labeled_examples = global.sd->weighted_examples - global.sd->weighted_unlabeled_examples;
-  float best_constant = (global.sd->weighted_labels - global.initial_t) / weighted_labeled_examples;
+  float weighted_labeled_examples = all.sd->weighted_examples - all.sd->weighted_unlabeled_examples;
+  float best_constant = (all.sd->weighted_labels - all.initial_t) / weighted_labeled_examples;
   float constant_loss = (best_constant*(1.0 - best_constant)*(1.0 - best_constant)
 			 + (1.0 - best_constant)*best_constant*best_constant);
   
-  if (!global.quiet)
+  if (!all.quiet)
     {
       cerr.precision(4);
       cerr << endl << "finished run";
-      cerr << endl << "number of examples = " << global.sd->example_number;
-      cerr << endl << "weighted example sum = " << global.sd->weighted_examples;
-      cerr << endl << "weighted label sum = " << global.sd->weighted_labels;
-      cerr << endl << "average loss = " << global.sd->sum_loss / global.sd->weighted_examples;
+      cerr << endl << "number of examples = " << all.sd->example_number;
+      cerr << endl << "weighted example sum = " << all.sd->weighted_examples;
+      cerr << endl << "weighted label sum = " << all.sd->weighted_labels;
+      cerr << endl << "average loss = " << all.sd->sum_loss / all.sd->weighted_examples;
       cerr << endl << "best constant = " << best_constant;
-      if (global.sd->min_label == 0. && global.sd->max_label == 1. && best_constant < 1. && best_constant > 0.)
+      if (all.sd->min_label == 0. && all.sd->max_label == 1. && best_constant < 1. && best_constant > 0.)
 	cerr << endl << "best constant's loss = " << constant_loss;
-      cerr << endl << "total feature number = " << global.sd->total_features;
-      if (global.active_simulation)
-	cerr << endl << "total queries = " << global.sd->queries << endl;
+      cerr << endl << "total feature number = " << all.sd->total_features;
+      if (all.active_simulation)
+	cerr << endl << "total queries = " << all.sd->queries << endl;
       cerr << endl;
     }
   
-  free(global.sd);
-  free(global.lp);
-  delete global.loss;
+  free(all.sd);
+  free(all.lp);
+  delete all.loss;
   
   return 0;
 }

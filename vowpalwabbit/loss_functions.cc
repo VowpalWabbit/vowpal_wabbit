@@ -17,24 +17,24 @@ public:
     
   }
   
-  float getLoss(float prediction, float label) {
-    if (prediction <= global.sd->max_label && prediction >= global.sd->min_label)
+  float getLoss(shared_data* sd, float prediction, float label) {
+    if (prediction <= sd->max_label && prediction >= sd->min_label)
       {
 	float example_loss = (prediction - label) * (prediction - label);
 	return example_loss;
       }
-    else if (prediction < global.sd->min_label)
-      if (label == global.sd->min_label)
+    else if (prediction < sd->min_label)
+      if (label == sd->min_label)
 	return 0.;
       else
-	return (label - global.sd->min_label) * (label - global.sd->min_label) 
-	  + 2. * (label-global.sd->min_label) * (global.sd->min_label - prediction);
+	return (label - sd->min_label) * (label - sd->min_label) 
+	  + 2. * (label-sd->min_label) * (sd->min_label - prediction);
     else 
-      if (label == global.sd->max_label)
+      if (label == sd->max_label)
 	return 0.;
       else
-	return (global.sd->max_label - label) * (global.sd->max_label - label) 
-	  + 2. * (global.sd->max_label - label) * (prediction - global.sd->max_label);
+	return (sd->max_label - label) * (sd->max_label - label) 
+	  + 2. * (sd->max_label - label) * (prediction - sd->max_label);
   }
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
@@ -49,26 +49,26 @@ public:
     return (label - prediction)*(1-exp(-eta_t))/norm;
   }
 
-  float getRevertingWeight(float prediction, float eta_t){
-    float t = 0.5*(global.sd->min_label+global.sd->max_label);
-    float alternative = (prediction > t) ? global.sd->min_label : global.sd->max_label;
+  float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
+    float t = 0.5*(sd->min_label+sd->max_label);
+    float alternative = (prediction > t) ? sd->min_label : sd->max_label;
     return log((alternative-prediction)/(alternative-t))/eta_t;
   }
   
   float getSquareGrad(float prediction, float label) {
     return (prediction - label) * (prediction - label);
   }
-  float first_derivative(float prediction, float label)
+  float first_derivative(shared_data* sd, float prediction, float label)
   {
-    if (prediction < global.sd->min_label)
-      prediction = global.sd->min_label;
-    else if (prediction > global.sd->max_label)
-      prediction = global.sd->max_label;
+    if (prediction < sd->min_label)
+      prediction = sd->min_label;
+    else if (prediction > sd->max_label)
+      prediction = sd->max_label;
     return 2. * (prediction-label);
   }
-  float second_derivative(float prediction, float label)
+  float second_derivative(shared_data* sd, float prediction, float label)
   {
-    if (prediction <= global.sd->max_label && prediction >= global.sd->min_label)
+    if (prediction <= sd->max_label && prediction >= sd->min_label)
       return 2.;
     else 
       return 0.;
@@ -81,7 +81,7 @@ public:
     
   }
   
-  float getLoss(float prediction, float label) {
+  float getLoss(shared_data*, float prediction, float label) {
     float example_loss = (prediction - label) * (prediction - label);
     return example_loss;
   }
@@ -90,20 +90,20 @@ public:
     return eta_t*(label - prediction)/norm;
   }
   
-  float getRevertingWeight(float prediction, float eta_t){
-    float t = 0.5*(global.sd->min_label+global.sd->max_label);
-    float alternative = (prediction > t) ? global.sd->min_label : global.sd->max_label;
+  float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
+    float t = 0.5*(sd->min_label+sd->max_label);
+    float alternative = (prediction > t) ? sd->min_label : sd->max_label;
     return (t-prediction)/((alternative-prediction)*eta_t);
   }
 
   float getSquareGrad(float prediction, float label) {
     return (prediction - label) * (prediction - label);
   }
-  float first_derivative(float prediction, float label)
+  float first_derivative(shared_data*, float prediction, float label)
   {
     return 2. * (prediction-label);
   }
-  float second_derivative(float prediction, float label)
+  float second_derivative(shared_data*, float prediction, float label)
   {
     return 2.;
   }
@@ -116,7 +116,7 @@ public:
     
   }
   
-  float getLoss(float prediction, float label) {
+  float getLoss(shared_data*, float prediction, float label) {
     float e = 1 - label*prediction;
     return (e > 0) ? e : 0;
   }
@@ -128,20 +128,21 @@ public:
     return label * (normal < err ? normal : err)/norm;
   }
 
-  float getRevertingWeight(float prediction, float eta_t){
+  float getRevertingWeight(shared_data*, float prediction, float eta_t){
     return fabs(prediction)/eta_t;
   }
 
   float getSquareGrad(float prediction, float label) {
-    return first_derivative(prediction,label);
+    float d = first_derivative(NULL, prediction,label);
+    return d*d;
   }
 
-  float first_derivative(float prediction, float label)
+  float first_derivative(shared_data*, float prediction, float label)
   {
     return (label*prediction >= label*label) ? 0 : -label;
   }
 
-  float second_derivative(float prediction, float label)
+  float second_derivative(shared_data*, float prediction, float label)
   {
     return 0.;
   }
@@ -153,7 +154,7 @@ public:
     
   }
   
-  float getLoss(float prediction, float label) {
+  float getLoss(shared_data*, float prediction, float label) {
     return log(1 + exp(-label * prediction));
   }
   
@@ -184,23 +185,23 @@ public:
     return w*(1.+r/t*(u-r)/(u-2.*r))-x; //more magic
   }
   
-  float getRevertingWeight(float prediction, float eta_t){
+  float getRevertingWeight(shared_data*, float prediction, float eta_t){
     float z = -fabs(prediction);
     return (1-z-exp(z))/eta_t;
   }
 
-  float first_derivative(float prediction, float label)
+  float first_derivative(shared_data*, float prediction, float label)
   {
     float v = - label/(1+exp(label * prediction));
     return v;
   }
 
   float getSquareGrad(float prediction, float label) {
-    float d = first_derivative(prediction,label);
+    float d = first_derivative(NULL, prediction,label);
     return d*d;
   }
 
-  float second_derivative(float prediction, float label)
+  float second_derivative(shared_data*, float prediction, float label)
   {
     float p = 1 / (1+exp(label*prediction));
     
@@ -213,7 +214,7 @@ public:
   quantileloss(double &tau_) : tau(tau_) {
   }
   
-  float getLoss(float prediction, float label) {
+  float getLoss(shared_data*, float prediction, float label) {
     float e = label - prediction;
     if(e > 0) {
       return tau * e;
@@ -236,9 +237,9 @@ public:
     }
   }
   
-  float getRevertingWeight(float prediction, float eta_t){
+  float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
     float v,t;
-    t = 0.5*(global.sd->min_label+global.sd->max_label);
+    t = 0.5*(sd->min_label+ sd->max_label);
     if(prediction > t)
       v = -(1-tau);
      else
@@ -246,7 +247,7 @@ public:
     return (t - prediction)/(eta_t*v);
   }
 
-  float first_derivative(float prediction, float label)
+  float first_derivative(shared_data*, float prediction, float label)
   {
     float e = label - prediction; 
     if(e == 0) return 0;
@@ -254,11 +255,11 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    float fd = first_derivative(prediction,label);
+    float fd = first_derivative(NULL, prediction,label);
     return fd*fd;
   }
 
-  float second_derivative(float prediction, float label)
+  float second_derivative(shared_data*, float prediction, float label)
   {
     return 0.;
   }
@@ -266,20 +267,20 @@ public:
   double tau;
 };
 
-loss_function* getLossFunction(string funcName, double function_parameter) {
+loss_function* getLossFunction(shared_data* sd, string funcName, double function_parameter) {
   if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0) {
     return new squaredloss();
   } else if(funcName.compare("classic") == 0){
     return new classic_squaredloss();
   } else if(funcName.compare("hinge") == 0) {
-    global.binary_label = true;
+    sd->binary_label = true;
     return new hingeloss();
   } else if(funcName.compare("logistic") == 0) {
     if (set_minmax != noop_mm)
       {
-	global.sd->min_label = -100;
-	global.sd->max_label = 100;
-	global.binary_label = true;
+	sd->min_label = -100;
+	sd->max_label = 100;
+	sd->binary_label = true;
       }
     return new logloss();
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {

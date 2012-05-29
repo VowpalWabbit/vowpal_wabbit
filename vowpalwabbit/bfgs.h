@@ -10,10 +10,10 @@ embodied in the content of this file are licensed under the BSD
 
 namespace BFGS {
 
-  void drive_bfgs();
-  void initializer();
-  void finish();
-  void learn(example* ec);
+  void drive_bfgs(void*);
+  void initializer(vw& all);
+  void finish(vw& all);
+  void learn(vw& all, example* ec);
 
 }
 

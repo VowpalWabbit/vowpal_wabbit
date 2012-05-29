@@ -10,7 +10,8 @@ embodied in the content of this file are licensed under the BSD
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 #include "gd.h"
+#include "global_data.h"
 
-void parse_args(int argc, char *argv[]);
+vw parse_args(int argc, char *argv[]);
 
 #endif

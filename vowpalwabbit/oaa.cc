@@ -19,7 +19,7 @@ char* bufread_label(mc_label* ld, char* c)
   return c;
 }
 
-size_t read_cached_label(void* v, io_buf& cache)
+  size_t read_cached_label(shared_data*, void* v, io_buf& cache)
 {
   mc_label* ld = (mc_label*) v;
   char *c;
@@ -70,7 +70,7 @@ void delete_label(void* v)
 {
 }
 
-void parse_label(void* v, v_array<substring>& words)
+  void parse_label(shared_data*, void* v, v_array<substring>& words)
 {
   mc_label* ld = (mc_label*)v;
 
@@ -94,9 +94,9 @@ size_t k=0;
 size_t increment=0;
 size_t total_increment=0;
 
-void print_update(example *ec)
+  void print_update(vw& all, example *ec)
 {
-  if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
+  if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
       mc_label* ld = (mc_label*) ec->ld;
       char label_buf[32];
@@ -106,43 +106,43 @@ void print_update(example *ec)
 	sprintf(label_buf,"%8i",ld->label);
 
       fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8i %8lu\n",
-	      global.sd->sum_loss/global.sd->weighted_examples,
-	      global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
-	      (long int)global.sd->example_number,
-	      global.sd->weighted_examples,
+	      all.sd->sum_loss/all.sd->weighted_examples,
+	      all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
+	      (long int)all.sd->example_number,
+	      all.sd->weighted_examples,
 	      label_buf,
 	      *(prediction_t*)&ec->final_prediction,
 	      (long unsigned int)ec->num_features);
      
-      global.sd->sum_loss_since_last_dump = 0.0;
-      global.sd->old_weighted_examples = global.sd->weighted_examples;
-      global.sd->dump_interval *= 2;
+      all.sd->sum_loss_since_last_dump = 0.0;
+      all.sd->old_weighted_examples = all.sd->weighted_examples;
+      all.sd->dump_interval *= 2;
     }
 }
 
-void output_example(example* ec)
+  void output_example(vw& all, example* ec)
 {
   mc_label* ld = (mc_label*)ec->ld;
-  global.sd->weighted_examples += ld->weight;
-  global.sd->total_features += ec->num_features;
+  all.sd->weighted_examples += ld->weight;
+  all.sd->total_features += ec->num_features;
   size_t loss = 1;
   if (ld->label == *(prediction_t*)&(ec->final_prediction))
     loss = 0;
-  global.sd->sum_loss += loss;
-  global.sd->sum_loss_since_last_dump += loss;
+  all.sd->sum_loss += loss;
+  all.sd->sum_loss_since_last_dump += loss;
   
-  for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
+  for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
     {
-      int f = global.final_prediction_sink[i];
-      global.print(f, *(prediction_t*)&(ec->final_prediction), 0, ec->tag);
+      int f = all.final_prediction_sink[i];
+      all.print(f, *(prediction_t*)&(ec->final_prediction), 0, ec->tag);
     }
   
-  global.sd->example_number++;
+  all.sd->example_number++;
 
-  print_update(ec);
+  print_update(all, ec);
 }
 
-void update_indicies(example* ec, size_t amount)
+  void update_indicies(vw& all, example* ec, size_t amount)
 {
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -150,7 +150,7 @@ void update_indicies(example* ec, size_t amount)
       for (feature* f = ec->atomics[*i].begin; f!= end; f++)
 	f->weight_index += amount;
     }
-  if (global.audit)
+  if (all.audit)
     {
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -159,10 +159,10 @@ void update_indicies(example* ec, size_t amount)
     }
 }
 
-  void (*base_learner)(example*) = NULL;
-  void (*base_finish)() = NULL;
+  void (*base_learner)(vw&,example*) = NULL;
+  void (*base_finish)(vw&) = NULL;
 
-void learn(example* ec)
+  void learn(vw& all, example* ec)
 {
   mc_label* mc_label_data = (mc_label*)ec->ld;
   size_t prediction = 1;
@@ -182,8 +182,8 @@ void learn(example* ec)
       simple_temp.weight = mc_label_data->weight;
       ec->ld = &simple_temp;
       if (i != 0)
-	update_indicies(ec, increment);
-      base_learner(ec);
+	update_indicies(all, ec, increment);
+      base_learner(all,ec);
       if (ec->partial_prediction > score)
 	{
 	  score = ec->partial_prediction;
@@ -193,28 +193,29 @@ void learn(example* ec)
     }
   ec->ld = mc_label_data;
   *(prediction_t*)&(ec->final_prediction) = prediction;
-  update_indicies(ec, -total_increment);
+  update_indicies(all, ec, -total_increment);
 }
 
-void finish()
+  void finish(vw& all)
 {
-  base_finish();
+  base_finish(all);
 }
 
-void drive_oaa()
+void drive_oaa(void *in)
 {
+  vw* all = (vw*)in;
   example* ec = NULL;
   while ( true )
     {
-      if ((ec = get_example()) != NULL)//semiblocking operation.
+      if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn(ec);
-          output_example(ec);
-	  free_example(ec);
+	  learn(*all, ec);
+          output_example(*all, ec);
+	  free_example(all->p, ec);
 	}
-      else if (parser_done())
+      else if (parser_done(all->p))
 	{
-	  finish();
+	  finish(*all);
 	  return;
 	}
       else 
@@ -222,14 +223,14 @@ void drive_oaa()
     }
 }
 
-  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
+  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
 {
-  *(global.lp) = mc_label_parser;
+  *(all.lp) = mc_label_parser;
   k = s;
-  global.driver = drive_oaa;
+  all.driver = drive_oaa;
   base_learner = base_l;
   base_finish = base_f;
-  increment = (global.length()/k) * global.stride;
+  increment = (all.length()/k) * all.stride;
   total_increment = increment*(k-1);
 }
 

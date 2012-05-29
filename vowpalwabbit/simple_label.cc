@@ -7,11 +7,11 @@
 
 using namespace std;
 
-char* bufread_simple_label(label_data* ld, char* c)
+char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
   ld->label = *(float *)c;
   c += sizeof(ld->label);
-  if (global.binary_label && fabs(ld->label) != 1.f && ld->label != FLT_MAX)
+  if (sd->binary_label && fabs(ld->label) != 1.f && ld->label != FLT_MAX)
     cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
   ld->weight = *(float *)c;
   c += sizeof(ld->weight);
@@ -20,14 +20,14 @@ char* bufread_simple_label(label_data* ld, char* c)
   return c;
 }
 
-size_t read_cached_simple_label(void* v, io_buf& cache)
+size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
 {
   label_data* ld = (label_data*) v;
   char *c;
   size_t total = sizeof(ld->label)+sizeof(ld->weight)+sizeof(ld->initial);
   if (buf_read(cache, c, total) < total) 
     return 0;
-  c = bufread_simple_label(ld,c);
+  c = bufread_simple_label(sd, ld,c);
 
   return total;
 }
@@ -75,7 +75,7 @@ void delete_simple_label(void* v)
 {
 }
 
-void parse_simple_label(void* v, v_array<substring>& words)
+void parse_simple_label(shared_data* sd, void* v, v_array<substring>& words)
 {
   label_data* ld = (label_data*)v;
 
@@ -98,7 +98,7 @@ void parse_simple_label(void* v, v_array<substring>& words)
     cerr << "malformed example!\n";
     cerr << "words.index() = " << words.index() << endl;
   }
-  if (words.index() > 0 && global.binary_label && fabs(ld->label) != 1.f)
+  if (words.index() > 0 && sd->binary_label && fabs(ld->label) != 1.f)
     cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
 }
 
@@ -115,15 +115,15 @@ float get_active_coin_bias(float k, float l, float g, float c0)
   return b*rs*rs;
 }
 
-float query_decision(example* ec, float k)
+float query_decision(vw& all, example* ec, float k)
 {
   float bias, avg_loss, weighted_queries;
   if (k<=1.)
     bias=1.;
   else{
-    weighted_queries = global.initial_t + global.sd->weighted_examples - global.sd->weighted_unlabeled_examples;
-    avg_loss = global.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
-    bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, global.active_c0);
+    weighted_queries = all.initial_t + all.sd->weighted_examples - all.sd->weighted_unlabeled_examples;
+    avg_loss = all.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
+    bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, all.active_c0);
   }
   if(drand48()<bias)
     return 1./bias;
@@ -131,9 +131,9 @@ float query_decision(example* ec, float k)
     return -1.;
 }
 
-void print_update(example *ec)
+void print_update(vw& all, example *ec)
 {
-  if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
+  if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
@@ -143,59 +143,55 @@ void print_update(example *ec)
 	sprintf(label_buf,"%8.4f",ld->label);
 
       fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
-	      global.sd->sum_loss/global.sd->weighted_examples,
-	      global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
-	      (long int)global.sd->example_number,
-	      global.sd->weighted_examples,
+	      all.sd->sum_loss/all.sd->weighted_examples,
+	      all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
+	      (long int)all.sd->example_number,
+	      all.sd->weighted_examples,
 	      label_buf,
 	      ec->final_prediction,
 	      (long unsigned int)ec->num_features);
      
-      global.sd->sum_loss_since_last_dump = 0.0;
-      global.sd->old_weighted_examples = global.sd->weighted_examples;
-      global.sd->dump_interval *= 2;
+      all.sd->sum_loss_since_last_dump = 0.0;
+      all.sd->old_weighted_examples = all.sd->weighted_examples;
+      all.sd->dump_interval *= 2;
     }
 }
 
-void output_and_account_example(example* ec)
+void output_and_account_example(vw& all, example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
-  global.sd->weighted_examples += ld->weight;
-  global.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-  global.sd->total_features += ec->num_features;
-  global.sd->sum_loss += ec->loss;
-  global.sd->sum_loss_since_last_dump += ec->loss;
+  all.sd->weighted_examples += ld->weight;
+  all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
+  all.sd->total_features += ec->num_features;
+  all.sd->sum_loss += ec->loss;
+  all.sd->sum_loss_since_last_dump += ec->loss;
   
-  global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
+  all.print(all.raw_prediction, ec->partial_prediction, -1, ec->tag);
 
   float ai=-1; 
-  if(global.active && ld->label == FLT_MAX)
-    ai=query_decision(ec, global.sd->weighted_unlabeled_examples);
-  global.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
+  if(all.active && ld->label == FLT_MAX)
+    ai=query_decision(all, ec, all.sd->weighted_unlabeled_examples);
+  all.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
   
-  for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
+  for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
     {
-      int f = global.final_prediction_sink[i];
-      if(global.active)
-	global.print(f, ec->final_prediction, ai, ec->tag);
-      else if (global.lda > 0)
-	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
+      int f = all.final_prediction_sink[i];
+      if(all.active)
+	all.print(f, ec->final_prediction, ai, ec->tag);
+      else if (all.lda > 0)
+	print_lda_result(all, f,ec->topic_predictions.begin,0.,ec->tag);
       else
-	global.print(f, ec->final_prediction, 0, ec->tag);
+	all.print(f, ec->final_prediction, 0, ec->tag);
     }
 
-  global.sd->example_number++;
+  all.sd->example_number++;
 
-  print_update(ec);
+  print_update(all, ec);
 }
 
-void return_simple_example(example* ec)
+void return_simple_example(vw& all, example* ec)
 {
-  output_and_account_example(ec);
-  free_example(ec);
+  output_and_account_example(all, ec);
+  free_example(all.p,ec);
 }
 
-example* get_simple_example()
-{
-  return get_example();
-}

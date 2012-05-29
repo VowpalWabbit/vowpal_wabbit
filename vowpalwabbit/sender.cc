@@ -41,43 +41,44 @@ void send_features(io_buf *b, example* ec)
   b->flush();
 }
 
-void drive_send()
+void drive_send(void* in)
 {
+  vw* all = (vw*)in;
   example* ec = NULL;
   v_array<char> null_tag;
   null_tag.erase();
 
-  example** delay_ring = (example**) calloc(global.ring_size, sizeof(example*));
+  example** delay_ring = (example**) calloc(all->p->ring_size, sizeof(example*));
   size_t sent_index =0;
   size_t received_index=0;
 
   bool parser_finished = false;
   while ( true )
     {//this is a poor man's select operation.
-      if (received_index + global.ring_size == sent_index || (parser_finished & (received_index != sent_index)))
+      if (received_index + all->p->ring_size == sent_index || (parser_finished & (received_index != sent_index)))
 	{
 	  float res, weight;
 	  get_prediction(sd,res,weight);
 	  
-	  ec=delay_ring[received_index++ % global.ring_size];
+	  ec=delay_ring[received_index++ % all->p->ring_size];
 	  label_data* ld = (label_data*)ec->ld;
 	  
 	  ec->final_prediction = res;
 	  
-	  ec->loss = global.loss->getLoss(ec->final_prediction, ld->label) * ld->weight;
+	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
 	  
-	  finish_example(ec);
+	  finish_example(*all, ec);
 	}
-      else if ((ec = get_example()) != NULL)//semiblocking operation.
+      else if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
         {
           label_data* ld = (label_data*)ec->ld;
-          set_minmax(ld->label);
+          set_minmax(*all, ld->label);
 	  simple_label.cache_label(ld, *buf);//send label information.
 	  cache_tag(*buf, ec->tag);
 	  send_features(buf,ec);
-	  delay_ring[sent_index++ % global.ring_size] = ec;
+	  delay_ring[sent_index++ % all->p->ring_size] = ec;
         }
-      else if (parser_done())
+      else if (parser_done(all->p))
         { //close our outputs to signal finishing.
 	  parser_finished = true;
 	  if (received_index == sent_index)

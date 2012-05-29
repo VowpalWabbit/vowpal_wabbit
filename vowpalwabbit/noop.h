@@ -1,1 +1,1 @@
-void drive_noop();
+void drive_noop(void*);

@@ -13,6 +13,6 @@ embodied in the content of this file are licensed under the BSD
 #include "parser.h"
 #include "gd.h"
 
-void drive_gd_mf();
+void drive_gd_mf(void*);
 
 #endif

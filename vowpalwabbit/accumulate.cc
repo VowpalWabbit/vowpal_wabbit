@@ -20,10 +20,10 @@ using namespace std;
 struct timeb t_start, t_end;
 double net_comm_time = 0.;
 
-void accumulate(string master_location, regressor& reg, size_t o) {
+void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
   ftime(&t_start);
-  uint32_t length = 1 << global.num_bits; //This is size of gradient
-  size_t stride = global.stride;
+  uint32_t length = 1 << all.num_bits; //This is size of gradient
+  size_t stride = all.stride;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vectors;
   for(uint32_t i = 0;i < length;i++) 
@@ -31,7 +31,7 @@ void accumulate(string master_location, regressor& reg, size_t o) {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce(local_grad, length, master_location, global.unique_id, global.total, global.node);
+  all_reduce(local_grad, length, master_location, all.unique_id, all.total, all.node);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i];
@@ -41,29 +41,29 @@ void accumulate(string master_location, regressor& reg, size_t o) {
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
 }
 
-float accumulate_scalar(string master_location, float local_sum) {
+float accumulate_scalar(vw& all, string master_location, float local_sum) {
   ftime(&t_start);
   float temp = local_sum;
-  all_reduce(&temp, 1, master_location, global.unique_id, global.total, global.node);
+  all_reduce(&temp, 1, master_location, all.unique_id, all.total, all.node);
   ftime(&t_end);
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   return temp;
 }
 
-void accumulate_avg(string master_location, regressor& reg, size_t o) {
-  uint32_t length = 1 << global.num_bits; //This is size of gradient
-  size_t stride = global.stride;
+void accumulate_avg(vw& all, string master_location, regressor& reg, size_t o) {
+  uint32_t length = 1 << all.num_bits; //This is size of gradient
+  size_t stride = all.stride;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vectors;
   ftime(&t_start);
   float numnodes = 1.;
-  all_reduce(&numnodes, 1, master_location, global.unique_id, global.total, global.node);
+  all_reduce(&numnodes, 1, master_location, all.unique_id, all.total, all.node);
   for(uint32_t i = 0;i < length;i++) 
     {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce(local_grad, length, master_location, global.unique_id, global.total, global.node);
+  all_reduce(local_grad, length, master_location, all.unique_id, all.total, all.node);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i]/numnodes;
@@ -87,13 +87,13 @@ float min_elem(float* arr, int length) {
   return min;
 }
 
-void accumulate_weighted_avg(string master_location, regressor& reg) {
-  if(!global.adaptive) {
+void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
+  if(!all.adaptive) {
     cerr<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
-  uint32_t length = 1 << global.num_bits; //This is size of gradient
-  size_t stride = global.stride;
+  uint32_t length = 1 << all.num_bits; //This is size of gradient
+  size_t stride = all.stride;
   weight* weights = reg.weight_vectors;
   float* local_weights = new float[length];
 
@@ -101,7 +101,7 @@ void accumulate_weighted_avg(string master_location, regressor& reg) {
   for(uint32_t i = 0;i < length;i++) 
     local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]-1);
   
-  all_reduce(local_weights, length, master_location, global.unique_id, global.total, global.node);
+  all_reduce(local_weights, length, master_location, all.unique_id, all.total, all.node);
 
   for(uint32_t i = 0;i < length;i++) 
     if(local_weights[i] > 0) {
@@ -112,7 +112,7 @@ void accumulate_weighted_avg(string master_location, regressor& reg) {
     else 
       weights[stride*i] = 0; 
 
-  all_reduce(weights, 2*length, master_location, global.unique_id, global.total, global.node);
+  all_reduce(weights, 2*length, master_location, all.unique_id, all.total, all.node);
 
   ftime(&t_end);
   net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 

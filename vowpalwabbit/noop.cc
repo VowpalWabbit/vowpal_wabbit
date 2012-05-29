@@ -4,14 +4,15 @@
 #include "parser.h"
 #include "gd.h"
 
-void drive_noop()
+void drive_noop(void* in)
 {
+  vw* all = (vw*)in;
   example* ec = NULL;
   
-  while ( !parser_done()){
-    ec = get_example();
+  while ( !parser_done(all->p)){
+    ec = get_example(all->p);
     if (ec != NULL)
-      finish_example(ec);
+      finish_example(*all, ec);
   }
 }
 

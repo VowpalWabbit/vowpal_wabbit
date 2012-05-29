@@ -9,33 +9,18 @@ embodied in the content of this file are licensed under the BSD
 #include <vector>
 #include <stdint.h>
 #include "v_array.h"
-#include "parse_regressor.h"
 #include "parse_primitives.h"
+#include "loss_functions.h"
 #include "comp_io.h"
-#include "simple_label.h"
 #include "example.h"
-#include "parser.h"
 
 extern std::string version;
 
-struct shared_data {
-  size_t queries;
+typedef float weight;
 
-  uint64_t example_number;
-  uint64_t total_features;
-
-  double t;
-  double weighted_examples;
-  double weighted_unlabeled_examples;
-  double old_weighted_examples;
-  double weighted_labels;
-  double sum_loss;
-  double sum_loss_since_last_dump;
-  float dump_interval;// when should I update for the user.
-  double gravity;
-  double contraction;
-  double min_label;//minimum label encountered
-  double max_label;//maximum label encountered
+struct regressor {
+  weight* weight_vectors;
+  weight* regularizers;
 };
 
 struct vw {
@@ -44,9 +29,7 @@ struct vw {
   label_parser* lp;
   parser* p;
 
-  void (*driver)();
-
-  uint32_t k;
+  void (*driver)(void *);
 
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
@@ -76,10 +59,6 @@ struct vw {
   int reg_mode;
 
   size_t minibatch;
-  size_t ring_size;
-
-  uint64_t parsed_examples; // The index of the parsed example.
-  uint64_t local_example_number; 
 
   float rel_threshold; // termination threshold
 
@@ -103,7 +82,6 @@ struct vw {
   bool random_weights;
   bool add_constant;
   bool nonormalize;
-  bool binary_label;
 
   size_t lda;
   float lda_alpha;
@@ -142,12 +120,11 @@ struct vw {
 };
 
 extern pthread_mutex_t io;
-extern vw global;
-extern void (*set_minmax)(double label);
+extern void (*set_minmax)(vw& all, double label);
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
-void noop_mm(double label);
-void print_lda_result(int f, float* res, float weight, v_array<char> tag);
+void noop_mm(vw& all, double label);
+void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
 
 extern pthread_mutex_t output_lock;

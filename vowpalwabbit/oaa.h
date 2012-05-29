@@ -16,14 +16,14 @@ namespace OAA
   
   typedef uint32_t prediction_t;
   
-  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
-  void learn(example* ec);
-  void finish();
+  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void learn(vw& all, example* ec);
+  void finish(vw&);
   
-  size_t read_cached_label(void* v, io_buf& cache);
+  size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
   void default_label(void* v);
-  void parse_label(void* v, v_array<substring>& words);
+  void parse_label(shared_data*, void* v, v_array<substring>& words);
   void delete_label(void* v);
   float weight(void* v);
   float initial(void* v);
@@ -32,8 +32,8 @@ namespace OAA
 					delete_label, weight, initial, 
 					sizeof(mc_label)};
   
-  void update_indicies(example* ec, size_t amount);
-  void output_example(example* ec);
+  void update_indicies(vw& all, example* ec, size_t amount);
+  void output_example(vw& all, example* ec);
 }
 
 #endif
