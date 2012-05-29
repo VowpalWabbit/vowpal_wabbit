@@ -47,7 +47,7 @@ size_t next_pow2(size_t x) {
   return 1 << i;
 }
 
-void parse_args(int argc, char *argv[], parser* par)
+void parse_args(int argc, char *argv[])
 {
   po::options_description desc("VW options");
   
@@ -273,10 +273,10 @@ void parse_args(int argc, char *argv[], parser* par)
 
   string data_filename = vm["data"].as<string>();
   if (vm.count("compressed") || ends_with(data_filename, ".gz"))
-    set_compressed(par);
+    set_compressed(global.p);
 
   if(vm.count("sort_features"))
-    par->sort_features = true;
+    global.p->sort_features = true;
 
   if (vm.count("quadratic"))
     {
@@ -369,7 +369,7 @@ void parse_args(int argc, char *argv[], parser* par)
   if (vm.count("lda"))
     {
       global.driver = drive_lda;
-      par->sort_features = true;
+      global.p->sort_features = true;
       float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
       global.stride = 1 << (int) temp;
       global.random_weights = true;
@@ -395,7 +395,7 @@ void parse_args(int argc, char *argv[], parser* par)
   }
 
   parse_regressor_args(vm, global.reg, global.final_regressor_name, global.quiet);
-  parse_source_args(vm,par,global.quiet,global.numpasses);
+  parse_source_args(vm,global.p,global.quiet,global.numpasses);
   if (vm.count("readable_model"))
     global.text_regressor_name = vm["readable_model"].as<string>();
   

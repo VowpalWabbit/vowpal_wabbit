@@ -14,16 +14,8 @@ embodied in the content of this file are licensed under the BSD
 #include <arpa/inet.h>
 #include <sys/timeb.h>
 #include "global_data.h"
-#include "parse_regressor.h"
 #include "parse_example.h"
 #include "parse_args.h"
-#include "gd.h"
-#include "gd_mf.h"
-#include "lda_core.h"
-#include "bfgs.h"
-#include "lda_core.h"
-#include "noop.h"
-#include "sender.h"
 #include "accumulate.h"
 
 using namespace std;
@@ -32,9 +24,7 @@ int main(int argc, char *argv[])
 {
   srand48(0);
 
-  parser* p = new_parser();
-  
-  parse_args(argc, argv, p);
+  parse_args(argc, argv);
   struct timeb t_start, t_end;
   ftime(&t_start);
   
@@ -49,15 +39,15 @@ int main(int argc, char *argv[])
       cerr.precision(5);
     }
 
-  start_parser(p);
+  start_parser(global.p);
 
   global.driver();
 
-  end_parser(p);
+  end_parser(global.p);
   
   finalize_regressor(global.final_regressor_name,global.reg);
-  finalize_source(p);
-  free(p);
+  finalize_source(global.p);
+  free(global.p);
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   if(!global.quiet && global.span_server != "")

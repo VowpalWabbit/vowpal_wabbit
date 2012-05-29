@@ -175,6 +175,7 @@ vw::vw()
   global.sd->t = 1.;
   global.lp = (label_parser*)malloc(sizeof(label_parser));
   *(global.lp) = simple_label;
+  global.p = new_parser();
   global.reg_mode = 0;
   global.local_example_number = 0;
   global.bfgs = false;

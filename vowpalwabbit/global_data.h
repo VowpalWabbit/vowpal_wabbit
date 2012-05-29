@@ -14,6 +14,7 @@ embodied in the content of this file are licensed under the BSD
 #include "comp_io.h"
 #include "simple_label.h"
 #include "example.h"
+#include "parser.h"
 
 extern std::string version;
 
@@ -41,6 +42,7 @@ struct vw {
   shared_data* sd;
 
   label_parser* lp;
+  parser* p;
 
   void (*driver)();
 
