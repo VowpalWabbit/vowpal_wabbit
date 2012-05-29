@@ -79,6 +79,7 @@ void parse_label(void* v, v_array<substring>& words)
     break;
   case 1:
     ld->label = float_of_substring(words[0]);
+    ld->weight = 1.0;
     break;
   case 2:
     ld->label = float_of_substring(words[0]);
