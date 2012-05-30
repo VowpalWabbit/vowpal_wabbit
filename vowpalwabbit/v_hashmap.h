@@ -30,6 +30,7 @@ template<class K, class V> class v_hashmap{
 
   v_hashmap(size_t min_size, V def, bool (*eq)(K,K)) {
     dat = v_array<elem>();
+    if (min_size < 1023) min_size = 1023;
     reserve(dat, min_size); // reserve sets to 0 ==> occupied=false
 
     default_value = def;
@@ -39,11 +40,10 @@ template<class K, class V> class v_hashmap{
     num_occupants = 0;
   }
 
-  v_hashmap(V def) { v_hashmap(1023, def, NULL); }
-
   void set_equivalent(bool (*eq)(K,K)) { equivalent = eq; }
 
   ~v_hashmap() {
+    //std::cerr << "~v_hashmap" << std::endl;
     dat.erase();
     free(dat.begin);
   }
@@ -55,16 +55,19 @@ template<class K, class V> class v_hashmap{
   }
 
   void iter(void (*func)(K,V)) {
-    //    printf("iter\n");
+    //for (size_t lp=0; lp<base_size(); lp++) {
     for (elem* e=dat.begin; e!=dat.end_array; e++) {
-      //      printf("  [occ=%d  hash=%zu]\n", e->occupied, e->hash);
-      if (e->occupied)
+      //elem* e = dat.begin+lp;
+      if (e->occupied) {
+        //printf("  [lp=%d\tocc=%d\thash=%zu]\n", lp, e->occupied, e->hash);
         func(e->key, e->val);
+      }
     }
   }
     
 
   void put_after_get_nogrow(K key, size_t hash, V val) {
+    //printf("++[lp=%d\tocc=%d\thash=%zu]\n", last_position, dat[last_position].occupied, hash);
     dat[last_position].occupied = true;
     dat[last_position].key = key;
     dat[last_position].val = val;

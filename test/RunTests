@@ -449,26 +449,41 @@ __DATA__
     train-sets/ref/seq_small.stderr
 
 # Test 12: Run sequence (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -c -d train-sets/wsj_small.dat.gz --passes 2 --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 2 --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1 && rm -f train-sets/wsj_small.dat.gz.cache
     train-sets/ref/wsj_small.dat.stdout
     train-sets/ref/wsj_small.dat.stderr
 
 # Test 13: Run sequence (wap) on wsj_small for 1 passes, current policy, limited transitions
-{VW} -c -d train-sets/wsj_small.dat.gz --passes 1 --sequence_allow_current_policy --sequence 45 --wap 45 --sequence_transition_file train-sets/wsj.train.tm2
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 1 --sequence_allow_current_policy --sequence 45 --wap 45 --sequence_transition_file train-sets/wsj.train.tm2 && rm -f train-sets/wsj_small.dat.gz.cache
     train-sets/ref/wsj_small-tm.dat.stdout
     train-sets/ref/wsj_small-tm.dat.stderr
 
-# Test 14: LBFGS on zero derivative input
+# Test 14: Run searn on seq_small for 12 passes, 4 passes per policy
+{VW} -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn sequence --searn_max_action 4 && rm -f train-sets/seq_small.cache
+    train-sets/ref/searn_small.stdout
+    train-sets/ref/searn_small.stderr
+
+# Test 15: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 12 --searn_passes_per_policy 4 --searn sequence --searn_max_action 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 && rm -f train-sets/wsj_small.dat.gz.cache
+    train-sets/ref/searn_wsj.stdout
+    train-sets/ref/searn_wsj.stderr
+
+# Test 16: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 2 --searn_passes_per_policy 1 --searn sequence --searn_max_action 45 --wap 45 --searn_history 2 --searn_bigrams --searn_features 1 && rm -f train-sets/wsj_small.dat.gz.cache
+    train-sets/ref/searn_wsj2.dat.stdout
+    train-sets/ref/searn_wsj2.dat.stderr
+
+# Test 17: LBFGS on zero derivative input
 {VW} -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 && rm -f train-sets/zero.dat.cache
     train-sets/ref/zero.stdout
     train-sets/ref/zero.stderr
 
-# Test 15: LBFGS early termination
+# Test 18: LBFGS early termination
 {VW} -c -d train-sets/rcv1_small.dat --loss_function=logistic -b 20 --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 && rm -f train-sets/rcv1_small.dat.cache
     train-sets/ref/rcv1_small.stdout
     train-sets/ref/rcv1_small.stderr
 
-# Test 16: Run LDA with 100 topics on 1000 Wikipedia articles
+# Test 19: Run LDA with 100 topics on 1000 Wikipedia articles
 {LDA} --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr

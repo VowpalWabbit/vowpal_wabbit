@@ -19,6 +19,7 @@ embodied in the content of this file are licensed under the BSD
 #include "csoaa.h"
 #include "wap.h"
 #include "sequence.h"
+#include "searn.h"
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
@@ -140,6 +141,16 @@ vw parse_args(int argc, char *argv[])
     ("sequence_transition_file", po::value<string>(), "read valid transitions from file (default all valid)")
     ("sequence_allow_current_policy", "allow sequence labeling to use the current policy")
     ("sequence_beam", po::value<size_t>(), "set the beam size for sequence prediction (default: 1 == greedy)")
+    ("searn", po::value<string>(), "use searn, argument=task (eg., sequence)")
+    ("searn_max_action", po::value<size_t>(), "largest action id that will be encountered in searn")
+
+    ("searn_rollout", po::value<size_t>(), "maximum rollout length")
+    ("searn_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
+    ("searn_beta", po::value<float>(), "interpolation rate for policies")
+    ("searn_gamma", po::value<float>(), "discount rate for policies")
+    ("searn_recombine", "allow searn labeling to use the current policy")
+    ("searn_allow_current_policy", "allow searn labeling to use the current policy")
+
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
@@ -578,7 +589,31 @@ vw parse_args(int argc, char *argv[])
     parse_sequence_args(all, vm, cs_learner, cs_finish);
     all.driver = drive_sequence;
     all.sequence = true;
+
+    if (vm.count("searn")) {
+      cerr << "error: you cannot use searn and sequence simultaneously" << endl;
+      exit(-1);
+    }
   }
+  if (vm.count("searn")) {
+    size_t max_action = 1;
+    if (vm.count("searn_max_action"))
+      max_action = vm["searn_max_action"].as<size_t>();
+    else {
+      cerr << "error: you must specify --searn_max_action" << endl;
+      exit(-1);
+    }
+
+    if (vm.count("wap"))
+      ;
+    else
+      CSOAA::parse_flags(all, max_action, base_learner, base_finish);  // default to CSOAA unless wap is specified
+
+    Searn::parse_args(all, vm, cs_learner, cs_finish);
+    all.driver = Searn::drive;
+    all.searn = true;
+  }
+
   return all;
 }
 

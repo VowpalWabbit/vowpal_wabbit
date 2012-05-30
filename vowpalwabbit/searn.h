@@ -35,7 +35,7 @@ namespace SearnUtil
   void remove_policy_offset(vw&, example*, size_t, size_t, size_t);
 
   void add_history_to_example(vw&, history_info*, example*, history);
-  void remove_history_from_example(vw&, example*);
+  void remove_history_from_example(vw&, history_info *, example*);
 }
 
 namespace Searn
@@ -61,18 +61,18 @@ namespace Searn
     // I can take from that state.
     action (*oracle)(state);
 
-    // copy(src, dst) copies the source state into the destination.  YOU
+    // copy(src) copies the source state into the destination.  YOU
     // are responsible for allocating the destination.  you can deallocate
     // it in the finish function below
     // note: if you provide hash or equivalent, we assume that a copied
     // state will be equivalent to and have the same hash value as the
     // original
-    void   (*copy)(state, state*);
+    state  (*copy)(state);
 
     // finish(state) should de-allocate any memory associated with state.
     // we will call finish precisely once per state created either through
     // copy or through one of the start_state functions
-    void   (*finish)(state*);
+    void   (*finish)(state);
 
     // you must provide a label parser for reading data
     label_parser searn_label_parser;
@@ -161,11 +161,17 @@ namespace Searn
     // will always try all actions 1, 2, ... max_action and you may
     // return any of them as invalid
     bool   (*allowed)(state, action);
+
+    // to_string takes a state and returns a string representation of
+    // both the TRUE output and the PREDICTED output into the
+    // respective char*s.  the max string length (excluding the 0
+    // at the end is the size argument
+    //    void   (*to_string)(state, size_t, char*, char*);
   };
 
 
-  void parse_args(po::variables_map& vm, void (*base_l)(example*), void (*base_f)());
-  void drive_searn();
+  void parse_args(vw&all, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&));
+  void drive(void*);
 }
 
 #endif

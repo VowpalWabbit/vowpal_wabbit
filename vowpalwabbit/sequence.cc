@@ -625,7 +625,7 @@ void generate_training_example(vw&all, example *ec, history h, v_array<CSOAA::wc
   base_learner(all, ec);
   if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << "::" << c->partial_prediction; clog << " ]\t"; simple_print_example_features(all,ec);}
 
-  SearnUtil::remove_history_from_example(all, ec);
+  SearnUtil::remove_history_from_example(all, &hinfo, ec);
   SearnUtil::remove_policy_offset(all, ec, sequence_k, total_number_of_policies, current_policy);
 }
 
@@ -661,7 +661,7 @@ size_t predict(vw&all, example *ec, history h, int policy, size_t truth)
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
     if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << ", pp=" << ec->partial_prediction << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
 
-    SearnUtil::remove_history_from_example(all, ec);
+    SearnUtil::remove_history_from_example(all, &hinfo, ec);
     SearnUtil::remove_policy_offset(all, ec, sequence_k, total_number_of_policies, policy);
   }
   if ((yhat <= 0) || (yhat > sequence_k)) {
@@ -1253,13 +1253,8 @@ void drive_sequence(void* in)
   vw* all = (vw*)in;
   const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
 
-  //  if (all.training) {
-    fprintf(stderr, header_fmt,
-            "average", "since", "sequence", "example",
-            "current label", "current predicted", "current", "cur", "cur", "predic.", "examples");
-    fprintf(stderr, header_fmt,
-            "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features", "pass", "pol", "made", "gener.");
-    //  }
+  fprintf(stderr, header_fmt, "average", "since", "sequence", "example",   "current label", "current predicted",  "current",  "cur", "cur", "predic.", "examples");
+  fprintf(stderr, header_fmt,    "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
   cerr.precision(5);
 
   allocate_required_memory(*all);

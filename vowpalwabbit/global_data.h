@@ -46,6 +46,7 @@ struct vw {
   int m;
 
   bool sequence;
+  bool searn;
 
   size_t stride;
 
