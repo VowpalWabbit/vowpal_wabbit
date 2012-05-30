@@ -62,6 +62,7 @@ bool OPTIMIZE_SHARED_HISTORIES    = 1;
 
 // struct timeb t_start_global;
 
+//nonreentrant
 size_t sequence_history           = 1;
 bool   sequence_bigrams           = false;
 size_t sequence_features          = 0;

@@ -77,6 +77,9 @@ struct parser {
   int label_sock;
   int bound_sock;
   int max_fd;
+
+  pthread_mutex_t output_lock;
+  pthread_cond_t output_done;
 };
 
 //chop up the string into a v_array of substring.

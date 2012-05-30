@@ -6,18 +6,11 @@
 #include <assert.h>
 
 #include "global_data.h"
-#include "config.h"
 #include "simple_label.h"
 #include "parser.h"
 #include "gd.h"
 
 using namespace std;
-
-vw global;
-string version = PACKAGE_VERSION;
-
-pthread_mutex_t output_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t output_done = PTHREAD_COND_INITIALIZER;
 
 struct global_prediction {
   float p;
@@ -158,17 +151,15 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
     }
 }
 
-void set_mm(vw& all, double label)
+void set_mm(shared_data* sd, double label)
 {
-  all.sd->min_label = min(all.sd->min_label, label);
+  sd->min_label = min(sd->min_label, label);
   if (label != FLT_MAX)
-    all.sd->max_label = max(all.sd->max_label, label);
+    sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(vw& all, double label)
+void noop_mm(shared_data* sd, double label)
 {}
-
-void (*set_minmax)(vw& all, double label) = set_mm;
 
 vw::vw()
 {
@@ -188,11 +179,13 @@ vw::vw()
   sd->max_label = 1.;
   sd->t = 1.;
   sd->binary_label = false;
+  sd->k = 0;
+  
   lp = (label_parser*)malloc(sizeof(label_parser));
   *(lp) = simple_label;
   p = new_parser();
   reg_mode = 0;
-  p->local_example_number = 0;
+
   bfgs = false;
   hessian_on = false;
   sequence = false;
@@ -209,8 +202,8 @@ vw::vw()
   m = 15; 
 
   driver = drive_gd;
-  sd->k = 0;
-  
+  set_minmax = set_mm;
+
   power_t = 0.5;
   eta = 10;
   numpasses = 1;
@@ -225,7 +218,7 @@ vw::vw()
   per_feature_regularizer_input = "";
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
-  p->ring_size = 1 << 8;
+
   nonormalize = false;
   l1_lambda = 0.0;
   l2_lambda = 0.0;

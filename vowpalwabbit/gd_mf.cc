@@ -164,7 +164,7 @@ void mf_print_audit_features(vw& all, example* ec, size_t offset)
 void mf_local_predict(vw& all, example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
-  set_minmax(all, ld->label);
+  all.set_minmax(all.sd, ld->label);
 
   ec->final_prediction = finalize_prediction(all, ec->partial_prediction);
 

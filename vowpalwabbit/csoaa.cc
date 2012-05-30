@@ -93,6 +93,7 @@ void delete_label(void* v)
 {
 }
 
+  //nonreentrant
 size_t increment=0;
 v_array<substring> name;
 

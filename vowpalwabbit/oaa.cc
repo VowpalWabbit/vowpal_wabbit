@@ -90,6 +90,7 @@ void delete_label(void* v)
   }
 }
 
+  //nonreentrant
 size_t k=0;
 size_t increment=0;
 size_t total_increment=0;

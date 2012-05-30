@@ -36,6 +36,7 @@ namespace po = boost::program_options;
 
 using namespace std;
 
+//nonreentrant
 example* examples;//A Ring of examples.
 pthread_mutex_t examples_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
@@ -56,6 +57,11 @@ parser* new_parser()
   parser* ret = (parser*) calloc(1,sizeof(parser));
   ret->input = new io_buf;
   ret->output = new io_buf;
+  ret->local_example_number = 0;
+  pthread_mutex_init(&(ret->output_lock), NULL);
+  pthread_cond_init(&ret->output_done, NULL);
+  ret->ring_size = 1 << 8;
+
   return ret;
 }
 
@@ -131,10 +137,10 @@ void reset_source(vw& all, size_t numbits)
       if (all.daemon)
 	{
 	  // wait for all predictions to be sent back to client
-	  pthread_mutex_lock(&output_lock);
+	  pthread_mutex_lock(&all.p->output_lock);
 	  while (all.p->local_example_number != all.p->parsed_examples)
-	    pthread_cond_wait(&output_done, &output_lock);
-	  pthread_mutex_unlock(&output_lock);
+	    pthread_cond_wait(&all.p->output_done, &all.p->output_lock);
+	  pthread_mutex_unlock(&all.p->output_lock);
 	  
 	  // close socket, erase final prediction sink and socket
 	  close(all.p->input->files[0]);
@@ -756,10 +762,10 @@ void *main_parse_loop(void *in)
 
 void free_example(parser* pf, example* ec)
 {
-  pthread_mutex_lock(&output_lock);
+  pthread_mutex_lock(&pf->output_lock);
   pf->local_example_number++;
-  pthread_cond_signal(&output_done);
-  pthread_mutex_unlock(&output_lock);
+  pthread_cond_signal(&pf->output_done);
+  pthread_mutex_unlock(&pf->output_lock);
 
   pthread_mutex_lock(&examples_lock);
   assert(ec->in_use);

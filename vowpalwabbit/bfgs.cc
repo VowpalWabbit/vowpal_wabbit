@@ -57,6 +57,8 @@ namespace BFGS
 
 {
 
+ //nonrentrant
+
 double wolfe1_bound = 0.01;
 
 struct timeb t_start, t_end;
@@ -174,7 +176,7 @@ float predict_and_gradient(vw& all, example* &ec)
   float fp = bfgs_predict(all, ec);
 
   label_data* ld = (label_data*)ec->ld;
-  set_minmax(all, ld->label);
+  all.set_minmax(all.sd, ld->label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
   

@@ -408,7 +408,7 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("max_prediction"))
     all.sd->max_label = vm["max_prediction"].as<double>();
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
-    set_minmax = noop_mm;
+    all.set_minmax = noop_mm;
 
   string loss_function;
   if(vm.count("loss_function"))
@@ -428,7 +428,7 @@ vw parse_args(int argc, char *argv[])
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
   }
 
-  all.loss = getLossFunction(all.sd, loss_function, loss_parameter);
+  all.loss = getLossFunction(&all, loss_function, loss_parameter);
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)

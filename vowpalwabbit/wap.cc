@@ -11,7 +11,7 @@
 using namespace std;
 
 namespace WAP {
-  
+  //nonreentrant
   size_t increment=0;
 
   void mirror_features(vw& all, example* ec, size_t offset1, size_t offset2)

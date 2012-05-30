@@ -74,6 +74,7 @@ void initialize_regressor(vw& all)
       all.reg.weight_vectors[j] = 1;
 }
 
+//nonreentrant
 v_array<char> temp;
 
 void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)

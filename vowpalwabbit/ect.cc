@@ -23,6 +23,8 @@ using namespace std;
 
 namespace ECT
 {
+
+  //nonreentrant
   int k = 1;
   size_t errors = 0;
 

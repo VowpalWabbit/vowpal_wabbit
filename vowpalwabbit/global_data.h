@@ -13,8 +13,9 @@ embodied in the content of this file are licensed under the BSD
 #include "loss_functions.h"
 #include "comp_io.h"
 #include "example.h"
+#include "config.h"
 
-extern std::string version;
+const std::string version = PACKAGE_VERSION;
 
 typedef float weight;
 
@@ -30,6 +31,7 @@ struct vw {
   parser* p;
 
   void (*driver)(void *);
+  void (*set_minmax)(shared_data* sd, double label);
 
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
@@ -119,15 +121,10 @@ struct vw {
   vw();
 };
 
-extern pthread_mutex_t io;
-extern void (*set_minmax)(vw& all, double label);
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
-void noop_mm(vw& all, double label);
+void noop_mm(shared_data*, double label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
-
-extern pthread_mutex_t output_lock;
-extern pthread_cond_t output_done;
 
 #endif
