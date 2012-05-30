@@ -13,7 +13,7 @@ namespace SequenceTask {
   void   copy(state, state*);
   void   finish(state*);
   void   start_state_multiline(example**, size_t, state*);
-  void   cs_example(state, example*&, bool);
+  void   cs_example(vw&, state, example*&, bool);
   bool   initialize(po::variables_map& vm);
 }
 

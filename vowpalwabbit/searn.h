@@ -1,10 +1,13 @@
 #ifndef SEARN_H
 #define SEARN_H
 
+#include <stdio.h>
+#include "parse_args.h"
 #include "oaa.h"
 #include "parse_primitives.h"
 
-#define clog_print_audit_features(ec) { print_audit_features(global.reg, ec); }
+#define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
+
 
 #define MAX_ACTION_ID   10000
 
@@ -26,12 +29,13 @@ namespace SearnUtil
   void* calloc_or_die(size_t, size_t);
   void free_it(void*);
 
-  void add_policy_offset(example*, size_t, size_t, size_t);
-  void remove_policy_offset(example*, size_t, size_t, size_t);
-  int random_policy(short unsigned int, float, bool, int, bool);
+  int  random_policy(long int, float, bool, int, bool);
 
-  void add_history_to_example(history_info*, example*, history);
-  void remove_history_from_example(example*);
+  void add_policy_offset(vw&, example*, size_t, size_t, size_t);
+  void remove_policy_offset(vw&, example*, size_t, size_t, size_t);
+
+  void add_history_to_example(vw&, history_info*, example*, history);
+  void remove_history_from_example(vw&, example*);
 }
 
 namespace Searn
@@ -106,7 +110,7 @@ namespace Searn
     // if you take the example from your example set (from
     // start_state), then you should be sure to un-manipulate it in
     // the destroy call.
-    void   (*cs_example)(state, example*&, bool);
+    void   (*cs_example)(vw&, state, example*&, bool);
 
     // if you need label dependent features, then you will need to
     // construct (and destroy) a separate example for each action.
@@ -114,7 +118,7 @@ namespace Searn
     // given state before any of them are destroyed, so don't reuse
     // the same memory.  note: if you are using cs_ldf_example, you
     // MUST provide the allowed() function, see below.
-    void   (*cs_ldf_example)(state, action, example*&, bool);
+    void   (*cs_ldf_example)(vw&, state, action, example*&, bool);
 
     /************************************************************************
      ********************* (MOSTLY) OPTIONAL FUNCTIONS **********************

@@ -7,6 +7,6 @@ embodied in the content of this file are licensed under the BSD
 #ifndef LDA_CORE_H
 #define LDA_CORE_H
 
-void drive_lda();
+void drive_lda(void*);
 
 #endif

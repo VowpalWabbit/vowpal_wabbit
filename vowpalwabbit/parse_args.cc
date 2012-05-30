@@ -47,20 +47,19 @@ size_t next_pow2(size_t x) {
   return 1 << i;
 }
 
-const float default_decay = 1.;
-
-po::variables_map parse_args(int argc, char *argv[], 
-			     boost::program_options::options_description& desc,
-			     parser* par)
+vw parse_args(int argc, char *argv[])
 {
-  global.program_name = argv[0];
-  global.sd = (shared_data *) malloc(sizeof(shared_data));
+  po::options_description desc("VW options");
+  
+  vw all;
+  long int random_seed = 0;
+  all.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
     ("active_learning", "active learning mode")
     ("active_simulation", "active learning simulation mode")
-    ("active_mellowness", po::value<float>(&global.active_c0)->default_value(8.f), "active learning mellowness parameter c_0. Default 8")
+    ("active_mellowness", po::value<float>(&all.active_c0), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
     ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
     ("audit,a", "print weights of features")
@@ -76,15 +75,15 @@ po::variables_map parse_args(int argc, char *argv[],
     ("csoaa_ldf", "Use one-against-all multiclass learning with label dependent features")
     ("wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features")
     ("nonormalize", "Do not normalize online updates")
-    ("l1", po::value<float>(&global.l1_lambda)->default_value(0.0), "l_1 lambda")
-    ("l2", po::value<float>(&global.l2_lambda)->default_value(0.0), "l_2 lambda")
-    ("data,d", po::value< string >()->default_value(""), "Example Set")
+    ("l1", po::value<float>(&all.l1_lambda), "l_1 lambda")
+    ("l2", po::value<float>(&all.l2_lambda), "l_2 lambda")
+    ("data,d", po::value< string >(), "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
-    ("num_children", po::value<size_t>(&global.num_children)->default_value(10), "number of children for persistent daemon mode")
+    ("num_children", po::value<size_t>(&all.num_children), "number of children for persistent daemon mode")
     ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
-    ("decay_learning_rate",    po::value<float>(&global.eta_decay_rate)->default_value(default_decay),
+    ("decay_learning_rate",    po::value<float>(&all.eta_decay_rate),
      "Set Decay factor for learning_rate between passes")
-    ("input_feature_regularizer", po::value< string >(&global.per_feature_regularizer_input), "Per feature regularization input file")
+    ("input_feature_regularizer", po::value< string >(&all.per_feature_regularizer_input), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
@@ -92,40 +91,38 @@ po::variables_map parse_args(int argc, char *argv[],
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
-    ("initial_weight", po::value<float>(&global.initial_weight)->default_value(0.), "Set all weights to an initial value of 1.")
+    ("initial_weight", po::value<float>(&all.initial_weight), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("initial_pass_length", po::value<size_t>(&global.pass_length)->default_value((size_t)-1), "initial number of examples per pass")
-    ("initial_t", po::value<double>(&(global.sd->t))->default_value(1.), "initial t value")
-    ("lda", po::value<size_t>(&global.lda), "Run lda with <int> topics")
-    ("lda_alpha", po::value<float>(&global.lda_alpha)->default_value(0.1), "Prior on sparsity of per-document topic weights")
-    ("lda_rho", po::value<float>(&global.lda_rho)->default_value(0.1), "Prior on sparsity of topic distributions")
-    ("lda_D", po::value<float>(&global.lda_D)->default_value(10000.), "Number of documents")
-    ("minibatch", po::value<size_t>(&global.minibatch)->default_value(1), "Minibatch size, for LDA")
-    ("span_server", po::value<string>(&global.span_server)->default_value(""), "Location of server for setting up spanning tree")
-    ("min_prediction", po::value<double>(&global.sd->min_label), "Smallest prediction to output")
-    ("max_prediction", po::value<double>(&global.sd->max_label), "Largest prediction to output")
-    ("mem", po::value<int>(&global.m)->default_value(15), "memory in bfgs")
+    ("initial_pass_length", po::value<size_t>(&all.pass_length), "initial number of examples per pass")
+    ("initial_t", po::value<double>(&(all.sd->t)), "initial t value")
+    ("lda", po::value<size_t>(&all.lda), "Run lda with <int> topics")
+    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
+    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA")
+    ("span_server", po::value<string>(&all.span_server), "Location of server for setting up spanning tree")
+    ("min_prediction", po::value<double>(&all.sd->min_label), "Smallest prediction to output")
+    ("max_prediction", po::value<double>(&all.sd->max_label), "Largest prediction to output")
+    ("mem", po::value<int>(&all.m), "memory in bfgs")
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
     //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
     //("errors", po::value<size_t>()->default_value(0), "Errors allowed in an error correcting tournament")
-    ("output_feature_regularizer_binary", po::value< string >(&global.per_feature_regularizer_output), "Per feature regularization output file")
-    ("output_feature_regularizer_text", po::value< string >(&global.per_feature_regularizer_text), "Per feature regularization output file, in text")
+    ("output_feature_regularizer_binary", po::value< string >(&all.per_feature_regularizer_output), "Per feature regularization output file")
+    ("output_feature_regularizer_text", po::value< string >(&all.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
-    ("power_t", po::value<float>(&global.power_t)->default_value(0.5), "t power value")
-    ("learning_rate,l", po::value<float>(&global.eta)->default_value(10),
-     "Set Learning Rate")
-    ("passes", po::value<size_t>(&global.numpasses)->default_value(1),
-     "Number of Training Passes")
-    ("termination", po::value<float>(&global.rel_threshold)->default_value(0.001),
-     "Termination threshold")
+    ("power_t", po::value<float>(&all.power_t), "t power value")
+    ("learning_rate,l", po::value<float>(&all.eta), "Set Learning Rate")
+    ("passes", po::value<size_t>(&all.numpasses),"Number of Training Passes")
+    ("termination", po::value<float>(&all.rel_threshold),"Termination threshold")
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
     ("quiet", "Don't output diagnostics")
-    ("rank", po::value<size_t>(&global.rank)->default_value(0), "rank for matrix factorization.")
-    ("random_weights", po::value<bool>(&global.random_weights), "make initial weights random")
+    ("rank", po::value<size_t>(&all.rank), "rank for matrix factorization.")
+    ("random_weights", po::value<bool>(&all.random_weights), "make initial weights random")
+    ("random_seed", po::value<long int>(&random_seed), "seed random number generator")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
     ("save_per_pass", "Save the model after every pass over data")
@@ -147,64 +144,13 @@ po::variables_map parse_args(int argc, char *argv[],
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
 
-    ("unique_id", po::value<size_t>(&global.unique_id)->default_value(0),"unique id used for cluster parallel jobs")
-    ("total", po::value<size_t>(&global.total)->default_value(1),"total number of nodes used in cluster parallel job")    
-    ("node", po::value<size_t>(&global.node)->default_value(0),"node number in cluster parallel job")    
+    ("unique_id", po::value<size_t>(&all.unique_id),"unique id used for cluster parallel jobs")
+    ("total", po::value<size_t>(&all.total),"total number of nodes used in cluster parallel job")    
+    ("node", po::value<size_t>(&all.node),"node number in cluster parallel job")    
 
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
     ("ngram", po::value<size_t>(), "Generate N grams")
     ("skips", po::value<size_t>(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
-
-  global.sd->queries = 0;
-  global.sd->example_number = 0;
-  global.sd->weighted_examples = 0.;
-  global.sd->old_weighted_examples = 0.;
-  global.sd->weighted_labels = 0.;
-  global.sd->total_features = 0;
-  global.sd->sum_loss = 0.0;
-  global.sd->sum_loss_since_last_dump = 0.0;
-  global.sd->dump_interval = exp(1.);
-  global.sd->gravity = 0.;
-  global.sd->contraction = 1.;
-  global.sd->min_label = 0.;
-  global.sd->max_label = 1.;
-  global.lp = (label_parser*)malloc(sizeof(label_parser));
-  *(global.lp) = simple_label;
-  global.reg_mode = 0;
-  global.local_example_number = 0;
-  global.bfgs = false;
-  global.hessian_on = false;
-  global.sequence = false;
-  global.stride = 1;
-  global.num_bits = 18;
-  global.default_bits = true;
-  global.daemon = false;
-
-  global.driver = drive_gd;
-  global.k = 0;
-
-  global.final_prediction_sink.begin = global.final_prediction_sink.end=global.final_prediction_sink.end_array = NULL;
-  global.raw_prediction = -1;
-  global.print = print_result;
-  global.lda = 0;
-  global.random_weights = false;
-  global.per_feature_regularizer_input = "";
-  global.per_feature_regularizer_output = "";
-  global.per_feature_regularizer_text = "";
-  global.ring_size = 1 << 8;
-  global.nonormalize = false;
-  global.binary_label = false;
-
-  global.adaptive = false;
-  global.add_constant = true;
-  global.exact_adaptive_norm = false;
-  global.audit = false;
-  global.active = false;
-  global.active_simulation =false;
-  global.reg.weight_vectors = NULL;
-  global.reg.regularizers = NULL;
-
-  global.save_per_pass = false;
 
   po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
@@ -217,8 +163,8 @@ po::variables_map parse_args(int argc, char *argv[],
 	    options(desc).positional(p).run(), vm);
   po::notify(vm);
 
-  global.sd->weighted_unlabeled_examples = global.sd->t;
-  global.initial_t = global.sd->t;
+  all.sd->weighted_unlabeled_examples = all.sd->t;
+  all.initial_t = all.sd->t;
 
   if (vm.count("help") || argc == 1) {
     /* upon direct query for help -- spit it out to stdout */
@@ -227,51 +173,53 @@ po::variables_map parse_args(int argc, char *argv[],
   }
 
   if (vm.count("quiet"))
-    global.quiet = true;
+    all.quiet = true;
   else
-    global.quiet = false;
+    all.quiet = false;
+
+  srand48(random_seed);
 
   if (vm.count("active_simulation"))
-      global.active_simulation = true;
+      all.active_simulation = true;
 
-  if (vm.count("active_learning") && !global.active_simulation)
-    global.active = true;
+  if (vm.count("active_learning") && !all.active_simulation)
+    all.active = true;
 
   if (vm.count("adaptive") || vm.count("exact_adaptive_norm")) {
-      global.adaptive = true;
+      all.adaptive = true;
       if (vm.count("exact_adaptive_norm"))
 	{
-	  global.exact_adaptive_norm = true;
+	  all.exact_adaptive_norm = true;
 	  if (vm.count("nonormalize"))
 	    cout << "Options don't make sense.  You can't use an exact norm and not normalize." << endl;
 	}
-      global.stride = 2;
+      all.stride = 2;
   }
   
-  void (*base_learner)(example*) = learn_gd;
-  void (*base_finish)() = finish_gd;
+  void (*base_learner)(vw& all, example*) = learn_gd;
+  void (*base_finish)(vw& all) = finish_gd;
   
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
-    global.driver = BFGS::drive_bfgs;
+    all.driver = BFGS::drive_bfgs;
     base_learner = BFGS::learn;
     base_finish = BFGS::finish;
-    global.bfgs = true;
-    global.stride = 4;
+    all.bfgs = true;
+    all.stride = 4;
     
-    if (vm.count("hessian_on") || global.m==0) {
-      global.hessian_on = true;
+    if (vm.count("hessian_on") || all.m==0) {
+      all.hessian_on = true;
     }
-    if (!global.quiet) {
-      if (global.m>0)
+    if (!all.quiet) {
+      if (all.m>0)
 	cerr << "enabling BFGS based optimization ";
       else
 	cerr << "enabling conjugate gradient optimization via BFGS ";
-      if (global.hessian_on)
+      if (all.hessian_on)
 	cerr << "with curvature calculation" << endl;
       else
 	cerr << "**without** curvature calculation" << endl;
     }
-    if (global.numpasses < 2)
+    if (all.numpasses < 2)
       {
 	cout << "you must make at least 2 passes to use BFGS" << endl;
 	exit(1);
@@ -287,8 +235,8 @@ po::variables_map parse_args(int argc, char *argv[],
 
 
   if(vm.count("ngram")){
-    global.ngram = vm["ngram"].as<size_t>();
-    if(!vm.count("skip_gram")) cerr << "You have chosen to generate " << global.ngram << "-grams" << endl;
+    all.ngram = vm["ngram"].as<size_t>();
+    if(!vm.count("skip_gram")) cerr << "You have chosen to generate " << all.ngram << "-grams" << endl;
     if(vm.count("sort_features"))
       {
 	cerr << "ngram is incompatible with sort_features.  " << endl;
@@ -297,14 +245,14 @@ po::variables_map parse_args(int argc, char *argv[],
   }
   if(vm.count("skips"))
     {
-    global.skips = vm["skips"].as<size_t>();
+    all.skips = vm["skips"].as<size_t>();
     if(!vm.count("ngram"))
       {
 	cout << "You can not skip unless ngram is > 1" << endl;
 	exit(1);
       }
-    cerr << "You have chosen to generate " << global.skips << "-skip-" << global.ngram << "-grams" << endl;
-    if(global.skips > 4)
+    cerr << "You have chosen to generate " << all.skips << "-skip-" << all.ngram << "-grams" << endl;
+    if(all.skips > 4)
       {
       cout << "*********************************" << endl;
       cout << "Generating these features might take quite some time" << endl;
@@ -313,9 +261,9 @@ po::variables_map parse_args(int argc, char *argv[],
     }
   if (vm.count("bit_precision"))
     {
-      global.default_bits = false;
-      global.num_bits = vm["bit_precision"].as< size_t>();
-      if (global.num_bits > sizeof(size_t)*8 - 3)
+      all.default_bits = false;
+      all.num_bits = vm["bit_precision"].as< size_t>();
+      if (all.num_bits > sizeof(size_t)*8 - 3)
 	{
 	  cout << "Only " << sizeof(size_t) - 3 << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
 	  exit(1);
@@ -323,26 +271,26 @@ po::variables_map parse_args(int argc, char *argv[],
     }
   
   if (vm.count("daemon") || vm.count("pid_file") || vm.count("port")) {
-    global.daemon = true;
+    all.daemon = true;
 
     // allow each child to process up to 1e5 connections
-    global.numpasses = (size_t) 1e5;
+    all.numpasses = (size_t) 1e5;
   }
 
   string data_filename = vm["data"].as<string>();
   if (vm.count("compressed") || ends_with(data_filename, ".gz"))
-    set_compressed(par);
+    set_compressed(all.p);
 
   if(vm.count("sort_features"))
-    par->sort_features = true;
+    all.p->sort_features = true;
 
   if (vm.count("quadratic"))
     {
-      global.pairs = vm["quadratic"].as< vector<string> >();
-      if (!global.quiet)
+      all.pairs = vm["quadratic"].as< vector<string> >();
+      if (!all.quiet)
 	{
 	  cerr << "creating quadratic features for pairs: ";
-	  for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++) {
+	  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
 	    cerr << *i << " ";
 	    if (i->length() > 2)
 	      cerr << endl << "warning, ignoring characters after the 2nd.\n";
@@ -356,19 +304,19 @@ po::variables_map parse_args(int argc, char *argv[],
     }
 
   for (size_t i = 0; i < 256; i++)
-    global.ignore[i] = false;
-  global.ignore_some = false;
+    all.ignore[i] = false;
+  all.ignore_some = false;
 
   if (vm.count("ignore"))
     {
-      global.ignore_some = true;
+      all.ignore_some = true;
 
       vector<unsigned char> ignore = vm["ignore"].as< vector<unsigned char> >();
       for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
 	{
-	  global.ignore[*i] = true;
+	  all.ignore[*i] = true;
 	}
-      if (!global.quiet)
+      if (!all.quiet)
 	{
 	  cerr << "ignoring namespaces beginning with: ";
 	  for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
@@ -381,16 +329,16 @@ po::variables_map parse_args(int argc, char *argv[],
   if (vm.count("keep"))
     {
       for (size_t i = 0; i < 256; i++)
-        global.ignore[i] = true;
+        all.ignore[i] = true;
 
-      global.ignore_some = true;
+      all.ignore_some = true;
 
       vector<unsigned char> keep = vm["keep"].as< vector<unsigned char> >();
       for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
 	{
-	  global.ignore[*i] = false;
+	  all.ignore[*i] = false;
 	}
-      if (!global.quiet)
+      if (!all.quiet)
 	{
 	  cerr << "using namespaces beginning with: ";
 	  for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
@@ -401,11 +349,11 @@ po::variables_map parse_args(int argc, char *argv[],
     }
 
   // matrix factorization enabled
-  if (global.rank > 0) {
+  if (all.rank > 0) {
     // store linear + 2*rank weights per index, round up to power of two
-    float temp = ceilf(logf((float)(global.rank*2+1)) / logf (2.f));
-    global.stride = 1 << (int) temp;
-    global.random_weights = true;
+    float temp = ceilf(logf((float)(all.rank*2+1)) / logf (2.f));
+    all.stride = 1 << (int) temp;
+    all.random_weights = true;
     if (vm.count("adaptive") || vm.count("exact_adaptive_norm"))
       {
 	cerr << "adaptive is not implemented for matrix factorization" << endl;
@@ -419,54 +367,51 @@ po::variables_map parse_args(int argc, char *argv[],
   }
 
   if (vm.count("noconstant"))
-    global.add_constant = false;
+    all.add_constant = false;
 
   if (vm.count("nonormalize"))
-    global.nonormalize = true;
+    all.nonormalize = true;
 
   if (vm.count("lda"))
     {
-      global.driver = drive_lda;
-      par->sort_features = true;
-      float temp = ceilf(logf((float)(global.lda*2+1)) / logf (2.f));
-      global.stride = 1 << (int) temp;
-      global.random_weights = true;
-      global.add_constant = false;
+      all.driver = drive_lda;
+      all.p->sort_features = true;
+      float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
+      all.stride = 1 << (int) temp;
+      all.random_weights = true;
+      all.add_constant = false;
     }
 
-  if (vm.count("lda") && global.eta > 1.)
+  if (vm.count("lda") && all.eta > 1.)
     {
       cerr << "your learning rate is too high, setting it to 1" << endl;
-      global.eta = min(global.eta,1.f);
+      all.eta = min(all.eta,1.f);
     }
   if (!vm.count("lda")) 
-    global.eta *= pow(global.sd->t, (double)global.power_t);
+    all.eta *= pow(all.sd->t, (double)all.power_t);
 
   if (vm.count("minibatch")) {
-    size_t minibatch2 = next_pow2(global.minibatch);
-    global.ring_size = global.ring_size > minibatch2 ? global.ring_size : minibatch2;
+    size_t minibatch2 = next_pow2(all.minibatch);
+    all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
   }
 
   if (vm.count("sequence_max_length")) {
     size_t maxlen = vm["sequence_max_length"].as<size_t>();
-    global.ring_size = (global.ring_size > maxlen) ? global.ring_size : maxlen;
+    all.p->ring_size = (all.p->ring_size > maxlen) ? all.p->ring_size : maxlen;
   }
 
-  parse_regressor_args(vm, global.reg, global.final_regressor_name, global.quiet);
-  parse_source_args(vm,par,global.quiet,global.numpasses);
+  parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
+  parse_source_args(all, vm, all.quiet,all.numpasses);
   if (vm.count("readable_model"))
-    global.text_regressor_name = vm["readable_model"].as<string>();
-  
-  if (vm.count("active_c0"))
-    global.active_c0 = vm["active_c0"].as<float>();
+    all.text_regressor_name = vm["readable_model"].as<string>();
   
   if (vm.count("save_per_pass"))
-    global.save_per_pass = true;
+    all.save_per_pass = true;
 
   if (vm.count("min_prediction"))
-    global.sd->min_label = vm["min_prediction"].as<double>();
+    all.sd->min_label = vm["min_prediction"].as<double>();
   if (vm.count("max_prediction"))
-    global.sd->max_label = vm["max_prediction"].as<double>();
+    all.sd->max_label = vm["max_prediction"].as<double>();
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     set_minmax = noop_mm;
 
@@ -480,41 +425,38 @@ po::variables_map parse_args(int argc, char *argv[],
     loss_parameter = vm["quantile_tau"].as<double>();
 
   if (vm.count("noop"))
-    global.driver = drive_noop;
+    all.driver = drive_noop;
   
-  if (global.rank != 0) {
-    global.driver = drive_gd_mf;
+  if (all.rank != 0) {
+    all.driver = drive_gd_mf;
     loss_function = "classic";
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
   }
 
-  global.loss = getLossFunction(loss_function, loss_parameter);
+  all.loss = getLossFunction(all.sd, loss_function, loss_parameter);
 
-  if (global.eta_decay_rate != default_decay && global.numpasses == 1)
-    cerr << "Warning: decay_learning_rate has no effect when there is only one pass" << endl;
-
-  if (pow((double)global.eta_decay_rate, (double)global.numpasses) < 0.0001 )
-    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)global.eta_decay_rate, (double)global.numpasses)
+  if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
+    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
 
-  if (!global.quiet)
+  if (!all.quiet)
     {
-      cerr << "Num weight bits = " << global.num_bits << endl;
-      cerr << "learning rate = " << global.eta << endl;
-      cerr << "initial_t = " << global.sd->t << endl;
-      cerr << "power_t = " << global.power_t << endl;
-      if (global.numpasses > 1)
-	cerr << "decay_learning_rate = " << global.eta_decay_rate << endl;
-      if (global.rank > 0)
-	cerr << "rank = " << global.rank << endl;
+      cerr << "Num weight bits = " << all.num_bits << endl;
+      cerr << "learning rate = " << all.eta << endl;
+      cerr << "initial_t = " << all.sd->t << endl;
+      cerr << "power_t = " << all.power_t << endl;
+      if (all.numpasses > 1)
+	cerr << "decay_learning_rate = " << all.eta_decay_rate << endl;
+      if (all.rank > 0)
+	cerr << "rank = " << all.rank << endl;
     }
 
   if (vm.count("predictions")) {
-    if (!global.quiet)
+    if (!all.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
       {
-	push(global.final_prediction_sink, (size_t) 1);//stdout
+	push(all.final_prediction_sink, (size_t) 1);//stdout
       }
     else
       {
@@ -522,122 +464,121 @@ po::variables_map parse_args(int argc, char *argv[],
 	int f = fileno(fopen(fstr,"w"));
 	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
-	push(global.final_prediction_sink, (size_t) f);
+	push(all.final_prediction_sink, (size_t) f);
       }
   }
 
   if (vm.count("raw_predictions")) {
-    if (!global.quiet)
+    if (!all.quiet)
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
-      global.raw_prediction = 1;//stdout
+      all.raw_prediction = 1;//stdout
     else
-      global.raw_prediction = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
+      all.raw_prediction = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
   }
 
   if (vm.count("audit"))
-    global.audit = true;
+    all.audit = true;
 
   if (vm.count("sendto"))
     {
-      global.driver = drive_send;
-      parse_send_args(vm, global.pairs);
+      all.driver = drive_send;
+      parse_send_args(vm, all.pairs);
     }
 
   if (vm.count("testonly"))
     {
-      if (!global.quiet)
+      if (!all.quiet)
 	cerr << "only testing" << endl;
-      global.training = false;
-      if (global.lda > 0)
-        global.eta = 0;
+      all.training = false;
+      if (all.lda > 0)
+        all.eta = 0;
     }
   else
-    global.training = true;
+    all.training = true;
 
-  if (global.l1_lambda < 0.) {
-    cerr << "l1_lambda should be nonnegative: resetting from " << global.l1_lambda << " to 0" << endl;
-    global.l1_lambda = 0.;
+  if (all.l1_lambda < 0.) {
+    cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
+    all.l1_lambda = 0.;
   }
-  if (global.l2_lambda < 0.) {
-    cerr << "l2_lambda should be nonnegative: resetting from " << global.l2_lambda << " to 0" << endl;
-    global.l2_lambda = 0.;
+  if (all.l2_lambda < 0.) {
+    cerr << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
+    all.l2_lambda = 0.;
   }
-  global.reg_mode += (global.l1_lambda > 0.) ? 1 : 0;
-  global.reg_mode += (global.l2_lambda > 0.) ? 2 : 0;
-  if (!global.quiet)
+  all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
+  all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
+  if (!all.quiet)
     {
-      if (global.reg_mode %2)
+      if (all.reg_mode %2)
 	cerr << "using l1 regularization" << endl;
-      if (global.reg_mode > 1)
+      if (all.reg_mode > 1)
 	cerr << "using l2 regularization" << endl;
     }
 
-  if (global.bfgs) {
-    BFGS::initializer();
+  if (all.bfgs) {
+    BFGS::initializer(all);
   }
 
-  void (*mc_learner)(example*) = NULL;
-  void (*mc_finish)() = NULL;
+  void (*mc_learner)(vw&, example*) = NULL;
+  void (*mc_finish)(vw&) = NULL;
 
   if(vm.count("oaa"))
     {
-      OAA::parse_flags(vm["oaa"].as<size_t>(), base_learner, base_finish);
+      OAA::parse_flags(all, vm["oaa"].as<size_t>(), base_learner, base_finish);
       mc_learner = OAA::learn;
       mc_finish = OAA::finish;
     }
   else if (vm.count("ect"))
     {
-      ECT::parse_flags(vm["ect"].as<size_t>(), vm["errors"].as<size_t>(), base_learner, base_finish);
+      ECT::parse_flags(all, vm["ect"].as<size_t>(), vm["errors"].as<size_t>(), base_learner, base_finish);
       mc_learner = ECT::learn;
       mc_finish = ECT::finish;
     }
 
-  void (*cs_learner)(example*) = CSOAA::learn;
-  void (*cs_finish)() = CSOAA::finish;
+  void (*cs_learner)(vw&,example*) = CSOAA::learn;
+  void (*cs_finish)(vw&) = CSOAA::finish;
 
   if(vm.count("wap"))
     {
-      WAP::parse_flags(vm["wap"].as<size_t>(), base_learner, base_finish);
+      WAP::parse_flags(all, vm["wap"].as<size_t>(), base_learner, base_finish);
       cs_learner = WAP::learn;
       cs_finish = WAP::finish;
     }
 
   if(vm.count("csoaa_ldf")) {
-    if (global.add_constant) {
+    if (all.add_constant) {
       cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
-      global.add_constant = false;
+      all.add_constant = false;
     }
-    CSOAA_LDF::parse_flags(0, base_learner, base_finish);
+    CSOAA_LDF::parse_flags(all, 0, base_learner, base_finish);
     cs_learner = CSOAA_LDF::learn;
     cs_finish  = CSOAA_LDF::finish;
   }
 
   if(vm.count("wap_ldf")) {
-    if (global.add_constant) {
+    if (all.add_constant) {
       cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
-      global.add_constant = false;
+      all.add_constant = false;
     }
-    WAP_LDF::parse_flags(0, base_learner, base_finish);
+    WAP_LDF::parse_flags(all, 0, base_learner, base_finish);
     cs_learner = WAP_LDF::learn;
     cs_finish  = WAP_LDF::finish;
   }
 
 
   if(vm.count("csoaa"))
-    CSOAA::parse_flags(vm["csoaa"].as<size_t>(), base_learner, base_finish);
+    CSOAA::parse_flags(all, vm["csoaa"].as<size_t>(), base_learner, base_finish);
 
   if (vm.count("sequence")) {
     if (vm.count("wap")) 
       ;
     else
-      CSOAA::parse_flags(vm["sequence"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
+      CSOAA::parse_flags(all, vm["sequence"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
 
-    parse_sequence_args(vm, cs_learner, cs_finish);
-    global.driver = drive_sequence;
-    global.sequence = true;
+    parse_sequence_args(all, vm, cs_learner, cs_finish);
+    all.driver = drive_sequence;
+    all.sequence = true;
   }
-
-  return vm;
+  return all;
 }
 

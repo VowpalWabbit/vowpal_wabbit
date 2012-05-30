@@ -14,7 +14,7 @@ namespace WAP {
   
   size_t increment=0;
 
-void mirror_features(example* ec, size_t offset1, size_t offset2)
+  void mirror_features(vw& all, example* ec, size_t offset1, size_t offset2)
 {
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -30,7 +30,7 @@ void mirror_features(example* ec, size_t offset1, size_t offset2)
       ec->sum_feat_sq[*i] *= 2;
       //cerr << "final_length = " << ec->atomics[*i].index() << endl;
     }
-  if (global.audit)
+  if (all.audit)
     {
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -60,7 +60,7 @@ void mirror_features(example* ec, size_t offset1, size_t offset2)
   //cerr << "total_sum_feat_sq = " << ec->total_sum_feat_sq << endl;
 }
 
-void unmirror_features(example* ec, size_t offset1, size_t offset2)
+  void unmirror_features(vw& all, example* ec, size_t offset1, size_t offset2)
 {
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -70,7 +70,7 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
 	f->weight_index -= offset1;
       ec->sum_feat_sq[*i] /= 2;
     }
-  if (global.audit)
+  if (all.audit)
     {
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -120,10 +120,10 @@ void unmirror_features(example* ec, size_t offset1, size_t offset2)
   }
   v_array<float_wclass> vs;
 
-  void (*base_learner)(example*) = NULL;
-  void (*base_finish)() = NULL;
+void (*base_learner)(vw&, example*) = NULL;
+  void (*base_finish)(vw&) = NULL;
 
-void train(example* ec)
+void train(vw& all, example* ec)
 {
   CSOAA::label* ld = (CSOAA::label*)ec->ld;
 
@@ -177,10 +177,10 @@ void train(example* ec)
 	    uint32_t myi = vs[i].ci.weight_index;
 	    uint32_t myj = vs[j].ci.weight_index;
 
-	    mirror_features(ec,(myi-1)*increment, (myj-1)*increment);
+	    mirror_features(all, ec,(myi-1)*increment, (myj-1)*increment);
 
-	    base_learner(ec);
-	    unmirror_features(ec,(myi-1)*increment, (myj-1)*increment);
+	    base_learner(all, ec);
+	    unmirror_features(all, ec,(myi-1)*increment, (myj-1)*increment);
 	  }
       }
 
@@ -188,7 +188,7 @@ void train(example* ec)
   ec->ld = ld;
 }
 
-uint32_t test(example* ec)
+uint32_t test(vw& all, example* ec)
 {
   uint32_t prediction = 1;
   float score = FLT_MIN;
@@ -203,12 +203,12 @@ uint32_t test(example* ec)
       simple_temp.label = FLT_MAX;
       uint32_t myi = cost_label->costs[i].weight_index;
       if (myi!= 1)
-	OAA::update_indicies(ec, increment*(myi-1));
+	OAA::update_indicies(all, ec, increment*(myi-1));
       ec->partial_prediction = 0.;
       ec->ld = &simple_temp;
-      base_learner(ec);
+      base_learner(all, ec);
       if (myi != 1)
-	OAA::update_indicies(ec, -increment*(myi-1));
+	OAA::update_indicies(all, ec, -increment*(myi-1));
       if (ec->partial_prediction > score)
 	{
 	  score = ec->partial_prediction;
@@ -219,38 +219,39 @@ uint32_t test(example* ec)
   return prediction;
 }
 
-  void learn(example* ec)
+void learn(vw& all, example* ec)
   {
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
     
-    uint32_t prediction = test(ec);
+    uint32_t prediction = test(all, ec);
 
     ec->ld = cost_label;
     
     if (cost_label->costs.index() > 0)
-      train(ec);
+      train(all, ec);
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
   }
 
-void finish()
+void finish(vw& all)
 {
-  base_finish();
+  base_finish(all);
 }
 
-void drive_wap()
+void drive_wap(void* in)
 {
+  vw* all = (vw*)in;
   example* ec = NULL;
   while ( true )
     {
-      if ((ec = get_example()) != NULL)//semiblocking operation.
+      if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  base_learner(ec);
-          CSOAA::output_example(ec);
-	  free_example(ec);
+	  base_learner(*all, ec);
+          CSOAA::output_example(*all, ec);
+	  free_example(all->p, ec);
 	}
-      else if (parser_done())
+      else if (parser_done(all->p))
 	{
-	  finish();
+	  finish(*all);
 	  return;
 	}
       else 
@@ -258,15 +259,15 @@ void drive_wap()
     }
 }
 
- void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
+void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
 
 {
-  *(global.lp) = CSOAA::cs_label_parser;
-  global.k = s;
-  global.driver = drive_wap;
+  *(all.lp) = CSOAA::cs_label_parser;
+  all.sd->k = s;
+  all.driver = drive_wap;
   base_learner = base_l;
   base_finish = base_f;
-  increment = (global.length()/global.k) * global.stride;
+  increment = (all.length()/all.sd->k) * all.stride;
 }
 }
 
@@ -275,10 +276,10 @@ namespace WAP_LDF {
   v_array<example*> ec_seq = v_array<example*>();
   size_t read_example_this_loop = 0;
 
-  void (*base_learner)(example*) = NULL;
-  void (*base_finish)() = NULL;
+  void (*base_learner)(vw&, example*) = NULL;
+  void (*base_finish)(vw&) = NULL;
 
-  float test(example* ec)
+  float test(vw& all, example* ec)
   {
     label *ld = (label*)ec->ld;
     label_data simple_temp;
@@ -287,27 +288,27 @@ namespace WAP_LDF {
     simple_temp.label = FLT_MAX;
     ec->partial_prediction = 0.;
     ec->ld = &simple_temp;
-    base_learner(ec);
+    base_learner(all, ec);
     ec->ld = ld;
     return ec->partial_prediction;
   }
 
-  void subtract_example(example *ec, example *ecsub)
+  void subtract_example(vw& all, example *ec, example *ecsub)
   {
     float norm_sq = 0.;
     size_t num_f = 0;
     for (size_t* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
       size_t feature_index = 0;
       for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
-        feature temp = { -f->x, (uint32_t) (f->weight_index & global.parse_mask) };
+        feature temp = { -f->x, (uint32_t) (f->weight_index & all.parse_mask) };
         push(ec->atomics[wap_ldf_namespace], temp);
         norm_sq += f->x * f->x;
         num_f ++;
 
-        if (global.audit) {
+        if (all.audit) {
           if (! (ecsub->audit_features[*i].index() >= feature_index)) {
             audit_data b_feature = ecsub->audit_features[*i][feature_index];
-            audit_data a_feature = { NULL, NULL, (uint32_t) (f->weight_index & global.parse_mask), -f->x, false };
+            audit_data a_feature = { NULL, NULL, (uint32_t) (f->weight_index & all.parse_mask), -f->x, false };
             a_feature.space = b_feature.space;
             a_feature.feature = b_feature.feature;
             push(ec->audit_features[wap_ldf_namespace], a_feature);
@@ -322,7 +323,7 @@ namespace WAP_LDF {
     ec->num_features += num_f;
   }
 
-  void unsubtract_example(example *ec)
+  void unsubtract_example(vw& all, example *ec)
   {
     if (ec->indices.index() == 0) {
       cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << endl;
@@ -338,7 +339,7 @@ namespace WAP_LDF {
     ec->total_sum_feat_sq -= ec->sum_feat_sq[wap_ldf_namespace];
     ec->sum_feat_sq[wap_ldf_namespace] = 0;
     ec->atomics[wap_ldf_namespace].erase();
-    if (global.audit) {
+    if (all.audit) {
       if (ec->audit_features[wap_ldf_namespace].begin != ec->audit_features[wap_ldf_namespace].end) {
         for (audit_data *f = ec->audit_features[wap_ldf_namespace].begin; f != ec->audit_features[wap_ldf_namespace].end; f++) {
           if (f->alloced) {
@@ -356,7 +357,7 @@ namespace WAP_LDF {
     
 
 
-  void do_actual_learning()
+  void do_actual_learning(vw& all)
   {
     if (ec_seq.index() <= 0) return;  // nothing to do
 
@@ -378,7 +379,7 @@ namespace WAP_LDF {
         cerr << "warning: got mix of train/test data; assuming test" << endl;
       }
 
-      float pred  = test(ec);
+      float pred  = test(all, ec);
 
       push(predictions, pred);
       if (pred > max_score) {
@@ -407,9 +408,9 @@ namespace WAP_LDF {
         simple_label.weight = 1.;
         ec1->ld = &simple_label;
         ec1->partial_prediction = 0.;
-        subtract_example(ec1, ec2);
-        base_learner(ec1);
-        unsubtract_example(ec1);
+        subtract_example(all, ec1, ec2);
+        base_learner(all, ec1);
+        unsubtract_example(all, ec1);
         ec1->ld = ld1;
       }
       
@@ -429,60 +430,61 @@ namespace WAP_LDF {
     }
   }
 
-  void clear_seq(bool output)
+  void clear_seq(vw& all, bool output)
   {
     if (ec_seq.index() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
         if (output)
-          CSOAA_LDF::output_example(*ecc);
-        free_example(*ecc);
+          CSOAA_LDF::output_example(all, *ecc);
+        free_example(all.p, *ecc);
       }
     ec_seq.erase();
   }
 
-  void learn(example *ec) {
-    if (ec_seq.index() >= global.ring_size - 2) { // give some wiggle room
+  void learn(vw& all, example *ec) {
+    if (ec_seq.index() >= all.p->ring_size - 2) { // give some wiggle room
       cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
-      do_actual_learning();
-      clear_seq(true);
+      do_actual_learning(all);
+      clear_seq(all, true);
     }
 
     if (CSOAA_LDF::example_is_newline(ec)) {
-      do_actual_learning();
-      clear_seq(true);
-      CSOAA_LDF::global_print_newline();
+      do_actual_learning(all);
+      clear_seq(all, true);
+      CSOAA_LDF::global_print_newline(all);
     } else {
       push(ec_seq, ec);
     }
   }
 
-  void finish()
+  void finish(vw& all)
   {
-    clear_seq(true);
+    clear_seq(all, true);
     if (ec_seq.begin != NULL)
       free(ec_seq.begin);
-    base_finish();
+    base_finish(all);
   }
 
-  void drive_wap_ldf()
+  void drive_wap_ldf(void* a)
   {
+    vw* all = (vw*)a;
     example* ec = NULL;
     read_example_this_loop = 0;
     while (true) {
-      if ((ec = get_example()) != NULL) { // semiblocking operation
-        learn(ec);
-      } else if (parser_done()) {
-        do_actual_learning();
-        finish();
+      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+        learn(*all, ec);
+      } else if (parser_done(all->p)) {
+        do_actual_learning(*all);
+        finish(*all);
         return;
       }
     }
   }
 
-  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)())
+  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
   {
-    *(global.lp) = OAA::mc_label_parser;
-    global.driver = drive_wap_ldf;
+    *(all.lp) = OAA::mc_label_parser;
+    all.driver = drive_wap_ldf;
     base_learner = base_l;
     base_finish = base_f;
   }

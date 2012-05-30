@@ -9,19 +9,19 @@
 #include "csoaa.h"
 
 namespace WAP {
-  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
-  void learn(example* ec);
-  void finish();
+  void parse_flags(vw&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void learn(vw&,example* ec);
+  void finish(vw&);
 
 }
 
 namespace WAP_LDF {
   typedef OAA::mc_label label;
   
-  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
+  void parse_flags(vw&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
   void global_print_newline();
-  void learn(example* ec);
-  void finish();
+  void learn(vw&,example* ec);
+  void finish(vw&);
 
   const label_parser cs_label_parser = CSOAA_LDF::cs_label_parser;
 }

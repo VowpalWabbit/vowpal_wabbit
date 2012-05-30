@@ -14,7 +14,7 @@ embodied in the content of this file are licensed under the BSD
 #include "example.h"
 
 //example processing
-int read_features(parser* p, void* ex);
+int read_features(void* a, void* ex);
 
 hash_func_t getHasher(const std::string& s);
 

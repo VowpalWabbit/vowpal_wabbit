@@ -122,15 +122,15 @@ namespace SequenceTask {
   }
 
 
-  void cs_example(state s0, example*&ec, bool create)
+  void cs_example(vw&all, state s0, example*&ec, bool create)
   {
     seq_state* s = (seq_state*)s0;
     example* cur = s->ec_start[s->pos];
     if (create) {
-      SearnUtil::add_history_to_example(&hinfo, cur, s->predictions);
+      SearnUtil::add_history_to_example(all, &hinfo, cur, s->predictions);
       ec = cur;
     } else { // destroy
-      SearnUtil::remove_history_from_example(cur);
+      SearnUtil::remove_history_from_example(all, cur);
       ec = NULL;
     }
   }

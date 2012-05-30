@@ -92,6 +92,6 @@ a call to pass_down.
 
 #########################################################################
 
-cg.cc, gd.cc, lbfgs.cc: learning algorithms which use all_reduce
+cg.cc, gd.cc, bfgs.cc: learning algorithms which use all_reduce
 whenever communication is needed. Uses routines accumulate and
 accumulate_scalar to reduce vectors and scalars resp.

@@ -1,3 +1,4 @@
+COMPILER = g++
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 

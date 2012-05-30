@@ -10,6 +10,7 @@ embodied in the content of this file are licensed under the BSD
 #include "hash.h"
 #include "cache.h"
 #include "unique_sort.h"
+#include "global_data.h"
 
 using namespace std;
 
@@ -104,26 +105,27 @@ char* copy(char* base)
   return ret;
 }
 
-int read_features(parser* p, void* ex)
+int read_features(void* in, void* ex)
 {
+  vw* all = (vw*)in;
   example* ae = (example*)ex;
   char *line=NULL;
-  int num_chars = readto(*(p->input), line, '\n');
+  int num_chars = readto(*(all->p->input), line, '\n');
   if (num_chars <= 1)
     return num_chars;
   if (line[num_chars-1] == '\n')
     num_chars--;
   substring example = {line, line + num_chars};
 
-  tokenize('|', example, p->channels);
-  global.lp->default_label(ae->ld);
-  substring* feature_start = &(p->channels[1]);
+  tokenize('|', example, all->p->channels);
+  all->lp->default_label(ae->ld);
+  substring* feature_start = &(all->p->channels[1]);
 
-  substring label_space = p->channels[0];
+  substring label_space = all->p->channels[0];
   if (*line == '|')
     {
-      feature_start = &(p->channels[0]);
-      p->words.erase();
+      feature_start = &(all->p->channels[0]);
+      all->p->words.erase();
     }
   else
     {
@@ -131,25 +133,25 @@ int read_features(parser* p, void* ex)
       if (tab_location != label_space.end)
 	label_space.begin = tab_location+1;
       
-      tokenize(' ',label_space,p->words);
-      if (p->words.index() > 0 && (p->words.last().end == label_space.end || *(p->words.last().begin)=='\'') ) //The last field is a tag, so record and strip it off
+      tokenize(' ',label_space,all->p->words);
+      if (all->p->words.index() > 0 && (all->p->words.last().end == label_space.end || *(all->p->words.last().begin)=='\'') ) //The last field is a tag, so record and strip it off
 	{
-	  substring tag = p->words.pop();
+	  substring tag = all->p->words.pop();
 	  if (*tag.begin == '\'')
 	    tag.begin++;
 	  
 	  push_many(ae->tag, tag.begin, tag.end - tag.begin);
 	}
     }
-  global.lp->parse_label(ae->ld, p->words);
+  all->lp->parse_label(all->sd, ae->ld, all->p->words);
 
-  size_t mask = global.parse_mask;
-  bool audit = global.audit;
-  for (substring* i = feature_start; i != p->channels.end; i++) {
+  size_t mask = all->parse_mask;
+  bool audit = all->audit;
+  for (substring* i = feature_start; i != all->p->channels.end; i++) {
     substring channel = *i;
     
-    tokenize(' ',channel, p->words);
-    if (p->words.begin == p->words.end)
+    tokenize(' ',channel, all->p->words);
+    if (all->p->words.begin == all->p->words.end)
       continue;
     
     float channel_v = 1.;
@@ -161,16 +163,16 @@ int read_features(parser* p, void* ex)
     if (channel.begin[0] != ' ')//we have a nonanonymous namespace
       {
 	feature_offset++;
-	feature_value(p->words[0], p->name, channel_v);
+	feature_value(all->p->words[0], all->p->name, channel_v);
 
-	if (p->name.index() > 0) {
-	  index = (unsigned char)(*p->name[0].begin);
+	if (all->p->name.index() > 0) {
+	  index = (unsigned char)(*all->p->name[0].begin);
 	  if (ae->atomics[index].begin == ae->atomics[index].end)
 	    new_index = true;
 	}
 	if (audit)
-	  base = c_string_of_substring(p->name[0]);
-	channel_hash = p->hasher(p->name[0], hash_base);
+	  base = c_string_of_substring(all->p->name[0]);
+	channel_hash = all->p->hasher(all->p->name[0], hash_base);
       }
     else
       {
@@ -186,12 +188,12 @@ int read_features(parser* p, void* ex)
 	channel_hash = 0;
       }
  
-    for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
+    for (substring* i = all->p->words.begin+feature_offset; i != all->p->words.end; i++) {
       float v = 0.;
-      feature_value(*i, p->name, v);
+      feature_value(*i, all->p->name, v);
       v *= channel_v;
 
-      size_t word_hash = (p->hasher(p->name[0], channel_hash)) & mask;
+      size_t word_hash = (all->p->hasher(all->p->name[0], channel_hash)) & mask;
       feature f = {v,(uint32_t)word_hash};
       ae->sum_feat_sq[index] += v*v;
       push(ae->atomics[index], f);
@@ -202,14 +204,14 @@ int read_features(parser* p, void* ex)
     
     if (audit)
       {
-	for (substring* i = p->words.begin+feature_offset; i != p->words.end; i++) {
+	for (substring* i = all->p->words.begin+feature_offset; i != all->p->words.end; i++) {
 	  float v = 0.;
-	  feature_value(*i, p->name, v);
+	  feature_value(*i, all->p->name, v);
 	  v *= channel_v;
 
-	  size_t word_hash = (p->hasher(p->name[0], channel_hash)) & mask;
+	  size_t word_hash = (all->p->hasher(all->p->name[0], channel_hash)) & mask;
       
-	  char* feature = c_string_of_substring(p->name[0]);
+	  char* feature = c_string_of_substring(all->p->name[0]);
 	  audit_data ad = {copy(base), feature, word_hash, v, true};
 	  push(ae->audit_features[index], ad);
 	}

@@ -26,6 +26,7 @@ embodied in the content of this file are licensed under the BSD
 namespace po = boost::program_options;
 
 #include "parser.h"
+#include "global_data.h"
 #include "parse_example.h"
 #include "cache.h"
 #include "gd.h"
@@ -106,43 +107,43 @@ bool member(v_array<size_t> ids, size_t id)
   return false;
 }
 
-void reset_source(size_t numbits, parser* p)
+void reset_source(vw& all, size_t numbits)
 {
-  io_buf* input = p->input;
+  io_buf* input = all.p->input;
   input->current = 0;
-  if (p->write_cache)
+  if (all.p->write_cache)
     {
-      p->output->flush();
-      p->write_cache = false;
-      p->output->close_file();
-      rename(p->output->currentname.begin, p->output->finalname.begin);
+      all.p->output->flush();
+      all.p->write_cache = false;
+      all.p->output->close_file();
+      rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
       while(input->files.index() > 0)
 	{
 	  int fd = input->files.pop();
-	  if (!member(global.final_prediction_sink, (size_t) fd))
+	  if (!member(all.final_prediction_sink, (size_t) fd))
 	    close(fd);
 	}
-      input->open_file(p->output->finalname.begin,io_buf::READ); //pushing is merged into open_file
-      p->reader = read_cached_features;
+      input->open_file(all.p->output->finalname.begin,io_buf::READ); //pushing is merged into open_file
+      all.p->reader = read_cached_features;
     }
-  if ( p->resettable == true )
+  if ( all.p->resettable == true )
     {
-      if (global.daemon)
+      if (all.daemon)
 	{
 	  // wait for all predictions to be sent back to client
 	  pthread_mutex_lock(&output_lock);
-	  while (global.local_example_number != global.parsed_examples)
+	  while (all.p->local_example_number != all.p->parsed_examples)
 	    pthread_cond_wait(&output_done, &output_lock);
 	  pthread_mutex_unlock(&output_lock);
 	  
 	  // close socket, erase final prediction sink and socket
-	  close(p->input->files[0]);
-	  global.final_prediction_sink.erase();
-	  p->input->files.erase();
+	  close(all.p->input->files[0]);
+	  all.final_prediction_sink.erase();
+	  all.p->input->files.erase();
 	  
 	  sockaddr_in client_address;
 	  socklen_t size = sizeof(client_address);
-	  int f = accept(p->bound_sock,(sockaddr*)&client_address,&size);
+	  int f = accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
 	      cerr << "bad client socket!" << endl;
@@ -151,15 +152,15 @@ void reset_source(size_t numbits, parser* p)
 	  
 	  // note: breaking cluster parallel online learning by dropping support for id
 	  
-	  push(global.final_prediction_sink, (size_t) f);
-	  push(p->input->files,f);
+	  push(all.final_prediction_sink, (size_t) f);
+	  push(all.p->input->files,f);
 
-	  if (isbinary(*(p->input))) {
-	    p->reader = read_cached_features;
-	    global.print = binary_print_result;
+	  if (isbinary(*(all.p->input))) {
+	    all.p->reader = read_cached_features;
+	    all.print = binary_print_result;
 	  } else {
-	    p->reader = read_features;
-	    global.print = print_result;
+	    all.p->reader = read_features;
+	    all.print = print_result;
 	  }
 	}
       else {
@@ -214,8 +215,8 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
     cerr << "creating cache_file = " << newname << endl;
 }
 
-void parse_cache(po::variables_map &vm, string source,
-		 parser* par, bool quiet)
+void parse_cache(vw& all, po::variables_map &vm, string source,
+		 bool quiet)
 {
   vector<string> caches;
   if (vm.count("cache_file"))
@@ -223,40 +224,40 @@ void parse_cache(po::variables_map &vm, string source,
   if (vm.count("cache"))
     caches.push_back(source+string(".cache"));
 
-  par->write_cache = false;
+  all.p->write_cache = false;
 
   for (size_t i = 0; i < caches.size(); i++)
     {
-      int f = par->input->open_file(caches[i].c_str(),io_buf::READ);
+      int f = all.p->input->open_file(caches[i].c_str(),io_buf::READ);
       if (f == -1)
-	make_write_cache(global.num_bits, par, caches[i], quiet);
+	make_write_cache(all.num_bits, all.p, caches[i], quiet);
       else {
-	size_t c = cache_numbits(par->input, f);
-	if (global.default_bits)
-	  global.num_bits = c;
-	if (c < global.num_bits) {
-          par->input->close_file();          
-	  make_write_cache(global.num_bits, par, caches[i], quiet);
+	size_t c = cache_numbits(all.p->input, f);
+	if (all.default_bits)
+	  all.num_bits = c;
+	if (c < all.num_bits) {
+          all.p->input->close_file();          
+	  make_write_cache(all.num_bits, all.p, caches[i], quiet);
 	}
 	else {
 	  if (!quiet)
 	    cerr << "using cache_file = " << caches[i].c_str() << endl;
-	  par->reader = read_cached_features;
-	  if (c == global.num_bits)
-	    par->sorted_cache = true;
+	  all.p->reader = read_cached_features;
+	  if (c == all.num_bits)
+	    all.p->sorted_cache = true;
 	  else
-	    par->sorted_cache = false;
-	  par->resettable = true;
+	    all.p->sorted_cache = false;
+	  all.p->resettable = true;
 	}
       }
     }
   
-  global.parse_mask = (1 << global.num_bits) - 1;
+  all.parse_mask = (1 << all.num_bits) - 1;
   if (caches.size() == 0)
     {
       if (!quiet)
 	cerr << "using no cache" << endl;
-      reserve(par->output->space,0);
+      reserve(all.p->output->space,0);
     }
 }
 
@@ -266,25 +267,25 @@ void parse_cache(po::variables_map &vm, string source,
 #endif
 
 
-void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t passes)
+void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 {
-  par->input->current = 0;
-  parse_cache(vm, vm["data"].as<string>(), par, quiet);
+  all.p->input->current = 0;
+  parse_cache(all, vm, vm["data"].as<string>(), quiet);
 
   string hash_function("strings");
   if(vm.count("hash")) 
     hash_function = vm["hash"].as<string>();
   
-  if (global.daemon)
+  if (all.daemon)
     {
-      par->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
-      if (par->bound_sock < 0) {
+      all.p->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
+      if (all.p->bound_sock < 0) {
 	cerr << "can't open socket!" << endl;
 	exit(1);
       }
 
       int on = 1;
-      if (setsockopt(par->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
+      if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
 	perror("setsockopt SO_REUSEADDR");
 
       sockaddr_in address;
@@ -296,7 +297,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       address.sin_port = htons(port);
 
       // attempt to bind to socket
-      if ( ::bind(par->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
+      if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
 	{
 	  cerr << "failure to bind!" << endl;
 	  exit(1);
@@ -304,7 +305,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       int source_count = 1;
       
       // listen on socket
-      listen(par->bound_sock, source_count);
+      listen(all.p->bound_sock, source_count);
 
       // background process
       if (daemon(1,1))
@@ -326,28 +327,28 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	  pid_file.close();
 	}
 
-      if (global.daemon)
+      if (all.daemon)
 	{
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights = 
-	    (float*)mmap(0,global.stride * global.length() * sizeof(float), 
+	    (float*)mmap(0,all.stride * all.length() * sizeof(float), 
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 
-	  size_t float_count = global.stride * global.length();
+	  size_t float_count = all.stride * all.length();
 	  weight* dest = shared_weights;
-	  memcpy(dest, global.reg.weight_vectors, float_count*sizeof(float));
-	  free(global.reg.weight_vectors);
-	  global.reg.weight_vectors = dest;
+	  memcpy(dest, all.reg.weight_vectors, float_count*sizeof(float));
+	  free(all.reg.weight_vectors);
+	  all.reg.weight_vectors = dest;
 	  
 	  // learning state to be shared across children
 	  shared_data* sd = (shared_data *)mmap(0,sizeof(shared_data),
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
-	  memcpy(sd, global.sd, sizeof(shared_data));
-	  free(global.sd);
-	  global.sd = sd;
+	  memcpy(sd, all.sd, sizeof(shared_data));
+	  free(all.sd);
+	  all.sd = sd;
 
 	  // create children
-	  size_t num_children = global.num_children;
+	  size_t num_children = all.num_children;
 	  v_array<int> children;
 	  reserve(children, num_children);
 	  for (size_t i = 0; i < num_children; i++)
@@ -395,45 +396,45 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
     child:
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
-      par->max_fd = 0;
-      if (!global.quiet)
+      all.p->max_fd = 0;
+      if (!all.quiet)
 	cerr << "calling accept" << endl;
-      int f = accept(par->bound_sock,(sockaddr*)&client_address,&size);
+      int f = accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
       if (f < 0)
 	{
 	  cerr << "bad client socket!" << endl;
 	  exit (1);
 	}
       
-      par->label_sock = f;
-      global.print = print_result;
+      all.p->label_sock = f;
+      all.print = print_result;
       
-      push(global.final_prediction_sink, (size_t) f);
+      push(all.final_prediction_sink, (size_t) f);
       
-      push(par->input->files,f);
-      par->max_fd = max(f, par->max_fd);
-      if (!global.quiet)
+      push(all.p->input->files,f);
+      all.p->max_fd = max(f, all.p->max_fd);
+      if (!all.quiet)
 	cerr << "reading data from port " << port << endl;
 
-      par->max_fd++;
-      if(global.active)
+      all.p->max_fd++;
+      if(all.active)
 	{
-	  par->reader = read_features;
-	  par->hasher = getHasher(hash_function);
+	  all.p->reader = read_features;
+	  all.p->hasher = getHasher(hash_function);
 	}
       else {
-	if (isbinary(*(par->input))) {
-	  par->reader = read_cached_features;
-	  global.print = binary_print_result;
+	if (isbinary(*(all.p->input))) {
+	  all.p->reader = read_cached_features;
+	  all.print = binary_print_result;
 	} else {
-	  par->reader = read_features;
+	  all.p->reader = read_features;
 	  
 	}
-	par->hasher = getHasher(hash_function);
-	par->sorted_cache = true;
+	all.p->hasher = getHasher(hash_function);
+	all.p->sorted_cache = true;
       }
 
-      par->resettable = par->write_cache || global.daemon;
+      all.p->resettable = all.p->write_cache || all.daemon;
     }
   
   else if (vm.count("data"))
@@ -441,7 +442,7 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
       string hash_function("strings");
       if(vm.count("hash")) 
 	hash_function = vm["hash"].as<string>();
-      if (par->input->files.index() > 0)
+      if (all.p->input->files.index() > 0)
 	{
 	  if (!quiet)
 	    cerr << "ignoring text input in favor of cache input" << endl;
@@ -453,18 +454,18 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    {
 	      if (!quiet)
 		cerr << "Reading from " << temp << endl;
-	      int f = par->input->open_file(temp.c_str(), io_buf::READ);
+	      int f = all.p->input->open_file(temp.c_str(), io_buf::READ);
 	      if (f == -1)
 		{
 		  cerr << "can't open " << temp << ", bailing!" << endl;
 		  exit(0);
 		}
-	      par->reader = read_features;
-	      par->hasher = getHasher(hash_function);
-	      par->resettable = par->write_cache;
+	      all.p->reader = read_features;
+	      all.p->hasher = getHasher(hash_function);
+	      all.p->resettable = all.p->write_cache;
 	    }
 	}
-      if (par->input->files.index() == 0)// Default to stdin
+      if (all.p->input->files.index() == 0)// Default to stdin
 	{
 	  if (!quiet)
 	    cerr << "Reading from stdin" << endl;
@@ -472,35 +473,35 @@ void parse_source_args(po::variables_map& vm, parser* par, bool quiet, size_t pa
 	    cerr << "Compressed source can't be read from stdin." << endl << "Directly use the compressed source with -d option";
 	    exit(0);
 	  }
-	  push(par->input->files,fileno(stdin));
-	  par->reader = read_features;
-	  par->hasher = getHasher(hash_function);
-	  par->resettable = par->write_cache;
+	  push(all.p->input->files,fileno(stdin));
+	  all.p->reader = read_features;
+	  all.p->hasher = getHasher(hash_function);
+	  all.p->resettable = all.p->write_cache;
 	}
     }
 
-  if (passes > 1 && !par->resettable)
+  if (passes > 1 && !all.p->resettable)
     {
-      cerr << global.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
+      cerr << all.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
       exit(1);
     }
-  par->input->count = par->input->files.index();
+  all.p->input->count = all.p->input->files.index();
   if (!quiet)
-    cerr << "num sources = " << par->input->files.index() << endl;
+    cerr << "num sources = " << all.p->input->files.index() << endl;
 }
 
-bool parser_done()
+bool parser_done(parser* p)
 {
   if (done)
     {
-      if (used_index != global.parsed_examples)
+      if (used_index != p->parsed_examples)
 	return false;
       return true;
     }
   return false;
 }
 
-void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& audits,
+void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& audits,
 	      size_t initial_length, v_array<size_t> &gram_mask, size_t skips)
 {
   if (ngram == 0 && gram_mask.last() < initial_length)
@@ -511,9 +512,9 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.index(); n++)
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
-	  feature f = {1.,(uint32_t)(new_index & global.parse_mask)};
+	  feature f = {1.,(uint32_t)(new_index & all.parse_mask)};
 	  push(atomics,f);
-	  if (global.audit && audits.index() >= initial_length)
+	  if (all.audit && audits.index() >= initial_length)
 	    {
 	      string feature_name(audits[i].feature);
 	      for (size_t n = 1; n < gram_mask.index(); n++)
@@ -523,7 +524,7 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
 		}
 	      string feature_space = string(audits[i].space);
 	      
-	      audit_data a_feature = {NULL,NULL,new_index & global.parse_mask, 1., true};
+	      audit_data a_feature = {NULL,NULL,new_index & all.parse_mask, 1., true};
 	      a_feature.space = (char*)malloc(feature_space.length()+1);
 	      strcpy(a_feature.space, feature_space.c_str());
 	      a_feature.feature = (char*)malloc(feature_name.length()+1);
@@ -535,11 +536,11 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
   if (ngram > 0)
     {
       push(gram_mask,gram_mask.last()+1+skips);
-      addgrams(ngram-1, skip_gram, atomics, audits, initial_length, gram_mask, 0);
+      addgrams(all, ngram-1, skip_gram, atomics, audits, initial_length, gram_mask, 0);
       gram_mask.pop();
     }
   if (skip_gram > 0 && ngram > 0)
-    addgrams(ngram, skip_gram-1, atomics, audits, initial_length, gram_mask, skips+1);
+    addgrams(all, ngram, skip_gram-1, atomics, audits, initial_length, gram_mask, skips+1);
 }
 
 /**
@@ -553,7 +554,7 @@ void addgrams(size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array
  * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
-void generateGrams(size_t ngram, size_t skip_gram, example * &ex) {
+void generateGrams(vw& all, size_t ngram, size_t skip_gram, example * &ex) {
   for(size_t *index = ex->indices.begin; index < ex->indices.end; index++)
     {
       size_t length = ex->atomics[*index].index();
@@ -561,23 +562,23 @@ void generateGrams(size_t ngram, size_t skip_gram, example * &ex) {
 	{
 	  gram_mask.erase();
 	  push(gram_mask,(size_t)0);
-	  addgrams(n, skip_gram, ex->atomics[*index], 
+	  addgrams(all, n, skip_gram, ex->atomics[*index], 
 		   ex->audit_features[*index], 
 		   length, gram_mask, 0);
 	}
     }
 }
 
-example* get_unused_example()
+example* get_unused_example(vw& all)
 {
   while (true)
     {
       pthread_mutex_lock(&examples_lock);
-      if (examples[global.parsed_examples % global.ring_size].in_use == false)
+      if (examples[all.p->parsed_examples % all.p->ring_size].in_use == false)
 	{
-	  examples[global.parsed_examples % global.ring_size].in_use = true;
+	  examples[all.p->parsed_examples % all.p->ring_size].in_use = true;
 	  pthread_mutex_unlock(&examples_lock);
-	  return examples + (global.parsed_examples % global.ring_size);
+	  return examples + (all.p->parsed_examples % all.p->ring_size);
 	}
       else 
 	{
@@ -587,9 +588,9 @@ example* get_unused_example()
     }
 }
 
-bool parse_atomic_example(parser* p, example *ae)
+bool parse_atomic_example(vw& all, example *ae)
 {
-  if (global.audit)
+  if (all.audit)
     for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
       {
 	for (audit_data* temp 
@@ -615,40 +616,40 @@ bool parse_atomic_example(parser* p, example *ae)
   ae->indices.erase();
   ae->tag.erase();
   ae->sorted = false;
-  if (p->reader(p,ae) <= 0)
+  if (all.p->reader(&all, ae) <= 0)
     return false;
 
-  if(p->sort_features && ae->sorted == false)
-    unique_sort_features(ae);
+  if(all.p->sort_features && ae->sorted == false)
+    unique_sort_features(all.audit, ae);
 
-  if (p->write_cache) 
+  if (all.p->write_cache) 
     {
-      global.lp->cache_label(ae->ld,*(p->output));
-      cache_features(*(p->output), ae);
+      all.lp->cache_label(ae->ld,*(all.p->output));
+      cache_features(*(all.p->output), ae);
     }
 
-  if(global.ngram > 1)
-    generateGrams(global.ngram, global.skips, ae);
+  if(all.ngram > 1)
+    generateGrams(all, all.ngram, all.skips, ae);
     
   return true;
 }
 
-void setup_example(parser* p, example* ae)
+void setup_example(vw& all, example* ae)
 {
-  ae->pass = global.passes_complete;
+  ae->pass = all.passes_complete;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->done = false;
-  ae->example_counter = global.parsed_examples + 1;
-  ae->global_weight = global.lp->get_weight(ae->ld);
-  global.sd->t += ae->global_weight;
-  ae->example_t = global.sd->t;
+  ae->example_counter = all.p->parsed_examples + 1;
+  ae->global_weight = all.lp->get_weight(ae->ld);
+  all.sd->t += ae->global_weight;
+  ae->example_t = all.sd->t;
 
-  if (global.ignore_some)
+  if (all.ignore_some)
     {
       for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
-	if (global.ignore[*i])
+	if (all.ignore[*i])
 	  {//delete namespace
 	    ae->atomics[*i].erase();
 	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(size_t));
@@ -657,21 +658,21 @@ void setup_example(parser* p, example* ae)
 	  }
     }
 
-  if (global.add_constant) {
+  if (all.add_constant) {
     //add constant feature
     push(ae->indices,constant_namespace);
-    feature temp = {1,(uint32_t) (constant & global.parse_mask)};
+    feature temp = {1,(uint32_t) (constant & all.parse_mask)};
     push(ae->atomics[constant_namespace], temp);
     ae->total_sum_feat_sq++;
   }
   
-  if(global.stride != 1) //make room for per-feature information.
+  if(all.stride != 1) //make room for per-feature information.
     {
-      size_t stride = global.stride;
+      size_t stride = all.stride;
       for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
 	  j->weight_index = j->weight_index*stride;
-      if (global.audit)
+      if (all.audit)
 	for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
 	    j->weight_index = j->weight_index*stride;
@@ -683,8 +684,8 @@ void setup_example(parser* p, example* ae)
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
 
-  if (global.rank == 0)                                                                        
-    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)
+  if (all.rank == 0)                                                                        
+    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       {
 	ae->num_features 
 	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
@@ -692,45 +693,45 @@ void setup_example(parser* p, example* ae)
 	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
       }
   else
-    for (vector<string>::iterator i = global.pairs.begin(); i != global.pairs.end();i++)
+    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       {
 	ae->num_features
-	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * global.rank;
+	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
 	ae->num_features
 	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
-	  *global.rank;
+	  *all.rank;
       }                                                                 
 }
 
 void *main_parse_loop(void *in)
 {
-  parser* p = (parser*) in;
+  vw* all = (vw*) in;
   
-  global.passes_complete = 0;
+  all->passes_complete = 0;
   size_t example_number = 0;  // for variable-size batch learning algorithms
   while(!done)
     {
-      example* ae=get_unused_example();
+      example* ae=get_unused_example(*all);
 
-      if (example_number != global.pass_length && parse_atomic_example(p,ae)) {	
-	setup_example(p,ae);
+      if (example_number != all->pass_length && parse_atomic_example(*all, ae)) {	
+	setup_example(*all,ae);
 	example_number++;
 	pthread_mutex_lock(&examples_lock);
-	global.parsed_examples++;
+	all->p->parsed_examples++;
 	pthread_cond_broadcast(&example_available);
 	pthread_mutex_unlock(&examples_lock);
       }
       else
 	{
-	  reset_source(global.num_bits, p);
-	  global.passes_complete++;
-	  if (global.passes_complete == global.numpasses && example_number == global.pass_length)
+	  reset_source(*all, all->num_bits);
+	  all->passes_complete++;
+	  if (all->passes_complete == all->numpasses && example_number == all->pass_length)
 	    {
-	      global.passes_complete = 0;
-	      global.pass_length = global.pass_length*2+1;
+	      all->passes_complete = 0;
+	      all->pass_length = all->pass_length*2+1;
 	    }
 	  example_number = 0;
-	  if (global.passes_complete >= global.numpasses)
+	  if (all->passes_complete >= all->numpasses)
 	    {
 	      pthread_mutex_lock(&examples_lock);
 	      done = true;
@@ -743,20 +744,20 @@ void *main_parse_loop(void *in)
 	}
     }  
 
-  free(p->channels.begin);
-  p->channels.begin = p->channels.end = p->channels.end_array = NULL;
-  free(p->words.begin);
-  p->words.begin = p->words.end = p->words.end_array = NULL;
-  free(p->name.begin);
-  p->name.begin = p->name.end = p->name.end_array = NULL;
+  free(all->p->channels.begin);
+  all->p->channels.begin = all->p->channels.end = all->p->channels.end_array = NULL;
+  free(all->p->words.begin);
+  all->p->words.begin = all->p->words.end = all->p->words.end_array = NULL;
+  free(all->p->name.begin);
+  all->p->name.begin = all->p->name.end = all->p->name.end_array = NULL;
 
   return NULL;
 }
 
-void free_example(example* ec)
+void free_example(parser* pf, example* ec)
 {
   pthread_mutex_lock(&output_lock);
-  global.local_example_number++;
+  pf->local_example_number++;
   pthread_cond_signal(&output_done);
   pthread_mutex_unlock(&output_lock);
 
@@ -769,14 +770,14 @@ void free_example(example* ec)
   pthread_mutex_unlock(&examples_lock);
 }
 
-example* get_example()
+example* get_example(parser* p)
 {
   pthread_mutex_lock(&examples_lock);
 
-  if (global.parsed_examples != used_index) {
-    size_t ring_index = used_index++ % global.ring_size;
+  if (p->parsed_examples != used_index) {
+    size_t ring_index = used_index++ % p->ring_size;
     if (!(examples+ring_index)->in_use)
-      cout << used_index << " " << global.parsed_examples << " " << ring_index << endl;
+      cout << used_index << " " << p->parsed_examples << " " << ring_index << endl;
     assert((examples+ring_index)->in_use);
     pthread_mutex_unlock(&examples_lock);
     
@@ -787,7 +788,7 @@ example* get_example()
       {
 	pthread_cond_wait(&example_available, &examples_lock);
 	pthread_mutex_unlock(&examples_lock);
-	return get_example();
+	return get_example(p);
       }
     else {
       pthread_mutex_unlock(&examples_lock);
@@ -798,41 +799,41 @@ example* get_example()
 
 pthread_t parse_thread;
 
-void start_parser(parser* pf)
+void start_parser(vw& all)
 {
   used_index = 0;
-  global.parsed_examples = 0;
+  all.p->parsed_examples = 0;
   done = false;
 
-  examples = (example*)calloc(global.ring_size, sizeof(example));
+  examples = (example*)calloc(all.p->ring_size, sizeof(example));
 
-  for (size_t i = 0; i < global.ring_size; i++)
+  for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      examples[i].ld = calloc(1,global.lp->label_size);
+      examples[i].ld = calloc(1,all.lp->label_size);
       examples[i].in_use = false;
     }
-  pthread_create(&parse_thread, NULL, main_parse_loop, pf);
+  pthread_create(&parse_thread, NULL, main_parse_loop, &all);
 }
 
-void end_parser(parser* pf)
+void end_parser(vw& all)
 {
   pthread_join(parse_thread, NULL);
 
-  if(global.ngram > 1)
+  if(all.ngram > 1)
     {
       if(gram_mask.begin != NULL) reserve(gram_mask,0);
     }
 
-  for (size_t i = 0; i < global.ring_size; i++) 
+  for (size_t i = 0; i < all.p->ring_size; i++) 
     {
-      global.lp->delete_label(examples[i].ld);
+      all.lp->delete_label(examples[i].ld);
       if (examples[i].tag.end_array != examples[i].tag.begin)
 	{
 	  free(examples[i].tag.begin);
 	  examples[i].tag.end_array = examples[i].tag.begin;
 	}
       
-      if (global.lda > 0)
+      if (all.lda > 0)
 	free(examples[i].topic_predictions.begin);
 
       free(examples[i].ld);
@@ -857,7 +858,7 @@ void end_parser(parser* pf)
     }
   free(examples);
   
-  io_buf* output = pf->output;
+  io_buf* output = all.p->output;
   if (output != NULL)
     {
       if (output->finalname.begin != NULL)
@@ -866,7 +867,7 @@ void end_parser(parser* pf)
 	free(output->currentname.begin);
     }
 
-  if (pf->counts.begin != NULL)
-    free(pf->counts.begin);
+  if (all.p->counts.begin != NULL)
+    free(all.p->counts.begin);
 }
 

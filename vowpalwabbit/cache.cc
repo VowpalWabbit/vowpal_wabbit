@@ -6,6 +6,7 @@ embodied in the content of this file are licensed under the BSD
 
 #include "cache.h"
 #include "unique_sort.h"
+#include "global_data.h"
 
 using namespace std;
 
@@ -46,14 +47,15 @@ struct one_float {
   float f;
 } __attribute__((packed));
 
-int read_cached_features(parser* p, void* ec)
+int read_cached_features(void* in, void* ec)
 {
+  vw* all = (vw*)in;
   example* ae = (example*)ec;
-  ae->sorted = p->sorted_cache;
-  size_t mask = global.parse_mask;
-  io_buf* input = p->input;
+  ae->sorted = all->p->sorted_cache;
+  size_t mask = all->parse_mask;
+  io_buf* input = all->p->input;
 
-  size_t total = global.lp->read_cached_label(ae->ld, *input);
+  size_t total = all->lp->read_cached_label(all->sd, ae->ld, *input);
   if (total == 0)
     return 0;
   if (read_cached_tag(*input,ae) == 0)
@@ -66,7 +68,7 @@ int read_cached_features(parser* p, void* ec)
   num_indices = *(unsigned char*)c;
   c += sizeof(num_indices);
 
-  p->input->set(c);
+  all->p->input->set(c);
 
   for (;num_indices > 0; num_indices--)
     {
@@ -84,7 +86,7 @@ int read_cached_features(parser* p, void* ec)
       float* our_sum_feat_sq = ae->sum_feat_sq+index;
       size_t storage = *(size_t *)c;
       c += sizeof(size_t);
-      p->input->set(c);
+      all->p->input->set(c);
       total += storage; 
      if (buf_read(*input,c,storage) < storage) {
 	cerr << "truncated example! wanted: " << storage << " bytes" << endl;
@@ -118,7 +120,7 @@ int read_cached_features(parser* p, void* ec)
 	  f.weight_index = f.weight_index & mask;
 	  push(*ours, f);
 	}
-      p->input->set(c);
+      all->p->input->set(c);
     }
 
   return total;

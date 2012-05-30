@@ -92,7 +92,7 @@ uint32_t      current_history_hash = 0;
 
 SearnUtil::history_info hinfo;
 
-v_array<example*> ec_seq        = v_array<example*>();
+v_array<example*> ec_seq    = v_array<example*>();
 size_t*       pred_seq      = NULL;
 int*          policy_seq    = NULL;
 history*      all_histories = NULL;
@@ -185,15 +185,15 @@ void read_transition_file(const char* filename)
 
 
 
-void allocate_required_memory()
+void allocate_required_memory(vw& all)
 {
   loss_vector.erase();
 
   if (pred_seq == NULL)
-    pred_seq = (size_t*)calloc_or_die(global.ring_size, sizeof(size_t));
+    pred_seq = (size_t*)calloc_or_die(all.p->ring_size, sizeof(size_t));
 
   if (policy_seq == NULL)
-    policy_seq = (int*)calloc_or_die(global.ring_size, sizeof(int));
+    policy_seq = (int*)calloc_or_die(all.p->ring_size, sizeof(int));
 
   if (all_histories == NULL) {
     all_histories = (history*)calloc_or_die(sequence_k * sequence_beam, sizeof(history));
@@ -204,24 +204,24 @@ void allocate_required_memory()
   if (hcache == NULL) {
     hcache = (history_item*)calloc_or_die(sequence_k * sequence_beam, sizeof(history_item));
     for (size_t i=0; i<sequence_k * sequence_beam; i++)
-      hcache[i].total_predictions = (history)calloc_or_die(global.ring_size, sizeof(size_t));
+      hcache[i].total_predictions = (history)calloc_or_die(all.p->ring_size, sizeof(size_t));
   }
 
   if (current_history == NULL)
     current_history = (history)calloc_or_die(hinfo.length, sizeof(uint32_t));
 
-  for (size_t i = 1; i <= global.k; i++)
+  for (size_t i = 1; i <= all.sd->k; i++)
     {
       CSOAA::wclass cost = {FLT_MAX, i, 0.};
       push(testall_costs.costs, cost);
     }
 }
 
-void clear_seq()
+void clear_seq(vw&all)
 {
   if (ec_seq.index() > 0) 
     for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
-      free_example(*ecc);
+      free_example(all.p, *ecc);
     }
   ec_seq.erase();
 }
@@ -267,19 +267,19 @@ void print_hcache()
 }
     
 
-void initialize_beam()
+void initialize_beam(vw&all)
 {
   if (beam != NULL) return;
   size_t sz = sequence_beam + sequence_k;
   beam = (history_item*)calloc_or_die(sz, sizeof(history_item));
   for (size_t k=0; k<sz; k++) {
     beam[k].predictions       = (history)calloc_or_die(hinfo.length, sizeof(uint32_t));
-    beam[k].total_predictions = (history)calloc_or_die(global.ring_size, sizeof(uint32_t));
+    beam[k].total_predictions = (history)calloc_or_die(all.p->ring_size, sizeof(uint32_t));
   }
   beam_backup = (history_item*)calloc_or_die(sequence_beam, sizeof(history_item));
   for (size_t k=0; k<sequence_beam; k++) {
     beam_backup[k].predictions       = (history)calloc_or_die(hinfo.length, sizeof(uint32_t));
-    beam_backup[k].total_predictions = (history)calloc_or_die(global.ring_size, sizeof(uint32_t));
+    beam_backup[k].total_predictions = (history)calloc_or_die(all.p->ring_size, sizeof(uint32_t));
   }
 }
 
@@ -303,9 +303,9 @@ void free_beam()
   }
 }
 
-void free_required_memory()
+void free_required_memory(vw&all)
 {
-  clear_seq();
+  clear_seq(all);
   if (ec_seq.begin != NULL)
     free(ec_seq.begin);
 
@@ -344,11 +344,11 @@ void free_required_memory()
  *** OUTPUTTING FUNCTIONS
  ********************************************************************************************/
 
-void global_print_label(example *ec, size_t label)
+void global_print_label(vw&all, example *ec, size_t label)
 {
-  for (size_t i=0; i<global.final_prediction_sink.index(); i++) {
-    int f = global.final_prediction_sink[i];
-    global.print(f, label, 0., ec->tag);
+  for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
+    int f = all.final_prediction_sink[i];
+    all.print(f, label, 0., ec->tag);
   }
 }
 
@@ -393,9 +393,9 @@ void show_big_number(uintmax_t *out, char *out_c, uintmax_t in)
 }
 */
 
-void print_update(long unsigned int seq_num_features)
+void print_update(vw& all, long unsigned int seq_num_features)
 {
-  if (!(global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)) {
+  if (!(all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)) {
     if (!PRINT_UPDATE_EVERY_EXAMPLE) return;
   }
 
@@ -434,12 +434,12 @@ void print_update(long unsigned int seq_num_features)
 
   //  timeb t_end_global;
   //  ftime(&t_end_global);
-  //  int net_time = (int) (t_end_global.time - t_start_global.time);
+  //  int net_time = (int) (t_end_all.time - t_start_all.time);
   fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
-          global.sd->sum_loss/global.sd->weighted_examples,
-          global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
-          (long int)global.sd->example_number,
-          global.sd->weighted_examples,
+          all.sd->sum_loss/all.sd->weighted_examples,
+          all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
+          (long int)all.sd->example_number,
+          all.sd->weighted_examples,
           true_label,
           pred_label,
           seq_num_features,
@@ -449,18 +449,18 @@ void print_update(long unsigned int seq_num_features)
           (long unsigned int)total_examples_generated);
   //          net_time);
      
-  global.sd->sum_loss_since_last_dump = 0.0;
-  global.sd->old_weighted_examples = global.sd->weighted_examples;
-  global.sd->dump_interval *= 2;
+  all.sd->sum_loss_since_last_dump = 0.0;
+  all.sd->old_weighted_examples = all.sd->weighted_examples;
+  all.sd->dump_interval *= 2;
 }
 
-void simple_print_example_features(example *ec)
+void simple_print_example_features(vw&all, example *ec)
 {
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature* end = ec->atomics[*i].end;
       for (feature* f = ec->atomics[*i].begin; f!= end; f++) {
-        cerr << "\t" << f->weight_index << ":" << f->x << ":" << global.reg.weight_vectors[f->weight_index & global.weight_mask];
+        cerr << "\t" << f->weight_index << ":" << f->x << ":" << all.reg.weight_vectors[f->weight_index & all.weight_mask];
       }
     }
   cerr << endl;
@@ -591,7 +591,7 @@ inline void copy_history(history to, history from) // TODO: memcpy this
     to[t] = from[t];
 }
 
-void copy_history_item(history_item *to, history_item from, bool copy_pred, bool copy_total)
+void copy_history_item(vw&all,history_item *to, history_item from, bool copy_pred, bool copy_total)
 {
   if (copy_pred) memcpy((*to).predictions, from.predictions, hinfo.length * sizeof(uint32_t));
   (*to).predictions_hash = from.predictions_hash;
@@ -600,7 +600,7 @@ void copy_history_item(history_item *to, history_item from, bool copy_pred, bool
   (*to).same = from.same;
   (*to).alive = from.alive;
   (*to).pred_score = from.pred_score;
-  if (copy_total) memcpy((*to).total_predictions, from.total_predictions, global.ring_size * sizeof(size_t));
+  if (copy_total) memcpy((*to).total_predictions, from.total_predictions, all.p->ring_size * sizeof(size_t));
 }
 
 /********************************************************************************************
@@ -608,52 +608,61 @@ void copy_history_item(history_item *to, history_item from, bool copy_pred, bool
  ********************************************************************************************/
 
 
-void (*base_learner)(example*) = NULL;
-void (*base_finish)() = NULL;
+void (*base_learner)(vw&,example*) = NULL;
+void (*base_finish)(vw&) = NULL;
 
 
-void generate_training_example(example *ec, history h, v_array<CSOAA::wclass>costs)
+void generate_training_example(vw&all, example *ec, history h, v_array<CSOAA::wclass>costs)
 {
   CSOAA::label ld = { costs };
 
-  SearnUtil::add_history_to_example(&hinfo, ec, h);
-  SearnUtil::add_policy_offset(ec, sequence_k, total_number_of_policies, current_policy);
+  SearnUtil::add_history_to_example(all, &hinfo, ec, h);
+  SearnUtil::add_policy_offset(all, ec, sequence_k, total_number_of_policies, current_policy);
 
-  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(ec);}
+  if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all,ec);}
   ec->ld = (void*)&ld;
   total_examples_generated++;
-  base_learner(ec);
-  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << "::" << c->partial_prediction; clog << " ]\t"; simple_print_example_features(ec);}
+  base_learner(all, ec);
+  if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << "::" << c->partial_prediction; clog << " ]\t"; simple_print_example_features(all,ec);}
 
-  SearnUtil::remove_history_from_example(ec);
-  SearnUtil::remove_policy_offset(ec, sequence_k, total_number_of_policies, current_policy);
+  SearnUtil::remove_history_from_example(all, ec);
+  SearnUtil::remove_policy_offset(all, ec, sequence_k, total_number_of_policies, current_policy);
 }
 
-size_t predict(example *ec, history h, int policy, size_t truth)
+size_t predict(vw&all, example *ec, history h, int policy, size_t truth)
 {
   size_t yhat;
   if (policy == -1) { // this is the optimal policy!
     yhat = truth;
     if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1) {
-      CSOAA::label *label = all_transitions_allowed ? &testall_costs : &transition_prediction_costs[last_prediction(h)];
+      //CSOAA::label *label = all_transitions_allowed ? &testall_costs : &transition_prediction_costs[last_prediction(h)];
+      CSOAA::label *label = true ? &testall_costs : &transition_prediction_costs[last_prediction(h)];
       ec->ld = (void*)label;
       for (CSOAA::wclass *f = label->costs.begin; f != label->costs.end; f++)
         f->partial_prediction = (f->weight_index == truth) ? 0. : 1.;
     }
   } else {
-    SearnUtil::add_history_to_example(&hinfo, ec, h);
-    SearnUtil::add_policy_offset(ec, sequence_k, total_number_of_policies, policy);
+    SearnUtil::add_history_to_example(all, &hinfo, ec, h);
+    SearnUtil::add_policy_offset(all, ec, sequence_k, total_number_of_policies, policy);
 
-    ec->ld = all_transitions_allowed ? (void*)&testall_costs : (void*)&transition_prediction_costs[last_prediction(h)];
+    if (PRINT_DEBUG_INFO) {
+      clog << "all_costs="; simple_print_costs(&testall_costs);;
+      if (! all_transitions_allowed) {
+        clog << "tpr_costs="; simple_print_costs(&transition_prediction_costs[last_prediction(h)]);
+      }
+      clog << "  (last prediction=" << last_prediction(h) << ")" << endl;
+    }
+    //ec->ld = all_transitions_allowed ? (void*)&testall_costs : (void*)&transition_prediction_costs[last_prediction(h)];
+    ec->ld = true ? (void*)&testall_costs : (void*)&transition_prediction_costs[last_prediction(h)];
 
-    if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(ec);clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
+    if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(all, ec);clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
     total_predictions_made++;
-    base_learner(ec);
+    base_learner(all, ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
     if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << ", pp=" << ec->partial_prediction << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
 
-    SearnUtil::remove_history_from_example(ec);
-    SearnUtil::remove_policy_offset(ec, sequence_k, total_number_of_policies, policy);
+    SearnUtil::remove_history_from_example(all, ec);
+    SearnUtil::remove_policy_offset(all, ec, sequence_k, total_number_of_policies, policy);
   }
   if ((yhat <= 0) || (yhat > sequence_k)) {
     clog << "internal error (bug): predict is returning an invalid class [" << yhat << "] -- replacing with 1" << endl;
@@ -700,7 +709,7 @@ void finalize_beam(size_t *idx)
   }
 }
 
-void clear_beam(history_item* b, size_t sz)
+void clear_beam(vw&all,history_item* b, size_t sz)
 {
   for (size_t k=0; k<sz; k++) {
     clear_history(b[k].predictions);
@@ -710,20 +719,20 @@ void clear_beam(history_item* b, size_t sz)
     b[k].same = false;
     b[k].alive = false;
     b[k].pred_score = 0.;
-    memset(b[k].total_predictions, 0, global.ring_size * sizeof(size_t));
+    memset(b[k].total_predictions, 0, all.p->ring_size * sizeof(size_t));
   }
 }
 
-void run_test_beam()
+void run_test_beam(vw&all)
 {
   size_t n = ec_seq.index();
   OAA::mc_label* old_label;
   size_t sz = sequence_beam + sequence_k;
 
-  clear_beam(beam, sz);
+  clear_beam(all, beam, sz);
 
   // create initial "old" beam
-  clear_beam(beam_backup, sequence_beam);
+  clear_beam(all, beam_backup, sequence_beam);
   beam_backup[0].alive = true;
 
   for (size_t t=0; t<n; t++) {
@@ -732,7 +741,7 @@ void run_test_beam()
     size_t idx = 0;
     for (size_t k=0; k<sequence_beam; k++) {
       if (! beam_backup[k].alive) break;  // the rest are guaranteed to be dead
-      predict(ec_seq[t], beam_backup[k].predictions, policy_seq[t], -1);
+      predict(all, ec_seq[t], beam_backup[k].predictions, policy_seq[t], -1);
       take_beam_step(((CSOAA::label*)ec_seq[t]->ld)->costs, t, k, &idx);
       ec_seq[t]->ld = old_label;
       finalize_beam(&idx);
@@ -741,7 +750,7 @@ void run_test_beam()
     // copy top k to beam_backup
     if (t < n-1) {
       for (size_t k=0; k<idx; k++)
-        copy_history_item(&beam_backup[k], beam[k], true, true);
+        copy_history_item(all, &beam_backup[k], beam[k], true, true);
       for (size_t k=idx; k<sz; k++)
         beam[k].alive = false;
     }
@@ -754,14 +763,16 @@ void run_test_beam()
     pred_seq[t] = beam[0].total_predictions[t];
 }
 
-void run_test()
+void run_test(vw&all)
 {
   OAA::mc_label* old_label;
+
+  if (PRINT_DEBUG_INFO) {clog << "-------------------------------------------------------------------" << endl;}
 
   clear_history(current_history); current_history_hash = 0;
   for (size_t t=0; t<ec_seq.index(); t++) {
     old_label = (OAA::mc_label*)ec_seq[t]->ld;
-    pred_seq[t] = predict(ec_seq[t], current_history, policy_seq[t], -1);
+    pred_seq[t] = predict(all, ec_seq[t], current_history, policy_seq[t], -1);
     append_history(current_history, pred_seq[t]);
     ec_seq[t]->ld = old_label;
   }
@@ -771,20 +782,25 @@ void run_test_common_init()
 {
   for (size_t t=0; t<ec_seq.index(); t++)
     policy_seq[t] = (current_policy == 0) ? 0 : SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, false);
+  if (PRINT_DEBUG_INFO) {
+    clog << "test policies:";
+    for (size_t t=0; t<ec_seq.index(); t++) clog << " " << policy_seq[t];
+    clog << endl;
+  }
 }
 
-void run_test_common_final(bool do_printing)
+void run_test_common_final(vw&all, bool do_printing)
 {
   size_t seq_num_features = 0;
   for (size_t t=0; t<ec_seq.index(); t++) {
-    if (do_printing) global_print_label(ec_seq[t], pred_seq[t]);
+    if (do_printing) global_print_label(all, ec_seq[t], pred_seq[t]);
     seq_num_features += ec_seq[t]->num_features;
   }
-  if (do_printing) print_update(seq_num_features);
+  if (do_printing) print_update(all, seq_num_features);
 }
 
 // some edit
-void run_train_common_init()
+void run_train_common_init(vw&all)
 {
   size_t n = ec_seq.index();
   size_t seq_num_features = 0;
@@ -793,12 +809,12 @@ void run_train_common_init()
     push(true_labels, (OAA::mc_label*)ec_seq[t]->ld);
 
     seq_num_features             += ec_seq[t]->num_features;
-    global.sd->total_features    += ec_seq[t]->num_features;
-    global.sd->weighted_examples += true_labels[t]->weight;
+    all.sd->total_features    += ec_seq[t]->num_features;
+    all.sd->weighted_examples += true_labels[t]->weight;
 
     if (pred_seq[t] != true_labels[t]->label) { // incorrect prediction
-      global.sd->sum_loss += true_labels[t]->weight;
-      global.sd->sum_loss_since_last_dump += true_labels[t]->weight;
+      all.sd->sum_loss += true_labels[t]->weight;
+      all.sd->sum_loss_since_last_dump += true_labels[t]->weight;
     }
 
     // global_print_label(ec_seq[t], pred_seq[t]);
@@ -807,8 +823,13 @@ void run_train_common_init()
     if (SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, true) == -1)
       policy_seq[t] = -1;
   }
-  global.sd->example_number++;
-  print_update(seq_num_features);
+  if (PRINT_DEBUG_INFO) {
+    clog << "train policies:";
+    for (size_t t=0; t<ec_seq.index(); t++) clog << " " << policy_seq[t];
+    clog << endl;
+  }
+  all.sd->example_number++;
+  print_update(all, seq_num_features);
 }
 
 void run_train_common_final()
@@ -818,7 +839,7 @@ void run_train_common_final()
 }
 
 
-void run_train()
+void run_train(vw&all)
 {
   size_t n = ec_seq.index();
   bool all_policies_optimal = true;
@@ -849,7 +870,8 @@ void run_train()
       hcache[i].predictions_hash = current_history_hash;
       hcache[i].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
       hcache[i].same = 0;
-      hcache[i].alive = all_transitions_allowed || valid_transition[last_prediction(current_history)][i] || (i+1==pred_seq[t]);
+      //hcache[i].alive = all_transitions_allowed || valid_transition[last_prediction(current_history)][i] || (i+1==pred_seq[t]);
+      hcache[i].alive = true || valid_transition[last_prediction(current_history)][i] || (i+1==pred_seq[t]);
       hcache[i].original_label = i;
       hcache[i].pred_score = 0.;
       //hcache[i].total_predictions = NULL;
@@ -909,7 +931,7 @@ NOT_REALLY_NEW:
             clog << " >" << endl;
           */
 
-          size_t yhat = predict(ec_seq[t2], hcache[i].predictions, policy_seq[t2], true_labels[t2]->label);
+          size_t yhat = predict(all, ec_seq[t2], hcache[i].predictions, policy_seq[t2], true_labels[t2]->label);
           append_history_item(hcache[i], yhat);
           hcache[i].loss += gamma * true_labels[t2]->weight * (float)(yhat != true_labels[t2]->label);
         }
@@ -945,29 +967,29 @@ NOT_REALLY_NEW:
         push(loss_vector, temp);
       }
     }
-    generate_training_example(ec_seq[t], current_history, loss_vector);
+    generate_training_example(all, ec_seq[t], current_history, loss_vector);
 
     // update state
     append_history(current_history, pred_seq[t]);
 
     if ((!entered_rollout) && (t < n-1)) {
-      pred_seq[t+1] = predict(ec_seq[t+1], current_history, policy_seq[t+1], true_labels[t+1]->label);
+      pred_seq[t+1] = predict(all, ec_seq[t+1], current_history, policy_seq[t+1], true_labels[t+1]->label);
     }
   }
 }
 
-void run_train_beam()
+void run_train_beam(vw&all)
 {
-  run_train();
+  run_train(all);
   return;
   size_t n = ec_seq.index();
   size_t sz = sequence_k + sequence_beam;
   OAA::mc_label* old_label;
 
-  clear_beam(beam, sz);
+  clear_beam(all, beam, sz);
 
   // create initial "old" beam
-  clear_beam(beam_backup, sequence_beam);
+  clear_beam(all, beam_backup, sequence_beam);
   beam_backup[0].alive = true;
 
   for (size_t t=0; t<n; t++) {
@@ -983,7 +1005,7 @@ void run_train_beam()
         for (size_t i=0; i<sequence_k; i++) {
           size_t id = i * sequence_beam + k;
           hcache[id].predictions = all_histories[id];
-          copy_history_item(&hcache[id], beam_backup[k], true, false);
+          copy_history_item(all, &hcache[id], beam_backup[k], true, false);
           hcache[id].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
           hcache[id].original_label = i;
           hcache[id].alive = true;
@@ -1017,12 +1039,12 @@ void run_train_beam()
           //        }
         //clog << "before step:" << endl; print_beam(t2+1);
         // make step
-        clear_beam(beam, sz);
+        clear_beam(all, beam, sz);
         size_t idx = 0;
         for (size_t k=0; k<sequence_beam; k++) {
           size_t id = i * sequence_beam + k;
           //if (! beam[k].alive) break;
-          predict(ec_seq[t2], hcache[id].predictions, policy_seq[t2], true_labels[t2]->label);
+          predict(all, ec_seq[t2], hcache[id].predictions, policy_seq[t2], true_labels[t2]->label);
           //simple_print_costs((CSOAA::label*)ec_seq[t2]->ld);
           take_beam_step(((CSOAA::label*)ec_seq[t2]->ld)->costs, t2, k, &idx);
           ec_seq[t2]->ld = old_label;
@@ -1033,7 +1055,7 @@ void run_train_beam()
         // now, the top K elements of beam contain our next positions, which we just move back into hcache
         for (size_t k=0; k<sequence_beam; k++) {
           size_t id = k * sequence_k + i;
-          copy_history_item(&hcache[id], beam[k], true, false);
+          copy_history_item(all, &hcache[id], beam[k], true, false);
           //clog << "copy hcache[" << id << "] <- beam[" << k << "]" << endl;
           //hcache[id].loss += gamma * true_labels[t2]->weight * (float)(last_prediction(hcache[id].predictions) != true_labels[t2]->label);
         }
@@ -1050,7 +1072,7 @@ void run_train_beam()
 
     for (size_t k=0; k<sequence_beam; k++) {
       // restore the beam
-      copy_history_item(&beam[k], beam_backup[k], true, true);
+      copy_history_item(all, &beam[k], beam_backup[k], true, true);
 
       // create the example
       loss_vector.erase();
@@ -1066,7 +1088,7 @@ void run_train_beam()
       //clog << "generate_training_example based on beam[" << k << "].predictions = <";
       //for (size_t tt=0; tt<hinfo.length; tt++) { clog << " " << beam[k].predictions[tt]; }
       //clog << " >" << endl;
-      generate_training_example(ec_seq[t], beam[k].predictions, loss_vector);
+      generate_training_example(all, ec_seq[t], beam[k].predictions, loss_vector);
     }
 
     // take a step
@@ -1075,7 +1097,7 @@ void run_train_beam()
     size_t idx = sequence_beam;
     for (size_t k=0; k<sequence_beam; k++) {
       if (! beam[k].alive) break;
-      predict(ec_seq[t], beam[k].predictions, policy_seq[t], true_labels[t]->label);
+      predict(all, ec_seq[t], beam[k].predictions, policy_seq[t], true_labels[t]->label);
       take_beam_step(((CSOAA::label*)ec_seq[t]->ld)->costs, t, k, &idx);
     }
     //clog << "before finalize step for iteration idx=" << idx << ":" << endl;
@@ -1086,7 +1108,7 @@ void run_train_beam()
   }
 }
 
-void do_actual_learning()
+void do_actual_learning(vw&all)
 {
   if (ec_seq.index() <= 0) return; // nothing to do
 
@@ -1101,14 +1123,14 @@ void do_actual_learning()
     cerr << "warning: mix of train and test data in sequence prediction at " << ec_seq[0]->example_counter << "; treating as test" << endl;
 
   run_test_common_init();
-  if (sequence_beam > 1 || DEBUG_FORCE_BEAM_ONE) run_test_beam();
-  else                                           run_test();
-  run_test_common_final(false);
+  if (sequence_beam > 1 || DEBUG_FORCE_BEAM_ONE) run_test_beam(all);
+  else                                           run_test(all);
+  run_test_common_final(all, false);
 
-  if (! any_test && global.training) {
-    run_train_common_init();
-    if (sequence_beam > 1 || DEBUG_FORCE_BEAM_ONE) run_train_beam();
-    else                                           run_train();
+  if (! any_test && all.training) {
+    run_train_common_init(all);
+    if (sequence_beam > 1 || DEBUG_FORCE_BEAM_ONE) run_train_beam(all);
+    else                                           run_train(all);
     run_train_common_final();
   }
 }
@@ -1120,11 +1142,11 @@ void do_actual_learning()
  ********************************************************************************************/
 
 
-void parse_sequence_args(po::variables_map& vm, void (*base_l)(example*), void (*base_f)())
+void parse_sequence_args(vw&all, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&))
 {
   base_learner = base_l;
   base_finish = base_f;
-  *(global.lp)=OAA::mc_label_parser;
+  *(all.lp)=OAA::mc_label_parser;
   sequence_k = vm["sequence"].as<size_t>();
 
   if (vm.count("sequence_bigrams"))
@@ -1165,38 +1187,40 @@ void parse_sequence_args(po::variables_map& vm, void (*base_l)(example*), void (
       sequence_beam = 1;
     }
     if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
-      initialize_beam();
+      initialize_beam(all);
   }
 
-  //  if (!all_transitions_allowed && (hinfo.length == 0))
-  //    hinfo.length = 1;
+  if (!all_transitions_allowed && (hinfo.length == 0)) {
+    cerr << "cannot have --sequence_transition_file and zero history length, setting history length to 1" << endl;
+    hinfo.length = 1;
+  }
 
   constant_pow_length = 1;
   for (size_t i=0; i < hinfo.length; i++)
     constant_pow_length *= quadratic_constant;
 
-  total_number_of_policies = (int)ceil(((float)global.numpasses) / ((float)sequence_passes_per_policy));
+  total_number_of_policies = (int)ceil(((float)all.numpasses) / ((float)sequence_passes_per_policy));
 }
 
 
-void finish()
+void finish(vw&all)
 {
-  free_required_memory();
-  base_finish();
+  free_required_memory(all);
+  base_finish(all);
 }
 
-void learn(example *ec) {
-  if (ec_seq.index() >= global.ring_size - 2) { // give some wiggle room
+void learn(vw& all, example *ec) {
+  if (ec_seq.index() >= all.p->ring_size - 2) { // give some wiggle room
     cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
-    do_actual_learning();
-    clear_seq();
+    do_actual_learning(all);
+    clear_seq(all);
   }
 
   if (CSOAA_LDF::example_is_newline(ec)) {
-    do_actual_learning();
-    clear_seq();
-    CSOAA_LDF::global_print_newline();
-    free_example(ec);
+    do_actual_learning(all);
+    clear_seq(all);
+    CSOAA_LDF::global_print_newline(all);
+    free_example(all.p, ec);
   } else {
     read_example_this_loop++;
     read_example_last_id = ec->example_counter;
@@ -1224,29 +1248,30 @@ void learn(example *ec) {
   }
 }
 
-void drive_sequence()
+void drive_sequence(void* in)
 {
+  vw* all = (vw*)in;
   const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
 
-  if (global.training) {
+  //  if (all.training) {
     fprintf(stderr, header_fmt,
             "average", "since", "sequence", "example",
             "current label", "current predicted", "current", "cur", "cur", "predic.", "examples");
     fprintf(stderr, header_fmt,
             "loss", "last", "counter", "weight", "sequence prefix", "sequence prefix", "features", "pass", "pol", "made", "gener.");
-  }
+    //  }
   cerr.precision(5);
 
-  allocate_required_memory();
+  allocate_required_memory(*all);
 
   example* ec = NULL;
   read_example_this_loop = 0;
   while (true) {
-    if ((ec = get_example()) != NULL) { // semiblocking operation
-      learn(ec);
-    } else if (parser_done()) {
-      do_actual_learning();
-      finish();
+    if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+      learn(*all, ec);
+    } else if (parser_done(all->p)) {
+      do_actual_learning(*all);
+      finish(*all);
       return;
     }
   }
