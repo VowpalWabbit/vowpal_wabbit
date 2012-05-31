@@ -219,8 +219,8 @@ size_t get_bit(size_t label, size_t bitNum)
   return retVal;
 }
 
-void (*base_learner)(vw&, example*) = NULL;
-void (*base_finish)(vw&) = NULL;
+void (*base_learner)(void*, example*) = NULL;
+void (*base_finish)(void*) = NULL;
 
   int ect_predict(vw& all, example* ec)
 {
@@ -244,7 +244,7 @@ void (*base_finish)(vw&) = NULL;
 	  OAA::update_indicies(all, ec,offset);
 	  ec->partial_prediction = 0;
 	  
-	  base_learner(all, ec);
+	  base_learner(&all, ec);
 	  
 	  OAA::update_indicies(all, ec,-offset);
 	  
@@ -274,7 +274,7 @@ void (*base_finish)(vw&) = NULL;
 
 	  ec->partial_prediction = 0;
 	  OAA::update_indicies(all, ec,offset);
-	  base_learner(all, ec);
+	  base_learner(&all, ec);
 	  float pred = ec->final_prediction;
 	  OAA::update_indicies(all, ec,-offset);
 	  root_to_leaf(current, pred > 0.);
@@ -323,10 +323,10 @@ bool member(size_t t, v_array<size_t> ar)
 	  OAA::update_indicies(all, ec,offset);
 
 	  ec->partial_prediction = 0;
-	  base_learner(all, ec);
+	  base_learner(&all, ec);
 	  simple_temp.weight = 0.;
 	  ec->partial_prediction = 0;
-	  base_learner(all, ec);//inefficient, we should extract final prediction exactly.
+	  base_learner(&all, ec);//inefficient, we should extract final prediction exactly.
 	  float pred = ec->final_prediction;
 	  OAA::update_indicies(all, ec,-offset);
 	  leaf_to_root(current, pred > 0.);
@@ -360,7 +360,7 @@ bool member(size_t t, v_array<size_t> ar)
 	      OAA::update_indicies(all, ec,offset);
 	      ec->partial_prediction = 0;
 	      
-	      base_learner(all, ec);
+	      base_learner(&all, ec);
 	      
 	      OAA::update_indicies(all, ec,-offset);
 	      
@@ -376,7 +376,7 @@ bool member(size_t t, v_array<size_t> ar)
       }
 }
 
-  void learn(vw& all, example* ec)
+  void learn(void*a, example* ec)
 {
   OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
   //int new_label = ect_predict(ec);
@@ -388,7 +388,7 @@ bool member(size_t t, v_array<size_t> ar)
   ec->final_prediction = new_label;*/
 }
 
-void finish(vw& all)
+void finish(void* all)
 {
   for (size_t i = 0; i < tournament_counts.index(); i++)
     if (tournament_counts[i].begin != tournament_counts[i].end)
@@ -419,13 +419,13 @@ void drive_ect(void* in)
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn(*all, ec);
+	  learn(all, ec);
 	  OAA::output_example(*all, ec);
 	  free_example(*all, ec);
 	}
       else if (parser_done(all->p))
 	{
-	  finish(*all);
+	  finish(all);
 	  return;
 	}
       else 
@@ -433,14 +433,17 @@ void drive_ect(void* in)
     }
 }
 
-void parse_flags(vw& all, size_t s, size_t e, void (*base_l)(vw&, example*), void (*base_f)(vw&))
+void parse_flags(vw& all, size_t s, size_t e)
 {
   *(all.lp) = OAA::mc_label_parser;
   k = s;
   errors = e;
   all.driver = drive_ect;
-  base_learner = base_l;
-  base_finish = base_f;
+  base_learner = all.learn;
+  all.learn = learn;
+
+  base_finish = all.finish;
+  all.finish = finish;
 
   create_circuit(all, k, errors+1);
 }

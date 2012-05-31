@@ -16,9 +16,7 @@ namespace OAA
   
   typedef uint32_t prediction_t;
   
-  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
-  void learn(vw& all, example* ec);
-  void finish(vw&);
+  void parse_flags(vw& all, size_t s);
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);

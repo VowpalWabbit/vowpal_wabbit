@@ -12,8 +12,8 @@ namespace BFGS {
 
   void drive_bfgs(void*);
   void initializer(vw& all);
-  void finish(vw& all);
-  void learn(vw& all, example* ec);
+  void finish(void*);
+  void learn(void*, example* ec);
 
 }
 

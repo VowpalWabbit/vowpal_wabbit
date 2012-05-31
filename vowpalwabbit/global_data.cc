@@ -202,6 +202,8 @@ vw::vw()
   m = 15; 
 
   driver = drive_gd;
+  learn = learn_gd;
+  finish = finish_gd;
   set_minmax = set_mm;
 
   power_t = 0.5;

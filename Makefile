@@ -2,11 +2,11 @@ COMPILER = g++
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), FreeBSD)
-LIBS = -l boost_program_options	-l pthread -l z -l compat -l allreduce
+LIBS = -l boost_program_options	-l pthread -l z -l compat
 BOOST_INCLUDE = /usr/local/include
 BOOST_LIBRARY = /usr/local/lib
 else
-LIBS = -l boost_program_options -l pthread -l z -l allreduce
+LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/include
 BOOST_LIBRARY = /usr/local/lib
 endif

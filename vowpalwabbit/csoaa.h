@@ -14,9 +14,7 @@ namespace CSOAA {
     v_array<feature> costs;
   };
   
-  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
-  void learn(vw& all, example* ec);
-  void finish(vw&);
+  void parse_flags(vw& all, size_t s);
 
   void output_example(vw& all, example* ec);
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
@@ -48,9 +46,7 @@ namespace CSOAA_LDF {
     return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
   }
 
-  void learn(vw& all, example* ec);
-  void finish(vw&);
-  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void parse_flags(vw& all, size_t s);
   void global_print_newline(vw& all);
   void output_example(vw& all, example* ec);
 

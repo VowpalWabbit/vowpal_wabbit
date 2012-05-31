@@ -31,6 +31,8 @@ struct vw {
   parser* p;
 
   void (*driver)(void *);
+  void (*learn)(void *, example*);
+  void (*finish)(void *);
   void (*set_minmax)(shared_data* sd, double label);
 
   size_t num_bits; // log_2 of the number of features.

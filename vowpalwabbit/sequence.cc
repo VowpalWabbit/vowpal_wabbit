@@ -685,14 +685,18 @@ void remove_policy_offset(vw& all, example *ec, size_t policy)
  *** INTERFACE TO VW
  ********************************************************************************************/
 
-void (*base_learner)(vw&, example*) = NULL;
-  void (*base_finish)(vw&) = NULL;
+void (*base_learner)(void*, example*) = NULL;
+  void (*base_finish)(void*) = NULL;
 
-void parse_sequence_args(vw& all, po::variables_map& vm, void (*base_l)(vw&, example*), void (*base_f)(vw&))
+void dummy_learn(void*,example*){ cerr << "bad idea!" << endl;}
+void drive_sequence(void* in);
+
+void parse_sequence_args(vw& all, po::variables_map& vm)
 {
-  base_learner = base_l;
-  base_finish = base_f;
+  base_learner = all.learn;
+  all.learn = dummy_learn;
   *(all.lp)=OAA::mc_label_parser;
+  all.driver = drive_sequence;
   sequence_k = vm["sequence"].as<size_t>();
 
   if (vm.count("sequence_bigrams"))
@@ -761,7 +765,7 @@ void generate_training_example(vw& all, example *ec, history h, v_array<feature>
   if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all, ec);}
   ec->ld = (void*)&ld;
   total_examples_generated++;
-  base_learner(all, ec);
+  base_learner(&all, ec);
   if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (feature*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all, ec);}
 
   remove_history_from_example(all, ec);
@@ -784,7 +788,7 @@ size_t predict(vw& all, example *ec, history h, int policy, size_t truth)
 
     if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(all, ec); clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
     total_predictions_made++;
-    base_learner(all, ec);
+    base_learner(&all, ec);
     yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
     if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
     
@@ -1106,7 +1110,6 @@ NOT_REALLY_NEW:
   if (cur_ec != NULL)
     free_example(all, cur_ec);
 }
- 
 
 void drive_sequence(void* in)
 {
@@ -1129,7 +1132,7 @@ void drive_sequence(void* in)
   }
   
   free_required_memory();
-  base_finish(*all);
+  all->finish(all);
 }
 
 /*

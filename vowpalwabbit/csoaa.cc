@@ -195,11 +195,12 @@ void output_example(vw& all, example* ec)
   print_update(all, is_test_label((label*)ec->ld), ec);
 }
 
-void (*base_learner)(vw&, example*) = NULL;
-  void (*base_finish)(vw&) = NULL;
+void (*base_learner)(void*, example*) = NULL;
+  void (*base_finish)(void*) = NULL;
 
-void learn(vw& all, example* ec)
+void learn(void* a, example* ec)
   {
+    vw* all = (vw*)a;
     label* ld = (label*)ec->ld;
     float prediction = 1;
     float score = FLT_MAX;
@@ -227,7 +228,7 @@ void learn(vw& all, example* ec)
 
         size_t desired_increment = increment * (i-1);
         if (desired_increment != current_increment) {
-	  OAA::update_indicies(all, ec, desired_increment - current_increment);
+	  OAA::update_indicies(*all, ec, desired_increment - current_increment);
           current_increment = desired_increment;
         }
 	ec->partial_prediction = 0.;
@@ -242,11 +243,12 @@ void learn(vw& all, example* ec)
     ec->ld = ld;
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
     if (current_increment != 0)
-      OAA::update_indicies(all, ec, -current_increment);
+      OAA::update_indicies(*all, ec, -current_increment);
   }
 
-void finish(vw& all)
+void finish(void* a)
 {
+  vw* all = (vw*)a;
   if (name.begin != NULL)
     free(name.begin);
   base_finish(all);
@@ -260,13 +262,13 @@ void drive_csoaa(void* in)
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn(*all, ec);
+	  learn(all, ec);
           output_example(*all, ec);
 	  free_example(*all, ec);
 	}
       else if (parser_done(all->p))
 	{
-	  finish(*all);
+	  finish(all);
 	  return;
 	}
       else 
@@ -274,13 +276,15 @@ void drive_csoaa(void* in)
     }
 }
 
-void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
+void parse_flags(vw& all, size_t s)
 {
   *(all.lp) = cs_label_parser;
   all.sd->k = s;
   all.driver = drive_csoaa;
-  base_learner = base_l;
-  base_finish = base_f;
+  base_learner = all.learn;
+  all.learn = learn;
+  base_finish = all.finish;
+  all.finish = finish;
   increment = (all.length()/all.sd->k) * all.stride;
 }
 
@@ -291,8 +295,8 @@ namespace CSOAA_LDF {
   v_array<example*> ec_seq = v_array<example*>();
   size_t read_example_this_loop = 0;
 
-  void (*base_learner)(vw&, example*) = NULL;
-  void (*base_finish)(vw&) = NULL;
+  void (*base_learner)(void*, example*) = NULL;
+  void (*base_finish)(void*) = NULL;
 
   void do_actual_learning(vw& all)
   {
@@ -322,7 +326,7 @@ namespace CSOAA_LDF {
       }
 
       ec->ld = &simple_label;
-      base_learner(all, ec); // make a prediction
+      base_learner(&all, ec); // make a prediction
       push(predictions, ec->partial_prediction);
       if (ec->partial_prediction < min_score) {
         min_score = ec->partial_prediction;
@@ -345,7 +349,7 @@ namespace CSOAA_LDF {
       simple_label.weight = 1.;
       ec->ld = &simple_label;
       ec->partial_prediction = 0.;
-      base_learner(all, ec);
+      base_learner(&all, ec);
 
       // fill in test predictions
       *(OAA::prediction_t*)&(ec->final_prediction) = (prediction == ld->label) ? 1 : 0;
@@ -390,25 +394,27 @@ namespace CSOAA_LDF {
     ec_seq.erase();
   }
 
-  void learn(vw& all, example *ec) {
-    if (ec_seq.index() >= all.p->ring_size - 2) { // give some wiggle room
+  void learn(void* a, example *ec) {
+    vw* all = (vw*)a;
+    if (ec_seq.index() >= all->p->ring_size - 2) { // give some wiggle room
       cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
-      do_actual_learning(all);
-      clear_seq(all, true);
+      do_actual_learning(*all);
+      clear_seq(*all, true);
     }
 
     if (example_is_newline(ec)) {
-      do_actual_learning(all);
-      clear_seq(all, true);
-      global_print_newline(all);
+      do_actual_learning(*all);
+      clear_seq(*all, true);
+      global_print_newline(*all);
     } else {
       push(ec_seq, ec);
     }
   }
 
-  void finish(vw& all)
+  void finish(void* a)
   {
-    clear_seq(all, true);
+    vw* all = (vw*)a;
+    clear_seq(*all, true);
     if (ec_seq.begin != NULL)
       free(ec_seq.begin);
     base_finish(all);
@@ -421,21 +427,21 @@ namespace CSOAA_LDF {
     read_example_this_loop = 0;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
-        learn(*all, ec);
+        learn(all, ec);
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
-        finish(*all);
+        finish(all);
         return;
       }
     }
   }
 
-  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
+  void parse_flags(vw& all, size_t s)
   {
     *(all.lp) = OAA::mc_label_parser;
     all.driver = drive_csoaa_ldf;
-    base_learner = base_l;
-    base_finish = base_f;
+    base_learner = all.learn;
+    base_finish = all.finish;
   }
 
   void global_print_newline(vw& all)

@@ -191,13 +191,10 @@ vw parse_args(int argc, char *argv[])
       all.stride = 2;
   }
   
-  void (*base_learner)(vw& all, example*) = learn_gd;
-  void (*base_finish)(vw& all) = finish_gd;
-  
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     all.driver = BFGS::drive_bfgs;
-    base_learner = BFGS::learn;
-    base_finish = BFGS::finish;
+    all.learn = BFGS::learn;
+    all.finish = BFGS::finish;
     all.bfgs = true;
     all.stride = 4;
     
@@ -514,62 +511,37 @@ vw parse_args(int argc, char *argv[])
     BFGS::initializer(all);
   }
 
-  void (*mc_learner)(vw&, example*) = NULL;
-  void (*mc_finish)(vw&) = NULL;
-
   if(vm.count("oaa"))
-    {
-      OAA::parse_flags(all, vm["oaa"].as<size_t>(), base_learner, base_finish);
-      mc_learner = OAA::learn;
-      mc_finish = OAA::finish;
-    }
+    OAA::parse_flags(all, vm["oaa"].as<size_t>());
   else if (vm.count("ect"))
-    {
-      ECT::parse_flags(all, vm["ect"].as<size_t>(), vm["errors"].as<size_t>(), base_learner, base_finish);
-      mc_learner = ECT::learn;
-      mc_finish = ECT::finish;
-    }
-
-  void (*cs_learner)(vw&,example*) = CSOAA::learn;
-  void (*cs_finish)(vw&) = CSOAA::finish;
+    ECT::parse_flags(all, vm["ect"].as<size_t>(), vm["errors"].as<size_t>());
 
   if(vm.count("wap"))
-    {
-      WAP::parse_flags(all, vm["wap"].as<size_t>(), base_learner, base_finish);
-      cs_learner = WAP::learn;
-      cs_finish = WAP::finish;
-    }
+    WAP::parse_flags(all, vm["wap"].as<size_t>());
 
   if(vm.count("csoaa_ldf")) {
-    CSOAA_LDF::parse_flags(all, 0, base_learner, base_finish);
-    cs_learner = CSOAA_LDF::learn;
-    cs_finish  = CSOAA_LDF::finish;
+    CSOAA_LDF::parse_flags(all, 0);
   }
 
-  if(vm.count("wap_ldf")) {
-    WAP_LDF::parse_flags(all, 0, base_learner, base_finish);
-    cs_learner = WAP_LDF::learn;
-    cs_finish  = WAP_LDF::finish;
-  }
-
+  if(vm.count("wap_ldf")) 
+    WAP_LDF::parse_flags(all, 0);
 
   if(vm.count("csoaa"))
-    CSOAA::parse_flags(all, vm["csoaa"].as<size_t>(), base_learner, base_finish);
+    CSOAA::parse_flags(all, vm["csoaa"].as<size_t>());
 
   if (vm.count("sequence")) {
     if (vm.count("wap")) 
       ;
     else
-      CSOAA::parse_flags(all, vm["sequence"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
+      CSOAA::parse_flags(all, vm["sequence"].as<size_t>());  // default to CSOAA unless wap is specified
 
-    parse_sequence_args(all, vm, cs_learner, cs_finish);
-    all.driver = drive_sequence;
+    parse_sequence_args(all, vm);
     all.sequence = true;
   }
   return all;
 }
 
-vw parse_args(char* c)
+vw vw_initialize(char* c)
 {
   size_t len = strlen(c);
   substring ss = {c, c+len};
