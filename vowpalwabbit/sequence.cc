@@ -611,8 +611,8 @@ namespace Sequence {
    ********************************************************************************************/
 
 
-  void (*base_learner)(vw&,example*) = NULL;
-  void (*base_finish)(vw&) = NULL;
+  void (*base_learner)(void*,example*) = NULL;
+  void (*base_finish)(void*) = NULL;
 
 
   void generate_training_example(vw&all, example *ec, history h, v_array<CSOAA::wclass>costs)
@@ -625,7 +625,7 @@ namespace Sequence {
     if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all,ec);}
     ec->ld = (void*)&ld;
     total_examples_generated++;
-    base_learner(all, ec);
+    base_learner(&all, ec);
     if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << "::" << c->partial_prediction; clog << " ]\t"; simple_print_example_features(all,ec);}
 
     SearnUtil::remove_history_from_example(all, &hinfo, ec);
@@ -660,7 +660,7 @@ namespace Sequence {
 
       if (PRINT_DEBUG_INFO) {clog << "before test: "; simple_print_example_features(all, ec);clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
       total_predictions_made++;
-      base_learner(all, ec);
+      base_learner(&all, ec);
       yhat = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
       if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << ", pp=" << ec->partial_prediction << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
 
@@ -780,6 +780,7 @@ namespace Sequence {
       ec_seq[t]->ld = old_label;
     }
   }
+
 
   void run_test_common_init()
   {
@@ -1145,7 +1146,78 @@ namespace Sequence {
    ********************************************************************************************/
 
 
-  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&))
+  void finish(void*in)
+  {
+    vw*all = (vw*)in;
+    free_required_memory(*all);
+    base_finish(in);
+  }
+
+  void learn(void*in, example *ec) {
+    vw*all = (vw*)in;
+    if (ec_seq.index() >= all->p->ring_size - 2) { // give some wiggle room
+      cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
+      do_actual_learning(*all);
+      clear_seq(*all);
+    }
+
+    if (CSOAA_LDF::example_is_newline(ec)) {
+      do_actual_learning(*all);
+      clear_seq(*all);
+      CSOAA_LDF::global_print_newline(*all);
+      free_example(*all, ec);
+    } else {
+      read_example_this_loop++;
+      read_example_last_id = ec->example_counter;
+      if (ec->pass != read_example_last_pass) {
+        read_example_last_pass = ec->pass;
+        passes_since_new_policy++;
+        if (passes_since_new_policy >= sequence_passes_per_policy) {
+          passes_since_new_policy = 0;
+          current_policy++;
+          if (current_policy > total_number_of_policies) {
+            cerr << "internal error (bug): too many policies; not advancing" << endl;
+            current_policy = total_number_of_policies;
+          }
+        }
+      }
+      if (((OAA::mc_label*)ec->ld)->label > sequence_k) {
+        if (!warned_about_class_overage) {
+          cerr << "warning: specified " << sequence_k << " classes, but found class " << ((OAA::mc_label*)ec->ld)->label << "; replacing with " << sequence_k << endl;
+          warned_about_class_overage = true;
+        }
+        ((OAA::mc_label*)ec->ld)->label = sequence_k;
+      }
+
+      push(ec_seq, ec);
+    }
+  }
+
+  void drive(void* in)
+  {
+    vw* all = (vw*)in;
+    const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
+
+    fprintf(stderr, header_fmt, "average", "since", "sequence", "example",   "current label", "current predicted",  "current",  "cur", "cur", "predic.", "examples");
+    fprintf(stderr, header_fmt,    "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
+    cerr.precision(5);
+
+    allocate_required_memory(*all);
+
+    example* ec = NULL;
+    read_example_this_loop = 0;
+    while (true) {
+      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+        learn(all, ec);
+      } else if (parser_done(all->p)) {
+        do_actual_learning(*all);
+        finish(all);
+        return;
+      }
+    }
+  }
+
+  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     po::options_description desc("Sequence options");
     desc.add_options()
@@ -1169,9 +1241,14 @@ namespace Sequence {
     po::store(parsed, vm);
     po::notify(vm);
 
-    base_learner = base_l;
-    base_finish = base_f;
+    all.driver = drive;
+    base_learner = all.learn;
+    all.learn = learn;
+    base_finish = all.finish;
+    all.finish = finish;
     *(all.lp)=OAA::mc_label_parser;
+
+    all.sequence = true;
 
     sequence_k = vm["sequence"].as<size_t>();
 
@@ -1229,73 +1306,8 @@ namespace Sequence {
   }
 
 
-  void finish(vw&all)
-  {
-    free_required_memory(all);
-    base_finish(all);
-  }
-
-  void learn(vw& all, example *ec) {
-    if (ec_seq.index() >= all.p->ring_size - 2) { // give some wiggle room
-      cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
-      do_actual_learning(all);
-      clear_seq(all);
-    }
-
-    if (CSOAA_LDF::example_is_newline(ec)) {
-      do_actual_learning(all);
-      clear_seq(all);
-      CSOAA_LDF::global_print_newline(all);
-      free_example(all, ec);
-    } else {
-      read_example_this_loop++;
-      read_example_last_id = ec->example_counter;
-      if (ec->pass != read_example_last_pass) {
-        read_example_last_pass = ec->pass;
-        passes_since_new_policy++;
-        if (passes_since_new_policy >= sequence_passes_per_policy) {
-          passes_since_new_policy = 0;
-          current_policy++;
-          if (current_policy > total_number_of_policies) {
-            cerr << "internal error (bug): too many policies; not advancing" << endl;
-            current_policy = total_number_of_policies;
-          }
-        }
-      }
-      if (((OAA::mc_label*)ec->ld)->label > sequence_k) {
-        if (!warned_about_class_overage) {
-          cerr << "warning: specified " << sequence_k << " classes, but found class " << ((OAA::mc_label*)ec->ld)->label << "; replacing with " << sequence_k << endl;
-          warned_about_class_overage = true;
-        }
-        ((OAA::mc_label*)ec->ld)->label = sequence_k;
-      }
-
-      push(ec_seq, ec);
-    }
-  }
-
-  void drive(void* in)
-  {
-    vw* all = (vw*)in;
-    const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
-
-    fprintf(stderr, header_fmt, "average", "since", "sequence", "example",   "current label", "current predicted",  "current",  "cur", "cur", "predic.", "examples");
-    fprintf(stderr, header_fmt,    "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
-    cerr.precision(5);
-
-    allocate_required_memory(*all);
-
-    example* ec = NULL;
-    read_example_this_loop = 0;
-    while (true) {
-      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
-        learn(*all, ec);
-      } else if (parser_done(all->p)) {
-        do_actual_learning(*all);
-        finish(*all);
-        return;
-      }
-    }
-  }
-
 }
+
+/*
+TODO: position-based history features?
+*/

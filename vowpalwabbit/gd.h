@@ -43,9 +43,9 @@ void train_offset_example(regressor& r, example* ex, size_t offset);
 void compute_update(example* ec);
 void offset_train(regressor &reg, example* &ec, float update, size_t offset);
 void train_one_example_single_thread(regressor& r, example* ex);
-void drive_gd(void *);
-void finish_gd(vw& all);
-void learn_gd(vw& all, example* ec);
+void drive_gd(void*);
+void finish_gd(void*);
+void learn_gd(void*, example* ec);
 
 void output_and_account_example(example* ec);
 void finish_example(vw&, example* ec);

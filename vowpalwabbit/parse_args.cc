@@ -146,6 +146,10 @@ vw parse_args(int argc, char *argv[])
 
   all.data_filename = "";
 
+  all.sequence = false;
+  all.searn = false;
+
+
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = all.sd->t;
 
@@ -179,13 +183,10 @@ vw parse_args(int argc, char *argv[])
       all.stride = 2;
   }
   
-  void (*base_learner)(vw& all, example*) = learn_gd;
-  void (*base_finish)(vw& all) = finish_gd;
-  
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     all.driver = BFGS::drive_bfgs;
-    base_learner = BFGS::learn;
-    base_finish = BFGS::finish;
+    all.learn = BFGS::learn;
+    all.finish = BFGS::finish;
     all.bfgs = true;
     all.stride = 4;
     
@@ -489,81 +490,64 @@ vw parse_args(int argc, char *argv[])
     BFGS::initializer(all);
   }
 
-  void (*mc_learner)(vw&, example*) = NULL;
-  void (*mc_finish)(vw&) = NULL;
-
-  void (*cs_learner)(vw&,example*) = NULL;
-  void (*cs_finish)(vw&) = NULL;
+  bool got_mc = false;
+  bool got_cs = false;
 
   if(vm.count("oaa")) {
-    if (mc_learner) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
-    OAA::parse_flags(all, to_pass_further, vm["oaa"].as<size_t>(), base_learner, base_finish);
-    mc_learner = OAA::learn;
-    mc_finish = OAA::finish;
+    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
+    OAA::parse_flags(all, to_pass_further, vm, vm["oaa"].as<size_t>());
+    got_mc = true;
   }
   
   if (vm.count("ect")) {
-    if (mc_learner) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
-    ECT::parse_flags(all, to_pass_further, vm["ect"].as<size_t>(), vm["errors"].as<size_t>(), base_learner, base_finish);
-    mc_learner = ECT::learn;
-    mc_finish = ECT::finish;
+    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
+    ECT::parse_flags(all, to_pass_further, vm, vm["ect"].as<size_t>());
+    got_mc = true;
   }
 
   if(vm.count("csoaa")) {
-    if (cs_learner) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    CSOAA::parse_flags(all, to_pass_further, vm["csoaa"].as<size_t>(), base_learner, base_finish);
-    cs_learner = CSOAA::learn;
-    cs_finish  = CSOAA::finish;
+    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    CSOAA::parse_flags(all, to_pass_further, vm, vm["csoaa"].as<size_t>());
+    got_cs = true;
   }
 
   if(vm.count("wap")) {
-    if (cs_learner) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    WAP::parse_flags(all, to_pass_further, vm["wap"].as<size_t>(), base_learner, base_finish);
-    cs_learner = WAP::learn;
-    cs_finish  = WAP::finish;
+    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    WAP::parse_flags(all, to_pass_further, vm, vm["wap"].as<size_t>());
+    got_cs = true;
   }
 
   if(vm.count("csoaa_ldf")) {
-    if (cs_learner) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    CSOAA_LDF::parse_flags(all, to_pass_further, 0, base_learner, base_finish);
-    cs_learner = CSOAA_LDF::learn;
-    cs_finish  = CSOAA_LDF::finish;
+    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    CSOAA_LDF::parse_flags(all, to_pass_further, vm, 0);
+    got_cs = true;
   }
 
   if(vm.count("wap_ldf")) {
-    if (cs_learner) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    WAP_LDF::parse_flags(all, to_pass_further, 0, base_learner, base_finish);
-    cs_learner = WAP_LDF::learn;
-    cs_finish  = WAP_LDF::finish;
+    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    WAP_LDF::parse_flags(all, to_pass_further, vm, 0);
+    got_cs = true;
   }
 
   if (vm.count("sequence")) {
-    if (!cs_learner) {
-      CSOAA::parse_flags(all, to_pass_further, vm["sequence"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
-      cs_learner = CSOAA::learn;
-      cs_finish  = CSOAA::finish;
+    if (!got_cs) {
+      CSOAA::parse_flags(all, to_pass_further, vm, vm["sequence"].as<size_t>());  // default to CSOAA unless wap is specified
+      got_cs = true;
     }
-    Sequence::parse_flags(all, to_pass_further, vm, cs_learner, cs_finish);
-
-    all.driver = Sequence::drive;
-    all.sequence = true;
+    Sequence::parse_flags(all, to_pass_further, vm);
   }
 
   if (vm.count("searn")) {
     if (vm.count("sequence")) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
 
-    if (!cs_learner) {
-      CSOAA::parse_flags(all, to_pass_further, vm["searn"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
-      cs_learner = CSOAA::learn;
-      cs_finish  = CSOAA::finish;
+    if (!got_cs) {
+      CSOAA::parse_flags(all, to_pass_further, vm, vm["searn"].as<size_t>());  // default to CSOAA unless wap is specified
+      got_cs = true;
     }
-    Searn::parse_flags(all, to_pass_further, vm, cs_learner, cs_finish);
-
-    all.driver = Searn::drive;
-    all.searn = true;
+    Searn::parse_flags(all, to_pass_further, vm);
   }
 
-  if (cs_learner && mc_learner) {
+  if (got_cs && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CS learning" << endl;
     exit(-1);
   }
@@ -578,7 +562,7 @@ vw parse_args(int argc, char *argv[])
       int f = io_buf().open_file(last_unrec_arg.c_str(), io_buf::READ);
       if (f != -1) {
         close(f);
-        cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
+        //cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
         all.data_filename = last_unrec_arg;
         if (ends_with(last_unrec_arg, ".gz"))
           set_compressed(all.p);
@@ -600,7 +584,7 @@ vw parse_args(int argc, char *argv[])
   return all;
 }
 
-vw parse_args(char* c)
+vw vw_initialize(char* c)
 {
   size_t len = strlen(c);
   substring ss = {c, c+len};

@@ -322,8 +322,8 @@ namespace Searn
   size_t total_number_of_policies = 1;
   size_t last_printed_policy      = 0;
 
-  void (*base_learner)(vw&, example*) = NULL;
-  void (*base_finish)(vw&) = NULL;
+  void (*base_learner)(void*, example*) = NULL;
+  void (*base_finish)(void*) = NULL;
 
   void simple_print_example_features(vw&all, example *ec)
   {
@@ -379,7 +379,7 @@ namespace Searn
 
     string str = task.to_string(s0, false, last_action_sequence);
     for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
-      int f = all.final_prediction_sink[i];
+      //int f = all.final_prediction_sink[i];
       // all.print(f, str, 0., ec->tag); // TODO: need to print strings!!!
     }
   }
@@ -424,7 +424,19 @@ namespace Searn
   }
 
 
-  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&))
+  void learn(void*in, example *ec)
+  {
+    //vw*all = (vw*)in;
+    // TODO
+  }
+
+  void finish(void*in)
+  {
+    //vw*all = (vw*)in;
+  }
+
+
+  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     po::options_description desc("Searn options");
     desc.add_options()
@@ -531,8 +543,13 @@ namespace Searn
       exit(-1);
     }
 
-    base_learner = base_l;
-    base_finish  = base_f;
+    all.searn = true;
+
+    all.driver = drive;
+    base_learner = all.learn;
+    all.learn = learn;
+    base_finish = all.finish;
+    all.finish = finish;
   }
 
   void clear_seq(vw&all)
@@ -630,7 +647,7 @@ namespace Searn
         if (!all_allowed)
           ec->ld = (void*)&allowed_labels;
       }
-      base_learner(all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
+      base_learner(&all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
       size_t final_prediction = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
       ec->ld = old_label;
 
@@ -647,7 +664,7 @@ namespace Searn
 
         task.cs_ldf_example(all, s0, action, ec, true);
         SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
-        base_learner(all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
+        base_learner(&all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
         SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
         if (action == 1 || 
             ec->partial_prediction > best_prediction) {
@@ -761,7 +778,7 @@ namespace Searn
       void* old_label = ec->ld;
       ec->ld = (void*)&ld;
       SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
-      base_learner(all,ec);
+      base_learner(&all,ec);
       SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
       ec->ld = old_label;
       task.cs_example(all, s0, ec, false);
@@ -778,10 +795,10 @@ namespace Searn
         push(old_labels, global_example_set[k-1]->ld);
         global_example_set[k-1]->ld = (void*)&ld;
         SearnUtil::add_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
-        base_learner(all,global_example_set[k-1]);
+        base_learner(&all,global_example_set[k-1]);
       }
 
-      base_learner(all,empty_example);
+      base_learner(&all,empty_example);
 
       for (size_t k=1; k<=max_action; k++) {
         if (!rollout[k-1].alive) break;
@@ -964,7 +981,7 @@ namespace Searn
     if (task.finalize != NULL)
       task.finalize();
     free_memory(*all);
-    base_finish(*all);
+    base_finish(all);
   }
 }
 

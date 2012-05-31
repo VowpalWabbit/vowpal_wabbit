@@ -3,7 +3,6 @@ Num weight bits = 13
 learning rate = 1
 initial_t = 1
 power_t = 0.5
-warning: final argument 'train-sets/wiki1K.dat' assumed to be input file; in the future, please use -d
 using no cache
 Reading from train-sets/wiki1K.dat
 num sources = 1

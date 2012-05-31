@@ -173,7 +173,7 @@ namespace Searn
   };
 
 
-  void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&));
+  void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm);
   void drive(void*);
 }
 

@@ -36,52 +36,54 @@ size_t gd_current_pass = 0;
 void predict(vw& all, example* ex);
 void sync_weights(vw& all);
 
-void learn_gd(vw& all, example* ec)
+void learn_gd(void* a, example* ec)
 {
+  vw* all = (vw*)a;
   assert(ec->in_use);
   if (ec->pass != gd_current_pass)
     {
-      if(all.span_server != "") {
-	if(all.adaptive)
-	  accumulate_weighted_avg(all, all.span_server, all.reg);
+      if(all->span_server != "") {
+	if(all->adaptive)
+	  accumulate_weighted_avg(*all, all->span_server, all->reg);
 	else 
-	  accumulate_avg(all, all.span_server, all.reg, 0);	      
+	  accumulate_avg(*all, all->span_server, all->reg, 0);	      
       }
       
-      if (all.save_per_pass)
-	sync_weights(all);
-      all.eta *= all.eta_decay_rate;
-      save_predictor(all, all.final_regressor_name, gd_current_pass);
+      if (all->save_per_pass)
+	sync_weights(*all);
+      all->eta *= all->eta_decay_rate;
+      save_predictor(*all, all->final_regressor_name, gd_current_pass);
       gd_current_pass = ec->pass;
     }
   
-  if (!command_example(all, ec))
+  if (!command_example(*all, ec))
     {
-      predict(all,ec);
+      predict(*all,ec);
       if (ec->eta_round != 0.)
 	{
-	  if (all.adaptive)
-	    if (all.power_t == 0.5 || !all.exact_adaptive_norm)
-	      adaptive_inline_train(all,ec,ec->eta_round);
+	  if (all->adaptive)
+	    if (all->power_t == 0.5 || !all->exact_adaptive_norm)
+	      adaptive_inline_train(*all,ec,ec->eta_round);
 	    else
-	      general_adaptive_train(all,ec,ec->eta_round,all.power_t);
+	      general_adaptive_train(*all,ec,ec->eta_round,all->power_t);
 	  else
-	    inline_train(all, ec, ec->eta_round);
-	  if (all.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-	    sync_weights(all);
+	    inline_train(*all, ec, ec->eta_round);
+	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+	    sync_weights(*all);
 	  
 	}
     }
 }
 
-void finish_gd(vw& all)
+void finish_gd(void* a)
 {
-  sync_weights(all);
-  if(all.span_server != "") {
-    if(all.adaptive)
-      accumulate_weighted_avg(all, all.span_server, all.reg);
+  vw* all = (vw*)a;
+  sync_weights(*all);
+  if(all->span_server != "") {
+    if(all->adaptive)
+      accumulate_weighted_avg(*all, all->span_server, all->reg);
     else 
-      accumulate_avg(all, all.span_server, all.reg, 0);	      
+      accumulate_avg(*all, all->span_server, all->reg, 0);	      
   }
 }
 
@@ -668,12 +670,12 @@ void drive_gd(void* in)
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn_gd(*all, ec);
+	  learn_gd(all, ec);
 	  finish_example(*all, ec);
 	}
       else if (parser_done(all->p))
 	{
-	  finish_gd(*all);
+	  finish_gd(all);
 	  return;
 	}
       else 

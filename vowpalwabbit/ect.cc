@@ -1,12 +1,12 @@
 /*
-Copyright (c) 2012 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+  Copyright (c) 2012 Yahoo! Inc.  All rights reserved.  The copyrights
+  embodied in the content of this file are licensed under the BSD
+  (revised) open source license
 
-Initial implementation by Hal Daume and John Langford.  
+  Initial implementation by Hal Daume and John Langford.  
 
-This is not working yet (more to do).
- */
+  This is not working yet (more to do).
+*/
 
 #include <math.h>
 #include <iostream>
@@ -18,6 +18,7 @@ This is not working yet (more to do).
 #include "ect.h"
 #include "parser.h"
 #include "simple_label.h"
+#include "parse_args.h"
 
 using namespace std;
 
@@ -219,8 +220,8 @@ namespace ECT
     return retVal;
   }
 
-  void (*base_learner)(vw&, example*) = NULL;
-  void (*base_finish)(vw&) = NULL;
+  void (*base_learner)(void*, example*) = NULL;
+  void (*base_finish)(void*) = NULL;
 
   int ect_predict(vw& all, example* ec)
   {
@@ -244,7 +245,7 @@ namespace ECT
             OAA::update_indicies(all, ec,offset);
             ec->partial_prediction = 0;
 	  
-            base_learner(all, ec);
+            base_learner(&all, ec);
 	  
             OAA::update_indicies(all, ec,-offset);
 	  
@@ -274,7 +275,7 @@ namespace ECT
 
             ec->partial_prediction = 0;
             OAA::update_indicies(all, ec,offset);
-            base_learner(all, ec);
+            base_learner(&all, ec);
             float pred = ec->final_prediction;
             OAA::update_indicies(all, ec,-offset);
             root_to_leaf(current, pred > 0.);
@@ -323,10 +324,10 @@ namespace ECT
             OAA::update_indicies(all, ec,offset);
 
             ec->partial_prediction = 0;
-            base_learner(all, ec);
+            base_learner(&all, ec);
             simple_temp.weight = 0.;
             ec->partial_prediction = 0;
-            base_learner(all, ec);//inefficient, we should extract final prediction exactly.
+            base_learner(&all, ec);//inefficient, we should extract final prediction exactly.
             float pred = ec->final_prediction;
             OAA::update_indicies(all, ec,-offset);
             leaf_to_root(current, pred > 0.);
@@ -360,7 +361,7 @@ namespace ECT
                 OAA::update_indicies(all, ec,offset);
                 ec->partial_prediction = 0;
 	      
-                base_learner(all, ec);
+                base_learner(&all, ec);
 	      
                 OAA::update_indicies(all, ec,-offset);
 	      
@@ -376,7 +377,7 @@ namespace ECT
       }
   }
 
-  void learn(vw& all, example* ec)
+  void learn(void*a, example* ec)
   {
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     //int new_label = ect_predict(ec);
@@ -388,7 +389,7 @@ namespace ECT
       ec->final_prediction = new_label;*/
   }
 
-  void finish(vw& all)
+  void finish(void* all)
   {
     for (size_t i = 0; i < tournament_counts.index(); i++)
       if (tournament_counts[i].begin != tournament_counts[i].end)
@@ -419,13 +420,13 @@ namespace ECT
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(*all, ec);
+            learn(all, ec);
             OAA::output_example(*all, ec);
             free_example(*all, ec);
           }
         else if (parser_done(all->p))
           {
-            finish(*all);
+            finish(all);
             return;
           }
         else 
@@ -433,14 +434,34 @@ namespace ECT
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, size_t s, size_t e, void (*base_l)(vw&, example*), void (*base_f)(vw&))
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
   {
+    po::options_description desc("ECT options");
+    desc.add_options()
+      ("error", po::value<size_t>(), "error in ECT");
+
+    po::parsed_options parsed = po::command_line_parser(opts).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+
+    if (vm.count("error")) {
+      errors = vm["error"].as<size_t>();
+    } else {
+      cerr << "error: ect requires --error" << endl;
+      exit(-1);
+    }
+
     *(all.lp) = OAA::mc_label_parser;
     k = s;
-    errors = e;
     all.driver = drive_ect;
-    base_learner = base_l;
-    base_finish = base_f;
+    base_learner = all.learn;
+    all.learn = learn;
+
+    base_finish = all.finish;
+    all.finish = finish;
 
     create_circuit(all, k, errors+1);
   }

@@ -4,7 +4,6 @@ Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0
-warning: final argument 'train-sets/0002.dat' assumed to be input file; in the future, please use -d
 using no cache
 Reading from train-sets/0002.dat
 num sources = 1

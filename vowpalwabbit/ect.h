@@ -2,12 +2,11 @@
 #define ECT_H
 
 #include "oaa.h"
+#include "parse_args.h"
 
 namespace ECT
 {
-  void parse_flags(vw&, std::vector<std::string>&, size_t s, size_t e, void (*base_l)(vw&, example*), void (*base_f)(vw&));
-  void learn(vw& all, example* ec);
-  void finish(vw&);  
+  void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, size_t s);
 }
 
 #endif

@@ -161,11 +161,11 @@ namespace OAA {
       }
   }
 
-  void (*base_learner)(vw&,example*) = NULL;
-  void (*base_finish)(vw&) = NULL;
+  void (*base_learner)(void*,example*) = NULL;
 
-  void learn(vw& all, example* ec)
+  void learn(void*a, example* ec)
   {
+    vw* all = (vw*)a;
     mc_label* mc_label_data = (mc_label*)ec->ld;
     size_t prediction = 1;
     float score = INT_MIN;
@@ -184,7 +184,7 @@ namespace OAA {
         simple_temp.weight = mc_label_data->weight;
         ec->ld = &simple_temp;
         if (i != 0)
-          update_indicies(all, ec, increment);
+          update_indicies(*all, ec, increment);
         base_learner(all,ec);
         if (ec->partial_prediction > score)
           {
@@ -195,12 +195,7 @@ namespace OAA {
       }
     ec->ld = mc_label_data;
     *(prediction_t*)&(ec->final_prediction) = prediction;
-    update_indicies(all, ec, -total_increment);
-  }
-
-  void finish(vw& all)
-  {
-    base_finish(all);
+    update_indicies(*all, ec, -total_increment);
   }
 
   void drive_oaa(void *in)
@@ -211,13 +206,13 @@ namespace OAA {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(*all, ec);
+            learn(all, ec);
             output_example(*all, ec);
             free_example(*all, ec);
           }
         else if (parser_done(all->p))
           {
-            finish(*all);
+            all->finish(all);
             return;
           }
         else 
@@ -225,15 +220,14 @@ namespace OAA {
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
   {
     *(all.lp) = mc_label_parser;
     k = s;
     all.driver = drive_oaa;
-    base_learner = base_l;
-    base_finish = base_f;
+    base_learner = all.learn;
+    all.learn = learn;
     increment = (all.length()/k) * all.stride;
     total_increment = increment*(k-1);
   }
-
 }

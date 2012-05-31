@@ -773,36 +773,38 @@ void process_example(vw& all, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void learn(vw& all, example* ec)
+void learn(void* a, example* ec)
 {
+  vw* all = (vw*)a;
   assert(ec->in_use);
   if (ec->pass != current_pass) {
-    int status = process_pass(all);
+    int status = process_pass(*all);
     if (status != LEARN_OK)
-      reset_state(all, true);
-    else if (output_regularizer && current_pass==all.numpasses-1) {
-      zero_preconditioner(all);
+      reset_state(*all, true);
+    else if (output_regularizer && current_pass==all->numpasses-1) {
+      zero_preconditioner(*all);
       preconditioner_pass = true;
     }
   }
   if (test_example(ec))
-    ec->final_prediction = bfgs_predict(all,ec);//w[0]
+    ec->final_prediction = bfgs_predict(*all,ec);//w[0]
   else
-    process_example(all, ec);
+    process_example(*all, ec);
 }
 
-void finish(vw& all)
+void finish(void* a)
 {
+  vw* all = (vw*)a;
   if (current_pass != 0 && !output_regularizer)
-    process_pass(all);
-  if (!all.quiet)
+    process_pass(*all);
+  if (!all->quiet)
     fprintf(stderr, "\n");
 
   if (output_regularizer)//need to accumulate and place the regularizer.
     {
-      if(all.span_server != "")
-	accumulate(all, all.span_server, all.reg, 3); //Accumulate preconditioner
-      preconditioner_to_regularizer(all, all.l2_lambda);
+      if(all->span_server != "")
+	accumulate(*all, all->span_server, all->reg, 3); //Accumulate preconditioner
+      preconditioner_to_regularizer(*all, all->l2_lambda);
     }
   ftime(&t_end_global);
   net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
@@ -878,7 +880,7 @@ void drive_bfgs(void* in)
 	}
      else if (parser_done(all->p))
 	{
-	  finish(*all);
+	  finish(all);
 	  return;
 	}
       else 
