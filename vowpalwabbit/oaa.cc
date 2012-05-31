@@ -207,7 +207,7 @@ void drive_oaa(void *in)
 	{
 	  learn(all, ec);
           output_example(*all, ec);
-	  free_example(*all, ec);
+	  vw_finish_example(*all, ec);
 	}
       else if (parser_done(all->p))
 	{

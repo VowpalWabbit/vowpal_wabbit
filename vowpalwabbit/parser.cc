@@ -744,7 +744,7 @@ void *main_parse_loop(void *in)
   return NULL;
 }
 
-void free_example(vw& all, example* ec)
+void vw_finish_example(vw& all, example* ec)
 {
   pthread_mutex_lock(&all.p->output_lock);
   all.p->local_example_number++;
