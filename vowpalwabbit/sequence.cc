@@ -224,7 +224,7 @@ namespace Sequence {
   {
     if (ec_seq.index() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
-        free_example(all, *ecc);
+        vw_finish_example(all, *ecc);
       }
     ec_seq.erase();
   }
@@ -1165,7 +1165,7 @@ namespace Sequence {
       do_actual_learning(*all);
       clear_seq(*all);
       CSOAA_LDF::global_print_newline(*all);
-      free_example(*all, ec);
+      vw_finish_example(*all, ec);
     } else {
       read_example_this_loop++;
       read_example_last_id = ec->example_counter;
@@ -1304,8 +1304,6 @@ namespace Sequence {
 
     total_number_of_policies = (int)ceil(((float)all.numpasses) / ((float)sequence_passes_per_policy));
   }
-
-
 }
 
 /*
