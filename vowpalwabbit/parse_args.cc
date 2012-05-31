@@ -592,6 +592,11 @@ vw parse_args(int argc, char *argv[])
     all.searn = true;
   }
 
+  if (cs_learner && mc_learner) {
+    cerr << "error: doesn't make sense to do both MC learning and CS learning" << endl;
+    exit(-1);
+  }
+
   if (to_pass_further.size() > 0) {
     bool is_actually_okay = false;
 
