@@ -8,5 +8,6 @@ embodied in the content of this file are licensed under the BSD
 #define LDA_CORE_H
 
 void drive_lda(void*);
+void lda_parse_flags(vw&, std::vector<std::string>&, po::variables_map&);
 
 #endif

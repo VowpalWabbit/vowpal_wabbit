@@ -478,6 +478,53 @@ public:
 
 std::vector<index_feature> sorted_features;
 
+size_t next_pow2(size_t x) {
+  int i = 0;
+  x = x > 0 ? x - 1 : 0;
+  while (x > 0) {
+    x >>= 1;
+    i++;
+  }
+  return 1 << i;
+}
+
+void lda_parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+{
+
+  po::options_description desc("Searn options");
+  desc.add_options()
+    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
+    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
+
+  po::parsed_options parsed = po::command_line_parser(opts).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(desc).allow_unregistered().run();
+  opts = po::collect_unrecognized(parsed.options, po::include_positional);
+  po::store(parsed, vm);
+  po::notify(vm);
+
+  all.p->sort_features = true;
+  float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
+  all.stride = 1 << (int) temp;
+  all.random_weights = true;
+  all.add_constant = false;
+
+  if (vm.count("lda") && all.eta > 1.)
+    {
+      cerr << "your learning rate is too high, setting it to 1" << endl;
+      all.eta = min(all.eta,1.f);
+    }
+
+  if (vm.count("minibatch")) {
+    size_t minibatch2 = next_pow2(all.minibatch);
+    all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
+  }
+
+
+}
+
 void drive_lda(void* in)
 {
   vw* all = (vw*)in;

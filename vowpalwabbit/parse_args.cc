@@ -38,16 +38,6 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
-size_t next_pow2(size_t x) {
-  int i = 0;
-  x = x > 0 ? x - 1 : 0;
-  while (x > 0) {
-    x >>= 1;
-    i++;
-  }
-  return 1 << i;
-}
-
 vw parse_args(int argc, char *argv[])
 {
   po::options_description desc("VW options");
@@ -97,10 +87,6 @@ vw parse_args(int argc, char *argv[])
     ("initial_pass_length", po::value<size_t>(&all.pass_length), "initial number of examples per pass")
     ("initial_t", po::value<double>(&(all.sd->t)), "initial t value")
     ("lda", po::value<size_t>(&all.lda), "Run lda with <int> topics")
-    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
-    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
-    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
-    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA")
     ("span_server", po::value<string>(&all.span_server), "Location of server for setting up spanning tree")
     ("min_prediction", po::value<double>(&all.sd->min_label), "Smallest prediction to output")
     ("max_prediction", po::value<double>(&all.sd->max_label), "Largest prediction to output")
@@ -371,33 +357,18 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("nonormalize"))
     all.nonormalize = true;
 
-  if (vm.count("lda"))
-    {
-      all.driver = drive_lda;
-      all.p->sort_features = true;
-      float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
-      all.stride = 1 << (int) temp;
-      all.random_weights = true;
-      all.add_constant = false;
-    }
+  if (vm.count("lda")) {
+    lda_parse_flags(all, to_pass_further, vm);
+    all.driver = drive_lda;
+  }
 
-  if (vm.count("lda") && all.eta > 1.)
-    {
-      cerr << "your learning rate is too high, setting it to 1" << endl;
-      all.eta = min(all.eta,1.f);
-    }
   if (!vm.count("lda")) 
     all.eta *= pow(all.sd->t, (double)all.power_t);
 
-  if (vm.count("minibatch")) {
-    size_t minibatch2 = next_pow2(all.minibatch);
-    all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
-  }
-
-  if (vm.count("sequence_max_length")) {
-    size_t maxlen = vm["sequence_max_length"].as<size_t>();
-    all.p->ring_size = (all.p->ring_size > maxlen) ? all.p->ring_size : maxlen;
-  }
+  // if (vm.count("sequence_max_length")) {
+  //   size_t maxlen = vm["sequence_max_length"].as<size_t>();
+  //   all.p->ring_size = (all.p->ring_size > maxlen) ? all.p->ring_size : maxlen;
+  // }
 
   parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
 

@@ -9,15 +9,15 @@ Reading from train-sets/wiki1K.dat
 num sources = 1
 average    since       example  example    current  current  current
 loss       last        counter   weight      label  predict features
-10.276562  10.276562         3      3.0    unknown   0.0000       37
-10.341712  10.406861         6      6.0    unknown   0.0000       13
+10.276560  10.276560         3      3.0    unknown   0.0000       37
+10.341711  10.406862         6      6.0    unknown   0.0000       13
 10.311279  10.274760        11     11.0    unknown   0.0000       31
-10.452043  10.592806        22     22.0    unknown   0.0000        1
+10.452044  10.592808        22     22.0    unknown   0.0000        1
 10.439283  10.426523        44     44.0    unknown   0.0000      165
 10.459842  10.480879        87     87.0    unknown   0.0000       28
-10.093538  9.727235        174    174.0    unknown   0.0000       16
-9.566512   9.039486        348    348.0    unknown   0.0000        1
-9.066552   8.566591        696    696.0    unknown   0.0000      142
+10.093539  9.727235        174    174.0    unknown   0.0000       16
+9.566513   9.039487        348    348.0    unknown   0.0000        1
+9.066552   8.566592        696    696.0    unknown   0.0000      142
 
 finished run
 number of examples = 1000
