@@ -304,8 +304,6 @@ using namespace boost::math::policies;
 
 #endif // MINEIRO_SPECIAL
 
-size_t max_w = 0;
-
 float decayfunc(float t, float old_t, float power_t) {
   float result = 1;
   for (float i = old_t+1; i <= t; i += 1)
@@ -370,6 +368,7 @@ float average_diff(vw& all, float* oldgamma, float* newgamma)
   return sum / normalizer;
 }
 
+//nonreentrant
 v_array<float> Elogtheta;
 
 // Returns E_q[log p(\theta)] - E_q[log q(\theta)].

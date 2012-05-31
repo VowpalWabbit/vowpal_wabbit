@@ -36,6 +36,7 @@ namespace po = boost::program_options;
 
 using namespace std;
 
+//nonreentrant
 example* examples;//A Ring of examples.
 pthread_mutex_t examples_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
@@ -56,6 +57,11 @@ parser* new_parser()
   parser* ret = (parser*) calloc(1,sizeof(parser));
   ret->input = new io_buf;
   ret->output = new io_buf;
+  ret->local_example_number = 0;
+  pthread_mutex_init(&(ret->output_lock), NULL);
+  pthread_cond_init(&ret->output_done, NULL);
+  ret->ring_size = 1 << 8;
+
   return ret;
 }
 
@@ -131,10 +137,10 @@ void reset_source(vw& all, size_t numbits)
       if (all.daemon)
 	{
 	  // wait for all predictions to be sent back to client
-	  pthread_mutex_lock(&output_lock);
+	  pthread_mutex_lock(&all.p->output_lock);
 	  while (all.p->local_example_number != all.p->parsed_examples)
-	    pthread_cond_wait(&output_done, &output_lock);
-	  pthread_mutex_unlock(&output_lock);
+	    pthread_cond_wait(&all.p->output_done, &all.p->output_lock);
+	  pthread_mutex_unlock(&all.p->output_lock);
 	  
 	  // close socket, erase final prediction sink and socket
 	  close(all.p->input->files[0]);
@@ -590,32 +596,6 @@ example* get_unused_example(vw& all)
 
 bool parse_atomic_example(vw& all, example *ae)
 {
-  if (all.audit)
-    for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
-      {
-	for (audit_data* temp 
-	       = ae->audit_features[*i].begin; 
-	     temp != ae->audit_features[*i].end; temp++)
-	  {
-	    if (temp->alloced)
-	      {
-		free(temp->space);
-		free(temp->feature);
-		temp->alloced=false;
-	      }
-	  }
-	ae->audit_features[*i].erase();
-      }
-
-  for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
-  {  
-    ae->atomics[*i].erase();
-    ae->sum_feat_sq[*i]=0;
-  }
-
-  ae->indices.erase();
-  ae->tag.erase();
-  ae->sorted = false;
   if (all.p->reader(&all, ae) <= 0)
     return false;
 
@@ -703,6 +683,16 @@ void setup_example(vw& all, example* ae)
       }                                                                 
 }
 
+example* vw_read_example(vw& all, char* example_line)
+{
+  example* ret = get_unused_example(all);
+  
+  read_line(all, ret, example_line);
+  setup_example(all, ret);
+
+  return ret;
+}
+
 void *main_parse_loop(void *in)
 {
   vw* all = (vw*) in;
@@ -714,7 +704,7 @@ void *main_parse_loop(void *in)
       example* ae=get_unused_example(*all);
 
       if (example_number != all->pass_length && parse_atomic_example(*all, ae)) {	
-	setup_example(*all,ae);
+	setup_example(*all, ae);
 	example_number++;
 	pthread_mutex_lock(&examples_lock);
 	all->p->parsed_examples++;
@@ -754,12 +744,39 @@ void *main_parse_loop(void *in)
   return NULL;
 }
 
-void free_example(parser* pf, example* ec)
+void free_example(vw& all, example* ec)
 {
-  pthread_mutex_lock(&output_lock);
-  pf->local_example_number++;
-  pthread_cond_signal(&output_done);
-  pthread_mutex_unlock(&output_lock);
+  pthread_mutex_lock(&all.p->output_lock);
+  all.p->local_example_number++;
+  pthread_cond_signal(&all.p->output_done);
+  pthread_mutex_unlock(&all.p->output_lock);
+
+  if (all.audit)
+    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      {
+	for (audit_data* temp 
+	       = ec->audit_features[*i].begin; 
+	     temp != ec->audit_features[*i].end; temp++)
+	  {
+	    if (temp->alloced)
+	      {
+		free(temp->space);
+		free(temp->feature);
+		temp->alloced=false;
+	      }
+	  }
+	ec->audit_features[*i].erase();
+      }
+
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  {  
+    ec->atomics[*i].erase();
+    ec->sum_feat_sq[*i]=0;
+  }
+
+  ec->indices.erase();
+  ec->tag.erase();
+  ec->sorted = false;
 
   pthread_mutex_lock(&examples_lock);
   assert(ec->in_use);

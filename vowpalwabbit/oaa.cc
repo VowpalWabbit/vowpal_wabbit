@@ -91,6 +91,7 @@ namespace OAA {
     }
   }
 
+  //nonreentrant
   size_t k=0;
   size_t increment=0;
   size_t total_increment=0;
@@ -212,7 +213,7 @@ namespace OAA {
           {
             learn(*all, ec);
             output_example(*all, ec);
-            free_example(all->p, ec);
+            free_example(*all, ec);
           }
         else if (parser_done(all->p))
           {

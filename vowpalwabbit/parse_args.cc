@@ -412,7 +412,7 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("max_prediction"))
     all.sd->max_label = vm["max_prediction"].as<double>();
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
-    set_minmax = noop_mm;
+    all.set_minmax = noop_mm;
 
   string loss_function;
   if(vm.count("loss_function"))
@@ -432,7 +432,7 @@ vw parse_args(int argc, char *argv[])
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
   }
 
-  all.loss = getLossFunction(all.sd, loss_function, loss_parameter);
+  all.loss = getLossFunction(&all, loss_function, loss_parameter);
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
@@ -604,7 +604,7 @@ vw parse_args(int argc, char *argv[])
     if ((to_pass_further.size() == 1) &&
         (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
 
-      int f = all.p->input->open_file(last_unrec_arg.c_str(), io_buf::READ);
+      int f = io_buf().open_file(last_unrec_arg.c_str(), io_buf::READ);
       if (f != -1) {
         close(f);
         cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
@@ -629,3 +629,27 @@ vw parse_args(int argc, char *argv[])
   return all;
 }
 
+vw parse_args(char* c)
+{
+  size_t len = strlen(c);
+  substring ss = {c, c+len};
+  v_array<substring> foo;
+  char t[2] = {'n','o'};
+  substring ss2 = {t,t+1};
+  push(foo, ss2);
+
+  tokenize(' ', ss, foo);
+  
+  char** argv = (char**)calloc(foo.index(), sizeof(char*));
+  for (size_t i = 0; i < foo.index(); i++)
+    {
+      foo[i].end = '\0';
+      argv[i] = foo[i].begin;
+    }
+  
+  vw all = parse_args(foo.index(), argv);
+
+  free (argv);
+
+  return all;
+}

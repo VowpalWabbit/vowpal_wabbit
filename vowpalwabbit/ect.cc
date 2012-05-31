@@ -23,6 +23,8 @@ using namespace std;
 
 namespace ECT
 {
+
+  //nonreentrant
   int k = 1;
   size_t errors = 0;
 
@@ -419,7 +421,7 @@ namespace ECT
           {
             learn(*all, ec);
             OAA::output_example(*all, ec);
-            free_example(all->p, ec);
+            free_example(*all, ec);
           }
         else if (parser_done(all->p))
           {

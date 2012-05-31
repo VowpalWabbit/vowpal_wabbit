@@ -17,11 +17,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
    
 using namespace std;
 
-struct timeb t_start, t_end;
-double net_comm_time = 0.;
-
 void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
-  ftime(&t_start);
   uint32_t length = 1 << all.num_bits; //This is size of gradient
   size_t stride = all.stride;
   float* local_grad = new float[length];
@@ -37,16 +33,11 @@ void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
       weights[stride*i+o] = local_grad[i];
     }
   delete[] local_grad;
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
 }
 
 float accumulate_scalar(vw& all, string master_location, float local_sum) {
-  ftime(&t_start);
   float temp = local_sum;
   all_reduce(&temp, 1, master_location, all.unique_id, all.total, all.node);
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   return temp;
 }
 
@@ -55,7 +46,6 @@ void accumulate_avg(vw& all, string master_location, regressor& reg, size_t o) {
   size_t stride = all.stride;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vectors;
-  ftime(&t_start);
   float numnodes = 1.;
   all_reduce(&numnodes, 1, master_location, all.unique_id, all.total, all.node);
   for(uint32_t i = 0;i < length;i++) 
@@ -68,8 +58,6 @@ void accumulate_avg(vw& all, string master_location, regressor& reg, size_t o) {
     {
       weights[stride*i+o] = local_grad[i]/numnodes;
     }
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   delete[] local_grad;
 }
 
@@ -97,7 +85,6 @@ void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
   weight* weights = reg.weight_vectors;
   float* local_weights = new float[length];
 
-  ftime(&t_start);
   for(uint32_t i = 0;i < length;i++) 
     local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]-1);
   
@@ -114,11 +101,6 @@ void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
 
   all_reduce(weights, 2*length, master_location, all.unique_id, all.total, all.node);
 
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   delete[] local_weights;
 }
 
-double get_comm_time() {
-  return net_comm_time;
-}

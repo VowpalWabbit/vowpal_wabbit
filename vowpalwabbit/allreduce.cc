@@ -24,6 +24,8 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <sys/timeb.h>
 #include "allreduce.h"
 
+ //nonreentrant
+
 using namespace std;
 
 struct node_socks {

@@ -8,6 +8,8 @@
 #include "network.h"
 
 using namespace std;
+
+//nonreentrant
 io_buf* buf;
 
 int sd = -1;
@@ -72,7 +74,7 @@ void drive_send(void* in)
       else if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
         {
           label_data* ld = (label_data*)ec->ld;
-          set_minmax(*all, ld->label);
+          all->set_minmax(all->sd, ld->label);
 	  simple_label.cache_label(ld, *buf);//send label information.
 	  cache_tag(*buf, ec->tag);
 	  send_features(buf,ec);

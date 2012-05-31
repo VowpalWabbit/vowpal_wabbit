@@ -11,7 +11,7 @@
 using namespace std;
 
 namespace WAP {
-  
+  //nonreentrant
   size_t increment=0;
 
   void mirror_features(vw& all, example* ec, size_t offset1, size_t offset2)
@@ -247,7 +247,7 @@ void drive_wap(void* in)
 	{
 	  base_learner(*all, ec);
           CSOAA::output_example(*all, ec);
-	  free_example(all->p, ec);
+	  free_example(*all, ec);
 	}
       else if (parser_done(all->p))
 	{
@@ -436,7 +436,7 @@ namespace WAP_LDF {
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
         if (output)
           CSOAA_LDF::output_example(all, *ecc);
-        free_example(all.p, *ecc);
+        free_example(all, *ecc);
       }
     ec_seq.erase();
   }

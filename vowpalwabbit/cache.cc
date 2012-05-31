@@ -10,8 +10,8 @@ embodied in the content of this file are licensed under the BSD
 
 using namespace std;
 
-size_t neg_1 = 1;
-size_t general = 2;
+const size_t neg_1 = 1;
+const size_t general = 2;
 
 char* run_len_decode(char *p, size_t& i)
 {// read an int 7 bits at a time.
@@ -21,8 +21,6 @@ char* run_len_decode(char *p, size_t& i)
   i = i | (*(p++) << 7*count);
   return p;
 }
-
-size_t invocations = 0;
 
 inline int32_t ZigZagDecode(uint32_t n) { return (n >> 1) ^ -static_cast<int32_t>(n & 1); }
 
@@ -47,7 +45,7 @@ struct one_float {
   float f;
 } __attribute__((packed));
 
-int read_cached_features(void* in, void* ec)
+int read_cached_features(void* in, example* ec)
 {
   vw* all = (vw*)in;
   example* ae = (example*)ec;

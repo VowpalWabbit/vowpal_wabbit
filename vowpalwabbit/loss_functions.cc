@@ -267,20 +267,21 @@ public:
   double tau;
 };
 
-loss_function* getLossFunction(shared_data* sd, string funcName, double function_parameter) {
+loss_function* getLossFunction(void* a, string funcName, double function_parameter) {
+  vw* all=(vw*)a;
   if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0) {
     return new squaredloss();
   } else if(funcName.compare("classic") == 0){
     return new classic_squaredloss();
   } else if(funcName.compare("hinge") == 0) {
-    sd->binary_label = true;
+    all->sd->binary_label = true;
     return new hingeloss();
   } else if(funcName.compare("logistic") == 0) {
-    if (set_minmax != noop_mm)
+    if (all->set_minmax != noop_mm)
       {
-	sd->min_label = -100;
-	sd->max_label = 100;
-	sd->binary_label = true;
+	all->sd->min_label = -100;
+	all->sd->max_label = 100;
+	all->sd->binary_label = true;
       }
     return new logloss();
   } else if(funcName.compare("quantile") == 0 || funcName.compare("pinball") == 0 || funcName.compare("absolute") == 0) {
