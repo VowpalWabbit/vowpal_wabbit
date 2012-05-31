@@ -1,12 +1,13 @@
 creating quadratic features for pairs: ff 
 final_regressor = models/0002c.model
-using no cache
-Reading from train-sets/0002.dat
-num sources = 1
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0
+warning: final argument 'train-sets/0002.dat' assumed to be input file; in the future, please use -d
+using no cache
+Reading from train-sets/0002.dat
+num sources = 1
 average    since       example  example    current  current  current
 loss       last        counter   weight      label  predict features
 0.134680   0.134680          3      3.0     0.5498   0.2361      184

@@ -1,20 +1,19 @@
-creating cache_file = train-sets/cs_test.ldf.cache
-Reading from train-sets/cs_test.ldf
-num sources = 1
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
 predictions = cs_test.ldf.wap.predict
-warning: turning off constant for label dependent features; use --noconstant
+creating cache_file = train-sets/cs_test.ldf.cache
+Reading from train-sets/cs_test.ldf
+num sources = 1
 average    since       example  example    current  current  current
 loss       last        counter   weight      label  predict features
-0.000000   0.000000          3      3.0    known        0        3
-0.000000   0.000000          6      6.0    known        0        3
-0.000000   0.000000         11     11.0    known        0        3
-0.000000   0.000000         22     22.0    known        0        3
-0.000000   0.000000         44     44.0    known        1        3
+0.000000   0.000000          3      3.0    known        0        4
+0.000000   0.000000          6      6.0    known        0        4
+0.000000   0.000000         11     11.0    known        0        4
+0.000000   0.000000         22     22.0    known        0        4
+0.000000   0.000000         44     44.0    known        1        4
 
 finished run
 number of examples = 70
@@ -22,4 +21,4 @@ weighted example sum = 70
 weighted label sum = 0
 average loss = 0
 best constant = -0.01449
-total feature number = 210
+total feature number = 280

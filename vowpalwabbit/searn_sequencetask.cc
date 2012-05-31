@@ -34,9 +34,25 @@ namespace SequenceTask {
     // done.
   };
 
-  bool initialize(po::variables_map& vm)
+  bool initialize(std::vector<std::string>&opts, po::variables_map& vm)
   {
     SearnUtil::default_info(&hinfo);
+
+    po::options_description desc("Searn[sequence] options");
+    desc.add_options()
+      ("searn_sequencetask_history",  po::value<size_t>(), "length of history to use")
+      ("searn_sequencetask_features", po::value<size_t>(), "length of history to pair with observed features")
+      ("searn_sequencetask_bigrams",                       "use bigrams from history")
+      ("searn_sequencetask_bigram_features",               "use bigrams from history paired with observed features")
+      ("searn_sequencetask_fake_ldf",                      "pretend like we're an LDF model even though we need not be");
+
+    po::parsed_options parsed = po::command_line_parser(opts).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+    
 
     if (vm.count("searn_sequencetask_bigrams"))          hinfo.bigrams = true;
     if (vm.count("searn_sequencetask_history"))          hinfo.length = vm["searn_sequencetask_history"].as<size_t>();
@@ -44,7 +60,7 @@ namespace SequenceTask {
     if (vm.count("searn_sequencetask_features"))         hinfo.features = vm["searn_sequencetask_features"].as<size_t>();
     if (vm.count("searn_sequencetask_fake_ldf"))         fake_as_ldf = true;
 
-    seq_max_action = vm["searn_max_action"].as<size_t>();
+    seq_max_action = vm["searn"].as<size_t>();
     constant_pow_length = 1;
     for (size_t i=0; i < hinfo.length; i++)
       constant_pow_length *= quadratic_constant;

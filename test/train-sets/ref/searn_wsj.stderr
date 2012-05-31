@@ -1,0 +1,29 @@
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/wsj_small.dat.gz.cache
+Reading from train-sets/wsj_small.dat.gz
+num sources = 1
+average    since       example  example    current  current  current
+loss       last        counter   weight      label  predict features
+#pol  average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
+chng  loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
+   0  22.000000  22.000000         3        3.000000   [14 10 13 9 1 2 1 4..] [11 11 11 1 2 1 2 1..]     2659     0     0              93              64
+   0  21.000000  20.000000         6        6.000000   [19 2 22 4 3 9 1 1 ..] [1 2 3 9 1 2 1 1 12..]     3324     0     0             196             160
+   0  18.363636  15.200000        11       11.000000   [29 4 3 9 1 1 23 8 ..] [1 2 3 9 1 2 1 10 7..]     1424     0     0             328             312
+   0  15.000000  11.636364        22       22.000000   [11 11 21 3 10 13 3..] [11 11 21 3 1 2 3 1..]     3419     0     0             613             576
+   0  12.681818  10.363636        44       44.000000   [3 26 9 1 4 3 1 2 5..] [3 1 1 1 2 3 1 2 11..]     1139     0     0            1120            1107
+   0  9.988506   7.232558         87       87.000000   [11 11 12 9 1 2 11 ..] [11 11 12 9 1 2 11 ..]     2564     1     0            2220            2192
+   0  6.316092   2.643678        174      174.000000   [11 1 10 13 2 17 30..] [11 1 10 13 2 17 30..]     1044     2     0            4370            4358
+   1  4.597701   2.879310        348      348.000000   [2 11 2 11 12 3 11 ..] [2 25 1 1 12 3 11 1..]     2279     4     1           49100            8673
+   1  4.612069   4.626437        696      696.000000   [19 22 4 5 3 1 2 1 ..] [19 22 34 9 12 1 2 ..]     2754     8     2          459337           17212
+
+finished run
+number of examples = 936
+weighted example sum = 936
+weighted label sum = 0
+average loss = 4.706
+best constant = -0.00107
+total feature number = 78376268

@@ -426,7 +426,7 @@ namespace Searn
 
   void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&))
   {
-    po::options_description desc("Sequence options");
+    po::options_description desc("Searn options");
     desc.add_options()
       ("searn_task", po::value<string>(), "the searn task")
       ("searn_rollout", po::value<size_t>(), "maximum rollout length")
@@ -480,7 +480,7 @@ namespace Searn
     if (vm.count("searn_passes_per_policy"))       passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
     if (vm.count("searn_beta"))                    beta                 = vm["searn_beta"].as<float>();
     if (vm.count("searn_gamma"))                   gamma                = vm["searn_gamma"].as<float>();
-    if (vm.count("searn_recombine"))               do_recombination     = true;
+    if (vm.count("searn_norecombine"))             do_recombination     = false;
     if (vm.count("searn_allow_current_policy"))    allow_current_policy = true;
 
     if (beta <= 0 || beta >= 1) {
@@ -494,7 +494,7 @@ namespace Searn
     }
 
     if (task.initialize != NULL)
-      if (!task.initialize(vm)) {
+      if (!task.initialize(opts, vm)) {
         std::cerr << "error: task did not initialize properly" << std::endl;
         exit(-1);
       }

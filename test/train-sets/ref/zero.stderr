@@ -1,7 +1,4 @@
 enabling BFGS based optimization **without** curvature calculation
-creating cache_file = train-sets/zero.dat.cache
-Reading from train-sets/zero.dat
-num sources = 1
 Num weight bits = 20
 learning rate = 10
 initial_t = 1
@@ -11,8 +8,11 @@ using l2 regularization
 m = 7
 Allocated 72M for weights and mem
 ## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 	time      
- 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.258
- 3 0.000000e+00	0.000000e+00	0.000000e+00	 nan       	nan       	
+creating cache_file = train-sets/zero.dat.cache
+Reading from train-sets/zero.dat
+num sources = 1
+ 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.130
+ 3 0.000000e+00	0.000000e+00	0.000000e+00	 -nan      	-nan      	
 
 
 finished run
