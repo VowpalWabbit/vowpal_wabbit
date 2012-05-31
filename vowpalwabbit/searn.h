@@ -162,15 +162,18 @@ namespace Searn
     // return any of them as invalid
     bool   (*allowed)(state, action);
 
-    // to_string takes a state and returns a string representation of
-    // both the TRUE output and the PREDICTED output into the
-    // respective char*s.  the max string length (excluding the 0
-    // at the end is the size argument
-    //    void   (*to_string)(state, size_t, char*, char*);
+    // to_string should return a string representation of some data.
+    // we'll give you a state and a bool specifying whether we want
+    // the TRUE output or the PREDICTED output.  in the case that we
+    // ask for the predicted output, we'll give you a sequence of
+    // actions corresponding to that prediction.  note: we make
+    // no guarantee that the state we give you is start or end or
+    // anything...
+    std::string (*to_string)(state, bool, std::vector<action>);
   };
 
 
-  void parse_args(vw&all, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&));
+  void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&));
   void drive(void*);
 }
 

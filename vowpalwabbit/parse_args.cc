@@ -109,7 +109,6 @@ vw parse_args(int argc, char *argv[])
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
     //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
-    //("errors", po::value<size_t>()->default_value(0), "Errors allowed in an error correcting tournament")
     ("output_feature_regularizer_binary", po::value< string >(&all.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&all.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
@@ -129,28 +128,7 @@ vw parse_args(int argc, char *argv[])
     ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("sequence", po::value<size_t>(), "Do sequence prediction with <k> labels per element")
-    ("sequence_history", po::value<size_t>(), "Prediction history length for sequences")
-    ("sequence_bigrams", "enable bigrams on prediction history")
-    ("sequence_features", po::value<size_t>(), "create history predictions x features")
-    ("sequence_bigram_features", "enable history bigrams for sequence_features")
-    ("sequence_rollout", po::value<size_t>(), "maximum rollout length")
-    ("sequence_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
-    ("sequence_beta", po::value<float>(), "interpolation rate for policies")
-    ("sequence_gamma", po::value<float>(), "discount rate for policies")
-    ("sequence_max_length", po::value<size_t>(), "maximum length of sequences (default 256)")
-    ("sequence_transition_file", po::value<string>(), "read valid transitions from file (default all valid)")
-    ("sequence_allow_current_policy", "allow sequence labeling to use the current policy")
-    ("sequence_beam", po::value<size_t>(), "set the beam size for sequence prediction (default: 1 == greedy)")
-    ("searn", po::value<string>(), "use searn, argument=task (eg., sequence)")
-    ("searn_max_action", po::value<size_t>(), "largest action id that will be encountered in searn")
-
-    ("searn_rollout", po::value<size_t>(), "maximum rollout length")
-    ("searn_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
-    ("searn_beta", po::value<float>(), "interpolation rate for policies")
-    ("searn_gamma", po::value<float>(), "discount rate for policies")
-    ("searn_recombine", "allow searn labeling to use the current policy")
-    ("searn_allow_current_policy", "allow searn labeling to use the current policy")
-
+    ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
@@ -163,16 +141,24 @@ vw parse_args(int argc, char *argv[])
     ("ngram", po::value<size_t>(), "Generate N grams")
     ("skips", po::value<size_t>(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
 
-  po::positional_options_description p;
+  //po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
-  p.add("data", -1);
+  //p.add("data", -1);
 
-  po::variables_map vm;
+  po::variables_map vm = po::variables_map();
+  po::parsed_options parsed = po::command_line_parser(argc, argv).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(desc).allow_unregistered().run();   // got rid of ".positional(p)" because it doesn't work well with unrecognized options
+  vector<string> to_pass_further = po::collect_unrecognized(parsed.options, po::include_positional);
+  string last_unrec_arg =
+    (to_pass_further.size() > 0)
+    ? string(to_pass_further[to_pass_further.size()-1])  // we want to write this down in case it's a data argument ala the positional option we got rid of
+    : "";
 
-  po::store(po::command_line_parser(argc, argv).
-	    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-	    options(desc).positional(p).run(), vm);
+  po::store(parsed, vm);
   po::notify(vm);
+
+  all.data_filename = "";
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = all.sd->t;
@@ -288,9 +274,11 @@ vw parse_args(int argc, char *argv[])
     all.numpasses = (size_t) 1e5;
   }
 
-  string data_filename = vm["data"].as<string>();
-  if (vm.count("compressed") || ends_with(data_filename, ".gz"))
-    set_compressed(all.p);
+  if (vm.count("data")) {
+    all.data_filename = vm["data"].as<string>();
+    if (vm.count("compressed") || ends_with(all.data_filename, ".gz"))
+      set_compressed(all.p);
+  }
 
   if(vm.count("sort_features"))
     all.p->sort_features = true;
@@ -412,7 +400,7 @@ vw parse_args(int argc, char *argv[])
   }
 
   parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
-  parse_source_args(all, vm, all.quiet,all.numpasses);
+
   if (vm.count("readable_model"))
     all.text_regressor_name = vm["readable_model"].as<string>();
   
@@ -533,86 +521,105 @@ vw parse_args(int argc, char *argv[])
   void (*mc_learner)(vw&, example*) = NULL;
   void (*mc_finish)(vw&) = NULL;
 
-  if(vm.count("oaa"))
-    {
-      OAA::parse_flags(all, vm["oaa"].as<size_t>(), base_learner, base_finish);
-      mc_learner = OAA::learn;
-      mc_finish = OAA::finish;
-    }
-  else if (vm.count("ect"))
-    {
-      ECT::parse_flags(all, vm["ect"].as<size_t>(), vm["errors"].as<size_t>(), base_learner, base_finish);
-      mc_learner = ECT::learn;
-      mc_finish = ECT::finish;
-    }
+  void (*cs_learner)(vw&,example*) = NULL;
+  void (*cs_finish)(vw&) = NULL;
 
-  void (*cs_learner)(vw&,example*) = CSOAA::learn;
-  void (*cs_finish)(vw&) = CSOAA::finish;
+  if(vm.count("oaa")) {
+    if (mc_learner) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
+    OAA::parse_flags(all, to_pass_further, vm["oaa"].as<size_t>(), base_learner, base_finish);
+    mc_learner = OAA::learn;
+    mc_finish = OAA::finish;
+  }
+  
+  if (vm.count("ect")) {
+    if (mc_learner) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
+    ECT::parse_flags(all, to_pass_further, vm["ect"].as<size_t>(), vm["errors"].as<size_t>(), base_learner, base_finish);
+    mc_learner = ECT::learn;
+    mc_finish = ECT::finish;
+  }
 
-  if(vm.count("wap"))
-    {
-      WAP::parse_flags(all, vm["wap"].as<size_t>(), base_learner, base_finish);
-      cs_learner = WAP::learn;
-      cs_finish = WAP::finish;
-    }
+  if(vm.count("csoaa")) {
+    if (cs_learner) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    CSOAA::parse_flags(all, to_pass_further, vm["csoaa"].as<size_t>(), base_learner, base_finish);
+    cs_learner = CSOAA::learn;
+    cs_finish  = CSOAA::finish;
+  }
+
+  if(vm.count("wap")) {
+    if (cs_learner) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    WAP::parse_flags(all, to_pass_further, vm["wap"].as<size_t>(), base_learner, base_finish);
+    cs_learner = WAP::learn;
+    cs_finish  = WAP::finish;
+  }
 
   if(vm.count("csoaa_ldf")) {
-    if (all.add_constant) {
-      cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
-      all.add_constant = false;
-    }
-    CSOAA_LDF::parse_flags(all, 0, base_learner, base_finish);
+    if (cs_learner) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    CSOAA_LDF::parse_flags(all, to_pass_further, 0, base_learner, base_finish);
     cs_learner = CSOAA_LDF::learn;
     cs_finish  = CSOAA_LDF::finish;
   }
 
   if(vm.count("wap_ldf")) {
-    if (all.add_constant) {
-      cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
-      all.add_constant = false;
-    }
-    WAP_LDF::parse_flags(all, 0, base_learner, base_finish);
+    if (cs_learner) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    WAP_LDF::parse_flags(all, to_pass_further, 0, base_learner, base_finish);
     cs_learner = WAP_LDF::learn;
     cs_finish  = WAP_LDF::finish;
   }
 
-
-  if(vm.count("csoaa"))
-    CSOAA::parse_flags(all, vm["csoaa"].as<size_t>(), base_learner, base_finish);
-
   if (vm.count("sequence")) {
-    if (vm.count("wap")) 
-      ;
-    else
-      CSOAA::parse_flags(all, vm["sequence"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
+    if (!cs_learner) {
+      CSOAA::parse_flags(all, to_pass_further, vm["sequence"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
+      cs_learner = CSOAA::learn;
+      cs_finish  = CSOAA::finish;
+    }
+    Sequence::parse_flags(all, to_pass_further, vm, cs_learner, cs_finish);
 
-    parse_sequence_args(all, vm, cs_learner, cs_finish);
-    all.driver = drive_sequence;
+    all.driver = Sequence::drive;
     all.sequence = true;
-
-    if (vm.count("searn")) {
-      cerr << "error: you cannot use searn and sequence simultaneously" << endl;
-      exit(-1);
-    }
   }
+
   if (vm.count("searn")) {
-    size_t max_action = 1;
-    if (vm.count("searn_max_action"))
-      max_action = vm["searn_max_action"].as<size_t>();
-    else {
-      cerr << "error: you must specify --searn_max_action" << endl;
-      exit(-1);
+    if (vm.count("sequence")) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
+
+    if (!cs_learner) {
+      CSOAA::parse_flags(all, to_pass_further, vm["searn"].as<size_t>(), base_learner, base_finish);  // default to CSOAA unless wap is specified
+      cs_learner = CSOAA::learn;
+      cs_finish  = CSOAA::finish;
     }
+    Searn::parse_flags(all, to_pass_further, vm, cs_learner, cs_finish);
 
-    if (vm.count("wap"))
-      ;
-    else
-      CSOAA::parse_flags(all, max_action, base_learner, base_finish);  // default to CSOAA unless wap is specified
-
-    Searn::parse_args(all, vm, cs_learner, cs_finish);
     all.driver = Searn::drive;
     all.searn = true;
   }
+
+  if (to_pass_further.size() > 0) {
+    bool is_actually_okay = false;
+
+    // special case to try to emulate the missing -d
+    if ((to_pass_further.size() == 1) &&
+        (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
+
+      int f = all.p->input->open_file(last_unrec_arg.c_str(), io_buf::READ);
+      if (f != -1) {
+        close(f);
+        cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
+        all.data_filename = last_unrec_arg;
+        if (ends_with(last_unrec_arg, ".gz"))
+          set_compressed(all.p);
+        is_actually_okay = true;
+      }
+    }
+
+    if (!is_actually_okay) {
+      cerr << "unrecognized options:";
+      for (size_t i=0; i<to_pass_further.size(); i++)
+        cerr << " " << to_pass_further[i];
+      cerr << endl;
+      exit(-1);
+    }
+  }
+
+  parse_source_args(all, vm, all.quiet,all.numpasses);
 
   return all;
 }

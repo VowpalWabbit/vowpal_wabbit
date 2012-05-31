@@ -259,7 +259,7 @@ void drive_wap(void* in)
     }
 }
 
-void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
+void parse_flags(vw& all, std::vector<std::string>&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
 
 {
   *(all.lp) = CSOAA::cs_label_parser;
@@ -481,7 +481,7 @@ namespace WAP_LDF {
     }
   }
 
-  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
+  void parse_flags(vw& all, std::vector<std::string>&opts, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&))
   {
     *(all.lp) = OAA::mc_label_parser;
     all.driver = drive_wap_ldf;

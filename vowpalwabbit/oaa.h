@@ -16,7 +16,7 @@ namespace OAA
   
   typedef uint32_t prediction_t;
   
-  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void parse_flags(vw& all, std::vector<std::string>&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
   void learn(vw& all, example* ec);
   void finish(vw&);
   

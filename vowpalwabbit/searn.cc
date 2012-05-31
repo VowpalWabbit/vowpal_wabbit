@@ -345,11 +345,49 @@ namespace Searn
     clog << endl;
   }
 
-  void print_update(vw& all, state s0)
+  bool should_print_update(vw& all)
   {
     if (!(all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)) {
-      if (!PRINT_UPDATE_EVERY_EXAMPLE) return;
+      if (!PRINT_UPDATE_EVERY_EXAMPLE) return false;
     }
+    return true;
+  }
+
+  std::vector<action> empty_action_vector = std::vector<action>();
+
+  void to_short_string(string in, size_t max_len, char*out) {
+    for (size_t i=0; i<max_len; i++) {
+      if (i >= in.length())
+        out[i] = ' ';
+      else if ((in[i] == '\n') || (in[i] == '\t'))    // TODO: maybe catch other characters?
+        out[i] = ' ';
+      else
+        out[i] = in[i];
+    }
+
+    if (in.length() > max_len) { 
+      out[max_len-2] = '.'; 
+      out[max_len-1] = '.'; 
+    }
+    out[max_len] = 0;
+  }
+
+  void global_print_label(vw& all, example*ec, state s0, std::vector<action> last_action_sequence)
+  {
+    if (!task.to_string)
+      return;
+
+    string str = task.to_string(s0, false, last_action_sequence);
+    for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
+      int f = all.final_prediction_sink[i];
+      // all.print(f, str, 0., ec->tag); // TODO: need to print strings!!!
+    }
+  }
+
+  void print_update(vw& all, state s0, std::vector<action> last_action_sequence)
+  {
+    if (!should_print_update(all))
+      return;
 
     size_t num_pol = current_policy - last_printed_policy;
     if (current_policy != last_printed_policy) {
@@ -358,10 +396,13 @@ namespace Searn
 
     char true_label[21];
     char pred_label[21];
-    memset(true_label, '_', 20*sizeof(char));  true_label[20] = 0;
-    memset(pred_label, '_', 20*sizeof(char));  pred_label[20] = 0;
-    //    if (task.to_string)
-    //      task.to_string(s0, 20, true_label, pred_label);
+    if (task.to_string) {
+      to_short_string(task.to_string(s0, true , empty_action_vector ), 20, true_label);
+      to_short_string(task.to_string(s0, false, last_action_sequence), 20, pred_label);
+    } else {
+      to_short_string("", 20, true_label);
+      to_short_string("", 20, pred_label);
+    }
 
     fprintf(stderr, "%4d  %-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
             num_pol,
@@ -383,10 +424,30 @@ namespace Searn
   }
 
 
-  void parse_args(vw&all, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&))
+  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&))
   {
-    // parse variables
-    std::string task_string = vm["searn"].as<std::string>();
+    po::options_description desc("Sequence options");
+    desc.add_options()
+      ("searn_task", po::value<string>(), "the searn task")
+      ("searn_rollout", po::value<size_t>(), "maximum rollout length")
+      ("searn_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
+      ("searn_beta", po::value<float>(), "interpolation rate for policies")
+      ("searn_gamma", po::value<float>(), "discount rate for policies")
+      ("searn_recombine", "allow searn labeling to use the current policy")
+      ("searn_allow_current_policy", "allow searn labeling to use the current policy");
+
+    po::parsed_options parsed = po::command_line_parser(opts).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+
+    if (vm.count("searn_task") == 0) {
+      cerr << "must specify --searn_task" << endl;
+      exit(-1);
+    }
+    std::string task_string = vm["searn_task"].as<std::string>();
 
     if (task_string.compare("sequence") == 0) {
       task.final = SequenceTask::final;
@@ -405,7 +466,7 @@ namespace Searn
       task.equivalent = SequenceTask::equivalent;
       task.hash = SequenceTask::hash;
       task.allowed = NULL;
-      //      task.to_string = SequenceTask::to_string;
+      task.to_string = SequenceTask::to_string;
     } else {
       std::cerr << "error: unknown search task '" << task_string << "'" << std::endl;
       exit(-1);
@@ -413,11 +474,7 @@ namespace Searn
 
     *(all.lp)=task.searn_label_parser;
 
-    if (vm.count("searn_max_action"))              max_action           = vm["searn_max_action"].as<size_t>();
-    else {
-      std::cerr << "error: you must specify --searn_max_action on the command line" << std::endl;
-      exit(-1);
-    }
+    max_action = vm["searn"].as<size_t>();
 
     if (vm.count("searn_rollout"))                 max_rollout          = vm["searn_rollout"].as<size_t>();
     if (vm.count("searn_passes_per_policy"))       passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
@@ -736,11 +793,14 @@ namespace Searn
 
   }
 
-  void run_prediction(vw&all, state s0, bool allow_oracle, bool allow_current)
+  void run_prediction(vw&all, state s0, bool allow_oracle, bool allow_current, bool track_actions, std::vector<action>* action_sequence)
   {
     int step = 1;
     while (!task.final(s0)) {
       size_t action = searn_predict(all, s0, step, allow_oracle, allow_current);
+      if (track_actions)
+        action_sequence->push_back(action);
+
       task.step(s0, action);
       step++;
     }
@@ -769,23 +829,31 @@ namespace Searn
 
     state s0copy;
     bool  is_test = is_test_example(ec_seq[0]);
-    if (!is_test)
+    if (!is_test) {
       s0copy = task.copy(s0);
+      all.sd->example_number++;
+      all.sd->total_features    += searn_num_features;
+      all.sd->weighted_examples += 1.;
+    }
+    bool will_print = is_test || should_print_update(all);
 
     searn_num_features = 0;
-    run_prediction(all, s0, false, true);
+    std::vector<action> action_sequence;
+    if (will_print)
+      action_sequence = std::vector<action>();
+    run_prediction(all, s0, false, true, will_print, &action_sequence);
+
+    if (is_test) {
+      global_print_label(all, ec_seq[0], s0, action_sequence);
+    }
 
     if (!is_test) {
       float loss = task.loss(s0);
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
-      all.sd->example_number++;
-
-      all.sd->total_features    += searn_num_features;
-      all.sd->weighted_examples += 1.;
     }
 
-    print_update(all, s0);
+    print_update(all, s0, action_sequence);
     
     task.finish(s0);
 
@@ -839,7 +907,7 @@ namespace Searn
       if (CSOAA_LDF::example_is_newline(ec)) {
         do_actual_learning(all);
         clear_seq(all);
-        CSOAA_LDF::global_print_newline(all);
+        //CSOAA_LDF::global_print_newline(all);
         free_example(all.p, ec);
         is_real_example = false;
       } else {

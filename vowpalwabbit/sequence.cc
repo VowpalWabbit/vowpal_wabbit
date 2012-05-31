@@ -44,6 +44,8 @@ Email questions/comments to me@hal3.name.
 #include "csoaa.h"
 #include "searn.h"
 
+namespace Sequence {
+
 typedef uint32_t* history;  // histories have the most recent prediction at the END
 
 struct history_item {
@@ -1125,7 +1127,7 @@ void do_actual_learning(vw&all)
   run_test_common_init();
   if (sequence_beam > 1 || DEBUG_FORCE_BEAM_ONE) run_test_beam(all);
   else                                           run_test(all);
-  run_test_common_final(all, false);
+  run_test_common_final(all, any_test);
 
   if (! any_test && all.training) {
     run_train_common_init(all);
@@ -1142,11 +1144,34 @@ void do_actual_learning(vw&all)
  ********************************************************************************************/
 
 
-void parse_sequence_args(vw&all, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&))
+void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, void (*base_l)(vw&,example*), void (*base_f)(vw&))
 {
+  po::options_description desc("Sequence options");
+  desc.add_options()
+    ("sequence_history", po::value<size_t>(), "Prediction history length for sequences")
+    ("sequence_bigrams", "enable bigrams on prediction history")
+    ("sequence_features", po::value<size_t>(), "create history predictions x features")
+    ("sequence_bigram_features", "enable history bigrams for sequence_features")
+    ("sequence_rollout", po::value<size_t>(), "maximum rollout length")
+    ("sequence_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
+    ("sequence_beta", po::value<float>(), "interpolation rate for policies")
+    ("sequence_gamma", po::value<float>(), "discount rate for policies")
+    ("sequence_max_length", po::value<size_t>(), "maximum length of sequences (default 256)")
+    ("sequence_transition_file", po::value<string>(), "read valid transitions from file (default all valid)")
+    ("sequence_allow_current_policy", "allow sequence labeling to use the current policy")
+    ("sequence_beam", po::value<size_t>(), "set the beam size for sequence prediction (default: 1 == greedy)");
+
+  po::parsed_options parsed = po::command_line_parser(opts).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(desc).allow_unregistered().run();
+  opts = po::collect_unrecognized(parsed.options, po::include_positional);
+  po::store(parsed, vm);
+  po::notify(vm);
+
   base_learner = base_l;
   base_finish = base_f;
   *(all.lp)=OAA::mc_label_parser;
+
   sequence_k = vm["sequence"].as<size_t>();
 
   if (vm.count("sequence_bigrams"))
@@ -1248,7 +1273,7 @@ void learn(vw& all, example *ec) {
   }
 }
 
-void drive_sequence(void* in)
+void drive(void* in)
 {
   vw* all = (vw*)in;
   const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
@@ -1270,4 +1295,6 @@ void drive_sequence(void* in)
       return;
     }
   }
+}
+
 }

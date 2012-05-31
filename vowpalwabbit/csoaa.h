@@ -22,7 +22,7 @@ namespace CSOAA {
     v_array<wclass> costs;
   };
   
-  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void parse_flags(vw& all, std::vector<std::string>&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
   void learn(vw& all, example* ec);
   void finish(vw&);
 
@@ -58,7 +58,7 @@ namespace CSOAA_LDF {
 
   void learn(vw& all, example* ec);
   void finish(vw&);
-  void parse_flags(vw& all, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void parse_flags(vw& all, std::vector<std::string>&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
   void global_print_newline(vw& all);
   void output_example(vw& all, example* ec);
 

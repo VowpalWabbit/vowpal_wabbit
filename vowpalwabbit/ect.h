@@ -5,7 +5,7 @@
 
 namespace ECT
 {
-  void parse_flags(vw&, size_t s, size_t e, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void parse_flags(vw&, std::vector<std::string>&, size_t s, size_t e, void (*base_l)(vw&, example*), void (*base_f)(vw&));
   void learn(vw& all, example* ec);
   void finish(vw&);  
 }

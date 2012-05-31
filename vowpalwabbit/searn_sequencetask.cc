@@ -2,6 +2,7 @@
 #include <float.h>
 #include <stdio.h>
 #include <math.h>
+#include <vector>
 #include "searn.h"
 #include "gd.h"
 #include "io.h"
@@ -167,6 +168,40 @@ namespace SequenceTask {
         return false;
 
     return true;
+  }
+
+  using namespace std;
+  string to_string(state s0, bool return_truth, vector<action> actions)
+  {
+    seq_state* s = (seq_state*)s0;
+    stringstream ss;
+    size_t len = s->length;
+
+    if (return_truth) {
+      for (size_t i=0; i<len; i++) {
+        size_t l = ((OAA::mc_label*)s->ec_start[i]->ld)->label;
+        if (i > 0) ss << ' ';
+        ss << l;
+      }
+    } else {
+      for (size_t i=0; i<actions.size(); i++) {
+        if (i > len) {
+          cerr << "warning (searn_sequencetask.to_string): list of actions is too long!  truncating from " << actions.size() << " to " << len << endl;
+          break;
+        }
+        if (i > 0) ss << ' ';
+        ss << actions[i];
+      }
+      if (actions.size() < len) {
+        cerr << "warning (searn_sequencetask.to_string): list of actions is too short!  appending from " << actions.size() << " to " << len << endl;
+        for (size_t i=actions.size(); i<len; i++) {
+          if (i > 0) ss << ' ';
+          ss << '0';
+        }
+      }
+    }
+
+    return ss.str();
   }
 
   // // The following is just to test out LDF... we "fake" being an

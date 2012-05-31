@@ -17,7 +17,7 @@ namespace SequenceTask {
   bool   initialize(po::variables_map& vm);
   size_t hash(state);
   bool   equivalent(state, state);
-  //  void   to_string(state, size_t, char*, char*);
+  std::string to_string(state, bool, std::vector<action>);
 }
 
 #endif

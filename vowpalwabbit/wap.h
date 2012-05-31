@@ -9,7 +9,7 @@
 #include "csoaa.h"
 
 namespace WAP {
-  void parse_flags(vw&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void parse_flags(vw&, std::vector<std::string>&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
   void learn(vw&,example* ec);
   void finish(vw&);
 
@@ -18,7 +18,7 @@ namespace WAP {
 namespace WAP_LDF {
   typedef OAA::mc_label label;
   
-  void parse_flags(vw&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
+  void parse_flags(vw&, std::vector<std::string>&, size_t s, void (*base_l)(vw&, example*), void (*base_f)(vw&));
   void global_print_newline();
   void learn(vw&,example* ec);
   void finish(vw&);

@@ -5,6 +5,7 @@
 #include "v_array.h"
 #include "v_hashmap.h"
 
+/*
 size_t myhash(int k)
 {
   //return (size_t)(k * 382490328 + 34280);   // ok hash function
@@ -68,3 +69,4 @@ void test_v_hashmap()
   hm.iter(&printit);
 }
 
+*/

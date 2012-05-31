@@ -270,7 +270,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 {
   all.p->input->current = 0;
-  parse_cache(all, vm, vm["data"].as<string>(), quiet);
+  parse_cache(all, vm, all.data_filename, quiet);
 
   string hash_function("strings");
   if(vm.count("hash")) 
@@ -437,7 +437,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       all.p->resettable = all.p->write_cache || all.daemon;
     }
   
-  else if (vm.count("data"))
+  else if (all.data_filename != "")  // was: vm.count("data"))
     {
       string hash_function("strings");
       if(vm.count("hash")) 
@@ -449,7 +449,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	}
       else
 	{
-	  string temp = vm["data"].as< string >();
+	  string temp = all.data_filename;
 	  if (temp.length() != 0)
 	    {
 	      if (!quiet)

@@ -42,6 +42,9 @@ template<class T> inline void push(v_array<T>& v, const T &new_ele)
 inline size_t max(size_t a, size_t b)
 { if ( a < b) return b; else return a;
 }
+inline size_t min(size_t a, size_t b)
+{ if ( a < b) return a; else return b;
+}
 
 template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
 {
