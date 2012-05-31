@@ -105,24 +105,14 @@ char* copy(char* base)
   return ret;
 }
 
-int read_features(void* in, void* ex)
+void substring_to_example(vw* all, example* ae, substring example)
 {
-  vw* all = (vw*)in;
-  example* ae = (example*)ex;
-  char *line=NULL;
-  int num_chars = readto(*(all->p->input), line, '\n');
-  if (num_chars <= 1)
-    return num_chars;
-  if (line[num_chars-1] == '\n')
-    num_chars--;
-  substring example = {line, line + num_chars};
-
   tokenize('|', example, all->p->channels);
   all->lp->default_label(ae->ld);
   substring* feature_start = &(all->p->channels[1]);
 
   substring label_space = all->p->channels[0];
-  if (*line == '|')
+  if (*example.begin == '|')
     {
       feature_start = &(all->p->channels[0]);
       all->p->words.erase();
@@ -219,6 +209,26 @@ int read_features(void* in, void* ex)
       }
   }
 
+}
+
+int read_features(void* in, example* ex)
+{
+  vw* all = (vw*)in;
+  example* ae = (example*)ex;
+  char *line=NULL;
+  int num_chars = readto(*(all->p->input), line, '\n');
+  if (num_chars <= 1)
+    return num_chars;
+  if (line[num_chars-1] == '\n')
+    num_chars--;
+  substring example = {line, line + num_chars};
+  substring_to_example(all, ae, example);
+
   return num_chars;
 }
 
+void read_line(vw& all, example* ex, char* line)
+{
+  substring ss = {line, line+strlen(line)};
+  substring_to_example(&all, ex, ss);  
+}

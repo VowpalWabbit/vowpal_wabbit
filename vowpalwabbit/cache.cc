@@ -45,7 +45,7 @@ struct one_float {
   float f;
 } __attribute__((packed));
 
-int read_cached_features(void* in, void* ec)
+int read_cached_features(void* in, example* ec)
 {
   vw* all = (vw*)in;
   example* ae = (example*)ec;

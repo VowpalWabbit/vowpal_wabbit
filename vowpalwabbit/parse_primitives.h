@@ -11,6 +11,7 @@ embodied in the content of this file are licensed under the BSD
 #include <stdint.h>
 #include "v_array.h"
 #include "io.h"
+#include "example.h"
 
 struct substring {
   char *begin;
@@ -59,7 +60,7 @@ struct parser {
   v_array<substring> name;
 
   io_buf* input; //Input source(s)
-  int (*reader)(void*, void* ae);
+  int (*reader)(void*, example* ae);
   hash_func_t hasher;
   bool resettable; //Whether or not the input can be reset.
   io_buf* output; //Where to output the cache.

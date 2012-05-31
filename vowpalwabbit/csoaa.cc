@@ -262,7 +262,7 @@ void drive_csoaa(void* in)
 	{
 	  learn(*all, ec);
           output_example(*all, ec);
-	  free_example(all->p, ec);
+	  free_example(*all, ec);
 	}
       else if (parser_done(all->p))
 	{
@@ -385,7 +385,7 @@ namespace CSOAA_LDF {
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
         if (output)
           output_example(all, *ecc);
-        free_example(all.p, *ecc);
+        free_example(all, *ecc);
       }
     ec_seq.erase();
   }

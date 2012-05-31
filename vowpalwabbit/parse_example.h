@@ -14,7 +14,9 @@ embodied in the content of this file are licensed under the BSD
 #include "example.h"
 
 //example processing
-int read_features(void* a, void* ex);
+
+int read_features(void* a, example* ex);// read example from  preset buffers.
+void read_line(vw& all, example* ex, char* line);//read example from the line.
 
 hash_func_t getHasher(const std::string& s);
 

@@ -885,11 +885,11 @@ void run_test(vw& all, example* ec)
 
     append_history(current_history, yhat);
 
-    free_example(all.p, ec);
+    free_example(all, ec);
     ec = safe_get_example(all, 0);
   }
   if (ec != NULL) {
-    free_example(all.p, ec);
+    free_example(all, ec);
     CSOAA_LDF::global_print_newline(all);
   }
 
@@ -909,7 +909,7 @@ void process_next_example_sequence(vw& all)
   // skip initial newlines
   while (CSOAA_LDF::example_is_newline(cur_ec)) {
     CSOAA_LDF::global_print_newline(all);
-    free_example(all.p, cur_ec);
+    free_example(all, cur_ec);
     cur_ec = safe_get_example(all, 1);
     if (cur_ec == NULL)
       return;
@@ -936,9 +936,9 @@ void process_next_example_sequence(vw& all)
 
   if (skip_this_one) {
     for (size_t i=0; i<n; i++)
-      free_example(all.p, ec_seq[n]);
+      free_example(all, ec_seq[n]);
     if (cur_ec != NULL)
-      free_example(all.p, cur_ec);
+      free_example(all, cur_ec);
     return;
   }
 
@@ -1101,10 +1101,10 @@ NOT_REALLY_NEW:
 
 
   for (size_t i=0; i<n; i++)
-    free_example(all.p, ec_seq[i]);
+    free_example(all, ec_seq[i]);
 
   if (cur_ec != NULL)
-    free_example(all.p, cur_ec);
+    free_example(all, cur_ec);
 }
  
 
