@@ -589,15 +589,13 @@ vw parse_args(int argc, char *argv[])
 namespace VW {
   vw initialize(string s)
   {
-    char* c = (char*)calloc(s.length()+1, sizeof(char));
-    strcpy(c, s.c_str());
-    substring ss = {c, c+s.length()};
+    char* c = (char*)calloc(s.length()+3, sizeof(char));
+    c[0] = 'b';
+    c[1] = ' ';
+    strcpy(c+2, s.c_str());
+    substring ss = {c, c+s.length()+2};
     v_array<substring> foo;
     foo.end_array = foo.begin = foo.end = NULL;
-    char t[2] = {'n','o'};
-    substring ss2 = {t,t+1};
-    push(foo, ss2);
-    
     tokenize(' ', ss, foo);
     
     char** argv = (char**)calloc(foo.index(), sizeof(char*));
@@ -610,7 +608,9 @@ namespace VW {
     
     vw all = parse_args(foo.index(), argv);
     
+    initialize_examples(all);
     free (argv);
+    free(c);
     
     return all;
   }

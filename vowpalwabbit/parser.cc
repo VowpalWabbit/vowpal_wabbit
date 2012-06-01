@@ -589,9 +589,7 @@ example* get_unused_example(vw& all)
 	  return examples + (all.p->parsed_examples % all.p->ring_size);
 	}
       else 
-	{
-	  pthread_cond_wait(&example_unused, &examples_lock);
-	}
+	pthread_cond_wait(&example_unused, &examples_lock);
       pthread_mutex_unlock(&examples_lock);
     }
 }
@@ -689,10 +687,11 @@ namespace VW{
   example* read_example(vw& all, char* example_line)
   {
     example* ret = get_unused_example(all);
-    
+
     read_line(all, ret, example_line);
     setup_example(all, ret);
-    
+    all.p->parsed_examples++;
+
     return ret;
   }
 
@@ -762,7 +761,6 @@ void *main_parse_loop(void *in)
 {
   vw* all = (vw*) in;
   
-  all->passes_complete = 0;
   size_t example_number = 0;  // for variable-size batch learning algorithms
   while(!done)
     {
@@ -838,7 +836,7 @@ example* get_example(parser* p)
 
 pthread_t parse_thread;
 
-void start_parser(vw& all)
+void initialize_examples(vw& all)
 {
   used_index = 0;
   all.p->parsed_examples = 0;
@@ -851,6 +849,11 @@ void start_parser(vw& all)
       examples[i].ld = calloc(1,all.p->lp->label_size);
       examples[i].in_use = false;
     }
+}
+
+void start_parser(vw& all)
+{
+  initialize_examples(all);
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
 }
 
