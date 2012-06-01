@@ -293,6 +293,7 @@ namespace CSOAA {
 namespace CSOAA_LDF {
   v_array<example*> ec_seq = v_array<example*>();
   size_t read_example_this_loop = 0;
+  bool need_to_clear = true;
 
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
@@ -364,25 +365,29 @@ namespace CSOAA_LDF {
   void output_example(vw& all, example* ec)
   {
     label* ld = (label*)ec->ld;
-    all.sd->weighted_examples += 1.;
+    all.sd->weighted_examples += 1;
     all.sd->total_features += ec->num_features;
     float loss = 0.;
-    if (!example_is_test(ec) && (ec->final_prediction == 1))
+    
+    size_t final_pred = *(OAA::prediction_t*)&(ec->final_prediction);
+
+    if (!example_is_test(ec) && (final_pred == 1))
       loss = ld->weight;
+    //    cerr << "ex eit=" << example_is_test(ec) << " pred=" << final_pred << "/" << (ec->final_prediction >= 0.999) << " weight=" << ld->weight << " loss=" << loss << endl;
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
+  
+    all.sd->example_number++;
 
     for (size_t i = 0; i<all.final_prediction_sink.index(); i++) {
       int f = all.final_prediction_sink[i];
       all.print(f, *(OAA::prediction_t*)&ec->final_prediction, 0, ec->tag);
     }
-  
-    all.sd->example_number++;
 
     CSOAA::print_update(all, example_is_test(ec), ec);
   }
 
-  void output_seq_example(vw& all)
+  void output_example_seq(vw& all)
   {
     if (ec_seq.index() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++)
@@ -399,18 +404,23 @@ namespace CSOAA_LDF {
 
   void learn(void* a, example *ec) {
     vw* all = (vw*)a;
+
     if (ec_seq.index() >= all->p->ring_size - 2) { // give some wiggle room
       cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
       do_actual_learning(*all);
-      //      output_seq_example(*all);
-      ec_seq.erase();
+      need_to_clear = true;
+    }
+
+    if (need_to_clear) {
+      clear_seq(*all);
+      need_to_clear = false;
     }
 
     if (example_is_newline(ec)) {
       do_actual_learning(*all);
-      //      output_seq_example(*all);
       global_print_newline(*all);
-      ec_seq.erase();
+      VW::finish_example(*all, ec);
+      need_to_clear = true;
     } else {
       push(ec_seq, ec);
     }
@@ -419,7 +429,8 @@ namespace CSOAA_LDF {
   void finish(void* a)
   {
     vw* all = (vw*)a;
-    //    output_seq_example(*all);
+    if (need_to_clear)
+      clear_seq(*all);
     base_finish(all);
   }
 
@@ -428,12 +439,18 @@ namespace CSOAA_LDF {
     vw* all =(vw*)in;
     example* ec = NULL;
     read_example_this_loop = 0;
+    need_to_clear = false;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
         learn(all, ec);
+        if (need_to_clear) {
+          output_example_seq(*all);
+          clear_seq(*all);
+          need_to_clear = false;
+        }
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
-        output_seq_example(*all);
+        output_example_seq(*all);
         finish(all);
         clear_seq(*all);
         if (ec_seq.begin != NULL)

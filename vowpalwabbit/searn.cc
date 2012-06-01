@@ -584,9 +584,6 @@ namespace Searn
     rollout = (rollout_item*)SearnUtil::calloc_or_die(max_action, sizeof(rollout_item));
     global_example_set = (example**)SearnUtil::calloc_or_die(max_action, sizeof(example*));
 
-    for (size_t k=0; k<max_action; k++)
-      global_example_set[k] = alloc_example(input_label_size);
-
     for (size_t k=1; k<=max_action; k++) {
       CSOAA::wclass cost = { FLT_MAX, k, 0. };
       push(testall_labels.costs, cost);
@@ -620,12 +617,6 @@ namespace Searn
 
     clear_seq(all);
     SearnUtil::free_it(ec_seq.begin);
-
-    for (size_t k=0; k<max_action; k++)
-      if (global_example_set[k]) {
-        dealloc_example(NULL, *global_example_set[k]);
-        SearnUtil::free_it(global_example_set[k]);
-      }
 
     SearnUtil::free_it(global_example_set);
 

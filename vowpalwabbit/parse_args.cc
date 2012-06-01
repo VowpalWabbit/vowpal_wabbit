@@ -605,6 +605,7 @@ namespace VW {
       {
 	*(foo[i].end) = '\0';
 	argv[i] = foo[i].begin;
+        cout << argv[i] << endl;
       }
     
     vw all = parse_args(foo.index(), argv);
