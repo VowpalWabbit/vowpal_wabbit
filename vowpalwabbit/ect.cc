@@ -454,7 +454,7 @@ namespace ECT
       exit(-1);
     }
 
-    *(all.lp) = OAA::mc_label_parser;
+    *(all.p->lp) = OAA::mc_label_parser;
     k = s;
     all.driver = drive_ect;
     base_learner = all.learn;

@@ -181,9 +181,10 @@ vw::vw()
   sd->binary_label = false;
   sd->k = 0;
   
-  lp = (label_parser*)malloc(sizeof(label_parser));
-  *(lp) = simple_label;
   p = new_parser();
+  p->lp = (label_parser*)malloc(sizeof(label_parser));
+  *(p->lp) = simple_label;
+
   reg_mode = 0;
 
   bfgs = false;

@@ -484,7 +484,7 @@ namespace Searn
       exit(-1);
     }
 
-    *(all.lp)=task.searn_label_parser;
+    *(all.p->lp)=task.searn_label_parser;
 
     max_action = vm["searn"].as<size_t>();
 

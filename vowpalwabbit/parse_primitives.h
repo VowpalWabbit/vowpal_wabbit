@@ -79,6 +79,8 @@ struct parser {
   int bound_sock;
   int max_fd;
 
+  label_parser* lp;  // moved from vw
+
   pthread_mutex_t output_lock;
   pthread_cond_t output_done;
 };

@@ -46,6 +46,19 @@ inline size_t min(size_t a, size_t b)
 { if ( a < b) return a; else return b;
 }
 
+template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
+{
+  dst.erase();
+  push_many(dst, src.begin, src.index());
+}
+
+template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)(T))
+{
+  dst.erase();
+  for (T*item = src.begin; item != src.end; item++)
+    push(dst, copy_item(*item));
+}
+
 template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
 {
   if(v.end+num >= v.end_array)

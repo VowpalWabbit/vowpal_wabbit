@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     }
   
   free(all.sd);
-  free(all.lp);
+  free(all.p->lp);
   delete all.loss;
   
   return 0;

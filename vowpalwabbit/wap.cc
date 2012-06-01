@@ -256,7 +256,7 @@ namespace WAP {
 
   void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, size_t s)
   {
-    *(all.lp) = CSOAA::cs_label_parser;
+    *(all.p->lp) = CSOAA::cs_label_parser;
     all.sd->k = s;
     all.driver = drive_wap;
     base_learner = all.learn;
@@ -479,7 +479,7 @@ namespace WAP_LDF {
 
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
   {
-    *(all.lp) = OAA::mc_label_parser;
+    *(all.p->lp) = OAA::mc_label_parser;
     all.driver = drive_wap_ldf;
     base_learner = all.learn;
     all.learn = learn;

@@ -52,4 +52,8 @@ struct example // core example datatype.
   bool done; //set to false by setup_example()
 };
 
+example *alloc_example(size_t);
+void dealloc_example(void(*delete_label)(void*), example&);
+void copy_example_data(example&, example, size_t);
+
 #endif

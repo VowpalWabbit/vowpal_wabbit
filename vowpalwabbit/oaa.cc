@@ -222,7 +222,7 @@ namespace OAA {
 
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
   {
-    *(all.lp) = mc_label_parser;
+    *(all.p->lp) = mc_label_parser;
     k = s;
     all.driver = drive_oaa;
     base_learner = all.learn;

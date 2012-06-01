@@ -278,7 +278,7 @@ namespace CSOAA {
 
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
   {
-    *(all.lp) = cs_label_parser;
+    *(all.p->lp) = cs_label_parser;
     all.sd->k = s;
     all.driver = drive_csoaa;
     base_learner = all.learn;
@@ -438,7 +438,7 @@ namespace CSOAA_LDF {
 
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
   {
-    *(all.lp) = OAA::mc_label_parser;
+    *(all.p->lp) = OAA::mc_label_parser;
 
     if (all.add_constant) {
       cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;

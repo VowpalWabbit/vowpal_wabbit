@@ -1246,7 +1246,7 @@ namespace Sequence {
     all.learn = learn;
     base_finish = all.finish;
     all.finish = finish;
-    *(all.lp)=OAA::mc_label_parser;
+    *(all.p->lp)=OAA::mc_label_parser;
 
     all.sequence = true;
 

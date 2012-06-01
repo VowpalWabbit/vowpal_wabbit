@@ -33,6 +33,7 @@ namespace po = boost::program_options;
 #include "comp_io.h"
 #include "unique_sort.h"
 #include "constant.h"
+#include "example.h"
 
 using namespace std;
 
@@ -604,7 +605,7 @@ bool parse_atomic_example(vw& all, example *ae)
 
   if (all.p->write_cache) 
     {
-      all.lp->cache_label(ae->ld,*(all.p->output));
+      all.p->lp->cache_label(ae->ld,*(all.p->output));
       cache_features(*(all.p->output), ae);
     }
 
@@ -622,7 +623,7 @@ void setup_example(vw& all, example* ae)
   ae->total_sum_feat_sq = 0;
   ae->done = false;
   ae->example_counter = all.p->parsed_examples + 1;
-  ae->global_weight = all.lp->get_weight(ae->ld);
+  ae->global_weight = all.p->lp->get_weight(ae->ld);
   all.sd->t += ae->global_weight;
   ae->example_t = all.sd->t;
 
@@ -826,7 +827,7 @@ void start_parser(vw& all)
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      examples[i].ld = calloc(1,all.lp->label_size);
+      examples[i].ld = calloc(1,all.p->lp->label_size);
       examples[i].in_use = false;
     }
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
@@ -843,35 +844,7 @@ void end_parser(vw& all)
 
   for (size_t i = 0; i < all.p->ring_size; i++) 
     {
-      all.lp->delete_label(examples[i].ld);
-      if (examples[i].tag.end_array != examples[i].tag.begin)
-	{
-	  free(examples[i].tag.begin);
-	  examples[i].tag.end_array = examples[i].tag.begin;
-	}
-      
-      if (all.lda > 0)
-	free(examples[i].topic_predictions.begin);
-
-      free(examples[i].ld);
-      for (size_t j = 0; j < 256; j++)
-	{
-	  if (examples[i].atomics[j].begin != examples[i].atomics[j].end_array)
-	    free(examples[i].atomics[j].begin);
-
-	  if (examples[i].audit_features[j].begin != examples[i].audit_features[j].end_array)
-	    {
-	      for (audit_data* temp = examples[i].audit_features[j].begin; 
-		  temp != examples[i].audit_features[j].end; temp++)
-		if (temp->alloced) {
-		  free(temp->space);
-		  free(temp->feature);
-		  temp->alloced = false;
-		}
-	      free(examples[i].audit_features[j].begin);
-	    }
-	}
-      free(examples[i].indices.begin);
+      dealloc_example(all.p->lp->delete_label, examples[i]);
     }
   free(examples);
   

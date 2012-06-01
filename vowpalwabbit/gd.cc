@@ -140,7 +140,7 @@ void finish_example(vw& all, example* ec)
 
 float inline_predict_trunc(vw& all, example* &ec)
 {
-  float prediction = all.lp->get_initial(ec->ld);
+  float prediction = all.p->lp->get_initial(ec->ld);
   
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
@@ -163,7 +163,7 @@ float inline_predict_trunc(vw& all, example* &ec)
 
 float inline_predict(vw& all, example* &ec)
 {
-  float prediction = all.lp->get_initial(ec->ld);
+  float prediction = all.p->lp->get_initial(ec->ld);
 
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;

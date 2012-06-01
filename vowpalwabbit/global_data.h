@@ -27,7 +27,6 @@ struct regressor {
 struct vw {
   shared_data* sd;
 
-  label_parser* lp;
   parser* p;
 
   void (*driver)(void *);

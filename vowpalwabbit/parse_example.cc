@@ -108,7 +108,7 @@ char* copy(char* base)
 void substring_to_example(vw* all, example* ae, substring example)
 {
   tokenize('|', example, all->p->channels);
-  all->lp->default_label(ae->ld);
+  all->p->lp->default_label(ae->ld);
   substring* feature_start = &(all->p->channels[1]);
 
   substring label_space = all->p->channels[0];
@@ -133,7 +133,7 @@ void substring_to_example(vw* all, example* ae, substring example)
 	  push_many(ae->tag, tag.begin, tag.end - tag.begin);
 	}
     }
-  all->lp->parse_label(all->sd, ae->ld, all->p->words);
+  all->p->lp->parse_label(all->sd, ae->ld, all->p->words);
 
   size_t mask = all->parse_mask;
   bool audit = all->audit;
