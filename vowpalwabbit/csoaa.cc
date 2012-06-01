@@ -291,7 +291,6 @@ namespace CSOAA {
 }
 
 namespace CSOAA_LDF {
-
   v_array<example*> ec_seq = v_array<example*>();
   size_t read_example_this_loop = 0;
 
@@ -383,14 +382,18 @@ namespace CSOAA_LDF {
     CSOAA::print_update(all, example_is_test(ec), ec);
   }
 
-  void clear_seq(vw& all, bool output)
+  void output_seq_example(vw& all)
   {
     if (ec_seq.index() > 0) 
-      for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
-        if (output)
-          output_example(all, *ecc);
+      for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++)
+        output_example(all, *ecc);
+  }
+
+  void clear_seq(vw& all)
+  {
+    if (ec_seq.index() > 0) 
+      for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++)
         vw_finish_example(all, *ecc);
-      }
     ec_seq.erase();
   }
 
@@ -399,13 +402,15 @@ namespace CSOAA_LDF {
     if (ec_seq.index() >= all->p->ring_size - 2) { // give some wiggle room
       cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
       do_actual_learning(*all);
-      clear_seq(*all, true);
+      //      output_seq_example(*all);
+      ec_seq.erase();
     }
 
     if (example_is_newline(ec)) {
       do_actual_learning(*all);
-      clear_seq(*all, true);
+      //      output_seq_example(*all);
       global_print_newline(*all);
+      ec_seq.erase();
     } else {
       push(ec_seq, ec);
     }
@@ -414,9 +419,7 @@ namespace CSOAA_LDF {
   void finish(void* a)
   {
     vw* all = (vw*)a;
-    clear_seq(*all, true);
-    if (ec_seq.begin != NULL)
-      free(ec_seq.begin);
+    //    output_seq_example(*all);
     base_finish(all);
   }
 
@@ -430,7 +433,11 @@ namespace CSOAA_LDF {
         learn(all, ec);
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
+        output_seq_example(*all);
         finish(all);
+        clear_seq(*all);
+        if (ec_seq.begin != NULL)
+          free(ec_seq.begin);
         return;
       }
     }

@@ -5,15 +5,17 @@
 
 example *alloc_example(size_t label_size)
 {
-  example* ex = (example*)calloc(1, sizeof(example));
-  if (ex == NULL) return NULL;
-  ex->ld = calloc(1, label_size);
-  ex->in_use = true;
-  return ex;
+  example* ec = (example*)calloc(1, sizeof(example));
+  if (ec == NULL) return NULL;
+  ec->ld = calloc(1, label_size);
+  ec->in_use = true;
+  //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
+  return ec;
 }
 
 void dealloc_example(void(*delete_label)(void*), example&ec)
 {
+  //  std::cerr << "dealloc_example.indices.begin=" << ec.indices.begin << " end=" << ec.indices.end << " // ld = " << ec.ld << "\t|| me = " << &ec << std::endl;
   if (delete_label)
     delete_label(ec.ld);
   if (ec.tag.end_array != ec.tag.begin)
@@ -51,39 +53,38 @@ feature copy_feature(feature src) {
   return f;
 }
 
-void copy_example_data(example &dst, example src, size_t label_size)
+void copy_example_data(example* &dst, example* src, size_t label_size)
 {
-  if ((label_size == 0) || (!src.ld)) {
-    if (dst.ld) free(dst.ld);
-    dst.ld = NULL;
+  if ((label_size == 0) || (!src->ld)) {
+    if (dst->ld) free(dst->ld);
+    dst->ld = NULL;
   } else {
-    memcpy(dst.ld, src.ld, label_size);
+    memcpy(dst->ld, src->ld, label_size);
   }
 
-  dst.final_prediction = src.final_prediction;
+  dst->final_prediction = src->final_prediction;
 
-  copy_array(dst.tag, src.tag);
-  dst.example_counter = src.example_counter;
+  copy_array(dst->tag, src->tag);
+  dst->example_counter = src->example_counter;
 
-  copy_array(dst.indices, src.indices);
+  copy_array(dst->indices, src->indices);
   for (size_t i=0; i<256; i++)
-    copy_array(dst.atomics[i], src.atomics[i], copy_feature);
+    copy_array(dst->atomics[i], src->atomics[i], copy_feature);
 
-  dst.num_features = src.num_features;
-  dst.pass = src.pass;
-  dst.partial_prediction = src.partial_prediction;
-  copy_array(dst.topic_predictions, src.topic_predictions);
-  dst.loss = src.loss;
-  dst.eta_round = src.eta_round;
-  dst.eta_global = src.eta_global;
-  dst.global_weight = src.global_weight;
-  dst.example_t = src.example_t;
+  dst->num_features = src->num_features;
+  dst->pass = src->pass;
+  dst->partial_prediction = src->partial_prediction;
+  copy_array(dst->topic_predictions, src->topic_predictions);
+  dst->loss = src->loss;
+  dst->eta_round = src->eta_round;
+  dst->eta_global = src->eta_global;
+  dst->global_weight = src->global_weight;
+  dst->example_t = src->example_t;
   for (size_t i=0; i<256; i++)
-    dst.sum_feat_sq[i] = src.sum_feat_sq[i];
-  dst.total_sum_feat_sq = src.total_sum_feat_sq;
-  dst.revert_weight = src.revert_weight;
-  dst.sorted = src.sorted;
-  dst.done = src.done;
-
-  dst.in_use = false;   // is_use is NOT copied!!!
+    dst->sum_feat_sq[i] = src->sum_feat_sq[i];
+  dst->total_sum_feat_sq = src->total_sum_feat_sq;
+  dst->revert_weight = src->revert_weight;
+  dst->sorted = src->sorted;
+  dst->in_use = src->in_use;
+  dst->done = src->done;
 }

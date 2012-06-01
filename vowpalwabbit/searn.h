@@ -126,7 +126,7 @@ namespace Searn
 
     // your task might need to initialize some memory at startup or
     // parse command line arguments: do that in initialize
-    bool   (*initialize)(std::vector<std::string>&opts, po::variables_map& vm);
+    bool   (*initialize)(vw&,std::vector<std::string>&opts, po::variables_map& vm);
 
     // your task might need to free some memory at the end of running:
     // do that in finalize

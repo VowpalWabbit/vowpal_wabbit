@@ -444,7 +444,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       all.p->resettable = all.p->write_cache || all.daemon;
     }
   
-  else if (all.data_filename != "")  // was: vm.count("data"))
+  else  // was: else if (vm.count("data"))
     {
       string hash_function("strings");
       if(vm.count("hash")) 

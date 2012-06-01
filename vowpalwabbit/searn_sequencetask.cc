@@ -17,6 +17,7 @@ namespace SequenceTask {
   bool   fake_as_ldf = false;
   size_t seq_max_action = 1;
   size_t constant_pow_length = 0;
+  size_t increment = 0;  // this is just for fake LDF
 
   struct seq_state {
     // global stuff -- common to any state in a trajectory
@@ -34,7 +35,7 @@ namespace SequenceTask {
     // done.
   };
 
-  bool initialize(std::vector<std::string>&opts, po::variables_map& vm)
+  bool initialize(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     SearnUtil::default_info(&hinfo);
 
@@ -64,6 +65,8 @@ namespace SequenceTask {
     constant_pow_length = 1;
     for (size_t i=0; i < hinfo.length; i++)
       constant_pow_length *= quadratic_constant;
+
+    increment = (all.length()/seq_max_action) * all.stride;
 
     return true;
   }
@@ -220,20 +223,28 @@ namespace SequenceTask {
     return ss.str();
   }
 
-  // // The following is just to test out LDF... we "fake" being an
-  // // LDF-based task.
+  // The following is just to test out LDF... we "fake" being an
+  // LDF-based task.
 
-  // bool allowed(state s, action a)
-  // {
-  //   return ((a >= 1) && (a <= seq_max_action));
-  // }
+  bool allowed(state s, action a)
+  {
+    return ((a >= 1) && (a <= seq_max_action));
+  }
 
-  // void cs_ldf_example(vw& all, state s, action a, example*& ec, bool create)
-  // {
-  //   seq_state* s = (seq_state*)s0;
-  //   example* cur = s->ec_start[s->pos];
-  //   if (create) {
-  //   } else {
-  //   }
-  // }
+  void cs_ldf_example(vw& all, state s0, action a, example*&ec, bool create)
+  {
+    seq_state* s = (seq_state*)s0;
+    example* cur = s->ec_start[s->pos];
+    if (create) {
+      ec = alloc_example(sizeof(OAA::mc_label));
+      copy_example_data(ec, cur, sizeof(OAA::mc_label));
+      OAA::default_label(ec->ld);
+      SearnUtil::add_history_to_example(all, &hinfo, ec, s->predictions);
+      OAA::update_indicies(all, ec, increment * a);
+    } else {
+      dealloc_example(OAA::delete_label, *ec);
+      free(ec);
+      ec = NULL;
+    }
+  }
 }

@@ -271,6 +271,7 @@ namespace Searn
   bool is_ldf;
   bool has_hash;
   bool constrainted_actions;
+  size_t input_label_size;
 
   // options
   size_t max_action           = 1;
@@ -298,9 +299,11 @@ namespace Searn
   rollout_item* rollout;
   v_array<example*> ec_seq = v_array<example*>();
   example** global_example_set = NULL;
-  example* empty_example = NULL;  // TODO: fill this in!
+  example* empty_example = NULL;
+  OAA::mc_label empty_label;
   v_array<CSOAA::wclass>loss_vector = v_array<CSOAA::wclass>();
   v_array<void*>old_labels = v_array<void*>();
+  v_array<OAA::mc_label>new_labels = v_array<OAA::mc_label>();
   CSOAA::label testall_labels = { v_array<CSOAA::wclass>() };
   CSOAA::label allowed_labels = { v_array<CSOAA::wclass>() };
 
@@ -469,15 +472,21 @@ namespace Searn
       task.copy = SequenceTask::copy;
       task.finish = SequenceTask::finish; 
       task.searn_label_parser = OAA::mc_label_parser;
+      input_label_size = sizeof(OAA::mc_label);
       task.start_state = NULL;
       task.start_state_multiline = SequenceTask::start_state_multiline;
-      task.cs_example = SequenceTask::cs_example;
-      task.cs_ldf_example = NULL;
+      if (0) {
+        task.cs_example = SequenceTask::cs_example;
+        task.cs_ldf_example = NULL;
+      } else {
+        task.cs_example = NULL;
+        task.cs_ldf_example = SequenceTask::cs_ldf_example;
+      }
       task.initialize = SequenceTask::initialize;
       task.finalize = NULL;
       task.equivalent = SequenceTask::equivalent;
       task.hash = SequenceTask::hash;
-      task.allowed = NULL;
+      task.allowed = SequenceTask::allowed;
       task.to_string = SequenceTask::to_string;
     } else {
       std::cerr << "error: unknown search task '" << task_string << "'" << std::endl;
@@ -506,7 +515,7 @@ namespace Searn
     }
 
     if (task.initialize != NULL)
-      if (!task.initialize(opts, vm)) {
+      if (!task.initialize(all, opts, vm)) {
         std::cerr << "error: task did not initialize properly" << std::endl;
         exit(-1);
       }
@@ -574,17 +583,26 @@ namespace Searn
     // initialize searn's memory
     rollout = (rollout_item*)SearnUtil::calloc_or_die(max_action, sizeof(rollout_item));
     global_example_set = (example**)SearnUtil::calloc_or_die(max_action, sizeof(example*));
+
     for (size_t k=0; k<max_action; k++)
-      global_example_set[k] = (example*)SearnUtil::calloc_or_die(1, sizeof(example*));
+      global_example_set[k] = alloc_example(input_label_size);
 
     for (size_t k=1; k<=max_action; k++) {
       CSOAA::wclass cost = { FLT_MAX, k, 0. };
       push(testall_labels.costs, cost);
     }
+
+    empty_example = alloc_example(sizeof(OAA::mc_label));
+    OAA::default_label(empty_example->ld);
+    //    cerr << "create: empty_example->ld = " << empty_example->ld << endl;
+    empty_example->in_use = true;
   }
   
   void free_memory(vw&all)
   {
+    dealloc_example(NULL, *empty_example);
+    free(empty_example);
+
     SearnUtil::free_it(rollout);
 
     loss_vector.erase();
@@ -592,6 +610,9 @@ namespace Searn
 
     old_labels.erase();
     SearnUtil::free_it(old_labels.begin);
+
+    new_labels.erase();
+    SearnUtil::free_it(new_labels.begin);
 
     free_unfreed_states();
     unfreed_states.erase();
@@ -601,7 +622,11 @@ namespace Searn
     SearnUtil::free_it(ec_seq.begin);
 
     for (size_t k=0; k<max_action; k++)
-      SearnUtil::free_it(global_example_set[k]);
+      if (global_example_set[k]) {
+        dealloc_example(NULL, *global_example_set[k]);
+        SearnUtil::free_it(global_example_set[k]);
+      }
+
     SearnUtil::free_it(global_example_set);
 
     SearnUtil::free_it(testall_labels.costs.begin);
@@ -665,14 +690,17 @@ namespace Searn
         task.cs_ldf_example(all, s0, action, ec, true);
         SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
         base_learner(&all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
+        empty_example->in_use = true;
+        base_learner(&all,empty_example);
         SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
         if (action == 1 || 
-            ec->partial_prediction > best_prediction) {
+            ec->partial_prediction < best_prediction) {
           best_prediction = ec->partial_prediction;
           best_action     = action;
         }
         task.cs_ldf_example(all, s0, action, ec, false);
       }
+
       if (best_action < 1) {
         std::cerr << "warning: internal error on search -- could not find an available action; quitting!" << std::endl;
         exit(-1);
@@ -784,20 +812,34 @@ namespace Searn
       task.cs_example(all, s0, ec, false);
     } else { // is_ldf
       old_labels.erase();
+      new_labels.erase();
+
+      for (size_t k=1; k<=max_action; k++) {
+        if (rollout[k-1].alive) {
+          OAA::mc_label ld = { k, loss_vector[k-1].x };
+          push(new_labels, ld);
+        } else {
+          OAA::mc_label ld = { k, 0. };
+          push(new_labels, ld);
+        }
+      }
+
+      //      cerr << "vvvvvvvvvvvvvvvvvvvvvvvvvvvv" << endl;
+
       for (size_t k=1; k<=max_action; k++) {
         if (!rollout[k-1].alive) break;
 
         total_examples_generated++;
 
-        OAA::mc_label ld = { k, loss_vector[k-1].x };
-
         task.cs_ldf_example(all, s0, k, global_example_set[k-1], true);
         push(old_labels, global_example_set[k-1]->ld);
-        global_example_set[k-1]->ld = (void*)&ld;
+        global_example_set[k-1]->ld = (void*)(&new_labels[k-1]);
         SearnUtil::add_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
         base_learner(&all,global_example_set[k-1]);
       }
 
+      //      cerr << "============================ (empty = " << empty_example << ")" << endl;
+      empty_example->in_use = true;
       base_learner(&all,empty_example);
 
       for (size_t k=1; k<=max_action; k++) {
@@ -806,6 +848,7 @@ namespace Searn
         global_example_set[k-1]->ld = old_labels[k-1];
         task.cs_ldf_example(all, s0, k, global_example_set[k-1], false);
       }
+      //      cerr << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << endl;
     }
 
   }

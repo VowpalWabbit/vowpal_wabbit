@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
   
   finalize_regressor(all, all.final_regressor_name);
   finalize_source(all.p);
+  free(all.p->lp);
   free(all.p);
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
@@ -91,7 +92,6 @@ int main(int argc, char *argv[])
     }
   
   free(all.sd);
-  free(all.p->lp);
   delete all.loss;
   
   return 0;
