@@ -364,6 +364,9 @@ namespace CSOAA_LDF {
 
   void output_example(vw& all, example* ec)
   {
+    if (example_is_newline(ec)) 
+      return;
+
     label* ld = (label*)ec->ld;
     all.sd->weighted_examples += 1;
     all.sd->total_features += ec->num_features;
@@ -411,15 +414,10 @@ namespace CSOAA_LDF {
       need_to_clear = true;
     }
 
-    if (need_to_clear) {
-      clear_seq(*all);
-      need_to_clear = false;
-    }
-
     if (example_is_newline(ec)) {
       do_actual_learning(*all);
       global_print_newline(*all);
-      VW::finish_example(*all, ec);
+      push(ec_seq, ec);
       need_to_clear = true;
     } else {
       push(ec_seq, ec);
@@ -429,8 +427,6 @@ namespace CSOAA_LDF {
   void finish(void* a)
   {
     vw* all = (vw*)a;
-    if (need_to_clear)
-      clear_seq(*all);
     base_finish(all);
   }
 
