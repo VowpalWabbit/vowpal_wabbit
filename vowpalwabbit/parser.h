@@ -41,5 +41,6 @@ void reset_source(vw& all, size_t numbits);
 void finalize_source(parser* source);
 void set_compressed(parser* par);
 void initialize_examples(vw& all);
+void free_parser(vw& all);
 
 #endif
