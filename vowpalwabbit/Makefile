@@ -28,8 +28,11 @@ liballreduce.a:	allreduce.o
 
 vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
 
-vw: $(vw_OBJECTS) liballreduce.a
-	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -L. -o $@ $+ $(LIBS)
+libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
+	ar rcs $@ $+
+
+vw: vw.o libvw.a liballreduce.a
+	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -L. $(LIBS) -o $@ $< -l vw -l allreduce
 
 active_interactor: active_interactor.cc
 	$(COMPILER) $(FLAGS) -o $@ $+
