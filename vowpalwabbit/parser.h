@@ -40,5 +40,6 @@ bool inconsistent_cache(size_t numbits, io_buf& cache);
 void reset_source(vw& all, size_t numbits);
 void finalize_source(parser* source);
 void set_compressed(parser* par);
+void initialize_examples(vw& all);
 
 #endif

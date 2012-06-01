@@ -263,6 +263,7 @@ vw::vw()
   reg.weight_vectors = NULL;
   reg.regularizers = NULL;
   pass_length = (size_t)-1;
+  passes_complete = 0;
 
   save_per_pass = false;
 }
