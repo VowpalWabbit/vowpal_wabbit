@@ -29,7 +29,9 @@ bool examples_to_finish();
 void start_parser(vw& all);
 void end_parser(vw& all);
 example* get_example(parser* pf);
-void vw_finish_example(vw& all, example* ec);
+namespace VW {
+  void finish_example(vw& all, example* ec);
+}
 void make_example_available();
 bool parser_done(parser* p);
 

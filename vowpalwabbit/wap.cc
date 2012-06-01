@@ -242,7 +242,7 @@ namespace WAP {
           {
             base_learner(all, ec);
             CSOAA::output_example(*all, ec);
-            vw_finish_example(*all, ec);
+	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
           {
@@ -430,7 +430,7 @@ namespace WAP_LDF {
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
         if (output)
           CSOAA_LDF::output_example(all, *ecc);
-        vw_finish_example(all, *ecc);
+	VW::finish_example(all, *ecc);
       }
     ec_seq.erase();
   }

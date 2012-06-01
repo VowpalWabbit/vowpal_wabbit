@@ -422,7 +422,7 @@ namespace ECT
           {
             learn(all, ec);
             OAA::output_example(*all, ec);
-            vw_finish_example(*all, ec);
+	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
           {

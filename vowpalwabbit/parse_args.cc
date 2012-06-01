@@ -586,27 +586,31 @@ vw parse_args(int argc, char *argv[])
   return all;
 }
 
-vw vw_initialize(char* c)
-{
-  size_t len = strlen(c);
-  substring ss = {c, c+len};
-  v_array<substring> foo;
-  char t[2] = {'n','o'};
-  substring ss2 = {t,t+1};
-  push(foo, ss2);
-
-  tokenize(' ', ss, foo);
-  
-  char** argv = (char**)calloc(foo.index(), sizeof(char*));
-  for (size_t i = 0; i < foo.index(); i++)
-    {
-      foo[i].end = '\0';
-      argv[i] = foo[i].begin;
-    }
-  
-  vw all = parse_args(foo.index(), argv);
-
-  free (argv);
-
-  return all;
+namespace VW {
+  vw initialize(string s)
+  {
+    char* c = (char*)calloc(s.length()+1, sizeof(char));
+    strcpy(c, s.c_str());
+    substring ss = {c, c+s.length()};
+    v_array<substring> foo;
+    foo.end_array = foo.begin = foo.end = NULL;
+    char t[2] = {'n','o'};
+    substring ss2 = {t,t+1};
+    push(foo, ss2);
+    
+    tokenize(' ', ss, foo);
+    
+    char** argv = (char**)calloc(foo.index(), sizeof(char*));
+    for (size_t i = 0; i < foo.index(); i++)
+      {
+	*(foo[i].end) = '\0';
+	argv[i] = foo[i].begin;
+      }
+    
+    vw all = parse_args(foo.index(), argv);
+    
+    free (argv);
+    
+    return all;
+  }
 }

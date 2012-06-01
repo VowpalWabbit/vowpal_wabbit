@@ -6,6 +6,9 @@ embodied in the content of this file are licensed under the BSD
 
 #include <strings.h>
 #include "parse_primitives.h"
+#include <iostream>
+
+using namespace std;
 
 void tokenize(char delim, substring s, v_array<substring>& ret)
 {
@@ -15,7 +18,7 @@ void tokenize(char delim, substring s, v_array<substring>& ret)
     if (*s.begin == delim) {
       if (s.begin != last)
 	{
-	  substring temp = {last,s.begin};
+	  substring temp = {last, s.begin};
 	  push(ret, temp);
 	}
       last = s.begin+1;
