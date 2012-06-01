@@ -264,7 +264,7 @@ namespace CSOAA {
           {
             learn(all, ec);
             output_example(*all, ec);
-            vw_finish_example(*all, ec);
+	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
           {
@@ -389,7 +389,7 @@ namespace CSOAA_LDF {
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
         if (output)
           output_example(all, *ecc);
-        vw_finish_example(all, *ecc);
+	VW::finish_example(all, *ecc);
       }
     ec_seq.erase();
   }

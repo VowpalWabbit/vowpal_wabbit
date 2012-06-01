@@ -556,7 +556,7 @@ namespace Searn
   {
     if (ec_seq.index() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
-        vw_finish_example(all, *ecc);
+	VW::finish_example(all, *ecc);
       }
     ec_seq.erase();
   }
@@ -925,7 +925,7 @@ namespace Searn
         do_actual_learning(all);
         clear_seq(all);
         //CSOAA_LDF::global_print_newline(all);
-        vw_finish_example(all, ec);
+	VW::finish_example(all, ec);
         is_real_example = false;
       } else {
         push(ec_seq, ec);

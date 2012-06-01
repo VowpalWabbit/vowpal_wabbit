@@ -33,6 +33,7 @@ namespace po = boost::program_options;
 #include "comp_io.h"
 #include "unique_sort.h"
 #include "constant.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -683,14 +684,77 @@ void setup_example(vw& all, example* ae)
       }                                                                 
 }
 
-example* vw_read_example(vw& all, char* example_line)
-{
-  example* ret = get_unused_example(all);
-  
-  read_line(all, ret, example_line);
-  setup_example(all, ret);
+namespace VW{
+  example* read_example(vw& all, char* example_line)
+  {
+    example* ret = get_unused_example(all);
+    
+    read_line(all, ret, example_line);
+    setup_example(all, ret);
+    
+    return ret;
+  }
 
-  return ret;
+  example* import_example(vw& all, vector<feature_space> vf)
+  {
+    example* ret = get_unused_example(all);
+    
+    for (size_t i = 0; i < vf.size();i++)
+      {
+	size_t index = vf[i].first;
+	push(ret->indices, index);
+	for (size_t j = 0; j < vf[i].second.size(); j++)
+	  {	    
+	    ret->sum_feat_sq[index] += vf[i].second[j].x * vf[i].second[j].x;
+	    push(ret->atomics[index], vf[i].second[j]);
+	  }
+      }
+    setup_example(all, ret);
+    return ret;
+  }
+  
+  void finish_example(vw& all, example* ec)
+  {
+    pthread_mutex_lock(&all.p->output_lock);
+    all.p->local_example_number++;
+    pthread_cond_signal(&all.p->output_done);
+    pthread_mutex_unlock(&all.p->output_lock);
+    
+    if (all.audit)
+      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+	{
+	  for (audit_data* temp 
+		 = ec->audit_features[*i].begin; 
+	       temp != ec->audit_features[*i].end; temp++)
+	    {
+	      if (temp->alloced)
+		{
+		  free(temp->space);
+		  free(temp->feature);
+		  temp->alloced=false;
+		}
+	    }
+	  ec->audit_features[*i].erase();
+	}
+    
+    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      {  
+	ec->atomics[*i].erase();
+	ec->sum_feat_sq[*i]=0;
+      }
+    
+    ec->indices.erase();
+    ec->tag.erase();
+    ec->sorted = false;
+    
+    pthread_mutex_lock(&examples_lock);
+    assert(ec->in_use);
+    ec->in_use = false;
+    pthread_cond_signal(&example_unused);
+    if (done)
+      pthread_cond_broadcast(&example_available);
+    pthread_mutex_unlock(&examples_lock);
+  }
 }
 
 void *main_parse_loop(void *in)
@@ -742,49 +806,6 @@ void *main_parse_loop(void *in)
   all->p->name.begin = all->p->name.end = all->p->name.end_array = NULL;
 
   return NULL;
-}
-
-void vw_finish_example(vw& all, example* ec)
-{
-  pthread_mutex_lock(&all.p->output_lock);
-  all.p->local_example_number++;
-  pthread_cond_signal(&all.p->output_done);
-  pthread_mutex_unlock(&all.p->output_lock);
-
-  if (all.audit)
-    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-      {
-	for (audit_data* temp 
-	       = ec->audit_features[*i].begin; 
-	     temp != ec->audit_features[*i].end; temp++)
-	  {
-	    if (temp->alloced)
-	      {
-		free(temp->space);
-		free(temp->feature);
-		temp->alloced=false;
-	      }
-	  }
-	ec->audit_features[*i].erase();
-      }
-
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-  {  
-    ec->atomics[*i].erase();
-    ec->sum_feat_sq[*i]=0;
-  }
-
-  ec->indices.erase();
-  ec->tag.erase();
-  ec->sorted = false;
-
-  pthread_mutex_lock(&examples_lock);
-  assert(ec->in_use);
-  ec->in_use = false;
-  pthread_cond_signal(&example_unused);
-  if (done)
-    pthread_cond_broadcast(&example_available);
-  pthread_mutex_unlock(&examples_lock);
 }
 
 example* get_example(parser* p)
