@@ -111,6 +111,7 @@ struct vw {
   size_t node; //node id number
 
   void (*print)(int,float,float,v_array<char>);
+  void (*print_text)(int, string, v_array<char>);
   loss_function* loss;
 
   char* program_name;

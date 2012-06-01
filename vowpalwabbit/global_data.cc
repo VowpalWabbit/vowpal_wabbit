@@ -104,6 +104,23 @@ void print_result(int f, float res, float weight, v_array<char> tag)
     }
 }
 
+void print_raw_text(int f, string s, v_array<char> tag)
+{
+  if (f < 0)
+    return;
+
+  ssize_t t;
+  int num = s.length();
+  t = write(f, s.c_str(), num);
+  if (t != num) 
+    cerr << "write error" << endl;
+  print_tag(f, tag);
+  char temp = '\n';
+  t = write(f, &temp, 1);     
+  if (t != 1)
+    cerr << "write error" << endl;
+}
+
 void active_print_result(int f, float res, float weight, v_array<char> tag)
 {
   if (f >= 0)
@@ -215,6 +232,7 @@ vw::vw()
   final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;
   raw_prediction = -1;
   print = print_result;
+  print_text = print_raw_text;
   lda = 0;
   random_weights = false;
   per_feature_regularizer_input = "";
