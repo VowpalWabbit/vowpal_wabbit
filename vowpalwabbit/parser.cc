@@ -857,10 +857,8 @@ void start_parser(vw& all)
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
 }
 
-void end_parser(vw& all)
+void free_parser(vw& all)
 {
-  pthread_join(parse_thread, NULL);
-
   if(all.ngram > 1)
     {
       if(gram_mask.begin != NULL) reserve(gram_mask,0);
@@ -885,3 +883,7 @@ void end_parser(vw& all)
     free(all.p->counts.begin);
 }
 
+void end_parser(vw& all)
+{
+  pthread_join(parse_thread, NULL);
+}

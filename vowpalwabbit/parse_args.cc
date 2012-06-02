@@ -613,4 +613,16 @@ namespace VW {
     
     return all;
   }
+
+  void finish(vw& all)
+  {
+    all.finish(&all);
+    free_parser(all);
+    finalize_regressor(all, all.final_regressor_name);
+    finalize_source(all.p);
+    free(all.p->lp);
+    free(all.p);
+    free(all.sd);
+    delete all.loss;
+  }
 }

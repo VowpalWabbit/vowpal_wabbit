@@ -17,6 +17,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_example.h"
 #include "parse_args.h"
 #include "accumulate.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -45,10 +46,6 @@ int main(int argc, char *argv[])
 
   end_parser(all);
   
-  finalize_regressor(all, all.final_regressor_name);
-  finalize_source(all.p);
-  free(all.p->lp);
-  free(all.p);
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   if(!all.quiet && all.span_server != "")
@@ -91,8 +88,7 @@ int main(int argc, char *argv[])
       cerr << endl;
     }
   
-  free(all.sd);
-  delete all.loss;
+  VW::finish(all);
   
   return 0;
 }
