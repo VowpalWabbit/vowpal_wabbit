@@ -322,7 +322,7 @@ namespace CSOAA_LDF {
         min_cost = ld->weight;
       if (example_is_test(ec) != isTest) {
         isTest = true;
-        cerr << "warning: got mix of train/test data; assuming test" << endl;
+        cerr << "warning: csoaa_ldf got mix of train/test data; assuming test" << endl;
       }
 
       ec->ld = &simple_label;
@@ -412,6 +412,11 @@ namespace CSOAA_LDF {
       cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
       do_actual_learning(*all);
       need_to_clear = true;
+    }
+
+    if (need_to_clear) {
+      ec_seq.erase();
+      need_to_clear = false;
     }
 
     if (example_is_newline(ec)) {

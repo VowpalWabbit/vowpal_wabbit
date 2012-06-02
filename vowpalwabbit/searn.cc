@@ -323,7 +323,6 @@ namespace Searn
   // variables
   size_t current_policy           = 0;
   size_t total_number_of_policies = 1;
-  size_t last_printed_policy      = 0;
 
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
@@ -392,11 +391,6 @@ namespace Searn
     if (!should_print_update(all))
       return;
 
-    size_t num_pol = current_policy - last_printed_policy;
-    if (current_policy != last_printed_policy) {
-      last_printed_policy = current_policy;
-    }
-
     char true_label[21];
     char pred_label[21];
     if (task.to_string) {
@@ -407,8 +401,7 @@ namespace Searn
       to_short_string("", 20, pred_label);
     }
 
-    fprintf(stderr, "%4d  %-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
-            num_pol,
+    fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
             all.sd->sum_loss/all.sd->weighted_examples,
             all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
             (long int)all.sd->example_number,
@@ -679,16 +672,20 @@ namespace Searn
           break;   // for LDF, there are no more actions
 
         task.cs_ldf_example(all, s0, action, ec, true);
+        //cerr << "created example: " << ec << ", label: " << ec->ld << endl;
         SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
         base_learner(&all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
+        //cerr << "base_learned on example: " << ec << endl;
         empty_example->in_use = true;
         base_learner(&all,empty_example);
+        //cerr << "base_learned on empty example: " << empty_example << endl;
         SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
         if (action == 1 || 
             ec->partial_prediction < best_prediction) {
           best_prediction = ec->partial_prediction;
           best_action     = action;
         }
+        //cerr << "releasing example: " << ec << ", label: " << ec->ld << endl;
         task.cs_ldf_example(all, s0, action, ec, false);
       }
 
@@ -991,10 +988,10 @@ namespace Searn
     // initialize everything
     total_number_of_policies = (int)ceil(((float)all->numpasses) / ((float)passes_per_policy));
 
-    const char * header_fmt = "%-5s %-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
+    const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
 
-    fprintf(stderr, header_fmt, "#pol", "average", "since", "sequence", "example",   "current label", "current predicted",  "current",  "cur", "cur", "predic.", "examples");
-    fprintf(stderr, header_fmt, "chng",    "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
+    fprintf(stderr, header_fmt, "average", "since", "sequence", "example",   "current label", "current predicted",  "current",  "cur", "cur", "predic.", "examples");
+    fprintf(stderr, header_fmt, "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
     cerr.precision(5);
 
     initialize_memory();

@@ -370,7 +370,7 @@ namespace WAP_LDF {
         min_cost = ld->weight;
       if (CSOAA_LDF::example_is_test(ec) != isTest) {
         isTest = true;
-        cerr << "warning: got mix of train/test data; assuming test" << endl;
+        cerr << "warning: wap_ldf got mix of train/test data; assuming test" << endl;
       }
 
       float pred  = test(all, ec);
