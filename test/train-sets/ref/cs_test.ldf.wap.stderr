@@ -12,13 +12,13 @@ loss       last        counter   weight      label  predict features
 0.000000   0.000000          3      3.0    known        0        4
 0.000000   0.000000          6      6.0    known        0        4
 0.000000   0.000000         11     11.0    known        0        4
-0.000000   0.000000         22     22.0    known        0        4
-0.000000   0.000000         44     44.0    known        1        4
+0.090909   0.181818         22     22.0    known        0        4
+0.113636   0.136364         44     44.0    known        1        4
 
 finished run
 number of examples = 70
 weighted example sum = 70
 weighted label sum = 0
-average loss = 0
+average loss = 0.1286
 best constant = -0.01449
 total feature number = 280

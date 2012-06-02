@@ -459,17 +459,17 @@ __DATA__
     train-sets/ref/wsj_small-tm.dat.stderr
 
 # Test 14: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn 4 --searn_task sequence --csoaa_ldf && rm -f train-sets/*.cache
+{VW} -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn 4 --searn_task sequence && rm -f train-sets/*.cache
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
 
 # Test 15: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
-{VW} -c -d train-sets/wsj_small.dat.gz --passes 12 --searn_passes_per_policy 4 --searn_task sequence --searn 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --csoaa_ldf  && rm -f train-sets/*.cache
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 12 --searn_passes_per_policy 4 --searn_task sequence --searn 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 && rm -f train-sets/*.cache
     train-sets/ref/searn_wsj.stdout
     train-sets/ref/searn_wsj.stderr
 
 # Test 16: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -c -d train-sets/wsj_small.dat.gz --passes 2 --searn_passes_per_policy 1 --searn_task sequence --searn 45 --wap_ldf --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 && rm -f train-sets/*.cache
+{VW} -c -d train-sets/wsj_small.dat.gz --passes 2 --searn_passes_per_policy 1 --searn_task sequence --searn 45 --wap 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 && rm -f train-sets/*.cache
     train-sets/ref/searn_wsj2.dat.stdout
     train-sets/ref/searn_wsj2.dat.stderr
 

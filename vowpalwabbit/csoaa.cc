@@ -214,11 +214,13 @@ namespace CSOAA {
 
 	if (cl->x == FLT_MAX)
 	  {
+            //cerr << "csoaa.learn: test  example" << endl;
 	    simple_temp.label = FLT_MAX;
 	    simple_temp.weight = 0.;
 	  }
 	else
 	  {
+            //cerr << "csoaa.learn: train example" << endl;
 	    simple_temp.label = cl->x;
 	    simple_temp.weight = 1.;
 	  }
@@ -227,7 +229,7 @@ namespace CSOAA {
 
         size_t desired_increment = increment * (i-1);
         if (desired_increment != current_increment) {
-	  OAA::update_indicies(*all, ec, desired_increment - current_increment);
+	  update_example_indicies(all->audit, ec, desired_increment - current_increment);
           current_increment = desired_increment;
         }
 	ec->partial_prediction = 0.;
@@ -243,7 +245,7 @@ namespace CSOAA {
     ec->ld = ld;
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
     if (current_increment != 0)
-      OAA::update_indicies(*all, ec, -current_increment);
+      update_example_indicies(all->audit, ec, -current_increment);
   }
 
   void finish(void* a)
@@ -309,6 +311,7 @@ namespace CSOAA_LDF {
     size_t prediction = 0;
     float prediction_cost = 0.;
     bool isTest = example_is_test(*ec_seq.begin);
+    //cerr << "csoaa_ldf.learn isTest=" << isTest << ", K=" << K << endl;
     for (int k=0; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
@@ -338,25 +341,27 @@ namespace CSOAA_LDF {
     }
     prediction_cost -= min_cost;
     // do actual learning
-    for (int k=0; k<K; k++) {
-      example *ec = ec_seq.begin[k];
-      label   *ld = (label*)ec->ld;
+    if (!isTest) {
+      for (int k=0; k<K; k++) {
+        example *ec = ec_seq.begin[k];
+        label   *ld = (label*)ec->ld;
 
-      // learn
-      label_data simple_label;
-      simple_label.initial = 0.;
-      simple_label.label = ld->weight;
-      simple_label.weight = 1.;
-      ec->ld = &simple_label;
-      ec->partial_prediction = 0.;
-      base_learner(&all, ec);
+        // learn
+        label_data simple_label;
+        simple_label.initial = 0.;
+        simple_label.label = ld->weight;
+        simple_label.weight = 1.;
+        ec->ld = &simple_label;
+        ec->partial_prediction = 0.;
+        base_learner(&all, ec);
 
-      // fill in test predictions
-      *(OAA::prediction_t*)&(ec->final_prediction) = (prediction == ld->label) ? 1 : 0;
-      ec->partial_prediction = predictions.begin[k];
+        // fill in test predictions
+        *(OAA::prediction_t*)&(ec->final_prediction) = (prediction == ld->label) ? 1 : 0;
+        ec->partial_prediction = predictions.begin[k];
       
-      // restore label
-      ec->ld = ld;
+        // restore label
+        ec->ld = ld;
+      }
     }
     predictions.erase();
     free(predictions.begin);

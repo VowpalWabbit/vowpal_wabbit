@@ -51,13 +51,14 @@ namespace SearnUtil
   void add_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
   {
     size_t amount = (policy * all.length() / max_action / total_number_of_policies) * all.stride;
-    OAA::update_indicies(all, ec, amount);
+    //cerr << "add_policy_offset: " << amount << endl;
+    update_example_indicies(all.audit, ec, amount);
   }
 
   void remove_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
   {
     size_t amount = (policy * all.length() / max_action / total_number_of_policies) * all.stride;
-    OAA::update_indicies(all, ec, -amount);
+    update_example_indicies(all.audit, ec, -amount);
   }
 
   int random_policy(long int seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal)
@@ -381,8 +382,8 @@ namespace Searn
 
     string str = task.to_string(s0, false, last_action_sequence);
     for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
-      //int f = all.final_prediction_sink[i];
-      // all.print(f, str, 0., ec->tag); // TODO: need to print strings!!!
+      int f = all.final_prediction_sink[i];
+      all.print_text(f, str, ec->tag);
     }
   }
 
@@ -468,7 +469,7 @@ namespace Searn
       input_label_size = sizeof(OAA::mc_label);
       task.start_state = NULL;
       task.start_state_multiline = SequenceTask::start_state_multiline;
-      if (0) {
+      if (1) {
         task.cs_example = SequenceTask::cs_example;
         task.cs_ldf_example = NULL;
       } else {
@@ -631,6 +632,7 @@ namespace Searn
   size_t searn_predict(vw&all, state s0, size_t step, bool allow_oracle, bool allow_current)
   {
     int policy = SearnUtil::random_policy(has_hash ? task.hash(s0) : step, beta, allow_current, current_policy, allow_oracle);
+    if (PRINT_DEBUG_INFO) { cerr << "predicing with policy " << policy << " (allow_oracle=" << allow_oracle << ", allow_current=" << allow_current << "), current_policy=" << current_policy << endl; }
     if (policy == -1) {
       return task.oracle(s0);
     }
@@ -823,6 +825,7 @@ namespace Searn
         push(old_labels, global_example_set[k-1]->ld);
         global_example_set[k-1]->ld = (void*)(&new_labels[k-1]);
         SearnUtil::add_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
+        if (PRINT_DEBUG_INFO) { cerr << "add_policy_offset, max_action=" << max_action << ", total_number_of_policies=" << total_number_of_policies << ", current_policy=" << current_policy << endl;}
         base_learner(&all,global_example_set[k-1]);
       }
 

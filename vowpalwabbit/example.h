@@ -55,5 +55,6 @@ struct example // core example datatype.
 example *alloc_example(size_t);
 void dealloc_example(void(*delete_label)(void*), example&);
 void copy_example_data(example*&, example*, size_t);
+void update_example_indicies(bool audit, example* ec, size_t amount);
 
 #endif
