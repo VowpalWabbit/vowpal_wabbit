@@ -270,7 +270,7 @@ namespace CSOAA {
           }
         else if (parser_done(all->p))
           {
-            finish(all);
+            //            finish(all);
             return;
           }
         else 
@@ -457,7 +457,7 @@ namespace CSOAA_LDF {
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
         output_example_seq(*all);
-        finish(all);
+        //finish(all);
         clear_seq(*all);
         if (ec_seq.begin != NULL)
           free(ec_seq.begin);

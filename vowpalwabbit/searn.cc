@@ -421,6 +421,77 @@ namespace Searn
   }
 
 
+
+  void clear_seq(vw&all)
+  {
+    if (ec_seq.index() > 0) 
+      for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
+	VW::finish_example(all, *ecc);
+      }
+    ec_seq.erase();
+  }
+
+  void free_unfreed_states()
+  {
+    while (!unfreed_states.empty()) {
+      state s = unfreed_states.pop();
+      task.finish(s);
+    }
+  }
+
+  void initialize_memory()
+  {
+    // initialize searn's memory
+    rollout = (rollout_item*)SearnUtil::calloc_or_die(max_action, sizeof(rollout_item));
+    global_example_set = (example**)SearnUtil::calloc_or_die(max_action, sizeof(example*));
+
+    for (size_t k=1; k<=max_action; k++) {
+      CSOAA::wclass cost = { FLT_MAX, k, 0. };
+      push(testall_labels.costs, cost);
+    }
+
+    empty_example = alloc_example(sizeof(OAA::mc_label));
+    OAA::default_label(empty_example->ld);
+    //    cerr << "create: empty_example->ld = " << empty_example->ld << endl;
+    empty_example->in_use = true;
+  }
+  
+  void free_memory(vw&all)
+  {
+    dealloc_example(NULL, *empty_example);
+    free(empty_example);
+
+    SearnUtil::free_it(rollout);
+
+    loss_vector.erase();
+    SearnUtil::free_it(loss_vector.begin);
+
+    old_labels.erase();
+    SearnUtil::free_it(old_labels.begin);
+
+    new_labels.erase();
+    SearnUtil::free_it(new_labels.begin);
+
+    free_unfreed_states();
+    unfreed_states.erase();
+    SearnUtil::free_it(unfreed_states.begin);
+
+    clear_seq(all);
+    SearnUtil::free_it(ec_seq.begin);
+
+    SearnUtil::free_it(global_example_set);
+
+    SearnUtil::free_it(testall_labels.costs.begin);
+    SearnUtil::free_it(allowed_labels.costs.begin);
+
+    if (do_recombination) {
+      delete past_states;
+      past_states = NULL;
+    }
+  }
+
+
+
   void learn(void*in, example *ec)
   {
     //vw*all = (vw*)in;
@@ -429,8 +500,14 @@ namespace Searn
 
   void finish(void*in)
   {
-    //vw*all = (vw*)in;
+    vw*all = (vw*)in;
+    // free everything
+    if (task.finalize != NULL)
+      task.finalize();
+    free_memory(*all);
+    base_finish(all);
   }
+
 
 
   void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
@@ -555,73 +632,6 @@ namespace Searn
     all.finish = finish;
   }
 
-  void clear_seq(vw&all)
-  {
-    if (ec_seq.index() > 0) 
-      for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
-	VW::finish_example(all, *ecc);
-      }
-    ec_seq.erase();
-  }
-
-  void free_unfreed_states()
-  {
-    while (!unfreed_states.empty()) {
-      state s = unfreed_states.pop();
-      task.finish(s);
-    }
-  }
-
-  void initialize_memory()
-  {
-    // initialize searn's memory
-    rollout = (rollout_item*)SearnUtil::calloc_or_die(max_action, sizeof(rollout_item));
-    global_example_set = (example**)SearnUtil::calloc_or_die(max_action, sizeof(example*));
-
-    for (size_t k=1; k<=max_action; k++) {
-      CSOAA::wclass cost = { FLT_MAX, k, 0. };
-      push(testall_labels.costs, cost);
-    }
-
-    empty_example = alloc_example(sizeof(OAA::mc_label));
-    OAA::default_label(empty_example->ld);
-    //    cerr << "create: empty_example->ld = " << empty_example->ld << endl;
-    empty_example->in_use = true;
-  }
-  
-  void free_memory(vw&all)
-  {
-    dealloc_example(NULL, *empty_example);
-    free(empty_example);
-
-    SearnUtil::free_it(rollout);
-
-    loss_vector.erase();
-    SearnUtil::free_it(loss_vector.begin);
-
-    old_labels.erase();
-    SearnUtil::free_it(old_labels.begin);
-
-    new_labels.erase();
-    SearnUtil::free_it(new_labels.begin);
-
-    free_unfreed_states();
-    unfreed_states.erase();
-    SearnUtil::free_it(unfreed_states.begin);
-
-    clear_seq(all);
-    SearnUtil::free_it(ec_seq.begin);
-
-    SearnUtil::free_it(global_example_set);
-
-    SearnUtil::free_it(testall_labels.costs.begin);
-    SearnUtil::free_it(allowed_labels.costs.begin);
-
-    if (do_recombination) {
-      delete past_states;
-      past_states = NULL;
-    }
-  }
 
   bool is_test_example(example*ec)
   {
@@ -1010,13 +1020,9 @@ namespace Searn
         break;
       }
     }
-
-    // free everything
-    if (task.finalize != NULL)
-      task.finalize();
-    free_memory(*all);
-    base_finish(all);
   }
+
+
 }
 
 

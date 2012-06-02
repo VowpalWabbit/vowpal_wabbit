@@ -266,9 +266,9 @@ namespace WAP {
 }
 
 namespace WAP_LDF {
-
   v_array<example*> ec_seq = v_array<example*>();
   size_t read_example_this_loop = 0;
+  bool need_to_clear = true;
 
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
@@ -424,12 +424,17 @@ namespace WAP_LDF {
     }
   }
 
-  void clear_seq(vw& all, bool output)
+  void output_example_seq(vw& all)
+  {
+    if (ec_seq.index() > 0) 
+      for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++)
+        CSOAA_LDF::output_example(all, *ecc);
+  }
+
+  void clear_seq(vw& all)
   {
     if (ec_seq.index() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
-        if (output)
-          CSOAA_LDF::output_example(all, *ecc);
 	VW::finish_example(all, *ecc);
       }
     ec_seq.erase();
@@ -437,16 +442,23 @@ namespace WAP_LDF {
 
   void learn(void* a, example *ec) {
     vw* all = (vw*)a;
+
     if (ec_seq.index() >= all->p->ring_size - 2) { // give some wiggle room
       cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
       do_actual_learning(*all);
-      clear_seq(*all, true);
+      need_to_clear = true;
+    }
+
+    if (need_to_clear) {
+      ec_seq.erase();
+      need_to_clear = false;
     }
 
     if (CSOAA_LDF::example_is_newline(ec)) {
       do_actual_learning(*all);
-      clear_seq(*all, true);
       CSOAA_LDF::global_print_newline(*all);
+      push(ec_seq, ec);
+      need_to_clear = true;
     } else {
       push(ec_seq, ec);
     }
@@ -455,9 +467,6 @@ namespace WAP_LDF {
   void finish(void* a)
   {
     vw* all = (vw*)a;
-    clear_seq(*all, true);
-    if (ec_seq.begin != NULL)
-      free(ec_seq.begin);
     base_finish(all);
   }
 
@@ -466,12 +475,22 @@ namespace WAP_LDF {
     vw* all = (vw*)a;
     example* ec = NULL;
     read_example_this_loop = 0;
+    need_to_clear = false;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
         learn(all, ec);
+        if (need_to_clear) {
+          output_example_seq(*all);
+          clear_seq(*all);
+          need_to_clear = false;
+        }
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
+        output_example_seq(*all);
         finish(all);
+        clear_seq(*all);
+        if (ec_seq.begin != NULL)
+          free(ec_seq.begin);
         return;
       }
     }
@@ -480,6 +499,12 @@ namespace WAP_LDF {
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
   {
     *(all.p->lp) = OAA::mc_label_parser;
+
+    if (all.add_constant) {
+      cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
+      all.add_constant = false;
+    }
+
     all.driver = drive_wap_ldf;
     base_learner = all.learn;
     all.learn = learn;
