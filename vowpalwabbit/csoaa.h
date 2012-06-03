@@ -52,6 +52,8 @@ namespace CSOAA_LDF {
 
   inline int example_is_test(example* ec)
   {
+    //    cerr << "example_is_test( " << ec << " )" << endl;
+    //    cerr << "ld = " << ec->ld << endl;
     return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
   }
 

@@ -880,7 +880,7 @@ void drive_bfgs(void* in)
 	}
      else if (parser_done(all->p))
 	{
-	  finish(all);
+          //	  finish(all);
 	  return;
 	}
       else 

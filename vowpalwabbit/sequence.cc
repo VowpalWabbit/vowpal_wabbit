@@ -320,8 +320,11 @@ namespace Sequence {
     free(hcache);          hcache          = NULL;
     free(current_history); current_history = NULL;
 
-    for (size_t i=0; i<sequence_k * sequence_beam; i++)
-      free(all_histories[i]);
+    if (all_histories) {
+      for (size_t i=0; i<sequence_k * sequence_beam; i++)
+        free(all_histories[i]);
+      free(all_histories);   all_histories   = NULL;
+    }
 
     if (!all_transitions_allowed) {
       for (size_t i=0; i<sequence_k+1; i++)
@@ -329,8 +332,6 @@ namespace Sequence {
       free(valid_transition);
       valid_transition = NULL;
     }
-
-    free(all_histories);   all_histories   = NULL;
 
     true_labels.erase();
     free(true_labels.begin);
@@ -1210,7 +1211,7 @@ namespace Sequence {
         learn(all, ec);
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
-        finish(all);
+        //finish(all);
         return;
       }
     }

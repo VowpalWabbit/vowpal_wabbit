@@ -14,7 +14,6 @@
 
 namespace SequenceTask {
   SearnUtil::history_info hinfo;
-  bool   fake_as_ldf = false;
   size_t seq_max_action = 1;
   size_t constant_pow_length = 0;
   size_t increment = 0;  // this is just for fake LDF
@@ -44,8 +43,7 @@ namespace SequenceTask {
       ("searn_sequencetask_history",  po::value<size_t>(), "length of history to use")
       ("searn_sequencetask_features", po::value<size_t>(), "length of history to pair with observed features")
       ("searn_sequencetask_bigrams",                       "use bigrams from history")
-      ("searn_sequencetask_bigram_features",               "use bigrams from history paired with observed features")
-      ("searn_sequencetask_fake_ldf",                      "pretend like we're an LDF model even though we need not be");
+      ("searn_sequencetask_bigram_features",               "use bigrams from history paired with observed features");
 
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -59,14 +57,13 @@ namespace SequenceTask {
     if (vm.count("searn_sequencetask_history"))          hinfo.length = vm["searn_sequencetask_history"].as<size_t>();
     if (vm.count("searn_sequencetask_bigram_features"))  hinfo.bigram_features = true;
     if (vm.count("searn_sequencetask_features"))         hinfo.features = vm["searn_sequencetask_features"].as<size_t>();
-    if (vm.count("searn_sequencetask_fake_ldf"))         fake_as_ldf = true;
 
     seq_max_action = vm["searn"].as<size_t>();
     constant_pow_length = 1;
     for (size_t i=0; i < hinfo.length; i++)
       constant_pow_length *= quadratic_constant;
 
-    increment = (all.length()/seq_max_action) * all.stride;
+    increment = (all.length() * all.stride + 132489)/seq_max_action;
 
     return true;
   }
@@ -240,7 +237,7 @@ namespace SequenceTask {
       copy_example_data(ec, cur, sizeof(OAA::mc_label));
       OAA::default_label(ec->ld);
       SearnUtil::add_history_to_example(all, &hinfo, ec, s->predictions);
-      OAA::update_indicies(all, ec, increment * a);
+      update_example_indicies(all.audit, ec, increment * a);
     } else {
       dealloc_example(OAA::delete_label, *ec);
       free(ec);

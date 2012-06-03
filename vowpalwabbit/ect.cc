@@ -242,12 +242,12 @@ namespace ECT
 	  
             offset = problem_number*increment;
 	  
-            OAA::update_indicies(all, ec,offset);
+            update_example_indicies(all.audit, ec,offset);
             ec->partial_prediction = 0;
 	  
             base_learner(&all, ec);
 	  
-            OAA::update_indicies(all, ec,-offset);
+            update_example_indicies(all.audit, ec,-offset);
 	  
             if (ec->final_prediction > 0.)
               final_winner = final_winner | (1 << i);
@@ -274,10 +274,10 @@ namespace ECT
             size_t offset = problem_number*increment;
 
             ec->partial_prediction = 0;
-            OAA::update_indicies(all, ec,offset);
+            update_example_indicies(all.audit, ec,offset);
             base_learner(&all, ec);
             float pred = ec->final_prediction;
-            OAA::update_indicies(all, ec,-offset);
+            update_example_indicies(all.audit, ec,-offset);
             root_to_leaf(current, pred > 0.);
           }
       }
@@ -321,7 +321,7 @@ namespace ECT
 	  
             size_t offset = problem_number*increment;
 	  
-            OAA::update_indicies(all, ec,offset);
+            update_example_indicies(all.audit, ec,offset);
 
             ec->partial_prediction = 0;
             base_learner(&all, ec);
@@ -329,7 +329,7 @@ namespace ECT
             ec->partial_prediction = 0;
             base_learner(&all, ec);//inefficient, we should extract final prediction exactly.
             float pred = ec->final_prediction;
-            OAA::update_indicies(all, ec,-offset);
+            update_example_indicies(all.audit, ec,-offset);
             leaf_to_root(current, pred > 0.);
           }
       }
@@ -358,12 +358,12 @@ namespace ECT
 	      
                 size_t offset = problem_number*increment;
 	      
-                OAA::update_indicies(all, ec,offset);
+                update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
                 base_learner(&all, ec);
 	      
-                OAA::update_indicies(all, ec,-offset);
+                update_example_indicies(all.audit, ec,-offset);
 	      
                 if (ec->final_prediction > 0.)
                   tournaments_won[j] = right;

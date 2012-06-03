@@ -31,7 +31,6 @@ namespace OAA
 					delete_label, weight, initial, 
 					sizeof(mc_label)};
   
-  void update_indicies(vw& all, example* ec, size_t amount);
   void output_example(vw& all, example* ec);
 }
 

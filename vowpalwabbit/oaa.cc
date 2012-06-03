@@ -144,23 +144,6 @@ namespace OAA {
     print_update(all, ec);
   }
 
-  void update_indicies(vw& all, example* ec, size_t amount)
-  {
-    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-      {
-        feature* end = ec->atomics[*i].end;
-        for (feature* f = ec->atomics[*i].begin; f!= end; f++)
-          f->weight_index += amount;
-      }
-    if (all.audit)
-      {
-        for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-          if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-            for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
-              f->weight_index += amount;
-      }
-  }
-
   void (*base_learner)(void*,example*) = NULL;
 
   void learn(void*a, example* ec)
@@ -184,7 +167,7 @@ namespace OAA {
         simple_temp.weight = mc_label_data->weight;
         ec->ld = &simple_temp;
         if (i != 0)
-          update_indicies(*all, ec, increment);
+          update_example_indicies(all->audit, ec, increment);
         base_learner(all,ec);
         if (ec->partial_prediction > score)
           {
@@ -195,7 +178,7 @@ namespace OAA {
       }
     ec->ld = mc_label_data;
     *(prediction_t*)&(ec->final_prediction) = prediction;
-    update_indicies(*all, ec, -total_increment);
+    update_example_indicies(all->audit, ec, -total_increment);
   }
 
   void drive_oaa(void *in)
