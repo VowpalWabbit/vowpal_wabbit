@@ -797,13 +797,6 @@ void *main_parse_loop(void *in)
 	}
     }  
 
-  free(all->p->channels.begin);
-  all->p->channels.begin = all->p->channels.end = all->p->channels.end_array = NULL;
-  free(all->p->words.begin);
-  all->p->words.begin = all->p->words.end = all->p->words.end_array = NULL;
-  free(all->p->name.begin);
-  all->p->name.begin = all->p->name.end = all->p->name.end_array = NULL;
-
   return NULL;
 }
 
@@ -859,6 +852,13 @@ void start_parser(vw& all)
 
 void free_parser(vw& all)
 {
+  free(all.p->channels.begin);
+  all.p->channels.begin = all.p->channels.end = all.p->channels.end_array = NULL;
+  free(all.p->words.begin);
+  all.p->words.begin = all.p->words.end = all.p->words.end_array = NULL;
+  free(all.p->name.begin);
+  all.p->name.begin = all.p->name.end = all.p->name.end_array = NULL;
+
   if(all.ngram > 1)
     {
       if(gram_mask.begin != NULL) reserve(gram_mask,0);

@@ -610,6 +610,8 @@ namespace VW {
     initialize_examples(all);
     free (argv);
     free(c);
+    if (foo.begin != NULL)
+      free(foo.begin);
     
     return all;
   }
