@@ -190,7 +190,7 @@ namespace WAP {
   uint32_t test(vw& all, example* ec)
   {
     uint32_t prediction = 1;
-    float score = FLT_MIN;
+    float score = -FLT_MAX;
   
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld; 
 
@@ -358,7 +358,7 @@ namespace WAP_LDF {
     int K = ec_seq.index();
     float min_cost = FLT_MAX;
     v_array<float> predictions = v_array<float>();
-    float max_score = FLT_MIN;
+    float max_score = -FLT_MAX;
     size_t prediction = 0;
     float prediction_cost = 0.;
     bool isTest = CSOAA_LDF::example_is_test(*ec_seq.begin);
