@@ -203,7 +203,7 @@ void print_audit_quad(vw& all, weight* weights, audit_data& page_feature, v_arra
   for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       ostringstream tempstream;
-      tempstream << '\t' << page_feature.space << '^' << page_feature.feature << '^' 
+      tempstream << page_feature.space << '^' << page_feature.feature << '^' 
 		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask)
 		 << ':' << ele->x*page_feature.x
 		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], all.sd->gravity) * all.sd->contraction;
@@ -218,9 +218,9 @@ void print_quad(vw& all, weight* weights, feature& page_feature, v_array<feature
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       ostringstream tempstream;
-      cout << '\t' << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask) 
-	   << ':' << (ele->x*page_feature.x)
-	   << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], all.sd->gravity) * all.sd->contraction;
+      tempstream << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask) 
+		 << ':' << (ele->x*page_feature.x)
+		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], all.sd->gravity) * all.sd->contraction;
       string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
