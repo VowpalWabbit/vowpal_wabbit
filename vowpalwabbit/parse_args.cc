@@ -247,9 +247,9 @@ vw parse_args(int argc, char *argv[])
     {
       all.default_bits = false;
       all.num_bits = vm["bit_precision"].as< size_t>();
-      if (all.num_bits > sizeof(size_t)*8 - 3)
+      if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
 	{
-	  cout << "Only " << sizeof(size_t)*8 - 3 << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
+	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
 	  exit(1);
 	}
     }
