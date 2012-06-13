@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
   vw vw = VW::initialize("--hash all -q st --noconstant -i train.w -t");
 
+  /*
   // JOHN'S CLUNKY INTERFACE USING STRINGS
   example *vec1 = VW::read_example(vw, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   vw.learn(&vw, vec1);
@@ -44,20 +45,28 @@ int main(int argc, char *argv[])
   vw.learn(&vw, vec3);
   cerr << "p3 = " << vec3->final_prediction << endl;
   VW::finish_example(vw, vec3);
+*/
 
   // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
   ezexample et(&vw, false);
+  et.print();
   et(vw_namespace('s'))
     ("p^the_man")
     ("w^the")
-    ("w^man", 1.0)
-    (vw_namespace('t'))
+    ("w^man");
+  et(vw_namespace('t'))
     ("p^le_homme")
-    (et.hash("w^le"))
-    (et.hash("w^homme"), 1.0);
+    ("w^le")
+    ("w^homme");
+  et.print();
   cerr << "p4 = " << et() << endl;
+
+  /*
   --et;  // remove the most recent namespace
-  cerr << "p5 = " << et('t')("p^un_homme")("w^un")("w^homme")() << endl;
+  et.print();
+  cerr << "p5 = " << et(vw_namespace('t'))("p^un_homme")("w^un")("w^homme")() << endl;
+  et.print();
+  */ 
 
   // AND FINISH UP
   vw.finish(&vw);

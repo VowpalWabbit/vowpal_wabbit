@@ -23,11 +23,12 @@ private:
   bool pass_empty;
 
 public:
+
   ezexample(vw*this_vw, bool pe) { 
     vw_ref = this_vw;
     current_seed = 0;
     current_ns = NULL;
-    str[0] = '|'; str[1] = 0;
+    str[0] = ' '; str[1] = 0;
     pass_empty = pe;
   }
 
@@ -39,6 +40,7 @@ public:
     current_ns = &( dat[dat.size()-1].second );
     past_seeds.push_back(current_seed);
     current_seed = VW::hash_space(*vw_ref, str);
+    cerr << "addns(" << c << ") -> '" << dat[dat.size()-1].first << "', dat.size() = " << dat.size() << ", seed=" << current_seed << endl;
   }
 
   void remns() { 
@@ -72,6 +74,7 @@ public:
     if (!current_ns) return 0;
     feature f = { val, fint };
     current_ns->push_back(f);
+    cerr << "addf(" << fint << ":" << val << "; " << current_seed << ")\t-> |current_ns=" << dat.size() << "| = " << current_ns->size() << endl;
     return fint;
   }
   inline fid addf(fid    fint           ) { return addf(fint      , 1.0); }
@@ -79,7 +82,7 @@ public:
   inline fid addf(string fstr           ) { return addf(hash(fstr), 1.0); }
 
   float predict() {
-    static example* empty_example = VW::read_example(*vw_ref, str);
+    static example* empty_example = VW::read_example(*vw_ref, "| ");
     example *ec = VW::import_example(*vw_ref, dat);
     vw_ref->learn(vw_ref, ec);
     if (pass_empty)
@@ -89,20 +92,29 @@ public:
     return pred;
   }
 
-
   inline float     operator()() { return predict(); }
 
   inline ezexample operator()(fid         fint           ) { addf(fint, 1.0); return *this; }
   inline ezexample operator()(string      fstr           ) { addf(fstr, 1.0); return *this; }
-  inline ezexample operator()(const char* fstr           ) { addf(fstr, 1.0); return *this; }
+  inline ezexample operator()(const char* fstr           ) { cerr << fstr; addf(fstr, 1.0); return *this; }
   inline ezexample operator()(fid         fint, float val) { addf(fint, val); return *this; }
   inline ezexample operator()(string      fstr, float val) { addf(fstr, val); return *this; }
   inline ezexample operator()(const char* fstr, float val) { addf(fstr, val); return *this; }
 
   //inline ezexample operator()(const char c               ) { addns(c); return *this; }
-  inline ezexample operator()(const vw_namespace&n) { addns(n. namespace_letter); return *this; }
+  inline ezexample operator()(const vw_namespace&n) { addns(n.namespace_letter); cerr << current_seed << endl; return *this; }
 
   inline ezexample operator--() { remns(); return *this; }
+
+  void print() {
+    cerr << "ezexample dat.size=" << dat.size() << ", current_seed=" << current_seed << endl;
+    for (size_t i=0; i<dat.size(); i++) {
+      cerr << "  namespace(" << dat[i].first << "):" << endl;
+      for (size_t j=0; j<dat[i].second.size(); j++) {
+        cerr << "    " << dat[i].second[j].weight_index << "\t: " << dat[i].second[j].x << endl;
+      }
+    }
+  }
 };
 
 
