@@ -15,7 +15,7 @@ public: vw_namespace(const char c) : namespace_letter(c) {}
 class ezexample {
 private:
   vw*vw_ref;
-  vector<VW::feature_space> dat;
+  vector<VW::feature_space> *dat;
   vector<fid> past_seeds;
   fid current_seed;
   vector<feature>*current_ns;
@@ -25,6 +25,7 @@ private:
 public:
 
   ezexample(vw*this_vw, bool pe) { 
+    dat = new vector<VW::feature_space>();
     vw_ref = this_vw;
     current_seed = 0;
     current_ns = NULL;
@@ -36,22 +37,21 @@ public:
 
   void addns(char c) {
     str[0] = c;
-    dat.push_back( VW::feature_space(c, vector<feature>()) );
-    current_ns = &( dat[dat.size()-1].second );
+    dat->push_back( VW::feature_space(c, vector<feature>()) );
+    current_ns = &( dat->at(dat->size()-1).second );
     past_seeds.push_back(current_seed);
     current_seed = VW::hash_space(*vw_ref, str);
-    cerr << "addns(" << c << ") -> '" << dat[dat.size()-1].first << "', dat.size() = " << dat.size() << ", seed=" << current_seed << endl;
   }
 
   void remns() { 
-    if (dat.size() == 0) {
+    if (dat->size() == 0) {
       current_seed = 0;
       current_ns   = NULL;
     } else {
       current_seed = past_seeds.back();
       past_seeds.pop_back();
-      dat.pop_back();
-      current_ns = &(dat.back().second);
+      dat->pop_back();
+      current_ns = &(dat->back().second);
     }
   }
 
@@ -74,7 +74,6 @@ public:
     if (!current_ns) return 0;
     feature f = { val, fint };
     current_ns->push_back(f);
-    cerr << "addf(" << fint << ":" << val << "; " << current_seed << ")\t-> |current_ns=" << dat.size() << "| = " << current_ns->size() << endl;
     return fint;
   }
   inline fid addf(fid    fint           ) { return addf(fint      , 1.0); }
@@ -83,7 +82,7 @@ public:
 
   float predict() {
     static example* empty_example = VW::read_example(*vw_ref, "| ");
-    example *ec = VW::import_example(*vw_ref, dat);
+    example *ec = VW::import_example(*vw_ref, *dat);
     vw_ref->learn(vw_ref, ec);
     if (pass_empty)
       vw_ref->learn(vw_ref, empty_example);
@@ -96,22 +95,22 @@ public:
 
   inline ezexample operator()(fid         fint           ) { addf(fint, 1.0); return *this; }
   inline ezexample operator()(string      fstr           ) { addf(fstr, 1.0); return *this; }
-  inline ezexample operator()(const char* fstr           ) { cerr << fstr; addf(fstr, 1.0); return *this; }
+  inline ezexample operator()(const char* fstr           ) { addf(fstr, 1.0); return *this; }
   inline ezexample operator()(fid         fint, float val) { addf(fint, val); return *this; }
   inline ezexample operator()(string      fstr, float val) { addf(fstr, val); return *this; }
   inline ezexample operator()(const char* fstr, float val) { addf(fstr, val); return *this; }
 
   //inline ezexample operator()(const char c               ) { addns(c); return *this; }
-  inline ezexample operator()(const vw_namespace&n) { addns(n.namespace_letter); cerr << current_seed << endl; return *this; }
+  inline ezexample operator()(const vw_namespace&n) { addns(n.namespace_letter); return *this; }
 
   inline ezexample operator--() { remns(); return *this; }
 
   void print() {
-    cerr << "ezexample dat.size=" << dat.size() << ", current_seed=" << current_seed << endl;
-    for (size_t i=0; i<dat.size(); i++) {
-      cerr << "  namespace(" << dat[i].first << "):" << endl;
-      for (size_t j=0; j<dat[i].second.size(); j++) {
-        cerr << "    " << dat[i].second[j].weight_index << "\t: " << dat[i].second[j].x << endl;
+    cerr << "ezexample dat->size=" << dat->size() << ", current_seed=" << current_seed << endl;
+    for (size_t i=0; i<dat->size(); i++) {
+      cerr << "  namespace(" << dat->at(i).first << "):" << endl;
+      for (size_t j=0; j<dat->at(i).second.size(); j++) {
+        cerr << "    " << dat->at(i).second[j].weight_index << "\t: " << dat->at(i).second[j].x << endl;
       }
     }
   }

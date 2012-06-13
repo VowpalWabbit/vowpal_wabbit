@@ -14,7 +14,26 @@ inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, fl
 int main(int argc, char *argv[])
 {
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
-  vw vw = VW::initialize("--hash all -q st --noconstant -i train.w -t");
+  vw vw = VW::initialize("--hash all -q st --noconstant -i train.w -t --quiet");
+
+  // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
+  ezexample ex(&vw, false);
+  ex(vw_namespace('s'))
+    ("p^the_man")
+    ("w^the")
+    ("w^man")
+    (vw_namespace('t'))
+    ("p^le_homme")
+    ("w^le")
+    ("w^homme");
+  cerr << "p_good = " << ex() << endl;
+
+  --ex;   // remove the most recent namespace
+  ex(vw_namespace('t'))
+    ("p^un_homme")
+    ("w^un")
+    ("w^homme");
+  cerr << "p_bad = " << ex() << endl;
 
   /*
   // JOHN'S CLUNKY INTERFACE USING STRINGS
@@ -46,27 +65,6 @@ int main(int argc, char *argv[])
   cerr << "p3 = " << vec3->final_prediction << endl;
   VW::finish_example(vw, vec3);
 */
-
-  // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
-  ezexample et(&vw, false);
-  et.print();
-  et(vw_namespace('s'))
-    ("p^the_man")
-    ("w^the")
-    ("w^man");
-  et(vw_namespace('t'))
-    ("p^le_homme")
-    ("w^le")
-    ("w^homme");
-  et.print();
-  cerr << "p4 = " << et() << endl;
-
-  /*
-  --et;  // remove the most recent namespace
-  et.print();
-  cerr << "p5 = " << et(vw_namespace('t'))("p^un_homme")("w^un")("w^homme")() << endl;
-  et.print();
-  */ 
 
   // AND FINISH UP
   vw.finish(&vw);
