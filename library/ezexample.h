@@ -7,6 +7,11 @@
 using namespace std;
 typedef uint32_t fid;
 
+struct vw_namespace {
+  char namespace_letter;
+public: vw_namespace(const char c) : namespace_letter(c) {}
+};
+
 class ezexample {
 private:
   vw*vw_ref;
@@ -29,30 +34,38 @@ public:
   ezexample(vw*this_vw) { ezexample(this_vw, false); }
 
   void addns(char c) {
-    current_ns = new vector<feature>();
     str[0] = c;
-    dat.push_back( VW::feature_space(c, *current_ns) );
+    dat.push_back( VW::feature_space(c, vector<feature>()) );
+    current_ns = &( dat[dat.size()-1].second );
     past_seeds.push_back(current_seed);
     current_seed = VW::hash_space(*vw_ref, str);
-    //feature f = { 1.0, 13 };
-    //current_ns->push_back(f);
   }
 
   void remns() { 
-    current_seed = past_seeds.back();
-    past_seeds.pop_back();
-    dat.pop_back();
-    current_ns = &(dat.back().second);
+    if (dat.size() == 0) {
+      current_seed = 0;
+      current_ns   = NULL;
+    } else {
+      current_seed = past_seeds.back();
+      past_seeds.pop_back();
+      dat.pop_back();
+      current_ns = &(dat.back().second);
+    }
   }
 
   inline fid hash(string fstr) { 
     return VW::hash_feature(*vw_ref, fstr, current_seed); 
   }
-  inline fid hash(const char* fstr) { return hash(string(fstr)); }
-
+  inline fid hash(char* fstr) { 
+    return VW::hash_feature_cstr(*vw_ref, fstr, current_seed);
+  }
   inline fid hash(char c, string fstr) { 
     str[0] = c;
     return VW::hash_feature(*vw_ref, fstr, VW::hash_space(*vw_ref, str)); 
+  }
+  inline fid hash(char c, char* fstr) { 
+    str[0] = c;
+    return VW::hash_feature_cstr(*vw_ref, fstr, VW::hash_space(*vw_ref, str)); 
   }
 
   inline fid addf(fid fint, float val) {
@@ -86,7 +99,8 @@ public:
   inline ezexample operator()(string      fstr, float val) { addf(fstr, val); return *this; }
   inline ezexample operator()(const char* fstr, float val) { addf(fstr, val); return *this; }
 
-  inline ezexample operator()(const char c               ) { addns(c); return *this; }
+  //inline ezexample operator()(const char c               ) { addns(c); return *this; }
+  inline ezexample operator()(const vw_namespace&n) { addns(n. namespace_letter); return *this; }
 
   inline ezexample operator--() { remns(); return *this; }
 };

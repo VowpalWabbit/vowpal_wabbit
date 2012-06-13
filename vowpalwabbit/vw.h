@@ -53,6 +53,14 @@ namespace VW {
     return all.p->hasher(ss,u) & all.parse_mask;
   }
 
+  inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
+  {
+    substring ss;
+    ss.begin = fstr;
+    ss.end = ss.begin + strlen(fstr);
+    return all.p->hasher(ss,u) & all.parse_mask;
+  }
+
   //after you create and fill feature_spaces, get an example with everything filled in.
   example* import_example(vw& all, vector< feature_space > ec_info);
 
