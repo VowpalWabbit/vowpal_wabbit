@@ -1,4 +1,4 @@
-lib_LTLIBRARIES = liballreduce.la
+lib_LTLIBRARIES = liballreduce.la libvw.la
 
 liballreduce_la_SOURCES = allreduce.cc
 include_HEADERS = allreduce.h
