@@ -17,7 +17,7 @@ template<class K, class V> class v_hashmap{
   };
 
   bool (*equivalent)(K,K);
-  size_t (*hash)(K);
+  //  size_t (*hash)(K);
   V default_value;
   v_array<elem> dat;
   size_t last_position;
