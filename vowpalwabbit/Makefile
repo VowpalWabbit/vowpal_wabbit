@@ -32,7 +32,7 @@ libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 	ar rcs $@ $+
 
 vw: vw.o libvw.a liballreduce.a
-	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -L. $(LIBS) -o $@ $< -l vw -l allreduce
+	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -L. -o $@ $< -l vw -l allreduce $(LIBS)
 
 active_interactor: active_interactor.cc
 	$(COMPILER) $(FLAGS) -o $@ $+
