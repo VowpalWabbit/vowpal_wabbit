@@ -10,7 +10,7 @@ all:	config.h depend $(BINARIES)
 config.h: 
 	echo \#define PACKAGE_VERSION \"`grep AC_INIT ../configure.ac | cut -d '[' -f 3 | cut -d ']' -f 1`\" > config.h
 
-vw_SOURCES = $(shell grep vw_SOURCES Makefile.am | cut -d '=' -f 2)
+vw_SOURCES = $(shell grep libvw_la_SOURCES Makefile.am | cut -d '=' -f 2)
 
 depend:	$(vw_SOURCES) config.h
 	gcc -MM $(vw_SOURCES) > depend
