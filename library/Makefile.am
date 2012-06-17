@@ -1,7 +1,7 @@
 bin_PROGRAMS = library_example
 
 library_example_SOURCES = library_example.cc
-library_example_LDADD = ../vowpalwabbit/libvw.la
+library_example_LDADD = ../vowpalwabbit/libvw.la ../vowpalwabbit/liballreduce.la
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
