@@ -1,4 +1,4 @@
-lib_LTLIBRARIES = liballreduce.a libvw.a
+lib_LTLIBRARIES = liballreduce.la libvw.la
 
 liballreduce_a_SOURCES = allreduce.cc
 include_HEADERS = allreduce.h
@@ -9,8 +9,8 @@ libvw_a_SOURCES = hash.cc global_data.cc io.cc parse_regressor.cc parse_primitiv
 
 vw_SOURCES = vw.cc
 
-vw_LDADD = libvw.a liballreduce.a
-vw_DEPENDENCIES = libvw.a liballreduce.a
+vw_LDADD = libvw.la liballreduce.la
+vw_DEPENDENCIES = libvw.la liballreduce.la
 
 active_interactor_SOURCES = active_interactor.cc
 
