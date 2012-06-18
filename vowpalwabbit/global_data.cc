@@ -250,8 +250,9 @@ vw::vw()
   unique_id = 0;
   total = 1;
   node = 0;
-  
+
   ngram = 0;
+  skips = 0;
 
   adaptive = false;
   add_constant = true;
