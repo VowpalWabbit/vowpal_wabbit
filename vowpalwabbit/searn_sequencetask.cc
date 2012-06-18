@@ -131,6 +131,15 @@ namespace SequenceTask {
     SearnUtil::free_it(s);
   }
 
+  bool is_test_example(example**ec, size_t N) {
+    for (size_t n=0; n<N; n++) {
+      if (((OAA::mc_label*)ec[n]->ld)->label < 0)
+        return 1;
+    }
+    return 0;
+  }
+
+
   void start_state_multiline(example**ec, size_t len, state*s0)
   {
     seq_state* s = (seq_state*)SearnUtil::calloc_or_die(1, sizeof(seq_state));
