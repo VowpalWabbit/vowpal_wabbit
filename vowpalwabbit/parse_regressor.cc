@@ -397,13 +397,14 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
 {
-   if(all.save_per_pass) {
-    char* filename = new char[reg_name.length()+4];
+  char* filename = new char[reg_name.length()+4];
+  if (all.save_per_pass)
     sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
-    dump_regressor(all, string(filename), false, false);
-    delete filename;
-  }
-}  
+  else
+    sprintf(filename,"%s",reg_name.c_str());
+  dump_regressor(all, string(filename), false, false);
+  delete filename;
+}
 
 void finalize_regressor(vw& all, string reg_name)
 {

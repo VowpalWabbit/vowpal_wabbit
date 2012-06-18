@@ -1,11 +1,23 @@
-SUBDIRS = vowpalwabbit cluster
+SUBDIRS = vowpalwabbit cluster library
 
-nobase_include_HEADERS = vowpalwabbit/accumulate.h vowpalwabbit/comp_io.h vowpalwabbit/gd.h vowpalwabbit/io.h vowpalwabbit/noop.h vowpalwabbit/parse_primitives.h \
-	vowpalwabbit/simple_label.h vowpalwabbit/allreduce.h vowpalwabbit/config.h vowpalwabbit/gd_mf.h vowpalwabbit/lda_core.h vowpalwabbit/oaa.h \
-	vowpalwabbit/parse_regressor.h vowpalwabbit/sparse_dense.h vowpalwabbit/bfgs.h vowpalwabbit/constant.h vowpalwabbit/global_data.h vowpalwabbit/loss_functions.h \
-	vowpalwabbit/parse_args.h vowpalwabbit/parser.h vowpalwabbit/unique_sort.h vowpalwabbit/cache.h vowpalwabbit/example.h vowpalwabbit/hash.h vowpalwabbit/network.h \
-	vowpalwabbit/parse_example.h vowpalwabbit/sender.h vowpalwabbit/v_array.h vowpalwabbit/v_hashmap.h vowpalwabbit/wap.h vowpalwabbit/searn.h \
-	vowpalwabbit/searn_sequencetask.h vowpalwabbit/sequence.h vowpalwabbit/csoaa.h vowpalwabbit/ect.h
+nobase_include_HEADERS = vowpalwabbit/vw.h vowpalwabbit/allreduce.h
+
+noinst_HEADERS = vowpalwabbit/accumulate.h vowpalwabbit/oaa.h		\
+       vowpalwabbit/parse_args.h vowpalwabbit/bfgs.h			\
+       vowpalwabbit/parse_example.h vowpalwabbit/cache.h		\
+       vowpalwabbit/parse_primitives.h vowpalwabbit/comp_io.h		\
+       vowpalwabbit/parse_regressor.h vowpalwabbit/constant.h		\
+       vowpalwabbit/parser.h vowpalwabbit/csoaa.h			\
+       vowpalwabbit/searn.h vowpalwabbit/ect.h				\
+       vowpalwabbit/searn_sequencetask.h vowpalwabbit/example.h		\
+       vowpalwabbit/sender.h vowpalwabbit/gd.h				\
+       vowpalwabbit/sequence.h vowpalwabbit/gd_mf.h			\
+       vowpalwabbit/simple_label.h vowpalwabbit/global_data.h		\
+       vowpalwabbit/sparse_dense.h vowpalwabbit/hash.h			\
+       vowpalwabbit/unique_sort.h vowpalwabbit/io.h			\
+       vowpalwabbit/v_array.h vowpalwabbit/lda_core.h			\
+       vowpalwabbit/v_hashmap.h vowpalwabbit/loss_functions.h		\
+       vowpalwabbit/network.h vowpalwabbit/wap.h vowpalwabbit/noop.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 

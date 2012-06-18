@@ -35,7 +35,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
-all:	vw spanning_tree 
+all:	vw spanning_tree library_example
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -47,6 +47,9 @@ spanning_tree:
 
 vw:
 	cd vowpalwabbit; $(MAKE); cd ..
+
+library_example: vw
+	cd library; $(MAKE); cd ..
 
 .FORCE:
 

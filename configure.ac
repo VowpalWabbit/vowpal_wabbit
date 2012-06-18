@@ -63,5 +63,6 @@ AC_CONFIG_FILES([
  Makefile
  vowpalwabbit/Makefile
  cluster/Makefile
+ library/Makefile
 ])
 AC_OUTPUT
