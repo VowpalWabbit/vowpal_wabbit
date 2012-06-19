@@ -17,6 +17,10 @@ using namespace std;
 #include "global_data.h"
 #include "io.h"
 
+/* Define the last version where files are backward compatible. */
+#define LAST_COMPATIBLE_VERSION "6.1.1"
+#define VERSION_FILE_WITH_SEARN "6.1.2"
+
 void initialize_regressor(vw& all)
 {
   size_t length = ((size_t)1) << all.num_bits;
