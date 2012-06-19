@@ -709,7 +709,6 @@ namespace Searn
       ("searn_allow_current_policy", "allow searn labeling to use the current policy")
       ("searn_rollout_oracle", "allow searn/dagger to do rollouts with the oracle when estimating cost-to-go")
       ("searn_as_dagger", po::value<float>(), "sets options to make searn operate as dagger. parameter is the sliding autonomy rate (rate at which beta tends to 1).")
-      ("searn_nb_initial_policies", po::value<size_t>(), "to specify the number of policies loaded through -i option")
       ("searn_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained");
 
     po::parsed_options parsed = po::command_line_parser(opts).
@@ -767,12 +766,18 @@ namespace Searn
     if (vm.count("searn_allow_current_policy"))    allow_current_policy = true;
     if (vm.count("searn_rollout_oracle"))    	   rollout_oracle       = true;
 
-    if (vm.count("searn_nb_initial_policies"))
+    //if we loaded a regressor with -i option, all.searn_trained_nb_policies contains the number of trained policies in the file
+    // and all.searn_total_nb_policies contains the total number of policies in the file
+    if (vm.count("initial_regressor") || vm.count("i"))
     {
-	current_policy = vm["searn_nb_initial_policies"].as<size_t>();
+	current_policy = all.searn_trained_nb_policies;
+	total_number_of_policies = all.searn_total_nb_policies;
+        if (vm.count("searn_total_nb_policies") && vm["searn_total_nb_policies"].as<size_t>() != total_number_of_policies)
+	{
+		std::cerr << "warning: --searn_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << total_number_of_policies << endl;
+        }
     }
-
-    if (vm.count("searn_total_nb_policies"))
+    else if (vm.count("searn_total_nb_policies"))
     {
 	total_number_of_policies = vm["searn_total_nb_policies"].as<size_t>();
     }
@@ -1212,6 +1217,7 @@ namespace Searn
         if (passes_since_new_policy >= passes_per_policy) {
           passes_since_new_policy = 0;
           current_policy++;
+          all.searn_trained_nb_policies++;
           if (current_policy > total_number_of_policies) {
             std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
             current_policy = total_number_of_policies;
@@ -1235,13 +1241,23 @@ namespace Searn
     //the user might have specified the number of policies that will eventually be trained through multiple vw calls, 
     //so only set total_number_of_policies to computed value if it is larger
     if( tmp_number_of_policies > total_number_of_policies )
+    {
 	total_number_of_policies = tmp_number_of_policies;
+        if( current_policy > 0 ) //we loaded a file but total number of policies didn't match what is needed for training
+        {
+          std::cerr << "warning: you're attempting to train more classifiers than was allocated initially. Likely to cause bad performance." << endl;
+        }  
+    }
 
     //current policy currently points to a new policy we would train
     //if we are not training and loaded a buch of policies for testing, we need to subtract 1 from current policy
     //so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
     if( !all->training && current_policy > 0 )
 	current_policy--;
+
+    //sync with values stored in all for when predictors will be saved
+    all->searn_trained_nb_policies = current_policy + 1;
+    all->searn_total_nb_policies = total_number_of_policies;
 
     std::cerr << "Current Policy: " << current_policy << endl;
     std::cerr << "Total Number of Policies: " << total_number_of_policies << endl;

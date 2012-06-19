@@ -240,6 +240,9 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
+  searn_trained_nb_policies = 1;
+  searn_total_nb_policies = 1;
+
   nonormalize = false;
   l1_lambda = 0.0;
   l2_lambda = 0.0;

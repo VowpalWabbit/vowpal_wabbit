@@ -189,7 +189,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
     {
       all.ngram = local_ngram;
       all.skips = local_skips;
-      initialized = true;
+      //initialized = true;
     }
   else
     if (all.ngram != local_ngram || all.skips != local_skips)
@@ -197,6 +197,34 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
 	cout << "can't combine sources with different ngram features!" << endl;
 	exit(1);
       }
+  
+  if( all.searn )
+  {
+    size_t local_searn_trained_nb_policies;
+    size_t local_searn_total_nb_policies;
+    source.read((char*)&local_searn_trained_nb_policies, sizeof(local_searn_trained_nb_policies));
+    source.read((char*)&local_searn_total_nb_policies, sizeof(local_searn_total_nb_policies));
+    if (!initialized)
+    {
+      all.searn_trained_nb_policies = local_searn_trained_nb_policies;
+      all.searn_total_nb_policies = local_searn_total_nb_policies;
+      initialized = true;
+    }
+    else
+    {
+      if (all.searn_trained_nb_policies != local_searn_trained_nb_policies)
+      {
+        cout << "can't combine sources with different number of trained policies!" << endl;
+        exit(1);
+      }
+
+      if (all.searn_total_nb_policies != local_searn_total_nb_policies)
+      {
+	cout << "can't combine sources with different total number of policies!" << endl;
+	exit(1);
+      }
+    }
+  }
 
   size_t stride = all.stride;
   while (source.good())
@@ -306,6 +334,11 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 
     io_temp.write_file(f,(char*)&all.ngram, sizeof(all.ngram));
     io_temp.write_file(f,(char*)&all.skips, sizeof(all.skips));
+
+    if(all.searn) {
+      io_temp.write_file(f,(char*)&all.searn_trained_nb_policies, sizeof(all.searn_trained_nb_policies));
+      io_temp.write_file(f,(char*)&all.searn_total_nb_policies, sizeof(all.searn_total_nb_policies));
+    }
   }
   else {
     char buff[512];
@@ -333,6 +366,13 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 
     len = sprintf(buff, "lda:%d\n", (int)all.lda);
     io_temp.write_file(f, buff, len);
+
+    if( all.searn ) {
+      len = sprintf(buff, "searn_trained_nb_policies:%d\n", (int)all.searn_trained_nb_policies);
+      io_temp.write_file(f, buff, len);
+      len = sprintf(buff, "searn_total_nb_policies:%d\n", (int)all.searn_total_nb_policies);
+      io_temp.write_file(f, buff, len);
+    }
   }
   
   uint32_t length = 1 << all.num_bits;

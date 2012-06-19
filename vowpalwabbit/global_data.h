@@ -52,6 +52,8 @@ struct vw {
 
   bool sequence;
   bool searn;
+  size_t searn_trained_nb_policies;
+  size_t searn_total_nb_policies;
 
   size_t stride;
 

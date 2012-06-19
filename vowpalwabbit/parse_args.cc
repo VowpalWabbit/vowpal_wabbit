@@ -373,7 +373,12 @@ vw parse_args(int argc, char *argv[])
   //   all.p->ring_size = (all.p->ring_size > maxlen) ? all.p->ring_size : maxlen;
   // }
 
+  //quickly check here if searn is present in the options, if so, this implies were loading in a regressor with a few more parameters
+  all.searn = vm.count("searn");
+
   parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
+
+  all.searn = false; //set it back to false, this will be set to true when processed
 
   if (vm.count("readable_model"))
     all.text_regressor_name = vm["readable_model"].as<string>();
