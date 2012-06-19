@@ -13,7 +13,7 @@ inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, fl
 
 int main(int argc, char *argv[])
 {
-  vw vw = VW::initialize("--hash all -q st --noconstant -i train.w");
+  vw vw = VW::initialize("--hash all -q st --noconstant");
 
   example *vec2 = VW::read_example(vw, "|s p^the_man w^the w^man |t p^le_homme w^le w^homme");
   vw.learn(&vw, vec2);
