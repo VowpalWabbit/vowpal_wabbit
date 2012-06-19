@@ -718,11 +718,25 @@ namespace Searn
     po::store(parsed, vm);
     po::notify(vm);
 
-    if (vm.count("searn_task") == 0) {
-      cerr << "must specify --searn_task" << endl;
-      exit(-1);
+    bool loaded_in_regressor = all.searn; //if all.searn is already true, this means we loaded a regressor containing most searn options already
+  
+    std::string task_string;
+    if(loaded_in_regressor)    
+    {
+      task_string.assign(all.searn_task);
+      if(vm.count("searn_task") && vm["searn_task"].as<std::string>().compare(task_string) != 0 )
+      {
+        std::cerr << "warning: specified --searn_task different than the one loaded from regressor. Pursuing with loaded value of: " << task_string << endl;
+      }
     }
-    std::string task_string = vm["searn_task"].as<std::string>();
+    else
+    {
+      if (vm.count("searn_task") == 0) {
+        cerr << "must specify --searn_task" << endl;
+        exit(-1);
+      }
+      task_string = vm["searn_task"].as<std::string>();
+    }
 
     if (task_string.compare("sequence") == 0) {
       task.final = SequenceTask::final;
@@ -756,11 +770,25 @@ namespace Searn
 
     *(all.p->lp)=task.searn_label_parser;
 
-    max_action = vm["searn"].as<size_t>();
-    
+    if(loaded_in_regressor)
+    {
+      max_action = all.searn_nb_actions;
+      if( vm.count("searn") && vm["searn"].as<size_t>() != max_action )
+        std::cerr << "warning: you specified a different number of actions through --searn than the one loaded from regressor. Pursuing with loaded value of: " << max_action << endl;
+
+      beta = all.searn_beta;
+      if (vm.count("searn_beta") && vm["searn_beta"].as<float>() != beta )
+        std::cerr << "warning: you specified a different value through --searn_beta than the one loaded from regressor. Pursuing with loaded value of: " << beta << endl;
+    }
+    else
+    {
+      max_action = vm["searn"].as<size_t>();
+      if (vm.count("searn_beta"))                    beta                 = vm["searn_beta"].as<float>();
+    }
+
     if (vm.count("searn_rollout"))                 max_rollout          = vm["searn_rollout"].as<size_t>();
     if (vm.count("searn_passes_per_policy"))       passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
-    if (vm.count("searn_beta"))                    beta                 = vm["searn_beta"].as<float>();
+      
     if (vm.count("searn_gamma"))                   gamma                = vm["searn_gamma"].as<float>();
     if (vm.count("searn_norecombine"))             do_recombination     = false;
     if (vm.count("searn_allow_current_policy"))    allow_current_policy = true;
@@ -768,7 +796,7 @@ namespace Searn
 
     //if we loaded a regressor with -i option, all.searn_trained_nb_policies contains the number of trained policies in the file
     // and all.searn_total_nb_policies contains the total number of policies in the file
-    if (vm.count("initial_regressor") || vm.count("i"))
+    if ( loaded_in_regressor )
     {
 	current_policy = all.searn_trained_nb_policies;
 	total_number_of_policies = all.searn_total_nb_policies;
@@ -849,7 +877,11 @@ namespace Searn
       exit(-1);
     }
 
+    //syncing with values in all for when regressor is saved
     all.searn = true;
+    all.searn_nb_actions = max_action;
+    all.searn_beta = beta;
+    all.searn_task = task_string;
 
     all.driver = drive;
     base_learner = all.learn;

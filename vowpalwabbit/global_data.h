@@ -8,6 +8,7 @@ embodied in the content of this file are licensed under the BSD
 #define GLOBAL_DATA_H
 #include <vector>
 #include <stdint.h>
+#include <cstdio>
 #include "v_array.h"
 #include "parse_primitives.h"
 #include "loss_functions.h"
@@ -15,7 +16,94 @@ embodied in the content of this file are licensed under the BSD
 #include "example.h"
 #include "config.h"
 
-const std::string version = PACKAGE_VERSION;
+struct version_struct {
+  int major;
+  int minor;
+  int rev;
+  version_struct(int maj, int min, int rv)
+  {
+    major = maj;
+    minor = min;
+    rev = rv;
+  }
+  version_struct(const char* v_str)
+  {
+    from_string(v_str);
+  }
+  void operator=(version_struct v){
+    major = v.major;
+    minor = v.minor;
+    rev = v.rev;
+  }
+  void operator=(const char* v_str){
+    from_string(v_str);
+  }
+  bool operator==(version_struct v){
+    return (major == v.major && minor == v.minor && rev == v.rev);
+  }
+  bool operator==(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this == v_tmp);
+  }
+  bool operator!=(version_struct v){
+    return !(*this == v);
+  }
+  bool operator!=(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this != v_tmp);
+  }
+  bool operator>=(version_struct v){
+    if(major < v.major) return false;
+    if(major > v.major) return true;
+    if(minor < v.minor) return false;
+    if(minor > v.minor) return true;
+    if(rev >= v.rev ) return true;
+    return false;
+  }
+  bool operator>=(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this >= v_tmp);
+  }
+  bool operator>(version_struct v){
+    if(major < v.major) return false;
+    if(major > v.major) return true;
+    if(minor < v.minor) return false;
+    if(minor > v.minor) return true;
+    if(rev > v.rev ) return true;
+    return false;
+  }
+  bool operator>(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this > v_tmp);
+  }
+  bool operator<=(version_struct v){
+    return !(*this < v);
+  }
+  bool operator<=(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this <= v_tmp);
+  }
+  bool operator<(version_struct v){
+    return !(*this >= v);
+  }
+  bool operator<(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this < v_tmp);
+  }
+  std::string to_string() const
+  {
+    char v_str[32];
+    std::sprintf(v_str,"%d.%d.%d",major,minor,rev);
+    std::string s = v_str;
+    return s;
+  }
+  void from_string(const char* str)
+  {
+    std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
+  }
+};
+
+const version_struct version(PACKAGE_VERSION);
 
 typedef float weight;
 
@@ -52,8 +140,16 @@ struct vw {
 
   bool sequence;
   bool searn;
+  size_t searn_nb_actions;
+  std::string searn_base_learner;
   size_t searn_trained_nb_policies;
   size_t searn_total_nb_policies;
+  float searn_beta;
+  std::string searn_task;
+  size_t searn_sequencetask_history;
+  size_t searn_sequencetask_features;
+  bool searn_sequencetask_bigrams;
+  bool searn_sequencetask_bigram_features;
 
   size_t stride;
 

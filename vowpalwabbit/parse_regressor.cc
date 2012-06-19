@@ -93,7 +93,8 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   if (temp.index() < v_length)
     reserve(temp, v_length);
   source.read(temp.begin,v_length);
-  if (strcmp(temp.begin,version.c_str()) != 0)
+  version_struct v_tmp(temp.begin);
+  if (v_tmp < LAST_COMPATIBLE_VERSION)
     {
       cout << "source has possibly incompatible version!" << endl;
       exit(1);
@@ -197,21 +198,90 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
 	cout << "can't combine sources with different ngram features!" << endl;
 	exit(1);
       }
-  
-  if( all.searn )
+
+  //files beyond 6.1.2 contains extra SEARN parameters 
+  if( v_tmp >= VERSION_FILE_WITH_SEARN )
   {
+    bool local_searn;
+    size_t local_searn_nb_actions;
+    size_t base_learner_length;
+    std::string local_searn_base_learner;
     size_t local_searn_trained_nb_policies;
     size_t local_searn_total_nb_policies;
+    float local_searn_beta;
+    size_t task_length;
+    std::string local_searn_task;
+    size_t local_searn_sequencetask_history;
+    size_t local_searn_sequencetask_features;
+    bool local_searn_sequencetask_bigrams;
+    bool local_searn_sequencetask_bigram_features;
+
+    source.read((char*)&local_searn, sizeof(local_searn));
+    source.read((char*)&local_searn_nb_actions, sizeof(local_searn_nb_actions));
+    source.read((char*)&base_learner_length, sizeof(base_learner_length));
+    temp.erase();
+    if (temp.index() < base_learner_length)
+      reserve(temp, base_learner_length);
+    source.read(temp.begin,base_learner_length);
+    local_searn_base_learner.assign(temp.begin);
     source.read((char*)&local_searn_trained_nb_policies, sizeof(local_searn_trained_nb_policies));
     source.read((char*)&local_searn_total_nb_policies, sizeof(local_searn_total_nb_policies));
+    source.read((char*)&local_searn_beta, sizeof(local_searn_beta));
+    source.read((char*)&task_length, sizeof(task_length));
+    temp.erase();
+    if (temp.index() < task_length)
+      reserve(temp, task_length);
+    source.read(temp.begin,task_length);
+    local_searn_task.assign(temp.begin);
+    source.read((char*)&local_searn_sequencetask_history, sizeof(local_searn_sequencetask_history));
+    source.read((char*)&local_searn_sequencetask_features, sizeof(local_searn_sequencetask_features));
+    source.read((char*)&local_searn_sequencetask_bigrams, sizeof(local_searn_sequencetask_bigrams));
+    source.read((char*)&local_searn_sequencetask_bigram_features, sizeof(local_searn_sequencetask_bigram_features));
+
     if (!initialized)
     {
+      all.searn = local_searn;
+      all.searn_nb_actions = local_searn_nb_actions;
+      all.searn_base_learner.assign(local_searn_base_learner);
       all.searn_trained_nb_policies = local_searn_trained_nb_policies;
       all.searn_total_nb_policies = local_searn_total_nb_policies;
+      all.searn_beta = local_searn_beta;
+      all.searn_task.assign(local_searn_task);
+      all.searn_sequencetask_history = local_searn_sequencetask_history;
+      all.searn_sequencetask_features = local_searn_sequencetask_features;
+      all.searn_sequencetask_bigrams = local_searn_sequencetask_bigrams;
+      all.searn_sequencetask_bigram_features = local_searn_sequencetask_bigram_features;
       initialized = true;
+
+      /*std::cerr << "searn: " << all.searn << endl;
+      std::cerr << "searn_nb_actions: " << all.searn_nb_actions << endl;
+      std::cerr << "searn_base_learner: " << all.searn_base_learner << endl;
+      std::cerr << "searn_trained_nb_policies: " << all.searn_trained_nb_policies << endl;
+      std::cerr << "searn_total_nb_policies: " << all.searn_total_nb_policies << endl;
+      std::cerr << "searn_beta: " << all.searn_beta << endl;
+      std::cerr << "searn_task: " << all.searn_task << endl;
+      std::cerr << "searn_sequencetask_history: " << all.searn_sequencetask_history << endl;
+      std::cerr << "searn_sequencetask_features: " << all.searn_sequencetask_features << endl;
+      std::cerr << "searn_sequencetask_bigrams: " << all.searn_sequencetask_bigrams << endl;
+      std::cerr << "searn_sequencetask_bigram_features: " << all.searn_sequencetask_bigram_features << endl;*/
     }
     else
     {
+      if (all.searn != local_searn){
+        cout << "can't combine sources for searn and not for searn!" << endl;
+        exit(1);
+      }
+
+      if (all.searn_nb_actions != local_searn_nb_actions){
+        cout << "can't combine sources with different number of actions!" << endl;
+        exit(1);
+      }
+
+      if (all.searn_base_learner.compare(local_searn_base_learner) != 0){
+        cout << "can't combine sources with different base learner!" << endl;
+        exit(1);
+      }
+
       if (all.searn_trained_nb_policies != local_searn_trained_nb_policies)
       {
         cout << "can't combine sources with different number of trained policies!" << endl;
@@ -222,6 +292,36 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
       {
 	cout << "can't combine sources with different total number of policies!" << endl;
 	exit(1);
+      }
+
+      if (all.searn_beta != local_searn_beta){
+        cout << "can't combine sources with different searn beta parameters!" << endl;
+        exit(1);
+      }
+
+      if (all.searn_task.compare(local_searn_task) != 0){
+        cout << "can't combine sources for different searn task!" << endl;
+        exit(1);
+      }
+
+      if (all.searn_sequencetask_history != local_searn_sequencetask_history){
+        cout << "can't combine sources using different history length!" << endl;
+        exit(1);
+      }
+
+      if (all.searn_sequencetask_features != local_searn_sequencetask_features){
+        cout << "can't combine sources using different feature history length!" << endl;
+        exit(1);
+      }
+
+      if (all.searn_sequencetask_bigrams != local_searn_sequencetask_bigrams){
+        cout << "can't combine sources using and not using bigrams!" << endl;
+        exit(1);
+      }
+
+      if (all.searn_sequencetask_bigram_features != local_searn_sequencetask_bigram_features){
+        cout << "can't combine sources using and not using bigram features!" << endl;
+        exit(1);
       }
     }
   }
@@ -315,10 +415,10 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
       cout << "can't open: " << start_name << " for writing, exiting" << endl;
       exit(1);
     }
-  size_t v_length = version.length()+1;
+  size_t v_length = version.to_string().length()+1;
   if (!as_text) {
     io_temp.write_file(f,(char*)&v_length, sizeof(v_length));
-    io_temp.write_file(f,version.c_str(),v_length);
+    io_temp.write_file(f,version.to_string().c_str(),v_length);
   
     io_temp.write_file(f,(char*)&all.sd->min_label, sizeof(all.sd->min_label));
     io_temp.write_file(f,(char*)&all.sd->max_label, sizeof(all.sd->max_label));
@@ -335,15 +435,29 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
     io_temp.write_file(f,(char*)&all.ngram, sizeof(all.ngram));
     io_temp.write_file(f,(char*)&all.skips, sizeof(all.skips));
 
-    if(all.searn) {
-      io_temp.write_file(f,(char*)&all.searn_trained_nb_policies, sizeof(all.searn_trained_nb_policies));
-      io_temp.write_file(f,(char*)&all.searn_total_nb_policies, sizeof(all.searn_total_nb_policies));
-    }
+    io_temp.write_file(f,(char*)&all.searn, sizeof(all.searn));
+    io_temp.write_file(f,(char*)&all.searn_nb_actions, sizeof(all.searn_nb_actions));
+
+    size_t base_learner_length = all.searn_base_learner.length()+1;
+    io_temp.write_file(f,(char*)&base_learner_length, sizeof(base_learner_length));
+    io_temp.write_file(f,all.searn_base_learner.c_str(), base_learner_length);
+
+    io_temp.write_file(f,(char*)&all.searn_trained_nb_policies, sizeof(all.searn_trained_nb_policies));
+    io_temp.write_file(f,(char*)&all.searn_total_nb_policies, sizeof(all.searn_total_nb_policies));
+    io_temp.write_file(f,(char*)&all.searn_beta, sizeof(all.searn_beta));
+
+    size_t task_length = all.searn_task.length()+1;
+    io_temp.write_file(f,(char*)&task_length, sizeof(task_length));
+    io_temp.write_file(f,all.searn_task.c_str(), task_length);
+    io_temp.write_file(f,(char*)&all.searn_sequencetask_history, sizeof(all.searn_sequencetask_history));
+    io_temp.write_file(f,(char*)&all.searn_sequencetask_features, sizeof(all.searn_sequencetask_features));
+    io_temp.write_file(f,(char*)&all.searn_sequencetask_bigrams, sizeof(all.searn_sequencetask_bigrams));
+    io_temp.write_file(f,(char*)&all.searn_sequencetask_bigram_features, sizeof(all.searn_sequencetask_bigram_features));
   }
   else {
     char buff[512];
     int len;
-    len = sprintf(buff, "Version %s\n", version.c_str());
+    len = sprintf(buff, "Version %s\n", version.to_string().c_str());
     io_temp.write_file(f, buff, len);
     len = sprintf(buff, "Min label:%f max label:%f\n", all.sd->min_label, all.sd->max_label);
     io_temp.write_file(f, buff, len);
@@ -367,12 +481,38 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
     len = sprintf(buff, "lda:%d\n", (int)all.lda);
     io_temp.write_file(f, buff, len);
 
-    if( all.searn ) {
-      len = sprintf(buff, "searn_trained_nb_policies:%d\n", (int)all.searn_trained_nb_policies);
-      io_temp.write_file(f, buff, len);
-      len = sprintf(buff, "searn_total_nb_policies:%d\n", (int)all.searn_total_nb_policies);
-      io_temp.write_file(f, buff, len);
-    }
+    len = sprintf(buff, "searn:%s\n", all.searn ? "true" : "false");
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_nb_actions:%d\n", (int)all.searn_nb_actions);
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_base_learner:%s\n", all.searn_base_learner.c_str());
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_trained_nb_policies:%d\n", (int)all.searn_trained_nb_policies);
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_total_nb_policies:%d\n", (int)all.searn_total_nb_policies);
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_beta:%f\n", all.searn_beta);
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_task:%s\n", all.searn_task.c_str());
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_sequencetask_history:%d\n", (int)all.searn_sequencetask_history);
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_sequencetask_features:%d\n", (int)all.searn_sequencetask_features);
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_sequencetask_bigrams:%s\n", all.searn_sequencetask_bigrams ? "true" : "false");
+    io_temp.write_file(f, buff, len);
+
+    len = sprintf(buff, "searn_sequencetask_bigram_features:%s\n", all.searn_sequencetask_bigram_features ? "true" : "false");
+    io_temp.write_file(f, buff, len);
   }
   
   uint32_t length = 1 << all.num_bits;
