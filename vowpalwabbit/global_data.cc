@@ -240,6 +240,18 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
+  searn = false;
+  searn_nb_actions = 1;
+  searn_base_learner = "csoaa";
+  searn_trained_nb_policies = 1;
+  searn_total_nb_policies = 1;
+  searn_beta = 0.5;
+  searn_task = "sequence";
+  searn_sequencetask_history = 1;
+  searn_sequencetask_features = 0;
+  searn_sequencetask_bigrams = false;
+  searn_sequencetask_bigram_features = false;
+
   nonormalize = false;
   l1_lambda = 0.0;
   l2_lambda = 0.0;

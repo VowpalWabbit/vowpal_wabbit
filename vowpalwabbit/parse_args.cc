@@ -213,7 +213,7 @@ vw parse_args(int argc, char *argv[])
 
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
-    cout << version << "\n";
+    cout << version.to_string() << "\n";
     exit(0);
   }
 
@@ -507,28 +507,51 @@ vw parse_args(int argc, char *argv[])
     got_mc = true;
   }
 
-  if(vm.count("csoaa")) {
+  if(vm.count("csoaa") || (all.searn && all.searn_base_learner.compare("csoaa") == 0) ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    CSOAA::parse_flags(all, to_pass_further, vm, vm["csoaa"].as<size_t>());
+    size_t nb_actions = 0;
+    if( all.searn ) { //if loaded options from regressor file already
+      nb_actions = all.searn_nb_actions;
+      if( vm.count("csoaa") && vm["csoaa"].as<size_t>() != all.searn_nb_actions )
+        std::cerr << "warning: you specified a different number of actions through --csoaa than the one loaded from regressor. Pursuing with loaded value of: " << all.searn_nb_actions << endl;
+    }
+    else {
+      nb_actions = vm["csoaa"].as<size_t>();
+    }
+    
+    CSOAA::parse_flags(all, to_pass_further, vm, nb_actions);
     got_cs = true;
+    all.searn_base_learner = "csoaa";
   }
 
-  if(vm.count("wap")) {
+  if(vm.count("wap") || (all.searn && all.searn_base_learner.compare("wap") == 0) ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    WAP::parse_flags(all, to_pass_further, vm, vm["wap"].as<size_t>());
+    size_t nb_actions = 0;
+    if( all.searn ) { //if loaded options from regressor file already
+      nb_actions = all.searn_nb_actions;
+      if( vm.count("wap") && vm["wap"].as<size_t>() != all.searn_nb_actions )
+        std::cerr << "warning: you specified a different number of actions through --wap than the one loaded from regressor. Pursuing with loaded value of: " << all.searn_nb_actions << endl;
+    }
+    else {
+      nb_actions = vm["wap"].as<size_t>();
+    }
+    WAP::parse_flags(all, to_pass_further, vm, nb_actions);
     got_cs = true;
+    all.searn_base_learner = "wap";
   }
 
-  if(vm.count("csoaa_ldf")) {
+  if(vm.count("csoaa_ldf") || (all.searn && all.searn_base_learner.compare("csoaa_ldf") == 0)) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
     CSOAA_LDF::parse_flags(all, to_pass_further, vm, 0);
     got_cs = true;
+    all.searn_base_learner = "csoaa_ldf";
   }
 
-  if(vm.count("wap_ldf")) {
+  if(vm.count("wap_ldf") || (all.searn && all.searn_base_learner.compare("wap_ldf") == 0)) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
     WAP_LDF::parse_flags(all, to_pass_further, vm, 0);
     got_cs = true;
+    all.searn_base_learner = "wap_ldf";
   }
 
   if (vm.count("sequence")) {
@@ -539,12 +562,26 @@ vw parse_args(int argc, char *argv[])
     Sequence::parse_flags(all, to_pass_further, vm);
   }
 
-  if (vm.count("searn")) {
+  if (vm.count("searn") || all.searn) { //all.searn can be set to true while loading regressor
     if (vm.count("sequence")) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
 
+    size_t searn_nb_actions = 0;
+    if(all.searn) //if we already loaded searn options through regressor file
+    {
+        searn_nb_actions = all.searn_nb_actions;
+        
+        if(vm.count("searn") && vm["searn"].as<size_t>() != all.searn_nb_actions )
+	  std::cerr << "warning: number of actions specified through --searn option not the same as the one loaded from predictor file. Pursuing with loaded value of: " << all.searn_nb_actions << endl;
+    }
+    else
+    {
+        searn_nb_actions = vm["searn"].as<size_t>();
+    }
+
     if (!got_cs) {
-      CSOAA::parse_flags(all, to_pass_further, vm, vm["searn"].as<size_t>());  // default to CSOAA unless wap is specified
+      CSOAA::parse_flags(all, to_pass_further, vm, searn_nb_actions);  // default to CSOAA unless wap is specified
       got_cs = true;
+      all.searn_base_learner = "csoaa";
     }
     Searn::parse_flags(all, to_pass_further, vm);
   }
