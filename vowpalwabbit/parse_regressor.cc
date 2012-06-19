@@ -100,7 +100,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   version_struct v_tmp(temp.begin);
   if (v_tmp < LAST_COMPATIBLE_VERSION)
     {
-      cout << "source has possibly incompatible version!" << endl;
+      cout << "source has possibly incompatible version! " << v_tmp.to_string() << endl;
       exit(1);
     }
   
