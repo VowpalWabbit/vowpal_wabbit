@@ -534,7 +534,9 @@ namespace Searn
 
   bool should_print_update(vw& all)
   {
-    if( parser_done(all.p)) return true;
+    //uncomment to print out final loss after all examples processed
+    //commented for now so that outputs matches make test
+    //if( parser_done(all.p)) return true;
 
     if (!(all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)) {
       if (!PRINT_UPDATE_EVERY_EXAMPLE) return false;
@@ -1291,8 +1293,8 @@ namespace Searn
     all->searn_trained_nb_policies = current_policy + 1;
     all->searn_total_nb_policies = total_number_of_policies;
 
-    std::cerr << "Current Policy: " << current_policy << endl;
-    std::cerr << "Total Number of Policies: " << total_number_of_policies << endl;
+    //std::cerr << "Current Policy: " << current_policy << endl;
+    //std::cerr << "Total Number of Policies: " << total_number_of_policies << endl;
 
     const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
 
