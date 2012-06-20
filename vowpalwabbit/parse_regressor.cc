@@ -587,7 +587,7 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
   else
     sprintf(filename,"%s",reg_name.c_str());
   dump_regressor(all, string(filename), false, false);
-  delete filename;
+  delete[] filename;
 }
 
 void finalize_regressor(vw& all, string reg_name)

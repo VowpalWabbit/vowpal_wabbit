@@ -128,7 +128,7 @@ namespace CSOAA {
 
     for (size_t i = 0; i < words.index(); i++)
       {
-        wclass f;
+        wclass f = {0.,0,0.};
         name_value(words[i], name, f.x);
       
         f.weight_index = 0;

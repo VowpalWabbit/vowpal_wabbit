@@ -74,16 +74,6 @@ public:
   parser* p;
   example* ae;
   
-  TC_parser(char* reading_head, char* endLine, vw& all, example* ae){
-    this->beginLine = reading_head;
-    this->reading_head = reading_head;
-    this->endLine = endLine;
-    this->p = all.p;
-    this->ae = ae;
-    mask  = all.parse_mask;
-    audit = all.audit;
-  }
-
   ~TC_parser(){ }
   
   inline void featureValue(){
@@ -239,6 +229,18 @@ public:
 	cout << "malformed example !\n'|' or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
       }
   }
+
+  TC_parser(char* reading_head, char* endLine, vw& all, example* ae){
+    this->beginLine = reading_head;
+    this->reading_head = reading_head;
+    this->endLine = endLine;
+    this->p = all.p;
+    this->ae = ae;
+    mask  = all.parse_mask;
+    audit = all.audit;
+    listNameSpace();
+  }
+
 };
 
 void substring_to_example(vw* all, example* ae, substring example)
@@ -269,8 +271,7 @@ void substring_to_example(vw* all, example* ae, substring example)
   
   all->p->lp->parse_label(all->sd, ae->ld, all->p->words);
   
-  TC_parser* parser_line = new TC_parser(bar_location,example.end,*all,ae);
-  parser_line->listNameSpace();
+  TC_parser parser_line(bar_location,example.end,*all,ae);
 }
 
 int read_features(void* in, example* ex)
