@@ -2,7 +2,7 @@
 #define EZEXAMPLE_H
 
 #include <stdio.h>
-#include "/home/hal/projects/vowpal_wabbit/vowpalwabbit/vw.h"
+#include "../vowpalwabbit/vw.h"
 
 using namespace std;
 typedef uint32_t fid;
