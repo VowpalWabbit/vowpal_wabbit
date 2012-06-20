@@ -19,11 +19,16 @@ embodied in the content of this file are licensed under the BSD
 #include "accumulate.h"
 #include "vw.h"
 
+#include "searn.cc"
+
 using namespace std;
 
 int main(int argc, char *argv[])
 {
   srand48(0);
+
+  //  Beam::test_beam();
+  //  exit(-1);
 
   vw all = parse_args(argc, argv);
   struct timeb t_start, t_end;

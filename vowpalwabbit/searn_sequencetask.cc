@@ -53,12 +53,42 @@ namespace SequenceTask {
     po::notify(vm);
     
 
-    if (vm.count("searn_sequencetask_bigrams"))          hinfo.bigrams = true;
-    if (vm.count("searn_sequencetask_history"))          hinfo.length = vm["searn_sequencetask_history"].as<size_t>();
-    if (vm.count("searn_sequencetask_bigram_features"))  hinfo.bigram_features = true;
-    if (vm.count("searn_sequencetask_features"))         hinfo.features = vm["searn_sequencetask_features"].as<size_t>();
+    bool loaded_from_regressor = all.searn; //if all.searn is already true, then we already loaded these options from the regressor
 
-    seq_max_action = vm["searn"].as<size_t>();
+    if( loaded_from_regressor ) {
+      hinfo.length = all.searn_sequencetask_history;
+      if( vm.count("searn_sequencetask_history") && hinfo.length != vm["searn_sequencetask_history"].as<size_t>() )
+        std::cerr << "warning: you specified a different value for --searn_sequencetask_history than the one loaded from regressor. Pursuing with loaded value: " << hinfo.length << endl;
+
+      hinfo.features = all.searn_sequencetask_features;
+      if( vm.count("searn_sequencetask_features") && hinfo.features != vm["searn_sequencetask_features"].as<size_t>() )
+        std::cerr << "warning: you specified a different value for --searn_sequencetask_features than the one loaded from regressor. Pursuing with loaded value: " << hinfo.features << endl;
+
+      hinfo.bigrams = all.searn_sequencetask_bigrams;
+      if( vm.count("searn_sequencetask_bigrams") && !hinfo.bigrams )
+        std::cerr << "warning: you specified --searn_sequencetask_bigrams but loaded regressor not using bigrams. Pursuing without bigrams." << endl;
+
+      hinfo.bigram_features = all.searn_sequencetask_bigram_features;
+      if( vm.count("searn_sequencetask_bigram_features") && !hinfo.bigram_features )
+        std::cerr << "warning: you specified --searn_sequencetask_bigram_features but loaded regressor not using bigram_features. Pursuing without bigram_features." << endl;
+
+      seq_max_action = all.searn_nb_actions;
+    }    
+    else {
+      if (vm.count("searn_sequencetask_bigrams"))          hinfo.bigrams = true;
+      if (vm.count("searn_sequencetask_history"))          hinfo.length = vm["searn_sequencetask_history"].as<size_t>();
+      if (vm.count("searn_sequencetask_bigram_features"))  hinfo.bigram_features = true;
+      if (vm.count("searn_sequencetask_features"))         hinfo.features = vm["searn_sequencetask_features"].as<size_t>();
+
+      seq_max_action = vm["searn"].as<size_t>();
+    }
+
+    //sync with values in all for when regressor will be saved
+    all.searn_sequencetask_history = hinfo.length;
+    all.searn_sequencetask_features = hinfo.features;
+    all.searn_sequencetask_bigrams = hinfo.bigrams;
+    all.searn_sequencetask_bigram_features = hinfo.bigram_features;
+
     constant_pow_length = 1;
     for (size_t i=0; i < hinfo.length; i++)
       constant_pow_length *= quadratic_constant;
@@ -130,6 +160,15 @@ namespace SequenceTask {
     SearnUtil::free_it(s->predictions);
     SearnUtil::free_it(s);
   }
+
+  bool is_test_example(example**ec, size_t N) {
+    for (size_t n=0; n<N; n++) {
+      if (((OAA::mc_label*)ec[n]->ld)->label < 0)
+        return 1;
+    }
+    return 0;
+  }
+
 
   void start_state_multiline(example**ec, size_t len, state*s0)
   {

@@ -88,7 +88,8 @@ size_t cache_numbits(io_buf* buf, int filepointer)
     reserve(t,v_length);
   
   buf->read_file(filepointer,t.begin,v_length);
-  if (strcmp(t.begin,version.c_str()) != 0)
+  version_struct v_tmp(t.begin);
+  if ( v_tmp != version )
     {
       cout << "cache has possibly incompatible version, rebuilding" << endl;
       free(t.begin);
@@ -210,10 +211,10 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
     return;
   }
 
-  size_t v_length = version.length()+1;
+  size_t v_length = version.to_string().length()+1;
 
   output->write_file(f, &v_length, sizeof(size_t));
-  output->write_file(f,version.c_str(),v_length);
+  output->write_file(f,version.to_string().c_str(),v_length);
   
   output->write_file(f, &numbits, sizeof(size_t));
   
