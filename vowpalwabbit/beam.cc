@@ -40,8 +40,8 @@ namespace Beam
 
   size_t hash_bucket(size_t id) { return 1043221*(893901 + id); }
 
-  void beam::put(size_t id, state s, size_t hs, float loss) {
-    elem e = { s, hs, loss, id, last_retrieved };
+  void beam::put(size_t id, state s, size_t hs, size_t act, float loss) {
+    elem e = { s, hs, loss, id, last_retrieved, act, true };
     // check to see if we have this bucket yet
     bucket b = dat->get(id, hash_bucket(id));
     if (b->index() > 0) { // this one exists: just add to it
@@ -56,7 +56,7 @@ namespace Beam
     }
   }
 
-  void beam::iterate(size_t id, void (*f)(beam*,size_t,state,float)) {
+  void beam::iterate(size_t id, void (*f)(beam*,size_t,state,float,void*), void*args) {
     bucket b = dat->get(id, hash_bucket(id));
     if (b->index() == 0) return;
 
@@ -68,7 +68,7 @@ namespace Beam
       cout << "element" << endl;
       if (e->alive) {
         last_retrieved = e;
-        f(this, id, e->s, e->loss);
+        f(this, id, e->s, e->loss, args);
       }
     }
   }
@@ -169,27 +169,59 @@ namespace Beam
     dat->put_after_get(id, hash_bucket(id), bnew);
   }
 
+  size_t beam::get_next_bucket(size_t start) {
+    size_t next_bucket = 0;
+    for (v_hashmap<size_t,bucket>::hash_elem* e=dat->dat.begin; e!=dat->dat.end_array; e++) {
+      if (e->occupied) {
+        size_t bucket_id = e->key;
+        if ((bucket_id > start) && (bucket_id < next_bucket))
+          next_bucket = bucket_id;
+      }
+    }
+    return next_bucket;
+  }
+
+  void beam::get_best_output(std::vector<size_t>* action_seq) {
+    action_seq->clear();
+    if (final_states->index() == 0) {
+      // TODO: error
+      return;
+    } else {
+      elem *bestElem   = NULL;
+      for (size_t i=0; i<final_states->index(); i++) {
+        if ((bestElem == NULL) || ((*final_states)[i].loss < bestElem->loss))
+          bestElem = &(*final_states)[i];
+      }
+      // chase backpointers
+      while (bestElem != NULL) {
+        std::vector<size_t>::iterator be = action_seq->begin();
+        action_seq->insert( be, bestElem->last_action );
+        bestElem = bestElem->backpointer;
+      }
+    }
+  }
+
 
   struct test_beam_state {
     size_t id;
   };
   bool state_eq(state a,state b) { return ((test_beam_state*)a)->id == ((test_beam_state*)b)->id; }
   size_t state_hash(state a) { return 381049*(3820+((test_beam_state*)a)->id); }
-  void expand_state(beam*b, size_t old_id, state old_state, float old_loss) {
+  void expand_state(beam*b, size_t old_id, state old_state, float old_loss, void*args) {
     test_beam_state* new_state = (test_beam_state*)calloc(1, sizeof(test_beam_state));
     new_state->id = old_id + ((test_beam_state*)old_state)->id * 2;
     float new_loss = old_loss + 0.5;
     cout << "expand_state " << old_loss << " -> " << new_state->id << " , " << new_loss << endl;
-    b->put(old_id+1, new_state, new_loss);
+    b->put(old_id+1, new_state, 0, new_loss);
   }
   void test_beam() {
     beam*b = new beam(&state_eq, &state_hash, 5);
     for (size_t i=0; i<25; i++) {
       test_beam_state* s = (test_beam_state*)calloc(1, sizeof(test_beam_state));
       s->id = i / 3;
-      b->put(0, s, 0. - (float)i);
+      b->put(0, s, 0, 0. - (float)i);
       cout << "added " << s->id << endl;
     }
-    b->iterate(0, expand_state);
+    b->iterate(0, expand_state, NULL);
   }
 }
