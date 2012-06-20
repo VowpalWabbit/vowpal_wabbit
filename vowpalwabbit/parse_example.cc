@@ -95,14 +95,14 @@ public:
   }
   
   inline void maybeFeature(){
-    if(*reading_head == ' ' || *reading_head == '|'|| reading_head == endLine   ){
+    if(*reading_head == ' ' || *reading_head == '|'|| reading_head == endLine ){
       // maybeFeature --> ø
     }else if(*reading_head != ':'){
       // maybeFeature --> 'String' FeatureValue
       substring feature_name ;
       feature_name.begin = reading_head;
       v_array<char> feature_v;
-      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' ||reading_head == endLine  )){
+      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' ||reading_head == endLine )){
 	if(audit){
 	  push(feature_v,*reading_head);
 	}

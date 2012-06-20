@@ -108,42 +108,49 @@ inline void print_substring(substring s)
 //    in charge of error detection.
 inline float parseFloat(char * p, char **end)
 {
-    if (!*p || *p == '?')
-        return 0;
-    int s = 1;
-    while (*p == ' ') p++;
+  char* start = p;
 
+  if (!*p)
+    return 0;
+  int s = 1;
+  while (*p == ' ') p++;
+  
+  if (*p == '-') {
+    s = -1; p++;
+  }
+  
+  double acc = 0;
+  while (*p >= '0' && *p <= '9')
+    acc = acc * 10 + *p++ - '0';
+  
+  int num_dec = 0;
+  if (*p == '.') {
+    p++;
+    while (*p >= '0' && *p <= '9') {
+      acc = acc *10 + (*p++ - '0') ;
+      num_dec++;
+    }
+  }
+  int exp_acc = 0;
+  if(*p == 'e' || *p == 'E'){
+    p++;
+    int exp_s = 1;
     if (*p == '-') {
-        s = -1; p++;
+      exp_s = -1; p++;
     }
-
-    double acc = 0;
     while (*p >= '0' && *p <= '9')
-        acc = acc * 10 + *p++ - '0';
-
-    int num_dec = 0;
-    if (*p == '.') {
-        p++;
-        while (*p >= '0' && *p <= '9') {
-            acc = acc *10 + (*p++ - '0') ;
-            num_dec++;
-        }
+      exp_acc = exp_acc * 10 + *p++ - '0';
+    exp_acc *= exp_s;
+    
+  }
+  if (*p == ' ')//easy case succeeded.
+    {
+      acc *= pow(10,exp_acc-num_dec);
+      *end = p;
+      return s * acc;
     }
-    int exp_acc = 0;
-    if(*p == 'e' || *p == 'E'){
-    	p++;
-    	int exp_s = 1;
-    	if (*p == '-') {
-    	        exp_s = -1; p++;
-    	}
-    	while (*p >= '0' && *p <= '9')
-    	        exp_acc = exp_acc * 10 + *p++ - '0';
-    	exp_acc *= exp_s;
-
-    }
-    acc *= pow(10,exp_acc-num_dec);
-    *end = p;
-    return s * acc;
+  else
+    return strtof(start,end);
 }
 
 inline float float_of_substring(substring s)
