@@ -48,14 +48,6 @@ hash_func_t getHasher(const string& s){
   }
 }
 
-char* c_string_of_substring(substring s)
-{
-  size_t len = s.end - s.begin+1;
-  char* ret = (char *)calloc(len,sizeof(char));
-  memcpy(ret,s.begin,len-1);
-  return ret;
-}
-
 char* copy(char* base)
 {
   size_t len = 0;
