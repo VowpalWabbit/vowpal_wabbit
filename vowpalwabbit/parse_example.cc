@@ -48,46 +48,6 @@ hash_func_t getHasher(const string& s){
   }
 }
 
-void feature_value(substring &s, v_array<substring>& name, float &v)
-{
-  tokenize(':', s, name);
-  
-  switch (name.index()) {
-  case 0:
-  case 1:
-    v = 1.;
-    break;
-  case 2:
-    v = float_of_substring(name[1]);
-    if ( isnan(v))
-      {
-	cerr << "error NaN value for feature: ";
-	cerr.write(name[0].begin, name[0].end - name[0].begin);
-	cerr << " terminating." << endl;
-	exit(1);
-      }
-    break;
-  default:
-    cerr << "example with a wierd name.  What is ";
-    cerr.write(s.begin, s.end - s.begin);
-    cerr << "\n";
-  }
-}
-
-// new should be empty. --Alex
-template<class T> void copy_v_array(v_array<T>& old, v_array<T>& new_va)
-{
-  // allocate new memory for new.
-  new_va.begin = (T *) malloc(sizeof(T)*old.index());
-
-  // copy the old to the new.
-  memcpy(new_va.begin,old.begin,sizeof(T)*old.index());
-  
-  // update pointers
-  new_va.end = new_va.begin + old.index();
-  new_va.end_array = new_va.end;
-}
-
 char* c_string_of_substring(substring s)
 {
   size_t len = s.end - s.begin+1;
@@ -105,110 +65,220 @@ char* copy(char* base)
   return ret;
 }
 
-void substring_to_example(vw* all, example* ae, substring example)
-{
-  tokenize('|', example, all->p->channels);
-  all->p->lp->default_label(ae->ld);
-  substring* feature_start = &(all->p->channels[1]);
-
-  substring label_space = all->p->channels[0];
-  if (*example.begin == '|')
-    {
-      feature_start = &(all->p->channels[0]);
-      all->p->words.erase();
-    }
-  else
-    {
-      char* tab_location = safe_index(label_space.begin, '\t', label_space.end);
-      if (tab_location != label_space.end)
-	label_space.begin = tab_location+1;
-      
-      tokenize(' ',label_space,all->p->words);
-      if (all->p->words.index() > 0 && (all->p->words.last().end == label_space.end || *(all->p->words.last().begin)=='\'') ) //The last field is a tag, so record and strip it off
-	{
-	  substring tag = all->p->words.pop();
-	  if (*tag.begin == '\'')
-	    tag.begin++;
-	  
-	  push_many(ae->tag, tag.begin, tag.end - tag.begin);
-	}
-    }
-  all->p->lp->parse_label(all->sd, ae->ld, all->p->words);
-
-  size_t mask = all->parse_mask;
-  bool audit = all->audit;
-  for (substring* i = feature_start; i != all->p->channels.end; i++) {
-    substring channel = *i;
-    
-    tokenize(' ',channel, all->p->words);
-    if (all->p->words.begin == all->p->words.end)
-      continue;
-    
-    float channel_v = 1.;
-    size_t channel_hash;
-    char* base=NULL;
-    size_t index = 0;
-    bool new_index = false;
-    size_t feature_offset = 0;
-    if (channel.begin[0] != ' ')//we have a nonanonymous namespace
-      {
-	feature_offset++;
-	feature_value(all->p->words[0], all->p->name, channel_v);
-
-	if (all->p->name.index() > 0) {
-	  index = (unsigned char)(*all->p->name[0].begin);
-	  if (ae->atomics[index].begin == ae->atomics[index].end)
-	    new_index = true;
-	}
-	if (audit)
-	  base = c_string_of_substring(all->p->name[0]);
-	channel_hash = all->p->hasher(all->p->name[0], hash_base);
-      }
-    else
-      {
-	index = (unsigned char)' ';
-	if (ae->atomics[index].begin == ae->atomics[index].end)
-	  new_index = true;
-	if (audit)
-	  {
-	    base = (char *)calloc(2,sizeof(char));
-	    base[0]=' ';
-	    base[1]='\0';
-	  }
-	channel_hash = 0;
-      }
- 
-    for (substring* i = all->p->words.begin+feature_offset; i != all->p->words.end; i++) {
-      float v = 0.;
-      feature_value(*i, all->p->name, v);
-      v *= channel_v;
-
-      size_t word_hash = (all->p->hasher(all->p->name[0], channel_hash)) & mask;
-      feature f = {v,(uint32_t)word_hash};
-      ae->sum_feat_sq[index] += v*v;
-      push(ae->atomics[index], f);
-    }
-
-    if (new_index && ae->atomics[index].begin != ae->atomics[index].end)
-      push(ae->indices, index);
-    
-    if (audit)
-      {
-	for (substring* i = all->p->words.begin+feature_offset; i != all->p->words.end; i++) {
-	  float v = 0.;
-	  feature_value(*i, all->p->name, v);
-	  v *= channel_v;
-
-	  size_t word_hash = (all->p->hasher(all->p->name[0], channel_hash)) & mask;
-      
-	  char* feature = c_string_of_substring(all->p->name[0]);
-	  audit_data ad = {copy(base), feature, word_hash, v, true};
-	  push(ae->audit_features[index], ad);
-	}
-	free(base);
-      }
+class TC_parser {
+  
+public:
+  char* beginLine;
+  char* reading_head;
+  char* endLine;
+  float cur_channel_v;
+  bool  new_index;
+  size_t mask;
+  bool audit;
+  size_t channel_hash;
+  char* base;
+  size_t index;
+  float v;
+  parser* p;
+  example* ae;
+  
+  TC_parser(char* reading_head, char* endLine, vw& all, example* ae){
+    this->beginLine = reading_head;
+    this->reading_head = reading_head;
+    this->endLine = endLine;
+    this->p = all.p;
+    this->ae = ae;
+    mask  = all.parse_mask;
+    audit = all.audit;
   }
 
+  ~TC_parser(){ }
+  
+  inline void featureValue(){
+    if(reading_head == endLine || *reading_head == '|' || *reading_head == ' '){
+      // featureValue --> ø
+    }else if(*reading_head == ':'){
+      // featureValue --> ':' 'Float'
+      ++reading_head;
+      char *end_read = NULL;
+      v = parseFloat(reading_head,&end_read);
+      if(end_read == reading_head){
+	cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      }
+      reading_head = end_read;
+    }else{
+      // syntax error
+      cout << "malformed example !\n'|' , ':' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+    }
+  }
+  
+  inline void maybeFeature(){
+    if(*reading_head == ' ' || *reading_head == '|'|| reading_head == endLine   ){
+      // maybeFeature --> ø
+    }else if(*reading_head != ':'){
+      // maybeFeature --> 'String' FeatureValue
+      substring feature_name ;
+      feature_name.begin = reading_head;
+      v_array<char> feature_v;
+      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' ||reading_head == endLine  )){
+	if(audit){
+	  push(feature_v,*reading_head);
+	}
+	++reading_head;
+      }
+      feature_name.end = reading_head;
+      v = 1.;
+      featureValue();
+      v *= cur_channel_v;
+      size_t word_hash = (p->hasher(feature_name,channel_hash)) & mask;
+      feature f = {v,(uint32_t)word_hash};
+      ae->sum_feat_sq[index] += v*v;
+      push(ae->atomics[index],f);
+      if(audit){
+	push(feature_v,'\0');
+	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
+	push(ae->audit_features[index],ad);
+      }
+    }else{
+      // syntax error
+      cout << "malformed example !\n'|' , space, String or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+    }
+  }
+  
+  inline void nameSpaceInfoValue(){
+    if(*reading_head == ' ' || reading_head == endLine || *reading_head == '|'  ){
+      // nameSpaceInfoValue -->  ø
+    }else if(*reading_head == ':'){
+      // nameSpaceInfoValue --> ':' 'Float'
+      ++reading_head;
+      char *end_read = NULL;
+      cur_channel_v = parseFloat(reading_head,&end_read);
+      if(end_read == reading_head){
+	cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      }
+      reading_head = end_read;
+    }else{
+      // syntax error
+      cout << "malformed example !\n'|' , ':' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+    }
+  }
+  
+  inline void nameSpaceInfo(){
+    if(reading_head == endLine ||*reading_head == '|' || *reading_head == ' ' || *reading_head == ':'){
+      // syntax error
+      cout << "malformed example !\nString expected after : " << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+    }else{
+      // NameSpaceInfo --> 'String' NameSpaceInfoValue
+      index = (unsigned char)(*reading_head);
+      if(ae->atomics[index].begin == ae->atomics[index].end)
+	new_index = true;
+      substring name;
+      name.begin = reading_head;
+      v_array<char> base_v_array;
+      
+      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine  )){
+	if(audit){
+	  push(base_v_array,*reading_head);
+	}
+	++reading_head;
+      }
+      if(audit){
+	push(base_v_array,'\0');
+	base = base_v_array.begin;
+      }
+      name.end = reading_head;
+      channel_hash = p->hasher(name, hash_base);
+      nameSpaceInfoValue();
+    }
+  }
+  
+  inline void listFeatures(){
+    while(*reading_head == ' '){
+      //listFeatures --> ' ' MaybeFeature ListFeatures
+      ++reading_head;
+      maybeFeature();
+    }
+    if(!(*reading_head == '|' ||reading_head == endLine  )){
+      //syntax error
+      cout << "malformed example !\n'|' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str() << "\""<< endl;
+    }
+  }
+  
+  
+  inline void nameSpace(){
+    cur_channel_v = 1.0;
+    base = NULL;
+    index = 0;
+    new_index = false;
+    if(*reading_head == ' ' || reading_head == endLine || *reading_head == '|'  ){
+      // NameSpace --> ListFeatures
+      index = (unsigned char)' ';
+      if(ae->atomics[index].begin == ae->atomics[index].end)
+	new_index = true;
+      if(audit)
+	{
+	  base = (char *) calloc(2,sizeof(char));
+	  base[0] = ' ';
+	  base[1] = '\0';
+	}
+      channel_hash = 0;
+      listFeatures();
+    }else if(*reading_head != ':'){
+      // NameSpace --> NameSpaceInfo ListFeatures
+      nameSpaceInfo();
+      listFeatures();
+    }else{
+      // syntax error
+      cout << "malformed example !\n'|' , String, space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+    }
+    if(new_index && ae->atomics[index].begin != ae->atomics[index].end)
+      push(ae->indices,index);
+  }
+  
+  inline void listNameSpace(){
+    while(*reading_head == '|'){
+      // ListNameSpace --> '|' NameSpace ListNameSpace
+      ++reading_head;
+      nameSpace();
+    }
+    if(reading_head != endLine)
+      {
+	// syntax error
+	cout << "malformed example !\n'|' or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      }
+  }
+};
+
+void substring_to_example(vw* all, example* ae, substring example)
+{
+  all->p->lp->default_label(ae->ld);
+  char* bar_location = safe_index(example.begin, '|', example.end);
+  char* tab_location = safe_index(example.begin, '\t', bar_location);
+  substring label_space;
+  if (tab_location != bar_location){
+    label_space.begin = tab_location + 1;
+  }else{
+    label_space.begin = example.begin;
+  }
+  label_space.end = bar_location;
+  
+  if (*example.begin == '|')	{
+    all->p->words.erase();
+  } else 	{
+    tokenize(' ', label_space, all->p->words);
+    if (all->p->words.index() > 0 && (all->p->words.last().end == label_space.end	|| *(all->p->words.last().begin) == '\'')) //The last field is a tag, so record and strip it off
+      {
+	substring tag = all->p->words.pop();
+	if (*tag.begin == '\'')
+	  tag.begin++;
+	push_many(ae->tag, tag.begin, tag.end - tag.begin);
+      }
+  }
+  
+  all->p->lp->parse_label(all->sd, ae->ld, all->p->words);
+  
+  TC_parser* parser_line = new TC_parser(bar_location,example.end,*all,ae);
+  parser_line->listNameSpace();
 }
 
 int read_features(void* in, example* ex)
