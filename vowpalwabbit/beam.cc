@@ -56,6 +56,11 @@ namespace Beam
     }
   }
 
+  void beam::put_final(state s, size_t act, float loss) {
+    elem e = { s, 0, loss, 0, last_retrieved, act, true };
+    push(*final_states, e);
+  }
+
   void beam::iterate(size_t id, void (*f)(beam*,size_t,state,float,void*), void*args) {
     bucket b = dat->get(id, hash_bucket(id));
     if (b->index() == 0) return;

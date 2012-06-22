@@ -311,9 +311,14 @@ namespace Sequence {
     if (ec_seq.begin != NULL)
       free(ec_seq.begin);
 
-    if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
-      for (size_t i=0; i<sequence_k * sequence_beam; i++)
-        free(hcache[i].total_predictions);
+    loss_vector.erase();
+    free(loss_vector.begin);
+
+    transition_prediction_costs.erase();
+    free(transition_prediction_costs.begin);
+
+    for (size_t i=0; i<sequence_k * sequence_beam; i++)
+      free(hcache[i].total_predictions);
 
     free(pred_seq);        pred_seq        = NULL;
     free(policy_seq);      policy_seq      = NULL;
