@@ -7,17 +7,17 @@ noinst_HEADERS = vowpalwabbit/accumulate.h vowpalwabbit/oaa.h		\
        vowpalwabbit/parse_example.h vowpalwabbit/cache.h		\
        vowpalwabbit/parse_primitives.h vowpalwabbit/comp_io.h		\
        vowpalwabbit/parse_regressor.h vowpalwabbit/constant.h		\
-       vowpalwabbit/parser.h vowpalwabbit/csoaa.h			\
+       vowpalwabbit/parser.h vowpalwabbit/csoaa.h vowpalwabbit/beam.h	\
        vowpalwabbit/searn.h vowpalwabbit/ect.h				\
        vowpalwabbit/searn_sequencetask.h vowpalwabbit/example.h		\
-       vowpalwabbit/sender.h vowpalwabbit/gd.h				\
-       vowpalwabbit/sequence.h vowpalwabbit/gd_mf.h			\
-       vowpalwabbit/simple_label.h vowpalwabbit/global_data.h		\
-       vowpalwabbit/sparse_dense.h vowpalwabbit/hash.h			\
-       vowpalwabbit/unique_sort.h vowpalwabbit/io.h			\
-       vowpalwabbit/v_array.h vowpalwabbit/lda_core.h			\
-       vowpalwabbit/v_hashmap.h vowpalwabbit/loss_functions.h		\
-       vowpalwabbit/network.h vowpalwabbit/wap.h vowpalwabbit/noop.h
+       vowpalwabbit/sender.h vowpalwabbit/gd.h vowpalwabbit/sequence.h	\
+       vowpalwabbit/gd_mf.h vowpalwabbit/simple_label.h			\
+       vowpalwabbit/global_data.h vowpalwabbit/sparse_dense.h		\
+       vowpalwabbit/hash.h vowpalwabbit/unique_sort.h			\
+       vowpalwabbit/io.h vowpalwabbit/v_array.h				\
+       vowpalwabbit/lda_core.h vowpalwabbit/v_hashmap.h			\
+       vowpalwabbit/loss_functions.h vowpalwabbit/network.h		\
+       vowpalwabbit/wap.h vowpalwabbit/noop.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 

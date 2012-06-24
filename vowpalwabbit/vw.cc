@@ -18,8 +18,7 @@ embodied in the content of this file are licensed under the BSD
 #include "parse_args.h"
 #include "accumulate.h"
 #include "vw.h"
-
-#include "searn.cc"
+#include "searn.h"
 
 using namespace std;
 

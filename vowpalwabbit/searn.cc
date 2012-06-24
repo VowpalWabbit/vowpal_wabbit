@@ -10,6 +10,7 @@
 #include "oaa.h"
 #include "csoaa.h"
 #include "v_hashmap.h"
+#include "beam.h"
 
 // task-specific includes
 #include "searn_sequencetask.h"
@@ -262,187 +263,6 @@ namespace SearnUtil
     ec->indices.decr();
   }
 
-}
-
-namespace Beam
-{
-  int compare_elem(const void *va, const void *vb) {
-    // first sort on hash, then on loss
-    elem* a = (elem*)va;
-    elem* b = (elem*)vb;
-    if (a->hash < b->hash) { return -1; }
-    if (a->hash > b->hash) { return  1; }
-    return b->loss - a->loss;   // if b is greater, it should go second
-  }
-
-  beam::beam(bool (*eq)(state,state), size_t (*hs)(state), size_t max_beam_size) {
-    equivalent = eq;
-    hash = hs;
-    empty_bucket = v_array<elem>();
-    last_retrieved = NULL;
-    max_size = max_beam_size;
-    losses = (float*)calloc(max_size, sizeof(float));
-    dat = new v_hashmap<size_t,bucket>(8, empty_bucket, NULL);
-  }
-
-  beam::~beam() {
-    // TODO: really free the elements
-    delete dat;
-    free(empty_bucket.begin);
-  }
-
-  size_t hash_bucket(size_t id) { return 1043221*(893901 + id); }
-
-  void beam::put(size_t id, state s, size_t hs, float loss) {
-    elem e = { s, hs, loss, id, last_retrieved };
-    // check to see if we have this bucket yet
-    bucket b = dat->get(id, hash_bucket(id));
-    if (b.index() > 0) { // this one exists: just add to it
-      push(b, e);
-      dat->put_after_get(id, hash_bucket(id), b);
-    } else {
-      bucket bnew = v_array<elem>();
-      push(bnew, e);
-      dat->put_after_get(id, hash_bucket(id), bnew);
-    }
-  }
-
-  void beam::iterate(size_t id, void (*f)(beam*,size_t,state,float)) {
-    bucket b = dat->get(id, hash_bucket(id));
-    if (b.index() == 0) return;
-
-    cout << "before prune" << endl;
-    prune(id);
-    cout << "after prune" << endl;
-
-    for (elem*e=b.begin; e!=b.end; e++) {
-      cout << "element" << endl;
-      if (e->alive) {
-        last_retrieved = e;
-        f(this, id, e->s, e->loss);
-      }
-    }
-  }
-
-  #define SWAP(a,b) temp=(a);(a)=(b);(b)=temp;
-  float quickselect(float *arr, size_t n, size_t k) {
-    size_t i,ir,j,l,mid;
-    float a,temp;
-
-    l=0;
-    ir=n-1;
-    for(;;) {
-      if (ir <= l+1) { 
-        if (ir == l+1 && arr[ir] < arr[l]) {
-          SWAP(arr[l],arr[ir]);
-        }
-        return arr[k];
-      }
-      else {
-        mid=(l+ir) >> 1; 
-        SWAP(arr[mid],arr[l+1]);
-        if (arr[l] > arr[ir]) {
-          SWAP(arr[l],arr[ir]);
-        }
-        if (arr[l+1] > arr[ir]) {
-          SWAP(arr[l+1],arr[ir]);
-        }
-        if (arr[l] > arr[l+1]) {
-          SWAP(arr[l],arr[l+1]);
-        }
-        i=l+1; 
-        j=ir;
-        a=arr[l+1]; 
-        for (;;) { 
-          do i++; while (arr[i] < a); 
-          do j--; while (arr[j] > a); 
-          if (j < i) break; 
-          SWAP(arr[i],arr[j]);
-        } 
-        arr[l+1]=arr[j]; 
-        arr[j]=a;
-        if (j >= k) ir=j-1; 
-        if (j <= k) l=i;
-      }
-    }
-  }
-
-
-  void beam::prune(size_t id) {
-    bucket b = dat->get(id, hash_bucket(id));
-    if (b.index() == 0) return;
-
-    size_t num_alive = 0;
-    if (equivalent == NULL) {
-      for (size_t i=1; i<b.index(); i++) {
-        b[i].alive = true;
-      }
-      num_alive = b.index();
-    } else {
-      // first, sort on hash, backing off to loss
-      qsort(b.begin, b.index(), sizeof(elem), compare_elem);
-
-      // now, check actual equivalence
-      size_t last_pos = 0;
-      size_t last_hash = b[0].hash;
-      for (size_t i=1; i<b.index(); i++) {
-        b[i].alive = true;
-        if (b[i].hash != last_hash) {
-          last_pos = i;
-          last_hash = b[i].hash;
-        } else {
-          for (size_t j=last_pos; j<i; j++) {
-            if (b[j].alive && equivalent(b[j].s, b[i].s)) {
-              b[i].alive = false;
-              break;
-            }
-          }
-        }
-
-        if (b[i].alive) {
-          losses[num_alive] = b[i].loss;
-          num_alive++;
-        }
-      }
-    }
-
-    if (num_alive <= max_size) return;
-
-    // sort the remaining items on loss
-    float cutoff = quickselect(losses, num_alive, max_size);
-    bucket bnew = v_array<elem>();
-    for (elem*e=b.begin; e!=b.end; e++) {
-      if (e->loss > cutoff) continue;
-      push(bnew, *e);
-      num_alive--;
-      if (num_alive < 0) break;
-    }
-    dat->put_after_get(id, hash_bucket(id), bnew);
-  }
-
-
-  struct test_beam_state {
-    size_t id;
-  };
-  bool state_eq(state a,state b) { return ((test_beam_state*)a)->id == ((test_beam_state*)b)->id; }
-  size_t state_hash(state a) { return 381049*(3820+((test_beam_state*)a)->id); }
-  void expand_state(beam*b, size_t old_id, state old_state, float old_loss) {
-    test_beam_state* new_state = (test_beam_state*)calloc(1, sizeof(test_beam_state));
-    new_state->id = old_id + ((test_beam_state*)old_state)->id * 2;
-    float new_loss = old_loss + 0.5;
-    cout << "expand_state " << old_loss << " -> " << new_state->id << " , " << new_loss << endl;
-    b->put(old_id+1, new_state, new_loss);
-  }
-  void test_beam() {
-    beam*b = new beam(&state_eq, &state_hash, 5);
-    for (size_t i=0; i<25; i++) {
-      test_beam_state* s = (test_beam_state*)calloc(1, sizeof(test_beam_state));
-      s->id = i / 3;
-      b->put(0, s, 0. - (float)i);
-      cout << "added " << s->id << endl;
-    }
-    b->iterate(0, expand_state);
-  }
 }
 
 namespace Searn
@@ -892,8 +712,7 @@ namespace Searn
     all.finish = finish;
   }
 
-
-  size_t searn_predict(vw&all, state s0, size_t step, bool allow_oracle, bool allow_current)
+  size_t searn_predict(vw&all, state s0, size_t step, bool allow_oracle, bool allow_current, v_array< pair<size_t,float> >* partial_predictions)  // TODO: partial_predictions
   {
     int policy = SearnUtil::random_policy(has_hash ? task.hash(s0) : step, beta, allow_current, current_policy, allow_oracle);
     if (PRINT_DEBUG_INFO) { cerr << "predicing with policy " << policy << " (allow_oracle=" << allow_oracle << ", allow_current=" << allow_current << "), current_policy=" << current_policy << endl; }
@@ -962,7 +781,7 @@ namespace Searn
       return best_action;
     }
   }
-  
+
   void parallel_rollout(vw&all, state s0)
   {
     // first, make K copies of s0 and step them
@@ -997,7 +816,7 @@ namespace Searn
 
           if (action == 0) {  // this means we didn't find it or we're not recombining
             if( !rollout_oracle )
-              action = searn_predict(all, rollout[k-1].st, step, true, allow_current_policy);
+              action = searn_predict(all, rollout[k-1].st, step, true, allow_current_policy, NULL);
 	    else
               action = task.oracle(rollout[k-1].st);
 
@@ -1116,13 +935,56 @@ namespace Searn
   {
     int step = 1;
     while (!task.final(s0)) {
-      size_t action = searn_predict(all, s0, step, allow_oracle, allow_current);
+      size_t action = searn_predict(all, s0, step, allow_oracle, allow_current, NULL);
       if (track_actions)
         action_sequence->push_back(action);
 
       task.step(s0, action);
       step++;
     }
+  }
+  
+  struct beam_info_struct {
+    vw&all;
+    bool allow_oracle;
+    bool allow_current;
+  };
+
+  void run_prediction_beam_iter(Beam::beam*b, size_t bucket_id, state s0, float cur_loss, void*args)
+  {
+    beam_info_struct* bi = (beam_info_struct*)args;
+
+    if (task.final(s0)) return;
+
+    v_array< pair<size_t,float> > partial_predictions;
+    searn_predict(bi->all, s0, bucket_id, bi->allow_oracle, bi->allow_current, &partial_predictions);
+    for (size_t i=0; i<partial_predictions.index(); i++) {
+      state s1 = task.copy(s0);
+      float new_loss = cur_loss + partial_predictions[i].second;
+      size_t action = partial_predictions[i].first;
+      task.step( s1, action );
+      b->put( task.bucket(s1), s1, action, new_loss );
+    }
+  }
+
+  void run_prediction_beam(vw&all, size_t max_beam_size, state s0, bool allow_oracle, bool allow_current, bool track_actions, std::vector<action>* action_sequence)
+  {
+    Beam::beam *b = new Beam::beam(task.equivalent, task.hash, max_beam_size);
+
+    beam_info_struct bi = { all, allow_oracle, allow_current };
+
+    b->put(task.bucket(s0), s0, 0, 0.);
+    size_t current_bucket = 0;
+    while (true) {
+      current_bucket = b->get_next_bucket(current_bucket);
+      if (current_bucket == 0) break;
+      b->iterate(current_bucket, run_prediction_beam_iter, &bi);
+    }
+
+    if (track_actions && (action_sequence != NULL))
+      b->get_best_output(action_sequence);
+
+    delete b;
   }
 
   //  void hm_free_state_copies(state s, action a) { 
@@ -1193,7 +1055,7 @@ namespace Searn
 
       // first, make a prediction (we don't want to bias ourselves if
       // we're using the current policy to predict)
-      size_t action = searn_predict(all, s0, step, true, allow_current_policy);
+      size_t action = searn_predict(all, s0, step, true, allow_current_policy, NULL);
 
       // generate training example for the current state
       generate_state_example(all, s0);
