@@ -103,7 +103,7 @@ class io_buf {
   virtual void flush() {
     if (write_file(files[0], space.begin, space.index()) != (int) space.index())
       std::cerr << "error, failed to write example\n";
-    space.end = space.begin; fsync(files[0]); }
+    space.end = space.begin; }
 
   virtual bool close_file(){
     if(files.index()>0){
