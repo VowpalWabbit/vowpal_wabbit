@@ -6,6 +6,7 @@
 #include "simple_label.h"
 #include "cache.h"
 #include "oaa.h"
+#include "v_hashmap.h"
 
 using namespace std;
 void feature_value(substring &s, v_array<substring>& name, float &v);
@@ -297,16 +298,119 @@ namespace CSOAA_LDF {
   size_t read_example_this_loop = 0;
   bool need_to_clear = true;
 
+  bool size_t_eq(size_t a, size_t b) { return (a==b); }
+  v_hashmap< size_t, v_array<feature> > label_features(256, v_array<feature>(), size_t_eq);
+
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
+
+
+  bool ec_is_label_definition(example*ec)
+  {
+    //cerr << "[" << ((OAA::mc_label*)ec->ld)->label << " " << ((OAA::mc_label*)ec->ld)->weight << "] ";
+    if (((OAA::mc_label*)ec->ld)->weight >= 0.) return false;
+    if (ec->indices.index() == 0) return false;
+    if (ec->indices.index() >  2) return false;
+    if (ec->indices[0] != 'l') return false;
+    return true;    
+  }
+
+  bool ec_seq_is_label_definition()
+  {
+    //cerr << "ec_seq_is_label_definition: " << ec_seq.index() << endl;
+    if (ec_seq.index() == 0) return false;
+    bool is_lab = ec_is_label_definition(ec_seq[0]);
+    //cerr << "is_lab=" << is_lab << endl;
+    for (size_t i=1; i<ec_seq.index(); i++) {
+      if (is_lab != ec_is_label_definition(ec_seq[i])) {
+        if (!((i == ec_seq.index()-1) && (example_is_newline(ec_seq[i])))) {
+          cerr << "error: mixed label definition and examples in ldf data! " << i << "/" << ec_seq.index() << ", isnl=" << example_is_newline(ec_seq[i]) << endl;
+          exit(-1);
+        }
+      }
+    }
+    //cerr << "is_lab=" << is_lab << endl << endl;
+    return is_lab;
+  }
+
+  size_t add_example_namespace(example*ec) {
+    size_t lab = ((OAA::mc_label*)ec->ld)->label;
+    size_t lab_hash = 328051 + 94389193 * lab;
+    v_array<feature> features = label_features.get(lab, lab_hash);
+    if (features.index() == 0) return 0;
+
+    bool has_l = false;
+    for (size_t i=0; i<ec->indices.index(); i++) {
+      if (ec->indices[i] == 'l') {
+        has_l = true;
+        break;
+      }
+    }
+    size_t original_index = 0;
+    if (has_l) {
+      original_index = ec->atomics['l'].index();
+      ec->total_sum_feat_sq -= ec->sum_feat_sq['l'];
+    } else {
+      push(ec->indices, (size_t)'l');
+    }
+
+    for (feature*f=features.begin; f!=features.end; f++) {
+      ec->sum_feat_sq['l'] += f->x * f->x;
+      push(ec->atomics['l'], *f);
+    }
+
+    ec->num_features += features.index();
+    ec->total_sum_feat_sq += ec->sum_feat_sq['l'];
+    return original_index;
+  }
+
+  void del_example_namespace(example* ec, size_t original_index) {
+    size_t lab = ((OAA::mc_label*)ec->ld)->label;
+    size_t lab_hash = 328051 + 94389193 * lab;
+    v_array<feature> features = label_features.get(lab, lab_hash);
+    if (features.index() == 0) return;
+
+    if (original_index == 0) {
+      ec->num_features -= features.index();
+      for (feature*f=features.begin; f!=features.end; f++) {
+        ec->sum_feat_sq['l'] -= f->x * f->x;
+        ec->atomics['l'].pop();
+      }
+    } else {
+      ec->atomics->pop();
+      ec->num_features -= features.index();
+      ec->total_sum_feat_sq -= ec->sum_feat_sq['l'];
+      ec->atomics['l'].erase();
+    }
+  }
 
   void do_actual_learning(vw& all)
   {
     if (ec_seq.index() <= 0) return;  // nothing to do
 
+    if (ec_seq_is_label_definition()) {
+      for (size_t i=0; i<ec_seq.index(); i++) {
+        size_t lab = ((OAA::mc_label*)ec_seq[i]->ld)->label;
+        size_t lab_hash = 328051 + 94389193 * lab;
+        v_array<feature> features;
+        for (feature*f=ec_seq[i]->atomics[ec_seq[i]->indices[0]].begin; f!=ec_seq[i]->atomics[ec_seq[i]->indices[0]].end; f++) {
+          feature fnew = { f->x,  f->weight_index };
+          push(features, fnew);
+        }
+        if (label_features.contains(lab, lab_hash)) {
+          v_array<feature> features2 = label_features.get(lab, lab_hash);
+          features2.erase();
+          free(features2.begin);
+        }
+        label_features.put_after_get(lab, lab_hash, features);
+      }
+      return;
+    }
+
     int K = ec_seq.index();
     float min_cost = FLT_MAX;
     v_array<float> predictions = v_array<float>();
+    v_array<size_t> ns_positions = v_array<size_t>();
     float min_score = FLT_MAX;
     size_t prediction = 0;
     float prediction_cost = 0.;
@@ -327,6 +431,8 @@ namespace CSOAA_LDF {
         isTest = true;
         cerr << "warning: csoaa_ldf got mix of train/test data; assuming test" << endl;
       }
+
+      push(ns_positions, add_example_namespace(ec));
 
       ec->ld = &simple_label;
       base_learner(&all, ec); // make a prediction
@@ -361,19 +467,22 @@ namespace CSOAA_LDF {
       
         // restore label
         ec->ld = ld;
+
+        del_example_namespace(ec, ns_positions[k]);
       }
     }
-    predictions.erase();
-    free(predictions.begin);
+    predictions.erase(); free(predictions.begin);
+    ns_positions.erase(); free(ns_positions.begin);
   }
 
   void output_example(vw& all, example* ec)
   {
     if (example_is_newline(ec)) 
       return;
+    if (ec_is_label_definition(ec))
+      return;
 
     label* ld = (label*)ec->ld;
-    all.sd->weighted_examples += 1;
     all.sd->total_features += ec->num_features;
     float loss = 0.;
     
@@ -381,12 +490,12 @@ namespace CSOAA_LDF {
 
     if (!example_is_test(ec) && (final_pred == 1))
       loss = ld->weight;
+
     //    cerr << "ex eit=" << example_is_test(ec) << " pred=" << final_pred << "/" << (ec->final_prediction >= 0.999) << " weight=" << ld->weight << " loss=" << loss << endl;
+
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   
-    all.sd->example_number++;
-
     for (size_t i = 0; i<all.final_prediction_sink.index(); i++) {
       int f = all.final_prediction_sink[i];
       all.print(f, *(OAA::prediction_t*)&ec->final_prediction, 0, ec->tag);
@@ -397,13 +506,18 @@ namespace CSOAA_LDF {
 
   void output_example_seq(vw& all)
   {
-    if (ec_seq.index() > 0) 
+    if ((ec_seq.index() > 0) && !ec_seq_is_label_definition()) {
+      all.sd->weighted_examples += 1;
+      all.sd->example_number++;
+
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++)
         output_example(all, *ecc);
+    }
   }
 
   void clear_seq(vw& all)
   {
+    //cerr << "clear_seq" << endl;
     if (ec_seq.index() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++)
         VW::finish_example(all, *ecc);
@@ -425,6 +539,7 @@ namespace CSOAA_LDF {
     }
 
     if (example_is_newline(ec)) {
+      //cerr << "ein" << endl;
       do_actual_learning(*all);
       global_print_newline(*all);
       push(ec_seq, ec);
@@ -438,6 +553,15 @@ namespace CSOAA_LDF {
   {
     vw* all = (vw*)a;
     base_finish(all);
+
+    void* label_iter = label_features.iterator();
+    while (label_iter != NULL) {
+      v_array<feature> features = label_features.iterator_get_value(label_iter);
+      features.erase();
+      free(features.begin);
+
+      label_iter = label_features.iterator_next(label_iter);
+    }
   }
 
   void drive_csoaa_ldf(void* in)
@@ -448,7 +572,9 @@ namespace CSOAA_LDF {
     need_to_clear = false;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+        //cerr << "learn" << endl;
         learn(all, ec);
+        //cerr << "ntc=" << need_to_clear << endl;
         if (need_to_clear) {
           output_example_seq(*all);
           clear_seq(*all);
@@ -457,7 +583,6 @@ namespace CSOAA_LDF {
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
         output_example_seq(*all);
-        //finish(all);
         clear_seq(*all);
         if (ec_seq.begin != NULL)
           free(ec_seq.begin);

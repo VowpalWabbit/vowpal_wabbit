@@ -34,7 +34,7 @@ namespace OAA {
   float weight(void* v)
   {
     mc_label* ld = (mc_label*) v;
-    return ld->weight;
+    return (ld->weight > 0) ? ld->weight : 0.;
   }
 
   float initial(void* v)
