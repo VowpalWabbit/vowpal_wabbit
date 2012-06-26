@@ -361,14 +361,14 @@ namespace WAP_LDF {
     float max_score = -FLT_MAX;
     size_t prediction = 0;
     float prediction_cost = 0.;
-    bool isTest = CSOAA_LDF::example_is_test(*ec_seq.begin);
+    bool isTest = OAA::example_is_test(*ec_seq.begin);
     for (int k=0; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
 
       if (ld->weight < min_cost) 
         min_cost = ld->weight;
-      if (CSOAA_LDF::example_is_test(ec) != isTest) {
+      if (OAA::example_is_test(ec) != isTest) {
         isTest = true;
         cerr << "warning: wap_ldf got mix of train/test data; assuming test" << endl;
       }
@@ -454,7 +454,7 @@ namespace WAP_LDF {
       need_to_clear = false;
     }
 
-    if (CSOAA_LDF::example_is_newline(ec)) {
+    if (OAA::example_is_newline(ec)) {
       do_actual_learning(*all);
       CSOAA_LDF::global_print_newline(*all);
       push(ec_seq, ec);

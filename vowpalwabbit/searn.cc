@@ -1230,7 +1230,7 @@ namespace Searn
         clear_seq(all);
       }
 
-      if (CSOAA_LDF::example_is_newline(ec)) {
+      if (OAA::example_is_newline(ec)) {
         do_actual_learning(all);
         clear_seq(all);
         //CSOAA_LDF::global_print_newline(all);

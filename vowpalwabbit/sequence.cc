@@ -1120,7 +1120,7 @@ namespace Sequence {
     bool any_test  = false;
 
     for (example **ec = ec_seq.begin; ec != ec_seq.end; ec++)
-      if (CSOAA_LDF::example_is_test(*ec)) { any_test = true; }
+      if (OAA::example_is_test(*ec)) { any_test = true; }
       else { any_train = true; }
 
     if (any_train && any_test)
@@ -1161,7 +1161,7 @@ namespace Sequence {
       clear_seq(*all);
     }
 
-    if (CSOAA_LDF::example_is_newline(ec)) {
+    if (OAA::example_is_newline(ec)) {
       do_actual_learning(*all);
       clear_seq(*all);
       CSOAA_LDF::global_print_newline(*all);

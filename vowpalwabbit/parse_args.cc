@@ -63,8 +63,8 @@ vw parse_args(int argc, char *argv[])
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
-    ("csoaa_ldf", "Use one-against-all multiclass learning with label dependent features")
-    ("wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features")
+    ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
+    ("wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&all.l1_lambda), "l_1 lambda")
     ("l2", po::value<float>(&all.l2_lambda), "l_2 lambda")
@@ -542,7 +542,7 @@ vw parse_args(int argc, char *argv[])
 
   if(vm.count("csoaa_ldf") || (all.searn && all.searn_base_learner.compare("csoaa_ldf") == 0)) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    CSOAA_LDF::parse_flags(all, to_pass_further, vm, 0);
+    CSOAA_LDF::parse_flags(all, vm["csoaa_ldf"].as<string>(), to_pass_further, vm, 0);
     got_cs = true;
     all.searn_base_learner = "csoaa_ldf";
   }

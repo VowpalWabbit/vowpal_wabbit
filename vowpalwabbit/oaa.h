@@ -6,6 +6,7 @@
 #include "global_data.h"
 #include "example.h"
 #include "parse_args.h"
+#include "v_hashmap.h"
 
 namespace OAA
 {
@@ -32,6 +33,21 @@ namespace OAA
 					sizeof(mc_label)};
   
   void output_example(vw& all, example* ec);
+
+  inline int example_is_newline(example* ec)
+  {
+    // if only index is constant namespace or no index
+    return ((ec->indices.index() == 0) || 
+            ((ec->indices.index() == 1) &&
+             (ec->indices.last() == constant_namespace)));
+  }
+
+  inline int example_is_test(example* ec)
+  {
+    return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
+  }
+
+
 }
 
 #endif

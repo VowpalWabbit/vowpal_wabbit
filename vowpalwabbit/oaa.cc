@@ -5,6 +5,7 @@
 #include "oaa.h"
 #include "simple_label.h"
 #include "cache.h"
+#include "v_hashmap.h"
 
 using namespace std;
 
@@ -149,6 +150,7 @@ namespace OAA {
   void learn(void*a, example* ec)
   {
     vw* all = (vw*)a;
+
     mc_label* mc_label_data = (mc_label*)ec->ld;
     size_t prediction = 1;
     float score = INT_MIN;
