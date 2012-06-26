@@ -21,6 +21,7 @@ private:
   vector<feature>*current_ns;
   char str[2];
   bool pass_empty;
+  string mylabel;
 
 public:
 
@@ -31,6 +32,7 @@ public:
     current_ns = NULL;
     str[0] = ' '; str[1] = 0;
     pass_empty = pe;
+    mylabel = "";
   }
 
   ezexample(vw*this_vw) { ezexample(this_vw, false); }
@@ -81,8 +83,12 @@ public:
   inline fid addf(string fstr           ) { return addf(hash(fstr), 1.0); }
 
   float predict() {
-    static example* empty_example = VW::read_example(*vw_ref, "| ");
+    static example* empty_example = VW::read_example(*vw_ref, (char*)"| ");
     example *ec = VW::import_example(*vw_ref, *dat);
+
+    if (mylabel.length() > 0)
+      VW::parse_example_label(*vw_ref, *ec, mylabel);
+
     vw_ref->learn(vw_ref, ec);
     if (pass_empty)
       vw_ref->learn(vw_ref, empty_example);
@@ -90,6 +96,8 @@ public:
     VW::finish_example(*vw_ref, ec);
     return pred;
   }
+
+  inline ezexample set_label(string label) { mylabel = label; return *this; }
 
   inline float     operator()() { return predict(); }
 
