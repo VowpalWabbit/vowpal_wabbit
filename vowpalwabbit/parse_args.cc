@@ -24,6 +24,7 @@ embodied in the content of this file are licensed under the BSD
 #include "lda_core.h"
 #include "noop.h"
 #include "gd_mf.h"
+#include "rl.h"
 
 using namespace std;
 //
@@ -94,6 +95,7 @@ vw parse_args(int argc, char *argv[])
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
+    ("oprl", po::value<double>(), "Learn expected future discounted reward with off-policy reinforcement learning. Use <gamma> future discount.")
     //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
     ("output_feature_regularizer_binary", po::value< string >(&all.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&all.per_feature_regularizer_text), "Per feature regularization output file, in text")
@@ -118,7 +120,6 @@ vw parse_args(int argc, char *argv[])
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
-
     ("unique_id", po::value<size_t>(&all.unique_id),"unique id used for cluster parallel jobs")
     ("total", po::value<size_t>(&all.total),"total number of nodes used in cluster parallel job")    
     ("node", po::value<size_t>(&all.node),"node number in cluster parallel job")    
@@ -494,6 +495,11 @@ vw parse_args(int argc, char *argv[])
 
   bool got_mc = false;
   bool got_cs = false;
+
+  if(vm.count("oprl")) {
+    if (got_mc) { cerr << "error: cannot specify MC learner with OPRL" << endl; exit(-1); }
+    RL::parse_flags(all, to_pass_further, vm, vm["oprl"].as<double>());
+  }
 
   if(vm.count("oaa")) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
