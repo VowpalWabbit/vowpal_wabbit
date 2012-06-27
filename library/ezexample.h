@@ -22,10 +22,12 @@ private:
   char str[2];
   bool pass_empty;
   string mylabel;
+  ezexample(const ezexample & ex);
+  ezexample & operator=(const ezexample & ex);
 
 public:
 
-  ezexample(vw*this_vw, bool pe) { 
+  ezexample(vw*this_vw, bool pe=false) { 
     dat = new vector<VW::feature_space>();
     vw_ref = this_vw;
     current_seed = 0;
@@ -35,7 +37,10 @@ public:
     mylabel = "";
   }
 
-  ezexample(vw*this_vw) { ezexample(this_vw, false); }
+  ~ezexample() {
+    if (dat != NULL)
+      delete dat;
+  }
 
   void addns(char c) {
     str[0] = c;
@@ -97,21 +102,17 @@ public:
     return pred;
   }
 
-  inline ezexample set_label(string label) { mylabel = label; return *this; }
+  inline ezexample& set_label(string label) { mylabel = label; return *this; }
+  inline ezexample& operator()(fid         fint           ) { addf(fint, 1.0); return *this; }
+  inline ezexample& operator()(string      fstr           ) { addf(fstr, 1.0); return *this; }
+  inline ezexample& operator()(const char* fstr           ) { addf(fstr, 1.0); return *this; }
+  inline ezexample& operator()(fid         fint, float val) { addf(fint, val); return *this; }
+  inline ezexample& operator()(string      fstr, float val) { addf(fstr, val); return *this; }
+  inline ezexample& operator()(const char* fstr, float val) { addf(fstr, val); return *this; }
+  inline ezexample& operator()(const vw_namespace&n) { addns(n.namespace_letter); return *this; }
+  inline ezexample& operator--() { remns(); return *this; }
+  inline float      operator()() { return predict(); }
 
-  inline float     operator()() { return predict(); }
-
-  inline ezexample operator()(fid         fint           ) { addf(fint, 1.0); return *this; }
-  inline ezexample operator()(string      fstr           ) { addf(fstr, 1.0); return *this; }
-  inline ezexample operator()(const char* fstr           ) { addf(fstr, 1.0); return *this; }
-  inline ezexample operator()(fid         fint, float val) { addf(fint, val); return *this; }
-  inline ezexample operator()(string      fstr, float val) { addf(fstr, val); return *this; }
-  inline ezexample operator()(const char* fstr, float val) { addf(fstr, val); return *this; }
-
-  //inline ezexample operator()(const char c               ) { addns(c); return *this; }
-  inline ezexample operator()(const vw_namespace&n) { addns(n.namespace_letter); return *this; }
-
-  inline ezexample operator--() { remns(); return *this; }
 
   void print() {
     cerr << "ezexample dat->size=" << dat->size() << ", current_seed=" << current_seed << endl;

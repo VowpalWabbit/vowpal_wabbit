@@ -27,6 +27,7 @@ namespace CSOAA {
   char* bufread_label(label* ld, char* c, io_buf& cache)
   {
     uint32_t num = *(uint32_t *)c;
+    ld->costs.erase();
     c += sizeof(uint32_t);
     size_t total = sizeof(wclass)*num;
     if (buf_read(cache, c, total) < total) 
@@ -47,6 +48,7 @@ namespace CSOAA {
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
     label* ld = (label*) v;
+    ld->costs.erase();
     char *c;
     size_t total = sizeof(uint32_t);
     if (buf_read(cache, c, total) < total) 
@@ -105,6 +107,7 @@ namespace CSOAA {
   {
     label* ld = (label*)v;
 
+    ld->costs.erase();
     for (size_t i = 0; i < words.index(); i++)
       {
         wclass f;
@@ -341,7 +344,7 @@ namespace CSOAA_LDF {
     size_t prediction = 0;
     float prediction_cost = 0.;
     bool isTest = CSOAA::example_is_test(*ec_seq.begin);
-    //cerr<< "csoaa_ldf.learn isTest=" << isTest << ", K=" << K << endl;
+    //cerr<< "csoaa_ldf.learn isTest=" << isTest << ", K=" << K << ", pass=" << ec_seq.begin[0]->pass <<endl;
     for (int k=0; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
@@ -361,7 +364,9 @@ namespace CSOAA_LDF {
           min_cost = costs[j].x;
         ec->partial_prediction = 0.;
 
+        //cerr<< "add_example_namespace " << costs[j].weight_index << ":" << costs[j].x << " oldlen=" << ec->indices.index() << "/" << ec->atomics['l'].index();
         size_t orig_pos = LabelDict::add_example_namespace(ec, costs[j].weight_index);
+        //cerr<< " orig_pos=" << orig_pos<< " newlen=" << ec->indices.index() << "/" << ec->atomics['l'].index();
 
         ec->ld = &simple_label;
         base_learner(&all, ec); // make a prediction
@@ -374,7 +379,9 @@ namespace CSOAA_LDF {
           prediction_cost = costs[j].x;
         }
 
+        //cerr<< " predellen=" << ec->indices.index() << "/" << ec->atomics['l'].index();
         LabelDict::del_example_namespace(ec, costs[j].weight_index, orig_pos);
+        //cerr<< " postdellen=" << ec->indices.index() << "/" << ec->atomics['l'].index()<<endl;
       }
 
       ec->ld = ld;
@@ -417,13 +424,14 @@ namespace CSOAA_LDF {
   void output_example(vw& all, example* ec)
   {
     //cerr<<"output_example"<<endl;
+    label* ld = (label*)ec->ld;
+    v_array<CSOAA::wclass> costs = ld->costs;
+
     if (OAA::example_is_newline(ec)) 
       return;
     if (LabelDict::ec_is_label_definition(ec))
       return;
 
-    label* ld = (label*)ec->ld;
-    v_array<CSOAA::wclass> costs = ld->costs;
     all.sd->total_features += ec->num_features;
 
     float loss = 0.;
@@ -431,13 +439,15 @@ namespace CSOAA_LDF {
     //cerr<<"final_prediction="<<final_pred<<endl;;
 
     if (!CSOAA::example_is_test(ec)) {
-      for (size_t j=0; j<costs.index(); j++)
+      for (size_t j=0; j<costs.index(); j++) {
         if (final_pred == costs[j].weight_index)
           loss = costs[j].x;
+      }
 
     //    cerr << "ex eit=" << example_is_test(ec) << " pred=" << final_pred << "/" << (ec->final_prediction >= 0.999) << " weight=" << ld->weight << " loss=" << loss << endl;
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
+      assert(loss >= 0);
     }
   
     for (size_t i = 0; i<all.final_prediction_sink.index(); i++) {
@@ -494,9 +504,10 @@ namespace CSOAA_LDF {
   }
 
   void learn_singleline(vw*all, example*ec) {
+    ec_seq.erase();
     push(ec_seq, ec);
     do_actual_learning(*all);
-    ec_seq.pop();
+    ec_seq.erase();
   }
 
   void learn(void*a, example*ec) {
@@ -516,6 +527,9 @@ namespace CSOAA_LDF {
     example* ec = NULL;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { //semiblocking operation.
+        v_array<CSOAA::wclass> costs = ((label*)ec->ld)->costs;
+        //cerr<<"weights ="; for (size_t j=0; j<costs.index(); j++) //cerr<<" " << costs[j].weight_index << ":"<<costs[j].x; //cerr<<endl;
+
         learn_singleline(all, ec);
         if (! LabelDict::ec_is_label_definition(ec)) {
           all->sd->weighted_examples += 1;
@@ -677,27 +691,28 @@ namespace LabelDict {
     v_array<feature> features = label_features.get(lab, lab_hash);
     if (features.index() == 0) return;
 
-    if (original_index == 0) {
-      ec->num_features -= features.index();
+    ec->num_features -= features.index();
+
+    if (original_index == 0) {  // did NOT have "l"
+      assert(ec->indices.index() > 0);
+      ec->indices.pop();
+      ec->total_sum_feat_sq -= ec->sum_feat_sq['l'];
+      ec->atomics['l'].erase();
+    } else { // DID have "l"
       for (feature*f=features.begin; f!=features.end; f++) {
         ec->sum_feat_sq['l'] -= f->x * f->x;
         ec->atomics['l'].pop();
       }
-    } else {
-      ec->atomics->pop();
-      ec->num_features -= features.index();
-      ec->total_sum_feat_sq -= ec->sum_feat_sq['l'];
-      ec->atomics['l'].erase();
     }
   }
 
   void set_label_features(size_t lab, v_array<feature>features) {
     size_t lab_hash = hash_lab(lab);
-    if (label_features.contains(lab, lab_hash)) {
-      v_array<feature> features2 = label_features.get(lab, lab_hash);
+    if (label_features.contains(lab, lab_hash)) { return; }
+    /*      v_array<feature> features2 = label_features.get(lab, lab_hash);
       features2.erase();
       free(features2.begin);
-    }
+      } */
     label_features.put_after_get(lab, lab_hash, features);
   }
 

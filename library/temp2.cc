@@ -26,14 +26,22 @@ int main(int argc, char *argv[])
     ("p^le_homme")
     ("w^le")
     ("w^homme");
-  cerr << "p_good = " << ex() << endl;
+  cerr << "should be near zero = " << ex() << endl;
 
   --ex;   // remove the most recent namespace
   ex(vw_namespace('t'))
     ("p^un_homme")
     ("w^un")
     ("w^homme");
-  cerr << "p_bad = " << ex() << endl;
+  cerr << "should be near one  = " << ex() << endl;
+
+  // AND FINISH UP
+  vw.finish(&vw);
+}
+
+  /*
+
+  */
 
   /*
   // JOHN'S CLUNKY INTERFACE USING STRINGS
@@ -65,7 +73,3 @@ int main(int argc, char *argv[])
   cerr << "p3 = " << vec3->final_prediction << endl;
   VW::finish_example(vw, vec3);
 */
-
-  // AND FINISH UP
-  vw.finish(&vw);
-}
