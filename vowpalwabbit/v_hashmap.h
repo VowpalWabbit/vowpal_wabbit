@@ -9,7 +9,8 @@
 
 template<class K, class V> class v_hashmap{
  public:
-  struct elem {
+
+  struct hash_elem {
     bool   occupied;
     K      key;
     V      val;
@@ -19,7 +20,7 @@ template<class K, class V> class v_hashmap{
   bool (*equivalent)(K,K);
   //  size_t (*hash)(K);
   V default_value;
-  v_array<elem> dat;
+  v_array<hash_elem> dat;
   size_t last_position;
   size_t num_occupants;
 
@@ -29,7 +30,7 @@ template<class K, class V> class v_hashmap{
   }
 
   v_hashmap(size_t min_size, V def, bool (*eq)(K,K)) {
-    dat = v_array<elem>();
+    dat = v_array<hash_elem>();
     if (min_size < 1023) min_size = 1023;
     reserve(dat, min_size); // reserve sets to 0 ==> occupied=false
 
@@ -49,7 +50,7 @@ template<class K, class V> class v_hashmap{
   }
 
   void clear() {
-    memset(dat.begin, 0, base_size()*sizeof(elem));
+    memset(dat.begin, 0, base_size()*sizeof(hash_elem));
     last_position = 0;
     num_occupants = 0;
   }
@@ -83,8 +84,8 @@ template<class K, class V> class v_hashmap{
 
   void iter(void (*func)(K,V)) {
     //for (size_t lp=0; lp<base_size(); lp++) {
-    for (elem* e=dat.begin; e!=dat.end_array; e++) {
-      //elem* e = dat.begin+lp;
+    for (hash_elem* e=dat.begin; e!=dat.end_array; e++) {
+      //hash_elem* e = dat.begin+lp;
       if (e->occupied) {
         //printf("  [lp=%d\tocc=%d\thash=%zu]\n", lp, e->occupied, e->hash);
         func(e->key, e->val);
@@ -103,18 +104,18 @@ template<class K, class V> class v_hashmap{
   void double_size() {
     //    printf("doubling size!\n");
     // remember the old occupants
-    v_array<elem>tmp = v_array<elem>();
+    v_array<hash_elem>tmp = v_array<hash_elem>();
     reserve(tmp, num_occupants+10);
-    for (elem* e=dat.begin; e!=dat.end_array; e++)
+    for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
       if (e->occupied)
         push(tmp, *e);
     
     // double the size and clear
     reserve(dat, base_size()*2);
-    memset(dat.begin, 0, base_size()*sizeof(elem));
+    memset(dat.begin, 0, base_size()*sizeof(hash_elem));
 
     // re-insert occupants
-    for (elem* e=tmp.begin; e!=tmp.end; e++) {
+    for (hash_elem* e=tmp.begin; e!=tmp.end; e++) {
       get(e->key, e->hash);
       //      std::cerr << "reinserting " << e->key << " at " << last_position << std::endl;
       put_after_get_nogrow(e->key, e->hash, e->val);

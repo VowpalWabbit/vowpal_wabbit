@@ -9,6 +9,7 @@ embodied in the content of this file are licensed under the BSD
 
 #include<iostream>
 #include <stdint.h>
+#include <math.h>
 #include "v_array.h"
 #include "io.h"
 #include "example.h"
@@ -100,10 +101,62 @@ inline void print_substring(substring s)
   std::cout.write(s.begin,s.end - s.begin);
 }
 
+// The following function is a home made strtof. The
+// differences are :
+//  - much faster (around 50% but depends on the string to parse)
+//  - less error control, but utilised inside a very strict parser
+//    in charge of error detection.
+inline float parseFloat(char * p, char **end)
+{
+  char* start = p;
+
+  if (!*p)
+    return 0;
+  int s = 1;
+  while (*p == ' ') p++;
+  
+  if (*p == '-') {
+    s = -1; p++;
+  }
+  
+  double acc = 0;
+  while (*p >= '0' && *p <= '9')
+    acc = acc * 10 + *p++ - '0';
+  
+  int num_dec = 0;
+  if (*p == '.') {
+    p++;
+    while (*p >= '0' && *p <= '9') {
+      acc = acc *10 + (*p++ - '0') ;
+      num_dec++;
+    }
+  }
+  int exp_acc = 0;
+  if(*p == 'e' || *p == 'E'){
+    p++;
+    int exp_s = 1;
+    if (*p == '-') {
+      exp_s = -1; p++;
+    }
+    while (*p >= '0' && *p <= '9')
+      exp_acc = exp_acc * 10 + *p++ - '0';
+    exp_acc *= exp_s;
+    
+  }
+  if (*p == ' ')//easy case succeeded.
+    {
+      acc *= pow(10,exp_acc-num_dec);
+      *end = p;
+      return s * acc;
+    }
+  else
+    return strtof(start,end);
+}
+
 inline float float_of_substring(substring s)
 {
   char* endptr = s.end;
-  float f = strtof(s.begin,&endptr);
+  float f = parseFloat(s.begin,&endptr);
   if (endptr == s.begin && s.begin != s.end)
     {
       std::cout << "error: " << std::string(s.begin, s.end-s.begin).c_str() << " is not a float" << std::endl;
@@ -112,31 +165,9 @@ inline float float_of_substring(substring s)
   return f;
 }
 
-inline float double_of_substring(substring s)
-{
-  char* endptr = s.end;
-  float f = strtod(s.begin,&endptr);
-  if (endptr == s.begin && s.begin != s.end)
-    {
-      std::cout << "error: " << std::string(s.begin, s.end-s.begin).c_str() << " is not a double" << std::endl;
-      f = 0;
-    }
-  return f;
-}
-
 inline int int_of_substring(substring s)
 {
   return atoi(std::string(s.begin, s.end-s.begin).c_str());
-}
-
-inline unsigned long ulong_of_substring(substring s)
-{
-  return strtoul(std::string(s.begin, s.end-s.begin).c_str(),NULL,10);
-}
-
-inline unsigned long ss_length(substring s)
-{
-  return (s.end - s.begin);
 }
 
 #endif

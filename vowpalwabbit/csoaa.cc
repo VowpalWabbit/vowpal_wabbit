@@ -9,10 +9,35 @@
 #include "v_hashmap.h"
 
 using namespace std;
-void feature_value(substring &s, v_array<substring>& name, float &v);
 size_t hashstring (substring s, unsigned long h);
 
 namespace CSOAA {
+
+  void name_value(substring &s, v_array<substring>& name, float &v)
+  {
+    tokenize(':', s, name);
+    
+    switch (name.index()) {
+    case 0:
+    case 1:
+      v = 1.;
+      break;
+    case 2:
+      v = float_of_substring(name[1]);
+      if ( isnan(v))
+	{
+	  cerr << "error NaN value for: ";
+	  cerr.write(name[0].begin, name[0].end - name[0].begin);
+	  cerr << " terminating." << endl;
+	  exit(1);
+	}
+      break;
+    default:
+      cerr << "example with a wierd name.  What is ";
+      cerr.write(s.begin, s.end - s.begin);
+      cerr << "\n";
+    }
+  }
 
   bool is_test_label(label* ld)
   {
@@ -110,8 +135,8 @@ namespace CSOAA {
     ld->costs.erase();
     for (size_t i = 0; i < words.index(); i++)
       {
-        wclass f;
-        feature_value(words[i], name, f.x);
+        wclass f = {0.,0,0.};
+        name_value(words[i], name, f.x);
       
         f.weight_index = 0;
         if (name.index() == 1 || name.index() == 2)
