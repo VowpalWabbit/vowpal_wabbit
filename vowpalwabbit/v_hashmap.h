@@ -56,7 +56,7 @@ template<class K, class V> class v_hashmap{
   }
 
   void* iterator_next(void* prev) {
-    elem* e = (elem*)prev;
+    hash_elem* e = (hash_elem*)prev;
     if (e == NULL) return NULL;
     e++;
     while (e != dat.end_array) {
@@ -68,7 +68,7 @@ template<class K, class V> class v_hashmap{
   }
 
   void* iterator() {
-    elem* e = dat.begin;
+    hash_elem* e = dat.begin;
     while (e != dat.end_array) {
       if (e->occupied)
         return e;
@@ -78,7 +78,7 @@ template<class K, class V> class v_hashmap{
   }
 
   V iterator_get_value(void* el) {
-    elem* e = (elem*)el;
+    hash_elem* e = (hash_elem*)el;
     return e->val;
   }
 
