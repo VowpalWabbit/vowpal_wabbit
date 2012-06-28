@@ -483,10 +483,20 @@ namespace CSOAA_LDF {
       assert(loss >= 0);
     }
   
-    for (size_t i = 0; i<all.final_prediction_sink.index(); i++) {
-      int f = all.final_prediction_sink[i];
-      all.print(f, *(OAA::prediction_t*)&ec->final_prediction, 0, ec->tag);
+    for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+      all.print(*sink, *(OAA::prediction_t*)&(ec->final_prediction), 0, ec->tag);
+
+    if (all.raw_prediction > 0) {
+      string outputString;
+      stringstream outputStringStream(outputString);
+      for (size_t i = 0; i < costs.index(); i++) {
+        if (i > 0) outputStringStream << ' ';
+        outputStringStream << costs[i].weight_index << ':' << costs[i].partial_prediction;
+      }
+      outputStringStream << endl;
+      all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
     }
+    
 
     //cerr<<"print_update"<<endl;
     CSOAA::print_update(all, CSOAA::example_is_test(ec), ec);
