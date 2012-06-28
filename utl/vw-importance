@@ -1,0 +1,333 @@
+#!/usr/bin/perl -w
+#
+# vim: sw=4 ts=4 expandtab smarttab
+#
+# vw-importance:    Determine and print feature importance using VW
+#   Input:            A vw training set file
+#   Output:           A list of features and their relative importance
+#
+# Algorithm:
+#   1)  Collect all variables and their ranges from training-set
+#   2)  Train with VW to determine weights
+#   3)  Build a test-set with a single example including all variables
+#   4)  run VW with --audit on 3) to map variable names to hash values
+#       and weights.
+#   5)  Output results in relative importance order
+#
+# (c) 2012 - ariel faigon for vowpal-wabbit
+# This software may be distributed under the same terms as vowpal-wabbit
+#
+use Getopt::Std;
+use vars (qw($opt_v $opt_V $opt_P $opt_O $opt_k));
+
+my $VW = 'vw';
+my $VWARGS = '--exact_adaptive_norm --sort_features';
+
+my ($TrainSet, $Model, $FullExample, $AuditFile);
+my (%FeatureMax, %FeatureMin);
+
+my (%Feature2Hash, %Feature2Weight);
+
+my %NameSpace;      # hash of hashes: namespace => { key => val }...
+my @Features;       # feature names
+
+my @TmpFiles;
+
+sub v(@) {
+    return unless $opt_v;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+sub V(@) {
+    return unless $opt_V;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+sub usage(@) {
+    print STDERR @_, "\n" if (@_);
+    die "Usage: $0 [options] <training-set-file>
+    Options:
+        -v          verbose
+        -V          more verbose
+        -k          keep temporary files
+        -P<Opts>    Pass-through <Opts> as-is to the vw training step
+        -I<which>   Use importance metric <which>
+                    Supported metrics:
+                        ... not implemented yet ...
+";
+}
+
+sub get_args {
+    $0 =~ s{.*/}{};
+
+    getopts('VvkP:I:');
+    $opt_v = 1 if ($opt_V);
+    $opt_I = '' unless (defined $opt_I);
+
+    foreach my $arg (@ARGV) {
+        if (-f $arg) {
+            $TrainSet = $arg;
+            next;
+        }
+    }
+    usage("You must supply a training-set file")
+        unless (defined $TrainSet);
+
+    usage("training-set file: $TrainSet: $!")
+        unless (-f $TrainSet);
+
+    if ($opt_P) {
+        $VWARGS = $opt_P;
+    }
+    $Model = "$TrainSet.model";
+    $FullExample = "$TrainSet.full-example";
+    $AuditFile = "$TrainSet.audit";
+
+    @TmpFiles = ($Model, $FullExample, $AuditFile);
+}
+
+sub cleanup {
+    if ($opt_k) {
+        v("keeping temporary files: @TmpFiles\n");
+        return;
+    }
+    foreach my $tmpfile (@TmpFiles) {
+        unlink($tmpfile);
+    }
+}
+
+
+#
+# symbolic full feature (name-space + feature-name) as used by --audit
+#
+sub feature_name($$) {
+    my ($ns, $key) = @_;
+    "$ns^$key";
+}
+
+sub read_features($) {
+    my ($trainset) = @_;
+
+    my $ts;
+    if ($trainset =~ /\.gz$/) {
+        open($ts, "zcat $trainset|") || die "$0: zcat $trainset|: $!\n";
+    } else {
+        open($ts, $trainset) || die "$0: $trainset: $!\n";
+    }
+    while (<$ts>) {
+        # -- examples loop
+        # -- grab anything following the 1st '|'
+        my ($input_features) = ($_ =~ /^[^|]+\|(.*)$/);
+        my @name_space_region = split('\|', $input_features);
+        foreach my $nsr (@name_space_region) {
+            # -- name-spaces loop
+            my ($ns) = ($nsr =~ /^(\S+)/);
+            $ns = '' unless ((defined $ns) && length($ns));
+            unless (exists $NameSpaces{$ns}) {
+                $NameSpaces{$ns} = {};
+            }
+            my $nsref = $NameSpaces{$ns};
+
+            $nsr =~ s/^$ns\s*//;
+            foreach my $keyval (split(/\s+/, $nsr)) {
+                # -- features loop
+                my ($key, $val);
+                if ($keyval =~ /:/) {
+                    ($key, $val) = ($`, $');
+                } else {
+                    $key = $keyval;
+                    $val = 1;
+                }
+                $nsref->{$key} = $val;
+
+                my $f = feature_name($ns, $key);
+
+                # -- record min, max per feature
+                #    not used currently, possibly in the future
+                unless (exists $FeatureMax{$f}) {
+                    $FeatureMax{$f} = 0;
+                    $FeatureMin{$f} = 0;
+                }
+                if ($FeatureMax{$f} < $val) {
+                    $FeatureMax{$f} = $val;
+                }
+                if ($FeatureMin{$f} > $val) {
+                    $FeatureMin{$f} = $val;
+                }
+            }
+        }
+    }
+    close $ts;
+    # return the list of feature names, add the Constant
+    sort (keys %FeatureMax, 'Constant');
+}
+
+#
+# do_train
+#   run the training stage to compute per feature weights
+#
+sub do_train($$;$) {
+    my ($trainset, $model, $rmodel) = @_;
+    my $cmd = "$VW --quiet $VWARGS -d $trainset -f $model";
+    if (defined $rmodel) {
+        $cmd .= " --readable_model $rmodel";
+    }
+    v("training: %s\n", $cmd);
+    system($cmd);
+}
+
+sub dump_features {
+    return unless ($opt_V);
+
+    foreach my $f (@Features) {
+        printf STDERR "%s\t\t%g\t%g\n", $f, $FeatureMin{$f}, $FeatureMax{$f};
+    }
+}
+
+sub generate_full_example($) {
+    my ($full_example) = @_;
+    open(my $fe, ">$full_example") ||
+        die "$0: can't write full_example file: '$full_example': $!\n";
+    print $fe "1";
+    
+    foreach my $ns (keys %NameSpaces) {
+        my $nsref = $NameSpaces{$ns};
+        printf $fe ' |%s', $ns;
+        foreach my $key (sort keys %$nsref) {
+            my $weight = 1;
+            printf $fe ' %s:%s', $key, $weight;
+        }
+    }
+    print $fe "\n";
+    close $fe;
+}
+
+sub audit_features {
+    # ^crab:142703:1:0.0435613 ...
+    generate_full_example($FullExample);
+
+    my $audit_cmd = "$VW --quiet -t --audit -i $Model -d $FullExample";
+    $audit_cmd .= "|tee $AuditFile" if ($opt_k);
+
+    open(my $audit_stream, "$audit_cmd |")
+        || die "$0: can't run \$audit_cmd: '$audit_cmd |'\n";
+    my $prediction = <$audit_stream>;
+    my $features_data = <$audit_stream>;
+    close $audit_stream;
+
+    while ($features_data =~ /\s+([^:]+):(\d+):([^:]+):([-+e.0-9]+)/g) {
+
+        my ($feature, $hash, $value, $weight) = ($1, $2, $3, $4);
+
+        $Feature2Hash{$feature} = $hash;
+        $Feature2Weight{$feature} = $weight;
+
+        V("%s\t%s\t%s\t%s\n", $feature, $hash, $value, $weight);
+    }
+}
+
+#
+# return 'importance' metric for a given feature
+#
+my %Importance;
+
+sub by_importance {
+    $Importance{$b} <=> $Importance{$a}
+}
+
+sub importance($;$) {
+    my ($feature, $metric) = @_;
+
+    my $fweight = $Feature2Weight{$feature};
+    unless (defined $fweight) {
+        $fweight = $Feature2Weight{$feature} = 0;
+        warn "$0: BUG?: importance: feature '$feature' has no weight!\n";
+        return $fweight;
+    }
+
+    # Support more importance metrics, are the any?
+    # if ($metric eq '...') ...
+
+    $fweight;
+}
+
+#
+# summarize_features
+#   Output what we know about all features + relative importance
+#
+sub summarize_features {
+    my ($min_weight, $max_weight) = (0, 0);
+    my $max_len = 0;
+
+    # 1st pass - determine maximum feature-name length
+    # and max/min values
+    foreach my $f (@Features) {
+        my $slen = length($f);
+        $max_len = $slen if ($slen > $max_len);
+
+        my $w = $Feature2Weight{$f};
+        unless (defined $w) {
+            $w = 0;
+            warn "$0: print_importance: feature '$f' has no weight!\n";
+        }
+        $max_weight = $w if ($w > $max_weight);
+        $min_weight = $w if ($w < $min_weight);
+    }
+    my $range_weight = $max_weight - $min_weight;
+ 
+    # 2nd pass - calculate importances of all features
+    my ($importance, $min_importance, $max_importance) = (0, 0, 0);
+    foreach my $f (@Features) {
+        $importance = $Importance{$f} = importance($f, $opt_I);
+        $max_importance = $importance if ($importance > $max_importance);
+        $min_importance = $importance if ($importance < $min_importance);
+    }
+    my $importance_range = $max_importance - $min_importance;
+    my $importance_0 = importance('Constant');
+
+    my $upper_range = abs($max_importance - $importance_0);
+    my $lower_range = abs($min_importance - $importance_0);
+
+    my $max_distance_from_0 = ($upper_range > $lower_range)
+                                    ? $upper_range
+                                    : $lower_range;
+
+    printf "%-*s\t%+10s\t%+8s\t%+9s\n",
+                $max_len, 'FeatureName', 'HashVal', 'Weight',
+                'Importance';
+    # FIXME: support different orders: by weight,
+    # by feature-range-normalized weights?
+    foreach my $f (sort by_importance @Features) {
+        my $importance = $Importance{$f};
+        my $distance_from_0 = $importance - $importance_0;
+        my $normalized_importance = $distance_from_0 / $max_distance_from_0;
+
+        # FIXME: support different normalization schemes
+        if ($opt_I =~ /^a/i) {
+            $normalized_importance = abs($normalized_importance);
+        }
+
+        printf "%-*s\t%10d\t%+8.4f\t%9.2f%%\n",
+                $max_len, $f,
+                $Feature2Hash{$f},
+                $Feature2Weight{$f},
+                (100.0 * $normalized_importance);
+    }
+}
+
+# -- main
+get_args();
+@Features = read_features($TrainSet);
+do_train($TrainSet, $Model);
+audit_features();
+summarize_features();
+cleanup();
+
