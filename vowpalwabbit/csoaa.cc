@@ -522,6 +522,14 @@ namespace CSOAA_LDF {
     ec_seq.erase();
   }
 
+
+  void learn_singleline(vw*all, example*ec) {
+    ec_seq.erase();
+    push(ec_seq, ec);
+    do_actual_learning(*all);
+    ec_seq.erase();
+  }
+
   void learn_multiline(vw*all, example *ec) {
     if (ec_seq.index() >= all->p->ring_size - 2) { // give some wiggle room
       cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
@@ -541,16 +549,14 @@ namespace CSOAA_LDF {
         global_print_newline(*all);
       push(ec_seq, ec);
       need_to_clear = true;
+    } else if (LabelDict::ec_is_label_definition(ec)) {
+      if (ec_seq.index() > 0)
+        cerr << "warning: label definition encountered in data block -- ignoring data!" << endl;
+      learn_singleline(all, ec);
+      VW::finish_example(*all, ec);
     } else {
       push(ec_seq, ec);
     }
-  }
-
-  void learn_singleline(vw*all, example*ec) {
-    ec_seq.erase();
-    push(ec_seq, ec);
-    do_actual_learning(*all);
-    ec_seq.erase();
   }
 
   void learn(void*a, example*ec) {
@@ -592,9 +598,9 @@ namespace CSOAA_LDF {
     need_to_clear = false;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
-        //cerr << "learn" << endl;
+        //cerr<< "learn";
         learn_multiline(all, ec);
-        //cerr << "ntc=" << need_to_clear << endl;
+        //cerr<< " ntc=" << need_to_clear << endl;
         if (need_to_clear) {
           output_example_seq(*all);
           clear_seq(*all);
