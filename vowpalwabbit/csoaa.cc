@@ -216,12 +216,21 @@ namespace CSOAA {
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   
-    for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
-      {
-        int f = all.final_prediction_sink[i];
-        all.print(f, *(OAA::prediction_t*)&ec->final_prediction, 0, ec->tag);
+    for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+      all.print(*sink, *(OAA::prediction_t*)&(ec->final_prediction), 0, ec->tag);
+
+    if (all.raw_prediction > 0) {
+      string outputString;
+      stringstream outputStringStream(outputString);
+      for (size_t i = 0; i < ld->costs.index(); i++) {
+        wclass cl = ld->costs[i];
+        if (i > 0) outputStringStream << ' ';
+        outputStringStream << cl.weight_index << ':' << cl.partial_prediction;
       }
-  
+      outputStringStream << endl;
+      all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
+    }
+
     all.sd->example_number++;
 
     print_update(all, is_test_label((label*)ec->ld), ec);
@@ -264,15 +273,14 @@ namespace CSOAA {
 	  update_example_indicies(all->audit, ec, desired_increment - current_increment);
           current_increment = desired_increment;
         }
-	ec->partial_prediction = 0.;
 
 	base_learner(all, ec);
-        //        cl->partial_prediction = ec->partial_prediction; // ?? TODO: do we need this?
-	if (ec->partial_prediction < score)
-	  {
-	    score = ec->partial_prediction;
-	    prediction = i;
-	  }
+        cl->partial_prediction = ec->partial_prediction;
+	if (ec->partial_prediction < score) {
+          score = ec->partial_prediction;
+          prediction = i;
+        }
+	ec->partial_prediction = 0.;
       }
     ec->ld = ld;
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;

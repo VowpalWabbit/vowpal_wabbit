@@ -206,7 +206,7 @@ namespace OAA {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn_with_output(all, ec, true);
+            learn_with_output(all, ec, all->raw_prediction > 0);
             output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
