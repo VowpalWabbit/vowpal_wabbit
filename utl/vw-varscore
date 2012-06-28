@@ -49,6 +49,11 @@ my (%Feature2Hash, %Feature2Weight);
 my %NameSpace;      # hash of hashes: namespace => { key => val }...
 my @Features;       # feature names
 
+my @QPairs = ();    # list of pairs ([a, b], [c, d] ...) for namespace pairing
+my %Ignore;         # support for --ignore X
+my %Keep;           # support for --keep X
+my $DoKeep;         # handy flag for whether we need to use --keep or not
+
 my @TmpFiles;
 
 sub v(@) {
@@ -77,6 +82,9 @@ sub usage(@) {
         -V          more verbose
         -k          keep temporary files
         -P<Opts>    Pass-through <Opts> as-is to the vw training step
+                    To have paired cross-features in name-spaces starting
+                    with X and Y, add -q XY ... to the -P option arguments,
+                    just like you do for vw.
         -O<which>   Use order/ranking metric <which>
                     Supported metrics:
                         ... not implemented yet ...
@@ -107,6 +115,18 @@ sub get_args {
     if ($opt_P) {
         $VWARGS = $opt_P;
     }
+    while ($VWARGS =~ /-q\s*(\S)(\S)/g) {
+        push(@QPairs, [$1, $2]);
+    }
+    while ($VWARGS =~ /--keep\s*(\S)/g) {
+        $DoKeep = 1;
+        $Keep{$1} = 1;
+    }
+    $Keep{''} = 1;          # to be consistent with vw no-namespce behavior
+    while ($VWARGS =~ /--ignore\s*(\S)/g) {
+        $Ignore{$1} = 1;
+    }
+
     $Model = "$TrainSet.model";
     $FullExample = "$TrainSet.full-example";
     $AuditFile = "$TrainSet.audit";
@@ -128,9 +148,45 @@ sub cleanup {
 #
 # symbolic full feature (name-space + feature-name) as used by --audit
 #
-sub feature_name($$) {
-    my ($ns, $key) = @_;
-    "$ns^$key";
+sub feature_name(@) {
+    join('^', @_);
+}
+
+sub pair_features {
+    my %paired_features;
+    my @name_spaces = keys %NameSpaces;
+    my (@matching_ns1, @matching_ns2);
+
+    foreach my $pair_ref (@QPairs) {
+        my ($x, $y) = @$pair_ref;
+        foreach my $ns1 (@name_spaces) {
+            my $ns1_ch = substr($ns1,0,1);
+            if ($x eq $ns1_ch) {
+                push(@matching_ns1, $ns1)
+                    if (exists($Keep{$x}) or !exists($Ignore{$x}));
+            }
+        }
+        foreach my $ns2 (@name_spaces) {
+            my $ns2_ch = substr($ns2,0,1);
+            if ($y eq $ns2_ch) {
+                push(@matching_ns2, $ns2)
+                    if (exists($Keep{$y}) or !exists($Ignore{$y}));
+            }
+        }
+    }
+    foreach my $ns1 (@matching_ns1) {
+        foreach my $ns2 (@matching_ns2) {
+            my $nsref1 = $NameSpaces{$ns1};
+            my $nsref2 = $NameSpaces{$ns2};
+            foreach my $key1 (keys %$nsref1) {
+                foreach my $key2 (keys %$nsref2) {
+                    my $feature = feature_name($ns1, $key1, $ns2, $key2);
+                    $FeatureMax{$feature} = 0;
+                    $FeatureMin{$feature} = 0;
+                }
+            }
+        }
+    }
 }
 
 sub read_features($) {
@@ -151,6 +207,12 @@ sub read_features($) {
             # -- name-spaces loop
             my ($ns) = ($nsr =~ /^(\S+)/);
             $ns = '' unless ((defined $ns) && length($ns));
+
+            my $ns_ch1 = substr($ns, 0, 1);
+
+            next if (exists $Ignore{$ns_ch1});
+            next if ($DoKeep && !exists $Keep{$ns_ch1});
+
             unless (exists $NameSpaces{$ns}) {
                 $NameSpaces{$ns} = {};
             }
@@ -186,10 +248,12 @@ sub read_features($) {
     }
     close $ts;
 
+    pair_features();
+
     $FeatureMin{'Constant'} = $FeatureMax{'Constant'} = 0;
 
     # return the list of feature names, add the Constant
-    sort (keys %FeatureMax, 'Constant');
+    sort (keys %FeatureMax);
 }
 
 #
