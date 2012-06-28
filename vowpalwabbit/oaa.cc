@@ -1,6 +1,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <sstream>
 
 #include "oaa.h"
 #include "simple_label.h"
@@ -134,11 +135,8 @@ namespace OAA {
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   
-    for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
-      {
-        int f = all.final_prediction_sink[i];
-        all.print(f, *(prediction_t*)&(ec->final_prediction), 0, ec->tag);
-      }
+    for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+      all.print(*sink, *(prediction_t*)&(ec->final_prediction), 0, ec->tag);
   
     all.sd->example_number++;
 
@@ -147,10 +145,8 @@ namespace OAA {
 
   void (*base_learner)(void*,example*) = NULL;
 
-  void learn(void*a, example* ec)
+  void learn_with_output(vw*all, example* ec, bool shouldOutput)
   {
-    vw* all = (vw*)a;
-
     mc_label* mc_label_data = (mc_label*)ec->ld;
     size_t prediction = 1;
     float score = INT_MIN;
@@ -158,6 +154,9 @@ namespace OAA {
     if (mc_label_data->label > k && mc_label_data->label != (uint32_t)-1)
       cerr << "warning: label " << mc_label_data->label << " is greater than " << k << endl;
   
+    string outputString;
+    stringstream outputStringStream(outputString);
+
     for (size_t i = 1; i <= k; i++)
       {
         label_data simple_temp;
@@ -176,11 +175,27 @@ namespace OAA {
             score = ec->partial_prediction;
             prediction = i;
           }
+
+        if (shouldOutput) {
+          if (i > 1) outputStringStream << ' ';
+          outputStringStream << i << ':' << ec->partial_prediction;
+        }
+
         ec->partial_prediction = 0.;
       }
     ec->ld = mc_label_data;
     *(prediction_t*)&(ec->final_prediction) = prediction;
     update_example_indicies(all->audit, ec, -total_increment);
+
+    if (shouldOutput) {
+      outputStringStream << '\n';
+      all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
+    }
+  }
+
+  void learn(void*a, example* ec) {
+    vw* all = (vw*)a;
+    learn_with_output(all, ec, false);
   }
 
   void drive_oaa(void *in)
@@ -191,7 +206,7 @@ namespace OAA {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(all, ec);
+            learn_with_output(all, ec, true);
             output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }

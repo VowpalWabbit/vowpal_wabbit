@@ -237,7 +237,9 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 
   for (size_t i = 0; i < caches.size(); i++)
     {
-      int f = all.p->input->open_file(caches[i].c_str(),io_buf::READ);
+      int f = -1;
+      if (!vm.count("kill_cache"))
+        f = all.p->input->open_file(caches[i].c_str(),io_buf::READ);
       if (f == -1)
 	make_write_cache(all.num_bits, all.p, caches[i], quiet);
       else {
