@@ -1169,7 +1169,7 @@ namespace Sequence {
     if (OAA::example_is_newline(ec)) {
       do_actual_learning(*all);
       clear_seq(*all);
-      CSOAA_LDF::global_print_newline(*all);
+      CSOAA_AND_WAP_LDF::global_print_newline(*all);
       VW::finish_example(*all, ec);
     } else {
       read_example_this_loop++;

@@ -15,6 +15,7 @@ namespace CSOAA {
     float x;  // the cost of this class
     uint32_t weight_index;  // the index of this class
     float partial_prediction;  // a partial prediction: new!
+    float wap_value;  // used for wap to store values derived from costs
     bool operator==(wclass j){return weight_index == j.weight_index;}
   };
 
@@ -41,7 +42,7 @@ namespace CSOAA {
   int example_is_test(example* ec);
 }
 
-namespace CSOAA_LDF {
+namespace CSOAA_AND_WAP_LDF {
   typedef CSOAA::label label;
 
   void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&, po::variables_map& vm, size_t s);

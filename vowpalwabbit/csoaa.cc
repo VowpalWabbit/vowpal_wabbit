@@ -341,51 +341,102 @@ namespace CSOAA {
 
 }
 
-namespace CSOAA_LDF {
+namespace CSOAA_AND_WAP_LDF {
   v_array<example*> ec_seq = v_array<example*>();
   size_t read_example_this_loop = 0;
   bool need_to_clear = true;
   bool is_singleline = true;
+  bool is_wap = false;
 
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
 
-  void do_actual_learning(vw& all)
+  inline bool cmp_wclass_ptr(const CSOAA::wclass* a, const CSOAA::wclass* b) { return a->x < b->x; }
+
+  void compute_wap_values(vector<CSOAA::wclass*> costs) {
+    std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
+    costs[0]->wap_value = 0.;
+    for (size_t i=1; i<costs.size(); i++)
+      costs[i]->wap_value = costs[i-1]->wap_value + (costs[i]->x - costs[i-1]->x) / (float)i;
+
+    //for (size_t i=0; i<costs.size(); i++) {
+      //cerr<< "i=" << i << " c=" << costs[i]->x << " v=" << costs[i]->wap_value << endl;
+    //}
+    //cerr<<endl;
+  }
+
+  void subtract_example(vw& all, example *ec, example *ecsub)
   {
-    if (ec_seq.index() <= 0) return;  // nothing to do
+    float norm_sq = 0.;
+    size_t num_f = 0;
+    for (size_t* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
+      size_t feature_index = 0;
+      for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
+        feature temp = { -f->x, (uint32_t) (f->weight_index & all.parse_mask) };
+        push(ec->atomics[wap_ldf_namespace], temp);
+        norm_sq += f->x * f->x;
+        num_f ++;
 
-    if (LabelDict::ec_seq_is_label_definition(ec_seq)) {
-      for (size_t i=0; i<ec_seq.index(); i++) {
-        v_array<feature> features;
-        for (feature*f=ec_seq[i]->atomics[ec_seq[i]->indices[0]].begin; f!=ec_seq[i]->atomics[ec_seq[i]->indices[0]].end; f++) {
-          feature fnew = { f->x,  f->weight_index };
-          push(features, fnew);
-        }
-
-        v_array<CSOAA::wclass> costs = ((CSOAA::label*)ec_seq[i]->ld)->costs;
-        for (size_t j=0; j<costs.index(); j++) {
-          size_t lab = costs[j].weight_index;
-          LabelDict::set_label_features(lab, features);
+        if (all.audit) {
+          if (! (ecsub->audit_features[*i].index() >= feature_index)) {
+            audit_data b_feature = ecsub->audit_features[*i][feature_index];
+            audit_data a_feature = { NULL, NULL, (uint32_t) (f->weight_index & all.parse_mask), -f->x, false };
+            a_feature.space = b_feature.space;
+            a_feature.feature = b_feature.feature;
+            push(ec->audit_features[wap_ldf_namespace], a_feature);
+            feature_index++;
+          }
         }
       }
+    }
+    push(ec->indices, wap_ldf_namespace);
+    ec->sum_feat_sq[wap_ldf_namespace] = norm_sq;
+    ec->total_sum_feat_sq += norm_sq;
+    ec->num_features += num_f;
+  }
+
+  void unsubtract_example(vw& all, example *ec)
+  {
+    if (ec->indices.index() == 0) {
+      cerr << "internal error (bug): trying to unsubtract_example, but there are no namespaces!" << endl;
+      return;
+    }
+    
+    if (ec->indices.last() != wap_ldf_namespace) {
+      cerr << "internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added after and not removed!" << endl;
       return;
     }
 
-    size_t K = ec_seq.index();
+    ec->num_features -= ec->atomics[wap_ldf_namespace].index();
+    ec->total_sum_feat_sq -= ec->sum_feat_sq[wap_ldf_namespace];
+    ec->sum_feat_sq[wap_ldf_namespace] = 0;
+    ec->atomics[wap_ldf_namespace].erase();
+    if (all.audit) {
+      if (ec->audit_features[wap_ldf_namespace].begin != ec->audit_features[wap_ldf_namespace].end) {
+        for (audit_data *f = ec->audit_features[wap_ldf_namespace].begin; f != ec->audit_features[wap_ldf_namespace].end; f++) {
+          if (f->alloced) {
+            free(f->space);
+            free(f->feature);
+            f->alloced = false;
+          }
+        }
+      }
 
-    size_t start_K = 0;
-    if (LabelDict::ec_is_example_header(ec_seq[0])) {
-      start_K = 1;
-      for (size_t k=1; k<K; k++)
-        LabelDict::add_example_namespaces_from_example(ec_seq[k], ec_seq[0]);
+      ec->audit_features[wap_ldf_namespace].erase();
     }
+    ec->indices.decr();
+  }
 
-    float min_cost = FLT_MAX;
-    float min_score = FLT_MAX;
+  void do_actual_learning_wap(vw& all, int start_K)
+  {
+
+    size_t K = ec_seq.index();
     size_t prediction = 0;
-    float prediction_cost = 0.;
-    bool isTest = CSOAA::example_is_test(*ec_seq.begin);
-    //cerr<< "csoaa_ldf.learn isTest=" << isTest << ", K=" << K << ", pass=" << ec_seq.begin[0]->pass <<endl;
+    float  prediction_cost = 0.;
+    bool   isTest = CSOAA::example_is_test(*ec_seq.begin);
+    float  min_cost = FLT_MAX;
+    float  min_score = FLT_MAX;
+
     for (size_t k=start_K; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
@@ -393,7 +444,116 @@ namespace CSOAA_LDF {
 
       if (CSOAA::example_is_test(ec) != isTest) {
         isTest = true;
-        cerr << "warning: csoaa_ldf got mix of train/test data; assuming test" << endl;
+        cerr << "warning: wap_ldf got mix of train/test data; assuming test" << endl;
+      }
+      if (LabelDict::ec_is_example_header(ec_seq[k])) {
+        cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
+        exit(-1);
+      }
+
+      label_data simple_label;
+      for (size_t j=0; j<costs.index(); j++) {
+        simple_label.initial = 0.;
+        simple_label.label = FLT_MAX;
+        simple_label.weight = 0.;
+        if (costs[j].x < min_cost) 
+          min_cost = costs[j].x;
+        ec->partial_prediction = 0.;
+
+        LabelDict::add_example_namespace_from_memory(ec, costs[j].weight_index);
+
+        ec->ld = &simple_label;
+        base_learner(&all, ec); // make a prediction
+        costs[j].partial_prediction = ec->partial_prediction;
+
+        if (ec->partial_prediction < min_score) {
+          min_score = ec->partial_prediction;
+          prediction = costs[j].weight_index;
+          prediction_cost = costs[j].x;
+        }
+        LabelDict::del_example_namespace_from_memory(ec, costs[j].weight_index);
+      }
+
+      ec->ld = ld;
+    }
+    prediction_cost -= min_cost;
+
+    // do actual learning
+    vector<CSOAA::wclass*> all_costs;
+    if (all.training && !isTest) {
+      for (size_t k=start_K; k<K; k++) {
+        v_array<CSOAA::wclass> this_costs = ((label*)ec_seq.begin[k]->ld)->costs;
+        for (size_t j=0; j<this_costs.index(); j++)
+          all_costs.push_back(&this_costs[j]);
+      }
+      compute_wap_values(all_costs);
+    }
+
+    label_data simple_label;
+    for (size_t k1=start_K; k1<K; k1++) {
+      example *ec1 = ec_seq.begin[k1];
+      label   *ld1 = (label*)ec1->ld;
+      v_array<CSOAA::wclass> costs1 = ld1->costs;
+      bool prediction_is_me = false;
+      ec1->ld = &simple_label;
+
+      for (size_t j1=0; j1<costs1.index(); j1++) {
+        if (all.training && !isTest) {
+          LabelDict::add_example_namespace_from_memory(ec1, costs1[j1].weight_index);
+
+          for (size_t k2=k1+1; k2<K; k2++) {
+            example *ec2 = ec_seq.begin[k2];
+            label   *ld2 = (label*)ec2->ld;
+            v_array<CSOAA::wclass> costs2 = ld2->costs;
+
+            for (size_t j2=0; j2<costs2.index(); j2++) {
+              float value_diff = costs2[j2].wap_value - costs1[j1].wap_value;
+              if (value_diff < 1e-6)
+                continue;
+
+              LabelDict::add_example_namespace_from_memory(ec2, costs2[j2].weight_index);
+
+              // learn
+              simple_label.initial = 0.;
+              simple_label.label = (costs1[j1].x < costs2[j2].x) ? -1.0 : 1.0;
+              simple_label.weight = value_diff;
+              ec1->partial_prediction = 0.;
+              subtract_example(all, ec1, ec2);
+              base_learner(&all, ec1);
+              unsubtract_example(all, ec1);
+              
+              LabelDict::del_example_namespace_from_memory(ec2, costs2[j2].weight_index);
+            }
+          }
+          LabelDict::del_example_namespace_from_memory(ec1, costs1[j1].weight_index);
+        }
+
+        if (prediction == costs1[j1].weight_index) prediction_is_me = true;
+      }
+      *(OAA::prediction_t*)&(ec1->final_prediction) = prediction_is_me ? prediction : 0;
+      ec1->ld = ld1;
+    }
+  }
+
+
+  void do_actual_learning_oaa(vw& all, int start_K)
+  {
+    size_t K = ec_seq.index();
+    float  min_cost = FLT_MAX;
+    float  min_score = FLT_MAX;
+    size_t prediction = 0;
+    float  prediction_cost = 0.;
+    bool   isTest = CSOAA::example_is_test(*ec_seq.begin);
+    //cerr<< "ldf.learn isTest=" << isTest << ", K=" << K << ", pass=" << ec_seq.begin[0]->pass <<endl;
+
+    for (size_t k=start_K; k<K; k++) {
+      example *ec = ec_seq.begin[k];
+      label   *ld = (label*)ec->ld;
+      v_array<CSOAA::wclass> costs = ld->costs;
+
+      if (CSOAA::example_is_test(ec) != isTest) {
+        isTest = true;
+        cerr << "warning: ldf got mix of train/test data; assuming test" << endl;
       }
       if (LabelDict::ec_is_example_header(ec_seq[k])) {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
@@ -461,12 +621,51 @@ namespace CSOAA_LDF {
       }
       *(OAA::prediction_t*)&(ec->final_prediction) = prediction_is_me ? prediction : 0;
 
-      if (start_K > 0)
-        LabelDict::del_example_namespaces_from_example(ec_seq[k], ec_seq[0]);
-
       // restore label
       ec->ld = ld;
     }
+  }
+
+
+  void do_actual_learning(vw& all)
+  {
+    if (ec_seq.index() <= 0) return;  // nothing to do
+
+    /////////////////////// handle label definitions
+    if (LabelDict::ec_seq_is_label_definition(ec_seq)) {
+      for (size_t i=0; i<ec_seq.index(); i++) {
+        v_array<feature> features;
+        for (feature*f=ec_seq[i]->atomics[ec_seq[i]->indices[0]].begin; f!=ec_seq[i]->atomics[ec_seq[i]->indices[0]].end; f++) {
+          feature fnew = { f->x,  f->weight_index };
+          push(features, fnew);
+        }
+
+        v_array<CSOAA::wclass> costs = ((CSOAA::label*)ec_seq[i]->ld)->costs;
+        for (size_t j=0; j<costs.index(); j++) {
+          size_t lab = costs[j].weight_index;
+          LabelDict::set_label_features(lab, features);
+        }
+      }
+      return;
+    }
+
+    /////////////////////// check for headers
+    size_t K = ec_seq.index();
+    size_t start_K = 0;
+    if (LabelDict::ec_is_example_header(ec_seq[0])) {
+      start_K = 1;
+      for (size_t k=1; k<K; k++)
+        LabelDict::add_example_namespaces_from_example(ec_seq[k], ec_seq[0]);
+    }
+
+    if (is_wap) do_actual_learning_wap(all, start_K);
+    else        do_actual_learning_oaa(all, start_K);
+
+    /////////////////////// remove header
+    if (start_K > 0)
+      for (size_t k=1; k<K; k++)
+        LabelDict::del_example_namespaces_from_example(ec_seq[k], ec_seq[0]);
+
   }
 
   void output_example(vw& all, example* ec)
@@ -586,7 +785,7 @@ namespace CSOAA_LDF {
     LabelDict::free_label_features();
   }
 
-  void drive_csoaa_ldf_singleline(vw*all) {
+  void drive_ldf_singleline(vw*all) {
     example* ec = NULL;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { //semiblocking operation.
@@ -594,7 +793,7 @@ namespace CSOAA_LDF {
         //cerr<<"weights ="; for (size_t j=0; j<costs.index(); j++) //cerr<<" " << costs[j].weight_index << ":"<<costs[j].x; //cerr<<endl;
 
         if (LabelDict::ec_is_example_header(ec)) {
-          cerr << "error: example headers not allowed in csoaa_ldf singleline mode" << endl;
+          cerr << "error: example headers not allowed in ldf singleline mode" << endl;
           exit(-1);
         }
         learn_singleline(all, ec);
@@ -610,7 +809,7 @@ namespace CSOAA_LDF {
     }
   }
 
-  void drive_csoaa_ldf_multiline(vw*all) {
+  void drive_ldf_multiline(vw*all) {
     example* ec = NULL;
     read_example_this_loop = 0;
     need_to_clear = false;
@@ -635,13 +834,13 @@ namespace CSOAA_LDF {
     }
   }
 
-  void drive_csoaa_ldf(void*in)
+  void drive_ldf(void*in)
   {
     vw* all =(vw*)in;
     if (is_singleline)
-      drive_csoaa_ldf_singleline(all);
+      drive_ldf_singleline(all);
     else
-      drive_csoaa_ldf_multiline(all);
+      drive_ldf_multiline(all);
   }
 
 
@@ -656,16 +855,19 @@ namespace CSOAA_LDF {
     else if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
       is_singleline = false;
     else {
-      cerr << "csoaa_ldf requires either [s]ingleline or [m]ultiline argument" << endl;
+      cerr << "ldf requires either [s]ingleline or [m]ultiline argument" << endl;
       exit(-1);
     }
+
+    if (vm.count("wap_ldf"))
+      is_wap = true;
 
     if (all.add_constant) {
       //cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
       all.add_constant = false;
     }
 
-    all.driver = drive_csoaa_ldf;
+    all.driver = drive_ldf;
     base_learner = all.learn;
     all.learn = learn;
     base_finish = all.finish;
