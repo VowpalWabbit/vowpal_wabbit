@@ -42,7 +42,6 @@ namespace CSOAA {
 }
 
 namespace CSOAA_LDF {
-  //  typedef OAA::mc_label label;
   typedef CSOAA::label label;
 
   void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&, po::variables_map& vm, size_t s);
@@ -50,18 +49,16 @@ namespace CSOAA_LDF {
   void output_example(vw& all, example* ec);
 
   const label_parser cs_label_parser = CSOAA::cs_label_parser;
-
-    /*{CSOAA::default_label, CSOAA::parse_label, 
-					CSOAA::cache_label, CSOAA::read_cached_label, 
-					CSOAA::delete_label, CSOAA::weight, CSOAA::initial, 
-					sizeof(label)}; */
 }
 
 namespace LabelDict {
   bool ec_is_label_definition(example*ec);
+  bool ec_is_example_header(example*ec);
   bool ec_seq_is_label_definition(v_array<example*>ec_seq);
-  size_t add_example_namespace(example*ec, size_t lab);
-  void del_example_namespace(example* ec, size_t lab, size_t original_index);
+  void add_example_namespaces_from_example(example*target, example*source);
+  void del_example_namespaces_from_example(example*target, example*source);
+  void add_example_namespace_from_memory(example*ec, size_t lab);
+  void del_example_namespace_from_memory(example* ec, size_t lab);
   void set_label_features(size_t lab, v_array<feature>features);
   void free_label_features();
 }
