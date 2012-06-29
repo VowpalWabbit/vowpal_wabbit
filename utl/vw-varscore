@@ -200,8 +200,9 @@ sub read_features($) {
     }
     while (<$ts>) {
         # -- examples loop
+        next unless (/\S/);     # skip empty lines
         # -- grab anything following the 1st '|'
-        my ($input_features) = ($_ =~ /^[^|]+\|(.*)$/);
+        my ($input_features) = ($_ =~ /^[^|]*\|(.*)$/);
         my @name_space_region = split('\|', $input_features);
         foreach my $nsr (@name_space_region) {
             # -- name-spaces loop
