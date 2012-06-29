@@ -507,7 +507,8 @@ namespace CSOAA_AND_WAP_LDF {
             v_array<CSOAA::wclass> costs2 = ld2->costs;
 
             for (size_t j2=0; j2<costs2.index(); j2++) {
-              float value_diff = costs2[j2].wap_value - costs1[j1].wap_value;
+              float value_diff = fabs(costs2[j2].wap_value - costs1[j1].wap_value);
+              //float value_diff = fabs(costs2[j2].x - costs1[j1].x);
               if (value_diff < 1e-6)
                 continue;
 
