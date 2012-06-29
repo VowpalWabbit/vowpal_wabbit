@@ -128,40 +128,67 @@ namespace CSOAA {
   size_t increment=0;
   v_array<substring> name;
 
+  bool substring_eq(substring ss, const char* str) {
+    size_t len_ss  = ss.end - ss.begin;
+    size_t len_str = strlen(str);
+    if (len_ss != len_str) return false;
+    return (strncmp(ss.begin, str, len_ss) == 0);
+  }
+
   void parse_label(shared_data* sd, void* v, v_array<substring>& words)
   {
     label* ld = (label*)v;
 
     ld->costs.erase();
-    for (size_t i = 0; i < words.index(); i++)
-      {
-        wclass f = {0.,0,0.};
-        name_value(words[i], name, f.x);
+    for (size_t i = 0; i < words.index(); i++) {
+      wclass f = {0.,0,0.};
+      name_value(words[i], name, f.x);
       
-        f.weight_index = 0;
-        if (name.index() == 1 || name.index() == 2)
-          {
+      if (name.index() == 0)
+        cerr << "invalid cost specification -- no names!" << endl;
+      else {
+        if (substring_eq(name[0], "shared")) {
+          if (name.index() == 1) {
+            f.x = -1;
+            f.weight_index = 0;
+          } else
+            cerr << "shared feature vectors should not have costs" << endl;
+        } else if (substring_eq(name[0], "label")) {
+          if (name.index() == 2) {
+            f.weight_index = (size_t)f.x;
+            f.x = -1;
+          } else
+            cerr << "label feature vectors must have label ids" << endl;
+        } else {
+          f.weight_index = 0;
+          if (name.index() == 1 || name.index() == 2) {
             f.weight_index = hashstring(name[0], 0);
-            if ((f.weight_index == 0 && f.x >= 0) || f.weight_index > sd->k)
+            if (name.index() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
+              f.x = FLT_MAX;
+
+            if ((f.weight_index >= 1) && (f.weight_index <= sd->k) && (f.x >= 0)) {}  // normal example
+            else if ((f.weight_index >= 1) && (f.weight_index <= sd->k) && (f.x <= -1)) {}   // label definition
+            else if ((f.weight_index == 0) && (f.x <= -1)) {} // shared header
+            else
               cerr << "invalid cost specification: " << f.weight_index << endl;
-          }
-        else 
-          cerr << "malformed cost specification!" << endl;
-      
-        if (name.index() == 1)
-          f.x = FLT_MAX;
-      
+          } else 
+            cerr << "malformed cost specification!" << endl;
+        }
         push(ld->costs, f);
       }
+    }
 
-    if (words.index() == 0)
-      {
-        for (size_t i = 1; i <= sd->k; i++)
-          {
-            wclass f = {f.x, i, 0.};
-            push(ld->costs, f);
-          }
+    if (words.index() == 0) {
+      if (sd->k != (size_t)-1)
+        for (size_t i = 1; i <= sd->k; i++) {
+          wclass f = {f.x, i, 0.};
+          push(ld->costs, f);
+        }
+      else {
+        cerr << "ldf test examples must have possible labels listed" << endl;
+        exit(-1);
       }
+    }
   }
 
   void print_update(vw& all, bool is_test, example *ec)
@@ -896,7 +923,7 @@ namespace LabelDict {
 
   size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
   
-  bool ec_is_label_definition(example*ec)
+  bool ec_is_label_definition(example*ec) // label defs look like "___:-1"
   {
     //cerr << "[" << ((OAA::mc_label*)ec->ld)->label << " " << ((OAA::mc_label*)ec->ld)->weight << "] ";
     v_array<CSOAA::wclass> costs = ((CSOAA::label*)ec->ld)->costs;
@@ -908,7 +935,7 @@ namespace LabelDict {
     return true;    
   }
 
-  bool ec_is_example_header(example*ec)
+  bool ec_is_example_header(example*ec)  // example headers look like "0:-1"
   {
     v_array<CSOAA::wclass> costs = ((CSOAA::label*)ec->ld)->costs;
     if (costs.index() != 1) return false;
