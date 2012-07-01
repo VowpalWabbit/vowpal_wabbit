@@ -2,10 +2,11 @@
 #
 # vim: sw=4 ts=4 expandtab smarttab
 #
-# vw-varscore:      Score features of a training-set using VW
+# vw-varinfo      Summarize features of a training-set using VW
 #   Input:          A vw training set file
 #   Output:         A list of features, their VW hash values, min/max
-#                   values, regressor weights, and relative scores
+#                   values, regressor weights, and distance from
+#                   the best constant.
 #
 # Algorithm:
 #   1)  Collect all variables and their ranges from training-set
@@ -13,20 +14,19 @@
 #   3)  Build a test-set with a single example including all variables
 #   4)  run VW with --audit on 3) to map variable names to hash values
 #       and weights.
-#   5)  Output results in relative distance from the best constant
-#       weight.
+#   5)  Output collected information about the input variables.
 #
-# NOTE: 'score' is not really variable 'importance', in the sense that
-# it is not a reliable indicator of prediction performance in general.
-# For example, if you have two equal co-occurring features, the sum
-# of the weights is what matters and individual weight values are
-# arbitrary.
+# NOTE: distance from the best constant predictor is not really
+# variable 'importance', in the sense that it is not a reliable indicator
+# of prediction performance in general.  For example, if you have two
+# equal co-occurring features, the sum of the weights is what matters
+# and individual weight values are arbitrary.
 #
-# What 'score' represents is the relative distance of the regressor
+# What distance represents is the relative distance of the regressor
 # weight from the weight of the 'zero' which is vw's best 'Constant'
 # feature.
 #
-# Score is also convenient because:
+# This distanceis also convenient because:
 #   1) It is a relative metric, making it easier to compare two features
 #   2) Easier to interpret (max is always set to 100%)
 #   2) It is signed, so it shows which features (variables) are
@@ -89,7 +89,7 @@ sub usage(@) {
                     Supported metrics:
                         ... not implemented yet ...
 
-    See the script source head comments for explanation of 'Score'
+    See the script source head comments for more details.
 ";
 }
 
@@ -382,7 +382,7 @@ sub summarize_features {
     printf "%-*s\t%+10s %8s %8s %+9s %+10s\n",
                 $max_len, 'FeatureName', 'HashVal',
                 'MinVal', 'MaxVal',
-                'Weight', 'Score';
+                'Weight', 'RelScore';
     # FIXME: support different orders: by weight,
     # by feature-range-normalized weights?
     foreach my $f (sort by_score @Features) {
