@@ -47,7 +47,7 @@ namespace CSOAA_AND_WAP_LDF {
 
   void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&, po::variables_map& vm, size_t s);
   void global_print_newline(vw& all);
-  void output_example(vw& all, example* ec);
+  void output_example(vw& all, example* ec, bool&hit_loss);
 
   const label_parser cs_label_parser = CSOAA::cs_label_parser;
 }

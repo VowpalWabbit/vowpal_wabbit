@@ -193,7 +193,7 @@ namespace CSOAA {
 
   void print_update(vw& all, bool is_test, example *ec)
   {
-    if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
+    if ((all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs))
       {
         char label_buf[32];
         if (is_test)
@@ -254,7 +254,7 @@ namespace CSOAA {
         if (i > 0) outputStringStream << ' ';
         outputStringStream << cl.weight_index << ':' << cl.partial_prediction;
       }
-      outputStringStream << endl;
+      //outputStringStream << endl;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
     }
 
@@ -464,6 +464,9 @@ namespace CSOAA_AND_WAP_LDF {
     float  min_cost = FLT_MAX;
     float  min_score = FLT_MAX;
 
+    v_hashmap<size_t,float> hit_labels(8, 0., NULL);
+    bool this_warned = false;
+
     for (size_t k=start_K; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
@@ -480,6 +483,17 @@ namespace CSOAA_AND_WAP_LDF {
 
       label_data simple_label;
       for (size_t j=0; j<costs.index(); j++) {
+        if (hit_labels.contains(costs[j].weight_index, 743285093*(328091 + costs[j].weight_index))) {
+          if (ec_seq[0]->pass == 0 && !this_warned) {
+            cerr << "warning: multiple costs for same index (" << costs[j].weight_index << ") at position " << k << ": ignoring all but the first!" << endl;
+            this_warned = true;
+          }
+          costs[j].weight_index = (size_t)-1;
+          costs[j].partial_prediction = FLT_MAX;
+          continue;
+        } else
+          hit_labels.put_after_get(costs[j].weight_index, 743285093*(328091 + costs[j].weight_index), 0.);
+
         simple_label.initial = 0.;
         simple_label.label = FLT_MAX;
         simple_label.weight = 0.;
@@ -525,6 +539,7 @@ namespace CSOAA_AND_WAP_LDF {
       ec1->ld = &simple_label;
 
       for (size_t j1=0; j1<costs1.index(); j1++) {
+        if (costs1[j1].weight_index == (size_t)-1) continue;
         if (all.training && !isTest) {
           LabelDict::add_example_namespace_from_memory(ec1, costs1[j1].weight_index);
 
@@ -534,6 +549,7 @@ namespace CSOAA_AND_WAP_LDF {
             v_array<CSOAA::wclass> costs2 = ld2->costs;
 
             for (size_t j2=0; j2<costs2.index(); j2++) {
+              if (costs2[j2].weight_index == (size_t)-1) continue;
               float value_diff = fabs(costs2[j2].wap_value - costs1[j1].wap_value);
               //float value_diff = fabs(costs2[j2].x - costs1[j1].x);
               if (value_diff < 1e-6)
@@ -574,6 +590,9 @@ namespace CSOAA_AND_WAP_LDF {
     bool   isTest = CSOAA::example_is_test(*ec_seq.begin);
     //cerr<< "ldf.learn isTest=" << isTest << ", K=" << K << ", pass=" << ec_seq.begin[0]->pass <<endl;
 
+    v_hashmap<size_t,float> hit_labels(8, 0., NULL);
+    bool this_warned = false;
+
     for (size_t k=start_K; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
@@ -590,6 +609,16 @@ namespace CSOAA_AND_WAP_LDF {
 
       label_data simple_label;
       for (size_t j=0; j<costs.index(); j++) {
+        if (hit_labels.contains(costs[j].weight_index, 743285093*(328091 + costs[j].weight_index))) {
+          if (ec_seq[0]->pass == 0 && !this_warned) {
+            cerr << "warning: multiple costs for same index (" << costs[j].weight_index << ") at position " << k << ": ignoring all but the first!" << endl;
+            this_warned = true;
+          }
+          costs[j].partial_prediction = FLT_MAX;
+          continue;
+        } else
+          hit_labels.put_after_get(costs[j].weight_index, 743285093*(328091 + costs[j].weight_index), 0.);
+
         simple_label.initial = 0.;
         simple_label.label = FLT_MAX;
         simple_label.weight = 0.;
@@ -686,6 +715,8 @@ namespace CSOAA_AND_WAP_LDF {
         LabelDict::add_example_namespaces_from_example(ec_seq[k], ec_seq[0]);
     }
 
+
+    /////////////////////// learn
     if (is_wap) do_actual_learning_wap(all, start_K);
     else        do_actual_learning_oaa(all, start_K);
 
@@ -696,7 +727,7 @@ namespace CSOAA_AND_WAP_LDF {
 
   }
 
-  void output_example(vw& all, example* ec)
+  void output_example(vw& all, example* ec, bool&hit_loss)
   {
     //cerr<<"output_example"<<endl;
     label* ld = (label*)ec->ld;
@@ -714,13 +745,17 @@ namespace CSOAA_AND_WAP_LDF {
 
     if (!CSOAA::example_is_test(ec)) {
       for (size_t j=0; j<costs.index(); j++) {
-        if (final_pred == costs[j].weight_index)
+        if (hit_loss) break;
+        if (final_pred == costs[j].weight_index) {
           loss = costs[j].x;
+          hit_loss = true;
+        }
       }
 
       //cerr<< "ex eit=" << example_is_test(ec) << " pred=" << final_pred << "/" << (ec->final_prediction >= 0.999) << " weight=" << ld->weight << " loss=" << loss << endl;
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
+      //cerr<<"[sum_loss += " << loss << " = " << all.sd->sum_loss << " | " << all.sd->sum_loss_since_last_dump << "]" << endl;
       assert(loss >= 0);
     }
   
@@ -734,7 +769,7 @@ namespace CSOAA_AND_WAP_LDF {
         if (i > 0) outputStringStream << ' ';
         outputStringStream << costs[i].weight_index << ':' << costs[i].partial_prediction;
       }
-      outputStringStream << endl;
+      //outputStringStream << endl;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
     }
     
@@ -748,9 +783,14 @@ namespace CSOAA_AND_WAP_LDF {
     if ((ec_seq.index() > 0) && !LabelDict::ec_seq_is_label_definition(ec_seq)) {
       all.sd->weighted_examples += 1;
       all.sd->example_number++;
+      //cerr<<"[weighted_examples += 1 = " << all.sd->weighted_examples << "]" << endl;
 
+      bool hit_loss = false;
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++)
-        output_example(all, *ecc);
+        output_example(all, *ecc, hit_loss);
+
+      if (all.raw_prediction > 0)
+        all.print_text(all.raw_prediction, "", ec_seq[0]->tag);
     }
   }
 
@@ -773,13 +813,15 @@ namespace CSOAA_AND_WAP_LDF {
 
   void learn_multiline(vw*all, example *ec) {
     if (ec_seq.index() >= all->p->ring_size - 2) { // give some wiggle room
-      cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
+      if (ec_seq[0]->pass == 0)
+        cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
       do_actual_learning(*all);
       need_to_clear = true;
     }
 
     if (need_to_clear) {
-      ec_seq.erase();
+      output_example_seq(*all);
+      clear_seq(*all);
       need_to_clear = false;
     }
 
@@ -788,7 +830,7 @@ namespace CSOAA_AND_WAP_LDF {
       do_actual_learning(*all);
       if (!LabelDict::ec_seq_is_label_definition(ec_seq))
         global_print_newline(*all);
-      push(ec_seq, ec);
+      VW::finish_example(*all, ec);
       need_to_clear = true;
     } else if (LabelDict::ec_is_label_definition(ec)) {
       if (ec_seq.index() > 0)
@@ -829,7 +871,8 @@ namespace CSOAA_AND_WAP_LDF {
           all->sd->weighted_examples += 1;
           all->sd->example_number++;
         }
-        output_example(*all, ec);
+        bool hit_loss = false;
+        output_example(*all, ec, hit_loss);
         VW::finish_example(*all, ec);
       } else if (parser_done(all->p)) {
         return;
