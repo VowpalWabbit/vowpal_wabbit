@@ -1,33 +1,13 @@
 /* 
-	Copyright (C) 2008, Brian Tanner
 
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
+Will Dabney
 
-	    http://www.apache.org/licenses/LICENSE-2.0
+Largely based upon Brain Tanner's SampleSarsaAgent for RL-Glue, and the library.cc example in Vowpel Wabbit.
+Differences from the SampleSarsaAgent for RL-Glue is that we completely replace the value function learning with calls 
+to the VW library, specifically the off-policy reinforcement learning reduction (oprl). 
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+The Fourier Basis computation is a port from George Konidaris' Java implementation.
 
-	
-	*  $Revision: 996 $
-	*  $Date: 2009-02-08 20:48:32 -0500 (Sun, 08 Feb 2009) $
-	*  $Author: brian@tannerpages.com $
-	*  $HeadURL: https://rl-library.googlecode.com/svn/trunk/projects/packages/examples/mines-sarsa-c/SampleSarsaAgent.c $
-	
-*/
-
-/* 	
-	This is a very simple Sarsa agent for discrete-action, discrete-state
-	environments.  It uses epsilon-greedy exploration.
-	
-	We've made a decision to store the previous action and observation in 
-	their raw form, as structures.  This code could be simplified and you
-	could store them just as ints.
 */
 
 
@@ -53,11 +33,7 @@
 
 using namespace std; 
 
-const float pi = acos(-1);
-double sarsa_stepsize = 0.1;
-double sarsa_epsilon = 0.1;
-double sarsa_gamma = 1.0;
-double sarsa_lambda = 0.0;
+// Create VW input features for use with vw library
 inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, float val)
 {
   uint32_t foo = VW::hash_feature(v, fstr, seed);
@@ -65,13 +41,25 @@ inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, fl
   return f;
 }
 
+
+// Need the constant PI for computing fourier basis
+const float pi = acos(-1);
+
+// RL constants, 
+double sarsa_epsilon = 0.1;
+
+// Create the VW instance and initialize it
 vw vw = VW::initialize("--hash all --adaptive --learning_rate 10.0 --oprl 1.0");
 
+// Variables for the fourier basis functions
 int numTerms = 0;
 int numVars = 0;
 int Order = 0;
 vector<vector<double> > multipliers;
+vector<vector<double> > obsRanges;
 
+
+/********** GDK's Fourier Code (Ported from Java) **************/
 /**
  * This method iterates through a coefficient vector
  * up to a given degree. (like counting in a base of
@@ -135,7 +123,6 @@ void computeFourierCoefficients(int nvars, int order) {
   while(c[0] <= order);
 }
 
-vector<vector<double> > obsRanges;
 
 /**
  * Scale a state variable to between 0 and 1.
@@ -177,16 +164,16 @@ vector<double> computeFeatures(double features[])
   return phi;
 }
 
+/******************* VW Library Based Calls ********************/
 
-vector<vector<double> > traces;
-
+// Convert action int into a character for use as a namespace in VW
 string action_to_name(int action) {
   char c = action + 97;
   return string(1, c);
 }
 
+// Send features to vw. Used for querying the value function and actual training
 double query_vw_value(vector<double> features, int action, int N, double label, double importance){
-  //string s = boost::lexical_cast<string>( number );
   vector< VW::feature_space > ec_info;
   vector<feature> s_features;
 
@@ -202,22 +189,11 @@ double query_vw_value(vector<double> features, int action, int N, double label, 
   ec_info.push_back( VW::feature_space(hash_name[0], s_features) );
   example* vec3 = VW::import_example(vw, ec_info);
 
-
+  // Only train if the importance is non-zero
 if (importance > 0.0) {
-    //  example *vec2 = VW::read_example(vw, "1.23 |s p^the_man w^the w^man |t p^le_homme w^le w^homme");
-    //  label_data* ld = (label_data*)vec2->ld;
-    //  cout << "Label: " << ld->label<<endl;
-    //  ld->label = 2.123;
-    //  cout << "Label: " << ld->label<<endl;
     default_simple_label(vec3->ld);
     ((label_data*)vec3->ld)->label = label;
     ((label_data*)vec3->ld)->weight = importance;
-    //    label_data* ld2 = (label_data*)vec3->ld;
-    //    cout << "... Label: " << ld2->label<<endl;
-    //    cout << label << "|" << hash_name;
-    //    for (int i=0; i<numTerms; i++)
-    //          cerr << " " << i << ":" << features[i];
-    //    cerr << endl;
   }
   
   vw.learn(&vw, vec3);
@@ -227,30 +203,16 @@ if (importance > 0.0) {
 }
 
 
+// RL variables
 action_t this_action;
 action_t last_action;
-
 observation_t *last_observation=0;
-
-double* value_function=0;
 int numActions=0;
 int numStates=0;
-
 int policy_frozen=0;
 int exploring_frozen=0;
 
-
-
-void update_traces(int last_action) {
-        vector<double> feats = computeFeatures(last_observation->doubleArray);
-	for (int i=0; i<numTerms; i++) {
-	  for (int a=0; a< numActions; a++)
-	    traces[a][i] *= sarsa_lambda*sarsa_gamma;
-	  traces[last_action][i] += feats[i];
-	}
-}
-
-
+/************** RL-Glue Code ****************/
 /* Returns a random integer in [0,max] */
 int randInRange(int max);
 /* 
@@ -279,11 +241,10 @@ void agent_init(const char* task_spec)
 	// Lots of assertions to make sure that we can handle this problem.  
 	assert(getNumIntObs(ts)==0);
 	assert(getNumDoubleObs(ts)>0);
-	//	assert(isIntObsMax_special(ts,0)==0);
-	//	assert(isIntObsMin_special(ts,0)==0);
 
 	numStates=getNumDoubleObs(ts);//getIntObsMax(ts,0)+1;
 
+	// Setup observation range values for use with Fourier basis
 	obsRanges.resize(numStates);//(numStates, vector<int>(2, 0));
 	for (int i = 0; i<numStates; i++) {
 	  obsRanges[i].resize(2);
@@ -291,6 +252,7 @@ void agent_init(const char* task_spec)
 	  obsRanges[i][1] = getDoubleObsMax(ts,i);
 	}
 
+	// Compute the fourier coefficients
 	computeFourierCoefficients(numStates, 3);
 
 	assert(getNumIntAct(ts)==1);
@@ -299,18 +261,14 @@ void agent_init(const char* task_spec)
 	assert(isIntActMin_special(ts,0)==0);
 
 	numActions=getIntActMax(ts,0)+1;
-	traces.resize(numActions);
-	for (int i =0 ; i<numActions; i++)
-	  traces[i].resize(numTerms);
-	// sanity check: vectors of doubles initialize to zero..?
 
 	free_taskspec_struct(ts); // Make the taskspec struct a "blank slate" 
 
 	delete ts; // Free the structure itself 
 	//Here is where you might allocate storage for parameters (value function or
-  // policy,last action, last observation, etc)
+	// policy,last action, last observation, etc)
 	
-  //*Here you would parse the task spec if you felt like it
+	//*Here you would parse the task spec if you felt like it
 	
 	//Allocate memory for a one-dimensional integer action using utility functions from RLStruct_util
 	allocateRLStruct(&this_action,1,0,0);
@@ -327,10 +285,6 @@ void agent_init(const char* task_spec)
 	//Allocate memory for a one-dimensional integer observation using utility functions from RLStruct_util
 	last_observation=allocateRLStructPointer(1,0,0);
 	
-	//Later we will parse this from the task spec, but for now
-	value_function= new double[numActions*numStates];
-  for (int i = 0; i < numActions*numStates; i++)
-    value_function[i] = 0; 
 }
 
 const action_t *agent_start(const observation_t *this_observation) {
@@ -345,37 +299,17 @@ const action_t *agent_start(const observation_t *this_observation) {
 }
 
 const action_t *agent_step(double reward, const observation_t *this_observation) {
-  //	int newState=this_observation->intArray[0];
-  //	int lastState=last_observation->intArray[0];
 	int lastAction=last_action.intArray[0];
-	// Testing vw
-	//	query_vw_value(value_function, 1, numActions*numStates, 1.0, true);
-
 	int newAction=egreedy(this_observation->doubleArray);
-	
-	//	double Q_sa=query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, 0.0, 0.0);//value_function[calculateArrayIndex(lastState,lastAction)];
-	//	double Q_sprime_aprime=query_vw_value(computeFeatures(this_observation->doubleArray), newAction, numStates, 0.0, 0.0);//value_function[calculateArrayIndex(newState,newAction)];
-	
-	//	double delta = (reward + sarsa_gamma * Q_sprime_aprime - Q_sa);
-	/*	Only update the value function if the policy is not frozen */
-	//	if(!policy_frozen){
-	// If NOT using TRACES
-	//	query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward + sarsa_gamma * Q_sprime_aprime, 1.0);	  
-	// If USING TRACES
-	//	double p = query_vw_value(traces[lastAction], lastAction, numStates, 0.0, 0.0);
-	//	query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward + sarsa_gamma * Q_sprime_aprime, 1.0);	  
-	//	query_vw_value(traces[lastAction], lastAction, numStates, p + delta, sarsa_gamma*sarsa_lambda);
+
+	// All of the RL is foisted onto VW
 	if(!policy_frozen){
 	  double Q_sa = query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward, 1.0);
-	//	update_traces(lastAction);
-
 	    cout << Q_sa;
 	    for(int i=0; i<numStates; i++)
 	      cout << "," << last_observation->doubleArray[i];
 	    cout << endl;
 	}
-	  //		value_function[calculateArrayIndex(lastState,lastAction)]=new_Q_sa;
-	  //	}
 
 	this_action.intArray[0]=newAction;
 	replaceRLStruct(&this_action, &last_action);
@@ -386,22 +320,9 @@ const action_t *agent_step(double reward, const observation_t *this_observation)
 
 
 void agent_end(double reward) {
-  //	int lastState=last_observation->intArray[0];
 	int lastAction=last_action.intArray[0];
 	
-	//	double Q_sa=query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, 0.0, 0.0);//value_function[calculateArrayIndex(lastState,lastAction)];
-	//	double new_Q_sa=Q_sa + sarsa_stepsize * (reward - Q_sa);
-
-	/*	Only update the value function if the policy is not frozen */
 	if(!policy_frozen){
-	// If NOT using TRACES
-	  //	query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward,1.0);	  
-	// If USING TRACES
-	  //	double delta = reward - Q_sa;
-	  //	double p = query_vw_value(traces[lastAction], lastAction, numStates, 0.0, 0.0);
-	  //	query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward,1.0);	  
-	  //	query_vw_value(traces[lastAction], lastAction, numStates, p + delta, sarsa_gamma*sarsa_lambda);
-	  //	update_traces(lastAction);
 	  query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward,1.0);	  
 	}
 
@@ -413,11 +334,6 @@ void agent_cleanup() {
 	clearRLStruct(&this_action);
 	clearRLStruct(&last_action);
 	freeRLStructPointer(last_observation);
-	
-	if(value_function!=0){
-		delete [] value_function;
-		value_function=0;
-	}
 }
 
 const char* agent_message(const char* _inMessage) {
@@ -489,17 +405,9 @@ const char* agent_message(const char* _inMessage) {
 void save_value_function(const char *fileName){
   ofstream out(fileName, ios_base::binary);
 
-	out.write(reinterpret_cast<const char *>(value_function),
-            sizeof(double)*numStates*numActions);
-	out.close();
 }
 
 void load_value_function(const char *fileName){
-	ifstream in(fileName, ios_base::binary); 
-	
-	in.read(reinterpret_cast<char *>(value_function),
-          sizeof(double)*numStates*numActions);
-	in.close(); 
 }
 
 int egreedy(double features[]){
