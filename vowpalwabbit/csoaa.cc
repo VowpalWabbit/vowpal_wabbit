@@ -489,7 +489,7 @@ namespace CSOAA_AND_WAP_LDF {
             cerr << "warning: multiple costs for same index (" << costs[j].weight_index << ") at position " << k << ": ignoring all but the first!" << endl;
             this_warned = true;
           }
-          costs[j].weight_index = (size_t)-1;
+          costs[j].weight_index = (uint32_t)-1;
           costs[j].partial_prediction = FLT_MAX;
           continue;
         } else
