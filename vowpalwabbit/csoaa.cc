@@ -155,7 +155,7 @@ namespace CSOAA {
             cerr << "shared feature vectors should not have costs" << endl;
         } else if (substring_eq(name[0], "label")) {
           if (name.index() == 2) {
-            f.weight_index = (size_t)f.x;
+            f.weight_index = (uint32_t)f.x;
             f.x = -1;
           } else
             cerr << "label feature vectors must have label ids" << endl;
@@ -224,7 +224,7 @@ namespace CSOAA {
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
+        uint32_t pred = *(OAA::prediction_t*)&ec->final_prediction;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
@@ -269,7 +269,7 @@ namespace CSOAA {
   void learn(void* a, example* ec) {
     vw* all = (vw*)a;
     label* ld = (label*)ec->ld;
-    float prediction = 1;
+    size_t prediction = 1;
     float score = FLT_MAX;
     size_t current_increment = 0;
 
@@ -310,7 +310,7 @@ namespace CSOAA {
 	ec->partial_prediction = 0.;
       }
     ec->ld = ld;
-    *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
+    *(OAA::prediction_t*)&(ec->final_prediction) = (uint32_t)prediction;
     if (current_increment != 0)
       update_example_indicies(all->audit, ec, -current_increment);
   }
@@ -459,13 +459,13 @@ namespace CSOAA_AND_WAP_LDF {
   {
 
     size_t K = ec_seq.index();
-    size_t prediction = 0;
+    uint32_t prediction = 0;
     float  prediction_cost = 0.;
     bool   isTest = CSOAA::example_is_test(*ec_seq.begin);
     float  min_cost = FLT_MAX;
     float  min_score = FLT_MAX;
 
-    v_hashmap<size_t,float> hit_labels(8, 0., NULL);
+    v_hashmap<uint32_t,float> hit_labels(8, 0., NULL);
     bool this_warned = false;
 
     for (size_t k=start_K; k<K; k++) {
@@ -543,7 +543,7 @@ namespace CSOAA_AND_WAP_LDF {
       float example_t1 = ec1->example_t;
 
       for (size_t j1=0; j1<costs1.index(); j1++) {
-        if (costs1[j1].weight_index == (size_t)-1) continue;
+        if (costs1[j1].weight_index == (uint32_t)-1) continue;
         if (all.training && !isTest) {
           LabelDict::add_example_namespace_from_memory(ec1, costs1[j1].weight_index);
 
@@ -553,7 +553,7 @@ namespace CSOAA_AND_WAP_LDF {
             v_array<CSOAA::wclass> costs2 = ld2->costs;
 
             for (size_t j2=0; j2<costs2.index(); j2++) {
-              if (costs2[j2].weight_index == (size_t)-1) continue;
+              if (costs2[j2].weight_index == (uint32_t)-1) continue;
               float value_diff = fabs(costs2[j2].wap_value - costs1[j1].wap_value);
               //float value_diff = fabs(costs2[j2].x - costs1[j1].x);
               if (value_diff < 1e-6)
