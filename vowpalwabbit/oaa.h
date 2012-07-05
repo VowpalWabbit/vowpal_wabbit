@@ -12,11 +12,11 @@ namespace OAA
 {
 
   struct mc_label {
-    uint32_t label;
+    size_t label;
     float weight;
   };
   
-  typedef uint32_t prediction_t;
+  typedef size_t prediction_t;
   
   void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, size_t s);
   
@@ -44,7 +44,7 @@ namespace OAA
 
   inline int example_is_test(example* ec)
   {
-    return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
+    return (((OAA::mc_label*)ec->ld)->label == (size_t)-1);
   }
 
 

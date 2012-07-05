@@ -10,10 +10,9 @@
 #include "parse_args.h"
 
 namespace CSOAA {
-
-  struct wclass {  // names are for compatibility with 'feature'
-    float x;  // the cost of this class
-    uint32_t weight_index;  // the index of this class
+  struct wclass {
+    float x;
+    size_t weight_index;
     float partial_prediction;  // a partial prediction: new!
     float wap_value;  // used for wap to store values derived from costs
     bool operator==(wclass j){return weight_index == j.weight_index;}

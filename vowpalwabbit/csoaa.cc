@@ -51,16 +51,16 @@ namespace CSOAA {
   
   char* bufread_label(label* ld, char* c, io_buf& cache)
   {
-    uint32_t num = *(uint32_t *)c;
+    size_t num = *(size_t *)c;
     ld->costs.erase();
-    c += sizeof(uint32_t);
+    c += sizeof(size_t);
     size_t total = sizeof(wclass)*num;
     if (buf_read(cache, c, total) < total) 
       {
         cout << "error in demarshal of cost data" << endl;
         return c;
       }
-    for (uint32_t i = 0; i<num; i++)
+    for (size_t i = 0; i<num; i++)
       {
         wclass temp = *(wclass *)c;
         c += sizeof(wclass);
@@ -75,7 +75,7 @@ namespace CSOAA {
     label* ld = (label*) v;
     ld->costs.erase();
     char *c;
-    size_t total = sizeof(uint32_t);
+    size_t total = sizeof(size_t);
     if (buf_read(cache, c, total) < total) 
       return 0;
     c = bufread_label(ld,c, cache);
@@ -95,8 +95,8 @@ namespace CSOAA {
 
   char* bufcache_label(label* ld, char* c)
   {
-    *(uint32_t *)c = ld->costs.index();
-    c += sizeof(uint32_t);
+    *(size_t *)c = ld->costs.index();
+    c += sizeof(size_t);
     for (size_t i = 0; i< ld->costs.index(); i++)
       {
         *(wclass *)c = ld->costs[i];
@@ -109,7 +109,7 @@ namespace CSOAA {
   {
     char *c;
     label* ld = (label*) v;
-    buf_write(cache, c, sizeof(uint32_t)+sizeof(wclass)*ld->costs.index());
+    buf_write(cache, c, sizeof(size_t)+sizeof(wclass)*ld->costs.index());
     bufcache_label(ld,c);
   }
 
@@ -155,7 +155,7 @@ namespace CSOAA {
             cerr << "shared feature vectors should not have costs" << endl;
         } else if (substring_eq(name[0], "label")) {
           if (name.index() == 2) {
-            f.weight_index = (uint32_t)f.x;
+            f.weight_index = (size_t)f.x;
             f.x = -1;
           } else
             cerr << "label feature vectors must have label ids" << endl;
@@ -224,7 +224,7 @@ namespace CSOAA {
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
-        uint32_t pred = *(OAA::prediction_t*)&ec->final_prediction;
+        size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
@@ -310,7 +310,7 @@ namespace CSOAA {
 	ec->partial_prediction = 0.;
       }
     ec->ld = ld;
-    *(OAA::prediction_t*)&(ec->final_prediction) = (uint32_t)prediction;
+    *(OAA::prediction_t*)&(ec->final_prediction) = (size_t)prediction;
     if (current_increment != 0)
       update_example_indicies(all->audit, ec, -current_increment);
   }
@@ -459,13 +459,13 @@ namespace CSOAA_AND_WAP_LDF {
   {
 
     size_t K = ec_seq.index();
-    uint32_t prediction = 0;
+    size_t prediction = 0;
     float  prediction_cost = 0.;
     bool   isTest = CSOAA::example_is_test(*ec_seq.begin);
     float  min_cost = FLT_MAX;
     float  min_score = FLT_MAX;
 
-    v_hashmap<uint32_t,float> hit_labels(8, 0., NULL);
+    v_hashmap<size_t,float> hit_labels(8, 0., NULL);
     bool this_warned = false;
 
     for (size_t k=start_K; k<K; k++) {
@@ -489,7 +489,7 @@ namespace CSOAA_AND_WAP_LDF {
             cerr << "warning: multiple costs for same index (" << costs[j].weight_index << ") at position " << k << ": ignoring all but the first!" << endl;
             this_warned = true;
           }
-          costs[j].weight_index = (uint32_t)-1;
+          costs[j].weight_index = (size_t)-1;
           costs[j].partial_prediction = FLT_MAX;
           continue;
         } else
@@ -543,7 +543,7 @@ namespace CSOAA_AND_WAP_LDF {
       float example_t1 = ec1->example_t;
 
       for (size_t j1=0; j1<costs1.index(); j1++) {
-        if (costs1[j1].weight_index == (uint32_t)-1) continue;
+        if (costs1[j1].weight_index == (size_t)-1) continue;
         if (all.training && !isTest) {
           LabelDict::add_example_namespace_from_memory(ec1, costs1[j1].weight_index);
 
@@ -553,7 +553,7 @@ namespace CSOAA_AND_WAP_LDF {
             v_array<CSOAA::wclass> costs2 = ld2->costs;
 
             for (size_t j2=0; j2<costs2.index(); j2++) {
-              if (costs2[j2].weight_index == (uint32_t)-1) continue;
+              if (costs2[j2].weight_index == (size_t)-1) continue;
               float value_diff = fabs(costs2[j2].wap_value - costs1[j1].wap_value);
               //float value_diff = fabs(costs2[j2].x - costs1[j1].x);
               if (value_diff < 1e-6)

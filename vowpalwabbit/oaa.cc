@@ -14,7 +14,7 @@ namespace OAA {
 
   char* bufread_label(mc_label* ld, char* c)
   {
-    ld->label = *(uint32_t *)c;
+    ld->label = *(size_t *)c;
     c += sizeof(ld->label);
     ld->weight = *(float *)c;
     c += sizeof(ld->weight);
@@ -46,7 +46,7 @@ namespace OAA {
 
   char* bufcache_label(mc_label* ld, char* c)
   {
-    *(uint32_t *)c = ld->label;
+    *(size_t *)c = ld->label;
     c += sizeof(ld->label);
     *(float *)c = ld->weight;
     c += sizeof(ld->weight);
@@ -151,7 +151,7 @@ namespace OAA {
     size_t prediction = 1;
     float score = INT_MIN;
   
-    if (mc_label_data->label > k && mc_label_data->label != (uint32_t)-1)
+    if (mc_label_data->label > k && mc_label_data->label != (size_t)-1)
       cerr << "warning: label " << mc_label_data->label << " is greater than " << k << endl;
   
     string outputString;
