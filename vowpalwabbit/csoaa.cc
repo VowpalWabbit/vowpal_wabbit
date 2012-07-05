@@ -374,6 +374,7 @@ namespace CSOAA_AND_WAP_LDF {
   bool need_to_clear = true;
   bool is_singleline = true;
   bool is_wap = false;
+  float csoaa_example_t = 0;
 
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
@@ -528,6 +529,8 @@ namespace CSOAA_AND_WAP_LDF {
           all_costs.push_back(&this_costs[j]);
       }
       compute_wap_values(all_costs);
+
+      csoaa_example_t += 1.;
     }
 
     label_data simple_label;
@@ -537,6 +540,7 @@ namespace CSOAA_AND_WAP_LDF {
       v_array<CSOAA::wclass> costs1 = ld1->costs;
       bool prediction_is_me = false;
       ec1->ld = &simple_label;
+      float example_t1 = ec1->example_t;
 
       for (size_t j1=0; j1<costs1.index(); j1++) {
         if (costs1[j1].weight_index == (size_t)-1) continue;
@@ -558,6 +562,7 @@ namespace CSOAA_AND_WAP_LDF {
               LabelDict::add_example_namespace_from_memory(ec2, costs2[j2].weight_index);
 
               // learn
+              ec1->example_t = csoaa_example_t;
               simple_label.initial = 0.;
               simple_label.label = (costs1[j1].x < costs2[j2].x) ? -1.0 : 1.0;
               simple_label.weight = value_diff;
@@ -576,6 +581,7 @@ namespace CSOAA_AND_WAP_LDF {
       }
       *(OAA::prediction_t*)&(ec1->final_prediction) = prediction_is_me ? prediction : 0;
       ec1->ld = ld1;
+      ec1->example_t = example_t1;
     }
   }
 
@@ -652,6 +658,8 @@ namespace CSOAA_AND_WAP_LDF {
     //cerr<<"prediction="<<prediction<<endl;
 
     // do actual learning
+    if (all.training && !isTest)
+      csoaa_example_t += 1.;
     for (size_t k=start_K; k<K; k++) {
       example *ec = ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
@@ -662,6 +670,8 @@ namespace CSOAA_AND_WAP_LDF {
       bool prediction_is_me = false;
       for (size_t j=0; j<costs.index(); j++) {
         if (all.training && !isTest) {
+          float example_t = ec->example_t;
+          ec->example_t = csoaa_example_t;
           simple_label.initial = 0.;
           simple_label.label = costs[j].x;
           simple_label.weight = 1.;
@@ -670,6 +680,7 @@ namespace CSOAA_AND_WAP_LDF {
           LabelDict::add_example_namespace_from_memory(ec, costs[j].weight_index);
           base_learner(&all, ec);
           LabelDict::del_example_namespace_from_memory(ec, costs[j].weight_index);
+          ec->example_t = example_t;
         }
 
         // fill in test predictions
@@ -1036,6 +1047,7 @@ namespace LabelDict {
       ec->total_sum_feat_sq -= ec->sum_feat_sq[(size_t)ns];
     } else {
       push(ec->indices, (size_t)ns);
+      ec->sum_feat_sq[(size_t)ns] = 0;
     }
 
     for (feature*f=features.begin; f!=features.end; f++) {
