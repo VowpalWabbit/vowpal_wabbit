@@ -424,11 +424,11 @@ namespace Sequence {
       if (true_labels.begin+i == true_labels.end) { break; }
 
       strlen = num_len - (int)ceil(log10f((float)true_labels[i]->label+1));
-      numspr = sprintf(true_label+pos+strlen, "%d", true_labels[i]->label);
+      numspr = sprintf(true_label+pos+strlen, "%lu", (long unsigned int)true_labels[i]->label);
       true_label[pos+numspr+strlen] = ' ';
 
       strlen = num_len - (int)ceil(log10f((float)pred_seq[i]+1));
-      numspr = sprintf(pred_label+pos+strlen, "%d", (int)pred_seq[i]);
+      numspr = sprintf(pred_label+pos+strlen, "%lu", (long unsigned int)pred_seq[i]);
       pred_label[pos+numspr+strlen] = ' ';
 
       pos += num_len + 1;
