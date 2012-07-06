@@ -89,7 +89,6 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
       cout << "can't open " << file << endl << " ... exiting." << endl;
       exit(1);
     }
-
   
   size_t v_length;
   source.read((char*)&v_length, sizeof(v_length));
@@ -100,7 +99,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   version_struct v_tmp(temp.begin);
   if (v_tmp < LAST_COMPATIBLE_VERSION)
     {
-      cout << "source has possibly incompatible version! " << v_tmp.to_string() << endl;
+      cout << "Model has possibly incompatible version! " << v_tmp.to_string() << endl;
       exit(1);
     }
   
