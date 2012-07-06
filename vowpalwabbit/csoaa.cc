@@ -112,6 +112,8 @@ namespace CSOAA {
 
   void default_label(void* v)
   {
+    label* ld = (label*) v;
+    ld->costs.erase();
   }
 
   void delete_label(void* v)
@@ -233,7 +235,6 @@ namespace CSOAA {
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
         size_t i = cl->weight_index;
-	
 	label_data simple_temp;
 	simple_temp.initial = 0.;
 
