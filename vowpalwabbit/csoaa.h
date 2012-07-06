@@ -10,11 +10,11 @@
 #include "parse_args.h"
 
 namespace CSOAA {
-
-  struct wclass {  // names are for compatibility with 'feature'
-    float x;  // the cost of this class
-    uint32_t weight_index;  // the index of this class
+  struct wclass {
+    float x;
+    size_t weight_index;
     float partial_prediction;  // a partial prediction: new!
+    float wap_value;  // used for wap to store values derived from costs
     bool operator==(wclass j){return weight_index == j.weight_index;}
   };
 
@@ -37,34 +37,30 @@ namespace CSOAA {
 					cache_label, read_cached_label, 
 					delete_label, weight, initial, 
 					sizeof(label)};
+
+  int example_is_test(example* ec);
 }
 
-namespace CSOAA_LDF {
-  typedef OAA::mc_label label;
+namespace CSOAA_AND_WAP_LDF {
+  typedef CSOAA::label label;
 
-  inline int example_is_newline(example* ec)
-  {
-    // if only index is constant namespace or no index
-    return ((ec->indices.index() == 0) || 
-            ((ec->indices.index() == 1) &&
-             (ec->indices.last() == constant_namespace)));
-  }
-
-  inline int example_is_test(example* ec)
-  {
-    //    cerr << "example_is_test( " << ec << " )" << endl;
-    //    cerr << "ld = " << ec->ld << endl;
-    return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
-  }
-
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, size_t s);
+  void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&, po::variables_map& vm, size_t s);
   void global_print_newline(vw& all);
-  void output_example(vw& all, example* ec);
+  void output_example(vw& all, example* ec, bool&hit_loss);
 
-  const label_parser cs_label_parser = {OAA::default_label, OAA::parse_label, 
-					OAA::cache_label, OAA::read_cached_label, 
-					OAA::delete_label, OAA::weight, OAA::initial, 
-					sizeof(label)};
+  const label_parser cs_label_parser = CSOAA::cs_label_parser;
+}
+
+namespace LabelDict {
+  bool ec_is_label_definition(example*ec);
+  bool ec_is_example_header(example*ec);
+  bool ec_seq_is_label_definition(v_array<example*>ec_seq);
+  void add_example_namespaces_from_example(example*target, example*source);
+  void del_example_namespaces_from_example(example*target, example*source);
+  void add_example_namespace_from_memory(example*ec, size_t lab);
+  void del_example_namespace_from_memory(example* ec, size_t lab);
+  void set_label_features(size_t lab, v_array<feature>features);
+  void free_label_features();
 }
 
 #endif
