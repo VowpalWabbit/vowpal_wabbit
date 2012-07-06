@@ -173,8 +173,8 @@ namespace WAP {
               ec->ld = &simple_temp;
 	    
               ec->partial_prediction = 0.;
-              uint32_t myi = vs[i].ci.weight_index;
-              uint32_t myj = vs[j].ci.weight_index;
+              size_t myi = vs[i].ci.weight_index;
+              size_t myj = vs[j].ci.weight_index;
 
               mirror_features(all, ec,(myi-1)*increment, (myj-1)*increment);
 
@@ -187,9 +187,9 @@ namespace WAP {
     ec->ld = ld;
   }
 
-  uint32_t test(vw& all, example* ec)
+  size_t test(vw& all, example* ec)
   {
-    uint32_t prediction = 1;
+    size_t prediction = 1;
     float score = -FLT_MAX;
   
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld; 
@@ -200,7 +200,7 @@ namespace WAP {
         simple_temp.initial = 0.;
         simple_temp.weight = 0.;
         simple_temp.label = FLT_MAX;
-        uint32_t myi = cost_label->costs[i].weight_index;
+        size_t myi = cost_label->costs[i].weight_index;
         if (myi!= 1)
           update_example_indicies(all.audit, ec, increment*(myi-1));
         ec->partial_prediction = 0.;
@@ -223,7 +223,7 @@ namespace WAP {
     vw* all = (vw*)a;
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
     
-    uint32_t prediction = test(*all, ec);
+    size_t prediction = test(*all, ec);
 
     ec->ld = cost_label;
     

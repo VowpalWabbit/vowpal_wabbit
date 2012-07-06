@@ -111,7 +111,7 @@ template<class K, class V> class v_hashmap{
         push(tmp, *e);
     
     // double the size and clear
-    std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;
+    //std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;
     reserve(dat, base_size()*2);
     memset(dat.begin, 0, base_size()*sizeof(hash_elem));
 

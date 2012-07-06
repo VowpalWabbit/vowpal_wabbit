@@ -179,12 +179,12 @@ namespace CSOAA {
     }
 
     if (words.index() == 0) {
-      if (sd->k != (size_t)-1)
+      if (sd->k != (size_t)-1) {
         for (size_t i = 1; i <= sd->k; i++) {
           wclass f = {f.x, i, 0.};
           push(ld->costs, f);
         }
-      else {
+      } else {
         cerr << "ldf test examples must have possible labels listed" << endl;
         exit(-1);
       }
@@ -193,7 +193,7 @@ namespace CSOAA {
 
   void print_update(vw& all, bool is_test, example *ec)
   {
-    if ((all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs))
+    if ( /* (all.sd->weighted_examples > all.sd->old_weighted_examples) || */ (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs))
       {
         char label_buf[32];
         if (is_test)
@@ -1027,6 +1027,7 @@ namespace LabelDict {
       ec->indices.pop();
       ec->total_sum_feat_sq -= ec->sum_feat_sq[(size_t)ns];
       ec->atomics[(size_t)ns].erase();
+      ec->sum_feat_sq[(size_t)ns] = 0.;
     } else { // DID have ns
       for (feature*f=features.begin; f!=features.end; f++) {
         ec->sum_feat_sq[(size_t)ns] -= f->x * f->x;

@@ -144,7 +144,7 @@ namespace SequenceTask {
     dst->pos      = src->pos;
     dst->predictions_hash = src->predictions_hash;
     dst->cum_loss = src->cum_loss;
-    dst->predictions = (history)SearnUtil::calloc_or_die(hinfo.length, sizeof(uint32_t));
+    dst->predictions = (history)SearnUtil::calloc_or_die(hinfo.length, sizeof(size_t));
     for (size_t t=0; t<hinfo.length; t++)
       dst->predictions[t] = src->predictions[t];
 
@@ -179,7 +179,7 @@ namespace SequenceTask {
     s->pos      = 0;
     s->cum_loss = 0.;
 
-    s->predictions = (history)SearnUtil::calloc_or_die(hinfo.length, sizeof(uint32_t));
+    s->predictions = (history)SearnUtil::calloc_or_die(hinfo.length, sizeof(size_t));
     for (size_t t=0; t<hinfo.length; t++)
       s->predictions[t] = 0;
 
