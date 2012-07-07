@@ -11,6 +11,7 @@ using namespace std;
 namespace RL {
 
 const float pi = acos(-1);
+  float gamma = 1.0;
 
   char* bufread_label(reward_label* ld, char* c)
   {
@@ -153,6 +154,11 @@ const float pi = acos(-1);
     float prediction = 0.;
     float score = INT_MIN;
     bool doTrain = reward_label_data->label != FLT_MAX;
+    if (reward_label_data->label == 0 && reward_label_data->weight == 0 && ec->num_features == 1) {
+      doTrain = false;
+      last_ec = NULL;
+      return;
+    }
 
     // Generate prediction
     label_data simple_temp;
@@ -169,7 +175,7 @@ const float pi = acos(-1);
       reward_label* last_reward = (reward_label*)last_ec->ld;
 
       // Compute delta-target
-      simple_temp.label = 0.9999 * Q_spap + last_reward->label;
+      simple_temp.label = gamma * Q_spap + last_reward->label;
       simple_temp.weight = last_reward->weight;
 
       // Update/learn
@@ -236,6 +242,7 @@ const float pi = acos(-1);
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, double s)
   {
     //    *(all.p->lp) = rl_label_parser;
+    gamma = s;
     all.driver = drive_rl;
     base_learner = all.learn;
     all.learn = learn;
