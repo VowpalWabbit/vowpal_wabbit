@@ -14,7 +14,7 @@
 
 typedef void*  state;
 typedef size_t action;     // actions are ONE-based
-typedef uint32_t* history;
+typedef size_t* history;
 
 namespace SearnUtil
 {

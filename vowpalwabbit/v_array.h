@@ -6,6 +6,7 @@ embodied in the content of this file are licensed under the BSD
 
 #ifndef VARRAY_H__
 #define VARRAY_H__
+#include <iostream>
 #include <stdlib.h>
 #include <string.h>
 
@@ -78,6 +79,10 @@ template<class T> void reserve(v_array<T>& v, size_t length)
 {
   size_t old_length = v.end_array-v.begin;
   v.begin = (T *)realloc(v.begin, sizeof(T) * length);
+  if ((v.begin == NULL) && ((sizeof(T)*length) > 0)) {
+    std::cerr << "realloc failed in reserve().  out of memory?" << std::endl;
+    exit(-1);
+  }
   if (old_length < length)
     memset(v.begin+old_length, 0, (length-old_length)*sizeof(T));
   v.end = v.begin;

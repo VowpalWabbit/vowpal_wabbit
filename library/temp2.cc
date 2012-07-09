@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "../vowpalwabbit/vw.h"
+#include "ezexample.h"
 
 using namespace std;
-
 
 inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, float val)
 {
@@ -13,13 +13,49 @@ inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, fl
 
 int main(int argc, char *argv[])
 {
-  vw vw = VW::initialize("--hash all -q st --noconstant -i train.w");
+  // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
+  vw vw = VW::initialize("--hash all -q st --noconstant -i train.w -t --quiet");
 
-  example *vec2 = VW::read_example(vw, "|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+  // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
+  ezexample ex(&vw, false);
+  ex(vw_namespace('s'))
+    ("p^the_man")
+    ("w^the")
+    ("w^man")
+    (vw_namespace('t'))
+    ("p^le_homme")
+    ("w^le")
+    ("w^homme");
+  cerr << "should be near zero = " << ex() << endl;
+
+  --ex;   // remove the most recent namespace
+  ex(vw_namespace('t'))
+    ("p^un_homme")
+    ("w^un")
+    ("w^homme");
+  cerr << "should be near one  = " << ex() << endl;
+
+  // AND FINISH UP
+  vw.finish(&vw);
+}
+
+  /*
+
+  */
+
+  /*
+  // JOHN'S CLUNKY INTERFACE USING STRINGS
+  example *vec1 = VW::read_example(vw, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+  vw.learn(&vw, vec1);
+  cerr << "p1 = " << vec1->final_prediction << endl;
+  VW::finish_example(vw, vec1);
+
+  example *vec2 = VW::read_example(vw, (char*)"|s p^the_man w^the w^man |t p^le_homme w^le w^homme");
   vw.learn(&vw, vec2);
   cerr << "p2 = " << vec2->final_prediction << endl;
   VW::finish_example(vw, vec2);
 
+  // JOHN'S CLUNKY INTERFACE USING VECTORS
   vector< VW::feature_space > ec_info;
   vector<feature> s_features, t_features;
   uint32_t s_hash = VW::hash_space(vw, "s");
@@ -33,11 +69,7 @@ int main(int argc, char *argv[])
   ec_info.push_back( VW::feature_space('s', s_features) );
   ec_info.push_back( VW::feature_space('t', t_features) );
   example* vec3 = VW::import_example(vw, ec_info);
-    
   vw.learn(&vw, vec3);
   cerr << "p3 = " << vec3->final_prediction << endl;
   VW::finish_example(vw, vec3);
-
-  VW::finish(vw);
-}
-
+*/
