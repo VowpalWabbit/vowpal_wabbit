@@ -99,8 +99,6 @@ const char* curv_message = "Zero or negative curvature detected.\n"
       "It is also possible that you have reached numerical accuracy\n"
       "and further decrease in the objective cannot be reliably detected.\n";
 
-inline bool nanpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fffffff) > 0x7f800000; } 
-
 void zero_derivative(vw& all)
 {//set derivative to 0.
   uint32_t length = 1 << all.num_bits;
