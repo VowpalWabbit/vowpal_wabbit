@@ -113,6 +113,11 @@ public:
   inline ezexample& operator--() { remns(); return *this; }
   inline float      operator()() { return predict(); }
 
+  inline void clear()
+  {
+    while (current_ns != NULL)
+      remns();
+  }
 
   void print() {
     cerr << "ezexample dat->size=" << dat->size() << ", current_seed=" << current_seed << endl;
