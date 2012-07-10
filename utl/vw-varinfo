@@ -22,15 +22,14 @@
 # equal co-occurring features, the sum of the weights is what matters
 # and individual weight values are arbitrary.
 #
-# What distance represents is the relative distance of the regressor
-# weight from the weight of the 'zero' which is vw's best 'Constant'
-# feature.
+# Distance represents the relative distance of the regressor weight
+# from the weight of the 'zero' which is vw's best constant prediction.
 #
-# This distanceis also convenient because:
+# Merits of this distance:
 #   1) It is a relative metric, making it easier to compare two features
-#   2) Easier to interpret (max is always set to 100%)
-#   2) It is signed, so it shows which features (variables) are
-#      positively vs negatively correlated with the target label.
+#   2) Easier to interpret vs an arbitrary weight (max is set to 100%)
+#   2) It is signed, so it shows which features are positively vs
+#      negatively correlated with the target label.
 #
 # (c) 2012 - ariel faigon for vowpal-wabbit
 # This software may be distributed under the same terms as vowpal-wabbit
@@ -56,6 +55,9 @@ my $DoKeep;         # handy flag for whether we need to use --keep or not
 
 my @TmpFiles;
 
+#
+# v() & V():  verbose/debug prints for -v and -V
+#
 sub v(@) {
     return unless $opt_v;
     if (@_ == 1) {
@@ -152,6 +154,14 @@ sub feature_name(@) {
     join('^', @_);
 }
 
+#
+# pair_features()
+#   Initialize %FeatureMin and %FeatureMax for all paired
+#   name-spaces based on the @QPairs list which was constructed
+#   from VW -q ... arguments.
+#
+#   Respect all --ignore and --keep logic while doing so.
+#
 sub pair_features {
     my %paired_features;
     my @name_spaces = keys %NameSpaces;
@@ -189,6 +199,11 @@ sub pair_features {
     }
 }
 
+#
+# read_features($trainingset_file)
+#   Read the training set & parse it, collect all name-spaces,
+#   feature-names, min/max values
+#
 sub read_features($) {
     my ($trainset) = @_;
 
@@ -201,12 +216,14 @@ sub read_features($) {
     while (<$ts>) {
         # -- examples loop
         next unless (/\S/);     # skip empty lines
+
         # -- grab anything following the 1st '|'
         my ($input_features) = ($_ =~ /^[^|]*\|(.*)$/);
         my @name_space_region = split('\|', $input_features);
         foreach my $nsr (@name_space_region) {
-            # -- name-spaces loop
-            my ($ns) = ($nsr =~ /^(\S+)/);
+            # -- name-spaces loop (note: name-space my be ''):
+            #    extract the name-space string, ignore (optional) :weight
+            my ($ns) = ($nsr =~ /^([^:\s]+)(?:\:\S+)?/);
             $ns = '' unless ((defined $ns) && length($ns));
 
             my $ns_ch1 = substr($ns, 0, 1);
@@ -219,13 +236,17 @@ sub read_features($) {
             }
             my $nsref = $NameSpaces{$ns};
 
-            $nsr =~ s/^$ns\s*//;
+            # Trim (the optionally empty) name-space prefix,
+            # including the optional :weight
+            $nsr =~ s/^$ns\S*\s*//;
+
+            # Following the name-space: loop over feature+value pairs:
             foreach my $keyval (split(/\s+/, $nsr)) {
                 # -- features loop
                 my ($key, $val);
-                if ($keyval =~ /:/) {
+                if ($keyval =~ /:/) {       # explicit :value
                     ($key, $val) = ($`, $');
-                } else {
+                } else {                    # implicit value == 1
                     $key = $keyval;
                     $val = 1;
                 }
@@ -289,6 +310,11 @@ sub generate_full_example($) {
     close $fe;
 }
 
+#
+# audit_features()
+#   read the output of vw -a (audit) on the all-feature example
+#   to extract hash values and weights
+#
 sub audit_features {
     generate_full_example($FullExample);
 
