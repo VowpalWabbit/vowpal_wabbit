@@ -101,6 +101,9 @@ public:
   }
 
   // HELPER FUNCTIONALITY
+  inline void clear() {
+    while (current_ns != NULL) remns();
+  }
   inline fid hash(string fstr) { 
     return VW::hash_feature(*vw_ref, fstr, current_seed); 
   }
