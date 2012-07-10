@@ -55,6 +55,33 @@ template<class K, class V> class v_hashmap{
     num_occupants = 0;
   }
 
+  void* iterator_next(void* prev) {
+    hash_elem* e = (hash_elem*)prev;
+    if (e == NULL) return NULL;
+    e++;
+    while (e != dat.end_array) {
+      if (e->occupied)
+        return e;
+      e++;
+    }
+    return NULL;
+  }
+
+  void* iterator() {
+    hash_elem* e = dat.begin;
+    while (e != dat.end_array) {
+      if (e->occupied)
+        return e;
+      e++;
+    }
+    return NULL;
+  }
+
+  V iterator_get_value(void* el) {
+    hash_elem* e = (hash_elem*)el;
+    return e->val;
+  }
+
   void iter(void (*func)(K,V)) {
     //for (size_t lp=0; lp<base_size(); lp++) {
     for (hash_elem* e=dat.begin; e!=dat.end_array; e++) {
@@ -65,7 +92,6 @@ template<class K, class V> class v_hashmap{
       }
     }
   }
-    
 
   void put_after_get_nogrow(K key, size_t hash, V val) {
     //printf("++[lp=%d\tocc=%d\thash=%zu]\n", last_position, dat[last_position].occupied, hash);
@@ -85,6 +111,7 @@ template<class K, class V> class v_hashmap{
         push(tmp, *e);
     
     // double the size and clear
+    //std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;
     reserve(dat, base_size()*2);
     memset(dat.begin, 0, base_size()*sizeof(hash_elem));
 
@@ -125,6 +152,35 @@ template<class K, class V> class v_hashmap{
       }
     }
   }
+
+  bool contains(K key, size_t hash) {
+    size_t sz  = base_size();
+    size_t first_position = hash % sz;
+    last_position = first_position;
+    while (true) {
+      // if there's nothing there, obviously we don't contain it
+      if (!dat[last_position].occupied)
+        return false;
+
+      // there's something there: maybe it's us
+      if ((dat[last_position].hash == hash) &&
+          ((equivalent == NULL) ||
+           (equivalent(key, dat[last_position].key))))
+        return true;
+
+      // there's something there that's NOT us -- advance pointer
+      last_position++;
+      if (last_position >= sz)
+        last_position = 0;
+
+      // check to make sure we haven't cycled around -- this is a bug!
+      if (last_position == first_position) {
+        std::cerr << "error: v_hashmap did not grow enough!" << std::endl;
+        exit(-1);
+      }
+    }
+  }
+    
 
   // only call put_after_get(key, hash, val) if you've already
   // run get(key, hash).  if you haven't already run get, then

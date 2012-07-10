@@ -46,11 +46,11 @@ Email questions/comments to me@hal3.name.
 
 namespace Sequence {
 
-  typedef uint32_t* history;  // histories have the most recent prediction at the END
+  typedef size_t* history;  // histories have the most recent prediction at the END
 
   struct history_item {
     history  predictions;
-    uint32_t predictions_hash;
+    size_t predictions_hash;
     float    loss;
     size_t   original_label;
     bool     same;
@@ -91,7 +91,7 @@ namespace Sequence {
   size_t total_examples_generated   = 0;
 
   history       current_history     = NULL;
-  uint32_t      current_history_hash = 0;
+  size_t      current_history_hash = 0;
 
   SearnUtil::history_info hinfo;
 
@@ -211,7 +211,7 @@ namespace Sequence {
     }
 
     if (current_history == NULL)
-      current_history = (history)calloc_or_die(hinfo.length, sizeof(uint32_t));
+      current_history = (history)calloc_or_die(hinfo.length, sizeof(size_t));
 
     for (size_t i = 1; i <= all.sd->k; i++)
       {
@@ -275,13 +275,13 @@ namespace Sequence {
     size_t sz = sequence_beam + sequence_k;
     beam = (history_item*)calloc_or_die(sz, sizeof(history_item));
     for (size_t k=0; k<sz; k++) {
-      beam[k].predictions       = (history)calloc_or_die(hinfo.length, sizeof(uint32_t));
-      beam[k].total_predictions = (history)calloc_or_die(all.p->ring_size, sizeof(uint32_t));
+      beam[k].predictions       = (history)calloc_or_die(hinfo.length, sizeof(size_t));
+      beam[k].total_predictions = (history)calloc_or_die(all.p->ring_size, sizeof(size_t));
     }
     beam_backup = (history_item*)calloc_or_die(sequence_beam, sizeof(history_item));
     for (size_t k=0; k<sequence_beam; k++) {
-      beam_backup[k].predictions       = (history)calloc_or_die(hinfo.length, sizeof(uint32_t));
-      beam_backup[k].total_predictions = (history)calloc_or_die(all.p->ring_size, sizeof(uint32_t));
+      beam_backup[k].predictions       = (history)calloc_or_die(hinfo.length, sizeof(size_t));
+      beam_backup[k].total_predictions = (history)calloc_or_die(all.p->ring_size, sizeof(size_t));
     }
   }
 
@@ -424,11 +424,11 @@ namespace Sequence {
       if (true_labels.begin+i == true_labels.end) { break; }
 
       strlen = num_len - (int)ceil(log10f((float)true_labels[i]->label+1));
-      numspr = sprintf(true_label+pos+strlen, "%d", true_labels[i]->label);
+      numspr = sprintf(true_label+pos+strlen, "%lu", (long unsigned int)true_labels[i]->label);
       true_label[pos+numspr+strlen] = ' ';
 
       strlen = num_len - (int)ceil(log10f((float)pred_seq[i]+1));
-      numspr = sprintf(pred_label+pos+strlen, "%d", (int)pred_seq[i]);
+      numspr = sprintf(pred_label+pos+strlen, "%lu", (long unsigned int)pred_seq[i]);
       pred_label[pos+numspr+strlen] = ' ';
 
       pos += num_len + 1;
@@ -486,7 +486,7 @@ namespace Sequence {
    *** HISTORY MANIPULATION
    ********************************************************************************************/
 
-  inline void append_history(history h, uint32_t p)
+  inline void append_history(history h, size_t p)
   {
     for (size_t i=1; i<hinfo.length; i++)
       h[i-1] = h[i];
@@ -494,7 +494,7 @@ namespace Sequence {
       h[hinfo.length-1] = (size_t)p;
   }
 
-  void append_history_item(history_item hi, uint32_t p)
+  void append_history_item(history_item hi, size_t p)
   {
     if (hinfo.length > 0) {
       int old_val = hi.predictions[0];
@@ -507,7 +507,7 @@ namespace Sequence {
     hi.same = 0;
   }
 
-  void assign_append_history_item(history_item to, history_item from, uint32_t p)
+  void assign_append_history_item(history_item to, history_item from, size_t p)
   {
     memcpy(to.predictions, from.predictions, hinfo.length * sizeof(size_t));
     to.predictions_hash = from.predictions_hash;
@@ -601,7 +601,7 @@ namespace Sequence {
 
   void copy_history_item(vw&all,history_item *to, history_item from, bool copy_pred, bool copy_total)
   {
-    if (copy_pred) memcpy((*to).predictions, from.predictions, hinfo.length * sizeof(uint32_t));
+    if (copy_pred) memcpy((*to).predictions, from.predictions, hinfo.length * sizeof(size_t));
     (*to).predictions_hash = from.predictions_hash;
     (*to).loss = from.loss;
     (*to).original_label = from.original_label;
@@ -1125,7 +1125,7 @@ namespace Sequence {
     bool any_test  = false;
 
     for (example **ec = ec_seq.begin; ec != ec_seq.end; ec++)
-      if (CSOAA_LDF::example_is_test(*ec)) { any_test = true; }
+      if (OAA::example_is_test(*ec)) { any_test = true; }
       else { any_train = true; }
 
     if (any_train && any_test)
@@ -1166,10 +1166,10 @@ namespace Sequence {
       clear_seq(*all);
     }
 
-    if (CSOAA_LDF::example_is_newline(ec)) {
+    if (OAA::example_is_newline(ec)) {
       do_actual_learning(*all);
       clear_seq(*all);
-      CSOAA_LDF::global_print_newline(*all);
+      CSOAA_AND_WAP_LDF::global_print_newline(*all);
       VW::finish_example(*all, ec);
     } else {
       read_example_this_loop++;

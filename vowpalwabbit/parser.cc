@@ -237,7 +237,9 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 
   for (size_t i = 0; i < caches.size(); i++)
     {
-      int f = all.p->input->open_file(caches[i].c_str(),io_buf::READ);
+      int f = -1;
+      if (!vm.count("kill_cache"))
+        f = all.p->input->open_file(caches[i].c_str(),io_buf::READ);
       if (f == -1)
 	make_write_cache(all.num_bits, all.p, caches[i], quiet);
       else {
@@ -699,7 +701,7 @@ namespace VW{
   example* import_example(vw& all, vector<feature_space> vf)
   {
     example* ret = get_unused_example(all);
-    
+    all.p->lp->default_label(ret->ld);
     for (size_t i = 0; i < vf.size();i++)
       {
 	size_t index = vf[i].first;
@@ -712,6 +714,14 @@ namespace VW{
       }
     setup_example(all, ret);
     return ret;
+  }
+
+  void parse_example_label(vw& all, example&ec, string label) {
+    v_array<substring> words;
+    char* cstr = (char*)label.c_str();
+    substring str = { cstr, cstr+label.length() };
+    push(words, str);
+    all.p->lp->parse_label(all.sd, ec.ld, words);
   }
   
   void finish_example(vw& all, example* ec)
