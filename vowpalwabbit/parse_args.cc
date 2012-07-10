@@ -112,6 +112,7 @@ vw parse_args(int argc, char *argv[])
     ("random_seed", po::value<long int>(&random_seed), "seed random number generator")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
+    ("ring_size", po::value<size_t>(), "size of example ring")
     ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("sequence", po::value<size_t>(), "Do sequence prediction with <k> labels per element")
@@ -561,6 +562,10 @@ vw parse_args(int argc, char *argv[])
       got_cs = true;
     }
     Sequence::parse_flags(all, to_pass_further, vm);
+  }
+
+  if (vm.count("ring_size")) {
+    all.p->ring_size = vm["ring_size"].as<size_t>();
   }
 
   if (vm.count("searn") || all.searn) { //all.searn can be set to true while loading regressor
