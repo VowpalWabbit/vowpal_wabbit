@@ -687,6 +687,7 @@ void setup_example(vw& all, example* ae)
 }
 
 namespace VW{
+  example* new_unused_example(vw& all) { return get_unused_example(all); }
   example* read_example(vw& all, char* example_line)
   {
     example* ret = get_unused_example(all);
@@ -697,6 +698,9 @@ namespace VW{
 
     return ret;
   }
+
+  size_t get_constant_namespace() { return constant_namespace; }
+  int get_constant() { return constant; }
 
   example* import_example(vw& all, vector<feature_space> vf)
   {

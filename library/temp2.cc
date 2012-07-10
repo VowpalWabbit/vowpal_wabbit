@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
   vw vw = VW::initialize("--hash all -q st --noconstant -i train.w -t --quiet");
 
   // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
-  ezexample ex(&vw, false);
+  ezexample_new ex(&vw, false);
   ex(vw_namespace('s'))
     ("p^the_man")
     ("w^the")
