@@ -154,7 +154,7 @@ const float pi = acos(-1);
     float prediction = 0.;
     float score = INT_MIN;
     bool doTrain = reward_label_data->label != FLT_MAX;
-    if (reward_label_data->label == 0 && reward_label_data->weight == 0 && ec->num_features == 1) {
+    if (ec->num_features == 1) {//reward_label_data->label == 0 && reward_label_data->weight == 0 && ec->num_features == 1) {
       doTrain = false;
       last_ec = NULL;
       return;
