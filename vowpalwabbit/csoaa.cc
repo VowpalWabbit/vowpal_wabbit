@@ -863,6 +863,7 @@ namespace CSOAA_AND_WAP_LDF {
   void finish(void* a)
   {
     vw* all = (vw*)a;
+    cerr<< "csoaa.finish"<<endl;
     base_finish(all);
     LabelDict::free_label_features();
   }

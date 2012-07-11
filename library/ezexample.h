@@ -16,7 +16,7 @@ public: vw_namespace(const char c) : namespace_letter(c) {}
 class ezexample {
  private:
   vw*vw_ref;
-  bool pass_empty;
+  bool is_multiline;
 
   char str[2];
   example*ec;
@@ -25,28 +25,34 @@ class ezexample {
   size_t quadratic_features_num;
   float quadratic_features_sqr;
   char current_ns;
-
   bool ns_exists[256];
-
   bool example_changed_since_prediction;
+
+  v_array<example*> example_copies;
 
   ezexample(const ezexample & ex);
   ezexample & operator=(const ezexample & ex);
 
+  example* get_new_example() {
+    example* new_ec = VW::new_unused_example(*vw_ref);
+    vw_ref->p->lp->default_label(new_ec->ld);
+    new_ec->pass = vw_ref->passes_complete;
+    return new_ec;
+  }
+
  public:
 
   // REAL FUNCTIONALITY
-  ezexample(vw*this_vw, bool pe=false) {
+  ezexample(vw*this_vw, bool multiline=false) {
     vw_ref = this_vw;
-    pass_empty = pe;
+    is_multiline = multiline;
 
     str[0] = 0; str[1] = 0;
     current_seed = 0;
     current_ns = 0;
 
-    ec = VW::new_unused_example(*vw_ref);
-    vw_ref->p->lp->default_label(ec->ld);
-    ec->pass = vw_ref->passes_complete;
+    ec = get_new_example();
+    example*foof = get_new_example();
 
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
@@ -67,6 +73,10 @@ class ezexample {
 
   ~ezexample() {
     VW::finish_example(*vw_ref, ec);
+    for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
+      VW::finish_example(*vw_ref, *ecc);
+    example_copies.erase();
+    free(example_copies.begin);
   }
 
   bool ensure_ns_exists(char c) {  // returns TRUE iff we should ignore it :)
@@ -154,18 +164,49 @@ class ezexample {
   }
 
   float predict() {
-    static example* empty_example = pass_empty ? VW::read_example(*vw_ref, (char*)"| ") : NULL;
+    static example* empty_example = is_multiline ? VW::read_example(*vw_ref, (char*)"| ") : NULL;
     if (example_changed_since_prediction) {
       mini_setup_example();
       vw_ref->learn(vw_ref, ec);
-      if (pass_empty) vw_ref->learn(vw_ref, empty_example);
+      if (is_multiline) vw_ref->learn(vw_ref, empty_example);
       example_changed_since_prediction = false;
     }
     return ec->final_prediction;
   }
 
+  void train() {  // if multiline, add to stack; otherwise, actually train
+    if (example_changed_since_prediction) {
+      mini_setup_example();
+      example_changed_since_prediction = false;
+    }
+
+    if (!is_multiline) {
+      vw_ref->learn(vw_ref, ec);
+    } else {   // is multiline
+      // we need to make a copy
+      example* copy = get_new_example();
+      VW::copy_example_data(copy, ec, vw_ref->p->lp->label_size);
+      vw_ref->learn(vw_ref, copy);
+      push(example_copies, copy);
+    }
+  }
+
+  void clear_features() {
+    while (current_ns != 0) remns();
+  }
+
+  void finish() {
+    static example* empty_example = is_multiline ? VW::read_example(*vw_ref, (char*)"| ") : NULL;
+    if (is_multiline) {
+      vw_ref->learn(vw_ref, empty_example);
+      for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
+        VW::finish_example(*vw_ref, *ecc);
+      example_copies.erase();
+    }
+  }
+    
+
   // HELPER FUNCTIONALITY
-  inline void clear()                  { while (current_ns != 0) remns();  }
 
   inline fid hash(string fstr)         { return VW::hash_feature(*vw_ref, fstr, current_seed); }
   inline fid hash(char*  fstr)         { return VW::hash_feature_cstr(*vw_ref, fstr, current_seed); }

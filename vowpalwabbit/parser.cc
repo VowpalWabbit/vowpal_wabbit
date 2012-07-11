@@ -687,7 +687,12 @@ void setup_example(vw& all, example* ae)
 }
 
 namespace VW{
-  example* new_unused_example(vw& all) { return get_unused_example(all); }
+  example* new_unused_example(vw& all) { 
+    example* ec = get_unused_example(all);
+    ec->example_counter = all.p->parsed_examples + 1;
+    all.p->parsed_examples++;
+    return ec;
+  }
   example* read_example(vw& all, char* example_line)
   {
     example* ret = get_unused_example(all);
@@ -717,6 +722,7 @@ namespace VW{
 	  }
       }
     setup_example(all, ret);
+    all.p->parsed_examples++;
     return ret;
   }
 
@@ -726,6 +732,8 @@ namespace VW{
     substring str = { cstr, cstr+label.length() };
     push(words, str);
     all.p->lp->parse_label(all.sd, ec.ld, words);
+    words.erase();
+    free(words.begin);
   }
   
   void finish_example(vw& all, example* ec)
