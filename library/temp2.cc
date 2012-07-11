@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
   vw vw = VW::initialize("--hash all -q st --noconstant -i train.w -t --quiet");
 
   // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
-  ezexample_new ex(&vw, false);
+  ezexample ex(&vw, false);
   ex(vw_namespace('s'))
     ("p^the_man")
     ("w^the")
@@ -33,6 +33,13 @@ int main(int argc, char *argv[])
     ("p^un_homme")
     ("w^un")
     ("w^homme");
+  cerr << "should be near one  = " << ex() << endl;
+
+  --ex;   // remove the most recent namespace
+  // add features with explicit ns
+  ex('t', "p^un_homme")
+    ('t', "w^un")
+    ('t', "w^homme");
   cerr << "should be near one  = " << ex() << endl;
 
   // AND FINISH UP
