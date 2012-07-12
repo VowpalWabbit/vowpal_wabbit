@@ -120,7 +120,7 @@ bool command_example(vw& all, example* ec) {
 
 float finalize_prediction(vw& all, float ret) 
 {
-  if ( isnan(ret))
+  if ( nanpattern(ret))
     {
       cout << "you have a NAN!!!!!" << endl;
       return 0.;

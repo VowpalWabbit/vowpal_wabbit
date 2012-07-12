@@ -24,7 +24,7 @@ namespace CSOAA {
       break;
     case 2:
       v = float_of_substring(name[1]);
-      if ( isnan(v))
+      if ( nanpattern(v))
 	{
 	  cerr << "error NaN value for: ";
 	  cerr.write(name[0].begin, name[0].end - name[0].begin);
