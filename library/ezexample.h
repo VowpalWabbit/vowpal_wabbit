@@ -52,7 +52,6 @@ class ezexample {
     current_ns = 0;
 
     ec = get_new_example();
-    example*foof = get_new_example();
 
     quadratic_features_num = 0;
     quadratic_features_sqr = 0.;
