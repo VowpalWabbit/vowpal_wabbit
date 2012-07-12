@@ -154,10 +154,11 @@ const float pi = acos(-1);
     float prediction = 0.;
     float score = INT_MIN;
     bool doTrain = reward_label_data->label != FLT_MAX;
-    if (ec->num_features == 1) {//reward_label_data->label == 0 && reward_label_data->weight == 0 && ec->num_features == 1) {
-      doTrain = false;
+
+    // rl_start
+    // Check for this tag to indicate the beginning of a new episode
+    if(ec->tag.index() >= 8 && !strncmp((const char*) ec->tag.begin, "rl_start", 8)) {
       last_ec = NULL;
-      return;
     }
 
     // Generate prediction
@@ -189,7 +190,7 @@ const float pi = acos(-1);
       last_ec->ld = last_reward;
       update_example_indicies(all->audit, last_ec, -total_increment);
     } else if(last_ec == NULL) {
-           cerr << "New Episode" <<endl; 
+    //       cerr << "New Episode" <<endl; 
     }
     
 
