@@ -302,7 +302,7 @@ namespace CSOAA {
 
 	base_learner(all, ec);
         cl->partial_prediction = ec->partial_prediction;
-	if (ec->partial_prediction < score) {
+	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
           prediction = i;
         }
