@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
     ex.set_label("1");
     cerr << ex.predict() << endl;
 
+    //    ex.clear_features();
 
     --ex;   // remove the most recent namespace
     ex(vw_namespace('t'))

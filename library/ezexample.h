@@ -102,14 +102,15 @@ class ezexample {
       current_seed = 0;
       current_ns = 0;
     } else {
-      if (ns_exists[current_ns]) return;
+      if (ns_exists[current_ns]) {
+        ec->total_sum_feat_sq -= ec->sum_feat_sq[current_ns];
+        ec->sum_feat_sq[current_ns] = 0;
+        ec->num_features -= ec->atomics[current_ns].index();
+        ec->atomics[current_ns].erase();
 
-      ec->total_sum_feat_sq -= ec->sum_feat_sq[current_ns];
-      ec->sum_feat_sq[current_ns] = 0;
-      ec->num_features -= ec->atomics[current_ns].index();
-      ec->atomics[current_ns].erase();
+        ns_exists[current_ns] = false;
+      }
 
-      ns_exists[current_ns] = false;
       current_seed = past_seeds.back();
       past_seeds.pop_back();
       ec->indices.pop();
@@ -216,9 +217,9 @@ class ezexample {
   inline fid addf(string fstr, float val) { return addf(hash(fstr), val); }
   inline fid addf(string fstr           ) { return addf(hash(fstr), 1.0); }
 
-  inline fid addf(char ns, fid    fint           ) { return addf(ns, fint      , 1.0); }
-  inline fid addf(char ns, string fstr, float val) { return addf(ns, hash(fstr), val); }
-  inline fid addf(char ns, string fstr           ) { return addf(ns, hash(fstr), 1.0); }
+  inline fid addf(char ns, fid    fint           ) { return addf(ns, fint          , 1.0); }
+  inline fid addf(char ns, string fstr, float val) { return addf(ns, hash(ns, fstr), val); }
+  inline fid addf(char ns, string fstr           ) { return addf(ns, hash(ns, fstr), 1.0); }
 
   inline ezexample& operator()(fid         fint           ) { addf(fint, 1.0); return *this; }
   inline ezexample& operator()(string      fstr           ) { addf(fstr, 1.0); return *this; }
