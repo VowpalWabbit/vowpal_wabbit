@@ -281,15 +281,13 @@ namespace CSOAA {
 	label_data simple_temp;
 	simple_temp.initial = 0.;
 
-	if (cl->x == FLT_MAX)
+	if (cl->x == FLT_MAX || !all->training)
 	  {
-            //cerr << "csoaa.learn: test  example" << endl;
 	    simple_temp.label = FLT_MAX;
 	    simple_temp.weight = 0.;
 	  }
 	else
 	  {
-            //cerr << "csoaa.learn: train example" << endl;
 	    simple_temp.label = cl->x;
 	    simple_temp.weight = 1.;
 	  }
