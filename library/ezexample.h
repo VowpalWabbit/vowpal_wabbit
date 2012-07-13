@@ -192,7 +192,10 @@ class ezexample {
   }
 
   void clear_features() {
-    while (current_ns != 0) remns();
+    for (size_t i=0; i<256; i++) {
+      if (current_ns == 0) break;
+      remns();
+    }
   }
 
   void finish() {
