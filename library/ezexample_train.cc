@@ -61,7 +61,7 @@ void run(vw*vw) {
 int main(int argc, char *argv[])
 {
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS WILL STORE A MODEL TO train.ezw
-  vw vw = VW::initialize("--hash all -q st --noconstant -f train.ezw -t --quiet --csoaa_ldf m");
+  vw vw = VW::initialize("--hash all -q st --noconstant -f train.ezw --quiet --csoaa_ldf m");
 
   run(&vw);
 

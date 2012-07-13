@@ -164,7 +164,7 @@ class ezexample {
   }
 
   float predict() {
-    static example* empty_example = is_multiline ? VW::read_example(*vw_ref, (char*)"| ") : NULL;
+    static example* empty_example = is_multiline ? VW::read_example(*vw_ref, (char*)"") : NULL;
     if (example_changed_since_prediction) {
       mini_setup_example();
       vw_ref->learn(vw_ref, ec);
@@ -196,7 +196,7 @@ class ezexample {
   }
 
   void finish() {
-    static example* empty_example = is_multiline ? VW::read_example(*vw_ref, (char*)"| ") : NULL;
+    static example* empty_example = is_multiline ? VW::read_example(*vw_ref, (char*)"") : NULL;
     if (is_multiline) {
       vw_ref->learn(vw_ref, empty_example);
       for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)

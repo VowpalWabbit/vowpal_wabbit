@@ -187,8 +187,8 @@ namespace CSOAA {
           push(ld->costs, f);
         }
       } else {
-        cerr << "ldf test examples must have possible labels listed" << endl;
-        exit(-1);
+        //cerr << "ldf test examples must have possible labels listed" << endl;
+        //exit(-1);
       }
     }
   }
@@ -613,6 +613,7 @@ namespace CSOAA_AND_WAP_LDF {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
         exit(-1);
       }
+      //cerr<< (isTest ? "test" : "train") << " costs.index()=" << costs.index() << endl;
 
       label_data simple_label;
       for (size_t j=0; j<costs.index(); j++) {
@@ -689,6 +690,10 @@ namespace CSOAA_AND_WAP_LDF {
         if (prediction == costs[j].weight_index) prediction_is_me = true;
       }
       *(OAA::prediction_t*)&(ec->final_prediction) = prediction_is_me ? prediction : 0;
+
+      if (isTest && (costs.index() == 1)) {
+        ec->final_prediction = costs[0].partial_prediction;
+      }
 
       // restore label
       ec->ld = ld;
@@ -863,7 +868,7 @@ namespace CSOAA_AND_WAP_LDF {
   void finish(void* a)
   {
     vw* all = (vw*)a;
-    cerr<< "csoaa.finish"<<endl;
+    //cerr<< "csoaa.finish"<<endl;
     base_finish(all);
     LabelDict::free_label_features();
   }
