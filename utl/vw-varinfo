@@ -413,6 +413,8 @@ sub summarize_features {
     # 2nd pass - calculate scores of all features
     my ($score, $min_score, $max_score) = (0, 0, 0);
     foreach my $f (@Features) {
+        next if ($f eq 'Constant');
+
         $score = score($f, $opt_O);
         next unless (defined $score);
 
@@ -422,10 +424,11 @@ sub summarize_features {
         $min_score = $score if ($score < $min_score);
     }
     my $score_range = $max_score - $min_score;
-    my $score_0 = score('Constant');
+    $Score{'Constant'} = 0;
+    # my $score_0 = score('Constant');
 
-    my $upper_range = abs($max_score - $score_0);
-    my $lower_range = abs($min_score - $score_0);
+    my $upper_range = abs($max_score);
+    my $lower_range = abs($min_score);
 
     my $max_distance_from_0 = ($upper_range > $lower_range)
                                     ? $upper_range
@@ -438,17 +441,16 @@ sub summarize_features {
 
     # FIXME: support different orders: by weight,
     # by feature-range-normalized weights?
-    foreach my $f (sort by_score @Features) {
 
+    foreach my $f (sort by_score @Features) {
         my $score = $Score{$f};
-        my $distance_from_0 = $score - $score_0;
+        my $distance_from_0 = $score;
         my $normalized_score = $distance_from_0 / $max_distance_from_0;
 
         # FIXME: support different normalization schemes
         if ($opt_O =~ /^a/i) {
             $normalized_score = abs($normalized_score);
         }
-
         printf "%-*s\t%10u %8.2f %8.2f %+9.4f %9.2f%%\n",
                 $max_len, $f,
                 $Feature2Hash{$f},
