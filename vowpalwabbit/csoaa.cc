@@ -869,8 +869,6 @@ namespace CSOAA_AND_WAP_LDF {
     example* ec = NULL;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { //semiblocking operation.
-        v_array<CSOAA::wclass> costs = ((label*)ec->ld)->costs;
-        //cerr<<"weights ="; for (size_t j=0; j<costs.index(); j++) //cerr<<" " << costs[j].weight_index << ":"<<costs[j].x; //cerr<<endl;
 
         if (LabelDict::ec_is_example_header(ec)) {
           cerr << "error: example headers not allowed in ldf singleline mode" << endl;
