@@ -40,10 +40,10 @@ namespace ECT
   v_array<size_t> cumulative_pairs;
   size_t last_pair;
   
-  v_array<int> final_rounds; //The final rounds of each tournament. 
+  v_array<int> final_levels; //The final rounds of each tournament. 
   // round number is one larger than the entrants round number and equal to 
   // the exit round number.
-  size_t tree_height; //The height of the final tournament.
+  size_t tree_height = 0; //The height of the final tournament.
   
   size_t increment = 0;
   v_array<bool> tournaments_won;
@@ -58,6 +58,7 @@ namespace ECT
 
   size_t final_depth(size_t eliminations)
   {
+    cout << "eliminations = " << eliminations << endl;
     eliminations--;
     for (size_t i = 0; i < 32; i++)
       if (eliminations >> i == 0)
@@ -65,13 +66,15 @@ namespace ECT
     cerr << "too many eliminations" << endl;
     return 31;
   }
-  
+ 
+
   void create_circuit(vw& all, size_t max_label, size_t eliminations)
   {
+    cout << "called create_circuit" << endl;
     v_array<size_t> first_round;
     v_array<size_t> first_pair;
   
-    if (max_label > 1)
+    if (max_label > 0)
       push(first_round, max_label);
     else
       push(first_round, (size_t)0);
@@ -85,13 +88,13 @@ namespace ECT
     push(pairs, first_pair);
     push(cumulative_pairs, first_pair[0]);
 
-    int depth = 0;
-    while(exists(tournament_counts[depth]))
+    int level = 0; // Counts the level of the tournament.
+    while(exists(tournament_counts[level]))
       {
         size_t pair_sum = 0;
         v_array<size_t> new_round;
         v_array<size_t> new_pairs;
-        v_array<size_t> old_round = tournament_counts[depth];
+        v_array<size_t> old_round = tournament_counts[level];
       
         for (size_t i = 0; i < old_round.index(); i++)
           {
@@ -107,8 +110,8 @@ namespace ECT
               count += prev/2;
 
             int old = old_round[i];
-            if (old == 2 && prev == 0)
-              push(final_rounds, depth-1);
+            if ( (old == 2 && prev == 0) || (old == 1 && prev == 0))
+              push(final_levels, level+1);
             else
               count += (old+1)/2;
             push(new_round, count);
@@ -117,57 +120,40 @@ namespace ECT
           }
         push(tournament_counts, new_round);
         push(pairs, new_pairs);
-        push(cumulative_pairs, pair_sum + cumulative_pairs[depth]);
-        depth++;
+        push(cumulative_pairs, pair_sum + cumulative_pairs[level]);
+        level++;
       }
     last_pair = (errors+1)*(k-1); // every single tournament has k-1 pairs.
 
-    tree_height = final_depth(eliminations);
-    increment = all.length() / (last_pair + errors) * all.stride;
+    if ( k > 1)
+      tree_height = final_depth(eliminations);
+    if (last_pair > 0)
+      increment = all.length() / (last_pair + errors) * all.stride;
+
+    cout << "last_pair = " << last_pair << "\ttree_height = " << tree_height << endl;
+    for (size_t i = 0; i < tournament_counts.index(); i++)
+      for (size_t j = 0; j < tournament_counts[i].index(); j++)
+	cout << "tournament_counts[" << i << "][" << j << "] = " << tournament_counts[i][j] << endl;
+    for (size_t i = 0; i < final_levels.index(); i++)
+      cout << "final_levels["<< i << "] = " << final_levels[i] << endl;
   }
 
   struct node {
     size_t label;// From leaves, starts as actual label
     size_t tournament;// Starts at 0
-    size_t depth;// Starts at 0 at the leaves
+    size_t level;// Starts at 0 at the leaves
   };
 
-  void leaf_to_root(node& current, bool right)
+  bool bye_to_leaf(node& current)
   {
-    v_array<size_t> round = tournament_counts[current.depth];
-
-    bool won = (((current.label % 2) == 1) && right) || (((current.label % 2) == 0) && !right);
-    bool last_round = round[current.tournament] == 1 && round[current.tournament-1] == (size_t)-1;
-
-    if (last_round)
+    cout << "current.level = " << current.level << "\tcurrent.tournament = " << current.tournament << endl;
+    if ((current.label == tournament_counts[current.level][current.tournament]
+	 && tournament_counts[current.level-1][current.tournament] % 2 == 1)
+	|| (current.label == 1 && tournament_counts[current.level-1][current.tournament] == 1))
       {
-        push(tournaments_won, won);
-        current.tournament++;
-      }
-    else if (won)
-      {
-        int num_losers = (round[current.tournament-1]+1) / 2;
-        if (round[current.tournament - 1] == 1 
-            && current.tournament > 1 && round[current.tournament-2] == (size_t)-1)
-          num_losers = 2;
-        current.label = num_losers + current.label / 2;
-      }
-    else 
-      {
-        push(tournaments_won, false);
-        current.tournament++;
-        current.label = current.label / 2;
-      }
-    current.depth++;
-  }
-
-  bool bye_to_root(node& current)
-  {
-    if (current.label == tournament_counts[current.depth][current.tournament] 
-        && current.label %2 == 0)
-      {
-        current.label = tournament_counts[current.depth+1][current.tournament];
-        current.depth++;
+	cout << "executing bye" << endl;
+        current.label = tournament_counts[current.level-1][current.tournament];
+        current.level--;
         return true;
       }
     else
@@ -175,20 +161,29 @@ namespace ECT
   }
 
   void root_to_leaf(node& current, bool right)
-  {
-    v_array<size_t> prev = tournament_counts[current.depth - 1];
+  {//shift down one level
+    cout << "root_to_leaf, right = " << right << endl;
+    v_array<size_t> prev = tournament_counts[current.level - 1];
   
-    if (current.label < 2 && prev[current.tournament-1] == 1 
-        && tournament_counts[current.depth][current.tournament-1] == (size_t)-1)
+    cout << "current.tournament = " << current.tournament << endl;
+    if (current.tournament > 0 && current.label < 2 && prev[current.tournament-1] == 1 
+        && tournament_counts[current.level][current.tournament-1] == 0)
       {
+	cout << "in if" << endl;
         current.tournament--;
       }
     else
       {
-        size_t num_losers = (prev[current.tournament-1]+1) / 2;
-        if (prev[current.tournament - 1] == 1 && current.tournament > 1 
-            && prev[current.tournament - 2] == (size_t)-1)
-          num_losers = 2;
+	cout << "in else" << endl;
+        size_t num_losers = 0;
+	if (current.tournament > 0)
+	  {
+	    num_losers = (prev[current.tournament-1]+1) / 2;
+	    if (prev[current.tournament - 1] == 1 && current.tournament > 1 
+		&& prev[current.tournament - 2] == 0)
+	      num_losers = 2;
+	  }
+	cout << "num_losers = " << num_losers << endl;
 
         if (current.label < num_losers)
           {
@@ -196,22 +191,10 @@ namespace ECT
             current.label = current.label * 2 + (right ? 0 : 1);
           }
         else
-          current.label = (current.label - num_losers) * 2 + (right ? 1 : 0);
+          current.label = (current.label - 1 - num_losers) * 2 + (right ? 1 : 0) + 1;
       }
-    current.depth--;
-  }
-
-  bool bye_to_leaf(node& current)
-  {
-    if (current.label == tournament_counts[current.depth][current.tournament]
-        && (tournament_counts[current.depth-1][current.tournament] % 2 == 0))
-      {
-        current.label = tournament_counts[current.depth-1][current.tournament];
-        current.depth--;
-        return true;
-      }
-    else
-      return false;
+    current.level--;
+    cout << "current.label = " << current.label << endl;
   }
 
   size_t get_bit(size_t label, size_t bitNum)
@@ -253,36 +236,84 @@ namespace ECT
               final_winner = final_winner | (1 << i);
           }
       }
-  
-    cout << "finished, final_winner = " << final_winner << " round = " << final_rounds[final_winner] << endl;
-    node current = {0, final_winner, final_rounds[final_winner]};
-    while (current.depth > 0)
+
+    cout << "finished, final_winner = " << final_winner << endl;
+    cout << " round = " << final_levels[final_winner] << endl;
+    node current = {1, final_winner, final_levels[final_winner]};
+    while (current.level > 0)
       {
-        if (bye_to_leaf(current))//nothing to do.
-          ;
-        else
-          {
-            size_t problem_number = 0;
-            if (current.depth-1 != 0)
-              problem_number += cumulative_pairs[current.depth-1];
-            size_t i = 0;
-            while(i < current.tournament)
-              problem_number += pairs[current.depth][i++];
-            problem_number += current.label/2;
-
-            cout << "problem_number = " << problem_number << endl;
-            size_t offset = problem_number*increment;
-
-            ec->partial_prediction = 0;
-            update_example_indicies(all.audit, ec,offset);
-            base_learner(&all, ec);
-            float pred = ec->final_prediction;
-            update_example_indicies(all.audit, ec,-offset);
-            root_to_leaf(current, pred > 0.);
-          }
+	cout << "in while" << endl;
+	if (bye_to_leaf(current))//nothing to do.
+	  ;
+	else
+	  {
+	    cout << "in else" << endl;
+	    size_t problem_number = 0;
+	    problem_number += cumulative_pairs[current.level-1];
+	    size_t i = 0;
+	    while(i < current.tournament)
+	      problem_number += pairs[current.level][i++];
+	    problem_number += current.label/2;
+	    
+	    problem_number--;
+	    cout << "problem_number = " << problem_number << endl;
+	    size_t offset = problem_number*increment;
+	    
+	    ec->partial_prediction = 0;
+	    update_example_indicies(all.audit, ec,offset);
+	    base_learner(&all, ec);
+	    float pred = ec->final_prediction;
+	    cout << "pred = " << pred << endl;
+	    update_example_indicies(all.audit, ec,-offset);
+	    root_to_leaf(current, pred > 0.);
+	  }
       }
-
+    cout << "returning " << current.label << endl;
     return current.label;
+  }
+
+  bool bye_to_root(node& current)
+  {
+    if (current.label == tournament_counts[current.level][current.tournament] 
+        && current.label %2 == 1)
+      {
+        current.label = tournament_counts[current.level+1][current.tournament];
+        current.level++;
+	cout << "executing bye_to_root" << endl;
+        return true;
+      }
+    else
+      return false;
+  }
+
+  void leaf_to_root(node& current, bool right)
+  {
+    cout << "in leaf_to_root, right = " << right << endl;
+    v_array<size_t> round = tournament_counts[current.level];
+
+    bool won = (((current.label % 2) == 0) && right) || (((current.label % 2) == 1) && !right);
+    bool last_round = round[current.tournament] == 1 && round[current.tournament-1] == 0;
+
+    if (last_round)
+      {
+        push(tournaments_won, won);
+        current.tournament++;
+      }
+    else if (won)
+      {
+        int num_losers = (round[current.tournament-1]+1) / 2;
+        if (round[current.tournament - 1] == 1 
+            && current.tournament > 1 && round[current.tournament-2] == 0)
+          num_losers = 2;
+        current.label = num_losers + current.label / 2;
+      }
+    else 
+      {
+        push(tournaments_won, false);
+        current.tournament++;
+        current.label = current.label / 2;
+      }
+    current.level++;
   }
 
   bool member(size_t t, v_array<size_t> ar)
@@ -300,6 +331,7 @@ namespace ECT
     node current = {mc->label, 0, 0};
 
     label_data simple_temp = {1.,mc->weight,0.};
+    cout << "mc->label = " << mc->label << endl;
 
     tournaments_won.erase();
     while(current.tournament < (size_t) tournament_counts[0].index())
@@ -308,21 +340,22 @@ namespace ECT
           ;
         else
           {
-            simple_temp.label = (2 * current.label % 2) - 1;
+            simple_temp.label = (2 * (current.label-1) % 2) - 1;
             ec->ld = &simple_temp;
-	  
+	    
             size_t problem_number = 0;
-            if (current.depth != 0)
-              problem_number += cumulative_pairs[current.depth-1];
+            if (current.level != 0)
+              problem_number += cumulative_pairs[current.level-1];
             size_t i = 0;
             while(i < current.tournament)
-              problem_number += pairs[current.depth][i++];
-            problem_number += current.label/2;
-	  
+              problem_number += pairs[current.level][i++];
+            problem_number += (current.label-1)/2;
+	    
+	    cout << "problem_number = " << problem_number << endl;
             size_t offset = problem_number*increment;
-	  
+	    
             update_example_indicies(all.audit, ec,offset);
-
+	    
             ec->partial_prediction = 0;
             base_learner(&all, ec);
             simple_temp.weight = 0.;
@@ -379,14 +412,15 @@ namespace ECT
 
   void learn(void*a, example* ec)
   {
+    vw* all = (vw*)a;
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
-    //int new_label = ect_predict(ec);
+    int new_label = ect_predict(*all, ec);
     ec->ld = mc;
-    /*
-      if (mc->label != (uint32_t)-1 && all.training)
-      ect_train(ec);
-      ec->ld = mc;
-      ec->final_prediction = new_label;*/
+
+    if (mc->label != (uint32_t)-1 && all->training)
+      ect_train(*all, ec);
+    ec->ld = mc;
+    ec->final_prediction = new_label;
   }
 
   void finish(void* all)
@@ -396,6 +430,9 @@ namespace ECT
         free(tournament_counts[i].begin);
     if (tournament_counts.begin != tournament_counts.end)
       free(tournament_counts.begin);
+
+    if (final_levels.begin != final_levels.end)
+      free (final_levels.begin);
 
     for (size_t i = 0; i < pairs.index(); i++)
       if (pairs[i].begin != pairs[i].end)
@@ -426,7 +463,6 @@ namespace ECT
           }
         else if (parser_done(all->p))
           {
-            finish(all);
             return;
           }
         else 
