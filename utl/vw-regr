@@ -67,7 +67,7 @@ until $stdin.eof?
   next if ex_line.to_s.strip.empty?
   ex_line_pipe_segs = ex_line.split("|")
   ex_label_seg = ex_line_pipe_segs.first
-  ex_label, ex_importance, ex_tag = ex_label_seg.split(" ")
+  ex_label, ex_imp, ex_init_pred, ex_tag = ex_label_seg.split(" ")
 
   if opt_map.has_key?(:ex_val_desc)
     ex_labels = [] if ex_labels.nil?
@@ -99,15 +99,16 @@ until $stdin.eof?
   end
 
   if opt_map.has_key?(:pos_ex_val_imp) && (ex_label.to_f > 0)
-    ex_importance = opt_map[:pos_ex_val_imp]
+    ex_imp = opt_map[:pos_ex_val_imp]
   elsif opt_map.has_key?(:neg_ex_val_imp) && (ex_label.to_f < 0)
-    ex_importance = opt_map[:neg_ex_val_imp]
+    ex_imp = opt_map[:neg_ex_val_imp]
   end
 
   new_ex_line = ex_label
-  new_ex_line += " #{ex_importance}" unless ex_importance.nil?
+  new_ex_line += " #{ex_imp}" unless ex_imp.nil?
+  new_ex_line += " #{ex_init_pred}" unless ex_init_pred.nil?
   new_ex_line += " #{ex_tag}" unless ex_tag.nil?
-  new_ex_line += "|" + ex_line_pipe_segs[1..-1].join("|")
+  new_ex_line += " |" + ex_line_pipe_segs[1..-1].join("|")
   $stdout.puts new_ex_line
 end
 
