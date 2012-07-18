@@ -59,6 +59,9 @@ EOF_BANNER
   opts.on("-P", "--neg_ex_val_imp=X", "Set importance of examples with negative labels to X") do |opt_val|
     opt_map[:neg_ex_val_imp] = opt_val.to_f
   end
+  opts.on("-c", "--to_class", "Convert positive (negative) example labels to +1 (-1) labels") do |opt_val|
+    opt_map[:to_class] = true
+  end
 end.parse!
 
 ex_labels = nil
@@ -104,7 +107,11 @@ until $stdin.eof?
     ex_imp = opt_map[:neg_ex_val_imp]
   end
 
-  new_ex_line = ex_label
+  if opt_map.has_key?(:to_class)
+    ex_label = (ex_label.to_f > 0) ? +1 : -1
+  end
+
+  new_ex_line = ex_label.to_s
   new_ex_line += " #{ex_imp}" unless ex_imp.nil?
   new_ex_line += " #{ex_init_pred}" unless ex_init_pred.nil?
   new_ex_line += " #{ex_tag}" unless ex_tag.nil?
