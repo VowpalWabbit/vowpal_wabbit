@@ -95,7 +95,8 @@ vw parse_args(int argc, char *argv[])
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
-    ("oprl", po::value<double>(), "Learn expected future discounted reward with off-policy reinforcement learning. Use <gamma> future discount.")
+    ("oprl", po::value<double>(), "Learn expected future discounted reward with off-policy reinforcement learning. Use <lambda> as eligibility trace decay rate.")
+    ("gamma", po::value<double>(), "With <gamma> discounting.")
     //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
     ("output_feature_regularizer_binary", po::value< string >(&all.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&all.per_feature_regularizer_text), "Per feature regularization output file, in text")
@@ -498,7 +499,11 @@ vw parse_args(int argc, char *argv[])
 
   if(vm.count("oprl")) {
     if (got_mc) { cerr << "error: cannot specify MC learner with OPRL" << endl; exit(-1); }
-    RL::parse_flags(all, to_pass_further, vm, vm["oprl"].as<double>());
+    if(vm.count("gamma")) {
+	RL::parse_flags(all, to_pass_further, vm, vm["oprl"].as<double>(), vm["gamma"].as<double>());
+    } else {
+	RL::parse_flags(all, to_pass_further, vm, vm["oprl"].as<double>(), 1.0);
+    }
   }
 
   if(vm.count("oaa")) {

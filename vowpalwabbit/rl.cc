@@ -5,13 +5,15 @@
 #include "rl.h"
 #include "simple_label.h"
 #include "cache.h"
+#include "global_data.h"
 
 using namespace std;
 
 namespace RL {
 
-const float pi = acos(-1);
+  const float pi = acos(-1);
   float gamma = 1.0;
+  float lambda = 0;
 
   char* bufread_label(reward_label* ld, char* c)
   {
@@ -99,6 +101,7 @@ const float pi = acos(-1);
   size_t increment=0;
   size_t total_increment=0;
   example* last_ec = NULL;
+  float* traces = NULL;
 
   void print_update(vw& all, example *ec)
   {
@@ -153,13 +156,23 @@ const float pi = acos(-1);
     reward_label* reward_label_data = (reward_label*)ec->ld;
     float prediction = 0.;
     float score = INT_MIN;
-    bool doTrain = reward_label_data->label != FLT_MAX;
+    bool doTrain = (reward_label_data->label != FLT_MAX) && (reward_label_data->weight > 0);
+    size_t trace_length = ((size_t)1) << all->num_bits;
 
     // rl_start
     // Check for this tag to indicate the beginning of a new episode
     if(ec->tag.index() >= 8 && !strncmp((const char*) ec->tag.begin, "rl_start", 8)) {
-      last_ec = NULL;
-    }
+      //      cerr << "New Episode..." << endl;
+      if(last_ec != NULL) {
+        // Free memory for last_ec
+        dealloc_example(RL::delete_label, *last_ec);
+	free(last_ec);
+	last_ec = NULL;
+      }
+	// Free memory for traces
+	free(traces);
+	traces = (float *)calloc(trace_length, sizeof(float));
+    } 
 
     // Generate prediction
     label_data simple_temp;
@@ -170,6 +183,7 @@ const float pi = acos(-1);
     update_example_indicies(all->audit, ec, increment);
     base_learner(all,ec);
     float Q_spap = ec->partial_prediction;
+    float delta = 0.0;
 
     if (doTrain && last_ec != NULL) {
       // Get previous state/reward
@@ -177,7 +191,7 @@ const float pi = acos(-1);
 
       // Compute delta-target
       simple_temp.label = gamma * Q_spap + last_reward->label;
-      simple_temp.weight = last_reward->weight;
+      simple_temp.weight = 0.0;//last_reward->weight;
 
       // Update/learn
       last_ec->ld = &simple_temp;
@@ -185,7 +199,7 @@ const float pi = acos(-1);
       base_learner(all,last_ec);
       score = last_ec->partial_prediction;
       prediction = score;
-
+      delta = simple_temp.label - prediction;
       last_ec->partial_prediction = 0.;
       last_ec->ld = last_reward;
       update_example_indicies(all->audit, last_ec, -total_increment);
@@ -198,18 +212,61 @@ const float pi = acos(-1);
     ec->ld = reward_label_data;
     *(prediction_t*)&(ec->final_prediction) = Q_spap;
     update_example_indicies(all->audit, ec, -total_increment);
-
     if(doTrain) {
-      // Clear out old example (actually we don't need to do this EVERY time I think..
       if (last_ec != NULL) {
+	//if (traces == NULL)
+	//  traces = (float *)calloc(trace_length, sizeof(float));
+	// Train on traces...
+	size_t mask = all->weight_mask;
+	float* weights = all->reg.weight_vectors;
+	//	cerr << "Updating traces... " << (traces == NULL) << endl;
+	// Decay traces and then update weights using them
+
+	for (int i=0; i<(int)trace_length; i++) {
+	  if (traces[i] != 0) {
+	    //	    cout << traces[i] << " ";
+	    traces[i] *= lambda*gamma;
+	    //	    weights[i] += last_ec->eta_round * traces[i];
+	    //   weights[i] += 0.025 * delta * traces[i];
+	  }
+	  //	  if(weights[i] != 0)
+	  //	    cerr << weights[i] << " ";
+
+	}
+	//		cout << endl;
+	//		cout << "Delta: " << last_ec->eta_round/0.025 << " " << delta << endl;
+	//	cerr << endl;
+        // Add old features to traces
+        for (size_t* i = last_ec->indices.begin; i != last_ec->indices.end; i++) 
+        {
+	  feature *f = last_ec->atomics[*i].begin;
+          for (; f != last_ec->atomics[*i].end; f++)
+	  {
+	    traces[f->weight_index & mask] += f->x;
+	  }
+        }
+	for (int i=0; i<(int)trace_length; i++) {
+	  if (traces[i] != 0) {
+	    //	    cout << traces[i] << " ";
+		    //	    weights[i] += last_ec->eta_round * traces[i];
+	    weights[i] += 0.001 * delta * traces[i];
+	  }
+	  //	  if(weights[i] != 0)
+	  //	    cerr << weights[i] << " ";
+
+	}
+	// Now we can clear the old example and copy over the new one
 	dealloc_example(RL::delete_label, *last_ec);
 	free(last_ec);
 	last_ec = NULL;
-	}
+
+      }
       // Copy over new example
-      if (last_ec == NULL)
+      if (last_ec == NULL) {
 	last_ec = alloc_example(sizeof(RL::reward_label));
+      }
       copy_example_data(last_ec, ec, sizeof(RL::reward_label));
+      
     }
   }
 
@@ -227,11 +284,11 @@ const float pi = acos(-1);
           }
         else if (parser_done(all->p))
           {
-	    if(last_ec != NULL) {
+	    /*	    if(last_ec != NULL) {
 	      dealloc_example(RL::delete_label, *last_ec);
 	      free(last_ec);
 	      last_ec = NULL;
-	    }
+	      }*/
 	    all->finish(all);
             return;
           }
@@ -240,10 +297,11 @@ const float pi = acos(-1);
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, double s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, double l, double g)
   {
     //    *(all.p->lp) = rl_label_parser;
-    gamma = s;
+    lambda = l;
+    gamma = g;
     all.driver = drive_rl;
     base_learner = all.learn;
     all.learn = learn;

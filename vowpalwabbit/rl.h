@@ -17,7 +17,7 @@ namespace RL
   
   typedef float prediction_t;
   
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, double s);
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, double l, double g);
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);

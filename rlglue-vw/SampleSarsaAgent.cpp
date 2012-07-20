@@ -14,6 +14,7 @@ The Fourier Basis computation is a port from George Konidaris' Java implementati
 #include <stdio.h>  /* for sprintf */
 #include <stdlib.h> /* for strtod */
 #include "../vowpalwabbit/simple_label.h"
+#include "../vowpalwabbit/v_array.h"
 
 #include <string>
 #include <cassert>
@@ -49,7 +50,8 @@ const float pi = acos(-1);
 double sarsa_epsilon = 0.1;
 
 // Create the VW instance and initialize it
-vw vw = VW::initialize("--hash all --adaptive --learning_rate 10.0 --oprl 1.0");
+vw vw = VW::initialize("--learning_rate 0.025 --oprl 0.9 --gamma 1.0");
+example *start_data = VW::read_example(vw, " \'rl_start |a p^the_man w^the w^man");
 
 // Variables for the fourier basis functions
 int numTerms = 0;
@@ -173,7 +175,7 @@ string action_to_name(int action) {
 }
 
 // Send features to vw. Used for querying the value function and actual training
-double query_vw_value(vector<double> features, int action, int N, double label, double importance){
+double query_vw_value(vector<double> features, int action, int N, double label, double importance, bool start_episode){
   vector< VW::feature_space > ec_info;
   vector<feature> s_features;
 
@@ -188,14 +190,17 @@ double query_vw_value(vector<double> features, int action, int N, double label, 
 
   ec_info.push_back( VW::feature_space(hash_name[0], s_features) );
   example* vec3 = VW::import_example(vw, ec_info);
+  if (start_episode) {
+    copy_array(vec3->tag, start_data->tag);
+  }
+
 
   // Only train if the importance is non-zero
-if (importance > 0.0) {
+  if (importance > 0.0) {
     default_simple_label(vec3->ld);
     ((label_data*)vec3->ld)->label = label;
     ((label_data*)vec3->ld)->weight = importance;
   }
-  
   vw.learn(&vw, vec3);
   double value = vec3->final_prediction;
   VW::finish_example(vw, vec3);
@@ -211,6 +216,7 @@ int numActions=0;
 int numStates=0;
 int policy_frozen=0;
 int exploring_frozen=0;
+bool newEpisode = true;
 
 /************** RL-Glue Code ****************/
 /* Returns a random integer in [0,max] */
@@ -288,7 +294,7 @@ void agent_init(const char* task_spec)
 }
 
 const action_t *agent_start(const observation_t *this_observation) {
-        
+        newEpisode = true;        
 	int theIntAction=egreedy(this_observation->doubleArray);
 	this_action.intArray[0]=theIntAction;
 
@@ -301,16 +307,15 @@ const action_t *agent_start(const observation_t *this_observation) {
 const action_t *agent_step(double reward, const observation_t *this_observation) {
 	int lastAction=last_action.intArray[0];
 	int newAction=egreedy(this_observation->doubleArray);
-
 	// All of the RL is foisted onto VW
 	if(!policy_frozen){
-	  double Q_sa = query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward, 1.0);
+	  double Q_sa = query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward, 1.0, newEpisode);
 	    cout << Q_sa;
 	    for(int i=0; i<numStates; i++)
 	      cout << "," << last_observation->doubleArray[i];
 	    cout << endl;
 	}
-
+	newEpisode = false;
 	this_action.intArray[0]=newAction;
 	replaceRLStruct(&this_action, &last_action);
 	replaceRLStruct(this_observation, last_observation);
@@ -323,9 +328,9 @@ void agent_end(double reward) {
 	int lastAction=last_action.intArray[0];
 	
 	if(!policy_frozen){
-	  query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward,1.0);	  
+	  query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward,1.0, newEpisode);	  
 	}
-
+	newEpisode=true;
 	clearRLStruct(&last_action);
 	clearRLStruct(last_observation);
 }
@@ -421,9 +426,9 @@ int egreedy(double features[]){
   		}
 	}
   maxIndex = 0;
-  double maxvalue = query_vw_value(computeFeatures(features), 0, numStates, 0.0, 0.0);
+  double maxvalue = query_vw_value(computeFeatures(features), 0, numStates, 0.0, 0.0, false);
   for(a = 1; a < numActions; a++){
-    double value_a = query_vw_value(computeFeatures(features), a, numStates, 0.0, 0.0);
+    double value_a = query_vw_value(computeFeatures(features), a, numStates, 0.0, 0.0, false);
     if(value_a > maxvalue)
       maxIndex = a;
   }
