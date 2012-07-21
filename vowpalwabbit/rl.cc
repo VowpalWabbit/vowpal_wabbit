@@ -6,6 +6,7 @@
 #include "simple_label.h"
 #include "cache.h"
 #include "global_data.h"
+#include "example.h"
 
 using namespace std;
 
@@ -101,7 +102,7 @@ namespace RL {
   size_t increment=0;
   size_t total_increment=0;
   example* last_ec = NULL;
-  float* traces = NULL;
+  example* traces = NULL;
 
   void print_update(vw& all, example *ec)
   {
@@ -168,10 +169,12 @@ namespace RL {
         dealloc_example(RL::delete_label, *last_ec);
 	free(last_ec);
 	last_ec = NULL;
+
+        dealloc_example(RL::delete_label, *traces);
+	free(traces);
+	traces = NULL;
       }
 	// Free memory for traces
-	free(traces);
-	traces = (float *)calloc(trace_length, sizeof(float));
     } 
 
     // Generate prediction
@@ -186,6 +189,7 @@ namespace RL {
     float delta = 0.0;
 
     if (doTrain && last_ec != NULL) {
+
       // Get previous state/reward
       reward_label* last_reward = (reward_label*)last_ec->ld;
 
@@ -214,47 +218,122 @@ namespace RL {
     update_example_indicies(all->audit, ec, -total_increment);
     if(doTrain) {
       if (last_ec != NULL) {
+      
 	//if (traces == NULL)
 	//  traces = (float *)calloc(trace_length, sizeof(float));
 	// Train on traces...
 	size_t mask = all->weight_mask;
 	float* weights = all->reg.weight_vectors;
+	//cerr << "Delta: " << delta << endl;
+      for (size_t* i = traces->indices.begin; i != traces->indices.end; i++) 
+	{
+      	  feature *f = traces->atomics[*i].begin;
+	  for (; f != traces->atomics[*i].end; f++)
+	    {
+	      weights[f->weight_index & mask] += 0.0001 * delta * f->x;
+	      //	      cerr << "(" << f->weight_index << "," << f->x  << ") ";
+	    }
+	}
+      //            cerr << endl << endl;
 	//	cerr << "Updating traces... " << (traces == NULL) << endl;
 	// Decay traces and then update weights using them
 
-	for (int i=0; i<(int)trace_length; i++) {
-	  if (traces[i] != 0) {
+	//	for (int i=0; i<(int)trace_length; i++) {
+	//	  if (traces[i] != 0) {
 	    //	    cout << traces[i] << " ";
-	    traces[i] *= lambda*gamma;
+	//	    traces[i] *= lambda*gamma;
 	    //	    weights[i] += last_ec->eta_round * traces[i];
 	    //   weights[i] += 0.025 * delta * traces[i];
-	  }
+	//	  }
 	  //	  if(weights[i] != 0)
 	  //	    cerr << weights[i] << " ";
 
-	}
+      
 	//		cout << endl;
 	//		cout << "Delta: " << last_ec->eta_round/0.025 << " " << delta << endl;
 	//	cerr << endl;
         // Add old features to traces
-        for (size_t* i = last_ec->indices.begin; i != last_ec->indices.end; i++) 
-        {
-	  feature *f = last_ec->atomics[*i].begin;
-          for (; f != last_ec->atomics[*i].end; f++)
-	  {
-	    traces[f->weight_index & mask] += f->x;
-	  }
-        }
-	for (int i=0; i<(int)trace_length; i++) {
-	  if (traces[i] != 0) {
+
+      //	for (int i=0; i<(int)trace_length; i++) {
+      //	  if (traces[i] != 0) {
 	    //	    cout << traces[i] << " ";
 		    //	    weights[i] += last_ec->eta_round * traces[i];
-	    weights[i] += 0.001 * delta * traces[i];
-	  }
+      //	    weights[i] += 0.0001 * delta * traces[i];
+      //	  }
 	  //	  if(weights[i] != 0)
 	  //	    cerr << weights[i] << " ";
 
+      //	}
+	
+	// Lets try adding things to last_ec..
+	// ec->indices are the name spaces really
+	//	cerr << ec->indices.index() << " " << ec->indices[0] << " " << ec->atomics[98].begin->weight_index << " " << ec->atomics[98].begin->x << endl;
+	//	cerr << last_ec->indices.index() << " " << last_ec->indices[0] << " " << last_ec->atomics[98].begin->weight_index << " " << last_ec->atomics[98].begin->x << endl;
+	// for each name space in last_ec, find that namespace in ec (or add it)
+      // decay traces...
+      for(int i=0; i<traces->indices.index(); i++)  {
+	for(int j=0; j<traces->atomics[traces->indices[i]].index(); j++) {
+	  traces->atomics[traces->indices[i]][j].x *= lambda * gamma;
 	}
+      }
+
+	for(int i=0; i<ec->indices.index(); i++) {
+	  int j = 0;
+	  bool found = false;
+	  for(; j < traces->indices.index(); j++) {
+	    if(ec->indices[i] == traces->indices[j]) {
+	      found = true;
+	      break;
+	    }
+	  }
+	  if(found) {
+	    //	    cerr << "last @ " << i << " <=> " << "current @ " << j << endl;
+	    // Now though we need to check that they contain the same stuff...
+	    size_t current_index = traces->indices[j];
+	    size_t last_index = ec->indices[i];
+	    for(int k=0; k<ec->atomics[last_index].index(); k++) {
+	      j = 0;
+	      found = false;
+	      for(; j < traces->atomics[current_index].index(); j++) {
+		if(ec->atomics[last_index][k].weight_index == traces->atomics[current_index][j].weight_index) {
+		  found = true;
+		  break;
+		}
+	      }
+	      if(found) {
+		traces->atomics[current_index][j].x += ec->atomics[last_index][k].x;
+	      }
+	      else {
+		// not found, need to add it
+		v_array<feature> *ecatomics = &traces->atomics[current_index];
+		feature cpyfeat = { ec->atomics[last_index][k].x, ec->atomics[last_index][k].weight_index };
+		push(*ecatomics, cpyfeat);
+	      }
+	    }
+	  }
+	  else {
+	    //	    cerr << "Couldn't find " << i << " inserting.. " << ec->indices.index() << endl;
+	    v_array<size_t> *ecindx = &traces->indices;
+	    push(*ecindx, ec->indices[i]);
+	    // okay but atomics for this index is empty... so add those too
+	    v_array<feature> *ecatomics = &traces->atomics[ecindx->last()];
+	    copy_array(*ecatomics, ec->atomics[ec->indices[i]]);
+	    
+	  }
+	}
+	//	for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+	//        {
+	  
+	  // then atomics are the features within those name spaces
+	//	  feature *f = ec->atomics[*i].begin;
+	//	  cerr << *i << " " << ec->indices.index() << endl;
+	//          for (; f != ec->atomics[*i].end; f++)
+	//	  {
+	//	    cerr << "(" << f->weight_index << "," << f->x << ") ";
+	//	  }
+	//	  cerr << endl;
+	//        }	
+	//	cerr << endl;
 	// Now we can clear the old example and copy over the new one
 	dealloc_example(RL::delete_label, *last_ec);
 	free(last_ec);
@@ -262,6 +341,10 @@ namespace RL {
 
       }
       // Copy over new example
+      if(traces ==  NULL) {
+	traces = alloc_example(sizeof(RL::reward_label));
+	copy_example_data(traces, ec, sizeof(RL::reward_label));
+      }
       if (last_ec == NULL) {
 	last_ec = alloc_example(sizeof(RL::reward_label));
       }
@@ -305,7 +388,7 @@ namespace RL {
     all.driver = drive_rl;
     base_learner = all.learn;
     all.learn = learn;
-    increment = (all.length()) * all.stride;
+    increment = 0.0;//(all.length()) * all.stride;
     total_increment = increment*0.0;
   }
 }

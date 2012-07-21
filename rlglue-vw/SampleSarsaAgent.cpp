@@ -50,7 +50,7 @@ const float pi = acos(-1);
 double sarsa_epsilon = 0.1;
 
 // Create the VW instance and initialize it
-vw vw = VW::initialize("--learning_rate 0.025 --oprl 0.9 --gamma 1.0");
+vw vw = VW::initialize("--learning_rate 0.025 --oprl 0.0 --gamma 1.0");
 example *start_data = VW::read_example(vw, " \'rl_start |a p^the_man w^the w^man");
 
 // Variables for the fourier basis functions
@@ -308,6 +308,7 @@ const action_t *agent_step(double reward, const observation_t *this_observation)
 	int lastAction=last_action.intArray[0];
 	int newAction=egreedy(this_observation->doubleArray);
 	// All of the RL is foisted onto VW
+	policy_frozen = false;
 	if(!policy_frozen){
 	  double Q_sa = query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward, 1.0, newEpisode);
 	    cout << Q_sa;
