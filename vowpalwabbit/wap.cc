@@ -260,6 +260,7 @@ namespace WAP {
     all.sd->k = s;
     all.driver = drive_wap;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     increment = (all.length()/all.sd->k) * all.stride;
   }
@@ -507,8 +508,10 @@ namespace WAP_LDF {
 
     all.driver = drive_wap_ldf;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     base_finish = all.finish;
+    all.base_finish = all.finish;
     all.finish = finish;
   }
 }

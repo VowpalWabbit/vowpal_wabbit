@@ -209,6 +209,7 @@ namespace OAA {
     k = s;
     all.driver = drive_oaa;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     increment = (all.length()/k) * all.stride;
     total_increment = increment*(k-1);

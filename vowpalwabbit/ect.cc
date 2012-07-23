@@ -458,9 +458,11 @@ namespace ECT
     k = s;
     all.driver = drive_ect;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
 
     base_finish = all.finish;
+    all.base_finish = all.finish;
     all.finish = finish;
 
     create_circuit(all, k, errors+1);

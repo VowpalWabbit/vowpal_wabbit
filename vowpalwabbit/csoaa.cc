@@ -203,7 +203,7 @@ namespace CSOAA {
     label* ld = (label*)ec->ld;
     float prediction = 1;
     float score = FLT_MAX;
-    size_t current_increment = 0;
+    //size_t current_increment = 0;
 
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
@@ -228,13 +228,15 @@ namespace CSOAA {
 	ec->ld = &simple_temp;
 
         size_t desired_increment = increment * (i-1);
-        if (desired_increment != current_increment) {
-	  update_example_indicies(all->audit, ec, desired_increment - current_increment);
-          current_increment = desired_increment;
-        }
+        //if (desired_increment != current_increment) {
+	  //update_example_indicies(all->audit, ec, desired_increment - current_increment);
+          //current_increment = desired_increment;
+        //}
+        update_example_indicies(all->audit, ec, desired_increment);
 	ec->partial_prediction = 0.;
 
 	base_learner(all, ec);
+        update_example_indicies(all->audit, ec, -desired_increment);
         //        cl->partial_prediction = ec->partial_prediction; // ?? TODO: do we need this?
 	if (ec->partial_prediction < score)
 	  {
@@ -244,8 +246,8 @@ namespace CSOAA {
       }
     ec->ld = ld;
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
-    if (current_increment != 0)
-      update_example_indicies(all->audit, ec, -current_increment);
+    //if (current_increment != 0)
+      //update_example_indicies(all->audit, ec, -current_increment);
   }
 
   void finish(void* a)
@@ -284,8 +286,10 @@ namespace CSOAA {
     all.sd->k = s;
     all.driver = drive_csoaa;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     base_finish = all.finish;
+    all.base_finish = all.finish;
     all.finish = finish;
     increment = (all.length()/all.sd->k) * all.stride;
   }
@@ -477,8 +481,10 @@ namespace CSOAA_LDF {
 
     all.driver = drive_csoaa_ldf;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     base_finish = all.finish;
+    all.base_finish = all.finish;
     all.finish = finish;
   }
 

@@ -18,6 +18,7 @@ embodied in the content of this file are licensed under the BSD
 #include "ect.h"
 #include "csoaa.h"
 #include "wap.h"
+#include "cb.h"
 #include "sequence.h"
 #include "searn.h"
 #include "bfgs.h"
@@ -65,6 +66,7 @@ vw parse_args(int argc, char *argv[])
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", "Use one-against-all multiclass learning with label dependent features")
     ("wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features")
+    ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&all.l1_lambda), "l_1 lambda")
     ("l2", po::value<float>(&all.l2_lambda), "l_2 lambda")
@@ -494,6 +496,7 @@ vw parse_args(int argc, char *argv[])
 
   bool got_mc = false;
   bool got_cs = false;
+  bool got_cb = false;
 
   if(vm.count("oaa")) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
@@ -507,7 +510,7 @@ vw parse_args(int argc, char *argv[])
     got_mc = true;
   }
 
-  if(vm.count("csoaa") || (all.searn && all.searn_base_learner.compare("csoaa") == 0) ) {
+  if(vm.count("csoaa") || (all.searn && (all.searn_base_learner.compare("csoaa") == 0 || all.searn_base_learner.compare("cb:csoaa") == 0)) ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
     size_t nb_actions = 0;
     if( all.searn ) { //if loaded options from regressor file already
@@ -521,10 +524,10 @@ vw parse_args(int argc, char *argv[])
     
     CSOAA::parse_flags(all, to_pass_further, vm, nb_actions);
     got_cs = true;
-    all.searn_base_learner = "csoaa";
+    if( !all.searn ) all.searn_base_learner = "csoaa"; //set searn_base_learner if not loaded options from regressor file already
   }
 
-  if(vm.count("wap") || (all.searn && all.searn_base_learner.compare("wap") == 0) ) {
+  if(vm.count("wap") || (all.searn && (all.searn_base_learner.compare("wap") == 0 || all.searn_base_learner.compare("cb:wap") == 0)) ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
     size_t nb_actions = 0;
     if( all.searn ) { //if loaded options from regressor file already
@@ -537,21 +540,47 @@ vw parse_args(int argc, char *argv[])
     }
     WAP::parse_flags(all, to_pass_further, vm, nb_actions);
     got_cs = true;
-    all.searn_base_learner = "wap";
+    if( !all.searn ) all.searn_base_learner = "wap"; //set searn_base_learner if not loaded options from regressor file already
   }
 
-  if(vm.count("csoaa_ldf") || (all.searn && all.searn_base_learner.compare("csoaa_ldf") == 0)) {
+  if(vm.count("csoaa_ldf") || (all.searn && (all.searn_base_learner.compare("csoaa_ldf") == 0 || all.searn_base_learner.compare("cb:csoaa_ldf") == 0))) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
     CSOAA_LDF::parse_flags(all, to_pass_further, vm, 0);
     got_cs = true;
-    all.searn_base_learner = "csoaa_ldf";
+    if( !all.searn ) all.searn_base_learner = "csoaa_ldf"; //set searn_base_learner if not loaded options from regressor file already
   }
 
-  if(vm.count("wap_ldf") || (all.searn && all.searn_base_learner.compare("wap_ldf") == 0)) {
+  if(vm.count("wap_ldf") || (all.searn && (all.searn_base_learner.compare("wap_ldf") == 0 || all.searn_base_learner.compare("cb:wap_ldf") == 0))) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
     WAP_LDF::parse_flags(all, to_pass_further, vm, 0);
     got_cs = true;
-    all.searn_base_learner = "wap_ldf";
+    if( !all.searn ) all.searn_base_learner = "wap_ldf"; //set searn_base_learner if not loaded options from regressor file already
+  }
+
+  if( vm.count("cb") || (all.searn && all.searn_base_learner.substr(0,3).compare("cb:") == 0 ) )
+  {
+    size_t nb_actions = 0;
+    if( all.searn ) { //if loaded options from regressor file already
+      nb_actions = all.searn_nb_actions;
+      if( vm.count("cb") && vm["cb"].as<size_t>() != all.searn_nb_actions )
+        std::cerr << "warning: you specified a different number of actions through --cb than the one loaded from regressor. Pursuing with loaded value of: " << all.searn_nb_actions << endl;
+    }
+    else {
+      nb_actions = vm["cb"].as<size_t>();
+    }
+
+    if(!got_cs) {
+      CSOAA::parse_flags(all, to_pass_further, vm, nb_actions);  // default to CSOAA unless wap is specified
+      got_cs = true;
+      all.searn_base_learner = "cb:csoaa";
+    }
+    else if( !all.searn ) { //set searn_base_learner if not loaded options from regressor file already
+      std::string tmp = "cb:";
+      tmp += all.searn_base_learner;
+      all.searn_base_learner = tmp;
+    }
+    CB::parse_flags(all, to_pass_further, vm, nb_actions);
+    got_cb = true;
   }
 
   if (vm.count("sequence")) {
@@ -578,7 +607,7 @@ vw parse_args(int argc, char *argv[])
         searn_nb_actions = vm["searn"].as<size_t>();
     }
 
-    if (!got_cs) {
+    if (!got_cs && !got_cb) {
       CSOAA::parse_flags(all, to_pass_further, vm, searn_nb_actions);  // default to CSOAA unless wap is specified
       got_cs = true;
       all.searn_base_learner = "csoaa";

@@ -37,6 +37,8 @@ namespace CSOAA {
 					cache_label, read_cached_label, 
 					delete_label, weight, initial, 
 					sizeof(label)};
+
+  bool is_test_label(label* ld);
 }
 
 namespace CSOAA_LDF {
