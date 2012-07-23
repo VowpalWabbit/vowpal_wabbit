@@ -64,8 +64,8 @@ vw parse_args(int argc, char *argv[])
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
-    ("csoaa_ldf", "Use one-against-all multiclass learning with label dependent features")
-    ("wap_ldf", "Use weighted all-pairs multiclass learning with label dependent features")
+    ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
+    ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&all.l1_lambda), "l_1 lambda")
@@ -84,6 +84,7 @@ vw parse_args(int argc, char *argv[])
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
+    ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("initial_weight", po::value<float>(&all.initial_weight), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("initial_pass_length", po::value<size_t>(&all.pass_length), "initial number of examples per pass")
@@ -545,14 +546,14 @@ vw parse_args(int argc, char *argv[])
 
   if(vm.count("csoaa_ldf") || (all.searn && (all.searn_base_learner.compare("csoaa_ldf") == 0 || all.searn_base_learner.compare("cb:csoaa_ldf") == 0))) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    CSOAA_LDF::parse_flags(all, to_pass_further, vm, 0);
+    CSOAA_AND_WAP_LDF::parse_flags(all, vm["csoaa_ldf"].as<string>(), to_pass_further, vm, 0);
     got_cs = true;
     if( !all.searn ) all.searn_base_learner = "csoaa_ldf"; //set searn_base_learner if not loaded options from regressor file already
   }
 
   if(vm.count("wap_ldf") || (all.searn && (all.searn_base_learner.compare("wap_ldf") == 0 || all.searn_base_learner.compare("cb:wap_ldf") == 0))) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    WAP_LDF::parse_flags(all, to_pass_further, vm, 0);
+    CSOAA_AND_WAP_LDF::parse_flags(all, vm["wap_ldf"].as<string>(), to_pass_further, vm, 0);
     got_cs = true;
     if( !all.searn ) all.searn_base_learner = "wap_ldf"; //set searn_base_learner if not loaded options from regressor file already
   }

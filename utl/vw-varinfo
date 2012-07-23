@@ -1,0 +1,471 @@
+#!/usr/bin/perl -w
+#
+# vim: sw=4 ts=4 expandtab smarttab
+#
+# vw-varinfo      Summarize features of a training-set using VW
+#   Input:          A vw training set file
+#   Output:         A list of features, their VW hash values, min/max
+#                   values, regressor weights, and distance from
+#                   the best constant.
+#
+# Algorithm:
+#   1)  Collect all variables and their ranges from training-set
+#   2)  Train with VW to determine regressor weights
+#   3)  Build a test-set with a single example including all variables
+#   4)  run VW with --audit on 3) to map variable names to hash values
+#       and weights.
+#   5)  Output collected information about the input variables.
+#
+# NOTE: distance from the best constant predictor is not really
+# variable 'importance', in the sense that it is not a reliable indicator
+# of prediction performance in general.  For example, if you have two
+# equal co-occurring features, the sum of the weights is what matters
+# and individual weight values are arbitrary.
+#
+# Distance represents the relative distance of the regressor weight
+# from the weight of the 'zero' which is vw's best constant prediction.
+#
+# Merits of this distance:
+#   1) It is a relative metric, making it easier to compare two features
+#   2) Easier to interpret vs an arbitrary weight (max is set to 100%)
+#   2) It is signed, so it shows which features are positively vs
+#      negatively correlated with the target label.
+#
+# (c) 2012 - ariel faigon for vowpal-wabbit
+# This software may be distributed under the same terms as vowpal-wabbit
+#
+use Getopt::Std;
+use vars (qw($opt_v $opt_V $opt_P $opt_O $opt_k));
+
+my $VW = 'vw';
+my $VWARGS = '--exact_adaptive_norm --sort_features';
+
+my ($TrainSet, $Model, $FullExample, $AuditFile);
+my (%FeatureMax, %FeatureMin);
+
+my (%Feature2Hash, %Feature2Weight);
+
+my %NameSpace;      # hash of hashes: namespace => { key => val }...
+my @Features;       # feature names list
+
+my @QPairs = ();    # list of pairs ([a, b], [c, d] ...) for namespace pairing
+my %Ignore;         # support for --ignore X
+my %Keep;           # support for --keep X
+my $DoKeep;         # flag for whether we need to use --keep or not
+my $DoLabels = 0;   # flag for multi-class (--oaa --csoaa --wap* --sequence?)
+
+my @TmpFiles;
+
+#
+# v() & V():  verbose/debug prints for -v and -V
+#
+sub v(@) {
+    return unless $opt_v;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+sub V(@) {
+    return unless $opt_V;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+sub usage(@) {
+    print STDERR @_, "\n" if (@_);
+    die "Usage: $0 [options] <training-set-file>
+    Options:
+        -v          verbose
+        -V          more verbose
+        -k          keep temporary files
+        -P<Opts>    Pass-through <Opts> as-is to the vw training step
+                    To have paired cross-features in name-spaces starting
+                    with X and Y, add -q XY ... to the -P option arguments,
+                    just like you do for vw.
+        -O<which>   Use order/ranking metric <which>
+                    Supported metrics:
+                        ... not implemented yet ...
+
+    See the script source head comments for more details.
+";
+}
+
+sub get_args {
+    $0 =~ s{.*/}{};
+
+    getopts('VvkP:O:') || usage();
+    $opt_v = 1 if ($opt_V);
+    $opt_O = '' unless (defined $opt_O);
+
+    foreach my $arg (@ARGV) {
+        if (-f $arg) {
+            $TrainSet = $arg;
+            next;
+        }
+    }
+    usage("You must supply a training-set file")
+        unless (defined $TrainSet);
+
+    usage("training-set file: $TrainSet: $!")
+        unless (-f $TrainSet);
+
+    if ($opt_P) {
+        $VWARGS = $opt_P;
+    }
+    while ($VWARGS =~ /-q\s*(\S)(\S)/g) {
+        push(@QPairs, [$1, $2]);
+    }
+    while ($VWARGS =~ /--keep\s*(\S)/g) {
+        $DoKeep = 1;
+        $Keep{$1} = 1;
+    }
+    $Keep{''} = 1;          # to be consistent with vw no-namespce behavior
+    while ($VWARGS =~ /--ignore\s*(\S)/g) {
+        $Ignore{$1} = 1;
+    }
+    if ($VWARGS =~ /--(?:(?:cs)?oaa|wap|sequence)/) {
+        $DoLabels = 1;
+    }
+    $Model = "$TrainSet.model";
+    $FullExample = "$TrainSet.full-example";
+    $AuditFile = "$TrainSet.audit";
+
+    @TmpFiles = ($Model, $FullExample, $AuditFile);
+}
+
+sub cleanup {
+    if ($opt_k) {
+        v("keeping temporary files: @TmpFiles\n");
+        return;
+    }
+    foreach my $tmpfile (@TmpFiles) {
+        unlink($tmpfile);
+    }
+}
+
+
+#
+# symbolic full feature (name-space + feature-name) as used by --audit
+#
+sub feature_name(@) {
+    join('^', @_);
+}
+
+#
+# pair_features()
+#   Initialize %FeatureMin and %FeatureMax for all paired
+#   name-spaces based on the @QPairs list which was constructed
+#   from VW -q ... arguments.
+#
+#   Respect all --ignore and --keep logic while doing so.
+#
+sub pair_features {
+    my %paired_features;
+    my @name_spaces = keys %NameSpaces;
+    my (@matching_ns1, @matching_ns2);
+
+    foreach my $pair_ref (@QPairs) {
+        my ($x, $y) = @$pair_ref;
+        foreach my $ns1 (@name_spaces) {
+            my $ns1_ch = substr($ns1,0,1);
+            if ($x eq $ns1_ch) {
+                push(@matching_ns1, $ns1)
+                    if (exists($Keep{$x}) or !exists($Ignore{$x}));
+            }
+        }
+        foreach my $ns2 (@name_spaces) {
+            my $ns2_ch = substr($ns2,0,1);
+            if ($y eq $ns2_ch) {
+                push(@matching_ns2, $ns2)
+                    if (exists($Keep{$y}) or !exists($Ignore{$y}));
+            }
+        }
+    }
+    foreach my $ns1 (@matching_ns1) {
+        foreach my $ns2 (@matching_ns2) {
+            my $nsref1 = $NameSpaces{$ns1};
+            my $nsref2 = $NameSpaces{$ns2};
+            foreach my $key1 (keys %$nsref1) {
+                foreach my $key2 (keys %$nsref2) {
+                    my $feature = feature_name($ns1, $key1, $ns2, $key2);
+                    $FeatureMax{$feature} = 0;
+                    $FeatureMin{$feature} = 0;
+                }
+            }
+        }
+    }
+}
+
+sub parse_labels($) {
+    my $labels = shift;
+    # FINISH ME
+}
+
+#
+# read_features($trainingset_file)
+#   Read the training set & parse it, collect all name-spaces,
+#   feature-names, min/max values
+#
+sub read_features($) {
+    my ($trainset) = @_;
+
+    my $ts;
+    if ($trainset =~ /\.gz$/) {
+        open($ts, "zcat $trainset|") || die "$0: zcat $trainset|: $!\n";
+    } else {
+        open($ts, $trainset) || die "$0: $trainset: $!\n";
+    }
+    while (<$ts>) {
+        # -- examples loop
+        next unless (/\S/);     # skip empty lines
+
+        # -- grab anything following the 1st '|'
+        my ($labels, $input_features) = ($_ =~ /^([^|]*)\|(.*)$/);
+        die "$0: $trainset line $.: malformed example: missing '|'\n"
+            unless (defined $input_features);
+
+        if ($DoLabels) {
+            parse_labels($labels);
+        }
+
+        my @name_space_region = split('\|', $input_features);
+        foreach my $nsr (@name_space_region) {
+            # -- name-spaces loop (note: name-space my be ''):
+            #    extract the name-space string, ignore (optional) :weight
+            my ($ns) = ($nsr =~ /^([^:\s]+)(?:\:\S+)?/);
+            $ns = '' unless ((defined $ns) && length($ns));
+
+            my $ns_ch1 = substr($ns, 0, 1);
+
+            next if (exists $Ignore{$ns_ch1});
+            next if ($DoKeep && !exists $Keep{$ns_ch1});
+
+            unless (exists $NameSpaces{$ns}) {
+                $NameSpaces{$ns} = {};
+            }
+            my $nsref = $NameSpaces{$ns};
+
+            # Trim (the optionally empty) name-space prefix,
+            # including the optional :weight
+            $nsr =~ s/^$ns\S*\s*//;
+
+            # Following the name-space: loop over feature+value pairs:
+            foreach my $keyval (split(/\s+/, $nsr)) {
+                # -- features loop
+                my ($key, $val);
+                if ($keyval =~ /:/) {       # explicit :value
+                    ($key, $val) = ($`, $');
+                } else {                    # implicit value == 1
+                    $key = $keyval;
+                    $val = 1;
+                }
+                $nsref->{$key} = $val;
+
+                my $f = feature_name($ns, $key);
+
+                # -- record min, max per feature
+                unless (exists $FeatureMax{$f}) {
+                    $FeatureMax{$f} = 0;
+                    $FeatureMin{$f} = 0;
+                }
+                if ($FeatureMax{$f} < $val) {
+                    $FeatureMax{$f} = $val;
+                }
+                if ($FeatureMin{$f} > $val) {
+                    $FeatureMin{$f} = $val;
+                }
+            }
+        }
+    }
+    close $ts;
+
+    # Add the -q pairs of features
+    pair_features();
+
+    # Add the Constant feature
+    $FeatureMin{'Constant'} = $FeatureMax{'Constant'} = 0;
+}
+
+#
+# do_train
+#   run the training stage to compute per feature weights
+#
+sub do_train($$;$) {
+    my ($trainset, $model, $rmodel) = @_;
+    my $cmd = "$VW --quiet $VWARGS -d $trainset -f $model";
+    if (defined $rmodel) {
+        $cmd .= " --readable_model $rmodel";
+    }
+    v("training: %s\n", $cmd);
+    system($cmd);
+}
+
+sub generate_full_example($) {
+    my ($full_example) = @_;
+    open(my $fe, ">$full_example") ||
+        die "$0: can't write full_example file: '$full_example': $!\n";
+    print $fe "1";
+    
+    foreach my $ns (keys %NameSpaces) {
+        my $nsref = $NameSpaces{$ns};
+        printf $fe ' |%s', $ns;
+        foreach my $key (sort keys %$nsref) {
+            my $weight = 1;
+            printf $fe ' %s:%s', $key, $weight;
+        }
+    }
+    print $fe "\n";
+    close $fe;
+}
+
+#
+# audit_features()
+#   read the output of vw -a (audit) on the all-feature example
+#   to extract hash values and weights
+#   Return the list of all feature-names
+#
+sub audit_features {
+    generate_full_example($FullExample);
+
+    my $audit_cmd = "$VW --quiet -t --audit -i $Model -d $FullExample";
+    $audit_cmd .= "|tee $AuditFile" if ($opt_k);
+
+    open(my $audit_stream, "$audit_cmd |")
+        || die "$0: can't run \$audit_cmd: '$audit_cmd |'\n";
+    my $prediction = <$audit_stream>;
+    my $features_data = <$audit_stream>;
+    close $audit_stream;
+
+    my %seen_feature_names;
+
+    # Audited feature format:   namespace^varname:142703:1:0.0435613 ...
+    while ($features_data =~ /\s+([^:]+):(\d+):([^:]+):([-+e.0-9]+)/g) {
+
+        my ($feature, $hash, $value, $weight) = ($1, $2, $3, $4);
+
+        $seen_feature_names{$feature} = 1;
+        $Feature2Hash{$feature} = $hash;
+        $Feature2Weight{$feature} = $weight;
+
+        V("%s\t%s\t%s\t%s\n", $feature, $hash, $value, $weight);
+    }
+
+    # Return the list of features actually seen in the audit
+    sort keys %seen_feature_names;
+}
+
+#
+# return 'score' metric for a given feature
+#
+my %Score;
+
+sub by_score {
+    $Score{$b} <=> $Score{$a}
+}
+
+sub score($;$) {
+    my ($feature, $metric) = @_;
+
+    my $fweight = $Feature2Weight{$feature};
+    unless (defined $fweight) {
+        warn "$0: BUG?: score($feature): feature has no weight!\n";
+        return undef;
+    }
+
+    # Support more metrics, are the any?
+    # if ($metric eq '...') ...
+
+    $fweight;
+}
+
+#
+# summarize_features
+#   Output what we know about all features + relative score
+#
+sub summarize_features {
+    my ($min_weight, $max_weight) = (0, 0);
+    my $max_len = 0;
+
+    # 1st pass - determine maximum feature-name length
+    # and max/min values
+    foreach my $f (@Features) {
+        my $w = $Feature2Weight{$f};
+        unless (defined $w) {
+            # Should already be caught in score() above,
+            # so warn only in verbose mode
+            v("%s: summarize_features: %s: undefined weight\n", $0, $f);
+            next;
+        }
+        my $slen = length($f);
+        $max_len = $slen if ($slen > $max_len);
+
+        $max_weight = $w if ($w > $max_weight);
+        $min_weight = $w if ($w < $min_weight);
+    }
+    my $range_weight = $max_weight - $min_weight;
+ 
+    # 2nd pass - calculate scores of all features
+    my ($score, $min_score, $max_score) = (0, 0, 0);
+    foreach my $f (@Features) {
+        next if ($f eq 'Constant');
+
+        $score = score($f, $opt_O);
+        next unless (defined $score);
+
+        $Score{$f} = $score;
+
+        $max_score = $score if ($score > $max_score);
+        $min_score = $score if ($score < $min_score);
+    }
+    my $score_range = $max_score - $min_score;
+    $Score{'Constant'} = 0;
+    # my $score_0 = score('Constant');
+
+    my $upper_range = abs($max_score);
+    my $lower_range = abs($min_score);
+
+    my $max_distance_from_0 = ($upper_range > $lower_range)
+                                    ? $upper_range
+                                    : $lower_range;
+
+    printf "%-*s\t%+10s %8s %8s %+9s %+10s\n",
+                $max_len, 'FeatureName', 'HashVal',
+                'MinVal', 'MaxVal',
+                'Weight', 'RelScore';
+
+    # FIXME: support different orders: by weight,
+    # by feature-range-normalized weights?
+
+    foreach my $f (sort by_score @Features) {
+        my $score = $Score{$f};
+        my $distance_from_0 = $score;
+        my $normalized_score = $distance_from_0 / $max_distance_from_0;
+
+        # FIXME: support different normalization schemes
+        if ($opt_O =~ /^a/i) {
+            $normalized_score = abs($normalized_score);
+        }
+        printf "%-*s\t%10u %8.2f %8.2f %+9.4f %9.2f%%\n",
+                $max_len, $f,
+                $Feature2Hash{$f},
+                $FeatureMin{$f},
+                $FeatureMax{$f},
+                $Feature2Weight{$f},
+                (100.0 * $normalized_score);
+    }
+}
+
+# -- main
+get_args();
+read_features($TrainSet);
+do_train($TrainSet, $Model);
+@Features = audit_features();
+summarize_features();
+cleanup();
+

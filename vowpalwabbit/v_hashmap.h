@@ -9,7 +9,8 @@
 
 template<class K, class V> class v_hashmap{
  public:
-  struct elem {
+
+  struct hash_elem {
     bool   occupied;
     K      key;
     V      val;
@@ -19,7 +20,7 @@ template<class K, class V> class v_hashmap{
   bool (*equivalent)(K,K);
   //  size_t (*hash)(K);
   V default_value;
-  v_array<elem> dat;
+  v_array<hash_elem> dat;
   size_t last_position;
   size_t num_occupants;
 
@@ -29,7 +30,7 @@ template<class K, class V> class v_hashmap{
   }
 
   v_hashmap(size_t min_size, V def, bool (*eq)(K,K)) {
-    dat = v_array<elem>();
+    dat = v_array<hash_elem>();
     if (min_size < 1023) min_size = 1023;
     reserve(dat, min_size); // reserve sets to 0 ==> occupied=false
 
@@ -49,22 +50,48 @@ template<class K, class V> class v_hashmap{
   }
 
   void clear() {
-    memset(dat.begin, 0, base_size()*sizeof(elem));
+    memset(dat.begin, 0, base_size()*sizeof(hash_elem));
     last_position = 0;
     num_occupants = 0;
   }
 
+  void* iterator_next(void* prev) {
+    hash_elem* e = (hash_elem*)prev;
+    if (e == NULL) return NULL;
+    e++;
+    while (e != dat.end_array) {
+      if (e->occupied)
+        return e;
+      e++;
+    }
+    return NULL;
+  }
+
+  void* iterator() {
+    hash_elem* e = dat.begin;
+    while (e != dat.end_array) {
+      if (e->occupied)
+        return e;
+      e++;
+    }
+    return NULL;
+  }
+
+  V iterator_get_value(void* el) {
+    hash_elem* e = (hash_elem*)el;
+    return e->val;
+  }
+
   void iter(void (*func)(K,V)) {
     //for (size_t lp=0; lp<base_size(); lp++) {
-    for (elem* e=dat.begin; e!=dat.end_array; e++) {
-      //elem* e = dat.begin+lp;
+    for (hash_elem* e=dat.begin; e!=dat.end_array; e++) {
+      //hash_elem* e = dat.begin+lp;
       if (e->occupied) {
         //printf("  [lp=%d\tocc=%d\thash=%zu]\n", lp, e->occupied, e->hash);
         func(e->key, e->val);
       }
     }
   }
-    
 
   void put_after_get_nogrow(K key, size_t hash, V val) {
     //printf("++[lp=%d\tocc=%d\thash=%zu]\n", last_position, dat[last_position].occupied, hash);
@@ -77,18 +104,19 @@ template<class K, class V> class v_hashmap{
   void double_size() {
     //    printf("doubling size!\n");
     // remember the old occupants
-    v_array<elem>tmp = v_array<elem>();
+    v_array<hash_elem>tmp = v_array<hash_elem>();
     reserve(tmp, num_occupants+10);
-    for (elem* e=dat.begin; e!=dat.end_array; e++)
+    for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
       if (e->occupied)
         push(tmp, *e);
     
     // double the size and clear
+    //std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;
     reserve(dat, base_size()*2);
-    memset(dat.begin, 0, base_size()*sizeof(elem));
+    memset(dat.begin, 0, base_size()*sizeof(hash_elem));
 
     // re-insert occupants
-    for (elem* e=tmp.begin; e!=tmp.end; e++) {
+    for (hash_elem* e=tmp.begin; e!=tmp.end; e++) {
       get(e->key, e->hash);
       //      std::cerr << "reinserting " << e->key << " at " << last_position << std::endl;
       put_after_get_nogrow(e->key, e->hash, e->val);
@@ -124,6 +152,35 @@ template<class K, class V> class v_hashmap{
       }
     }
   }
+
+  bool contains(K key, size_t hash) {
+    size_t sz  = base_size();
+    size_t first_position = hash % sz;
+    last_position = first_position;
+    while (true) {
+      // if there's nothing there, obviously we don't contain it
+      if (!dat[last_position].occupied)
+        return false;
+
+      // there's something there: maybe it's us
+      if ((dat[last_position].hash == hash) &&
+          ((equivalent == NULL) ||
+           (equivalent(key, dat[last_position].key))))
+        return true;
+
+      // there's something there that's NOT us -- advance pointer
+      last_position++;
+      if (last_position >= sz)
+        last_position = 0;
+
+      // check to make sure we haven't cycled around -- this is a bug!
+      if (last_position == first_position) {
+        std::cerr << "error: v_hashmap did not grow enough!" << std::endl;
+        exit(-1);
+      }
+    }
+  }
+    
 
   // only call put_after_get(key, hash, val) if you've already
   // run get(key, hash).  if you haven't already run get, then

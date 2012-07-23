@@ -1,10 +1,12 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <sstream>
 
 #include "oaa.h"
 #include "simple_label.h"
 #include "cache.h"
+#include "v_hashmap.h"
 
 using namespace std;
 
@@ -12,7 +14,7 @@ namespace OAA {
 
   char* bufread_label(mc_label* ld, char* c)
   {
-    ld->label = *(uint32_t *)c;
+    ld->label = *(size_t *)c;
     c += sizeof(ld->label);
     ld->weight = *(float *)c;
     c += sizeof(ld->weight);
@@ -34,7 +36,7 @@ namespace OAA {
   float weight(void* v)
   {
     mc_label* ld = (mc_label*) v;
-    return ld->weight;
+    return (ld->weight > 0) ? ld->weight : 0.;
   }
 
   float initial(void* v)
@@ -44,7 +46,7 @@ namespace OAA {
 
   char* bufcache_label(mc_label* ld, char* c)
   {
-    *(uint32_t *)c = ld->label;
+    *(size_t *)c = ld->label;
     c += sizeof(ld->label);
     *(float *)c = ld->weight;
     c += sizeof(ld->weight);
@@ -105,15 +107,15 @@ namespace OAA {
         if (ld->label == INT_MAX)
           strcpy(label_buf," unknown");
         else
-          sprintf(label_buf,"%8i",ld->label);
+          sprintf(label_buf,"%8lu",(long unsigned int)ld->label);
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8i %8lu\n",
+        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                *(prediction_t*)&ec->final_prediction,
+                (long unsigned int)*(prediction_t*)&ec->final_prediction,
                 (long unsigned int)ec->num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -133,11 +135,8 @@ namespace OAA {
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   
-    for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
-      {
-        int f = all.final_prediction_sink[i];
-        all.print(f, *(prediction_t*)&(ec->final_prediction), 0, ec->tag);
-      }
+    for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+      all.print(*sink, *(prediction_t*)&(ec->final_prediction), 0, ec->tag);
   
     all.sd->example_number++;
 
@@ -146,16 +145,18 @@ namespace OAA {
 
   void (*base_learner)(void*,example*) = NULL;
 
-  void learn(void*a, example* ec)
+  void learn_with_output(vw*all, example* ec, bool shouldOutput)
   {
-    vw* all = (vw*)a;
     mc_label* mc_label_data = (mc_label*)ec->ld;
     size_t prediction = 1;
     float score = INT_MIN;
   
-    if (mc_label_data->label > k && mc_label_data->label != (uint32_t)-1)
+    if (mc_label_data->label > k && mc_label_data->label != (size_t)-1)
       cerr << "warning: label " << mc_label_data->label << " is greater than " << k << endl;
   
+    string outputString;
+    stringstream outputStringStream(outputString);
+
     for (size_t i = 1; i <= k; i++)
       {
         label_data simple_temp;
@@ -174,11 +175,27 @@ namespace OAA {
             score = ec->partial_prediction;
             prediction = i;
           }
+
+        if (shouldOutput) {
+          if (i > 1) outputStringStream << ' ';
+          outputStringStream << i << ':' << ec->partial_prediction;
+        }
+
         ec->partial_prediction = 0.;
       }
     ec->ld = mc_label_data;
     *(prediction_t*)&(ec->final_prediction) = prediction;
     update_example_indicies(all->audit, ec, -total_increment);
+
+    if (shouldOutput) {
+      outputStringStream << endl;
+      all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
+    }
+  }
+
+  void learn(void*a, example* ec) {
+    vw* all = (vw*)a;
+    learn_with_output(all, ec, false);
   }
 
   void drive_oaa(void *in)
@@ -189,7 +206,7 @@ namespace OAA {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(all, ec);
+            learn_with_output(all, ec, all->raw_prediction > 0);
             output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }

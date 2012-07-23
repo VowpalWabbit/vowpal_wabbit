@@ -7,7 +7,7 @@ all:	config.h depend $(BINARIES)
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
 
-config.h: 
+config.h: ../configure.ac
 	echo \#define PACKAGE_VERSION \"`grep AC_INIT ../configure.ac | cut -d '[' -f 3 | cut -d ']' -f 1`\" > config.h
 
 vw_SOURCES = $(shell grep libvw_la_SOURCES Makefile.am | cut -d '=' -f 2)

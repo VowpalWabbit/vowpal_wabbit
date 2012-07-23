@@ -89,7 +89,6 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
       cout << "can't open " << file << endl << " ... exiting." << endl;
       exit(1);
     }
-
   
   size_t v_length;
   source.read((char*)&v_length, sizeof(v_length));
@@ -100,7 +99,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   version_struct v_tmp(temp.begin);
   if (v_tmp < LAST_COMPATIBLE_VERSION)
     {
-      cout << "source has possibly incompatible version!" << endl;
+      cout << "Model has possibly incompatible version! " << v_tmp.to_string() << endl;
       exit(1);
     }
   
@@ -587,7 +586,7 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
   else
     sprintf(filename,"%s",reg_name.c_str());
   dump_regressor(all, string(filename), false, false);
-  delete filename;
+  delete[] filename;
 }
 
 void finalize_regressor(vw& all, string reg_name)

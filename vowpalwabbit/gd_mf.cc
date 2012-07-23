@@ -191,7 +191,6 @@ float mf_predict(vw& all, example* ex)
 void drive_gd_mf(void* in)
 {
   vw* all = (vw*)in;
-  regressor reg = all->reg;
   example* ec = NULL;
   
   size_t current_pass = 0;

@@ -120,7 +120,7 @@ bool command_example(vw& all, example* ec) {
 
 float finalize_prediction(vw& all, float ret) 
 {
-  if ( isnan(ret))
+  if ( nanpattern(ret))
     {
       cout << "you have a NAN!!!!!" << endl;
       return 0.;
@@ -606,7 +606,6 @@ void local_predict(vw& all, example* ec)
   if (ld->label != FLT_MAX)
     {
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
-
       if (all.training && ec->loss > 0.)
 	{
 	  double eta_t;
@@ -629,7 +628,8 @@ void local_predict(vw& all, example* ec)
 	    else
 	      norm = ec->total_sum_feat_sq;
 	  }
-	  ec->eta_round = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm) / all.sd->contraction;
+          float update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm);
+	  ec->eta_round = update / all.sd->contraction;
 
 	  if (all.reg_mode && fabs(ec->eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ec->final_prediction, ld->label);
