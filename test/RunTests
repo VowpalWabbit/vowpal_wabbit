@@ -458,10 +458,10 @@ __DATA__
     train-sets/ref/wsj_small-tm.dat.stdout
     train-sets/ref/wsj_small-tm.dat.stderr
 
-# Test 14: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn 4 --searn_task sequence
-    train-sets/ref/searn_small.stdout
-    train-sets/ref/searn_small.stderr
+# Test 14: Filter tree
+{VW} --ect 10 -c --passes 10 train-sets/multiclass && rm train-sets/multiclass.cache
+    train-sets/ref/multiclass.stdout
+    train-sets/ref/multiclass.stderr
 
 # Test 15: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
 {VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --searn_passes_per_policy 4 --searn_task sequence --searn 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
@@ -487,3 +487,8 @@ __DATA__
 {LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr
+
+# Test 20: Run searn on seq_small for 12 passes, 4 passes per policy
+{VW} -k -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn 4 --searn_task sequence
+    train-sets/ref/searn_small.stdout
+    train-sets/ref/searn_small.stderr
