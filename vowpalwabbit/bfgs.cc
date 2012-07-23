@@ -8,7 +8,9 @@ Implementation by Miro Dudik.
  */
 #include <fstream>
 #include <float.h>
+#ifndef _WIN32
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -21,6 +23,10 @@ Implementation by Miro Dudik.
 #include "simple_label.h"
 #include "accumulate.h"
 #include <exception>
+
+#ifdef _WIN32
+inline bool isnan(double d) { return _isnan(d); }
+#endif
 
 using namespace std;
 

@@ -6,7 +6,11 @@ embodied in the content of this file are licensed under the BSD
 #include <fstream>
 #include <sstream>
 #include <float.h>
+#ifdef _WIN32
+#include <WinSock2.h>
+#else
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>

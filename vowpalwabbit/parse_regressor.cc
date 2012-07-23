@@ -8,7 +8,9 @@ embodied in the content of this file are licensed under the BSD
 #include <iostream>
 using namespace std;
 
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
@@ -20,6 +22,10 @@ using namespace std;
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.1"
 #define VERSION_FILE_WITH_SEARN "6.1.2"
+
+#ifdef _WIN32
+inline double drand48() { return rand() / (double)RAND_MAX; }
+#endif
 
 void initialize_regressor(vw& all)
 {

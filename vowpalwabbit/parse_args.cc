@@ -165,7 +165,11 @@ vw parse_args(int argc, char *argv[])
   else
     all.quiet = false;
 
+#ifdef _WIN32
+  srand(random_seed);
+#else
   srand48(random_seed);
+#endif
 
   if (vm.count("active_simulation"))
       all.active_simulation = true;

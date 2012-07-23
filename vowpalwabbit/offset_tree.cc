@@ -61,9 +61,9 @@ int max_label = 1;
 void parse_offset_label(void* v, substring label_space, v_array<substring>& words)
 {
   offset_data* od = (offset_data*) v;
-  char* tab_location = safe_index(label_space.start,'\t',label_space.end);
+  char* tab_location = safe_index(label_space.begin,'\t',label_space.end);
   if (tab_location != label_space.end)
-    label_space.start = tab_location+1;
+    label_space.begin = tab_location+1;
   
   tokenize(' ',label_space, words);
   switch(words.index()) {
@@ -94,8 +94,8 @@ void parse_offset_label(void* v, substring label_space, v_array<substring>& word
     od->importance = float_of_substring(words[2]);
     od->probability = float_of_substring(words[3]);
 
-    push_many(od->tag, words[4].start, 
-	      words[4].end - words[4].start);
+    push_many(od->tag, words[4].begin, 
+	      words[4].end - words[4].begin);
     break;
   default:
     cerr << "malformed example!\n";

@@ -125,7 +125,11 @@ float query_decision(vw& all, example* ec, float k)
     avg_loss = all.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
     bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, all.active_c0);
   }
+#ifdef _WIN32
+  if(rand()/(double)RAND_MAX <bias)
+#else
   if(drand48()<bias)
+#endif
     return 1./bias;
   else
     return -1.;
