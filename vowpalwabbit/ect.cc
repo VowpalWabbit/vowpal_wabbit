@@ -30,7 +30,7 @@ namespace ECT
   size_t errors = 0;
 
   //At each round, the maximum number participating in each tournament.
-  // level 0 = first round, entry 1 = first single elimination tournament.
+  // level 0 = first round, entry 0 = first single elimination tournament.
   v_array< v_array< size_t > > tournament_counts; 
   
   //Derived from tournament_counts, the number of pairs in each tournament.
@@ -40,7 +40,7 @@ namespace ECT
   v_array<size_t> cumulative_pairs;
   size_t last_pair;
   
-  v_array<int> final_levels; //The final rounds of each tournament. 
+  v_array<size_t> final_levels; //The final rounds of each tournament. 
   // round number is one larger than the entrants round number and equal to 
   // the exit round number.
   size_t tree_height = 0; //The height of the final tournament.
@@ -58,7 +58,6 @@ namespace ECT
 
   size_t final_depth(size_t eliminations)
   {
-    cout << "eliminations = " << eliminations << endl;
     eliminations--;
     for (size_t i = 0; i < 32; i++)
       if (eliminations >> i == 0)
@@ -70,7 +69,6 @@ namespace ECT
 
   void create_circuit(vw& all, size_t max_label, size_t eliminations)
   {
-    cout << "called create_circuit" << endl;
     v_array<size_t> first_round;
     v_array<size_t> first_pair;
   
@@ -111,7 +109,7 @@ namespace ECT
 
             int old = old_round[i];
             if ( (old == 2 && prev == 0) || (old == 1 && prev == 0))
-              push(final_levels, level+1);
+              push(final_levels, (size_t)(level+1));
             else
               count += (old+1)/2;
             push(new_round, count);
@@ -129,13 +127,6 @@ namespace ECT
       tree_height = final_depth(eliminations);
     if (last_pair > 0)
       increment = all.length() / (last_pair + errors) * all.stride;
-
-    cout << "last_pair = " << last_pair << "\ttree_height = " << tree_height << endl;
-    for (size_t i = 0; i < tournament_counts.index(); i++)
-      for (size_t j = 0; j < tournament_counts[i].index(); j++)
-	cout << "tournament_counts[" << i << "][" << j << "] = " << tournament_counts[i][j] << endl;
-    for (size_t i = 0; i < final_levels.index(); i++)
-      cout << "final_levels["<< i << "] = " << final_levels[i] << endl;
   }
 
   struct node {
@@ -146,12 +137,10 @@ namespace ECT
 
   bool bye_to_leaf(node& current)
   {
-    cout << "current.level = " << current.level << "\tcurrent.tournament = " << current.tournament << endl;
     if ((current.label == tournament_counts[current.level][current.tournament]
 	 && tournament_counts[current.level-1][current.tournament] % 2 == 1)
 	|| (current.label == 1 && tournament_counts[current.level-1][current.tournament] == 1))
       {
-	cout << "executing bye" << endl;
         current.label = tournament_counts[current.level-1][current.tournament];
         current.level--;
         return true;
@@ -162,19 +151,13 @@ namespace ECT
 
   void root_to_leaf(node& current, bool right)
   {//shift down one level
-    cout << "root_to_leaf, right = " << right << endl;
     v_array<size_t> prev = tournament_counts[current.level - 1];
   
-    cout << "current.tournament = " << current.tournament << endl;
     if (current.tournament > 0 && current.label < 2 && prev[current.tournament-1] == 1 
         && tournament_counts[current.level][current.tournament-1] == 0)
-      {
-	cout << "in if" << endl;
-        current.tournament--;
-      }
+      current.tournament--;
     else
       {
-	cout << "in else" << endl;
         size_t num_losers = 0;
 	if (current.tournament > 0)
 	  {
@@ -183,7 +166,6 @@ namespace ECT
 		&& prev[current.tournament - 2] == 0)
 	      num_losers = 2;
 	  }
-	cout << "num_losers = " << num_losers << endl;
 
         if (current.label < num_losers)
           {
@@ -194,7 +176,6 @@ namespace ECT
           current.label = (current.label - 1 - num_losers) * 2 + (right ? 1 : 0) + 1;
       }
     current.level--;
-    cout << "current.label = " << current.label << endl;
   }
 
   size_t get_bit(size_t label, size_t bitNum)
@@ -216,14 +197,12 @@ namespace ECT
 
     for (size_t i = tree_height-1; i != (size_t)0 -1; i--)
       {
-        cout << "i = " << i << endl;
         if ((final_winner | (1 << i)) <= errors)
           {// a real choice exists
             uint32_t offset = 0;
 	  
             size_t problem_number = last_pair + (final_winner | (1 << i)) - 1; //This is unique.
-	  
-            offset = problem_number*increment;
+	    offset = problem_number*increment;
 	  
             update_example_indicies(all.audit, ec,offset);
             ec->partial_prediction = 0;
@@ -237,38 +216,31 @@ namespace ECT
           }
       }
 
-    cout << "finished, final_winner = " << final_winner << endl;
-    cout << " round = " << final_levels[final_winner] << endl;
     node current = {1, final_winner, final_levels[final_winner]};
     while (current.level > 0)
       {
-	cout << "in while" << endl;
 	if (bye_to_leaf(current))//nothing to do.
 	  ;
 	else
 	  {
-	    cout << "in else" << endl;
 	    size_t problem_number = 0;
-	    problem_number += cumulative_pairs[current.level-1];
+	    if (current.level > 1)
+	      problem_number += cumulative_pairs[current.level-2];
 	    size_t i = 0;
 	    while(i < current.tournament)
-	      problem_number += pairs[current.level][i++];
-	    problem_number += current.label/2;
+	      problem_number += pairs[current.level-1][i++];
+	    problem_number += current.label-1;
 	    
-	    problem_number--;
-	    cout << "problem_number = " << problem_number << endl;
 	    size_t offset = problem_number*increment;
 	    
 	    ec->partial_prediction = 0;
 	    update_example_indicies(all.audit, ec,offset);
 	    base_learner(&all, ec);
 	    float pred = ec->final_prediction;
-	    cout << "pred = " << pred << endl;
 	    update_example_indicies(all.audit, ec,-offset);
 	    root_to_leaf(current, pred > 0.);
 	  }
       }
-    cout << "returning " << current.label << endl;
     return current.label;
   }
 
@@ -279,7 +251,8 @@ namespace ECT
       {
         current.label = tournament_counts[current.level+1][current.tournament];
         current.level++;
-	cout << "executing bye_to_root" << endl;
+	if (final_levels[current.tournament] == current.level)
+	  push(tournaments_won,true);
         return true;
       }
     else
@@ -288,11 +261,10 @@ namespace ECT
 
   void leaf_to_root(node& current, bool right)
   {
-    cout << "in leaf_to_root, right = " << right << endl;
     v_array<size_t> round = tournament_counts[current.level];
 
     bool won = (((current.label % 2) == 0) && right) || (((current.label % 2) == 1) && !right);
-    bool last_round = round[current.tournament] == 1 && round[current.tournament-1] == 0;
+    bool last_round = round[current.tournament] == 2 && (current.tournament == 0 ||round[current.tournament-1] == 0);
 
     if (last_round)
       {
@@ -301,17 +273,21 @@ namespace ECT
       }
     else if (won)
       {
-        int num_losers = (round[current.tournament-1]+1) / 2;
-        if (round[current.tournament - 1] == 1 
-            && current.tournament > 1 && round[current.tournament-2] == 0)
-          num_losers = 2;
-        current.label = num_losers + current.label / 2;
+        int num_losers= 0;
+	if (current.tournament > 0)
+	  {
+	    num_losers += (round[current.tournament-1]+1) / 2;
+	    if (round[current.tournament - 1] == 1 
+		&& current.tournament > 1 && round[current.tournament-2] == 0)
+	      num_losers = 2;
+	  }
+        current.label = num_losers + (current.label+1) / 2;
       }
     else 
       {
         push(tournaments_won, false);
         current.tournament++;
-        current.label = current.label / 2;
+        current.label = (current.label+1) / 2;
       }
     current.level++;
   }
@@ -331,16 +307,16 @@ namespace ECT
     node current = {mc->label, 0, 0};
 
     label_data simple_temp = {1.,mc->weight,0.};
-    cout << "mc->label = " << mc->label << endl;
 
     tournaments_won.erase();
-    while(current.tournament < (size_t) tournament_counts[0].index())
+    while(current.level < final_levels.last())
       {
         if (bye_to_root(current))
           ;
         else
           {
-            simple_temp.label = (2 * (current.label-1) % 2) - 1;
+            simple_temp.label = (int)(2 * ((current.label-1) % 2)) - 1;
+	    simple_temp.weight = mc->weight;
             ec->ld = &simple_temp;
 	    
             size_t problem_number = 0;
@@ -350,8 +326,6 @@ namespace ECT
             while(i < current.tournament)
               problem_number += pairs[current.level][i++];
             problem_number += (current.label-1)/2;
-	    
-	    cout << "problem_number = " << problem_number << endl;
             size_t offset = problem_number*increment;
 	    
             update_example_indicies(all.audit, ec,offset);
@@ -368,7 +342,6 @@ namespace ECT
       }
   
     //tournaments_won is a bit vector determining which tournaments the label won.
-
     for (size_t i = 0; i < tree_height; i++)
       {
         for (size_t j = 0; j < tournaments_won.index()/2; j++)
@@ -414,13 +387,16 @@ namespace ECT
   {
     vw* all = (vw*)a;
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
+    if ((int)mc->label > k)
+      cout << "label > maximum label!  This won't work right." << endl;
     int new_label = ect_predict(*all, ec);
     ec->ld = mc;
 
     if (mc->label != (uint32_t)-1 && all->training)
       ect_train(*all, ec);
     ec->ld = mc;
-    ec->final_prediction = new_label;
+
+    *(OAA::prediction_t*)&(ec->final_prediction) = new_label;
   }
 
   void finish(void* all)
@@ -485,10 +461,8 @@ namespace ECT
 
     if (vm.count("error")) {
       errors = vm["error"].as<size_t>();
-    } else {
-      cerr << "error: ect requires --error" << endl;
-      exit(-1);
-    }
+    } else 
+      errors = 0;
 
     *(all.p->lp) = OAA::mc_label_parser;
     k = s;
