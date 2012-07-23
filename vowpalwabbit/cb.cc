@@ -19,6 +19,7 @@ namespace CB
   size_t nb_ex_regressors = 0;
   float last_pred_reg = 0.;
   float last_correct_cost = 0.;
+  bool first_print_call = true;
 
   bool is_test_label(CB::label* ld)
   {
@@ -32,15 +33,16 @@ namespace CB
   
   char* bufread_label(CB::label* ld, char* c, io_buf& cache)
   {
-    uint32_t num = *(uint32_t *)c;
-    c += sizeof(uint32_t);
+    size_t num = *(size_t *)c;
+    ld->costs.erase();
+    c += sizeof(size_t);
     size_t total = sizeof(cb_class)*num;
     if (buf_read(cache, c, total) < total) 
       {
         cout << "error in demarshal of cost data" << endl;
         return c;
       }
-    for (uint32_t i = 0; i<num; i++)
+    for (size_t i = 0; i<num; i++)
       {
         cb_class temp = *(cb_class *)c;
         c += sizeof(cb_class);
@@ -53,8 +55,9 @@ namespace CB
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
     CB::label* ld = (CB::label*) v;
+    ld->costs.erase();
     char *c;
-    size_t total = sizeof(uint32_t);
+    size_t total = sizeof(size_t);
     if (buf_read(cache, c, total) < total) 
       return 0;
     c = bufread_label(ld,c, cache);
@@ -74,8 +77,8 @@ namespace CB
 
   char* bufcache_label(CB::label* ld, char* c)
   {
-    *(uint32_t *)c = ld->costs.index();
-    c += sizeof(uint32_t);
+    *(size_t *)c = ld->costs.index();
+    c += sizeof(size_t);
     for (size_t i = 0; i< ld->costs.index(); i++)
       {
         *(cb_class *)c = ld->costs[i];
@@ -88,16 +91,21 @@ namespace CB
   {
     char *c;
     CB::label* ld = (CB::label*) v;
-    buf_write(cache, c, sizeof(uint32_t)+sizeof(cb_class)*ld->costs.index());
+    buf_write(cache, c, sizeof(size_t)+sizeof(cb_class)*ld->costs.index());
     bufcache_label(ld,c);
   }
 
   void default_label(void* v)
   {
+    CB::label* ld = (CB::label*) v;
+    ld->costs.erase();
   }
 
   void delete_label(void* v)
   {
+    CB::label* ld = (CB::label*)v;
+    ld->costs.erase();
+    free(ld->costs.begin);
   }
 
   v_array<substring> name;
@@ -383,7 +391,7 @@ namespace CB
 	simple_temp.initial = 0.;
 	simple_temp.label = cl_obs->x;
 	simple_temp.weight = 1.;
-        std::cerr << "Updating regressor for class " << i << " to predict cost " << simple_temp.label << endl;
+        //std::cerr << "Updating regressor for class " << i << " to predict cost " << simple_temp.label << endl;
 
 	ec->ld = &simple_temp;
 
@@ -402,6 +410,12 @@ namespace CB
 
   void print_update(vw& all, bool is_test, example *ec)
   {
+    if( first_print_call )
+    {
+      fprintf(stderr, "*estimate* *estimate*                                                avglossreg last pred  last correct\n");
+      first_print_call = false;
+    }
+
     if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
         char label_buf[32];
@@ -410,7 +424,7 @@ namespace CB
         else
           sprintf(label_buf," known");
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8i %8lu %-10.6f %-10.6f %-10.6f\n",
+        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu   %-10.6f %-10.6f %-10.6f\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
@@ -437,6 +451,7 @@ namespace CB
     if (!CB::is_test_label(ld))
       {//need to compute exact loss
         size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
+        //size_t min_pred = pred;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
@@ -445,12 +460,16 @@ namespace CB
           if (cl->weight_index == pred)
             chosen_loss = cl->x;
           if (cl->x < min)
+          {
             min = cl->x;
+            //min_pred = cl->weight_index;
+          }
         }
         if (chosen_loss == FLT_MAX)
           cerr << "warning: cb predicted an invalid class" << endl;
 
         loss = chosen_loss - min;
+        //cerr << "pred: " << pred << " min_pred: " << min_pred << " loss: " << chosen_loss << " min_loss: " << min << " regret: " << loss << endl;
       }
 
     all.sd->sum_loss += loss;
