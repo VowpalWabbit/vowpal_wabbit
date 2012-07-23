@@ -224,6 +224,11 @@ vw::vw()
   finish = finish_gd;
   set_minmax = set_mm;
 
+  base_learn = NULL;
+  base_cs_learn = NULL;
+  base_finish = NULL;
+  base_cs_finish = NULL;
+
   power_t = 0.5;
   eta = 10;
   numpasses = 1;

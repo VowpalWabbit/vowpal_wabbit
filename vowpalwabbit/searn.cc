@@ -9,6 +9,7 @@
 #include "constant.h"
 #include "oaa.h"
 #include "csoaa.h"
+#include "cb.h"
 #include "v_hashmap.h"
 #include "beam.h"
 
@@ -51,14 +52,18 @@ namespace SearnUtil
 
   void add_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
   {
-    size_t amount = (policy * all.length() / max_action / total_number_of_policies) * all.stride;
+    //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
+    //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
+    size_t amount = (policy * all.length() / max_action / 2 / total_number_of_policies) * all.stride;
     //cerr << "add_policy_offset: " << amount << endl;
     update_example_indicies(all.audit, ec, amount);
   }
 
   void remove_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
   {
-    size_t amount = (policy * all.length() / max_action / total_number_of_policies) * all.stride;
+    //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
+    //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
+    size_t amount = (policy * all.length() / max_action / 2 / total_number_of_policies) * all.stride;
     update_example_indicies(all.audit, ec, -amount);
   }
 
@@ -286,6 +291,7 @@ namespace Searn
   bool   rollout_oracle       = false; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
   bool   adaptive_beta        = false; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
   float  alpha                = 0.001; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
+  bool   rollout_all_actions  = true;  //by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
 
   // debug stuff
   bool PRINT_DEBUG_INFO             = 0;
@@ -307,10 +313,13 @@ namespace Searn
   example* empty_example = NULL;
   OAA::mc_label empty_label;
   v_array<CSOAA::wclass>loss_vector = v_array<CSOAA::wclass>();
+  v_array<CB::cb_class>loss_vector_cb = v_array<CB::cb_class>();
   v_array<void*>old_labels = v_array<void*>();
   v_array<OAA::mc_label>new_labels = v_array<OAA::mc_label>();
   CSOAA::label testall_labels = { v_array<CSOAA::wclass>() };
   CSOAA::label allowed_labels = { v_array<CSOAA::wclass>() };
+  CB::label testall_labels_cb = { v_array<CB::cb_class>() };
+  CB::label allowed_labels_cb = { v_array<CB::cb_class>() };
 
   // we need a hashmap that maps from STATES to ACTIONS
   v_hashmap<state,action> *past_states = NULL;
@@ -456,6 +465,8 @@ namespace Searn
     for (size_t k=1; k<=max_action; k++) {
       CSOAA::wclass cost = { FLT_MAX, k, 0. };
       push(testall_labels.costs, cost);
+      CB::cb_class cost_cb = { FLT_MAX, k, 0., 0. };
+      push(testall_labels_cb.costs, cost_cb);
     }
 
     empty_example = alloc_example(sizeof(OAA::mc_label));
@@ -490,7 +501,9 @@ namespace Searn
     SearnUtil::free_it(global_example_set);
 
     SearnUtil::free_it(testall_labels.costs.begin);
+    SearnUtil::free_it(testall_labels_cb.costs.begin);
     SearnUtil::free_it(allowed_labels.costs.begin);
+    SearnUtil::free_it(allowed_labels_cb.costs.begin);
 
     if (do_recombination) {
       delete past_states;
@@ -616,6 +629,9 @@ namespace Searn
     if (vm.count("searn_allow_current_policy"))    allow_current_policy = true;
     if (vm.count("searn_rollout_oracle"))    	   rollout_oracle       = true;
 
+    //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
+    if (all.searn_base_learner.substr(0,3).compare("cb:") == 0) rollout_all_actions = false;
+
     //if we loaded a regressor with -i option, all.searn_trained_nb_policies contains the number of trained policies in the file
     // and all.searn_total_nb_policies contains the total number of policies in the file
     if ( loaded_in_regressor )
@@ -727,19 +743,37 @@ namespace Searn
       SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
 
       void* old_label = ec->ld;
-      ec->ld = (void*)&testall_labels;
-      if (task.allowed != NULL) {  // we need to check which actions are allowed
-        allowed_labels.costs.erase();
-        bool all_allowed = true;
-        for (size_t k=1; k<=max_action; k++)
-          if (task.allowed(s0, k)) {
-            CSOAA::wclass cost = { FLT_MAX, k, 0. };
-            push(allowed_labels.costs, cost);
-          } else
-            all_allowed = false;
+      if(rollout_all_actions) { //this means we have a cost-sensitive base learner
+        ec->ld = (void*)&testall_labels;
+        if (task.allowed != NULL) {  // we need to check which actions are allowed
+          allowed_labels.costs.erase();
+          bool all_allowed = true;
+          for (size_t k=1; k<=max_action; k++)
+            if (task.allowed(s0, k)) {
+              CSOAA::wclass cost = { FLT_MAX, k, 0. };
+              push(allowed_labels.costs, cost);
+            } else
+              all_allowed = false;
 
-        if (!all_allowed)
-          ec->ld = (void*)&allowed_labels;
+          if (!all_allowed)
+            ec->ld = (void*)&allowed_labels;
+        }
+      }
+      else { //if we have a contextual bandit base learner
+        ec->ld = (void*)&testall_labels_cb;
+        if (task.allowed != NULL) {  // we need to check which actions are allowed
+          allowed_labels_cb.costs.erase();
+          bool all_allowed = true;
+          for (size_t k=1; k<=max_action; k++)
+            if (task.allowed(s0, k)) {
+              CB::cb_class cost = { FLT_MAX, k, 0., 0. };
+              push(allowed_labels_cb.costs, cost);
+            } else
+              all_allowed = false;
+
+          if (!all_allowed)
+            ec->ld = (void*)&allowed_labels_cb;
+        }
       }
       base_learner(&all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
       size_t final_prediction = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
@@ -750,6 +784,7 @@ namespace Searn
 
       return final_prediction;
     } else {  // is_ldf
+      //TODO: modify this to handle contextual bandit base learner with ldf
       float best_prediction = 0;
       size_t best_action = 0;
       for (size_t action=1; action <= max_action; action++) {
@@ -780,6 +815,61 @@ namespace Searn
       }
       return best_action;
     }
+  }
+
+  float single_rollout(vw&all, state s0, size_t action)
+  {
+    //first check if action is valid for current state
+    if( action < 1 || action > max_action || (task.allowed && !task.allowed(s0,action)) )
+    {
+	std::cerr << "warning: asked to rollout an unallowed action: " << action << "; not performing rollout." << std::endl;
+	return 0;
+    }
+    
+    //copy state and step it with current action
+    rollout[action-1].alive = true;
+    rollout[action-1].st = task.copy(s0);
+    task.step(rollout[action-1].st, action);
+    rollout[action-1].is_finished = task.final(rollout[action-1].st);
+    if (do_recombination) rollout[action-1].hash = task.hash(rollout[action-1].st);
+
+    //if not finished complete rollout
+    if (!rollout[action-1].is_finished) {
+      for (size_t step=1; step<max_rollout; step++) {
+        size_t act_tmp = 0;
+        if (do_recombination)
+          act_tmp = past_states->get(rollout[action-1].st, rollout[action-1].hash);
+
+        if (act_tmp == 0) {  // this means we didn't find it or we're not recombining
+          if( !rollout_oracle )
+            act_tmp = searn_predict(all, rollout[action-1].st, step, true, allow_current_policy, NULL);
+	  else
+            act_tmp = task.oracle(rollout[action-1].st);
+
+          if (do_recombination) {
+            // we need to make a copy of the state
+            state copy = task.copy(rollout[action-1].st);
+            past_states->put_after_get(copy, rollout[action-1].hash, act_tmp);
+            push(unfreed_states, copy);
+          }
+        }          
+          
+        task.step(rollout[action-1].st, act_tmp);
+        rollout[action-1].is_finished = task.final(rollout[action-1].st);
+        if (do_recombination) rollout[action-1].hash = task.hash(rollout[action-1].st);
+        if (rollout[action-1].is_finished) break;
+      }
+    }
+
+    // finally, compute losses and free copies
+    float l = task.loss(rollout[action-1].st);
+    if ((l == FLT_MAX) && (!rollout[action-1].is_finished) && (max_rollout < INT_MAX)) {
+      std::cerr << "error: you asked for short rollouts, but your task does not support pre-final losses" << std::endl;
+      exit(-1);
+    }
+    task.finish(rollout[action-1].st);
+
+    return l;
   }
 
   void parallel_rollout(vw&all, state s0)
@@ -863,11 +953,73 @@ namespace Searn
         loss_vector[k-1].x -= min_loss;
   }
 
+  size_t random_action(state s0, float& prob_sampled_action)
+  {
+    //if we specified a hash, use it to seed the random number generator, otherwise just dont reseed the number generator
+    if( has_hash ) srand48(task.hash(s0));
+
+    //find how many valid actions
+    size_t nb_allowed_actions = max_action;
+    if( task.allowed ) {  
+      for (size_t k=1; k<=max_action; k++) {
+        if( !task.allowed(s0,k) ) {
+          nb_allowed_actions--;
+          if (is_ldf) {
+            nb_allowed_actions = k-1;
+            break;
+          }
+        }
+      }
+    }
+
+    size_t action = (size_t)(drand48() * nb_allowed_actions) + 1;
+    if( task.allowed && nb_allowed_actions < max_action && !is_ldf) {
+      //need to adjust action to the corresponding valid action
+      for (size_t k=1; k<=action; k++) {
+        if( !task.allowed(s0,k) ) action++;
+      }
+    }
+    prob_sampled_action = 1.0/nb_allowed_actions;
+    return action;
+  }
+
+  void get_contextual_bandit_loss_vector(vw&all, state s0)
+  {
+    float prob_sampled = 1.;
+    size_t act = random_action(s0,prob_sampled);
+    float loss = single_rollout(all,s0,act);
+
+    loss_vector_cb.erase();
+    for (size_t k=1; k<=max_action; k++) {
+      if( task.allowed && !task.allowed(s0,k))
+	break;
+      
+      CB::cb_class temp;
+      temp.x = FLT_MAX;
+      temp.weight_index = k;
+      temp.partial_prediction = 0.;
+      temp.prob_action = 0.;
+      if( act == k ) {
+        temp.x = loss;
+        temp.prob_action = prob_sampled;
+      }
+      push(loss_vector_cb, temp);
+    }
+  }
+
   void generate_state_example(vw&all, state s0)
   {
     // start by doing rollouts so we can get costs
-    parallel_rollout(all, s0);
-    if (loss_vector.index() <= 1) {
+    loss_vector.erase();
+    loss_vector_cb.erase();
+    if( rollout_all_actions ) {
+      parallel_rollout(all, s0);      
+    }
+    else {
+      get_contextual_bandit_loss_vector(all, s0);
+    }
+
+    if (loss_vector.index() <= 1 && loss_vector_cb.index() == 0) {
       // nothing interesting to do!
       return;
     }
@@ -877,17 +1029,24 @@ namespace Searn
       total_examples_generated++;
 
       example* ec;
-      CSOAA::label ld = { loss_vector };
-
       task.cs_example(all, s0, ec, true);
       void* old_label = ec->ld;
-      ec->ld = (void*)&ld;
+
+      if(rollout_all_actions) {
+        CSOAA::label ld = { loss_vector };
+        ec->ld = (void*)&ld;
+      } 
+      else {
+        CB::label ld = { loss_vector_cb };
+        ec->ld = (void*)&ld;
+      }
       SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
       base_learner(&all,ec);
       SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
       ec->ld = old_label;
       task.cs_example(all, s0, ec, false);
     } else { // is_ldf
+      //TODO: support ldf with contextual bandit base learner
       old_labels.erase();
       new_labels.erase();
 

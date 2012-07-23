@@ -21,6 +21,20 @@ namespace CB
   float last_correct_cost = 0.;
   bool first_print_call = true;
 
+  bool know_all_cost_example(CB::label* ld)
+  {
+    if (ld->costs.index() <= 1) //this means we specified an example where all actions are possible but only specified the cost for the observed action
+      return false;
+
+    //if we specified more than 1 action for this example, i.e. either we have a limited set of possible actions, or all actions are specified
+    //than check if all actions have a specified cost
+    for (cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++)
+      if (cl->x == FLT_MAX)
+        return false;
+
+    return true;
+  }
+
   bool is_test_label(CB::label* ld)
   {
     if (ld->costs.index() == 0)
@@ -206,18 +220,51 @@ namespace CB
     
     //generate cost-sensitive example
     cs_ld.costs.erase();
-    for( size_t i = 1; i <= all->sd->k; i++)
-    {
-      CSOAA::wclass wc;
-      wc.x = 0.;
-      wc.weight_index = i;
-      wc.partial_prediction = 0.;
-      if( cl_obs != NULL && i == cl_obs->weight_index )
+    if( ld->costs.index() == 1) { //this is a typical example where we can perform all actions
+      //in this case generate cost-sensitive example with all actions
+      for( size_t i = 1; i <= all->sd->k; i++)
       {
-        wc.x = cl_obs->x / cl_obs->prob_action; //use importance weighted cost for observed action, 0 otherwise 
-      }
+        CSOAA::wclass wc;
+        wc.x = 0.;
+        wc.weight_index = i;
+        wc.partial_prediction = 0.;
+        if( cl_obs != NULL && i == cl_obs->weight_index )
+        {
+          wc.x = cl_obs->x / cl_obs->prob_action; //use importance weighted cost for observed action, 0 otherwise 
 
-      push( cs_ld.costs, wc );
+          //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
+          //update the loss of this regressor 
+          nb_ex_regressors++;
+          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x)*(cl_obs->x) - avg_loss_regressors );
+          last_pred_reg = 0;
+          last_correct_cost = cl_obs->x;
+        }
+
+        push( cs_ld.costs, wc );
+      }
+    }
+    else { //this is an example where we can only perform a subset of the actions
+      //in this case generate cost-sensitive example with only allowed actions
+      for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
+      {
+        CSOAA::wclass wc;
+        wc.x = 0.;
+        wc.weight_index = cl->weight_index;
+        wc.partial_prediction = 0.;
+        if( cl_obs != NULL && cl->weight_index == cl_obs->weight_index )
+        {
+          wc.x = cl_obs->x / cl_obs->prob_action; //use importance weighted cost for observed action, 0 otherwise 
+
+          //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
+          //update the loss of this regressor 
+          nb_ex_regressors++;
+          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x)*(cl_obs->x) - avg_loss_regressors );
+          last_pred_reg = 0;
+          last_correct_cost = cl_obs->x;
+        }
+
+        push( cs_ld.costs, wc );
+      }
     }
 
   }
@@ -258,24 +305,48 @@ namespace CB
     cb_class* cl_obs = get_observed_cost(ld);
 
     //generate cost sensitive example
-    cs_ld.costs.erase();    
-    for( size_t i = 1; i <= all->sd->k; i++)
-    {
-      CSOAA::wclass wc;
+    cs_ld.costs.erase();  
+    if( ld->costs.index() == 1) { //this is a typical example where we can perform all actions
+      //in this case generate cost-sensitive example with all actions  
+      for( size_t i = 1; i <= all->sd->k; i++)
+      {
+        CSOAA::wclass wc;
       
-      //get cost prediction for this action
-      wc.x = get_cost_pred(a,ec,i);
-      wc.weight_index = i;
-      wc.partial_prediction = 0.;
+        //get cost prediction for this action
+        wc.x = get_cost_pred(a,ec,i);
+        wc.weight_index = i;
+        wc.partial_prediction = 0.;
 
-      if( cl_obs != NULL && cl_obs->weight_index == i ) {
-        nb_ex_regressors++;
-        avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
-        last_pred_reg = wc.x;
-        last_correct_cost = cl_obs->x;
+        if( cl_obs != NULL && cl_obs->weight_index == i ) {
+          nb_ex_regressors++;
+          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          last_pred_reg = wc.x;
+          last_correct_cost = cl_obs->x;
+        }
+
+        push( cs_ld.costs, wc );
       }
+    }
+    else { //this is an example where we can only perform a subset of the actions
+      //in this case generate cost-sensitive example with only allowed actions
+      for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
+      {
+        CSOAA::wclass wc;
+      
+        //get cost prediction for this action
+        wc.x = get_cost_pred(a,ec,cl->weight_index);
+        wc.weight_index = cl->weight_index;
+        wc.partial_prediction = 0.;
 
-      push( cs_ld.costs, wc );
+        if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
+          nb_ex_regressors++;
+          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          last_pred_reg = wc.x;
+          last_correct_cost = cl_obs->x;
+        }
+
+        push( cs_ld.costs, wc );
+      }
     }
 
   }
@@ -289,26 +360,52 @@ namespace CB
     cb_class* cl_obs = get_observed_cost(ld);
 
     //generate cost sensitive example
-    cs_ld.costs.erase();    
-    for( size_t i = 1; i <= all->sd->k; i++)
-    {
-      CSOAA::wclass wc;
+    cs_ld.costs.erase();
+    if( ld->costs.index() == 1) { //this is a typical example where we can perform all actions
+      //in this case generate cost-sensitive example with all actions
+      for( size_t i = 1; i <= all->sd->k; i++)
+      {
+        CSOAA::wclass wc;
 
-      //get cost prediction for this label
-      wc.x = get_cost_pred(a,ec,i);
-      wc.weight_index = i;
-      wc.partial_prediction = 0.;
+        //get cost prediction for this label
+        wc.x = get_cost_pred(a,ec,i);
+        wc.weight_index = i;
+        wc.partial_prediction = 0.;
 
-      //add correction if we observed cost for this action and regressor is wrong
-      if( cl_obs != NULL && cl_obs->weight_index == i ) {
-        nb_ex_regressors++;
-        avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
-        last_pred_reg = wc.x;
-        last_correct_cost = cl_obs->x;
-        wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
+        //add correction if we observed cost for this action and regressor is wrong
+        if( cl_obs != NULL && cl_obs->weight_index == i ) {
+          nb_ex_regressors++;
+          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          last_pred_reg = wc.x;
+          last_correct_cost = cl_obs->x;
+          wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
+        }
+
+        push( cs_ld.costs, wc );
       }
+    }
+    else { //this is an example where we can only perform a subset of the actions
+      //in this case generate cost-sensitive example with only allowed actions
+      for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
+      {
+        CSOAA::wclass wc;
 
-      push( cs_ld.costs, wc );
+        //get cost prediction for this label
+        wc.x = get_cost_pred(a,ec,cl->weight_index);
+        wc.weight_index = cl->weight_index;
+        wc.partial_prediction = 0.;
+
+        //add correction if we observed cost for this action and regressor is wrong
+        if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
+          nb_ex_regressors++;
+          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          last_pred_reg = wc.x;
+          last_correct_cost = cl_obs->x;
+          wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
+        }
+
+        push( cs_ld.costs, wc );
+      }
     }
   }
 
@@ -455,14 +552,27 @@ namespace CB
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
-        //we do not know exact cost of each action, so evaluate on generated cost-sensitive example currently stored in cb_cs_ld
-        for (CSOAA::wclass *cl = cb_cs_ld.costs.begin; cl != cb_cs_ld.costs.end; cl ++) {
-          if (cl->weight_index == pred)
-            chosen_loss = cl->x;
-          if (cl->x < min)
-          {
-            min = cl->x;
-            //min_pred = cl->weight_index;
+        if( know_all_cost_example(ld) ) {
+          for (cb_class *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
+            if (cl->weight_index == pred)
+              chosen_loss = cl->x;
+            if (cl->x < min)
+            {
+              min = cl->x;
+              //min_pred = cl->weight_index;
+            }
+          }
+        }
+        else {
+          //we do not know exact cost of each action, so evaluate on generated cost-sensitive example currently stored in cb_cs_ld
+          for (CSOAA::wclass *cl = cb_cs_ld.costs.begin; cl != cb_cs_ld.costs.end; cl ++) {
+            if (cl->weight_index == pred)
+              chosen_loss = cl->x;
+            if (cl->x < min)
+            {
+              min = cl->x;
+              //min_pred = cl->weight_index;
+            }
           }
         }
         if (chosen_loss == FLT_MAX)
@@ -492,8 +602,13 @@ namespace CB
     cb_cs_ld.costs.erase();
     if (cb_cs_ld.costs.begin != NULL)
       free(cb_cs_ld.costs.begin);
-    base_finish_cs(all);
-    base_finish(all);
+    //cerr << "base finish cs" << endl;
+    if(base_finish_cs != NULL)
+      base_finish_cs(all);
+    //cerr << "base finish" << endl;
+    if(base_finish != NULL)
+      base_finish(all);
+    //cerr << "all finished" << endl;
   }
 
   void drive_cb(void* in)
