@@ -273,7 +273,7 @@ namespace SequenceTask {
     example* cur = s->ec_start[s->pos];
     if (create) {
       ec = alloc_example(sizeof(OAA::mc_label));
-      copy_example_data(ec, cur, sizeof(OAA::mc_label));
+      VW::copy_example_data(ec, cur, sizeof(OAA::mc_label));
       OAA::default_label(ec->ld);
       SearnUtil::add_history_to_example(all, &hinfo, ec, s->predictions);
       update_example_indicies(all.audit, ec, increment * a);

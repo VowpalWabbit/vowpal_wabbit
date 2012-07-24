@@ -661,6 +661,7 @@ namespace VW {
 
   void finish(vw& all)
   {
+    cerr << "finish"<<endl;
     all.finish(&all);
     free_parser(all);
     finalize_regressor(all, all.final_regressor_name);

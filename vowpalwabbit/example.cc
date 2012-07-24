@@ -53,6 +53,7 @@ feature copy_feature(feature src) {
   return f;
 }
 
+namespace VW {
 void copy_example_data(example* &dst, example* src, size_t label_size)
 {
   if ((label_size == 0) || (!src->ld)) {
@@ -87,6 +88,7 @@ void copy_example_data(example* &dst, example* src, size_t label_size)
   dst->sorted = src->sorted;
   dst->in_use = src->in_use;
   dst->done = src->done;
+}
 }
 
 void update_example_indicies(bool audit, example* ec, size_t amount)
