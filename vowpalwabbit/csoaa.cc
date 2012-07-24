@@ -350,7 +350,8 @@ namespace CSOAA {
   {
     *(all.p->lp) = cs_label_parser;
     all.sd->k = s;
-    all.driver = drive_csoaa;
+    if (!all.is_noop)
+      all.driver = drive_csoaa;
     base_learner = all.learn;
     all.learn = learn;
     base_finish = all.finish;
@@ -950,7 +951,8 @@ namespace CSOAA_AND_WAP_LDF {
       all.add_constant = false;
     }
 
-    all.driver = drive_ldf;
+    if (!all.is_noop)
+      all.driver = drive_ldf;
     base_learner = all.learn;
     all.learn = learn;
     base_finish = all.finish;
