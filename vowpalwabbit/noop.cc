@@ -16,3 +16,5 @@ void drive_noop(void* in)
   }
 }
 
+void learn_noop(void*in, example*ec) {}
+
