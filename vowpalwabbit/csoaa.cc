@@ -7,9 +7,9 @@
 #include "cache.h"
 #include "oaa.h"
 #include "v_hashmap.h"
+#include "parse_example.h"
 
 using namespace std;
-size_t hashstring (substring s, unsigned long h);
 
 namespace CSOAA {
 
