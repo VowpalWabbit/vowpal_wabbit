@@ -3,9 +3,8 @@
   embodied in the content of this file are licensed under the BSD
   (revised) open source license
 
-  Initial implementation by Hal Daume and John Langford.  
-
-  This is not working yet (more to do).
+  Initial implementation by Hal Daume and John Langford.  Reimplementation 
+  by John Langford.
 */
 
 #include <math.h>
@@ -47,7 +46,7 @@ namespace ECT
   
   size_t increment = 0;
   v_array<bool> tournaments_won;
-
+  
   bool exists(v_array<size_t> db)
   {
     for (size_t i = 0; i< db.index();i++)
@@ -66,17 +65,16 @@ namespace ECT
     return 31;
   }
  
-
   void create_circuit(vw& all, size_t max_label, size_t eliminations)
   {
     v_array<size_t> first_round;
     v_array<size_t> first_pair;
-  
+    
     if (max_label > 0)
       push(first_round, max_label);
     else
       push(first_round, (size_t)0);
-
+    
     for (size_t i = 1; i <= errors; i++)
       push(first_round, (size_t)0);
 
@@ -138,43 +136,37 @@ namespace ECT
   bool bye_to_leaf(node& current)
   {
     if ((current.label == tournament_counts[current.level][current.tournament]
-	 && tournament_counts[current.level-1][current.tournament] % 2 == 1)
-	|| (current.label == 1 && tournament_counts[current.level-1][current.tournament] == 1))
+	 && tournament_counts[current.level-1][current.tournament] % 2 == 1)) 
+	// last label in current tournament and odd number in previous level
       {
         current.label = tournament_counts[current.level-1][current.tournament];
         current.level--;
         return true;
       }
-    else
-      return false;
+
+    return false;
   }
 
-  void root_to_leaf(node& current, bool right)
+  void root_to_leaf(node& current, bool right_wins)
   {//shift down one level
-    v_array<size_t> prev = tournament_counts[current.level - 1];
-  
-    if (current.tournament > 0 && current.label < 2 && prev[current.tournament-1] == 1 
-        && tournament_counts[current.level][current.tournament-1] == 0)
-      current.tournament--;
-    else
+    size_t num_losers = 0;
+    if (current.tournament > 0)
       {
-        size_t num_losers = 0;
-	if (current.tournament > 0)
-	  {
-	    num_losers = (prev[current.tournament-1]+1) / 2;
-	    if (prev[current.tournament - 1] == 1 && current.tournament > 1 
-		&& prev[current.tournament - 2] == 0)
-	      num_losers = 2;
-	  }
-
-        if (current.label < num_losers)
-          {
-            current.tournament--;
-            current.label = current.label * 2 + (right ? 0 : 1);
-          }
-        else
-          current.label = (current.label - 1 - num_losers) * 2 + (right ? 1 : 0) + 1;
+	v_array<size_t> prev = tournament_counts[current.level - 2];
+  
+	num_losers = (prev[current.tournament-1]+1) / 2;
+	if (prev[current.tournament - 1] == 1 && current.tournament > 1 
+	    && prev[current.tournament - 2] == 0)
+	  num_losers = 2;
       }
+    
+    if (current.label < num_losers)
+      {
+	current.tournament--;
+	current.label = current.label * 2 + (right_wins ? 0 : 1);
+      }
+    else
+      current.label = (current.label - 1 - num_losers) * 2 + (right_wins ? 1 : 0) + 1;
     current.level--;
   }
 
@@ -189,19 +181,22 @@ namespace ECT
 
   int ect_predict(vw& all, example* ec)
   {
-    size_t final_winner = 0;
+    if (k == (size_t)1)
+      return 1;
 
+    size_t finals_winner = 0;
+    
     //Binary final elimination tournament first
     label_data simple_temp = {FLT_MAX,0.,0.};
     ec->ld = & simple_temp;
 
     for (size_t i = tree_height-1; i != (size_t)0 -1; i--)
       {
-        if ((final_winner | (1 << i)) <= errors)
+        if ((finals_winner | (1 << i)) <= errors)
           {// a real choice exists
             uint32_t offset = 0;
 	  
-            size_t problem_number = last_pair + (final_winner | (1 << i)) - 1; //This is unique.
+            size_t problem_number = last_pair + (finals_winner | (1 << i)) - 1; //This is unique.
 	    offset = problem_number*increment;
 	  
             update_example_indicies(all.audit, ec,offset);
@@ -210,13 +205,14 @@ namespace ECT
             base_learner(&all, ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
-	  
-            if (ec->final_prediction > 0.)
-              final_winner = final_winner | (1 << i);
+	    
+	    float pred = ec->final_prediction;
+	    if (pred > 0.)
+              finals_winner = finals_winner | (1 << i);
           }
       }
-
-    node current = {1, final_winner, final_levels[final_winner]};
+    
+    node current = {1, finals_winner, final_levels[finals_winner]};
     while (current.level > 0)
       {
 	if (bye_to_leaf(current))//nothing to do.
@@ -225,10 +221,12 @@ namespace ECT
 	  {
 	    size_t problem_number = 0;
 	    if (current.level > 1)
-	      problem_number += cumulative_pairs[current.level-2];
-	    size_t i = 0;
-	    while(i < current.tournament)
-	      problem_number += pairs[current.level-1][i++];
+	      {
+		problem_number += cumulative_pairs[current.level-2];
+		size_t i = 0;
+		while(i < current.tournament)
+		  problem_number += pairs[current.level-1][i++];
+	      }
 	    problem_number += current.label-1;
 	    
 	    size_t offset = problem_number*increment;
@@ -259,11 +257,11 @@ namespace ECT
       return false;
   }
 
-  void leaf_to_root(node& current, bool right)
+  void leaf_to_root(node& current, bool right_wins)
   {
     v_array<size_t> round = tournament_counts[current.level];
 
-    bool won = (((current.label % 2) == 0) && right) || (((current.label % 2) == 1) && !right);
+    bool won = (((current.label % 2) == 0) && right_wins) || (((current.label % 2) == 1) && !right_wins);
     bool last_round = round[current.tournament] == 2 && (current.tournament == 0 ||round[current.tournament-1] == 0);
 
     if (last_round)
@@ -302,6 +300,8 @@ namespace ECT
 
   void ect_train(vw& all, example* ec)
   {
+    if (k == 1)//nothing to do
+      return;
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
   
     node current = {mc->label, 0, 0};
@@ -309,7 +309,7 @@ namespace ECT
     label_data simple_temp = {1.,mc->weight,0.};
 
     tournaments_won.erase();
-    while(current.level < final_levels.last())
+    while(current.tournament <= errors)
       {
         if (bye_to_root(current))
           ;
@@ -341,6 +341,9 @@ namespace ECT
           }
       }
   
+    if (tournaments_won.index() < 1)
+      cout << "badness!" << endl;
+
     //tournaments_won is a bit vector determining which tournaments the label won.
     for (size_t i = 0; i < tree_height; i++)
       {
@@ -361,17 +364,18 @@ namespace ECT
                 ec->ld = & simple_temp;
 	      
                 size_t problem_number = last_pair + j*(1 << (i+1)) + (1 << i) -1;
-	      
+		
                 size_t offset = problem_number*increment;
 	      
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
                 base_learner(&all, ec);
-	      
+		
                 update_example_indicies(all.audit, ec,-offset);
-	      
-                if (ec->final_prediction > 0.)
+		
+		float pred = ec->final_prediction;
+		if (pred > 0.)
                   tournaments_won[j] = right;
                 else
                   tournaments_won[j] = left;
@@ -386,16 +390,17 @@ namespace ECT
   void learn(void*a, example* ec)
   {
     vw* all = (vw*)a;
+
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if ((int)mc->label > k)
       cout << "label > maximum label!  This won't work right." << endl;
     int new_label = ect_predict(*all, ec);
     ec->ld = mc;
-
+    
     if (mc->label != (uint32_t)-1 && all->training)
       ect_train(*all, ec);
     ec->ld = mc;
-
+    
     *(OAA::prediction_t*)&(ec->final_prediction) = new_label;
   }
 

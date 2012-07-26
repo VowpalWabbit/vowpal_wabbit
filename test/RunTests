@@ -458,8 +458,8 @@ __DATA__
     train-sets/ref/wsj_small-tm.dat.stdout
     train-sets/ref/wsj_small-tm.dat.stderr
 
-# Test 14: Filter tree
-{VW} --ect 10 -c --passes 10 train-sets/multiclass && rm train-sets/multiclass.cache
+# Test 14: Error Correcting Tournament
+{VW} --ect 10 --error 3 -c --passes 10 train-sets/multiclass && rm train-sets/multiclass.cache
     train-sets/ref/multiclass.stdout
     train-sets/ref/multiclass.stderr
 
