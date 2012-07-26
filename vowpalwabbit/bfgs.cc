@@ -78,7 +78,7 @@ size_t example_number=0;
 size_t current_pass = 0;
 
   // default transition behavior
-bool first_hessian_on=false;
+bool first_hessian_on=true;
 bool backstep_on=false; 
 
   // set by initializer
