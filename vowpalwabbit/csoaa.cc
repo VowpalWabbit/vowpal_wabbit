@@ -126,10 +126,6 @@ namespace CSOAA {
     free(ld->costs.begin);
   }
 
-  //nonreentrant
-  size_t increment=0;
-  v_array<substring> name;
-
   bool substring_eq(substring ss, const char* str) {
     size_t len_ss  = ss.end - ss.begin;
     size_t len_str = strlen(str);
@@ -140,6 +136,7 @@ namespace CSOAA {
   void parse_label(shared_data* sd, void* v, v_array<substring>& words)
   {
     label* ld = (label*)v;
+    v_array<substring> name;
 
     ld->costs.erase();
     for (size_t i = 0; i < words.index(); i++) {
@@ -191,6 +188,11 @@ namespace CSOAA {
         //exit(-1);
       }
     }
+
+    name.erase();
+    if (name.begin != NULL)
+      free(name.begin);
+
   }
 
   void print_update(vw& all, bool is_test, example *ec)
@@ -274,6 +276,7 @@ namespace CSOAA {
     size_t prediction = 1;
     float score = FLT_MAX;
     size_t current_increment = 0;
+    size_t increment = (all->length()/all->sd->k) * all->stride;
 
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
@@ -319,8 +322,6 @@ namespace CSOAA {
   void finish(void* a)
   {
     vw* all = (vw*)a;
-    if (name.begin != NULL)
-      free(name.begin);
     base_finish(all);
   }
 
@@ -356,7 +357,6 @@ namespace CSOAA {
     all.learn = learn;
     base_finish = all.finish;
     all.finish = finish;
-    increment = (all.length()/all.sd->k) * all.stride;
   }
 
   int example_is_test(example* ec)
