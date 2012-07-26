@@ -790,7 +790,7 @@ namespace Sequence {
   void run_test_common_init()
   {
     for (size_t t=0; t<ec_seq.index(); t++)
-      policy_seq[t] = (current_policy == 0) ? 0 : SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, false);
+      policy_seq[t] = (current_policy == 0) ? 0 : SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, false, true);
     if (PRINT_DEBUG_INFO) {
       clog << "test policies:";
       for (size_t t=0; t<ec_seq.index(); t++) clog << " " << policy_seq[t];
@@ -829,7 +829,7 @@ namespace Sequence {
       // global_print_label(ec_seq[t], pred_seq[t]);
 
       // allow us to use the optimal policy for the future
-      if (SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, true) == -1)
+      if (SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, true, true) == -1)
         policy_seq[t] = -1;
     }
     if (PRINT_DEBUG_INFO) {

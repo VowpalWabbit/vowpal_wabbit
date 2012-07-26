@@ -245,6 +245,8 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
+  options_from_file = "";
+
   searn = false;
   searn_nb_actions = 1;
   searn_base_learner = "csoaa";

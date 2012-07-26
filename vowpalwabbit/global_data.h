@@ -142,6 +142,10 @@ struct vw {
   bool hessian_on;
   int m;
 
+  std::string options_from_file;
+  char** options_from_file_argv;
+  int options_from_file_argc;
+
   bool sequence;
   bool searn;
   size_t searn_nb_actions;

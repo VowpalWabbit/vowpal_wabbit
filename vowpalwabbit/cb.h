@@ -28,7 +28,7 @@ namespace CB {
     v_array<cb_class> costs;
   };
 
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, size_t s);
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file, size_t s);
 
   void output_example(vw& all, example* ec);
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);

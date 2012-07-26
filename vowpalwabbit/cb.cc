@@ -296,6 +296,87 @@ namespace CB
     return cost;
   }
 
+  //this function below was a test to see if we save time by carefully organizing the feature offset/regression calls, but seems to be same time as gen_cs_example_dm
+  void gen_cs_example_dm2(void* a, example* ec, CSOAA::label& cs_ld)
+  {
+    //this implements the direct estimation method, where costs are directly specified by the learned regressor.
+    vw* all = (vw*)a;
+    CB::label* ld = (CB::label*)ec->ld;
+
+    cb_class* cl_obs = get_observed_cost(ld);
+
+    size_t desired_increment = 0;
+    size_t current_increment = 0;
+ 
+    label_data simple_temp;
+    simple_temp.initial = 0.;
+    simple_temp.label = FLT_MAX;
+    simple_temp.weight = 0.;
+
+    ec->ld = &simple_temp;
+
+    //generate cost sensitive example
+    cs_ld.costs.erase();  
+    if( ld->costs.index() == 1) { //this is a typical example where we can perform all actions
+      //in this case generate cost-sensitive example with all actions  
+      for( size_t i = 1; i <= all->sd->k; i++)
+      {
+        CSOAA::wclass wc;
+
+        ec->partial_prediction = 0.;
+        desired_increment = increment * (2*i-1);
+        update_example_indicies(all->audit, ec, desired_increment-current_increment);
+        current_increment = desired_increment;
+        base_learner(all, ec); 
+      
+        //get cost prediction for this action
+        wc.x = ec->partial_prediction;
+        wc.weight_index = i;
+        wc.partial_prediction = 0.;
+
+        if( cl_obs != NULL && cl_obs->weight_index == i ) {
+          nb_ex_regressors++;
+          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          last_pred_reg = wc.x;
+          last_correct_cost = cl_obs->x;
+        }
+
+        push( cs_ld.costs, wc );
+      }
+    }
+    else { //this is an example where we can only perform a subset of the actions
+      //in this case generate cost-sensitive example with only allowed actions
+      for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
+      {
+        CSOAA::wclass wc;
+
+        ec->partial_prediction = 0.;
+        desired_increment = increment * (2*cl->weight_index-1);
+        update_example_indicies(all->audit, ec, desired_increment-current_increment);
+        current_increment = desired_increment;
+        base_learner(all, ec);
+      
+        //get cost prediction for this action
+        wc.x = ec->partial_prediction;
+        wc.weight_index = cl->weight_index;
+        wc.partial_prediction = 0.;
+
+        if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
+          nb_ex_regressors++;
+          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          last_pred_reg = wc.x;
+          last_correct_cost = cl_obs->x;
+        }
+
+        push( cs_ld.costs, wc );
+      }
+    }
+
+    ec->ld = ld;
+    ec->partial_prediction = 0.;
+    update_example_indicies(all->audit, ec, -current_increment);
+  }
+
   void gen_cs_example_dm(void* a, example* ec, CSOAA::label& cs_ld)
   {
     //this implements the direct estimation method, where costs are directly specified by the learned regressor.
@@ -348,7 +429,6 @@ namespace CB
         push( cs_ld.costs, wc );
       }
     }
-
   }
 
   void gen_cs_example_dr(void* a, example* ec, CSOAA::label& cs_ld)
@@ -476,7 +556,7 @@ namespace CB
     prediction = ec->final_prediction;
 
     //update our regressors if we are training regressors
-    if( (cb_type == CB_TYPE_DM || cb_type == CB_TYPE_DR) && all->training)
+    if( cb_type == CB_TYPE_DM || cb_type == CB_TYPE_DR )
     {
       cb_class* cl_obs = get_observed_cost(ld);
 
@@ -631,11 +711,11 @@ namespace CB
     }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t s)
   {
     po::options_description desc("CB options");
     desc.add_options()
-      ("cb_type", po::value<string>()->default_value("dr"), "contextual bandit method to use in {ips,dm,dr}");
+      ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
 
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -644,9 +724,28 @@ namespace CB
     po::store(parsed, vm);
     po::notify(vm);
 
-    if (vm.count("cb_type"))
+    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
+
+    if (vm.count("cb_type") || vm_file.count("cb_type"))
     {
-      std::string type_string = vm["cb_type"].as<std::string>();
+      std::string type_string;
+
+      if(vm_file.count("cb_type")) {
+        type_string = vm_file["cb_type"].as<std::string>();
+        if( vm.count("cb_type") && type_string.compare(vm["cb_type"].as<string>()) != 0)
+          cerr << "You specified a different --cb_type than the one loaded from regressor file. Pursuing with loaded value of: " << type_string << endl;
+      }
+      else {
+        type_string = vm["cb_type"].as<std::string>();
+
+        all.options_from_file.append(" --cb_type ");
+        all.options_from_file.append(type_string);
+      }
+
       if (type_string.compare("dr") == 0) cb_type = CB_TYPE_DR;
       else if (type_string.compare("dm") == 0) cb_type = CB_TYPE_DM;
       else if (type_string.compare("ips") == 0) cb_type = CB_TYPE_IPS;
@@ -655,6 +754,11 @@ namespace CB
         std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
         cb_type = CB_TYPE_DR;
       }
+    }
+    else {
+      //by default use doubly robust
+      cb_type = CB_TYPE_DR;
+      all.options_from_file.append(" --cb_type dr");
     }
 
     *(all.p->lp) = CB::cb_label_parser; 

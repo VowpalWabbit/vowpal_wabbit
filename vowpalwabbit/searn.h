@@ -30,7 +30,7 @@ namespace SearnUtil
   void* calloc_or_die(size_t, size_t);
   void free_it(void*);
 
-  int  random_policy(long int, float, bool, int, bool);
+  int  random_policy(long int, float, bool, int, bool, bool);
 
   void add_policy_offset(vw&, example*, size_t, size_t, size_t);
   void remove_policy_offset(vw&, example*, size_t, size_t, size_t);
@@ -142,7 +142,7 @@ namespace Searn
 
     // your task might need to initialize some memory at startup or
     // parse command line arguments: do that in initialize
-    bool   (*initialize)(vw&,std::vector<std::string>&opts, po::variables_map& vm);
+    bool   (*initialize)(vw&,std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file);
 
     // your task might need to free some memory at the end of running:
     // do that in finalize
@@ -189,7 +189,7 @@ namespace Searn
   };
 
 
-  void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm);
+  void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   void drive(void*);
 }
 
