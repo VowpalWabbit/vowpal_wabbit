@@ -166,7 +166,7 @@ namespace ECT
 	current.label = current.label * 2 + (right_wins ? 0 : 1);
       }
     else
-      current.label = (current.label - 1 - num_losers) * 2 + (right_wins ? 1 : 0) + 1;
+      current.label = (current.label - 1) * 2 + (right_wins ? 1 : 0) + 1 - num_losers;
     current.level--;
   }
 
@@ -211,7 +211,7 @@ namespace ECT
               finals_winner = finals_winner | (1 << i);
           }
       }
-    
+
     node current = {1, finals_winner, final_levels[finals_winner]};
     while (current.level > 0)
       {
