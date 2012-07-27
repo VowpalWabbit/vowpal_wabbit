@@ -996,6 +996,7 @@ namespace LabelDict {
   void del_example_namespace(example*ec, char ns, v_array<feature> features) {
     size_t numf = features.index();
     ec->num_features -= numf;
+    cerr<< "del_example_namespace " << ns << ", atomics size=" << ec->atomics[(size_t)ns].index() << ", numf=" << numf << endl;
 
     assert (ec->atomics[(size_t)ns].index() >= numf);
     if (ec->atomics[(size_t)ns].index() == numf) { // did NOT have ns
@@ -1021,6 +1022,7 @@ namespace LabelDict {
         break;
       }
     }
+    cerr<< "add_example_namespace " << ns << ", has_ns=" << has_ns << endl;
     if (has_ns) {
       ec->total_sum_feat_sq -= ec->sum_feat_sq[(size_t)ns];
     } else {
@@ -1047,7 +1049,10 @@ namespace LabelDict {
   }
 
   void del_example_namespaces_from_example(example*target, example*source) {
-    for (size_t*idx=source->indices.begin; idx!=source->indices.end; idx++) {
+    //for (size_t*idx=source->indices.begin; idx!=source->indices.end; idx++) {
+    size_t*idx = source->indices.end;
+    idx--;
+    for (; idx>=source->indices.begin; idx--) {
       if (*idx == constant_namespace) continue;
       del_example_namespace(target, (char)*idx, source->atomics[*idx]);
     }
