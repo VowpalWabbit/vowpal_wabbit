@@ -78,6 +78,8 @@ namespace Sequence {
   bool   sequence_allow_current_policy = false;
   size_t sequence_beam              = 1;
 
+  size_t increment                  = 0; //for policy offset
+
   bool   all_transitions_allowed    = true;
   bool** valid_transition           = NULL;
 
@@ -625,7 +627,7 @@ namespace Sequence {
     CSOAA::label ld = { costs };
 
     SearnUtil::add_history_to_example(all, &hinfo, ec, h);
-    SearnUtil::add_policy_offset(all, ec, sequence_k, total_number_of_policies, current_policy);
+    SearnUtil::add_policy_offset(all, ec, increment, current_policy);
 
     if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all,ec);}
     ec->ld = (void*)&ld;
@@ -634,7 +636,7 @@ namespace Sequence {
     if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << "::" << c->partial_prediction; clog << " ]\t"; simple_print_example_features(all,ec);}
 
     SearnUtil::remove_history_from_example(all, &hinfo, ec);
-    SearnUtil::remove_policy_offset(all, ec, sequence_k, total_number_of_policies, current_policy);
+    SearnUtil::remove_policy_offset(all, ec, increment, current_policy);
   }
 
   size_t predict(vw&all, example *ec, history h, int policy, size_t truth)
@@ -651,7 +653,7 @@ namespace Sequence {
       }
     } else {
       SearnUtil::add_history_to_example(all, &hinfo, ec, h);
-      SearnUtil::add_policy_offset(all, ec, sequence_k, total_number_of_policies, policy);
+      SearnUtil::add_policy_offset(all, ec, increment, policy);
 
       if (PRINT_DEBUG_INFO) {
         clog << "all_costs="; simple_print_costs(&testall_costs);;
@@ -670,7 +672,7 @@ namespace Sequence {
       if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << ", pp=" << ec->partial_prediction << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
 
       SearnUtil::remove_history_from_example(all, &hinfo, ec);
-      SearnUtil::remove_policy_offset(all, ec, sequence_k, total_number_of_policies, policy);
+      SearnUtil::remove_policy_offset(all, ec, increment, policy);
     }
     if ((yhat <= 0) || (yhat > sequence_k)) {
       clog << "internal error (bug): predict is returning an invalid class [" << yhat << "] -- replacing with 1" << endl;
@@ -1222,7 +1224,7 @@ namespace Sequence {
     }
   }
 
-  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     po::options_description desc("Sequence options");
     desc.add_options()
@@ -1246,6 +1248,12 @@ namespace Sequence {
     po::store(parsed, vm);
     po::notify(vm);
 
+    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
+
     all.driver = drive;
     base_learner = all.learn;
     all.learn = learn;
@@ -1255,48 +1263,125 @@ namespace Sequence {
 
     all.sequence = true;
 
-    sequence_k = vm["sequence"].as<size_t>();
+    if( vm_file.count("sequence") ) { //we loaded a regressor file containing all the sequence options, use the ones in the file
+      sequence_k = vm_file["sequence"].as<size_t>();
 
-    if (vm.count("sequence_bigrams"))
-      hinfo.bigrams = true;
-    if (vm.count("sequence_bigram_features"))
-      hinfo.bigram_features = true;
-    if (vm.count("sequence_allow_current_policy"))
-      sequence_allow_current_policy = true;
+      if (vm_file.count("sequence_bigrams"))
+        hinfo.bigrams = true;
+      if (vm_file.count("sequence_bigram_features"))
+        hinfo.bigram_features = true;
+      if (vm_file.count("sequence_history"))
+        hinfo.length = vm_file["sequence_history"].as<size_t>();
+      if (vm_file.count("sequence_features"))
+        hinfo.features = vm_file["sequence_features"].as<size_t>();
 
-    if (vm.count("sequence_history"))
-      hinfo.length = vm["sequence_history"].as<size_t>();
-    if (vm.count("sequence_features"))
-      hinfo.features = vm["sequence_features"].as<size_t>();
-    if (vm.count("sequence_rollout"))
-      sequence_rollout = vm["sequence_rollout"].as<size_t>();
-    if (vm.count("sequence_passes_per_policy"))
-      sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
-    if (vm.count("sequence_beta"))
-      sequence_beta = vm["sequence_beta"].as<float>();
+      if (vm_file.count("sequence_beta"))
+        sequence_beta = vm_file["sequence_beta"].as<float>();
+
+      if (vm_file.count("sequence_beam")) {
+        sequence_beam = vm_file["sequence_beam"].as<size_t>();
+        if (sequence_beam < 1) {
+          cerr << "cannot have --sequence_beam < 1; resetting to 1" << endl;
+          sequence_beam = 1;
+        }
+        if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
+          initialize_beam(all);
+      }
+
+      //check if there are a discrepancies with what user has specified in command line
+      if( vm.count("sequence_bigrams") && !hinfo.bigrams )
+        cerr << "warning: you specified --sequence_bigrams but loaded predictor does not use bigrams. Pursuing without bigrams." << endl;
+
+      if( vm.count("sequence_bigram_features") && !hinfo.bigram_features )
+        cerr << "warning: you specified --sequence_bigram_features but loaded predictor does not use bigram features. Pursuing without bigram features." << endl;
+
+      if( vm.count("sequence_history") && hinfo.length != vm["sequence_history"].as<size_t>() )
+        cerr << "warning: you specified a different value for --sequence_history than the one stored in loaded predictor. Pursuing with loaded value of: " << hinfo.length << endl;
+
+      if( vm.count("sequence_features") && hinfo.features != vm["sequence_features"].as<size_t>() )
+        cerr << "warning: you specified a different value for --sequence_features than the one stored in loaded predictor. Pursuing with loaded value of: " << hinfo.features << endl;
+
+      if( vm.count("sequence_beta") && sequence_beta != vm["sequence_beta"].as<float>() )
+        cerr << "warning: you specified a different value for --sequence_beta than the one stored in loaded predictor. Pursuing with loaded value of: " << sequence_beta << endl;
+
+      if( vm.count("sequence_beam") && sequence_beam != vm["sequence_beam"].as<size_t>() )
+        cerr << "warning: you specified a different value for --sequence_beam than the one stored in loaded predictor. Pursuing with loaded value of: " << sequence_beam << endl;
+
+    }
+    else {
+      sequence_k = vm["sequence"].as<size_t>();
+
+      if (vm.count("sequence_bigrams")) {
+        hinfo.bigrams = true;
+	all.options_from_file.append(" --sequence_bigrams");
+      }
+
+      if (vm.count("sequence_bigram_features")){
+        hinfo.bigram_features = true;
+	all.options_from_file.append(" --sequence_bigram_features");
+      }
+      
+      if (vm.count("sequence_history")){
+        hinfo.length = vm["sequence_history"].as<size_t>();
+        stringstream ss;
+        ss << " --sequence_history " << hinfo.length;
+        all.options_from_file.append(ss.str());
+      }
+
+      if (vm.count("sequence_features")){
+        hinfo.features = vm["sequence_features"].as<size_t>();
+        stringstream ss;
+        ss << " --sequence_features " << hinfo.features;
+        all.options_from_file.append(ss.str());
+      }
+      
+      if (vm.count("sequence_beam")) {
+        sequence_beam = vm["sequence_beam"].as<size_t>();
+        if (sequence_beam < 1) {
+          cerr << "cannot have --sequence_beam < 1; resetting to 1" << endl;
+          sequence_beam = 1;
+        }
+
+        stringstream ss;
+        ss << " --sequence_beam " << sequence_beam;
+        all.options_from_file.append(ss.str());
+
+        if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
+          initialize_beam(all);
+      }
+
+      if (vm.count("sequence_beta"))
+        sequence_beta = vm["sequence_beta"].as<float>();
+      
+      if (sequence_beta <= 0) {
+        sequence_beta = 0.5;
+        cerr << "warning: sequence_beta set to a value <= 0; resetting to 0.5" << endl;
+      }
+
+      stringstream ss;
+      ss << " --sequence_beta " << sequence_beta;
+      all.options_from_file.append(ss.str());
+    }
+
+    //these remaining options are not stored in the file so always load them from command line
+
     if (vm.count("sequence_gamma"))
       sequence_beta = vm["sequence_gamma"].as<float>();
 
-    if (sequence_beta <= 0) {
-      sequence_beta = 0.5;
-      cerr << "warning: sequence_beta set to a value <= 0; resetting to 0.5" << endl;
-    }
+    if (vm.count("sequence_rollout"))
+      sequence_rollout = vm["sequence_rollout"].as<size_t>();
+    
+    if (vm.count("sequence_passes_per_policy"))
+      sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
+
+    if (vm.count("sequence_allow_current_policy"))
+      sequence_allow_current_policy = true;
 
     if (vm.count("sequence_transition_file")) {
-      all_transitions_allowed = false;
-      read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
-    } else
-      all_transitions_allowed = true;
-
-    if (vm.count("sequence_beam")) {
-      sequence_beam = vm["sequence_beam"].as<size_t>();
-      if (sequence_beam < 1) {
-        cerr << "cannot have --sequence_beam < 1; resetting to 1" << endl;
-        sequence_beam = 1;
-      }
-      if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
-        initialize_beam(all);
-    }
+        all_transitions_allowed = false;
+        read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
+      } else
+        all_transitions_allowed = true;
 
     if (!all_transitions_allowed && (hinfo.length == 0)) {
       cerr << "cannot have --sequence_transition_file and zero history length, setting history length to 1" << endl;
@@ -1308,6 +1393,9 @@ namespace Sequence {
       constant_pow_length *= quadratic_constant;
 
     total_number_of_policies = (int)ceil(((float)all.numpasses) / ((float)sequence_passes_per_policy));
+
+    all.base_learner_nb_w *= total_number_of_policies;
+    increment = (all.length() / all.base_learner_nb_w) * all.stride;
   }
 }
 

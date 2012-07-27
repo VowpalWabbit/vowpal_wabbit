@@ -220,7 +220,7 @@ namespace OAA {
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t s)
   {
     *(all.p->lp) = mc_label_parser;
     k = s;
@@ -228,7 +228,9 @@ namespace OAA {
     base_learner = all.learn;
     all.base_learn = all.learn;
     all.learn = learn;
-    increment = (all.length()/k) * all.stride;
+
+    all.base_learner_nb_w *= k;
+    increment = (all.length()/all.base_learner_nb_w) * all.stride;
     total_increment = increment*(k-1);
   }
 }

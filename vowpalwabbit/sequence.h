@@ -4,7 +4,7 @@
 #include "oaa.h"
 
 namespace Sequence {
-  void parse_flags(vw&, std::vector<std::string>&, po::variables_map&);
+  void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void drive(void*);
 }
 #endif

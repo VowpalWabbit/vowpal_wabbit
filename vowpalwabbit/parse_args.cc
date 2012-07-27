@@ -534,7 +534,7 @@ vw parse_args(int argc, char *argv[])
       all.options_from_file.append(ss.str());
     }
 
-    OAA::parse_flags(all, to_pass_further, vm, nb_actions);
+    OAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
     got_mc = true;
   }
   
@@ -556,7 +556,7 @@ vw parse_args(int argc, char *argv[])
       all.options_from_file.append(ss.str());
     }
 
-    ECT::parse_flags(all, to_pass_further, vm, nb_actions);
+    ECT::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
     got_mc = true;
   }
 
@@ -577,7 +577,7 @@ vw parse_args(int argc, char *argv[])
       all.options_from_file.append(ss.str());
     }
     
-    CSOAA::parse_flags(all, to_pass_further, vm, nb_actions);
+    CSOAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
     got_cs = true;
   }
 
@@ -597,7 +597,7 @@ vw parse_args(int argc, char *argv[])
      ss << " --wap " << nb_actions;
      all.options_from_file.append(ss.str());
     }
-    WAP::parse_flags(all, to_pass_further, vm, nb_actions);
+    WAP::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
     got_cs = true;
   }
 
@@ -616,7 +616,7 @@ vw parse_args(int argc, char *argv[])
       all.options_from_file.append(" --csoaa_ldf ");
       all.options_from_file.append(csoaa_ldf_str);
     }
-    CSOAA_AND_WAP_LDF::parse_flags(all, csoaa_ldf_str, to_pass_further, vm, 0);
+    CSOAA_AND_WAP_LDF::parse_flags(all, csoaa_ldf_str, to_pass_further, vm, vm_file, 0);
     got_cs = true;
   }
 
@@ -636,7 +636,7 @@ vw parse_args(int argc, char *argv[])
       all.options_from_file.append(wap_ldf_str);
     }
 
-    CSOAA_AND_WAP_LDF::parse_flags(all, vm["wap_ldf"].as<string>(), to_pass_further, vm, 0);
+    CSOAA_AND_WAP_LDF::parse_flags(all, wap_ldf_str, to_pass_further, vm, vm_file, 0);
     got_cs = true;
   }
 
@@ -657,7 +657,7 @@ vw parse_args(int argc, char *argv[])
     }
 
     if(!got_cs) {
-      CSOAA::parse_flags(all, to_pass_further, vm, nb_actions);  // default to CSOAA unless wap is specified
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);  // default to CSOAA unless wap is specified
       got_cs = true;
 
       //append csoaa with nb_actions to options_from_file so it is saved to regressor later
@@ -686,7 +686,7 @@ vw parse_args(int argc, char *argv[])
     }
 
     if (!got_cs) {
-      CSOAA::parse_flags(all, to_pass_further, vm, vm["sequence"].as<size_t>());  // default to CSOAA unless wap is specified
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);  // default to CSOAA unless wap is specified
       got_cs = true;
 
       //append csoaa with nb_actions to options_from_file so it is saved to regressor later
@@ -695,7 +695,7 @@ vw parse_args(int argc, char *argv[])
       all.options_from_file.append(ss.str());
     }
 
-    Sequence::parse_flags(all, to_pass_further, vm);
+    Sequence::parse_flags(all, to_pass_further, vm, vm_file);
   }
 
   if (vm.count("searn") || vm_file.count("searn") ) { 
@@ -717,7 +717,7 @@ vw parse_args(int argc, char *argv[])
     }
 
     if (!got_cs && !got_cb) {
-      CSOAA::parse_flags(all, to_pass_further, vm, nb_actions);  // default to CSOAA unless others have been specified
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);  // default to CSOAA unless others have been specified
       got_cs = true;
 
       //append csoaa with nb_actions to options_from_file so it is saved to regressor later

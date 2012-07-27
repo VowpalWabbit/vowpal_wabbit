@@ -746,9 +746,18 @@ namespace CB
         all.options_from_file.append(type_string);
       }
 
-      if (type_string.compare("dr") == 0) cb_type = CB_TYPE_DR;
-      else if (type_string.compare("dm") == 0) cb_type = CB_TYPE_DM;
-      else if (type_string.compare("ips") == 0) cb_type = CB_TYPE_IPS;
+      if (type_string.compare("dr") == 0) { 
+        cb_type = CB_TYPE_DR;
+        all.base_learner_nb_w *= s * 2;
+      }
+      else if (type_string.compare("dm") == 0) {
+        cb_type = CB_TYPE_DM;
+        all.base_learner_nb_w *= s * 2;
+      }
+      else if (type_string.compare("ips") == 0) {
+        cb_type = CB_TYPE_IPS;
+        all.base_learner_nb_w *= s;
+      }
       else
       {
         std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
@@ -758,8 +767,11 @@ namespace CB
     else {
       //by default use doubly robust
       cb_type = CB_TYPE_DR;
+      all.base_learner_nb_w *= s * 2;
       all.options_from_file.append(" --cb_type dr");
     }
+
+    increment = (all.length()/all.base_learner_nb_w) * all.stride;
 
     *(all.p->lp) = CB::cb_label_parser; 
 
@@ -777,7 +789,7 @@ namespace CB
     all.base_cs_finish = all.finish;
     base_finish = all.base_finish;
     all.finish = finish;
-    increment = (all.length()/all.sd->k/2) * all.stride;
+    
   }
 
 

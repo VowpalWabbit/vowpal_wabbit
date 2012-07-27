@@ -229,6 +229,8 @@ vw::vw()
   base_finish = NULL;
   base_cs_finish = NULL;
 
+  base_learner_nb_w = 1;
+
   power_t = 0.5;
   eta = 10;
   numpasses = 1;
@@ -248,16 +250,6 @@ vw::vw()
   options_from_file = "";
 
   searn = false;
-  searn_nb_actions = 1;
-  searn_base_learner = "csoaa";
-  searn_trained_nb_policies = 1;
-  searn_total_nb_policies = 1;
-  searn_beta = 0.5;
-  searn_task = "sequence";
-  searn_sequencetask_history = 1;
-  searn_sequencetask_features = 0;
-  searn_sequencetask_bigrams = false;
-  searn_sequencetask_bigram_features = false;
 
   nonormalize = false;
   l1_lambda = 0.0;

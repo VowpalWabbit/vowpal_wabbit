@@ -32,8 +32,10 @@ namespace SearnUtil
 
   int  random_policy(long int, float, bool, int, bool, bool);
 
-  void add_policy_offset(vw&, example*, size_t, size_t, size_t);
-  void remove_policy_offset(vw&, example*, size_t, size_t, size_t);
+  void add_policy_offset(vw&, example*, size_t, size_t);
+  void remove_policy_offset(vw&, example*, size_t, size_t);
+  //void add_policy_offset(vw&, example*, size_t, size_t, size_t);
+  //void remove_policy_offset(vw&, example*, size_t, size_t, size_t);
 
   void add_history_to_example(vw&, history_info*, example*, history);
   void remove_history_from_example(vw&, history_info *, example*);
@@ -187,7 +189,6 @@ namespace Searn
     // anything...
     std::string (*to_string)(state, bool, std::vector<action>);
   };
-
 
   void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   void drive(void*);

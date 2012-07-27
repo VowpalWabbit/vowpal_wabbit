@@ -127,8 +127,10 @@ namespace ECT
 
     if ( k > 1)
       tree_height = final_depth(eliminations);
-    if (last_pair > 0)
-      increment = all.length() / (last_pair + errors) * all.stride;
+    if (last_pair > 0) {
+      all.base_learner_nb_w *= (last_pair + errors);
+      increment = all.length() / all.base_learner_nb_w * all.stride;
+    }
 
     cout << "last_pair = " << last_pair << "\ttree_height = " << tree_height << endl;
     for (size_t i = 0; i < tournament_counts.index(); i++)
@@ -470,7 +472,7 @@ namespace ECT
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t s)
   {
     po::options_description desc("ECT options");
     desc.add_options()
@@ -483,8 +485,25 @@ namespace ECT
     po::store(parsed, vm);
     po::notify(vm);
 
-    if (vm.count("error")) {
+    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
+
+    if(vm_file.count("error")) {
+      errors = vm_file["error"].as<size_t>();
+      if (vm.count("error") && vm["error"].as<size_t>() != errors) {
+        cerr << "warning: specified value for --error different than the one loaded from predictor file. Pursuing with loaded value of: " << errors << endl;
+      }
+    }
+    else if (vm.count("error")) {
       errors = vm["error"].as<size_t>();
+
+      //append error flag to options_from_file so it is saved in regressor file later
+      stringstream ss;
+      ss << " --error " << errors;
+      all.options_from_file.append(ss.str());
     } else {
       cerr << "error: ect requires --error" << endl;
       exit(-1);

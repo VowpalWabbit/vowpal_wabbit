@@ -345,10 +345,14 @@ namespace CSOAA {
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t s)
   {
     *(all.p->lp) = cs_label_parser;
     all.sd->k = s;
+
+    all.base_learner_nb_w *= s;
+    increment = (all.length()/ all.base_learner_nb_w ) * all.stride;     
+
     all.driver = drive_csoaa;
     base_learner = all.learn;
     all.base_learn = all.learn;
@@ -356,7 +360,6 @@ namespace CSOAA {
     base_finish = all.finish;
     all.base_finish = all.finish;
     all.finish = finish;
-    increment = (all.length()/all.sd->k) * all.stride;
   }
 
   int example_is_test(example* ec)
@@ -926,7 +929,7 @@ namespace CSOAA_AND_WAP_LDF {
   }
 
 
-  void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t s)
   {
     *(all.p->lp) = CSOAA::cs_label_parser;
 
@@ -941,7 +944,7 @@ namespace CSOAA_AND_WAP_LDF {
       exit(-1);
     }
 
-    if (vm.count("wap_ldf"))
+    if (vm.count("wap_ldf") || vm_file.count("wap_ldf") )
       is_wap = true;
 
     if (all.add_constant) {

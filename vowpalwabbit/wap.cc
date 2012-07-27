@@ -254,14 +254,17 @@ namespace WAP {
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file, size_t s)
   {
     *(all.p->lp) = CSOAA::cs_label_parser;
+
     all.sd->k = s;
+    all.base_learner_nb_w *= s;
+    increment = (all.length()/ all.base_learner_nb_w) * all.stride;
+
     all.driver = drive_wap;
     base_learner = all.learn;
     all.base_learn = all.learn;
     all.learn = learn;
-    increment = (all.length()/all.sd->k) * all.stride;
   }
 }

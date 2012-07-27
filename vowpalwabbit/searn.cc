@@ -51,20 +51,37 @@ namespace SearnUtil
       free(ptr);
   }
 
-  void add_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
+  /*void add_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
   {
     //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
     //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
-    size_t amount = (policy * all.length() / max_action / 2 / total_number_of_policies) * all.stride;
+    size_t amount = (policy * all.length() / max_action / total_number_of_policies) * all.stride;
+    //cerr << "add_policy_offset: " << amount << endl;
+    update_example_indicies(all.audit, ec, amount);
+  }*/
+
+  /*void remove_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
+  {
+    //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
+    //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
+    size_t amount = (policy * all.length() / max_action / total_number_of_policies) * all.stride;
+    update_example_indicies(all.audit, ec, -amount);
+  }*/
+
+  void add_policy_offset(vw&all, example *ec, size_t increment, size_t policy)
+  {
+    //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
+    //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
+    size_t amount = policy * increment;
     //cerr << "add_policy_offset: " << amount << endl;
     update_example_indicies(all.audit, ec, amount);
   }
 
-  void remove_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
+  void remove_policy_offset(vw&all, example *ec, size_t increment, size_t policy)
   {
     //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
     //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
-    size_t amount = (policy * all.length() / max_action / 2 / total_number_of_policies) * all.stride;
+    size_t amount = policy * increment;
     update_example_indicies(all.audit, ec, -amount);
   }
 
@@ -339,6 +356,7 @@ namespace Searn
   // variables
   size_t current_policy           = 0;
   size_t total_number_of_policies = 1;
+  size_t increment                = 0; //for policy offset
 
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
@@ -736,6 +754,44 @@ namespace Searn
 
     all.searn = true;
 
+    //compute total number of policies we will have at end of training
+    // we add current_policy for cases where we start from an initial set of policies loaded through -i option
+    size_t tmp_number_of_policies = current_policy; 
+    if( all.training )
+	tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)passes_per_policy));
+
+    //the user might have specified the number of policies that will eventually be trained through multiple vw calls, 
+    //so only set total_number_of_policies to computed value if it is larger
+    if( tmp_number_of_policies > total_number_of_policies )
+    {
+	total_number_of_policies = tmp_number_of_policies;
+        if( current_policy > 0 ) //we loaded a file but total number of policies didn't match what is needed for training
+        {
+          std::cerr << "warning: you're attempting to train more classifiers than was allocated initially. Likely to cause bad performance." << endl;
+        }  
+    }
+
+    //current policy currently points to a new policy we would train
+    //if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
+    //so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
+    if( !all.training && current_policy > 0 )
+	current_policy--;
+
+    //std::cerr << "Current Policy: " << current_policy << endl;
+    //std::cerr << "Total Number of Policies: " << total_number_of_policies << endl;
+
+    std::stringstream ss1;
+    std::stringstream ss2;
+    ss1 << current_policy;
+    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_trained_nb_policies
+    VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss1.str()); 
+    ss2 << total_number_of_policies;
+    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
+    VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies", ss2.str());
+
+    all.base_learner_nb_w *= total_number_of_policies;
+    increment = (all.length() / all.base_learner_nb_w ) * all.stride;
+
     all.driver = drive;
     base_learner = all.learn;
     all.learn = learn;
@@ -755,7 +811,8 @@ namespace Searn
 
     if (!is_ldf) {
       task.cs_example(all, s0, ec, true);
-      SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
+      SearnUtil::add_policy_offset(all, ec, increment, policy);
+      //SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
 
       void* old_label = ec->ld;
       if(rollout_all_actions) { //this means we have a cost-sensitive base learner
@@ -794,7 +851,8 @@ namespace Searn
       size_t final_prediction = (size_t)(*(OAA::prediction_t*)&(ec->final_prediction));
       ec->ld = old_label;
 
-      SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
+      SearnUtil::remove_policy_offset(all, ec, increment, policy);
+      //SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
       task.cs_example(all, s0, ec, false);
 
       return final_prediction;
@@ -808,13 +866,15 @@ namespace Searn
 
         task.cs_ldf_example(all, s0, action, ec, true);
         //cerr << "created example: " << ec << ", label: " << ec->ld << endl;
-        SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
+        SearnUtil::add_policy_offset(all, ec, increment, policy);
+        //SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
         base_learner(&all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
         //cerr << "base_learned on example: " << ec << endl;
         empty_example->in_use = true;
         base_learner(&all,empty_example);
         //cerr << "base_learned on empty example: " << empty_example << endl;
-        SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
+        SearnUtil::remove_policy_offset(all, ec, increment, policy);
+        //SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
         if (action == 1 || 
             ec->partial_prediction < best_prediction) {
           best_prediction = ec->partial_prediction;
@@ -1052,9 +1112,11 @@ namespace Searn
         CB::label ld = { loss_vector_cb };
         ec->ld = (void*)&ld;
       }
-      SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
+      SearnUtil::add_policy_offset(all, ec, increment, current_policy);
+      //SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
       base_learner(&all,ec);
-      SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
+      SearnUtil::remove_policy_offset(all, ec, increment, current_policy);
+      //SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
       ec->ld = old_label;
       task.cs_example(all, s0, ec, false);
     } else { // is_ldf
@@ -1082,7 +1144,8 @@ namespace Searn
         task.cs_ldf_example(all, s0, k, global_example_set[k-1], true);
         push(old_labels, global_example_set[k-1]->ld);
         global_example_set[k-1]->ld = (void*)(&new_labels[k-1]);
-        SearnUtil::add_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
+        SearnUtil::add_policy_offset(all, global_example_set[k-1], increment, current_policy);
+        //SearnUtil::add_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
         if (PRINT_DEBUG_INFO) { cerr << "add_policy_offset, max_action=" << max_action << ", total_number_of_policies=" << total_number_of_policies << ", current_policy=" << current_policy << endl;}
         base_learner(&all,global_example_set[k-1]);
       }
@@ -1093,7 +1156,8 @@ namespace Searn
 
       for (size_t k=1; k<=max_action; k++) {
         if (!rollout[k-1].alive) break;
-        SearnUtil::remove_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
+        SearnUtil::remove_policy_offset(all, global_example_set[k-1], increment, current_policy);
+        //SearnUtil::remove_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
         global_example_set[k-1]->ld = old_labels[k-1];
         task.cs_ldf_example(all, s0, k, global_example_set[k-1], false);
       }
@@ -1301,41 +1365,6 @@ namespace Searn
   {
     vw*all = (vw*)in;
     // initialize everything
-
-    //compute total number of policies we will have at end of training
-    // we add current_policy for cases where we start from an initial set of policies loaded through -i option
-    size_t tmp_number_of_policies = current_policy; 
-    if( all->training )
-	tmp_number_of_policies += (int)ceil(((float)all->numpasses) / ((float)passes_per_policy));
-
-    //the user might have specified the number of policies that will eventually be trained through multiple vw calls, 
-    //so only set total_number_of_policies to computed value if it is larger
-    if( tmp_number_of_policies > total_number_of_policies )
-    {
-	total_number_of_policies = tmp_number_of_policies;
-        if( current_policy > 0 ) //we loaded a file but total number of policies didn't match what is needed for training
-        {
-          std::cerr << "warning: you're attempting to train more classifiers than was allocated initially. Likely to cause bad performance." << endl;
-        }  
-    }
-
-    //current policy currently points to a new policy we would train
-    //if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
-    //so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
-    if( !all->training && current_policy > 0 )
-	current_policy--;
-
-    //std::cerr << "Current Policy: " << current_policy << endl;
-    //std::cerr << "Total Number of Policies: " << total_number_of_policies << endl;
-
-    std::stringstream ss1;
-    std::stringstream ss2;
-    ss1 << current_policy;
-    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_trained_nb_policies
-    VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss1.str()); 
-    ss2 << total_number_of_policies;
-    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
-    VW::cmd_string_replace_value(all->options_from_file,"--searn_total_nb_policies", ss2.str());
     
     const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
 
@@ -1358,14 +1387,14 @@ namespace Searn
     }
 
     if( all->training ) {
-      std::stringstream ss3;
-      std::stringstream ss4;
-      ss3 << (current_policy+1);
+      std::stringstream ss1;
+      std::stringstream ss2;
+      ss1 << (current_policy+1);
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_trained_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss3.str()); 
-      ss4 << total_number_of_policies;
+      VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss1.str()); 
+      ss2 << total_number_of_policies;
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--searn_total_nb_policies", ss4.str());
+      VW::cmd_string_replace_value(all->options_from_file,"--searn_total_nb_policies", ss2.str());
     }
   }
 
