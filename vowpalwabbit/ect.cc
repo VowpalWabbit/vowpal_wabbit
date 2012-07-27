@@ -154,19 +154,20 @@ namespace ECT
       {
 	v_array<size_t> prev = tournament_counts[current.level - 2];
   
-	num_losers = (prev[current.tournament-1]+1) / 2;
-	if (prev[current.tournament - 1] == 1 && current.tournament > 1 
-	    && prev[current.tournament - 2] == 0)
+	num_losers = prev[current.tournament-1] / 2;
+	if (prev[current.tournament - 1] == 2 
+	    && (current.tournament == 1
+		|| (current.tournament > 1 && prev[current.tournament - 2] == 0)))
 	  num_losers = 2;
       }
     
-    if (current.label < num_losers)
+    if (current.label <= num_losers)
       {
 	current.tournament--;
-	current.label = current.label * 2 + (right_wins ? 0 : 1);
+	current.label = (current.label - 1) * 2 + (right_wins ? 0 : 1) + 1;
       }
     else
-      current.label = (current.label - 1) * 2 + (right_wins ? 1 : 0) + 1 - num_losers;
+      current.label = (current.label - 1 - num_losers) * 2 + (right_wins ? 1 : 0) + 1;
     current.level--;
   }
 
@@ -267,16 +268,17 @@ namespace ECT
     if (last_round)
       {
         push(tournaments_won, won);
-        current.tournament++;
+        current.tournament++;//label stays the same
       }
     else if (won)
       {
         int num_losers= 0;
 	if (current.tournament > 0)
 	  {
-	    num_losers += (round[current.tournament-1]+1) / 2;
-	    if (round[current.tournament - 1] == 1 
-		&& current.tournament > 1 && round[current.tournament-2] == 0)
+	    num_losers = round[current.tournament-1] / 2;
+	    if (round[current.tournament-1] == 2 
+		&& (current.tournament == 1 
+		    || (current.tournament > 1 && round[current.tournament-2] == 0)))
 	      num_losers = 2;
 	  }
         current.label = num_losers + (current.label+1) / 2;
