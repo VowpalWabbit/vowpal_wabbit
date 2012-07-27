@@ -95,7 +95,7 @@ vw parse_args(int argc, char *argv[])
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
-    //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
     ("output_feature_regularizer_binary", po::value< string >(&all.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&all.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
@@ -106,6 +106,8 @@ vw parse_args(int argc, char *argv[])
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
+    ("cubic", po::value< vector<string> > (),
+     "Create and use cubic features")
     ("quiet", "Don't output diagnostics")
     ("rank", po::value<size_t>(&all.rank), "rank for matrix factorization.")
     ("random_weights", po::value<bool>(&all.random_weights), "make initial weights random")
@@ -166,7 +168,11 @@ vw parse_args(int argc, char *argv[])
   else
     all.quiet = false;
 
+#ifdef _WIN32
+  srand(random_seed);
+#else
   srand48(random_seed);
+#endif
 
   if (vm.count("active_simulation"))
       all.active_simulation = true;
@@ -286,6 +292,25 @@ vw parse_args(int argc, char *argv[])
 	      cerr << endl << "warning, ignoring characters after the 2nd.\n";
 	    if (i->length() < 2) {
 	      cerr << endl << "error, quadratic features must involve two sets.\n";
+	      exit(0);
+	    }
+	  }
+	  cerr << endl;
+	}
+    }
+
+  if (vm.count("cubic"))
+    {
+      all.triples = vm["cubic"].as< vector<string> >();
+      if (!all.quiet)
+	{
+	  cerr << "creating cubic features for triples: ";
+	  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+	    cerr << *i << " ";
+	    if (i->length() > 3)
+	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
+	    if (i->length() < 3) {
+	      cerr << endl << "error, cubic features must involve three sets.\n";
 	      exit(0);
 	    }
 	  }

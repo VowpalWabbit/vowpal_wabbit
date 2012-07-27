@@ -43,7 +43,11 @@ size_t read_cached_tag(io_buf& cache, example* ae)
 
 struct one_float {
   float f;
-} __attribute__((packed));
+}
+#ifndef _WIN32
+__attribute__((packed))
+#endif
+	;
 
 int read_cached_features(void* in, example* ec)
 {

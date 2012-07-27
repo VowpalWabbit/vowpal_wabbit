@@ -24,7 +24,7 @@ namespace CSOAA {
       break;
     case 2:
       v = float_of_substring(name[1]);
-      if ( isnan(v))
+      if ( nanpattern(v))
 	{
 	  cerr << "error NaN value for: ";
 	  cerr.write(name[0].begin, name[0].end - name[0].begin);
@@ -284,15 +284,13 @@ namespace CSOAA {
 	label_data simple_temp;
 	simple_temp.initial = 0.;
 
-	if (cl->x == FLT_MAX)
+	if (cl->x == FLT_MAX || !all->training)
 	  {
-            //cerr << "csoaa.learn: test  example" << endl;
 	    simple_temp.label = FLT_MAX;
 	    simple_temp.weight = 0.;
 	  }
 	else
 	  {
-            //cerr << "csoaa.learn: train example" << endl;
 	    simple_temp.label = cl->x;
 	    simple_temp.weight = 1.;
 	  }
@@ -307,7 +305,7 @@ namespace CSOAA {
 
 	base_learner(all, ec);
         cl->partial_prediction = ec->partial_prediction;
-	if (ec->partial_prediction < score) {
+	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
           prediction = i;
         }
@@ -850,8 +848,6 @@ namespace CSOAA_AND_WAP_LDF {
     example* ec = NULL;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { //semiblocking operation.
-        v_array<CSOAA::wclass> costs = ((label*)ec->ld)->costs;
-        //cerr<<"weights ="; for (size_t j=0; j<costs.index(); j++) //cerr<<" " << costs[j].weight_index << ":"<<costs[j].x; //cerr<<endl;
 
         if (LabelDict::ec_is_example_header(ec)) {
           cerr << "error: example headers not allowed in ldf singleline mode" << endl;

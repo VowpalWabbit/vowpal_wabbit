@@ -38,4 +38,9 @@ void print_quad(weight* weights, feature& page_feature, v_array<feature> &offer_
 
 float single_quad_weight(weight* weights, feature& page_feature, feature* offer_feature, size_t mask);
 
+void cubic(v_array<feature> &f, const v_array<feature> &first_part, const v_array<feature> &second_part, const v_array<feature> &third_part, size_t mask);
+float one_pf_cubic_predict(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask);
+float one_pf_cubic_predict_trunc(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float gravity);
+
+
 #endif

@@ -11,16 +11,29 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <cstdio>
 #include <cmath>
 #include <ctime>
+#ifdef _WIN32
+#include <WinSock2.h>
+typedef unsigned int uint32_t;
+typedef unsigned short uint16_t;
+typedef int socklen_t;
+#else
 #include <sys/socket.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <errno.h>
 #include <netdb.h>
+#endif
+#include <errno.h>
+#ifndef _WIN32
 #include <strings.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <sys/timeb.h>
 #include "allreduce.h"
 
@@ -228,8 +241,8 @@ void addbufs(float* buf1, float* buf2, int n) {
 void pass_up(char* buffer, int left_read_pos, int right_read_pos, int& parent_sent_pos, int parent_sock, int n) {
   
   //cerr<<left_read_pos<<" "<<right_read_pos<<" "<<parent_sent_pos<<" "<<n<<endl;
-  int my_bufsize = min(buf_size, ((int)(floor(left_read_pos/(sizeof(float)))*sizeof(float)) - parent_sent_pos));
-  my_bufsize = min(my_bufsize, ((int)(floor(right_read_pos/(sizeof(float)))*sizeof(float)) - parent_sent_pos));
+  int my_bufsize = min(buf_size, ((int)(floor(left_read_pos/((float)sizeof(float)))*sizeof(float)) - parent_sent_pos));
+  my_bufsize = min(my_bufsize, ((int)(floor(right_read_pos/((float)sizeof(float)))*sizeof(float)) - parent_sent_pos));
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the parent
