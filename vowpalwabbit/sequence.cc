@@ -43,6 +43,7 @@ Email questions/comments to me@hal3.name.
 #include "oaa.h"
 #include "csoaa.h"
 #include "searn.h"
+#include "vw.h"
 
 namespace Sequence {
 
@@ -1138,7 +1139,7 @@ namespace Sequence {
     else                                           run_test(all);
     run_test_common_final(all, any_test);
 
-    if (! any_test && all.training) {
+    if (! any_test ) {// && all.training) {
       run_train_common_init(all);
       if (sequence_beam > 1 || DEBUG_FORCE_BEAM_ONE) run_train_beam(all);
       else                                           run_train(all);
@@ -1181,11 +1182,16 @@ namespace Sequence {
         passes_since_new_policy++;
         if (passes_since_new_policy >= sequence_passes_per_policy) {
           passes_since_new_policy = 0;
-          current_policy++;
+          if(all->training)
+            current_policy++;
           if (current_policy > total_number_of_policies) {
             cerr << "internal error (bug): too many policies; not advancing" << endl;
             current_policy = total_number_of_policies;
           }
+          //reset sequence_trained_nb_policies in options_from_file so it is saved to regressor file later
+          std::stringstream ss;
+          ss << current_policy;
+          VW::cmd_string_replace_value(all->options_from_file,"--sequence_trained_nb_policies", ss.str());
         }
       }
       if (((OAA::mc_label*)ec->ld)->label > sequence_k) {
@@ -1219,8 +1225,19 @@ namespace Sequence {
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
         //finish(all);
-        return;
+        break;
       }
+    }
+
+    if( all->training ) {
+      std::stringstream ss1;
+      std::stringstream ss2;
+      ss1 << (current_policy+1);
+      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --sequence_trained_nb_policies
+      VW::cmd_string_replace_value(all->options_from_file,"--sequence_trained_nb_policies", ss1.str()); 
+      ss2 << total_number_of_policies;
+      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --sequence_total_nb_policies
+      VW::cmd_string_replace_value(all->options_from_file,"--sequence_total_nb_policies", ss2.str());
     }
   }
 
@@ -1239,7 +1256,15 @@ namespace Sequence {
       ("sequence_max_length", po::value<size_t>(), "maximum length of sequences (default 256)")
       ("sequence_transition_file", po::value<string>(), "read valid transitions from file (default all valid)")
       ("sequence_allow_current_policy", "allow sequence labeling to use the current policy")
+      ("sequence_total_nb_policies", po::value<size_t>(), "Number of policies that will eventually be trained")
       ("sequence_beam", po::value<size_t>(), "set the beam size for sequence prediction (default: 1 == greedy)");
+
+    po::options_description add_desc_file("Sequence options in regressor file");
+    add_desc_file.add_options()
+      ("sequence_trained_nb_policies", po::value<size_t>(), "Number of policies trained in the file");
+
+    po::options_description desc_file("Sequence options in regressor file");
+    desc_file.add(desc).add(add_desc_file);
 
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -1250,7 +1275,7 @@ namespace Sequence {
 
     po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
+      options(desc_file).allow_unregistered().run();
     po::store(parsed_file, vm_file);
     po::notify(vm_file);
 
@@ -1286,6 +1311,16 @@ namespace Sequence {
         }
         if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
           initialize_beam(all);
+      }
+
+      if( vm_file.count("sequence_total_nb_policies") ) {
+        total_number_of_policies = vm_file["sequence_total_nb_policies"].as<size_t>();
+        if (vm.count("sequence_total_nb_policies") && vm["sequence_total_nb_policies"].as<size_t>() != total_number_of_policies)
+          std::cerr << "warning: --sequence_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << total_number_of_policies << endl;
+      }
+
+      if( vm_file.count("sequence_trained_nb_policies") ) {
+        current_policy = vm_file["sequence_trained_nb_policies"].as<size_t>();
       }
 
       //check if there are a discrepancies with what user has specified in command line
@@ -1350,6 +1385,10 @@ namespace Sequence {
           initialize_beam(all);
       }
 
+      if( vm.count("sequence_total_nb_policies") ) {
+        total_number_of_policies = vm["sequence_total_nb_policies"].as<size_t>();
+      }
+
       if (vm.count("sequence_beta"))
         sequence_beta = vm["sequence_beta"].as<float>();
       
@@ -1392,7 +1431,36 @@ namespace Sequence {
     for (size_t i=0; i < hinfo.length; i++)
       constant_pow_length *= quadratic_constant;
 
-    total_number_of_policies = (int)ceil(((float)all.numpasses) / ((float)sequence_passes_per_policy));
+    //compute total number of policies we will have at end of training
+    // we add current_policy for cases where we start from an initial set of policies loaded through -i option
+    size_t tmp_number_of_policies = current_policy;
+    if(all.training)
+      tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)sequence_passes_per_policy));
+
+    //the user might have specified the number of policies that will eventually be trained through multiple vw calls, 
+    //so only set total_number_of_policies to computed value if it is larger
+    if(tmp_number_of_policies > total_number_of_policies) {
+      total_number_of_policies = tmp_number_of_policies;
+      if( current_policy > 0 ) //we loaded a file but total number of policies didn't match what is needed for training
+      {
+        std::cerr << "warning: you're attempting to train more classifiers than was allocated initially. Likely to cause bad performance." << endl;
+      }
+    }
+
+    //current policy currently points to a new policy we would train
+    //if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
+    //so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
+    if( !all.training && current_policy > 0 )
+      current_policy--;
+
+    std::stringstream ss1;
+    std::stringstream ss2;
+    ss1 << current_policy;
+    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --sequence_trained_nb_policies
+    VW::cmd_string_replace_value(all.options_from_file,"--sequence_trained_nb_policies", ss1.str()); 
+    ss2 << total_number_of_policies;
+    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --sequence_total_nb_policies
+    VW::cmd_string_replace_value(all.options_from_file,"--sequence_total_nb_policies", ss2.str());
 
     all.base_learner_nb_w *= total_number_of_policies;
     increment = (all.length() / all.base_learner_nb_w) * all.stride;

@@ -1347,7 +1347,8 @@ namespace Searn
         passes_since_new_policy++;
         if (passes_since_new_policy >= passes_per_policy) {
           passes_since_new_policy = 0;
-          current_policy++;
+          if(all.training)
+            current_policy++;
           if (current_policy > total_number_of_policies) {
             std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
             current_policy = total_number_of_policies;
