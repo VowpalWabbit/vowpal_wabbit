@@ -17,6 +17,11 @@
 // task-specific includes
 #include "searn_sequencetask.h"
 
+#ifdef _WIN32
+inline void srand48(long l) { srand(l); }
+inline double drand48() { return rand() / (double)RAND_MAX; }
+#endif
+
 namespace SearnUtil
 {
   using namespace std;

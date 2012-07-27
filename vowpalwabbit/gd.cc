@@ -6,7 +6,11 @@ embodied in the content of this file are licensed under the BSD
 #include <fstream>
 #include <sstream>
 #include <float.h>
+#ifdef _WIN32
+#include <WinSock2.h>
+#else
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -50,9 +54,11 @@ void learn_gd(void* a, example* ec)
       }
       
       if (all->save_per_pass)
-	sync_weights(*all);
+	{
+	  sync_weights(*all);
+	  save_predictor(*all, all->final_regressor_name, gd_current_pass);
+	}
       all->eta *= all->eta_decay_rate;
-      save_predictor(*all, all->final_regressor_name, gd_current_pass);
       gd_current_pass = ec->pass;
     }
   

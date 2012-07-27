@@ -10,8 +10,12 @@ embodied in the content of this file are licensed under the BSD
 #include <float.h>
 #include <pthread.h>
 #include <time.h>
+#ifdef _WIN32
+#include <WinSock2.h>
+#else
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#endif
 #include <sys/timeb.h>
 #include "global_data.h"
 #include "parse_example.h"
@@ -24,7 +28,11 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+#ifdef _WIN32
+  srand(0);
+#else
   srand48(0);
+#endif
 
   vw all = parse_args(argc, argv);
   struct timeb t_start, t_end;

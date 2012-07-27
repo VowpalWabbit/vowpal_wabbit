@@ -8,7 +8,9 @@ Implementation by Miro Dudik.
  */
 #include <fstream>
 #include <float.h>
+#ifndef _WIN32
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -21,6 +23,10 @@ Implementation by Miro Dudik.
 #include "simple_label.h"
 #include "accumulate.h"
 #include <exception>
+
+#ifdef _WIN32
+inline bool isnan(double d) { return _isnan(d); }
+#endif
 
 using namespace std;
 
@@ -72,7 +78,7 @@ size_t example_number=0;
 size_t current_pass = 0;
 
   // default transition behavior
-bool first_hessian_on=false;
+bool first_hessian_on=true;
 bool backstep_on=false; 
 
   // set by initializer

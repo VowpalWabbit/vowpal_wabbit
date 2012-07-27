@@ -5,21 +5,45 @@ embodied in the content of this file are licensed under the BSD
  */
 
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/mman.h>
 #include <sys/wait.h>
+#endif
 
 #include <signal.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+
 #include <fstream>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <Windows.h>
+#include <io.h>
+typedef int socklen_t;
+
+int daemon(int a, int b)
+{
+	exit(0);
+	return 0;
+}
+int getpid()
+{
+	return (int) ::GetCurrentProcessId();
+}
+#else
 #include <netdb.h>
+#endif
 #include <boost/program_options.hpp>
 
 #ifdef __FreeBSD__
 #include <netinet/in.h>
 #endif
 
+#ifndef _WIN32
 #include <netinet/tcp.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <assert.h>
@@ -340,6 +364,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 
       if (all.daemon)
 	{
+#ifdef _WIN32
+		exit(1);
+#else
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights = 
 	    (float*)mmap(0,all.stride * all.length() * sizeof(float), 
@@ -402,6 +429,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 		  }
 	    }
 
+#endif
 	}
 
     child:

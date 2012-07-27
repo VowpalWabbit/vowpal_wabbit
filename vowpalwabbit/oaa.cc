@@ -211,10 +211,7 @@ namespace OAA {
 	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
-          {
-            all->finish(all);
-            return;
-          }
+	  return;
         else 
           ;
       }

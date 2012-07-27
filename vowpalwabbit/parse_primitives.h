@@ -150,7 +150,7 @@ inline float parseFloat(char * p, char **end)
       return s * acc;
     }
   else
-    return strtof(start,end);
+    return strtod(start,end);
 }
 
 inline float float_of_substring(substring s)
