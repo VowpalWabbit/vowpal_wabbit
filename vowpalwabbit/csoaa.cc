@@ -173,7 +173,7 @@ namespace CSOAA {
             cerr << "label feature vectors must have label ids" << endl;
         } else {
           f.weight_index = 0;
-          if (name.index() == 1 || name.index() == 2) {
+          if (name.index() == 1 || name.index() == 2 || name.index() == 3) {
             f.weight_index = hashstring(name[0], 0);
             if (name.index() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
               f.x = FLT_MAX;
