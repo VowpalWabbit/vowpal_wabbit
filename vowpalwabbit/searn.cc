@@ -459,7 +459,7 @@ namespace Searn
     global_example_set = (example**)SearnUtil::calloc_or_die(max_action, sizeof(example*));
 
     for (size_t k=1; k<=max_action; k++) {
-      CSOAA::wclass cost = { FLT_MAX, k, 0. };
+      CSOAA::wclass cost = { FLT_MAX, k, 1., 0. };
       push(testall_labels.costs, cost);
     }
 
@@ -738,7 +738,7 @@ namespace Searn
         bool all_allowed = true;
         for (size_t k=1; k<=max_action; k++)
           if (task.allowed(s0, k)) {
-            CSOAA::wclass cost = { FLT_MAX, k, 0. };
+            CSOAA::wclass cost = { FLT_MAX, k, 1., 0. };
             push(allowed_labels.costs, cost);
           } else
             all_allowed = false;
@@ -855,7 +855,7 @@ namespace Searn
         exit(-1);
       }
 
-      CSOAA::wclass temp = { l, k, 0. };
+      CSOAA::wclass temp = { l, k, 1., 0. };
       push(loss_vector, temp);
       if ((k == 1) || (l < min_loss)) { min_loss = l; }
 

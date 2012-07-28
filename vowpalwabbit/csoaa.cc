@@ -13,7 +13,7 @@ using namespace std;
 
 namespace CSOAA {
 
-  void name_value(substring &s, v_array<substring>& name, float &v)
+  void name_value(substring &s, v_array<substring>& name, float &v, float &imp)
   {
     tokenize(':', s, name);
     
@@ -21,10 +21,23 @@ namespace CSOAA {
     case 0:
     case 1:
       v = 1.;
+      imp = 1.;
       break;
     case 2:
       v = float_of_substring(name[1]);
+      imp = 1.;
       if ( nanpattern(v))
+	{
+	  cerr << "error NaN value for: ";
+	  cerr.write(name[0].begin, name[0].end - name[0].begin);
+	  cerr << " terminating." << endl;
+	  exit(1);
+	}
+      break;
+    case 3:
+      v = float_of_substring(name[1]);
+      imp = float_of_substring(name[2]);
+      if ( nanpattern(v) || nanpattern(imp))
 	{
 	  cerr << "error NaN value for: ";
 	  cerr.write(name[0].begin, name[0].end - name[0].begin);
@@ -140,8 +153,8 @@ namespace CSOAA {
 
     ld->costs.erase();
     for (size_t i = 0; i < words.index(); i++) {
-      wclass f = {0.,0,0.};
-      name_value(words[i], name, f.x);
+      wclass f = {0.,0,1.,0.};
+      name_value(words[i], name, f.x, f.importance);
       
       if (name.index() == 0)
         cerr << "invalid cost specification -- no names!" << endl;
@@ -180,7 +193,7 @@ namespace CSOAA {
     if (words.index() == 0) {
       if (sd->k != (size_t)-1) {
         for (size_t i = 1; i <= sd->k; i++) {
-          wclass f = {f.x, i, 0.};
+          wclass f = {f.x, i, 1., 0.};
           push(ld->costs, f);
         }
       } else {
@@ -385,7 +398,7 @@ namespace CSOAA_AND_WAP_LDF {
     std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
     costs[0]->wap_value = 0.;
     for (size_t i=1; i<costs.size(); i++)
-      costs[i]->wap_value = costs[i-1]->wap_value + (costs[i]->x - costs[i-1]->x) / (float)i;
+      costs[i]->wap_value = costs[i-1]->wap_value + (costs[i]->x * costs[i]->importance - costs[i-1]->x * costs[i-1]->importance) / (float)i;
 
     //for (size_t i=0; i<costs.size(); i++) {
       //cerr<< "i=" << i << " c=" << costs[i]->x << " v=" << costs[i]->wap_value << endl;
@@ -459,41 +472,25 @@ namespace CSOAA_AND_WAP_LDF {
     label   *ld = (label*)ec->ld;
     v_array<CSOAA::wclass> costs = ld->costs;
     label_data simple_label;
+
     for (size_t j=0; j<costs.index(); j++) {
-      /* if (hit_labels.contains(costs[j].weight_index, 743285093*(328091 + costs[j].weight_index))) {
-        if (ec_seq[0]->pass == 0) {
-          cerr << "warning: multiple costs for same index (" << costs[j].weight_index << ") at position " << k << ": ignoring all but the first!" << endl;
-        }
-        costs[j].partial_prediction = FLT_MAX;
-        continue;
-      } else
-      hit_labels.put_after_get(costs[j].weight_index, 743285093*(328091 + costs[j].weight_index), 0.); */
-      
       simple_label.initial = 0.;
       simple_label.label = FLT_MAX;
       simple_label.weight = 0.;
-      //if (costs[j].x < *min_cost) 
-      //  *min_cost = costs[j].x;
       ec->partial_prediction = 0.;
 
-      //cerr<< "add_example_namespace " << costs[j].weight_index << ":" << costs[j].x << " oldlen=" << ec->indices.index() << "/" << ec->atomics['l'].index();
       LabelDict::add_example_namespace_from_memory(ec, costs[j].weight_index);
-      //cerr<< " orig_pos=" << orig_pos<< " newlen=" << ec->indices.index() << "/" << ec->atomics['l'].index();
       
       ec->ld = &simple_label;
       base_learner(&all, ec); // make a prediction
       costs[j].partial_prediction = ec->partial_prediction;
-      //cerr<<"pp=" << ec->partial_prediction << " fp=" << ec->final_prediction << " min_score=" << min_score << " wi=" << costs[j].weight_index << " x=" << costs[j].x<<endl;
+
       if (ec->partial_prediction < *min_score) {
-        //cerr<<"updated pp"<<endl;
         *min_score = ec->partial_prediction;
         *prediction = costs[j].weight_index;
-        //*prediction_cost = costs[j].x;
       }
 
-      //cerr<< " predellen=" << ec->indices.index() << "/" << ec->atomics['l'].index();
       LabelDict::del_example_namespace_from_memory(ec, costs[j].weight_index);
-      //cerr<< " postdellen=" << ec->indices.index() << "/" << ec->atomics['l'].index()<<endl;
     }
 
     ec->ld = ld;
@@ -597,18 +594,12 @@ namespace CSOAA_AND_WAP_LDF {
   void do_actual_learning_oaa(vw& all, int start_K)
   {
     size_t K = ec_seq.index();
-    //float  min_cost = FLT_MAX;
     size_t prediction = 0;
-    //float  prediction_cost = 0.;
     bool   isTest = CSOAA::example_is_test(*ec_seq.begin);
     float  min_score = FLT_MAX;
-    //cerr<< "ldf.learn isTest=" << isTest << ", K=" << K << ", pass=" << ec_seq.begin[0]->pass <<endl;
-
-    //v_hashmap<size_t,float> hit_labels(8, 0., NULL);
 
     for (size_t k=start_K; k<K; k++) {
       example *ec = ec_seq.begin[k];
-
       if (CSOAA::example_is_test(ec) != isTest) {
         isTest = true;
         cerr << "warning: ldf got mix of train/test data; assuming test" << endl;
@@ -617,12 +608,8 @@ namespace CSOAA_AND_WAP_LDF {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
         exit(-1);
       }
-      //cerr<< (isTest ? "test" : "train") << " costs.index()=" << costs.index() << endl;
-
       make_single_prediction(all, ec, &prediction, &min_score);
     }
-    //prediction_cost -= min_cost;
-    //cerr<<"prediction="<<prediction<< " cost="<<prediction_cost<< " (min_cost was "<<min_cost<<")"<<endl;
 
     // do actual learning
     if (all.training && !isTest)
@@ -641,7 +628,7 @@ namespace CSOAA_AND_WAP_LDF {
           ec->example_t = csoaa_example_t;
           simple_label.initial = 0.;
           simple_label.label = costs[j].x;
-          simple_label.weight = 1.;
+          simple_label.weight = costs[j].importance;
           ec->ld = &simple_label;
           ec->partial_prediction = 0.;
           LabelDict::add_example_namespace_from_memory(ec, costs[j].weight_index);
