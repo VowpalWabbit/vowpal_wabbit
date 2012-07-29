@@ -502,7 +502,7 @@ namespace CSOAA_AND_WAP_LDF {
   {
 
     size_t K = ec_seq.index();
-    bool   isTest = CSOAA::example_is_test(*ec_seq.begin);
+    bool   isTest = CSOAA::example_is_test(ec_seq[start_K]);
     size_t prediction = 0;
     //float  prediction_cost = 0.;
     //float  min_cost = FLT_MAX;
@@ -595,7 +595,7 @@ namespace CSOAA_AND_WAP_LDF {
   {
     size_t K = ec_seq.index();
     size_t prediction = 0;
-    bool   isTest = CSOAA::example_is_test(*ec_seq.begin);
+    bool   isTest = CSOAA::example_is_test(ec_seq[start_K]);
     float  min_score = FLT_MAX;
 
     for (size_t k=start_K; k<K; k++) {

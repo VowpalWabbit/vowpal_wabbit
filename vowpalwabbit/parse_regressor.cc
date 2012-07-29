@@ -88,7 +88,7 @@ void initialize_regressor(vw& all)
 //nonreentrant
 v_array<char> temp;
 
-void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
+void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector, bool initial_regressor_force_cubic_version)
 {
   ifstream source(file);
   if (!source.is_open())
@@ -144,7 +144,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
     }
 
   vector<string> local_triples;
-  if (v_tmp >= VERSION_FILE_WITH_CUBIC) {
+  if (initial_regressor_force_cubic_version || (v_tmp >= VERSION_FILE_WITH_CUBIC)) {
     source.read((char *)&len, sizeof(len));
     for (; len > 0; len--)
       {
@@ -388,7 +388,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   source.close();
 }
 
-void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regressor_name, bool quiet)
+void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regressor_name, bool quiet, bool initial_regressor_force_cubic_version)
 {
   if (vm.count("final_regressor")) {
     final_regressor_name = vm["final_regressor"].as<string>();
@@ -410,10 +410,10 @@ void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regresso
   bool initialized = false;
 
   for (size_t i = 0; i < regs.size(); i++)
-    read_vector(all, regs[i].c_str(), initialized, false);
+    read_vector(all, regs[i].c_str(), initialized, false, initial_regressor_force_cubic_version);
   
   if (all.per_feature_regularizer_input != "")
-    read_vector(all, all.per_feature_regularizer_input.c_str(), initialized, true);
+    read_vector(all, all.per_feature_regularizer_input.c_str(), initialized, true, initial_regressor_force_cubic_version);
       
   if (!initialized)
     {
