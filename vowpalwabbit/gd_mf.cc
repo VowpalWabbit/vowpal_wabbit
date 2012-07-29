@@ -5,7 +5,11 @@ embodied in the content of this file are licensed under the BSD
  */
 #include <fstream>
 #include <float.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include "parse_example.h"
@@ -62,6 +66,11 @@ float mf_inline_predict(vw& all, example* &ec)
 	    }
 	}
     }
+
+  if (all.triples.begin() != all.triples.end()) {
+    cerr << "cannot use triples in matrix factorization" << endl;
+    exit(-1);
+  }
     
   // ec->topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ... 
 
@@ -111,6 +120,11 @@ void mf_inline_train(vw& all, example* &ec, float update)
 
 	    }
 	}
+  if (all.triples.begin() != all.triples.end()) {
+    cerr << "cannot use triples in matrix factorization" << endl;
+    exit(-1);
+  }
+
 }  
 
 void mf_print_offset_features(vw& all, example* &ec, size_t offset)
@@ -153,6 +167,10 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 		}
 	  }
       }
+  if (all.triples.begin() != all.triples.end()) {
+    cerr << "cannot use triples in matrix factorization" << endl;
+    exit(-1);
+  }
 }
 
 void mf_print_audit_features(vw& all, example* ec, size_t offset)
@@ -191,7 +209,6 @@ float mf_predict(vw& all, example* ex)
 void drive_gd_mf(void* in)
 {
   vw* all = (vw*)in;
-  regressor reg = all->reg;
   example* ec = NULL;
   
   size_t current_pass = 0;

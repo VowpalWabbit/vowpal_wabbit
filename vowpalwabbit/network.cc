@@ -2,12 +2,19 @@
 #include <sys/types.h>
 #endif
 
+#ifdef _WIN32
+#include <WinSock2.h>
+#include <io.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#endif
 #include <errno.h>
+#ifndef _WIN32
 #include <netdb.h>
 #include <strings.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,7 +25,11 @@ using namespace std;
 
 int open_socket(const char* host)
 {
+#ifdef _WIN32
+  const char* colon = strchr(host,':');
+#else
   const char* colon = index(host,':');
+#endif
   short unsigned int port = 26542;
   hostent* he;
   if (colon != NULL)

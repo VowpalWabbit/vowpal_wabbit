@@ -22,15 +22,14 @@
 # equal co-occurring features, the sum of the weights is what matters
 # and individual weight values are arbitrary.
 #
-# What distance represents is the relative distance of the regressor
-# weight from the weight of the 'zero' which is vw's best 'Constant'
-# feature.
+# Distance represents the relative distance of the regressor weight
+# from the weight of the 'zero' which is vw's best constant prediction.
 #
-# This distanceis also convenient because:
+# Merits of this distance:
 #   1) It is a relative metric, making it easier to compare two features
-#   2) Easier to interpret (max is always set to 100%)
-#   2) It is signed, so it shows which features (variables) are
-#      positively vs negatively correlated with the target label.
+#   2) Easier to interpret vs an arbitrary weight (max is set to 100%)
+#   2) It is signed, so it shows which features are positively vs
+#      negatively correlated with the target label.
 #
 # (c) 2012 - ariel faigon for vowpal-wabbit
 # This software may be distributed under the same terms as vowpal-wabbit
@@ -47,15 +46,19 @@ my (%FeatureMax, %FeatureMin);
 my (%Feature2Hash, %Feature2Weight);
 
 my %NameSpace;      # hash of hashes: namespace => { key => val }...
-my @Features;       # feature names
+my @Features;       # feature names list
 
 my @QPairs = ();    # list of pairs ([a, b], [c, d] ...) for namespace pairing
 my %Ignore;         # support for --ignore X
 my %Keep;           # support for --keep X
-my $DoKeep;         # handy flag for whether we need to use --keep or not
+my $DoKeep;         # flag for whether we need to use --keep or not
+my $DoLabels = 0;   # flag for multi-class (--oaa --csoaa --wap* --sequence?)
 
 my @TmpFiles;
 
+#
+# v() & V():  verbose/debug prints for -v and -V
+#
 sub v(@) {
     return unless $opt_v;
     if (@_ == 1) {
@@ -126,7 +129,9 @@ sub get_args {
     while ($VWARGS =~ /--ignore\s*(\S)/g) {
         $Ignore{$1} = 1;
     }
-
+    if ($VWARGS =~ /--(?:(?:cs)?oaa|wap|sequence)/) {
+        $DoLabels = 1;
+    }
     $Model = "$TrainSet.model";
     $FullExample = "$TrainSet.full-example";
     $AuditFile = "$TrainSet.audit";
@@ -152,6 +157,14 @@ sub feature_name(@) {
     join('^', @_);
 }
 
+#
+# pair_features()
+#   Initialize %FeatureMin and %FeatureMax for all paired
+#   name-spaces based on the @QPairs list which was constructed
+#   from VW -q ... arguments.
+#
+#   Respect all --ignore and --keep logic while doing so.
+#
 sub pair_features {
     my %paired_features;
     my @name_spaces = keys %NameSpaces;
@@ -189,6 +202,16 @@ sub pair_features {
     }
 }
 
+sub parse_labels($) {
+    my $labels = shift;
+    # FINISH ME
+}
+
+#
+# read_features($trainingset_file)
+#   Read the training set & parse it, collect all name-spaces,
+#   feature-names, min/max values
+#
 sub read_features($) {
     my ($trainset) = @_;
 
@@ -201,12 +224,21 @@ sub read_features($) {
     while (<$ts>) {
         # -- examples loop
         next unless (/\S/);     # skip empty lines
+
         # -- grab anything following the 1st '|'
-        my ($input_features) = ($_ =~ /^[^|]*\|(.*)$/);
+        my ($labels, $input_features) = ($_ =~ /^([^|]*)\|(.*)$/);
+        die "$0: $trainset line $.: malformed example: missing '|'\n"
+            unless (defined $input_features);
+
+        if ($DoLabels) {
+            parse_labels($labels);
+        }
+
         my @name_space_region = split('\|', $input_features);
         foreach my $nsr (@name_space_region) {
-            # -- name-spaces loop
-            my ($ns) = ($nsr =~ /^(\S+)/);
+            # -- name-spaces loop (note: name-space my be ''):
+            #    extract the name-space string, ignore (optional) :weight
+            my ($ns) = ($nsr =~ /^([^:\s]+)(?:\:\S+)?/);
             $ns = '' unless ((defined $ns) && length($ns));
 
             my $ns_ch1 = substr($ns, 0, 1);
@@ -219,13 +251,17 @@ sub read_features($) {
             }
             my $nsref = $NameSpaces{$ns};
 
-            $nsr =~ s/^$ns\s*//;
+            # Trim (the optionally empty) name-space prefix,
+            # including the optional :weight
+            $nsr =~ s/^$ns\S*\s*//;
+
+            # Following the name-space: loop over feature+value pairs:
             foreach my $keyval (split(/\s+/, $nsr)) {
                 # -- features loop
                 my ($key, $val);
-                if ($keyval =~ /:/) {
+                if ($keyval =~ /:/) {       # explicit :value
                     ($key, $val) = ($`, $');
-                } else {
+                } else {                    # implicit value == 1
                     $key = $keyval;
                     $val = 1;
                 }
@@ -249,12 +285,11 @@ sub read_features($) {
     }
     close $ts;
 
+    # Add the -q pairs of features
     pair_features();
 
+    # Add the Constant feature
     $FeatureMin{'Constant'} = $FeatureMax{'Constant'} = 0;
-
-    # return the list of feature names, add the Constant
-    sort (keys %FeatureMax);
 }
 
 #
@@ -289,6 +324,12 @@ sub generate_full_example($) {
     close $fe;
 }
 
+#
+# audit_features()
+#   read the output of vw -a (audit) on the all-feature example
+#   to extract hash values and weights
+#   Return the list of all feature-names
+#
 sub audit_features {
     generate_full_example($FullExample);
 
@@ -301,16 +342,22 @@ sub audit_features {
     my $features_data = <$audit_stream>;
     close $audit_stream;
 
+    my %seen_feature_names;
+
     # Audited feature format:   namespace^varname:142703:1:0.0435613 ...
     while ($features_data =~ /\s+([^:]+):(\d+):([^:]+):([-+e.0-9]+)/g) {
 
         my ($feature, $hash, $value, $weight) = ($1, $2, $3, $4);
 
+        $seen_feature_names{$feature} = 1;
         $Feature2Hash{$feature} = $hash;
         $Feature2Weight{$feature} = $weight;
 
         V("%s\t%s\t%s\t%s\n", $feature, $hash, $value, $weight);
     }
+
+    # Return the list of features actually seen in the audit
+    sort keys %seen_feature_names;
 }
 
 #
@@ -327,9 +374,8 @@ sub score($;$) {
 
     my $fweight = $Feature2Weight{$feature};
     unless (defined $fweight) {
-        $fweight = $Feature2Weight{$feature} = 0;
         warn "$0: BUG?: score($feature): feature has no weight!\n";
-        return $fweight;
+        return undef;
     }
 
     # Support more metrics, are the any?
@@ -349,14 +395,16 @@ sub summarize_features {
     # 1st pass - determine maximum feature-name length
     # and max/min values
     foreach my $f (@Features) {
+        my $w = $Feature2Weight{$f};
+        unless (defined $w) {
+            # Should already be caught in score() above,
+            # so warn only in verbose mode
+            v("%s: summarize_features: %s: undefined weight\n", $0, $f);
+            next;
+        }
         my $slen = length($f);
         $max_len = $slen if ($slen > $max_len);
 
-        my $w = $Feature2Weight{$f};
-        unless (defined $w) {
-            $w = 0;
-            warn "$0: summarize_features: feature '$f' has no weight!\n";
-        }
         $max_weight = $w if ($w > $max_weight);
         $min_weight = $w if ($w < $min_weight);
     }
@@ -365,15 +413,22 @@ sub summarize_features {
     # 2nd pass - calculate scores of all features
     my ($score, $min_score, $max_score) = (0, 0, 0);
     foreach my $f (@Features) {
-        $score = $Score{$f} = score($f, $opt_O);
+        next if ($f eq 'Constant');
+
+        $score = score($f, $opt_O);
+        next unless (defined $score);
+
+        $Score{$f} = $score;
+
         $max_score = $score if ($score > $max_score);
         $min_score = $score if ($score < $min_score);
     }
     my $score_range = $max_score - $min_score;
-    my $score_0 = score('Constant');
+    $Score{'Constant'} = 0;
+    # my $score_0 = score('Constant');
 
-    my $upper_range = abs($max_score - $score_0);
-    my $lower_range = abs($min_score - $score_0);
+    my $upper_range = abs($max_score);
+    my $lower_range = abs($min_score);
 
     my $max_distance_from_0 = ($upper_range > $lower_range)
                                     ? $upper_range
@@ -383,18 +438,19 @@ sub summarize_features {
                 $max_len, 'FeatureName', 'HashVal',
                 'MinVal', 'MaxVal',
                 'Weight', 'RelScore';
+
     # FIXME: support different orders: by weight,
     # by feature-range-normalized weights?
+
     foreach my $f (sort by_score @Features) {
         my $score = $Score{$f};
-        my $distance_from_0 = $score - $score_0;
+        my $distance_from_0 = $score;
         my $normalized_score = $distance_from_0 / $max_distance_from_0;
 
         # FIXME: support different normalization schemes
         if ($opt_O =~ /^a/i) {
             $normalized_score = abs($normalized_score);
         }
-
         printf "%-*s\t%10u %8.2f %8.2f %+9.4f %9.2f%%\n",
                 $max_len, $f,
                 $Feature2Hash{$f},
@@ -407,9 +463,9 @@ sub summarize_features {
 
 # -- main
 get_args();
-@Features = read_features($TrainSet);
+read_features($TrainSet);
 do_train($TrainSet, $Model);
-audit_features();
+@Features = audit_features();
 summarize_features();
 cleanup();
 

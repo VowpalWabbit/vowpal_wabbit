@@ -6,7 +6,11 @@ embodied in the content of this file are licensed under the BSD
 #include <fstream>
 #include <vector>
 #include <float.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -17,6 +21,11 @@ embodied in the content of this file are licensed under the BSD
 #include "lda_core.h"
 #include "cache.h"
 #include "simple_label.h"
+
+#ifdef _WIN32
+inline float fmax(float f1, float f2) { return (f1 < f2 ? f2 : f1); }
+inline float fmin(float f1, float f2) { return (f1 > f2 ? f2 : f1); }
+#endif
 
 #define MINEIRO_SPECIAL
 #ifdef MINEIRO_SPECIAL
@@ -282,7 +291,9 @@ void vexpdigammify_2(vw& all, float* gamma, const float* norm)
 #define myexpdigammify_2 vexpdigammify_2
 
 #else
+#ifndef _WIN32
 #warning "lda IS NOT using sse instructions"
+#endif
 #define myexpdigammify expdigammify
 #define myexpdigammify_2 expdigammify_2
 

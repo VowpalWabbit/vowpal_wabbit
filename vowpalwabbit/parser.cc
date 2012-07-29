@@ -5,21 +5,45 @@ embodied in the content of this file are licensed under the BSD
  */
 
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/mman.h>
 #include <sys/wait.h>
+#endif
 
 #include <signal.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+
 #include <fstream>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <Windows.h>
+#include <io.h>
+typedef int socklen_t;
+
+int daemon(int a, int b)
+{
+	exit(0);
+	return 0;
+}
+int getpid()
+{
+	return (int) ::GetCurrentProcessId();
+}
+#else
 #include <netdb.h>
+#endif
 #include <boost/program_options.hpp>
 
 #ifdef __FreeBSD__
 #include <netinet/in.h>
 #endif
 
+#ifndef _WIN32
 #include <netinet/tcp.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <assert.h>
@@ -340,6 +364,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 
       if (all.daemon)
 	{
+#ifdef _WIN32
+		exit(1);
+#else
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights = 
 	    (float*)mmap(0,all.stride * all.length() * sizeof(float), 
@@ -402,6 +429,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 		  }
 	    }
 
+#endif
 	}
 
     child:
@@ -667,7 +695,7 @@ void setup_example(vw& all, example* ae)
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
 
-  if (all.rank == 0)                                                                        
+  if (all.rank == 0) {
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       {
 	ae->num_features 
@@ -675,15 +703,34 @@ void setup_example(vw& all, example* ae)
 	  *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin);
 	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
       }
-  else
+
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
+      {
+	ae->num_features 
+	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
+            *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
+            *(ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[1]].begin);
+	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
+      }
+
+  } else {
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       {
 	ae->num_features
 	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
 	ae->num_features
-	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
-	  *all.rank;
-      }                                                                 
+	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin) * all.rank;
+      }
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
+      {
+	ae->num_features
+	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
+	ae->num_features
+	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin) * all.rank;
+	ae->num_features
+	  += (ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[2]].begin) * all.rank;
+      }
+  }
 }
 
 namespace VW{
