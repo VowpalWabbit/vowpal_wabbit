@@ -12,7 +12,6 @@ float sd_add(weight* weights, size_t mask, feature* begin, feature* end)
 {
   float ret = 0.;
   for (feature* f = begin; f!= end; f++) {
-    //cout << "sd_add masked index: " << (f->weight_index & mask) << " weight value: " << weights[f->weight_index & mask] << " feature value: " << f->x << endl;
     ret += weights[f->weight_index & mask] * f->x;
   }
   return ret;

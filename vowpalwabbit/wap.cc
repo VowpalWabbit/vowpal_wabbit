@@ -254,12 +254,27 @@ namespace WAP {
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
+    size_t nb_actions = 0;
+    if( vm_file.count("wap") ) { //if loaded options from regressor
+      nb_actions = vm_file["wap"].as<size_t>();
+      if( vm.count("wap") && vm["wap"].as<size_t>() != nb_actions )
+        std::cerr << "warning: you specified a different number of actions through --wap than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
+    }
+    else {
+      nb_actions = vm["wap"].as<size_t>();
+
+     //append wap with nb_actions to options_from_file so it is saved to regressor later
+     std::stringstream ss;
+     ss << " --wap " << nb_actions;
+     all.options_from_file.append(ss.str());
+    }
+
     *(all.p->lp) = CSOAA::cs_label_parser;
 
-    all.sd->k = s;
-    all.base_learner_nb_w *= s;
+    all.sd->k = nb_actions;
+    all.base_learner_nb_w *= nb_actions;
     increment = (all.length()/ all.base_learner_nb_w) * all.stride;
 
     all.driver = drive_wap;

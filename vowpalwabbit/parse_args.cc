@@ -386,9 +386,6 @@ vw parse_args(int argc, char *argv[])
   parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
 
   //parse flags from regressor file
-
-  //cerr << "Loaded options from predictor file: " << all.options_from_file << endl;
-
   all.options_from_file_argv = VW::get_argv_from_string(all.options_from_file,all.options_from_file_argc);
 
   po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
@@ -523,180 +520,68 @@ vw parse_args(int argc, char *argv[])
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
 
-    size_t nb_actions = 0;
-    if( vm_file.count("oaa") ) {
-      nb_actions = vm_file["oaa"].as<size_t>();
-      if( vm.count("oaa") && vm["oaa"].as<size_t>() != nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --oaa than the one loaded from predictor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["oaa"].as<size_t>();
-
-      //append oaa with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --oaa " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
-
-    OAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
+    OAA::parse_flags(all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
   
   if (vm.count("ect") || vm_file.count("ect") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
 
-    size_t nb_actions = 0;
-    if( vm_file.count("ect") ) {
-      nb_actions = vm_file["ect"].as<size_t>();
-      if( vm.count("ect") && vm["ect"].as<size_t>() != nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --ect than the one loaded from predictor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["ect"].as<size_t>();
-
-      //append ect with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --ect " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
-
-    ECT::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
+    ECT::parse_flags(all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
 
   if(vm.count("csoaa") || vm_file.count("csoaa") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    size_t nb_actions = 0;
-    if( vm_file.count("csoaa") ) { //if loaded options from regressor
-      nb_actions = vm_file["csoaa"].as<size_t>();
-      if( vm.count("csoaa") && vm["csoaa"].as<size_t>() != nb_actions ) //if csoaa was also specified in commandline, warn user if its different
-        std::cerr << "warning: you specified a different number of actions through --csoaa than the one loaded from predictor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["csoaa"].as<size_t>();
-
-      //append csoaa with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --csoaa " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
     
-    CSOAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
+    CSOAA::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("wap") || vm_file.count("wap") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    size_t nb_actions = 0;
-    if( vm_file.count("wap") ) { //if loaded options from regressor
-      nb_actions = vm_file["wap"].as<size_t>();
-      if( vm.count("wap") && vm["wap"].as<size_t>() != nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --wap than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["wap"].as<size_t>();
-
-     //append wap with nb_actions to options_from_file so it is saved to regressor later
-     std::stringstream ss;
-     ss << " --wap " << nb_actions;
-     all.options_from_file.append(ss.str());
-    }
-    WAP::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
+    
+    WAP::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("csoaa_ldf") || vm_file.count("csoaa_ldf")) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
 
-    string csoaa_ldf_str;
-    if(vm_file.count("csoaa_ldf")) {
-      csoaa_ldf_str = vm_file["csoaa_ldf"].as<string>();
-      
-      if(vm.count("csoaa_ldf") && csoaa_ldf_str.compare(vm["csoaa_ldf"].as<string>()) != 0)
-        std::cerr << "warning: you specified a different value for --csoaa_ldf than the one loaded from regressor. Pursuing with loaded value of: " << csoaa_ldf_str << endl;
-    }
-    else {
-      csoaa_ldf_str = vm["csoaa_ldf"].as<string>();
-      all.options_from_file.append(" --csoaa_ldf ");
-      all.options_from_file.append(csoaa_ldf_str);
-    }
-    CSOAA_AND_WAP_LDF::parse_flags(all, csoaa_ldf_str, to_pass_further, vm, vm_file, 0);
+    CSOAA_AND_WAP_LDF::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("wap_ldf") || vm_file.count("wap_ldf") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
 
-    string wap_ldf_str;
-    if(vm_file.count("wap_ldf")) {
-      wap_ldf_str = vm_file["wap_ldf"].as<string>();
-      
-      if(vm.count("wap_ldf") && wap_ldf_str.compare(vm["wap_ldf"].as<string>()) != 0)
-        std::cerr << "warning: you specified a different value for --wap_ldf than the one loaded from regressor. Pursuing with loaded value of: " << wap_ldf_str << endl;
-    }
-    else {
-      wap_ldf_str = vm["wap_ldf"].as<string>();
-      all.options_from_file.append(" --wap_ldf ");
-      all.options_from_file.append(wap_ldf_str);
-    }
-
-    CSOAA_AND_WAP_LDF::parse_flags(all, wap_ldf_str, to_pass_further, vm, vm_file, 0);
+    CSOAA_AND_WAP_LDF::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if( vm.count("cb") || vm_file.count("cb") )
   {
-    size_t nb_actions = 0;
-    if( vm_file.count("cb") ) { //if loaded options from regressor file already
-      nb_actions = vm_file["cb"].as<size_t>();
-      if( vm.count("cb") && vm["cb"].as<size_t>() != nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --cb than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["cb"].as<size_t>();
-      //append cb with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --cb " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
-
     if(!got_cs) {
-      CSOAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);  // default to CSOAA unless wap is specified
-      got_cs = true;
+      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
+      if( vm_file.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cb"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 
-      //append csoaa with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --csoaa " << nb_actions;
-      all.options_from_file.append(ss.str());
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+      got_cs = true;
     }
 
-    CB::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);
+    CB::parse_flags(all, to_pass_further, vm, vm_file);
     got_cb = true;
   }
 
   if (vm.count("sequence") || vm_file.count("sequence") ) {
-    size_t nb_actions = 0;
-    if( vm_file.count("sequence") ) { //if loaded options from regressor file already
-      nb_actions = vm_file["sequence"].as<size_t>();
-      if( vm.count("sequence") && vm["sequence"].as<size_t>() != nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --sequence than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["sequence"].as<size_t>();
-      //append sequence with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --sequence " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
-
     if (!got_cs) {
-      CSOAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);  // default to CSOAA unless wap is specified
+      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
+      if( vm_file.count("sequence") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["sequence"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["sequence"]));
+      
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
       got_cs = true;
-
-      //append csoaa with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --csoaa " << nb_actions;
-      all.options_from_file.append(ss.str());
     }
 
     Sequence::parse_flags(all, to_pass_further, vm, vm_file);
@@ -705,35 +590,24 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("searn") || vm_file.count("searn") ) { 
     if (vm.count("sequence") || vm_file.count("sequence") ) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
 
-    size_t nb_actions = 0;
-    if(vm_file.count("searn")) {//if we already loaded searn options through regressor file
-      nb_actions = vm_file["searn"].as<size_t>();
-      if(vm.count("searn") && vm["searn"].as<size_t>() != nb_actions )
-	std::cerr << "warning: number of actions specified through --searn option not the same as the one loaded from predictor file. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["searn"].as<size_t>();
-
-      //append searn with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --searn " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
-
     if (!got_cs && !got_cb) {
-      CSOAA::parse_flags(all, to_pass_further, vm, vm_file, nb_actions);  // default to CSOAA unless others have been specified
+      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
+      if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
+      
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
-
-      //append csoaa with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --csoaa " << nb_actions;
-      all.options_from_file.append(ss.str());
     }
     Searn::parse_flags(all, to_pass_further, vm, vm_file);
   }
 
   if (got_cs && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CS learning" << endl;
+    exit(-1);
+  }
+
+  if (got_cb && got_mc) {
+    cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
     exit(-1);
   }
 
@@ -835,7 +709,10 @@ namespace VW {
     
     initialize_examples(all);
 
+    for(int i = 0; i < argc; i++)
+      free(argv[i]);
     free (argv);
+
     return all;
   }
 

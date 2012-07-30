@@ -16,11 +16,10 @@
 
 namespace CB {
 
-  struct cb_class {  // names are for compatibility with 'features'
+  struct cb_class {
     float x;  // the cost of this class
     uint32_t weight_index;  // the index of this class
-    float partial_prediction;  // a partial prediction: new!
-    float prob_action; //new for bandit setting, specifies the probability our policy chose this class for importance weighting
+    float prob_action; //new for bandit setting, specifies the probability the data collection policy chose this class for importance weighting
     bool operator==(cb_class j){return weight_index == j.weight_index;}
   };
 
@@ -28,7 +27,7 @@ namespace CB {
     v_array<cb_class> costs;
   };
 
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file, size_t s);
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 
   void output_example(vw& all, example* ec);
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);

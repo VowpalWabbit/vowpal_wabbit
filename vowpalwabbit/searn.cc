@@ -56,38 +56,14 @@ namespace SearnUtil
       free(ptr);
   }
 
-  /*void add_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
-  {
-    //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
-    //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
-    size_t amount = (policy * all.length() / max_action / total_number_of_policies) * all.stride;
-    //cerr << "add_policy_offset: " << amount << endl;
-    update_example_indicies(all.audit, ec, amount);
-  }*/
-
-  /*void remove_policy_offset(vw&all, example *ec, size_t max_action, size_t total_number_of_policies, size_t policy)
-  {
-    //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
-    //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
-    size_t amount = (policy * all.length() / max_action / total_number_of_policies) * all.stride;
-    update_example_indicies(all.audit, ec, -amount);
-  }*/
-
   void add_policy_offset(vw&all, example *ec, size_t increment, size_t policy)
   {
-    //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
-    //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
-    size_t amount = policy * increment;
-    //cerr << "add_policy_offset: " << amount << endl;
-    update_example_indicies(all.audit, ec, amount);
+    update_example_indicies(all.audit, ec, policy * increment);
   }
 
   void remove_policy_offset(vw&all, example *ec, size_t increment, size_t policy)
   {
-    //there is at most max_action*2 weight vectors per policy (e.g. if base learner is contextual bandit with regressors)
-    //offset assuming this max amount, but ideally may want to use the actual number depending on the current base learner
-    size_t amount = policy * increment;
-    update_example_indicies(all.audit, ec, -amount);
+    update_example_indicies(all.audit, ec, -policy * increment);
   }
 
   int random_policy(long int seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)
@@ -490,7 +466,7 @@ namespace Searn
     for (size_t k=1; k<=max_action; k++) {
       CSOAA::wclass cost = { FLT_MAX, k, 0. };
       push(testall_labels.costs, cost);
-      CB::cb_class cost_cb = { FLT_MAX, k, 0., 0. };
+      CB::cb_class cost_cb = { FLT_MAX, k, 0. };
       push(testall_labels_cb.costs, cost_cb);
     }
 
@@ -648,6 +624,11 @@ namespace Searn
     }
     else {
       max_action = vm["searn"].as<size_t>();
+
+      //append searn with nb_actions to options_from_file so it is saved to regressor later
+      std::stringstream ss;
+      ss << " --searn " << max_action;
+      all.options_from_file.append(ss.str());
     }
 
     if(vm_file.count("searn_beta")) { //we loaded searn_beta flag from regressor file 
@@ -817,7 +798,6 @@ namespace Searn
     if (!is_ldf) {
       task.cs_example(all, s0, ec, true);
       SearnUtil::add_policy_offset(all, ec, increment, policy);
-      //SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
 
       void* old_label = ec->ld;
       if(rollout_all_actions) { //this means we have a cost-sensitive base learner
@@ -843,7 +823,7 @@ namespace Searn
           bool all_allowed = true;
           for (size_t k=1; k<=max_action; k++)
             if (task.allowed(s0, k)) {
-              CB::cb_class cost = { FLT_MAX, k, 0., 0. };
+              CB::cb_class cost = { FLT_MAX, k, 0. };
               push(allowed_labels_cb.costs, cost);
             } else
               all_allowed = false;
@@ -857,7 +837,6 @@ namespace Searn
       ec->ld = old_label;
 
       SearnUtil::remove_policy_offset(all, ec, increment, policy);
-      //SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
       task.cs_example(all, s0, ec, false);
 
       return final_prediction;
@@ -872,14 +851,13 @@ namespace Searn
         task.cs_ldf_example(all, s0, action, ec, true);
         //cerr << "created example: " << ec << ", label: " << ec->ld << endl;
         SearnUtil::add_policy_offset(all, ec, increment, policy);
-        //SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, policy);
         base_learner(&all,ec);  total_predictions_made++;  searn_num_features += ec->num_features;
         //cerr << "base_learned on example: " << ec << endl;
         empty_example->in_use = true;
         base_learner(&all,empty_example);
         //cerr << "base_learned on empty example: " << empty_example << endl;
         SearnUtil::remove_policy_offset(all, ec, increment, policy);
-        //SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, policy);
+
         if (action == 1 || 
             ec->partial_prediction < best_prediction) {
           best_prediction = ec->partial_prediction;
@@ -1074,7 +1052,6 @@ namespace Searn
       CB::cb_class temp;
       temp.x = FLT_MAX;
       temp.weight_index = k;
-      temp.partial_prediction = 0.;
       temp.prob_action = 0.;
       if( act == k ) {
         temp.x = loss;
@@ -1118,10 +1095,8 @@ namespace Searn
         ec->ld = (void*)&ld;
       }
       SearnUtil::add_policy_offset(all, ec, increment, current_policy);
-      //SearnUtil::add_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
       base_learner(&all,ec);
       SearnUtil::remove_policy_offset(all, ec, increment, current_policy);
-      //SearnUtil::remove_policy_offset(all, ec, max_action, total_number_of_policies, current_policy);
       ec->ld = old_label;
       task.cs_example(all, s0, ec, false);
     } else { // is_ldf
@@ -1150,7 +1125,6 @@ namespace Searn
         push(old_labels, global_example_set[k-1]->ld);
         global_example_set[k-1]->ld = (void*)(&new_labels[k-1]);
         SearnUtil::add_policy_offset(all, global_example_set[k-1], increment, current_policy);
-        //SearnUtil::add_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
         if (PRINT_DEBUG_INFO) { cerr << "add_policy_offset, max_action=" << max_action << ", total_number_of_policies=" << total_number_of_policies << ", current_policy=" << current_policy << endl;}
         base_learner(&all,global_example_set[k-1]);
       }
@@ -1162,7 +1136,6 @@ namespace Searn
       for (size_t k=1; k<=max_action; k++) {
         if (!rollout[k-1].alive) break;
         SearnUtil::remove_policy_offset(all, global_example_set[k-1], increment, current_policy);
-        //SearnUtil::remove_policy_offset(all, global_example_set[k-1], max_action, total_number_of_policies, current_policy);
         global_example_set[k-1]->ld = old_labels[k-1];
         task.cs_ldf_example(all, s0, k, global_example_set[k-1], false);
       }

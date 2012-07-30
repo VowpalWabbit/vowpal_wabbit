@@ -208,7 +208,6 @@ namespace CB
   void (*base_learner)(void*, example*) = NULL; //base learning algorithm (gd,bfgs,etc...) for training regressors of cb
   void (*base_learner_cs)(void*, example*) = NULL; //base learner for cost-sensitive data
   void (*base_finish)(void*) = NULL;
-  void (*base_finish_cs)(void*) = NULL;
 
   void gen_cs_example_ips(void* a, example* ec, CSOAA::label& cs_ld)
   {
@@ -568,7 +567,6 @@ namespace CB
 	simple_temp.initial = 0.;
 	simple_temp.label = cl_obs->x;
 	simple_temp.weight = 1.;
-        //std::cerr << "Updating regressor for class " << i << " to predict cost " << simple_temp.label << endl;
 
 	ec->ld = &simple_temp;
 
@@ -628,7 +626,6 @@ namespace CB
     if (!CB::is_test_label(ld))
       {//need to compute exact loss
         size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
-        //size_t min_pred = pred;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
@@ -639,7 +636,6 @@ namespace CB
             if (cl->x < min)
             {
               min = cl->x;
-              //min_pred = cl->weight_index;
             }
           }
         }
@@ -651,7 +647,6 @@ namespace CB
             if (cl->x < min)
             {
               min = cl->x;
-              //min_pred = cl->weight_index;
             }
           }
         }
@@ -659,7 +654,6 @@ namespace CB
           cerr << "warning: cb predicted an invalid class" << endl;
 
         loss = chosen_loss - min;
-        //cerr << "pred: " << pred << " min_pred: " << min_pred << " loss: " << chosen_loss << " min_loss: " << min << " regret: " << loss << endl;
       }
 
     all.sd->sum_loss += loss;
@@ -682,13 +676,7 @@ namespace CB
     cb_cs_ld.costs.erase();
     if (cb_cs_ld.costs.begin != NULL)
       free(cb_cs_ld.costs.begin);
-    //cerr << "base finish cs" << endl;
-    if(base_finish_cs != NULL)
-      base_finish_cs(all);
-    //cerr << "base finish" << endl;
-    if(base_finish != NULL)
-      base_finish(all);
-    //cerr << "all finished" << endl;
+    base_finish(all);
   }
 
   void drive_cb(void* in)
@@ -711,7 +699,7 @@ namespace CB
     }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     po::options_description desc("CB options");
     desc.add_options()
@@ -729,6 +717,20 @@ namespace CB
       options(desc).allow_unregistered().run();
     po::store(parsed_file, vm_file);
     po::notify(vm_file);
+
+    size_t nb_actions = 0;
+    if( vm_file.count("cb") ) { //if loaded options from regressor file already
+      nb_actions = vm_file["cb"].as<size_t>();
+      if( vm.count("cb") && vm["cb"].as<size_t>() != nb_actions )
+        std::cerr << "warning: you specified a different number of actions through --cb than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
+    }
+    else {
+      nb_actions = vm["cb"].as<size_t>();
+      //append cb with nb_actions to options_from_file so it is saved to regressor later
+      std::stringstream ss;
+      ss << " --cb " << nb_actions;
+      all.options_from_file.append(ss.str());
+    }
 
     if (vm.count("cb_type") || vm_file.count("cb_type"))
     {
@@ -748,26 +750,26 @@ namespace CB
 
       if (type_string.compare("dr") == 0) { 
         cb_type = CB_TYPE_DR;
-        all.base_learner_nb_w *= s * 2;
+        all.base_learner_nb_w *= nb_actions * 2;
       }
       else if (type_string.compare("dm") == 0) {
         cb_type = CB_TYPE_DM;
-        all.base_learner_nb_w *= s * 2;
+        all.base_learner_nb_w *= nb_actions * 2;
       }
       else if (type_string.compare("ips") == 0) {
         cb_type = CB_TYPE_IPS;
-        all.base_learner_nb_w *= s;
+        all.base_learner_nb_w *= nb_actions;
       }
-      else
-      {
+      else {
         std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
         cb_type = CB_TYPE_DR;
+        all.base_learner_nb_w *= nb_actions * 2;
       }
     }
     else {
       //by default use doubly robust
       cb_type = CB_TYPE_DR;
-      all.base_learner_nb_w *= s * 2;
+      all.base_learner_nb_w *= nb_actions * 2;
       all.options_from_file.append(" --cb_type dr");
     }
 
@@ -775,7 +777,7 @@ namespace CB
 
     *(all.p->lp) = CB::cb_label_parser; 
 
-    all.sd->k = s;
+    all.sd->k = nb_actions;
     all.driver = drive_cb;
 
     //this parsing is done after the cost-sensitive parsing, so all.learn currently points to the base cs learner
@@ -785,9 +787,7 @@ namespace CB
     base_learner = all.base_learn;
 
     all.learn = learn;
-    base_finish_cs = all.finish;
-    all.base_cs_finish = all.finish;
-    base_finish = all.base_finish;
+    base_finish = all.finish;
     all.finish = finish;
     
   }

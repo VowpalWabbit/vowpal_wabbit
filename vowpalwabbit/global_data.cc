@@ -226,8 +226,6 @@ vw::vw()
 
   base_learn = NULL;
   base_cs_learn = NULL;
-  base_finish = NULL;
-  base_cs_finish = NULL;
 
   base_learner_nb_w = 1;
 

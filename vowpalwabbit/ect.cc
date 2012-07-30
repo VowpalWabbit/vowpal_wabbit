@@ -455,7 +455,7 @@ namespace ECT
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     po::options_description desc("ECT options");
     desc.add_options()
@@ -473,6 +473,22 @@ namespace ECT
       options(desc).allow_unregistered().run();
     po::store(parsed_file, vm_file);
     po::notify(vm_file);
+
+    //first parse for number of actions
+    k = 0;
+    if( vm_file.count("ect") ) {
+      k = (int)vm_file["ect"].as<size_t>();
+      if( vm.count("ect") && (int)vm["ect"].as<size_t>() != k )
+        std::cerr << "warning: you specified a different number of actions through --ect than the one loaded from predictor. Pursuing with loaded value of: " << k << endl;
+    }
+    else {
+      k = (int)vm["ect"].as<size_t>();
+
+      //append ect with nb_actions to options_from_file so it is saved to regressor later
+      std::stringstream ss;
+      ss << " --ect " << k;
+      all.options_from_file.append(ss.str());
+    }
 
     if(vm_file.count("error")) {
       errors = vm_file["error"].as<size_t>();
@@ -492,14 +508,12 @@ namespace ECT
     }
 
     *(all.p->lp) = OAA::mc_label_parser;
-    k = s;
     all.driver = drive_ect;
     base_learner = all.learn;
     all.base_learn = all.learn;
     all.learn = learn;
 
     base_finish = all.finish;
-    all.base_finish = all.finish;
     all.finish = finish;
 
     create_circuit(all, k, errors+1);

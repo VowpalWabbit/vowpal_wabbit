@@ -1139,7 +1139,7 @@ namespace Sequence {
     else                                           run_test(all);
     run_test_common_final(all, any_test);
 
-    if (! any_test ) {// && all.training) {
+    if (! any_test ) {
       run_train_common_init(all);
       if (sequence_beam > 1 || DEBUG_FORCE_BEAM_ONE) run_train_beam(all);
       else                                           run_train(all);
@@ -1291,6 +1291,9 @@ namespace Sequence {
     if( vm_file.count("sequence") ) { //we loaded a regressor file containing all the sequence options, use the ones in the file
       sequence_k = vm_file["sequence"].as<size_t>();
 
+      if( vm.count("sequence") && vm["sequence"].as<size_t>() != sequence_k )
+        std::cerr << "warning: you specified a different number of actions through --sequence than the one loaded from regressor. Pursuing with loaded value of: " << sequence_k << endl;
+
       if (vm_file.count("sequence_bigrams"))
         hinfo.bigrams = true;
       if (vm_file.count("sequence_bigram_features"))
@@ -1397,7 +1400,9 @@ namespace Sequence {
         cerr << "warning: sequence_beta set to a value <= 0; resetting to 0.5" << endl;
       }
 
+      //append sequence with nb_actionsand sequence_beta to options_from_file so it is saved to regressor later
       stringstream ss;
+      ss << " --sequence " << sequence_k;
       ss << " --sequence_beta " << sequence_beta;
       all.options_from_file.append(ss.str());
     }

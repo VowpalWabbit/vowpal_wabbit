@@ -6,7 +6,7 @@
 
 namespace ECT
 {
-  void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map& vm_file, size_t s);
+  void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map& vm_file);
 }
 
 #endif
