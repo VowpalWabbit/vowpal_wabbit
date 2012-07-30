@@ -120,7 +120,6 @@ struct vw {
   void (*driver)(void *);
   void (*learn)(void *, example*);
   void (*base_learn)(void *, example*);
-  void (*base_cs_learn)(void *, example*);
   void (*finish)(void *);
   void (*set_minmax)(shared_data* sd, double label);
 

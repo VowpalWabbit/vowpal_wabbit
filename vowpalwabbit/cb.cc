@@ -783,7 +783,6 @@ namespace CB
     //this parsing is done after the cost-sensitive parsing, so all.learn currently points to the base cs learner
     //and all.base_learn points to gd/bfgs base learner
     base_learner_cs = all.learn;
-    all.base_cs_learn = all.learn;
     base_learner = all.base_learn;
 
     all.learn = learn;

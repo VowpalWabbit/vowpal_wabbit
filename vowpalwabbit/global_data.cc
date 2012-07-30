@@ -225,7 +225,6 @@ vw::vw()
   set_minmax = set_mm;
 
   base_learn = NULL;
-  base_cs_learn = NULL;
 
   base_learner_nb_w = 1;
 
