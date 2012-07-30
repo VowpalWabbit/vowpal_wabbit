@@ -162,8 +162,7 @@ namespace ECT
 
   bool last(size_t tournament, v_array<size_t> round)
   {//previous tournament is ending.
-    return round[tournament] == 2 
-      && (tournament == 0 || round[tournament-1] == 0);
+    return round[tournament] == 2 && (tournament == 0 || round[tournament -1] == 0);
   }
 
   size_t get_transfers(size_t tournament, v_array<size_t> round)
@@ -185,15 +184,18 @@ namespace ECT
 
     if (current.label <= num_transfers)
       {
-	current.tournament--;
 	if (last(current.tournament-1, tournament_counts[current.level-2]))
 	  ; //label stays unchanged because it was from the last round in the previous tournament.
 	else //label was from loser of previous tournament
 	  current.label = (current.label - 1) * 2 + (right_wins ? 0 : 1) + 1;
+	current.tournament--;
       }
     else//label was from winner of current tournament
       current.label = (current.label - 1 - num_transfers) * 2 + (right_wins ? 1 : 0) + 1;
     current.level--;
+    assert(current.label >= 1);
+    assert(current.label <= (size_t)k);
+    assert(current.tournament <= errors);
   }
 
   void leaf_to_root(node& current, bool right_wins)
