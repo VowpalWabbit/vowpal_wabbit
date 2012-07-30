@@ -55,6 +55,7 @@ vw parse_args(int argc, char *argv[])
     ("active_mellowness", po::value<float>(&all.active_c0), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
     ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
+    ("normalized_adaptive", "use normalized adaptive learning rates.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
@@ -182,7 +183,7 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
 
-  if (vm.count("adaptive") || vm.count("exact_adaptive_norm")) {
+  if (vm.count("adaptive") || vm.count("exact_adaptive_norm") || vm.count("normalized_adaptive")) {
       all.adaptive = true;
       if (vm.count("exact_adaptive_norm"))
 	{
@@ -190,7 +191,13 @@ vw parse_args(int argc, char *argv[])
 	  if (vm.count("nonormalize"))
 	    cout << "Options don't make sense.  You can't use an exact norm and not normalize." << endl;
 	}
-      all.stride = 2;
+      if (vm.count("normalized_adaptive"))
+	{
+	  all.normalized_adaptive = true;
+          if (vm.count("nonormalize"))
+	    cout << "Options don't make sense.  You can't use an normalized adaptive updates and not normalize." << endl;
+	}
+      all.stride = 4;
   }
   
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {

@@ -265,6 +265,7 @@ vw::vw()
   adaptive = false;
   add_constant = true;
   exact_adaptive_norm = false;
+  normalized_adaptive = false;
   audit = false;
   active = false;
   active_c0 = 8.;
