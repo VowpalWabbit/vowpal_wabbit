@@ -85,6 +85,7 @@ vw parse_args(int argc, char *argv[])
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("initial_weight", po::value<float>(&all.initial_weight), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
+    ("initial_regressor_force_cubic_version", "Temporary command to be removed later!!!")
     ("initial_pass_length", po::value<size_t>(&all.pass_length), "initial number of examples per pass")
     ("initial_t", po::value<double>(&(all.sd->t)), "initial t value")
     ("lda", po::value<size_t>(&all.lda), "Run lda with <int> topics")
@@ -400,7 +401,7 @@ vw parse_args(int argc, char *argv[])
   //   all.p->ring_size = (all.p->ring_size > maxlen) ? all.p->ring_size : maxlen;
   // }
 
-  parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
+  parse_regressor_args(all, vm, all.final_regressor_name, all.quiet, vm.count("initial_regressor_force_cubic_version")>0);
 
   if (vm.count("readable_model"))
     all.text_regressor_name = vm["readable_model"].as<string>();

@@ -9,6 +9,7 @@ embodied in the content of this file are licensed under the BSD
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #ifdef _WIN32
 #define __INLINE 
@@ -99,7 +100,7 @@ template<class T> void reserve(v_array<T>& v, size_t length)
   v.begin = (T *)realloc(v.begin, sizeof(T) * length);
   if ((v.begin == NULL) && ((sizeof(T)*length) > 0)) {
     std::cerr << "realloc failed in reserve().  out of memory?" << std::endl;
-    exit(-1);
+    assert(false);
   }
   if (old_length < length)
     memset(v.begin+old_length, 0, (length-old_length)*sizeof(T));
