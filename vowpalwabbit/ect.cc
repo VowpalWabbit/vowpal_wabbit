@@ -179,12 +179,12 @@ namespace ECT
   void root_to_leaf(node& current, bool right_wins)
   {//shift down one level
     size_t num_transfers = 0;
-    if (current.level > 1)
-      num_transfers = get_transfers(current.tournament, tournament_counts[current.level-2]);
+    if (current.level > 0)
+      num_transfers = get_transfers(current.tournament, tournament_counts[current.level-1]);
 
     if (current.label <= num_transfers)
       {
-	if (last(current.tournament-1, tournament_counts[current.level-2]))
+	if (last(current.tournament-1, tournament_counts[current.level-1]))
 	  ; //label stays unchanged because it was from the last round in the previous tournament.
 	else //label was from loser of previous tournament
 	  current.label = (current.label - 1) * 2 + (right_wins ? 0 : 1) + 1;
@@ -360,12 +360,13 @@ namespace ECT
               tournaments_won[j] = left;
             else //query to do
               {
-                size_t label;
+                float label;
                 if (left) 
                   label = -1;
                 else
                   label = 1;
                 simple_temp.label = label;
+		simple_temp.weight = (float)(1 << (tree_heigh -i -1));
                 ec->ld = & simple_temp;
 	      
                 size_t problem_number = last_pair + j*(1 << (i+1)) + (1 << i) -1;
