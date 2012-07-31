@@ -366,7 +366,7 @@ namespace ECT
                 else
                   label = 1;
                 simple_temp.label = label;
-		simple_temp.weight = (float)(1 << (tree_heigh -i -1));
+		simple_temp.weight = (float)(1 << (tree_height -i -1));
                 ec->ld = & simple_temp;
 	      
                 size_t problem_number = last_pair + j*(1 << (i+1)) + (1 << i) -1;
