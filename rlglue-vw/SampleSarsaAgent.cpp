@@ -44,14 +44,16 @@ inline feature vw_feature_from_string(vw& v, string fstr, unsigned long seed, fl
 
 
 // Need the constant PI for computing fourier basis
-const float pi = acos(-1);
+const double pi = 3.141592653589793;//acos(-1);
 
 // RL constants, 
-double sarsa_epsilon = 0.1;
+double sarsa_epsilon = 0.0;
 
 // Create the VW instance and initialize it
-vw vw = VW::initialize("--learning_rate 0.025 --oprl 0.0 --gamma 1.0");
+//vw vw = VW::initialize("--learning_rate 10.0 --oprl 0.0 --gamma 1.0");
+vw vw = VW::initialize("--learning_rate 0.001 --noconstant --oprl 0.9 --gamma 1.0");
 example *start_data = VW::read_example(vw, " \'rl_start |a p^the_man w^the w^man");
+example *end_data = VW::read_example(vw, " \'rl_end |a p^the_man w^the w^man");
 
 // Variables for the fourier basis functions
 int numTerms = 0;
@@ -162,7 +164,6 @@ vector<double> computeFeatures(double features[])
       
       phi[pos] = cos((pi) * dsum);
     }
-  
   return phi;
 }
 
@@ -183,27 +184,32 @@ double query_vw_value(vector<double> features, int action, int N, double label, 
   string hash_name = action_to_name(action);
   uint32_t hash = VW::hash_space(vw, hash_name);
   // Add features to the hash space
-  for (int i=0; i<numTerms; i++) {
-    string ident = boost::lexical_cast<string>( i );
-    s_features.push_back( vw_feature_from_string(vw, ident, hash, features[i]) );
+  if(features.size() > 0) {
+    for (int i=0; i<numTerms; i++) {
+      string ident = boost::lexical_cast<string>( i );
+      s_features.push_back( vw_feature_from_string(vw, ident, hash, features[i]) );
+    }
   }
 
   ec_info.push_back( VW::feature_space(hash_name[0], s_features) );
   example* vec3 = VW::import_example(vw, ec_info);
   if (start_episode) {
     copy_array(vec3->tag, start_data->tag);
+  } else if(features.size() == 0) {
+    copy_array(vec3->tag, end_data->tag);
   }
 
-
   // Only train if the importance is non-zero
-  if (importance > 0.0) {
+  /*  if (importance > 0.0) {
+    cerr << "Action: " << action << " " << hash_name << endl;
+    }*/
     default_simple_label(vec3->ld);
     ((label_data*)vec3->ld)->label = label;
     ((label_data*)vec3->ld)->weight = importance;
-  }
+    //  }
   vw.learn(&vw, vec3);
   double value = vec3->final_prediction;
-  VW::finish_example(vw, vec3);
+  VW::finish_example(vw, vec3);  
   return value;
 }
 
@@ -297,7 +303,12 @@ const action_t *agent_start(const observation_t *this_observation) {
         newEpisode = true;        
 	int theIntAction=egreedy(this_observation->doubleArray);
 	this_action.intArray[0]=theIntAction;
-
+	if(!policy_frozen) {
+	  double Q_sa = query_vw_value(computeFeatures(this_observation->doubleArray), theIntAction, numStates, 0.0, 1.0, true);
+	  for(int i=0; i<numStates; i++)
+	    cout << "," << this_observation->doubleArray[i];
+	  cout << endl;
+	}
 	replaceRLStruct(&this_action, &last_action);
 	replaceRLStruct(this_observation, last_observation);
 	
@@ -308,12 +319,11 @@ const action_t *agent_step(double reward, const observation_t *this_observation)
 	int lastAction=last_action.intArray[0];
 	int newAction=egreedy(this_observation->doubleArray);
 	// All of the RL is foisted onto VW
-	policy_frozen = false;
 	if(!policy_frozen){
-	  double Q_sa = query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward, 1.0, newEpisode);
+	  double Q_sa = query_vw_value(computeFeatures(this_observation->doubleArray), newAction, numStates, reward, 1.0, false);
 	    cout << Q_sa;
 	    for(int i=0; i<numStates; i++)
-	      cout << "," << last_observation->doubleArray[i];
+	      cout << "," << this_observation->doubleArray[i];
 	    cout << endl;
 	}
 	newEpisode = false;
@@ -329,7 +339,7 @@ void agent_end(double reward) {
 	int lastAction=last_action.intArray[0];
 	
 	if(!policy_frozen){
-	  query_vw_value(computeFeatures(last_observation->doubleArray), lastAction, numStates, reward,1.0, newEpisode);	  
+	  query_vw_value(vector<double>(0), 0, numStates, reward,1.0, false);	  
 	}
 	newEpisode=true;
 	clearRLStruct(&last_action);
@@ -351,7 +361,7 @@ const char* agent_message(const char* _inMessage) {
 	 * Action: Set flag to stop updating policy
 	 */
 	if(inMessage == "freeze learning"){
-		policy_frozen=1;
+	  //		policy_frozen=1;
 		return "message understood, policy frozen";
 	}
 	/*	Message Description
@@ -419,11 +429,10 @@ void load_value_function(const char *fileName){
 int egreedy(double features[]){
 	int maxIndex = 0;
 	int a = 1;
-	int randFrequency=(int)(1.0f/sarsa_epsilon);
 
 	if(!exploring_frozen){
-  		if((rand() % randFrequency == 1)) {
-    		return randInRange(numActions-1);
+	  if((rand() / double(RAND_MAX) < sarsa_epsilon)) {
+	    return randInRange(numActions-1);
   		}
 	}
   maxIndex = 0;
@@ -431,6 +440,8 @@ int egreedy(double features[]){
   for(a = 1; a < numActions; a++){
     double value_a = query_vw_value(computeFeatures(features), a, numStates, 0.0, 0.0, false);
     if(value_a > maxvalue)
+      maxIndex = a;
+    else if (value_a == maxvalue && (rand() / double(RAND_MAX) < 0.5))
       maxIndex = a;
   }
   return maxIndex;

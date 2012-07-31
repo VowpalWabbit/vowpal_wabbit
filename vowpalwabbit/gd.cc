@@ -169,6 +169,7 @@ float inline_predict(vw& all, example* &ec)
   size_t mask = all.weight_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
+
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
       if (ec->atomics[(int)(*i)[0]].index() > 0)
@@ -656,7 +657,6 @@ void predict(vw& all, example* ex)
     prediction = inline_predict(all, ex);
 
   ex->partial_prediction += prediction;
-
   local_predict(all, ex);
   ex->done = true;
 }

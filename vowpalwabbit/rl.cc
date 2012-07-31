@@ -12,7 +12,10 @@ using namespace std;
 
 namespace RL {
 
+  // Constant for PI
   const float pi = acos(-1);
+
+  // Run time arguments for RL algorithms
   float gamma = 1.0;
   float lambda = 0;
 
@@ -101,7 +104,11 @@ namespace RL {
   size_t k=0;
   size_t increment=0;
   size_t total_increment=0;
+
+  // Previous example, needed to do temporal difference learning
   example* last_ec = NULL;
+
+  // Eligibility traces
   example* traces = NULL;
 
   void print_update(vw& all, example *ec)
@@ -149,6 +156,95 @@ namespace RL {
     print_update(all, ec);
   }
 
+  // Decay eligibility traces
+  void decay_traces() {
+    // If traces haven't been instantiated, do nothing
+    if(traces != NULL) {
+      if(lambda == 0) { // If lambda is zero just delete the traces all together
+	// Free memory for traces
+        dealloc_example(RL::delete_label, *traces);
+	free(traces);
+	traces = NULL;
+      } else {
+	for(int i=0; i<(int)traces->indices.index(); i++)  {
+	  for(int j=0; j<(int)traces->atomics[traces->indices[i]].index(); j++) {
+	    traces->atomics[traces->indices[i]][j].x *= lambda * gamma;
+	  }
+	}
+      }
+    }
+  }
+
+  // Update traces given a new example, instantiate if neccessary 
+  void update_traces(example* ec) {
+    if(traces != NULL) {
+      // For each namespace... search for it in the traces
+      for(int i=0; i<(int)ec->indices.index(); i++) {
+	int j = 0;
+	bool found = false; // Found the namespace in the traces
+	for(; j < (int)traces->indices.index(); j++) {
+	  if(ec->indices[i] == traces->indices[j]) {
+	    found = true;
+	    break;
+	  }
+	}
+
+	// If the namespace already exists in the trace...
+	if(found) {
+	  // Now though we need to check that they contain the same features...
+	  size_t current_index = traces->indices[j];
+	  size_t last_index = ec->indices[i];
+	  // Searching the namespace for the features
+	  for(int k=0; k<(int)ec->atomics[last_index].index(); k++) {
+	    j = 0;
+	    found = false; // Reusing the found flag
+	    for(; j < (int)traces->atomics[current_index].index(); j++) {
+	      if(ec->atomics[last_index][k].weight_index == traces->atomics[current_index][j].weight_index) {
+		found = true;
+		break;
+	      }
+	    }
+	    if(found) {
+	      traces->atomics[current_index][j].x += ec->atomics[last_index][k].x;
+	    } else {
+	      // not found, need to add the feature
+	      v_array<feature> *ecatomics = &traces->atomics[current_index];
+	      feature cpyfeat = { ec->atomics[last_index][k].x, ec->atomics[last_index][k].weight_index };
+	      push(*ecatomics, cpyfeat);
+	    }
+	  }
+	} else {
+	  v_array<size_t> *ecindx = &traces->indices;
+	  push(*ecindx, ec->indices[i]);
+	  // okay but atomics for this index is empty... so add those too
+	  v_array<feature> *ecatomics = &traces->atomics[ecindx->last()];
+	  copy_array(*ecatomics, ec->atomics[ec->indices[i]]);
+	}
+      }
+    } else { // Traces are NULL, so instantiate them!
+	traces = alloc_example(sizeof(RL::reward_label));
+	copy_example_data(traces, ec, sizeof(RL::reward_label));
+    }
+  }
+
+  // Update weights using the traces and specified delta
+  void train_on_traces(vw* all, float delta) {
+    if(traces != NULL) {
+      //      cerr << "Delta: " << delta << endl;
+        // Train on traces...
+	size_t mask = all->weight_mask;
+	float* weights = all->reg.weight_vectors;
+	for (size_t* i = traces->indices.begin; i != traces->indices.end; i++) {
+      	  feature *f = traces->atomics[*i].begin;
+	  for (; f != traces->atomics[*i].end; f++) {
+	    weights[f->weight_index & mask] +=  all->eta * delta * f->x;
+	    //    cerr << f->weight_index << ":" << f->x << ":" << weights[f->weight_index & mask] << " ";
+	  }
+	}
+	//	cerr << endl;
+    }
+  }
+
   void (*base_learner)(void*,example*) = NULL;
 
   void learn(void*a, example* ec)
@@ -157,8 +253,9 @@ namespace RL {
     reward_label* reward_label_data = (reward_label*)ec->ld;
     float prediction = 0.;
     float score = INT_MIN;
+
+    // Train when a label is provided and the importance weight is greater than zero
     bool doTrain = (reward_label_data->label != FLT_MAX) && (reward_label_data->weight > 0);
-    size_t trace_length = ((size_t)1) << all->num_bits;
 
     // rl_start
     // Check for this tag to indicate the beginning of a new episode
@@ -169,188 +266,94 @@ namespace RL {
         dealloc_example(RL::delete_label, *last_ec);
 	free(last_ec);
 	last_ec = NULL;
-
+      }
+      if(traces != NULL) {
+	// Free memory for traces
         dealloc_example(RL::delete_label, *traces);
 	free(traces);
 	traces = NULL;
       }
-	// Free memory for traces
     } 
 
-    // Generate prediction
+    // Generate prediction for Q(s',a')
     label_data simple_temp;
     simple_temp.initial = 0.;
-    simple_temp.label = reward_label_data->label; // later add in gamma*Q
-    simple_temp.weight = 0.0; // Don't learn on this, use it to get Q_spap //reward_label_data->weight;
-    ec->ld = &simple_temp;
-    update_example_indicies(all->audit, ec, increment);
-    base_learner(all,ec);
-    float Q_spap = ec->partial_prediction;
-    float delta = 0.0;
+    simple_temp.label = reward_label_data->label; 
+    simple_temp.weight = 0.0; // Don't learn on this, use it to get Q_spap
 
+    float Q_spap = 0.0;
+    if(ec->tag.index() >= 6 && !strncmp((const char*) ec->tag.begin, "rl_end", 6)) {
+      Q_spap = 0.0;
+    } else {
+      ec->ld = &simple_temp;
+      update_example_indicies(all->audit, ec, increment);
+      base_learner(all,ec);
+      Q_spap = ec->partial_prediction;
+    }
+
+    // Training and we are ready to update
     if (doTrain && last_ec != NULL) {
+      // Standard RL Loss (delta) or use VW's built in loss function
+      bool rl_loss = true;
 
-      // Get previous state/reward
+      // Get previous state/reward, only used so that it can be freed later
       reward_label* last_reward = (reward_label*)last_ec->ld;
 
       // Compute delta-target
-      simple_temp.label = gamma * Q_spap + last_reward->label;
-      simple_temp.weight = 0.0;//last_reward->weight;
-
-      // Update/learn
+      simple_temp.label = gamma * Q_spap + reward_label_data->label;
+      
+      // If we want to use VW's update system then set this to non-zero
+      if(rl_loss) {
+	simple_temp.weight = 0.0;
+      } else {
+	simple_temp.weight = reward_label_data->weight;
+      }
+      
+      // Update/learn on previous example
       last_ec->ld = &simple_temp;
       update_example_indicies(all->audit, last_ec, increment);
       base_learner(all,last_ec);
       score = last_ec->partial_prediction;
       prediction = score;
-      delta = simple_temp.label - prediction;
+
       last_ec->partial_prediction = 0.;
       last_ec->ld = last_reward;
       update_example_indicies(all->audit, last_ec, -total_increment);
-    } else if(last_ec == NULL) {
-    //       cerr << "New Episode" <<endl; 
-    }
-    
 
+      // Handle Eligibility Traces
+      // Decay X_t-1
+      decay_traces();
+      if(rl_loss) {
+	// Add x_t, then train
+	update_traces(last_ec);
+	train_on_traces(all, gamma * Q_spap + reward_label_data->label - prediction);
+      } else {
+	// Train using traces (training for x_t already done by VW), then add x_t to the traces
+	train_on_traces(all, (last_ec->eta_round / all->eta));
+	update_traces(last_ec);
+      }
+    }     
+
+    // Update prediction that gets returned: Q(s',a')
     ec->partial_prediction = 0.;
-    ec->ld = reward_label_data;
+    ec->ld = reward_label_data; // Give current example its label back
     *(prediction_t*)&(ec->final_prediction) = Q_spap;
     update_example_indicies(all->audit, ec, -total_increment);
+
+    // Only update the previous example if we are training (not just evaluating)
     if(doTrain) {
-      if (last_ec != NULL) {
-      
-	//if (traces == NULL)
-	//  traces = (float *)calloc(trace_length, sizeof(float));
-	// Train on traces...
-	size_t mask = all->weight_mask;
-	float* weights = all->reg.weight_vectors;
-	//cerr << "Delta: " << delta << endl;
-      for (size_t* i = traces->indices.begin; i != traces->indices.end; i++) 
-	{
-      	  feature *f = traces->atomics[*i].begin;
-	  for (; f != traces->atomics[*i].end; f++)
-	    {
-	      weights[f->weight_index & mask] += 0.0001 * delta * f->x;
-	      //	      cerr << "(" << f->weight_index << "," << f->x  << ") ";
-	    }
-	}
-      //            cerr << endl << endl;
-	//	cerr << "Updating traces... " << (traces == NULL) << endl;
-	// Decay traces and then update weights using them
-
-	//	for (int i=0; i<(int)trace_length; i++) {
-	//	  if (traces[i] != 0) {
-	    //	    cout << traces[i] << " ";
-	//	    traces[i] *= lambda*gamma;
-	    //	    weights[i] += last_ec->eta_round * traces[i];
-	    //   weights[i] += 0.025 * delta * traces[i];
-	//	  }
-	  //	  if(weights[i] != 0)
-	  //	    cerr << weights[i] << " ";
-
-      
-	//		cout << endl;
-	//		cout << "Delta: " << last_ec->eta_round/0.025 << " " << delta << endl;
-	//	cerr << endl;
-        // Add old features to traces
-
-      //	for (int i=0; i<(int)trace_length; i++) {
-      //	  if (traces[i] != 0) {
-	    //	    cout << traces[i] << " ";
-		    //	    weights[i] += last_ec->eta_round * traces[i];
-      //	    weights[i] += 0.0001 * delta * traces[i];
-      //	  }
-	  //	  if(weights[i] != 0)
-	  //	    cerr << weights[i] << " ";
-
-      //	}
-	
-	// Lets try adding things to last_ec..
-	// ec->indices are the name spaces really
-	//	cerr << ec->indices.index() << " " << ec->indices[0] << " " << ec->atomics[98].begin->weight_index << " " << ec->atomics[98].begin->x << endl;
-	//	cerr << last_ec->indices.index() << " " << last_ec->indices[0] << " " << last_ec->atomics[98].begin->weight_index << " " << last_ec->atomics[98].begin->x << endl;
-	// for each name space in last_ec, find that namespace in ec (or add it)
-      // decay traces...
-      for(int i=0; i<traces->indices.index(); i++)  {
-	for(int j=0; j<traces->atomics[traces->indices[i]].index(); j++) {
-	  traces->atomics[traces->indices[i]][j].x *= lambda * gamma;
-	}
-      }
-
-	for(int i=0; i<ec->indices.index(); i++) {
-	  int j = 0;
-	  bool found = false;
-	  for(; j < traces->indices.index(); j++) {
-	    if(ec->indices[i] == traces->indices[j]) {
-	      found = true;
-	      break;
-	    }
-	  }
-	  if(found) {
-	    //	    cerr << "last @ " << i << " <=> " << "current @ " << j << endl;
-	    // Now though we need to check that they contain the same stuff...
-	    size_t current_index = traces->indices[j];
-	    size_t last_index = ec->indices[i];
-	    for(int k=0; k<ec->atomics[last_index].index(); k++) {
-	      j = 0;
-	      found = false;
-	      for(; j < traces->atomics[current_index].index(); j++) {
-		if(ec->atomics[last_index][k].weight_index == traces->atomics[current_index][j].weight_index) {
-		  found = true;
-		  break;
-		}
-	      }
-	      if(found) {
-		traces->atomics[current_index][j].x += ec->atomics[last_index][k].x;
-	      }
-	      else {
-		// not found, need to add it
-		v_array<feature> *ecatomics = &traces->atomics[current_index];
-		feature cpyfeat = { ec->atomics[last_index][k].x, ec->atomics[last_index][k].weight_index };
-		push(*ecatomics, cpyfeat);
-	      }
-	    }
-	  }
-	  else {
-	    //	    cerr << "Couldn't find " << i << " inserting.. " << ec->indices.index() << endl;
-	    v_array<size_t> *ecindx = &traces->indices;
-	    push(*ecindx, ec->indices[i]);
-	    // okay but atomics for this index is empty... so add those too
-	    v_array<feature> *ecatomics = &traces->atomics[ecindx->last()];
-	    copy_array(*ecatomics, ec->atomics[ec->indices[i]]);
-	    
-	  }
-	}
-	//	for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-	//        {
-	  
-	  // then atomics are the features within those name spaces
-	//	  feature *f = ec->atomics[*i].begin;
-	//	  cerr << *i << " " << ec->indices.index() << endl;
-	//          for (; f != ec->atomics[*i].end; f++)
-	//	  {
-	//	    cerr << "(" << f->weight_index << "," << f->x << ") ";
-	//	  }
-	//	  cerr << endl;
-	//        }	
-	//	cerr << endl;
-	// Now we can clear the old example and copy over the new one
+      // Free memory before copying over latest example
+      if(last_ec != NULL) {
 	dealloc_example(RL::delete_label, *last_ec);
 	free(last_ec);
 	last_ec = NULL;
+      }
 
-      }
-      // Copy over new example
-      if(traces ==  NULL) {
-	traces = alloc_example(sizeof(RL::reward_label));
-	copy_example_data(traces, ec, sizeof(RL::reward_label));
-      }
-      if (last_ec == NULL) {
-	last_ec = alloc_example(sizeof(RL::reward_label));
-      }
+      // Copy over latest example, but only during training..
+      last_ec = alloc_example(sizeof(RL::reward_label));
       copy_example_data(last_ec, ec, sizeof(RL::reward_label));
-      
     }
+
   }
 
   void drive_rl(void *in)
@@ -367,11 +370,18 @@ namespace RL {
           }
         else if (parser_done(all->p))
           {
-	    /*	    if(last_ec != NULL) {
+	    // Clean up example and traces between sessions
+	    if(last_ec != NULL) {
 	      dealloc_example(RL::delete_label, *last_ec);
 	      free(last_ec);
 	      last_ec = NULL;
-	      }*/
+	    }
+
+	    if(traces != NULL) {
+	      dealloc_example(RL::delete_label, *traces);
+	      free(traces);
+	      traces = NULL;
+	    }
 	    all->finish(all);
             return;
           }
