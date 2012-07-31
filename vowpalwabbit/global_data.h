@@ -119,6 +119,7 @@ struct vw {
 
   void (*driver)(void *);
   void (*learn)(void *, example*);
+  void (*base_learn)(void *, example*);
   void (*finish)(void *);
   void (*set_minmax)(shared_data* sd, double label);
 
@@ -138,18 +139,14 @@ struct vw {
   bool hessian_on;
   int m;
 
+  std::string options_from_file;
+  char** options_from_file_argv;
+  int options_from_file_argc;
+
   bool sequence;
   bool searn;
-  size_t searn_nb_actions;
-  std::string searn_base_learner;
-  size_t searn_trained_nb_policies;
-  size_t searn_total_nb_policies;
-  float searn_beta;
-  std::string searn_task;
-  size_t searn_sequencetask_history;
-  size_t searn_sequencetask_features;
-  bool searn_sequencetask_bigrams;
-  bool searn_sequencetask_bigram_features;
+
+  size_t base_learner_nb_w; //this stores the current number of "weight vector" required by the based learner, which is used to compute offsets when composing reductions
 
   size_t stride;
 
