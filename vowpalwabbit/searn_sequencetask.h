@@ -15,7 +15,7 @@ namespace SequenceTask {
   void   start_state_multiline(example**, size_t, state*);
   bool   is_test_example(example**, size_t);
   void   cs_example(vw&, state, example*&, bool);
-  bool   initialize(vw&,std::vector<std::string>&, po::variables_map&);
+  bool   initialize(vw&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
   size_t hash(state);
   bool   equivalent(state, state);
   std::string to_string(state, bool, std::vector<action>);

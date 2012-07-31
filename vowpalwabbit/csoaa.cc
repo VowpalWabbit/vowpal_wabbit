@@ -295,6 +295,7 @@ namespace CSOAA {
 	ec->ld = &simple_temp;
 
         size_t desired_increment = increment * (i-1);
+
         if (desired_increment != current_increment) {
 	  update_example_indicies(all->audit, ec, desired_increment - current_increment);
           current_increment = desired_increment;
@@ -344,16 +345,36 @@ namespace CSOAA {
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
+    //first parse for number of actions
+    size_t nb_actions = 0;
+    if( vm_file.count("csoaa") ) { //if loaded options from regressor
+      nb_actions = vm_file["csoaa"].as<size_t>();
+      if( vm.count("csoaa") && vm["csoaa"].as<size_t>() != nb_actions ) //if csoaa was also specified in commandline, warn user if its different
+        std::cerr << "warning: you specified a different number of actions through --csoaa than the one loaded from predictor. Pursuing with loaded value of: " << nb_actions << endl;
+    }
+    else {
+      nb_actions = vm["csoaa"].as<size_t>();
+
+      //append csoaa with nb_actions to options_from_file so it is saved to regressor later
+      std::stringstream ss;
+      ss << " --csoaa " << nb_actions;
+      all.options_from_file.append(ss.str());
+    }
+
     *(all.p->lp) = cs_label_parser;
-    all.sd->k = s;
+    all.sd->k = nb_actions;
+
+    all.base_learner_nb_w *= nb_actions;
+    increment = (all.length()/ all.base_learner_nb_w ) * all.stride;     
+
     all.driver = drive_csoaa;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     base_finish = all.finish;
     all.finish = finish;
-    increment = (all.length()/all.sd->k) * all.stride;
   }
 
   int example_is_test(example* ec)
@@ -923,8 +944,34 @@ namespace CSOAA_AND_WAP_LDF {
   }
 
 
-  void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
+    string ldf_arg;
+    if(vm_file.count("csoaa_ldf")) {
+      ldf_arg = vm_file["csoaa_ldf"].as<string>();
+      
+      if(vm.count("csoaa_ldf") && ldf_arg.compare(vm["csoaa_ldf"].as<string>()) != 0)
+        std::cerr << "warning: you specified a different ldf argument through --csoaa_ldf than the one loaded from regressor. Pursuing with loaded value of: " << ldf_arg << endl;
+    }
+    else if( vm.count("csoaa_ldf") ){
+      ldf_arg = vm["csoaa_ldf"].as<string>();
+      all.options_from_file.append(" --csoaa_ldf ");
+      all.options_from_file.append(ldf_arg);
+    }
+    else if( vm_file.count("wap_ldf") ) {
+      ldf_arg = vm_file["wap_ldf"].as<string>();
+      is_wap = true;
+      
+      if(vm.count("wap_ldf") && ldf_arg.compare(vm["wap_ldf"].as<string>()) != 0)
+        std::cerr << "warning: you specified a different value for --wap_ldf than the one loaded from regressor. Pursuing with loaded value of: " << ldf_arg << endl;
+    }
+    else {
+      ldf_arg = vm["wap_ldf"].as<string>();
+      is_wap = true;
+      all.options_from_file.append(" --wap_ldf ");
+      all.options_from_file.append(ldf_arg);
+    }
+
     *(all.p->lp) = CSOAA::cs_label_parser;
 
     all.sd->k = -1;
@@ -938,9 +985,6 @@ namespace CSOAA_AND_WAP_LDF {
       exit(-1);
     }
 
-    if (vm.count("wap_ldf"))
-      is_wap = true;
-
     if (all.add_constant) {
       //cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
       all.add_constant = false;
@@ -948,6 +992,7 @@ namespace CSOAA_AND_WAP_LDF {
 
     all.driver = drive_ldf;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     base_finish = all.finish;
     all.finish = finish;

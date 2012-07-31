@@ -88,8 +88,8 @@ void finish_gd(void* a)
   if(all->span_server != "") {
     if(all->adaptive)
       accumulate_weighted_avg(*all, all->span_server, all->reg);
-    else 
-      accumulate_avg(*all, all->span_server, all->reg, 0);	      
+    else
+      accumulate_avg(*all, all->span_server, all->reg, 0);
   }
 }
 

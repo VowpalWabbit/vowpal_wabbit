@@ -8,7 +8,7 @@
 #include "parse_args.h"
 
 namespace WAP {
-  void parse_flags(vw&, std::vector<std::string>&, po::variables_map& vm, size_t s);
+  void parse_flags(vw&, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 #endif

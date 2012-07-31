@@ -18,7 +18,7 @@ namespace OAA
   
   typedef size_t prediction_t;
   
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, size_t s);
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
