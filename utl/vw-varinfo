@@ -34,13 +34,13 @@
 # (c) 2012 - ariel faigon for vowpal-wabbit
 # This software may be distributed under the same terms as vowpal-wabbit
 #
-use Getopt::Std;
-use vars (qw($opt_v $opt_V $opt_P $opt_O $opt_k));
+# use Getopt::Std;
+use vars (qw($opt_v $opt_V $opt_O $opt_K));
 
 my $VW = 'vw';
 my $VWARGS = '--exact_adaptive_norm --sort_features';
 
-my ($TrainSet, $Model, $FullExample, $AuditFile);
+my ($TrainFile, $ModelFile, $RmodelFile, $ExampleFile, $AuditFile);
 my (%FeatureMax, %FeatureMin);
 
 my (%Feature2Hash, %Feature2Weight);
@@ -52,7 +52,12 @@ my @QPairs = ();    # list of pairs ([a, b], [c, d] ...) for namespace pairing
 my %Ignore;         # support for --ignore X
 my %Keep;           # support for --keep X
 my $DoKeep;         # flag for whether we need to use --keep or not
-my $DoLabels = 0;   # flag for multi-class (--oaa --csoaa --wap* --sequence?)
+my $MultiClass = 0; # flag for multi-class (--oaa --csoaa --wap* --sequence?)
+my %Labels;
+my @Labels = (1);   # List of labels for super example generation
+
+my %Label2FW;       # for multi-class: every label has feature->weight
+my %Prediction;     # prediction of each isolated multi-class label
 
 my @TmpFiles;
 
@@ -79,18 +84,18 @@ sub V(@) {
 
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
-    die "Usage: $0 [options] <training-set-file>
+    die "Usage: $0 [options] [vw-options] <training-set-file>
     Options:
         -v          verbose
         -V          more verbose
-        -k          keep temporary files
-        -P<Opts>    Pass-through <Opts> as-is to the vw training step
-                    To have paired cross-features in name-spaces starting
-                    with X and Y, add -q XY ... to the -P option arguments,
-                    just like you do for vw.
+        -K          keep temporary files
         -O<which>   Use order/ranking metric <which>
                     Supported metrics:
                         ... not implemented yet ...
+
+    vw-options:
+        Note that all the above options do not clash with vw options
+        All other options will be passed as-is to the vw training step.
 
     See the script source head comments for more details.
 ";
@@ -99,24 +104,67 @@ sub usage(@) {
 sub get_args {
     $0 =~ s{.*/}{};
 
-    getopts('VvkP:O:') || usage();
-    $opt_v = 1 if ($opt_V);
-    $opt_O = '' unless (defined $opt_O);
+    if (-f $ARGV[-1]) {
+        $TrainFile = pop(@ARGV);
+    } else {
+        usage("last command line arg must be a training-set file");
+    }
 
+    my @vw_opts_and_args = ();
     foreach my $arg (@ARGV) {
-        if (-f $arg) {
-            $TrainSet = $arg;
+        if ($arg =~ /^-[vVKOP]+$/) {
+            # These options are for us, not for vw
+            $opt_v = 1 if ($arg =~ /v/);
+            $opt_V = 1 if ($arg =~ /V/);
+            $opt_K = 1 if ($arg =~ /K/);
+            $opt_v = 1 if ($opt_V);
+            if ($arg =~ /O/) {
+                ($opt_O) = ("@ARGV" =~ /$arg\s+(\S+)\b/);
+            }
+            if ($arg =~ /P/) {
+                usage("-P: option no longer supported.\n" .
+                       "Please pass VW options directly.\n");
+            }
             next;
         }
+        if (-f $arg) {
+            my $skip_ts = 0;
+            if ($vw_opts_and_args[-1] =~ '-d|--data') {
+                pop(@vw_opts_and_args);
+                $skip_ts = 1;
+            } elsif ($vw_opts_and_args[-1] !~
+                        /^(?:
+                            -p
+                            |--predictions
+                            |-i
+                            |--initial_regressor
+                            |-f
+                            |--final_regressor
+                            |-r
+                            |--raw_predictions
+                            |--cache_file
+                            |--pid_file
+                            |--readable_model
+                            |--output_feature_\S+
+                        )$/x) {
+                $skip_ts = 1;
+            }
+            if ($skip_ts) {
+                warning("ignoring trainset: $arg in vw-args\n");
+                next;
+            }
+        }
+        push(@vw_opts_and_args, $arg);
     }
+    $opt_O = '' unless (defined $opt_O);
     usage("You must supply a training-set file")
-        unless (defined $TrainSet);
+        unless (defined $TrainFile);
 
-    usage("training-set file: $TrainSet: $!")
-        unless (-f $TrainSet);
+    usage("training-set file: $TrainFile: $!")
+        unless (-f $TrainFile);
 
-    if ($opt_P) {
-        $VWARGS = $opt_P;
+    if (@vw_opts_and_args) {
+        $VWARGS = "@vw_opts_and_args";
     }
     while ($VWARGS =~ /-q\s*(\S)(\S)/g) {
         push(@QPairs, [$1, $2]);
@@ -129,18 +177,23 @@ sub get_args {
     while ($VWARGS =~ /--ignore\s*(\S)/g) {
         $Ignore{$1} = 1;
     }
-    if ($VWARGS =~ /--(?:(?:cs)?oaa|wap|sequence)/) {
-        $DoLabels = 1;
+    if ($VWARGS =~ /--(?:(?:cs)?oaa|wap|ect|sequence)/) {
+        if ($VWARGS =~ /--(?:wap|ect)/) {
+            # Please send a patch when/if you can figure these out
+            die "$0: --wap, --ect multi-class is not supported - sorry\n";
+        }
+        $MultiClass = 1;
     }
-    $Model = "$TrainSet.model";
-    $FullExample = "$TrainSet.full-example";
-    $AuditFile = "$TrainSet.audit";
+    $ModelFile = "$TrainFile.model";
+    $RModelFile = "$TrainFile.rmodel";
+    $ExampleFile = "$TrainFile.examples";
+    $AuditFile = "$TrainFile.audit";
 
-    @TmpFiles = ($Model, $FullExample, $AuditFile);
+    @TmpFiles = ($ModelFile, $RModelFile, $ExampleFile, $AuditFile);
 }
 
 sub cleanup {
-    if ($opt_k) {
+    if ($opt_K) {
         v("keeping temporary files: @TmpFiles\n");
         return;
     }
@@ -204,7 +257,12 @@ sub pair_features {
 
 sub parse_labels($) {
     my $labels = shift;
-    # FINISH ME
+    $labels =~ s/\s+\S+$//; # trim optional tag (touching the '|')
+    while ($labels =~ /([^:\s]+):?(\S+)?/g) {
+        # match labels and optional weights
+        $Labels{$1} = (defined $2) ? $2 : 1;
+    }
+    sort {$a <=> $b} keys %Labels;
 }
 
 #
@@ -230,8 +288,8 @@ sub read_features($) {
         die "$0: $trainset line $.: malformed example: missing '|'\n"
             unless (defined $input_features);
 
-        if ($DoLabels) {
-            parse_labels($labels);
+        if ($MultiClass) {
+            @Labels = parse_labels($labels);
         }
 
         my @name_space_region = split('\|', $input_features);
@@ -298,30 +356,113 @@ sub read_features($) {
 #
 sub do_train($$;$) {
     my ($trainset, $model, $rmodel) = @_;
-    my $cmd = "$VW --quiet $VWARGS -d $trainset -f $model";
+    my $cmd = "$VW --quiet $VWARGS -f $model";
+    if ($opt_v) {
+        $cmd =~ s/ --quiet / /;
+    }
     if (defined $rmodel) {
         $cmd .= " --readable_model $rmodel";
     }
+    $cmd .= " $trainset";
     v("training: %s\n", $cmd);
     system($cmd);
+    die "$0: vw training failed (see details above)\n"
+        unless ($? == 0);
 }
 
-sub generate_full_example($) {
-    my ($full_example) = @_;
-    open(my $fe, ">$full_example") ||
-        die "$0: can't write full_example file: '$full_example': $!\n";
-    print $fe "1";
-    
+sub generate_one_example($$) {
+    my ($fd, $label) = @_;
+
+    if ($MultiClass) {
+        printf $fd "%s:1", $label;
+        # foreach $label2 (@Labels) {
+        #    next if ($label eq $label2);
+        #    printf $fd " %s:0", $label2;
+        # }
+    } else {
+        # simple, non multi-class case
+        print $fd $label;
+    }
+    # print all possible input features, with a weight of 1
     foreach my $ns (keys %NameSpaces) {
         my $nsref = $NameSpaces{$ns};
-        printf $fe ' |%s', $ns;
+        printf $fd ' |%s', $ns;
         foreach my $key (sort keys %$nsref) {
             my $weight = 1;
-            printf $fe ' %s:%s', $key, $weight;
+            printf $fd ' %s:%s', $key, $weight;
         }
     }
-    print $fe "\n";
-    close $fe;
+    print $fd "\n";
+}
+
+sub generate_examples($) {
+    my ($example_file) = shift;
+    open(my $fd, ">$example_file") ||
+        die "$0: can't write full_example file: '$example_file': $!\n";
+
+    v("Labels: @Labels\n");
+    foreach my $label (@Labels) {
+        # One line per label:
+        # multiclass deprecates to singleton: label=1
+        generate_one_example($fd, $label);
+    }
+    close $fd;
+}
+
+my %SeenFeatureNames;
+my $MCLabel;
+my $MCLabelIndex = -1;
+
+sub audit_one_example($) {
+    my $audit_stream = shift;
+
+    # skip the prediction line
+    # we're only interested in the audit line
+    my $prediction = <$audit_stream>;
+    my $features_data = <$audit_stream>;
+
+    my $weight_href;
+    if ($MultiClass) {
+        if (++$MCLabelIndex >= @Labels) {
+            $MCLabelIndex =0;
+        }
+        $MCLabel = $Labels[$MCLabelIndex];
+        $weight_href = $Label2FW{$MCLabel} = {};
+        chomp($prediction);
+        $Prediction{$MCLabel} = $prediction;
+    }
+
+    chomp($features_data);
+    my @features_list = split(' ', $features_data);
+
+    while (@features_list) {
+        my $audited_item = shift @features_list;
+        next unless ($audited_item);
+
+        # Audited feature format:   namespace^varname:142703:1:0.0435613 ...
+        my (@fields) = split(':', $audited_item);
+
+        my ($feature, $hashval, $value, $weight) = @fields[-4 .. -1];
+
+        unless ($feature) {
+            if ($MultiClass) {
+                $feature = "Constant_$MCLabel";
+                $FeatureMax{$feature} = 0;
+                $FeatureMin{$feature} = 0;
+            }
+        }
+
+        $SeenFeatureNames{$feature} = 1;
+        $Feature2Hash{$feature} = $hashval;
+
+        if ($MultiClass) {
+            # v("audit_one_example: MC=$MultiClass Label=$MCLabel {$feature} = $weight\n");
+            $weight_href->{$feature} = $weight;
+        } else {
+            $Feature2Weight{$feature} = $weight;
+        }
+        V("%s\t%s\t%s\t%s\n", $feature, $hashval, $value, $weight);
+    }
 }
 
 #
@@ -331,120 +472,127 @@ sub generate_full_example($) {
 #   Return the list of all feature-names
 #
 sub audit_features {
-    generate_full_example($FullExample);
+    generate_examples($ExampleFile);
 
-    my $audit_cmd = "$VW --quiet -t --audit -i $Model -d $FullExample";
-    $audit_cmd .= "|tee $AuditFile" if ($opt_k);
+    # Bug in vw multiclass, looks like we need to pass the multiclass
+    # params to --audit even though they should be in the model
+    my $vw_audit_args = "--quiet -t --audit -i $ModelFile -d $ExampleFile";
+    my $vw_mcargs = '';
+    if (${VWARGS} =~ /--(?:(?:cs)?oaa|wap|sequence)(?:_ldf)?\s+\d+/) {
+        $vw_mcargs = $&;
+    }
+    my $audit_cmd = "$VW $vw_mcargs $vw_audit_args";
+    $audit_cmd .= "|tee $AuditFile" if ($opt_K);
 
-    open(my $audit_stream, "$audit_cmd |")
-        || die "$0: can't run \$audit_cmd: '$audit_cmd |'\n";
-    my $prediction = <$audit_stream>;
-    my $features_data = <$audit_stream>;
-    close $audit_stream;
+    open(my $audit_stream, "$audit_cmd |") ||
+        die "$0: can't run \$audit_cmd: '$audit_cmd |'\n";
 
-    my %seen_feature_names;
-
-    # Audited feature format:   namespace^varname:142703:1:0.0435613 ...
-    while ($features_data =~ /\s+([^:]+):(\d+):([^:]+):([-+e.0-9]+)/g) {
-
-        my ($feature, $hash, $value, $weight) = ($1, $2, $3, $4);
-
-        $seen_feature_names{$feature} = 1;
-        $Feature2Hash{$feature} = $hash;
-        $Feature2Weight{$feature} = $weight;
-
-        V("%s\t%s\t%s\t%s\n", $feature, $hash, $value, $weight);
+    while (!eof($audit_stream)) {
+        audit_one_example($audit_stream);
     }
 
+    close $audit_stream;
+
     # Return the list of features actually seen in the audit
-    sort keys %seen_feature_names;
+    sort keys %SeenFeatureNames;
 }
+
 
 #
 # return 'score' metric for a given feature
 #
-my %Score;
+sub score($$;$) {
+    my ($class_label, $feature, $metric) = @_;
 
-sub by_score {
-    $Score{$b} <=> $Score{$a}
-}
+    my $f2w_hashref = $MultiClass
+                        ? $Label2FW{$class_label}
+                        : \%Feature2Weight;
 
-sub score($;$) {
-    my ($feature, $metric) = @_;
-
-    my $fweight = $Feature2Weight{$feature};
+    my $fweight = $f2w_hashref->{$feature};
     unless (defined $fweight) {
-        warn "$0: BUG?: score($feature): feature has no weight!\n";
+        warn "$0: BUG?: score($class_label, $feature): undef weight!\n";
         return undef;
     }
 
-    # Support more metrics, are the any?
+    # Support more metrics, are there any others that make sense?
     # if ($metric eq '...') ...
 
     $fweight;
 }
 
 #
-# summarize_features
-#   Output what we know about all features + relative score
+# Find maximum feature-name length and max/min values
 #
-sub summarize_features {
-    my ($min_weight, $max_weight) = (0, 0);
-    my $max_len = 0;
+sub feature_flen_min_max($@) {
+    my $w_href = shift @_;
 
-    # 1st pass - determine maximum feature-name length
-    # and max/min values
-    foreach my $f (@Features) {
-        my $w = $Feature2Weight{$f};
+    my ($max_flen, $min_weight, $max_weight) = (10, 0, 0);
+
+    foreach my $f (@_) {
+        my $w = $w_href->{$f};
         unless (defined $w) {
             # Should already be caught in score() above,
             # so warn only in verbose mode
-            v("%s: summarize_features: %s: undefined weight\n", $0, $f);
+            v("%s: feature_flen_min_max: %s: undefined weight\n", $0, $f);
             next;
         }
-        my $slen = length($f);
-        $max_len = $slen if ($slen > $max_len);
+        my $flen = length($f);
+        $max_flen = $flen if ($flen > $max_flen);
 
         $max_weight = $w if ($w > $max_weight);
         $min_weight = $w if ($w < $min_weight);
     }
-    my $range_weight = $max_weight - $min_weight;
- 
-    # 2nd pass - calculate scores of all features
-    my ($score, $min_score, $max_score) = (0, 0, 0);
-    foreach my $f (@Features) {
-        next if ($f eq 'Constant');
+    ($max_flen, $min_weight, $max_weight);
+}
 
-        $score = score($f, $opt_O);
+#
+# Find min/max score and zero the score of the constant feature
+#
+sub feature_min_max_score($@) {
+    my $class_label = shift @_;
+
+    my ($min_score, $max_score) = (0, 0);
+    my $score_href = {};    # feature->score
+
+    foreach my $f (@_) {            # features loop
+        if ($f =~ /^Constant/) {
+            my $constant_feature_name = $f;
+            $score_href->{$f} = 0;
+            next;
+        }
+
+        my $score = score($class_label, $f, $opt_O);
         next unless (defined $score);
-
-        $Score{$f} = $score;
+        $score_href->{$f} = $score;
 
         $max_score = $score if ($score > $max_score);
         $min_score = $score if ($score < $min_score);
     }
-    my $score_range = $max_score - $min_score;
-    $Score{'Constant'} = 0;
-    # my $score_0 = score('Constant');
+    ($min_score, $max_score, $score_href);
+}
 
-    my $upper_range = abs($max_score);
-    my $lower_range = abs($min_score);
+sub print_feature_report($$$$@) {
+    my ($max_flen, $max_distance_from_0,
+        $class_label, $score_href, @features) = @_;
 
-    my $max_distance_from_0 = ($upper_range > $lower_range)
-                                    ? $upper_range
-                                    : $lower_range;
+    my $weight_href = $MultiClass
+                        ? $Label2FW{$class_label}
+                        : \%Feature2Weight;
 
     printf "%-*s\t%+10s %8s %8s %+9s %+10s\n",
-                $max_len, 'FeatureName', 'HashVal',
+                $max_flen, 'FeatureName', 'HashVal',
                 'MinVal', 'MaxVal',
                 'Weight', 'RelScore';
 
-    # FIXME: support different orders: by weight,
-    # by feature-range-normalized weights?
+    # TODO? support different orders:
+    # by weight, by feature-range-normalized weights?
+    foreach my $f (sort {
+                     $score_href->{$b} <=> $score_href->{$a}
+                  } @features) {
 
-    foreach my $f (sort by_score @Features) {
-        my $score = $Score{$f};
+        my $score = $score_href->{$f};
         my $distance_from_0 = $score;
+        $max_distance_from_0 = 1e-10 if ($max_distance_from_0 == 0);
         my $normalized_score = $distance_from_0 / $max_distance_from_0;
 
         # FIXME: support different normalization schemes
@@ -452,19 +600,55 @@ sub summarize_features {
             $normalized_score = abs($normalized_score);
         }
         printf "%-*s\t%10u %8.2f %8.2f %+9.4f %9.2f%%\n",
-                $max_len, $f,
+                $max_flen, $f,
                 $Feature2Hash{$f},
                 $FeatureMin{$f},
                 $FeatureMax{$f},
-                $Feature2Weight{$f},
+                $weight_href->{$f},
                 (100.0 * $normalized_score);
+    }
+    print "\n" if ($MultiClass);
+}
+
+
+#
+# summarize_features
+#   Output what we know about all features + relative score
+#
+sub summarize_features {
+    # Per-class loop for multi-class,
+    # only one loop for non multi-class
+    foreach my $label (@Labels) {
+        my @features = ($MultiClass) ? (keys %{$Label2FW{$label}}) : @Features;
+
+        my ($min_score, $max_score, $score_href) =
+                            feature_min_max_score($label, @features);
+        my $score_range = $max_score - $min_score;
+
+        my ($max_flen, $min_wt, $max_wt) =
+                            feature_flen_min_max($score_href, @features);
+        my $range_weight = $max_wt - $min_wt;
+
+        my $upper_range = abs($max_score);
+        my $lower_range = abs($min_score);
+
+        my $max_distance_from_0 = ($upper_range > $lower_range)
+                                        ? $upper_range
+                                        : $lower_range;
+
+        printf "=== Class Label: %s\tPrediction: %s\n",
+                $label, $Prediction{$label}
+                    if ($MultiClass);
+
+        print_feature_report($max_flen, $max_distance_from_0,
+                             $label, $score_href, @features);
     }
 }
 
 # -- main
 get_args();
-read_features($TrainSet);
-do_train($TrainSet, $Model);
+read_features($TrainFile);
+do_train($TrainFile, $ModelFile, $RModelFile);
 @Features = audit_features();
 summarize_features();
 cleanup();
