@@ -181,6 +181,7 @@ struct vw {
   bool adaptive;//Should I use adaptive individual learning rates?
   bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
   bool normalized_adaptive;
+  bool norm_corr_adaptive;
   bool random_weights;
   bool add_constant;
   bool nonormalize;

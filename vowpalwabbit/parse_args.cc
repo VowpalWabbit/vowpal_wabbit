@@ -56,6 +56,7 @@ vw parse_args(int argc, char *argv[])
     ("adaptive", "use adaptive, individual learning rates.")
     ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
     ("normalized_adaptive", "use normalized adaptive learning rates.")
+    ("norm_corr_adaptive", "use normalized correlation adaptive learning rates.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
@@ -183,7 +184,7 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
 
-  if (vm.count("adaptive") || vm.count("exact_adaptive_norm") || vm.count("normalized_adaptive")) {
+  if (vm.count("adaptive") || vm.count("exact_adaptive_norm") || vm.count("normalized_adaptive") || vm.count("norm_corr_adaptive")) {
       all.adaptive = true;
       if (vm.count("exact_adaptive_norm"))
 	{
@@ -196,6 +197,12 @@ vw parse_args(int argc, char *argv[])
 	  all.normalized_adaptive = true;
           if (vm.count("nonormalize"))
 	    cout << "Options don't make sense.  You can't use an normalized adaptive updates and not normalize." << endl;
+	}
+      if (vm.count("norm_corr_adaptive"))
+	{
+	  all.norm_corr_adaptive = true;
+          if (vm.count("nonormalize"))
+	    cout << "Options don't make sense.  You can't use normalized correlation adaptive updates and not normalize." << endl;
 	}
       all.stride = 4;
   }
