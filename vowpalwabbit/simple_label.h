@@ -28,6 +28,4 @@ const label_parser simple_label = {default_simple_label, parse_simple_label,
 
 float query_decision(vw& all, example* ec, float k);
 
-inline bool nanpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fffffff) > 0x7f800000; } 
-
 #endif

@@ -153,13 +153,15 @@ inline float parseFloat(char * p, char **end)
     return strtod(start,end);
 }
 
+inline bool nanpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fffffff) > 0x7f800000; } 
+
 inline float float_of_substring(substring s)
 {
   char* endptr = s.end;
   float f = parseFloat(s.begin,&endptr);
-  if (endptr == s.begin && s.begin != s.end)
+  if ((endptr == s.begin && s.begin != s.end) || nanpattern(f))
     {
-      std::cout << "error: " << std::string(s.begin, s.end-s.begin).c_str() << " is not a float" << std::endl;
+      std::cout << "warning: " << std::string(s.begin, s.end-s.begin).c_str() << " is not a good float, replacing with 0" << std::endl;
       f = 0;
     }
   return f;

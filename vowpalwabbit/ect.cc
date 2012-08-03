@@ -28,6 +28,15 @@ namespace ECT
   int k = 1;
   size_t errors = 0;
 
+  struct direction {
+    size_t winner;
+    size_t loser;
+    size_t left;
+    size_t right;
+  };
+
+  v_array<direction> directions;
+
   //At each round, the maximum number participating in each tournament.
   // level 0 = first round, entry 0 = first single elimination tournament.
   v_array< v_array< size_t > > tournament_counts; 
@@ -65,6 +74,11 @@ namespace ECT
     return 31;
   }
  
+  bool last(size_t tournament, v_array<size_t> round)
+  {//previous tournament is ending.
+    return round[tournament] == 2 && (tournament == 0 || round[tournament -1] == 0);
+  }
+
   void create_circuit(vw& all, size_t max_label, size_t eliminations)
   {
     v_array<size_t> first_round;
@@ -78,6 +92,12 @@ namespace ECT
     for (size_t i = 1; i <= errors; i++)
       push(first_round, (size_t)0);
 
+    for (size_t i = 0; i < k; i++)
+      {
+	direction d = {0,0,0,0};
+	push(directions, d);
+      }
+
     push(first_pair, first_round[0]/2);
 
     push(tournament_counts, first_round);
@@ -85,6 +105,7 @@ namespace ECT
     push(cumulative_pairs, first_pair[0]);
 
     int level = 0; // Counts the level of the tournament.
+
     while(exists(tournament_counts[level]))
       {
         size_t pair_sum = 0;
@@ -97,16 +118,18 @@ namespace ECT
             size_t count = 0;
             size_t prev = 0; 
             if (i != 0)
-              prev = old_round[i-1];
-
-            if (prev == 2 && (i == 1 || (i > 1 && old_round[i-2] == 0)))
-              //last tournament finished
-              count += 2;
-            else
-              count += prev/2;
-
+	      {
+		prev = old_round[i-1];
+		
+		if (last(i-1,old_round))
+		  //last tournament finished
+		  count += 2;
+		else
+		  count += prev/2;
+	      }
+	   
             int old = old_round[i];
-            if ( (old == 2 && prev == 0) || (old == 1 && prev == 0))
+            if (last(i,old_round))
               push(final_levels, (size_t)(level+1));
             else
               count += (old+1)/2;
@@ -162,11 +185,6 @@ namespace ECT
       }
     else
       return false;
-  }
-
-  bool last(size_t tournament, v_array<size_t> round)
-  {//previous tournament is ending.
-    return round[tournament] == 2 && (tournament == 0 || round[tournament -1] == 0);
   }
 
   size_t get_transfers(size_t tournament, v_array<size_t> round)
