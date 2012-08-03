@@ -28,6 +28,15 @@ namespace ECT
   int k = 1;
   size_t errors = 0;
 
+  struct direction {
+    size_t winner;
+    size_t loser;
+    size_t left;
+    size_t right;
+  };
+
+  v_array<direction> directions;
+
   //At each round, the maximum number participating in each tournament.
   // level 0 = first round, entry 0 = first single elimination tournament.
   v_array< v_array< size_t > > tournament_counts; 
@@ -65,6 +74,11 @@ namespace ECT
     return 31;
   }
  
+  bool last(size_t tournament, v_array<size_t> round)
+  {//previous tournament is ending.
+    return round[tournament] == 2 && (tournament == 0 || round[tournament -1] == 0);
+  }
+
   void create_circuit(vw& all, size_t max_label, size_t eliminations)
   {
     v_array<size_t> first_round;
@@ -78,6 +92,12 @@ namespace ECT
     for (size_t i = 1; i <= errors; i++)
       push(first_round, (size_t)0);
 
+    for (size_t i = 0; i < k; i++)
+      {
+	direction d = {0,0,0,0};
+	push(directions, d);
+      }
+
     push(first_pair, first_round[0]/2);
 
     push(tournament_counts, first_round);
@@ -85,6 +105,7 @@ namespace ECT
     push(cumulative_pairs, first_pair[0]);
 
     int level = 0; // Counts the level of the tournament.
+
     while(exists(tournament_counts[level]))
       {
         size_t pair_sum = 0;
@@ -97,16 +118,18 @@ namespace ECT
             size_t count = 0;
             size_t prev = 0; 
             if (i != 0)
-              prev = old_round[i-1];
-
-            if (prev == 2 && (i == 1 || (i > 1 && old_round[i-2] == 0)))
-              //last tournament finished
-              count += 2;
-            else
-              count += prev/2;
-
+	      {
+		prev = old_round[i-1];
+		
+		if (last(i-1,old_round))
+		  //last tournament finished
+		  count += 2;
+		else
+		  count += prev/2;
+	      }
+	   
             int old = old_round[i];
-            if ( (old == 2 && prev == 0) || (old == 1 && prev == 0))
+            if (last(i,old_round))
               push(final_levels, (size_t)(level+1));
             else
               count += (old+1)/2;
@@ -151,27 +174,75 @@ namespace ECT
     return false;
   }
 
-  void root_to_leaf(node& current, bool right_wins)
-  {//shift down one level
-    size_t num_losers = 0;
-    if (current.tournament > 0)
+  bool bye_to_root(node& current)
+  {//inverts bye_to_leaf
+    if (current.label == tournament_counts[current.level][current.tournament] 
+        && current.label %2 == 1)
       {
-	v_array<size_t> prev = tournament_counts[current.level - 2];
-  
-	num_losers = (prev[current.tournament-1]+1) / 2;
-	if (prev[current.tournament - 1] == 1 && current.tournament > 1 
-	    && prev[current.tournament - 2] == 0)
-	  num_losers = 2;
-      }
-    
-    if (current.label < num_losers)
-      {
-	current.tournament--;
-	current.label = current.label * 2 + (right_wins ? 0 : 1);
+        current.label = tournament_counts[current.level+1][current.tournament];
+        current.level++;
+	return true;
       }
     else
-      current.label = (current.label - 1) * 2 + (right_wins ? 1 : 0) + 1 - num_losers;
+      return false;
+  }
+
+  size_t get_transfers(size_t tournament, v_array<size_t> round)
+  {
+    if (tournament == 0)//special case: no earlier tournaments
+      return 0;
+
+    if (last(tournament-1, round))//special case: a tournament ends
+      return 2;
+    
+    return round[tournament-1] / 2;
+  }
+
+  void root_to_leaf(node& current, bool right_wins)
+  {//shift down one level
+    size_t num_transfers = 0;
+    if (current.level > 0)
+      num_transfers = get_transfers(current.tournament, tournament_counts[current.level-1]);
+
+    if (current.label <= num_transfers)
+      {
+	if (last(current.tournament-1, tournament_counts[current.level-1]))
+	  ; //label stays unchanged because it was from the last round in the previous tournament.
+	else //label was from loser of previous tournament
+	  current.label = (current.label - 1) * 2 + (right_wins ? 0 : 1) + 1;
+	current.tournament--;
+      }
+    else//label was from winner of current tournament
+      current.label = (current.label - 1 - num_transfers) * 2 + (right_wins ? 1 : 0) + 1;
     current.level--;
+    assert(current.label >= 1);
+    assert(current.label <= (size_t)k);
+    assert(current.tournament <= errors);
+  }
+
+  void leaf_to_root(node& current, bool right_wins)
+  {//inverts root_to_leaf
+    v_array<size_t> round = tournament_counts[current.level];
+
+    bool won = (((current.label % 2) == 0) && right_wins) || (((current.label % 2) == 1) && !right_wins);
+
+    if (last(current.tournament, round))
+      {//label stays unchanged in moving to next round.
+	push(tournaments_won, won);
+	current.tournament++;
+      }
+    else if (won)//label won in current tournament
+      {
+	int num_transfers= get_transfers(current.tournament,round);
+	current.label = num_transfers + (current.label+1) / 2;
+      }
+    else //label loses and moves to next tournament
+      {
+        push(tournaments_won, false);
+        current.tournament++;
+        current.label = (current.label+1) / 2;
+      }
+    current.level++;
   }
 
   size_t get_bit(size_t label, size_t bitNum)
@@ -246,54 +317,6 @@ namespace ECT
     return current.label;
   }
 
-  bool bye_to_root(node& current)
-  {
-    if (current.label == tournament_counts[current.level][current.tournament] 
-        && current.label %2 == 1)
-      {
-        current.label = tournament_counts[current.level+1][current.tournament];
-        current.level++;
-	if (final_levels[current.tournament] == current.level)
-	  push(tournaments_won,true);
-        return true;
-      }
-    else
-      return false;
-  }
-
-  void leaf_to_root(node& current, bool right_wins)
-  {
-    v_array<size_t> round = tournament_counts[current.level];
-
-    bool won = (((current.label % 2) == 0) && right_wins) || (((current.label % 2) == 1) && !right_wins);
-    bool last_round = round[current.tournament] == 2 && (current.tournament == 0 ||round[current.tournament-1] == 0);
-
-    if (last_round)
-      {
-        push(tournaments_won, won);
-        current.tournament++;
-      }
-    else if (won)
-      {
-        int num_losers= 0;
-	if (current.tournament > 0)
-	  {
-	    num_losers += (round[current.tournament-1]+1) / 2;
-	    if (round[current.tournament - 1] == 1 
-		&& current.tournament > 1 && round[current.tournament-2] == 0)
-	      num_losers = 2;
-	  }
-        current.label = num_losers + (current.label+1) / 2;
-      }
-    else 
-      {
-        push(tournaments_won, false);
-        current.tournament++;
-        current.label = (current.label+1) / 2;
-      }
-    current.level++;
-  }
-
   bool member(size_t t, v_array<size_t> ar)
   {
     for (size_t i = 0; i < ar.index(); i++)
@@ -359,12 +382,13 @@ namespace ECT
               tournaments_won[j] = left;
             else //query to do
               {
-                size_t label;
+                float label;
                 if (left) 
                   label = -1;
                 else
                   label = 1;
                 simple_temp.label = label;
+		simple_temp.weight = (float)(1 << (tree_height -i -1));
                 ec->ld = & simple_temp;
 	      
                 size_t problem_number = last_pair + j*(1 << (i+1)) + (1 << i) -1;
