@@ -146,7 +146,7 @@ void print_update(vw& all, example *ec)
       else
 	sprintf(label_buf,"%8.4f",ld->label);
 
-      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
+      fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
 	      all.sd->sum_loss/all.sd->weighted_examples,
 	      all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
 	      (long int)all.sd->example_number,
