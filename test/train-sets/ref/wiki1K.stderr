@@ -6,17 +6,17 @@ power_t = 0.5
 using no cache
 Reading from train-sets/wiki1K.dat
 num sources = 1
-average    since       example  example    current  current  current
-loss       last        counter   weight      label  predict features
-10.276556  10.276556         3      3.0    unknown   0.0000       37
-10.341704  10.406852         6      6.0    unknown   0.0000       13
-10.311266  10.274740        11     11.0    unknown   0.0000       31
-10.452002  10.592738        22     22.0    unknown   0.0000        1
-10.439252  10.426501        44     44.0    unknown   0.0000      165
-10.459809  10.480844        87     87.0    unknown   0.0000       28
-10.093510  9.727212        174    174.0    unknown   0.0000       16
-9.566353   9.039196        348    348.0    unknown   0.0000        1
-9.066774   8.567194        696    696.0    unknown   0.0000      142
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+10.276555  10.276555           3         3.0  unknown   0.0000       37
+10.341704  10.406853           6         6.0  unknown   0.0000       13
+10.311266  10.274741          11        11.0  unknown   0.0000       31
+10.452002  10.592738          22        22.0  unknown   0.0000        1
+10.439251  10.426501          44        44.0  unknown   0.0000      165
+10.459809  10.480844          87        87.0  unknown   0.0000       28
+10.093513  9.727218          174       174.0  unknown   0.0000       16
+9.566354   9.039195          348       348.0  unknown   0.0000        1
+9.066772   8.567190          696       696.0  unknown   0.0000      142
 
 finished run
 number of examples = 1000
