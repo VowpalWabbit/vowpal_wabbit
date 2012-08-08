@@ -7,15 +7,15 @@ only testing
 using no cache
 Reading from train-sets/0001.dat
 num sources = 1
-average    since       example  example    current  current  current
-loss       last        counter   weight      label  predict features
-0.000000   0.000000          3      3.0     0.0000   0.0000      326
-0.000000   0.000000          6      6.0     1.0000   1.0000      170
-0.000000   0.000000         11     11.0     0.0000   0.0000      212
-0.000000   0.000000         22     22.0     1.0000   1.0000      512
-0.000000   0.000000         44     44.0     0.0000   0.0000      380
-0.000000   0.000000         87     87.0     1.0000   1.0000      350
-0.011494   0.022989        174    174.0     1.0000   1.0000      140
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.000000   0.000000            3         3.0   0.0000   0.0000      326
+0.000000   0.000000            6         6.0   1.0000   1.0000      170
+0.000000   0.000000           11        11.0   0.0000   0.0000      212
+0.000000   0.000000           22        22.0   1.0000   1.0000      512
+0.000000   0.000000           44        44.0   0.0000   0.0000      380
+0.000000   0.000000           87        87.0   1.0000   1.0000      350
+0.011494   0.022989          174       174.0   1.0000   1.0000      140
 
 finished run
 number of examples = 200
