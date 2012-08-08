@@ -100,7 +100,11 @@ sub init() {
         }
         push(@exe_args, $arg);
     }
-    @ToTest = sort { $a <=> $b } @num_args if (@num_args);
+    if (@num_args) {
+        @ToTest = sort { $a <=> $b } @num_args;
+        # add dummy element so we don't become empty on last test
+        push(@ToTest, -1);
+    }
     @ARGV = @exe_args;
 
     $VW = which_vw();
