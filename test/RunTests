@@ -8,12 +8,15 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o);
+use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w);
 
 my $Epsilon = 1e-4;
 
 my $VW;
 my $LDA;
+
+my $Diff = 'diff';
+my @ToTest = ();
 
 my @TrainSets = glob('train-sets/*.dat');
 my @TestSets = glob('test-sets/*.dat');
@@ -21,7 +24,7 @@ my @TestSets = glob('test-sets/*.dat');
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
 
-    die "Usage: $0 [options] [vw-executable]
+    die "Usage: $0 [options] [testno...] [vw-executable]
     By default will run against the 1st 'vw' executable found in:
         .  ..  ../vowpalwabbit  \$PATH
 
@@ -29,9 +32,12 @@ sub usage(@) {
         -c    print commands before running them
         -d    print diff output on diff-failure
         -e    Abort on first diff error
+        -w    Ignore white-space differences (diff --ignore-space-change)
         -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
         -E<e> Set epsilon <e> for fuzzy floating-point compares (default $Epsilon)
         -o    Overwrite reference file with new/different result
+
+    [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
 }
 
@@ -82,8 +88,21 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('cdefE:o') || usage();
+    getopts('wcdefE:o') || usage();
     $Epsilon = $opt_E if ($opt_E);
+    $Diff .= ' --ignore-space-change' if ($opt_w);
+    my @num_args = ();
+    my @exe_args = ();
+    foreach my $arg (@ARGV) {
+        if ($arg =~ /^\d+$/) {  # a test number
+            push(@num_args, $arg);
+            next;
+        }
+        push(@exe_args, $arg);
+    }
+    @ToTest = sort { $a <=> $b } @num_args if (@num_args);
+    @ARGV = @exe_args;
+
     $VW = which_vw();
     $LDA = which_lda();
 }
@@ -198,7 +217,7 @@ sub diff_lenient_float($$) {
     my $status = 0;
     my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines';
     my $tmpf = 'lenient-diff.tmp';
-    system("diff $diff_opts $outfile $reffile >$tmpf");
+    system("$Diff $diff_opts $outfile $reffile >$tmpf");
     $status = $? >> 8;
     if (-s $tmpf) {
         # assume innocent till proven guilty
@@ -250,7 +269,7 @@ sub diff($$) {
     }
 
     # Actually run the diff
-    system("diff -N $outfile $reffile >diff.tmp");
+    system("$Diff -N $outfile $reffile >diff.tmp");
     $status = $? >> 8;
     if (-s 'diff.tmp') {
         if ($opt_d) {
@@ -300,6 +319,14 @@ sub run_tests() {
 
     while (($cmd, $out_ref, $err_ref, $pred_ref, $predf) = next_test()) {
         last unless (defined $cmd);
+        if (@ToTest) {
+            if ($ToTest[0] != $TestNo) {
+                # warn "$0: test $TestNo: skipped\n";
+                next;
+            } else {
+                shift(@ToTest);
+            }
+        }
 
         ($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
 
