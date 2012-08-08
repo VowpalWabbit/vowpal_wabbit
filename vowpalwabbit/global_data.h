@@ -223,6 +223,7 @@ struct vw {
 
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
+void active_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, double label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
