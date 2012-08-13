@@ -892,6 +892,7 @@ example* get_example(parser* p)
     }
   }
   #else
+  return NULL;
   #endif
 }
 
