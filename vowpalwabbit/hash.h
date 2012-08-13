@@ -4,10 +4,5 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
-#ifdef MURMUR3
-    const uint32_t hash_base = 0;
-#else
-    const uint32_t hash_base = 97562527;
-#endif
-
+const uint32_t hash_base = 0;
 uint32_t uniform_hash( const void *key, size_t length, uint32_t initval);

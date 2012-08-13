@@ -1,20 +1,17 @@
-// Tweaked for VW and contributed by Ariel Faigon.
-// Original at: http://murmurhash.googlepages.com/
 //
-// Incorporates MurmurHash2, by Austin Appleby
-// Incorporates MurmurHash3, by Austin Appleby
+// MurmurHash3, by Austin Appleby
 //
-// Note - This code makes a few assumptions about how your machine behaves:
+// Originals at:
+// http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp
+// http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.h
 //
-// 1. We can read a 4-byte value from any address without crashing
-//    (i.e non aligned access is supported) - this is not a problem
-//    on Intel/x86/AMD64 machines (including new Macs)
-// 2. sizeof(int) == 4
+// Notes:
+// 1) this code assumes we can read a 4-byte value from any address
+//    without crashing (i.e non aligned access is supported). This is
+//    not a problem on Intel/x86/AMD64 machines (including new Macs)
+// 2) It produces different results on little-endian and big-endian machines.
 //
-// And it has a few limitations -
-//  1. It will not work incrementally.
-//  2. It will not produce the same results on little-endian and
-//     big-endian machines.
+// Adopted for VW and contributed by Ariel Faigon.
 //
 
 // Platform-specific functions and macros
@@ -29,8 +26,6 @@
 #endif // !defined(_MSC_VER)
 
 #include <sys/types.h>	/* defines size_t */
-
-#ifdef MURMUR3  /* compile w/ -D MURMUR3 to default to this hash */
 
 //-----------------------------------------------------------------------------
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
@@ -53,7 +48,6 @@
 #include <stdlib.h>
 
 #define ROTL32(x,y)	_rotl(x,y)
-#define ROTL64(x,y)	_rotl64(x,y)
 
 #define BIG_CONSTANT(x) (x)
 
@@ -68,13 +62,7 @@ inline uint32_t rotl32 ( uint32_t x, int8_t r )
   return (x << r) | (x >> (32 - r));
 }
 
-inline uint64_t rotl64 ( uint64_t x, int8_t r )
-{
-  return (x << r) | (x >> (64 - r));
-}
-
 #define	ROTL32(x,y)	rotl32(x,y)
-#define ROTL64(x,y)	rotl64(x,y)
 
 #define BIG_CONSTANT(x) (x##LLU)
 
@@ -85,11 +73,6 @@ inline uint64_t rotl64 ( uint64_t x, int8_t r )
 // handle aligned reads, do the conversion here
 
 FORCE_INLINE uint32_t getblock ( const uint32_t * p, int i )
-{
-  return p[i];
-}
-
-FORCE_INLINE uint64_t getblock ( const uint64_t * p, int i )
 {
   return p[i];
 }
@@ -108,11 +91,7 @@ FORCE_INLINE uint32_t fmix ( uint32_t h )
   return h;
 }
 
-//
-// ariel: changed the interface to match vw
-// removed all the functions we don't need (leave only the 32-bit hash)
-// renamed MurmurHash3_x86_32 -> uniform_hash
-//
+//-----------------------------------------------------------------------------
 uint32_t uniform_hash (const void * key, size_t len, uint32_t seed)
 {
   const uint8_t * data = (const uint8_t*)key;
@@ -164,60 +143,5 @@ uint32_t uniform_hash (const void * key, size_t len, uint32_t seed)
   h1 = fmix(h1);
 
   return h1;
-}
-
-//-----------------------------------------------------------------------------
-
-#else
-
-#define MIX(h,k,m) { k *= m; k ^= k >> r; k *= m; h *= m; h ^= k; }
-
-uint32_t uniform_hash( const void *key, size_t len, uint32_t seed)
-{
-    // 'm' and 'r' are mixing constants generated offline.
-    // They're not really 'magic', they just happen to work well.
-
-    const unsigned int m = 0x5bd1e995;
-    const int r = 24;
-
-    // Initialize the hash to a 'random' value
-
-    unsigned int h = seed ^ len;
-
-    // Mix 4 bytes at a time into the hash
-
-    const unsigned char * data = (const unsigned char *)key;
-
-    while (len >= 4) {
-	unsigned int k = *(unsigned int *)data;
-
-	k *= m;
-	k ^= k >> r;
-	k *= m;
-
-	h *= m;
-	h ^= k;
-
-	data += 4;
-	len -= 4;
-    }
-
-    // Handle the last few bytes of the input array
-    switch (len) {
-	case 3: h ^= data[2] << 16;
-	case 2: h ^= data[1] << 8;
-	case 1: h ^= data[0];
-		h *= m;
-    };
-
-    // Do a few final mixes of the hash to ensure the last few
-    // bytes are well-incorporated.
-    h ^= h >> 13;
-    h *= m;
-    h ^= h >> 15;
-
-    return h;
-}
-
-#endif /* MURMUR2 or MURMUR3 */
+} 
 
