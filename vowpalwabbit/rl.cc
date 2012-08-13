@@ -1,7 +1,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
-#include <boost/unordered_set.hpp>
+//#include <boost/unordered_set.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
 #include "rl.h"
@@ -250,7 +250,7 @@ namespace RL {
 
   void (*base_learner)(void*,example*) = NULL;
 
-  boost::unordered_set<string> actions;
+  set<string> actions;
 
   substring chars2ss(char* str)
   {
@@ -282,7 +282,7 @@ namespace RL {
       // Insert action...
       actions.insert(string(ad->space));
 
-      boost::unordered_set<string>::iterator iter;
+      set<string>::iterator iter;
       int counter = 0;
       for(iter = actions.begin(); iter != actions.end(); ++iter) 
       {
