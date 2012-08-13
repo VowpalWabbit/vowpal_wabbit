@@ -300,7 +300,9 @@ sub diff($$) {
             rename($outfile, $reffile) ||
                 die "FATAL: rename($outfile, $reffile): $!\n";
 
-            $status = 0;
+            unless ($opt_e) {
+                $status = 0;
+            }
         }
     }
     $status;
@@ -421,7 +423,7 @@ run_tests();
 
 __DATA__
 # Test 1:
-{VW} -k -b 17 -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 2 --compressed --ngram 3 --skips 1
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --ngram 3 --skips 1
     train-sets/ref/0001.stdout
     train-sets/ref/0001.stderr
 
