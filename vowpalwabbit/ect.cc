@@ -11,7 +11,6 @@
 #include <iostream>
 #include <fstream>
 #include <float.h>
-#include <pthread.h>
 #include <time.h>
 #include <boost/program_options.hpp>
 #include "ect.h"
