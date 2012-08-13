@@ -81,9 +81,6 @@ struct parser {
   int max_fd;
 
   label_parser* lp;  // moved from vw
-
-  pthread_mutex_t output_lock;
-  pthread_cond_t output_done;
 };
 
 //chop up the string into a v_array of substring.
