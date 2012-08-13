@@ -1,6 +1,8 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <boost/unordered_set.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 
 #include "rl.h"
 #include "simple_label.h"
@@ -9,6 +11,7 @@
 #include "example.h"
 
 using namespace std;
+
 
 namespace RL {
 
@@ -238,7 +241,7 @@ namespace RL {
       	  feature *f = traces->atomics[*i].begin;
 	  for (; f != traces->atomics[*i].end; f++) {
 	    weights[f->weight_index & mask] +=  all->eta * delta * f->x;
-	    //    cerr << f->weight_index << ":" << f->x << ":" << weights[f->weight_index & mask] << " ";
+	    //	    cerr << f->x << ":" << *i << ":" << f->weight_index << " ";
 	  }
 	}
 	//	cerr << endl;
@@ -247,6 +250,65 @@ namespace RL {
 
   void (*base_learner)(void*,example*) = NULL;
 
+  boost::unordered_set<string> actions;
+
+  substring chars2ss(char* str)
+  {
+    string fullstring(str);
+    substring result;
+    result.begin = (char*)fullstring.c_str();
+    result.end = result.begin + fullstring.length();
+    return result;
+  }
+
+  substring str2ss(string str) 
+  {
+    substring result;
+    result.begin = (char*)str.c_str();
+    result.end = result.begin + str.length();
+    return result;
+  }
+
+  boost::numeric::ublas::vector<double> compute_action_values(vw* all, example* ec) 
+  {
+    size_t mask = all->weight_mask;
+    float* weights = all->reg.weight_vectors;
+    size_t p_mask  = all->parse_mask;
+    parser* p = all->p;
+    boost::numeric::ublas::vector<float> action_values(actions.size());
+    
+    for (size_t* i = ec->indices.begin; i != ec->indices.end && ec->audit_features[*i].begin != NULL; i++) {
+      audit_data *ad = ec->audit_features[*i].begin;
+      // Insert action...
+      actions.insert(string(ad->space));
+
+      boost::unordered_set<string>::iterator iter;
+      int counter = 0;
+      for(iter = actions.begin(); iter != actions.end(); ++iter) 
+      {
+	ad = ec->audit_features[*i].begin;
+	for (; ad != ec->audit_features[*i].end; ad++) {
+	  substring ft = chars2ss(ad->feature);
+	  substring current = str2ss(*iter);
+	  size_t whash = (p->hasher(ft, p->hasher(current, 97562527))) & p_mask;
+	  if(action_values.size() <= counter)
+	    action_values.resize(counter+1);
+	  action_values[counter] += weights[whash & mask] * ad->x;
+	  //cerr << ad->space << ":" << ad->weight_index << " --> " << (*iter) << ":" << whash << endl;
+	}
+	counter++;
+      }
+      //      cerr << "...." << endl;
+    }
+
+    for(int i=0; i<action_values.size(); i++)
+      cerr << action_values[i] << " ";
+    cerr << endl;
+    //    cerr << "--------------------"<<endl << endl;
+    // END DEBUG CODE
+    return action_values;
+  }
+  
   void learn(void*a, example* ec)
   {
     vw* all = (vw*)a;
@@ -256,6 +318,7 @@ namespace RL {
 
     // Train when a label is provided and the importance weight is greater than zero
     bool doTrain = (reward_label_data->label != FLT_MAX) && (reward_label_data->weight > 0);
+    boost::numeric::ublas::vector<float> values = compute_action_values(all, ec);
 
     // rl_start
     // Check for this tag to indicate the beginning of a new episode
