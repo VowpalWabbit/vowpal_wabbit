@@ -299,10 +299,13 @@ namespace RL {
 	counter++;
       }
       //      cerr << "...." << endl;
+    
     }
-
-    for(int i=0; i<action_values.size(); i++)
-      cerr << action_values[i] << " ";
+    set<string>::iterator iter = actions.begin();
+    for(int i=0; i<action_values.size(); i++) {
+      cerr << *iter << ":" << action_values[i] << " ";
+      ++iter;
+    }
     cerr << endl;
     //    cerr << "--------------------"<<endl << endl;
     // END DEBUG CODE
