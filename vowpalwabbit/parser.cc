@@ -5,15 +5,15 @@ embodied in the content of this file are licensed under the BSD
  */
 
 #include <sys/types.h>
+
 #ifndef _WIN32
 #include <sys/mman.h>
 #include <sys/wait.h>
+#include <unistd.h>
+#include <netinet/tcp.h>
 #endif
 
 #include <signal.h>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 
 #include <fstream>
 
@@ -41,9 +41,6 @@ int getpid()
 #include <netinet/in.h>
 #endif
 
-#ifndef _WIN32
-#include <netinet/tcp.h>
-#endif
 #include <errno.h>
 #include <stdio.h>
 #include <assert.h>
@@ -62,6 +59,8 @@ namespace po = boost::program_options;
 
 using namespace std;
 
+pthread_mutex_t output_lock;
+pthread_cond_t output_done;
 //nonreentrant
 example* examples;//A Ring of examples.
 pthread_mutex_t examples_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -84,8 +83,8 @@ parser* new_parser()
   ret->input = new io_buf;
   ret->output = new io_buf;
   ret->local_example_number = 0;
-  pthread_mutex_init(&(ret->output_lock), NULL);
-  pthread_cond_init(&ret->output_done, NULL);
+  pthread_mutex_init(&output_lock, NULL);
+  pthread_cond_init(&output_done, NULL);
   ret->ring_size = 1 << 8;
 
   return ret;
@@ -164,10 +163,10 @@ void reset_source(vw& all, size_t numbits)
       if (all.daemon)
 	{
 	  // wait for all predictions to be sent back to client
-	  pthread_mutex_lock(&all.p->output_lock);
+	  pthread_mutex_lock(&output_lock);
 	  while (all.p->local_example_number != all.p->parsed_examples)
-	    pthread_cond_wait(&all.p->output_done, &all.p->output_lock);
-	  pthread_mutex_unlock(&all.p->output_lock);
+	    pthread_cond_wait(&output_done, &output_lock);
+	  pthread_mutex_unlock(&output_lock);
 	  
 	  // close socket, erase final prediction sink and socket
 	  close(all.p->input->files[0]);
@@ -754,10 +753,10 @@ namespace VW{
   
   void finish_example(vw& all, example* ec)
   {
-    pthread_mutex_lock(&all.p->output_lock);
+    pthread_mutex_lock(&output_lock);
     all.p->local_example_number++;
-    pthread_cond_signal(&all.p->output_done);
-    pthread_mutex_unlock(&all.p->output_lock);
+    pthread_cond_signal(&output_done);
+    pthread_mutex_unlock(&output_lock);
     
     if (all.audit)
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
