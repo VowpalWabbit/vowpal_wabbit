@@ -14,19 +14,6 @@
 // Adopted for VW and contributed by Ariel Faigon.
 //
 
-#include <sys/types.h>  /* defines size_t */
-
-// Platform-specific functions and macros
-// Microsoft Visual Studio
-#if defined(_MSC_VER)
-    typedef unsigned char uint8_t;
-    typedef unsigned long uint32_t;
-    typedef unsigned __int64 uint64_t;
-// Other compilers
-#else   // defined(_MSC_VER)
-#  include <stdint.h>   /* defines uint32_t etc */
-#endif // !defined(_MSC_VER)
-
 //-----------------------------------------------------------------------------
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
 // domain. The author hereby disclaims copyright to this source code.
@@ -35,22 +22,25 @@
 // algorithms are optimized for their respective platforms. You can still
 // compile and run any of them on any platform, but your performance with the
 // non-native version will be less than optimal.
-
 //-----------------------------------------------------------------------------
-// Platform-specific functions and macros
 
-#if defined(_MSC_VER)       // Microsoft Visual Studio
+#include <sys/types.h>  /* defines size_t */
+
+// Platform-specific functions and macros
+#if defined(_MSC_VER)                       // Microsoft Visual Studio
+    typedef unsigned char uint8_t;
+    typedef unsigned long uint32_t;
 
 #   define FORCE_INLINE __forceinline
 #   include <stdlib.h>
 #   define ROTL32(x,y)  _rotl(x,y)
 #   define BIG_CONSTANT(x) (x)
 
-#else                       // Other compilers
-
+#else                                       // Other compilers
+#   include <stdint.h>   /* defines uint32_t etc */
 #   define FORCE_INLINE	__attribute__((always_inline))
 
-    inline uint32_t rotl32 ( uint32_t x, int8_t r )
+    inline uint32_t rotl32 (uint32_t x, int8_t r)
     {
         return (x << r) | (x >> (32 - r));
     }
@@ -58,13 +48,13 @@
 #   define ROTL32(x,y)     rotl32(x,y)
 #   define BIG_CONSTANT(x) (x##LLU)
 
-#endif
+#endif                                      // !defined(_MSC_VER)
 
 //-----------------------------------------------------------------------------
 // Block read - if your platform needs to do endian-swapping or can only
 // handle aligned reads, do the conversion here
 
-FORCE_INLINE uint32_t getblock ( const uint32_t * p, int i )
+FORCE_INLINE uint32_t getblock (const uint32_t * p, int i)
 {
     return p[i];
 }
@@ -72,7 +62,7 @@ FORCE_INLINE uint32_t getblock ( const uint32_t * p, int i )
 //-----------------------------------------------------------------------------
 // Finalization mix - force all bits of a hash block to avalanche
 
-FORCE_INLINE uint32_t fmix ( uint32_t h )
+FORCE_INLINE uint32_t fmix (uint32_t h)
 {
     h ^= h >> 16;
     h *= 0x85ebca6b;
