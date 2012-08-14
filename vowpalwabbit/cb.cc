@@ -8,6 +8,10 @@
 #include "parse_example.h"
 #include "parse_primitives.h"
 
+#ifdef _WIN32
+inline bool isnan(double d) { return _isnan(d); }
+#endif
+
 size_t hashstring (substring s, unsigned long h);
 
 namespace CB
