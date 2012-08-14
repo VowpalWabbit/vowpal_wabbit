@@ -9,6 +9,7 @@
 #include "cache.h"
 #include "global_data.h"
 #include "example.h"
+#include "gd.cc"
 
 using namespace std;
 
@@ -231,87 +232,87 @@ namespace RL {
   }
 
   // Update weights using the traces and specified delta
-  void train_on_traces(vw* all, float delta) {
-    if(traces != NULL) {
-      //      cerr << "Delta: " << delta << endl;
-        // Train on traces...
-	size_t mask = all->weight_mask;
-	float* weights = all->reg.weight_vectors;
-	for (size_t* i = traces->indices.begin; i != traces->indices.end; i++) {
-      	  feature *f = traces->atomics[*i].begin;
-	  for (; f != traces->atomics[*i].end; f++) {
-	    weights[f->weight_index & mask] +=  all->eta * delta * f->x;
-	    //	    cerr << f->x << ":" << *i << ":" << f->weight_index << " ";
-	  }
+  void train_on_traces(vw* all, example* ec, float delta) {
+    if(ec != NULL) {
+      if (delta != 0.)
+	{
+	  // Copied from gd.cc (but we are supplying our own result of calling predict
+	  if (all->adaptive)
+	    if (all->power_t == 0.5 || !all->exact_adaptive_norm)
+	      adaptive_inline_train(*all,ec,delta);
+	    else
+	      general_adaptive_train(*all,ec,delta,all->power_t);
+	  else
+	    inline_train(*all, ec, delta);
+	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+	    sync_weights(*all);
 	}
-	//	cerr << endl;
     }
   }
 
   void (*base_learner)(void*,example*) = NULL;
 
-  set<string> actions;
-
-  substring chars2ss(char* str)
-  {
-    string fullstring(str);
-    substring result;
-    result.begin = (char*)fullstring.c_str();
-    result.end = result.begin + fullstring.length();
-    return result;
-  }
-
-  substring str2ss(string str) 
-  {
-    substring result;
-    result.begin = (char*)str.c_str();
-    result.end = result.begin + str.length();
-    return result;
-  }
-
-  boost::numeric::ublas::vector<double> compute_action_values(vw* all, example* ec) 
-  {
-    size_t mask = all->weight_mask;
-    float* weights = all->reg.weight_vectors;
-    size_t p_mask  = all->parse_mask;
-    parser* p = all->p;
-    boost::numeric::ublas::vector<float> action_values(actions.size());
-    
-    for (size_t* i = ec->indices.begin; i != ec->indices.end && ec->audit_features[*i].begin != NULL; i++) {
-      audit_data *ad = ec->audit_features[*i].begin;
-      // Insert action...
-      actions.insert(string(ad->space));
-
-      set<string>::iterator iter;
-      int counter = 0;
-      for(iter = actions.begin(); iter != actions.end(); ++iter) 
-      {
-	ad = ec->audit_features[*i].begin;
-	for (; ad != ec->audit_features[*i].end; ad++) {
-	  substring ft = chars2ss(ad->feature);
-	  substring current = str2ss(*iter);
-	  size_t whash = (p->hasher(ft, p->hasher(current, 97562527))) & p_mask;
-	  if(action_values.size() <= counter)
-	    action_values.resize(counter+1);
-	  action_values[counter] += weights[whash & mask] * ad->x;
-	  //cerr << ad->space << ":" << ad->weight_index << " --> " << (*iter) << ":" << whash << endl;
-	}
-	counter++;
-      }
-      //      cerr << "...." << endl;
-    
+  struct feature_value {
+    float x;
+    uint32_t weight_index;
+    bool operator==(feature_value j){return (weight_index == j.weight_index) && (x == j.x);}
+    bool operator<(const feature_value& j) const {
+      if(weight_index == j.weight_index)
+	return (x < j.x);
+      else
+	return (weight_index < j.weight_index);
     }
-    set<string>::iterator iter = actions.begin();
-    for(int i=0; i<action_values.size(); i++) {
-      cerr << *iter << ":" << action_values[i] << " ";
-      ++iter;
+  };
+
+  set<vector<feature_value> > actions;
+
+  vector<feature_value> varray_to_vector(v_array<feature> array) 
+  {
+    vector<feature_value> vect;
+    for(feature* f = array.begin; f != array.end; f++) 
+    {
+      if(f->x != 0.) {
+	feature_value copyF = {f->x,f->weight_index};
+	vect.push_back(copyF);
+      }
+    }
+    return vect;
+  }
+
+  feature copy_feature(feature src) {
+    feature f = { src.x, src.weight_index };
+    return f;
+  }
+
+
+  vector<float> compute_action_values(vw* all, example* ec) 
+  {
+    vector<float> values;
+
+    // Backup current action for ec
+    v_array<feature> backup;
+    copy_array(backup, ec->atomics[65], copy_feature);
+
+    set<vector<feature_value> >::iterator iter = actions.begin();
+    for( ; iter != actions.end(); iter++) {
+      ec->atomics[65].erase();
+      cerr << "Action: ";
+
+      for(int i=0; i< (*iter).size(); i++) {
+	cerr << (*iter)[i].x << ":" << (*iter)[i].weight_index << " ";
+	feature f = {(*iter)[i].x,(*iter)[i].weight_index};
+	push(ec->atomics[65], f);
+      } 
+      ec->partial_prediction = 0.;
+      base_learner(all,ec);
+      values.push_back(ec->partial_prediction);
+      ec->done = false;
     }
     cerr << endl;
-    //    cerr << "--------------------"<<endl << endl;
-    // END DEBUG CODE
-    return action_values;
+    copy_array(ec->atomics[65], backup, copy_feature);
+    return values;
   }
-  
+
   void learn(void*a, example* ec)
   {
     vw* all = (vw*)a;
@@ -321,7 +322,10 @@ namespace RL {
 
     // Train when a label is provided and the importance weight is greater than zero
     bool doTrain = (reward_label_data->label != FLT_MAX) && (reward_label_data->weight > 0);
-    boost::numeric::ublas::vector<float> values = compute_action_values(all, ec);
+    if(ec->atomics[65].index() > 0)
+    {
+      actions.insert(varray_to_vector(ec->atomics[65]));
+    }
 
     // rl_start
     // Check for this tag to indicate the beginning of a new episode
@@ -351,10 +355,33 @@ namespace RL {
     if(ec->tag.index() >= 6 && !strncmp((const char*) ec->tag.begin, "rl_end", 6)) {
       Q_spap = 0.0;
     } else {
+      bool tree_backup = false;
       ec->ld = &simple_temp;
-      update_example_indicies(all->audit, ec, increment);
       base_learner(all,ec);
       Q_spap = ec->partial_prediction;
+      ec->done = false;
+
+      if(tree_backup) {
+      vector<float> values = compute_action_values(all, ec);
+      cerr << "Q: " << Q_spap << endl;
+      Q_spap = 0.0;
+      vector<float> pi(values.size());
+      int max_index = 0;
+      float randp = (1.0/(float)values.size()) * 0.1;
+      for(int i=0; i<values.size(); i++) {
+	cerr << values[i] << " ";
+        if(values[i] > values[max_index])
+	  max_index = i;
+	pi[i] = randp;
+      }
+      pi[max_index] = 0.9 + randp;
+      cerr << endl;
+      for(int i=0; i<values.size(); i++) {
+	Q_spap += values[i] * pi[i];
+      }
+	
+      }
+      
     }
 
     // Training and we are ready to update
@@ -367,44 +394,34 @@ namespace RL {
 
       // Compute delta-target
       simple_temp.label = gamma * Q_spap + reward_label_data->label;
-      
-      // If we want to use VW's update system then set this to non-zero
-      if(rl_loss) {
-	simple_temp.weight = 0.0;
-      } else {
-	simple_temp.weight = reward_label_data->weight;
-      }
+      simple_temp.weight = 0.0;
       
       // Update/learn on previous example
       last_ec->ld = &simple_temp;
-      update_example_indicies(all->audit, last_ec, increment);
       base_learner(all,last_ec);
       score = last_ec->partial_prediction;
       prediction = score;
 
       last_ec->partial_prediction = 0.;
       last_ec->ld = last_reward;
-      update_example_indicies(all->audit, last_ec, -total_increment);
 
       // Handle Eligibility Traces
       // Decay X_t-1
       decay_traces();
+      // Add x_t, then train
+      update_traces(last_ec);
       if(rl_loss) {
-	// Add x_t, then train
-	update_traces(last_ec);
-	train_on_traces(all, gamma * Q_spap + reward_label_data->label - prediction);
-      } else {
-	// Train using traces (training for x_t already done by VW), then add x_t to the traces
-	train_on_traces(all, (last_ec->eta_round / all->eta));
-	update_traces(last_ec);
+	last_ec->eta_round = (gamma * Q_spap + reward_label_data->label - prediction) * all->eta;
       }
+
+      // Train
+      train_on_traces(all, traces, last_ec->eta_round);
     }     
 
     // Update prediction that gets returned: Q(s',a')
     ec->partial_prediction = 0.;
     ec->ld = reward_label_data; // Give current example its label back
     *(prediction_t*)&(ec->final_prediction) = Q_spap;
-    update_example_indicies(all->audit, ec, -total_increment);
 
     // Only update the previous example if we are training (not just evaluating)
     if(doTrain) {
