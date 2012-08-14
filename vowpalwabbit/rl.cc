@@ -360,10 +360,9 @@ namespace RL {
       base_learner(all,ec);
       Q_spap = ec->partial_prediction;
       ec->done = false;
-
+      cerr << "Q: " << Q_spap << endl;
       if(tree_backup) {
       vector<float> values = compute_action_values(all, ec);
-      cerr << "Q: " << Q_spap << endl;
       Q_spap = 0.0;
       vector<float> pi(values.size());
       int max_index = 0;
