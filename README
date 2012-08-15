@@ -14,6 +14,8 @@ You should be able to build it on most systems with:
 make
 (make test)
 
+(For Windows, look at README.windows.txt)
+
 If that fails, you try:
 ./autogen.sh
 ./configure

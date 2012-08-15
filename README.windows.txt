@@ -8,6 +8,10 @@ You need Visual Studio 2010
 
   http://boostpro.com/download/boost_1_50_setup.exe
 
+  NOTE -- be sure to install binaries for VS 2010, and to check
+          ALL OF THE BOXES on the right hand side! If you get a
+          boost link error, this is the most likely culprit!
+
 (2) Pick a base directory for sources -- I'll use c:\src\vw
 
 (3) Download zlib from here:
