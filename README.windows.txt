@@ -6,6 +6,15 @@ You need Visual Studio 2010
 
 (1) Install boost 1.50. There are several options available.
 
+    ==> Get pre-built binaries from someone else.
+
+      (a) Download my pre-built boost-1.50-bins.zip from SkyDrive:
+
+            http://sdrv.ms/RXV5gt
+
+      (b) Unzip in the root of your C: drive, so you should have c:\boost\x86 and c:\boost\x64 directories.
+
+
     ==> Build boost from scratch:
 
       (a) Download boost_1_50_0.zip from here http://sourceforge.net/projects/boost/files/boost/1.50.0/
@@ -19,7 +28,6 @@ You need Visual Studio 2010
       (i) Run "b2 --prefix=c:\boost\x86 --build-dir=x86 --toolset=msvc install" (I add " -j 16" to the end to run up to 16 procs at once.)
       (j) Run "b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc address-model=64 install"
 
-    ==> Steal binaries from someone else. I'll post pre-built binaries soon.
 
     ==> Get pre-built binaries from boostpro -- BUT ONLY 32 BIT BINS ARE AVAILABLE
 
@@ -63,9 +71,11 @@ You need Visual Studio 2010
 
 (7) Open %ROOT%\vowpal_wabbit\vowpalwabbit\vw.sln in Visual Studio 2010 and hit Build.
 
-(8) Build. Binaries will be in one of these two directories, based on whether you built DEBUG or RELEASE bits.
+(8) Build. Binaries will be in one of these four directories, based on whether you built DEBUG or RELEASE bits and whether you are building x64 or Win32.
 
   %ROOT%\vowpal_wabbit\vowpalwabbit\Debug\vw.exe
   %ROOT%\vowpal_wabbit\vowpalwabbit\Release\vw.exe
+  %ROOT%\vowpal_wabbit\vowpalwabbit\x64\Debug\vw.exe
+  %ROOT%\vowpal_wabbit\vowpalwabbit\x64\Release\vw.exe
 
 
