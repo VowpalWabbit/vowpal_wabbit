@@ -993,6 +993,9 @@ void start_parser(vw& all)
   #ifndef _WIN32
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
   #else
+  ::InitializeCriticalSection(&examples_lock);
+  ::InitializeConditionVariable(&example_available);
+  ::InitializeConditionVariable(&example_unused);
   parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
   #endif
 }
@@ -1037,5 +1040,7 @@ void end_parser(vw& all)
   #else
   ::WaitForSingleObject(parse_thread, INFINITE);
   ::CloseHandle(parse_thread);
+  ::DeleteCriticalSection(&examples_lock);
+  ::DeleteCriticalSection(&output_lock);
   #endif
 }
