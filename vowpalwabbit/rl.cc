@@ -55,7 +55,8 @@ The command line arguments are:
 --gamma arg      Where arg provides the gamma value used in both algorithms which sets the horizon, and defaults to 1.0.
 
 Currently the only way to switch between Sarsa and TreeBackup is in the code, because the main use for this seems to be 
-off-policy learning. 
+off-policy learning. This switch and other values such as 'epsilon' for the exploration rate should ideally be set through 
+command line arguments, but I was hesitant to add a whole mess of additional flags. 
 
 */
 
@@ -71,7 +72,7 @@ off-policy learning.
 #include "global_data.h"
 #include "example.h"
 
-#include "gd.cc" // Making use of the build in training functions
+#include "gd.h" // Making use of the build in training functions
 
 using namespace std;
 
