@@ -52,4 +52,11 @@ void finish_example(vw&, example* ec);
 
 bool command_example(vw&, example* ec);
 
+void adaptive_inline_train(vw& all, example* &ec, float update);
+void inline_train(vw& all, example* &ec, float update);
+void general_adaptive_train(vw&, example* &ec, float update, float power_t);
+
+void predict(vw& all, example* ex);
+void sync_weights(vw& all);
+
 #endif

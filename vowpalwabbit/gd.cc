@@ -30,15 +30,8 @@ embodied in the content of this file are licensed under the BSD
 
 using namespace std;
 
-void adaptive_inline_train(vw& all, example* &ec, float update);
-void inline_train(vw& all, example* &ec, float update);
-void general_adaptive_train(vw&, example* &ec, float update, float power_t);
-
 //nonreentrant
 size_t gd_current_pass = 0;
-
-void predict(vw& all, example* ex);
-void sync_weights(vw& all);
 
 void learn_gd(void* a, example* ec)
 {
@@ -174,6 +167,7 @@ float inline_predict(vw& all, example* &ec)
   size_t mask = all.weight_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
+
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
       if (ec->atomics[(int)(*i)[0]].index() > 0)
@@ -661,7 +655,6 @@ void predict(vw& all, example* ex)
     prediction = inline_predict(all, ex);
 
   ex->partial_prediction += prediction;
-
   local_predict(all, ex);
   ex->done = true;
 }
