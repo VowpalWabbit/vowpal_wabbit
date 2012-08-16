@@ -1,16 +1,35 @@
 Building VW on Windows -- only 32 bit right now; 64 bit to come
 
-8/14/2012, Chris Quirk <chrisq@microsoft.com>
+8/15/2012, Chris Quirk <chrisq@microsoft.com>
 
 You need Visual Studio 2010
 
-(1) Install boost 1.50 from boostpro (only 32bit, unfortunately).
+(1) Install boost 1.50. There are several options available.
 
-  http://boostpro.com/download/boost_1_50_setup.exe
+    ==> Build boost from scratch:
 
-  NOTE -- be sure to install binaries for VS 2010, and to check
-          ALL OF THE BOXES on the right hand side! If you get a
-          boost link error, this is the most likely culprit!
+      (a) Download boost_1_50_0.zip from here http://sourceforge.net/projects/boost/files/boost/1.50.0/
+      (b) Unzip to someplace convenient (I use c:\src)
+      (c) Open a new command window
+      (d) Run "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat" to set build variables
+      (e) cd to the directory where you unzipped boost, and run "bootstrap.bat"
+      (f) Run "mkdir c:\boost"
+      (g) Run "mkdir c:\boost\x86"
+      (h) Run "mkdir c:\boost\x64"
+      (i) Run "b2 --prefix=c:\boost\x86 --build-dir=x86 --toolset=msvc install" (I add " -j 16" to the end to run up to 16 procs at once.)
+      (j) Run "b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc address-model=64 install"
+
+    ==> Steal binaries from someone else. I'll post pre-built binaries soon.
+
+    ==> Get pre-built binaries from boostpro -- BUT ONLY 32 BIT BINS ARE AVAILABLE
+
+          http://boostpro.com/download/boost_1_50_setup.exe
+
+          NOTE -- be sure to install binaries for VS 2010, and to check
+                  ALL OF THE BOXES on the right hand side! If you get a
+                  boost link error, this is the most likely culprit!
+
+          ALSO NOTE -- you'll need to install more information
 
 (2) Pick a base directory for sources -- I'll use c:\src\vw
 
@@ -28,6 +47,14 @@ You need Visual Studio 2010
     (b) Run "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat" to set build variables
     (c) Go to the %ROOT%\zlib-1.2.7 directory (for me, c:\src\vw\zlib-1.2.5)
     (d) Run "nmake /f win32\Makefile.msc"
+
+(5a) [optional, for 64 bit support] Build 64-bit zlib
+
+    (a) Unzip a new copy of zlib to c:\src\vw\zlib-1.2.7-x64
+    (b) Start a new CMD window
+    (c) Run "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\amd64\vcvars64.bat" to set build variables
+    (d) Go to the %ROOT%\zlib-1.2.7-x64 dir
+    (e) Run "nmake /f win32\Makefile.msc"
 
 (6) Get a copy of VW in %ROOT%. I ran "cd \src\vw" and "git clone http
 
