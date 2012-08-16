@@ -3,16 +3,14 @@
   embodied in the content of this file are licensed under the BSD
   (revised) open source license
 
-  Initial implementation by Hal Daume and John Langford.  
-
-  This is not working yet (more to do).
+  Initial implementation by Hal Daume and John Langford.  Reimplementation 
+  by John Langford.
 */
 
 #include <math.h>
 #include <iostream>
 #include <fstream>
 #include <float.h>
-#include <pthread.h>
 #include <time.h>
 #include <boost/program_options.hpp>
 #include "ect.h"
@@ -26,28 +24,36 @@ namespace ECT
 {
 
   //nonreentrant
-  int k = 1;
+  size_t k = 1;
   size_t errors = 0;
 
-  //At each round, the maximum number participating in each tournament.
-  // level 0 = first round, entry 1 = first single elimination tournament.
-  v_array< v_array< size_t > > tournament_counts; 
+  struct direction { 
+    size_t id; //unique id for node
+    size_t tournament; //unique id for node
+    size_t winner; //up traversal, winner
+    size_t loser; //up traversal, loser
+    size_t left; //down traversal, left
+    size_t right; //down traversal, right
+    bool last;
+  };
+
+  v_array<direction> directions;//The nodes of the tournament datastructure
+
+  v_array<v_array<v_array<size_t > > > all_levels;
+
+  v_array<size_t> final_nodes; //The final nodes of each tournament. 
+
+  v_array<size_t> up_directions; //On edge e, which node n is in the up direction?
+  v_array<size_t> down_directions;//On edge e, which node n is in the down direction?
+
+  size_t tree_height = 0; //The height of the final tournament.
   
-  //Derived from tournament_counts, the number of pairs in each tournament.
-  v_array< v_array< size_t > > pairs; 
-  
-  //The sum of pairs in all tournaments up to this depth.
-  v_array<size_t> cumulative_pairs;
-  size_t last_pair;
-  
-  v_array<int> final_rounds; //The final rounds of each tournament. 
-  // round number is one larger than the entrants round number and equal to 
-  // the exit round number.
-  size_t tree_height; //The height of the final tournament.
+  size_t last_pair = 0;
   
   size_t increment = 0;
-  v_array<bool> tournaments_won;
 
+  v_array<bool> tournaments_won;
+  
   bool exists(v_array<size_t> db)
   {
     for (size_t i = 0; i< db.index();i++)
@@ -65,182 +71,156 @@ namespace ECT
     cerr << "too many eliminations" << endl;
     return 31;
   }
-  
+ 
+  bool not_empty(v_array<v_array<size_t > > tournaments)
+  {
+    for (size_t i = 0; i < tournaments.index(); i++)
+    {
+      if (tournaments[i].index() > 0)
+        return true;
+    }
+    return false;
+  }
+
+  void print_level(v_array<v_array<size_t> > level)
+  {
+    for (size_t t = 0; t < level.index(); t++)
+      {
+	for (size_t i = 0; i < level[t].index(); i++)
+	  cout << " " << level[t][i];
+	cout << " | ";
+      }
+    cout << endl;
+  }
+
+  void print_state()
+  { 
+    cout << "all_levels = " << endl;
+    for (size_t l = 0; l < all_levels.index(); l++)
+      print_level(all_levels[l]);
+    
+    cout << "directions = " << endl;
+    for (size_t i = 0; i < directions.index(); i++)
+      cout << " | " << directions[i].id << " t" << directions[i].tournament << " " << directions[i].winner << " " << directions[i].loser << " " << directions[i].left << " " << directions[i].right << " " << directions[i].last;
+    cout << endl;
+  }
+
   void create_circuit(vw& all, size_t max_label, size_t eliminations)
   {
-    v_array<size_t> first_round;
-    v_array<size_t> first_pair;
-  
-    if (max_label > 1)
-      push(first_round, max_label);
-    else
-      push(first_round, (size_t)0);
+    if (max_label == 1)
+      return;
 
-    for (size_t i = 1; i <= errors; i++)
-      push(first_round, (size_t)0);
+    v_array<v_array<size_t > > tournaments;
 
-    push(first_pair, first_round[0]/2);
+    v_array<size_t> t;
 
-    push(tournament_counts, first_round);
-    push(pairs, first_pair);
-    push(cumulative_pairs, first_pair[0]);
-
-    int depth = 0;
-    while(exists(tournament_counts[depth]))
+    for (size_t i = 0; i < max_label; i++)
       {
-        size_t pair_sum = 0;
-        v_array<size_t> new_round;
-        v_array<size_t> new_pairs;
-        v_array<size_t> old_round = tournament_counts[depth];
-      
-        for (size_t i = 0; i < old_round.index(); i++)
-          {
-            size_t count = 0;
-            size_t prev = 0; 
-            if (i != 0)
-              prev = old_round[i-1];
-
-            if (prev == 2 && (i == 1 || (i > 1 && old_round[i-2] == 0)))
-              //last tournament finished
-              count += 2;
-            else
-              count += prev/2;
-
-            int old = old_round[i];
-            if (old == 2 && prev == 0)
-              push(final_rounds, depth-1);
-            else
-              count += (old+1)/2;
-            push(new_round, count);
-            push(new_pairs, new_round[i]/2);
-            pair_sum += new_pairs[i];
-          }
-        push(tournament_counts, new_round);
-        push(pairs, new_pairs);
-        push(cumulative_pairs, pair_sum + cumulative_pairs[depth]);
-        depth++;
+	push(t,i);	
+	direction d = {i,0,0,0,0,0, false};
+	push(directions,d);
       }
-    last_pair = (errors+1)*(k-1); // every single tournament has k-1 pairs.
 
-    tree_height = final_depth(eliminations);
-    increment = all.length() / (last_pair + errors) * all.stride;
-  }
+    push(tournaments,t);
 
-  struct node {
-    size_t label;// From leaves, starts as actual label
-    size_t tournament;// Starts at 0
-    size_t depth;// Starts at 0 at the leaves
-  };
+    for (size_t i = 0; i < eliminations-1; i++)
+      push(tournaments, v_array<size_t>());
+    
+    push(all_levels, tournaments);
+    
+    size_t level = 0;
 
-  void leaf_to_root(node& current, bool right)
-  {
-    v_array<size_t> round = tournament_counts[current.depth];
+    size_t node = directions.index();
 
-    bool won = (((current.label % 2) == 1) && right) || (((current.label % 2) == 0) && !right);
-    bool last_round = round[current.tournament] == 1 && round[current.tournament-1] == (size_t)-1;
-
-    if (last_round)
+    while (not_empty(all_levels[level]))
       {
-        push(tournaments_won, won);
-        current.tournament++;
-      }
-    else if (won)
-      {
-        int num_losers = (round[current.tournament-1]+1) / 2;
-        if (round[current.tournament - 1] == 1 
-            && current.tournament > 1 && round[current.tournament-2] == (size_t)-1)
-          num_losers = 2;
-        current.label = num_losers + current.label / 2;
-      }
-    else 
-      {
-        push(tournaments_won, false);
-        current.tournament++;
-        current.label = current.label / 2;
-      }
-    current.depth++;
-  }
+	v_array<v_array<size_t > > new_tournaments;
+	tournaments = all_levels[level];
 
-  bool bye_to_root(node& current)
-  {
-    if (current.label == tournament_counts[current.depth][current.tournament] 
-        && current.label %2 == 0)
-      {
-        current.label = tournament_counts[current.depth+1][current.tournament];
-        current.depth++;
-        return true;
-      }
-    else
-      return false;
-  }
+	for (size_t t = 0; t < tournaments.index(); t++)
+	  {
+	    v_array<size_t> empty;
+	    push(new_tournaments, empty);
+	  }
 
-  void root_to_leaf(node& current, bool right)
-  {
-    v_array<size_t> prev = tournament_counts[current.depth - 1];
-  
-    if (current.label < 2 && prev[current.tournament-1] == 1 
-        && tournament_counts[current.depth][current.tournament-1] == (size_t)-1)
-      {
-        current.tournament--;
+	for (size_t t = 0; t < tournaments.index(); t++)
+	  {
+	    for (size_t j = 0; j < tournaments[t].index()/2; j++)
+	      {
+		size_t id = node++;
+		size_t left = tournaments[t][2*j];
+		size_t right = tournaments[t][2*j+1];
+		
+		direction d = {id,t,0,0,left,right, false};
+		push(directions,d);
+		size_t direction_index = directions.index()-1;
+		if (directions[left].tournament == t)
+		  directions[left].winner = direction_index;
+		else
+		  directions[left].loser = direction_index;
+		if (directions[right].tournament == t)
+		  directions[right].winner = direction_index;
+		else
+		  directions[right].loser = direction_index;
+		if (directions[left].last == true)
+		  directions[left].winner = direction_index;
+		
+		if (tournaments[t].index() == 2 && (t == 0 || tournaments[t-1].index() == 0))
+		  {
+		    directions[direction_index].last = true;
+		    if (t+1 < tournaments.index())
+		      push(new_tournaments[t+1], id);
+		    else // winner eliminated.
+		      directions[direction_index].winner = 0;
+		    push(final_nodes, (size_t)(directions.index()-1));
+		  }
+		else
+		  push(new_tournaments[t], id);
+		if (t+1 < tournaments.index())
+		  push(new_tournaments[t+1], id);
+		else // loser eliminated.
+		  directions[direction_index].loser = 0;
+	      }
+	    if (tournaments[t].index() % 2 == 1)
+	      push(new_tournaments[t], tournaments[t].last());
+	  }
+	push(all_levels, new_tournaments);
+	level++;
       }
-    else
-      {
-        size_t num_losers = (prev[current.tournament-1]+1) / 2;
-        if (prev[current.tournament - 1] == 1 && current.tournament > 1 
-            && prev[current.tournament - 2] == (size_t)-1)
-          num_losers = 2;
 
-        if (current.label < num_losers)
-          {
-            current.tournament--;
-            current.label = current.label * 2 + (right ? 0 : 1);
-          }
-        else
-          current.label = (current.label - num_losers) * 2 + (right ? 1 : 0);
-      }
-    current.depth--;
-  }
-
-  bool bye_to_leaf(node& current)
-  {
-    if (current.label == tournament_counts[current.depth][current.tournament]
-        && (tournament_counts[current.depth-1][current.tournament] % 2 == 0))
-      {
-        current.label = tournament_counts[current.depth-1][current.tournament];
-        current.depth--;
-        return true;
-      }
-    else
-      return false;
-  }
-
-  size_t get_bit(size_t label, size_t bitNum)
-  {
-    size_t retVal = (label >> bitNum) & 1;
-    return retVal;
+    last_pair = (max_label - 1)*(eliminations);
+    
+    if ( max_label > 1)
+      tree_height = final_depth(eliminations);
+    
+    if (last_pair > 0) {
+      all.base_learner_nb_w *= (last_pair + (eliminations-1));
+      increment = all.length() / all.base_learner_nb_w * all.stride;
+    }
   }
 
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
-
+  
   int ect_predict(vw& all, example* ec)
   {
-    size_t final_winner = 0;
+    if (k == (size_t)1)
+      return 1;
 
+    size_t finals_winner = 0;
+    
     //Binary final elimination tournament first
-    label_data simple_temp = {FLT_MAX,0.,0.};
+    label_data simple_temp = {FLT_MAX, 0., 0.};
     ec->ld = & simple_temp;
 
     for (size_t i = tree_height-1; i != (size_t)0 -1; i--)
       {
-        cout << "i = " << i << endl;
-        if ((final_winner | (1 << i)) <= errors)
+        if ((finals_winner | (1 << i)) <= errors)
           {// a real choice exists
             uint32_t offset = 0;
 	  
-            size_t problem_number = last_pair + (final_winner | (1 << i)) - 1; //This is unique.
-	  
-            offset = problem_number*increment;
+            size_t problem_number = last_pair + (finals_winner | (1 << i)) - 1; //This is unique.
+	    offset = problem_number*increment;
 	  
             update_example_indicies(all.audit, ec,offset);
             ec->partial_prediction = 0;
@@ -248,41 +228,30 @@ namespace ECT
             base_learner(&all, ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
-	  
-            if (ec->final_prediction > 0.)
-              final_winner = final_winner | (1 << i);
+	    
+	    float pred = ec->final_prediction;
+	    if (pred > 0.)
+              finals_winner = finals_winner | (1 << i);
           }
       }
-  
-    cout << "finished, final_winner = " << final_winner << " round = " << final_rounds[final_winner] << endl;
-    node current = {0, final_winner, final_rounds[final_winner]};
-    while (current.depth > 0)
+
+    size_t id = final_nodes[finals_winner];
+    while (id >= k)
       {
-        if (bye_to_leaf(current))//nothing to do.
-          ;
-        else
-          {
-            size_t problem_number = 0;
-            if (current.depth-1 != 0)
-              problem_number += cumulative_pairs[current.depth-1];
-            size_t i = 0;
-            while(i < current.tournament)
-              problem_number += pairs[current.depth][i++];
-            problem_number += current.label/2;
+	size_t offset = (id-k)*increment;
+	
+	ec->partial_prediction = 0;
+	update_example_indicies(all.audit, ec,offset);
+	base_learner(&all, ec);
+	float pred = ec->final_prediction;
+	update_example_indicies(all.audit, ec,-offset);
 
-            cout << "problem_number = " << problem_number << endl;
-            size_t offset = problem_number*increment;
-
-            ec->partial_prediction = 0;
-            update_example_indicies(all.audit, ec,offset);
-            base_learner(&all, ec);
-            float pred = ec->final_prediction;
-            update_example_indicies(all.audit, ec,-offset);
-            root_to_leaf(current, pred > 0.);
-          }
+	if (pred > 0.)
+	  id = directions[id].right;
+	else
+	  id = directions[id].left;
       }
-
-    return current.label;
+    return id+1;
   }
 
   bool member(size_t t, v_array<size_t> ar)
@@ -295,47 +264,67 @@ namespace ECT
 
   void ect_train(vw& all, example* ec)
   {
-    OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
+    if (k == 1)//nothing to do
+      return;
+    OAA::mc_label * mc = (OAA::mc_label*)ec->ld;
   
-    node current = {mc->label, 0, 0};
-
     label_data simple_temp = {1.,mc->weight,0.};
 
     tournaments_won.erase();
-    while(current.tournament < (size_t) tournament_counts[0].index())
+
+    size_t id = directions[mc->label-1].winner;
+    bool left = directions[id].left == mc->label - 1;
+    do
       {
-        if (bye_to_root(current))
-          ;
-        else
-          {
-            simple_temp.label = (2 * current.label % 2) - 1;
-            ec->ld = &simple_temp;
-	  
-            size_t problem_number = 0;
-            if (current.depth != 0)
-              problem_number += cumulative_pairs[current.depth-1];
-            size_t i = 0;
-            while(i < current.tournament)
-              problem_number += pairs[current.depth][i++];
-            problem_number += current.label/2;
-	  
-            size_t offset = problem_number*increment;
-	  
-            update_example_indicies(all.audit, ec,offset);
+	if (left)
+	  simple_temp.label = -1;
+	else
+	  simple_temp.label = 1;
+	
+	simple_temp.weight = mc->weight;
+	ec->ld = &simple_temp;
+	
+	size_t offset = (id-k)*increment;
+	
+	update_example_indicies(all.audit, ec,offset);
+	
+	ec->partial_prediction = 0;
+	base_learner(&all, ec);
+	simple_temp.weight = 0.;
+	ec->partial_prediction = 0;
+	base_learner(&all, ec);//inefficient, we should extract final prediction exactly.
+	float pred = ec->final_prediction;
+	update_example_indicies(all.audit, ec,-offset);
 
-            ec->partial_prediction = 0;
-            base_learner(&all, ec);
-            simple_temp.weight = 0.;
-            ec->partial_prediction = 0;
-            base_learner(&all, ec);//inefficient, we should extract final prediction exactly.
-            float pred = ec->final_prediction;
-            update_example_indicies(all.audit, ec,-offset);
-            leaf_to_root(current, pred > 0.);
-          }
+	bool won = pred*simple_temp.label > 0;
+
+	if (won)
+	  {
+	    if (!directions[id].last)
+	      left = directions[directions[id].winner].left == id;
+	    else
+	      push(tournaments_won, true);
+	    id = directions[id].winner;
+	  }
+	else
+	  {
+	    if (!directions[id].last)
+	      {
+		left = directions[directions[id].loser].left == id;
+		if (directions[id].loser == 0)
+		  push(tournaments_won, false);
+	      }
+	    else
+	      push(tournaments_won, false);
+	    id = directions[id].loser;
+	  }
       }
-  
-    //tournaments_won is a bit vector determining which tournaments the label won.
+    while(id != 0);
+      
+    if (tournaments_won.index() < 1)
+      cout << "badness!" << endl;
 
+    //tournaments_won is a bit vector determining which tournaments the label won.
     for (size_t i = 0; i < tree_height; i++)
       {
         for (size_t j = 0; j < tournaments_won.index()/2; j++)
@@ -346,26 +335,28 @@ namespace ECT
               tournaments_won[j] = left;
             else //query to do
               {
-                size_t label;
+                float label;
                 if (left) 
                   label = -1;
                 else
                   label = 1;
                 simple_temp.label = label;
+		simple_temp.weight = (float)(1 << (tree_height -i -1));
                 ec->ld = & simple_temp;
 	      
                 size_t problem_number = last_pair + j*(1 << (i+1)) + (1 << i) -1;
-	      
+		
                 size_t offset = problem_number*increment;
 	      
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
                 base_learner(&all, ec);
-	      
+		
                 update_example_indicies(all.audit, ec,-offset);
-	      
-                if (ec->final_prediction > 0.)
+		
+		float pred = ec->final_prediction;
+		if (pred > 0.)
                   tournaments_won[j] = right;
                 else
                   tournaments_won[j] = left;
@@ -379,39 +370,49 @@ namespace ECT
 
   void learn(void*a, example* ec)
   {
+    vw* all = (vw*)a;
+
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
-    //int new_label = ect_predict(ec);
+    if (mc->label > k)
+      cout << "label > maximum label!  This won't work right." << endl;
+    int new_label = ect_predict(*all, ec);
     ec->ld = mc;
-    /*
-      if (mc->label != (uint32_t)-1 && all.training)
-      ect_train(ec);
-      ec->ld = mc;
-      ec->final_prediction = new_label;*/
+    
+    if (mc->label != (uint32_t)-1 && all->training)
+      ect_train(*all, ec);
+    ec->ld = mc;
+    
+    *(OAA::prediction_t*)&(ec->final_prediction) = new_label;
   }
 
   void finish(void* all)
   {
-    for (size_t i = 0; i < tournament_counts.index(); i++)
-      if (tournament_counts[i].begin != tournament_counts[i].end)
-        free(tournament_counts[i].begin);
-    if (tournament_counts.begin != tournament_counts.end)
-      free(tournament_counts.begin);
+    for (size_t l = 0; l < all_levels.index(); l++)
+      {
+	for (size_t t = 0; t < all_levels[l].index(); t++)
+	  if (all_levels[l][t].begin != all_levels[l][t].end)
+	    free (all_levels[l][t].begin);
+	if (all_levels[l].begin != all_levels[l].end)
+	  free(all_levels[l].begin);
+      }
+    if (final_nodes.begin != final_nodes.end)
+      free (final_nodes.begin);
 
-    for (size_t i = 0; i < pairs.index(); i++)
-      if (pairs[i].begin != pairs[i].end)
-        free(pairs[i].begin);
-    if (pairs.begin != pairs.end)
-      free(pairs.begin);
+    if (up_directions.begin != up_directions.end)
+      free (up_directions.begin);
 
-    if (cumulative_pairs.begin != cumulative_pairs.end)
-      free(cumulative_pairs.begin);
+    if (directions.begin != directions.end)
+      free (directions.begin);
+
+    if (down_directions.begin != down_directions.end)
+      free (down_directions.begin);
 
     if (tournaments_won.begin != tournaments_won.end)
       free(tournaments_won.begin);
 
     base_finish(all);
   }
-
+  
   void drive_ect(void* in)
   {
     vw* all = (vw*)in;
@@ -426,7 +427,6 @@ namespace ECT
           }
         else if (parser_done(all->p))
           {
-            finish(all);
             return;
           }
         else 
@@ -434,7 +434,7 @@ namespace ECT
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     po::options_description desc("ECT options");
     desc.add_options()
@@ -447,17 +447,49 @@ namespace ECT
     po::store(parsed, vm);
     po::notify(vm);
 
-    if (vm.count("error")) {
+    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
+
+    //first parse for number of actions
+    k = 0;
+    if( vm_file.count("ect") ) {
+      k = (int)vm_file["ect"].as<size_t>();
+      if( vm.count("ect") && vm["ect"].as<size_t>() != k )
+        std::cerr << "warning: you specified a different number of actions through --ect than the one loaded from predictor. Pursuing with loaded value of: " << k << endl;
+    }
+    else {
+      k = (int)vm["ect"].as<size_t>();
+
+      //append ect with nb_actions to options_from_file so it is saved to regressor later
+      std::stringstream ss;
+      ss << " --ect " << k;
+      all.options_from_file.append(ss.str());
+    }
+
+    if(vm_file.count("error")) {
+      errors = vm_file["error"].as<size_t>();
+      if (vm.count("error") && vm["error"].as<size_t>() != errors) {
+        cerr << "warning: specified value for --error different than the one loaded from predictor file. Pursuing with loaded value of: " << errors << endl;
+      }
+    }
+    else if (vm.count("error")) {
       errors = vm["error"].as<size_t>();
+
+      //append error flag to options_from_file so it is saved in regressor file later
+      stringstream ss;
+      ss << " --error " << errors;
+      all.options_from_file.append(ss.str());
     } else {
-      cerr << "error: ect requires --error" << endl;
-      exit(-1);
+      errors = 0;
     }
 
     *(all.p->lp) = OAA::mc_label_parser;
-    k = s;
     all.driver = drive_ect;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
 
     base_finish = all.finish;

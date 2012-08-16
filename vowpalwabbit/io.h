@@ -15,6 +15,12 @@ embodied in the content of this file are licensed under the BSD
 #define O_LARGEFILE 0
 #endif
 
+#ifdef _WIN32
+#define ssize_t size_t
+#include <io.h>
+#define fsync(x) ;
+#endif
+
 class io_buf {
  public:
   v_array<char> space; //space.begin = beginning of loaded values.  space.end = end of read or written values.

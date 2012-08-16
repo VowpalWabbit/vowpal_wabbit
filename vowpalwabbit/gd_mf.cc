@@ -5,7 +5,11 @@ embodied in the content of this file are licensed under the BSD
  */
 #include <fstream>
 #include <float.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include "parse_example.h"
@@ -191,7 +195,6 @@ float mf_predict(vw& all, example* ex)
 void drive_gd_mf(void* in)
 {
   vw* all = (vw*)in;
-  regressor reg = all->reg;
   example* ec = NULL;
   
   size_t current_pass = 0;

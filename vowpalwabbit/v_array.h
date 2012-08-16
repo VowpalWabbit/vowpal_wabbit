@@ -6,8 +6,15 @@ embodied in the content of this file are licensed under the BSD
 
 #ifndef VARRAY_H__
 #define VARRAY_H__
+#include <iostream>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#define __INLINE 
+#else
+#define __INLINE inline
+#endif
 
 template<class T> class v_array{
  public:
@@ -39,12 +46,24 @@ template<class T> inline void push(v_array<T>& v, const T &new_ele)
   *(v.end++) = new_ele;
 }
 
+
+#ifdef _WIN32
+#undef max
+#undef min
 inline size_t max(size_t a, size_t b)
 { if ( a < b) return b; else return a;
 }
 inline size_t min(size_t a, size_t b)
 { if ( a < b) return a; else return b;
 }
+#else
+inline size_t max(size_t a, size_t b)
+{ if ( a < b) return b; else return a;
+}
+inline size_t min(size_t a, size_t b)
+{ if ( a < b) return a; else return b;
+}
+#endif
 
 template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
 {
@@ -78,6 +97,10 @@ template<class T> void reserve(v_array<T>& v, size_t length)
 {
   size_t old_length = v.end_array-v.begin;
   v.begin = (T *)realloc(v.begin, sizeof(T) * length);
+  if ((v.begin == NULL) && ((sizeof(T)*length) > 0)) {
+    std::cerr << "realloc failed in reserve().  out of memory?" << std::endl;
+    exit(-1);
+  }
   if (old_length < length)
     memset(v.begin+old_length, 0, (length-old_length)*sizeof(T));
   v.end = v.begin;

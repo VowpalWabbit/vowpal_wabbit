@@ -125,7 +125,11 @@ float query_decision(vw& all, example* ec, float k)
     avg_loss = all.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
     bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, all.active_c0);
   }
+#ifdef _WIN32
+  if(rand()/(double)RAND_MAX <bias)
+#else
   if(drand48()<bias)
+#endif
     return 1./bias;
   else
     return -1.;
@@ -142,7 +146,7 @@ void print_update(vw& all, example *ec)
       else
 	sprintf(label_buf,"%8.4f",ld->label);
 
-      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
+      fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
 	      all.sd->sum_loss/all.sd->weighted_examples,
 	      all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
 	      (long int)all.sd->example_number,
@@ -177,7 +181,7 @@ void output_and_account_example(vw& all, example* ec)
     {
       int f = all.final_prediction_sink[i];
       if(all.active)
-	all.print(f, ec->final_prediction, ai, ec->tag);
+	active_print_result(f, ec->final_prediction, ai, ec->tag);
       else if (all.lda > 0)
 	print_lda_result(all, f,ec->topic_predictions.begin,0.,ec->tag);
       else

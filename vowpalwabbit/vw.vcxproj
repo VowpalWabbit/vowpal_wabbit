@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>vw</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>c:\Program Files (x86)\boost\boost_1_50;../../zlib-1.2.7;./win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>c:\Program Files (x86)\boost\boost_1_50\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;..\..\zlib-1.2.7\zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>win32\make_config_h.exe</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="accumulate.cc" />
+    <ClCompile Include="allreduce.cc" />
+    <ClCompile Include="beam.cc" />
+    <ClCompile Include="bfgs.cc" />
+    <ClCompile Include="cache.cc" />
+    <ClCompile Include="cb.cc" />
+    <ClCompile Include="csoaa.cc" />
+    <ClCompile Include="ect.cc" />
+    <ClCompile Include="example.cc" />
+    <ClCompile Include="gd.cc" />
+    <ClCompile Include="gd_mf.cc" />
+    <ClCompile Include="global_data.cc" />
+    <ClCompile Include="hash.cc" />
+    <ClCompile Include="io.cc" />
+    <ClCompile Include="lda_core.cc" />
+    <ClCompile Include="loss_functions.cc" />
+    <ClCompile Include="network.cc" />
+    <ClCompile Include="noop.cc" />
+    <ClCompile Include="oaa.cc" />
+    <ClCompile Include="parser.cc" />
+    <ClCompile Include="parse_args.cc" />
+    <ClCompile Include="parse_example.cc" />
+    <ClCompile Include="parse_primitives.cc" />
+    <ClCompile Include="parse_regressor.cc" />
+    <ClCompile Include="searn.cc" />
+    <ClCompile Include="searn_sequencetask.cc" />
+    <ClCompile Include="sender.cc" />
+    <ClCompile Include="sequence.cc" />
+    <ClCompile Include="simple_label.cc" />
+    <ClCompile Include="sparse_dense.cc" />
+    <ClCompile Include="unique_sort.cc" />
+    <ClCompile Include="vw.cc" />
+    <ClCompile Include="wap.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="accumulate.h" />
+    <ClInclude Include="allreduce.h" />
+    <ClInclude Include="bfgs.h" />
+    <ClInclude Include="cache.h" />
+    <ClInclude Include="comp_io.h" />
+    <ClInclude Include="constant.h" />
+    <ClInclude Include="csoaa.h" />
+    <ClInclude Include="ect.h" />
+    <ClInclude Include="example.h" />
+    <ClInclude Include="gd.h" />
+    <ClInclude Include="gd_mf.h" />
+    <ClInclude Include="global_data.h" />
+    <ClInclude Include="hash.h" />
+    <ClInclude Include="io.h" />
+    <ClInclude Include="lda_core.h" />
+    <ClInclude Include="loss_functions.h" />
+    <ClInclude Include="network.h" />
+    <ClInclude Include="noop.h" />
+    <ClInclude Include="oaa.h" />
+    <ClInclude Include="parser.h" />
+    <ClInclude Include="parse_args.h" />
+    <ClInclude Include="parse_example.h" />
+    <ClInclude Include="parse_primitives.h" />
+    <ClInclude Include="parse_regressor.h" />
+    <ClInclude Include="searn.h" />
+    <ClInclude Include="searn_sequencetask.h" />
+    <ClInclude Include="sender.h" />
+    <ClInclude Include="sequence.h" />
+    <ClInclude Include="simple_label.h" />
+    <ClInclude Include="sparse_dense.h" />
+    <ClInclude Include="unique_sort.h" />
+    <ClInclude Include="vw.h" />
+    <ClInclude Include="v_array.h" />
+    <ClInclude Include="v_hashmap.h" />
+    <ClInclude Include="wap.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

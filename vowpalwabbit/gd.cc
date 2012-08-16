@@ -6,7 +6,11 @@ embodied in the content of this file are licensed under the BSD
 #include <fstream>
 #include <sstream>
 #include <float.h>
+#ifdef _WIN32
+#include <WinSock2.h>
+#else
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -50,9 +54,11 @@ void learn_gd(void* a, example* ec)
       }
       
       if (all->save_per_pass)
-	sync_weights(*all);
+	{
+	  sync_weights(*all);
+	  save_predictor(*all, all->final_regressor_name, gd_current_pass);
+	}
       all->eta *= all->eta_decay_rate;
-      save_predictor(*all, all->final_regressor_name, gd_current_pass);
       gd_current_pass = ec->pass;
     }
   
@@ -82,8 +88,8 @@ void finish_gd(void* a)
   if(all->span_server != "") {
     if(all->adaptive)
       accumulate_weighted_avg(*all, all->span_server, all->reg);
-    else 
-      accumulate_avg(*all, all->span_server, all->reg, 0);	      
+    else
+      accumulate_avg(*all, all->span_server, all->reg, 0);
   }
 }
 
@@ -120,7 +126,7 @@ bool command_example(vw& all, example* ec) {
 
 float finalize_prediction(vw& all, float ret) 
 {
-  if ( isnan(ret))
+  if ( nanpattern(ret))
     {
       cout << "you have a NAN!!!!!" << endl;
       return 0.;
@@ -129,7 +135,6 @@ float finalize_prediction(vw& all, float ret)
     return all.sd->max_label;
   if (ret < all.sd->min_label)
     return all.sd->min_label;
-
   return ret;
 }
 
@@ -607,7 +612,6 @@ void local_predict(vw& all, example* ec)
   if (ld->label != FLT_MAX)
     {
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
-
       if (all.training && ec->loss > 0.)
 	{
 	  double eta_t;
@@ -630,7 +634,8 @@ void local_predict(vw& all, example* ec)
 	    else
 	      norm = ec->total_sum_feat_sq;
 	  }
-	  ec->eta_round = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm) / all.sd->contraction;
+          float update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm);
+	  ec->eta_round = update / all.sd->contraction;
 
 	  if (all.reg_mode && fabs(ec->eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ec->final_prediction, ld->label);

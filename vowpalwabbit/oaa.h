@@ -6,18 +6,19 @@
 #include "global_data.h"
 #include "example.h"
 #include "parse_args.h"
+#include "v_hashmap.h"
 
 namespace OAA
 {
 
   struct mc_label {
-    uint32_t label;
+    size_t label;
     float weight;
   };
   
-  typedef uint32_t prediction_t;
+  typedef size_t prediction_t;
   
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, size_t s);
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
@@ -32,6 +33,21 @@ namespace OAA
 					sizeof(mc_label)};
   
   void output_example(vw& all, example* ec);
+
+  inline int example_is_newline(example* ec)
+  {
+    // if only index is constant namespace or no index
+    return ((ec->indices.index() == 0) || 
+            ((ec->indices.index() == 1) &&
+             (ec->indices.last() == constant_namespace)));
+  }
+
+  inline int example_is_test(example* ec)
+  {
+    return (((OAA::mc_label*)ec->ld)->label == (size_t)-1);
+  }
+
+
 }
 
 #endif

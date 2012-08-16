@@ -5,21 +5,42 @@ embodied in the content of this file are licensed under the BSD
  */
 
 #include <sys/types.h>
+
+#ifndef _WIN32
 #include <sys/mman.h>
 #include <sys/wait.h>
+#include <unistd.h>
+#include <netinet/tcp.h>
+#endif
 
 #include <signal.h>
-#include <unistd.h>
+
 #include <fstream>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <Windows.h>
+#include <io.h>
+typedef int socklen_t;
+
+int daemon(int a, int b)
+{
+	exit(0);
+	return 0;
+}
+int getpid()
+{
+	return (int) ::GetCurrentProcessId();
+}
+#else
 #include <netdb.h>
+#endif
 #include <boost/program_options.hpp>
 
 #ifdef __FreeBSD__
 #include <netinet/in.h>
 #endif
 
-#include <netinet/tcp.h>
 #include <errno.h>
 #include <stdio.h>
 #include <assert.h>
@@ -40,9 +61,14 @@ using namespace std;
 
 //nonreentrant
 example* examples;//A Ring of examples.
+#ifndef _WIN32
 pthread_mutex_t examples_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t example_available = PTHREAD_COND_INITIALIZER;
 pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t output_lock;
+pthread_cond_t output_done;
+#else
+#endif
 uint64_t used_index = 0; // The index of the example currently used by thread i.
 bool done=false;
 v_array<size_t> gram_mask;
@@ -60,8 +86,11 @@ parser* new_parser()
   ret->input = new io_buf;
   ret->output = new io_buf;
   ret->local_example_number = 0;
-  pthread_mutex_init(&(ret->output_lock), NULL);
-  pthread_cond_init(&ret->output_done, NULL);
+  #ifndef _WIN32
+  pthread_mutex_init(&output_lock, NULL);
+  pthread_cond_init(&output_done, NULL);
+  #else
+  #endif
   ret->ring_size = 1 << 8;
 
   return ret;
@@ -140,10 +169,13 @@ void reset_source(vw& all, size_t numbits)
       if (all.daemon)
 	{
 	  // wait for all predictions to be sent back to client
-	  pthread_mutex_lock(&all.p->output_lock);
+	  #ifndef _WIN32
+	  pthread_mutex_lock(&output_lock);
 	  while (all.p->local_example_number != all.p->parsed_examples)
-	    pthread_cond_wait(&all.p->output_done, &all.p->output_lock);
-	  pthread_mutex_unlock(&all.p->output_lock);
+	    pthread_cond_wait(&output_done, &output_lock);
+	  pthread_mutex_unlock(&output_lock);
+	  #else
+	  #endif
 	  
 	  // close socket, erase final prediction sink and socket
 	  close(all.p->input->files[0]);
@@ -237,7 +269,9 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 
   for (size_t i = 0; i < caches.size(); i++)
     {
-      int f = all.p->input->open_file(caches[i].c_str(),io_buf::READ);
+      int f = -1;
+      if (!vm.count("kill_cache"))
+        f = all.p->input->open_file(caches[i].c_str(),io_buf::READ);
       if (f == -1)
 	make_write_cache(all.num_bits, all.p, caches[i], quiet);
       else {
@@ -338,6 +372,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 
       if (all.daemon)
 	{
+#ifdef _WIN32
+		exit(1);
+#else
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights = 
 	    (float*)mmap(0,all.stride * all.length() * sizeof(float), 
@@ -400,6 +437,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 		  }
 	    }
 
+#endif
 	}
 
     child:
@@ -582,6 +620,7 @@ example* get_unused_example(vw& all)
 {
   while (true)
     {
+      #ifndef _WIN32
       pthread_mutex_lock(&examples_lock);
       if (examples[all.p->parsed_examples % all.p->ring_size].in_use == false)
 	{
@@ -592,6 +631,8 @@ example* get_unused_example(vw& all)
       else 
 	pthread_cond_wait(&example_unused, &examples_lock);
       pthread_mutex_unlock(&examples_lock);
+      #else
+      #endif
     }
 }
 
@@ -699,7 +740,7 @@ namespace VW{
   example* import_example(vw& all, vector<feature_space> vf)
   {
     example* ret = get_unused_example(all);
-    
+    all.p->lp->default_label(ret->ld);
     for (size_t i = 0; i < vf.size();i++)
       {
 	size_t index = vf[i].first;
@@ -713,13 +754,24 @@ namespace VW{
     setup_example(all, ret);
     return ret;
   }
+
+  void parse_example_label(vw& all, example&ec, string label) {
+    v_array<substring> words;
+    char* cstr = (char*)label.c_str();
+    substring str = { cstr, cstr+label.length() };
+    push(words, str);
+    all.p->lp->parse_label(all.sd, ec.ld, words);
+  }
   
   void finish_example(vw& all, example* ec)
   {
-    pthread_mutex_lock(&all.p->output_lock);
+    #ifndef _WIN32
+    pthread_mutex_lock(&output_lock);
     all.p->local_example_number++;
-    pthread_cond_signal(&all.p->output_done);
-    pthread_mutex_unlock(&all.p->output_lock);
+    pthread_cond_signal(&output_done);
+    pthread_mutex_unlock(&output_lock);
+    #else
+    #endif
     
     if (all.audit)
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
@@ -748,6 +800,7 @@ namespace VW{
     ec->tag.erase();
     ec->sorted = false;
     
+    #ifndef _WIN32
     pthread_mutex_lock(&examples_lock);
     assert(ec->in_use);
     ec->in_use = false;
@@ -755,6 +808,8 @@ namespace VW{
     if (done)
       pthread_cond_broadcast(&example_available);
     pthread_mutex_unlock(&examples_lock);
+    #else
+    #endif
   }
 }
 
@@ -770,10 +825,13 @@ void *main_parse_loop(void *in)
       if (example_number != all->pass_length && parse_atomic_example(*all, ae)) {	
 	setup_example(*all, ae);
 	example_number++;
+	#ifndef _WIN32
 	pthread_mutex_lock(&examples_lock);
 	all->p->parsed_examples++;
 	pthread_cond_broadcast(&example_available);
 	pthread_mutex_unlock(&examples_lock);
+	#else
+	#endif
       }
       else
 	{
@@ -787,14 +845,20 @@ void *main_parse_loop(void *in)
 	  example_number = 0;
 	  if (all->passes_complete >= all->numpasses)
 	    {
+	      #ifndef _WIN32
 	      pthread_mutex_lock(&examples_lock);
 	      done = true;
 	      pthread_mutex_unlock(&examples_lock);
+	      #else
+	      #endif
 	    }
+	  #ifndef _WIN32
 	  pthread_mutex_lock(&examples_lock);
 	  ae->in_use = false;
 	  pthread_cond_broadcast(&example_available);
 	  pthread_mutex_unlock(&examples_lock);
+	  #else
+	  #endif
 	}
     }  
 
@@ -803,6 +867,7 @@ void *main_parse_loop(void *in)
 
 example* get_example(parser* p)
 {
+  #ifndef _WIN32
   pthread_mutex_lock(&examples_lock);
 
   if (p->parsed_examples != used_index) {
@@ -826,9 +891,15 @@ example* get_example(parser* p)
       return NULL;
     }
   }
+  #else
+  return NULL;
+  #endif
 }
 
+#ifndef _WIN32
 pthread_t parse_thread;
+#else
+#endif
 
 void initialize_examples(vw& all)
 {
@@ -848,7 +919,10 @@ void initialize_examples(vw& all)
 void start_parser(vw& all)
 {
   initialize_examples(all);
+  #ifndef _WIN32
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
+  #else
+  #endif
 }
 
 void free_parser(vw& all)
@@ -886,5 +960,8 @@ void free_parser(vw& all)
 
 void end_parser(vw& all)
 {
+  #ifndef _WIN32
   pthread_join(parse_thread, NULL);
+  #else
+  #endif
 }

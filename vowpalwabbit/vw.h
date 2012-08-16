@@ -22,6 +22,10 @@ namespace VW {
    */
   vw initialize(string s);
 
+  void cmd_string_replace_value( string& cmd, string flag_to_replace, string new_value );
+
+  char** get_argv_from_string(string s, int& argc);
+
   /*
     Call finish() after you are done with the vw instance.  This cleans up memory usage.
    */
@@ -53,8 +57,17 @@ namespace VW {
     return all.p->hasher(ss,u) & all.parse_mask;
   }
 
+  inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
+  {
+    substring ss;
+    ss.begin = fstr;
+    ss.end = ss.begin + strlen(fstr);
+    return all.p->hasher(ss,u) & all.parse_mask;
+  }
+
   //after you create and fill feature_spaces, get an example with everything filled in.
   example* import_example(vw& all, vector< feature_space > ec_info);
+  void parse_example_label(vw&all, example&ec, string label);
 
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);

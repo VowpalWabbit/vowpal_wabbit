@@ -8,7 +8,9 @@ Implementation by Miro Dudik.
  */
 #include <fstream>
 #include <float.h>
+#ifndef _WIN32
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -21,6 +23,10 @@ Implementation by Miro Dudik.
 #include "simple_label.h"
 #include "accumulate.h"
 #include <exception>
+
+#ifdef _WIN32
+inline bool isnan(double d) { return _isnan(d); }
+#endif
 
 using namespace std;
 
@@ -72,7 +78,7 @@ size_t example_number=0;
 size_t current_pass = 0;
 
   // default transition behavior
-bool first_hessian_on=false;
+bool first_hessian_on=true;
 bool backstep_on=false; 
 
   // set by initializer
@@ -336,7 +342,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
 
     double beta = g_Hy/g_Hg;
 
-    if (beta<0. || isnan(beta))
+    if (beta<0. || nanpattern(beta))
       beta = 0.;
       
     mem = mem0;
@@ -373,7 +379,6 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
   
   if (y_s <= 0. || y_Hy <= 0.)
     throw curv_ex;
-
   rho[0] = 1/y_s;
   
   double gamma = y_s/y_Hy;
@@ -628,7 +633,7 @@ int process_pass(vw& all) {
   /********************************************************************/
   /* B0) DERIVATIVE ZERO: MINIMUM FOUND *******************************/
   /********************************************************************/ 
-		  if (isnan(wolfe1))
+		  if (nanpattern(wolfe1))
 		    {
 		      fprintf(stderr, "\n");
 		      fprintf(stdout, "Derivative 0 detected.\n");
@@ -661,7 +666,7 @@ int process_pass(vw& all) {
   /********************************************************************/ 
 		  else {
 		      double rel_decrease = (previous_loss_sum-loss_sum)/previous_loss_sum;
-		      if (!isnan(rel_decrease) && backstep_on && fabs(rel_decrease)<all.rel_threshold) {
+		      if (!nanpattern(rel_decrease) && backstep_on && fabs(rel_decrease)<all.rel_threshold) {
 			fprintf(stdout, "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
 				"If you want to optimize further, decrease termination threshold.\n", (long int)current_pass+1, all.rel_threshold*100.0);
 			status = LEARN_CONV;
