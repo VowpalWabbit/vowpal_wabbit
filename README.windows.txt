@@ -6,6 +6,8 @@ You need Visual Studio 2010
 
 (1) Install boost 1.50. There are several options available.
 
+  (This must have the correct absolute path for builds to work)
+
     ==> Get pre-built binaries from someone else.
 
       (a) Download my pre-built boost-1.50-bins.zip from SkyDrive:
@@ -47,22 +49,18 @@ You need Visual Studio 2010
 
 (4) Unzip to %ROOT% -- on my machine, this lands in c:\src\vw\zlib-1.2.7.
 
-  (This must have the correct relative
+  (This must have the correct relative path for builds to work)
 
 (5) Build zlib
 
     (a) Start a new CMD window
     (b) Run "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat" to set build variables
-    (c) Go to the %ROOT%\zlib-1.2.7 directory (for me, c:\src\vw\zlib-1.2.5)
-    (d) Run "nmake /f win32\Makefile.msc"
-
-(5a) [optional, for 64 bit support] Build 64-bit zlib
-
-    (a) Unzip a new copy of zlib to c:\src\vw\zlib-1.2.7-x64
-    (b) Start a new CMD window
-    (c) Run "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\amd64\vcvars64.bat" to set build variables
-    (d) Go to the %ROOT%\zlib-1.2.7-x64 dir
-    (e) Run "nmake /f win32\Makefile.msc"
+    (c) Go to the %ROOT%\zlib-1.2.7\zlib-1.2.7\contrib\vstudio\vc10 directory (for me, c:\src\vw\zlib-1.2.7zlib-1.2.7\contrib\vstudio\vc10)
+    (d) Run the following four commands (can skip the last two if you only want 32bit binaries)
+        "msbuild /p:Configuration=Debug;Platform=Win32 zlibstat.vcxproj"
+        "msbuild /p:Configuration=Release;Platform=Win32 zlibstat.vcxproj"
+        "msbuild /p:Configuration=Debug;Platform=x64 zlibstat.vcxproj"
+        "msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
 
 (6) Get a copy of VW in %ROOT%. I ran "cd \src\vw" and "git clone http
 
