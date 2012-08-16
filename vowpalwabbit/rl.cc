@@ -1,7 +1,68 @@
+/*
+
+Reduction for performing either On-Policy or Off-Policy value function based Reinforcement Learning. 
+The algorithms implemented are:
+
+    Sarsa(lambda) - On-Policy RL algorithm which uses VW for value function approximation. Updates 
+    state-action values based upon the current estimates of the current state-action value and the 
+    value for the next observed state-action pair. Full explanation of the algorithm can be found 
+    in Reinforcement Learning: An Introduction (Sutton & Barto), and many other places.
+    
+    TreeBackup - Off-Policy RL algorithm which uses VW for value function approximation. Updates the 
+    previous state-action value based upon the current estimate and the sum over state-action values 
+    for all possible actions of the next state, multiplied by the probability of selecting that action. 
+    Full explanation of this algorithm can be found in the paper Eligibility Traces for Off-Policy Evaluation 
+    (Precup, Sutton, and Singh 2000). 
+
+Both algorithms make use of eligibility traces, which are stored in an example structure that is updated 
+incrementally. 
+
+The input format is standard VW input, with the requirement that there be an ACTION namespace, whose first character 
+is assumed to be 'A'. This is only a strict requirement for TreeBackup because the algorithm must be able to 
+consider multiple actions at each step. 
+
+The label should be the reward for the current time step, and the prediction returned is the current state-action value.
+Finally, we use tags to mark the start and end of episodes. "'rl_start" for the beginning of an episode and "'rl_end" for the 
+end of an episode. 
+
+So a sequence could be as follows:
+
+0.0 'rl_start |Action RIGHT |f X:0.0 Y:0.123
+0.0 |Action UP |f X:0.25 Y:0.123
+0.0 |Action UP |f X:0.25 Y:0.373
+0.0 |Action RIGHT |f X:0.24 Y:0.623
+0.0 |Action UP |f X:0.5 Y:0.623
+1.0 'rl_end |Action DOWN
+
+Note that there need not be any features passed on the last example of the episode because these features will not be used. 
+The examples are temporally linked, so the general form is:
+
+reward |Action action |featureNamespace statefeatures
+
+0 'rl_start |Action a0 |f s0
+r0 |Action a1 |f s1
+r1 |Action a2 |f s2
+....
+rn 'rl_end |Action
+
+This sequence forms the traditional experience trajectory of the RL agent:
+(s0, a0) -- r0 --> (s1, a1) -- r1 --> (s2, a2) ...
+
+
+The command line arguments are: 
+
+--oprl lambda    Where lambda is the eligibility trace decay rate used by both algorithms. 
+--gamma arg      Where arg provides the gamma value used in both algorithms which sets the horizon, and defaults to 1.0.
+
+Currently the only way to switch between Sarsa and TreeBackup is in the code, because the main use for this seems to be 
+off-policy learning. 
+
+*/
+
+
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
-//#include <boost/unordered_set.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
 #include "rl.h"
@@ -9,19 +70,35 @@
 #include "cache.h"
 #include "global_data.h"
 #include "example.h"
-#include "gd.cc"
+
+#include "gd.cc" // Making use of the build in training functions
 
 using namespace std;
 
+/*
+    This was based on one of the existing reductions, so some of these functions may
+    be unneccessary.
+*/
 
 namespace RL {
 
-  // Constant for PI
-  const float pi = acos(-1);
+  // Constants that shouldn't be constant ideally
+  const bool tree_backup = true;
+  const float epsilon = 0.1;
+  bool rl_loss = true; // Standard RL Loss (delta) or use VW's built in loss function
 
   // Run time arguments for RL algorithms
   float gamma = 1.0;
   float lambda = 0;
+
+  // Previous example, needed to do temporal difference learning
+  example* last_ec = NULL;
+
+  // Eligibility traces
+  example* traces = NULL;
+
+  // Actions known to be available
+  set<vector<feature_value> > actions;
 
   char* bufread_label(reward_label* ld, char* c)
   {
@@ -104,17 +181,6 @@ namespace RL {
     }
   }
 
-  //nonreentrant
-  size_t k=0;
-  size_t increment=0;
-  size_t total_increment=0;
-
-  // Previous example, needed to do temporal difference learning
-  example* last_ec = NULL;
-
-  // Eligibility traces
-  example* traces = NULL;
-
   void print_update(vw& all, example *ec)
   {
     if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
@@ -163,23 +229,27 @@ namespace RL {
   // Decay eligibility traces
   void decay_traces() {
     // If traces haven't been instantiated, do nothing
-    if(traces != NULL) {
-      if(lambda == 0) { // If lambda is zero just delete the traces all together
-	// Free memory for traces
-        dealloc_example(RL::delete_label, *traces);
-	free(traces);
-	traces = NULL;
-      } else {
-	for(int i=0; i<(int)traces->indices.index(); i++)  {
-	  for(int j=0; j<(int)traces->atomics[traces->indices[i]].index(); j++) {
-	    traces->atomics[traces->indices[i]][j].x *= lambda * gamma;
-	  }
+    if(traces == NULL) 
+      return;
+
+    if(lambda == 0) { // If lambda is zero just delete the traces all together
+      // Free memory for traces
+      dealloc_example(RL::delete_label, *traces);
+      free(traces);
+      traces = NULL;
+    } else {
+      // Loop over the namespaces in the traces
+      for(int i=0; i<(int)traces->indices.index(); i++)  {
+	// For each feature, decay its value
+	for(int j=0; j<(int)traces->atomics[traces->indices[i]].index(); j++) {
+	  traces->atomics[traces->indices[i]][j].x *= lambda * gamma;
 	}
       }
     }
   }
 
   // Update traces given a new example, instantiate if neccessary 
+  // This is a little messy
   void update_traces(example* ec) {
     if(traces != NULL) {
       // For each namespace... search for it in the traces
@@ -233,39 +303,26 @@ namespace RL {
 
   // Update weights using the traces and specified delta
   void train_on_traces(vw* all, example* ec, float delta) {
-    if(ec != NULL) {
-      if (delta != 0.)
-	{
-	  // Copied from gd.cc (but we are supplying our own result of calling predict
-	  if (all->adaptive)
-	    if (all->power_t == 0.5 || !all->exact_adaptive_norm)
-	      adaptive_inline_train(*all,ec,delta);
-	    else
-	      general_adaptive_train(*all,ec,delta,all->power_t);
-	  else
-	    inline_train(*all, ec, delta);
-	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-	    sync_weights(*all);
-	}
+    if(ec == NULL) 
+      return;
+
+    if (delta != 0.) {
+      // Copied from gd.cc (Can't use it directly without predict getting called)
+      if (all->adaptive)
+	if (all->power_t == 0.5 || !all->exact_adaptive_norm)
+	  adaptive_inline_train(*all,ec,delta);
+	else
+	  general_adaptive_train(*all,ec,delta,all->power_t);
+      else
+	inline_train(*all, ec, delta);
+      if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+	sync_weights(*all);
     }
   }
 
   void (*base_learner)(void*,example*) = NULL;
 
-  struct feature_value {
-    float x;
-    uint32_t weight_index;
-    bool operator==(feature_value j){return (weight_index == j.weight_index) && (x == j.x);}
-    bool operator<(const feature_value& j) const {
-      if(weight_index == j.weight_index)
-	return (x < j.x);
-      else
-	return (weight_index < j.weight_index);
-    }
-  };
-
-  set<vector<feature_value> > actions;
-
+  // Convert our vector of sortable feature-values back to an array of features
   vector<feature_value> varray_to_vector(v_array<feature> array) 
   {
     vector<feature_value> vect;
@@ -279,36 +336,38 @@ namespace RL {
     return vect;
   }
 
+  // Needed this function from elsewhere
   feature copy_feature(feature src) {
     feature f = { src.x, src.weight_index };
     return f;
   }
 
-
+  // Compute action values for the current example (state)
   vector<float> compute_action_values(vw* all, example* ec) 
   {
     vector<float> values;
 
-    // Backup current action for ec
+    // Backup current action for the example (ec)
     v_array<feature> backup;
     copy_array(backup, ec->atomics[65], copy_feature);
 
+    // Iterate over our known actions, generate a value for each one
     set<vector<feature_value> >::iterator iter = actions.begin();
     for( ; iter != actions.end(); iter++) {
       ec->atomics[65].erase();
-      cerr << "Action: ";
-
       for(int i=0; i< (*iter).size(); i++) {
-	cerr << (*iter)[i].x << ":" << (*iter)[i].weight_index << " ";
 	feature f = {(*iter)[i].x,(*iter)[i].weight_index};
 	push(ec->atomics[65], f);
       } 
+
+      // Generate the prediction (state-action value)
       ec->partial_prediction = 0.;
       base_learner(all,ec);
       values.push_back(ec->partial_prediction);
       ec->done = false;
     }
-    cerr << endl;
+
+    // Copy the example's actions back
     copy_array(ec->atomics[65], backup, copy_feature);
     return values;
   }
@@ -322,15 +381,19 @@ namespace RL {
 
     // Train when a label is provided and the importance weight is greater than zero
     bool doTrain = (reward_label_data->label != FLT_MAX) && (reward_label_data->weight > 0);
+
+    float Q_spap = 0.0;
+    float pred_out = 0.0;
+
+    // If there are actions provided, add them to the set of known actions
     if(ec->atomics[65].index() > 0)
     {
+      // This is a set, so we don't get duplicates
       actions.insert(varray_to_vector(ec->atomics[65]));
     }
 
-    // rl_start
-    // Check for this tag to indicate the beginning of a new episode
+    // Check for rl_start tag to indicate the beginning of a new episode
     if(ec->tag.index() >= 8 && !strncmp((const char*) ec->tag.begin, "rl_start", 8)) {
-      //      cerr << "New Episode..." << endl;
       if(last_ec != NULL) {
         // Free memory for last_ec
         dealloc_example(RL::delete_label, *last_ec);
@@ -351,42 +414,46 @@ namespace RL {
     simple_temp.label = reward_label_data->label; 
     simple_temp.weight = 0.0; // Don't learn on this, use it to get Q_spap
 
-    float Q_spap = 0.0;
+    // Check for rl_end tag
     if(ec->tag.index() >= 6 && !strncmp((const char*) ec->tag.begin, "rl_end", 6)) {
+      // If end of episode then Q_spap should always be zero, no extra computation needed
       Q_spap = 0.0;
     } else {
-      bool tree_backup = false;
+      // Otherwise, generate prediction for Q_spap
+      ec->partial_prediction = 0.;
       ec->ld = &simple_temp;
       base_learner(all,ec);
-      Q_spap = ec->partial_prediction;
       ec->done = false;
-      cerr << "Q: " << Q_spap << endl;
+
+      // Leave this alone if doing Sarsa
+      Q_spap = ec->partial_prediction;
+      pred_out = Q_spap;
+
+      // Tree Backup Algorithm?
       if(tree_backup) {
-      vector<float> values = compute_action_values(all, ec);
-      Q_spap = 0.0;
-      vector<float> pi(values.size());
-      int max_index = 0;
-      float randp = (1.0/(float)values.size()) * 0.1;
-      for(int i=0; i<values.size(); i++) {
-	cerr << values[i] << " ";
-        if(values[i] > values[max_index])
-	  max_index = i;
-	pi[i] = randp;
-      }
-      pi[max_index] = 0.9 + randp;
-      cerr << endl;
-      for(int i=0; i<values.size(); i++) {
-	Q_spap += values[i] * pi[i];
-      }
+	Q_spap = 0.0;
+	vector<float> values = compute_action_values(all, ec);
+	vector<float> pi(values.size());
+	int max_index = 0;
+
+	// Assign an epsilon-greedy policy
+	float rand_pi = (1.0/(float)values.size()) * epsilon;
+
+	for(int i=0; i<values.size(); i++) {
+	  if(values[i] > values[max_index])
+	    max_index = i;
+	  pi[i] = rand_pi;
+	}
+	pi[max_index] = (1.0 - epsilon) + rand_pi;
 	
+	for(int i=0; i<values.size(); i++) {
+	  Q_spap += values[i] * pi[i];
+	}
       }
-      
     }
 
-    // Training and we are ready to update
+    // Prediction made, ready to update
     if (doTrain && last_ec != NULL) {
-      // Standard RL Loss (delta) or use VW's built in loss function
-      bool rl_loss = true;
 
       // Get previous state/reward, only used so that it can be freed later
       reward_label* last_reward = (reward_label*)last_ec->ld;
@@ -409,6 +476,7 @@ namespace RL {
       decay_traces();
       // Add x_t, then train
       update_traces(last_ec);
+
       if(rl_loss) {
 	last_ec->eta_round = (gamma * Q_spap + reward_label_data->label - prediction) * all->eta;
       }
@@ -420,7 +488,7 @@ namespace RL {
     // Update prediction that gets returned: Q(s',a')
     ec->partial_prediction = 0.;
     ec->ld = reward_label_data; // Give current example its label back
-    *(prediction_t*)&(ec->final_prediction) = Q_spap;
+    *(prediction_t*)&(ec->final_prediction) = pred_out;
 
     // Only update the previous example if we are training (not just evaluating)
     if(doTrain) {
@@ -474,13 +542,10 @@ namespace RL {
 
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, double l, double g)
   {
-    //    *(all.p->lp) = rl_label_parser;
     lambda = l;
     gamma = g;
     all.driver = drive_rl;
     base_learner = all.learn;
     all.learn = learn;
-    increment = 0.0;//(all.length()) * all.stride;
-    total_increment = increment*0.0;
   }
 }

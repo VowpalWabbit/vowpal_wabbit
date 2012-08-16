@@ -14,6 +14,19 @@ namespace RL
     float label;
     float weight;
   };
+
+  // Holder for feature-value pairs that allows sorting
+  struct feature_value {
+    float x;
+    uint32_t weight_index;
+    bool operator==(feature_value j){return (weight_index == j.weight_index) && (x == j.x);}
+    bool operator<(const feature_value& j) const {
+      if(weight_index == j.weight_index)
+	return (x < j.x);
+      else
+	return (weight_index < j.weight_index);
+    }
+  };
   
   typedef float prediction_t;
   
