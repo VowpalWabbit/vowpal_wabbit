@@ -2,7 +2,6 @@
 #define EX_H
 
 #include <stdint.h>
-#include <pthread.h>
 #include "v_array.h"
 
 struct feature {

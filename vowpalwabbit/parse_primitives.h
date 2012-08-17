@@ -81,9 +81,6 @@ struct parser {
   int max_fd;
 
   label_parser* lp;  // moved from vw
-
-  pthread_mutex_t output_lock;
-  pthread_cond_t output_done;
 };
 
 //chop up the string into a v_array of substring.
@@ -145,7 +142,7 @@ inline float parseFloat(char * p, char **end)
   }
   if (*p == ' ')//easy case succeeded.
     {
-      acc *= pow(10,exp_acc-num_dec);
+      acc *= powf(10,exp_acc-num_dec);
       *end = p;
       return s * acc;
     }

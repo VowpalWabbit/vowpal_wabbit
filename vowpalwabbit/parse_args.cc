@@ -407,7 +407,6 @@ vw parse_args(int argc, char *argv[])
   po::store(parsed_file, vm_file);
   po::notify(vm_file);
   
-
   if (vm.count("readable_model"))
     all.text_regressor_name = vm["readable_model"].as<string>();
   
@@ -701,7 +700,7 @@ namespace VW {
     for (size_t i = 0; i < foo.index(); i++)
       {
 	*(foo[i].end) = '\0';
-	argv[i] = (char*)calloc(foo[i].end-foo[i].begin, sizeof(char));
+	argv[i] = (char*)calloc(foo[i].end-foo[i].begin+1, sizeof(char));
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
@@ -737,6 +736,9 @@ namespace VW {
     free(all.p->lp);
     free(all.p);
     free(all.sd);
+    for (int i = 0; i < all.options_from_file_argc; i++)
+      free(all.options_from_file_argv[i]);
+    free(all.options_from_file_argv);
     delete all.loss;
   }
 }

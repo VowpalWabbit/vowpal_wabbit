@@ -163,7 +163,6 @@ float finalize_prediction(vw& all, float ret)
     return all.sd->max_label;
   if (ret < all.sd->min_label)
     return all.sd->min_label;
-
   return ret;
 }
 

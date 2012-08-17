@@ -8,7 +8,6 @@ embodied in the content of this file are licensed under the BSD
 #include <iostream>
 #include <fstream>
 #include <float.h>
-#include <pthread.h>
 #include <time.h>
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -40,7 +39,7 @@ int main(int argc, char *argv[])
   
   if (!all.quiet && !all.bfgs && !all.sequence && !all.searn)
     {
-      const char * header_fmt = "%-10s %-10s %8s %8s %10s %8s %8s\n";
+      const char * header_fmt = "%-10s %-10s %10s %11s %8s %8s %8s\n";
       fprintf(stderr, header_fmt,
 	      "average", "since", "example", "example",
 	      "current", "current", "current");
