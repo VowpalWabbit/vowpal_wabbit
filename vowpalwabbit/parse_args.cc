@@ -189,12 +189,19 @@ vw parse_args(int argc, char *argv[])
       if (vm.count("exact_adaptive_norm"))
 	{
 	  all.exact_adaptive_norm = true;
+          if(!vm.count("learning_rate") && !vm.count("l"))
+            all.eta = 2; //default learning rate to 2 for exact_adaptive
+
 	  if (vm.count("nonormalize"))
 	    cout << "Options don't make sense.  You can't use an exact norm and not normalize." << endl;
 	}
       if (vm.count("normalized_adaptive"))
 	{
 	  all.normalized_adaptive = true;
+
+          if(!vm.count("learning_rate") && !vm.count("l"))
+            all.eta = 4; //default learning rate to 4 for normalized_adaptive
+
           if(vm.count("precompute_norm")) {
             all.normalized_adaptive_precompute = true;
             all.numpasses++; //increase number of pass by 1, since we're going to use the 1st pass to compute the normalization
