@@ -195,7 +195,8 @@ void output_and_account_example(vw& all, example* ec)
 
 void return_simple_example(vw& all, example* ec)
 {
-  output_and_account_example(all, ec);
+  if( !(all.normalized_adaptive_precompute && ec->pass == 0))
+    output_and_account_example(all, ec);
   VW::finish_example(all,ec);
 }
 

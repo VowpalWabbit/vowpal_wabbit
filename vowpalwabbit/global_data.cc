@@ -266,7 +266,6 @@ vw::vw()
   add_constant = true;
   exact_adaptive_norm = false;
   normalized_adaptive = false;
-  norm_corr_adaptive = false;
   audit = false;
   active = false;
   active_c0 = 8.;
@@ -275,6 +274,9 @@ vw::vw()
   reg.regularizers = NULL;
   pass_length = (size_t)-1;
   passes_complete = 0;
+
+  normalized_adaptive_precompute = false;
+  normalized_adaptive_max_norm_x = 1.;
 
   save_per_pass = false;
 }

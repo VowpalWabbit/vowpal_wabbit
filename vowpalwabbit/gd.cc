@@ -35,8 +35,6 @@ void inline_train(vw& all, example* &ec, float update);
 void general_adaptive_train(vw&, example* &ec, float update, float power_t);
 void general_normalized_adaptive_train(vw& all, example* &ec, float update, float power_t);
 void normalized_adaptive_inline_train(vw& all, example* &ec, float update);
-void general_norm_corr_adaptive_train(vw& all, example* &ec, float update, float power_t);
-void norm_corr_adaptive_inline_train(vw& all, example* &ec, float update);
 
 //nonreentrant
 size_t gd_current_pass = 0;
@@ -44,41 +42,45 @@ size_t gd_current_pass = 0;
 void predict(vw& all, example* ex);
 void sync_weights(vw& all);
 
-float last_eta_t = 0;
-float last_norm = 0;
-float last_error = 0;
-float last_update = 0;
-size_t next_print = 1;
-size_t next_print_mult = 2;
-
-void print_update_status(float t)
-{
-  if(t >= next_print)
-  {
-    next_print *= next_print_mult;
-    cout << "Last norm:" << last_norm << " eta_t:" << last_eta_t << " error:" << last_error << " update:" << last_update << endl;
-  }
-}
-
 void learn_gd(void* a, example* ec)
 {
   vw* all = (vw*)a;
   assert(ec->in_use);
   if (ec->pass != gd_current_pass)
     {
-      if(all->span_server != "") {
-	if(all->adaptive)
-	  accumulate_weighted_avg(*all, all->span_server, all->reg);
-	else 
-	  accumulate_avg(*all, all->span_server, all->reg, 0);	      
+      if(gd_current_pass == 0 && all->normalized_adaptive_precompute)
+      { //we completed the first pass where we were computing the norm
+        //reset t in all->sd and example so that this is like if we were starting the first pass
+        all->sd->t = all->initial_t + ec->global_weight;
+        ec->example_t = all->sd->t;
+
+        cout << "Finished Precomputing Norm - Starting Training" << endl;
+
+        //reset evaluation score in case this is non-zero
+        all->sd->weighted_examples = 0.;
+        all->sd->weighted_labels = 0.;
+        all->sd->weighted_unlabeled_examples = 0.;
+        all->sd->total_features = 0.;
+        all->sd->sum_loss = 0.;
+        all->sd->sum_loss_since_last_dump = 0.;
+        all->sd->old_weighted_examples = 0.;
+        all->sd->dump_interval = exp(1.);
       }
+      else {
+        if(all->span_server != "") {
+	  if(all->adaptive)
+	    accumulate_weighted_avg(*all, all->span_server, all->reg);
+	  else 
+	    accumulate_avg(*all, all->span_server, all->reg, 0);	      
+        }
       
-      if (all->save_per_pass)
+        if (all->save_per_pass)
 	{
 	  sync_weights(*all);
 	  save_predictor(*all, all->final_regressor_name, gd_current_pass);
 	}
-      all->eta *= all->eta_decay_rate;
+        all->eta *= all->eta_decay_rate;
+      }
       gd_current_pass = ec->pass;
     }
   
@@ -88,13 +90,7 @@ void learn_gd(void* a, example* ec)
       if (ec->eta_round != 0.)
 	{
 	  if (all->adaptive)
-            if (all->norm_corr_adaptive) {
-              if(all->power_t == 0.5)
-                norm_corr_adaptive_inline_train(*all,ec,ec->eta_round);
-              else
-                general_norm_corr_adaptive_train(*all,ec,ec->eta_round,all->power_t);
-            }
-            else if (all->normalized_adaptive) {
+            if (all->normalized_adaptive) {
               if(all->power_t == 0.5)
                 normalized_adaptive_inline_train(*all,ec,ec->eta_round);
               else
@@ -376,70 +372,38 @@ void one_pf_quad_adaptive_update(weight* weights, feature& page_feature, v_array
     }
 }
 
-void one_pf_quad_norm_corr_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, float label)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  update *= page_feature.x;
-  float x2 = page_feature.x * page_feature.x;
-  float xy = page_feature.x * label;
-  float update2 = g * x2;
-  float xtmp = 0.;
-  float xtmp2 = 0.;
-  float t = 0.;
-  float m = 0.;
-
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      xtmp = ele->x;
-      xtmp2 = xtmp * xtmp;
-      w[1] += update2 * xtmp2;
-      w[2] += x2 * xtmp2;
-      //w[3] += xtmp * xy;
-      w[3] += xtmp * xy - w[0] * x2 * xtmp2;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      m = w[1];
-      __m128 eta = _mm_load_ss(&m);
-      eta = _mm_rsqrt_ss(eta);
-      _mm_store_ss(&t, eta);
-      t *= xtmp;
-#else
-      t = xtmp*InvSqrt(w[1]);
-#endif
-      //w[0] += update * t * fabs(w[3]/w[2]);
-      w[0] += update * t * fabs(w[3]/w[2] + w[0]);
-    }
-}
-
-void one_pf_quad_normalized_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, float timestep_inv)
+void one_pf_quad_normalized_adaptive_update(vw& all, weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   update *= page_feature.x;
   float x2 = page_feature.x * page_feature.x;
   float update2 = g * x2;
-  float xtmp = 0.;
-  float xtmp2 = 0.;
+  float x = 0.;
+  float xquad_abs = 0.;
   float t = 0.;
-  float m = 0.;
+  weight* w = NULL;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+  __m128 eta;
+#endif
 
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      xtmp = ele->x;
-      xtmp2 = xtmp * xtmp;
-      w[1] += update2 * xtmp2;
-      w[2] += x2 * xtmp2;
+  {
+    w=&weights[(halfhash + ele->weight_index) & mask];
+    x = ele->x;
+    xquad_abs = fabs(x*page_feature.x);
+    if( xquad_abs > w[2] ) w[2] = xquad_abs;
+    if( all.normalized_adaptive_precompute && ec->pass == 0) continue;
+    w[1] += update2 * x * x;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      m = w[1]*(w[2]*timestep_inv);
-      __m128 eta = _mm_load_ss(&m);
-      eta = _mm_rsqrt_ss(eta);
-      _mm_store_ss(&t, eta);
-      t *= xtmp;
+    eta = _mm_load_ss(&w[1]);
+    eta = _mm_rsqrt_ss(eta);
+    _mm_store_ss(&t, eta);
+    t *= x;
 #else
-      t = xtmp*InvSqrt(w[1]*(w[2]*timestep_inv));
+    t = x*InvSqrt(w[1]);
 #endif
-      w[0] += update * t;
-    }
+    w[0] += update * t / (w[2]*all.normalized_adaptive_max_norm_x);
+  }
 }
 
 void offset_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, size_t offset)
@@ -450,59 +414,6 @@ void offset_quad_update(weight* weights, feature& page_feature, v_array<feature>
     weights[(halfhash + ele->weight_index) & mask] += update * ele->x;
 }
 
-void norm_corr_adaptive_inline_train(vw& all, example* &ec, float update)
-{
-  if (fabs(update) == 0.)
-    return;
-
-  size_t mask = all.weight_mask;
-  label_data* ld = (label_data*)ec->ld;
-  weight* weights = all.reg.weight_vectors;
-  float x = 0.;
-  float x2 = 0.;
-  float m = 0.;
-  float t = 0.;
-  float y = ld->label;
-  float res = ec->final_prediction-y;
-  
-  float g = all.loss->getSquareGrad(ec->final_prediction, y) * ld->weight;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-          x = f->x;
-          x2 = x * x;
-	  w[1] += g * x2;
-          w[2] += x2;
-          //w[3] += x * y;
-          w[3] += x * res - w[0]*x2;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-          m = w[1];
-          __m128 eta = _mm_load_ss(&m);
-          eta = _mm_rsqrt_ss(eta);
-          _mm_store_ss(&t, eta);
-          t *= x;
-#else
-	  t = x*InvSqrt(w[1]);
-#endif
-	  //w[0] += update * t * fabs(w[3]/w[2]);
-	  w[0] += update * t * fabs(w[3]/w[2] + w[0]);
-	}
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-            one_pf_quad_norm_corr_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, res);
-	    //one_pf_quad_norm_corr_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, y);
-	} 
-    }
-}
-
 void normalized_adaptive_inline_train(vw& all, example* &ec, float update)
 {
   if (fabs(update) == 0.)
@@ -511,47 +422,47 @@ void normalized_adaptive_inline_train(vw& all, example* &ec, float update)
   size_t mask = all.weight_mask;
   label_data* ld = (label_data*)ec->ld;
   weight* weights = all.reg.weight_vectors;
-  float x2 = 0.;
-  float m = 0.;
+  float x = 0.;
+  float x_abs = 0.;
   float t = 0.;
+  weight* w = NULL;
+  feature* f = NULL;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+  __m128 eta;
+#endif
 
-  float timestep_inv;
-  if(all.active)
-    timestep_inv = 1./all.sd->weighted_unlabeled_examples;
-  else
-    timestep_inv = 1./ec->example_t;
-  
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  {
+    f = ec->atomics[*i].begin;
+    for (; f != ec->atomics[*i].end; f++)
     {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-          x2 = f->x * f->x;
-	  w[1] += g * x2;
-          w[2] += x2;
+      w = &weights[f->weight_index & mask];
+      x = f->x;
+      x_abs = fabs(x);
+      if( x_abs > w[2] ) w[2] = x_abs;
+      if( all.normalized_adaptive_precompute && ec->pass == 0) continue;
+      w[1] += g * x * x;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-          m = w[1]*(w[2]*timestep_inv);
-          __m128 eta = _mm_load_ss(&m);
-          eta = _mm_rsqrt_ss(eta);
-          _mm_store_ss(&t, eta);
-          t *= f->x;
+      eta = _mm_load_ss(&w[1]);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&t, eta);
+      t *= x;
 #else
-	  t = f->x*InvSqrt(w[1]*(w[2]*timestep_inv));
+      t = x*InvSqrt(w[1]);
 #endif
-	  w[0] += update * t;
-	}
+      w[0] += update * t / (w[2] * all.normalized_adaptive_max_norm_x);
     }
+  }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+  {
+    if (ec->atomics[(int)(*i)[0]].index() > 0)
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    one_pf_quad_normalized_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, timestep_inv);
-	} 
-    }
+      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+      for (; temp.begin != temp.end; temp.begin++)
+        one_pf_quad_normalized_adaptive_update(all, weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec);
+    } 
+  }
 }
 
 
@@ -595,73 +506,7 @@ void adaptive_inline_train(vw& all, example* &ec, float update)
     }
 }
 
-
-void quad_general_norm_corr_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, float power_t, float label)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  update *= page_feature.x;
-  float xy = page_feature.x * label;
-  float x2 = page_feature.x * page_feature.x;
-  float update2 = g * x2;
-  float xtmp2 = 0.;
-  float xtmp = 0.;
-  float t = 0.;
-  
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      xtmp = ele->x;
-      xtmp2 = xtmp * xtmp;
-      w[1] += update2 * xtmp2;
-      w[2] += x2*xtmp2;
-      w[3] += xy*xtmp;
-      t = xtmp*powf(w[1],-power_t)*powf(fabs(w[3])/w[2],2.*(1.-power_t));
-      w[0] += update * t;
-    }
-}
-
-void general_norm_corr_adaptive_train(vw& all, example* &ec, float update, float power_t)
-{
-  if (fabs(update) == 0.)
-    return;
-  
-  size_t mask = all.weight_mask;
-  label_data* ld = (label_data*)ec->ld;
-  weight* weights = all.reg.weight_vectors;
-
-  float x = 0.;
-  float x2 = 0.;  
-  float t = 0.;
-  float y = ld->label;
-
-  float g = all.loss->getSquareGrad(ec->final_prediction, y) * ld->weight;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-          x = f->x;
-          x2 = x * x;
-	  w[1] += g * x2;
-          w[2] += x2;
-          w[3] += x*y;
-	  t = x*powf(w[1],-power_t)*powf(fabs(w[3])/w[2],2*(1.-power_t));
-	  w[0] += update * t;
-	}
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    quad_general_norm_corr_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, power_t, y);
-	} 
-    }
-}
-
-void quad_general_normalized_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, float power_t, float timestep_inv)
+void quad_general_normalized_adaptive_update(vw& all, weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, float power_t)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   update *= page_feature.x;
@@ -669,18 +514,23 @@ void quad_general_normalized_adaptive_update(weight* weights, feature& page_feat
   float update2 = g * x2;
   float xtmp2 = 0.;
   float xtmp = 0.;
+  float xquad_abs = 0.;
   float t = 0.;
+  float norm = 0.;
   
+  weight* w = NULL;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      xtmp = ele->x;
-      xtmp2 = xtmp * xtmp;
-      w[1] += update2 * xtmp2;
-      w[2] += x2*xtmp2;
-      t = xtmp*powf(w[1],-power_t)*powf(w[2]*timestep_inv,power_t-1.);
-      w[0] += update * t;
-    }
+  {
+    w=&weights[(halfhash + ele->weight_index) & mask];
+    xtmp = ele->x;
+    xtmp2 = xtmp * xtmp;
+    w[1] += update2 * xtmp2;
+    xquad_abs = fabs(xtmp*page_feature.x);
+    if( xquad_abs > w[2] ) w[2] = xquad_abs;
+    norm = w[2]*all.normalized_adaptive_max_norm_x;
+    t = xtmp*powf(w[1],-power_t)*powf(norm*norm,power_t-1.);
+    w[0] += update * t;
+  }
 }
 
 void general_normalized_adaptive_train(vw& all, example* &ec, float update, float power_t)
@@ -693,38 +543,38 @@ void general_normalized_adaptive_train(vw& all, example* &ec, float update, floa
   weight* weights = all.reg.weight_vectors;
 
   float x = 0.;
-  float x2 = 0.;  
+  float x_abs = 0.;
+  float norm = 0.;
   float t = 0.;
-  float timestep_inv;
-  if(all.active)
-    timestep_inv = 1./all.sd->weighted_unlabeled_examples;
-  else
-    timestep_inv = 1./ec->example_t;
 
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
+  feature *f = NULL;
+  weight *w = NULL; 
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  {
+    f = ec->atomics[*i].begin;
+    for (; f != ec->atomics[*i].end; f++)
     {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-          x = f->x;
-          x2 = x * x;
-	  w[1] += g * x2;
-          w[2] += x2;
-	  t = x*powf(w[1],-power_t)*powf(w[2]*timestep_inv,power_t-1.);
-	  w[0] += update * t;
-	}
+      w = &weights[f->weight_index & mask];
+      x = f->x;
+      x_abs = fabs(x);
+      if( x_abs > w[2] ) w[2] = x_abs;
+      if( all.normalized_adaptive_precompute && ec->pass == 0) continue;
+      w[1] += g * x * x;
+      norm = w[2]*all.normalized_adaptive_max_norm_x;
+      t = x*powf(w[1],-power_t)*powf(norm*norm,power_t-1.);
+      w[0] += update * t;
     }
+  }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+  {
+    if (ec->atomics[(int)(*i)[0]].index() > 0)
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    quad_general_normalized_adaptive_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, power_t, timestep_inv);
-	} 
-    }
+      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+      for (; temp.begin != temp.end; temp.begin++)
+        quad_general_normalized_adaptive_update(all, weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, power_t);
+    } 
+  }
 }
 
 void quad_general_adaptive_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, float power_t)
@@ -885,7 +735,7 @@ float compute_xGx(vw& all, example* &ec)
   return xGx;
 }
 
-float xGNx_general_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float power_t, float timestep_inv)
+float xGNx_general_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float power_t, float& norm_x)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   float xGNx = 0.;
@@ -893,20 +743,29 @@ float xGNx_general_quad(weight* weights, feature& page_feature, v_array<feature>
   float update2 = g * x2;
   float xtmp = 0.;
   float xtmp2 = 0.;
+  float xquad_abs = 0.;
+  float range = 0.;
+  float range2 = 0.;
   float t = 0.;
 
+  weight* w = NULL;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      xtmp = ele->x;
-      xtmp2 = xtmp * xtmp;
-      t = xtmp*powf(w[1] + update2 * xtmp2,- power_t)*powf((w[2]+x2*xtmp2)*timestep_inv,power_t - 1.);
-      xGNx += t * xtmp;
-    }
-  return xGNx;
+  {
+    w=&weights[(halfhash + ele->weight_index) & mask];
+    xtmp = ele->x;
+    xtmp2 = xtmp * xtmp;
+    xquad_abs = fabs(xtmp*page_feature.x);
+    range = w[2];
+    if( xquad_abs > range ) range = xquad_abs;
+    range2 = range*range;
+    t = powf(w[1] + update2 * xtmp2,- power_t)*powf(range2,power_t - 1.);
+    xGNx += t * xtmp2;
+    norm_x += xtmp2 * x2 / range2;
+  }
+  return xGNx*x2;
 }
 
-float xGNx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float timestep_inv)
+float xGNx_quad(vw &all, weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float& norm_x)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   float xGNx = 0.;
@@ -914,80 +773,35 @@ float xGNx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_
   float update2 = g * x2;
   float xtmp = 0.;
   float xtmp2 = 0.;
-  float m = 0.;
+  float xquad_abs = 0.;
   float t = 0.;
+  float range = 0.;
 
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      xtmp = ele->x;
-      xtmp2 = xtmp * xtmp;
+  weight* w = NULL;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      m = (w[1] + update2 * xtmp2)*((w[2] + x2 * xtmp2)*timestep_inv);
-      __m128 eta = _mm_load_ss(&m);
-      eta = _mm_rsqrt_ss(eta);
-      _mm_store_ss(&m, eta);
-      t = xtmp * m;
-#else
-      t = xtmp*InvSqrt((w[1] + update2 * xtmp2)*((w[2] + x2 * xtmp2)*timestep_inv));
+  __m128 eta;
 #endif
-      xGNx += t * xtmp;
-    }
-  return xGNx;
-}
-
-float xGNCx_general_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float power_t, float label)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float xGNCx = 0.;
-  float xy = page_feature.x * label;
-  float x2 = page_feature.x * page_feature.x;
-  float update2 = g * x2;
-  float xtmp = 0.;
-  float xtmp2 = 0.;
-  float t = 0.;
 
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      xtmp = ele->x;
-      xtmp2 = xtmp * xtmp;
-      t = xtmp*powf(w[1] + update2 * xtmp2,- power_t)*powf(fabs(w[3]+xy*xtmp)/(w[2]+x2*xtmp2),2.*(1.-power_t));
-      xGNCx += t * xtmp;
-    }
-  return xGNCx;
-}
-
-float xGNCx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float label)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float xGNCx = 0.;
-  float xy = page_feature.x * label;
-  float x2 = page_feature.x * page_feature.x;
-  float update2 = g * x2;
-  float xtmp = 0.;
-  float xtmp2 = 0.;
-  float m = 0.;
-  float t = 0.;
-
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      xtmp = ele->x;
-      xtmp2 = xtmp * xtmp;
+  {
+    w=&weights[(halfhash + ele->weight_index) & mask];
+    xtmp = ele->x;
+    xtmp2 = xtmp * xtmp;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      m = w[1] + update2 * xtmp2;
-      __m128 eta = _mm_load_ss(&m);
-      eta = _mm_rsqrt_ss(eta);
-      _mm_store_ss(&m, eta);
-      t = xtmp * m;
+    t = w[1] + update2 * xtmp2;
+    eta = _mm_load_ss(&t);
+    eta = _mm_rsqrt_ss(eta);
+    _mm_store_ss(&t, eta);
 #else
-      t = xtmp*InvSqrt(w[1] + update2 * xtmp2);
+    t = InvSqrt(w[1] + update2 * xtmp2);
 #endif
-      //xGNCx += t * xtmp * (fabs(w[3] + xtmp*xy)/(w[2] + xtmp2*x2));
-      xGNCx += t * xtmp * fabs((w[3] + xtmp*xy - w[0]*xtmp2*x2)/(w[2] + xtmp2*x2) + w[0]);
-    }
-  return xGNCx;
+    range = w[2];
+    xquad_abs = fabs(xtmp*page_feature.x);
+    if( xquad_abs > range ) range = xquad_abs;
+    xGNx += t * xtmp2 / range;
+    norm_x += xtmp2 * x2 / (range*range);
+  }
+  return xGNx*x2;
 }
 
 float compute_general_xGNx(vw& all, example* &ec, float power_t)
@@ -999,130 +813,50 @@ float compute_general_xGNx(vw& all, example* &ec, float power_t)
 
   float xGNx = 0.;
 
-  float timestep_inv;
-  if(all.active)
-    timestep_inv = 1./all.sd->weighted_unlabeled_examples;
-  else
-    timestep_inv = 1./ec->example_t;
-  
   float t = 0;
-  float xtmp = 0;
-  float xtmp2 = 0.;
+  float x = 0;
+  float x2 = 0.;
+  float x_abs = 0.;
+  float range = 0.;
+  float range2 = 0.;
+  float norm_x = 0.;
   weight* weights = all.reg.weight_vectors;
+  feature *f = NULL;
+  weight *w = NULL;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  {
+    f = ec->atomics[*i].begin;
+    for (; f != ec->atomics[*i].end; f++)
     {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-          xtmp = f->x;
-          xtmp2 = xtmp * xtmp;
-	  t = xtmp*powf(w[1] + g * xtmp2,- power_t)*powf((w[2] + xtmp2)*timestep_inv,power_t - 1.);
-	  xGNx += t * xtmp;
-	}
+      w = &weights[f->weight_index & mask];
+      x = f->x;
+      x2 = x * x;
+      range = w[2];
+      x_abs = fabs(x);
+      if( x_abs > range ) range = x_abs;
+      range2 = range*range;
+      t = powf(w[1] + g * x2,- power_t)*powf(range2,power_t - 1.);
+      xGNx += t * x2;
+      norm_x += x2 / range2;
     }
+  }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+  {
+    if (ec->atomics[(int)(*i)[0]].index() > 0)
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    xGNx += xGNx_general_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, power_t, timestep_inv);
-	} 
-    }
+      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+      for (; temp.begin != temp.end; temp.begin++)
+        xGNx += xGNx_general_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, power_t, norm_x);
+    } 
+  }
+  
+  norm_x = sqrt(norm_x);
+  if( (!all.normalized_adaptive_precompute || ec->pass > 0) && norm_x > all.normalized_adaptive_max_norm_x)
+    all.normalized_adaptive_max_norm_x = norm_x;
+
+  xGNx *= powf(all.normalized_adaptive_max_norm_x * all.normalized_adaptive_max_norm_x,power_t-1.);
   
   return xGNx;
-}
-
-float compute_general_xGNCx(vw& all, example* &ec, float power_t)
-{//We must traverse the features in _precisely_ the same order as during training.
-  size_t mask = all.weight_mask;
-  label_data* ld = (label_data*)ec->ld;
-  float y = ld->label;
-  float g = all.loss->getSquareGrad(ec->final_prediction, y) * ld->weight;
-  if (g==0) return 1.;
-
-  float xGNCx = 0.;
-  
-  float t = 0;
-  float xtmp = 0;
-  float xtmp2 = 0.;
-  weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-          xtmp = f->x;
-          xtmp2 = xtmp * xtmp;
-	  t = xtmp*powf(w[1] + g * xtmp2,- power_t)*powf(fabs(w[3] + xtmp*y)/(w[2] + xtmp2),2.*(1.-power_t));
-	  xGNCx += t * xtmp;
-	}
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    xGNCx += xGNCx_general_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, power_t, y);
-	} 
-    }
-  
-  return xGNCx;
-}
-
-float compute_xGNCx(vw& all, example* &ec)
-{//We must traverse the features in _precisely_ the same order as during training.
-  size_t mask = all.weight_mask;
-  label_data* ld = (label_data*)ec->ld;
-  float y = ld->label;
-  float res = ec->final_prediction-y;
-  float g = all.loss->getSquareGrad(ec->final_prediction, y) * ld->weight;
-  if (g==0) return 1.;
-
-  float xGNCx = 0.;
-
-  float m = 0.;
-  float xtmp2 = 0.;
-  float xtmp = 0.;
-  float t = 0.;
-  weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-          xtmp = f->x;
-          xtmp2 = xtmp * xtmp;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      m = (w[1] + g * xtmp2);
-      __m128 eta = _mm_load_ss(&m);
-      eta = _mm_rsqrt_ss(eta);
-      _mm_store_ss(&m, eta);
-      t = xtmp * m;
-#else
-	  t = xtmp*InvSqrt(w[1] + g * xtmp2);
-#endif
-          xGNCx += t * xtmp * fabs((w[3] + xtmp * res - w[0]*xtmp2)/(w[2]+xtmp2) + w[0]);
-	  //xGNCx += t * xtmp * (fabs(w[3] + xtmp * y)/(w[2]+xtmp2));
-          //xGNCx += t * xtmp * (fabs(w[3] + xtmp * res)/(w[2]+xtmp2));
-	}
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-            xGNCx += xGNCx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, res);
-	    //xGNCx += xGNCx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, y);
-	} 
-    }
-  
-  return xGNCx;
 }
 
 float compute_xGNx(vw& all, example* &ec)
@@ -1134,48 +868,59 @@ float compute_xGNx(vw& all, example* &ec)
 
   float xGNx = 0.;
 
-  float timestep_inv;
-  if(all.active)
-    timestep_inv = 1./all.sd->weighted_unlabeled_examples;
-  else
-    timestep_inv = 1./ec->example_t;
-
-  float m = 0.;
-  float xtmp2 = 0.;
-  float xtmp = 0.;
+  float x2 = 0.;
+  float x = 0.;
+  float x_abs = 0.;
   float t = 0.;
+  float range = 0.;
+  float norm_x = 0.;
   weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-          xtmp = f->x;
-          xtmp2 = xtmp * xtmp;
+  feature* f = NULL;
+  weight* w = NULL;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      m = (w[1] + g * xtmp2)*((w[2] + xtmp2)*timestep_inv);
-      //if(1./timestep_inv >= next_print ) cout << "Weight Index:" << (f->weight_index & mask) << " Sum Grad:" << (w[1] + g * xtmp2) << " Sum x^2:" << (w[2] + xtmp2) << " Prod/t:" << m << endl;
-      __m128 eta = _mm_load_ss(&m);
-      eta = _mm_rsqrt_ss(eta);
-      _mm_store_ss(&m, eta);
-      t = xtmp * m;
-      //if(1./timestep_inv >= next_print ) cout << "Inv Sqrt:" << m << " x:" << xtmp << " x*invsqrt:" << t << " adding:" << t*xtmp << endl;
-#else
-	  t = xtmp*InvSqrt((w[1] + g * xtmp2)*((w[2] + xtmp2)*timestep_inv));
+  __m128 eta;
 #endif
-	  xGNx += t * xtmp;
-	}
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+
+  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  {
+    f = ec->atomics[*i].begin;
+    for (; f != ec->atomics[*i].end; f++)
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    xGNx += xGNx_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, timestep_inv);
-	} 
+      w = &weights[f->weight_index & mask];
+      x = f->x;
+      x2 = x * x;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      t = w[1] + g * x2;
+      eta = _mm_load_ss(&t);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&t, eta);
+#else
+      t = InvSqrt(w[1] + g * x2);
+#endif
+      range = w[2];
+      x_abs = fabs(x);
+      if( x_abs > range ) range = x_abs;
+
+      xGNx += t * x2 / range;
+
+      norm_x += x2 / (range*range);
     }
+  }
+  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+  {
+    if (ec->atomics[(int)(*i)[0]].index() > 0)
+    {
+      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+      for (; temp.begin != temp.end; temp.begin++)
+        xGNx += xGNx_quad(all, weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, norm_x);
+    } 
+  }
+ 
+  norm_x = sqrt(norm_x);
+  if( (!all.normalized_adaptive_precompute || ec->pass > 0) && norm_x > all.normalized_adaptive_max_norm_x)
+    all.normalized_adaptive_max_norm_x = norm_x;
+
+  xGNx /= all.normalized_adaptive_max_norm_x;
   
   return xGNx;
 }
@@ -1232,6 +977,11 @@ void local_predict(vw& all, example* ec)
       ld->label = FLT_MAX;
   }
 
+  if( all.normalized_adaptive_precompute && ec->pass == 0) {
+    ec->eta_round = 1.0;
+    return;
+  }
+
   float t;
   if(all.active)
     t = all.sd->weighted_unlabeled_examples;
@@ -1246,25 +996,12 @@ void local_predict(vw& all, example* ec)
 	{
 	  double eta_t;
 	  float norm;
-          if(all.adaptive && all.norm_corr_adaptive ) {
-            if (all.power_t == 0.5)
-	      norm = compute_xGNCx(all, ec);
-	    else 
-	      norm = compute_general_xGNCx(all, ec, all.power_t);
-	    eta_t = all.eta * norm * ld->weight;
-            last_norm = norm;
-            last_eta_t = eta_t;
-            last_error = ld->label-ec->final_prediction;
-          }
           if(all.adaptive && all.normalized_adaptive ) {
             if (all.power_t == 0.5)
 	      norm = compute_xGNx(all, ec);
 	    else 
 	      norm = compute_general_xGNx(all, ec, all.power_t);
 	    eta_t = all.eta * norm * ld->weight;
-            last_norm = norm;
-            last_eta_t = eta_t;
-            last_error = ld->label-ec->final_prediction;
           }
 	  else if (all.adaptive && all.exact_adaptive_norm) {
 	    float magx = 0.;
@@ -1285,7 +1022,6 @@ void local_predict(vw& all, example* ec)
 	      norm = ec->total_sum_feat_sq;
 	  }
           float update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm);
-          last_update = update;
 	  ec->eta_round = update / all.sd->contraction;
 
 	  if (all.reg_mode && fabs(ec->eta_round) > 1e-8) {
@@ -1302,8 +1038,6 @@ void local_predict(vw& all, example* ec)
 
   if (all.audit)
     print_audit_features(all, ec);
-
-  print_update_status(t);
 }
 
 void predict(vw& all, example* ex)
