@@ -56,7 +56,76 @@ You need Visual Studio 2010
     (a) Start a new CMD window
     (b) Run "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat" to set build variables
     (c) Go to the %ROOT%\zlib-1.2.7\zlib-1.2.7\contrib\vstudio\vc10 directory (for me, c:\src\vw\zlib-1.2.7zlib-1.2.7\contrib\vstudio\vc10)
-    (d) Run the following four commands (can skip the last two if you only want 32bit binaries)
+    (d) Patch up the zlibstat.vcxproj to correctly use DLL versions of the runtime for 32bit platforms (ugh):
+
+***************
+*** 164,170 ****
+        <PreprocessorDefinitions>WIN32;ZLIB_WINAPI;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;%(PreprocessorDefinitio
+ns)</PreprocessorDefinitions>
+        <ExceptionHandling>
+        </ExceptionHandling>
+!       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+        <BufferSecurityCheck>false</BufferSecurityCheck>
+        <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
+        <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+--- 164,170 ----
+        <PreprocessorDefinitions>WIN32;ZLIB_WINAPI;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;%(PreprocessorDefinitio
+ns)</PreprocessorDefinitions>
+        <ExceptionHandling>
+        </ExceptionHandling>
+!       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+        <BufferSecurityCheck>false</BufferSecurityCheck>
+        <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
+        <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+***************
+*** 191,197 ****
+        <StringPooling>true</StringPooling>
+        <ExceptionHandling>
+        </ExceptionHandling>
+!       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+        <BufferSecurityCheck>false</BufferSecurityCheck>
+        <FunctionLevelLinking>true</FunctionLevelLinking>
+        <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
+--- 191,197 ----
+        <StringPooling>true</StringPooling>
+        <ExceptionHandling>
+        </ExceptionHandling>
+!       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+        <BufferSecurityCheck>false</BufferSecurityCheck>
+        <FunctionLevelLinking>true</FunctionLevelLinking>
+        <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
+***************
+*** 219,225 ****
+        <StringPooling>true</StringPooling>
+        <ExceptionHandling>
+        </ExceptionHandling>
+!       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+        <BufferSecurityCheck>false</BufferSecurityCheck>
+        <FunctionLevelLinking>true</FunctionLevelLinking>
+        <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
+--- 219,225 ----
+        <StringPooling>true</StringPooling>
+        <ExceptionHandling>
+        </ExceptionHandling>
+!       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+        <BufferSecurityCheck>false</BufferSecurityCheck>
+        <FunctionLevelLinking>true</FunctionLevelLinking>
+        <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
+***************
+*** 454,457 ****
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <ImportGroup Label="ExtensionTargets">
+    </ImportGroup>
+! </Project>
+--- 454,457 ----
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <ImportGroup Label="ExtensionTargets">
+    </ImportGroup>
+! </Project>
+
+
+    (e) Run the following four commands (can skip the last two if you only want 32bit binaries)
+
         "msbuild /p:Configuration=Debug;Platform=Win32 zlibstat.vcxproj"
         "msbuild /p:Configuration=Release;Platform=Win32 zlibstat.vcxproj"
         "msbuild /p:Configuration=Debug;Platform=x64 zlibstat.vcxproj"

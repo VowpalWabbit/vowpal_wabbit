@@ -148,9 +148,13 @@
     <ZlibIncludeDir>..\..\zlib-1.2.7</ZlibIncludeDir>
     <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc10\x86\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
+  <Target Name="DepCheck">
+    <Error Text=" Cannot find zlibstat.lib in $(ZlibLibDir)" Condition="!Exists($(ZlibLibDir)\zlibstat.lib)" />
+  </Target>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
