@@ -68,6 +68,12 @@ pthread_cond_t example_unused = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t output_lock;
 pthread_cond_t output_done;
 #else
+#include <Windows.h>
+CRITICAL_SECTION examples_lock;
+CONDITION_VARIABLE example_available;
+CONDITION_VARIABLE example_unused;
+CRITICAL_SECTION output_lock;
+CONDITION_VARIABLE output_done;
 #endif
 uint64_t used_index = 0; // The index of the example currently used by thread i.
 bool done=false;
@@ -90,6 +96,8 @@ parser* new_parser()
   pthread_mutex_init(&output_lock, NULL);
   pthread_cond_init(&output_done, NULL);
   #else
+  ::InitializeCriticalSection(&output_lock);
+  ::InitializeConditionVariable(&output_done);
   #endif
   ret->ring_size = 1 << 8;
 
@@ -175,6 +183,10 @@ void reset_source(vw& all, size_t numbits)
 	    pthread_cond_wait(&output_done, &output_lock);
 	  pthread_mutex_unlock(&output_lock);
 	  #else
+      ::EnterCriticalSection(&output_lock);
+      while (all.p->local_example_number != all.p->parsed_examples)
+        !::SleepConditionVariableCS(&output_done, &output_lock, INFINITE);
+      ::LeaveCriticalSection(&output_lock);
 	  #endif
 	  
 	  // close socket, erase final prediction sink and socket
@@ -632,6 +644,16 @@ example* get_unused_example(vw& all)
 	pthread_cond_wait(&example_unused, &examples_lock);
       pthread_mutex_unlock(&examples_lock);
       #else
+      ::EnterCriticalSection(&examples_lock);
+      if (examples[all.p->parsed_examples % all.p->ring_size].in_use == false)
+	{
+	  examples[all.p->parsed_examples % all.p->ring_size].in_use = true;
+          ::LeaveCriticalSection(&examples_lock);
+	  return examples + (all.p->parsed_examples % all.p->ring_size);
+	}
+      else 
+        ::SleepConditionVariableCS(&example_unused, &examples_lock, INFINITE);
+      ::LeaveCriticalSection(&examples_lock);
       #endif
     }
 }
@@ -771,6 +793,10 @@ namespace VW{
     pthread_cond_signal(&output_done);
     pthread_mutex_unlock(&output_lock);
     #else
+    ::EnterCriticalSection(&output_lock);
+    all.p->local_example_number++;
+    ::WakeConditionVariable(&output_done);
+    ::LeaveCriticalSection(&output_lock);
     #endif
     
     if (all.audit)
@@ -809,11 +835,22 @@ namespace VW{
       pthread_cond_broadcast(&example_available);
     pthread_mutex_unlock(&examples_lock);
     #else
+    ::EnterCriticalSection(&examples_lock);
+    assert(ec->in_use);
+    ec->in_use = false;
+    ::WakeConditionVariable(&example_unused);
+    if (done)
+      ::WakeAllConditionVariable(&example_available);
+    ::LeaveCriticalSection(&examples_lock);
     #endif
   }
 }
 
+#ifdef _WIN32
+DWORD WINAPI main_parse_loop(LPVOID in)
+#else
 void *main_parse_loop(void *in)
+#endif
 {
   vw* all = (vw*) in;
   
@@ -831,6 +868,10 @@ void *main_parse_loop(void *in)
 	pthread_cond_broadcast(&example_available);
 	pthread_mutex_unlock(&examples_lock);
 	#else
+    ::EnterCriticalSection(&examples_lock);
+	all->p->parsed_examples++;
+	::WakeAllConditionVariable(&example_available);
+	::LeaveCriticalSection(&examples_lock);
 	#endif
       }
       else
@@ -850,6 +891,9 @@ void *main_parse_loop(void *in)
 	      done = true;
 	      pthread_mutex_unlock(&examples_lock);
 	      #else
+              ::EnterCriticalSection(&examples_lock);
+	      done = true;
+              ::LeaveCriticalSection(&examples_lock);
 	      #endif
 	    }
 	  #ifndef _WIN32
@@ -858,6 +902,10 @@ void *main_parse_loop(void *in)
 	  pthread_cond_broadcast(&example_available);
 	  pthread_mutex_unlock(&examples_lock);
 	  #else
+          ::EnterCriticalSection(&examples_lock);
+          ae->in_use = false;
+	  ::WakeAllConditionVariable(&example_available);
+	  ::LeaveCriticalSection(&examples_lock);
 	  #endif
 	}
     }  
@@ -892,13 +940,36 @@ example* get_example(parser* p)
     }
   }
   #else
-  return NULL;
+  ::EnterCriticalSection(&examples_lock);
+
+  if (p->parsed_examples != used_index) {
+    size_t ring_index = used_index++ % p->ring_size;
+    if (!(examples+ring_index)->in_use)
+      cout << used_index << " " << p->parsed_examples << " " << ring_index << endl;
+    assert((examples+ring_index)->in_use);
+    ::LeaveCriticalSection(&examples_lock);
+    
+    return examples + ring_index;
+  }
+  else {
+    if (!done)
+      {
+	::SleepConditionVariableCS(&example_available, &examples_lock, INFINITE);
+	::LeaveCriticalSection(&examples_lock);
+	return get_example(p);
+      }
+    else {
+      ::LeaveCriticalSection(&examples_lock);
+      return NULL;
+    }
+  }
   #endif
 }
 
 #ifndef _WIN32
 pthread_t parse_thread;
 #else
+HANDLE parse_thread;
 #endif
 
 void initialize_examples(vw& all)
@@ -922,6 +993,10 @@ void start_parser(vw& all)
   #ifndef _WIN32
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
   #else
+  ::InitializeCriticalSection(&examples_lock);
+  ::InitializeConditionVariable(&example_available);
+  ::InitializeConditionVariable(&example_unused);
+  parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
   #endif
 }
 
@@ -963,5 +1038,9 @@ void end_parser(vw& all)
   #ifndef _WIN32
   pthread_join(parse_thread, NULL);
   #else
+  ::WaitForSingleObject(parse_thread, INFINITE);
+  ::CloseHandle(parse_thread);
+  ::DeleteCriticalSection(&examples_lock);
+  ::DeleteCriticalSection(&output_lock);
   #endif
 }
