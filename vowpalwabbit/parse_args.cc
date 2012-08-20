@@ -54,9 +54,7 @@ vw parse_args(int argc, char *argv[])
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&all.active_c0), "active learning mellowness parameter c_0. Default 8")
     ("adaptive", "use adaptive, individual learning rates.")
-    ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
-    ("normalized_adaptive", "use normalized adaptive learning rates.")
-    ("precompute_norm","precompute norm in a 1st pass before updating weight vector when using normalized adaptive")
+    ("sgd", "use regular stochastic gradient descent update.")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
@@ -184,32 +182,24 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
 
-  if (vm.count("adaptive") || vm.count("exact_adaptive_norm") || vm.count("normalized_adaptive") ) {
-      all.adaptive = true;
-      if (vm.count("exact_adaptive_norm"))
-	{
-	  all.exact_adaptive_norm = true;
-          if(!vm.count("learning_rate") && !vm.count("l"))
-            all.eta = 2; //default learning rate to 2 for exact_adaptive
+  if( vm.count("sgd") || all.rank > 0 ) { //use regular sgd only if specified by user, or if doing matrix factorization, since adaptive updates not implemented for matrix factorization
+    all.adaptive = false;
+    all.normalized_adaptive = false;
+    if(!vm.count("learning_rate") && !vm.count("l"))
+      all.eta = 10; //default learning rate to 10 for regular sgd
+  }
+  else { //we use an adaptive gradient descent update with individual learning rates for each feature
+    all.stride = 4;
+    if( vm.count("adaptive") ) {
+      all.normalized_adaptive = false;
 
-	  if (vm.count("nonormalize"))
-	    cout << "Options don't make sense.  You can't use an exact norm and not normalize." << endl;
-	}
-      if (vm.count("normalized_adaptive"))
-	{
-	  all.normalized_adaptive = true;
-
-          if(!vm.count("learning_rate") && !vm.count("l"))
-            all.eta = 4; //default learning rate to 4 for normalized_adaptive
-
-          if(vm.count("precompute_norm")) {
-            all.normalized_adaptive_precompute = true;
-            all.numpasses++; //increase number of pass by 1, since we're going to use the 1st pass to compute the normalization
-          }
-          if (vm.count("nonormalize"))
-	    cout << "Options don't make sense.  You can't use an normalized adaptive updates and not normalize." << endl;
-	}
-      all.stride = 4;
+      if(!vm.count("learning_rate") && !vm.count("l"))
+        all.eta = 10; //default learning rate to 10 for regular adaptive
+    }
+    else { //we use the normalized adaptive updates by default
+      if (vm.count("nonormalize"))
+        cout << "Options don't make sense.  You can't use an normalized adaptive updates and not normalize." << endl;
+    }
   }
   
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
@@ -371,10 +361,11 @@ vw parse_args(int argc, char *argv[])
     float temp = ceilf(logf((float)(all.rank*2+1)) / logf (2.f));
     all.stride = 1 << (int) temp;
     all.random_weights = true;
-    if (vm.count("adaptive") || vm.count("exact_adaptive_norm"))
+
+    if ( vm.count("adaptive") )
       {
 	cerr << "adaptive is not implemented for matrix factorization" << endl;
-	exit (1);
+        exit(1);
       }
     if (vm.count("bfgs") || vm.count("conjugate_gradient"))
       {

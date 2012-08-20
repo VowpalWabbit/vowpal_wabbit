@@ -228,7 +228,7 @@ vw::vw()
   base_learner_nb_w = 1;
 
   power_t = 0.5;
-  eta = 10;
+  eta = 4; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
   rel_threshold = 0.001;
   rank = 0;
@@ -261,10 +261,13 @@ vw::vw()
   ngram = 0;
   skips = 0;
 
-  adaptive = false;
+  //by default use normalized adaptive updates
+  adaptive = true;
+  normalized_adaptive = true;
+  normalized_adaptive_precompute = false;
+  normalized_adaptive_max_norm_x = 1.;
+  
   add_constant = true;
-  exact_adaptive_norm = false;
-  normalized_adaptive = false;
   audit = false;
   active = false;
   active_c0 = 8.;
@@ -273,9 +276,6 @@ vw::vw()
   reg.regularizers = NULL;
   pass_length = (size_t)-1;
   passes_complete = 0;
-
-  normalized_adaptive_precompute = false;
-  normalized_adaptive_max_norm_x = 1.;
 
   save_per_pass = false;
 }

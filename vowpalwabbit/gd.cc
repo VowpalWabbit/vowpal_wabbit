@@ -96,7 +96,7 @@ void learn_gd(void* a, example* ec)
               else
                 general_normalized_adaptive_train(*all,ec,ec->eta_round,all->power_t);
             }
-	    else if (all->power_t == 0.5 || !all->exact_adaptive_norm)
+	    else if (all->power_t == 0.5)
 	      adaptive_inline_train(*all,ec,ec->eta_round);
 	    else
 	      general_adaptive_train(*all,ec,ec->eta_round,all->power_t);
@@ -628,7 +628,8 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   float xGx = 0.;
-  float update2 = g * page_feature.x * page_feature.x;
+  float x2 = page_feature.x * page_feature.x;
+  float update2 = g * x2;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
@@ -643,21 +644,22 @@ float xGx_quad(weight* weights, feature& page_feature, v_array<feature> &offer_f
 #endif
       xGx += t * ele->x;
     }
-  return xGx;
+  return xGx * x2;
 }
 
 float xGx_general_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float power_t)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   float xGx = 0.;
-  float update2 = g * page_feature.x * page_feature.x;
+  float x2 = page_feature.x * page_feature.x;
+  float update2 = g * x2;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       float t = ele->x*powf(w[1] + update2 * ele->x * ele->x,- power_t);
       xGx += t * ele->x;
     }
-  return xGx;
+  return xGx * x2;
 }
 
 float compute_general_xGx(vw& all, example* &ec, float power_t)
@@ -1002,15 +1004,13 @@ void local_predict(vw& all, example* ec)
 	      norm = compute_general_xGNx(all, ec, all.power_t);
 	    eta_t = all.eta * norm * ld->weight;
           }
-	  else if (all.adaptive && all.exact_adaptive_norm) {
-	    float magx = 0.;
+	  else if (all.adaptive) { //regular adaptive gd
 	    if (all.power_t == 0.5)
 	      norm = compute_xGx(all, ec);
 	    else 
 	      norm = compute_general_xGx(all, ec, all.power_t);
-	    magx = powf(ec->total_sum_feat_sq, 1. - all.power_t);
-	    eta_t = all.eta * norm / magx * ld->weight;
-	  } else {
+	    eta_t = all.eta * norm * ld->weight;
+	  } else { //regular sgd
 	    eta_t = all.eta / powf(t,all.power_t) * ld->weight;
 	    if (all.nonormalize) 
 	      {
