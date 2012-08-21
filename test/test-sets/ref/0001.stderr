@@ -1,4 +1,4 @@
-Num weight bits = 17
+Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0.5
@@ -15,13 +15,13 @@ loss       last          counter      weight    label  predict features
 0.000000   0.000000           22        22.0   1.0000   1.0000      512
 0.000000   0.000000           44        44.0   0.0000   0.0000      380
 0.000000   0.000000           87        87.0   1.0000   1.0000      350
-0.011494   0.022989          174       174.0   1.0000   1.0000      140
+0.000000   0.000000          174       174.0   1.0000   1.0000      140
 
 finished run
 number of examples = 200
 weighted example sum = 200
 weighted label sum = 91
-average loss = 0.01
+average loss = 0
 best constant = 0.4523
 best constant's loss = 0.2477
 total feature number = 89692

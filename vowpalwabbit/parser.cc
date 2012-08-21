@@ -64,7 +64,7 @@ example* examples;//A Ring of examples.
 
 #ifndef _WIN32
 typedef pthread_mutex_t MUTEX;
-typedef phtread_cond_t CV;
+typedef pthread_cond_t CV;
 #else
 #include <Windows.h>
 typedef CRITICAL_SECTION MUTEX;
@@ -74,7 +74,7 @@ typedef CONDITION_VARIABLE CV;
 void initialize_mutex(MUTEX * pm)
 {
 #ifndef _WIN32
-	*pm = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(pm, NULL);
 #else
 	::InitializeCriticalSection(pm);
 #endif
@@ -92,7 +92,7 @@ void delete_mutex(MUTEX * pm)
 void initialize_condition_variable(CV * pcv)
 {
 #ifndef _WIN32
-	*pcv = PTHREAD_COND_INITIALIZER;
+  pthread_cond_init(pcv, NULL);
 #else
 	::InitializeConditionVariable(pcv);
 #endif
@@ -166,8 +166,6 @@ parser* new_parser()
   ret->input = new io_buf;
   ret->output = new io_buf;
   ret->local_example_number = 0;
-  initialize_mutex(&output_lock);
-  initialize_condition_variable(&output_done);
   ret->ring_size = 1 << 8;
 
   return ret;
@@ -979,6 +977,8 @@ void start_parser(vw& all)
   initialize_mutex(&examples_lock);
   initialize_condition_variable(&example_available);
   initialize_condition_variable(&example_unused);
+  initialize_mutex(&output_lock);
+  initialize_condition_variable(&output_done);
   #ifndef _WIN32
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
   #else

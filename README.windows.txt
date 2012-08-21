@@ -27,8 +27,10 @@ You need Visual Studio 2010
       (f) Run "mkdir c:\boost"
       (g) Run "mkdir c:\boost\x86"
       (h) Run "mkdir c:\boost\x64"
-      (i) Run "b2 --prefix=c:\boost\x86 --build-dir=x86 --toolset=msvc install" (I add " -j 16" to the end to run up to 16 procs at once.)
-      (j) Run "b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc address-model=64 install"
+      (i) cd c:\src
+      (j) bootstrap.bat
+      (k) Run "b2 --prefix=c:\boost\x86 --build-dir=x86 --toolset=msvc install --with-program_options" (I add " -j 16" to the end to run up to 16 procs at once.)
+      (l) Run "b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc address-model=64 install --with-program_options"
 
 
     ==> Get pre-built binaries from boostpro -- BUT ONLY 32 BIT BINS ARE AVAILABLE
@@ -112,23 +114,14 @@ ns)</PreprocessorDefinitions>
         <FunctionLevelLinking>true</FunctionLevelLinking>
         <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
 ***************
-*** 454,457 ****
-    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-    <ImportGroup Label="ExtensionTargets">
-    </ImportGroup>
-! </Project>
---- 454,457 ----
-    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-    <ImportGroup Label="ExtensionTargets">
-    </ImportGroup>
-! </Project>
-
 
     (e) Run the following four commands (can skip the last two if you only want 32bit binaries)
 
         "msbuild /p:Configuration=Debug;Platform=Win32 zlibstat.vcxproj"
+        "msbuild /p:Configuration=Release;Platform=Win32 zlibvc.vcxproj"
         "msbuild /p:Configuration=Release;Platform=Win32 zlibstat.vcxproj"
         "msbuild /p:Configuration=Debug;Platform=x64 zlibstat.vcxproj"
+        "msbuild /p:Configuration=Release;Platform=x64 zlibvc.vcxproj"
         "msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
 
 (6) Get a copy of VW in %ROOT%. I ran "cd \src\vw" and "git clone http

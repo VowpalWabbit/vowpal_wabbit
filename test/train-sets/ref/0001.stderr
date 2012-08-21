@@ -1,7 +1,7 @@
 You have chosen to generate 3-grams
 You have chosen to generate 1-skip-3-grams
 final_regressor = models/0001.model
-Num weight bits = 17
+Num weight bits = 18
 learning rate = 2.56e+06
 initial_t = 128000
 power_t = 1
@@ -11,19 +11,21 @@ Reading from train-sets/0001.dat
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
-1.000000   1.000000            3         3.0   0.0000   1.0000      326
-0.666667   0.333333            6         6.0   1.0000   0.0000      170
-0.545455   0.400000           11        11.0   0.0000   0.0000      212
-0.460134   0.374814           22        22.0   1.0000   0.0000      512
-0.435176   0.410217           44        44.0   0.0000   1.0000      380
-0.449784   0.464733           87        87.0   1.0000   0.0000      350
-0.382986   0.316187          174       174.0   1.0000   0.0000      140
-0.238299   0.093611          348       348.0   1.0000   1.0000      152
+0.667135   0.667135            3         3.0   0.0000   0.0375      326
+0.500234   0.333333            6         6.0   1.0000   0.0000      170
+0.441085   0.370105           11        11.0   0.0000   0.9034      212
+0.430364   0.419643           22        22.0   1.0000   0.2339      512
+0.470963   0.511563           44        44.0   0.0000   1.0000      380
+0.418930   0.365687           87        87.0   1.0000   0.0000      350
+0.381112   0.343295          174       174.0   1.0000   0.3448      140
+0.253458   0.125803          348       348.0   1.0000   1.0000      152
+0.138076   0.022694          696       696.0   0.0000   0.0000      296
+0.069038   0.000000         1392      1392.0   0.0000   0.0000       62
 
 finished run
-number of examples = 400
-weighted example sum = 400
-weighted label sum = 182
-average loss = 0.2179
-best constant = 1.002
-total feature number = 179384
+number of examples = 1600
+weighted example sum = 1600
+weighted label sum = 728
+average loss = 0.06006
+best constant = 1.007
+total feature number = 717536

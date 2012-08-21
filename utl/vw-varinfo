@@ -150,7 +150,7 @@ sub get_args {
                 $skip_ts = 1;
             }
             if ($skip_ts) {
-                warning("ignoring trainset: $arg in vw-args\n");
+                warn "ignoring trainset: $arg in vw-args\n";
                 next;
             }
         }
