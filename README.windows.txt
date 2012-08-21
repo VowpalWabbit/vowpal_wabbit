@@ -118,8 +118,10 @@ ns)</PreprocessorDefinitions>
     (e) Run the following four commands (can skip the last two if you only want 32bit binaries)
 
         "msbuild /p:Configuration=Debug;Platform=Win32 zlibstat.vcxproj"
+        "msbuild /p:Configuration=Release;Platform=Win32 zlibvc.vcxproj"
         "msbuild /p:Configuration=Release;Platform=Win32 zlibstat.vcxproj"
         "msbuild /p:Configuration=Debug;Platform=x64 zlibstat.vcxproj"
+        "msbuild /p:Configuration=Release;Platform=x64 zlibvc.vcxproj"
         "msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
 
 (6) Get a copy of VW in %ROOT%. I ran "cd \src\vw" and "git clone http
