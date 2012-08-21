@@ -25,7 +25,7 @@ Implementation by Miro Dudik.
 #include <exception>
 
 #ifdef _WIN32
-inline bool isnan(double d) { return _isnan(d); }
+inline bool isnan(double d) { return (bool)_isnan(d); }
 #endif
 
 using namespace std;
@@ -340,10 +340,10 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
       g_Hg += mem[(MEM_GT+origin)%mem_stride] * w[W_COND] * mem[(MEM_GT+origin)%mem_stride];
     }
 
-    double beta = g_Hy/g_Hg;
+    float beta = (float) (g_Hy/g_Hg);
 
-    if (beta<0. || nanpattern(beta))
-      beta = 0.;
+    if (beta<0.f || nanpattern(beta))
+      beta = 0.f;
       
     mem = mem0;
     w = w0;
@@ -381,7 +381,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
     throw curv_ex;
   rho[0] = 1/y_s;
   
-  double gamma = y_s/y_Hy;
+  float gamma = (float) (y_s/y_Hy);
 
   for (int j=0; j<lastj; j++) {
     alpha[j] = rho[j] * s_q;
@@ -389,7 +389,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
     mem = mem0;
     w = w0;
     for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-      w[W_DIR] -= alpha[j]*mem[(2*j+MEM_YT+origin)%mem_stride];
+      w[W_DIR] -= (float)alpha[j]*mem[(2*j+MEM_YT+origin)%mem_stride];
       s_q += mem[(2*j+2+MEM_ST+origin)%mem_stride]*w[W_DIR];
     }
   }
@@ -399,7 +399,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
   mem = mem0;
   w = w0;
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    w[W_DIR] -= alpha[lastj]*mem[(2*lastj+MEM_YT+origin)%mem_stride];
+    w[W_DIR] -= (float)alpha[lastj]*mem[(2*lastj+MEM_YT+origin)%mem_stride];
     w[W_DIR] *= gamma*w[W_COND];
     y_r += mem[(2*lastj+MEM_YT+origin)%mem_stride]*w[W_DIR];
   }
@@ -412,7 +412,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
     mem = mem0;
     w = w0;
     for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-      w[W_DIR] += coef_j*mem[(2*j+MEM_ST+origin)%mem_stride];
+      w[W_DIR] += (float)coef_j*mem[(2*j+MEM_ST+origin)%mem_stride];
       y_r += mem[(2*j-2+MEM_YT+origin)%mem_stride]*w[W_DIR];
     }
   }
@@ -421,7 +421,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
   mem = mem0;
   w = w0;
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    w[W_DIR] = -w[W_DIR]-coef_j*mem[(MEM_ST+origin)%mem_stride];
+    w[W_DIR] = -w[W_DIR]-(float)coef_j*mem[(MEM_ST+origin)%mem_stride];
   }
   
   /*********************
@@ -502,13 +502,13 @@ void finalize_preconditioner(vw& all, float regularization)
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+3] += regularization;
       if (weights[stride*i+3] > 0)
-	weights[stride*i+3] = 1. / weights[stride*i+3];
+	weights[stride*i+3] = 1.f / weights[stride*i+3];
     }
   else
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+3] += all.reg.regularizers[2*i];
       if (weights[stride*i+3] > 0)
-	weights[stride*i+3] = 1. / weights[stride*i+3];
+	weights[stride*i+3] = 1.f / weights[stride*i+3];
     }
 }
 
