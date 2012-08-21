@@ -13,7 +13,7 @@ embodied in the content of this file are licensed under the BSD
 inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
 
 inline float trunc_weight(float w, float gravity){
-  return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.;
+  return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
 }
 
 float sd_add(weight* weights, size_t mask, feature* begin, feature* end);

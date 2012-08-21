@@ -116,7 +116,7 @@ inline float parseFloat(char * p, char **end)
     s = -1; p++;
   }
   
-  double acc = 0;
+  float acc = 0;
   while (*p >= '0' && *p <= '9')
     acc = acc * 10 + *p++ - '0';
   
@@ -142,12 +142,12 @@ inline float parseFloat(char * p, char **end)
   }
   if (*p == ' ')//easy case succeeded.
     {
-      acc *= powf(10,exp_acc-num_dec);
+      acc *= powf(10,(float)(exp_acc-num_dec));
       *end = p;
       return s * acc;
     }
   else
-    return strtod(start,end);
+    return (float)strtod(start,end);
 }
 
 inline bool nanpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fffffff) > 0x7f800000; } 
