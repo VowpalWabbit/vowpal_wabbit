@@ -1,4 +1,3 @@
-#include <pthread.h>
 #include <vector>
 #ifdef _WIN32
 #include <WinSock2.h>

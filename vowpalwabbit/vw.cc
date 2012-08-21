@@ -8,7 +8,6 @@ embodied in the content of this file are licensed under the BSD
 #include <iostream>
 #include <fstream>
 #include <float.h>
-#include <pthread.h>
 #include <time.h>
 #ifdef _WIN32
 #include <WinSock2.h>
