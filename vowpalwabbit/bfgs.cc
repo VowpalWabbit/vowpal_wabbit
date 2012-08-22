@@ -24,10 +24,6 @@ Implementation by Miro Dudik.
 #include "accumulate.h"
 #include <exception>
 
-#ifdef _WIN32
-inline bool isnan(double d) { return _isnan(d); }
-#endif
-
 using namespace std;
 
 #define CG_EXTRA 1
@@ -281,7 +277,7 @@ double regularizer_direction_magnitude(vw& all, float regularizer)
   return ret;
 }
 
-double direction_magnitude(vw& all)
+float direction_magnitude(vw& all)
 {//compute direction magnitude
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
@@ -290,7 +286,7 @@ double direction_magnitude(vw& all)
   for(uint32_t i = 0; i < length; i++)
     ret += weights[stride*i+2]*weights[stride*i+2];
   
-  return ret;
+  return (float)ret;
 }
 
   void bfgs_iter_start(vw& all, float* mem, int& lastj, double importance_weight_sum, int&origin)
@@ -340,10 +336,10 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
       g_Hg += mem[(MEM_GT+origin)%mem_stride] * w[W_COND] * mem[(MEM_GT+origin)%mem_stride];
     }
 
-    double beta = g_Hy/g_Hg;
+    float beta = (float) (g_Hy/g_Hg);
 
-    if (beta<0. || nanpattern(beta))
-      beta = 0.;
+    if (beta<0.f || nanpattern(beta))
+      beta = 0.f;
       
     mem = mem0;
     w = w0;
@@ -381,7 +377,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
     throw curv_ex;
   rho[0] = 1/y_s;
   
-  double gamma = y_s/y_Hy;
+  float gamma = (float) (y_s/y_Hy);
 
   for (int j=0; j<lastj; j++) {
     alpha[j] = rho[j] * s_q;
@@ -389,7 +385,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
     mem = mem0;
     w = w0;
     for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-      w[W_DIR] -= alpha[j]*mem[(2*j+MEM_YT+origin)%mem_stride];
+      w[W_DIR] -= (float)alpha[j]*mem[(2*j+MEM_YT+origin)%mem_stride];
       s_q += mem[(2*j+2+MEM_ST+origin)%mem_stride]*w[W_DIR];
     }
   }
@@ -399,7 +395,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
   mem = mem0;
   w = w0;
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    w[W_DIR] -= alpha[lastj]*mem[(2*lastj+MEM_YT+origin)%mem_stride];
+    w[W_DIR] -= (float)alpha[lastj]*mem[(2*lastj+MEM_YT+origin)%mem_stride];
     w[W_DIR] *= gamma*w[W_COND];
     y_r += mem[(2*lastj+MEM_YT+origin)%mem_stride]*w[W_DIR];
   }
@@ -412,7 +408,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
     mem = mem0;
     w = w0;
     for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-      w[W_DIR] += coef_j*mem[(2*j+MEM_ST+origin)%mem_stride];
+      w[W_DIR] += (float)coef_j*mem[(2*j+MEM_ST+origin)%mem_stride];
       y_r += mem[(2*j-2+MEM_YT+origin)%mem_stride]*w[W_DIR];
     }
   }
@@ -421,7 +417,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
   mem = mem0;
   w = w0;
   for(uint32_t i = 0; i < length; i++, mem+=mem_stride, w+=stride) {
-    w[W_DIR] = -w[W_DIR]-coef_j*mem[(MEM_ST+origin)%mem_stride];
+    w[W_DIR] = -w[W_DIR]-(float)coef_j*mem[(MEM_ST+origin)%mem_stride];
   }
   
   /*********************
@@ -502,13 +498,13 @@ void finalize_preconditioner(vw& all, float regularization)
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+3] += regularization;
       if (weights[stride*i+3] > 0)
-	weights[stride*i+3] = 1. / weights[stride*i+3];
+	weights[stride*i+3] = 1.f / weights[stride*i+3];
     }
   else
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+3] += all.reg.regularizers[2*i];
       if (weights[stride*i+3] > 0)
-	weights[stride*i+3] = 1. / weights[stride*i+3];
+	weights[stride*i+3] = 1.f / weights[stride*i+3];
     }
 }
 
@@ -582,11 +578,11 @@ int process_pass(vw& all) {
       if(all.span_server != "")
 	{
 	  accumulate(all, all.span_server, all.reg, 3); //Accumulate preconditioner
-	  importance_weight_sum = accumulate_scalar(all, all.span_server, importance_weight_sum);
+	  importance_weight_sum = accumulate_scalar(all, all.span_server, (float)importance_weight_sum);
 	}
       finalize_preconditioner(all, all.l2_lambda);
       if(all.span_server != "") {
-	loss_sum = accumulate_scalar(all, all.span_server, loss_sum);  //Accumulate loss_sums
+	loss_sum = accumulate_scalar(all, all.span_server, (float)loss_sum);  //Accumulate loss_sums
 	accumulate(all, all.span_server, all.reg, 1); //Accumulate gradients from all nodes
       }
       if (all.l2_lambda > 0.)
@@ -619,7 +615,7 @@ int process_pass(vw& all) {
 	      if (gradient_pass) // We just finished computing all gradients
 		{
 		  if(all.span_server != "") {
-		    loss_sum = accumulate_scalar(all, all.span_server, loss_sum);  //Accumulate loss_sums
+		    loss_sum = accumulate_scalar(all, all.span_server, (float)loss_sum);  //Accumulate loss_sums
 		    accumulate(all, all.span_server, all.reg, 1); //Accumulate gradients from all nodes
 		  }
 		  if (all.l2_lambda > 0.)
@@ -633,7 +629,7 @@ int process_pass(vw& all) {
   /********************************************************************/
   /* B0) DERIVATIVE ZERO: MINIMUM FOUND *******************************/
   /********************************************************************/ 
-		  if (nanpattern(wolfe1))
+		  if (nanpattern((float)wolfe1))
 		    {
 		      fprintf(stderr, "\n");
 		      fprintf(stdout, "Derivative 0 detected.\n");
@@ -647,15 +643,15 @@ int process_pass(vw& all) {
 		    {// curvature violated, or we stepped too far last time: step back
 		      ftime(&t_end_global);
 		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
-		      float ratio = (step_size==0.) ? 0. : new_step/step_size;
+		      float ratio = (step_size==0.f) ? 0.f : (float)new_step/(float)step_size;
 		      if (!all.quiet)
 			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
 				"","",ratio,
 				new_step,
 				net_time/1000.);
 			predictions.erase();
-			update_weight(all, all.final_regressor_name, -step_size+new_step, current_pass);		     		      			
-			step_size = new_step;
+			update_weight(all, all.final_regressor_name, (float)(-step_size+new_step), current_pass);		     		      			
+			step_size = (float)new_step;
 			zero_derivative(all);
 			loss_sum = 0.;
 		    }
@@ -666,7 +662,7 @@ int process_pass(vw& all) {
   /********************************************************************/ 
 		  else {
 		      double rel_decrease = (previous_loss_sum-loss_sum)/previous_loss_sum;
-		      if (!nanpattern(rel_decrease) && backstep_on && fabs(rel_decrease)<all.rel_threshold) {
+		      if (!nanpattern((float)rel_decrease) && backstep_on && fabs(rel_decrease)<all.rel_threshold) {
 			fprintf(stdout, "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
 				"If you want to optimize further, decrease termination threshold.\n", (long int)current_pass+1, all.rel_threshold*100.0);
 			status = LEARN_CONV;
@@ -707,11 +703,11 @@ int process_pass(vw& all) {
 	      else // just finished all second gradients
 		{
 		  if(all.span_server != "") {
-		    curvature = accumulate_scalar(all, all.span_server, curvature);  //Accumulate curvatures
+		    curvature = accumulate_scalar(all, all.span_server, (float)curvature);  //Accumulate curvatures
 		  }
 		  if (all.l2_lambda > 0.)
 		    curvature += regularizer_direction_magnitude(all, all.l2_lambda);
-		  float dd = derivative_in_direction(all, mem, origin);
+		  float dd = (float)derivative_in_direction(all, mem, origin);
 		  if (curvature == 0. && dd != 0.)
 		    {
 		      fprintf(stdout, "%s", curv_message);
@@ -725,7 +721,7 @@ int process_pass(vw& all) {
 		      status = LEARN_CONV;
 		    }
 		  else
-		    step_size = - dd/curvature;
+		    step_size = - dd/(float)curvature;
 		  
 		  float d_mag = direction_magnitude(all);
 

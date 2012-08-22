@@ -284,6 +284,8 @@ int read_features(void* in, example* ex)
     return num_chars;
   if (line[num_chars-1] == '\n')
     num_chars--;
+  if (line[num_chars-1] == '\r')
+    num_chars--;
   substring example = {line, line + num_chars};
   substring_to_example(all, ae, example);
 

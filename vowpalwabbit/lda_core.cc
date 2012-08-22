@@ -37,8 +37,8 @@ fastlog2 (float x)
 {
   union { float f; uint32_t i; } vx = { x };
   union { uint32_t i; float f; } mx = { (vx.i & 0x007FFFFF) | (0x7e << 23) };
-  float y = vx.i;
-  y *= 1.0f / (1 << 23);
+  float y = (float)vx.i;
+  y *= 1.0f / (float)(1 << 23);
 
   return 
     y - 124.22544637f - 1.498030302f * mx.f - 1.72587999f / (0.3520887068f + mx.f);
@@ -55,7 +55,7 @@ fastpow2 (float p)
 {
   float offset = (p < 0) ? 1.0f : 0.0f;
   float clipp = (p < -126) ? -126.0f : p;
-  int w = clipp;
+  int w = (int)clipp;
   float z = clipp - w + offset;
   union { uint32_t i; float f; } v = { (uint32_t)((1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z)) };
 
@@ -324,7 +324,7 @@ float decayfunc(float t, float old_t, float power_t) {
 
 float decayfunc2(float t, float old_t, float power_t) 
 {
-  float power_t_plus_one = 1. - power_t;
+  float power_t_plus_one = 1.f - power_t;
   float arg =  - ( powf(t, power_t_plus_one) -
                    powf(old_t, power_t_plus_one));
   return exp ( arg
@@ -334,9 +334,9 @@ float decayfunc2(float t, float old_t, float power_t)
 float decayfunc3(double t, double old_t, double power_t) 
 {
   double power_t_plus_one = 1. - power_t;
-  double logt = log(t);
-  double logoldt = log(old_t);
-  return (old_t / t) * exp(0.5*power_t_plus_one*(-logt*logt + logoldt*logoldt));
+  double logt = log((float)t);
+  double logoldt = log((float)old_t);
+  return (float)((old_t / t) * exp(0.5f*power_t_plus_one*(-logt*logt + logoldt*logoldt)));
 }
 
 float decayfunc4(double t, double old_t, double power_t)
@@ -344,7 +344,7 @@ float decayfunc4(double t, double old_t, double power_t)
   if (power_t > 0.99)
     return decayfunc3(t, old_t, power_t);
   else
-    return decayfunc2(t, old_t, power_t);
+    return (float)decayfunc2(t, (float)old_t, (float)power_t);
 }
 
 void expdigammify(vw& all, float* gamma)

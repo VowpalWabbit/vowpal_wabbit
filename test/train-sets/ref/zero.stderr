@@ -11,7 +11,7 @@ Allocated 72M for weights and mem
 creating cache_file = train-sets/zero.dat.cache
 Reading from train-sets/zero.dat
 num sources = 1
- 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.066
+ 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.059
 
 finished run
 number of examples = 25
@@ -19,6 +19,6 @@ weighted example sum = 25
 weighted label sum = 0
 average loss = 0
 best constant = -0.04167
-total feature number = 15030
+total feature number = 15005
  3 0.000000e+00	0.000000e+00	0.000000e+00	 -nan      	-nan      	
 

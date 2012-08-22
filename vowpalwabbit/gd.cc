@@ -109,7 +109,7 @@ void sync_weights(vw& all) {
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
   for(uint32_t i = 0; i < length && all.reg_mode; i++)
-    all.reg.weight_vectors[stride*i] = trunc_weight(all.reg.weight_vectors[stride*i], all.sd->gravity) * all.sd->contraction;
+    all.reg.weight_vectors[stride*i] = trunc_weight(all.reg.weight_vectors[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
   all.sd->contraction = 1.;
 }
@@ -142,9 +142,9 @@ float finalize_prediction(vw& all, float ret)
       return 0.;
     }
   if ( ret > all.sd->max_label )
-    return all.sd->max_label;
+    return (float)all.sd->max_label;
   if (ret < all.sd->min_label)
-    return all.sd->min_label;
+    return (float)all.sd->min_label;
   return ret;
 }
 
@@ -160,7 +160,7 @@ float inline_predict_trunc(vw& all, example* &ec)
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add_trunc(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, all.sd->gravity);
+    prediction += sd_add_trunc(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, (float)all.sd->gravity);
   
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
@@ -169,7 +169,7 @@ float inline_predict_trunc(vw& all, example* &ec)
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
 	    prediction += one_pf_quad_predict_trunc(weights, *temp.begin,
-						    ec->atomics[(int)(*i)[1]], mask, all.sd->gravity);
+						    ec->atomics[(int)(*i)[1]], mask, (float)all.sd->gravity);
 	}
     }
   
@@ -221,7 +221,7 @@ void print_audit_quad(vw& all, weight* weights, audit_data& page_feature, v_arra
       tempstream << page_feature.space << '^' << page_feature.feature << '^' 
 		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask)
 		 << ':' << ele->x*page_feature.x
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], all.sd->gravity) * all.sd->contraction;
+		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
       string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
@@ -235,7 +235,7 @@ void print_quad(vw& all, weight* weights, feature& page_feature, v_array<feature
       ostringstream tempstream;
       tempstream << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask) 
 		 << ':' << (ele->x*page_feature.x)
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], all.sd->gravity) * all.sd->contraction;
+		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
       string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
@@ -270,7 +270,7 @@ void print_features(vw& all, example* &ec)
 	    {
 	      ostringstream tempstream;
 	      tempstream << f->space << '^' << f->feature << ':' << (f->weight_index/stride & all.parse_mask) << ':' << f->x;
-	      tempstream  << ':' << trunc_weight(weights[f->weight_index & all.weight_mask], all.sd->gravity) * all.sd->contraction;
+	      tempstream  << ':' << trunc_weight(weights[f->weight_index & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
 	      if(all.adaptive)
 		tempstream << '@' << weights[(f->weight_index+1) & all.weight_mask];
 	      string_value sv = {weights[f->weight_index & all.weight_mask]*f->x, tempstream.str()};
@@ -283,7 +283,7 @@ void print_features(vw& all, example* &ec)
 	      if ( f->weight_index == ((constant*stride)&all.weight_mask))
 		tempstream << "Constant:";
 	      tempstream << (f->weight_index/stride & all.parse_mask) << ':' << f->x;
-	      tempstream << ':' << trunc_weight(weights[f->weight_index & all.weight_mask], all.sd->gravity) * all.sd->contraction;
+	      tempstream << ':' << trunc_weight(weights[f->weight_index & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
 	      if(all.adaptive)
 		tempstream << '@' << weights[(f->weight_index+1) & all.weight_mask];
 	      string_value sv = {weights[f->weight_index & all.weight_mask]*f->x, tempstream.str()};
@@ -943,7 +943,7 @@ void local_predict(vw& all, example* ec)
 
   all.set_minmax(all.sd, ld->label);
 
-  ec->final_prediction = finalize_prediction(all, ec->partial_prediction * all.sd->contraction);
+  ec->final_prediction = finalize_prediction(all, ec->partial_prediction * (float)all.sd->contraction);
 
   if(all.active_simulation){
     float k = ec->example_t - ld->weight;
@@ -959,7 +959,7 @@ void local_predict(vw& all, example* ec)
 
   float t;
   if(all.active)
-    t = all.sd->weighted_unlabeled_examples;
+    t = (float)all.sd->weighted_unlabeled_examples;
   else
     t = ec->example_t;
 
@@ -969,7 +969,7 @@ void local_predict(vw& all, example* ec)
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       if (all.training && ec->loss > 0.)
 	{
-	  double eta_t;
+	  float eta_t;
 	  float norm;
           if(all.adaptive && all.normalized_adaptive ) {
             if (all.power_t == 0.5)
@@ -995,7 +995,7 @@ void local_predict(vw& all, example* ec)
 	      norm = ec->total_sum_feat_sq;
 	  }
           float update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm);
-	  ec->eta_round = update / all.sd->contraction;
+	  ec->eta_round = (float) (update / all.sd->contraction);
 
 	  if (all.reg_mode && fabs(ec->eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ec->final_prediction, ld->label);
