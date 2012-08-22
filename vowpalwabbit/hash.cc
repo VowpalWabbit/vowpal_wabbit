@@ -28,8 +28,7 @@
 
 // Platform-specific functions and macros
 #if defined(_MSC_VER)                       // Microsoft Visual Studio
-    typedef unsigned char uint8_t;
-    typedef unsigned long uint32_t;
+#   include <stdint.h>
 
 #   define FORCE_INLINE __forceinline
 #   include <stdlib.h>
