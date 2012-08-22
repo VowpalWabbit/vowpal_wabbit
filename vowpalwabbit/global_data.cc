@@ -188,7 +188,7 @@ vw::vw()
   sd->total_features = 0;
   sd->sum_loss = 0.0;
   sd->sum_loss_since_last_dump = 0.0;
-  sd->dump_interval = exp(1.);
+  sd->dump_interval = (float)exp(1.);
   sd->gravity = 0.;
   sd->contraction = 1.;
   sd->min_label = 0.;
@@ -211,8 +211,8 @@ vw::vw()
   default_bits = true;
   daemon = false;
   num_children = 10;
-  lda_alpha = 0.1;
-  lda_rho = 0.1;
+  lda_alpha = 0.1f;
+  lda_rho = 0.1f;
   lda_D = 10000.;
   minibatch = 1;
   span_server = "";
@@ -230,7 +230,7 @@ vw::vw()
   power_t = 0.5;
   eta = 10;
   numpasses = 1;
-  rel_threshold = 0.001;
+  rel_threshold = 0.001f;
   rank = 0;
 
   final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;

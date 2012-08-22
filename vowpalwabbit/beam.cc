@@ -215,7 +215,7 @@ namespace Beam
   void expand_state(beam*b, size_t old_id, state old_state, float old_loss, void*args) {
     test_beam_state* new_state = (test_beam_state*)calloc(1, sizeof(test_beam_state));
     new_state->id = old_id + ((test_beam_state*)old_state)->id * 2;
-    float new_loss = old_loss + 0.5;
+    float new_loss = old_loss + 0.5f;
     cout << "expand_state " << old_loss << " -> " << new_state->id << " , " << new_loss << endl;
     b->put(old_id+1, new_state, 0, new_loss);
   }
@@ -224,7 +224,7 @@ namespace Beam
     for (size_t i=0; i<25; i++) {
       test_beam_state* s = (test_beam_state*)calloc(1, sizeof(test_beam_state));
       s->id = i / 3;
-      b->put(0, s, 0, 0. - (float)i);
+      b->put(0, s, 0, 0.f - (float)i);
       cout << "added " << s->id << endl;
     }
     b->iterate(0, expand_state, NULL);

@@ -8,10 +8,6 @@
 #include "parse_example.h"
 #include "parse_primitives.h"
 
-#ifdef _WIN32
-inline bool isnan(double d) { return _isnan(d); }
-#endif
-
 size_t hashstring (substring s, unsigned long h);
 
 namespace CB
@@ -156,7 +152,7 @@ namespace CB
         if(name.index() > 1)
           f.x = float_of_substring(name[1]);
 
-        if ( isnan(f.x))
+        if ( nanpattern(f.x))
         {
 	  cerr << "error NaN cost for action: ";
 	  cerr.write(name[0].begin, name[0].end - name[0].begin);
@@ -168,7 +164,7 @@ namespace CB
         if(name.index() > 2)
           f.prob_action = float_of_substring(name[2]);
 
-        if ( isnan(f.prob_action))
+        if ( nanpattern(f.prob_action))
         {
 	  cerr << "error NaN probability for action: ";
 	  cerr.write(name[0].begin, name[0].end - name[0].begin);
@@ -238,7 +234,7 @@ namespace CB
           //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
           //update the loss of this regressor 
           nb_ex_regressors++;
-          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x)*(cl_obs->x) - avg_loss_regressors );
+          avg_loss_regressors += (1.0f/nb_ex_regressors)*( (cl_obs->x)*(cl_obs->x) - avg_loss_regressors );
           last_pred_reg = 0;
           last_correct_cost = cl_obs->x;
         }
@@ -261,7 +257,7 @@ namespace CB
           //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
           //update the loss of this regressor 
           nb_ex_regressors++;
-          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x)*(cl_obs->x) - avg_loss_regressors );
+          avg_loss_regressors += (1.0f/nb_ex_regressors)*( (cl_obs->x)*(cl_obs->x) - avg_loss_regressors );
           last_pred_reg = 0;
           last_correct_cost = cl_obs->x;
         }
@@ -339,7 +335,7 @@ namespace CB
 
         if( cl_obs != NULL && cl_obs->weight_index == i ) {
           nb_ex_regressors++;
-          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          avg_loss_regressors += (1.0f/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
           last_pred_reg = wc.x;
           last_correct_cost = cl_obs->x;
         }
@@ -366,7 +362,7 @@ namespace CB
 
         if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
           nb_ex_regressors++;
-          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          avg_loss_regressors += (1.0f/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
           last_pred_reg = wc.x;
           last_correct_cost = cl_obs->x;
         }
@@ -403,7 +399,7 @@ namespace CB
 
         if( cl_obs != NULL && cl_obs->weight_index == i ) {
           nb_ex_regressors++;
-          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          avg_loss_regressors += (1.0f/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
           last_pred_reg = wc.x;
           last_correct_cost = cl_obs->x;
         }
@@ -424,7 +420,7 @@ namespace CB
 
         if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
           nb_ex_regressors++;
-          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          avg_loss_regressors += (1.0f/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
           last_pred_reg = wc.x;
           last_correct_cost = cl_obs->x;
         }
@@ -458,7 +454,7 @@ namespace CB
         //add correction if we observed cost for this action and regressor is wrong
         if( cl_obs != NULL && cl_obs->weight_index == i ) {
           nb_ex_regressors++;
-          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          avg_loss_regressors += (1.0f/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
           last_pred_reg = wc.x;
           last_correct_cost = cl_obs->x;
           wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
@@ -481,7 +477,7 @@ namespace CB
         //add correction if we observed cost for this action and regressor is wrong
         if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
           nb_ex_regressors++;
-          avg_loss_regressors += (1.0/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
+          avg_loss_regressors += (1.0f/nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - avg_loss_regressors );
           last_pred_reg = wc.x;
           last_correct_cost = cl_obs->x;
           wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
@@ -666,7 +662,7 @@ namespace CB
     for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
       {
         int f = all.final_prediction_sink[i];
-        all.print(f, *(OAA::prediction_t*)&ec->final_prediction, 0, ec->tag);
+        all.print(f, (float) (*(OAA::prediction_t*)&ec->final_prediction), 0, ec->tag);
       }
   
     all.sd->example_number++;

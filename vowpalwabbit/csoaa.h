@@ -38,7 +38,7 @@ namespace CSOAA {
 					delete_label, weight, initial, 
 					sizeof(label)};
 
-  int example_is_test(example* ec);
+  bool example_is_test(example* ec);
 }
 
 namespace CSOAA_AND_WAP_LDF {

@@ -80,7 +80,7 @@ void mf_inline_train(vw& all, example* &ec, float update)
 
       // use final prediction to get update size
       // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-      float eta_t = all.eta/pow(ec->example_t,all.power_t) / 3. * ld->weight;
+      float eta_t = all.eta/pow(ec->example_t,all.power_t) / 3.f * ld->weight;
       update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, 1.); //ec->total_sum_feat_sq);
 
       float regularization = eta_t * all.l2_lambda;
