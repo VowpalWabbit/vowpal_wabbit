@@ -167,14 +167,14 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
     }
 }
 
-void set_mm(shared_data* sd, double label)
+void set_mm(shared_data* sd, float label)
 {
   sd->min_label = min(sd->min_label, label);
   if (label != FLT_MAX)
     sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(shared_data* sd, double label)
+void noop_mm(shared_data* sd, float label)
 {}
 
 vw::vw()

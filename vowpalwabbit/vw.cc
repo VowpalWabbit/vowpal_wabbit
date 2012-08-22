@@ -60,24 +60,24 @@ int main(int argc, char *argv[])
     cerr<<"Net time taken by process = "<<net_time/(double)(1000)<<" seconds\n";
 
   if(all.span_server != "") {
-    float loss = all.sd->sum_loss;
+    float loss = (float)all.sd->sum_loss;
     all.sd->sum_loss = (double)accumulate_scalar(all, all.span_server, loss);
-    float weighted_examples = all.sd->weighted_examples;
+    float weighted_examples = (float)all.sd->weighted_examples;
     all.sd->weighted_examples = (double)accumulate_scalar(all, all.span_server, weighted_examples);
-    float weighted_labels = all.sd->weighted_labels;
+    float weighted_labels = (float)all.sd->weighted_labels;
     all.sd->weighted_labels = (double)accumulate_scalar(all, all.span_server, weighted_labels);
-    float weighted_unlabeled_examples = all.sd->weighted_unlabeled_examples;
+    float weighted_unlabeled_examples = (float)all.sd->weighted_unlabeled_examples;
     all.sd->weighted_unlabeled_examples = (double)accumulate_scalar(all, all.span_server, weighted_unlabeled_examples);
-    float example_number = all.sd->example_number;
+    float example_number = (float)all.sd->example_number;
     all.sd->example_number = (uint64_t)accumulate_scalar(all, all.span_server, example_number);
-    float total_features = all.sd->total_features;
+    float total_features = (float)all.sd->total_features;
     all.sd->total_features = (uint64_t)accumulate_scalar(all, all.span_server, total_features);
   }
 
-  float weighted_labeled_examples = all.sd->weighted_examples - all.sd->weighted_unlabeled_examples;
-  float best_constant = (all.sd->weighted_labels - all.initial_t) / weighted_labeled_examples;
-  float constant_loss = (best_constant*(1.0 - best_constant)*(1.0 - best_constant)
-			 + (1.0 - best_constant)*best_constant*best_constant);
+  float weighted_labeled_examples = (float)(all.sd->weighted_examples - all.sd->weighted_unlabeled_examples);
+  float best_constant = (float)((all.sd->weighted_labels - all.initial_t) / weighted_labeled_examples);
+  float constant_loss = (best_constant*(1.0f - best_constant)*(1.0f - best_constant)
+			 + (1.0f - best_constant)*best_constant*best_constant);
   
   if (!all.quiet)
     {
