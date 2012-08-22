@@ -246,7 +246,7 @@ namespace CSOAA {
     all.sd->sum_loss_since_last_dump += loss;
   
     for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, *(OAA::prediction_t*)&(ec->final_prediction), 0, ec->tag);
+      all.print(*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
@@ -377,7 +377,7 @@ namespace CSOAA {
     all.finish = finish;
   }
 
-  int example_is_test(example* ec)
+  bool example_is_test(example* ec)
   {
     v_array<CSOAA::wclass> costs = ((label*)ec->ld)->costs;
     if (costs.index() == 0) return true;
@@ -584,7 +584,7 @@ namespace CSOAA_AND_WAP_LDF {
               // learn
               ec1->example_t = csoaa_example_t;
               simple_label.initial = 0.;
-              simple_label.label = (costs1[j1].x < costs2[j2].x) ? -1.0 : 1.0;
+              simple_label.label = (costs1[j1].x < costs2[j2].x) ? -1.0f : 1.0f;
               simple_label.weight = value_diff;
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
@@ -791,7 +791,7 @@ namespace CSOAA_AND_WAP_LDF {
     }
   
     for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, *(OAA::prediction_t*)&(ec->final_prediction), 0, ec->tag);
+      all.print(*sink, (float)(*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
