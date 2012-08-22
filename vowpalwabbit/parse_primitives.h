@@ -53,7 +53,7 @@ struct label_parser {
   size_t label_size;
 };
 
-typedef size_t (*hash_func_t)(substring, unsigned long);
+typedef size_t (*hash_func_t)(substring, uint32_t);
 
 struct parser {
   v_array<substring> channels;//helper(s) for text parsing
