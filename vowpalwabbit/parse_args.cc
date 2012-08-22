@@ -121,7 +121,7 @@ vw parse_args(int argc, char *argv[])
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
-    ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
+    ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
 
     ("unique_id", po::value<size_t>(&all.unique_id),"unique id used for cluster parallel jobs")
     ("total", po::value<size_t>(&all.total),"total number of nodes used in cluster parallel job")    
@@ -192,7 +192,6 @@ vw parse_args(int argc, char *argv[])
 	}
       all.stride = 2;
   }
-  
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     all.driver = BFGS::drive_bfgs;
     all.learn = BFGS::learn;
