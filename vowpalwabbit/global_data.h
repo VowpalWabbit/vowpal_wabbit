@@ -184,7 +184,6 @@ struct vw {
   bool add_constant;
   bool nonormalize;
 
-  bool normalized_adaptive_precompute;
   float normalized_adaptive_max_norm_x;
 
   size_t lda;

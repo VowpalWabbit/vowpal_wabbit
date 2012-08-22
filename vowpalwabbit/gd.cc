@@ -48,39 +48,21 @@ void learn_gd(void* a, example* ec)
   assert(ec->in_use);
   if (ec->pass != gd_current_pass)
     {
-      if(gd_current_pass == 0 && all->normalized_adaptive_precompute)
-      { //we completed the first pass where we were computing the norm
-        //reset t in all->sd and example so that this is like if we were starting the first pass
-        all->sd->t = all->initial_t + ec->global_weight;
-        ec->example_t = all->sd->t;
-
-        cout << "Finished Precomputing Norm - Starting Training" << endl;
-
-        //reset evaluation score in case this is non-zero
-        all->sd->weighted_examples = 0.;
-        all->sd->weighted_labels = 0.;
-        all->sd->weighted_unlabeled_examples = 0.;
-        all->sd->total_features = 0.;
-        all->sd->sum_loss = 0.;
-        all->sd->sum_loss_since_last_dump = 0.;
-        all->sd->old_weighted_examples = 0.;
-        all->sd->dump_interval = exp(1.);
-      }
-      else {
-        if(all->span_server != "") {
-	  if(all->adaptive)
-	    accumulate_weighted_avg(*all, all->span_server, all->reg);
-	  else 
-	    accumulate_avg(*all, all->span_server, all->reg, 0);	      
-        }
       
-        if (all->save_per_pass)
+      if(all->span_server != "") {
+	if(all->adaptive)
+	  accumulate_weighted_avg(*all, all->span_server, all->reg);
+	else 
+	  accumulate_avg(*all, all->span_server, all->reg, 0);	      
+      }
+      
+      if (all->save_per_pass)
 	{
 	  sync_weights(*all);
 	  save_predictor(*all, all->final_regressor_name, gd_current_pass);
 	}
-        all->eta *= all->eta_decay_rate;
-      }
+      all->eta *= all->eta_decay_rate;
+      
       gd_current_pass = ec->pass;
     }
   
@@ -391,7 +373,6 @@ void one_pf_quad_normalized_adaptive_update(vw& all, weight* weights, feature& p
     x = ele->x;
     xquad_abs = fabs(x*page_feature.x);
     if( xquad_abs > w[2] ) w[2] = xquad_abs;
-    if( all.normalized_adaptive_precompute && ec->pass == 0) continue;
     w[1] += update2 * x * x;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     eta = _mm_load_ss(&w[1]);
@@ -440,7 +421,6 @@ void normalized_adaptive_inline_train(vw& all, example* &ec, float update)
       x = f->x;
       x_abs = fabs(x);
       if( x_abs > w[2] ) w[2] = x_abs;
-      if( all.normalized_adaptive_precompute && ec->pass == 0) continue;
       w[1] += g * x * x;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
       eta = _mm_load_ss(&w[1]);
@@ -558,7 +538,6 @@ void general_normalized_adaptive_train(vw& all, example* &ec, float update, floa
       x = f->x;
       x_abs = fabs(x);
       if( x_abs > w[2] ) w[2] = x_abs;
-      if( all.normalized_adaptive_precompute && ec->pass == 0) continue;
       w[1] += g * x * x;
       norm = w[2]*all.normalized_adaptive_max_norm_x;
       t = x*powf(w[1],-power_t)*powf(norm*norm,power_t-1.);
@@ -852,7 +831,7 @@ float compute_general_xGNx(vw& all, example* &ec, float power_t)
   }
   
   norm_x = sqrt(norm_x);
-  if( (!all.normalized_adaptive_precompute || ec->pass > 0) && norm_x > all.normalized_adaptive_max_norm_x)
+  if( norm_x > all.normalized_adaptive_max_norm_x)
     all.normalized_adaptive_max_norm_x = norm_x;
 
   xGNx *= powf(all.normalized_adaptive_max_norm_x * all.normalized_adaptive_max_norm_x,power_t-1.);
@@ -918,7 +897,7 @@ float compute_xGNx(vw& all, example* &ec)
   }
  
   norm_x = sqrt(norm_x);
-  if( (!all.normalized_adaptive_precompute || ec->pass > 0) && norm_x > all.normalized_adaptive_max_norm_x)
+  if( norm_x > all.normalized_adaptive_max_norm_x)
     all.normalized_adaptive_max_norm_x = norm_x;
 
   xGNx /= all.normalized_adaptive_max_norm_x;
@@ -976,11 +955,6 @@ void local_predict(vw& all, example* ec)
     }
     else //do not query => do not train
       ld->label = FLT_MAX;
-  }
-
-  if( all.normalized_adaptive_precompute && ec->pass == 0) {
-    ec->eta_round = 1.0;
-    return;
   }
 
   float t;
