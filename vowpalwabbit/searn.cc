@@ -88,13 +88,13 @@ namespace SearnUtil
     } else if (num_valid_policies == 1) {
       pid = 0;
     } else {
-      float r = drand48();
+      float r = (float)drand48();
       pid = 0;
       if (r > beta) {
         r -= beta;
         while ((r > 0) && (pid < num_valid_policies-1)) {
           pid ++;
-          r -= beta * powf(1. - beta, (float)pid);
+          r -= beta * powf(1.f - beta, (float)pid);
         }
       }
     }
@@ -173,7 +173,7 @@ namespace SearnUtil
         for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++) {
 
           if (all.audit) {
-            if (!ec->audit_features[*i].index() >= feature_index) {
+            if (feature_index >= (int)ec->audit_features[*i].index() ) {
               char buf[32];
               sprintf(buf, "{%d}", f->weight_index);
               fstring = string(buf);
@@ -285,12 +285,12 @@ namespace Searn
   size_t max_rollout          = INT_MAX;
   size_t passes_per_policy    = 1;     //this should be set to the same value as --passes for dagger
   float  beta                 = 0.5;
-  size_t gamma                = 1.;
+  float gamma                = 1.;
   bool   do_recombination     = true;
   bool   allow_current_policy = false; //this should be set to true for dagger
   bool   rollout_oracle       = false; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
   bool   adaptive_beta        = false; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
-  float  alpha                = 0.001; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
+  float  alpha                = 0.001f; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
   bool   rollout_all_actions  = true;  //by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
 
   // debug stuff
@@ -697,7 +697,7 @@ namespace Searn
 
     if (alpha < 0 || alpha > 1) {
       std::cerr << "warning: searn_adaptive_beta must be in (0,1); resetting to 0.001" << std::endl;
-      alpha = 0.001;
+      alpha = 0.001f;
     }
 
     if (task.initialize != NULL)
@@ -1034,7 +1034,7 @@ namespace Searn
         if( !task.allowed(s0,k) ) action++;
       }
     }
-    prob_sampled_action = 1.0/nb_allowed_actions;
+    prob_sampled_action = (float) (1.0/nb_allowed_actions);
     return action;
   }
 
@@ -1237,7 +1237,7 @@ namespace Searn
       action_sequence = std::vector<action>();
 
     // if we are using adaptive beta, update it to take into account the latest updates
-    if( adaptive_beta ) beta = 1. - powf(1. - alpha,total_examples_generated);
+    if( adaptive_beta ) beta = 1.f - powf(1.f - alpha,(float)total_examples_generated);
     
     run_prediction(all, s0, false, true, will_print, &action_sequence);
 
@@ -1264,7 +1264,7 @@ namespace Searn
     int step = 1;
     while (!task.final(s0)) {
       // if we are using adaptive beta, update it to take into account the latest updates
-      if( adaptive_beta ) beta = 1. - powf(1. - alpha,total_examples_generated);
+      if( adaptive_beta ) beta = 1.f - powf(1.f - alpha,(float)total_examples_generated);
 
       // first, make a prediction (we don't want to bias ourselves if
       // we're using the current policy to predict)

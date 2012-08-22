@@ -36,7 +36,7 @@ namespace OAA {
   float weight(void* v)
   {
     mc_label* ld = (mc_label*) v;
-    return (ld->weight > 0) ? ld->weight : 0.;
+    return (ld->weight > 0) ? ld->weight : 0.f;
   }
 
   float initial(void* v)
@@ -136,7 +136,7 @@ namespace OAA {
     all.sd->sum_loss_since_last_dump += loss;
   
     for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, *(prediction_t*)&(ec->final_prediction), 0, ec->tag);
+      all.print(*sink, (float)(*(prediction_t*)&(ec->final_prediction)), 0, ec->tag);
   
     all.sd->example_number++;
 

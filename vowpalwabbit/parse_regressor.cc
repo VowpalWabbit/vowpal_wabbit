@@ -54,10 +54,10 @@ void initialize_regressor(vw& all)
     {
       if (all.rank > 0)
 	for (size_t j = 0; j < all.stride*length; j++)
-	  all.reg.weight_vectors[j] = (double) 0.1 * drand48(); 
+	  all.reg.weight_vectors[j] = (float) (0.1 * drand48()); 
       else
 	for (size_t j = 0; j < length; j++)
-	  all.reg.weight_vectors[j] = drand48() - 0.5;
+	  all.reg.weight_vectors[j] = (float)(drand48() - 0.5);
     }
   if (all.initial_weight != 0.)
     for (size_t j = 0; j < all.stride*length; j+=all.stride)
@@ -70,9 +70,8 @@ void initialize_regressor(vw& all)
 	{
 	  for (size_t k = 0; k < all.lda; k++) {
 	    if (all.random_weights) {
-	      all.reg.weight_vectors[j+k] = -log(drand48()) + 1.0;
-	      all.reg.weight_vectors[j+k] *= (float)all.lda_D / (float)all.lda
-		/ all.length() * 200;
+	      all.reg.weight_vectors[j+k] = (float)(-log(drand48()) + 1.0f);
+		  all.reg.weight_vectors[j+k] *= (float)(all.lda_D / all.lda / all.length() * 200);
 	    }
 	  }
 	  all.reg.weight_vectors[j+all.lda] = all.initial_t;

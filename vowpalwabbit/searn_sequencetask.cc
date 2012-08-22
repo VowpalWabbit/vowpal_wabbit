@@ -141,7 +141,7 @@ namespace SequenceTask {
   {
     seq_state* s = (seq_state*)s0;
 
-    s->cum_loss += (oracle(s0) == a) ? 0.0 : 1.0;
+    s->cum_loss += (oracle(s0) == a) ? 0.0f : 1.0f;
 
     if (hinfo.length > 0) {
       int old_val = s->predictions[0];

@@ -35,8 +35,8 @@ struct shared_data {
   float dump_interval;// when should I update for the user.
   double gravity;
   double contraction;
-  double min_label;//minimum label encountered
-  double max_label;//maximum label encountered
+  float min_label;//minimum label encountered
+  float max_label;//maximum label encountered
 
   bool binary_label;
   uint32_t k;
