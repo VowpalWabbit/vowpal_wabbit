@@ -80,11 +80,11 @@ namespace OAA {
     case 0:
       break;
     case 1:
-      ld->label = float_of_substring(words[0]);
+      ld->label = int_of_substring(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = float_of_substring(words[0]);
+      ld->label = int_of_substring(words[0]);
       ld->weight = float_of_substring(words[1]);
       break;
     default:

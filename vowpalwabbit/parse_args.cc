@@ -502,9 +502,9 @@ vw parse_args(int argc, char *argv[])
   if (!all.quiet)
     {
       if (all.reg_mode %2)
-	cerr << "using l1 regularization" << endl;
+	cerr << "using l1 regularization = " << all.l1_lambda << endl;
       if (all.reg_mode > 1)
-	cerr << "using l2 regularization" << endl;
+	cerr << "using l2 regularization = " << all.l2_lambda << endl;
     }
 
   if (all.bfgs) {

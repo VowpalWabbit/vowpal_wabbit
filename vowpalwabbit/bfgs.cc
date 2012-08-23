@@ -315,7 +315,7 @@ float direction_magnitude(vw& all)
 	    g1_Hg1/importance_weight_sum, "", "", "");
 }
 
-void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& lastj, int &origin) throw (curv_exception)
+void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& lastj, int &origin) 
 {  
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
