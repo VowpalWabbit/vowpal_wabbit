@@ -359,28 +359,22 @@ void one_pf_quad_normalized_adaptive_update(vw& all, weight* weights, feature& p
   update *= page_feature.x;
   float x2 = page_feature.x * page_feature.x;
   float update2 = g * x2;
-  float x = 0.;
-  float xquad_abs = 0.;
-  float t = 0.;
-  weight* w = NULL;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-  __m128 eta;
-#endif
 
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
   {
-    w=&weights[(halfhash + ele->weight_index) & mask];
-    x = ele->x;
-    xquad_abs = fabs(x*page_feature.x);
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    float x = ele->x;
+    float xquad_abs = fabs(x*page_feature.x);
     if( xquad_abs > w[2] ) w[2] = xquad_abs;
     w[1] += update2 * x * x;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-    eta = _mm_load_ss(&w[1]);
+    float t;
+    __m128 eta = _mm_load_ss(&w[1]);
     eta = _mm_rsqrt_ss(eta);
     _mm_store_ss(&t, eta);
     t *= x;
 #else
-    t = x*InvSqrt(w[1]);
+    float t = x*InvSqrt(w[1]);
 #endif
     w[0] += update * t / (w[2]*all.normalized_adaptive_max_norm_x);
   }
@@ -402,33 +396,26 @@ void normalized_adaptive_inline_train(vw& all, example* &ec, float update)
   size_t mask = all.weight_mask;
   label_data* ld = (label_data*)ec->ld;
   weight* weights = all.reg.weight_vectors;
-  float x = 0.;
-  float x_abs = 0.;
-  float t = 0.;
-  weight* w = NULL;
-  feature* f = NULL;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-  __m128 eta;
-#endif
 
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
   {
-    f = ec->atomics[*i].begin;
+    feature* f = ec->atomics[*i].begin;
     for (; f != ec->atomics[*i].end; f++)
     {
-      w = &weights[f->weight_index & mask];
-      x = f->x;
-      x_abs = fabs(x);
+      weight* w = &weights[f->weight_index & mask];
+      float x = f->x;
+      float x_abs = fabs(x);
       if( x_abs > w[2] ) w[2] = x_abs;
       w[1] += g * x * x;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      eta = _mm_load_ss(&w[1]);
+      float t;
+      __m128 eta = _mm_load_ss(&w[1]);
       eta = _mm_rsqrt_ss(eta);
       _mm_store_ss(&t, eta);
       t *= x;
 #else
-      t = x*InvSqrt(w[1]);
+      float t = x*InvSqrt(w[1]);
 #endif
       w[0] += update * t / (w[2] * all.normalized_adaptive_max_norm_x);
     }
@@ -491,23 +478,17 @@ void quad_general_normalized_adaptive_update(vw& all, weight* weights, feature& 
   update *= page_feature.x;
   float x2 = page_feature.x * page_feature.x;
   float update2 = g * x2;
-  float xtmp2 = 0.;
-  float xtmp = 0.;
-  float xquad_abs = 0.;
-  float t = 0.;
-  float norm = 0.;
   
-  weight* w = NULL;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
   {
-    w=&weights[(halfhash + ele->weight_index) & mask];
-    xtmp = ele->x;
-    xtmp2 = xtmp * xtmp;
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    float xtmp = ele->x;
+    float xtmp2 = xtmp * xtmp;
     w[1] += update2 * xtmp2;
-    xquad_abs = fabs(xtmp*page_feature.x);
+    float xquad_abs = fabs(xtmp*page_feature.x);
     if( xquad_abs > w[2] ) w[2] = xquad_abs;
-    norm = w[2]*all.normalized_adaptive_max_norm_x;
-    t = xtmp*powf(w[1],-power_t)*powf(norm*norm,power_t-1.);
+    float norm = w[2]*all.normalized_adaptive_max_norm_x;
+    float t = xtmp*powf(w[1],-power_t)*powf(norm*norm,power_t-1.);
     w[0] += update * t;
   }
 }
@@ -521,26 +502,19 @@ void general_normalized_adaptive_train(vw& all, example* &ec, float update, floa
   label_data* ld = (label_data*)ec->ld;
   weight* weights = all.reg.weight_vectors;
 
-  float x = 0.;
-  float x_abs = 0.;
-  float norm = 0.;
-  float t = 0.;
-
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  feature *f = NULL;
-  weight *w = NULL; 
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
   {
-    f = ec->atomics[*i].begin;
+    feature* f = ec->atomics[*i].begin;
     for (; f != ec->atomics[*i].end; f++)
     {
-      w = &weights[f->weight_index & mask];
-      x = f->x;
-      x_abs = fabs(x);
+      weight* w = &weights[f->weight_index & mask];
+      float x = f->x;
+      float x_abs = fabs(x);
       if( x_abs > w[2] ) w[2] = x_abs;
       w[1] += g * x * x;
-      norm = w[2]*all.normalized_adaptive_max_norm_x;
-      t = x*powf(w[1],-power_t)*powf(norm*norm,power_t-1.);
+      float norm = w[2]*all.normalized_adaptive_max_norm_x;
+      float t = x*powf(w[1],-power_t)*powf(norm*norm,power_t-1.);
       w[0] += update * t;
     }
   }
@@ -721,24 +695,17 @@ float xGNx_general_quad(weight* weights, feature& page_feature, v_array<feature>
   float xGNx = 0.;
   float x2 = page_feature.x * page_feature.x;
   float update2 = g * x2;
-  float xtmp = 0.;
-  float xtmp2 = 0.;
-  float xquad_abs = 0.;
-  float range = 0.;
-  float range2 = 0.;
-  float t = 0.;
 
-  weight* w = NULL;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
   {
-    w=&weights[(halfhash + ele->weight_index) & mask];
-    xtmp = ele->x;
-    xtmp2 = xtmp * xtmp;
-    xquad_abs = fabs(xtmp*page_feature.x);
-    range = w[2];
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    float xtmp = ele->x;
+    float xtmp2 = xtmp * xtmp;
+    float xquad_abs = fabs(xtmp*page_feature.x);
+    float range = w[2];
     if( xquad_abs > range ) range = xquad_abs;
-    range2 = range*range;
-    t = powf(w[1] + update2 * xtmp2,- power_t)*powf(range2,power_t - 1.);
+    float range2 = range*range;
+    float t = powf(w[1] + update2 * xtmp2,- power_t)*powf(range2,power_t - 1.);
     xGNx += t * xtmp2;
     norm_x += xtmp2 * x2 / range2;
   }
@@ -751,32 +718,22 @@ float xGNx_quad(vw &all, weight* weights, feature& page_feature, v_array<feature
   float xGNx = 0.;
   float x2 = page_feature.x * page_feature.x;
   float update2 = g * x2;
-  float xtmp = 0.;
-  float xtmp2 = 0.;
-  float xquad_abs = 0.;
-  float t = 0.;
-  float range = 0.;
-
-  weight* w = NULL;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-  __m128 eta;
-#endif
 
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
   {
-    w=&weights[(halfhash + ele->weight_index) & mask];
-    xtmp = ele->x;
-    xtmp2 = xtmp * xtmp;
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    float xtmp = ele->x;
+    float xtmp2 = xtmp * xtmp;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-    t = w[1] + update2 * xtmp2;
-    eta = _mm_load_ss(&t);
+    float t = w[1] + update2 * xtmp2;
+    __m128 eta = _mm_load_ss(&t);
     eta = _mm_rsqrt_ss(eta);
     _mm_store_ss(&t, eta);
 #else
-    t = InvSqrt(w[1] + update2 * xtmp2);
+    float t = InvSqrt(w[1] + update2 * xtmp2);
 #endif
-    range = w[2];
-    xquad_abs = fabs(xtmp*page_feature.x);
+    float range = w[2];
+    float xquad_abs = fabs(xtmp*page_feature.x);
     if( xquad_abs > range ) range = xquad_abs;
     xGNx += t * xtmp2 / range;
     norm_x += xtmp2 * x2 / (range*range);
@@ -793,29 +750,21 @@ float compute_general_xGNx(vw& all, example* &ec, float power_t)
 
   float xGNx = 0.;
 
-  float t = 0;
-  float x = 0;
-  float x2 = 0.;
-  float x_abs = 0.;
-  float range = 0.;
-  float range2 = 0.;
   float norm_x = 0.;
   weight* weights = all.reg.weight_vectors;
-  feature *f = NULL;
-  weight *w = NULL;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
   {
-    f = ec->atomics[*i].begin;
+    feature* f = ec->atomics[*i].begin;
     for (; f != ec->atomics[*i].end; f++)
     {
-      w = &weights[f->weight_index & mask];
-      x = f->x;
-      x2 = x * x;
-      range = w[2];
-      x_abs = fabs(x);
+      weight* w = &weights[f->weight_index & mask];
+      float x = f->x;
+      float x2 = x * x;
+      float range = w[2];
+      float x_abs = fabs(x);
       if( x_abs > range ) range = x_abs;
-      range2 = range*range;
-      t = powf(w[1] + g * x2,- power_t)*powf(range2,power_t - 1.);
+      float range2 = range*range;
+      float t = powf(w[1] + g * x2,- power_t)*powf(range2,power_t - 1.);
       xGNx += t * x2;
       norm_x += x2 / range2;
     }
@@ -848,37 +797,26 @@ float compute_xGNx(vw& all, example* &ec)
 
   float xGNx = 0.;
 
-  float x2 = 0.;
-  float x = 0.;
-  float x_abs = 0.;
-  float t = 0.;
-  float range = 0.;
   float norm_x = 0.;
   weight* weights = all.reg.weight_vectors;
-  feature* f = NULL;
-  weight* w = NULL;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-  __m128 eta;
-#endif
-
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
   {
-    f = ec->atomics[*i].begin;
+    feature* f = ec->atomics[*i].begin;
     for (; f != ec->atomics[*i].end; f++)
     {
-      w = &weights[f->weight_index & mask];
-      x = f->x;
-      x2 = x * x;
+      weight* w = &weights[f->weight_index & mask];
+      float x = f->x;
+      float x2 = x * x;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      t = w[1] + g * x2;
-      eta = _mm_load_ss(&t);
+      float t = w[1] + g * x2;
+      __m128 eta = _mm_load_ss(&t);
       eta = _mm_rsqrt_ss(eta);
       _mm_store_ss(&t, eta);
 #else
-      t = InvSqrt(w[1] + g * x2);
+      float t = InvSqrt(w[1] + g * x2);
 #endif
-      range = w[2];
-      x_abs = fabs(x);
+      float range = w[2];
+      float x_abs = fabs(x);
       if( x_abs > range ) range = x_abs;
 
       xGNx += t * x2 / range;
