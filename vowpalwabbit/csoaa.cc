@@ -367,6 +367,7 @@ namespace CSOAA {
     if (!all.is_noop)
       all.driver = drive_csoaa;
 
+    all.sd->k = nb_actions;
     all.base_learner_nb_w *= nb_actions;
     increment = (all.length()/ all.base_learner_nb_w ) * all.stride;     
 
