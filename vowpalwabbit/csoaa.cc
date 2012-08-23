@@ -9,7 +9,7 @@
 #include "v_hashmap.h"
 
 using namespace std;
-size_t hashstring (substring s, unsigned long h);
+size_t hashstring (substring s, uint32_t h);
 
 namespace CSOAA {
 
