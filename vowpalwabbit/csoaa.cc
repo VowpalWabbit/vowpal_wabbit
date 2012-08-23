@@ -183,7 +183,7 @@ namespace CSOAA {
     if (words.index() == 0) {
       if (sd->k != (size_t)-1) {
         for (size_t i = 1; i <= sd->k; i++) {
-          wclass f = {f.x, i, 0.};
+          wclass f = {FLT_MAX, i, 0.};
           push(ld->costs, f);
         }
       } else {
