@@ -35,8 +35,8 @@ struct shared_data {
   float dump_interval;// when should I update for the user.
   double gravity;
   double contraction;
-  double min_label;//minimum label encountered
-  double max_label;//maximum label encountered
+  float min_label;//minimum label encountered
+  float max_label;//maximum label encountered
 
   bool binary_label;
   uint32_t k;
@@ -53,7 +53,7 @@ struct label_parser {
   size_t label_size;
 };
 
-typedef size_t (*hash_func_t)(substring, unsigned long);
+typedef size_t (*hash_func_t)(substring, uint32_t);
 
 struct parser {
   v_array<substring> channels;//helper(s) for text parsing
@@ -81,9 +81,6 @@ struct parser {
   int max_fd;
 
   label_parser* lp;  // moved from vw
-
-  pthread_mutex_t output_lock;
-  pthread_cond_t output_done;
 };
 
 //chop up the string into a v_array of substring.
@@ -119,7 +116,7 @@ inline float parseFloat(char * p, char **end)
     s = -1; p++;
   }
   
-  double acc = 0;
+  float acc = 0;
   while (*p >= '0' && *p <= '9')
     acc = acc * 10 + *p++ - '0';
   
@@ -145,21 +142,23 @@ inline float parseFloat(char * p, char **end)
   }
   if (*p == ' ')//easy case succeeded.
     {
-      acc *= pow(10,exp_acc-num_dec);
+      acc *= powf(10,(float)(exp_acc-num_dec));
       *end = p;
       return s * acc;
     }
   else
-    return strtof(start,end);
+    return (float)strtod(start,end);
 }
+
+inline bool nanpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fffffff) > 0x7f800000; } 
 
 inline float float_of_substring(substring s)
 {
   char* endptr = s.end;
   float f = parseFloat(s.begin,&endptr);
-  if (endptr == s.begin && s.begin != s.end)
+  if ((endptr == s.begin && s.begin != s.end) || nanpattern(f))
     {
-      std::cout << "error: " << std::string(s.begin, s.end-s.begin).c_str() << " is not a float" << std::endl;
+      std::cout << "warning: " << std::string(s.begin, s.end-s.begin).c_str() << " is not a good float, replacing with 0" << std::endl;
       f = 0;
     }
   return f;

@@ -1,15 +1,18 @@
 COMPILER = g++
 UNAME := $(shell uname)
 
+LIBS = -l boost_program_options -l pthread -l z
+BOOST_INCLUDE = /usr/include
 ifeq ($(UNAME), FreeBSD)
 LIBS = -l boost_program_options	-l pthread -l z -l compat
 BOOST_INCLUDE = /usr/local/include
-BOOST_LIBRARY = /usr/local/lib
-else
-LIBS = -l boost_program_options -l pthread -l z
-BOOST_INCLUDE = /usr/include
-BOOST_LIBRARY = /usr/local/lib
 endif
+ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
+LIBS = -l boost_program_options-mt -l pthread -l z
+BOOST_INCLUDE = /usr/include
+endif
+
+BOOST_LIBRARY = /usr/local/lib
 
 ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 
@@ -30,7 +33,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_I
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg -g
 
 # for valgrind
-FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
+#FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
@@ -58,7 +61,7 @@ library_example: vw
 
 test: .FORCE
 	@echo "vw running test-suite..."
-	@(cd test && ./RunTests -f -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw)
+	(cd test && ./RunTests -fe -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw)
 
 install: $(BINARIES)
 	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install

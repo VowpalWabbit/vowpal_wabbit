@@ -8,12 +8,15 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o);
+use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w);
 
 my $Epsilon = 1e-4;
 
 my $VW;
 my $LDA;
+
+my $Diff = 'diff';
+my @ToTest = ();
 
 my @TrainSets = glob('train-sets/*.dat');
 my @TestSets = glob('test-sets/*.dat');
@@ -21,7 +24,7 @@ my @TestSets = glob('test-sets/*.dat');
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
 
-    die "Usage: $0 [options] [vw-executable]
+    die "Usage: $0 [options] [testno...] [vw-executable]
     By default will run against the 1st 'vw' executable found in:
         .  ..  ../vowpalwabbit  \$PATH
 
@@ -29,9 +32,12 @@ sub usage(@) {
         -c    print commands before running them
         -d    print diff output on diff-failure
         -e    Abort on first diff error
+        -w    Ignore white-space differences (diff --ignore-space-change)
         -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
         -E<e> Set epsilon <e> for fuzzy floating-point compares (default $Epsilon)
         -o    Overwrite reference file with new/different result
+
+    [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
 }
 
@@ -82,8 +88,25 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('cdefE:o') || usage();
+    getopts('wcdefE:o') || usage();
     $Epsilon = $opt_E if ($opt_E);
+    $Diff .= ' --ignore-space-change' if ($opt_w);
+    my @num_args = ();
+    my @exe_args = ();
+    foreach my $arg (@ARGV) {
+        if ($arg =~ /^\d+$/) {  # a test number
+            push(@num_args, $arg);
+            next;
+        }
+        push(@exe_args, $arg);
+    }
+    if (@num_args) {
+        @ToTest = sort { $a <=> $b } @num_args;
+        # add dummy element so we don't become empty on last test
+        push(@ToTest, -1);
+    }
+    @ARGV = @exe_args;
+
     $VW = which_vw();
     $LDA = which_lda();
 }
@@ -180,12 +203,14 @@ sub lenient_array_compare($$) {
     return 1 if ($#w1 != $#w2); # arrays not of same size
     my $nelem = scalar @w1;
     for (my $i = 0; $i < $nelem; $i++) {
-        # print STDERR "\t$w1[$i] == $w2[$i] ?\n";
-        next if ($w1[$i] eq $w2[$i]);
+        my ($word1, $word2) = ($w1[$i], $w2[$i]);
+        # print STDERR "\t$word1 == $word2 ?\n";
+        next if ($word1 eq $word2);
+
         # There's some difference, is it significant?
-        return 1 unless (looks_like_number($w1[$i]));        
-        return 1 unless (looks_like_number($w2[$i]));        
-        my $delta = abs($w1[$i] - $w2[$i]);
+        return 1 unless (looks_like_number($word1));        
+        return 1 unless (looks_like_number($word2));        
+        my $delta = abs($word1 - $word2);
  
         return 1 if ($delta > $Epsilon);
     }
@@ -194,11 +219,11 @@ sub lenient_array_compare($$) {
 }
 
 sub diff_lenient_float($$) {
-    my ($outfile, $reffile) = @_;
+    my ($reffile, $outfile) = @_;
     my $status = 0;
     my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines';
     my $tmpf = 'lenient-diff.tmp';
-    system("diff $diff_opts $outfile $reffile >$tmpf");
+    system("$Diff $diff_opts $reffile $outfile >$tmpf");
     $status = $? >> 8;
     if (-s $tmpf) {
         # assume innocent till proven guilty
@@ -225,7 +250,7 @@ sub diff_lenient_float($$) {
 }
 
 sub diff($$) {
-    my ($outfile, $reffile) = @_;
+    my ($reffile, $outfile) = @_;
     my $status = 0;
 
     # Special case, empty file w/o reference is not considered a failure.
@@ -250,15 +275,17 @@ sub diff($$) {
     }
 
     # Actually run the diff
-    system("diff -N $outfile $reffile >diff.tmp");
+    my $diff_cmd = "$Diff -N $reffile $outfile";
+    system("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     if (-s 'diff.tmp') {
         if ($opt_d) {
+            printf STDERR "--- %s\n", $diff_cmd;
             system("cat diff.tmp")
         }
         # There's a difference, but is it meaningfull?
-        if ($opt_f && -e $outfile && -e $reffile &&
-            diff_lenient_float($outfile, $reffile) == 0) {
+        if ($opt_f && -e $reffile && -e $outfile &&
+            diff_lenient_float($reffile, $outfile) == 0) {
 
             print STDERR "$0: test $TestNo: minor (<$Epsilon) precision differences ignored\n";
             $status = 0;
@@ -275,7 +302,9 @@ sub diff($$) {
             rename($outfile, $reffile) ||
                 die "FATAL: rename($outfile, $reffile): $!\n";
 
-            $status = 0;
+            unless ($opt_e) {
+                $status = 0;
+            }
         }
     }
     $status;
@@ -300,6 +329,14 @@ sub run_tests() {
 
     while (($cmd, $out_ref, $err_ref, $pred_ref, $predf) = next_test()) {
         last unless (defined $cmd);
+        if (@ToTest) {
+            if ($ToTest[0] != $TestNo) {
+                # warn "$0: test $TestNo: skipped\n";
+                next;
+            } else {
+                shift(@ToTest);
+            }
+        }
 
         ($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
 
@@ -315,10 +352,10 @@ sub run_tests() {
 
         # command succeded
         # -- compare stdout
-        $status = diff($outf, $out_ref);
+        $status = diff($out_ref, $outf);
         if ($status) {
-            printf STDERR "%s: test %d: FAILED: stdout(%s) != ref(%s):\n",
-                $0, $TestNo, $outf, $out_ref;
+            printf STDERR "%s: test %d: FAILED: ref(%s) != stdout(%s)\n",
+                $0, $TestNo, $out_ref, $outf;
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stdout OK\n";
@@ -330,10 +367,10 @@ sub run_tests() {
             exit 1 if ($opt_e);
             next;
         }
-        $status = diff($errf, $err_ref);
+        $status = diff($err_ref, $errf);
         if ($status) {
-            printf STDERR "%s: test %d: FAILED: stderr(%s) != ref(%s):\n",
-                $0, $TestNo, $errf, $err_ref;
+            printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n",
+                $0, $TestNo, $err_ref, $errf;
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stderr OK\n";
@@ -341,10 +378,10 @@ sub run_tests() {
         # -- compare predict
         next unless (defined $pred_ref);
         $predf = 'predict.tmp' unless (defined $predf);
-        $status = diff($predf, $pred_ref);
+        $status = diff($pred_ref, $predf);
         if ($status) {
-            printf STDERR "%s: test %d: FAILED: predict(%s) != ref(%s):\n",
-                $0, $TestNo, $predf, $pred_ref;
+            printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n",
+                $0, $TestNo, $pred_ref, $predf;
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: predict OK\n";
@@ -388,7 +425,7 @@ run_tests();
 
 __DATA__
 # Test 1:
-{VW} -k -b 17 -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 2 --compressed --ngram 3 --skips 1
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --ngram 3 --skips 1
     train-sets/ref/0001.stdout
     train-sets/ref/0001.stderr
 
@@ -420,8 +457,8 @@ __DATA__
     test-sets/ref/0002b.stderr
     pred-sets/ref/0002b.predict
 
-# Test 7: using -q and multiple threads
-{VW} -k --power_t 0 --adaptive -q ff -f models/0002c.model train-sets/0002.dat
+# Test 7: using --exact_adaptive_norm and a low --power_t
+{VW} -k --power_t 0.45 --exact_adaptive_norm -f models/0002c.model train-sets/0002.dat
     train-sets/ref/0002c.stdout
     train-sets/ref/0002c.stderr
 
@@ -449,7 +486,7 @@ __DATA__
     train-sets/ref/seq_small.stderr
 
 # Test 12: Run sequence (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 2 --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1
+{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1
     train-sets/ref/wsj_small.dat.stdout
     train-sets/ref/wsj_small.dat.stderr
 
@@ -458,10 +495,10 @@ __DATA__
     train-sets/ref/wsj_small-tm.dat.stdout
     train-sets/ref/wsj_small-tm.dat.stderr
 
-# Test 14: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn 4 --searn_task sequence
-    train-sets/ref/searn_small.stdout
-    train-sets/ref/searn_small.stderr
+# Test 14: Error Correcting Tournament
+{VW} --ect 10 --error 3 -c --passes 10 train-sets/multiclass && rm train-sets/multiclass.cache
+    train-sets/ref/multiclass.stdout
+    train-sets/ref/multiclass.stderr
 
 # Test 15: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
 {VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --searn_passes_per_policy 4 --searn_task sequence --searn 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
@@ -469,7 +506,7 @@ __DATA__
     train-sets/ref/searn_wsj.stderr
 
 # Test 16: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 2 --searn_passes_per_policy 1 --searn_task sequence --searn 45 --wap 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
+{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --searn_passes_per_policy 1 --searn_task sequence --searn 45 --wap 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
     train-sets/ref/searn_wsj2.dat.stdout
     train-sets/ref/searn_wsj2.dat.stderr
 
@@ -487,3 +524,8 @@ __DATA__
 {LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr
+
+# Test 20: Run searn on seq_small for 12 passes, 4 passes per policy
+{VW} -k -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn 4 --searn_task sequence
+    train-sets/ref/searn_small.stdout
+    train-sets/ref/searn_small.stderr

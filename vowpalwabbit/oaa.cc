@@ -36,7 +36,7 @@ namespace OAA {
   float weight(void* v)
   {
     mc_label* ld = (mc_label*) v;
-    return (ld->weight > 0) ? ld->weight : 0.;
+    return (ld->weight > 0) ? ld->weight : 0.f;
   }
 
   float initial(void* v)
@@ -80,11 +80,11 @@ namespace OAA {
     case 0:
       break;
     case 1:
-      ld->label = float_of_substring(words[0]);
+      ld->label = int_of_substring(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = float_of_substring(words[0]);
+      ld->label = int_of_substring(words[0]);
       ld->weight = float_of_substring(words[1]);
       break;
     default:
@@ -136,7 +136,7 @@ namespace OAA {
     all.sd->sum_loss_since_last_dump += loss;
   
     for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, *(prediction_t*)&(ec->final_prediction), 0, ec->tag);
+      all.print(*sink, (float)(*(prediction_t*)&(ec->final_prediction)), 0, ec->tag);
   
     all.sd->example_number++;
 
@@ -211,23 +211,38 @@ namespace OAA {
 	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
-          {
-            all->finish(all);
-            return;
-          }
+	  return;
         else 
           ;
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
+    //first parse for number of actions
+    k = 0;
+    if( vm_file.count("oaa") ) {
+      k = vm_file["oaa"].as<size_t>();
+      if( vm.count("oaa") && vm["oaa"].as<size_t>() != k )
+        std::cerr << "warning: you specified a different number of actions through --oaa than the one loaded from predictor. Pursuing with loaded value of: " << k << endl;
+    }
+    else {
+      k = vm["oaa"].as<size_t>();
+
+      //append oaa with nb_actions to options_from_file so it is saved to regressor later
+      std::stringstream ss;
+      ss << " --oaa " << k;
+      all.options_from_file.append(ss.str());
+    }
+
     *(all.p->lp) = mc_label_parser;
-    k = s;
     all.driver = drive_oaa;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
-    increment = (all.length()/k) * all.stride;
+
+    all.base_learner_nb_w *= k;
+    increment = (all.length()/all.base_learner_nb_w) * all.stride;
     total_increment = increment*(k-1);
   }
 }

@@ -4,7 +4,9 @@ embodied in the content of this file are licensed under the BSD
 (revised) open source license
  */
 
+#ifndef WIN32
 #include <strings.h>
+#endif
 #include "parse_primitives.h"
 #include <iostream>
 

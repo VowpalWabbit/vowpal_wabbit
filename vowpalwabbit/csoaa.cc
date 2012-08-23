@@ -9,7 +9,7 @@
 #include "v_hashmap.h"
 
 using namespace std;
-size_t hashstring (substring s, unsigned long h);
+size_t hashstring (substring s, uint32_t h);
 
 namespace CSOAA {
 
@@ -24,7 +24,7 @@ namespace CSOAA {
       break;
     case 2:
       v = float_of_substring(name[1]);
-      if ( isnan(v))
+      if ( nanpattern(v))
 	{
 	  cerr << "error NaN value for: ";
 	  cerr.write(name[0].begin, name[0].end - name[0].begin);
@@ -183,7 +183,7 @@ namespace CSOAA {
     if (words.index() == 0) {
       if (sd->k != (size_t)-1) {
         for (size_t i = 1; i <= sd->k; i++) {
-          wclass f = {f.x, i, 0.};
+          wclass f = {FLT_MAX, i, 0.};
           push(ld->costs, f);
         }
       } else {
@@ -246,7 +246,7 @@ namespace CSOAA {
     all.sd->sum_loss_since_last_dump += loss;
   
     for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, *(OAA::prediction_t*)&(ec->final_prediction), 0, ec->tag);
+      all.print(*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
@@ -281,15 +281,13 @@ namespace CSOAA {
 	label_data simple_temp;
 	simple_temp.initial = 0.;
 
-	if (cl->x == FLT_MAX)
+	if (cl->x == FLT_MAX || !all->training)
 	  {
-            //cerr << "csoaa.learn: test  example" << endl;
 	    simple_temp.label = FLT_MAX;
 	    simple_temp.weight = 0.;
 	  }
 	else
 	  {
-            //cerr << "csoaa.learn: train example" << endl;
 	    simple_temp.label = cl->x;
 	    simple_temp.weight = 1.;
 	  }
@@ -297,6 +295,7 @@ namespace CSOAA {
 	ec->ld = &simple_temp;
 
         size_t desired_increment = increment * (i-1);
+
         if (desired_increment != current_increment) {
 	  update_example_indicies(all->audit, ec, desired_increment - current_increment);
           current_increment = desired_increment;
@@ -304,7 +303,7 @@ namespace CSOAA {
 
 	base_learner(all, ec);
         cl->partial_prediction = ec->partial_prediction;
-	if (ec->partial_prediction < score) {
+	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
           prediction = i;
         }
@@ -346,20 +345,39 @@ namespace CSOAA {
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
+    //first parse for number of actions
+    size_t nb_actions = 0;
+    if( vm_file.count("csoaa") ) { //if loaded options from regressor
+      nb_actions = vm_file["csoaa"].as<size_t>();
+      if( vm.count("csoaa") && vm["csoaa"].as<size_t>() != nb_actions ) //if csoaa was also specified in commandline, warn user if its different
+        std::cerr << "warning: you specified a different number of actions through --csoaa than the one loaded from predictor. Pursuing with loaded value of: " << nb_actions << endl;
+    }
+    else {
+      nb_actions = vm["csoaa"].as<size_t>();
+
+      //append csoaa with nb_actions to options_from_file so it is saved to regressor later
+      std::stringstream ss;
+      ss << " --csoaa " << nb_actions;
+      all.options_from_file.append(ss.str());
+    }
+
     *(all.p->lp) = cs_label_parser;
-    all.sd->k = s;
     if (!all.is_noop)
       all.driver = drive_csoaa;
+
+    all.base_learner_nb_w *= nb_actions;
+    increment = (all.length()/ all.base_learner_nb_w ) * all.stride;     
+
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     base_finish = all.finish;
     all.finish = finish;
-    increment = (all.length()/all.sd->k) * all.stride;
   }
 
-  int example_is_test(example* ec)
+  bool example_is_test(example* ec)
   {
     v_array<CSOAA::wclass> costs = ((label*)ec->ld)->costs;
     if (costs.index() == 0) return true;
@@ -566,7 +584,7 @@ namespace CSOAA_AND_WAP_LDF {
               // learn
               ec1->example_t = csoaa_example_t;
               simple_label.initial = 0.;
-              simple_label.label = (costs1[j1].x < costs2[j2].x) ? -1.0 : 1.0;
+              simple_label.label = (costs1[j1].x < costs2[j2].x) ? -1.0f : 1.0f;
               simple_label.weight = value_diff;
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
@@ -773,7 +791,7 @@ namespace CSOAA_AND_WAP_LDF {
     }
   
     for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, *(OAA::prediction_t*)&(ec->final_prediction), 0, ec->tag);
+      all.print(*sink, (float)(*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
@@ -872,8 +890,6 @@ namespace CSOAA_AND_WAP_LDF {
     example* ec = NULL;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { //semiblocking operation.
-        v_array<CSOAA::wclass> costs = ((label*)ec->ld)->costs;
-        //cerr<<"weights ="; for (size_t j=0; j<costs.index(); j++) //cerr<<" " << costs[j].weight_index << ":"<<costs[j].x; //cerr<<endl;
 
         if (LabelDict::ec_is_example_header(ec)) {
           cerr << "error: example headers not allowed in ldf singleline mode" << endl;
@@ -928,8 +944,34 @@ namespace CSOAA_AND_WAP_LDF {
   }
 
 
-  void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&opts, po::variables_map& vm, size_t s)
+  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
+    string ldf_arg;
+    if(vm_file.count("csoaa_ldf")) {
+      ldf_arg = vm_file["csoaa_ldf"].as<string>();
+      
+      if(vm.count("csoaa_ldf") && ldf_arg.compare(vm["csoaa_ldf"].as<string>()) != 0)
+        std::cerr << "warning: you specified a different ldf argument through --csoaa_ldf than the one loaded from regressor. Pursuing with loaded value of: " << ldf_arg << endl;
+    }
+    else if( vm.count("csoaa_ldf") ){
+      ldf_arg = vm["csoaa_ldf"].as<string>();
+      all.options_from_file.append(" --csoaa_ldf ");
+      all.options_from_file.append(ldf_arg);
+    }
+    else if( vm_file.count("wap_ldf") ) {
+      ldf_arg = vm_file["wap_ldf"].as<string>();
+      is_wap = true;
+      
+      if(vm.count("wap_ldf") && ldf_arg.compare(vm["wap_ldf"].as<string>()) != 0)
+        std::cerr << "warning: you specified a different value for --wap_ldf than the one loaded from regressor. Pursuing with loaded value of: " << ldf_arg << endl;
+    }
+    else {
+      ldf_arg = vm["wap_ldf"].as<string>();
+      is_wap = true;
+      all.options_from_file.append(" --wap_ldf ");
+      all.options_from_file.append(ldf_arg);
+    }
+
     *(all.p->lp) = CSOAA::cs_label_parser;
 
     all.sd->k = -1;
@@ -943,9 +985,6 @@ namespace CSOAA_AND_WAP_LDF {
       exit(-1);
     }
 
-    if (vm.count("wap_ldf"))
-      is_wap = true;
-
     if (all.add_constant) {
       //cerr << "warning: turning off constant for label dependent features; use --noconstant" << endl;
       all.add_constant = false;
@@ -954,6 +993,7 @@ namespace CSOAA_AND_WAP_LDF {
     if (!all.is_noop)
       all.driver = drive_ldf;
     base_learner = all.learn;
+    all.base_learn = all.learn;
     all.learn = learn;
     base_finish = all.finish;
     all.finish = finish;

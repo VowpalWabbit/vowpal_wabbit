@@ -6,7 +6,11 @@ embodied in the content of this file are licensed under the BSD
 #include <fstream>
 #include <vector>
 #include <float.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -18,6 +22,11 @@ embodied in the content of this file are licensed under the BSD
 #include "cache.h"
 #include "simple_label.h"
 
+#ifdef _WIN32
+inline float fmax(float f1, float f2) { return (f1 < f2 ? f2 : f1); }
+inline float fmin(float f1, float f2) { return (f1 > f2 ? f2 : f1); }
+#endif
+
 #define MINEIRO_SPECIAL
 #ifdef MINEIRO_SPECIAL
 
@@ -28,8 +37,8 @@ fastlog2 (float x)
 {
   union { float f; uint32_t i; } vx = { x };
   union { uint32_t i; float f; } mx = { (vx.i & 0x007FFFFF) | (0x7e << 23) };
-  float y = vx.i;
-  y *= 1.0f / (1 << 23);
+  float y = (float)vx.i;
+  y *= 1.0f / (float)(1 << 23);
 
   return 
     y - 124.22544637f - 1.498030302f * mx.f - 1.72587999f / (0.3520887068f + mx.f);
@@ -46,7 +55,7 @@ fastpow2 (float p)
 {
   float offset = (p < 0) ? 1.0f : 0.0f;
   float clipp = (p < -126) ? -126.0f : p;
-  int w = clipp;
+  int w = (int)clipp;
   float z = clipp - w + offset;
   union { uint32_t i; float f; } v = { (uint32_t)((1 << 23) * (clipp + 121.2740838f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z)) };
 
@@ -282,7 +291,9 @@ void vexpdigammify_2(vw& all, float* gamma, const float* norm)
 #define myexpdigammify_2 vexpdigammify_2
 
 #else
+#ifndef _WIN32
 #warning "lda IS NOT using sse instructions"
+#endif
 #define myexpdigammify expdigammify
 #define myexpdigammify_2 expdigammify_2
 
@@ -313,7 +324,7 @@ float decayfunc(float t, float old_t, float power_t) {
 
 float decayfunc2(float t, float old_t, float power_t) 
 {
-  float power_t_plus_one = 1. - power_t;
+  float power_t_plus_one = 1.f - power_t;
   float arg =  - ( powf(t, power_t_plus_one) -
                    powf(old_t, power_t_plus_one));
   return exp ( arg
@@ -323,9 +334,9 @@ float decayfunc2(float t, float old_t, float power_t)
 float decayfunc3(double t, double old_t, double power_t) 
 {
   double power_t_plus_one = 1. - power_t;
-  double logt = log(t);
-  double logoldt = log(old_t);
-  return (old_t / t) * exp(0.5*power_t_plus_one*(-logt*logt + logoldt*logoldt));
+  double logt = log((float)t);
+  double logoldt = log((float)old_t);
+  return (float)((old_t / t) * exp((float)(0.5*power_t_plus_one*(-logt*logt + logoldt*logoldt))));
 }
 
 float decayfunc4(double t, double old_t, double power_t)
@@ -333,7 +344,7 @@ float decayfunc4(double t, double old_t, double power_t)
   if (power_t > 0.99)
     return decayfunc3(t, old_t, power_t);
   else
-    return decayfunc2(t, old_t, power_t);
+    return (float)decayfunc2((float)t, (float)old_t, (float)power_t);
 }
 
 void expdigammify(vw& all, float* gamma)
@@ -346,14 +357,14 @@ void expdigammify(vw& all, float* gamma)
     }
   sum = mydigamma(sum);
   for (size_t i = 0; i<all.lda; i++)
-    gamma[i] = fmax(1e-10, exp(gamma[i] - sum));
+    gamma[i] = fmax(1e-6f, exp(gamma[i] - sum));
 }
 
 void expdigammify_2(vw& all, float* gamma, float* norm)
 {
   for (size_t i = 0; i<all.lda; i++)
     {
-      gamma[i] = fmax(1e-10, exp(mydigamma(gamma[i]) - norm[i]));
+      gamma[i] = fmax(1e-6f, exp(mydigamma(gamma[i]) - norm[i]));
     }
 }
 
@@ -578,7 +589,7 @@ void drive_lda(void* in)
                 for (; f != ec->atomics[*i].end; f++) {
                   index_feature temp = {(uint32_t)d, *f};
                   sorted_features.push_back(temp);
-                  doc_lengths[d] += f->x;
+                  doc_lengths[d] += (int)f->x;
                 }
               }
 	    }
@@ -590,8 +601,8 @@ void drive_lda(void* in)
 
       sort(sorted_features.begin(), sorted_features.end());
 
-      eta = all->eta * powf(example_t, - all->power_t);
-      minuseta = 1.0 - eta;
+      eta = all->eta * powf((float)example_t, - all->power_t);
+      minuseta = 1.0f - eta;
       eta *= all->lda_D / batch_size;
       push(decay_levels, decay_levels.last() + log(minuseta));
 
@@ -611,7 +622,7 @@ void drive_lda(void* in)
           float decay = fmin(1.0, exp(decay_levels.end[-2] - decay_levels.end[(int)(-1-example_t+weights_for_w[all->lda])]));
 	  float* u_for_w = weights_for_w + all->lda+1;
 
-	  weights_for_w[all->lda] = example_t;
+	  weights_for_w[all->lda] = (float)example_t;
 	  for (size_t k = 0; k < all->lda; k++)
 	    {
 	      weights_for_w[k] *= decay;

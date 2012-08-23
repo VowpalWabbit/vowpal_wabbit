@@ -4,14 +4,14 @@ learning rate = 10
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
-using l2 regularization
+using l2 regularization = 1
 m = 7
 Allocated 72M for weights and mem
 ## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 	time      
 creating cache_file = train-sets/zero.dat.cache
 Reading from train-sets/zero.dat
 num sources = 1
- 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.126
+ 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.136
 
 finished run
 number of examples = 25
@@ -19,6 +19,6 @@ weighted example sum = 25
 weighted label sum = 0
 average loss = 0
 best constant = -0.04167
-total feature number = 15030
+total feature number = 15005
  3 0.000000e+00	0.000000e+00	0.000000e+00	 -nan      	-nan      	
 

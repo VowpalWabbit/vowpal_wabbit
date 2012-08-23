@@ -5,7 +5,11 @@ embodied in the content of this file are licensed under the BSD
  */
 #include <fstream>
 #include <float.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <netdb.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include "parse_example.h"
@@ -76,7 +80,7 @@ void mf_inline_train(vw& all, example* &ec, float update)
 
       // use final prediction to get update size
       // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-      float eta_t = all.eta/pow(ec->example_t,all.power_t) / 3. * ld->weight;
+      float eta_t = all.eta/pow(ec->example_t,all.power_t) / 3.f * ld->weight;
       update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, 1.); //ec->total_sum_feat_sq);
 
       float regularization = eta_t * all.l2_lambda;
@@ -191,7 +195,6 @@ float mf_predict(vw& all, example* ex)
 void drive_gd_mf(void* in)
 {
   vw* all = (vw*)in;
-  regressor reg = all->reg;
   example* ec = NULL;
   
   size_t current_pass = 0;

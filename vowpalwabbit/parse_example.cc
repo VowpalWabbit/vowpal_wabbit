@@ -14,7 +14,7 @@ embodied in the content of this file are licensed under the BSD
 
 using namespace std;
 
-size_t hashstring (substring s, unsigned long h)
+size_t hashstring (substring s, uint32_t h)
 {
   size_t ret = 0;
   //trim leading whitespace but not UTF-8
@@ -32,7 +32,7 @@ size_t hashstring (substring s, unsigned long h)
   return ret + h;
 }
 
-size_t hashall (substring s, unsigned long h)
+size_t hashall (substring s, uint32_t h)
 {
   return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
 }
@@ -283,6 +283,8 @@ int read_features(void* in, example* ex)
   if (num_chars <= 1)
     return num_chars;
   if (line[num_chars-1] == '\n')
+    num_chars--;
+  if (line[num_chars-1] == '\r')
     num_chars--;
   substring example = {line, line + num_chars};
   substring_to_example(all, ae, example);

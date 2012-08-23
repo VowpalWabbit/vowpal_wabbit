@@ -8,7 +8,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h vowpalwabbit/oaa.h		\
        vowpalwabbit/parse_primitives.h vowpalwabbit/comp_io.h		\
        vowpalwabbit/parse_regressor.h vowpalwabbit/constant.h		\
        vowpalwabbit/parser.h vowpalwabbit/csoaa.h vowpalwabbit/beam.h	\
-       vowpalwabbit/searn.h vowpalwabbit/ect.h				\
+       vowpalwabbit/searn.h vowpalwabbit/ect.h vowpalwabbit/cb.h	\
        vowpalwabbit/searn_sequencetask.h vowpalwabbit/example.h		\
        vowpalwabbit/sender.h vowpalwabbit/gd.h vowpalwabbit/sequence.h	\
        vowpalwabbit/gd_mf.h vowpalwabbit/simple_label.h			\

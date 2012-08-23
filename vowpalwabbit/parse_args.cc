@@ -18,12 +18,14 @@ embodied in the content of this file are licensed under the BSD
 #include "ect.h"
 #include "csoaa.h"
 #include "wap.h"
+#include "cb.h"
 #include "sequence.h"
 #include "searn.h"
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
 #include "gd_mf.h"
+#include "vw.h"
 
 using namespace std;
 //
@@ -65,6 +67,7 @@ vw parse_args(int argc, char *argv[])
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
+    ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
     ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&all.l1_lambda), "l_1 lambda")
     ("l2", po::value<float>(&all.l2_lambda), "l_2 lambda")
@@ -89,13 +92,13 @@ vw parse_args(int argc, char *argv[])
     ("initial_t", po::value<double>(&(all.sd->t)), "initial t value")
     ("lda", po::value<size_t>(&all.lda), "Run lda with <int> topics")
     ("span_server", po::value<string>(&all.span_server), "Location of server for setting up spanning tree")
-    ("min_prediction", po::value<double>(&all.sd->min_label), "Smallest prediction to output")
-    ("max_prediction", po::value<double>(&all.sd->max_label), "Largest prediction to output")
+    ("min_prediction", po::value<float>(&all.sd->min_label), "Smallest prediction to output")
+    ("max_prediction", po::value<float>(&all.sd->max_label), "Largest prediction to output")
     ("mem", po::value<int>(&all.m), "memory in bfgs")
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
-    //("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
     ("output_feature_regularizer_binary", po::value< string >(&all.per_feature_regularizer_output), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&all.per_feature_regularizer_text), "Per feature regularization output file, in text")
     ("port", po::value<size_t>(),"port to listen on")
@@ -118,7 +121,7 @@ vw parse_args(int argc, char *argv[])
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
-    ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
+    ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
 
     ("unique_id", po::value<size_t>(&all.unique_id),"unique id used for cluster parallel jobs")
     ("total", po::value<size_t>(&all.total),"total number of nodes used in cluster parallel job")    
@@ -133,6 +136,8 @@ vw parse_args(int argc, char *argv[])
   //p.add("data", -1);
 
   po::variables_map vm = po::variables_map();
+  po::variables_map vm_file = po::variables_map(); //separate variable map for storing flags in regressor file
+
   po::parsed_options parsed = po::command_line_parser(argc, argv).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(desc).allow_unregistered().run();   // got rid of ".positional(p)" because it doesn't work well with unrecognized options
@@ -152,7 +157,7 @@ vw parse_args(int argc, char *argv[])
 
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
-  all.initial_t = all.sd->t;
+  all.initial_t = (float)all.sd->t;
 
   if (vm.count("help") || argc == 1) {
     /* upon direct query for help -- spit it out to stdout */
@@ -165,7 +170,11 @@ vw parse_args(int argc, char *argv[])
   else
     all.quiet = false;
 
+#ifdef _WIN32
+  srand(random_seed);
+#else
   srand48(random_seed);
+#endif
 
   if (vm.count("active_simulation"))
       all.active_simulation = true;
@@ -183,7 +192,6 @@ vw parse_args(int argc, char *argv[])
 	}
       all.stride = 2;
   }
-  
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     all.driver = BFGS::drive_bfgs;
     all.learn = BFGS::learn;
@@ -367,7 +375,7 @@ vw parse_args(int argc, char *argv[])
   }
 
   if (!vm.count("lda")) 
-    all.eta *= pow(all.sd->t, (double)all.power_t);
+    all.eta *= powf((float)(all.sd->t), all.power_t);
 
   // if (vm.count("sequence_max_length")) {
   //   size_t maxlen = vm["sequence_max_length"].as<size_t>();
@@ -376,6 +384,16 @@ vw parse_args(int argc, char *argv[])
 
   parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
 
+  //parse flags from regressor file
+  all.options_from_file_argv = VW::get_argv_from_string(all.options_from_file,all.options_from_file_argc);
+
+  po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(desc).allow_unregistered().run();
+
+  po::store(parsed_file, vm_file);
+  po::notify(vm_file);
+  
   if (vm.count("readable_model"))
     all.text_regressor_name = vm["readable_model"].as<string>();
   
@@ -383,9 +401,9 @@ vw parse_args(int argc, char *argv[])
     all.save_per_pass = true;
 
   if (vm.count("min_prediction"))
-    all.sd->min_label = vm["min_prediction"].as<double>();
+    all.sd->min_label = vm["min_prediction"].as<float>();
   if (vm.count("max_prediction"))
-    all.sd->max_label = vm["max_prediction"].as<double>();
+    all.sd->max_label = vm["max_prediction"].as<float>();
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     all.set_minmax = noop_mm;
 
@@ -394,9 +412,9 @@ vw parse_args(int argc, char *argv[])
     loss_function = vm["loss_function"].as<string>();
   else
     loss_function = "squaredloss";
-  double loss_parameter = 0.0;
+  float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
-    loss_parameter = vm["quantile_tau"].as<double>();
+    loss_parameter = vm["quantile_tau"].as<float>();
 
   all.is_noop = false;
   if (vm.count("noop")) {
@@ -411,7 +429,7 @@ vw parse_args(int argc, char *argv[])
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
   }
 
-  all.loss = getLossFunction(&all, loss_function, loss_parameter);
+  all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
@@ -488,9 +506,9 @@ vw parse_args(int argc, char *argv[])
   if (!all.quiet)
     {
       if (all.reg_mode %2)
-	cerr << "using l1 regularization" << endl;
+	cerr << "using l1 regularization = " << all.l1_lambda << endl;
       if (all.reg_mode > 1)
-	cerr << "using l2 regularization" << endl;
+	cerr << "using l2 regularization = " << all.l2_lambda << endl;
     }
 
   if (all.bfgs) {
@@ -499,100 +517,99 @@ vw parse_args(int argc, char *argv[])
 
   bool got_mc = false;
   bool got_cs = false;
+  bool got_cb = false;
 
-  if(vm.count("oaa")) {
+  if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
-    OAA::parse_flags(all, to_pass_further, vm, vm["oaa"].as<size_t>());
+
+    OAA::parse_flags(all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
   
-  if (vm.count("ect")) {
+  if (vm.count("ect") || vm_file.count("ect") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
-    ECT::parse_flags(all, to_pass_further, vm, vm["ect"].as<size_t>());
+
+    ECT::parse_flags(all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
 
-  if(vm.count("csoaa") || (all.searn && all.searn_base_learner.compare("csoaa") == 0) ) {
+  if(vm.count("csoaa") || vm_file.count("csoaa") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    size_t nb_actions = 0;
-    if( all.searn ) { //if loaded options from regressor file already
-      nb_actions = all.searn_nb_actions;
-      if( vm.count("csoaa") && vm["csoaa"].as<size_t>() != all.searn_nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --csoaa than the one loaded from regressor. Pursuing with loaded value of: " << all.searn_nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["csoaa"].as<size_t>();
-    }
     
-    CSOAA::parse_flags(all, to_pass_further, vm, nb_actions);
+    CSOAA::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
-    all.searn_base_learner = "csoaa";
   }
 
-  if(vm.count("wap") || (all.searn && all.searn_base_learner.compare("wap") == 0) ) {
+  if(vm.count("wap") || vm_file.count("wap") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    size_t nb_actions = 0;
-    if( all.searn ) { //if loaded options from regressor file already
-      nb_actions = all.searn_nb_actions;
-      if( vm.count("wap") && vm["wap"].as<size_t>() != all.searn_nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --wap than the one loaded from regressor. Pursuing with loaded value of: " << all.searn_nb_actions << endl;
-    }
-    else {
-      nb_actions = vm["wap"].as<size_t>();
-    }
-    WAP::parse_flags(all, to_pass_further, vm, nb_actions);
+    
+    WAP::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
-    all.searn_base_learner = "wap";
   }
 
-  if(vm.count("csoaa_ldf") || (all.searn && all.searn_base_learner.compare("csoaa_ldf") == 0)) {
+  if(vm.count("csoaa_ldf") || vm_file.count("csoaa_ldf")) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    CSOAA_AND_WAP_LDF::parse_flags(all, vm["csoaa_ldf"].as<string>(), to_pass_further, vm, 0);
+
+    CSOAA_AND_WAP_LDF::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
-    all.searn_base_learner = "csoaa_ldf";
   }
 
-  if(vm.count("wap_ldf") || (all.searn && all.searn_base_learner.compare("wap_ldf") == 0)) {
+  if(vm.count("wap_ldf") || vm_file.count("wap_ldf") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
-    CSOAA_AND_WAP_LDF::parse_flags(all, vm["wap_ldf"].as<string>(), to_pass_further, vm, 0);
+
+    CSOAA_AND_WAP_LDF::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
-    all.searn_base_learner = "wap_ldf";
   }
 
-  if (vm.count("sequence")) {
-    if (!got_cs) {
-      CSOAA::parse_flags(all, to_pass_further, vm, vm["sequence"].as<size_t>());  // default to CSOAA unless wap is specified
+  if( vm.count("cb") || vm_file.count("cb") )
+  {
+    if(!got_cs) {
+      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
+      if( vm_file.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cb"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
+
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
       got_cs = true;
     }
-    Sequence::parse_flags(all, to_pass_further, vm);
+
+    CB::parse_flags(all, to_pass_further, vm, vm_file);
+    got_cb = true;
   }
 
-  if (vm.count("searn") || all.searn) { //all.searn can be set to true while loading regressor
-    if (vm.count("sequence")) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
-
-    size_t searn_nb_actions = 0;
-    if(all.searn) //if we already loaded searn options through regressor file
-    {
-        searn_nb_actions = all.searn_nb_actions;
-        
-        if(vm.count("searn") && vm["searn"].as<size_t>() != all.searn_nb_actions )
-	  std::cerr << "warning: number of actions specified through --searn option not the same as the one loaded from predictor file. Pursuing with loaded value of: " << all.searn_nb_actions << endl;
-    }
-    else
-    {
-        searn_nb_actions = vm["searn"].as<size_t>();
-    }
-
+  if (vm.count("sequence") || vm_file.count("sequence") ) {
     if (!got_cs) {
-      CSOAA::parse_flags(all, to_pass_further, vm, searn_nb_actions);  // default to CSOAA unless wap is specified
+      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
+      if( vm_file.count("sequence") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["sequence"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["sequence"]));
+      
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
       got_cs = true;
-      all.searn_base_learner = "csoaa";
     }
-    Searn::parse_flags(all, to_pass_further, vm);
+
+    Sequence::parse_flags(all, to_pass_further, vm, vm_file);
+  }
+
+  if (vm.count("searn") || vm_file.count("searn") ) { 
+    if (vm.count("sequence") || vm_file.count("sequence") ) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
+
+    if (!got_cs && !got_cb) {
+      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
+      if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
+      
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      got_cs = true;
+    }
+    Searn::parse_flags(all, to_pass_further, vm, vm_file);
   }
 
   if (got_cs && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CS learning" << endl;
+    exit(-1);
+  }
+
+  if (got_cb && got_mc) {
+    cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
     exit(-1);
   }
 
@@ -629,7 +646,37 @@ vw parse_args(int argc, char *argv[])
 }
 
 namespace VW {
-  vw initialize(string s)
+  void cmd_string_replace_value( string& cmd, string flag_to_replace, string new_value )
+  {
+    flag_to_replace.append(" "); //add a space to make sure we obtain the right flag in case 2 flags start with the same set of characters
+    size_t pos = cmd.find(flag_to_replace);
+    if( pos == string::npos ) {
+      //flag currently not present in command string, so just append it to command string
+      cmd.append(" ");
+      cmd.append(flag_to_replace);
+      cmd.append(new_value);
+    }
+    else {
+      //flag is present, need to replace old value with new value
+      
+      //compute position after flag_to_replace
+      pos += flag_to_replace.size();
+
+      //now pos is position where value starts
+      //find position of next space
+      size_t pos_after_value = cmd.find(" ",pos);
+      if(pos_after_value == string::npos) {
+        //we reach the end of the string, so replace the all characters after pos by new_value
+        cmd.replace(pos,cmd.size()-pos,new_value);
+      }
+      else {
+        //replace characters between pos and pos_after_value by new_value
+        cmd.replace(pos,pos_after_value-pos,new_value);
+      }
+    }
+  }
+
+  char** get_argv_from_string(string s, int& argc)
   {
     char* c = (char*)calloc(s.length()+3, sizeof(char));
     c[0] = 'b';
@@ -644,17 +691,30 @@ namespace VW {
     for (size_t i = 0; i < foo.index(); i++)
       {
 	*(foo[i].end) = '\0';
-	argv[i] = foo[i].begin;
+	argv[i] = (char*)calloc(foo[i].end-foo[i].begin+1, sizeof(char));
+        sprintf(argv[i],"%s",foo[i].begin);
       }
-    
-    vw all = parse_args(foo.index(), argv);
-    
-    initialize_examples(all);
-    free (argv);
+
+    argc = foo.index();
     free(c);
     if (foo.begin != NULL)
       free(foo.begin);
+    return argv;
+  }
+ 
+  vw initialize(string s)
+  {
+    int argc = 0;
+    char** argv = get_argv_from_string(s,argc);
     
+    vw all = parse_args(argc, argv);
+    
+    initialize_examples(all);
+
+    for(int i = 0; i < argc; i++)
+      free(argv[i]);
+    free (argv);
+
     return all;
   }
 
@@ -667,6 +727,9 @@ namespace VW {
     free(all.p->lp);
     free(all.p);
     free(all.sd);
+    for (int i = 0; i < all.options_from_file_argc; i++)
+      free(all.options_from_file_argv[i]);
+    free(all.options_from_file_argv);
     delete all.loss;
   }
 }

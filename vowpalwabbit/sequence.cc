@@ -43,6 +43,7 @@ Email questions/comments to me@hal3.name.
 #include "oaa.h"
 #include "csoaa.h"
 #include "searn.h"
+#include "vw.h"
 
 namespace Sequence {
 
@@ -74,9 +75,11 @@ namespace Sequence {
   size_t sequence_passes_per_policy = 1;
   float  sequence_beta              = 0.5;
   size_t sequence_k                 = 2;
-  size_t sequence_gamma             = 1.;
+  float sequence_gamma             = 1.;
   bool   sequence_allow_current_policy = false;
   size_t sequence_beam              = 1;
+
+  size_t increment                  = 0; //for policy offset
 
   bool   all_transitions_allowed    = true;
   bool** valid_transition           = NULL;
@@ -356,7 +359,7 @@ namespace Sequence {
   {
     for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
       int f = all.final_prediction_sink[i];
-      all.print(f, label, 0., ec->tag);
+      all.print(f, (float)label, 0., ec->tag);
     }
   }
 
@@ -625,7 +628,7 @@ namespace Sequence {
     CSOAA::label ld = { costs };
 
     SearnUtil::add_history_to_example(all, &hinfo, ec, h);
-    SearnUtil::add_policy_offset(all, ec, sequence_k, total_number_of_policies, current_policy);
+    SearnUtil::add_policy_offset(all, ec, increment, current_policy);
 
     if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all,ec);}
     ec->ld = (void*)&ld;
@@ -634,7 +637,7 @@ namespace Sequence {
     if (PRINT_DEBUG_INFO) {clog << " after train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x << "::" << c->partial_prediction; clog << " ]\t"; simple_print_example_features(all,ec);}
 
     SearnUtil::remove_history_from_example(all, &hinfo, ec);
-    SearnUtil::remove_policy_offset(all, ec, sequence_k, total_number_of_policies, current_policy);
+    SearnUtil::remove_policy_offset(all, ec, increment, current_policy);
   }
 
   size_t predict(vw&all, example *ec, history h, int policy, size_t truth)
@@ -647,11 +650,11 @@ namespace Sequence {
         CSOAA::label *label = true ? &testall_costs : &transition_prediction_costs[last_prediction(h)];
         ec->ld = (void*)label;
         for (CSOAA::wclass *f = label->costs.begin; f != label->costs.end; f++)
-          f->partial_prediction = (f->weight_index == truth) ? 0. : 1.;
+          f->partial_prediction = (f->weight_index == truth) ? 0.f : 1.f;
       }
     } else {
       SearnUtil::add_history_to_example(all, &hinfo, ec, h);
-      SearnUtil::add_policy_offset(all, ec, sequence_k, total_number_of_policies, policy);
+      SearnUtil::add_policy_offset(all, ec, increment, policy);
 
       if (PRINT_DEBUG_INFO) {
         clog << "all_costs="; simple_print_costs(&testall_costs);;
@@ -670,7 +673,7 @@ namespace Sequence {
       if (PRINT_DEBUG_INFO) {clog << " after test: " << yhat << ", pp=" << ec->partial_prediction << endl;clog << "costs = "; simple_print_costs((CSOAA::label*)ec->ld); }
 
       SearnUtil::remove_history_from_example(all, &hinfo, ec);
-      SearnUtil::remove_policy_offset(all, ec, sequence_k, total_number_of_policies, policy);
+      SearnUtil::remove_policy_offset(all, ec, increment, policy);
     }
     if ((yhat <= 0) || (yhat > sequence_k)) {
       clog << "internal error (bug): predict is returning an invalid class [" << yhat << "] -- replacing with 1" << endl;
@@ -790,7 +793,7 @@ namespace Sequence {
   void run_test_common_init()
   {
     for (size_t t=0; t<ec_seq.index(); t++)
-      policy_seq[t] = (current_policy == 0) ? 0 : SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, false);
+      policy_seq[t] = (current_policy == 0) ? 0 : SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, false, true);
     if (PRINT_DEBUG_INFO) {
       clog << "test policies:";
       for (size_t t=0; t<ec_seq.index(); t++) clog << " " << policy_seq[t];
@@ -829,7 +832,7 @@ namespace Sequence {
       // global_print_label(ec_seq[t], pred_seq[t]);
 
       // allow us to use the optimal policy for the future
-      if (SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, true) == -1)
+      if (SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, true, true) == -1)
         policy_seq[t] = -1;
     }
     if (PRINT_DEBUG_INFO) {
@@ -971,7 +974,7 @@ namespace Sequence {
       for (size_t i=0; i<sequence_k; i++) {
         if (hcache[i].alive) {
           size_t lab  = hcache[i].original_label;
-          size_t cost = hcache[i].loss - min_loss;
+          float cost = hcache[i].loss - min_loss;
           CSOAA::wclass temp  = { cost, lab+1, 0. };
           push(loss_vector, temp);
         }
@@ -1089,7 +1092,7 @@ namespace Sequence {
           size_t id = k * sequence_k + i;
           if (hcache[id].alive) {
             size_t lab  = hcache[id].original_label % sequence_k;
-            size_t cost = hcache[id].loss - min_loss;
+            float cost = hcache[id].loss - min_loss;
             CSOAA::wclass temp  = { cost, lab+1, 0. };
             push(loss_vector, temp);
           }
@@ -1136,7 +1139,7 @@ namespace Sequence {
     else                                           run_test(all);
     run_test_common_final(all, any_test);
 
-    if (! any_test && all.training) {
+    if (! any_test ) {
       run_train_common_init(all);
       if (sequence_beam > 1 || DEBUG_FORCE_BEAM_ONE) run_train_beam(all);
       else                                           run_train(all);
@@ -1179,11 +1182,16 @@ namespace Sequence {
         passes_since_new_policy++;
         if (passes_since_new_policy >= sequence_passes_per_policy) {
           passes_since_new_policy = 0;
-          current_policy++;
+          if(all->training)
+            current_policy++;
           if (current_policy > total_number_of_policies) {
             cerr << "internal error (bug): too many policies; not advancing" << endl;
             current_policy = total_number_of_policies;
           }
+          //reset sequence_trained_nb_policies in options_from_file so it is saved to regressor file later
+          std::stringstream ss;
+          ss << current_policy;
+          VW::cmd_string_replace_value(all->options_from_file,"--sequence_trained_nb_policies", ss.str());
         }
       }
       if (((OAA::mc_label*)ec->ld)->label > sequence_k) {
@@ -1217,12 +1225,23 @@ namespace Sequence {
       } else if (parser_done(all->p)) {
         do_actual_learning(*all);
         //finish(all);
-        return;
+        break;
       }
+    }
+
+    if( all->training ) {
+      std::stringstream ss1;
+      std::stringstream ss2;
+      ss1 << (current_policy+1);
+      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --sequence_trained_nb_policies
+      VW::cmd_string_replace_value(all->options_from_file,"--sequence_trained_nb_policies", ss1.str()); 
+      ss2 << total_number_of_policies;
+      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --sequence_total_nb_policies
+      VW::cmd_string_replace_value(all->options_from_file,"--sequence_total_nb_policies", ss2.str());
     }
   }
 
-  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+  void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     po::options_description desc("Sequence options");
     desc.add_options()
@@ -1237,7 +1256,15 @@ namespace Sequence {
       ("sequence_max_length", po::value<size_t>(), "maximum length of sequences (default 256)")
       ("sequence_transition_file", po::value<string>(), "read valid transitions from file (default all valid)")
       ("sequence_allow_current_policy", "allow sequence labeling to use the current policy")
+      ("sequence_total_nb_policies", po::value<size_t>(), "Number of policies that will eventually be trained")
       ("sequence_beam", po::value<size_t>(), "set the beam size for sequence prediction (default: 1 == greedy)");
+
+    po::options_description add_desc_file("Sequence options in regressor file");
+    add_desc_file.add_options()
+      ("sequence_trained_nb_policies", po::value<size_t>(), "Number of policies trained in the file");
+
+    po::options_description desc_file("Sequence options in regressor file");
+    desc_file.add(desc).add(add_desc_file);
 
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -1245,6 +1272,12 @@ namespace Sequence {
     opts = po::collect_unrecognized(parsed.options, po::include_positional);
     po::store(parsed, vm);
     po::notify(vm);
+
+    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc_file).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
 
     all.driver = drive;
     base_learner = all.learn;
@@ -1255,48 +1288,144 @@ namespace Sequence {
 
     all.sequence = true;
 
-    sequence_k = vm["sequence"].as<size_t>();
+    if( vm_file.count("sequence") ) { //we loaded a regressor file containing all the sequence options, use the ones in the file
+      sequence_k = vm_file["sequence"].as<size_t>();
 
-    if (vm.count("sequence_bigrams"))
-      hinfo.bigrams = true;
-    if (vm.count("sequence_bigram_features"))
-      hinfo.bigram_features = true;
-    if (vm.count("sequence_allow_current_policy"))
-      sequence_allow_current_policy = true;
+      if( vm.count("sequence") && vm["sequence"].as<size_t>() != sequence_k )
+        std::cerr << "warning: you specified a different number of actions through --sequence than the one loaded from regressor. Pursuing with loaded value of: " << sequence_k << endl;
 
-    if (vm.count("sequence_history"))
-      hinfo.length = vm["sequence_history"].as<size_t>();
-    if (vm.count("sequence_features"))
-      hinfo.features = vm["sequence_features"].as<size_t>();
-    if (vm.count("sequence_rollout"))
-      sequence_rollout = vm["sequence_rollout"].as<size_t>();
-    if (vm.count("sequence_passes_per_policy"))
-      sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
-    if (vm.count("sequence_beta"))
-      sequence_beta = vm["sequence_beta"].as<float>();
+      if (vm_file.count("sequence_bigrams"))
+        hinfo.bigrams = true;
+      if (vm_file.count("sequence_bigram_features"))
+        hinfo.bigram_features = true;
+      if (vm_file.count("sequence_history"))
+        hinfo.length = vm_file["sequence_history"].as<size_t>();
+      if (vm_file.count("sequence_features"))
+        hinfo.features = vm_file["sequence_features"].as<size_t>();
+
+      if (vm_file.count("sequence_beta"))
+        sequence_beta = vm_file["sequence_beta"].as<float>();
+
+      if (vm_file.count("sequence_beam")) {
+        sequence_beam = vm_file["sequence_beam"].as<size_t>();
+        if (sequence_beam < 1) {
+          cerr << "cannot have --sequence_beam < 1; resetting to 1" << endl;
+          sequence_beam = 1;
+        }
+        if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
+          initialize_beam(all);
+      }
+
+      if( vm_file.count("sequence_total_nb_policies") ) {
+        total_number_of_policies = vm_file["sequence_total_nb_policies"].as<size_t>();
+        if (vm.count("sequence_total_nb_policies") && vm["sequence_total_nb_policies"].as<size_t>() != total_number_of_policies)
+          std::cerr << "warning: --sequence_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << total_number_of_policies << endl;
+      }
+
+      if( vm_file.count("sequence_trained_nb_policies") ) {
+        current_policy = vm_file["sequence_trained_nb_policies"].as<size_t>();
+      }
+
+      //check if there are a discrepancies with what user has specified in command line
+      if( vm.count("sequence_bigrams") && !hinfo.bigrams )
+        cerr << "warning: you specified --sequence_bigrams but loaded predictor does not use bigrams. Pursuing without bigrams." << endl;
+
+      if( vm.count("sequence_bigram_features") && !hinfo.bigram_features )
+        cerr << "warning: you specified --sequence_bigram_features but loaded predictor does not use bigram features. Pursuing without bigram features." << endl;
+
+      if( vm.count("sequence_history") && hinfo.length != vm["sequence_history"].as<size_t>() )
+        cerr << "warning: you specified a different value for --sequence_history than the one stored in loaded predictor. Pursuing with loaded value of: " << hinfo.length << endl;
+
+      if( vm.count("sequence_features") && hinfo.features != vm["sequence_features"].as<size_t>() )
+        cerr << "warning: you specified a different value for --sequence_features than the one stored in loaded predictor. Pursuing with loaded value of: " << hinfo.features << endl;
+
+      if( vm.count("sequence_beta") && sequence_beta != vm["sequence_beta"].as<float>() )
+        cerr << "warning: you specified a different value for --sequence_beta than the one stored in loaded predictor. Pursuing with loaded value of: " << sequence_beta << endl;
+
+      if( vm.count("sequence_beam") && sequence_beam != vm["sequence_beam"].as<size_t>() )
+        cerr << "warning: you specified a different value for --sequence_beam than the one stored in loaded predictor. Pursuing with loaded value of: " << sequence_beam << endl;
+
+    }
+    else {
+      sequence_k = vm["sequence"].as<size_t>();
+
+      if (vm.count("sequence_bigrams")) {
+        hinfo.bigrams = true;
+	all.options_from_file.append(" --sequence_bigrams");
+      }
+
+      if (vm.count("sequence_bigram_features")){
+        hinfo.bigram_features = true;
+	all.options_from_file.append(" --sequence_bigram_features");
+      }
+      
+      if (vm.count("sequence_history")){
+        hinfo.length = vm["sequence_history"].as<size_t>();
+        stringstream ss;
+        ss << " --sequence_history " << hinfo.length;
+        all.options_from_file.append(ss.str());
+      }
+
+      if (vm.count("sequence_features")){
+        hinfo.features = vm["sequence_features"].as<size_t>();
+        stringstream ss;
+        ss << " --sequence_features " << hinfo.features;
+        all.options_from_file.append(ss.str());
+      }
+      
+      if (vm.count("sequence_beam")) {
+        sequence_beam = vm["sequence_beam"].as<size_t>();
+        if (sequence_beam < 1) {
+          cerr << "cannot have --sequence_beam < 1; resetting to 1" << endl;
+          sequence_beam = 1;
+        }
+
+        stringstream ss;
+        ss << " --sequence_beam " << sequence_beam;
+        all.options_from_file.append(ss.str());
+
+        if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
+          initialize_beam(all);
+      }
+
+      if( vm.count("sequence_total_nb_policies") ) {
+        total_number_of_policies = vm["sequence_total_nb_policies"].as<size_t>();
+      }
+
+      if (vm.count("sequence_beta"))
+        sequence_beta = vm["sequence_beta"].as<float>();
+      
+      if (sequence_beta <= 0) {
+        sequence_beta = 0.5;
+        cerr << "warning: sequence_beta set to a value <= 0; resetting to 0.5" << endl;
+      }
+
+      //append sequence with nb_actionsand sequence_beta to options_from_file so it is saved to regressor later
+      stringstream ss;
+      ss << " --sequence " << sequence_k;
+      ss << " --sequence_beta " << sequence_beta;
+      all.options_from_file.append(ss.str());
+    }
+
+    //these remaining options are not stored in the file so always load them from command line
+
     if (vm.count("sequence_gamma"))
       sequence_beta = vm["sequence_gamma"].as<float>();
 
-    if (sequence_beta <= 0) {
-      sequence_beta = 0.5;
-      cerr << "warning: sequence_beta set to a value <= 0; resetting to 0.5" << endl;
-    }
+    if (vm.count("sequence_rollout"))
+      sequence_rollout = vm["sequence_rollout"].as<size_t>();
+    
+    if (vm.count("sequence_passes_per_policy"))
+      sequence_passes_per_policy = vm["sequence_passes_per_policy"].as<size_t>();
+
+    if (vm.count("sequence_allow_current_policy"))
+      sequence_allow_current_policy = true;
 
     if (vm.count("sequence_transition_file")) {
-      all_transitions_allowed = false;
-      read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
-    } else
-      all_transitions_allowed = true;
-
-    if (vm.count("sequence_beam")) {
-      sequence_beam = vm["sequence_beam"].as<size_t>();
-      if (sequence_beam < 1) {
-        cerr << "cannot have --sequence_beam < 1; resetting to 1" << endl;
-        sequence_beam = 1;
-      }
-      if (DEBUG_FORCE_BEAM_ONE || sequence_beam > 1)
-        initialize_beam(all);
-    }
+        all_transitions_allowed = false;
+        read_transition_file(vm["sequence_transition_file"].as<string>().c_str());
+      } else
+        all_transitions_allowed = true;
 
     if (!all_transitions_allowed && (hinfo.length == 0)) {
       cerr << "cannot have --sequence_transition_file and zero history length, setting history length to 1" << endl;
@@ -1307,7 +1436,39 @@ namespace Sequence {
     for (size_t i=0; i < hinfo.length; i++)
       constant_pow_length *= quadratic_constant;
 
-    total_number_of_policies = (int)ceil(((float)all.numpasses) / ((float)sequence_passes_per_policy));
+    //compute total number of policies we will have at end of training
+    // we add current_policy for cases where we start from an initial set of policies loaded through -i option
+    size_t tmp_number_of_policies = current_policy;
+    if(all.training)
+      tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)sequence_passes_per_policy));
+
+    //the user might have specified the number of policies that will eventually be trained through multiple vw calls, 
+    //so only set total_number_of_policies to computed value if it is larger
+    if(tmp_number_of_policies > total_number_of_policies) {
+      total_number_of_policies = tmp_number_of_policies;
+      if( current_policy > 0 ) //we loaded a file but total number of policies didn't match what is needed for training
+      {
+        std::cerr << "warning: you're attempting to train more classifiers than was allocated initially. Likely to cause bad performance." << endl;
+      }
+    }
+
+    //current policy currently points to a new policy we would train
+    //if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
+    //so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
+    if( !all.training && current_policy > 0 )
+      current_policy--;
+
+    std::stringstream ss1;
+    std::stringstream ss2;
+    ss1 << current_policy;
+    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --sequence_trained_nb_policies
+    VW::cmd_string_replace_value(all.options_from_file,"--sequence_trained_nb_policies", ss1.str()); 
+    ss2 << total_number_of_policies;
+    //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --sequence_total_nb_policies
+    VW::cmd_string_replace_value(all.options_from_file,"--sequence_total_nb_policies", ss2.str());
+
+    all.base_learner_nb_w *= total_number_of_policies;
+    increment = (all.length() / all.base_learner_nb_w) * all.stride;
   }
 }
 

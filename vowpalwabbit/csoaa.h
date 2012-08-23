@@ -23,7 +23,7 @@ namespace CSOAA {
     v_array<wclass> costs;
   };
   
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, size_t s);
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 
   void output_example(vw& all, example* ec);
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
@@ -38,13 +38,13 @@ namespace CSOAA {
 					delete_label, weight, initial, 
 					sizeof(label)};
 
-  int example_is_test(example* ec);
+  bool example_is_test(example* ec);
 }
 
 namespace CSOAA_AND_WAP_LDF {
   typedef CSOAA::label label;
 
-  void parse_flags(vw& all, std::string ldf_arg, std::vector<std::string>&, po::variables_map& vm, size_t s);
+  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   void global_print_newline(vw& all);
   void output_example(vw& all, example* ec, bool&hit_loss);
 

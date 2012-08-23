@@ -1,4 +1,3 @@
-#include <pthread.h>
 #include <stdio.h>
 #include <float.h>
 #include <iostream>
@@ -168,14 +167,14 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
     }
 }
 
-void set_mm(shared_data* sd, double label)
+void set_mm(shared_data* sd, float label)
 {
   sd->min_label = min(sd->min_label, label);
   if (label != FLT_MAX)
     sd->max_label = max(sd->max_label, label);
 }
 
-void noop_mm(shared_data* sd, double label)
+void noop_mm(shared_data* sd, float label)
 {}
 
 vw::vw()
@@ -189,7 +188,7 @@ vw::vw()
   sd->total_features = 0;
   sd->sum_loss = 0.0;
   sd->sum_loss_since_last_dump = 0.0;
-  sd->dump_interval = exp(1.);
+  sd->dump_interval = (float)exp(1.);
   sd->gravity = 0.;
   sd->contraction = 1.;
   sd->min_label = 0.;
@@ -212,8 +211,8 @@ vw::vw()
   default_bits = true;
   daemon = false;
   num_children = 10;
-  lda_alpha = 0.1;
-  lda_rho = 0.1;
+  lda_alpha = 0.1f;
+  lda_rho = 0.1f;
   lda_D = 10000.;
   minibatch = 1;
   span_server = "";
@@ -224,10 +223,14 @@ vw::vw()
   finish = finish_gd;
   set_minmax = set_mm;
 
+  base_learn = NULL;
+
+  base_learner_nb_w = 1;
+
   power_t = 0.5;
   eta = 10;
   numpasses = 1;
-  rel_threshold = 0.001;
+  rel_threshold = 0.001f;
   rank = 0;
 
   final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;
@@ -240,17 +243,9 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
+  options_from_file = "";
+
   searn = false;
-  searn_nb_actions = 1;
-  searn_base_learner = "csoaa";
-  searn_trained_nb_policies = 1;
-  searn_total_nb_policies = 1;
-  searn_beta = 0.5;
-  searn_task = "sequence";
-  searn_sequencetask_history = 1;
-  searn_sequencetask_features = 0;
-  searn_sequencetask_bigrams = false;
-  searn_sequencetask_bigram_features = false;
 
   nonormalize = false;
   l1_lambda = 0.0;
