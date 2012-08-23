@@ -8,7 +8,7 @@
 #include "parse_example.h"
 #include "parse_primitives.h"
 
-size_t hashstring (substring s, unsigned long h);
+size_t hashstring (substring s, uint32_t h);
 
 namespace CB
 {
@@ -175,7 +175,7 @@ namespace CB
         if( f.prob_action > 1.0 )
         {
           cerr << "invalid probability > 1 specified for an action, resetting to 1." << endl;
-          f.prob_action = 1.0;size_t hashstring (substring s, unsigned long h);
+          f.prob_action = 1.0;
         }
         if( f.prob_action < 0.0 )
         {

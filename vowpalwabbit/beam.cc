@@ -16,9 +16,10 @@ namespace Beam
     // first sort on hash, then on loss
     elem* a = (elem*)va;
     elem* b = (elem*)vb;
-    if (a->hash < b->hash) { return -1; }
-    if (a->hash > b->hash) { return  1; }
-    return b->loss - a->loss;   // if b is greater, it should go second
+    if (a->hash < b->hash) return -1; 
+    if (a->hash > b->hash) return  1; 
+	if (b->loss > a->loss) return 1; // if b is greater, it should go second
+	else return -1;
   }
 
   beam::beam(bool (*eq)(state,state), size_t (*hs)(state), size_t max_beam_size) {

@@ -27,14 +27,14 @@ public:
       if (label == sd->min_label)
 	return 0.;
       else
-	return (label - sd->min_label) * (label - sd->min_label) 
-	  + 2. * (label-sd->min_label) * (sd->min_label - prediction);
+	return (float) ((label - sd->min_label) * (label - sd->min_label) 
+	  + 2. * (label-sd->min_label) * (sd->min_label - prediction));
     else 
       if (label == sd->max_label)
 	return 0.;
       else
-	return (sd->max_label - label) * (sd->max_label - label) 
-	  + 2. * (sd->max_label - label) * (prediction - sd->max_label);
+	return float((sd->max_label - label) * (sd->max_label - label) 
+	  + 2. * (sd->max_label - label) * (prediction - sd->max_label));
   }
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
@@ -50,7 +50,7 @@ public:
   }
 
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
-    float t = 0.5*(sd->min_label+sd->max_label);
+    float t = 0.5f*(sd->min_label+sd->max_label);
     float alternative = (prediction > t) ? sd->min_label : sd->max_label;
     return log((alternative-prediction)/(alternative-t))/eta_t;
   }
@@ -64,7 +64,7 @@ public:
       prediction = sd->min_label;
     else if (prediction > sd->max_label)
       prediction = sd->max_label;
-    return 2. * (prediction-label);
+    return 2.f * (prediction-label);
   }
   float second_derivative(shared_data* sd, float prediction, float label)
   {
@@ -91,7 +91,7 @@ public:
   }
   
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
-    float t = 0.5*(sd->min_label+sd->max_label);
+    float t = 0.5f*(sd->min_label+sd->max_label);
     float alternative = (prediction > t) ? sd->min_label : sd->max_label;
     return (t-prediction)/((alternative-prediction)*eta_t);
   }
@@ -101,7 +101,7 @@ public:
   }
   float first_derivative(shared_data*, float prediction, float label)
   {
-    return 2. * (prediction-label);
+    return 2.f * (prediction-label);
   }
   float second_derivative(shared_data*, float prediction, float label)
   {
@@ -182,7 +182,7 @@ public:
     double r = x>=1. ? x-log(w)-w : 0.2*x+0.65-w; //residual
     double t = 1.+w;
     double u = 2.*t*(t+2.*r/3.); //magic
-    return w*(1.+r/t*(u-r)/(u-2.*r))-x; //more magic
+    return (float)(w*(1.+r/t*(u-r)/(u-2.*r))-x); //more magic
   }
   
   float getRevertingWeight(shared_data*, float prediction, float eta_t){
@@ -211,7 +211,7 @@ public:
 
 class quantileloss : public loss_function {
 public:
-  quantileloss(double &tau_) : tau(tau_) {
+  quantileloss(float &tau_) : tau(tau_) {
   }
   
   float getLoss(shared_data*, float prediction, float label) {
@@ -239,7 +239,7 @@ public:
   
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
     float v,t;
-    t = 0.5*(sd->min_label+ sd->max_label);
+    t = 0.5f*(sd->min_label+ sd->max_label);
     if(prediction > t)
       v = -(1-tau);
      else
@@ -264,10 +264,10 @@ public:
     return 0.;
   }
 
-  double tau;
+  float tau;
 };
 
-loss_function* getLossFunction(void* a, string funcName, double function_parameter) {
+loss_function* getLossFunction(void* a, string funcName, float function_parameter) {
   vw* all=(vw*)a;
   if(funcName.compare("squared") == 0 || funcName.compare("Huber") == 0) {
     return new squaredloss();

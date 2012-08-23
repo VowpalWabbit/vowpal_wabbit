@@ -35,8 +35,8 @@ struct shared_data {
   float dump_interval;// when should I update for the user.
   double gravity;
   double contraction;
-  double min_label;//minimum label encountered
-  double max_label;//maximum label encountered
+  float min_label;//minimum label encountered
+  float max_label;//maximum label encountered
 
   bool binary_label;
   uint32_t k;
@@ -53,7 +53,7 @@ struct label_parser {
   size_t label_size;
 };
 
-typedef size_t (*hash_func_t)(substring, unsigned long);
+typedef size_t (*hash_func_t)(substring, uint32_t);
 
 struct parser {
   v_array<substring> channels;//helper(s) for text parsing

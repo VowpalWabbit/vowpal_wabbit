@@ -75,7 +75,7 @@ namespace Sequence {
   size_t sequence_passes_per_policy = 1;
   float  sequence_beta              = 0.5;
   size_t sequence_k                 = 2;
-  size_t sequence_gamma             = 1.;
+  float sequence_gamma             = 1.;
   bool   sequence_allow_current_policy = false;
   size_t sequence_beam              = 1;
 
@@ -359,7 +359,7 @@ namespace Sequence {
   {
     for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
       int f = all.final_prediction_sink[i];
-      all.print(f, label, 0., ec->tag);
+      all.print(f, (float)label, 0., ec->tag);
     }
   }
 
@@ -650,7 +650,7 @@ namespace Sequence {
         CSOAA::label *label = true ? &testall_costs : &transition_prediction_costs[last_prediction(h)];
         ec->ld = (void*)label;
         for (CSOAA::wclass *f = label->costs.begin; f != label->costs.end; f++)
-          f->partial_prediction = (f->weight_index == truth) ? 0. : 1.;
+          f->partial_prediction = (f->weight_index == truth) ? 0.f : 1.f;
       }
     } else {
       SearnUtil::add_history_to_example(all, &hinfo, ec, h);
@@ -974,7 +974,7 @@ namespace Sequence {
       for (size_t i=0; i<sequence_k; i++) {
         if (hcache[i].alive) {
           size_t lab  = hcache[i].original_label;
-          size_t cost = hcache[i].loss - min_loss;
+          float cost = hcache[i].loss - min_loss;
           CSOAA::wclass temp  = { cost, lab+1, 0. };
           push(loss_vector, temp);
         }
@@ -1092,7 +1092,7 @@ namespace Sequence {
           size_t id = k * sequence_k + i;
           if (hcache[id].alive) {
             size_t lab  = hcache[id].original_label % sequence_k;
-            size_t cost = hcache[id].loss - min_loss;
+            float cost = hcache[id].loss - min_loss;
             CSOAA::wclass temp  = { cost, lab+1, 0. };
             push(loss_vector, temp);
           }

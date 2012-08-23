@@ -512,7 +512,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 #endif
 	}
 
-    child:
+#ifndef _WIN32
+	child:
+#endif
       sockaddr_in client_address;
       socklen_t size = sizeof(client_address);
       all.p->max_fd = 0;
@@ -732,10 +734,10 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->done = false;
-  ae->example_counter = all.p->parsed_examples + 1;
+  ae->example_counter = (size_t)(all.p->parsed_examples + 1);
   ae->global_weight = all.p->lp->get_weight(ae->ld);
   all.sd->t += ae->global_weight;
-  ae->example_t = all.sd->t;
+  ae->example_t = (float)all.sd->t;
 
   if (all.ignore_some)
     {

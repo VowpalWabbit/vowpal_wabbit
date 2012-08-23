@@ -92,8 +92,8 @@ vw parse_args(int argc, char *argv[])
     ("initial_t", po::value<double>(&(all.sd->t)), "initial t value")
     ("lda", po::value<size_t>(&all.lda), "Run lda with <int> topics")
     ("span_server", po::value<string>(&all.span_server), "Location of server for setting up spanning tree")
-    ("min_prediction", po::value<double>(&all.sd->min_label), "Smallest prediction to output")
-    ("max_prediction", po::value<double>(&all.sd->max_label), "Largest prediction to output")
+    ("min_prediction", po::value<float>(&all.sd->min_label), "Smallest prediction to output")
+    ("max_prediction", po::value<float>(&all.sd->max_label), "Largest prediction to output")
     ("mem", po::value<int>(&all.m), "memory in bfgs")
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
@@ -121,7 +121,7 @@ vw parse_args(int argc, char *argv[])
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
-    ("quantile_tau", po::value<double>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
+    ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
 
     ("unique_id", po::value<size_t>(&all.unique_id),"unique id used for cluster parallel jobs")
     ("total", po::value<size_t>(&all.total),"total number of nodes used in cluster parallel job")    
@@ -157,7 +157,7 @@ vw parse_args(int argc, char *argv[])
 
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
-  all.initial_t = all.sd->t;
+  all.initial_t = (float)all.sd->t;
 
   if (vm.count("help") || argc == 1) {
     /* upon direct query for help -- spit it out to stdout */
@@ -201,7 +201,6 @@ vw parse_args(int argc, char *argv[])
         cout << "Options don't make sense.  You can't use an normalized adaptive updates and not normalize." << endl;
     }
   }
-  
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     all.driver = BFGS::drive_bfgs;
     all.learn = BFGS::learn;
@@ -386,7 +385,7 @@ vw parse_args(int argc, char *argv[])
   }
 
   if (!vm.count("lda")) 
-    all.eta *= pow(all.sd->t, (double)all.power_t);
+    all.eta *= powf((float)(all.sd->t), all.power_t);
 
   // if (vm.count("sequence_max_length")) {
   //   size_t maxlen = vm["sequence_max_length"].as<size_t>();
@@ -412,9 +411,9 @@ vw parse_args(int argc, char *argv[])
     all.save_per_pass = true;
 
   if (vm.count("min_prediction"))
-    all.sd->min_label = vm["min_prediction"].as<double>();
+    all.sd->min_label = vm["min_prediction"].as<float>();
   if (vm.count("max_prediction"))
-    all.sd->max_label = vm["max_prediction"].as<double>();
+    all.sd->max_label = vm["max_prediction"].as<float>();
   if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
     all.set_minmax = noop_mm;
 
@@ -423,9 +422,9 @@ vw parse_args(int argc, char *argv[])
     loss_function = vm["loss_function"].as<string>();
   else
     loss_function = "squaredloss";
-  double loss_parameter = 0.0;
+  float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
-    loss_parameter = vm["quantile_tau"].as<double>();
+    loss_parameter = vm["quantile_tau"].as<float>();
 
   if (vm.count("noop"))
     all.driver = drive_noop;
@@ -436,7 +435,7 @@ vw parse_args(int argc, char *argv[])
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
   }
 
-  all.loss = getLossFunction(&all, loss_function, loss_parameter);
+  all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
 
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
@@ -513,9 +512,9 @@ vw parse_args(int argc, char *argv[])
   if (!all.quiet)
     {
       if (all.reg_mode %2)
-	cerr << "using l1 regularization" << endl;
+	cerr << "using l1 regularization = " << all.l1_lambda << endl;
       if (all.reg_mode > 1)
-	cerr << "using l2 regularization" << endl;
+	cerr << "using l2 regularization = " << all.l2_lambda << endl;
     }
 
   if (all.bfgs) {

@@ -121,7 +121,7 @@ struct vw {
   void (*learn)(void *, example*);
   void (*base_learn)(void *, example*);
   void (*finish)(void *);
-  void (*set_minmax)(shared_data* sd, double label);
+  void (*set_minmax)(shared_data* sd, float label);
 
   size_t num_bits; // log_2 of the number of features.
   bool default_bits;
@@ -213,7 +213,7 @@ struct vw {
   char* program_name;
 
   //runtime accounting variables. 
-  double initial_t;
+  float initial_t;
   float eta;//learning rate control.
   float eta_decay_rate;
 
@@ -226,7 +226,7 @@ struct vw {
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
 void active_print_result(int f, float res, float weight, v_array<char> tag);
-void noop_mm(shared_data*, double label);
+void noop_mm(shared_data*, float label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
 
