@@ -240,7 +240,7 @@ namespace WAP {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            base_learner(all, ec);
+	    learn(all,ec);
             CSOAA::output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
