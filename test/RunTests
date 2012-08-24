@@ -15,11 +15,11 @@ my $Epsilon = 1e-4;
 my $VW;
 my $LDA;
 
-my $Diff = 'diff';
+my $Diff = 'c:\\cygwin\\bin\\diff.exe';
 my @ToTest = ();
 
-my @TrainSets = glob('train-sets/*.dat');
-my @TestSets = glob('test-sets/*.dat');
+my @TrainSets = glob('train-sets\\*.dat');
+my @TestSets = glob('test-sets\\*.dat');
 
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
@@ -341,6 +341,7 @@ sub run_tests() {
         ($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
 
         # run the test
+	$cmd =~ s/\//\\/g;
         print STDERR "($cmd) >$outf 2>$errf\n" if ($opt_c);
         system("($cmd) >$outf 2>$errf");
         my $status = $? >> 8;

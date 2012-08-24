@@ -107,9 +107,9 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -156,6 +156,10 @@
       <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS"  /D "_CRT_NONSTDC_NO_DEPRECATE" %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed Condition="'$(Configuration)'=='Release'">Speed</FavorSizeOrSpeed>
+      <OmitFramePointers Condition="'$(Configuration)'=='Release'">true</OmitFramePointers>
+      <EnableFiberSafeOptimizations Condition="'$(Configuration)'=='Release'">false</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
