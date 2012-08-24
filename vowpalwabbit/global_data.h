@@ -203,6 +203,7 @@ struct vw {
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
   size_t total; //total number of nodes
   size_t node; //node id number
+  bool is_noop; // are we a noop learner?
 
   void (*print)(int,float,float,v_array<char>);
   void (*print_text)(int, string, v_array<char>);
