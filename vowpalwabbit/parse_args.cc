@@ -416,8 +416,12 @@ vw parse_args(int argc, char *argv[])
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
 
-  if (vm.count("noop"))
+  all.is_noop = false;
+  if (vm.count("noop")) {
     all.driver = drive_noop;
+    all.learn = learn_noop;
+    all.is_noop = true;
+  }
   
   if (all.rank != 0) {
     all.driver = drive_gd_mf;
