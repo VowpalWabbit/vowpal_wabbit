@@ -179,12 +179,14 @@ struct vw {
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
-  bool normalized_adaptive;//individual normalized & adaptive learning rates
+  bool normalized_updates; //Should every feature be normalized
+  bool invariant_updates; //Should we use importance aware/safe updates
   bool random_weights;
   bool add_constant;
   bool nonormalize;
 
-  float normalized_adaptive_max_norm_x;
+  float normalized_max_norm_x;
+  size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   size_t lda;
   float lda_alpha;

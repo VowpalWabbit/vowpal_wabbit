@@ -261,11 +261,14 @@ vw::vw()
   ngram = 0;
   skips = 0;
 
-  //by default use normalized adaptive updates
+  //by default use invariant normalized adaptive updates
   adaptive = true;
-  normalized_adaptive = true;
-  normalized_adaptive_max_norm_x = 1.;
-  
+  normalized_updates = true;
+  invariant_updates = true;
+
+  normalized_max_norm_x = 1.;
+  normalized_idx = 2;
+
   add_constant = true;
   audit = false;
   active = false;
