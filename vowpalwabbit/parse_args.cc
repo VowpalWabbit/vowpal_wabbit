@@ -184,25 +184,6 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
 
-  /*if( vm.count("sgd") || all.rank > 0 ) { //use regular sgd only if specified by user, or if doing matrix factorization, since adaptive updates not implemented for matrix factorization
-    all.adaptive = false;
-    all.normalized_updates = false;
-    if(!vm.count("learning_rate") && !vm.count("l"))
-      all.eta = 10; //default learning rate to 10 for regular sgd
-  }
-  else if( vm.count("adaptive") ) {
-    all.normalized_updates = false;
-    all.stride = 2;
-
-    if(!vm.count("learning_rate") && !vm.count("l"))
-      all.eta = 10; //default learning rate to 10 for regular adaptive
-  }
-  else { //we use the normalized adaptive updates by default
-    all.stride = 4;
-    if (vm.count("nonormalize"))
-      cout << "Options don't make sense.  You can't use an normalized adaptive updates and not normalize." << endl;
-  }*/
-
   all.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
   if( all.rank > 0 || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )

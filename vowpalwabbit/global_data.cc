@@ -228,7 +228,7 @@ vw::vw()
   base_learner_nb_w = 1;
 
   power_t = 0.5;
-  eta = 4; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
+  eta = 2; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
   rel_threshold = 0.001f;
   rank = 0;
