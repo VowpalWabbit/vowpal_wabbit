@@ -81,7 +81,7 @@ void initialize_regressor(vw& all)
   {
     for (size_t j = 1; j < all.stride*length; j+=all.stride)
     {
-      all.reg.weight_vectors[j] = 1;   //sets sum of gradients to 1
+      all.reg.weight_vectors[j] = 0;//1;   //sets sum of gradients to 1
     }
 
   }
