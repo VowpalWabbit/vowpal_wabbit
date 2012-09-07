@@ -410,7 +410,7 @@ float InvSqrt(float x){
 }
 
 void one_pf_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, 
-                        bool is_adaptive, bool is_normalized, size_t idx_norm, float max_norm)
+                        bool is_adaptive, bool is_normalized, size_t idx_norm, float avg_norm)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   update *= page_feature.x;
@@ -420,7 +420,7 @@ void one_pf_quad_update(weight* weights, feature& page_feature, v_array<feature>
     weight* w=&weights[(halfhash + ele->weight_index) & mask];
     float t = 1.f;
     float inv_norm = 1.f;
-    if(is_normalized) inv_norm /= (w[idx_norm] * max_norm);
+    if(is_normalized) inv_norm /= (w[idx_norm] * avg_norm);
     if(is_adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
       __m128 eta = _mm_load_ss(&w[1]);
@@ -458,7 +458,14 @@ void inline_train(vw& all, example* &ec, float update)
   size_t idx_norm = all.normalized_idx;
   bool is_adaptive = all.adaptive;
   bool is_normalized = all.normalized_updates;
-  float max_norm = all.normalized_max_norm_x;
+
+  float total_weight;
+  if(all.active)
+    total_weight = (float)all.sd->weighted_unlabeled_examples;
+  else
+    total_weight = ec->example_t;
+
+  float avg_norm = sqrt(all.normalized_sum_norm_x / total_weight);
 
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
@@ -469,7 +476,7 @@ void inline_train(vw& all, example* &ec, float update)
       weight* w = &weights[f->weight_index & mask];
       float t = 1.f;
       float inv_norm = 1.f;
-      if( is_normalized ) inv_norm /= (w[idx_norm] * max_norm);
+      if( is_normalized ) inv_norm /= (w[idx_norm] * avg_norm);
       if(is_adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
         __m128 eta = _mm_load_ss(&w[1]);
@@ -492,13 +499,13 @@ void inline_train(vw& all, example* &ec, float update)
     {
       v_array<feature> temp = ec->atomics[(int)(*i)[0]];
       for (; temp.begin != temp.end; temp.begin++)
-        one_pf_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, is_adaptive, is_normalized, idx_norm, max_norm);
+        one_pf_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, is_adaptive, is_normalized, idx_norm, avg_norm);
     } 
   }
 }
 
 void quad_general_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, float power_t, 
-                         bool is_adaptive, bool is_normalized, size_t idx_norm, float max_norm, float power_t_norm)
+                         bool is_adaptive, bool is_normalized, size_t idx_norm, float avg_norm, float power_t_norm)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
   update *= page_feature.x;
@@ -509,7 +516,7 @@ void quad_general_update(weight* weights, feature& page_feature, v_array<feature
     float t=1.f;
     if(is_adaptive) t = powf(w[1],-power_t);
     if(is_normalized) {
-      float norm = w[idx_norm]*max_norm;
+      float norm = w[idx_norm]*avg_norm;
       t *= powf(norm*norm,-power_t_norm); 
     }
     w[0] += update * ele->x * t;
@@ -528,7 +535,13 @@ void general_train(vw& all, example* &ec, float update, float power_t)
   size_t idx_norm = all.normalized_idx;
   bool is_adaptive = all.adaptive;
   bool is_normalized = all.normalized_updates;
-  float max_norm = all.normalized_max_norm_x;
+  float total_weight = 0.f;
+  if(all.active)
+    total_weight = (float)all.sd->weighted_unlabeled_examples;
+  else
+    total_weight = ec->example_t;
+
+  float avg_norm = all.normalized_sum_norm_x / total_weight;
  
   float power_t_norm = 1.f;
   if(is_adaptive) power_t_norm -= power_t;
@@ -543,7 +556,7 @@ void general_train(vw& all, example* &ec, float update, float power_t)
       float t = 1.f;
       if(is_adaptive) t = powf(w[1],-power_t);
       if(is_normalized) {
-        float norm = w[idx_norm]*max_norm;
+        float norm = w[idx_norm]*avg_norm;
         t *= powf(norm*norm,-power_t_norm);
       }
       w[0] += update * f->x * t;
@@ -555,7 +568,7 @@ void general_train(vw& all, example* &ec, float update, float power_t)
     {
       v_array<feature> temp = ec->atomics[(int)(*i)[0]];
       for (; temp.begin != temp.end; temp.begin++)
-        quad_general_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, power_t, is_adaptive, is_normalized, idx_norm, max_norm, power_t_norm);
+        quad_general_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update, g, ec, power_t, is_adaptive, is_normalized, idx_norm, avg_norm, power_t_norm);
     } 
   }
 }
@@ -637,15 +650,20 @@ float compute_general_norm(vw& all, example* &ec, float power_t)
         norm += general_norm_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, power_t, is_adaptive, is_normalized, idx_norm, power_t_norm, norm_x);
     } 
   }
-  
+
   if(is_normalized) {
-    norm_x = sqrt(norm_x);
-    if( norm_x > all.normalized_max_norm_x)
-      all.normalized_max_norm_x = norm_x;
+    float total_weight = 0;
+    if(all.active)
+      total_weight = (float)all.sd->weighted_unlabeled_examples;
+    else
+      total_weight = ec->example_t;
 
-    norm *= powf(all.normalized_max_norm_x * all.normalized_max_norm_x,-power_t_norm);
+    all.normalized_sum_norm_x += ld->weight * norm_x;
+    float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
+
+    norm *= powf(avg_sq_norm,-power_t_norm);
   }
-
+  
   return norm;
 }
 
@@ -749,12 +767,17 @@ float compute_norm(vw& all, example* &ec)
   }
   
   if(is_normalized) {
-    norm_x = sqrt(norm_x);
-    if( norm_x > all.normalized_max_norm_x)
-      all.normalized_max_norm_x = norm_x;
+    float total_weight = 0;
+    if(all.active)
+      total_weight = (float)all.sd->weighted_unlabeled_examples;
+    else
+      total_weight = ec->example_t;
 
-    if(is_adaptive) norm /= all.normalized_max_norm_x;
-    else norm /= (all.normalized_max_norm_x * all.normalized_max_norm_x);
+    all.normalized_sum_norm_x += ld->weight * norm_x;
+    float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
+
+    if(is_adaptive) norm /= sqrt(avg_sq_norm);
+    else norm /= avg_sq_norm;
   }
   
   return norm;

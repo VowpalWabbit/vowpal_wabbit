@@ -193,7 +193,7 @@ vw::vw()
   sd->contraction = 1.;
   sd->min_label = 0.;
   sd->max_label = 1.;
-  sd->t = 1.;
+  sd->t = 0.;
   sd->binary_label = false;
   sd->k = 0;
   
@@ -266,7 +266,7 @@ vw::vw()
   normalized_updates = true;
   invariant_updates = true;
 
-  normalized_max_norm_x = 1.;
+  normalized_sum_norm_x = 0.;
   normalized_idx = 2;
 
   add_constant = true;

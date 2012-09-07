@@ -185,7 +185,7 @@ struct vw {
   bool add_constant;
   bool nonormalize;
 
-  float normalized_max_norm_x;
+  float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   size_t lda;

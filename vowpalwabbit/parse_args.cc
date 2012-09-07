@@ -161,6 +161,11 @@ vw parse_args(int argc, char *argv[])
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
 
+  if(all.initial_t > 0)
+  {
+    all.normalized_sum_norm_x = all.initial_t;//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
+  }
+
   if (vm.count("help") || argc == 1) {
     /* upon direct query for help -- spit it out to stdout */
     cout << "\n" << desc << "\n";
@@ -201,6 +206,14 @@ vw parse_args(int argc, char *argv[])
 
     if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
       all.eta = 10; //default learning rate to 10 for non default update rule
+
+    //if not using normalized or adaptive, default initial_t to 1 instead of 0
+    if(!all.adaptive && !all.normalized_updates && !vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+      all.normalized_sum_norm_x = 1.f;
+    }
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
@@ -396,7 +409,7 @@ vw parse_args(int argc, char *argv[])
     all.driver = drive_lda;
   }
 
-  if (!vm.count("lda")) 
+  if (!vm.count("lda") && !all.adaptive && !all.normalized_updates) 
     all.eta *= powf((float)(all.sd->t), all.power_t);
 
   // if (vm.count("sequence_max_length")) {
