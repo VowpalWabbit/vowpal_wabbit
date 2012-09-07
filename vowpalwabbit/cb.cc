@@ -227,6 +227,7 @@ namespace CB
         wc.x = 0.;
         wc.weight_index = i;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
         if( cl_obs != NULL && i == cl_obs->weight_index )
         {
           wc.x = cl_obs->x / cl_obs->prob_action; //use importance weighted cost for observed action, 0 otherwise 
@@ -250,6 +251,7 @@ namespace CB
         wc.x = 0.;
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
         if( cl_obs != NULL && cl->weight_index == cl_obs->weight_index )
         {
           wc.x = cl_obs->x / cl_obs->prob_action; //use importance weighted cost for observed action, 0 otherwise 
@@ -332,6 +334,7 @@ namespace CB
         wc.x = ec->partial_prediction;
         wc.weight_index = i;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
 
         if( cl_obs != NULL && cl_obs->weight_index == i ) {
           nb_ex_regressors++;
@@ -359,6 +362,7 @@ namespace CB
         wc.x = ec->partial_prediction;
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
 
         if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
           nb_ex_regressors++;
@@ -396,6 +400,7 @@ namespace CB
         wc.x = get_cost_pred(a,ec,i);
         wc.weight_index = i;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
 
         if( cl_obs != NULL && cl_obs->weight_index == i ) {
           nb_ex_regressors++;
@@ -417,6 +422,7 @@ namespace CB
         wc.x = get_cost_pred(a,ec,cl->weight_index);
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
 
         if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
           nb_ex_regressors++;
@@ -450,6 +456,7 @@ namespace CB
         wc.x = get_cost_pred(a,ec,i);
         wc.weight_index = i;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
 
         //add correction if we observed cost for this action and regressor is wrong
         if( cl_obs != NULL && cl_obs->weight_index == i ) {
@@ -473,6 +480,7 @@ namespace CB
         wc.x = get_cost_pred(a,ec,cl->weight_index);
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
 
         //add correction if we observed cost for this action and regressor is wrong
         if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
@@ -503,6 +511,7 @@ namespace CB
         wc.x = cl->x;
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
+        wc.wap_value = 0.;
         
         push(cs_ld.costs,wc);
       }
