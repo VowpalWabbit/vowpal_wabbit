@@ -212,7 +212,6 @@ vw parse_args(int argc, char *argv[])
       all.sd->t = 1.f;
       all.sd->weighted_unlabeled_examples = 1.f;
       all.initial_t = 1.f;
-      all.normalized_sum_norm_x = 1.f;
     }
   }
 
@@ -241,6 +240,13 @@ vw parse_args(int argc, char *argv[])
 	cout << "you must make at least 2 passes to use BFGS" << endl;
 	exit(1);
       }
+
+    //default initial_t to 1 instead of 0
+    if(!vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
   }
 
 
@@ -396,6 +402,13 @@ vw parse_args(int argc, char *argv[])
 	cerr << "bfgs is not implemented for matrix factorization" << endl;
 	exit (1);
       }	
+
+    //default initial_t to 1 instead of 0
+    if(!vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
   }
 
   if (vm.count("noconstant"))
@@ -405,6 +418,13 @@ vw parse_args(int argc, char *argv[])
   //  all.nonormalize = true;
 
   if (vm.count("lda")) {
+    //default initial_t to 1 instead of 0
+    if(!vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
+
     lda_parse_flags(all, to_pass_further, vm);
     all.driver = drive_lda;
   }
