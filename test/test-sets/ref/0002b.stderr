@@ -1,5 +1,5 @@
 Num weight bits = 18
-learning rate = 10
+learning rate = 4
 initial_t = 1
 power_t = 0.5
 predictions = 0002b.predict

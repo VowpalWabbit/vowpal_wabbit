@@ -193,7 +193,7 @@ vw::vw()
   sd->contraction = 1.;
   sd->min_label = 0.;
   sd->max_label = 1.;
-  sd->t = 1.;
+  sd->t = 0.;
   sd->binary_label = false;
   sd->k = 0;
   
@@ -228,7 +228,7 @@ vw::vw()
   base_learner_nb_w = 1;
 
   power_t = 0.5;
-  eta = 10;
+  eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
   rel_threshold = 0.001f;
   rank = 0;
@@ -261,9 +261,15 @@ vw::vw()
   ngram = 0;
   skips = 0;
 
-  adaptive = false;
+  //by default use invariant normalized adaptive updates
+  adaptive = true;
+  normalized_updates = true;
+  invariant_updates = true;
+
+  normalized_sum_norm_x = 0.;
+  normalized_idx = 2;
+
   add_constant = true;
-  exact_adaptive_norm = false;
   audit = false;
   active = false;
   active_c0 = 8.;

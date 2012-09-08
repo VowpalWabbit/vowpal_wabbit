@@ -425,28 +425,28 @@ run_tests();
 
 __DATA__
 # Test 1:
-{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --ngram 3 --skips 1
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1
     train-sets/ref/0001.stdout
     train-sets/ref/0001.stderr
 
 # Test 2: checking predictions as well
-{VW} -k -t train-sets/0001.dat -i models/0001.model -p 001.predict.tmp
+{VW} -k -t train-sets/0001.dat -i models/0001.model -p 001.predict.tmp --invariant
     test-sets/ref/0001.stdout
     test-sets/ref/0001.stderr
     pred-sets/ref/0001.predict
 
 # Test 3: without -d, training only
-{VW} -k train-sets/0002.dat    -f models/0002.model
+{VW} -k train-sets/0002.dat -f models/0002.model --invariant
     train-sets/ref/0002.stdout
     train-sets/ref/0002.stderr
 
 # Test 4: same, with -d
-{VW} -k -d train-sets/0002.dat    -f models/0002.model
+{VW} -k -d train-sets/0002.dat -f models/0002.model --invariant
     train-sets/ref/0002.stdout
     train-sets/ref/0002.stderr
 
 # Test 5: add -q .., adaptive, and more (same input, different outputs)
-{VW} -k --initial_t 1 --power_t 0 --adaptive -q Tf -q ff -f models/0002a.model train-sets/0002.dat
+{VW} -k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model train-sets/0002.dat
     train-sets/ref/0002a.stdout
     train-sets/ref/0002a.stderr
 
@@ -457,8 +457,8 @@ __DATA__
     test-sets/ref/0002b.stderr
     pred-sets/ref/0002b.predict
 
-# Test 7: using --exact_adaptive_norm and a low --power_t
-{VW} -k --power_t 0.45 --exact_adaptive_norm -f models/0002c.model train-sets/0002.dat
+# Test 7: using normalized adaptive updates and a low --power_t
+{VW} -k --power_t 0.45 -f models/0002c.model train-sets/0002.dat
     train-sets/ref/0002c.stdout
     train-sets/ref/0002c.stderr
 
@@ -469,44 +469,44 @@ __DATA__
     pred-sets/ref/0002c.predict
 
 # Test 9: label-dependent features with csoaa_ldf
-{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --csoaa_ldf multiline
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline
     train-sets/ref/cs_test.ldf.csoaa.stdout
     train-sets/ref/cs_test.ldf.csoaa.stderr
     train-sets/ref/cs_test.ldf.csoaa.predict
 
 # Test 10: label-dependent features with wap_ldf
-{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --wap_ldf multiline
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline
     train-sets/ref/cs_test.ldf.wap.stdout
     train-sets/ref/cs_test.ldf.wap.stderr
     train-sets/ref/cs_test.ldf.wap.predict
 
 # Test 11: Run sequence on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --sequence_passes_per_policy 4 --sequence 4
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --sequence_passes_per_policy 4 --sequence 4
     train-sets/ref/seq_small.stdout
     train-sets/ref/seq_small.stderr
 
 # Test 12: Run sequence (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1
+{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1
     train-sets/ref/wsj_small.dat.stdout
     train-sets/ref/wsj_small.dat.stderr
 
 # Test 13: Run sequence (wap) on wsj_small for 1 passes, current policy, limited transitions
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 1 --sequence_allow_current_policy --sequence 45 --wap 45 --sequence_transition_file train-sets/wsj.train.tm2
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 1 --invariant --sequence_allow_current_policy --sequence 45 --wap 45 --sequence_transition_file train-sets/wsj.train.tm2
     train-sets/ref/wsj_small-tm.dat.stdout
     train-sets/ref/wsj_small-tm.dat.stderr
 
 # Test 14: Error Correcting Tournament
-{VW} --ect 10 --error 3 -c --passes 10 train-sets/multiclass && rm train-sets/multiclass.cache
+{VW} --ect 10 --error 3 -c --passes 10 --invariant train-sets/multiclass && rm train-sets/multiclass.cache
     train-sets/ref/multiclass.stdout
     train-sets/ref/multiclass.stderr
 
 # Test 15: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --searn_passes_per_policy 4 --searn_task sequence --searn 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --searn_passes_per_policy 4 --searn_task sequence --searn 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
     train-sets/ref/searn_wsj.stdout
     train-sets/ref/searn_wsj.stderr
 
 # Test 16: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --searn_passes_per_policy 1 --searn_task sequence --searn 45 --wap 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
+{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 45 --wap 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
     train-sets/ref/searn_wsj2.dat.stdout
     train-sets/ref/searn_wsj2.dat.stderr
 
@@ -521,11 +521,11 @@ __DATA__
     train-sets/ref/rcv1_small.stderr
 
 # Test 19: Run LDA with 100 topics on 1000 Wikipedia articles
-{LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 train-sets/wiki1K.dat
+{LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 --invariant train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr
 
 # Test 20: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn 4 --searn_task sequence
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
