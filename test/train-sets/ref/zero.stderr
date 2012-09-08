@@ -1,6 +1,6 @@
 enabling BFGS based optimization **without** curvature calculation
 Num weight bits = 20
-learning rate = 10
+learning rate = 0.5
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
@@ -11,7 +11,9 @@ Allocated 72M for weights and mem
 creating cache_file = train-sets/zero.dat.cache
 Reading from train-sets/zero.dat
 num sources = 1
- 1 0.000000e+00	0.000000e+00	0.000000e+00	          	          	          	0.000000e+00	0.000000e+00	0.000000e+00	0.121
+ 1 0.000000e+00	4.194304e+04	2.095493e+05	          	          	          	2.233896e+05	1.047595e+06	9.380441e-01	0.061
+ 3 9.218072e+04	3.687229e+04	1.843551e+05	 -0.468954 	-0.937909 	          	          	(revise x 0.5)	4.690221e-01	0.077
+ 4 2.304518e+04	9.218072e+03	4.608877e+04	 -0.234477 	-0.468954 	          	          	(revise x 0.5)	2.345110e-01	0.101
 
 finished run
 number of examples = 25
@@ -20,5 +22,5 @@ weighted label sum = 0
 average loss = 0
 best constant = -0.04167
 total feature number = 15005
- 3 0.000000e+00	0.000000e+00	0.000000e+00	 -nan      	-nan      	
+ 5 5.761295e+03	2.304518e+03	1.152219e+04	 -0.117239 	-0.234477 	          	          	(revise x 0.5)	1.172555e-01	0.125
 
