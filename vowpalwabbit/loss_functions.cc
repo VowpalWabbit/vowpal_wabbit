@@ -6,6 +6,7 @@ embodied in the content of this file are licensed under the BSD
 #include<math.h>
 #include<iostream>
 #include<stdlib.h>
+#include<assert.h>
 using namespace std;
 
 #include "loss_functions.h"
@@ -125,6 +126,7 @@ public:
   }
   
   float getLoss(shared_data*, float prediction, float label) {
+    assert(label == -1.f || label == 1.f);
     float e = 1 - label*prediction;
     return (e > 0) ? e : 0;
   }
@@ -168,6 +170,7 @@ public:
   }
   
   float getLoss(shared_data*, float prediction, float label) {
+    assert(label == -1.f || label == 1.f);
     return log(1 + exp(-label * prediction));
   }
   
