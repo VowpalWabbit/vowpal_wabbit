@@ -77,9 +77,17 @@ void initialize_regressor(vw& all)
 	  all.reg.weight_vectors[j+all.lda] = all.initial_t;
 	}
     }
-  if(all.adaptive)
+  if(all.adaptive && all.initial_t > 0)
+  {
     for (size_t j = 1; j < all.stride*length; j+=all.stride)
-      all.reg.weight_vectors[j] = 1;
+    {
+      all.reg.weight_vectors[j] = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be 
+      //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients 
+      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
+    }
+
+  }
 }
 
 //nonreentrant

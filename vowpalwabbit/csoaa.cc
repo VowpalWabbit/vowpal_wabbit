@@ -364,12 +364,13 @@ namespace CSOAA {
     }
 
     *(all.p->lp) = cs_label_parser;
-    all.sd->k = nb_actions;
+    if (!all.is_noop)
+      all.driver = drive_csoaa;
 
+    all.sd->k = nb_actions;
     all.base_learner_nb_w *= nb_actions;
     increment = (all.length()/ all.base_learner_nb_w ) * all.stride;     
 
-    all.driver = drive_csoaa;
     base_learner = all.learn;
     all.base_learn = all.learn;
     all.learn = learn;
@@ -990,7 +991,8 @@ namespace CSOAA_AND_WAP_LDF {
       all.add_constant = false;
     }
 
-    all.driver = drive_ldf;
+    if (!all.is_noop)
+      all.driver = drive_ldf;
     base_learner = all.learn;
     all.base_learn = all.learn;
     all.learn = learn;

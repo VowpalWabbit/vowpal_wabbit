@@ -87,6 +87,10 @@ public:
       if(end_read == reading_head){
 	cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
       }
+      if(nanpattern(v)) {
+        v = 0.f;
+        cout << "warning: invalid feature value:\"" << std::string(reading_head, end_read - reading_head).c_str() << "\" read as NaN. Replacing with 0." << endl;
+      }
       reading_head = end_read;
     }else{
       // syntax error
@@ -112,6 +116,7 @@ public:
       v = 1.;
       featureValue();
       v *= cur_channel_v;
+      if(v == 0) return; //dont add 0 valued features to list of features
       size_t word_hash = (p->hasher(feature_name,channel_hash)) & mask;
       feature f = {v,(uint32_t)word_hash};
       ae->sum_feat_sq[index] += v*v;
@@ -137,6 +142,10 @@ public:
       cur_channel_v = parseFloat(reading_head,&end_read);
       if(end_read == reading_head){
 	cout << "malformed example !\nFloat expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      }
+      if(nanpattern(cur_channel_v)) {
+        cur_channel_v = 1.f;
+        cout << "warning: invalid namespace value:\"" << std::string(reading_head, end_read - reading_head).c_str() << "\" read as NaN. Replacing with 1." << endl;
       }
       reading_head = end_read;
     }else{

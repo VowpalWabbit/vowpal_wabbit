@@ -179,10 +179,14 @@ struct vw {
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
-  bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
+  bool normalized_updates; //Should every feature be normalized
+  bool invariant_updates; //Should we use importance aware/safe updates
   bool random_weights;
   bool add_constant;
   bool nonormalize;
+
+  float normalized_sum_norm_x;
+  size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   size_t lda;
   float lda_alpha;
@@ -203,6 +207,7 @@ struct vw {
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
   size_t total; //total number of nodes
   size_t node; //node id number
+  bool is_noop; // are we a noop learner?
 
   void (*print)(int,float,float,v_array<char>);
   void (*print_text)(int, string, v_array<char>);
