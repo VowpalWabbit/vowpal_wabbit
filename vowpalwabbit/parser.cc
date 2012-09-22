@@ -973,7 +973,7 @@ void initialize_examples(vw& all)
     }
 }
 
-void start_parser(vw& all)
+void initialize_parser_datastructures(vw& all)
 {
   initialize_examples(all);
   initialize_mutex(&examples_lock);
@@ -981,6 +981,11 @@ void start_parser(vw& all)
   initialize_condition_variable(&example_unused);
   initialize_mutex(&output_lock);
   initialize_condition_variable(&output_done);
+}
+
+void start_parser(vw& all)
+{
+  initialize_parser_datastructures(all);
   #ifndef _WIN32
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
   #else
@@ -1021,6 +1026,12 @@ void free_parser(vw& all)
     free(all.p->counts.begin);
 }
 
+void release_parser_datastructures(vw& all)
+{
+  delete_mutex(&examples_lock);
+  delete_mutex(&output_lock);
+}
+
 void end_parser(vw& all)
 {
   #ifndef _WIN32
@@ -1029,6 +1040,5 @@ void end_parser(vw& all)
   ::WaitForSingleObject(parse_thread, INFINITE);
   ::CloseHandle(parse_thread);
   #endif
-  delete_mutex(&examples_lock);
-  delete_mutex(&output_lock);
+  release_parser_datastructures(all);
 }

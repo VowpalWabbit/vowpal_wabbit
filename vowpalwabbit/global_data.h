@@ -92,7 +92,7 @@ struct version_struct {
   }
   std::string to_string() const
   {
-    char v_str[32];
+    char v_str[128];
     std::sprintf(v_str,"%d.%d.%d",major,minor,rev);
     std::string s = v_str;
     return s;
