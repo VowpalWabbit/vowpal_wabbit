@@ -24,6 +24,10 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 
 bool examples_to_finish();
 
+//only call these from the library form:
+void initialize_parser_datastructures(vw& all);
+void release_parser_datastructures(vw& all);
+
 //parser control
 
 void start_parser(vw& all);
