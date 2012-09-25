@@ -43,7 +43,7 @@ namespace CSOAA {
   {
     if (ld->costs.index() == 0)
       return true;
-    for (size_t i=0; i<ld->costs.index(); i++)
+    for (unsigned int i=0; i<ld->costs.index(); i++)
       if (FLT_MAX != ld->costs[i].x)
         return false;
     return true;
@@ -55,7 +55,7 @@ namespace CSOAA {
     ld->costs.erase();
     c += sizeof(size_t);
     size_t total = sizeof(wclass)*num;
-    if (buf_read(cache, c, total) < total) 
+    if (buf_read(cache, c, (int)total) < total) 
       {
         cout << "error in demarshal of cost data" << endl;
         return c;
@@ -76,7 +76,7 @@ namespace CSOAA {
     ld->costs.erase();
     char *c;
     size_t total = sizeof(size_t);
-    if (buf_read(cache, c, total) < total) 
+    if (buf_read(cache, c, (int)total) < total) 
       return 0;
     c = bufread_label(ld,c, cache);
   
@@ -97,7 +97,7 @@ namespace CSOAA {
   {
     *(size_t *)c = ld->costs.index();
     c += sizeof(size_t);
-    for (size_t i = 0; i< ld->costs.index(); i++)
+    for (unsigned int i = 0; i< ld->costs.index(); i++)
       {
         *(wclass *)c = ld->costs[i];
         c += sizeof(wclass);
@@ -142,7 +142,7 @@ namespace CSOAA {
     label* ld = (label*)v;
 
     ld->costs.erase();
-    for (size_t i = 0; i < words.index(); i++) {
+    for (unsigned int i = 0; i < words.index(); i++) {
       wclass f = {0.,0,0.};
       name_value(words[i], name, f.x);
       
@@ -246,7 +246,7 @@ namespace CSOAA {
     all.sd->sum_loss_since_last_dump += loss;
   
     for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
+      all.print((int)*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;

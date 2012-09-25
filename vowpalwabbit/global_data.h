@@ -197,7 +197,7 @@ struct vw {
   
   std::string span_server;
 
-  size_t length () { return 1 << num_bits; };
+  size_t length () { return ((size_t)1) << num_bits; };
 
   size_t rank;
 

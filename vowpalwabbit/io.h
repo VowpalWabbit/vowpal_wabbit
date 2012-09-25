@@ -82,7 +82,7 @@ class io_buf {
   void set(char *p){space.end = p;}
 
   virtual ssize_t read_file(int f, void* buf, size_t nbytes){
-    return read(f, buf, nbytes);
+    return read(f, buf, (unsigned int)nbytes);
   }
 
   size_t fill(int f) {
@@ -103,7 +103,7 @@ class io_buf {
   }
 
   virtual ssize_t write_file(int f, const void* buf, size_t nbytes){
-    return write(f, buf, nbytes);
+    return write(f, buf, (unsigned int)nbytes);
   }
 
   virtual void flush() {

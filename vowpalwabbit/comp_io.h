@@ -64,14 +64,14 @@ public:
   virtual ssize_t read_file(int f, void* buf, size_t nbytes)
   {
     gzFile fil = gz_files[f];
-    int num_read = gzread(fil, buf, nbytes);
+    int num_read = gzread(fil, buf, (unsigned int)nbytes);
     return (num_read > 0) ? num_read : 0;
   }
 
   virtual inline ssize_t write_file(int f, const void* buf, size_t nbytes)
   {
     gzFile fil = gz_files[f];
-    int num_written = gzwrite(fil, buf, nbytes);
+    int num_written = gzwrite(fil, buf, (unsigned int)nbytes);
     return (num_written > 0) ? num_written : 0;
   }
 
