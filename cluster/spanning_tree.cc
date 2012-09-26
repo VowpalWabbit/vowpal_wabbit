@@ -6,12 +6,37 @@ embodied in the content of this file are licensed under the BSD
 This creates a binary tree topology over a set of n nodes that connect.
 
  */
+#ifdef _WIN32
+
+#include <WinSock2.h>
+#include <Windows.h>
+#include <io.h>
+
+typedef unsigned int uint32_t;
+typedef unsigned short uint16_t;
+typedef int socklen_t;
+
+int daemon(int a, int b)
+{
+	exit(0);
+	return 0;
+}
+int getpid()
+{
+	return (int) ::GetCurrentProcessId();
+}
+
+#else
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <errno.h>
 #include <netdb.h>
 #include <strings.h>
+
+#endif
+
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>

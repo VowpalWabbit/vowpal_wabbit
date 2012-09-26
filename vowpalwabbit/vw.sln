@@ -1,6 +1,9 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvw", "libvw.vcxproj", "{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1E205806-7F80-47DD-A38D-FC08083F3592} = {1E205806-7F80-47DD-A38D-FC08083F3592}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cs_test", "..\cs_test\cs_test.csproj", "{D5E462FC-3DD6-4B65-A9E9-DA0B0B11D254}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -11,7 +14,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw", "vw.vcxproj", "{1055A7
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_static", "vw_static.vcxproj", "{1E205806-7F80-47DD-A38D-FC08083F3592}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cluster", "..\cluster\cluster.vcxproj", "{2720BCD9-6731-4A11-BA24-1F74E35BA97F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spanning_tree", "..\cluster\cluster.vcxproj", "{2720BCD9-6731-4A11-BA24-1F74E35BA97F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -106,15 +109,19 @@ Global
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Debug|Win32.ActiveCfg = Debug|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Debug|Win32.Build.0 = Debug|Win32
-		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Debug|x64.ActiveCfg = Debug|Win32
+		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Debug|x64.ActiveCfg = Debug|x64
+		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Debug|x64.Build.0 = Debug|x64
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Debug|x86.ActiveCfg = Debug|Win32
+		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Debug|x86.Build.0 = Debug|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|Any CPU.ActiveCfg = Release|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|Mixed Platforms.ActiveCfg = Release|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|Win32.ActiveCfg = Release|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|Win32.Build.0 = Release|Win32
-		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x64.ActiveCfg = Release|Win32
+		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x64.ActiveCfg = Release|x64
+		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x64.Build.0 = Release|x64
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x86.ActiveCfg = Release|Win32
+		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
