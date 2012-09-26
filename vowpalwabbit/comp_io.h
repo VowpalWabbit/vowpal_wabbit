@@ -29,7 +29,7 @@ public:
       fil = gzopen(name, "rb");
       if(fil!=NULL){
         push(gz_files,fil);
-        ret = gz_files.index()-1;
+        ret = (int)gz_files.index()-1;
         push(files,ret);
       }
       else
@@ -40,7 +40,7 @@ public:
       fil = gzopen(name, "wb");
       if(fil!=NULL){
         push(gz_files,fil);
-        ret = gz_files.index()-1;
+        ret = (int)gz_files.index()-1;
         push(files,ret);
       }
       else

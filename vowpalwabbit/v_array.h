@@ -27,8 +27,8 @@ template<class T> class v_array{
   bool empty() { return begin == end;}
   void decr() { end--;}
   v_array() { begin= NULL; end = NULL; end_array=NULL;}
-  T& operator[](unsigned int i) { return begin[i]; }
-  unsigned int index(){return end-begin;}
+  T& operator[](size_t i) { return begin[i]; }
+  size_t index(){return end-begin;}
   void erase() { end = begin;}
 };
 

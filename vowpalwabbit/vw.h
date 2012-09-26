@@ -46,7 +46,7 @@ namespace VW {
     substring ss;
     ss.begin = (char*)s.c_str();
     ss.end = ss.begin + s.length();
-    return all.p->hasher(ss,hash_base);
+    return (uint32_t)all.p->hasher(ss,hash_base);
   }
   //Then use it as the seed for hashing features.
   inline uint32_t hash_feature(vw& all, string s, unsigned long u)
@@ -54,7 +54,7 @@ namespace VW {
     substring ss;
     ss.begin = (char*)s.c_str();
     ss.end = ss.begin + s.length();
-    return all.p->hasher(ss,u) & all.parse_mask;
+    return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
   }
 
   inline uint32_t hash_feature_cstr(vw& all, char* fstr, unsigned long u)
@@ -62,7 +62,7 @@ namespace VW {
     substring ss;
     ss.begin = fstr;
     ss.end = ss.begin + strlen(fstr);
-    return all.p->hasher(ss,u) & all.parse_mask;
+    return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
   }
 
   //after you create and fill feature_spaces, get an example with everything filled in.

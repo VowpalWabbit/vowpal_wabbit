@@ -251,7 +251,7 @@ namespace CSOAA {
     if (all.raw_prediction > 0) {
       string outputString;
       stringstream outputStringStream(outputString);
-      for (size_t i = 0; i < ld->costs.index(); i++) {
+      for (unsigned int i = 0; i < ld->costs.index(); i++) {
         wclass cl = ld->costs[i];
         if (i > 0) outputStringStream << ' ';
         outputStringStream << cl.weight_index << ':' << cl.partial_prediction;

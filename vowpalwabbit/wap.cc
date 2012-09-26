@@ -12,15 +12,15 @@ using namespace std;
 
 namespace WAP {
   //nonreentrant
-  size_t increment=0;
+  uint32_t increment=0;
 
-  void mirror_features(vw& all, example* ec, size_t offset1, size_t offset2)
+  void mirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
   {
     for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
         size_t original_length = ec->atomics[*i].index();
         //cerr << "original_length = " << original_length << endl;
-        for (size_t j = 0; j < original_length; j++)
+        for (uint32_t j = 0; j < original_length; j++)
           {
             feature* f = &ec->atomics[*i][j];
             feature temp = {- f->x, f->weight_index + offset2};
@@ -36,7 +36,7 @@ namespace WAP {
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
             {
               size_t original_length = ec->audit_features[*i].index();
-              for (size_t j = 0; j < original_length; j++)
+              for (uint32_t j = 0; j < original_length; j++)
                 {
                   audit_data* f = &ec->audit_features[*i][j];
                   char* new_space = NULL;
@@ -60,7 +60,7 @@ namespace WAP {
     //cerr << "total_sum_feat_sq = " << ec->total_sum_feat_sq << endl;
   }
 
-  void unmirror_features(vw& all, example* ec, size_t offset1, size_t offset2)
+  void unmirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
   {
     for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
@@ -145,7 +145,7 @@ namespace WAP {
   
     qsort(vs.begin, vs.index(), sizeof(float_wclass), fi_compare);
   
-    for (size_t i = 0; i < ld->costs.index(); i++)
+    for (uint32_t i = 0; i < ld->costs.index(); i++)
       {
         vs[i].ci.x -= score;
         if (i == 0)
@@ -156,8 +156,8 @@ namespace WAP {
   
     qsort(vs.begin, vs.index(), sizeof(float_wclass), fi_compare_i);
 
-    for (size_t i = 0; i < ld->costs.index(); i++)
-      for (size_t j = i+1; j < ld->costs.index(); j++)
+    for (uint32_t i = 0; i < ld->costs.index(); i++)
+      for (uint32_t j = i+1; j < ld->costs.index(); j++)
         {
           label_data simple_temp;
           simple_temp.weight = fabsf(vs[i].v - vs[j].v);
@@ -173,8 +173,8 @@ namespace WAP {
               ec->ld = &simple_temp;
 	    
               ec->partial_prediction = 0.;
-              size_t myi = vs[i].ci.weight_index;
-              size_t myj = vs[j].ci.weight_index;
+              uint32_t myi = (uint32_t)vs[i].ci.weight_index;
+              uint32_t myj = (uint32_t)vs[j].ci.weight_index;
 
               mirror_features(all, ec,(myi-1)*increment, (myj-1)*increment);
 
@@ -194,13 +194,13 @@ namespace WAP {
   
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld; 
 
-    for (size_t i = 0; i < cost_label->costs.index(); i++)
+    for (uint32_t i = 0; i < cost_label->costs.index(); i++)
       {
         label_data simple_temp;
         simple_temp.initial = 0.;
         simple_temp.weight = 0.;
         simple_temp.label = FLT_MAX;
-        size_t myi = cost_label->costs[i].weight_index;
+        uint32_t myi = (uint32_t)cost_label->costs[i].weight_index;
         if (myi!= 1)
           update_example_indicies(all.audit, ec, increment*(myi-1));
         ec->partial_prediction = 0.;
@@ -273,9 +273,9 @@ namespace WAP {
 
     *(all.p->lp) = CSOAA::cs_label_parser;
 
-    all.sd->k = nb_actions;
+    all.sd->k = (uint32_t)nb_actions;
     all.base_learner_nb_w *= nb_actions;
-    increment = (all.length()/ all.base_learner_nb_w) * all.stride;
+    increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.stride);
 
     all.driver = drive_wap;
     base_learner = all.learn;

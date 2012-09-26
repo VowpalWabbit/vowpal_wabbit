@@ -179,7 +179,7 @@ void output_and_account_example(vw& all, example* ec)
   
   for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
     {
-      int f = all.final_prediction_sink[i];
+      int f = (int)all.final_prediction_sink[i];
       if(all.active)
 	active_print_result(f, ec->final_prediction, ai, ec->tag);
       else if (all.lda > 0)

@@ -125,7 +125,7 @@ class io_buf {
 };
 
 void buf_write(io_buf &o, char* &pointer, int n);
-unsigned int buf_read(io_buf &i, char* &pointer, int n);
+size_t buf_read(io_buf &i, char* &pointer, size_t n);
 bool isbinary(io_buf &i);
 size_t readto(io_buf &i, char* &pointer, char terminal);
 #endif

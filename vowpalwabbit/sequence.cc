@@ -358,7 +358,7 @@ namespace Sequence {
   void global_print_label(vw&all, example *ec, size_t label)
   {
     for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
-      int f = all.final_prediction_sink[i];
+      int f = (int)all.final_prediction_sink[i];
       all.print(f, (float)label, 0., ec->tag);
     }
   }
@@ -500,7 +500,7 @@ namespace Sequence {
   void append_history_item(history_item hi, size_t p)
   {
     if (hinfo.length > 0) {
-      int old_val = hi.predictions[0];
+      int old_val = (int)hi.predictions[0];
       hi.predictions_hash -= old_val * constant_pow_length;
       hi.predictions_hash += p;
       hi.predictions_hash *= quadratic_constant;
