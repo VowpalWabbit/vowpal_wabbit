@@ -144,7 +144,7 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
 #endif
   master_sock = sock_connect(master_ip, htons(port));
   if(send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
-    cerr << "write failed!" << WSAGetLastError() << endl; 
+    cerr << "write failed!" << endl; 
   if(send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
     cerr << "write failed!" << endl; 
   if(send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
@@ -209,7 +209,7 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
   if(recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
     cerr << "read 4 failed!" << endl;
   
-  shutdown(master_sock, SD_BOTH);
+  shutdown(master_sock, SHUT_RDWR);
     
   //int parent_sock;
   if(parent_ip != (uint32_t)-1) 

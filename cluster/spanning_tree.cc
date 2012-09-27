@@ -119,9 +119,13 @@ int main(int argc, char* argv[]) {
 
   int sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
+#ifdef _WIN32
 	lastError = WSAGetLastError();
 
     cerr << "can't open socket! (" << lastError << ")" << endl;
+#else
+    cerr << "can't open socket! " << errno << endl;
+#endif
     exit(1);
   }
 
