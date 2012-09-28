@@ -7,6 +7,9 @@
 #   - test files
 # Assumes all lines have the same features (dense)
 #
+# (c) 2012 - ariel faigon for vowpal-wabbit
+# This software may be distributed under the same terms as vowpal-wabbit
+#
 use Getopt::Std;
 use vars qw($opt_h $opt_c $opt_t $opt_b $opt_l);
 
