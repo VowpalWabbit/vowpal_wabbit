@@ -38,7 +38,8 @@
 use vars (qw($opt_v $opt_V $opt_O $opt_K));
 
 my $VW = 'vw';
-my $VWARGS = '--exact_adaptive_norm --sort_features';
+# default vw options are more optimal now, don't try to make them so
+my $VWARGS = '';
 
 my ($TrainFile, $ModelFile, $RmodelFile, $ExampleFile, $AuditFile);
 my (%FeatureMax, %FeatureMin);
@@ -443,6 +444,9 @@ sub audit_one_example($) {
         my (@fields) = split(':', $audited_item);
 
         my ($feature, $hashval, $value, $weight) = @fields[-4 .. -1];
+
+        # Trim '@0' and similar suffixes.
+        $weight =~ s/@.*$//;
 
         unless ($feature) {
             if ($MultiClass) {
