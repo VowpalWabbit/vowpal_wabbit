@@ -54,6 +54,9 @@ spanning_tree:
 vw:
 	cd vowpalwabbit; $(MAKE); cd ..
 
+active_interactor:
+	cd vowpalwabbit; $(MAKE); cd ..
+
 library_example: vw
 	cd library; $(MAKE); cd ..
 
@@ -64,7 +67,7 @@ test: .FORCE
 	(cd test && ./RunTests -fe -E 0.001 ../vowpalwabbit/vw ../vowpalwabbit/vw)
 
 install: $(BINARIES)
-	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
+	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ..; cd cluster; $(MAKE) install
 
 clean:
 	cd vowpalwabbit; $(MAKE) clean; cd ..; cd cluster; $(MAKE) clean; cd ..
