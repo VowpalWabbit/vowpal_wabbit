@@ -43,16 +43,24 @@ class io_buf {
   }
 
   virtual int open_file(const char* name, int flag=READ){
-    int ret;
+	int ret;
     switch(flag){
     case READ:
+#ifdef _WIN32
+	ret = _open(name, _O_RDONLY|_O_BINARY);
+#else
       ret = open(name, O_RDONLY|O_LARGEFILE);
+#endif
       if(ret!=-1)
         push(files,ret);
       break;
 
     case WRITE:
-      ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+#ifdef _WIN32
+		ret = _open(name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC,0666);
+#else
+		ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+#endif
       if(ret!=-1)
         push(files,ret);
       break;
@@ -82,7 +90,7 @@ class io_buf {
   void set(char *p){space.end = p;}
 
   virtual ssize_t read_file(int f, void* buf, size_t nbytes){
-    return read(f, buf, (unsigned int)nbytes);
+	  return read(f, buf, (unsigned int)nbytes); 
   }
 
   size_t fill(int f) {
@@ -102,12 +110,13 @@ class io_buf {
       return 0;
   }
 
-  virtual ssize_t write_file(int f, const void* buf, size_t nbytes){
+  virtual ssize_t write_file(int f, const void* buf, size_t nbytes)
+  {
     return write(f, buf, (unsigned int)nbytes);
   }
 
   virtual void flush() {
-    if (write_file(files[0], space.begin, space.index()) != (int) space.index())
+	  if (write_file(files[0], space.begin, space.index()) != (int) space.index())
       std::cerr << "error, failed to write example\n";
     space.end = space.begin; }
 

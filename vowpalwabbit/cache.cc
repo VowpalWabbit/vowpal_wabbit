@@ -62,7 +62,6 @@ int read_cached_features(void* in, example* ec)
     return 0;
   if (read_cached_tag(*input,ae) == 0)
     return 0;
-
   char* c;
   unsigned char num_indices = 0;
   if (buf_read(*input, c, sizeof(num_indices)) < sizeof(num_indices)) 
@@ -71,7 +70,6 @@ int read_cached_features(void* in, example* ec)
   c += sizeof(num_indices);
 
   all->p->input->set(c);
-
   for (;num_indices > 0; num_indices--)
     {
       size_t temp;
@@ -156,12 +154,10 @@ void output_byte(io_buf& cache, unsigned char s)
 void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end)
 {
   char* c;
-  
   size_t storage = (end-begin) * int_size;
   for (feature* i = begin; i != end; i++)
     if (i->x != 1. && i->x != -1.)
       storage+=sizeof(float);
-  
   buf_write(cache, c, sizeof(index) + storage + sizeof(size_t));
   *(unsigned char*)c = index;
   c += sizeof(index);
