@@ -129,7 +129,12 @@ namespace Sequence {
 
   void read_transition_file(const char* filename)
   {
-    FILE *f = fopen(filename, "r");
+    FILE *f;
+#ifdef _WIN32
+	f = fopen(filename, "rb");
+#else
+	f = fopen(filename, "r");
+#endif
     if (f == NULL) {
       cerr << "warning: could not read file " << filename << "; assuming all transitions are valid" << endl;
       return;

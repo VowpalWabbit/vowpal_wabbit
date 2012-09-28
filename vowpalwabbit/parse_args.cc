@@ -512,7 +512,13 @@ vw parse_args(int argc, char *argv[])
     else
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	int f = fileno(fopen(fstr,"w"));
+	FILE* foo;
+#ifdef _WIN32
+	foo = fopen(fstr, "wb");
+#else
+	foo = fopen(fstr, "w");
+#endif
+	int f = fileno(foo);
 	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
 	push(all.final_prediction_sink, (size_t) f);
@@ -525,7 +531,16 @@ vw parse_args(int argc, char *argv[])
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
       all.raw_prediction = 1;//stdout
     else
-      all.raw_prediction = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
+	{
+	  const char* t = vm["raw_predictions"].as< string >().c_str();
+	  FILE* f;
+#ifdef _WIN32
+	  f = fopen(t, "wb");
+#else
+	  f = fopen(t, "w");
+#endif
+      all.raw_prediction = fileno(f);
+	}
   }
 
   if (vm.count("audit"))
