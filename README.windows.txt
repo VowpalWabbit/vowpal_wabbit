@@ -1,4 +1,4 @@
-Building VW on Windows -- only 32 bit right now; 64 bit to come
+Building VW on Windows
 
 8/15/2012, Chris Quirk <chrisq@microsoft.com>
 
