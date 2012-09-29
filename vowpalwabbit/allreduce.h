@@ -1,11 +1,9 @@
 /*
-Copyright (c) 2011 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
-
-This implements the allreduce function of MPI.  
-
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
+// This implements the allreduce function of MPI.  
 
 #ifndef ALLREDUCE_H
 #define ALLREDUCE_H
