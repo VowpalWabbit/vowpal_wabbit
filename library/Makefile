@@ -42,11 +42,6 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude.d/ax_boost_base.m4 \
 	$(top_srcdir)/acinclude.d/ax_boost_program_options.m4 \
 	$(top_srcdir)/acinclude.d/ax_check_zlib.m4 \
 	$(top_srcdir)/acinclude.d/ax_pthread.m4 \
-	$(top_srcdir)/acinclude.d/libtool.m4 \
-	$(top_srcdir)/acinclude.d/ltoptions.m4 \
-	$(top_srcdir)/acinclude.d/ltsugar.m4 \
-	$(top_srcdir)/acinclude.d/ltversion.m4 \
-	$(top_srcdir)/acinclude.d/lt~obsolete.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -78,12 +73,12 @@ DIST_SOURCES = $(library_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/jl/temp/vowpal_wabbit/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/jl/temp/vowpal_wabbit/missing --run tar
+ACLOCAL = ${SHELL} /home/jl/programs/temp/vowpal_wabbit/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/jl/programs/temp/vowpal_wabbit/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home/jl/temp/vowpal_wabbit/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/jl/temp/vowpal_wabbit/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/jl/temp/vowpal_wabbit/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/jl/programs/temp/vowpal_wabbit/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/jl/programs/temp/vowpal_wabbit/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/jl/programs/temp/vowpal_wabbit/missing --run automake-1.11
 AWK = gawk
 BOOST_CPPFLAGS = -I/usr/include
 BOOST_LDFLAGS = -L/usr/lib64
@@ -122,7 +117,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/jl/temp/vowpal_wabbit/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/jl/programs/temp/vowpal_wabbit/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
 NMEDIT = 
@@ -149,10 +144,10 @@ STRIP = strip
 VERSION = 7.0.1
 ZLIB_CPPFLAGS = -I/include
 ZLIB_LDFLAGS = -L/lib -lz
-abs_builddir = /home/jl/temp/vowpal_wabbit/library
-abs_srcdir = /home/jl/temp/vowpal_wabbit/library
-abs_top_builddir = /home/jl/temp/vowpal_wabbit
-abs_top_srcdir = /home/jl/temp/vowpal_wabbit
+abs_builddir = /home/jl/programs/temp/vowpal_wabbit/library
+abs_srcdir = /home/jl/programs/temp/vowpal_wabbit/library
+abs_top_builddir = /home/jl/programs/temp/vowpal_wabbit
+abs_top_srcdir = /home/jl/programs/temp/vowpal_wabbit
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_DUMPBIN = 
@@ -182,7 +177,7 @@ host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/jl/temp/vowpal_wabbit/install-sh
+install_sh = ${SHELL} /home/jl/programs/temp/vowpal_wabbit/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
