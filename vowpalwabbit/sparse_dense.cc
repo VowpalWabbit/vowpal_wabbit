@@ -33,8 +33,10 @@ float sd_add_rescale(weight* weights, size_t mask, feature* begin, feature* end,
     float x = f->x;
     float x_abs = fabs(x);
     if( x_abs > w[idx_norm] ) {
-      float rescale = (w[idx_norm]/x_abs);
-      w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      if( w[idx_norm] > 0. ) {
+        float rescale = (w[idx_norm]/x_abs);
+        w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      }
       w[idx_norm] = x_abs;
     }
     ret += w[0] * x;
@@ -50,8 +52,10 @@ float sd_add_trunc_rescale(weight* weights, size_t mask, feature* begin, feature
     float x = f->x;
     float x_abs = fabs(x);
     if( x_abs > w[idx_norm] ) {
-      float rescale = (w[idx_norm]/x_abs);
-      w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      if( w[idx_norm] > 0. ) {
+        float rescale = (w[idx_norm]/x_abs);
+        w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      }
       w[idx_norm] = x_abs;
     }
     ret += trunc_weight(w[0], gravity) * x;
@@ -67,8 +71,10 @@ float sd_add_rescale_general(weight* weights, size_t mask, feature* begin, featu
     float x = f->x;
     float x_abs = fabs(x);
     if( x_abs > w[idx_norm] ) {
-      float rescale = (w[idx_norm]/x_abs);
-      w[0] *= powf(rescale*rescale,power_t_norm);
+      if( w[idx_norm] > 0. ) {
+        float rescale = (w[idx_norm]/x_abs);
+        w[0] *= powf(rescale*rescale,power_t_norm);
+      }
       w[idx_norm] = x_abs;
     }
     ret += w[0] * x;
@@ -84,8 +90,10 @@ float sd_add_trunc_rescale_general(weight* weights, size_t mask, feature* begin,
     float x = f->x;
     float x_abs = fabs(x);
     if( x_abs > w[idx_norm] ) {
-      float rescale = (w[idx_norm]/x_abs);
-      w[0] *= powf(rescale*rescale,power_t_norm);
+      if( w[idx_norm] > 0. ) {
+        float rescale = (w[idx_norm]/x_abs);
+        w[0] *= powf(rescale*rescale,power_t_norm);
+      }
       w[idx_norm] = x_abs;
     }
     ret += trunc_weight(w[0], gravity) * x;
@@ -117,8 +125,10 @@ float sd_offset_add_rescale(weight* weights, size_t mask, feature* begin, featur
     float xtmp = f->x;
     float xquad_abs = fabs(x*xtmp);
     if( xquad_abs > w[idx_norm] ) {
-      float rescale = w[idx_norm]/xquad_abs;
-      w[0] *= (is_adaptive ? rescale : rescale * rescale);
+      if( w[idx_norm] > 0. ) {
+        float rescale = w[idx_norm]/xquad_abs;
+        w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      }
       w[idx_norm] = xquad_abs;
     }
     ret += w[0] * xtmp;
@@ -134,8 +144,10 @@ float sd_offset_add_trunc_rescale(weight* weights, size_t mask, feature* begin, 
     float xtmp = f->x;
     float xquad_abs = fabs(x*xtmp);
     if( xquad_abs > w[idx_norm] ) {
-      float rescale = w[idx_norm]/xquad_abs;
-      w[0] *= (is_adaptive ? rescale : rescale * rescale);
+      if( w[idx_norm] > 0. ) {
+        float rescale = w[idx_norm]/xquad_abs;
+        w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      }
       w[idx_norm] = xquad_abs;
     }
     ret += trunc_weight(w[0],gravity) * xtmp;
@@ -151,8 +163,10 @@ float sd_offset_add_rescale_general(weight* weights, size_t mask, feature* begin
     float xtmp = f->x;
     float xquad_abs = fabs(x*xtmp);
     if( xquad_abs > w[idx_norm] ) {
-      float rescale = w[idx_norm]/xquad_abs;
-      w[0] *= powf(rescale*rescale,power_t_norm);
+      if( w[idx_norm] > 0 ) {
+        float rescale = w[idx_norm]/xquad_abs;
+        w[0] *= powf(rescale*rescale,power_t_norm);
+      }
       w[idx_norm] = xquad_abs;
     }
     ret += w[0] * xtmp;
@@ -168,8 +182,10 @@ float sd_offset_add_trunc_rescale_general(weight* weights, size_t mask, feature*
     float xtmp = f->x;
     float xquad_abs = fabs(x*xtmp);
     if( xquad_abs > w[idx_norm] ) {
-      float rescale = w[idx_norm]/xquad_abs;
-      w[0] *= powf(rescale*rescale,power_t_norm);
+      if( w[idx_norm] > 0 ) {
+        float rescale = w[idx_norm]/xquad_abs;
+        w[0] *= powf(rescale*rescale,power_t_norm);
+      }
       w[idx_norm] = xquad_abs;
     }
     ret += trunc_weight(w[0],gravity) * xtmp;
