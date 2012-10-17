@@ -306,6 +306,16 @@ void free_regressor(regressor &r)
     free(r.regularizers);
 }
 
+namespace {
+void my_buf_write_file(io_buf& o, int f, const char* data, size_t len)
+{
+  char *p;
+
+  buf_write (o, p, len);
+  memcpy (p, data, len);
+}
+}
+
 void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 {
   if (reg_name == string(""))
@@ -322,58 +332,58 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
     }
   size_t v_length = version.to_string().length()+1;
   if (!as_text) {
-    io_temp.write_file(f,(char*)&v_length, sizeof(v_length));
-    io_temp.write_file(f,version.to_string().c_str(),v_length);
+    my_buf_write_file(io_temp,f,(char*)&v_length, sizeof(v_length));
+    my_buf_write_file(io_temp,f,version.to_string().c_str(),v_length);
   
-    io_temp.write_file(f,(char*)&all.sd->min_label, sizeof(all.sd->min_label));
-    io_temp.write_file(f,(char*)&all.sd->max_label, sizeof(all.sd->max_label));
+    my_buf_write_file(io_temp,f,(char*)&all.sd->min_label, sizeof(all.sd->min_label));
+    my_buf_write_file(io_temp,f,(char*)&all.sd->max_label, sizeof(all.sd->max_label));
   
-    io_temp.write_file(f,(char *)&all.num_bits, sizeof(all.num_bits));
+    my_buf_write_file(io_temp,f,(char *)&all.num_bits, sizeof(all.num_bits));
     int len = all.pairs.size();
-    io_temp.write_file(f,(char *)&len, sizeof(len));
+    my_buf_write_file(io_temp,f,(char *)&len, sizeof(len));
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-      io_temp.write_file(f,i->c_str(),2);
+      my_buf_write_file(io_temp,f,i->c_str(),2);
 
-    io_temp.write_file(f,(char*)&all.rank, sizeof(all.rank));
-    io_temp.write_file(f,(char*)&all.lda, sizeof(all.lda));
+    my_buf_write_file(io_temp,f,(char*)&all.rank, sizeof(all.rank));
+    my_buf_write_file(io_temp,f,(char*)&all.lda, sizeof(all.lda));
 
-    io_temp.write_file(f,(char*)&all.ngram, sizeof(all.ngram));
-    io_temp.write_file(f,(char*)&all.skips, sizeof(all.skips));
+    my_buf_write_file(io_temp,f,(char*)&all.ngram, sizeof(all.ngram));
+    my_buf_write_file(io_temp,f,(char*)&all.skips, sizeof(all.skips));
 
 
     size_t options_length = all.options_from_file.length()+1;
-    io_temp.write_file(f,(char*)&options_length, sizeof(options_length));
-    io_temp.write_file(f,all.options_from_file.c_str(), options_length);
+    my_buf_write_file(io_temp,f,(char*)&options_length, sizeof(options_length));
+    my_buf_write_file(io_temp,f,all.options_from_file.c_str(), options_length);
   }
   else {
     char buff[512];
     int len;
     len = sprintf(buff, "Version %s\n", version.to_string().c_str());
-    io_temp.write_file(f, buff, len);
+    my_buf_write_file(io_temp,f, buff, len);
     len = sprintf(buff, "Min label:%f max label:%f\n", all.sd->min_label, all.sd->max_label);
-    io_temp.write_file(f, buff, len);
+    my_buf_write_file(io_temp,f, buff, len);
     len = sprintf(buff, "bits:%d\n", (int)all.num_bits);
-    io_temp.write_file(f, buff, len);
+    my_buf_write_file(io_temp,f, buff, len);
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
       len = sprintf(buff, "%s ", i->c_str());
-      io_temp.write_file(f, buff, len);
+      my_buf_write_file(io_temp,f, buff, len);
     }
     if (all.pairs.size() > 0)
       {
 	len = sprintf(buff, "\n");
-	io_temp.write_file(f, buff, len);
+	my_buf_write_file(io_temp,f, buff, len);
       }
     len = sprintf(buff, "ngram:%d skips:%d\nindex:weight pairs:\n", (int)all.ngram, (int)all.skips);
-    io_temp.write_file(f, buff, len);
+    my_buf_write_file(io_temp,f, buff, len);
 
     len = sprintf(buff, "rank:%d\n", (int)all.rank);
-    io_temp.write_file(f, buff, len);
+    my_buf_write_file(io_temp,f, buff, len);
 
     len = sprintf(buff, "lda:%d\n", (int)all.lda);
-    io_temp.write_file(f, buff, len);
+    my_buf_write_file(io_temp,f, buff, len);
 
     len = sprintf(buff, "options:%s\n", all.options_from_file.c_str());
-    io_temp.write_file(f, buff, len);
+    my_buf_write_file(io_temp,f, buff, len);
   }
   
   uint32_t length = 1 << all.num_bits;
@@ -392,12 +402,12 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 	  if (v != 0.)
 	    {
               if (!as_text) {
-                io_temp.write_file(f,(char *)&i, sizeof (i));
-                io_temp.write_file(f,(char *)&v, sizeof (v));
+                my_buf_write_file(io_temp,f,(char *)&i, sizeof (i));
+                my_buf_write_file(io_temp,f,(char *)&v, sizeof (v));
               } else {
                 char buff[512];
                 int len = sprintf(buff, "%d:%f\n", i, v);
-                io_temp.write_file(f, buff, len);
+                my_buf_write_file(io_temp,f, buff, len);
               }
 	    }
 	}
@@ -413,8 +423,8 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
               weight v = all.reg.weight_vectors[stride*i+k];
               uint32_t ndx = stride*i+k;
               if (!as_text) {
-                io_temp.write_file(f,(char *)&ndx, sizeof (ndx));
-                io_temp.write_file(f,(char *)&v, sizeof (v));
+                my_buf_write_file(io_temp,f,(char *)&ndx, sizeof (ndx));
+                my_buf_write_file(io_temp,f,(char *)&v, sizeof (v));
               } else {
                 char buff[512];
 		int len;
@@ -424,14 +434,15 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 		else
 		  len = sprintf(buff, "%f ", v + all.lda_rho);
 
-                io_temp.write_file(f, buff, len);
+                my_buf_write_file(io_temp,f, buff, len);
               }
             }
           if (as_text)
-            io_temp.write_file(f, "\n", 1);
+            my_buf_write_file(io_temp,f, "\n", 1);
 	}
     }
 
+  io_temp.flush(); // close_file() should do this for me ...
   io_temp.close_file();
   rename(start_name.c_str(),reg_name.c_str());
 }
