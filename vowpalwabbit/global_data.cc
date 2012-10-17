@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include <stdio.h>
 #include <float.h>
 #include <iostream>
+#include <sstream>
 #include <math.h>
 #include <assert.h>
 
@@ -75,18 +76,11 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag)
     }
 }
 
-void print_tag(int f, v_array<char> tag)
+void print_tag(std::stringstream& ss, v_array<char> tag)
 {
-  char temp[30];
-  ssize_t t;
   if (tag.begin != tag.end){
-    temp[0] = ' ';
-    t = write(f, temp, 1);
-    if (t != 1)
-      cerr << "write error" << endl;
-    t = write(f, tag.begin, sizeof(char)*tag.index());
-    if (t != (ssize_t) (sizeof(char)*tag.index()))
-      cerr << "write error" << endl;
+    ss << ' ';
+    ss.write(tag.begin, sizeof(char)*tag.index());
   }  
 }
 
@@ -95,16 +89,17 @@ void print_result(int f, float res, float weight, v_array<char> tag)
   if (f >= 0)
     {
       char temp[30];
-      int num = sprintf(temp, "%f", res);
-      ssize_t t;
-      t = write(f, temp, num);
-      if (t != num) 
-	cerr << "write error" << endl;
-      print_tag(f, tag);
-      temp[0] = '\n';
-      t = write(f, temp, 1);     
-      if (t != 1) 
-	cerr << "write error" << endl;
+      sprintf(temp, "%f", res);
+      std::stringstream ss;
+      ss << temp;
+      print_tag(ss, tag);
+      ss << '\n';
+      ssize_t len = ss.str().size();
+      ssize_t t = write(f, ss.str().c_str(), len);
+      if (t != len)
+        {
+          cerr << "write error" << endl;
+        }
     }
 }
 
@@ -113,39 +108,36 @@ void print_raw_text(int f, string s, v_array<char> tag)
   if (f < 0)
     return;
 
-  ssize_t t;
-  int num = s.length();
-  t = write(f, s.c_str(), num);
-  if (t != num) 
-    cerr << "write error" << endl;
-  print_tag(f, tag);
-  char temp = '\n';
-  t = write(f, &temp, 1);     
-  if (t != 1)
-    cerr << "write error" << endl;
+  std::stringstream ss;
+  ss << s;
+  print_tag (ss, tag);
+  ss << '\n';
+  ssize_t len = ss.str().size();
+  ssize_t t = write(f, ss.str().c_str(), len);
+  if (t != len)
+    {
+      cerr << "write error" << endl;
+    }
 }
 
 void active_print_result(int f, float res, float weight, v_array<char> tag)
 {
   if (f >= 0)
     {
+      std::stringstream ss;
       char temp[30];
-      int num = sprintf(temp, "%f", res);
-      ssize_t t;
-      t = write(f, temp, num);
-      if (t != num) 
-	cerr << "write error" << endl;
-      print_tag(f, tag);
+      sprintf(temp, "%f", res);
+      ss << temp;
+      print_tag(ss, tag);
       if(weight >= 0)
 	{
-	  num = sprintf(temp, " %f", weight);
-	  t = write(f, temp, num);
-	  if (t != num)
-	    cerr << "write error" << endl;
+	  sprintf(temp, " %f", weight);
+          ss << temp;
 	}
-      temp[0] = '\n';
-      t = write(f, temp, 1);     
-      if (t != 1) 
+      ss << '\n';
+      ssize_t len = ss.str().size();
+      ssize_t t = write(f, ss.str().c_str(), len);
+      if (t != len)
 	cerr << "write error" << endl;
     }
 }
@@ -154,20 +146,18 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
 {
   if (f >= 0)
     {
+      std::stringstream ss;
       char temp[30];
-      ssize_t t;
-      int num;
       for (size_t k = 0; k < all.lda; k++)
 	{
-	  num = sprintf(temp, "%f ", res[k]);
-	  t = write(f, temp, num);
-	  if (t != num)
-	    cerr << "write error" << endl;
+	  sprintf(temp, "%f ", res[k]);
+          ss << temp;
 	}
-      print_tag(f, tag);
-      temp[0] = '\n';
-      t = write(f, temp, 1);
-      if (t != 1)
+      print_tag(ss, tag);
+      ss << '\n';
+      ssize_t len = ss.str().size();
+      ssize_t t = write(f, ss.str().c_str(), len);
+      if (t != len)
 	cerr << "write error" << endl;
     }
 }
