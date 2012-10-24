@@ -6,6 +6,12 @@ license as described in the file LICENSE.
 #ifndef IO_H__
 #define IO_H__
 
+
+#ifndef _WIN32
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 #include <fcntl.h>
 #include "v_array.h"
 #include<iostream>
