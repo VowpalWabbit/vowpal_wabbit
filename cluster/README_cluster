@@ -1,5 +1,5 @@
 The implementation of Non-linear (Preconditioned) Conjugate Gradient,
-LBFGS, online learning, and adaptive online elarning works on clusters
+LBFGS, online learning, and adaptive online learning works on clusters
 (both Hadoop and otherwise) now.
 
 To build the code, run make.
