@@ -3,14 +3,12 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#ifdef __FreeBSD__
-#include <sys/types.h>
-#endif
-
 #ifdef _WIN32
 #include <WinSock2.h>
 #include <io.h>
 #else
+#include <sys/types.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>

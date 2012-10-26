@@ -10,6 +10,8 @@ license as described in the file LICENSE.
 #ifdef _WIN32
 #include <WinSock2.h>
 #else
+#include <sys/types.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
