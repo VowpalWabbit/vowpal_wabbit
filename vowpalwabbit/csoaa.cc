@@ -483,7 +483,6 @@ namespace CSOAA_AND_WAP_LDF {
 
   void do_actual_learning_wap(vw& all, int start_K)
   {
-
     size_t K = ec_seq.index();
     size_t prediction = 0;
     float  prediction_cost = 0.;
