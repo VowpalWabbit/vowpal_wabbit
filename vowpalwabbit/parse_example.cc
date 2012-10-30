@@ -77,7 +77,7 @@ public:
   ~TC_parser(){ }
   
   inline void featureValue(){
-    if(reading_head == endLine || *reading_head == '|' || *reading_head == ' '){
+    if(reading_head == endLine || *reading_head == '|' || *reading_head == ' ' || *reading_head == '\r'){
       // featureValue --> ø
     }else if(*reading_head == ':'){
       // featureValue --> ':' 'Float'
@@ -99,14 +99,14 @@ public:
   }
   
   inline void maybeFeature(){
-    if(*reading_head == ' ' || *reading_head == '|'|| reading_head == endLine ){
+    if(*reading_head == ' ' || *reading_head == '|'|| reading_head == endLine || *reading_head == '\r' ){
       // maybeFeature --> ø
     }else if(*reading_head != ':'){
       // maybeFeature --> 'String' FeatureValue
       substring feature_name ;
       feature_name.begin = reading_head;
       v_array<char> feature_v;
-      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' ||reading_head == endLine )){
+      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' ||reading_head == endLine || *reading_head == '\r')){
 	if(audit){
 	  push(feature_v,*reading_head);
 	}
@@ -133,7 +133,7 @@ public:
   }
   
   inline void nameSpaceInfoValue(){
-    if(*reading_head == ' ' || reading_head == endLine || *reading_head == '|'  ){
+    if(*reading_head == ' ' || reading_head == endLine || *reading_head == '|' || *reading_head == '\r' ){
       // nameSpaceInfoValue -->  ø
     }else if(*reading_head == ':'){
       // nameSpaceInfoValue --> ':' 'Float'
@@ -155,7 +155,7 @@ public:
   }
   
   inline void nameSpaceInfo(){
-    if(reading_head == endLine ||*reading_head == '|' || *reading_head == ' ' || *reading_head == ':'){
+    if(reading_head == endLine ||*reading_head == '|' || *reading_head == ' ' || *reading_head == ':' || *reading_head == '\r'){
       // syntax error
       cout << "malformed example !\nString expected after : " << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
     }else{
@@ -167,7 +167,7 @@ public:
       name.begin = reading_head;
       v_array<char> base_v_array;
       
-      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine  )){
+      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine || *reading_head == '\r' )){
 	if(audit){
 	  push(base_v_array,*reading_head);
 	}
@@ -189,9 +189,9 @@ public:
       ++reading_head;
       maybeFeature();
     }
-    if(!(*reading_head == '|' ||reading_head == endLine  )){
+    if(!(*reading_head == '|' || reading_head == endLine || *reading_head == '\r')){
       //syntax error
-      cout << "malformed example !\n'|' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str() << "\""<< endl;
+      cout << "malformed example !\n'|' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str() << "\"" << endl;
     }
   }
   
@@ -201,7 +201,7 @@ public:
     base = NULL;
     index = 0;
     new_index = false;
-    if(*reading_head == ' ' || reading_head == endLine || *reading_head == '|'  ){
+    if(*reading_head == ' ' || reading_head == endLine || *reading_head == '|' || *reading_head == '\r' ){
       // NameSpace --> ListFeatures
       index = (unsigned char)' ';
       if(ae->atomics[index].begin == ae->atomics[index].end)
@@ -232,7 +232,7 @@ public:
       ++reading_head;
       nameSpace();
     }
-    if(reading_head != endLine)
+    if(reading_head != endLine && *reading_head != '\r')
       {
 	// syntax error
 	cout << "malformed example !\n'|' or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
