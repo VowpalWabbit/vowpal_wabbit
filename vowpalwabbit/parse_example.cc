@@ -277,8 +277,9 @@ void substring_to_example(vw* all, example* ae, substring example)
 	push_many(ae->tag, tag.begin, tag.end - tag.begin);
       }
   }
-  
-  all->p->lp->parse_label(all->sd, ae->ld, all->p->words);
+
+  if (all->p->words.index() > 0)
+    all->p->lp->parse_label(all->sd, ae->ld, all->p->words);
   
   TC_parser parser_line(bar_location,example.end,*all,ae);
 }
@@ -288,9 +289,10 @@ int read_features(void* in, example* ex)
   vw* all = (vw*)in;
   example* ae = (example*)ex;
   char *line=NULL;
-  int num_chars = readto(*(all->p->input), line, '\n');
-  if (num_chars <= 1)
-    return num_chars;
+  int num_chars_initial = readto(*(all->p->input), line, '\n');
+  if (num_chars_initial <= 1)
+    return num_chars_initial;
+  int num_chars = num_chars_initial;
   if (line[num_chars-1] == '\n')
     num_chars--;
   if (line[num_chars-1] == '\r')
@@ -298,7 +300,7 @@ int read_features(void* in, example* ex)
   substring example = {line, line + num_chars};
   substring_to_example(all, ae, example);
 
-  return num_chars;
+  return num_chars_initial;
 }
 
 void read_line(vw& all, example* ex, char* line)

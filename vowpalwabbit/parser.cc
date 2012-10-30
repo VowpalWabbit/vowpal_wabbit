@@ -927,7 +927,6 @@ void *main_parse_loop(void *in)
 example* get_example(parser* p)
 {
   mutex_lock(&examples_lock);
-
   if (p->parsed_examples != used_index) {
     size_t ring_index = used_index++ % p->ring_size;
     if (!(examples+ring_index)->in_use)

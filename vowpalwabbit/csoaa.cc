@@ -186,7 +186,7 @@ namespace CSOAA {
     }
 
     if (words.index() == 0) {
-      if (sd->k != (size_t)-1) {
+      if (sd->k != (uint32_t)-1) {
         for (size_t i = 1; i <= sd->k; i++) {
           wclass f = {FLT_MAX, i, 0.};
           push(ld->costs, f);
@@ -980,7 +980,7 @@ namespace CSOAA_AND_WAP_LDF {
 
     *(all.p->lp) = CSOAA::cs_label_parser;
 
-    all.sd->k = -1;
+    all.sd->k = (uint32_t)-1;
 
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0)
       is_singleline = true;
