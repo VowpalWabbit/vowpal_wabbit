@@ -195,10 +195,9 @@ namespace SequenceTask {
   }
 
   bool is_test_example(example**ec, size_t N) {
-    for (size_t n=0; n<N; n++) {
-      if (((OAA::mc_label*)ec[n]->ld)->label < 0)
-        return 1;
-    }
+    for (size_t n=0; n<N; n++) 
+      if (OAA::example_is_test(ec[n])) 
+	return 1;
     return 0;
   }
 
