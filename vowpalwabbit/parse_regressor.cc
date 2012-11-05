@@ -57,7 +57,7 @@ void initialize_regressor(vw& all)
 	  all.reg.weight_vectors[j] = (float) (0.1 * drand48()); 
       else
 	for (size_t j = 0; j < length; j++)
-	  all.reg.weight_vectors[j] = (float)(drand48() - 0.5);
+	  all.reg.weight_vectors[j*all.stride] = (float)(drand48() - 0.5);
     }
   if (all.initial_weight != 0.)
     for (size_t j = 0; j < all.stride*length; j+=all.stride)
