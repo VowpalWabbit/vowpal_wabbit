@@ -189,13 +189,24 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
 
+  if (vm.count("testonly") || all.eta == 0.)
+    {
+      if (!all.quiet)
+	cerr << "only testing" << endl;
+      all.training = false;
+      if (all.lda > 0)
+        all.eta = 0;
+    }
+  else
+    all.training = true;
+
   all.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
-  if( all.rank > 0 || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  if( all.rank > 0 || !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
   {
-    all.adaptive = (vm.count("adaptive") && all.rank == 0);
-    all.invariant_updates = vm.count("invariant");
-    all.normalized_updates = (vm.count("normalized") && all.rank == 0);
+    all.adaptive = all.training && (vm.count("adaptive") && all.rank == 0);
+    all.invariant_updates = all.training && vm.count("invariant");
+    all.normalized_updates = all.training && (vm.count("normalized") && all.rank == 0);
 
     all.stride = 1;
 
@@ -551,17 +562,6 @@ vw parse_args(int argc, char *argv[])
       all.driver = drive_send;
       parse_send_args(vm, all.pairs);
     }
-
-  if (vm.count("testonly"))
-    {
-      if (!all.quiet)
-	cerr << "only testing" << endl;
-      all.training = false;
-      if (all.lda > 0)
-        all.eta = 0;
-    }
-  else
-    all.training = true;
 
   if (all.l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
