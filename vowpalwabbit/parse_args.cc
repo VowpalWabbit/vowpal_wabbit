@@ -311,9 +311,12 @@ vw parse_args(int argc, char *argv[])
     all.numpasses = (size_t) 1e5;
   }
 
+  if (vm.count("compressed"))
+      set_compressed(all.p);
+
   if (vm.count("data")) {
     all.data_filename = vm["data"].as<string>();
-    if (vm.count("compressed") || ends_with(all.data_filename, ".gz"))
+    if (ends_with(all.data_filename, ".gz"))
       set_compressed(all.p);
   } else {
     all.data_filename = "";
