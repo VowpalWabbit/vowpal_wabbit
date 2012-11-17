@@ -409,6 +409,40 @@ float InvSqrt(float x){
   return x;
 }
 
+#define cast_uint32_t static_cast<uint32_t>
+
+static inline float 
+fastlog2 (float x)
+{
+  union { float f; uint32_t i; } vx = { x };
+  union { uint32_t i; float f; } mx = { (vx.i & 0x007FFFFF) | 0x3f000000 };
+  float y = vx.i;
+  y *= 1.1920928955078125e-7f;
+
+  return y - 124.22551499f
+           - 1.498030302f * mx.f 
+           - 1.72587999f / (0.3520887068f + mx.f);
+}
+
+static inline float
+fastpow2 (float p)
+{
+  float offset = (p < 0) ? 1.0f : 0.0f;
+  float clipp = (p < -126) ? -126.0f : p;
+  int w = clipp;
+  float z = clipp - w + offset;
+  union { uint32_t i; float f; } v = { cast_uint32_t ( (1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z) ) };
+
+  return v.f;
+}
+
+static inline float
+fastpow (float x,
+         float p)
+{
+  return fastpow2 (p * fastlog2 (x));
+}
+
 void one_pf_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, float g, example* ec, 
                         bool is_adaptive, bool is_normalized, size_t idx_norm, float avg_norm)
 {
@@ -514,10 +548,10 @@ void quad_general_update(weight* weights, feature& page_feature, v_array<feature
   {
     weight* w=&weights[(halfhash + ele->weight_index) & mask];
     float t=1.f;
-    if(is_adaptive) t = powf(w[1],-power_t);
+    if(is_adaptive) t = fastpow(w[1],-power_t);
     if(is_normalized) {
       float norm = w[idx_norm]*avg_norm;
-      t *= powf(norm*norm,-power_t_norm); 
+      t *= fastpow(norm*norm,-power_t_norm); 
     }
     w[0] += update * ele->x * t;
   }
@@ -554,10 +588,10 @@ void general_train(vw& all, example* &ec, float update, float power_t)
     {
       weight* w = &weights[f->weight_index & mask];
       float t = 1.f;
-      if(is_adaptive) t = powf(w[1],-power_t);
+      if(is_adaptive) t = fastpow(w[1],-power_t);
       if(is_normalized) {
         float norm = w[idx_norm]*avg_norm;
-        t *= powf(norm*norm,-power_t_norm);
+        t *= fastpow(norm*norm,-power_t_norm);
       }
       w[0] += update * f->x * t;
     }
@@ -590,11 +624,11 @@ float general_norm_quad(weight* weights, feature& page_feature, v_array<feature>
     float t = 1.f;
     if(is_adaptive) {
       w[1] += update2 * xtmp2;
-      t = powf(w[1],- power_t);
+      t = fastpow(w[1],- power_t);
     }
     if(is_normalized) {
       float range2 = w[idx_norm]*w[idx_norm];
-      t *= powf(range2,-power_t_norm);
+      t *= fastpow(range2,-power_t_norm);
       add_norm_x += xtmp2 / range2;
     }
     norm += t * xtmp2;
@@ -631,11 +665,11 @@ float compute_general_norm(vw& all, example* &ec, float power_t)
       float t = 1.f;
       if(is_adaptive) {
         w[1] += g * x2;
-        t = powf(w[1],- power_t);
+        t = fastpow(w[1],- power_t);
       }
       if(is_normalized) {
         float range2 = w[idx_norm]*w[idx_norm];
-        t *= powf(range2,-power_t_norm);
+        t *= fastpow(range2,-power_t_norm);
         norm_x += x2 / range2;
       }
       norm += t * x2;
@@ -661,7 +695,7 @@ float compute_general_norm(vw& all, example* &ec, float power_t)
     all.normalized_sum_norm_x += ld->weight * norm_x;
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
 
-    norm *= powf(avg_sq_norm,-power_t_norm);
+    norm *= fastpow(avg_sq_norm,-power_t_norm);
   }
   
   return norm;
@@ -800,7 +834,7 @@ void local_predict(vw& all, example* ec)
 
   if(all.active_simulation){
     float k = ec->example_t - ld->weight;
-    ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(k,all.power_t));
+    ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/fastpow(k,all.power_t));
     float importance = query_decision(all, ec, k);
     if(importance > 0){
       all.sd->queries += 1;
@@ -835,7 +869,7 @@ void local_predict(vw& all, example* ec)
           }
 
           eta_t = all.eta * norm * ld->weight;
-          if(!all.adaptive) eta_t *= powf(t,-all.power_t);
+          if(!all.adaptive) eta_t *= fastpow(t,-all.power_t);
 
           float update = 0.f;
           if( all.invariant_updates )
@@ -855,7 +889,7 @@ void local_predict(vw& all, example* ec)
 	}
     }
   else if(all.active)
-    ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(t,all.power_t));
+    ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/fastpow(t,all.power_t));
 
   if (all.audit)
     print_audit_features(all, ec);
