@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "io.h"
 #include "v_array.h"
 #include "zlib.h"
+#include <stdio.h>
 
 class comp_io_buf : public io_buf
 {
@@ -25,7 +26,10 @@ public:
     int ret = -1;
     switch(flag){
     case READ:
-      fil = gzopen(name, "rb");
+      if (*name != '\0')
+	fil = gzopen(name, "rb");
+      else
+	fil = gzdopen(fileno(stdin), "rb");
       if(fil!=NULL){
         push(gz_files,fil);
         ret = (int)gz_files.index()-1;

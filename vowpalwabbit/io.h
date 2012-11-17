@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include <unistd.h>
 #endif
 
+#include <stdio.h>
 #include <fcntl.h>
 #include "v_array.h"
 #include<iostream>
@@ -51,13 +52,18 @@ class io_buf {
 	int ret;
     switch(flag){
     case READ:
+      if (*name != '\0')
+	{
 #ifdef _WIN32
-	ret = _open(name, _O_RDONLY|_O_BINARY);
+	  ret = _open(name, _O_RDONLY|_O_BINARY);
 #else
-      ret = open(name, O_RDONLY|O_LARGEFILE);
+	  ret = open(name, O_RDONLY|O_LARGEFILE);
 #endif
+	}
+      else
+	ret = fileno(stdin);
       if(ret!=-1)
-        push(files,ret);
+	push(files,ret);
       break;
 
     case WRITE:

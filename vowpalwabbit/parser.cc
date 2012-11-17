@@ -562,6 +562,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       string hash_function("strings");
       if(vm.count("hash")) 
 	hash_function = vm["hash"].as<string>();
+
       if (all.p->input->files.index() > 0)
 	{
 	  if (!quiet)
@@ -570,30 +571,14 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       else
 	{
 	  string temp = all.data_filename;
-	  if (temp.length() != 0)
-	    {
-	      if (!quiet)
-		cerr << "Reading from " << temp << endl;
-	      int f = all.p->input->open_file(temp.c_str(), io_buf::READ);
-	      if (f == -1)
-		{
-		  cerr << "can't open " << temp << ", bailing!" << endl;
-		  exit(0);
-		}
-	      all.p->reader = read_features;
-	      all.p->hasher = getHasher(hash_function);
-	      all.p->resettable = all.p->write_cache;
-	    }
-	}
-      if (all.p->input->files.index() == 0)// Default to stdin
-	{
 	  if (!quiet)
-	    cerr << "Reading from stdin" << endl;
-	  if (vm.count("compressed")){
-	    cerr << "Compressed source can't be read from stdin." << endl << "Directly use the compressed source with -d option";
-	    exit(0);
-	  }
-	  push(all.p->input->files,fileno(stdin));
+	    cerr << "Reading from " << temp << endl;
+	  int f = all.p->input->open_file(temp.c_str(), io_buf::READ);
+	  if (f == -1)
+	    {
+	      cerr << "can't open " << temp << ", bailing!" << endl;
+	      exit(0);
+	    }
 	  all.p->reader = read_features;
 	  all.p->hasher = getHasher(hash_function);
 	  all.p->resettable = all.p->write_cache;
