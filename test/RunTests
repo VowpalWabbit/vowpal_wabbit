@@ -330,25 +330,34 @@ sub read_times($) {
 
 sub check_for_time_regression() {
     my $tolerate_regress = 1.02;
-
+    my $pct_change = 0.0;
+    my ($overall_time0, $overall_time1);
+    my ($user0, $system0, $cuser0, $csystem0);
     my ($user1, $system1, $cuser1, $csystem1) = times;
-    printf STDERR "$0 runtime: user %g, system %g, total %g sec\n",
-                $cuser1, $csystem1, $cuser1+$csystem1;
+    $overall_time1 = $cuser1 + $csystem1;
+ 
     if (-e $LastTimeFile) {
-        my ($user0, $system0, $cuser0, $csystem0) = read_times($LastTimeFile);
-        my $overall_time0 = $cuser0 + $csystem0;
-        my $overall_time1 = $cuser1 + $csystem1;
+        ($user0, $system0, $cuser0, $csystem0) = read_times($LastTimeFile);
+        if (!(defined $csystem0) or !(defined $cuser0)) {
+            die "$0: undefined times in saved times file: $LastTimeFile," .
+                    " try removing it\n"
+        }
+        $overall_time0 = $cuser0 + $csystem0;
+        $pct_change = 100 * ($overall_time1 - $overall_time0) / $overall_time0;
+
         if ($overall_time0 == 0) {
             die "$0: Bad times in saved times file: $LastTimeFile," .
                     " try removing it\n"
         } elsif ($overall_time1/$overall_time0 > $tolerate_regress) {
             printf STDERR "$0: RUNTIME REGRESSION: " .
                     "%.2f sec vs last time %.2f sec. (%.2f%% worse)\n",
-                    $overall_time1, $overall_time0,
-                    100 * ($overall_time1 - $overall_time0) / $overall_time0;
+                    $overall_time1, $overall_time0, $pct_change;
         }
     }
     write_times($LastTimeFile, $user1, $system1, $cuser1, $csystem1);
+    printf STDERR
+        "$0 runtime: user %g, system %g, total %g sec (%+.2f%% vs. last)\n",
+                $cuser1, $csystem1, $overall_time1, $pct_change;
 }
 
 sub run_tests() {
