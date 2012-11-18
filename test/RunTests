@@ -18,9 +18,6 @@ my $LDA;
 my $Diff = 'diff';
 my @ToTest = ();
 
-my @TrainSets = glob('train-sets/*.dat');
-my @TestSets = glob('test-sets/*.dat');
-
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
 
