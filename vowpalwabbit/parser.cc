@@ -777,7 +777,7 @@ void setup_example(vw& all, example* ae)
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
     }
 
-  if (all.rank == 0)                                                                        
+  if (all.rank == 0) {
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       {
 	ae->num_features 
@@ -785,18 +785,43 @@ void setup_example(vw& all, example* ae)
 	  *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin);
 	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]]*ae->sum_feat_sq[(int)(*i)[1]];
       }
-  else
+
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
+      {
+	ae->num_features 
+	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
+            *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
+            *(ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[1]].begin);
+	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
+      }
+
+  } else {
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
       {
 	ae->num_features
 	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
 	ae->num_features
-	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
-	  *all.rank;
-      }                                                                 
+	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin) * all.rank;
+      }
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)
+      {
+	ae->num_features
+	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin) * all.rank;
+	ae->num_features
+	  += (ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin) * all.rank;
+	ae->num_features
+	  += (ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[2]].begin) * all.rank;
+      }
+  }
 }
 
 namespace VW{
+  example* new_unused_example(vw& all) { 
+    example* ec = get_unused_example(all);
+    ec->example_counter = all.p->parsed_examples + 1;
+    all.p->parsed_examples++;
+    return ec;
+  }
   example* read_example(vw& all, char* example_line)
   {
     example* ret = get_unused_example(all);
@@ -807,6 +832,9 @@ namespace VW{
 
     return ret;
   }
+
+  size_t get_constant_namespace() { return constant_namespace; }
+  int get_constant() { return constant; }
 
   example* import_example(vw& all, vector<feature_space> vf)
   {
@@ -823,6 +851,7 @@ namespace VW{
 	  }
       }
     setup_example(all, ret);
+    all.p->parsed_examples++;
     return ret;
   }
 
@@ -832,6 +861,8 @@ namespace VW{
     substring str = { cstr, cstr+label.length() };
     push(words, str);
     all.p->lp->parse_label(all.sd, ec.ld, words);
+    words.erase();
+    free(words.begin);
   }
   
   void finish_example(vw& all, example* ec)

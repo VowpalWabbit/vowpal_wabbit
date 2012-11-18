@@ -68,6 +68,9 @@ namespace VW {
   //after you create and fill feature_spaces, get an example with everything filled in.
   example* import_example(vw& all, vector< feature_space > ec_info);
   void parse_example_label(vw&all, example&ec, string label);
+  example* new_unused_example(vw& all);
+  size_t get_constant_namespace();
+  int get_constant();
 
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);

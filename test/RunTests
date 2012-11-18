@@ -529,3 +529,8 @@ __DATA__
 {VW} -k -c -d train-sets/seq_small --passes 12 --searn_passes_per_policy 4 --searn 4 --searn_task sequence
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
+
+# Test 21: cubic features
+{VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100
+    train-sets/ref/xxor.stderr
+

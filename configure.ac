@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 AC_INIT([vowpal_wabbit], [6.1.4], [jl@hunch.net])
+=======
+AC_INIT([vowpal_wabbit], [6.1.3], [jl@hunch.net])
+>>>>>>> d167c2bc46a56a26c4a3839366be76186a07ed1c
 AC_DEFINE([PACKAGE_URL],["https://github.com/JohnLangford/vowpal_wabbit"],[project url])
 AM_CONFIG_HEADER(vowpalwabbit/config.h)
 AM_INIT_AUTOMAKE()

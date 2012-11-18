@@ -191,7 +191,7 @@ namespace SequenceTask {
 
   bool is_test_example(example**ec, size_t N) {
     for (size_t n=0; n<N; n++) {
-      if (((OAA::mc_label*)ec[n]->ld)->label < 0)
+      if (((OAA::mc_label*)ec[n]->ld)->label == (size_t)-1)
         return 1;
     }
     return 0;
@@ -301,7 +301,7 @@ namespace SequenceTask {
     example* cur = s->ec_start[s->pos];
     if (create) {
       ec = alloc_example(sizeof(OAA::mc_label));
-      copy_example_data(ec, cur, sizeof(OAA::mc_label));
+      VW::copy_example_data(ec, cur, sizeof(OAA::mc_label));
       OAA::default_label(ec->ld);
       SearnUtil::add_history_to_example(all, &hinfo, ec, s->predictions);
       update_example_indicies(all.audit, ec, increment * a);

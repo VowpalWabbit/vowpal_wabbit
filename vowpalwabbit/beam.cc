@@ -18,8 +18,8 @@ namespace Beam
     elem* b = (elem*)vb;
     if (a->hash < b->hash) return -1; 
     if (a->hash > b->hash) return  1; 
-	if (b->loss > a->loss) return 1; // if b is greater, it should go second
-	else return -1;
+    if (b->loss > a->loss) return 1; // if b is greater, it should go second
+    else return -1;
   }
 
   beam::beam(bool (*eq)(state,state), size_t (*hs)(state), size_t max_beam_size) {
@@ -169,8 +169,8 @@ namespace Beam
     for (elem*e=b->begin; e!=b->end; e++) {
       if (e->loss > cutoff) continue;
       push(*bnew, *e);
+      if (num_alive == 0) break;
       num_alive--;
-      if (num_alive < 0) break;
     }
     dat->put_after_get(id, hash_bucket(id), bnew);
   }
