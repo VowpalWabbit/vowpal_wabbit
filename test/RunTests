@@ -18,9 +18,6 @@ my $LDA;
 my $Diff = 'diff';
 my @ToTest = ();
 
-my @TrainSets = glob('train-sets/*.dat');
-my @TestSets = glob('test-sets/*.dat');
-
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
 
@@ -310,6 +307,59 @@ sub diff($$) {
     $status;
 }
 
+#
+# check_for_time_regression()
+#   Compare last overall time to run to current to catch
+#   performance regressions
+#
+my $LastTimeFile = 'RunTests.last.times';
+
+sub write_times($@) {
+    my ($file, @times) = @_;
+    open(my $fh, ">$file") || die "$0: can't open(>$file): $!\n";
+    print $fh join(' ', @times), "\n";
+    close $fh;
+}
+sub read_times($) {
+    my ($file) = @_;
+    open(my $fh, $file) || die "$0: can't open($file): $!\n";
+    my $line = <$fh>; chomp $line;
+    close $fh;
+    return (split(' ', $line));
+}
+
+sub check_for_time_regression() {
+    my $tolerate_regress = 1.02;
+    my $pct_change = 0.0;
+    my ($overall_time0, $overall_time1);
+    my ($user0, $system0, $cuser0, $csystem0);
+    my ($user1, $system1, $cuser1, $csystem1) = times;
+    $overall_time1 = $cuser1 + $csystem1;
+ 
+    if (-e $LastTimeFile) {
+        ($user0, $system0, $cuser0, $csystem0) = read_times($LastTimeFile);
+        if (!(defined $csystem0) or !(defined $cuser0)) {
+            die "$0: undefined times in saved times file: $LastTimeFile," .
+                    " try removing it\n"
+        }
+        $overall_time0 = $cuser0 + $csystem0;
+        $pct_change = 100 * ($overall_time1 - $overall_time0) / $overall_time0;
+
+        if ($overall_time0 == 0) {
+            die "$0: Bad times in saved times file: $LastTimeFile," .
+                    " try removing it\n"
+        } elsif ($overall_time1/$overall_time0 > $tolerate_regress) {
+            printf STDERR "$0: RUNTIME REGRESSION: " .
+                    "%.2f sec vs last time %.2f sec. (%.2f%% worse)\n",
+                    $overall_time1, $overall_time0, $pct_change;
+        }
+    }
+    write_times($LastTimeFile, $user1, $system1, $cuser1, $csystem1);
+    printf STDERR
+        "$0 runtime: user %g, system %g, total %g sec (%+.2f%% vs. last)\n",
+                $cuser1, $csystem1, $overall_time1, $pct_change;
+}
+
 sub run_tests() {
     print STDERR "$0: '-d' to see diff output\n"
         unless ($opt_d);
@@ -387,6 +437,7 @@ sub run_tests() {
             print STDERR "$0: test $TestNo: predict OK\n";
         }
     }
+    check_for_time_regression();
 }
 
 # --- main
