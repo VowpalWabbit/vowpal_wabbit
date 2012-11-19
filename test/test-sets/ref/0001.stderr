@@ -1,9 +1,9 @@
+only testing
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0.5
 predictions = 001.predict.tmp
-only testing
 using no cache
 Reading from train-sets/0001.dat
 num sources = 1

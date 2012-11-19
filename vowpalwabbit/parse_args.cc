@@ -1,7 +1,7 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
  */
 #include <stdio.h>
 #include <float.h>
@@ -53,8 +53,11 @@ vw parse_args(int argc, char *argv[])
     ("active_learning", "active learning mode")
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&all.active_c0), "active learning mellowness parameter c_0. Default 8")
+    ("sgd", "use regular stochastic gradient descent update.")
     ("adaptive", "use adaptive, individual learning rates.")
-    ("exact_adaptive_norm", "use a more expensive exact norm for adaptive learning rates.")
+    ("invariant", "use safe/importance aware updates.")
+    ("normalized", "use per feature normalized updates")
+    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
      "number of bits in the feature table")
@@ -68,7 +71,6 @@ vw parse_args(int argc, char *argv[])
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
-    ("nonormalize", "Do not normalize online updates")
     ("l1", po::value<float>(&all.l1_lambda), "l_1 lambda")
     ("l2", po::value<float>(&all.l2_lambda), "l_2 lambda")
     ("data,d", po::value< string >(), "Example Set")
@@ -163,6 +165,11 @@ vw parse_args(int argc, char *argv[])
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
 
+  if(all.initial_t > 0)
+  {
+    all.normalized_sum_norm_x = all.initial_t;//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
+  }
+
   if (vm.count("help") || argc == 1) {
     /* upon direct query for help -- spit it out to stdout */
     cout << "\n" << desc << "\n";
@@ -186,16 +193,43 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
 
-  if (vm.count("adaptive") || vm.count("exact_adaptive_norm")) {
-      all.adaptive = true;
-      if (vm.count("exact_adaptive_norm"))
-	{
-	  all.exact_adaptive_norm = true;
-	  if (vm.count("nonormalize"))
-	    cout << "Options don't make sense.  You can't use an exact norm and not normalize." << endl;
-	}
-      all.stride = 2;
+  if (vm.count("testonly") || all.eta == 0.)
+    {
+      if (!all.quiet)
+	cerr << "only testing" << endl;
+      all.training = false;
+      if (all.lda > 0)
+        all.eta = 0;
+    }
+  else
+    all.training = true;
+
+  all.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
+  //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
+  if( all.rank > 0 || !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  {
+    all.adaptive = all.training && (vm.count("adaptive") && all.rank == 0);
+    all.invariant_updates = all.training && vm.count("invariant");
+    all.normalized_updates = all.training && (vm.count("normalized") && all.rank == 0);
+
+    all.stride = 1;
+
+    if( all.adaptive ) all.stride *= 2;
+    else all.normalized_idx = 1; //store per feature norm at 1 index offset from weight value instead of 2
+
+    if( all.normalized_updates ) all.stride *= 2;
+
+    if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
+      all.eta = 10; //default learning rate to 10 for non default update rule
+
+    //if not using normalized or adaptive, default initial_t to 1 instead of 0
+    if(!all.adaptive && !all.normalized_updates && !vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
   }
+
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
     all.driver = BFGS::drive_bfgs;
     all.learn = BFGS::learn;
@@ -221,6 +255,13 @@ vw parse_args(int argc, char *argv[])
 	cout << "you must make at least 2 passes to use BFGS" << endl;
 	exit(1);
       }
+
+    //default initial_t to 1 instead of 0
+    if(!vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
   }
 
 
@@ -274,9 +315,12 @@ vw parse_args(int argc, char *argv[])
     all.numpasses = (size_t) 1e5;
   }
 
+  if (vm.count("compressed"))
+      set_compressed(all.p);
+
   if (vm.count("data")) {
     all.data_filename = vm["data"].as<string>();
-    if (vm.count("compressed") || ends_with(all.data_filename, ".gz"))
+    if (ends_with(all.data_filename, ".gz"))
       set_compressed(all.p);
   } else {
     all.data_filename = "";
@@ -374,30 +418,55 @@ vw parse_args(int argc, char *argv[])
     float temp = ceilf(logf((float)(all.rank*2+1)) / logf (2.f));
     all.stride = 1 << (int) temp;
     all.random_weights = true;
-    if (vm.count("adaptive") || vm.count("exact_adaptive_norm"))
+
+    if ( vm.count("adaptive") )
       {
 	cerr << "adaptive is not implemented for matrix factorization" << endl;
-	exit (1);
+        exit(1);
+      }
+    if ( vm.count("normalized") )
+      {
+	cerr << "normalized is not implemented for matrix factorization" << endl;
+        exit(1);
+      }
+    if ( vm.count("exact_adaptive_norm") )
+      {
+	cerr << "normalized adaptive updates is not implemented for matrix factorization" << endl;
+        exit(1);
       }
     if (vm.count("bfgs") || vm.count("conjugate_gradient"))
       {
 	cerr << "bfgs is not implemented for matrix factorization" << endl;
 	exit (1);
       }	
+
+    //default initial_t to 1 instead of 0
+    if(!vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
   }
 
   if (vm.count("noconstant"))
     all.add_constant = false;
 
-  if (vm.count("nonormalize"))
-    all.nonormalize = true;
+  //if (vm.count("nonormalize"))
+  //  all.nonormalize = true;
 
   if (vm.count("lda")) {
+    //default initial_t to 1 instead of 0
+    if(!vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
+
     lda_parse_flags(all, to_pass_further, vm);
     all.driver = drive_lda;
   }
 
-  if (!vm.count("lda")) 
+  if (!vm.count("lda") && !all.adaptive && !all.normalized_updates) 
     all.eta *= powf((float)(all.sd->t), all.power_t);
 
   // if (vm.count("sequence_max_length")) {
@@ -480,7 +549,13 @@ vw parse_args(int argc, char *argv[])
     else
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	int f = fileno(fopen(fstr,"w"));
+	FILE* foo;
+#ifdef _WIN32
+	foo = fopen(fstr, "wb");
+#else
+	foo = fopen(fstr, "w");
+#endif
+	int f = fileno(foo);
 	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
 	push(all.final_prediction_sink, (size_t) f);
@@ -493,7 +568,16 @@ vw parse_args(int argc, char *argv[])
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
       all.raw_prediction = 1;//stdout
     else
-      all.raw_prediction = fileno(fopen(vm["raw_predictions"].as< string >().c_str(), "w"));
+	{
+	  const char* t = vm["raw_predictions"].as< string >().c_str();
+	  FILE* f;
+#ifdef _WIN32
+	  f = fopen(t, "wb");
+#else
+	  f = fopen(t, "w");
+#endif
+      all.raw_prediction = fileno(f);
+	}
   }
 
   if (vm.count("audit"))
@@ -504,17 +588,6 @@ vw parse_args(int argc, char *argv[])
       all.driver = drive_send;
       parse_send_args(vm, all.pairs);
     }
-
-  if (vm.count("testonly"))
-    {
-      if (!all.quiet)
-	cerr << "only testing" << endl;
-      all.training = false;
-      if (all.lda > 0)
-        all.eta = 0;
-    }
-  else
-    all.training = true;
 
   if (all.l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;

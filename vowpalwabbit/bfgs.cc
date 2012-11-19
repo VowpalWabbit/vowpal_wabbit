@@ -1,8 +1,9 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
-
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
+/*
 The algorithm here is generally based on Nocedal 1980, Liu and Nocedal 1989.
 Implementation by Miro Dudik.
  */
@@ -649,7 +650,7 @@ int process_pass(vw& all) {
 	step_size = 0.5;
 	float d_mag = direction_magnitude(all);
 	ftime(&t_end_global);
-	net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+	net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 	if (!all.quiet)
 	  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 	predictions.erase();
@@ -689,7 +690,7 @@ int process_pass(vw& all) {
 		  else if (backstep_on && (wolfe1<wolfe1_bound || loss_sum > previous_loss_sum))
 		    {// curvature violated, or we stepped too far last time: step back
 		      ftime(&t_end_global);
-		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		      net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		      float ratio = (step_size==0.f) ? 0.f : (float)new_step/(float)step_size;
 		      if (!all.quiet)
 			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
@@ -735,7 +736,7 @@ int process_pass(vw& all) {
 		      else {
 			float d_mag = direction_magnitude(all);
 			ftime(&t_end_global);
-			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+			net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!all.quiet)
 			  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 			predictions.erase();
@@ -775,7 +776,7 @@ int process_pass(vw& all) {
 		  predictions.erase();
 		  update_weight(all, all.final_regressor_name , step_size, current_pass);
 		  ftime(&t_end_global);
-		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		  net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		  if (!all.quiet)
 		    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
 		  gradient_pass = true;

@@ -1,11 +1,11 @@
 /*
-Copyright (c) 2011 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
-
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
+/*
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
-
  */
 #include <iostream>
 #include <cstdio>
@@ -16,6 +16,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef int socklen_t;
+#define SHUT_RDWR SD_BOTH
 #else
 #include <sys/socket.h>
 #include <sys/socket.h>
@@ -119,8 +120,14 @@ int getsock()
 
 void all_reduce_init(string master_location, size_t unique_id, size_t total, size_t node)
 {
-  struct hostent* master = gethostbyname(master_location.c_str());
-    
+#ifdef _WIN32
+  WSAData wsaData;
+  WSAStartup(MAKEWORD(2,2), &wsaData);
+  int lastError = WSAGetLastError();
+#endif
+
+   struct hostent* master = gethostbyname(master_location.c_str());
+
   if (master == NULL) {
     cerr << "can't resolve hostname: " << master_location << endl;
     exit(1);
@@ -130,16 +137,20 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
   int port = 26543;
     
-  int master_sock = sock_connect(master_ip, htons(port));
-
-  if(write(master_sock, &unique_id, sizeof(unique_id)) < (int)sizeof(unique_id))
+#ifdef _WIN32
+  SOCKET master_sock;
+#else
+  int master_sock;
+#endif
+  master_sock = sock_connect(master_ip, htons(port));
+  if(send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
     cerr << "write failed!" << endl; 
-  if(write(master_sock, &total, sizeof(total)) < (int)sizeof(total))
+  if(send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
     cerr << "write failed!" << endl; 
-  if(write(master_sock, &node, sizeof(node)) < (int)sizeof(node))
+  if(send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
     cerr << "write failed!" << endl; 
   int ok;
-  if (read(master_sock, &ok, sizeof(ok)) < (int)sizeof(ok))
+  if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok))
     cerr << "read 1 failed!" << endl;
   if (!ok) {
     cerr << "mapper already connected" << endl;
@@ -150,7 +161,7 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
   uint16_t parent_port;
   uint32_t parent_ip;
 
-  if(read(master_sock, &kid_count, sizeof(kid_count)) < (int)sizeof(kid_count))
+  if(recv(master_sock, (char*)&kid_count, sizeof(kid_count), 0) < (int)sizeof(kid_count))
     cerr << "read 2 failed!" << endl;
 
   int sock = -1;
@@ -165,7 +176,7 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
     bool listening = false;
     while(!listening)
       {
-	if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
+		  if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
 	  if (errno == EADDRINUSE)
 	    {
 	      netport = htons(ntohs(netport)+1);
@@ -180,7 +191,7 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
 	  if (listen(sock, kid_count) < 0)
 	    {
 	      perror("listen failed! ");
-	      close(sock);
+	      shutdown(sock, SHUT_RDWR);
 	      sock = getsock();
 	    }
 	  else
@@ -190,16 +201,15 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
       }
   }
   
-  if(write(master_sock, &netport, sizeof(netport)) < (int)sizeof(netport))
+		  if(send(master_sock, (const char*)&netport, sizeof(netport), 0) < (int)sizeof(netport))
     cerr << "write failed!" << endl;
   
-  if(read(master_sock, &parent_ip, sizeof(parent_ip)) < (int)sizeof(parent_ip))
+  if(recv(master_sock, (char*)&parent_ip, sizeof(parent_ip), 0) < (int)sizeof(parent_ip))
     cerr << "read 3 failed!" << endl;
-  if(read(master_sock, &parent_port, sizeof(parent_port)) < (int)sizeof(parent_port))
+  if(recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
     cerr << "read 4 failed!" << endl;
-
   
-  close(master_sock);
+  shutdown(master_sock, SHUT_RDWR);
     
   //int parent_sock;
   if(parent_ip != (uint32_t)-1) 
@@ -208,7 +218,6 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
     socks.parent = -1;
     
   socks.children[0] = -1; socks.children[1] = -1;
-
   for (int i = 0; i < kid_count; i++)
     {
       sockaddr_in child_address;
@@ -223,7 +232,7 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
     }
 
   if (kid_count > 0)
-    close(sock);
+    shutdown(sock, SHUT_RDWR);
 }
 
 void addbufs(float* buf1, float* buf2, int n) {
@@ -246,7 +255,7 @@ void pass_up(char* buffer, int left_read_pos, int right_read_pos, int& parent_se
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the parent
-    int write_size = write(parent_sock, buffer+parent_sent_pos, my_bufsize);
+    int write_size = send(parent_sock, buffer+parent_sent_pos, my_bufsize, 0);
     if(write_size < my_bufsize) 
       cerr<<"Write to parent failed "<<my_bufsize<<" "<<write_size<<" "<<parent_sent_pos<<" "<<left_read_pos<<" "<<right_read_pos<<endl ;
     parent_sent_pos += my_bufsize;
@@ -262,9 +271,9 @@ void pass_down(char* buffer, int parent_read_pos, int&children_sent_pos, int* ch
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the children
-    if(child_sockets[0] != -1 && write(child_sockets[0], buffer+children_sent_pos, my_bufsize) < my_bufsize) 
+    if(child_sockets[0] != -1 && send(child_sockets[0], buffer+children_sent_pos, my_bufsize, 0) < my_bufsize) 
       cerr<<"Write to left child failed\n";
-    if(child_sockets[1] != -1 && write(child_sockets[1], buffer+children_sent_pos, my_bufsize) < my_bufsize) 
+    if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, my_bufsize, 0) < my_bufsize) 
       cerr<<"Write to right child failed\n";
     
     children_sent_pos += my_bufsize;
@@ -326,7 +335,7 @@ void reduce(char* buffer, int n, int parent_sock, int* child_sockets) {
 	
 	    //float read_buf[buf_size];
 	    size_t count = min(buf_size,n - child_read_pos[i]);
-	    int read_size = read(child_sockets[i], child_read_buf[i] + child_unprocessed[i], count);
+	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], count, 0);
 	    if(read_size == -1) {
 	      cerr <<" Read from child failed\n";
 	      perror(NULL);
@@ -398,7 +407,7 @@ void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
 	  exit(1);
 	}
 	size_t count = min(buf_size,n-parent_read_pos);
-	int read_size = read(parent_sock, buffer + parent_read_pos, count);
+	int read_size = recv(parent_sock, buffer + parent_read_pos, count, 0);
 	if(read_size == -1) {
 	  cerr <<" Read from parent failed\n";
 	  perror(NULL);
@@ -412,20 +421,19 @@ void all_reduce(float* buffer, int n, string master_location, size_t unique_id, 
 {
   if(master_location != current_master) 
     all_reduce_init(master_location, unique_id, total, node);
-    
   reduce((char*)buffer, n*sizeof(float), socks.parent, socks.children);
   broadcast((char*)buffer, n*sizeof(float), socks.parent, socks.children);
 }
 
 node_socks::~node_socks()
 {
-  if(current_master != "") {
+ if(current_master != "") {
     if(this->parent != -1)
-      close(this->parent);
+      shutdown(this->parent, SHUT_RDWR);
     if(this->children[0] != -1) 
-      close(this->children[0]);
+      shutdown(this->children[0], SHUT_RDWR);
     if(this->children[1] != -1)
-      close(this->children[1]);  
+      shutdown(this->children[1], SHUT_RDWR);  
   }
 }
 

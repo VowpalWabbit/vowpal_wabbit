@@ -1,7 +1,7 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
  */
 
 #include "sparse_dense.h"
@@ -25,6 +25,82 @@ float sd_add_trunc(weight* weights, size_t mask, feature* begin, feature* end, f
   return ret;
 }
 
+float sd_add_rescale(weight* weights, size_t mask, feature* begin, feature* end, bool is_adaptive, size_t idx_norm)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++) {
+    weight* w = &weights[f->weight_index & mask];
+    float x = f->x;
+    float x_abs = fabs(x);
+    if( x_abs > w[idx_norm] ) {
+      if( w[idx_norm] > 0. ) {
+        float rescale = (w[idx_norm]/x_abs);
+        w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      }
+      w[idx_norm] = x_abs;
+    }
+    ret += w[0] * x;
+  }
+  return ret;
+}
+
+float sd_add_trunc_rescale(weight* weights, size_t mask, feature* begin, feature* end, float gravity, bool is_adaptive, size_t idx_norm)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++) {
+    weight* w = &weights[f->weight_index & mask];
+    float x = f->x;
+    float x_abs = fabs(x);
+    if( x_abs > w[idx_norm] ) {
+      if( w[idx_norm] > 0. ) {
+        float rescale = (w[idx_norm]/x_abs);
+        w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      }
+      w[idx_norm] = x_abs;
+    }
+    ret += trunc_weight(w[0], gravity) * x;
+  }
+  return ret;
+}
+
+float sd_add_rescale_general(weight* weights, size_t mask, feature* begin, feature* end, size_t idx_norm, float power_t_norm)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++) {
+    weight* w = &weights[f->weight_index & mask];
+    float x = f->x;
+    float x_abs = fabs(x);
+    if( x_abs > w[idx_norm] ) {
+      if( w[idx_norm] > 0. ) {
+        float rescale = (w[idx_norm]/x_abs);
+        w[0] *= powf(rescale*rescale,power_t_norm);
+      }
+      w[idx_norm] = x_abs;
+    }
+    ret += w[0] * x;
+  }
+  return ret;
+}
+
+float sd_add_trunc_rescale_general(weight* weights, size_t mask, feature* begin, feature* end, float gravity, size_t idx_norm, float power_t_norm)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++) {
+    weight* w = &weights[f->weight_index & mask];
+    float x = f->x;
+    float x_abs = fabs(x);
+    if( x_abs > w[idx_norm] ) {
+      if( w[idx_norm] > 0. ) {
+        float rescale = (w[idx_norm]/x_abs);
+        w[0] *= powf(rescale*rescale,power_t_norm);
+      }
+      w[idx_norm] = x_abs;
+    }
+    ret += trunc_weight(w[0], gravity) * x;
+  }
+  return ret;
+}
+
 float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, size_t offset)
 {
   float ret = 0.;
@@ -38,6 +114,82 @@ float sd_offset_add_trunc(weight* weights, size_t mask, feature* begin, feature*
   float ret = 0.;
   for (feature* f = begin; f!= end; f++)
     ret += trunc_weight(weights[(f->weight_index + offset) & mask], gravity) * f->x;
+  return ret;
+}
+
+float sd_offset_add_rescale(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float x, bool is_adaptive, size_t idx_norm)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++) {
+    weight* w = &weights[(f->weight_index + offset) & mask];
+    float xtmp = f->x;
+    float xquad_abs = fabs(x*xtmp);
+    if( xquad_abs > w[idx_norm] ) {
+      if( w[idx_norm] > 0. ) {
+        float rescale = w[idx_norm]/xquad_abs;
+        w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      }
+      w[idx_norm] = xquad_abs;
+    }
+    ret += w[0] * xtmp;
+  }
+  return ret;
+}
+
+float sd_offset_add_trunc_rescale(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float gravity, float x, bool is_adaptive, size_t idx_norm)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++) {
+    weight* w = &weights[(f->weight_index + offset) & mask];
+    float xtmp = f->x;
+    float xquad_abs = fabs(x*xtmp);
+    if( xquad_abs > w[idx_norm] ) {
+      if( w[idx_norm] > 0. ) {
+        float rescale = w[idx_norm]/xquad_abs;
+        w[0] *= (is_adaptive ? rescale : rescale*rescale);
+      }
+      w[idx_norm] = xquad_abs;
+    }
+    ret += trunc_weight(w[0],gravity) * xtmp;
+  }
+  return ret;
+}
+
+float sd_offset_add_rescale_general(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float x, size_t idx_norm, float power_t_norm)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++) {
+    weight* w = &weights[(f->weight_index + offset) & mask];
+    float xtmp = f->x;
+    float xquad_abs = fabs(x*xtmp);
+    if( xquad_abs > w[idx_norm] ) {
+      if( w[idx_norm] > 0 ) {
+        float rescale = w[idx_norm]/xquad_abs;
+        w[0] *= powf(rescale*rescale,power_t_norm);
+      }
+      w[idx_norm] = xquad_abs;
+    }
+    ret += w[0] * xtmp;
+  }
+  return ret;
+}
+
+float sd_offset_add_trunc_rescale_general(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float gravity, float x, size_t idx_norm, float power_t_norm)
+{
+  float ret = 0.;
+  for (feature* f = begin; f!= end; f++) {
+    weight* w = &weights[(f->weight_index + offset) & mask];
+    float xtmp = f->x;
+    float xquad_abs = fabs(x*xtmp);
+    if( xquad_abs > w[idx_norm] ) {
+      if( w[idx_norm] > 0 ) {
+        float rescale = w[idx_norm]/xquad_abs;
+        w[0] *= powf(rescale*rescale,power_t_norm);
+      }
+      w[idx_norm] = xquad_abs;
+    }
+    ret += trunc_weight(w[0],gravity) * xtmp;
+  }
   return ret;
 }
 
@@ -85,6 +237,34 @@ float one_pf_quad_predict_trunc(weight* weights, feature& f, v_array<feature> &c
   size_t halfhash = quadratic_constant * f.weight_index;
   
   return f.x * sd_offset_add_trunc(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity);
+}
+
+float one_pf_quad_predict_rescale(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, bool is_adaptive, size_t idx_norm)
+{
+  size_t halfhash = quadratic_constant * f.weight_index;
+  
+  return f.x * sd_offset_add_rescale(weights, mask, cross_features.begin, cross_features.end, halfhash, f.x, is_adaptive, idx_norm);
+}
+
+float one_pf_quad_predict_trunc_rescale(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, float gravity, bool is_adaptive, size_t idx_norm)
+{
+  size_t halfhash = quadratic_constant * f.weight_index;
+  
+  return f.x * sd_offset_add_trunc_rescale(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity, f.x, is_adaptive, idx_norm);
+}
+
+float one_pf_quad_predict_rescale_general(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, size_t idx_norm, float power_t_norm)
+{
+  size_t halfhash = quadratic_constant * f.weight_index;
+  
+  return f.x * sd_offset_add_rescale_general(weights, mask, cross_features.begin, cross_features.end, halfhash, f.x, idx_norm, power_t_norm);
+}
+
+float one_pf_quad_predict_trunc_rescale_general(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, float gravity, size_t idx_norm, float power_t_norm)
+{
+  size_t halfhash = quadratic_constant * f.weight_index;
+  
+  return f.x * sd_offset_add_trunc_rescale_general(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity, f.x, idx_norm, power_t_norm);
 }
 
 float offset_quad_predict(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, size_t offset)

@@ -1,9 +1,8 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
  */
-
 #include <sys/types.h>
 
 #ifndef _WIN32
@@ -563,6 +562,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       string hash_function("strings");
       if(vm.count("hash")) 
 	hash_function = vm["hash"].as<string>();
+
       if (all.p->input->files.index() > 0)
 	{
 	  if (!quiet)
@@ -571,30 +571,14 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       else
 	{
 	  string temp = all.data_filename;
-	  if (temp.length() != 0)
-	    {
-	      if (!quiet)
-		cerr << "Reading from " << temp << endl;
-	      int f = all.p->input->open_file(temp.c_str(), io_buf::READ);
-	      if (f == -1)
-		{
-		  cerr << "can't open " << temp << ", bailing!" << endl;
-		  exit(0);
-		}
-	      all.p->reader = read_features;
-	      all.p->hasher = getHasher(hash_function);
-	      all.p->resettable = all.p->write_cache;
-	    }
-	}
-      if (all.p->input->files.index() == 0)// Default to stdin
-	{
 	  if (!quiet)
-	    cerr << "Reading from stdin" << endl;
-	  if (vm.count("compressed")){
-	    cerr << "Compressed source can't be read from stdin." << endl << "Directly use the compressed source with -d option";
-	    exit(0);
-	  }
-	  push(all.p->input->files,fileno(stdin));
+	    cerr << "Reading from " << temp << endl;
+	  int f = all.p->input->open_file(temp.c_str(), io_buf::READ);
+	  if (f == -1)
+	    {
+	      cerr << "can't open " << temp << ", bailing!" << endl;
+	      exit(0);
+	    }
 	  all.p->reader = read_features;
 	  all.p->hasher = getHasher(hash_function);
 	  all.p->resettable = all.p->write_cache;
@@ -959,7 +943,6 @@ void *main_parse_loop(void *in)
 example* get_example(parser* p)
 {
   mutex_lock(&examples_lock);
-
   if (p->parsed_examples != used_index) {
     size_t ring_index = used_index++ % p->ring_size;
     if (!(examples+ring_index)->in_use)
@@ -1004,7 +987,7 @@ void initialize_examples(vw& all)
     }
 }
 
-void start_parser(vw& all)
+void initialize_parser_datastructures(vw& all)
 {
   initialize_examples(all);
   initialize_mutex(&examples_lock);
@@ -1012,6 +995,11 @@ void start_parser(vw& all)
   initialize_condition_variable(&example_unused);
   initialize_mutex(&output_lock);
   initialize_condition_variable(&output_done);
+}
+
+void start_parser(vw& all)
+{
+  initialize_parser_datastructures(all);
   #ifndef _WIN32
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
   #else
@@ -1052,6 +1040,12 @@ void free_parser(vw& all)
     free(all.p->counts.begin);
 }
 
+void release_parser_datastructures(vw& all)
+{
+  delete_mutex(&examples_lock);
+  delete_mutex(&output_lock);
+}
+
 void end_parser(vw& all)
 {
   #ifndef _WIN32
@@ -1060,6 +1054,5 @@ void end_parser(vw& all)
   ::WaitForSingleObject(parse_thread, INFINITE);
   ::CloseHandle(parse_thread);
   #endif
-  delete_mutex(&examples_lock);
-  delete_mutex(&output_lock);
+  release_parser_datastructures(all);
 }

@@ -1,3 +1,8 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
 #include <iostream>
 #include <float.h>
 #include <stdio.h>
@@ -190,10 +195,9 @@ namespace SequenceTask {
   }
 
   bool is_test_example(example**ec, size_t N) {
-    for (size_t n=0; n<N; n++) {
-      if (((OAA::mc_label*)ec[n]->ld)->label == (size_t)-1)
-        return 1;
-    }
+    for (size_t n=0; n<N; n++) 
+      if (OAA::example_is_test(ec[n])) 
+	return 1;
     return 0;
   }
 

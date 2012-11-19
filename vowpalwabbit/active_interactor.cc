@@ -1,3 +1,8 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -5,6 +10,8 @@
 #ifdef _WIN32
 #include <WinSock2.h>
 #else
+#include <sys/types.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>

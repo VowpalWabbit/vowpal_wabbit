@@ -1,3 +1,8 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -56,7 +61,7 @@ namespace CSOAA {
   {
     if (ld->costs.index() == 0)
       return true;
-    for (size_t i=0; i<ld->costs.index(); i++)
+    for (unsigned int i=0; i<ld->costs.index(); i++)
       if (FLT_MAX != ld->costs[i].x)
         return false;
     return true;
@@ -68,7 +73,7 @@ namespace CSOAA {
     ld->costs.erase();
     c += sizeof(size_t);
     size_t total = sizeof(wclass)*num;
-    if (buf_read(cache, c, total) < total) 
+    if (buf_read(cache, c, (int)total) < total) 
       {
         cout << "error in demarshal of cost data" << endl;
         return c;
@@ -89,7 +94,7 @@ namespace CSOAA {
     ld->costs.erase();
     char *c;
     size_t total = sizeof(size_t);
-    if (buf_read(cache, c, total) < total) 
+    if (buf_read(cache, c, (int)total) < total) 
       return 0;
     c = bufread_label(ld,c, cache);
   
@@ -110,7 +115,7 @@ namespace CSOAA {
   {
     *(size_t *)c = ld->costs.index();
     c += sizeof(size_t);
-    for (size_t i = 0; i< ld->costs.index(); i++)
+    for (unsigned int i = 0; i< ld->costs.index(); i++)
       {
         *(wclass *)c = ld->costs[i];
         c += sizeof(wclass);
@@ -152,8 +157,8 @@ namespace CSOAA {
     v_array<substring> name;
 
     ld->costs.erase();
-    for (size_t i = 0; i < words.index(); i++) {
-      wclass f = {0.,0,1.,0.};
+    for (unsigned int i = 0; i < words.index(); i++) {
+      wclass f = {0.,0,0.};
       name_value(words[i], name, f.x, f.importance);
       
       if (name.index() == 0)
@@ -191,7 +196,7 @@ namespace CSOAA {
     }
 
     if (words.index() == 0) {
-      if (sd->k != (size_t)-1) {
+      if (sd->k != (uint32_t)-1) {
         for (size_t i = 1; i <= sd->k; i++) {
           wclass f = {FLT_MAX, i, 1., 0.};
           push(ld->costs, f);
@@ -261,12 +266,12 @@ namespace CSOAA {
     all.sd->sum_loss_since_last_dump += loss;
   
     for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
+      all.print((int)*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
       stringstream outputStringStream(outputString);
-      for (size_t i = 0; i < ld->costs.index(); i++) {
+      for (unsigned int i = 0; i < ld->costs.index(); i++) {
         wclass cl = ld->costs[i];
         if (i > 0) outputStringStream << ' ';
         outputStringStream << cl.weight_index << ':' << cl.partial_prediction;
@@ -522,7 +527,6 @@ namespace CSOAA_AND_WAP_LDF {
 
   void do_actual_learning_wap(vw& all, int start_K)
   {
-
     size_t K = ec_seq.index();
     bool   isTest = CSOAA::example_is_test(ec_seq[start_K]);
     size_t prediction = 0;
@@ -941,7 +945,7 @@ namespace CSOAA_AND_WAP_LDF {
 
     *(all.p->lp) = CSOAA::cs_label_parser;
 
-    all.sd->k = -1;
+    all.sd->k = (uint32_t)-1;
 
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0)
       is_singleline = true;

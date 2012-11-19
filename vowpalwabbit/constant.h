@@ -1,9 +1,8 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 const int quadratic_constant = 27942141;
 const int cubic_constant = 21791;
 const int cubic_constant2 = 37663;

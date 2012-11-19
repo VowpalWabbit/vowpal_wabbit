@@ -1,3 +1,14 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
+
+#ifndef _WIN32
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 #include <iostream>
 #include <float.h>
 #include <stdio.h>
@@ -776,7 +787,7 @@ namespace Searn
     VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies", ss2.str());
 
     all.base_learner_nb_w *= total_number_of_policies;
-    increment = (all.length() / all.base_learner_nb_w ) * all.stride;
+    increment = (all.length() / all.base_learner_nb_w / 2) * all.stride;
 
     all.driver = drive;
     base_learner = all.learn;

@@ -1,12 +1,18 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef IO_H__
 #define IO_H__
 
+
+#ifndef _WIN32
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
 #include <fcntl.h>
 #include "v_array.h"
 #include<iostream>
@@ -43,16 +49,29 @@ class io_buf {
   }
 
   virtual int open_file(const char* name, int flag=READ){
-    int ret;
+	int ret;
     switch(flag){
     case READ:
-      ret = open(name, O_RDONLY|O_LARGEFILE);
+      if (*name != '\0')
+	{
+#ifdef _WIN32
+	  ret = _open(name, _O_RDONLY|_O_BINARY);
+#else
+	  ret = open(name, O_RDONLY|O_LARGEFILE);
+#endif
+	}
+      else
+	ret = fileno(stdin);
       if(ret!=-1)
-        push(files,ret);
+	push(files,ret);
       break;
 
     case WRITE:
-      ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+#ifdef _WIN32
+		ret = _open(name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC,0666);
+#else
+		ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+#endif
       if(ret!=-1)
         push(files,ret);
       break;
@@ -82,7 +101,7 @@ class io_buf {
   void set(char *p){space.end = p;}
 
   virtual ssize_t read_file(int f, void* buf, size_t nbytes){
-    return read(f, buf, nbytes);
+	  return read(f, buf, (unsigned int)nbytes); 
   }
 
   size_t fill(int f) {
@@ -102,12 +121,13 @@ class io_buf {
       return 0;
   }
 
-  virtual ssize_t write_file(int f, const void* buf, size_t nbytes){
-    return write(f, buf, nbytes);
+  virtual ssize_t write_file(int f, const void* buf, size_t nbytes)
+  {
+    return write(f, buf, (unsigned int)nbytes);
   }
 
   virtual void flush() {
-    if (write_file(files[0], space.begin, space.index()) != (int) space.index())
+	  if (write_file(files[0], space.begin, space.index()) != (int) space.index())
       std::cerr << "error, failed to write example\n";
     space.end = space.begin; }
 
@@ -125,7 +145,7 @@ class io_buf {
 };
 
 void buf_write(io_buf &o, char* &pointer, int n);
-unsigned int buf_read(io_buf &i, char* &pointer, int n);
+size_t buf_read(io_buf &i, char* &pointer, size_t n);
 bool isbinary(io_buf &i);
 size_t readto(io_buf &i, char* &pointer, char terminal);
 #endif

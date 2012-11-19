@@ -1,3 +1,9 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
+ */
+
 #include "unique_sort.h"
 #include "global_data.h"
 
@@ -8,7 +14,7 @@ int order_features(const void* first, const void* second)
 
 int order_audit_features(const void* first, const void* second)
 {
-  return ((audit_data*)first)->weight_index - ((audit_data*)second)->weight_index;
+  return (int)(((audit_data*)first)->weight_index) - (int)(((audit_data*)second)->weight_index);
 }
 
 void unique_features(v_array<feature> &features)

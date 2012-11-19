@@ -1,12 +1,9 @@
 /*
-Copyright (c) 2011 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
-
-This implements various accumulate functions building on top of allreduce.  
-
-*/
-
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
+ */
+//This implements various accumulate functions building on top of allreduce.  
 #ifndef ACCUMULATE_H
 #define ACCUMULATE_H
 

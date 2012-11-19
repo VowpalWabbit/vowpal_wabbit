@@ -1,13 +1,13 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
  */
 #include <string.h>
 
 #include "io.h"
 
-unsigned int buf_read(io_buf &i, char* &pointer, int n)
+size_t buf_read(io_buf &i, char* &pointer, size_t n)
 {//return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (i.space.end + n <= i.endloaded)
     {
@@ -19,7 +19,7 @@ unsigned int buf_read(io_buf &i, char* &pointer, int n)
     {
       if (i.space.end != i.space.begin) //There exists room to shift.
 	{ // Out of buffer so swap to beginning.
-	  int left = i.endloaded - i.space.end;
+	  size_t left = i.endloaded - i.space.end;
 	  memmove(i.space.begin, i.space.end, left);
 	  i.space.end = i.space.begin;
 	  i.endloaded = i.space.begin+left;

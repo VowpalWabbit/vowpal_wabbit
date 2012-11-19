@@ -1,11 +1,12 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
  */
 #include<math.h>
 #include<iostream>
 #include<stdlib.h>
+#include<assert.h>
 using namespace std;
 
 #include "loss_functions.h"
@@ -44,9 +45,13 @@ public:
        * with its first order Taylor expansion around 0
        * to avoid catastrophic cancellation.
        */
-      return (label - prediction)*eta_t/norm;
+      return 2.f*(label - prediction)*eta_t/norm;
     }
-    return (label - prediction)*(1-exp(-eta_t))/norm;
+    return (label - prediction)*(1.f-exp(-2.f*eta_t))/norm;
+  }
+
+  float getUnsafeUpdate(float prediction, float label,float eta_t,float norm) {
+    return 2.f*(label - prediction)*eta_t/norm;
   }
 
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
@@ -56,7 +61,7 @@ public:
   }
   
   float getSquareGrad(float prediction, float label) {
-    return (prediction - label) * (prediction - label);
+    return 4.f*(prediction - label) * (prediction - label);
   }
   float first_derivative(shared_data* sd, float prediction, float label)
   {
@@ -87,7 +92,11 @@ public:
   }
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
-    return eta_t*(label - prediction)/norm;
+    return 2.f*eta_t*(label - prediction)/norm;
+  }
+
+  float getUnsafeUpdate(float prediction, float label,float eta_t,float norm) {
+    return 2.f*(label - prediction)*eta_t/norm;
   }
   
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
@@ -97,7 +106,7 @@ public:
   }
 
   float getSquareGrad(float prediction, float label) {
-    return (prediction - label) * (prediction - label);
+    return 4.f * (prediction - label) * (prediction - label);
   }
   float first_derivative(shared_data*, float prediction, float label)
   {
@@ -117,6 +126,7 @@ public:
   }
   
   float getLoss(shared_data*, float prediction, float label) {
+    assert(label == -1.f || label == 1.f);
     float e = 1 - label*prediction;
     return (e > 0) ? e : 0;
   }
@@ -126,6 +136,11 @@ public:
     float err=(label*label-label*prediction)/(label*label);
     float normal= eta_t;
     return label * (normal < err ? normal : err)/norm;
+  }
+
+  float getUnsafeUpdate(float prediction, float label,float eta_t, float norm) {
+    if(label*prediction >= label*label) return 0;
+    return label * eta_t/norm;
   }
 
   float getRevertingWeight(shared_data*, float prediction, float eta_t){
@@ -155,6 +170,7 @@ public:
   }
   
   float getLoss(shared_data*, float prediction, float label) {
+    assert(label == -1.f || label == 1.f);
     return log(1 + exp(-label * prediction));
   }
   
@@ -170,6 +186,11 @@ public:
     x = eta_t + label*prediction + d;
     w = wexpmx(x);
     return -(label*w+prediction)/norm;
+  }
+
+  float getUnsafeUpdate(float prediction, float label, float eta_t, float norm) {
+    float d = exp(label * prediction);
+    return label*eta_t/((1+d)*norm);
   }
   
   inline float wexpmx(float x){
@@ -230,11 +251,18 @@ public:
     float normal = eta_t;//base update size
     if(err > 0) {
       normal = tau*normal;
-      return tau*(normal < err ? normal : err) / norm;
+      return (normal < err ? normal : err) / norm;
     } else {
       normal = -(1-tau) * normal;
-      return ( normal < - err ?  normal : err) / norm;
+      return ( normal > err ?  normal : err) / norm;
     }
+  }
+
+  float getUnsafeUpdate(float prediction, float label, float eta_t, float norm) {
+    float err = label - prediction;
+    if(err == 0) return 0;
+    if(err > 0) return tau*eta_t/norm;
+    return -(1-tau)*eta_t/norm;
   }
   
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){

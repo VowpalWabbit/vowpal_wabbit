@@ -1,4 +1,9 @@
 /*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
+/*
 This is an implementation of the Searn algorithm, specialized to
 sequence labeling.  It is based on:
 
@@ -61,9 +66,9 @@ namespace Sequence {
     history  total_predictions;
   };
 
-  bool PRINT_DEBUG_INFO             = 1;
-  bool PRINT_UPDATE_EVERY_EXAMPLE   = 1 | PRINT_DEBUG_INFO;
-  bool OPTIMIZE_SHARED_HISTORIES    = 0;
+  bool PRINT_DEBUG_INFO             = 0;
+  bool PRINT_UPDATE_EVERY_EXAMPLE   = 0 | PRINT_DEBUG_INFO;
+  bool OPTIMIZE_SHARED_HISTORIES    = 1;
   bool DEBUG_FORCE_BEAM_ONE         = 0;
 
 #define PRINT_LEN 21
@@ -129,7 +134,12 @@ namespace Sequence {
 
   void read_transition_file(const char* filename)
   {
-    FILE *f = fopen(filename, "r");
+    FILE *f;
+#ifdef _WIN32
+	f = fopen(filename, "rb");
+#else
+	f = fopen(filename, "r");
+#endif
     if (f == NULL) {
       cerr << "warning: could not read file " << filename << "; assuming all transitions are valid" << endl;
       return;
@@ -358,7 +368,7 @@ namespace Sequence {
   void global_print_label(vw&all, example *ec, size_t label)
   {
     for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
-      int f = all.final_prediction_sink[i];
+      int f = (int)all.final_prediction_sink[i];
       all.print(f, (float)label, 0., ec->tag);
     }
   }
@@ -500,7 +510,7 @@ namespace Sequence {
   void append_history_item(history_item hi, size_t p)
   {
     if (hinfo.length > 0) {
-      int old_val = hi.predictions[0];
+      int old_val = (int)hi.predictions[0];
       hi.predictions_hash -= old_val * constant_pow_length;
       hi.predictions_hash += p;
       hi.predictions_hash *= quadratic_constant;
@@ -629,6 +639,8 @@ namespace Sequence {
 
     SearnUtil::add_history_to_example(all, &hinfo, ec, h);
     SearnUtil::add_policy_offset(all, ec, increment, current_policy);
+
+    //cerr<< "add_policy_offset: " << increment << " * " << current_policy << endl;
 
     if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all,ec);}
     ec->ld = (void*)&ld;
@@ -935,7 +947,7 @@ namespace Sequence {
             // compute new
             last_new = i;
 
-            cerr<<"t2="<<t2<<" t="<<t<<" last_prediction="<<last_prediction(hcache[i].predictions)<<" pred_seq="<<pred_seq[t]<<" pol="<<policy_seq[t2]<<endl;
+            //cerr<<"t2="<<t2<<" t="<<t<<" last_prediction="<<last_prediction(hcache[i].predictions)<<" pred_seq="<<pred_seq[t]<<" pol="<<policy_seq[t2]<<endl;
             prediction_matches_history = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
 
             /*
@@ -947,7 +959,7 @@ namespace Sequence {
 
             size_t yhat = predict(all, ec_seq[t2], hcache[i].predictions, policy_seq[t2], true_labels[t2]->label);
             append_history_item(hcache[i], yhat);
-            cerr<<"i="<<i<<" yhat=" << yhat<<endl;
+            //cerr<<"i="<<i<<" yhat=" << yhat<<endl;
             hcache[i].loss += gamma * true_labels[t2]->weight * (float)(yhat != true_labels[t2]->label);
           }
           hcache[i].same = 0;
@@ -963,8 +975,8 @@ namespace Sequence {
       }
 
       if (entered_rollout && ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k))) {
-        cerr<<"last_prediction=" << pred_seq[t+1]<<endl;
-        cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
+        //cerr<<"last_prediction=" << pred_seq[t+1]<<endl;
+        //cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
         pred_seq[t] = 1;
       }
 
@@ -1482,8 +1494,8 @@ namespace Sequence {
     VW::cmd_string_replace_value(all.options_from_file,"--sequence_total_nb_policies", ss2.str());
 
     all.base_learner_nb_w *= total_number_of_policies;
-    increment = (all.length() / all.base_learner_nb_w) * all.stride;
-    cerr<<"increment=" << increment<<endl;
+    increment = (all.length() / all.base_learner_nb_w / 2) * all.stride;
+    //cerr<<"increment=" << increment<<endl;
   }
 }
 

@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2007 Yahoo! Inc.  All rights reserved.  The copyrights
- * embodied in the content of this file are licensed under the BSD
- * (revised) open source license
- *  */
-
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
+ */
 #ifndef COMP_IO_BUF_H_
 #define COMP_IO_BUF_H_
 
 #include "io.h"
 #include "v_array.h"
 #include "zlib.h"
+#include <stdio.h>
 
 class comp_io_buf : public io_buf
 {
@@ -26,10 +26,13 @@ public:
     int ret = -1;
     switch(flag){
     case READ:
-      fil = gzopen(name, "rb");
+      if (*name != '\0')
+	fil = gzopen(name, "rb");
+      else
+	fil = gzdopen(fileno(stdin), "rb");
       if(fil!=NULL){
         push(gz_files,fil);
-        ret = gz_files.index()-1;
+        ret = (int)gz_files.index()-1;
         push(files,ret);
       }
       else
@@ -40,7 +43,7 @@ public:
       fil = gzopen(name, "wb");
       if(fil!=NULL){
         push(gz_files,fil);
-        ret = gz_files.index()-1;
+        ret = (int)gz_files.index()-1;
         push(files,ret);
       }
       else
@@ -64,14 +67,14 @@ public:
   virtual ssize_t read_file(int f, void* buf, size_t nbytes)
   {
     gzFile fil = gz_files[f];
-    int num_read = gzread(fil, buf, nbytes);
+    int num_read = gzread(fil, buf, (unsigned int)nbytes);
     return (num_read > 0) ? num_read : 0;
   }
 
   virtual inline ssize_t write_file(int f, const void* buf, size_t nbytes)
   {
     gzFile fil = gz_files[f];
-    int num_written = gzwrite(fil, buf, nbytes);
+    int num_written = gzwrite(fil, buf, (unsigned int)nbytes);
     return (num_written > 0) ? num_written : 0;
   }
 

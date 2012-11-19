@@ -1,12 +1,12 @@
 /*
-Copyright (c) 2011 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
-
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
+/*
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
-
- */
+*/
 
 #include <iostream>
 #include <sys/timeb.h>

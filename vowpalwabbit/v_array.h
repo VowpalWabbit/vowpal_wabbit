@@ -1,9 +1,8 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef VARRAY_H__
 #define VARRAY_H__
 #include <iostream>
@@ -28,8 +27,8 @@ template<class T> class v_array{
   bool empty() { return begin == end;}
   void decr() { end--;}
   v_array() { begin= NULL; end = NULL; end_array=NULL;}
-  T& operator[](unsigned int i) { return begin[i]; }
-  unsigned int index(){return end-begin;}
+  T& operator[](size_t i) { return begin[i]; }
+  size_t index(){return end-begin;}
   void erase() { end = begin;}
 };
 

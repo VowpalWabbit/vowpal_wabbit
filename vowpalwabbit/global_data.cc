@@ -1,6 +1,12 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
 #include <stdio.h>
 #include <float.h>
 #include <iostream>
+#include <sstream>
 #include <math.h>
 #include <assert.h>
 
@@ -70,18 +76,11 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag)
     }
 }
 
-void print_tag(int f, v_array<char> tag)
+void print_tag(std::stringstream& ss, v_array<char> tag)
 {
-  char temp[30];
-  ssize_t t;
   if (tag.begin != tag.end){
-    temp[0] = ' ';
-    t = write(f, temp, 1);
-    if (t != 1)
-      cerr << "write error" << endl;
-    t = write(f, tag.begin, sizeof(char)*tag.index());
-    if (t != (ssize_t) (sizeof(char)*tag.index()))
-      cerr << "write error" << endl;
+    ss << ' ';
+    ss.write(tag.begin, sizeof(char)*tag.index());
   }  
 }
 
@@ -90,16 +89,17 @@ void print_result(int f, float res, float weight, v_array<char> tag)
   if (f >= 0)
     {
       char temp[30];
-      int num = sprintf(temp, "%f", res);
-      ssize_t t;
-      t = write(f, temp, num);
-      if (t != num) 
-	cerr << "write error" << endl;
-      print_tag(f, tag);
-      temp[0] = '\n';
-      t = write(f, temp, 1);     
-      if (t != 1) 
-	cerr << "write error" << endl;
+      sprintf(temp, "%f", res);
+      std::stringstream ss;
+      ss << temp;
+      print_tag(ss, tag);
+      ss << '\n';
+      ssize_t len = ss.str().size();
+      ssize_t t = write(f, ss.str().c_str(), len);
+      if (t != len)
+        {
+          cerr << "write error" << endl;
+        }
     }
 }
 
@@ -108,39 +108,36 @@ void print_raw_text(int f, string s, v_array<char> tag)
   if (f < 0)
     return;
 
-  ssize_t t;
-  int num = s.length();
-  t = write(f, s.c_str(), num);
-  if (t != num) 
-    cerr << "write error" << endl;
-  print_tag(f, tag);
-  char temp = '\n';
-  t = write(f, &temp, 1);     
-  if (t != 1)
-    cerr << "write error" << endl;
+  std::stringstream ss;
+  ss << s;
+  print_tag (ss, tag);
+  ss << '\n';
+  ssize_t len = ss.str().size();
+  ssize_t t = write(f, ss.str().c_str(), len);
+  if (t != len)
+    {
+      cerr << "write error" << endl;
+    }
 }
 
 void active_print_result(int f, float res, float weight, v_array<char> tag)
 {
   if (f >= 0)
     {
+      std::stringstream ss;
       char temp[30];
-      int num = sprintf(temp, "%f", res);
-      ssize_t t;
-      t = write(f, temp, num);
-      if (t != num) 
-	cerr << "write error" << endl;
-      print_tag(f, tag);
+      sprintf(temp, "%f", res);
+      ss << temp;
+      print_tag(ss, tag);
       if(weight >= 0)
 	{
-	  num = sprintf(temp, " %f", weight);
-	  t = write(f, temp, num);
-	  if (t != num)
-	    cerr << "write error" << endl;
+	  sprintf(temp, " %f", weight);
+          ss << temp;
 	}
-      temp[0] = '\n';
-      t = write(f, temp, 1);     
-      if (t != 1) 
+      ss << '\n';
+      ssize_t len = ss.str().size();
+      ssize_t t = write(f, ss.str().c_str(), len);
+      if (t != len)
 	cerr << "write error" << endl;
     }
 }
@@ -149,20 +146,18 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
 {
   if (f >= 0)
     {
+      std::stringstream ss;
       char temp[30];
-      ssize_t t;
-      int num;
       for (size_t k = 0; k < all.lda; k++)
 	{
-	  num = sprintf(temp, "%f ", res[k]);
-	  t = write(f, temp, num);
-	  if (t != num)
-	    cerr << "write error" << endl;
+	  sprintf(temp, "%f ", res[k]);
+          ss << temp;
 	}
-      print_tag(f, tag);
-      temp[0] = '\n';
-      t = write(f, temp, 1);
-      if (t != 1)
+      print_tag(ss, tag);
+      ss << '\n';
+      ssize_t len = ss.str().size();
+      ssize_t t = write(f, ss.str().c_str(), len);
+      if (t != len)
 	cerr << "write error" << endl;
     }
 }
@@ -193,7 +188,7 @@ vw::vw()
   sd->contraction = 1.;
   sd->min_label = 0.;
   sd->max_label = 1.;
-  sd->t = 1.;
+  sd->t = 0.;
   sd->binary_label = false;
   sd->k = 0;
   
@@ -228,7 +223,7 @@ vw::vw()
   base_learner_nb_w = 1;
 
   power_t = 0.5;
-  eta = 10;
+  eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
   numpasses = 1;
   rel_threshold = 0.001f;
   rank = 0;
@@ -261,9 +256,15 @@ vw::vw()
   ngram = 0;
   skips = 0;
 
-  adaptive = false;
+  //by default use invariant normalized adaptive updates
+  adaptive = true;
+  normalized_updates = true;
+  invariant_updates = true;
+
+  normalized_sum_norm_x = 0.;
+  normalized_idx = 2;
+
   add_constant = true;
-  exact_adaptive_norm = false;
   audit = false;
   active = false;
   active_c0 = 8.;

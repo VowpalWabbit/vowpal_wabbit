@@ -1,9 +1,8 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef SCE
 #define SCE
 
@@ -23,6 +22,10 @@ namespace po = boost::program_options;
 void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes);
 
 bool examples_to_finish();
+
+//only call these from the library form:
+void initialize_parser_datastructures(vw& all);
+void release_parser_datastructures(vw& all);
 
 //parser control
 

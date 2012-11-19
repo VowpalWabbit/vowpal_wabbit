@@ -8,20 +8,20 @@ Reading from train-sets/wiki1K.dat
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
-10.276555  10.276555           3         3.0  unknown   0.0000       37
-10.341704  10.406853           6         6.0  unknown   0.0000       13
-10.311266  10.274741          11        11.0  unknown   0.0000       31
-10.452002  10.592738          22        22.0  unknown   0.0000        1
-10.439251  10.426501          44        44.0  unknown   0.0000      165
-10.459809  10.480844          87        87.0  unknown   0.0000       28
-10.093513  9.727218          174       174.0  unknown   0.0000       16
-9.566354   9.039195          348       348.0  unknown   0.0000        1
-9.066772   8.567190          696       696.0  unknown   0.0000      142
+10.276570  10.276570           3         3.0  unknown   0.0000       37
+10.341638  10.406706           6         6.0  unknown   0.0000       13
+10.311179  10.274628          11        11.0  unknown   0.0000       31
+10.451952  10.592726          22        22.0  unknown   0.0000        1
+10.439177  10.426401          44        44.0  unknown   0.0000      165
+10.754319  11.076790          87        87.0  unknown   0.0000       28
+10.224619  9.694919          174       174.0  unknown   0.0000       16
+9.585939   8.947258          348       348.0  unknown   0.0000        1
+8.971597   8.357256          696       696.0  unknown   0.0000      142
 
 finished run
 number of examples = 1000
 weighted example sum = 1000
 weighted label sum = 0
-average loss = 8.856
+average loss = 8.753
 best constant = 1
 total feature number = 86919

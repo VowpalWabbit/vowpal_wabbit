@@ -1,9 +1,8 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef LOSSFUNCTIONS_H_
 #define LOSSFUNCTIONS_H_
 
@@ -27,6 +26,7 @@ public :
 	 * The function return the update scalar
 	 */
 	virtual float getUpdate(float prediction, float label, float eta_t, float norm) = 0;
+	virtual float getUnsafeUpdate(float prediction, float label, float eta_t, float norm) = 0;
 	virtual float getRevertingWeight(shared_data*, float prediction, float eta_t) = 0;
 	virtual float getSquareGrad(float prediction, float label) = 0;
 	virtual float first_derivative(shared_data*, float prediction, float label) = 0;

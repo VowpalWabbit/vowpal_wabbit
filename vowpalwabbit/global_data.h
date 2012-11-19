@@ -1,9 +1,8 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef GLOBAL_DATA_H
 #define GLOBAL_DATA_H
 #include <vector>
@@ -92,7 +91,7 @@ struct version_struct {
   }
   std::string to_string() const
   {
-    char v_str[32];
+    char v_str[128];
     std::sprintf(v_str,"%d.%d.%d",major,minor,rev);
     std::string s = v_str;
     return s;
@@ -180,10 +179,14 @@ struct vw {
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
-  bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
+  bool normalized_updates; //Should every feature be normalized
+  bool invariant_updates; //Should we use importance aware/safe updates
   bool random_weights;
   bool add_constant;
   bool nonormalize;
+
+  float normalized_sum_norm_x;
+  size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   size_t lda;
   float lda_alpha;
@@ -194,7 +197,7 @@ struct vw {
   
   std::string span_server;
 
-  size_t length () { return 1 << num_bits; };
+  size_t length () { return ((size_t)1) << num_bits; };
 
   size_t rank;
 
