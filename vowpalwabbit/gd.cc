@@ -176,7 +176,7 @@ float inline_predict_trunc(vw& all, example* &ec)
                                                    *f1.begin,
                                                    ec->atomics[(int)(*i)[2]],
                                                    mask,
-                                                   all.sd->gravity);
+                                                   (float)all.sd->gravity);
         }
       }
   }
@@ -237,6 +237,20 @@ float inline_predict_rescale(vw& all, example* &ec)
 					      ec->atomics[(int)(*i)[1]],mask,all.adaptive,all.normalized_idx);
 	}
     }
+
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++) {
+        prediction += one_pf_cubic_predict_rescale(weights,*temp1.begin,*temp2.begin,
+                                                   ec->atomics[(int)(*i)[2]],mask,all.adaptive,all.normalized_idx);
+      }
+    }
+  }
+
   
   return prediction;
 }
@@ -260,6 +274,19 @@ float inline_predict_trunc_rescale(vw& all, example* &ec)
 					      ec->atomics[(int)(*i)[1]],mask,(float)all.sd->gravity,all.adaptive,all.normalized_idx);
 	}
     }
+
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++) {
+        prediction += one_pf_cubic_predict_trunc_rescale(weights,*temp1.begin,*temp2.begin,
+                                                         ec->atomics[(int)(*i)[2]],mask,(float)all.sd->gravity,all.adaptive,all.normalized_idx);
+      }
+    }
+  }
   
   return prediction;
 }
@@ -286,6 +313,19 @@ float inline_predict_rescale_general(vw& all, example* &ec)
 					      ec->atomics[(int)(*i)[1]],mask, all.normalized_idx, power_t_norm);
 	}
     }
+
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++) {
+        prediction += one_pf_cubic_predict_rescale_general(weights,*temp1.begin,*temp2.begin,
+                                                           ec->atomics[(int)(*i)[2]],mask,all.normalized_idx, power_t_norm);
+      }
+    }
+  }
   
   return prediction;
 }
@@ -359,7 +399,7 @@ void print_quad(vw& all, weight* weights, feature& page_feature, v_array<feature
     }
 }
 
- void print_audit_cubic(vw& all, weight* weights, audit_data& f0, audit_data& f1, v_array<audit_data> &cross_features, vector<string_value>& features)
+void print_audit_cubic(vw& all, weight* weights, audit_data& f0, audit_data& f1, v_array<audit_data> &cross_features, vector<string_value>& features)
 {
   size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
 
@@ -475,14 +515,6 @@ void print_audit_features(vw& all, example* ec)
 }
 
 
-void one_pf_cubic_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float update)
-{
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  update *= f0.x * f1.x;
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
-    weights[(halfhash + ele->weight_index) & mask] += update * ele->x;
-}
-
 float InvSqrt(float x){
   float xhalf = 0.5f * x;
   int i = *(int*)&x; // store floating-point bits in integer
@@ -521,28 +553,36 @@ void one_pf_quad_update(weight* weights, feature& page_feature, v_array<feature>
     w[0] += update * ele->x * t;
   }
 }
-void one_pf_cubic_adaptive_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float update, float g, example* ec)
+
+void one_pf_cubic_update(weight* weights, feature& f0, feature&f1, v_array<feature> &cross_features, size_t mask, float update, float g, example* ec, 
+                         bool is_adaptive, bool is_normalized, size_t idx_norm, float avg_norm)
 {
   size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
   update *= f0.x * f1.x;
-  float update2 = g * f0.x * f0.x * f1.x * f1.x;
 
   for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[1] += update2 * ele->x * ele->x;
+  {
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    float t = 1.f;
+    float inv_norm = 1.f;
+    if(is_normalized) inv_norm /= (w[idx_norm] * avg_norm);
+    if(is_adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      float t;
       __m128 eta = _mm_load_ss(&w[1]);
       eta = _mm_rsqrt_ss(eta);
       _mm_store_ss(&t, eta);
-      t *= ele->x;
+      t *= inv_norm;
 #else
-      float t = ele->x*InvSqrt(w[1]);
+      t = InvSqrt(w[1]) * inv_norm;
 #endif
-      w[0] += update * t;
     }
+    else {
+      t *= inv_norm * inv_norm; //if only using normalized updates but not adaptive, need to divide by feature norm squared
+    }
+    w[0] += update * ele->x * t;
+  }
 }
+
 
 void offset_quad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float update, size_t offset)
 {
@@ -622,7 +662,7 @@ void inline_train(vw& all, example* &ec, float update)
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
       for (; temp2.begin != temp2.end; temp2.begin++)
-        one_pf_cubic_adaptive_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, update, g, ec);
+        one_pf_cubic_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, update, g, ec, is_adaptive, is_normalized, idx_norm, avg_norm);
     } 
   }
 }
@@ -646,19 +686,23 @@ void quad_general_update(weight* weights, feature& page_feature, v_array<feature
   }
 }
 
-void cubic_general_adaptive_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float update, float g, example* ec, float power_t)
+void cubic_general_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float update, float g, example* ec, float power_t, 
+                         bool is_adaptive, bool is_normalized, size_t idx_norm, float avg_norm, float power_t_norm)
 {
   size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  update *= f0.x*f1.x;
-  float update2 = g * f0.x * f0.x * f1.x * f1.x;
-  
+  update *= f0.x * f1.x;
+
   for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[1] += update2 * ele->x * ele->x;
-      float t = ele->x*powf(w[1],-power_t);
-      w[0] += update * t;
+  {
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    float t=1.f;
+    if(is_adaptive) t = powf(w[1],-power_t);
+    if(is_normalized) {
+      float norm = w[idx_norm]*avg_norm;
+      t *= powf(norm*norm,-power_t_norm); 
     }
+    w[0] += update * ele->x * t;
+  }
 }
 
 void general_train(vw& all, example* &ec, float update, float power_t)
@@ -716,7 +760,7 @@ void general_train(vw& all, example* &ec, float update, float power_t)
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
       for (; temp2.begin != temp2.end; temp2.begin++)
-        cubic_general_adaptive_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, update, g, ec, power_t);
+        cubic_general_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, update, g, ec, power_t, is_adaptive, is_normalized, idx_norm, avg_norm, power_t_norm);
     } 
   }
 }
@@ -773,19 +817,35 @@ float general_norm_quad(weight* weights, feature& page_feature, v_array<feature>
   return norm*x2;
 }
 
-float xGx_general_cubic(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g, float power_t)
+float general_norm_cubic(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g, float power_t, 
+                         bool is_adaptive, bool is_normalized, size_t idx_norm, float power_t_norm, float& norm_x)
 {
   size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  float xGx = 0.;
-  float update2 = g * f0.x * f0.x * f1.x * f1.x;
+  float norm = 0.;
+  float x2 = f0.x * f0.x * f1.x * f1.x;
+  float update2 = g * x2;
+  float add_norm_x = 0.f;
   for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      float t = ele->x*powf(w[1] + update2 * ele->x * ele->x,- power_t);
-      xGx += t * ele->x;
+  {
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    float xtmp = ele->x;
+    float xtmp2 = xtmp * xtmp;
+    float t = 1.f;
+    if(is_adaptive) {
+      w[1] += update2 * xtmp2;
+      t = powf(w[1],- power_t);
     }
-  return xGx;
+    if(is_normalized) {
+      float range2 = w[idx_norm]*w[idx_norm];
+      t *= powf(range2,-power_t_norm);
+      add_norm_x += xtmp2 / range2;
+    }
+    norm += t * xtmp2;
+  }
+  norm_x += add_norm_x * x2;
+  return norm*x2;
 }
+
 
 float compute_general_norm(vw& all, example* &ec, float power_t)
 {//We must traverse the features in _precisely_ the same order as during training.
@@ -841,7 +901,7 @@ float compute_general_norm(vw& all, example* &ec, float power_t)
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
       for (; temp2.begin != temp2.end; temp2.begin++)
-        norm += xGx_general_cubic(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, g, power_t);
+        norm += general_norm_cubic(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, g, power_t, is_adaptive, is_normalized, idx_norm, power_t_norm, norm_x);
     } 
   }
 
@@ -869,6 +929,48 @@ float norm_quad(weight* weights, feature& page_feature, v_array<feature> &offer_
 
   float add_norm_x = 0.f;
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
+  {
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    float xtmp = ele->x;
+    float xtmp2 = xtmp * xtmp;
+    float t = 1.f;
+    float inv_norm = 1.f;
+    float inv_norm2 = 1.f;
+    if(is_normalized) {
+      inv_norm /= w[idx_norm];
+      inv_norm2 = inv_norm * inv_norm;
+      add_norm_x += xtmp2 * inv_norm2; 
+    }
+    if(is_adaptive) {
+      w[1] += update2*xtmp2;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+      __m128 eta = _mm_load_ss(&w[1]);
+      eta = _mm_rsqrt_ss(eta);
+      _mm_store_ss(&t, eta);
+      t *= inv_norm;
+#else
+      t = InvSqrt(w[1]) * inv_norm;
+#endif
+    }
+    else {
+      t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
+    }
+    
+    norm += xtmp2 * t;
+  }
+  norm_x += add_norm_x*x2;
+  return norm*x2;
+}
+
+float norm_cubic(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g, bool is_adaptive, bool is_normalized, size_t idx_norm, float& norm_x)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  float norm = 0.;
+  float x2 = f0.x * f0.x * f1.x * f1.x;
+  float update2 = g * x2;
+
+  float add_norm_x = 0.f;
+  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
   {
     weight* w=&weights[(halfhash + ele->weight_index) & mask];
     float xtmp = ele->x;
@@ -965,10 +1067,7 @@ float compute_norm(vw& all, example* &ec)
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
       for (; temp2.begin != temp2.end; temp2.begin++)
-        norm += xGx_cubic(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, g);
-      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-      for (; temp.begin != temp.end; temp.begin++)
-        norm += norm_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, is_adaptive, is_normalized, idx_norm, norm_x);
+        norm += norm_cubic(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, g, is_adaptive, is_normalized, idx_norm, norm_x);
     } 
   }
   
@@ -986,26 +1085,6 @@ float compute_norm(vw& all, example* &ec)
     else norm /= avg_sq_norm;
   }
   
-  /*
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    one_pf_quad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, update);
-	} 
-    }
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        one_pf_cubic_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, update);
-    } 
-  }
-  */
   return norm;
 }
 

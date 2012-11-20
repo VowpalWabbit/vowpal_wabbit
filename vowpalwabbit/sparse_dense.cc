@@ -315,3 +315,27 @@ float one_pf_cubic_predict_trunc(weight* weights, feature& f0, feature& f1, v_ar
   size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);  
   return f0.x * f1.x * sd_offset_add_trunc(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity);
 }
+
+float one_pf_cubic_predict_rescale(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, bool is_adaptive, size_t idx_norm)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);  
+  return f0.x * f1.x * sd_offset_add_rescale(weights, mask, cross_features.begin, cross_features.end, halfhash, f0.x * f1.x, is_adaptive, idx_norm);
+}
+
+float one_pf_cubic_predict_trunc_rescale(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float gravity, bool is_adaptive, size_t idx_norm)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);  
+  return f0.x * f1.x * sd_offset_add_trunc_rescale(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity, f0.x * f1.x, is_adaptive, idx_norm);
+}
+
+float one_pf_cubic_predict_rescale_general(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, size_t idx_norm, float power_t_norm)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);  
+  return f0.x * f1.x * sd_offset_add_rescale_general(weights, mask, cross_features.begin, cross_features.end, halfhash, f0.x * f1.x, idx_norm, power_t_norm);
+}
+
+float one_pf_cubic_predict_trunc_rescale_general(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float gravity, size_t idx_norm, float power_t_norm)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);  
+  return f0.x * f1.x * sd_offset_add_trunc_rescale_general(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity, f0.x * f1.x, idx_norm, power_t_norm);
+}

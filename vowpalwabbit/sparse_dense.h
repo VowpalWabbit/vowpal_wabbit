@@ -49,6 +49,8 @@ float single_quad_weight(weight* weights, feature& page_feature, feature* offer_
 void cubic(v_array<feature> &f, const v_array<feature> &first_part, const v_array<feature> &second_part, const v_array<feature> &third_part, size_t mask);
 float one_pf_cubic_predict(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask);
 float one_pf_cubic_predict_trunc(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float gravity);
-
-
+float one_pf_cubic_predict_rescale(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, bool is_adaptive, size_t idx_norm);
+float one_pf_cubic_predict_trunc_rescale(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float gravity, bool is_adaptive, size_t idx_norm);
+float one_pf_cubic_predict_rescale_general(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, size_t idx_norm, float power_t_norm);
+float one_pf_cubic_predict_trunc_rescale_general(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float gravity, size_t idx_norm);
 #endif
