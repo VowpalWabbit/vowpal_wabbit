@@ -67,7 +67,7 @@ namespace VW {
   }
 
   //after you create and fill feature_spaces, get an example with everything filled in.
-  example* import_example(vw& all, feature_space* ec_info, size_t len);
+  example* import_example(vw& all, feature_space* features, size_t len);
   void parse_example_label(vw&all, example&ec, string label);
 
   //notify VW that you are done with the example.
