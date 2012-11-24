@@ -1,3 +1,4 @@
+final_regressor = models/0021.model
 Num weight bits = 16
 learning rate = 10
 initial_t = 1
