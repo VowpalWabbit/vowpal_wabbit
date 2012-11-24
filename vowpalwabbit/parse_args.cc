@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "sender.h"
 #include "network.h"
 #include "global_data.h"
+#include "nn.h"
 #include "oaa.h"
 #include "ect.h"
 #include "csoaa.h"
@@ -97,6 +98,9 @@ vw parse_args(int argc, char *argv[])
     ("min_prediction", po::value<float>(&all.sd->min_label), "Smallest prediction to output")
     ("max_prediction", po::value<float>(&all.sd->max_label), "Largest prediction to output")
     ("mem", po::value<int>(&all.m), "memory in bfgs")
+    ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
+    ("dropout", "Train or test sigmoidal feedforward network using dropout.")
+    ("meanfield", "Train or test sigmoidal feedforward network using mean field.")
     ("noconstant", "Don't add a constant feature")
     ("noop","do no learning")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
@@ -591,7 +595,13 @@ vw parse_args(int argc, char *argv[])
   bool got_mc = false;
   bool got_cs = false;
   bool got_cb = false;
+  bool got_nn = false;
 
+  if(vm.count("nn") || vm_file.count("nn") ) {
+    NN::parse_flags(all, to_pass_further, vm, vm_file);
+    got_nn = true;
+  }
+  
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
 
@@ -676,8 +686,8 @@ vw parse_args(int argc, char *argv[])
     Searn::parse_flags(all, to_pass_further, vm, vm_file);
   }
 
-  if (got_cs && got_mc) {
-    cerr << "error: doesn't make sense to do both MC learning and CS learning" << endl;
+  if (got_nn && (got_cs || got_mc)) {
+    cerr << "error: NN learning doesn't compose with other reductions (yet)" << endl;
     exit(-1);
   }
 
