@@ -595,11 +595,9 @@ vw parse_args(int argc, char *argv[])
   bool got_mc = false;
   bool got_cs = false;
   bool got_cb = false;
-  bool got_nn = false;
 
   if(vm.count("nn") || vm_file.count("nn") ) {
     NN::parse_flags(all, to_pass_further, vm, vm_file);
-    got_nn = true;
   }
   
   if(vm.count("oaa") || vm_file.count("oaa") ) {
@@ -684,11 +682,6 @@ vw parse_args(int argc, char *argv[])
       got_cs = true;
     }
     Searn::parse_flags(all, to_pass_further, vm, vm_file);
-  }
-
-  if (got_nn && (got_cs || got_mc)) {
-    cerr << "error: NN learning doesn't compose with other reductions (yet)" << endl;
-    exit(-1);
   }
 
   if (got_cb && got_mc) {
