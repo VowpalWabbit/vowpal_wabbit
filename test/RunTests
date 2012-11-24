@@ -343,7 +343,7 @@ sub check_for_time_regression() {
                     " try removing it\n"
         }
         $overall_time0 = $cuser0 + $csystem0;
-        $pct_change = 100 * ($overall_time1 - $overall_time0) / $overall_time0;
+        $pct_change = 100 * ($overall_time1 - $overall_time0) / (1e-4+$overall_time0);
 
         if ($overall_time0 == 0) {
             die "$0: Bad times in saved times file: $LastTimeFile," .
@@ -580,3 +580,14 @@ __DATA__
 {VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
+
+# Test 21: neural network 3-parity with 2 hidden units
+{VW} -k -c -d train-sets/3parity --hash all --passes 2000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model
+    train-sets/ref/3parity.stdout
+    train-sets/ref/3parity.stderr
+
+# Test 22: neural network 3-parity with 2 hidden units (predict)
+{VW} -d train-sets/3parity --hash all -t -i models/0021.model -p 0022.predict.tmp
+    pred-sets/ref/0022.stdout
+    pred-sets/ref/0022.stderr
+    pred-sets/ref/0022.predict
