@@ -266,6 +266,24 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
+    po::options_description desc("NN options");
+    desc.add_options()
+      ("dropout", "Train or test sigmoidal feedforward network using dropout.")
+      ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
+
+    po::parsed_options parsed = po::command_line_parser(opts).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+
+    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
+
     //first parse for number of hidden units
     k = 0;
     if( vm_file.count("nn") ) {
@@ -283,7 +301,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     }
 
     if( vm_file.count("dropout") ) {
-      dropout = true;
+      dropout = all.training || vm.count("dropout");
+
+      if (! dropout && ! vm.count("meanfield") && ! all.quiet) 
+        std::cerr << "using mean field for testing, specify --dropout explicitly to override" << std::endl;
     }
     else if ( vm.count("dropout") ) {
       dropout = true;
