@@ -792,7 +792,25 @@ namespace VW{
     return ret;
   }
 
-  example* import_example(vw& all, feature_space* features, size_t len)
+  example* import_example(vw& all, vector<feature_space> vf)
+  {
+    example* ret = get_unused_example(all);
+    all.p->lp->default_label(ret->ld);
+    for (size_t i = 0; i < vf.size();i++)
+      {
+	size_t index = vf[i].first;
+	push(ret->indices, index);
+	for (size_t j = 0; j < vf[i].second.size(); j++)
+	  {	    
+	    ret->sum_feat_sq[index] += vf[i].second[j].x * vf[i].second[j].x;
+	    push(ret->atomics[index], vf[i].second[j]);
+	  }
+      }
+    setup_example(all, ret);
+    return ret;
+  }
+
+  example* import_example(vw& all, primitive_feature_space* features, size_t len)
   {
     example* ret = get_unused_example(all);
     all.p->lp->default_label(ret->ld);
