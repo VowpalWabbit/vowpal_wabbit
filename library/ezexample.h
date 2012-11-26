@@ -12,15 +12,10 @@ struct vw_namespace {
 public: vw_namespace(const char c) : namespace_letter(c) {}
 };
 
-struct feature_space {
-  unsigned char name;
-  vector<feature> fs;
-};
-
 class ezexample {
 private:
   vw*vw_ref;
-  vector<feature_space> *dat;
+  vector<VW::feature_space> *dat;
   vector<fid> past_seeds;
   fid current_seed;
   vector<feature>*current_ns;
@@ -33,7 +28,7 @@ private:
 public:
 
   ezexample(vw*this_vw, bool pe=false) { 
-    dat = new vector<feature_space>();
+    dat = new vector<VW::feature_space>();
     vw_ref = this_vw;
     current_seed = 0;
     current_ns = NULL;
@@ -49,9 +44,8 @@ public:
 
   void addns(char c) {
     str[0] = c;
-    feature_space t = {c, vector<feature>()};
-    dat->push_back( t );
-    current_ns = &( dat->at(dat->size()-1).fs );
+    dat->push_back( VW::feature_space(c, vector<feature>()) );
+    current_ns = &( dat->at(dat->size()-1).second );
     past_seeds.push_back(current_seed);
     current_seed = VW::hash_space(*vw_ref, str);
   }
@@ -64,7 +58,7 @@ public:
       current_seed = past_seeds.back();
       past_seeds.pop_back();
       dat->pop_back();
-      current_ns = &(dat->back().fs);
+      current_ns = &(dat->back().second);
     }
   }
 
@@ -95,25 +89,7 @@ public:
 
   float predict() {
     static example* empty_example = VW::read_example(*vw_ref, (char*)"| ");
-    
-    size_t len = dat->size();
-    VW::feature_space* features = (VW::feature_space*)calloc(len, sizeof(VW::feature_space));
-    for (size_t i = 0; i < len; i++)
-      {
-	features[i].name = (*dat)[i].name;
-	features[i].len = (*dat)[i].fs.size();
-        features[i].fs = (feature*)calloc(features[i].len, sizeof(feature));
-	for (size_t j = 0; j< features[i].len; j++)
-	  features[i].fs[j] = (*dat)[i].fs[j];
-      }
-
-    example *ec = VW::import_example(*vw_ref, features, len);
-
-    for (size_t i = 0; i < len; i++)
-      {
-	free(features[i].fs);
-      }
-    free(features);
+    example *ec = VW::import_example(*vw_ref, *dat);
 
     if (mylabel.length() > 0)
       VW::parse_example_label(*vw_ref, *ec, mylabel);
@@ -141,9 +117,9 @@ public:
   void print() {
     cerr << "ezexample dat->size=" << dat->size() << ", current_seed=" << current_seed << endl;
     for (size_t i=0; i<dat->size(); i++) {
-      cerr << "  namespace(" << dat->at(i).name << "):" << endl;
-      for (size_t j=0; j<dat->at(i).fs.size(); j++) {
-        cerr << "    " << dat->at(i).fs[j].weight_index << "\t: " << dat->at(i).fs[j].x << endl;
+      cerr << "  namespace(" << dat->at(i).first << "):" << endl;
+      for (size_t j=0; j<dat->at(i).second.size(); j++) {
+        cerr << "    " << dat->at(i).second[j].weight_index << "\t: " << dat->at(i).second[j].x << endl;
       }
     }
   }
