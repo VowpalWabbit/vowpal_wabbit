@@ -214,10 +214,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         all->sd->min_label = save_min_label;
         all->sd->max_label = save_max_label;
       }
-      else {
+      else 
         update_example_indicies(all->audit, ec, -total_increment);
-      }
     }
+    else 
+      update_example_indicies(all->audit, ec, -total_increment);
 
     ec->partial_prediction = output_layer.partial_prediction;
     ec->final_prediction = output_layer.final_prediction;
