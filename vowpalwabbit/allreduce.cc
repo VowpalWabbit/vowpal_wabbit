@@ -13,9 +13,11 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <ctime>
 #ifdef _WIN32
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef int socklen_t;
+typedef SOCKET socket_t;
 #define SHUT_RDWR SD_BOTH
 #else
 #include <sys/socket.h>
@@ -23,6 +25,7 @@ typedef int socklen_t;
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
+typedef int socket_t;
 #endif
 #include <errno.h>
 #ifndef _WIN32
@@ -43,8 +46,8 @@ typedef int socklen_t;
 using namespace std;
 
 struct node_socks {
-  int parent;
-  int children[2];
+  socket_t parent;
+  socket_t children[2];
   ~node_socks();
 };
 
@@ -54,28 +57,10 @@ string current_master="";
 
 node_socks socks;
 
-float add(float* arr, int n) {
-  float sum = 0.0;
-  for(int i = 0;i < n;i++)
-    sum += arr[i];
-  return sum;
-}
+// port is already in network order
+socket_t sock_connect(const uint32_t ip, const int port) {
 
-void printfloat(float* arr, int n) {
-  for(int i = 0;i < n;i++)
-    cout<<arr[i]<<" ";
-  cout<<endl;
-}
-
-void printchar(char* arr, int n) {
-  for(int i = 0;i < n;i++)
-    cout<<arr[i]<<" ";
-  cout<<endl;
-}
-
-int sock_connect(uint32_t ip, int port) {
-
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
+  socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
     {
       cerr << "can't get socket " << endl;
@@ -87,38 +72,55 @@ int sock_connect(uint32_t ip, int port) {
 
   far_end.sin_addr = *(in_addr*)&ip;
   memset(&far_end.sin_zero, '\0',8);
+
+  {
+    char hostname[NI_MAXHOST];
+    char servInfo[NI_MAXSERV];
+    getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV);
+
+    cerr << "connecting to " << hostname << ':' << ntohs(port) << endl;
+  }
+
   if (connect(sock,(sockaddr*)&far_end, sizeof(far_end)) == -1)
+  {
+#ifdef _WIN32
+    int err_code = WSAGetLastError();
+    cerr << "Windows Sockets error code: " << err_code << endl;
+#endif
+    cerr << "can't connect to: " ;
+    uint32_t pip = ntohl(ip);
+    unsigned char * pp = (unsigned char*)&pip;
+
+    for (size_t i = 0; i < 4; i++)
     {
-      cerr << "can't connect to: " ;
-      uint32_t pip = ntohl(ip);
-      char* pp = (char*)&pip;
-	
-      for (size_t i = 0; i < 4; i++)
-	{
-	  cerr << (int)pp[i] << ".";
-	}
-      cout << ':' << htons(port) << endl;
-      perror(NULL);
-      exit(1);
+      cerr << static_cast<unsigned int>(static_cast<unsigned short>(pp[3-i])) << ".";
     }
+    cerr << ':' << ntohs(port) << endl;
+    perror(NULL);
+    exit(1);
+  }
   return sock;
 }
 
-int getsock()
+socket_t getsock()
 {
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
+  socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
       cerr << "can't open socket!" << endl;
       exit(1);
-    }
-    
+  }
+
+  // SO_REUSEADDR will allow port rebinding on Windows, causing multiple instances
+  // of VW on the same machine to potentially contact the wrong tree node.
+#ifndef _WIN32
     int on = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
       perror("setsockopt SO_REUSEADDR");
-    return sock;
+#endif
+  return sock;
 }
 
-void all_reduce_init(string master_location, size_t unique_id, size_t total, size_t node)
+void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node)
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -126,7 +128,7 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
   int lastError = WSAGetLastError();
 #endif
 
-   struct hostent* master = gethostbyname(master_location.c_str());
+  struct hostent* master = gethostbyname(master_location.c_str());
 
   if (master == NULL) {
     cerr << "can't resolve hostname: " << master_location << endl;
@@ -136,13 +138,8 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
 
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
   int port = 26543;
-    
-#ifdef _WIN32
-  SOCKET master_sock;
-#else
-  int master_sock;
-#endif
-  master_sock = sock_connect(master_ip, htons(port));
+
+  socket_t master_sock = sock_connect(master_ip, htons(port));
   if(send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
     cerr << "write failed!" << endl; 
   if(send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
@@ -164,7 +161,7 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
   if(recv(master_sock, (char*)&kid_count, sizeof(kid_count), 0) < (int)sizeof(kid_count))
     cerr << "read 2 failed!" << endl;
 
-  int sock = -1;
+  socket_t sock = -1;
   short unsigned int netport = htons(26544);
   if(kid_count > 0) {
     sock = getsock();
@@ -175,67 +172,75 @@ void all_reduce_init(string master_location, size_t unique_id, size_t total, siz
 
     bool listening = false;
     while(!listening)
+    {
+      if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
       {
-		  if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
-	  if (errno == EADDRINUSE)
-	    {
-	      netport = htons(ntohs(netport)+1);
-	      address.sin_port = netport;
-	    }
-	  else
-	    {
-	      perror("Bind failed ");
-	      exit(1);
-	    }
-	else
-	  if (listen(sock, kid_count) < 0)
-	    {
-	      perror("listen failed! ");
-	      shutdown(sock, SHUT_RDWR);
-	      sock = getsock();
-	    }
-	  else
-	    {
-	      listening = true;
-	    }
+#ifdef _WIN32
+        if (WSAGetLastError() == WSAEADDRINUSE)
+#else
+        if (errno == EADDRINUSE)
+#endif
+        {
+          netport = htons(ntohs(netport)+1);
+          address.sin_port = netport;
+        }
+        else
+        {
+          perror("Bind failed ");
+          exit(1);
+        }
       }
+      else
+      {
+        if (listen(sock, kid_count) < 0)
+        {
+          perror("listen failed! ");
+          shutdown(sock, SHUT_RDWR);
+          sock = getsock();
+        }
+        else
+        {
+          listening = true;
+        }
+      }
+    }
   }
-  
-		  if(send(master_sock, (const char*)&netport, sizeof(netport), 0) < (int)sizeof(netport))
+
+  if(send(master_sock, (const char*)&netport, sizeof(netport), 0) < (int)sizeof(netport))
     cerr << "write failed!" << endl;
-  
+
   if(recv(master_sock, (char*)&parent_ip, sizeof(parent_ip), 0) < (int)sizeof(parent_ip))
     cerr << "read 3 failed!" << endl;
   if(recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
     cerr << "read 4 failed!" << endl;
-  
+
   shutdown(master_sock, SHUT_RDWR);
-    
+
   //int parent_sock;
   if(parent_ip != (uint32_t)-1) 
     socks.parent = sock_connect(parent_ip, parent_port);
   else
     socks.parent = -1;
-    
+
   socks.children[0] = -1; socks.children[1] = -1;
   for (int i = 0; i < kid_count; i++)
+  {
+    sockaddr_in child_address;
+    socklen_t size = sizeof(child_address);
+    socket_t f = accept(sock,(sockaddr*)&child_address,&size);
+    if (f < 0)
     {
-      sockaddr_in child_address;
-      socklen_t size = sizeof(child_address);
-      int f = accept(sock,(sockaddr*)&child_address,&size);
-      if (f < 0)
-	{
-	  cerr << "bad client socket!" << endl;
-	  exit (1);
-	}
-      socks.children[i] = f;
+      cerr << "bad client socket!" << endl;
+      exit (1);
     }
+    socks.children[i] = f;
+  }
 
   if (kid_count > 0)
     shutdown(sock, SHUT_RDWR);
 }
 
-void addbufs(float* buf1, float* buf2, int n) {
+void addbufs(float* buf1, const float* buf2, const int n) {
   for(int i = 0;i < n;i++) 
 //     {
 //       uint32_t first = *((uint32_t*)(buf1+i));
@@ -247,9 +252,7 @@ void addbufs(float* buf1, float* buf2, int n) {
 }
 
 
-void pass_up(char* buffer, int left_read_pos, int right_read_pos, int& parent_sent_pos, int parent_sock, int n) {
-  
-  //cerr<<left_read_pos<<" "<<right_read_pos<<" "<<parent_sent_pos<<" "<<n<<endl;
+void pass_up(char* buffer, int left_read_pos, int right_read_pos, int& parent_sent_pos, socket_t parent_sock, int n) {
   int my_bufsize = min(buf_size, ((int)(floor(left_read_pos/((float)sizeof(float)))*sizeof(float)) - parent_sent_pos));
   my_bufsize = min(my_bufsize, ((int)(floor(right_read_pos/((float)sizeof(float)))*sizeof(float)) - parent_sent_pos));
 
@@ -264,10 +267,9 @@ void pass_up(char* buffer, int left_read_pos, int right_read_pos, int& parent_se
 
 }
 
-void pass_down(char* buffer, int parent_read_pos, int&children_sent_pos, int* child_sockets, int n) {
+void pass_down(char* buffer, const int parent_read_pos, int&children_sent_pos, const socket_t * child_sockets, const int n) {
 
   int my_bufsize = min(buf_size, (parent_read_pos - children_sent_pos));
-
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the children
@@ -275,14 +277,13 @@ void pass_down(char* buffer, int parent_read_pos, int&children_sent_pos, int* ch
       cerr<<"Write to left child failed\n";
     if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, my_bufsize, 0) < my_bufsize) 
       cerr<<"Write to right child failed\n";
-    
+
     children_sent_pos += my_bufsize;
   }
-
 }
 
 
-void reduce(char* buffer, int n, int parent_sock, int* child_sockets) {
+void reduce(char* buffer, const int n, const socket_t parent_sock, const socket_t* child_sockets) {
 
   fd_set fds;
   FD_ZERO(&fds);
@@ -291,7 +292,7 @@ void reduce(char* buffer, int n, int parent_sock, int* child_sockets) {
   if(child_sockets[1] != -1)
     FD_SET(child_sockets[1],&fds);
 
-  int max_fd = max(child_sockets[0],child_sockets[1])+1;
+  socket_t max_fd = max(child_sockets[0],child_sockets[1])+1;
   int child_read_pos[2] = {0,0}; //First unread float from left and right children
   int child_unprocessed[2] = {0,0}; //The number of bytes sent by the child but not yet added to the buffer
   char child_read_buf[2][buf_size+sizeof(float)-1];
@@ -381,8 +382,8 @@ void reduce(char* buffer, int n, int parent_sock, int* child_sockets) {
   
 }
 
-void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
 
+void broadcast(char* buffer, const int n, const socket_t parent_sock, const socket_t * child_sockets) {
  
    int parent_read_pos = 0; //First unread float from parent
    int children_sent_pos = 0; //First unsent float to children
@@ -417,7 +418,7 @@ void broadcast(char* buffer, int n, int parent_sock, int* child_sockets) {
     }
 }
 
-void all_reduce(float* buffer, int n, string master_location, size_t unique_id, size_t total, size_t node) 
+void all_reduce(float* buffer, const int n, const string master_location, const size_t unique_id, const size_t total, const size_t node) 
 {
   if(master_location != current_master) 
     all_reduce_init(master_location, unique_id, total, node);
@@ -427,7 +428,7 @@ void all_reduce(float* buffer, int n, string master_location, size_t unique_id, 
 
 node_socks::~node_socks()
 {
- if(current_master != "") {
+  if(current_master != "") {
     if(this->parent != -1)
       shutdown(this->parent, SHUT_RDWR);
     if(this->children[0] != -1) 
@@ -436,4 +437,3 @@ node_socks::~node_socks()
       shutdown(this->children[1], SHUT_RDWR);  
   }
 }
-
