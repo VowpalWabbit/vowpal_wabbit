@@ -35,6 +35,20 @@ extern "C"
 		catch (...)
 		{}
 	}
+
+	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE * features, size_t len)
+	{
+		try
+		{
+			vw * pointer = static_cast<vw*>(handle);
+			VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
+			return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, f, len));
+		}
+		catch (...)
+		{
+			return INVALID_VW_EXAMPLE;
+		}
+	}
 	
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char * line)
 	{
@@ -57,6 +71,34 @@ extern "C"
 		{
 			vw * pointer = static_cast<vw*>(handle);
 			VW::finish_example(*pointer, static_cast<example*>(e));
+		}
+		catch (...)
+		{
+			// BUGBUG: should report error here....
+		}
+	}
+
+	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_HashSpace(VW_HANDLE handle, const char * s)
+	{
+		try
+		{
+			vw * pointer = static_cast<vw*>(handle);
+			string str(s);
+			return VW::hash_space(*pointer, str);
+		}
+		catch (...)
+		{
+			// BUGBUG: should report error here....
+		}
+	}
+
+	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char * s, unsigned long u)
+	{
+		try
+		{
+			vw * pointer = static_cast<vw*>(handle);
+			string str(s);
+			return VW::hash_feature(*pointer, str, u);
 		}
 		catch (...)
 		{

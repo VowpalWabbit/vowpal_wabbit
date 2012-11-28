@@ -810,6 +810,24 @@ namespace VW{
     return ret;
   }
 
+  example* import_example(vw& all, primitive_feature_space* features, size_t len)
+  {
+    example* ret = get_unused_example(all);
+    all.p->lp->default_label(ret->ld);
+    for (size_t i = 0; i < len;i++)
+      {
+	size_t index = features[i].name;
+	push(ret->indices, index);
+	for (size_t j = 0; j < features[i].len; j++)
+	  {	    
+	    ret->sum_feat_sq[index] += features[i].fs[j].x * features[i].fs[j].x;
+	    push(ret->atomics[index], features[i].fs[j]);
+	  }
+      }
+    setup_example(all, ret);
+    return ret;
+  }
+
   void parse_example_label(vw& all, example&ec, string label) {
     v_array<substring> words;
     char* cstr = (char*)label.c_str();

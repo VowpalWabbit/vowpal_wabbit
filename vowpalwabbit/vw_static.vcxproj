@@ -250,6 +250,7 @@
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="loss_functions.h" />
     <ClInclude Include="network.h" />
+    <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
     <ClInclude Include="oaa.h" />
     <ClInclude Include="parser.h" />
@@ -288,6 +289,7 @@
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="loss_functions.cc" />
     <ClCompile Include="network.cc" />
+    <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="parser.cc" />
