@@ -34,7 +34,7 @@ namespace NN {
   #ifdef _WIN32
     inline double erand48(unsigned short us[]) { return rand() / (double)RAND_MAX; }
     inline double drand48() { return rand() / (double)RAND_MAX; }
-    inline unsigned short * seed48(unsigned short seed[]) { return (unsigned short *)rand(); }
+    inline unsigned short * seed48(unsigned short seed[]) { srand((int)seed); unsigned short empty[3]; return empty; }
   #endif
 
   static void
