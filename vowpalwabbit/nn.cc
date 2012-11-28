@@ -31,6 +31,12 @@ namespace NN {
   unsigned short save_xsubi[3];
   size_t nn_current_pass = 0;
 
+  #ifdef _WIN32
+    inline double erand48(unsigned short us[]) { return rand() / (double)RAND_MAX; }
+    inline double drand48() { return rand() / (double)RAND_MAX; }
+    inline unsigned short * seed48(unsigned short seed[]) { return (unsigned short *)rand(); }
+  #endif
+
   static void
   free_squared_loss (void)
   {
@@ -363,7 +369,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
       // output weights
 
-      float sqrtk = sqrt (k);
+      float sqrtk = sqrt ((double)k);
       for (unsigned int i = 0; i <= k; ++i)
         {
           weight* w = &all.reg.weight_vectors[output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
