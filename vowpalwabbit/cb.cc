@@ -13,8 +13,6 @@ license as described in the file LICENSE.
 #include "parse_example.h"
 #include "parse_primitives.h"
 
-size_t hashstring (substring s, uint32_t h);
-
 namespace CB
 {
   size_t increment = 0;
@@ -229,6 +227,7 @@ namespace CB
       for( size_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
         wc.x = 0.;
         wc.weight_index = i;
         wc.partial_prediction = 0.;
@@ -253,6 +252,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
         wc.x = 0.;
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
@@ -328,6 +328,7 @@ namespace CB
       for( size_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
 
         ec->partial_prediction = 0.;
         desired_increment = increment * (2*i-1);
@@ -356,6 +357,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
 
         ec->partial_prediction = 0.;
         desired_increment = increment * (2*cl->weight_index-1);
@@ -400,6 +402,7 @@ namespace CB
       for( size_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
       
         //get cost prediction for this action
         wc.x = get_cost_pred(a,ec,i);
@@ -422,6 +425,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
       
         //get cost prediction for this action
         wc.x = get_cost_pred(a,ec,cl->weight_index);
@@ -456,6 +460,7 @@ namespace CB
       for( size_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
 
         //get cost prediction for this label
         wc.x = get_cost_pred(a,ec,i);
@@ -480,6 +485,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
 
         //get cost prediction for this label
         wc.x = get_cost_pred(a,ec,cl->weight_index);
@@ -512,6 +518,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++)
       {
         CSOAA::wclass wc;
+        wc.wap_value = 0.; wc.importance = 1.;
 
         wc.x = cl->x;
         wc.weight_index = cl->weight_index;
@@ -619,7 +626,7 @@ namespace CB
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                *(OAA::prediction_t*)&ec->final_prediction,
+                (long unsigned int)*(OAA::prediction_t*)&ec->final_prediction,
                 (long unsigned int)ec->num_features,
                 avg_loss_regressors,
                 last_pred_reg,
