@@ -104,7 +104,7 @@ am_libvw_la_OBJECTS = hash.lo global_data.lo io.lo parse_regressor.lo \
 	searn_sequencetask.lo sequence.lo parse_example.lo \
 	sparse_dense.lo network.lo parse_args.lo accumulate.lo gd.lo \
 	lda_core.lo gd_mf.lo bfgs.lo noop.lo example.lo parser.lo \
-	vw.lo loss_functions.lo sender.lo
+	vw.lo loss_functions.lo sender.lo nn.lo
 libvw_la_OBJECTS = $(am_libvw_la_OBJECTS)
 PROGRAMS = $(bin_PROGRAMS)
 am_active_interactor_OBJECTS = active_interactor.$(OBJEXT)
@@ -266,7 +266,7 @@ top_srcdir = ..
 lib_LTLIBRARIES = liballreduce.la libvw.la
 liballreduce_la_SOURCES = allreduce.cc
 include_HEADERS = allreduce.h
-libvw_la_SOURCES = hash.cc global_data.cc io.cc parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc simple_label.cc oaa.cc ect.cc csoaa.cc cb.cc wap.cc beam.cc searn.cc searn_sequencetask.cc sequence.cc parse_example.cc sparse_dense.cc network.cc parse_args.cc accumulate.cc gd.cc lda_core.cc gd_mf.cc bfgs.cc noop.cc example.cc parser.cc vw.cc loss_functions.cc sender.cc
+libvw_la_SOURCES = hash.cc global_data.cc io.cc parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc simple_label.cc oaa.cc ect.cc csoaa.cc cb.cc wap.cc beam.cc searn.cc searn_sequencetask.cc sequence.cc parse_example.cc sparse_dense.cc network.cc parse_args.cc accumulate.cc gd.cc lda_core.cc gd_mf.cc bfgs.cc noop.cc example.cc parser.cc vw.cc loss_functions.cc sender.cc nn.cc 
 vw_SOURCES = vw.cc
 vw_CXXFLAGS = $(AM_CXXFLAGS)
 vw_LDADD = libvw.la liballreduce.la
@@ -441,6 +441,7 @@ include ./$(DEPDIR)/io.Plo
 include ./$(DEPDIR)/lda_core.Plo
 include ./$(DEPDIR)/loss_functions.Plo
 include ./$(DEPDIR)/network.Plo
+include ./$(DEPDIR)/nn.Plo
 include ./$(DEPDIR)/noop.Plo
 include ./$(DEPDIR)/oaa.Plo
 include ./$(DEPDIR)/parse_args.Plo
