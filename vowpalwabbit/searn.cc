@@ -475,7 +475,7 @@ namespace Searn
     global_example_set = (example**)SearnUtil::calloc_or_die(max_action, sizeof(example*));
 
     for (size_t k=1; k<=max_action; k++) {
-      CSOAA::wclass cost = { FLT_MAX, k, 0. };
+      CSOAA::wclass cost = { FLT_MAX, k, 1., 0. };
       push(testall_labels.costs, cost);
       CB::cb_class cost_cb = { FLT_MAX, k, 0. };
       push(testall_labels_cb.costs, cost_cb);
@@ -787,7 +787,7 @@ namespace Searn
     VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies", ss2.str());
 
     all.base_learner_nb_w *= total_number_of_policies;
-    increment = (all.length() / all.base_learner_nb_w ) * all.stride;
+    increment = (all.length() / all.base_learner_nb_w / 2) * all.stride;
 
     all.driver = drive;
     base_learner = all.learn;
@@ -818,7 +818,7 @@ namespace Searn
           bool all_allowed = true;
           for (size_t k=1; k<=max_action; k++)
             if (task.allowed(s0, k)) {
-              CSOAA::wclass cost = { FLT_MAX, k, 0. };
+              CSOAA::wclass cost = { FLT_MAX, k, 1., 0. };
               push(allowed_labels.costs, cost);
             } else
               all_allowed = false;
@@ -1009,7 +1009,7 @@ namespace Searn
         exit(-1);
       }
 
-      CSOAA::wclass temp = { l, k, 0. };
+      CSOAA::wclass temp = { l, k, 1., 0. };
       push(loss_vector, temp);
       if ((k == 1) || (l < min_loss)) { min_loss = l; }
 

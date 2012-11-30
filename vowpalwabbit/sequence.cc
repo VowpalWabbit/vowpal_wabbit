@@ -56,7 +56,7 @@ namespace Sequence {
 
   struct history_item {
     history  predictions;
-    size_t predictions_hash;
+    size_t   predictions_hash;
     float    loss;
     size_t   original_label;
     bool     same;
@@ -186,7 +186,7 @@ namespace Sequence {
         if ((i <= (int)sequence_k) && (j < (int)sequence_k)) {
           valid_transition[i][j] = (rd > 0);
           if (valid_transition[i][j]) {
-            CSOAA::wclass feat = { FLT_MAX, j+1, 0. };
+            CSOAA::wclass feat = { FLT_MAX, j+1, 1., 0., 0. };
             push(this_costs, feat);
           }
         }
@@ -228,7 +228,7 @@ namespace Sequence {
 
     for (size_t i = 1; i <= all.sd->k; i++)
       {
-        CSOAA::wclass cost = {FLT_MAX, i, 0.};
+        CSOAA::wclass cost = {FLT_MAX, i, 1., 0., 0.};
         push(testall_costs.costs, cost);
       }
   }
@@ -640,6 +640,8 @@ namespace Sequence {
     SearnUtil::add_history_to_example(all, &hinfo, ec, h);
     SearnUtil::add_policy_offset(all, ec, increment, current_policy);
 
+    //cerr<< "add_policy_offset: " << increment << " * " << current_policy << endl;
+
     if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all,ec);}
     ec->ld = (void*)&ld;
     total_examples_generated++;
@@ -846,7 +848,7 @@ namespace Sequence {
         policy_seq[t] = -1;
     }
     if (PRINT_DEBUG_INFO) {
-      clog << "train policies:";
+      clog << "train policies (curp=" << current_policy<<", allow_current="<<sequence_allow_current_policy<<":";
       for (size_t t=0; t<ec_seq.index(); t++) clog << " " << policy_seq[t];
       clog << endl;
     }
@@ -889,6 +891,7 @@ namespace Sequence {
         // NOTE: have to keep all_histories and hcache[i].predictions
         // seperate to avoid copy by value versus copy by pointer issues
         hcache[i].predictions = all_histories[i];
+        assert(last_prediction(hcache[i].predictions) <= sequence_k);
         hcache[i].predictions_hash = current_history_hash;
         hcache[i].loss = true_labels[t]->weight * (float)((i+1) != true_labels[t]->label);
         hcache[i].same = 0;
@@ -929,7 +932,7 @@ namespace Sequence {
           prediction_matches_history = 0;
           if (OPTIMIZE_SHARED_HISTORIES && hcache[i].same) {
             // copy from the previous cache
-            if (last_new < 0) {
+            if (last_new == (size_t)-1) {
               cerr << "internal error (bug): sequence histories match, but no new items; skipping" << endl;
               goto NOT_REALLY_NEW;
             }
@@ -944,6 +947,7 @@ namespace Sequence {
             // compute new
             last_new = i;
 
+            //cerr<<"t2="<<t2<<" t="<<t<<" last_prediction="<<last_prediction(hcache[i].predictions)<<" pred_seq="<<pred_seq[t]<<" pol="<<policy_seq[t2]<<endl;
             prediction_matches_history = (t2 == t+1) && (last_prediction(hcache[i].predictions) == pred_seq[t]);
 
             /*
@@ -955,6 +959,7 @@ namespace Sequence {
 
             size_t yhat = predict(all, ec_seq[t2], hcache[i].predictions, policy_seq[t2], true_labels[t2]->label);
             append_history_item(hcache[i], yhat);
+            //cerr<<"i="<<i<<" yhat=" << yhat<<endl;
             hcache[i].loss += gamma * true_labels[t2]->weight * (float)(yhat != true_labels[t2]->label);
           }
           hcache[i].same = 0;
@@ -970,7 +975,8 @@ namespace Sequence {
       }
 
       if (entered_rollout && ((pred_seq[t+1] <= 0) || (pred_seq[t+1] > sequence_k))) {
-        cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
+        //cerr<<"last_prediction=" << pred_seq[t+1]<<endl;
+        //cerr << "internal error (bug): did not find actual predicted path at " << t << "; defaulting to 1" << endl;
         pred_seq[t] = 1;
       }
 
@@ -985,7 +991,7 @@ namespace Sequence {
         if (hcache[i].alive) {
           size_t lab  = hcache[i].original_label;
           float cost = hcache[i].loss - min_loss;
-          CSOAA::wclass temp  = { cost, lab+1, 0. };
+          CSOAA::wclass temp  = { cost, lab+1, 1., 0., 0. };
           push(loss_vector, temp);
         }
       }
@@ -1103,7 +1109,7 @@ namespace Sequence {
           if (hcache[id].alive) {
             size_t lab  = hcache[id].original_label % sequence_k;
             float cost = hcache[id].loss - min_loss;
-            CSOAA::wclass temp  = { cost, lab+1, 0. };
+            CSOAA::wclass temp  = { cost, lab+1, 1., 0., 0. };
             push(loss_vector, temp);
           }
         }
@@ -1356,6 +1362,7 @@ namespace Sequence {
         cerr << "warning: you specified a different value for --sequence_beam than the one stored in loaded predictor. Pursuing with loaded value of: " << sequence_beam << endl;
 
     }
+
     else {
       sequence_k = vm["sequence"].as<size_t>();
 
@@ -1369,8 +1376,17 @@ namespace Sequence {
 	all.options_from_file.append(" --sequence_bigram_features");
       }
       
-      if (vm.count("sequence_history")){
+      if (vm.count("sequence_history"))
         hinfo.length = vm["sequence_history"].as<size_t>();
+      else 
+        hinfo.length = 1;
+
+      if (hinfo.length == 0) {
+        cerr << "warning: cannot have --sequence_history < 1: resetting to 1";
+        hinfo.length = 1;
+      }
+
+      {
         stringstream ss;
         ss << " --sequence_history " << hinfo.length;
         all.options_from_file.append(ss.str());
@@ -1478,7 +1494,8 @@ namespace Sequence {
     VW::cmd_string_replace_value(all.options_from_file,"--sequence_total_nb_policies", ss2.str());
 
     all.base_learner_nb_w *= total_number_of_policies;
-    increment = (all.length() / all.base_learner_nb_w) * all.stride;
+    increment = (all.length() / all.base_learner_nb_w / 2) * all.stride;
+    //cerr<<"increment=" << increment<<endl;
   }
 }
 

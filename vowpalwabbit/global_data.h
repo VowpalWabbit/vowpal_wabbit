@@ -168,6 +168,7 @@ struct vw {
   size_t parse_mask; // 1 << num_bits -1
   size_t weight_mask; // (stride*(1 << num_bits) -1)
   std::vector<std::string> pairs; // pairs of features to cross.
+  std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
   size_t ngram;//ngrams to generate.
