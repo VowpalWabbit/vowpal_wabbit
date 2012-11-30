@@ -134,6 +134,23 @@ sub trim_spaces($) {
     $str;
 }
 
+#
+# ref_file($default_name)
+#   Reference file existence: if we're on Windows, AND
+#   an alternate reference-file exists, give precedence
+#   to the alternate file (file with a '-mswin' suffix.)
+#
+sub ref_file($) {
+    my $file = shift;
+    if ($^O =~ /Win/i) {
+        my $win_reffile = "$file-mswin";
+        if (-e $win_reffile) {
+            return $win_reffile;
+        }
+    }
+    $file;
+}
+
 # __DATA__ test counter
 my $TestNo = 0;
 
@@ -168,15 +185,15 @@ sub next_test() {
             next;
         }
         if ($line =~ m/\.stdout\b/) {
-            $out_ref = trim_spaces($line);
+            $out_ref = ref_file(trim_spaces($line));
             next;
         }
         if ($line =~ /\.stderr\b/) {
-            $err_ref = trim_spaces($line);
+            $err_ref = ref_file(trim_spaces($line));
             next;
         }
         if ($line =~ /\.predict\b/) {
-            $pred_ref = trim_spaces($line);
+            $pred_ref = ref_file(trim_spaces($line));
             next;
         }
         # if we get here it is some unrecognized pattern
