@@ -120,21 +120,21 @@ void zero_preconditioner(vw& all)
     weights[stride*i+3] = 0;
 }
 
-  void reset_state(vw& all, bool zero)
-  {
-    lastj = origin = 0;
-    loss_sum = previous_loss_sum = 0.;
-    importance_weight_sum = 0.;
-    curvature = 0.;
-    first_pass = true;
-    gradient_pass = true;
-    preconditioner_pass = true;
-    if (zero)
-      {
-	zero_derivative(all);
-	zero_preconditioner(all);
-      }
-  }
+void reset_state(vw& all, bool zero)
+{
+  lastj = origin = 0;
+  loss_sum = previous_loss_sum = 0.;
+  importance_weight_sum = 0.;
+  curvature = 0.;
+  first_pass = true;
+  gradient_pass = true;
+  preconditioner_pass = true;
+  if (zero)
+    {
+      zero_derivative(all);
+      zero_preconditioner(all);
+    }
+}
 
 void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {
@@ -147,6 +147,16 @@ void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &
     }
 }
 
+void cubic_grad_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  float update = g * f0.x * f1.x;
+  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    w[1] += update * ele->x;
+  }
+}
+
 void quad_precond_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
@@ -156,6 +166,16 @@ void quad_precond_update(weight* weights, feature& page_feature, v_array<feature
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       w[3] += update * ele->x * ele->x;
     }
+}
+
+void cubic_precond_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  float update = g * f0.x * f0.x * f1.x * f1.x;
+  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    w[3] += update * ele->x * ele->x;
+  }
 }
 
 // w[0] = weight
@@ -203,6 +223,15 @@ float predict_and_gradient(vw& all, example* &ec)
 	    quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, loss_grad);
 	} 
     }
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++)
+        cubic_grad_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, loss_grad);
+    }
+  }
   return fp;
 }
 
@@ -231,6 +260,15 @@ void update_preconditioner(vw& all, example* &ec)
             quad_precond_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, curvature);
         }
     }
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++)
+        cubic_precond_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, curvature);
+    }
+  }
 }  
 
 
@@ -255,6 +293,15 @@ float dot_with_direction(vw& all, example* &ec)
 	    ret += one_pf_quad_predict(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask);
 	} 
     }
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++)
+        ret += one_pf_cubic_predict(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask);
+    }
+  }
   return ret;
 }
 
@@ -603,7 +650,7 @@ int process_pass(vw& all) {
 	step_size = 0.5;
 	float d_mag = direction_magnitude(all);
 	ftime(&t_end_global);
-	net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+	net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 	if (!all.quiet)
 	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 	predictions.erase();
@@ -643,7 +690,7 @@ int process_pass(vw& all) {
 		  else if (backstep_on && (wolfe1<wolfe1_bound || loss_sum > previous_loss_sum))
 		    {// curvature violated, or we stepped too far last time: step back
 		      ftime(&t_end_global);
-		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		      net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		      float ratio = (step_size==0.f) ? 0.f : (float)new_step/(float)step_size;
 		      if (!all.quiet)
 			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10.5f\t%-.3f\n",
@@ -689,7 +736,7 @@ int process_pass(vw& all) {
 		      else {
 			float d_mag = direction_magnitude(all);
 			ftime(&t_end_global);
-			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+			net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!all.quiet)
 			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 			predictions.erase();
@@ -729,7 +776,7 @@ int process_pass(vw& all) {
 		  predictions.erase();
 		  update_weight(all, all.final_regressor_name , step_size, current_pass);
 		  ftime(&t_end_global);
-		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
+		  net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		  if (!all.quiet)
 		    fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
 		  gradient_pass = true;

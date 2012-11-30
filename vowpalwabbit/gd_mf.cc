@@ -66,6 +66,11 @@ float mf_inline_predict(vw& all, example* &ec)
 	    }
 	}
     }
+
+  if (all.triples.begin() != all.triples.end()) {
+    cerr << "cannot use triples in matrix factorization" << endl;
+    exit(-1);
+  }
     
   // ec->topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ... 
 
@@ -115,6 +120,11 @@ void mf_inline_train(vw& all, example* &ec, float update)
 
 	    }
 	}
+  if (all.triples.begin() != all.triples.end()) {
+    cerr << "cannot use triples in matrix factorization" << endl;
+    exit(-1);
+  }
+
 }  
 
 void mf_print_offset_features(vw& all, example* &ec, size_t offset)
@@ -157,6 +167,10 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 		}
 	  }
       }
+  if (all.triples.begin() != all.triples.end()) {
+    cerr << "cannot use triples in matrix factorization" << endl;
+    exit(-1);
+  }
 }
 
 void mf_print_audit_features(vw& all, example* ec, size_t offset)

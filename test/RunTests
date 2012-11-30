@@ -607,3 +607,8 @@ __DATA__
     pred-sets/ref/0022.stdout
     pred-sets/ref/0022.stderr
     pred-sets/ref/0022.predict
+
+# Test 23: cubic features -- on a parity test case
+{VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100
+    train-sets/ref/xxor.stdout
+    train-sets/ref/xxor.stderr
