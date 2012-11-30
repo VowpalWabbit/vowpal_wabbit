@@ -536,7 +536,19 @@ run_tests();
 # Except: if -p ... appears in the command, it will be used as the
 # (explicit) predictions file.
 #
-
+# Windows note:
+#
+# due to differences in Random-Number-Generators in Windows,
+# floating-point outputs may differ in some tests (not all).
+#
+# To minimize the need for changes (leverage existing tests and
+# reference files as much as possible), on Windows we check for
+# existance of files with '-mswin' suffix:
+#   *.stderr-mswin
+#   *.stdout-mswin
+#   *.predict-mswin
+# and if any of them exists, we use it instead.
+#
 __DATA__
 # Test 1:
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1
