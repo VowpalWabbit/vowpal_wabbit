@@ -16,10 +16,10 @@ my $RatioEpsilon = 1e-4;
 my $VW;
 my $LDA;
 
-# set the path to the dependent executables we'll be using
-my $Diff = ($^O eq "MSWin32") ? 'c:\cygwin\bin\diff.exe' : 'diff';
-my $Cat = ($^O eq "MSWin32") ? 'c:\cygwin\bin\cat.exe' : 'cat';
-my $Touch = ($^O eq "MSWin32") ? 'c:\cygwin\bin\touch.exe' : 'touch';
+# These are different on Windows+cygwin and Unix...
+# we change defaults in init() accordingly
+my $Diff = 'diff';
+my $Cat = 'cat';
 
 my @ToTest = ();
 
@@ -92,6 +92,18 @@ sub which_lda() {
 sub init() {
     $0 =~ s{.*/}{};
     getopts('wcdefE:R:o') || usage();
+
+    # On Windows we need to change the paths to dependent external executables
+    if ($^O =~ /MSWin/i) {
+        # This all assumes cygwin is present :(
+        $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
+        # Adding to PATH should be sufficient for those working in
+        # a cygwin bash shell for maximum compatbility with
+        # Linux/Mac OS/X, alas, it won't work in cmd.exe or from
+        # non Unixy envs, so we need to override the full paths here
+        $Diff  = 'c:\cygwin\bin\diff.exe';
+        $Cat   = 'c:\cygwin\bin\cat.exe';
+    }
     $Epsilon = $opt_E if ($opt_E);
     $RatioEpsilon = $opt_R if ($opt_R);
     $Diff .= ' --ignore-space-change' if ($opt_w);
@@ -272,6 +284,14 @@ sub diff_lenient_float($$) {
     $status;
 }
 
+#
+# perl internal way to emulate 'touch'
+#
+sub touch(@) {
+    my $now = time;
+    utime $now, $now, @_;
+}
+
 sub diff($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
@@ -288,7 +308,7 @@ sub diff($$) {
             if ($opt_o) {
                 print STDERR
                   "$0: test $TestNo: -o: creating empty reference $reffile\n";
-                system("$Touch $reffile");
+                touch($reffile);
             } else {
                 print STDERR
                   "$0: test $TestNo: empty output with no reference: ignored.\n"
