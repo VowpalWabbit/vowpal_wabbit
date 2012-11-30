@@ -21,6 +21,8 @@ using namespace std;
 
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
+#define VERSION_FILE_WITH_SEARN "6.1.2"
+#define VERSION_FILE_WITH_CUBIC "6.1.3"
 
 #ifdef _WIN32
 inline double drand48() { return rand() / (double)RAND_MAX; }
@@ -93,7 +95,7 @@ void initialize_regressor(vw& all)
 //nonreentrant
 v_array<char> temp;
 
-void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
+void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector, bool initial_regressor_force_cubic_version)
 {
   ifstream source(file, ios::in | ios::binary);
   if (!source.is_open())
@@ -148,6 +150,17 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
       local_pairs.push_back(temp);
     }
 
+  vector<string> local_triples;
+  if (initial_regressor_force_cubic_version || (v_tmp >= VERSION_FILE_WITH_CUBIC)) {
+    source.read((char *)&len, sizeof(len));
+    for (; len > 0; len--)
+      {
+        char triple[3];
+        source.read(triple, sizeof(char)*3);
+        string temp(triple, 3);
+        local_triples.push_back(temp);
+      }
+  }
 
   size_t local_rank;
   source.read((char*)&local_rank, sizeof(local_rank));
@@ -183,6 +196,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   if (!initialized)
     {
       all.pairs = local_pairs;
+      all.triples = local_triples;
       initialize_regressor(all);
     }
   else
@@ -194,6 +208,18 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
 	cout << endl;
 	for (size_t i = 0; i < all.pairs.size(); i++)
 	  cout << all.pairs[i] << " " << all.pairs[i].size() << " ";
+	cout << endl;
+	exit (1);
+      }
+  else
+    if (local_triples != all.triples)
+      {
+	cout << "can't combine sources with different features!" << endl;
+	for (size_t i = 0; i < local_triples.size(); i++)
+	  cout << local_triples[i] << " " << local_triples[i].size() << " ";
+	cout << endl;
+	for (size_t i = 0; i < all.triples.size(); i++)
+	  cout << all.triples[i] << " " << all.triples[i].size() << " ";
 	cout << endl;
 	exit (1);
       }
@@ -259,7 +285,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   source.close();
 }
 
-void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regressor_name, bool quiet)
+void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regressor_name, bool quiet, bool initial_regressor_force_cubic_version)
 {
   if (vm.count("final_regressor")) {
     final_regressor_name = vm["final_regressor"].as<string>();
@@ -281,10 +307,10 @@ void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regresso
   bool initialized = false;
 
   for (size_t i = 0; i < regs.size(); i++)
-    read_vector(all, regs[i].c_str(), initialized, false);
+    read_vector(all, regs[i].c_str(), initialized, false, initial_regressor_force_cubic_version);
   
   if (all.per_feature_regularizer_input != "")
-    read_vector(all, all.per_feature_regularizer_input.c_str(), initialized, true);
+    read_vector(all, all.per_feature_regularizer_input.c_str(), initialized, true, initial_regressor_force_cubic_version);
       
   if (!initialized)
     {
@@ -344,6 +370,11 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
       my_buf_write_file(io_temp,f,i->c_str(),2);
 
+    len = all.triples.size();
+    my_buf_write_file(io_temp,f,(char *)&len, sizeof(len));
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
+      my_buf_write_file(io_temp,f,i->c_str(),3);
+
     my_buf_write_file(io_temp,f,(char*)&all.rank, sizeof(all.rank));
     my_buf_write_file(io_temp,f,(char*)&all.lda, sizeof(all.lda));
 
@@ -372,6 +403,15 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
       {
 	len = sprintf(buff, "\n");
 	my_buf_write_file(io_temp,f, buff, len);
+      }
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+      len = sprintf(buff, "%s ", i->c_str());
+      io_temp.write_file(f, buff, len);
+    }
+    if (all.triples.size() > 0)
+      {
+	len = sprintf(buff, "\n");
+	io_temp.write_file(f, buff, len);
       }
     len = sprintf(buff, "ngram:%d skips:%d\nindex:weight pairs:\n", (int)all.ngram, (int)all.skips);
     my_buf_write_file(io_temp,f, buff, len);

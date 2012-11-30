@@ -15,10 +15,9 @@ int main(int argc, char *argv[])
 {
   vw vw = VW::initialize("--hash all -q st --noconstant -i train.w");
 
-  example *vec2 = VW::read_example(vw, "|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+  example *vec2 = VW::read_example(vw, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   vw.learn(&vw, vec2);
   cerr << "p2 = " << vec2->final_prediction << endl;
-  VW::finish_example(vw, vec2);
 
   vector< VW::feature_space > ec_info;
   vector<feature> s_features, t_features;
@@ -36,6 +35,7 @@ int main(int argc, char *argv[])
     
   vw.learn(&vw, vec3);
   cerr << "p3 = " << vec3->final_prediction << endl;
+  VW::finish_example(vw, vec2);
   VW::finish_example(vw, vec3);
 
   VW::finish(vw);
