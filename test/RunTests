@@ -16,7 +16,11 @@ my $RatioEpsilon = 1e-4;
 my $VW;
 my $LDA;
 
-my $Diff = 'diff';
+# set the path to the dependent executables we'll be using
+my $Diff = ($^O eq "MSWin32") ? 'c:\cygwin\bin\diff.exe' : 'diff';
+my $Cat = ($^O eq "MSWin32") ? 'c:\cygwin\bin\cat.exe' : 'cat';
+my $Touch = ($^O eq "MSWin32") ? 'c:\cygwin\bin\touch.exe' : 'touch';
+
 my @ToTest = ();
 
 sub usage(@) {
@@ -284,7 +288,7 @@ sub diff($$) {
             if ($opt_o) {
                 print STDERR
                   "$0: test $TestNo: -o: creating empty reference $reffile\n";
-                system("touch $reffile");
+                system("$Touch $reffile");
             } else {
                 print STDERR
                   "$0: test $TestNo: empty output with no reference: ignored.\n"
@@ -300,7 +304,7 @@ sub diff($$) {
     if (-s 'diff.tmp') {
         if ($opt_d) {
             printf STDERR "--- %s\n", $diff_cmd;
-            system("cat diff.tmp")
+            system("$Cat diff.tmp")
         }
         # There's a difference, but is it meaningfull?
         if ($opt_f && -e $reffile && -e $outfile &&
