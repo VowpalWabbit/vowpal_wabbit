@@ -358,7 +358,7 @@ float direction_magnitude(vw& all)
   }
   lastj = 0;
   if (!all.quiet)
-    fprintf(stderr, "%-10e\t%-10e\t%-10s\t%-10s\t%-10s\t",
+    fprintf(stderr, "%-10.5f\t%-10.5f\t%-10s\t%-10s\t%-10s\t",
 	    g1_g1/(importance_weight_sum*importance_weight_sum),
 	    g1_Hg1/importance_weight_sum, "", "", "");
 }
@@ -507,7 +507,7 @@ double wolfe_eval(vw& all, float* mem, double loss_sum, double previous_loss_sum
   // double new_step_cross = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
   if (!all.quiet)
-    fprintf(stderr, "%-10e\t%-10e\t%s%-10f\t%-10f\t", g1_g1/(importance_weight_sum*importance_weight_sum), g1_Hg1/importance_weight_sum, " ", wolfe1, wolfe2);
+    fprintf(stderr, "%-10.5f\t%-10.5f\t%s%-10f\t%-10f\t", g1_g1/(importance_weight_sum*importance_weight_sum), g1_Hg1/importance_weight_sum, " ", wolfe1, wolfe2);
   return 0.5*step_size;
 }
 
@@ -636,7 +636,7 @@ int process_pass(vw& all) {
       if (all.l2_lambda > 0.)
 	loss_sum += add_regularization(all, all.l2_lambda);
       if (!all.quiet)
-	fprintf(stderr, "%2lu %-e\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
+	fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
       
       previous_loss_sum = loss_sum;
       loss_sum = 0.;
@@ -652,7 +652,7 @@ int process_pass(vw& all) {
 	ftime(&t_end_global);
 	net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 	if (!all.quiet)
-	  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 	predictions.erase();
 	update_weight(all, all.final_regressor_name, step_size, current_pass);		     		           }
     }
@@ -669,7 +669,7 @@ int process_pass(vw& all) {
 		  if (all.l2_lambda > 0.)
 		    loss_sum += add_regularization(all, all.l2_lambda);
 		  if (!all.quiet)
-		    fprintf(stderr, "%2lu %-e\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
+		    fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)current_pass+1, loss_sum / importance_weight_sum);
 
 		  double wolfe1;
 		  double new_step = wolfe_eval(all, mem, loss_sum, previous_loss_sum, step_size, importance_weight_sum, origin, wolfe1);
@@ -693,7 +693,7 @@ int process_pass(vw& all) {
 		      net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		      float ratio = (step_size==0.f) ? 0.f : (float)new_step/(float)step_size;
 		      if (!all.quiet)
-			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10e\t%-.3f\n",
+			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10.5f\t%-.3f\n",
 				"","",ratio,
 				new_step,
 				net_time/1000.);
@@ -738,7 +738,7 @@ int process_pass(vw& all) {
 			ftime(&t_end_global);
 			net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!all.quiet)
-			  fprintf(stderr, "%-10s\t%-10e\t%-10e\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
 			predictions.erase();
 			update_weight(all, all.final_regressor_name, step_size, current_pass);		     		      
 		      }
@@ -778,7 +778,7 @@ int process_pass(vw& all) {
 		  ftime(&t_end_global);
 		  net_time = 0; // (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		  if (!all.quiet)
-		    fprintf(stderr, "%-e\t%-e\t%-e\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
+		    fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
 		  gradient_pass = true;
 		}//now start computing derivatives.    
     current_pass++;

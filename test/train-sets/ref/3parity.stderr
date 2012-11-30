@@ -1,0 +1,33 @@
+final_regressor = models/0021.model
+Num weight bits = 16
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+decay_learning_rate = 1
+randomly initializing neural network output weights and hidden bias
+creating cache_file = train-sets/3parity.cache
+Reading from train-sets/3parity
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+1.601836   1.601836            3         3.0   1.0000  -1.0000        4
+2.076739   2.551642            6         6.0   1.0000   0.9400        4
+2.105755   2.140573           11        11.0   1.0000  -1.0000        4
+1.917901   1.730047           22        22.0   1.0000   0.4547        4
+2.227579   2.537257           44        44.0  -1.0000   0.9938        4
+2.233599   2.239760           87        87.0  -1.0000   1.0000        4
+2.204439   2.175278          174       174.0   1.0000   0.8489        4
+2.179507   2.154575          348       348.0  -1.0000   0.1234        4
+1.612765   1.046022          696       696.0   1.0000   0.9800        4
+1.307339   1.001913         1392      1392.0   1.0000   1.0000        4
+1.051402   0.795465         2784      2784.0   1.0000   1.0000        4
+0.751892   0.452382         5568      5568.0   1.0000   1.0000        4
+0.375980   0.000000        11135     11135.0  -1.0000  -1.0000        4
+
+finished run
+number of examples = 16000
+weighted example sum = 1.6e+04
+weighted label sum = 0
+average loss = 0.2617
+best constant = -6.25e-05
+total feature number = 64000

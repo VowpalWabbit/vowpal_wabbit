@@ -62,7 +62,12 @@ int open_socket(const char* host)
   memset(&far_end.sin_zero, '\0',8);
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
     {
+#ifdef _WIN32
+      int err_code = WSAGetLastError();
+      cerr << "can't connect to: " << host << ":" << port << ". Windows Sockets error code " << err_code << endl;
+#else
       cerr << "can't connect to: " << host << ':' << port << endl;
+#endif
       exit(1);
     }
   char id = '\0';

@@ -37,6 +37,10 @@ namespace VW {
 
   //The more complex way to create an example.   
   typedef pair< unsigned char, vector<feature> > feature_space; //just a helper definition.
+  struct primitive_feature_space { //just a helper definition.
+    unsigned char name; 
+    feature* fs; 
+    size_t len; }; 
 
   //First create the hash of a namespace.
   inline uint32_t hash_space(vw& all, string s)
@@ -64,6 +68,7 @@ namespace VW {
   }
 
   //after you create and fill feature_spaces, get an example with everything filled in.
+  example* import_example(vw& all, primitive_feature_space* features, size_t len);
   example* import_example(vw& all, vector< feature_space > ec_info);
   void parse_example_label(vw&all, example&ec, string label);
   example* new_unused_example(vw& all);

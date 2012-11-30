@@ -15,11 +15,24 @@ my $Epsilon = 1e-4;
 my $VW;
 my $LDA;
 
-my $Diff = 'diff';
+# set the path to the dependent executables we'll be using
+my $Diff;
+my $Cat;
+my $Touch;
 my @ToTest = ();
 
-my @TrainSets = glob('train-sets/*.dat');
-my @TestSets = glob('test-sets/*.dat');
+if ($^O eq "MSWin32") {
+	
+	$Diff = 'c:\cygwin\bin\diff.exe';
+	$Cat = 'c:\cygwin\bin\cat.exe';
+	$Touch = 'c:\cygwin\bin\touch.exe';
+}
+else
+{
+	$Diff = "diff";
+	$Cat = "cat";
+	$Touch = "touch";
+}
 
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
@@ -265,7 +278,7 @@ sub diff($$) {
             if ($opt_o) {
                 print STDERR
                   "$0: test $TestNo: -o: creating empty reference $reffile\n";
-                system("touch $reffile");
+                system("$Touch $reffile");
             } else {
                 print STDERR
                   "$0: test $TestNo: empty output with no reference: ignored.\n"
@@ -281,7 +294,7 @@ sub diff($$) {
     if (-s 'diff.tmp') {
         if ($opt_d) {
             printf STDERR "--- %s\n", $diff_cmd;
-            system("cat diff.tmp")
+            system("$Cat diff.tmp")
         }
         # There's a difference, but is it meaningfull?
         if ($opt_f && -e $reffile && -e $outfile &&
@@ -308,6 +321,59 @@ sub diff($$) {
         }
     }
     $status;
+}
+
+#
+# check_for_time_regression()
+#   Compare last overall time to run to current to catch
+#   performance regressions
+#
+my $LastTimeFile = 'RunTests.last.times';
+
+sub write_times($@) {
+    my ($file, @times) = @_;
+    open(my $fh, ">$file") || die "$0: can't open(>$file): $!\n";
+    print $fh join(' ', @times), "\n";
+    close $fh;
+}
+sub read_times($) {
+    my ($file) = @_;
+    open(my $fh, $file) || die "$0: can't open($file): $!\n";
+    my $line = <$fh>; chomp $line;
+    close $fh;
+    return (split(' ', $line));
+}
+
+sub check_for_time_regression() {
+    my $tolerate_regress = 1.02;
+    my $pct_change = 0.0;
+    my ($overall_time0, $overall_time1);
+    my ($user0, $system0, $cuser0, $csystem0);
+    my ($user1, $system1, $cuser1, $csystem1) = times;
+    $overall_time1 = $cuser1 + $csystem1;
+ 
+    if (-e $LastTimeFile) {
+        ($user0, $system0, $cuser0, $csystem0) = read_times($LastTimeFile);
+        if (!(defined $csystem0) or !(defined $cuser0)) {
+            die "$0: undefined times in saved times file: $LastTimeFile," .
+                    " try removing it\n"
+        }
+        $overall_time0 = $cuser0 + $csystem0;
+        $pct_change = 100 * ($overall_time1 - $overall_time0) / (1e-4+$overall_time0);
+
+        if ($overall_time0 == 0) {
+            die "$0: Bad times in saved times file: $LastTimeFile," .
+                    " try removing it\n"
+        } elsif ($overall_time1/$overall_time0 > $tolerate_regress) {
+            printf STDERR "$0: RUNTIME REGRESSION: " .
+                    "%.2f sec vs last time %.2f sec. (%.2f%% worse)\n",
+                    $overall_time1, $overall_time0, $pct_change;
+        }
+    }
+    write_times($LastTimeFile, $user1, $system1, $cuser1, $csystem1);
+    printf STDERR
+        "$0 runtime: user %g, system %g, total %g sec (%+.2f%% vs. last)\n",
+                $cuser1, $csystem1, $overall_time1, $pct_change;
 }
 
 sub run_tests() {
@@ -387,6 +453,7 @@ sub run_tests() {
             print STDERR "$0: test $TestNo: predict OK\n";
         }
     }
+    check_for_time_regression();
 }
 
 # --- main
@@ -530,7 +597,18 @@ __DATA__
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
 
-# Test 21: cubic features -- on a parity test case
+# Test 21: neural network 3-parity with 2 hidden units
+{VW} -k -c -d train-sets/3parity --hash all --passes 2000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 14
+    train-sets/ref/3parity.stdout
+    train-sets/ref/3parity.stderr
+
+# Test 22: neural network 3-parity with 2 hidden units (predict)
+{VW} -d train-sets/3parity --hash all -t -i models/0021.model -p 0022.predict.tmp
+    pred-sets/ref/0022.stdout
+    pred-sets/ref/0022.stderr
+    pred-sets/ref/0022.predict
+
+# Test 23: cubic features -- on a parity test case
 {VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100
     train-sets/ref/xxor.stdout
     train-sets/ref/xxor.stderr

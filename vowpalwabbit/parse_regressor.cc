@@ -97,7 +97,7 @@ v_array<char> temp;
 
 void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector, bool initial_regressor_force_cubic_version)
 {
-  ifstream source(file);
+  ifstream source(file, ios::in | ios::binary);
   if (!source.is_open())
     {
       cout << "can't open " << file << endl << " ... exiting." << endl;

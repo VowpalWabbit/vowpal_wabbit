@@ -24,6 +24,7 @@ license as described in the file LICENSE.
 #ifdef _WIN32
 #define ssize_t size_t
 #include <io.h>
+#include <sys/stat.h>
 #define fsync(x) ;
 #endif
 
@@ -55,7 +56,8 @@ class io_buf {
       if (*name != '\0')
 	{
 #ifdef _WIN32
-	  ret = _open(name, _O_RDONLY|_O_BINARY);
+	  // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
+	  _sopen_s(&ret, name, _O_RDONLY|_O_BINARY|_O_SEQUENTIAL, _SH_DENYWR, 0);
 #else
 	  ret = open(name, O_RDONLY|O_LARGEFILE);
 #endif
@@ -68,7 +70,7 @@ class io_buf {
 
     case WRITE:
 #ifdef _WIN32
-		ret = _open(name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC,0666);
+		_sopen_s(&ret, name, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
 		ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif

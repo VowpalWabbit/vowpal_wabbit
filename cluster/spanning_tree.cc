@@ -10,6 +10,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 
 #include <WinSock2.h>
 #include <Windows.h>
+#include <WS2tcpip.h>
 #include <io.h>
 
 #define SHUT_RDWR SD_BOTH
@@ -17,6 +18,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
 typedef int socklen_t;
+typedef SOCKET socket_t;
 
 int daemon(int a, int b)
 {
@@ -36,6 +38,8 @@ int getpid()
 #include <netdb.h>
 #include <strings.h>
 
+typedef int socket_t;
+
 #endif
 
 #include <errno.h>
@@ -51,7 +55,7 @@ using namespace std;
 
 struct client {
   uint32_t client_ip;
-  int socket;
+  socket_t socket;
 };
 
 struct partial {
@@ -96,7 +100,7 @@ int build_tree(int*  parent, uint16_t* kid_count, int source_count, int offset) 
   return oroot;
 }
 
-void fail_send(int fd, const void* buf, size_t count)
+void fail_send(const socket_t fd, const void* buf, const size_t count)
 {
   if (send(fd,(char*)buf,count,0)==-1)
     {
@@ -118,7 +122,7 @@ int main(int argc, char* argv[]) {
   int lastError = WSAGetLastError();
 #endif
 
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
+  socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
 #ifdef _WIN32
 	lastError = WSAGetLastError();
@@ -171,7 +175,16 @@ int main(int argc, char* argv[]) {
     
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    int f = accept(sock,(sockaddr*)&client_address,&size);
+    socket_t f = accept(sock,(sockaddr*)&client_address,&size);
+
+    {
+        char hostname[NI_MAXHOST];
+        char servInfo[NI_MAXSERV];
+        getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0);
+
+        cerr << "inbound connection from " << hostname << endl;
+    }
+
     if (f < 0)
       {
 	cerr << "bad client socket!" << endl;

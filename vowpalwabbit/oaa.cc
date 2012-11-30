@@ -172,7 +172,7 @@ namespace OAA {
           simple_temp.label = -1;
         simple_temp.weight = mc_label_data->weight;
         ec->ld = &simple_temp;
-        if (i != 0)
+        if (i != 1)
           update_example_indicies(all->audit, ec, increment);
         base_learner(all,ec);
         if (ec->partial_prediction > score)
