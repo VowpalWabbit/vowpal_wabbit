@@ -58,15 +58,9 @@ class ezexample {
 
     for (size_t i=0; i<256; i++) ns_exists[i] = false;
 
-    if (vw_ref->add_constant) {
-      size_t cns = VW::get_constant_namespace();
-      push(ec->indices, cns);
-      feature temp = {1,(uint32_t) (VW::get_constant() & vw_ref->parse_mask)};
-      push(ec->atomics[cns], temp);
-      ec->total_sum_feat_sq++;
-      ec->num_features++;
-      ns_exists[cns] = true;
-    }
+    if (vw_ref->add_constant)
+      VW::add_constant_feature(*this_vw, ec);
+
     example_changed_since_prediction = true;
   }
 

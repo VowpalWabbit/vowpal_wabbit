@@ -186,7 +186,7 @@ namespace Sequence {
         if ((i <= (int)sequence_k) && (j < (int)sequence_k)) {
           valid_transition[i][j] = (rd > 0);
           if (valid_transition[i][j]) {
-            CSOAA::wclass feat = { FLT_MAX, j+1, 1., 0., 0. };
+            CSOAA::wclass feat = { FLT_MAX, j+1, 0., 0. };
             push(this_costs, feat);
           }
         }
@@ -228,7 +228,7 @@ namespace Sequence {
 
     for (size_t i = 1; i <= all.sd->k; i++)
       {
-        CSOAA::wclass cost = {FLT_MAX, i, 1., 0., 0.};
+        CSOAA::wclass cost = {FLT_MAX, i, 0., 0.};
         push(testall_costs.costs, cost);
       }
   }
@@ -640,8 +640,6 @@ namespace Sequence {
     SearnUtil::add_history_to_example(all, &hinfo, ec, h);
     SearnUtil::add_policy_offset(all, ec, increment, current_policy);
 
-    //cerr<< "add_policy_offset: " << increment << " * " << current_policy << endl;
-
     if (PRINT_DEBUG_INFO) {clog << "before train: costs = ["; for (CSOAA::wclass*c=costs.begin; c!=costs.end; c++) clog << " " << c->weight_index << ":" << c->x; clog << " ]\t"; simple_print_example_features(all,ec);}
     ec->ld = (void*)&ld;
     total_examples_generated++;
@@ -991,7 +989,7 @@ namespace Sequence {
         if (hcache[i].alive) {
           size_t lab  = hcache[i].original_label;
           float cost = hcache[i].loss - min_loss;
-          CSOAA::wclass temp  = { cost, lab+1, 1., 0., 0. };
+          CSOAA::wclass temp  = { cost, lab+1, 0., 0. };
           push(loss_vector, temp);
         }
       }
@@ -1109,7 +1107,7 @@ namespace Sequence {
           if (hcache[id].alive) {
             size_t lab  = hcache[id].original_label % sequence_k;
             float cost = hcache[id].loss - min_loss;
-            CSOAA::wclass temp  = { cost, lab+1, 1., 0., 0. };
+            CSOAA::wclass temp  = { cost, lab+1, 0., 0. };
             push(loss_vector, temp);
           }
         }

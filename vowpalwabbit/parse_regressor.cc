@@ -21,7 +21,6 @@ using namespace std;
 
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
-#define VERSION_FILE_WITH_SEARN "6.1.2"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
 
 #ifdef _WIN32
@@ -95,7 +94,7 @@ void initialize_regressor(vw& all)
 //nonreentrant
 v_array<char> temp;
 
-void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector, bool initial_regressor_force_cubic_version)
+void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
 {
   ifstream source(file, ios::in | ios::binary);
   if (!source.is_open())
@@ -151,7 +150,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector, 
     }
 
   vector<string> local_triples;
-  if (initial_regressor_force_cubic_version || (v_tmp >= VERSION_FILE_WITH_CUBIC)) {
+  if (v_tmp >= VERSION_FILE_WITH_CUBIC) {
     source.read((char *)&len, sizeof(len));
     for (; len > 0; len--)
       {
@@ -285,7 +284,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector, 
   source.close();
 }
 
-void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regressor_name, bool quiet, bool initial_regressor_force_cubic_version)
+void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regressor_name, bool quiet)
 {
   if (vm.count("final_regressor")) {
     final_regressor_name = vm["final_regressor"].as<string>();
@@ -307,10 +306,10 @@ void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regresso
   bool initialized = false;
 
   for (size_t i = 0; i < regs.size(); i++)
-    read_vector(all, regs[i].c_str(), initialized, false, initial_regressor_force_cubic_version);
+    read_vector(all, regs[i].c_str(), initialized, false);
   
   if (all.per_feature_regularizer_input != "")
-    read_vector(all, all.per_feature_regularizer_input.c_str(), initialized, true, initial_regressor_force_cubic_version);
+    read_vector(all, all.per_feature_regularizer_input.c_str(), initialized, true);
       
   if (!initialized)
     {

@@ -22,7 +22,7 @@ void return_simple_example(vw& all, example* ec);
 size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache);
 void cache_simple_label(void* v, io_buf& cache);
 void default_simple_label(void* v);
-void parse_simple_label(shared_data* sd, void* v, v_array<substring>& words);
+void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>& words);
 void delete_simple_label(void* v);
 float get_weight(void* v);
 float get_initial(void* v);

@@ -41,9 +41,11 @@ struct shared_data {
   uint32_t k;
 };
 
+struct parser;
+
 struct label_parser {
   void (*default_label)(void*);
-  void (*parse_label)(shared_data*, void*, v_array<substring>&);
+  void (*parse_label)(parser*, shared_data*, void*, v_array<substring>&);
   void (*cache_label)(void*, io_buf& cache);
   size_t (*read_cached_label)(shared_data*, void*, io_buf& cache);
   void (*delete_label)(void*);
@@ -78,6 +80,8 @@ struct parser {
   int label_sock;
   int bound_sock;
   int max_fd;
+
+  v_array<substring> parse_name;
 
   label_parser* lp;  // moved from vw
 };

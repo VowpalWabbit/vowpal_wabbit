@@ -125,25 +125,23 @@ namespace CB
     free(ld->costs.begin);
   }
 
-  v_array<substring> name;
-
-  void parse_label(shared_data* sd, void* v, v_array<substring>& words)
+  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   {
     CB::label* ld = (CB::label*)v;
 
     for (size_t i = 0; i < words.index(); i++)
       {
         cb_class f;
-	tokenize(':', words[i], name);
+	tokenize(':', words[i], p->parse_name);
 
-        if( name.index() < 1 || name.index() > 3 )
+        if( p->parse_name.index() < 1 || p->parse_name.index() > 3 )
         {
           cerr << "malformed cost specification!" << endl;
 	  cerr << "terminating." << endl;
           exit(1);
         }
 
-        f.weight_index = hashstring(name[0], 0);
+        f.weight_index = hashstring(p->parse_name[0], 0);
         if (f.weight_index < 1 || f.weight_index > sd->k)
         {
           cerr << "invalid action: " << f.weight_index << endl;
@@ -152,25 +150,25 @@ namespace CB
         }
 
         f.x = FLT_MAX;
-        if(name.index() > 1)
-          f.x = float_of_substring(name[1]);
+        if(p->parse_name.index() > 1)
+          f.x = float_of_substring(p->parse_name[1]);
 
         if ( nanpattern(f.x))
         {
 	  cerr << "error NaN cost for action: ";
-	  cerr.write(name[0].begin, name[0].end - name[0].begin);
+	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
 	  cerr << " terminating." << endl;
 	  exit(1);
         }
       
         f.prob_action = .0;
-        if(name.index() > 2)
-          f.prob_action = float_of_substring(name[2]);
+        if(p->parse_name.index() > 2)
+          f.prob_action = float_of_substring(p->parse_name[2]);
 
         if ( nanpattern(f.prob_action))
         {
 	  cerr << "error NaN probability for action: ";
-	  cerr.write(name[0].begin, name[0].end - name[0].begin);
+	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
 	  cerr << " terminating." << endl;
 	  exit(1);
         }
@@ -227,7 +225,7 @@ namespace CB
       for( size_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
         wc.x = 0.;
         wc.weight_index = i;
         wc.partial_prediction = 0.;
@@ -252,7 +250,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
         wc.x = 0.;
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
@@ -328,7 +326,7 @@ namespace CB
       for( size_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
 
         ec->partial_prediction = 0.;
         desired_increment = increment * (2*i-1);
@@ -357,7 +355,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
 
         ec->partial_prediction = 0.;
         desired_increment = increment * (2*cl->weight_index-1);
@@ -402,7 +400,7 @@ namespace CB
       for( size_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
       
         //get cost prediction for this action
         wc.x = get_cost_pred(a,ec,i);
@@ -425,7 +423,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
       
         //get cost prediction for this action
         wc.x = get_cost_pred(a,ec,cl->weight_index);
@@ -460,7 +458,7 @@ namespace CB
       for( size_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
 
         //get cost prediction for this label
         wc.x = get_cost_pred(a,ec,i);
@@ -485,7 +483,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
 
         //get cost prediction for this label
         wc.x = get_cost_pred(a,ec,cl->weight_index);
@@ -518,7 +516,7 @@ namespace CB
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++)
       {
         CSOAA::wclass wc;
-        wc.wap_value = 0.; wc.importance = 1.;
+        wc.wap_value = 0.;
 
         wc.x = cl->x;
         wc.weight_index = cl->weight_index;

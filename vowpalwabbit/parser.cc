@@ -802,8 +802,8 @@ void setup_example(vw& all, example* ae)
 namespace VW{
   example* new_unused_example(vw& all) { 
     example* ec = get_unused_example(all);
-    ec->example_counter = all.p->parsed_examples + 1;
     all.p->parsed_examples++;
+    ec->example_counter = all.p->parsed_examples;
     return ec;
   }
   example* read_example(vw& all, char* example_line)
@@ -817,8 +817,15 @@ namespace VW{
     return ret;
   }
 
-  size_t get_constant_namespace() { return constant_namespace; }
-  int get_constant() { return constant; }
+  void add_constant_feature(vw& vw, example*ec) {
+    size_t cns = constant_namespace;
+    push(ec->indices, cns);
+    feature temp = {1,(uint32_t) (constant & vw.parse_mask)};
+    push(ec->atomics[cns], temp);
+    ec->total_sum_feat_sq++;
+    ec->num_features++;
+  }
+
 
   example* import_example(vw& all, vector<feature_space> vf)
   {
@@ -862,7 +869,7 @@ namespace VW{
     char* cstr = (char*)label.c_str();
     substring str = { cstr, cstr+label.length() };
     push(words, str);
-    all.p->lp->parse_label(all.sd, ec.ld, words);
+    all.p->lp->parse_label(all.p, all.sd, ec.ld, words);
     words.erase();
     free(words.begin);
   }

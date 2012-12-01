@@ -18,7 +18,6 @@ namespace CSOAA {
   struct wclass {
     float x;
     size_t weight_index;
-    float importance;
     float partial_prediction;  // a partial prediction: new!
     float wap_value;  // used for wap to store values derived from costs
     bool operator==(wclass j){return weight_index == j.weight_index;}
@@ -35,7 +34,7 @@ namespace CSOAA {
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
   void default_label(void* v);
-  void parse_label(shared_data* sd, void* v, v_array<substring>& words);
+  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words);
   void delete_label(void* v);
   float weight(void* v);
   float initial(void* v);

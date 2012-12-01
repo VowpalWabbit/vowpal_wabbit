@@ -72,8 +72,7 @@ namespace VW {
   example* import_example(vw& all, vector< feature_space > ec_info);
   void parse_example_label(vw&all, example&ec, string label);
   example* new_unused_example(vw& all);
-  size_t get_constant_namespace();
-  int get_constant();
+  void add_constant_feature(vw& all, example*ec);
 
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
