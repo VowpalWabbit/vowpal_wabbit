@@ -120,21 +120,21 @@ void zero_preconditioner(vw& all)
     weights[stride*i+3] = 0;
 }
 
-  void reset_state(vw& all, bool zero)
-  {
-    lastj = origin = 0;
-    loss_sum = previous_loss_sum = 0.;
-    importance_weight_sum = 0.;
-    curvature = 0.;
-    first_pass = true;
-    gradient_pass = true;
-    preconditioner_pass = true;
-    if (zero)
-      {
-	zero_derivative(all);
-	zero_preconditioner(all);
-      }
-  }
+void reset_state(vw& all, bool zero)
+{
+  lastj = origin = 0;
+  loss_sum = previous_loss_sum = 0.;
+  importance_weight_sum = 0.;
+  curvature = 0.;
+  first_pass = true;
+  gradient_pass = true;
+  preconditioner_pass = true;
+  if (zero)
+    {
+      zero_derivative(all);
+      zero_preconditioner(all);
+    }
+}
 
 void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {
@@ -147,6 +147,16 @@ void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &
     }
 }
 
+void cubic_grad_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  float update = g * f0.x * f1.x;
+  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    w[1] += update * ele->x;
+  }
+}
+
 void quad_precond_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
 {
   size_t halfhash = quadratic_constant * page_feature.weight_index;
@@ -156,6 +166,16 @@ void quad_precond_update(weight* weights, feature& page_feature, v_array<feature
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
       w[3] += update * ele->x * ele->x;
     }
+}
+
+void cubic_precond_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  float update = g * f0.x * f0.x * f1.x * f1.x;
+  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
+    weight* w=&weights[(halfhash + ele->weight_index) & mask];
+    w[3] += update * ele->x * ele->x;
+  }
 }
 
 // w[0] = weight
@@ -203,6 +223,15 @@ float predict_and_gradient(vw& all, example* &ec)
 	    quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, loss_grad);
 	} 
     }
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++)
+        cubic_grad_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, loss_grad);
+    }
+  }
   return fp;
 }
 
@@ -231,6 +260,15 @@ void update_preconditioner(vw& all, example* &ec)
             quad_precond_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, curvature);
         }
     }
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++)
+        cubic_precond_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, curvature);
+    }
+  }
 }  
 
 
@@ -255,6 +293,15 @@ float dot_with_direction(vw& all, example* &ec)
 	    ret += one_pf_quad_predict(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask);
 	} 
     }
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++)
+        ret += one_pf_cubic_predict(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask);
+    }
+  }
   return ret;
 }
 
@@ -891,3 +938,4 @@ void drive_bfgs(void* in)
 }
 
 }
+
