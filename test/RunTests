@@ -8,7 +8,7 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w);
+use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w $opt_y);
 
 my $Epsilon = 1e-4;
 
@@ -49,6 +49,7 @@ sub usage(@) {
         -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
         -E<e> Set epsilon <e> for fuzzy floating-point compares (default $Epsilon)
         -o    Overwrite reference file with new/different result
+        -y    On error, copy bad files to (eg stderr.test21) for later comparison
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
@@ -101,7 +102,7 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdefE:o') || usage();
+    getopts('wcdefyE:o') || usage();
     $Epsilon = $opt_E if ($opt_E);
     $Diff .= ' --ignore-space-change' if ($opt_w);
     my @num_args = ();
@@ -122,6 +123,13 @@ sub init() {
 
     $VW = which_vw();
     $LDA = which_lda();
+}
+
+sub copy_file {
+    my ($src_file, $dst_file) = @_;
+    use File::Copy;
+    print STDERR "\t\t-> copying output to $dst_file\n";
+    copy($src_file, $dst_file);
 }
 
 sub trim_spaces($) {
@@ -422,6 +430,7 @@ sub run_tests() {
         if ($status) {
             printf STDERR "%s: test %d: FAILED: ref(%s) != stdout(%s)\n",
                 $0, $TestNo, $out_ref, $outf;
+            if ($opt_y) { copy_file($outf, $outf . '.test' . $TestNo); }
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stdout OK\n";
@@ -437,6 +446,7 @@ sub run_tests() {
         if ($status) {
             printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n",
                 $0, $TestNo, $err_ref, $errf;
+            if ($opt_y) { copy_file($errf, $errf . '.test' . $TestNo); }
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stderr OK\n";
@@ -448,6 +458,7 @@ sub run_tests() {
         if ($status) {
             printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n",
                 $0, $TestNo, $pred_ref, $predf;
+            if ($opt_y) { copy_file($predf, $predf . '.test' . $TestNo); }
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: predict OK\n";
@@ -607,3 +618,8 @@ __DATA__
     pred-sets/ref/0022.stdout
     pred-sets/ref/0022.stderr
     pred-sets/ref/0022.predict
+
+# Test 23: cubic features -- on a parity test case
+{VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100
+    train-sets/ref/xxor.stdout
+    train-sets/ref/xxor.stderr
