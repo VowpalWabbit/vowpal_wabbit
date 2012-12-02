@@ -8,16 +8,14 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_R $opt_o $opt_w);
+use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w);
 
 my $Epsilon = 1e-4;
-my $RatioEpsilon = 1e-4;
 
 my $VW;
 my $LDA;
 
-# These are different on Windows+cygwin and Unix...
-# we change defaults in init() accordingly
+# External utilities we use. See init() for Windows specific actions.
 my $Diff = 'diff';
 my $Cat = 'cat';
 
@@ -36,8 +34,7 @@ sub usage(@) {
         -e    Abort on first diff error
         -w    Ignore white-space differences (diff --ignore-space-change)
         -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
-        -E<e> Absolute difference epsilon <e> for fuzzy float compares (default $Epsilon)
-        -R<r> Ratio difference epsilon <r> for fuzzy float compares (default $RatioEpsilon)
+        -E<e> Tolerance epsilon <e> for fuzzy float compares (default $Epsilon)
         -o    Overwrite reference file with new/different result
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
@@ -91,21 +88,17 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdefE:R:o') || usage();
+    getopts('wcdefE:o') || usage();
 
-    # On Windows we need to change the paths to dependent external executables
     if ($^O =~ /MSWin/i) {
-        # This all assumes cygwin is present :(
+        # On MS Windows we need to change paths to external executables
+        # Assumes cygwin is instakked
         $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
-        # Adding to PATH should be sufficient for those working in
-        # a cygwin bash shell for maximum compatbility with
-        # Linux/Mac OS/X, alas, it won't work in cmd.exe or from
-        # non Unixy envs, so we need to override the full paths here
+        # And just to be safe (probably not needed):
         $Diff  = 'c:\cygwin\bin\diff.exe';
         $Cat   = 'c:\cygwin\bin\cat.exe';
     }
     $Epsilon = $opt_E if ($opt_E);
-    $RatioEpsilon = $opt_R if ($opt_R);
     $Diff .= ' --ignore-space-change' if ($opt_w);
     my @num_args = ();
     my @exe_args = ();
@@ -142,7 +135,7 @@ sub trim_spaces($) {
 #
 sub ref_file($) {
     my $file = shift;
-    if ($^O =~ /Win/i) {
+    if ($^O =~ /MSWin/i) {
         my $win_reffile = "$file-mswin";
         if (-e $win_reffile) {
             return $win_reffile;
@@ -263,7 +256,7 @@ sub lenient_array_compare($$) {
             # Now we can safely divide (since abs($word2) > 0)
             # and determine the ratio difference from 1.0
             my $ratio_delta = abs($word1/$word2 - 1.0);
-            return 1 if ($ratio_delta > $RatioEpsilon);
+            return 1 if ($ratio_delta > $Epsilon);
         }
     }
     # print STDERR "lenient_array_compare: no meaningful difference\n";
@@ -538,7 +531,7 @@ run_tests();
 #
 # Windows note:
 #
-# due to differences in Random-Number-Generators in Windows,
+# Due to differences in Random-Number-Generators in Windows,
 # floating-point outputs may differ in some tests (not all).
 #
 # To minimize the need for changes (leverage existing tests and
