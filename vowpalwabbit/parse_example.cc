@@ -279,7 +279,7 @@ void substring_to_example(vw* all, example* ae, substring example)
   }
 
   if (all->p->words.index() > 0)
-    all->p->lp->parse_label(all->sd, ae->ld, all->p->words);
+    all->p->lp->parse_label(all->p, all->sd, ae->ld, all->p->words);
   
   TC_parser parser_line(bar_location,example.end,*all,ae);
 }

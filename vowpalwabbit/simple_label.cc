@@ -75,7 +75,7 @@ void delete_simple_label(void* v)
 {
 }
 
-void parse_simple_label(shared_data* sd, void* v, v_array<substring>& words)
+void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
 {
   label_data* ld = (label_data*)v;
 

@@ -113,12 +113,15 @@ vw parse_args(int argc, char *argv[])
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
+    ("cubic", po::value< vector<string> > (),
+     "Create and use cubic features")
     ("quiet", "Don't output diagnostics")
     ("rank", po::value<size_t>(&all.rank), "rank for matrix factorization.")
     ("random_weights", po::value<bool>(&all.random_weights), "make initial weights random")
     ("random_seed", po::value<long int>(&random_seed), "seed random number generator")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
+    ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring")
     ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("sequence", po::value<size_t>(), "Do sequence prediction with <k> labels per element")
@@ -346,6 +349,25 @@ vw parse_args(int argc, char *argv[])
 	}
     }
 
+  if (vm.count("cubic"))
+    {
+      all.triples = vm["cubic"].as< vector<string> >();
+      if (!all.quiet)
+	{
+	  cerr << "creating cubic features for triples: ";
+	  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+	    cerr << *i << " ";
+	    if (i->length() > 3)
+	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
+	    if (i->length() < 3) {
+	      cerr << endl << "error, cubic features must involve three sets.\n";
+	      exit(0);
+	    }
+	  }
+	  cerr << endl;
+	}
+    }
+
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
   all.ignore_some = false;
@@ -447,11 +469,6 @@ vw parse_args(int argc, char *argv[])
 
   if (!vm.count("lda") && !all.adaptive && !all.normalized_updates) 
     all.eta *= powf((float)(all.sd->t), all.power_t);
-
-  // if (vm.count("sequence_max_length")) {
-  //   size_t maxlen = vm["sequence_max_length"].as<size_t>();
-  //   all.p->ring_size = (all.p->ring_size > maxlen) ? all.p->ring_size : maxlen;
-  // }
 
   parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
 
@@ -655,6 +672,10 @@ vw parse_args(int argc, char *argv[])
     got_cb = true;
   }
 
+  if (vm.count("searn") || all.searn) { //all.searn can be set to true while loading regressor
+    if (vm.count("sequence")) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
+  }
+
   if (vm.count("sequence") || vm_file.count("sequence") ) {
     if (!got_cs) {
       //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
@@ -799,6 +820,9 @@ namespace VW {
     finalize_regressor(all, all.final_regressor_name);
     finalize_source(all.p);
     free(all.p->lp);
+    all.p->parse_name.erase();
+    if (all.p->parse_name.begin != NULL)
+      free(all.p->parse_name.begin);
     free(all.p);
     free(all.sd);
     for (int i = 0; i < all.options_from_file_argc; i++)

@@ -77,7 +77,7 @@ namespace OAA {
   {
   }
 
-  void parse_label(shared_data*, void* v, v_array<substring>& words)
+  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
     mc_label* ld = (mc_label*)v;
 

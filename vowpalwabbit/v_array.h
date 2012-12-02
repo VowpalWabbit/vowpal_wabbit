@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #ifdef _WIN32
 #define __INLINE 

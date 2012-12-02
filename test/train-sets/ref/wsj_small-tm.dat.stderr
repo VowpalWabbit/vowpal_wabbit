@@ -2,7 +2,6 @@ Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0.5
-cannot have --sequence_transition_file and zero history length, setting history length to 1
 creating cache_file = train-sets/wsj_small.dat.gz.cache
 Reading from train-sets/wsj_small.dat.gz
 num sources = 1
