@@ -15,24 +15,11 @@ my $Epsilon = 1e-4;
 my $VW;
 my $LDA;
 
-# set the path to the dependent executables we'll be using
-my $Diff;
-my $Cat;
-my $Touch;
-my @ToTest = ();
+# External utilities we use. See init() for Windows specific actions.
+my $Diff = 'diff';
+my $Cat = 'cat';
 
-if ($^O eq "MSWin32") {
-	
-	$Diff = 'c:\cygwin\bin\diff.exe';
-	$Cat = 'c:\cygwin\bin\cat.exe';
-	$Touch = 'c:\cygwin\bin\touch.exe';
-}
-else
-{
-	$Diff = "diff";
-	$Cat = "cat";
-	$Touch = "touch";
-}
+my @ToTest = ();
 
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
@@ -47,7 +34,7 @@ sub usage(@) {
         -e    Abort on first diff error
         -w    Ignore white-space differences (diff --ignore-space-change)
         -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
-        -E<e> Set epsilon <e> for fuzzy floating-point compares (default $Epsilon)
+        -E<e> Tolerance epsilon <e> for fuzzy float compares (default $Epsilon)
         -o    Overwrite reference file with new/different result
         -y    On error, copy bad files to (eg stderr.test21) for later comparison
 
@@ -103,6 +90,15 @@ sub which_lda() {
 sub init() {
     $0 =~ s{.*/}{};
     getopts('wcdefyE:o') || usage();
+
+    if ($^O =~ /MSWin/i) {
+        # On MS Windows we need to change paths to external executables
+        # Assumes cygwin is installed
+        $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
+        # And just to be safe (probably not needed):
+        $Diff  = 'c:\cygwin\bin\diff.exe';
+        $Cat   = 'c:\cygwin\bin\cat.exe';
+    }
     $Epsilon = $opt_E if ($opt_E);
     $Diff .= ' --ignore-space-change' if ($opt_w);
     my @num_args = ();
@@ -139,6 +135,23 @@ sub trim_spaces($) {
     $str;
 }
 
+#
+# ref_file($default_name)
+#   Reference file existence: if we're on Windows, AND
+#   an alternate reference-file exists, give precedence
+#   to the alternate file (file with a '-mswin' suffix.)
+#
+sub ref_file($) {
+    my $file = shift;
+    if ($^O =~ /MSWin/i) {
+        my $win_reffile = "$file-mswin";
+        if (-e $win_reffile) {
+            return $win_reffile;
+        }
+    }
+    $file;
+}
+
 # __DATA__ test counter
 my $TestNo = 0;
 
@@ -173,15 +186,15 @@ sub next_test() {
             next;
         }
         if ($line =~ m/\.stdout\b/) {
-            $out_ref = trim_spaces($line);
+            $out_ref = ref_file(trim_spaces($line));
             next;
         }
         if ($line =~ /\.stderr\b/) {
-            $err_ref = trim_spaces($line);
+            $err_ref = ref_file(trim_spaces($line));
             next;
         }
         if ($line =~ /\.predict\b/) {
-            $pred_ref = trim_spaces($line);
+            $pred_ref = ref_file(trim_spaces($line));
             next;
         }
         # if we get here it is some unrecognized pattern
@@ -231,9 +244,28 @@ sub lenient_array_compare($$) {
         # There's some difference, is it significant?
         return 1 unless (looks_like_number($word1));        
         return 1 unless (looks_like_number($word2));        
+
         my $delta = abs($word1 - $word2);
- 
-        return 1 if ($delta > $Epsilon);
+
+        if ($delta > $Epsilon) {
+            # We have a 'big enough' difference, but this difference
+            # may still not be meaningful in all contexts:
+
+            # Big numbers should be compared by ratio rather than
+            # by difference
+
+            # Must ensure we can divide (avoid div-by-0)
+            if (abs($word2) <= 1.0) {
+                # If numbers are so small (close to zero),
+                # ($delta > $Epsilon) suffices for deciding that
+                # the numbers are meaningfully different
+                return 1;
+            }
+            # Now we can safely divide (since abs($word2) > 0)
+            # and determine the ratio difference from 1.0
+            my $ratio_delta = abs($word1/$word2 - 1.0);
+            return 1 if ($ratio_delta > $Epsilon);
+        }
     }
     # print STDERR "lenient_array_compare: no meaningful difference\n";
     return 0; # no meaningful difference
@@ -270,6 +302,14 @@ sub diff_lenient_float($$) {
     $status;
 }
 
+#
+# perl internal way to emulate 'touch'
+#
+sub touch(@) {
+    my $now = time;
+    utime $now, $now, @_;
+}
+
 sub diff($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
@@ -286,7 +326,7 @@ sub diff($$) {
             if ($opt_o) {
                 print STDERR
                   "$0: test $TestNo: -o: creating empty reference $reffile\n";
-                system("$Touch $reffile");
+                touch($reffile);
             } else {
                 print STDERR
                   "$0: test $TestNo: empty output with no reference: ignored.\n"
@@ -500,7 +540,19 @@ run_tests();
 # Except: if -p ... appears in the command, it will be used as the
 # (explicit) predictions file.
 #
-
+# Windows note:
+#
+# Due to differences in Random-Number-Generators in Windows,
+# floating-point outputs may differ in some tests (not all).
+#
+# To minimize the need for changes (leverage existing tests and
+# reference files as much as possible), on Windows we check for
+# existance of files with '-mswin' suffix:
+#   *.stderr-mswin
+#   *.stdout-mswin
+#   *.predict-mswin
+# and if any of them exists, we use it instead.
+#
 __DATA__
 # Test 1:
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1
