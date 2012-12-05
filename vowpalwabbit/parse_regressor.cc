@@ -18,14 +18,11 @@ using namespace std;
 #include "loss_functions.h"
 #include "global_data.h"
 #include "io.h"
+#include "rand48.h"
 
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
 #define VERSION_FILE_WITH_CUBIC "6.1.3"
-
-#ifdef _WIN32
-inline double drand48() { return rand() / (double)RAND_MAX; }
-#endif
 
 void initialize_regressor(vw& all)
 {
@@ -55,10 +52,10 @@ void initialize_regressor(vw& all)
     {
       if (all.rank > 0)
 	for (size_t j = 0; j < all.stride*length; j++)
-	  all.reg.weight_vectors[j] = (float) (0.1 * drand48()); 
+	  all.reg.weight_vectors[j] = (float) (0.1 * frand48()); 
       else
 	for (size_t j = 0; j < length; j++)
-	  all.reg.weight_vectors[j*all.stride] = (float)(drand48() - 0.5);
+	  all.reg.weight_vectors[j*all.stride] = (float)(frand48() - 0.5);
     }
   if (all.initial_weight != 0.)
     for (size_t j = 0; j < all.stride*length; j+=all.stride)
@@ -71,7 +68,7 @@ void initialize_regressor(vw& all)
 	{
 	  for (size_t k = 0; k < all.lda; k++) {
 	    if (all.random_weights) {
-	      all.reg.weight_vectors[j+k] = (float)(-log(drand48()) + 1.0f);
+	      all.reg.weight_vectors[j+k] = (float)(-log(frand48()) + 1.0f);
 		  all.reg.weight_vectors[j+k] *= (float)(all.lda_D / all.lda / all.length() * 200);
 	    }
 	  }

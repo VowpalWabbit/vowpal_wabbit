@@ -24,14 +24,10 @@ license as described in the file LICENSE.
 #include "v_hashmap.h"
 #include "beam.h"
 #include "vw.h"
+#include "rand48.h"
 
 // task-specific includes
 #include "searn_sequencetask.h"
-
-#ifdef _WIN32
-inline void srand48(long l) { srand(l); }
-inline double drand48() { return rand() / (double)RAND_MAX; }
-#endif
 
 namespace SearnUtil
 {
@@ -80,7 +76,7 @@ namespace SearnUtil
   int random_policy(long int seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)
   {
     if(reset_seed) //reset_seed is false for contextual bandit, so that we only reset the seed if the base learner is not a contextual bandit learner, as this breaks the exploration.
-      srand48(seed);
+      msrand48(seed);
 
     if (beta >= 1) {
       if (allow_current_policy) return (int)current_policy;
@@ -99,7 +95,7 @@ namespace SearnUtil
     } else if (num_valid_policies == 1) {
       pid = 0;
     } else {
-      float r = (float)drand48();
+      float r = frand48();
       pid = 0;
       if (r > beta) {
         r -= beta;
@@ -1038,7 +1034,7 @@ namespace Searn
       }
     }
 
-    size_t action = (size_t)(drand48() * nb_allowed_actions) + 1;
+    size_t action = (size_t)(frand48() * nb_allowed_actions) + 1;
     if( task.allowed && nb_allowed_actions < max_action && !is_ldf) {
       //need to adjust action to the corresponding valid action
       for (size_t k=1; k<=action; k++) {

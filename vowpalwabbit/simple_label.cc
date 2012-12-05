@@ -4,6 +4,7 @@
 
 #include "simple_label.h"
 #include "cache.h"
+#include "rand48.h"
 
 using namespace std;
 
@@ -125,11 +126,7 @@ float query_decision(vw& all, example* ec, float k)
     avg_loss = (float)(all.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001)));
     bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, all.active_c0);
   }
-#ifdef _WIN32
-  if(rand()/(double)RAND_MAX <bias)
-#else
-  if(drand48()<bias)
-#endif
+  if(frand48()<bias)
     return 1.f/bias;
   else
     return -1.;

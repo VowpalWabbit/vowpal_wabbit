@@ -27,6 +27,7 @@ license as described in the file LICENSE.
 #include "noop.h"
 #include "gd_mf.h"
 #include "vw.h"
+#include "rand48.h"
 
 using namespace std;
 //
@@ -182,11 +183,7 @@ vw parse_args(int argc, char *argv[])
   else
     all.quiet = false;
 
-#ifdef _WIN32
-  srand(random_seed);
-#else
-  srand48(random_seed);
-#endif
+  msrand48(random_seed);
 
   if (vm.count("active_simulation"))
       all.active_simulation = true;
