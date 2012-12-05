@@ -27,12 +27,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-#ifdef _WIN32
-  srand(0);
-#else
-  srand48(0);
-#endif
-
   vw all = parse_args(argc, argv);
   struct timeb t_start, t_end;
   ftime(&t_start);

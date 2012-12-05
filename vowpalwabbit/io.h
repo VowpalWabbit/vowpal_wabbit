@@ -25,7 +25,6 @@ license as described in the file LICENSE.
 #define ssize_t size_t
 #include <io.h>
 #include <sys/stat.h>
-#define fsync(x) ;
 #endif
 
 class io_buf {
