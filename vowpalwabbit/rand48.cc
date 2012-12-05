@@ -1,29 +1,34 @@
 //A quick implementation similar to drand48 for cross-platform compatibility
 #include <stdint.h>
+#include <iostream>
+using namespace std;
 
 uint64_t a = 0x5DEECE66D;
 uint64_t c = 2147483647;
 
-uint64_t v = c;
+int bias = 127 << 23;
 
-uint64_t mask = (((uint64_t)1) << 48) - 1;
+float merand48(uint64_t& initial)
+{
+  initial = a * initial + c;
+  int32_t temp = (initial >> 41) | bias;
+  return *(float *)&temp - 1;
+}
+
+uint64_t v = c;
 
 void msrand48(uint64_t initial)
 {
   v = initial;
 }
 
-int bias = 127 << 23;
-
 float frand48()
 {
-  v = a * v + c;
-  int32_t temp = (v >> 41) | bias;
-  return *(float *)&temp - 1;
+  return merand48(v);
 }
 
-/*#include <iostream>
-using namespace std;
+
+/*
 
 int mantissa = 128 << 15;
 

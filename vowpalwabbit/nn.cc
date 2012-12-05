@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "cache.h"
 #include "v_hashmap.h"
+#include "rand48.h"
 
 using namespace std;
 
@@ -27,15 +28,9 @@ namespace NN {
   const float hidden_max_activation = 3;
   const int nn_constant = 533357803;
   bool dropout = false;
-  unsigned short xsubi[3];
-  unsigned short save_xsubi[3];
+  uint64_t xsubi;
+  uint64_t save_xsubi;
   size_t nn_current_pass = 0;
-
-  #ifdef _WIN32
-    inline double erand48(unsigned short us[]) { return rand() / (double)RAND_MAX; }
-    inline double drand48() { return rand() / (double)RAND_MAX; }
-    inline unsigned short * seed48(unsigned short seed[]) { srand((int)seed); unsigned short empty[3]; return empty; }
-  #endif
 
   static void
   free_squared_loss (void)
@@ -102,7 +97,7 @@ namespace NN {
     }
 
     if (all->bfgs && ec->pass != nn_current_pass) {
-      memcpy (xsubi, save_xsubi, sizeof (xsubi));
+      save_xsubi = xsubi;
       nn_current_pass = ec->pass;
     }
 
@@ -135,7 +130,7 @@ namespace NN {
         base_learner(all,ec);
         hidden_units[i] = finalize_prediction (*all, ec->partial_prediction);
 
-        dropped_out[i] = (dropout && erand48 (xsubi) < 0.5);
+        dropped_out[i] = (dropout && merand48 (xsubi) < 0.5);
 
         if (shouldOutput) {
           if (i > 0) outputStringStream << ' ';
@@ -374,7 +369,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         {
           weight* w = &all.reg.weight_vectors[output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
 
-          w[0] = (float) (drand48 () - 0.5) / sqrtk;
+          w[0] = (float) (frand48 () - 0.5) / sqrtk;
 
           // prevent divide by zero error
           if (dropout && all.normalized_updates)
@@ -382,12 +377,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         }
 
       // hidden biases
-
       unsigned int weight_index = constant * all.stride;
 
       for (unsigned int i = 0; i < k; ++i)
         {
-          all.reg.weight_vectors[weight_index & all.weight_mask] = (float) (drand48 () - 0.5);
+          all.reg.weight_vectors[weight_index & all.weight_mask] = (float) (frand48 () - 0.5);
           weight_index += increment;
         }
     }
@@ -397,10 +391,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     atexit (free_output_layer);
     atexit (free_squared_loss);
 
-    memset (xsubi, 0, sizeof (xsubi));
-    unsigned short *old = seed48 (xsubi);
-    memcpy (xsubi, old, sizeof (xsubi));
-    memcpy (save_xsubi, old, sizeof (save_xsubi));
-    seed48 (xsubi);
+    msrand48 (0);
   }
 }
