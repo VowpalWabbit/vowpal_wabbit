@@ -228,6 +228,7 @@ void reset_source(vw& all, size_t numbits)
       all.p->output->flush();
       all.p->write_cache = false;
       all.p->output->close_file();
+	  remove(all.p->output->finalname.begin);
       rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
       while(input->files.index() > 0)
 	{
