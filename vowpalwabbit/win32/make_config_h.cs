@@ -14,10 +14,10 @@ public class Program
                 {
                     string version = line.Split('[')[2].Split(']')[0];
                     string config = "#define PACKAGE_VERSION \"" + version + "\"\n";
-                    if (!File.Exists("win32\\config.h") ||
-                        string.CompareOrdinal(File.ReadAllText("win32\\config.h"), config) != 0)
+                    if (!File.Exists("config.h") ||
+                        string.CompareOrdinal(File.ReadAllText("config.h"), config) != 0)
                     {
-                        File.WriteAllText("win32\\config.h", config);
+                        File.WriteAllText("config.h", config);
                     }
                     return;
                 }

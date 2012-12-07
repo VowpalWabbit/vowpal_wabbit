@@ -31,7 +31,7 @@ void initialize_regressor(vw& all)
   all.reg.weight_vectors = (weight *)calloc(all.stride*length, sizeof(weight));
   if (all.reg.weight_vectors == NULL)
     {
-      cerr << all.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
+      cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
       exit (1);
     }
   
@@ -480,6 +480,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 
   io_temp.flush(); // close_file() should do this for me ...
   io_temp.close_file();
+  remove(reg_name.c_str());
   rename(start_name.c_str(),reg_name.c_str());
 }
 
