@@ -1,0 +1,3 @@
+language: cpp
+install: ./autogen.sh && ./configure && make
+script: make test
