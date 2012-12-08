@@ -47,7 +47,7 @@ vw parse_args(int argc, char *argv[])
   po::options_description desc("VW options");
   
   vw all;
-  long int random_seed = 0;
+  size_t random_seed = 0;
   all.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
@@ -119,7 +119,7 @@ vw parse_args(int argc, char *argv[])
     ("quiet", "Don't output diagnostics")
     ("rank", po::value<size_t>(&all.rank), "rank for matrix factorization.")
     ("random_weights", po::value<bool>(&all.random_weights), "make initial weights random")
-    ("random_seed", po::value<long int>(&random_seed), "seed random number generator")
+    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring")

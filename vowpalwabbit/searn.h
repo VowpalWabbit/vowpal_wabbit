@@ -35,7 +35,7 @@ namespace SearnUtil
   void* calloc_or_die(size_t, size_t);
   void free_it(void*);
 
-  int  random_policy(long int, float, bool, int, bool, bool);
+  int  random_policy(uint64_t, float, bool, int, bool, bool);
 
   void add_policy_offset(vw&, example*, size_t, size_t);
   void remove_policy_offset(vw&, example*, size_t, size_t);

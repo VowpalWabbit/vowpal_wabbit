@@ -73,7 +73,7 @@ namespace SearnUtil
     update_example_indicies(all.audit, ec, -policy * increment);
   }
 
-  int random_policy(long int seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)
+  int random_policy(uint64_t seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)
   {
     if(reset_seed) //reset_seed is false for contextual bandit, so that we only reset the seed if the base learner is not a contextual bandit learner, as this breaks the exploration.
       msrand48(seed);
