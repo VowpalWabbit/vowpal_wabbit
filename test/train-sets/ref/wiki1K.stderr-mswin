@@ -1,0 +1,27 @@
+your learning rate is too high, setting it to 1
+Num weight bits = 13
+learning rate = 1
+initial_t = 1
+power_t = 0.5
+using no cache
+Reading from train-sets/wiki1K.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+10.312708  10.312708           3         3.0  unknown   0.0000       37
+10.402514  10.492320           6         6.0  unknown   0.0000       13
+10.356154  10.300523          11        11.0  unknown   0.0000       31
+11.649708  12.943261          22        22.0  unknown   0.0000        1
+11.039215  10.428723          44        44.0  unknown   0.0000      165
+11.042017  11.044884          87        87.0  unknown   0.0000       28
+10.370092  9.698167          174       174.0  unknown   0.0000       16
+9.628472   8.886853          348       348.0  unknown   0.0000        1
+8.989231   8.349991          696       696.0  unknown   0.0000      142
+
+finished run
+number of examples = 1000
+weighted example sum = 1000
+weighted label sum = 0
+average loss = 8.742
+best constant = 1
+total feature number = 86919

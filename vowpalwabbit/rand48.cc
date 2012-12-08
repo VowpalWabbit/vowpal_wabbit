@@ -19,12 +19,12 @@ uint64_t v = c;
 
 void msrand48(uint64_t initial)
 {
-  v = initial;
+	v = initial;
 }
 
 float frand48()
 {
-  return merand48(v);
+	return merand48(v);
 }
 
 

@@ -776,7 +776,7 @@ void setup_example(vw& all, example* ae)
 	ae->num_features 
 	  += (ae->atomics[(int)(*i)[0]].end - ae->atomics[(int)(*i)[0]].begin)
             *(ae->atomics[(int)(*i)[1]].end - ae->atomics[(int)(*i)[1]].begin)
-            *(ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[1]].begin);
+            *(ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[2]].begin);
 	ae->total_sum_feat_sq += ae->sum_feat_sq[(int)(*i)[0]] * ae->sum_feat_sq[(int)(*i)[1]] * ae->sum_feat_sq[(int)(*i)[2]];
       }
 
