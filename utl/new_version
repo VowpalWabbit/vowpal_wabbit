@@ -1,0 +1,12 @@
+git branch $1
+git checkout $1
+./autogen.sh
+make
+cp LICENSE COPYING
+git add -f ltmain.sh acinclude.d/* aclocal.m4 config.guess missing install-sh config.sub depcomp COPYING Makefile.in configure config.status libtool vowpalwabbit/config.h.in vowpalwabbit/Makefile.in cluster/Makefile.in library/Makefile.in 
+rm Makefile vowpalwabbit/Makefile cluster/Makefile library/Makefile
+git commit -a -m "added autogen extra files"
+git tag $1
+git checkout master
+git branch -D $1
+git push --tags
