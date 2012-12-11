@@ -202,6 +202,12 @@ vw parse_args(int argc, char *argv[])
   else
     all.training = true;
 
+  if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
+    {
+      cout << "you must specificy unique_id, total, and node if you specify any" << endl;
+      exit (1);
+    }
+
   all.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
   if( all.rank > 0 || !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
