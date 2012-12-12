@@ -62,7 +62,11 @@ class io_buf {
 #endif
 	}
       else
+#ifdef _WIN32
 	ret = _fileno(stdin);
+#else
+	ret = fileno(stdin);
+#endif
       if(ret!=-1)
 	push(files,ret);
       break;
