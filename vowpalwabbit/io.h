@@ -62,7 +62,7 @@ class io_buf {
 #endif
 	}
       else
-	ret = fileno(stdin);
+	ret = _fileno(stdin);
       if(ret!=-1)
 	push(files,ret);
       break;
