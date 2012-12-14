@@ -32,7 +32,7 @@ public:
 	fil = gzdopen(fileno(stdin), "rb");
       if(fil!=NULL){
         push(gz_files,fil);
-        ret = (int)gz_files.index()-1;
+        ret = (int)gz_files.size()-1;
         push(files,ret);
       }
       else
@@ -43,7 +43,7 @@ public:
       fil = gzopen(name, "wb");
       if(fil!=NULL){
         push(gz_files,fil);
-        ret = (int)gz_files.index()-1;
+        ret = (int)gz_files.size()-1;
         push(files,ret);
       }
       else
@@ -80,14 +80,14 @@ public:
 
   virtual void flush()
   {
-    if (write_file(files[0], space.begin, space.index()) != (int) ((space.index())))
+    if (write_file(files[0], space.begin, space.size()) != (int) ((space.size())))
       std::cerr << "error, failed to write to cache\n";
     space.end = space.begin;
   }
 
   virtual bool close_file(){
     gzFile fil;
-    if(files.index()>0){
+    if(files.size()>0){
       fil = gz_files[files.pop()];
       gzclose(fil);
       free(gz_files.begin);

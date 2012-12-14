@@ -216,7 +216,7 @@ float predict_and_gradient(vw& all, example* &ec)
     }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -224,7 +224,7 @@ float predict_and_gradient(vw& all, example* &ec)
 	} 
     }
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
@@ -253,7 +253,7 @@ void update_preconditioner(vw& all, example* &ec)
     }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
         {
           v_array<feature> temp = ec->atomics[(int)(*i)[0]];
           for (; temp.begin != temp.end; temp.begin++)
@@ -261,7 +261,7 @@ void update_preconditioner(vw& all, example* &ec)
         }
     }
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
@@ -286,7 +286,7 @@ float dot_with_direction(vw& all, example* &ec)
     }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -294,7 +294,7 @@ float dot_with_direction(vw& all, example* &ec)
 	} 
     }
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
@@ -809,8 +809,8 @@ void process_example(vw& all, example *ec)
   else //computing curvature
     {
       float d_dot_x = dot_with_direction(all, ec);//w[2]
-      if (example_number >= predictions.index())//Make things safe in case example source is strange.
-	example_number = predictions.index()-1;
+      if (example_number >= predictions.size())//Make things safe in case example source is strange.
+	example_number = predictions.size()-1;
       ec->final_prediction = predictions[example_number];
       ec->partial_prediction = predictions[example_number];
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;	      

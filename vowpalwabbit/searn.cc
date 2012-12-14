@@ -180,7 +180,7 @@ namespace SearnUtil
         for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++) {
 
           if (all.audit) {
-            if (feature_index >= (int)ec->audit_features[*i].index() ) {
+            if (feature_index >= (int)ec->audit_features[*i].size() ) {
               char buf[32];
               sprintf(buf, "{%d}", f->weight_index);
               fstring = string(buf);
@@ -235,9 +235,9 @@ namespace SearnUtil
     }
 
     push(ec->indices, history_namespace);
-    ec->sum_feat_sq[history_namespace] += ec->atomics[history_namespace].index();
+    ec->sum_feat_sq[history_namespace] += ec->atomics[history_namespace].size();
     ec->total_sum_feat_sq += ec->sum_feat_sq[history_namespace];
-    ec->num_features += ec->atomics[history_namespace].index();
+    ec->num_features += ec->atomics[history_namespace].size();
   }
 
   void remove_history_from_example(vw&all, history_info *hinfo, example* ec)
@@ -245,7 +245,7 @@ namespace SearnUtil
     size_t total_length = max(hinfo->features, hinfo->length);
     if (total_length == 0) return;
 
-    if (ec->indices.index() == 0) {
+    if (ec->indices.size() == 0) {
       cerr << "internal error (bug): trying to remove history, but there are no namespaces!" << endl;
       return;
     }
@@ -255,7 +255,7 @@ namespace SearnUtil
       return;
     }
 
-    ec->num_features -= ec->atomics[history_namespace].index();
+    ec->num_features -= ec->atomics[history_namespace].size();
     ec->total_sum_feat_sq -= ec->sum_feat_sq[history_namespace];
     ec->sum_feat_sq[history_namespace] = 0;
     ec->atomics[history_namespace].erase();
@@ -406,7 +406,7 @@ namespace Searn
       return;
 
     string str = task.to_string(s0, false, last_action_sequence);
-    for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
+    for (size_t i=0; i<all.final_prediction_sink.size(); i++) {
       int f = all.final_prediction_sink[i];
       all.print_text(f, str, ec->tag);
     }
@@ -449,7 +449,7 @@ namespace Searn
 
   void clear_seq(vw&all)
   {
-    if (ec_seq.index() > 0) 
+    if (ec_seq.size() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
 	VW::finish_example(all, *ecc);
       }
@@ -1080,7 +1080,7 @@ namespace Searn
       get_contextual_bandit_loss_vector(all, s0);
     }
 
-    if (loss_vector.index() <= 1 && loss_vector_cb.index() == 0) {
+    if (loss_vector.size() <= 1 && loss_vector_cb.size() == 0) {
       // nothing interesting to do!
       return;
     }
@@ -1178,7 +1178,7 @@ namespace Searn
 
     v_array< pair<size_t,float> > partial_predictions;
     searn_predict(bi->all, s0, bucket_id, bi->allow_oracle, bi->allow_current, &partial_predictions);
-    for (size_t i=0; i<partial_predictions.index(); i++) {
+    for (size_t i=0; i<partial_predictions.size(); i++) {
       state s1 = task.copy(s0);
       float new_loss = cur_loss + partial_predictions[i].second;
       size_t action = partial_predictions[i].first;
@@ -1218,7 +1218,7 @@ namespace Searn
     //   * is_singleline --> look only at ec_seq[0]
     //   * otherwise     --> look at everything
 
-    if (ec_seq.index() == 0)
+    if (ec_seq.size() == 0)
       return;
 
     // generate the start state
@@ -1226,10 +1226,10 @@ namespace Searn
     if (is_singleline)
       task.start_state(ec_seq[0], &s0);
     else
-      task.start_state_multiline(ec_seq.begin, ec_seq.index(), &s0);
+      task.start_state_multiline(ec_seq.begin, ec_seq.size(), &s0);
 
     state s0copy = NULL;
-    bool  is_test = task.is_test_example(ec_seq.begin, ec_seq.index());
+    bool  is_test = task.is_test_example(ec_seq.begin, ec_seq.size());
     if (!is_test) {
       s0copy = task.copy(s0);
       all.sd->example_number++;
@@ -1298,7 +1298,7 @@ namespace Searn
     bool is_real_example = true;
 
     if (is_singleline) {
-      if (ec_seq.index() == 0)
+      if (ec_seq.size() == 0)
         push(ec_seq, ec);
       else
         ec_seq[0] = ec;
@@ -1306,7 +1306,7 @@ namespace Searn
       do_actual_learning(all);
     } else {  
       // is multiline
-      if (ec_seq.index() >= all.p->ring_size - 2) { // give some wiggle room
+      if (ec_seq.size() >= all.p->ring_size - 2) { // give some wiggle room
         std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
         do_actual_learning(all);
         clear_seq(all);

@@ -235,7 +235,7 @@ namespace Sequence {
 
   void clear_seq(vw&all)
   {
-    if (ec_seq.index() > 0) 
+    if (ec_seq.size() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) 
 	VW::finish_example(all, *ecc);
     ec_seq.erase();
@@ -367,7 +367,7 @@ namespace Sequence {
 
   void global_print_label(vw&all, example *ec, size_t label)
   {
-    for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
+    for (size_t i=0; i<all.final_prediction_sink.size(); i++) {
       int f = (int)all.final_prediction_sink[i];
       all.print(f, (float)label, 0., ec->tag);
     }
@@ -746,7 +746,7 @@ namespace Sequence {
 
   void run_test_beam(vw&all)
   {
-    size_t n = ec_seq.index();
+    size_t n = ec_seq.size();
     OAA::mc_label* old_label;
     size_t sz = sequence_beam + sequence_k;
 
@@ -791,7 +791,7 @@ namespace Sequence {
     if (PRINT_DEBUG_INFO) {clog << "-------------------------------------------------------------------" << endl;}
 
     clear_history(current_history); current_history_hash = 0;
-    for (size_t t=0; t<ec_seq.index(); t++) {
+    for (size_t t=0; t<ec_seq.size(); t++) {
       old_label = (OAA::mc_label*)ec_seq[t]->ld;
       pred_seq[t] = predict(all, ec_seq[t], current_history, policy_seq[t], -1);
       append_history(current_history, pred_seq[t]);
@@ -802,11 +802,11 @@ namespace Sequence {
 
   void run_test_common_init()
   {
-    for (size_t t=0; t<ec_seq.index(); t++)
+    for (size_t t=0; t<ec_seq.size(); t++)
       policy_seq[t] = (current_policy == 0) ? 0 : SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, false, true);
     if (PRINT_DEBUG_INFO) {
       clog << "test policies:";
-      for (size_t t=0; t<ec_seq.index(); t++) clog << " " << policy_seq[t];
+      for (size_t t=0; t<ec_seq.size(); t++) clog << " " << policy_seq[t];
       clog << endl;
     }
   }
@@ -814,7 +814,7 @@ namespace Sequence {
   void run_test_common_final(vw&all, bool do_printing)
   {
     size_t seq_num_features = 0;
-    for (size_t t=0; t<ec_seq.index(); t++) {
+    for (size_t t=0; t<ec_seq.size(); t++) {
       if (do_printing) global_print_label(all, ec_seq[t], pred_seq[t]);
       seq_num_features += ec_seq[t]->num_features;
     }
@@ -824,7 +824,7 @@ namespace Sequence {
   // some edit
   void run_train_common_init(vw&all)
   {
-    size_t n = ec_seq.index();
+    size_t n = ec_seq.size();
     size_t seq_num_features = 0;
     true_labels.erase();
     for (size_t t=0; t<n; t++) {
@@ -847,7 +847,7 @@ namespace Sequence {
     }
     if (PRINT_DEBUG_INFO) {
       clog << "train policies (curp=" << current_policy<<", allow_current="<<sequence_allow_current_policy<<":";
-      for (size_t t=0; t<ec_seq.index(); t++) clog << " " << policy_seq[t];
+      for (size_t t=0; t<ec_seq.size(); t++) clog << " " << policy_seq[t];
       clog << endl;
     }
     all.sd->example_number++;
@@ -856,14 +856,14 @@ namespace Sequence {
 
   void run_train_common_final()
   {
-    for (size_t i=0; i<ec_seq.index(); i++)
+    for (size_t i=0; i<ec_seq.size(); i++)
       ec_seq[i]->ld = (void*)true_labels[i];
   }
 
 
   void run_train(vw&all)
   {
-    size_t n = ec_seq.index();
+    size_t n = ec_seq.size();
     bool all_policies_optimal = true;
     for (size_t t=0; t<n; t++) {
       if (policy_seq[t] >= 0) all_policies_optimal = false;
@@ -1008,7 +1008,7 @@ namespace Sequence {
   {
     run_train(all);
     return;
-    size_t n = ec_seq.index();
+    size_t n = ec_seq.size();
     size_t sz = sequence_k + sequence_beam;
     OAA::mc_label* old_label;
 
@@ -1136,7 +1136,7 @@ namespace Sequence {
 
   void do_actual_learning(vw&all)
   {
-    if (ec_seq.index() <= 0) return; // nothing to do
+    if (ec_seq.size() <= 0) return; // nothing to do
 
     bool any_train = false;
     bool any_test  = false;
@@ -1177,7 +1177,7 @@ namespace Sequence {
 
   void learn(void*in, example *ec) {
     vw*all = (vw*)in;
-    if (ec_seq.index() >= all->p->ring_size - 2) { // give some wiggle room
+    if (ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
       cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
       do_actual_learning(*all);
       clear_seq(*all);

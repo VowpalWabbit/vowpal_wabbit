@@ -187,7 +187,7 @@ size_t cache_numbits(io_buf* buf, int filepointer)
     exit(1);
   }
   t.erase();
-  if (t.index() < v_length)
+  if (t.size() < v_length)
     reserve(t,v_length);
   
   buf->read_file(filepointer,t.begin,v_length);
@@ -213,7 +213,7 @@ size_t cache_numbits(io_buf* buf, int filepointer)
 
 bool member(v_array<size_t> ids, size_t id)
 {
-  for (size_t i = 0; i < ids.index(); i++)
+  for (size_t i = 0; i < ids.size(); i++)
     if (ids[i] == id)
       return true;
   return false;
@@ -230,7 +230,7 @@ void reset_source(vw& all, size_t numbits)
       all.p->output->close_file();
 	  remove(all.p->output->finalname.begin);
       rename(all.p->output->currentname.begin, all.p->output->finalname.begin);
-      while(input->files.index() > 0)
+      while(input->files.size() > 0)
 	{
 	  int fd = input->files.pop();
 	  if (!member(all.final_prediction_sink, (size_t) fd))
@@ -277,7 +277,7 @@ void reset_source(vw& all, size_t numbits)
 	  }
 	}
       else {
-	for (size_t i = 0; i < input->files.index();i++)
+	for (size_t i = 0; i < input->files.size();i++)
 	  {
 	    input->reset_file(input->files[i]);
 	    if (cache_numbits(input, input->files[i]) < numbits) {
@@ -301,7 +301,7 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
 		      bool quiet)
 {
   io_buf* output = par->output;
-  if (output->files.index() != 0){
+  if (output->files.size() != 0){
     cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
   }
@@ -564,7 +564,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if(vm.count("hash")) 
 	hash_function = vm["hash"].as<string>();
 
-      if (all.p->input->files.index() > 0)
+      if (all.p->input->files.size() > 0)
 	{
 	  if (!quiet)
 	    cerr << "ignoring text input in favor of cache input" << endl;
@@ -591,9 +591,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       cerr << all.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
       exit(1);
     }
-  all.p->input->count = all.p->input->files.index();
+  all.p->input->count = all.p->input->files.size();
   if (!quiet)
-    cerr << "num sources = " << all.p->input->files.index() << endl;
+    cerr << "num sources = " << all.p->input->files.size() << endl;
 }
 
 bool parser_done(parser* p)
@@ -616,14 +616,14 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
       for(size_t i = 0; i < last; i++)
 	{
 	  size_t new_index = atomics[i].weight_index;
-	  for (size_t n = 1; n < gram_mask.index(); n++)
+	  for (size_t n = 1; n < gram_mask.size(); n++)
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
 	  feature f = {1.,(uint32_t)(new_index & all.parse_mask)};
 	  push(atomics,f);
-	  if (all.audit && audits.index() >= initial_length)
+	  if (all.audit && audits.size() >= initial_length)
 	    {
 	      string feature_name(audits[i].feature);
-	      for (size_t n = 1; n < gram_mask.index(); n++)
+	      for (size_t n = 1; n < gram_mask.size(); n++)
 		{
 		  feature_name += string("^");
 		  feature_name += string(audits[i+gram_mask[n]].feature);
@@ -663,7 +663,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 void generateGrams(vw& all, size_t ngram, size_t skip_gram, example * &ex) {
   for(size_t *index = ex->indices.begin; index < ex->indices.end; index++)
     {
-      size_t length = ex->atomics[*index].index();
+      size_t length = ex->atomics[*index].size();
       for (size_t n = 1; n < ngram; n++)
 	{
 	  gram_mask.erase();

@@ -92,14 +92,14 @@ class ezexample {
   }
 
   void remns() {
-    if (ec->indices.index() == 0) {
+    if (ec->indices.size() == 0) {
       current_seed = 0;
       current_ns = 0;
     } else {
       if (ns_exists[current_ns]) {
         ec->total_sum_feat_sq -= ec->sum_feat_sq[current_ns];
         ec->sum_feat_sq[current_ns] = 0;
-        ec->num_features -= ec->atomics[current_ns].index();
+        ec->num_features -= ec->atomics[current_ns].size();
         ec->atomics[current_ns].erase();
 
         ns_exists[current_ns] = false;

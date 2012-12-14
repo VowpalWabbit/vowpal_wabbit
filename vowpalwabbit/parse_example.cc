@@ -269,7 +269,7 @@ void substring_to_example(vw* all, example* ae, substring example)
     all->p->words.erase();
   } else 	{
     tokenize(' ', label_space, all->p->words);
-    if (all->p->words.index() > 0 && (all->p->words.last().end == label_space.end	|| *(all->p->words.last().begin) == '\'')) //The last field is a tag, so record and strip it off
+    if (all->p->words.size() > 0 && (all->p->words.last().end == label_space.end	|| *(all->p->words.last().begin) == '\'')) //The last field is a tag, so record and strip it off
       {
 	substring tag = all->p->words.pop();
 	if (*tag.begin == '\'')
@@ -278,7 +278,7 @@ void substring_to_example(vw* all, example* ae, substring example)
       }
   }
 
-  if (all->p->words.index() > 0)
+  if (all->p->words.size() > 0)
     all->p->lp->parse_label(all->p, all->sd, ae->ld, all->p->words);
   
   TC_parser parser_line(bar_location,example.end,*all,ae);

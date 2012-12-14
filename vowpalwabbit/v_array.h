@@ -32,7 +32,7 @@ template<class T> class v_array{
   void decr() { end--;}
   v_array() { begin= NULL; end = NULL; end_array=NULL; erase_count = 0;}
   T& operator[](size_t i) { return begin[i]; }
-  size_t index(){return end-begin;}
+  size_t size(){return end-begin;}
   void erase() 
   { if (++erase_count & erase_point && end_array != end)
       {
@@ -86,7 +86,7 @@ inline size_t min(size_t a, size_t b)
 template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
 {
   dst.erase();
-  push_many(dst, src.begin, src.index());
+  push_many(dst, src.begin, src.size());
 }
 
 template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)(T))

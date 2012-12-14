@@ -785,15 +785,15 @@ namespace VW {
     foo.end_array = foo.begin = foo.end = NULL;
     tokenize(' ', ss, foo);
     
-    char** argv = (char**)calloc(foo.index(), sizeof(char*));
-    for (size_t i = 0; i < foo.index(); i++)
+    char** argv = (char**)calloc(foo.size(), sizeof(char*));
+    for (size_t i = 0; i < foo.size(); i++)
       {
 	*(foo[i].end) = '\0';
 	argv[i] = (char*)calloc(foo[i].end-foo[i].begin+1, sizeof(char));
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
-    argc = foo.index();
+    argc = foo.size();
     free(c);
     if (foo.begin != NULL)
       free(foo.begin);

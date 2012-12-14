@@ -24,7 +24,7 @@ namespace WAP {
   {
     for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
-        size_t original_length = ec->atomics[*i].index();
+        size_t original_length = ec->atomics[*i].size();
         //cerr << "original_length = " << original_length << endl;
         for (uint32_t j = 0; j < original_length; j++)
           {
@@ -34,14 +34,14 @@ namespace WAP {
             push(ec->atomics[*i], temp);
           }
         ec->sum_feat_sq[*i] *= 2;
-        //cerr << "final_length = " << ec->atomics[*i].index() << endl;
+        //cerr << "final_length = " << ec->atomics[*i].size() << endl;
       }
     if (all.audit)
       {
         for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
             {
-              size_t original_length = ec->audit_features[*i].index();
+              size_t original_length = ec->audit_features[*i].size();
               for (uint32_t j = 0; j < original_length; j++)
                 {
                   audit_data* f = &ec->audit_features[*i][j];
@@ -58,7 +58,7 @@ namespace WAP {
                   f->weight_index += offset1;
                   push(ec->audit_features[*i], temp);
                 }
-              //cerr << "final_length = " << ec->audit_features[*i].index() << endl;
+              //cerr << "final_length = " << ec->audit_features[*i].size() << endl;
             }
       }
     ec->num_features *= 2;
@@ -70,7 +70,7 @@ namespace WAP {
   {
     for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
-        ec->atomics[*i].end = ec->atomics[*i].begin+ec->atomics[*i].index()/2;
+        ec->atomics[*i].end = ec->atomics[*i].begin+ec->atomics[*i].size()/2;
         feature* end = ec->atomics[*i].end;
         for (feature* f = ec->atomics[*i].begin; f!= end; f++)
           f->weight_index -= offset1;
@@ -81,14 +81,14 @@ namespace WAP {
         for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
             {
-              for (audit_data *f = ec->audit_features[*i].begin + ec->audit_features[*i].index()/2; f != ec->audit_features[*i].end; f++)
+              for (audit_data *f = ec->audit_features[*i].begin + ec->audit_features[*i].size()/2; f != ec->audit_features[*i].end; f++)
                 {
                   if (f->space != NULL)
                     free(f->space);
                   free(f->feature);
                   f->alloced = false;
                 }
-              ec->audit_features[*i].end = ec->audit_features[*i].begin+ec->audit_features[*i].index()/2;
+              ec->audit_features[*i].end = ec->audit_features[*i].begin+ec->audit_features[*i].size()/2;
               for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
                 f->weight_index -= offset1;
             }
@@ -149,9 +149,9 @@ namespace WAP {
         push(vs, temp);
       }
   
-    qsort(vs.begin, vs.index(), sizeof(float_wclass), fi_compare);
+    qsort(vs.begin, vs.size(), sizeof(float_wclass), fi_compare);
   
-    for (uint32_t i = 0; i < ld->costs.index(); i++)
+    for (uint32_t i = 0; i < ld->costs.size(); i++)
       {
         vs[i].ci.x -= score;
         if (i == 0)
@@ -160,10 +160,10 @@ namespace WAP {
           vs[i].v = vs[i-1].v + (vs[i].ci.x-vs[i-1].ci.x) / (float)i;
       }
   
-    qsort(vs.begin, vs.index(), sizeof(float_wclass), fi_compare_i);
+    qsort(vs.begin, vs.size(), sizeof(float_wclass), fi_compare_i);
 
-    for (uint32_t i = 0; i < ld->costs.index(); i++)
-      for (uint32_t j = i+1; j < ld->costs.index(); j++)
+    for (uint32_t i = 0; i < ld->costs.size(); i++)
+      for (uint32_t j = i+1; j < ld->costs.size(); j++)
         {
           label_data simple_temp;
           simple_temp.weight = fabsf(vs[i].v - vs[j].v);
@@ -200,7 +200,7 @@ namespace WAP {
   
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld; 
 
-    for (uint32_t i = 0; i < cost_label->costs.index(); i++)
+    for (uint32_t i = 0; i < cost_label->costs.size(); i++)
       {
         label_data simple_temp;
         simple_temp.initial = 0.;
@@ -233,7 +233,7 @@ namespace WAP {
 
     ec->ld = cost_label;
     
-    if (cost_label->costs.index() > 0)
+    if (cost_label->costs.size() > 0)
       train(*all, ec);
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
   }

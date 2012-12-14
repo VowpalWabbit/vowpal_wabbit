@@ -104,15 +104,15 @@ void sync_weights(vw& all) {
 }
 
 bool command_example(vw& all, example* ec) {
-  if (ec->indices.index() > 1)
+  if (ec->indices.size() > 1)
     return false;
 
-  if (ec->tag.index() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
+  if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
     {//save state
       string final_regressor_name = all.final_regressor_name;
 
-      if ((ec->tag).index() >= 6 && (ec->tag)[4] == '_')
-	final_regressor_name = string(ec->tag.begin+5, (ec->tag).index()-5);
+      if ((ec->tag).size() >= 6 && (ec->tag)[4] == '_')
+	final_regressor_name = string(ec->tag.begin+5, (ec->tag).size()-5);
 
       if (!all.quiet)
 	cerr << "saving regressor to " << final_regressor_name << endl;
@@ -153,7 +153,7 @@ float inline_predict_trunc(vw& all, example* &ec)
   
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -163,9 +163,9 @@ float inline_predict_trunc(vw& all, example* &ec)
     }
 
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) ||
-        (ec->atomics[(int)(*i)[1]].index() == 0) ||
-        (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) ||
+        (ec->atomics[(int)(*i)[1]].size() == 0) ||
+        (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
 
       v_array<feature> f0 = ec->atomics[(int)(*i)[0]];
       for (; f0.begin != f0.end; f0.begin++) {
@@ -194,7 +194,7 @@ float inline_predict(vw& all, example* &ec)
     prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -203,7 +203,7 @@ float inline_predict(vw& all, example* &ec)
 	}
     }
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
 
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
@@ -229,7 +229,7 @@ float inline_predict_rescale(vw& all, example* &ec)
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -239,7 +239,7 @@ float inline_predict_rescale(vw& all, example* &ec)
     }
 
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
 
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
@@ -266,7 +266,7 @@ float inline_predict_trunc_rescale(vw& all, example* &ec)
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -276,7 +276,7 @@ float inline_predict_trunc_rescale(vw& all, example* &ec)
     }
 
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
 
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
@@ -305,7 +305,7 @@ float inline_predict_rescale_general(vw& all, example* &ec)
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -315,7 +315,7 @@ float inline_predict_rescale_general(vw& all, example* &ec)
     }
 
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
 
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
@@ -344,7 +344,7 @@ float inline_predict_trunc_rescale_general(vw& all, example* &ec)
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -440,7 +440,7 @@ void print_features(vw& all, example* &ec)
     {
       size_t count = 0;
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
-	count += ec->audit_features[*i].index() + ec->atomics[*i].index();
+	count += ec->audit_features[*i].size() + ec->atomics[*i].size();
       for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
 	for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	  {
@@ -649,7 +649,7 @@ void inline_train(vw& all, example* &ec, float update)
   }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
   {
-    if (ec->atomics[(int)(*i)[0]].index() > 0)
+    if (ec->atomics[(int)(*i)[0]].size() > 0)
       {
         v_array<feature> temp = ec->atomics[(int)(*i)[0]];
         for (; temp.begin != temp.end; temp.begin++)
@@ -657,7 +657,7 @@ void inline_train(vw& all, example* &ec, float update)
       } 
   }
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
@@ -746,7 +746,7 @@ void general_train(vw& all, example* &ec, float update, float power_t)
   }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
   {
-    if (ec->atomics[(int)(*i)[0]].index() > 0)
+    if (ec->atomics[(int)(*i)[0]].size() > 0)
       {
         v_array<feature> temp = ec->atomics[(int)(*i)[0]];
         for (; temp.begin != temp.end; temp.begin++)
@@ -755,7 +755,7 @@ void general_train(vw& all, example* &ec, float update, float power_t)
   }
 
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
@@ -887,7 +887,7 @@ float compute_general_norm(vw& all, example* &ec, float power_t)
   }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
   {
-    if (ec->atomics[(int)(*i)[0]].index() > 0)
+    if (ec->atomics[(int)(*i)[0]].size() > 0)
     {
       v_array<feature> temp = ec->atomics[(int)(*i)[0]];
       for (; temp.begin != temp.end; temp.begin++)
@@ -896,7 +896,7 @@ float compute_general_norm(vw& all, example* &ec, float power_t)
   }
 
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
@@ -1053,7 +1053,7 @@ float compute_norm(vw& all, example* &ec)
   }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
   {
-    if (ec->atomics[(int)(*i)[0]].index() > 0)
+    if (ec->atomics[(int)(*i)[0]].size() > 0)
       {
         v_array<feature> temp = ec->atomics[(int)(*i)[0]];
         for (; temp.begin != temp.end; temp.begin++)
@@ -1062,7 +1062,7 @@ float compute_norm(vw& all, example* &ec)
   }
 
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];

@@ -81,7 +81,7 @@ namespace OAA {
   {
     mc_label* ld = (mc_label*)v;
 
-    switch(words.index()) {
+    switch(words.size()) {
     case 0:
       break;
     case 1:
@@ -94,7 +94,7 @@ namespace OAA {
       break;
     default:
       cerr << "malformed example!\n";
-      cerr << "words.index() = " << words.index() << endl;
+      cerr << "words.size() = " << words.size() << endl;
     }
   }
 
