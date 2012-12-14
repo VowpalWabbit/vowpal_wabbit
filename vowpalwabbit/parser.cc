@@ -291,7 +291,10 @@ void reset_source(vw& all, size_t numbits)
 
 void finalize_source(parser* p)
 {
+  while (!p->input->files.empty() && p->input->files.last() == fileno(stdin))
+    p->input->files.pop();
   p->input->close_files();
+
   delete p->input;
   p->output->close_files();
   delete p->output;
