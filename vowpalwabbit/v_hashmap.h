@@ -50,8 +50,7 @@ template<class K, class V> class v_hashmap{
 
   ~v_hashmap() {
     //std::cerr << "~v_hashmap" << std::endl;
-    dat.erase();
-    free(dat.begin);
+    dat.delete_v();
   }
 
   void clear() {
@@ -126,8 +125,7 @@ template<class K, class V> class v_hashmap{
       //      std::cerr << "reinserting " << e->key << " at " << last_position << std::endl;
       put_after_get_nogrow(e->key, e->hash, e->val);
     }
-    tmp.erase();
-    free(tmp.begin);
+    tmp.delete_v();
   }
 
   V get(K key, size_t hash) {

@@ -631,8 +631,6 @@ void drive_lda(void* in)
 	  myexpdigammify_2(*all, u_for_w, digammas.begin);
 	}
 
-      v.erase();
-
       for (size_t d = 0; d < batch_size; d++)
 	{
           float score = lda_loop(*all, &v[d*all->lda], weights, examples[d],all->power_t);

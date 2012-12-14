@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #define __INLINE 
@@ -16,20 +17,37 @@ license as described in the file LICENSE.
 #define __INLINE inline
 #endif
 
+const size_t erase_point = ~ ((1 << 10) -1);
+
 template<class T> class v_array{
  public:
   T* begin;
   T* end;
   T* end_array;
+  size_t erase_count;
 
   T last() { return *(end-1);}
   T pop() { return *(--end);}
   bool empty() { return begin == end;}
   void decr() { end--;}
-  v_array() { begin= NULL; end = NULL; end_array=NULL;}
+  v_array() { begin= NULL; end = NULL; end_array=NULL; erase_count = 0;}
   T& operator[](size_t i) { return begin[i]; }
   size_t index(){return end-begin;}
-  void erase() { end = begin;}
+  void erase() 
+  { if (++erase_count & erase_point && end_array != end)
+      {
+	size_t new_len = end-begin;
+	begin = (T *)realloc(begin, sizeof(T)*new_len);
+	end_array = begin + new_len;
+	erase_count = 0;
+      }
+    end = begin;
+  }
+  void delete_v()
+  {
+    if (begin != NULL)
+      free(begin);
+  }
 };
 
 template<class T> inline void push(v_array<T>& v, const T &new_ele)
