@@ -40,7 +40,7 @@ namespace Beam
   beam::~beam() {
     // TODO: really free the elements
     delete dat;
-    free(empty_bucket->begin);
+    empty_bucket->delete_v();
     delete empty_bucket;
   }
 

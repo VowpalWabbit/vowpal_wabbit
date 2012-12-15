@@ -90,7 +90,7 @@ public:
     if(files.size()>0){
       fil = gz_files[files.pop()];
       gzclose(fil);
-      free(gz_files.begin);
+      gz_files.delete_v();
       return true;
     }
     return false;

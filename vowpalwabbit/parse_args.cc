@@ -795,8 +795,7 @@ namespace VW {
 
     argc = foo.size();
     free(c);
-    if (foo.begin != NULL)
-      free(foo.begin);
+    foo.delete_v();
     return argv;
   }
  
@@ -824,8 +823,7 @@ namespace VW {
     finalize_source(all.p);
     free(all.p->lp);
     all.p->parse_name.erase();
-    if (all.p->parse_name.begin != NULL)
-      free(all.p->parse_name.begin);
+    all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
     for (int i = 0; i < all.options_from_file_argc; i++)

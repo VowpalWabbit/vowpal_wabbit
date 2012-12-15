@@ -195,10 +195,10 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   if ( v_tmp != version )
     {
       cout << "cache has possibly incompatible version, rebuilding" << endl;
-      free(t.begin);
+      t.delete_v();
       return 0;
     }
-  free(t.begin);
+  t.delete_v();
   
   const int total = sizeof(size_t);
   char* p[total];
@@ -875,7 +875,7 @@ namespace VW{
     words.push_back(str);
     all.p->lp->parse_label(all.p, all.sd, ec.ld, words);
     words.erase();
-    free(words.begin);
+    words.delete_v();
   }
   
   void finish_example(vw& all, example* ec)
@@ -1038,12 +1038,9 @@ void start_parser(vw& all)
 
 void free_parser(vw& all)
 {
-  free(all.p->channels.begin);
-  all.p->channels.begin = all.p->channels.end = all.p->channels.end_array = NULL;
-  free(all.p->words.begin);
-  all.p->words.begin = all.p->words.end = all.p->words.end_array = NULL;
-  free(all.p->name.begin);
-  all.p->name.begin = all.p->name.end = all.p->name.end_array = NULL;
+  all.p->channels.delete_v();
+  all.p->words.delete_v();
+  all.p->name.delete_v();
 
   if(all.ngram > 1)
     {
@@ -1059,14 +1056,11 @@ void free_parser(vw& all)
   io_buf* output = all.p->output;
   if (output != NULL)
     {
-      if (output->finalname.begin != NULL)
-	free(output->finalname.begin);
-      if (output->currentname.begin != NULL)
-	free(output->currentname.begin);
+      output->finalname.delete_v();
+      output->currentname.delete_v();
     }
 
-  if (all.p->counts.begin != NULL)
-    free(all.p->counts.begin);
+  all.p->counts.delete_v();
 }
 
 void release_parser_datastructures(vw& all)

@@ -490,28 +490,24 @@ namespace Searn
 
     SearnUtil::free_it(rollout);
 
-    loss_vector.erase();
-    SearnUtil::free_it(loss_vector.begin);
+    loss_vector.delete_v();
 
-    old_labels.erase();
-    SearnUtil::free_it(old_labels.begin);
+    old_labels.delete_v();
 
-    new_labels.erase();
-    SearnUtil::free_it(new_labels.begin);
+    new_labels.delete_v();
 
     free_unfreed_states();
-    unfreed_states.erase();
-    SearnUtil::free_it(unfreed_states.begin);
+    unfreed_states.delete_v();
 
     clear_seq(all);
-    SearnUtil::free_it(ec_seq.begin);
+    ec_seq.delete_v();
 
     SearnUtil::free_it(global_example_set);
 
-    SearnUtil::free_it(testall_labels.costs.begin);
-    SearnUtil::free_it(testall_labels_cb.costs.begin);
-    SearnUtil::free_it(allowed_labels.costs.begin);
-    SearnUtil::free_it(allowed_labels_cb.costs.begin);
+    testall_labels.costs.delete_v();
+    testall_labels_cb.costs.delete_v();
+    allowed_labels.costs.delete_v();
+    allowed_labels_cb.costs.delete_v();
 
     if (do_recombination) {
       delete past_states;

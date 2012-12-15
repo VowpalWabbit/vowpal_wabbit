@@ -391,25 +391,18 @@ namespace ECT
     for (size_t l = 0; l < all_levels.size(); l++)
       {
 	for (size_t t = 0; t < all_levels[l].size(); t++)
-	  if (all_levels[l][t].begin != all_levels[l][t].end)
-	    free (all_levels[l][t].begin);
-	if (all_levels[l].begin != all_levels[l].end)
-	  free(all_levels[l].begin);
+	  all_levels[l][t].delete_v();
+	all_levels[l].delete_v();
       }
-    if (final_nodes.begin != final_nodes.end)
-      free (final_nodes.begin);
+    final_nodes.delete_v();
 
-    if (up_directions.begin != up_directions.end)
-      free (up_directions.begin);
+    up_directions.delete_v();
 
-    if (directions.begin != directions.end)
-      free (directions.begin);
+    directions.delete_v();
 
-    if (down_directions.begin != down_directions.end)
-      free (down_directions.begin);
+    down_directions.delete_v();
 
-    if (tournaments_won.begin != tournaments_won.end)
-      free(tournaments_won.begin);
+    tournaments_won.delete_v();
 
     base_finish(all);
   }

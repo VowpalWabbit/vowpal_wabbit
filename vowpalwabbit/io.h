@@ -99,8 +99,8 @@ class io_buf {
   }
 
   virtual ~io_buf(){
-    free(files.begin);
-    free(space.begin);
+    files.delete_v();
+    space.delete_v();
   }
 
   void set(char *p){space.end = p;}

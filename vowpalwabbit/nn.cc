@@ -41,8 +41,8 @@ namespace NN {
   static void
   free_output_layer (void)
   {
-    free (output_layer.indices.begin);
-    free (output_layer.atomics[nn_output_namespace].begin);
+    output_layer.indices.delete_v();
+    output_layer.atomics[nn_output_namespace].delete_v();
   }
 
 #define cast_uint32_t static_cast<uint32_t>

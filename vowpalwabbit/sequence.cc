@@ -321,14 +321,11 @@ namespace Sequence {
   void free_required_memory(vw&all)
   {
     clear_seq(all);
-    if (ec_seq.begin != NULL)
-      free(ec_seq.begin);
+    ec_seq.delete_v();
 
-    loss_vector.erase();
-    free(loss_vector.begin);
+    loss_vector.delete_v();
 
-    transition_prediction_costs.erase();
-    free(transition_prediction_costs.begin);
+    transition_prediction_costs.delete_v();
 
     for (size_t i=0; i<sequence_k * sequence_beam; i++)
       free(hcache[i].total_predictions);
@@ -351,11 +348,9 @@ namespace Sequence {
       valid_transition = NULL;
     }
 
-    true_labels.erase();
-    free(true_labels.begin);
+    true_labels.delete_v();
 
-    if (testall_costs.costs.begin != NULL)
-      free(testall_costs.costs.begin);
+    testall_costs.costs.delete_v();
 
     free_beam();
   }

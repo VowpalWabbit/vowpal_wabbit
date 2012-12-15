@@ -100,8 +100,8 @@ void drive_send(void* in)
 	  if (received_index == sent_index)
 	    {
 	      shutdown(buf->files[0],SHUT_WR);
-	      free(buf->files.begin);
-	      free(buf->space.begin);
+	      buf->files.delete_v();
+	      buf->space.delete_v();
 	      free(delay_ring);
 	      return;
 	    }

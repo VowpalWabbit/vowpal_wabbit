@@ -858,7 +858,7 @@ void finish(void* a)
   ftime(&t_end_global);
   net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 
-  free(predictions.begin);
+  predictions.delete_v();
   free(mem);
   free(rho);
   free(alpha);

@@ -127,8 +127,7 @@ namespace CSOAA {
   void delete_label(void* v)
   {
     label* ld = (label*)v;
-    ld->costs.erase();
-    free(ld->costs.begin);
+    ld->costs.delete_v();
   }
 
   bool substring_eq(substring ss, const char* str) {
@@ -859,8 +858,7 @@ namespace CSOAA_AND_WAP_LDF {
         do_actual_learning(*all);
         output_example_seq(*all);
         clear_seq(*all);
-        if (ec_seq.begin != NULL)
-          free(ec_seq.begin);
+	ec_seq.delete_v();
         return;
       }
     }
@@ -1074,7 +1072,7 @@ namespace LabelDict {
     while (label_iter != NULL) {
       v_array<feature> features = LabelDict::label_features.iterator_get_value(label_iter);
       features.erase();
-      free(features.begin);
+      features.delete_v();
 
       label_iter = LabelDict::label_features.iterator_next(label_iter);
     }

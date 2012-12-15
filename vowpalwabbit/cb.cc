@@ -121,8 +121,7 @@ namespace CB
   void delete_label(void* v)
   {
     CB::label* ld = (CB::label*)v;
-    ld->costs.erase();
-    free(ld->costs.begin);
+    ld->costs.delete_v();
   }
 
   void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
@@ -692,9 +691,7 @@ namespace CB
   void finish(void* a)
   {
     vw* all = (vw*)a;
-    cb_cs_ld.costs.erase();
-    if (cb_cs_ld.costs.begin != NULL)
-      free(cb_cs_ld.costs.begin);
+    cb_cs_ld.costs.delete_v();
     base_finish(all);
   }
 

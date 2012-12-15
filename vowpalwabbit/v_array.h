@@ -47,6 +47,7 @@ template<class T> class v_array{
   {
     if (begin != NULL)
       free(begin);
+    begin = end = end_array = NULL;
   }
   void push_back(const T &new_ele)
   {
