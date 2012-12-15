@@ -188,7 +188,7 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   }
   t.erase();
   if (t.size() < v_length)
-    reserve(t,v_length);
+    t.resize(v_length);
   
   buf->read_file(filepointer,t.begin,v_length);
   version_struct v_tmp(t.begin);
@@ -375,7 +375,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
     {
       if (!quiet)
 	cerr << "using no cache" << endl;
-      reserve(all.p->output->space,0);
+      all.p->output->space.delete_v();
     }
 }
 
@@ -471,7 +471,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	  // create children
 	  size_t num_children = all.num_children;
 	  v_array<int> children;
-	  reserve(children, num_children);
+	  children.resize(num_children);
 	  for (size_t i = 0; i < num_children; i++)
 	    {
 	      // fork() returns pid if parent, 0 if child
@@ -1043,10 +1043,8 @@ void free_parser(vw& all)
   all.p->name.delete_v();
 
   if(all.ngram > 1)
-    {
-      if(gram_mask.begin != NULL) reserve(gram_mask,0);
-    }
-
+    gram_mask.delete_v();
+  
   for (size_t i = 0; i < all.p->ring_size; i++) 
     {
       dealloc_example(all.p->lp->delete_label, examples[i]);

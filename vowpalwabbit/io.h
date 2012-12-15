@@ -42,7 +42,7 @@ class io_buf {
 
   void init(){
     size_t s = 1 << 16;
-    reserve(space, s);
+    space.resize(s);
     current = 0;
     count = 0;
     endloaded = space.begin;
@@ -113,7 +113,7 @@ class io_buf {
     if (space.end_array - endloaded == 0)
       {
 	size_t offset = endloaded - space.begin;
-	reserve(space, 2 * (space.end_array - space.begin));
+	space.resize(2 * (space.end_array - space.begin));
 	endloaded = space.begin+offset;
       }
     ssize_t num_read = read_file(f, endloaded, space.end_array - endloaded);

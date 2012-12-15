@@ -104,7 +104,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   source.read((char*)&v_length, sizeof(v_length));
   temp.erase();
   if (temp.size() < v_length)
-    reserve(temp, v_length);
+    temp.resize(v_length);
   source.read(temp.begin,v_length);
   version_struct v_tmp(temp.begin);
   if (v_tmp < LAST_COMPATIBLE_VERSION)
@@ -240,8 +240,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   size_t options_length;
   source.read((char*)&options_length, sizeof(options_length));
   temp.erase();
-  if (temp.size() < options_length)
-    reserve(temp, options_length);
+  temp.resize(options_length);
   source.read(temp.begin,options_length);
   local_options_from_file.assign(temp.begin);
   if( !initialized ) {

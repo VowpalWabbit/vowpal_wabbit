@@ -471,8 +471,7 @@ float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
   while (average_diff(all, old_gamma.begin, new_gamma.begin) > 0.001);
 
   ec->topic_predictions.erase();
-  if (ec->topic_predictions.end_array - ec->topic_predictions.begin < (int)all.lda)
-    reserve(ec->topic_predictions,all.lda);
+  ec->topic_predictions.resize(all.lda);
   memcpy(ec->topic_predictions.begin,new_gamma.begin,all.lda*sizeof(float));
 
   score += theta_kl(all, new_gamma.begin);
@@ -548,7 +547,7 @@ void drive_lda(void* in)
   v_array<int> doc_lengths;
   v_array<float> digammas;
   v_array<float> v;
-  reserve(v, all->lda*all->minibatch);
+  v.resize(all->lda*all->minibatch);
   
   total_lambda.erase();
 

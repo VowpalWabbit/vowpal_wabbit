@@ -33,6 +33,21 @@ template<class T> class v_array{
   v_array() { begin= NULL; end = NULL; end_array=NULL; erase_count = 0;}
   T& operator[](size_t i) { return begin[i]; }
   size_t size(){return end-begin;}
+  void resize(size_t length)
+    {
+      if ((size_t)(end_array-begin) != length)
+	{
+	  size_t old_len = end-begin;
+	  begin = (T *)realloc(begin, sizeof(T) * length);
+	  if ((begin == NULL) && ((sizeof(T)*length) > 0)) {
+	    std::cerr << "realloc of " << length << " failed in reserve().  out of memory?" << std::endl;
+	    exit(-1);
+	  }
+	  end = begin+old_len;
+	  end_array = begin + length;
+	}
+    }
+
   void erase() 
   { if (++erase_count & erase_point && end_array != end)
       {
@@ -109,20 +124,6 @@ template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
     }
   memcpy(v.end, begin, num * sizeof(T));
   v.end += num;
-}
-
-template<class T> void reserve(v_array<T>& v, size_t length)
-{
-  size_t old_length = v.end_array-v.begin;
-  v.begin = (T *)realloc(v.begin, sizeof(T) * length);
-  if ((v.begin == NULL) && ((sizeof(T)*length) > 0)) {
-    std::cerr << "realloc of " << length << " failed in reserve().  out of memory?" << std::endl;
-    exit(-1);
-  }
-  if (old_length < length)
-    memset(v.begin+old_length, 0, (length-old_length)*sizeof(T));
-  v.end = v.begin;
-  v.end_array = v.begin + length;
 }
 
 template<class T> void calloc_reserve(v_array<T>& v, size_t length)

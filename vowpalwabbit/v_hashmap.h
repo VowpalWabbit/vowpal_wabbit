@@ -37,7 +37,7 @@ template<class K, class V> class v_hashmap{
   v_hashmap(size_t min_size, V def, bool (*eq)(K,K)) {
     dat = v_array<hash_elem>();
     if (min_size < 1023) min_size = 1023;
-    reserve(dat, min_size); // reserve sets to 0 ==> occupied=false
+    dat.resize(min_size); // reserve sets to 0 ==> occupied=false
 
     default_value = def;
     equivalent = eq;
@@ -109,14 +109,14 @@ template<class K, class V> class v_hashmap{
     //    printf("doubling size!\n");
     // remember the old occupants
     v_array<hash_elem>tmp = v_array<hash_elem>();
-    reserve(tmp, num_occupants+10);
+    tmp.resize(num_occupants+10);
     for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
       if (e->occupied)
         tmp.push_back(*e);
     
     // double the size and clear
     //std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;
-    reserve(dat, base_size()*2);
+    dat.resize(base_size()*2);
     memset(dat.begin, 0, base_size()*sizeof(hash_elem));
 
     // re-insert occupants
