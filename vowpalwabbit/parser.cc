@@ -236,7 +236,7 @@ void reset_source(vw& all, size_t numbits)
 	  if (!member(all.final_prediction_sink, (size_t) fd))
 	    close(fd);
 	}
-      input->open_file(all.p->output->finalname.begin,io_buf::READ); //pushing is merged into open_file
+      input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
       all.p->reader = read_cached_features;
     }
   if ( all.p->resettable == true )
@@ -300,10 +300,9 @@ void finalize_source(parser* p)
   delete p->output;
 }
 
-void make_write_cache(size_t numbits, parser* par, string &newname, 
-		      bool quiet)
+void make_write_cache(vw& all, string &newname, bool quiet)
 {
-  io_buf* output = par->output;
+  io_buf* output = all.p->output;
   if (output->files.size() != 0){
     cerr << "Warning: you tried to make two write caches.  Only the first one will be made." << endl;
     return;
@@ -312,7 +311,7 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
   string temp = newname+string(".writing");
   push_many(output->currentname,temp.c_str(),temp.length()+1);
   
-  int f = output->open_file(temp.c_str(), io_buf::WRITE);
+  int f = output->open_file(temp.c_str(), all.stdin_off, io_buf::WRITE);
   if (f == -1) {
     cerr << "can't create cache file !" << endl;
     return;
@@ -323,10 +322,10 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
   output->write_file(f, &v_length, sizeof(size_t));
   output->write_file(f,version.to_string().c_str(),v_length);
   
-  output->write_file(f, &numbits, sizeof(size_t));
+  output->write_file(f, &all.num_bits, sizeof(size_t));
   
   push_many(output->finalname,newname.c_str(),newname.length()+1);
-  par->write_cache = true;
+  all.p->write_cache = true;
   if (!quiet)
     cerr << "creating cache_file = " << newname << endl;
 }
@@ -346,16 +345,16 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
     {
       int f = -1;
       if (!vm.count("kill_cache"))
-        f = all.p->input->open_file(caches[i].c_str(),io_buf::READ);
+        f = all.p->input->open_file(caches[i].c_str(), all.stdin_off, io_buf::READ);
       if (f == -1)
-	make_write_cache(all.num_bits, all.p, caches[i], quiet);
+	make_write_cache(all, caches[i], quiet);
       else {
 	size_t c = cache_numbits(all.p->input, f);
 	if (all.default_bits)
 	  all.num_bits = c;
 	if (c < all.num_bits) {
           all.p->input->close_file();          
-	  make_write_cache(all.num_bits, all.p, caches[i], quiet);
+	  make_write_cache(all, caches[i], quiet);
 	}
 	else {
 	  if (!quiet)
@@ -577,7 +576,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	  string temp = all.data_filename;
 	  if (!quiet)
 	    cerr << "Reading from " << temp << endl;
-	  int f = all.p->input->open_file(temp.c_str(), io_buf::READ);
+	  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
 	  if (f == -1)
 	    {
 	      cerr << "can't open " << temp << ", bailing!" << endl;

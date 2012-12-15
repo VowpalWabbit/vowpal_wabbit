@@ -67,6 +67,7 @@ vw parse_args(int argc, char *argv[])
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
+    ("no_stdin", "do not default to reading from stdin")
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
@@ -190,6 +191,9 @@ vw parse_args(int argc, char *argv[])
 
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
+
+  if (vm.count("no_stdin"))
+    all.stdin_off = true;
 
   if (vm.count("testonly") || all.eta == 0.)
     {
@@ -718,7 +722,7 @@ vw parse_args(int argc, char *argv[])
     if ((to_pass_further.size() == 1) &&
         (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
 
-      int f = io_buf().open_file(last_unrec_arg.c_str(), io_buf::READ);
+      int f = io_buf().open_file(last_unrec_arg.c_str(), all.stdin_off, io_buf::READ);
       if (f != -1) {
         close(f);
         //cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
@@ -802,6 +806,7 @@ namespace VW {
   vw initialize(string s)
   {
     int argc = 0;
+    s += "--no_stdin";
     char** argv = get_argv_from_string(s,argc);
     
     vw all = parse_args(argc, argv);

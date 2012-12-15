@@ -344,7 +344,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
   string start_name = reg_name+string(".writing");
   io_buf io_temp;
 
-  int f = io_temp.open_file(start_name.c_str(),io_buf::WRITE);
+  int f = io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
   
   if (f<0)
     {

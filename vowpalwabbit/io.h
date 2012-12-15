@@ -48,8 +48,8 @@ class io_buf {
     endloaded = space.begin;
   }
 
-  virtual int open_file(const char* name, int flag=READ){
-	int ret;
+  virtual int open_file(const char* name, bool stdin_off, int flag=READ){
+    int ret = -1;
     switch(flag){
     case READ:
       if (*name != '\0')
@@ -61,11 +61,11 @@ class io_buf {
 	  ret = open(name, O_RDONLY|O_LARGEFILE);
 #endif
 	}
-      else
+      else if (!stdin_off)
 #ifdef _WIN32
 	ret = _fileno(stdin);
 #else
-	ret = fileno(stdin);
+      ret = fileno(stdin);
 #endif
       if(ret!=-1)
 	files.push_back(ret);

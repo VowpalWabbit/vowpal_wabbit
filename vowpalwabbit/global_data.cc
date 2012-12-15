@@ -275,4 +275,6 @@ vw::vw()
   passes_complete = 0;
 
   save_per_pass = false;
+
+  stdin_off = false;
 }

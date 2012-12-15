@@ -21,15 +21,19 @@ public:
     init();
   }
 
-  virtual int open_file(const char* name, int flag=READ){
-    gzFile fil;
+  virtual int open_file(const char* name, bool stdin_off, int flag=READ){
+    gzFile fil=NULL;
     int ret = -1;
     switch(flag){
     case READ:
       if (*name != '\0')
 	fil = gzopen(name, "rb");
-      else
-	fil = gzdopen(fileno(stdin), "rb");
+      else if (!stdin_off)
+#ifdef _WIN32
+	fil = gzdopen(_fileno(stdin), "rb");
+#else
+       fil = gzdopen(fileno(stdin), "rb");
+#endif
       if(fil!=NULL){
         gz_files.push_back(fil);
         ret = (int)gz_files.size()-1;
