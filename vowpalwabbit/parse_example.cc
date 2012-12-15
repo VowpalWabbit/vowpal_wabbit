@@ -77,10 +77,10 @@ public:
   
   ~TC_parser(){ }
   
-  inline void featureValue(){
-    if(reading_head == endLine || *reading_head == '|' || *reading_head == ' ' || *reading_head == '\r'){
-      // featureValue --> ø
-    }else if(*reading_head == ':'){
+  inline float featureValue(){
+    if(reading_head == endLine || *reading_head == '|' || *reading_head == ' ' || *reading_head == '\r')
+      return 1.;
+    else if(*reading_head == ':'){
       // featureValue --> ':' 'Float'
       ++reading_head;
       char *end_read = NULL;
@@ -93,9 +93,11 @@ public:
         cout << "warning: invalid feature value:\"" << std::string(reading_head, end_read - reading_head).c_str() << "\" read as NaN. Replacing with 0." << endl;
       }
       reading_head = end_read;
+      return v;
     }else{
       // syntax error
       cout << "malformed example !\n'|' , ':' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      return 0.f;
     }
   }
 
@@ -114,9 +116,7 @@ public:
     }else {
       // maybeFeature --> 'String' FeatureValue
       substring feature_name=read_name();
-      v = 1.;
-      featureValue();
-      v *= cur_channel_v;
+      v = cur_channel_v * featureValue();
       if(v == 0) return; //dont add 0 valued features to list of features
       size_t word_hash;
       if (feature_name.end != feature_name.begin)
