@@ -49,11 +49,9 @@ template<class T> class v_array{
     }
 
   void erase() 
-  { if (++erase_count & erase_point && end_array != end)
+  { if (++erase_count & erase_point)
       {
-	size_t new_len = end-begin;
-	begin = (T *)realloc(begin, sizeof(T)*new_len);
-	end_array = begin + new_len;
+	resize(end-begin);
 	erase_count = 0;
       }
     end = begin;
@@ -67,14 +65,7 @@ template<class T> class v_array{
   void push_back(const T &new_ele)
   {
     if(end == end_array)
-      {
-	size_t old_length = end_array - begin;
-	size_t new_length = 2 * old_length + 3;
-	//      size_t new_length = old_length + 1;
-	begin = (T *)realloc(begin,sizeof(T) * new_length);
-	end = begin + old_length;
-	end_array = begin + new_length;
-      }
+      resize(2 * (end_array-begin) + 3);
     *(end++) = new_ele;
   }
 };
@@ -114,14 +105,8 @@ template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)
 template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)
 {
   if(v.end+num >= v.end_array)
-    {
-      size_t length = v.end - v.begin;
-      size_t new_length = max(2 * (size_t)(v.end_array - v.begin) + 3, 
-			      v.end - v.begin + num);
-      v.begin = (T *)realloc(v.begin,sizeof(T) * new_length);
-      v.end = v.begin + length;
-      v.end_array = v.begin + new_length;
-    }
+    v.resize(max(2 * (size_t)(v.end_array - v.begin) + 3, 
+		 v.end - v.begin + num));
   memcpy(v.end, begin, num * sizeof(T));
   v.end += num;
 }
