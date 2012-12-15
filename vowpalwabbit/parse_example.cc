@@ -66,6 +66,7 @@ public:
   float cur_channel_v;
   bool  new_index;
   size_t mask;
+  size_t anon; 
   bool audit;
   size_t channel_hash;
   char* base;
@@ -97,38 +98,41 @@ public:
       cout << "malformed example !\n'|' , ':' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
     }
   }
+
+  inline substring read_name(){
+    substring ret;
+    ret.begin = reading_head;
+    while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine || *reading_head == '\r' ))
+      ++reading_head;
+    ret.end = reading_head;
+    return ret;
+  }
   
   inline void maybeFeature(){
     if(*reading_head == ' ' || *reading_head == '|'|| reading_head == endLine || *reading_head == '\r' ){
       // maybeFeature --> ø
-    }else if(*reading_head != ':'){
+    }else {
       // maybeFeature --> 'String' FeatureValue
-      substring feature_name ;
-      feature_name.begin = reading_head;
-      v_array<char> feature_v;
-      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' ||reading_head == endLine || *reading_head == '\r')){
-	if(audit){
-	  feature_v.push_back(*reading_head);
-	}
-	++reading_head;
-      }
-      feature_name.end = reading_head;
+      substring feature_name=read_name();
       v = 1.;
       featureValue();
       v *= cur_channel_v;
       if(v == 0) return; //dont add 0 valued features to list of features
-      size_t word_hash = (p->hasher(feature_name,channel_hash)) & mask;
+      size_t word_hash;
+      if (feature_name.end != feature_name.begin)
+	word_hash = (p->hasher(feature_name,channel_hash)) & mask;
+      else
+	word_hash = channel_hash + anon++;
       feature f = {v,(uint32_t)word_hash};
       ae->sum_feat_sq[index] += v*v;
       ae->atomics[index].push_back(f);
       if(audit){
+	v_array<char> feature_v;
+	push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
 	feature_v.push_back('\0');
 	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
 	ae->audit_features[index].push_back(ad);
       }
-    }else{
-      // syntax error
-      cout << "malformed example !\n'|' , space, String or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
     }
   }
   
@@ -163,21 +167,13 @@ public:
       index = (unsigned char)(*reading_head);
       if(ae->atomics[index].begin == ae->atomics[index].end)
 	new_index = true;
-      substring name;
-      name.begin = reading_head;
-      v_array<char> base_v_array;
-      
-      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine || *reading_head == '\r' )){
-	if(audit){
-	  base_v_array.push_back(*reading_head);
-	}
-	++reading_head;
-      }
+      substring name = read_name();
       if(audit){
+	v_array<char> base_v_array;
+	push_many(base_v_array, name.begin, name.end - name.begin);
 	base_v_array.push_back('\0');
 	base = base_v_array.begin;
       }
-      name.end = reading_head;
       channel_hash = p->hasher(name, hash_base);
       nameSpaceInfoValue();
     }
@@ -201,6 +197,7 @@ public:
     base = NULL;
     index = 0;
     new_index = false;
+    anon = 0;
     if(*reading_head == ' ' || reading_head == endLine || *reading_head == '|' || *reading_head == '\r' ){
       // NameSpace --> ListFeatures
       index = (unsigned char)' ';
