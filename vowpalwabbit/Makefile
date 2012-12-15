@@ -14,11 +14,13 @@ config.h: ../configure.ac
 	echo \#define PACKAGE_VERSION \"`grep AC_INIT ../configure.ac | cut -d '[' -f 3 | cut -d ']' -f 1`\" > config.h
 
 vw_SOURCES = $(shell grep libvw_la_SOURCES Makefile.am | cut -d '=' -f 2)
+vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
+vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 
-depend:	$(vw_SOURCES) config.h
-	gcc -MM $(vw_SOURCES) > depend
+%.d:	%.cc
+	gcc -MM $< > $@
 
--include depend
+-include $(vw_DEPS)
 
 %.o:	 %.cc  %.h
 	$(COMPILER) $(FLAGS) -c $< -o $@
@@ -28,8 +30,6 @@ depend:	$(vw_SOURCES) config.h
 
 liballreduce.a:	allreduce.o
 	ar rcs $@ $<
-
-vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
 
 libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 	ar rcs $@ $+
@@ -44,4 +44,4 @@ install: $(BINARIES)
 	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
 
 clean:
-	rm -f  *.o $(BINARIES) *~ $(MANPAGES)
+	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES)
