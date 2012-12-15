@@ -2,7 +2,10 @@ COMPILER = g++
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
-all:	config.h depend $(BINARIES)
+all:	
+	cd ..; $(MAKE)
+
+things:	config.h depend $(BINARIES)
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@

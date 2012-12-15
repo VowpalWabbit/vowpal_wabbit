@@ -52,7 +52,7 @@ spanning_tree:
 	cd cluster; $(MAKE)
 
 vw:
-	cd vowpalwabbit; $(MAKE)
+	cd vowpalwabbit; $(MAKE) things
 
 active_interactor:
 	cd vowpalwabbit; $(MAKE)
