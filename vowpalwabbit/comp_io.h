@@ -31,9 +31,9 @@ public:
       else
 	fil = gzdopen(fileno(stdin), "rb");
       if(fil!=NULL){
-        push(gz_files,fil);
+        gz_files.push_back(fil);
         ret = (int)gz_files.size()-1;
-        push(files,ret);
+        files.push_back(ret);
       }
       else
         ret = -1;
@@ -42,9 +42,9 @@ public:
     case WRITE:
       fil = gzopen(name, "wb");
       if(fil!=NULL){
-        push(gz_files,fil);
+        gz_files.push_back(fil);
         ret = (int)gz_files.size()-1;
-        push(files,ret);
+        files.push_back(ret);
       }
       else
         ret = -1;

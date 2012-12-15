@@ -112,7 +112,7 @@ template<class K, class V> class v_hashmap{
     reserve(tmp, num_occupants+10);
     for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
       if (e->occupied)
-        push(tmp, *e);
+        tmp.push_back(*e);
     
     // double the size and clear
     //std::cerr<<"doubling to "<<(base_size()*2) << " units == " << (base_size()*2*sizeof(hash_elem)) << " bytes / " << ((size_t)-1)<<std::endl;

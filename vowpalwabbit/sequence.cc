@@ -187,13 +187,13 @@ namespace Sequence {
           valid_transition[i][j] = (rd > 0);
           if (valid_transition[i][j]) {
             CSOAA::wclass feat = { FLT_MAX, j+1, 0., 0. };
-            push(this_costs, feat);
+            this_costs.push_back(feat);
           }
         }
       }
       if (i <= (int)sequence_k) {
         CSOAA::label label = { this_costs };
-        push(transition_prediction_costs, label);
+        transition_prediction_costs.push_back(label);
       }
     }
     fclose(f);
@@ -229,7 +229,7 @@ namespace Sequence {
     for (size_t i = 1; i <= all.sd->k; i++)
       {
         CSOAA::wclass cost = {FLT_MAX, i, 0., 0.};
-        push(testall_costs.costs, cost);
+        testall_costs.costs.push_back(cost);
       }
   }
 
@@ -828,7 +828,7 @@ namespace Sequence {
     size_t seq_num_features = 0;
     true_labels.erase();
     for (size_t t=0; t<n; t++) {
-      push(true_labels, (OAA::mc_label*)ec_seq[t]->ld);
+      true_labels.push_back((OAA::mc_label*)ec_seq[t]->ld);
 
       seq_num_features             += ec_seq[t]->num_features;
       all.sd->total_features    += ec_seq[t]->num_features;
@@ -990,7 +990,7 @@ namespace Sequence {
           size_t lab  = hcache[i].original_label;
           float cost = hcache[i].loss - min_loss;
           CSOAA::wclass temp  = { cost, lab+1, 0., 0. };
-          push(loss_vector, temp);
+          loss_vector.push_back(temp);
         }
       }
       generate_training_example(all, ec_seq[t], current_history, loss_vector);
@@ -1108,7 +1108,7 @@ namespace Sequence {
             size_t lab  = hcache[id].original_label % sequence_k;
             float cost = hcache[id].loss - min_loss;
             CSOAA::wclass temp  = { cost, lab+1, 0., 0. };
-            push(loss_vector, temp);
+            loss_vector.push_back(temp);
           }
         }
         //clog << "generate_training_example based on beam[" << k << "].predictions = <";
@@ -1216,7 +1216,7 @@ namespace Sequence {
         ((OAA::mc_label*)ec->ld)->label = sequence_k;
       }
 
-      push(ec_seq, ec);
+      ec_seq.push_back(ec);
     }
   }
 

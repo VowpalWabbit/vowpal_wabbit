@@ -265,8 +265,8 @@ void reset_source(vw& all, size_t numbits)
 	  
 	  // note: breaking cluster parallel online learning by dropping support for id
 	  
-	  push(all.final_prediction_sink, (size_t) f);
-	  push(all.p->input->files,f);
+	  all.final_prediction_sink.push_back((size_t) f);
+	  all.p->input->files.push_back(f);
 
 	  if (isbinary(*(all.p->input))) {
 	    all.p->reader = read_cached_features;
@@ -533,9 +533,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       all.p->label_sock = f;
       all.print = print_result;
       
-      push(all.final_prediction_sink, (size_t) f);
+      all.final_prediction_sink.push_back((size_t) f);
       
-      push(all.p->input->files,f);
+      all.p->input->files.push_back(f);
       all.p->max_fd = max(f, all.p->max_fd);
       if (!all.quiet)
 	cerr << "reading data from port " << port << endl;
@@ -622,7 +622,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	  for (size_t n = 1; n < gram_mask.size(); n++)
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
 	  feature f = {1.,(uint32_t)(new_index & all.parse_mask)};
-	  push(atomics,f);
+	  atomics.push_back(f);
 	  if (all.audit && audits.size() >= initial_length)
 	    {
 	      string feature_name(audits[i].feature);
@@ -638,13 +638,13 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	      strcpy(a_feature.space, feature_space.c_str());
 	      a_feature.feature = (char*)malloc(feature_name.length()+1);
 	      strcpy(a_feature.feature, feature_name.c_str());
-	      push(audits, a_feature);
+	      audits.push_back(a_feature);
 	    }
 	}
     }
   if (ngram > 0)
     {
-      push(gram_mask,gram_mask.last()+1+skips);
+      gram_mask.push_back(gram_mask.last()+1+skips);
       addgrams(all, ngram-1, skip_gram, atomics, audits, initial_length, gram_mask, 0);
       gram_mask.pop();
     }
@@ -670,7 +670,7 @@ void generateGrams(vw& all, size_t ngram, size_t skip_gram, example * &ex) {
       for (size_t n = 1; n < ngram; n++)
 	{
 	  gram_mask.erase();
-	  push(gram_mask,(size_t)0);
+	  gram_mask.push_back((size_t)0);
 	  addgrams(all, n, skip_gram, ex->atomics[*index], 
 		   ex->audit_features[*index], 
 		   length, gram_mask, 0);
@@ -741,9 +741,9 @@ void setup_example(vw& all, example* ae)
 
   if (all.add_constant) {
     //add constant feature
-    push(ae->indices,constant_namespace);
+    ae->indices.push_back(constant_namespace);
     feature temp = {1,(uint32_t) (constant & all.parse_mask)};
-    push(ae->atomics[constant_namespace], temp);
+    ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
   
@@ -823,9 +823,9 @@ namespace VW{
 
   void add_constant_feature(vw& vw, example*ec) {
     size_t cns = constant_namespace;
-    push(ec->indices, cns);
+    ec->indices.push_back(cns);
     feature temp = {1,(uint32_t) (constant & vw.parse_mask)};
-    push(ec->atomics[cns], temp);
+    ec->atomics[cns].push_back(temp);
     ec->total_sum_feat_sq++;
     ec->num_features++;
   }
@@ -838,11 +838,11 @@ namespace VW{
     for (size_t i = 0; i < vf.size();i++)
       {
 	size_t index = vf[i].first;
-	push(ret->indices, index);
+	ret->indices.push_back(index);
 	for (size_t j = 0; j < vf[i].second.size(); j++)
 	  {	    
 	    ret->sum_feat_sq[index] += vf[i].second[j].x * vf[i].second[j].x;
-	    push(ret->atomics[index], vf[i].second[j]);
+	    ret->atomics[index].push_back(vf[i].second[j]);
 	  }
       }
     setup_example(all, ret);
@@ -857,11 +857,11 @@ namespace VW{
     for (size_t i = 0; i < len;i++)
       {
 	size_t index = features[i].name;
-	push(ret->indices, index);
+	ret->indices.push_back(index);
 	for (size_t j = 0; j < features[i].len; j++)
 	  {	    
 	    ret->sum_feat_sq[index] += features[i].fs[j].x * features[i].fs[j].x;
-	    push(ret->atomics[index], features[i].fs[j]);
+	    ret->atomics[index].push_back(features[i].fs[j]);
 	  }
       }
     setup_example(all, ret);
@@ -872,7 +872,7 @@ namespace VW{
     v_array<substring> words;
     char* cstr = (char*)label.c_str();
     substring str = { cstr, cstr+label.length() };
-    push(words, str);
+    words.push_back(str);
     all.p->lp->parse_label(all.p, all.sd, ec.ld, words);
     words.erase();
     free(words.begin);

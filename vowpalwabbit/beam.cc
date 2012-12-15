@@ -51,20 +51,20 @@ namespace Beam
     // check to see if we have this bucket yet
     bucket b = dat->get(id, hash_bucket(id));
     if (b->size() > 0) { // this one exists: just add to it
-      push(*b, e);
+      b->push_back(e);
       //dat->put_after_get(id, hash_bucket(id), b);
       if (b->size() >= max_size * MULTIPLIER)
         prune(id);
     } else {
       bucket bnew = new v_array<elem>();
-      push(*bnew, e);
+      bnew->push_back(e);
       dat->put_after_get(id, hash_bucket(id), bnew);
     }
   }
 
   void beam::put_final(state s, size_t act, float loss) {
     elem e = { s, 0, loss, 0, last_retrieved, act, true };
-    push(*final_states, e);
+    final_states->push_back(e);
   }
 
   void beam::iterate(size_t id, void (*f)(beam*,size_t,state,float,void*), void*args) {
@@ -173,7 +173,7 @@ namespace Beam
     bucket bnew = new v_array<elem>();
     for (elem*e=b->begin; e!=b->end; e++) {
       if (e->loss > cutoff) continue;
-      push(*bnew, *e);
+      bnew->push_back(*e);
       if (num_alive == 0) break;
       num_alive--;
     }

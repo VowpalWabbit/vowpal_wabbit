@@ -69,7 +69,7 @@ namespace CSOAA {
       {
         wclass temp = *(wclass *)c;
         c += sizeof(wclass);
-        push(ld->costs, temp);
+        ld->costs.push_back(temp);
       }
   
     return c;
@@ -177,7 +177,7 @@ namespace CSOAA {
           } else 
             cerr << "malformed cost specification!" << endl;
         }
-        push(ld->costs, f);
+        ld->costs.push_back(f);
       }
     }
 
@@ -185,7 +185,7 @@ namespace CSOAA {
       if (sd->k != (uint32_t)-1) {
         for (size_t i = 1; i <= sd->k; i++) {
           wclass f = {FLT_MAX, i, 0., 0.};
-          push(ld->costs, f);
+          ld->costs.push_back(f);
         }
       } else {
         //cerr << "ldf test examples must have possible labels listed" << endl;
@@ -416,7 +416,7 @@ namespace CSOAA_AND_WAP_LDF {
       size_t feature_index = 0;
       for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
         feature temp = { -f->x, (uint32_t) (f->weight_index & all.parse_mask) };
-        push(ec->atomics[wap_ldf_namespace], temp);
+        ec->atomics[wap_ldf_namespace].push_back(temp);
         norm_sq += f->x * f->x;
         num_f ++;
 
@@ -426,13 +426,13 @@ namespace CSOAA_AND_WAP_LDF {
             audit_data a_feature = { NULL, NULL, (uint32_t) (f->weight_index & all.parse_mask), -f->x, false };
             a_feature.space = b_feature.space;
             a_feature.feature = b_feature.feature;
-            push(ec->audit_features[wap_ldf_namespace], a_feature);
+            ec->audit_features[wap_ldf_namespace].push_back(a_feature);
             feature_index++;
           }
         }
       }
     }
-    push(ec->indices, wap_ldf_namespace);
+    ec->indices.push_back(wap_ldf_namespace);
     ec->sum_feat_sq[wap_ldf_namespace] = norm_sq;
     ec->total_sum_feat_sq += norm_sq;
     ec->num_features += num_f;
@@ -661,7 +661,7 @@ namespace CSOAA_AND_WAP_LDF {
         v_array<feature> features;
         for (feature*f=ec_seq[i]->atomics[ec_seq[i]->indices[0]].begin; f!=ec_seq[i]->atomics[ec_seq[i]->indices[0]].end; f++) {
           feature fnew = { f->x,  f->weight_index };
-          push(features, fnew);
+          features.push_back(fnew);
         }
 
         v_array<CSOAA::wclass> costs = ((CSOAA::label*)ec_seq[i]->ld)->costs;
@@ -771,7 +771,7 @@ namespace CSOAA_AND_WAP_LDF {
       make_single_prediction(*all, ec, &prediction, &min_score);
     } else {
       ec_seq.erase();
-      push(ec_seq, ec);
+      ec_seq.push_back(ec);
       do_actual_learning(*all);
       ec_seq.erase();
     }
@@ -803,7 +803,7 @@ namespace CSOAA_AND_WAP_LDF {
       learn_singleline(all, ec);
       VW::finish_example(*all, ec);
     } else {
-      push(ec_seq, ec);
+      ec_seq.push_back(ec);
     }
   }
 
@@ -1017,13 +1017,13 @@ namespace LabelDict {
     if (has_ns) {
       ec->total_sum_feat_sq -= ec->sum_feat_sq[(size_t)ns];
     } else {
-      push(ec->indices, (size_t)ns);
+      ec->indices.push_back((size_t)ns);
       ec->sum_feat_sq[(size_t)ns] = 0;
     }
 
     for (feature*f=features.begin; f!=features.end; f++) {
       ec->sum_feat_sq[(size_t)ns] += f->x * f->x;
-      push(ec->atomics[(size_t)ns], *f);
+      ec->atomics[(size_t)ns].push_back(*f);
     }
 
     ec->num_features += features.size();

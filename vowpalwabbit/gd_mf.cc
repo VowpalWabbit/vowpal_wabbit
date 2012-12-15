@@ -40,7 +40,7 @@ float mf_inline_predict(vw& all, example* &ec)
 
   // store constant + linear prediction
   // note: constant is now automatically added
-  push(ec->topic_predictions, linear_prediction);
+  ec->topic_predictions.push_back(linear_prediction);
   
   prediction += linear_prediction;
 
@@ -61,8 +61,8 @@ float mf_inline_predict(vw& all, example* &ec)
 	      prediction += x_dot_l * x_dot_r;
 
 	      // store prediction from interaction terms
-	      push(ec->topic_predictions, x_dot_l);
-	      push(ec->topic_predictions, x_dot_r);
+	      ec->topic_predictions.push_back(x_dot_l);
+	      ec->topic_predictions.push_back(x_dot_r);
 	    }
 	}
     }

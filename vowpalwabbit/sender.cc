@@ -32,7 +32,7 @@ void open_sockets(string host)
 {
   sd = open_socket(host.c_str());
   buf = new io_buf();
-  push(buf->files,sd);
+  buf->files.push_back(sd);
 }
 
 void parse_send_args(po::variables_map& vm, vector<string> pairs)

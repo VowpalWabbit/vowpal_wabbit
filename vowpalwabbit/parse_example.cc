@@ -108,7 +108,7 @@ public:
       v_array<char> feature_v;
       while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' ||reading_head == endLine || *reading_head == '\r')){
 	if(audit){
-	  push(feature_v,*reading_head);
+	  feature_v.push_back(*reading_head);
 	}
 	++reading_head;
       }
@@ -120,11 +120,11 @@ public:
       size_t word_hash = (p->hasher(feature_name,channel_hash)) & mask;
       feature f = {v,(uint32_t)word_hash};
       ae->sum_feat_sq[index] += v*v;
-      push(ae->atomics[index],f);
+      ae->atomics[index].push_back(f);
       if(audit){
-	push(feature_v,'\0');
+	feature_v.push_back('\0');
 	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
-	push(ae->audit_features[index],ad);
+	ae->audit_features[index].push_back(ad);
       }
     }else{
       // syntax error
@@ -169,12 +169,12 @@ public:
       
       while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine || *reading_head == '\r' )){
 	if(audit){
-	  push(base_v_array,*reading_head);
+	  base_v_array.push_back(*reading_head);
 	}
 	++reading_head;
       }
       if(audit){
-	push(base_v_array,'\0');
+	base_v_array.push_back('\0');
 	base = base_v_array.begin;
       }
       name.end = reading_head;
@@ -223,7 +223,7 @@ public:
       cout << "malformed example !\n'|' , String, space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
     }
     if(new_index && ae->atomics[index].begin != ae->atomics[index].end)
-      push(ae->indices,index);
+      ae->indices.push_back(index);
   }
   
   inline void listNameSpace(){

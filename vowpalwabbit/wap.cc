@@ -31,7 +31,7 @@ namespace WAP {
             feature* f = &ec->atomics[*i][j];
             feature temp = {- f->x, f->weight_index + offset2};
             f->weight_index += offset1;
-            push(ec->atomics[*i], temp);
+            ec->atomics[*i].push_back(temp);
           }
         ec->sum_feat_sq[*i] *= 2;
         //cerr << "final_length = " << ec->atomics[*i].size() << endl;
@@ -56,7 +56,7 @@ namespace WAP {
                   *new_feature = '-';
                   audit_data temp = {new_space, new_feature, f->weight_index + offset2, - f->x, true};
                   f->weight_index += offset1;
-                  push(ec->audit_features[*i], temp);
+                  ec->audit_features[*i].push_back(temp);
                 }
               //cerr << "final_length = " << ec->audit_features[*i].size() << endl;
             }
@@ -146,7 +146,7 @@ namespace WAP {
         float_wclass temp = {0., *cl};
         if (temp.ci.x < score)
           score = temp.ci.x;
-        push(vs, temp);
+        vs.push_back(temp);
       }
   
     qsort(vs.begin, vs.size(), sizeof(float_wclass), fi_compare);

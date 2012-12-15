@@ -117,17 +117,17 @@ namespace ECT
 
     for (size_t i = 0; i < max_label; i++)
       {
-	push(t,i);	
+	t.push_back(i);	
 	direction d = {i,0,0,0,0,0, false};
-	push(directions,d);
+	directions.push_back(d);
       }
 
-    push(tournaments,t);
+    tournaments.push_back(t);
 
     for (size_t i = 0; i < eliminations-1; i++)
-      push(tournaments, v_array<size_t>());
+      tournaments.push_back(v_array<size_t>());
     
-    push(all_levels, tournaments);
+    all_levels.push_back(tournaments);
     
     size_t level = 0;
 
@@ -141,7 +141,7 @@ namespace ECT
 	for (size_t t = 0; t < tournaments.size(); t++)
 	  {
 	    v_array<size_t> empty;
-	    push(new_tournaments, empty);
+	    new_tournaments.push_back(empty);
 	  }
 
 	for (size_t t = 0; t < tournaments.size(); t++)
@@ -153,7 +153,7 @@ namespace ECT
 		size_t right = tournaments[t][2*j+1];
 		
 		direction d = {id,t,0,0,left,right, false};
-		push(directions,d);
+		directions.push_back(d);
 		size_t direction_index = directions.size()-1;
 		if (directions[left].tournament == t)
 		  directions[left].winner = direction_index;
@@ -170,22 +170,22 @@ namespace ECT
 		  {
 		    directions[direction_index].last = true;
 		    if (t+1 < tournaments.size())
-		      push(new_tournaments[t+1], id);
+		      new_tournaments[t+1].push_back(id);
 		    else // winner eliminated.
 		      directions[direction_index].winner = 0;
-		    push(final_nodes, (size_t)(directions.size()-1));
+		    final_nodes.push_back((size_t)(directions.size()-1));
 		  }
 		else
-		  push(new_tournaments[t], id);
+		  new_tournaments[t].push_back(id);
 		if (t+1 < tournaments.size())
-		  push(new_tournaments[t+1], id);
+		  new_tournaments[t+1].push_back(id);
 		else // loser eliminated.
 		  directions[direction_index].loser = 0;
 	      }
 	    if (tournaments[t].size() % 2 == 1)
-	      push(new_tournaments[t], tournaments[t].last());
+	      new_tournaments[t].push_back(tournaments[t].last());
 	  }
-	push(all_levels, new_tournaments);
+	all_levels.push_back(new_tournaments);
 	level++;
       }
 
@@ -304,7 +304,7 @@ namespace ECT
 	    if (!directions[id].last)
 	      left = directions[directions[id].winner].left == id;
 	    else
-	      push(tournaments_won, true);
+	      tournaments_won.push_back(true);
 	    id = directions[id].winner;
 	  }
 	else
@@ -313,10 +313,10 @@ namespace ECT
 	      {
 		left = directions[directions[id].loser].left == id;
 		if (directions[id].loser == 0)
-		  push(tournaments_won, false);
+		  tournaments_won.push_back(false);
 	      }
 	    else
-	      push(tournaments_won, false);
+	      tournaments_won.push_back(false);
 	    id = directions[id].loser;
 	  }
       }

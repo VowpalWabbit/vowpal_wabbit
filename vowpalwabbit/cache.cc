@@ -80,7 +80,7 @@ int read_cached_features(void* in, example* ec)
 
       index = *(unsigned char*)c;
       c+= sizeof(index);
-      push(ae->indices, (size_t)index);
+      ae->indices.push_back((size_t)index);
       v_array<feature>* ours = ae->atomics+index;
       float* our_sum_feat_sq = ae->sum_feat_sq+index;
       size_t storage = *(size_t *)c;
@@ -117,7 +117,7 @@ int read_cached_features(void* in, example* ec)
 	  f.weight_index = last + s_diff;
 	  last = f.weight_index;
 	  f.weight_index = f.weight_index & mask;
-	  push(*ours, f);
+	  ours->push_back(f);
 	}
       all->p->input->set(c);
     }

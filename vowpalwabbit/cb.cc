@@ -63,7 +63,7 @@ namespace CB
       {
         cb_class temp = *(cb_class *)c;
         c += sizeof(cb_class);
-        push(ld->costs, temp);
+        ld->costs.push_back(temp);
       }
   
     return c;
@@ -184,7 +184,7 @@ namespace CB
           f.prob_action = .0;
         }
 
-        push(ld->costs, f);
+        ld->costs.push_back(f);
       }
   }
 
@@ -242,7 +242,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back(wc );
       }
     }
     else { //this is an example where we can only perform a subset of the actions
@@ -267,7 +267,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
 
@@ -347,7 +347,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
     else { //this is an example where we can only perform a subset of the actions
@@ -376,7 +376,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
 
@@ -415,7 +415,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
     else { //this is an example where we can only perform a subset of the actions
@@ -438,7 +438,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
   }
@@ -475,7 +475,7 @@ namespace CB
           wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
     else { //this is an example where we can only perform a subset of the actions
@@ -500,7 +500,7 @@ namespace CB
           wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
   }
@@ -523,7 +523,7 @@ namespace CB
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
         
-        push(cs_ld.costs,wc);
+        cs_ld.costs.push_back(wc);
       }
     }
   }

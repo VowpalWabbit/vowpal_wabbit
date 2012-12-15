@@ -48,21 +48,20 @@ template<class T> class v_array{
     if (begin != NULL)
       free(begin);
   }
+  void push_back(const T &new_ele)
+  {
+    if(end == end_array)
+      {
+	size_t old_length = end_array - begin;
+	size_t new_length = 2 * old_length + 3;
+	//      size_t new_length = old_length + 1;
+	begin = (T *)realloc(begin,sizeof(T) * new_length);
+	end = begin + old_length;
+	end_array = begin + new_length;
+      }
+    *(end++) = new_ele;
+  }
 };
-
-template<class T> inline void push(v_array<T>& v, const T &new_ele)
-{
-  if(v.end == v.end_array)
-    {
-      size_t old_length = v.end_array - v.begin;
-      size_t new_length = 2 * old_length + 3;
-      //      size_t new_length = old_length + 1;
-      v.begin = (T *)realloc(v.begin,sizeof(T) * new_length);
-      v.end = v.begin + old_length;
-      v.end_array = v.begin + new_length;
-    }
-  *(v.end++) = new_ele;
-}
 
 
 #ifdef _WIN32
@@ -93,7 +92,7 @@ template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)
 {
   dst.erase();
   for (T*item = src.begin; item != src.end; item++)
-    push(dst, copy_item(*item));
+    dst.push_back(copy_item(*item));
 }
 
 template<class T> void push_many(v_array<T>& v, const T* begin, size_t num)

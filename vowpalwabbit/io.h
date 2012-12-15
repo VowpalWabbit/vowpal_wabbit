@@ -68,7 +68,7 @@ class io_buf {
 	ret = fileno(stdin);
 #endif
       if(ret!=-1)
-	push(files,ret);
+	files.push_back(ret);
       break;
 
     case WRITE:
@@ -78,7 +78,7 @@ class io_buf {
 		ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
       if(ret!=-1)
-        push(files,ret);
+        files.push_back(ret);
       break;
 
     default:

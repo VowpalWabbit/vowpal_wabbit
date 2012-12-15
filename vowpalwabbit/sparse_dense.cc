@@ -209,7 +209,7 @@ void quadratic(v_array<feature> &f, const v_array<feature> &first_part,
       for (feature* ele = second_part.begin; ele != second_part.end; ele++) {
         size_t quad_index = (halfhash+ele->weight_index) & mask;
         feature temp = {i_value * ele->x, (uint32_t)quad_index};
-        push(f, temp);
+        f.push_back(temp);
       }
     }
 }
@@ -298,7 +298,7 @@ void cubic(v_array<feature> &f, const v_array<feature> &first_part, const v_arra
       for (feature* ele2 = third_part.begin; ele2 != third_part.end; ele2++) {
         size_t thirdhash = (secondhash+ele2->weight_index) & mask;
         feature temp = {j_value * ele2->x, (uint32_t)thirdhash};
-        push(f, temp);
+        f.push_back(temp);
       }
     }
   }

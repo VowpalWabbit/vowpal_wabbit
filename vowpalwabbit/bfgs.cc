@@ -801,7 +801,7 @@ void process_example(vw& all, example *ec)
       ec->final_prediction = predict_and_gradient(all, ec);//w[0] & w[1]
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       loss_sum += ec->loss;
-      push(predictions,ec->final_prediction);
+      predictions.push_back(ec->final_prediction);
     }
   /********************************************************************/
   /* II) CURVATURE CALCULATION ****************************************/

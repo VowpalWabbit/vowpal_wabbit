@@ -543,7 +543,7 @@ vw parse_args(int argc, char *argv[])
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
       {
-	push(all.final_prediction_sink, (size_t) 1);//stdout
+	all.final_prediction_sink.push_back((size_t) 1);//stdout
       }
     else
       {
@@ -557,7 +557,7 @@ vw parse_args(int argc, char *argv[])
 	int f = fileno(foo);
 	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
-	push(all.final_prediction_sink, (size_t) f);
+	all.final_prediction_sink.push_back((size_t) f);
       }
   }
 
