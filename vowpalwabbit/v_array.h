@@ -74,20 +74,14 @@ template<class T> class v_array{
 #ifdef _WIN32
 #undef max
 #undef min
-inline size_t max(size_t a, size_t b)
-{ if ( a < b) return b; else return a;
-}
-inline size_t min(size_t a, size_t b)
-{ if ( a < b) return a; else return b;
-}
-#else
-inline size_t max(size_t a, size_t b)
-{ if ( a < b) return b; else return a;
-}
-inline size_t min(size_t a, size_t b)
-{ if ( a < b) return a; else return b;
-}
 #endif
+
+inline size_t max(size_t a, size_t b)
+{ if ( a < b) return b; else return a;
+}
+inline size_t min(size_t a, size_t b)
+{ if ( a < b) return a; else return b;
+}
 
 template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
 {
