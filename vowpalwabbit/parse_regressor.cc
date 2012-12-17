@@ -112,6 +112,13 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
       cout << "Model has possibly incompatible version! " << v_tmp.to_string() << endl;
       exit(1);
     }
+  char foo;
+  source.read(&foo,1);
+  if (foo != 'm')
+    {
+      cout << "file is not a model file" << endl;
+      exit(1);
+    }
   
   source.read((char*)&all.sd->min_label, sizeof(all.sd->min_label));
   source.read((char*)&all.sd->max_label, sizeof(all.sd->max_label));
@@ -355,6 +362,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
   if (!as_text) {
     my_buf_write_file(io_temp,f,(char*)&v_length, sizeof(v_length));
     my_buf_write_file(io_temp,f,version.to_string().c_str(),v_length);
+    my_buf_write_file(io_temp,f,"m",1);
   
     my_buf_write_file(io_temp,f,(char*)&all.sd->min_label, sizeof(all.sd->min_label));
     my_buf_write_file(io_temp,f,(char*)&all.sd->max_label, sizeof(all.sd->max_label));
