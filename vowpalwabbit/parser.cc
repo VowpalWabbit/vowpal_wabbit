@@ -199,7 +199,19 @@ size_t cache_numbits(io_buf* buf, int filepointer)
       return 0;
     }
   free(t.begin);
-  
+
+  char temp;
+  if (buf->read_file(filepointer, &temp, 1) < 1) 
+    {
+      cout << "failed to read" << endl;
+      exit(0);
+    }
+  if (temp != 'c')
+    {
+      cout << "data file is not a cache file" << endl;
+      exit (0);
+    }
+
   const int total = sizeof(size_t);
   char* p[total];
   if (buf->read_file(filepointer, p, total) < total) 
@@ -319,7 +331,7 @@ void make_write_cache(size_t numbits, parser* par, string &newname,
 
   output->write_file(f, &v_length, sizeof(size_t));
   output->write_file(f,version.to_string().c_str(),v_length);
-  
+  output->write_file(f,"c",1);
   output->write_file(f, &numbits, sizeof(size_t));
   
   push_many(output->finalname,newname.c_str(),newname.length()+1);
