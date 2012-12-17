@@ -40,14 +40,14 @@ float mf_inline_predict(vw& all, example* &ec)
 
   // store constant + linear prediction
   // note: constant is now automatically added
-  push(ec->topic_predictions, linear_prediction);
+  ec->topic_predictions.push_back(linear_prediction);
   
   prediction += linear_prediction;
 
   // interaction terms
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0 && ec->atomics[(int)(*i)[1]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
 	{
 	  for (size_t k = 1; k <= all.rank; k++)
 	    {
@@ -61,8 +61,8 @@ float mf_inline_predict(vw& all, example* &ec)
 	      prediction += x_dot_l * x_dot_r;
 
 	      // store prediction from interaction terms
-	      push(ec->topic_predictions, x_dot_l);
-	      push(ec->topic_predictions, x_dot_r);
+	      ec->topic_predictions.push_back(x_dot_l);
+	      ec->topic_predictions.push_back(x_dot_r);
 	    }
 	}
     }
@@ -97,7 +97,7 @@ void mf_inline_train(vw& all, example* &ec, float update)
       // quadratic update
       for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
 	{
-	  if (ec->atomics[(int)(*i)[0]].index() > 0 && ec->atomics[(int)(*i)[1]].index() > 0)
+	  if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
 	    {
 
 	      // update l^k weights
@@ -146,7 +146,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 	  cout << ':' << weights[(f->weight_index + offset) & mask];
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    if (ec->atomics[(int)(*i)[0]].index() > 0 && ec->atomics[(int)(*i)[1]].index() > 0)
+    if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
       {
 	/* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
 	for (size_t k = 1; k <= all.rank; k++)

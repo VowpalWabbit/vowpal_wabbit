@@ -103,8 +103,8 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   size_t v_length;
   source.read((char*)&v_length, sizeof(v_length));
   temp.erase();
-  if (temp.index() < v_length)
-    reserve(temp, v_length);
+  if (temp.size() < v_length)
+    temp.resize(v_length);
   source.read(temp.begin,v_length);
   version_struct v_tmp(temp.begin);
   if (v_tmp < LAST_COMPATIBLE_VERSION)
@@ -240,8 +240,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
   size_t options_length;
   source.read((char*)&options_length, sizeof(options_length));
   temp.erase();
-  if (temp.index() < options_length)
-    reserve(temp, options_length);
+  temp.resize(options_length);
   source.read(temp.begin,options_length);
   local_options_from_file.assign(temp.begin);
   if( !initialized ) {
@@ -345,7 +344,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
   string start_name = reg_name+string(".writing");
   io_buf io_temp;
 
-  int f = io_temp.open_file(start_name.c_str(),io_buf::WRITE);
+  int f = io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
   
   if (f<0)
     {

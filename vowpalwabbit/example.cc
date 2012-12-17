@@ -23,20 +23,14 @@ void dealloc_example(void(*delete_label)(void*), example&ec)
   //  std::cerr << "dealloc_example.indices.begin=" << ec.indices.begin << " end=" << ec.indices.end << " // ld = " << ec.ld << "\t|| me = " << &ec << std::endl;
   if (delete_label)
     delete_label(ec.ld);
-  if (ec.tag.end_array != ec.tag.begin)
-    {
-      free(ec.tag.begin);
-      ec.tag.end_array = ec.tag.begin;
-    }
+  ec.tag.delete_v();
       
-  if (ec.topic_predictions.begin)
-    free(ec.topic_predictions.begin);
+  ec.topic_predictions.delete_v();
 
   free(ec.ld);
   for (size_t j = 0; j < 256; j++)
     {
-      if (ec.atomics[j].begin != ec.atomics[j].end_array)
-        free(ec.atomics[j].begin);
+      ec.atomics[j].delete_v();
 
       if (ec.audit_features[j].begin != ec.audit_features[j].end_array)
         {
@@ -47,10 +41,10 @@ void dealloc_example(void(*delete_label)(void*), example&ec)
               free(temp->feature);
               temp->alloced = false;
             }
-          free(ec.audit_features[j].begin);
+	  ec.audit_features[j].delete_v();
         }
     }
-  free(ec.indices.begin);
+  ec.indices.delete_v();
 }
 
 feature copy_feature(feature src) {

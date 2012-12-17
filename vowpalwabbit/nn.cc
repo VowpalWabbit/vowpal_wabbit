@@ -41,8 +41,8 @@ namespace NN {
   static void
   free_output_layer (void)
   {
-    free (output_layer.indices.begin);
-    free (output_layer.atomics[nn_output_namespace].begin);
+    output_layer.indices.delete_v();
+    output_layer.atomics[nn_output_namespace].delete_v();
   }
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -343,15 +343,15 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     bool initialize = true;
 
     memset (&output_layer, 0, sizeof (output_layer));
-    push(output_layer.indices, nn_output_namespace);
+    output_layer.indices.push_back(nn_output_namespace);
     feature output = {1., nn_constant*all.stride};
-    push(output_layer.atomics[nn_output_namespace], output);
+    output_layer.atomics[nn_output_namespace].push_back(output);
     initialize &= (all.reg.weight_vectors[output_layer.atomics[nn_output_namespace][0].weight_index & all.weight_mask] == 0);
 
     for (unsigned int i = 0; i < k; ++i)
       {
         output.weight_index += all.stride;
-        push(output_layer.atomics[nn_output_namespace], output);
+        output_layer.atomics[nn_output_namespace].push_back(output);
         initialize &= (all.reg.weight_vectors[output_layer.atomics[nn_output_namespace][i+1].weight_index & all.weight_mask] == 0);
       }
 

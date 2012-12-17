@@ -26,7 +26,7 @@ size_t buf_read(io_buf &i, char* &pointer, size_t n)
 	}
       if (i.fill(i.files[i.current]) > 0)
 	return buf_read(i,pointer,n);// more bytes are read.
-      else if (++i.current < i.files.index()) 
+      else if (++i.current < i.files.size()) 
 	return buf_read(i,pointer,n);// No more bytes, so go to next file and try again.
       else
 	{//no more bytes to read, return all that we have left.
@@ -71,9 +71,9 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
 	  i.endloaded = i.space.begin+left;
 	  pointer = i.endloaded;
 	}
-      if (i.current < i.files.index() && i.fill(i.files[i.current]) > 0)// more bytes are read.
+      if (i.current < i.files.size() && i.fill(i.files[i.current]) > 0)// more bytes are read.
 	return readto(i,pointer,terminal);
-      else if (++i.current < i.files.index())  //no more bytes, so go to next file.
+      else if (++i.current < i.files.size())  //no more bytes, so go to next file.
 	return readto(i,pointer,terminal);
       else //no more bytes to read, return everything we have.
 	{
@@ -98,7 +98,7 @@ void buf_write(io_buf &o, char* &pointer, int n)
 	o.flush();
       else // Array is short, so increase size.
 	{
-	  reserve(o.space, 2*(o.space.end_array - o.space.begin));
+	  o.space.resize(2*(o.space.end_array - o.space.begin));
 	  o.endloaded = o.space.begin;
 	}
       buf_write (o, pointer,n);

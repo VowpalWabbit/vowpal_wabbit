@@ -80,7 +80,7 @@ int read_cached_features(void* in, example* ec)
 
       index = *(unsigned char*)c;
       c+= sizeof(index);
-      push(ae->indices, (size_t)index);
+      ae->indices.push_back((size_t)index);
       v_array<feature>* ours = ae->atomics+index;
       float* our_sum_feat_sq = ae->sum_feat_sq+index;
       size_t storage = *(size_t *)c;
@@ -117,7 +117,7 @@ int read_cached_features(void* in, example* ec)
 	  f.weight_index = last + s_diff;
 	  last = f.weight_index;
 	  f.weight_index = f.weight_index & mask;
-	  push(*ours, f);
+	  ours->push_back(f);
 	}
       all->p->input->set(c);
     }
@@ -188,18 +188,18 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
 void cache_tag(io_buf& cache, v_array<char> tag)
 {
   char *c;
-  buf_write(cache, c, sizeof(size_t)+tag.index());
-  *(size_t*)c = tag.index();
+  buf_write(cache, c, sizeof(size_t)+tag.size());
+  *(size_t*)c = tag.size();
   c += sizeof(size_t);
-  memcpy(c, tag.begin, tag.index());
-  c += tag.index();
+  memcpy(c, tag.begin, tag.size());
+  c += tag.size();
   cache.set(c);
 }
 
 void cache_features(io_buf& cache, example* ae)
 {
   cache_tag(cache,ae->tag);
-  output_byte(cache, ae->indices.index());
+  output_byte(cache, ae->indices.size());
   for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
     output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end);
 }

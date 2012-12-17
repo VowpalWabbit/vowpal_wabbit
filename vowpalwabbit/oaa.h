@@ -42,8 +42,8 @@ namespace OAA
   inline int example_is_newline(example* ec)
   {
     // if only index is constant namespace or no index
-    return ((ec->indices.index() == 0) || 
-            ((ec->indices.index() == 1) &&
+    return ((ec->indices.size() == 0) || 
+            ((ec->indices.size() == 1) &&
              (ec->indices.last() == constant_namespace)));
   }
 

@@ -215,6 +215,8 @@ struct vw {
 
   char* program_name;
 
+  bool stdin_off;
+
   //runtime accounting variables. 
   float initial_t;
   float eta;//learning rate control.

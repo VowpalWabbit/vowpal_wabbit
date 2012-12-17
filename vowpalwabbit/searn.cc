@@ -3,7 +3,6 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-
 #ifndef _WIN32
 #include <sys/types.h>
 #include <unistd.h>
@@ -138,7 +137,7 @@ namespace SearnUtil
 
       // add the basic history features
       feature temp = {1., (uint32_t) ( (2*v0) & all.parse_mask )};
-      push(ec->atomics[history_namespace], temp);
+      ec->atomics[history_namespace].push_back(temp);
 
       if (all.audit) {
         audit_data a_feature = { NULL, NULL, (uint32_t)((2*v0) & all.parse_mask), 1., true };
@@ -148,7 +147,7 @@ namespace SearnUtil
         a_feature.feature = (char*)calloc_or_die(5 + 2*max_string_length, sizeof(char));
         sprintf(a_feature.feature, "ug@%d=%d", (int)t, (int)h[hinfo->length-t]);
 
-        push(ec->audit_features[history_namespace], a_feature);
+        ec->audit_features[history_namespace].push_back(a_feature);
       }
 
       // add the bigram features
@@ -156,7 +155,7 @@ namespace SearnUtil
         v0 = ((v0 - history_constant) * quadratic_constant + h[hinfo->length-t+1]) * quadratic_constant + history_constant;
 
         feature temp = {1., (uint32_t) ( (2*v0) & all.parse_mask )};
-        push(ec->atomics[history_namespace], temp);
+        ec->atomics[history_namespace].push_back(temp);
 
         if (all.audit) {
           audit_data a_feature = { NULL, NULL, (uint32_t)((2*v0) & all.parse_mask), 1., true };
@@ -166,7 +165,7 @@ namespace SearnUtil
           a_feature.feature = (char*)calloc_or_die(6 + 3*max_string_length, sizeof(char));
           sprintf(a_feature.feature, "bg@%d=%d-%d", (int)t-1, (int)h[hinfo->length-t], (int)h[hinfo->length-t+1]);
 
-          push(ec->audit_features[history_namespace], a_feature);
+          ec->audit_features[history_namespace].push_back(a_feature);
         }
 
       }
@@ -180,7 +179,7 @@ namespace SearnUtil
         for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++) {
 
           if (all.audit) {
-            if (feature_index >= (int)ec->audit_features[*i].index() ) {
+            if (feature_index >= (int)ec->audit_features[*i].size() ) {
               char buf[32];
               sprintf(buf, "{%d}", f->weight_index);
               fstring = string(buf);
@@ -196,7 +195,7 @@ namespace SearnUtil
           
             // add the history/feature pair
             feature temp = {1., (uint32_t) ( (2*(v0 + v)) & all.parse_mask )};
-            push(ec->atomics[history_namespace], temp);
+            ec->atomics[history_namespace].push_back(temp);
 
             if (all.audit) {
               audit_data a_feature = { NULL, NULL, (uint32_t)((2*(v+v0)) & all.parse_mask), 1., true };
@@ -206,7 +205,7 @@ namespace SearnUtil
               a_feature.feature = (char*)calloc_or_die(8 + 2*max_string_length + fstring.length(), sizeof(char));
               sprintf(a_feature.feature, "ug+f@%d=%d=%s", (int)t, (int)h[hinfo->length-t], fstring.c_str());
 
-              push(ec->audit_features[history_namespace], a_feature);
+              ec->audit_features[history_namespace].push_back(a_feature);
             }
 
 
@@ -215,7 +214,7 @@ namespace SearnUtil
               v0 = (v0 + h[hinfo->length-t+1]) * quadratic_constant;
 
               feature temp = {1., (uint32_t) ( (2*(v + v0)) & all.parse_mask )};
-              push(ec->atomics[history_namespace], temp);
+              ec->atomics[history_namespace].push_back(temp);
 
               if (all.audit) {
                 audit_data a_feature = { NULL, NULL, (uint32_t)((2*(v+v0)) & all.parse_mask), 1., true };
@@ -225,7 +224,7 @@ namespace SearnUtil
                 a_feature.feature = (char*)calloc_or_die(9 + 3*max_string_length + fstring.length(), sizeof(char));
                 sprintf(a_feature.feature, "bg+f@%d=%d-%d=%s", (int)t-1, (int)h[hinfo->length-t], (int)h[hinfo->length-t+1], fstring.c_str());
 
-                push(ec->audit_features[history_namespace], a_feature);
+                ec->audit_features[history_namespace].push_back(a_feature);
               }
 
             }
@@ -234,10 +233,10 @@ namespace SearnUtil
       }
     }
 
-    push(ec->indices, history_namespace);
-    ec->sum_feat_sq[history_namespace] += ec->atomics[history_namespace].index();
+    ec->indices.push_back(history_namespace);
+    ec->sum_feat_sq[history_namespace] += ec->atomics[history_namespace].size();
     ec->total_sum_feat_sq += ec->sum_feat_sq[history_namespace];
-    ec->num_features += ec->atomics[history_namespace].index();
+    ec->num_features += ec->atomics[history_namespace].size();
   }
 
   void remove_history_from_example(vw&all, history_info *hinfo, example* ec)
@@ -245,7 +244,7 @@ namespace SearnUtil
     size_t total_length = max(hinfo->features, hinfo->length);
     if (total_length == 0) return;
 
-    if (ec->indices.index() == 0) {
+    if (ec->indices.size() == 0) {
       cerr << "internal error (bug): trying to remove history, but there are no namespaces!" << endl;
       return;
     }
@@ -255,7 +254,7 @@ namespace SearnUtil
       return;
     }
 
-    ec->num_features -= ec->atomics[history_namespace].index();
+    ec->num_features -= ec->atomics[history_namespace].size();
     ec->total_sum_feat_sq -= ec->sum_feat_sq[history_namespace];
     ec->sum_feat_sq[history_namespace] = 0;
     ec->atomics[history_namespace].erase();
@@ -406,7 +405,7 @@ namespace Searn
       return;
 
     string str = task.to_string(s0, false, last_action_sequence);
-    for (size_t i=0; i<all.final_prediction_sink.index(); i++) {
+    for (size_t i=0; i<all.final_prediction_sink.size(); i++) {
       int f = all.final_prediction_sink[i];
       all.print_text(f, str, ec->tag);
     }
@@ -449,7 +448,7 @@ namespace Searn
 
   void clear_seq(vw&all)
   {
-    if (ec_seq.index() > 0) 
+    if (ec_seq.size() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++) {
 	VW::finish_example(all, *ecc);
       }
@@ -472,9 +471,9 @@ namespace Searn
 
     for (size_t k=1; k<=max_action; k++) {
       CSOAA::wclass cost = { FLT_MAX, k, 1., 0. };
-      push(testall_labels.costs, cost);
+      testall_labels.costs.push_back(cost);
       CB::cb_class cost_cb = { FLT_MAX, k, 0. };
-      push(testall_labels_cb.costs, cost_cb);
+      testall_labels_cb.costs.push_back(cost_cb);
     }
 
     empty_example = alloc_example(sizeof(OAA::mc_label));
@@ -490,28 +489,24 @@ namespace Searn
 
     SearnUtil::free_it(rollout);
 
-    loss_vector.erase();
-    SearnUtil::free_it(loss_vector.begin);
+    loss_vector.delete_v();
 
-    old_labels.erase();
-    SearnUtil::free_it(old_labels.begin);
+    old_labels.delete_v();
 
-    new_labels.erase();
-    SearnUtil::free_it(new_labels.begin);
+    new_labels.delete_v();
 
     free_unfreed_states();
-    unfreed_states.erase();
-    SearnUtil::free_it(unfreed_states.begin);
+    unfreed_states.delete_v();
 
     clear_seq(all);
-    SearnUtil::free_it(ec_seq.begin);
+    ec_seq.delete_v();
 
     SearnUtil::free_it(global_example_set);
 
-    SearnUtil::free_it(testall_labels.costs.begin);
-    SearnUtil::free_it(testall_labels_cb.costs.begin);
-    SearnUtil::free_it(allowed_labels.costs.begin);
-    SearnUtil::free_it(allowed_labels_cb.costs.begin);
+    testall_labels.costs.delete_v();
+    testall_labels_cb.costs.delete_v();
+    allowed_labels.costs.delete_v();
+    allowed_labels_cb.costs.delete_v();
 
     if (do_recombination) {
       delete past_states;
@@ -815,7 +810,7 @@ namespace Searn
           for (size_t k=1; k<=max_action; k++)
             if (task.allowed(s0, k)) {
               CSOAA::wclass cost = { FLT_MAX, k, 1., 0. };
-              push(allowed_labels.costs, cost);
+              allowed_labels.costs.push_back(cost);
             } else
               all_allowed = false;
 
@@ -831,7 +826,7 @@ namespace Searn
           for (size_t k=1; k<=max_action; k++)
             if (task.allowed(s0, k)) {
               CB::cb_class cost = { FLT_MAX, k, 0. };
-              push(allowed_labels_cb.costs, cost);
+              allowed_labels_cb.costs.push_back(cost);
             } else
               all_allowed = false;
 
@@ -915,7 +910,7 @@ namespace Searn
             // we need to make a copy of the state
             state copy = task.copy(rollout[action-1].st);
             past_states->put_after_get(copy, rollout[action-1].hash, act_tmp);
-            push(unfreed_states, copy);
+            unfreed_states.push_back(copy);
           }
         }          
           
@@ -979,7 +974,7 @@ namespace Searn
               // we need to make a copy of the state
               state copy = task.copy(rollout[k-1].st);
               past_states->put_after_get(copy, rollout[k-1].hash, action);
-              push(unfreed_states, copy);
+              unfreed_states.push_back(copy);
             }
           }          
           
@@ -1006,7 +1001,7 @@ namespace Searn
       }
 
       CSOAA::wclass temp = { l, k, 1., 0. };
-      push(loss_vector, temp);
+      loss_vector.push_back(temp);
       if ((k == 1) || (l < min_loss)) { min_loss = l; }
 
       task.finish(rollout[k-1].st);
@@ -1064,7 +1059,7 @@ namespace Searn
         temp.x = loss;
         temp.prob_action = prob_sampled;
       }
-      push(loss_vector_cb, temp);
+      loss_vector_cb.push_back(temp);
     }
   }
 
@@ -1080,7 +1075,7 @@ namespace Searn
       get_contextual_bandit_loss_vector(all, s0);
     }
 
-    if (loss_vector.index() <= 1 && loss_vector_cb.index() == 0) {
+    if (loss_vector.size() <= 1 && loss_vector_cb.size() == 0) {
       // nothing interesting to do!
       return;
     }
@@ -1114,10 +1109,10 @@ namespace Searn
       for (size_t k=1; k<=max_action; k++) {
         if (rollout[k-1].alive) {
           OAA::mc_label ld = { k, loss_vector[k-1].x };
-          push(new_labels, ld);
+          new_labels.push_back(ld);
         } else {
           OAA::mc_label ld = { k, 0. };
-          push(new_labels, ld);
+          new_labels.push_back(ld);
         }
       }
 
@@ -1129,7 +1124,7 @@ namespace Searn
         total_examples_generated++;
 
         task.cs_ldf_example(all, s0, k, global_example_set[k-1], true);
-        push(old_labels, global_example_set[k-1]->ld);
+        old_labels.push_back(global_example_set[k-1]->ld);
         global_example_set[k-1]->ld = (void*)(&new_labels[k-1]);
         SearnUtil::add_policy_offset(all, global_example_set[k-1], increment, current_policy);
         if (PRINT_DEBUG_INFO) { cerr << "add_policy_offset, max_action=" << max_action << ", total_number_of_policies=" << total_number_of_policies << ", current_policy=" << current_policy << endl;}
@@ -1178,7 +1173,7 @@ namespace Searn
 
     v_array< pair<size_t,float> > partial_predictions;
     searn_predict(bi->all, s0, bucket_id, bi->allow_oracle, bi->allow_current, &partial_predictions);
-    for (size_t i=0; i<partial_predictions.index(); i++) {
+    for (size_t i=0; i<partial_predictions.size(); i++) {
       state s1 = task.copy(s0);
       float new_loss = cur_loss + partial_predictions[i].second;
       size_t action = partial_predictions[i].first;
@@ -1218,7 +1213,7 @@ namespace Searn
     //   * is_singleline --> look only at ec_seq[0]
     //   * otherwise     --> look at everything
 
-    if (ec_seq.index() == 0)
+    if (ec_seq.size() == 0)
       return;
 
     // generate the start state
@@ -1226,10 +1221,10 @@ namespace Searn
     if (is_singleline)
       task.start_state(ec_seq[0], &s0);
     else
-      task.start_state_multiline(ec_seq.begin, ec_seq.index(), &s0);
+      task.start_state_multiline(ec_seq.begin, ec_seq.size(), &s0);
 
     state s0copy = NULL;
-    bool  is_test = task.is_test_example(ec_seq.begin, ec_seq.index());
+    bool  is_test = task.is_test_example(ec_seq.begin, ec_seq.size());
     if (!is_test) {
       s0copy = task.copy(s0);
       all.sd->example_number++;
@@ -1298,15 +1293,15 @@ namespace Searn
     bool is_real_example = true;
 
     if (is_singleline) {
-      if (ec_seq.index() == 0)
-        push(ec_seq, ec);
+      if (ec_seq.size() == 0)
+        ec_seq.push_back(ec);
       else
         ec_seq[0] = ec;
 
       do_actual_learning(all);
     } else {  
       // is multiline
-      if (ec_seq.index() >= all.p->ring_size - 2) { // give some wiggle room
+      if (ec_seq.size() >= all.p->ring_size - 2) { // give some wiggle room
         std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
         do_actual_learning(all);
         clear_seq(all);
@@ -1319,7 +1314,7 @@ namespace Searn
 	VW::finish_example(all, ec);
         is_real_example = false;
       } else {
-        push(ec_seq, ec);
+        ec_seq.push_back(ec);
       }
     }
 

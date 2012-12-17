@@ -32,7 +32,7 @@ void open_sockets(string host)
 {
   sd = open_socket(host.c_str());
   buf = new io_buf();
-  push(buf->files,sd);
+  buf->files.push_back(sd);
 }
 
 void parse_send_args(po::variables_map& vm, vector<string> pairs)
@@ -47,7 +47,7 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs)
 void send_features(io_buf *b, example* ec)
 {
   // note: subtracting 1 b/c not sending constant
-  output_byte(*b,ec->indices.index()-1);
+  output_byte(*b,ec->indices.size()-1);
   
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
     if (*i == constant_namespace)
@@ -100,8 +100,8 @@ void drive_send(void* in)
 	  if (received_index == sent_index)
 	    {
 	      shutdown(buf->files[0],SHUT_WR);
-	      free(buf->files.begin);
-	      free(buf->space.begin);
+	      buf->files.delete_v();
+	      buf->space.delete_v();
 	      free(delay_ring);
 	      return;
 	    }

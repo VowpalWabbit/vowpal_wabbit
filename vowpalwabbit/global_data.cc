@@ -80,7 +80,7 @@ void print_tag(std::stringstream& ss, v_array<char> tag)
 {
   if (tag.begin != tag.end){
     ss << ' ';
-    ss.write(tag.begin, sizeof(char)*tag.index());
+    ss.write(tag.begin, sizeof(char)*tag.size());
   }  
 }
 
@@ -275,4 +275,6 @@ vw::vw()
   passes_complete = 0;
 
   save_per_pass = false;
+
+  stdin_off = false;
 }

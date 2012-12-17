@@ -67,6 +67,7 @@ vw parse_args(int argc, char *argv[])
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
+    ("no_stdin", "do not default to reading from stdin")
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
@@ -190,6 +191,9 @@ vw parse_args(int argc, char *argv[])
 
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
+
+  if (vm.count("no_stdin"))
+    all.stdin_off = true;
 
   if (vm.count("testonly") || all.eta == 0.)
     {
@@ -543,7 +547,7 @@ vw parse_args(int argc, char *argv[])
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
       {
-	push(all.final_prediction_sink, (size_t) 1);//stdout
+	all.final_prediction_sink.push_back((size_t) 1);//stdout
       }
     else
       {
@@ -557,7 +561,7 @@ vw parse_args(int argc, char *argv[])
 	int f = fileno(foo);
 	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
-	push(all.final_prediction_sink, (size_t) f);
+	all.final_prediction_sink.push_back((size_t) f);
       }
   }
 
@@ -718,7 +722,7 @@ vw parse_args(int argc, char *argv[])
     if ((to_pass_further.size() == 1) &&
         (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
 
-      int f = io_buf().open_file(last_unrec_arg.c_str(), io_buf::READ);
+      int f = io_buf().open_file(last_unrec_arg.c_str(), all.stdin_off, io_buf::READ);
       if (f != -1) {
         close(f);
         //cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
@@ -785,24 +789,24 @@ namespace VW {
     foo.end_array = foo.begin = foo.end = NULL;
     tokenize(' ', ss, foo);
     
-    char** argv = (char**)calloc(foo.index(), sizeof(char*));
-    for (size_t i = 0; i < foo.index(); i++)
+    char** argv = (char**)calloc(foo.size(), sizeof(char*));
+    for (size_t i = 0; i < foo.size(); i++)
       {
 	*(foo[i].end) = '\0';
 	argv[i] = (char*)calloc(foo[i].end-foo[i].begin+1, sizeof(char));
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
-    argc = foo.index();
+    argc = foo.size();
     free(c);
-    if (foo.begin != NULL)
-      free(foo.begin);
+    foo.delete_v();
     return argv;
   }
  
   vw initialize(string s)
   {
     int argc = 0;
+    s += "--no_stdin";
     char** argv = get_argv_from_string(s,argc);
     
     vw all = parse_args(argc, argv);
@@ -824,8 +828,7 @@ namespace VW {
     finalize_source(all.p);
     free(all.p->lp);
     all.p->parse_name.erase();
-    if (all.p->parse_name.begin != NULL)
-      free(all.p->parse_name.begin);
+    all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
     for (int i = 0; i < all.options_from_file_argc; i++)

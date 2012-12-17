@@ -26,7 +26,7 @@ namespace CB
 
   bool know_all_cost_example(CB::label* ld)
   {
-    if (ld->costs.index() <= 1) //this means we specified an example where all actions are possible but only specified the cost for the observed action
+    if (ld->costs.size() <= 1) //this means we specified an example where all actions are possible but only specified the cost for the observed action
       return false;
 
     //if we specified more than 1 action for this example, i.e. either we have a limited set of possible actions, or all actions are specified
@@ -40,9 +40,9 @@ namespace CB
 
   bool is_test_label(CB::label* ld)
   {
-    if (ld->costs.index() == 0)
+    if (ld->costs.size() == 0)
       return true;
-    for (size_t i=0; i<ld->costs.index(); i++)
+    for (size_t i=0; i<ld->costs.size(); i++)
       if (FLT_MAX != ld->costs[i].x && ld->costs[i].prob_action > 0.)
         return false;
     return true;
@@ -63,7 +63,7 @@ namespace CB
       {
         cb_class temp = *(cb_class *)c;
         c += sizeof(cb_class);
-        push(ld->costs, temp);
+        ld->costs.push_back(temp);
       }
   
     return c;
@@ -94,9 +94,9 @@ namespace CB
 
   char* bufcache_label(CB::label* ld, char* c)
   {
-    *(size_t *)c = ld->costs.index();
+    *(size_t *)c = ld->costs.size();
     c += sizeof(size_t);
-    for (size_t i = 0; i< ld->costs.index(); i++)
+    for (size_t i = 0; i< ld->costs.size(); i++)
       {
         *(cb_class *)c = ld->costs[i];
         c += sizeof(cb_class);
@@ -108,7 +108,7 @@ namespace CB
   {
     char *c;
     CB::label* ld = (CB::label*) v;
-    buf_write(cache, c, sizeof(size_t)+sizeof(cb_class)*ld->costs.index());
+    buf_write(cache, c, sizeof(size_t)+sizeof(cb_class)*ld->costs.size());
     bufcache_label(ld,c);
   }
 
@@ -121,20 +121,19 @@ namespace CB
   void delete_label(void* v)
   {
     CB::label* ld = (CB::label*)v;
-    ld->costs.erase();
-    free(ld->costs.begin);
+    ld->costs.delete_v();
   }
 
   void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   {
     CB::label* ld = (CB::label*)v;
 
-    for (size_t i = 0; i < words.index(); i++)
+    for (size_t i = 0; i < words.size(); i++)
       {
         cb_class f;
 	tokenize(':', words[i], p->parse_name);
 
-        if( p->parse_name.index() < 1 || p->parse_name.index() > 3 )
+        if( p->parse_name.size() < 1 || p->parse_name.size() > 3 )
         {
           cerr << "malformed cost specification!" << endl;
 	  cerr << "terminating." << endl;
@@ -150,7 +149,7 @@ namespace CB
         }
 
         f.x = FLT_MAX;
-        if(p->parse_name.index() > 1)
+        if(p->parse_name.size() > 1)
           f.x = float_of_substring(p->parse_name[1]);
 
         if ( nanpattern(f.x))
@@ -162,7 +161,7 @@ namespace CB
         }
       
         f.prob_action = .0;
-        if(p->parse_name.index() > 2)
+        if(p->parse_name.size() > 2)
           f.prob_action = float_of_substring(p->parse_name[2]);
 
         if ( nanpattern(f.prob_action))
@@ -184,7 +183,7 @@ namespace CB
           f.prob_action = .0;
         }
 
-        push(ld->costs, f);
+        ld->costs.push_back(f);
       }
   }
 
@@ -220,7 +219,7 @@ namespace CB
     
     //generate cost-sensitive example
     cs_ld.costs.erase();
-    if( ld->costs.index() == 1) { //this is a typical example where we can perform all actions
+    if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
       for( size_t i = 1; i <= all->sd->k; i++)
       {
@@ -242,7 +241,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back(wc );
       }
     }
     else { //this is an example where we can only perform a subset of the actions
@@ -267,7 +266,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
 
@@ -321,7 +320,7 @@ namespace CB
 
     //generate cost sensitive example
     cs_ld.costs.erase();  
-    if( ld->costs.index() == 1) { //this is a typical example where we can perform all actions
+    if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions  
       for( size_t i = 1; i <= all->sd->k; i++)
       {
@@ -347,7 +346,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
     else { //this is an example where we can only perform a subset of the actions
@@ -376,7 +375,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
 
@@ -395,7 +394,7 @@ namespace CB
 
     //generate cost sensitive example
     cs_ld.costs.erase();  
-    if( ld->costs.index() == 1) { //this is a typical example where we can perform all actions
+    if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions  
       for( size_t i = 1; i <= all->sd->k; i++)
       {
@@ -415,7 +414,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
     else { //this is an example where we can only perform a subset of the actions
@@ -438,7 +437,7 @@ namespace CB
           last_correct_cost = cl_obs->x;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
   }
@@ -453,7 +452,7 @@ namespace CB
 
     //generate cost sensitive example
     cs_ld.costs.erase();
-    if( ld->costs.index() == 1) { //this is a typical example where we can perform all actions
+    if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
       for( size_t i = 1; i <= all->sd->k; i++)
       {
@@ -475,7 +474,7 @@ namespace CB
           wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
     else { //this is an example where we can only perform a subset of the actions
@@ -500,7 +499,7 @@ namespace CB
           wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
         }
 
-        push( cs_ld.costs, wc );
+        cs_ld.costs.push_back( wc );
       }
     }
   }
@@ -510,7 +509,7 @@ namespace CB
     CB::label* ld = (CB::label*)ec->ld;
 
     cs_ld.costs.erase();
-    if(ld->costs.index() > 0)
+    if(ld->costs.size() > 0)
     {
       //if this is a test example and we specified actions, this means we are only allowed to perform these actions, so copy all actions with their specified costs
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++)
@@ -523,7 +522,7 @@ namespace CB
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
         
-        push(cs_ld.costs,wc);
+        cs_ld.costs.push_back(wc);
       }
     }
   }
@@ -678,7 +677,7 @@ namespace CB
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   
-    for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
+    for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
         int f = all.final_prediction_sink[i];
         all.print(f, (float) (*(OAA::prediction_t*)&ec->final_prediction), 0, ec->tag);
@@ -692,9 +691,7 @@ namespace CB
   void finish(void* a)
   {
     vw* all = (vw*)a;
-    cb_cs_ld.costs.erase();
-    if (cb_cs_ld.costs.begin != NULL)
-      free(cb_cs_ld.costs.begin);
+    cb_cs_ld.costs.delete_v();
     base_finish(all);
   }
 

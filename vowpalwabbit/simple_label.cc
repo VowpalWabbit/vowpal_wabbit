@@ -80,7 +80,7 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
 {
   label_data* ld = (label_data*)v;
 
-  switch(words.index()) {
+  switch(words.size()) {
   case 0:
     break;
   case 1:
@@ -97,9 +97,9 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
     break;
   default:
     cerr << "malformed example!\n";
-    cerr << "words.index() = " << words.index() << endl;
+    cerr << "words.size() = " << words.size() << endl;
   }
-  if (words.index() > 0 && sd->binary_label && fabs(ld->label) != 1.f)
+  if (words.size() > 0 && sd->binary_label && fabs(ld->label) != 1.f)
     cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
 }
 
@@ -174,7 +174,7 @@ void output_and_account_example(vw& all, example* ec)
     ai=query_decision(all, ec, (float)all.sd->weighted_unlabeled_examples);
   all.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
   
-  for (size_t i = 0; i<all.final_prediction_sink.index(); i++)
+  for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
     {
       int f = (int)all.final_prediction_sink[i];
       if(all.active)

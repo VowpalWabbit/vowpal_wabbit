@@ -388,7 +388,7 @@ float theta_kl(vw& all, float* gamma)
   float gammasum = 0;
   Elogtheta.erase();
   for (size_t k = 0; k < all.lda; k++) {
-    push(Elogtheta, mydigamma(gamma[k]));
+    Elogtheta.push_back(mydigamma(gamma[k]));
     gammasum += gamma[k];
   }
   float digammasum = mydigamma(gammasum);
@@ -427,8 +427,8 @@ float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
   
   for (size_t i = 0; i < all.lda; i++)
     {
-      push(new_gamma, 1.f);
-      push(old_gamma, 0.f);
+      new_gamma.push_back(1.f);
+      old_gamma.push_back(0.f);
     }
   size_t num_words =0;
   for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
@@ -471,8 +471,7 @@ float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
   while (average_diff(all, old_gamma.begin, new_gamma.begin) > 0.001);
 
   ec->topic_predictions.erase();
-  if (ec->topic_predictions.end_array - ec->topic_predictions.begin < (int)all.lda)
-    reserve(ec->topic_predictions,all.lda);
+  ec->topic_predictions.resize(all.lda);
   memcpy(ec->topic_predictions.begin,new_gamma.begin,all.lda*sizeof(float));
 
   score += theta_kl(all, new_gamma.begin);
@@ -548,12 +547,12 @@ void drive_lda(void* in)
   v_array<int> doc_lengths;
   v_array<float> digammas;
   v_array<float> v;
-  reserve(v, all->lda*all->minibatch);
+  v.resize(all->lda*all->minibatch);
   
   total_lambda.erase();
 
   for (size_t k = 0; k < all->lda; k++)
-    push(total_lambda, 0.f);
+    total_lambda.push_back(0.f);
   size_t stride = all->stride;
   weight* weights = reg.weight_vectors;
 
@@ -562,14 +561,14 @@ void drive_lda(void* in)
       total_lambda[k] += weights[i+k];
 
   v_array<float> decay_levels;
-  push(decay_levels, 0.f);
+  decay_levels.push_back(0.f);
   double example_t = all->initial_t;
   while ( true )
     {
       example_t++;
       total_new.erase();
       for (size_t k = 0; k < all->lda; k++)
-	push(total_new, 0.f);
+	total_new.push_back(0.f);
 
       sorted_features.resize(0);
 
@@ -580,10 +579,10 @@ void drive_lda(void* in)
       size_t batch_size = all->minibatch;
       for (size_t d = 0; d < batch_size; d++)
 	{
-          push(doc_lengths, 0);
+          doc_lengths.push_back(0);
 	  if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	    {
-	      push(examples, ec);
+	      examples.push_back(ec);
               for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
                 feature* f = ec->atomics[*i].begin;
                 for (; f != ec->atomics[*i].end; f++) {
@@ -604,12 +603,12 @@ void drive_lda(void* in)
       eta = all->eta * powf((float)example_t, - all->power_t);
       minuseta = 1.0f - eta;
       eta *= all->lda_D / batch_size;
-      push(decay_levels, decay_levels.last() + log(minuseta));
+      decay_levels.push_back(decay_levels.last() + log(minuseta));
 
       digammas.erase();
       float additional = (float)(all->length()) * all->lda_rho;
       for (size_t i = 0; i<all->lda; i++) {
-	push(digammas,mydigamma(total_lambda[i] + additional));
+	digammas.push_back(mydigamma(total_lambda[i] + additional));
       }
       
       size_t last_weight_index = -1;
@@ -630,8 +629,6 @@ void drive_lda(void* in)
 	    }
 	  myexpdigammify_2(*all, u_for_w, digammas.begin);
 	}
-
-      v.erase();
 
       for (size_t d = 0; d < batch_size; d++)
 	{
