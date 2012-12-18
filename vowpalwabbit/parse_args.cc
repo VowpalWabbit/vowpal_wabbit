@@ -806,7 +806,7 @@ namespace VW {
   vw initialize(string s)
   {
     int argc = 0;
-    s += "--no_stdin";
+    s += " --no_stdin";
     char** argv = get_argv_from_string(s,argc);
     
     vw all = parse_args(argc, argv);
