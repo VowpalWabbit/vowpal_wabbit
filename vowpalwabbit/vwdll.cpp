@@ -28,7 +28,16 @@ extern "C"
 		try
 		{
 			vw * pointer = static_cast<vw*>(handle);
-			release_parser_datastructures(*pointer);
+			if (pointer->numpasses > 1)
+			{
+				adjust_used_index(*pointer);
+				pointer->pass_length = pointer->p->parsed_examples;
+				start_parser(*pointer,false);
+				pointer->driver((void*)pointer);
+				end_parser(*pointer); 
+			}
+			else
+				release_parser_datastructures(*pointer);
 			VW::finish(*pointer);
 			delete pointer;
 		}
