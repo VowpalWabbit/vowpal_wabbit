@@ -75,12 +75,12 @@ namespace cs_test
             const string outDir = ".\\..\\..\\..\\..\\test\\";  // or make separate output directory before running
             const string trainSet = testDir + "train-sets\\0001.dat";
             const string testSet = testDir + "test-sets\\0001.dat";
-            const string predictFile = outDir + "0001.predict.tmp";
-            const string cacheFile = outDir + "00001A.dat.cache ";
-            const string modelFile = outDir + "00001.model";
-
+            const string predictFile = outDir + "0001A.predict.tmp";
+            const string cacheFile = outDir + "00001A.cache";
+            const string modelFile = outDir + "00001A.model";
+ 
             string initTrain = String.Format(
-                " -k --cache_file {0} --passes 3 --hash all --invariant --ngram 3 --skips  1 -l 20 --initial_t 128000 --power_t 1 -f {1}",
+                " -k -l 20 --initial_t 128000 --power_t 1  -f {1} --passes 8 --invariant --ngram 3 --skips  1  --cache_file {0} ",
                  cacheFile, modelFile);
 
             IntPtr vw = VowpalWabbitInterface.Initialize(initTrain);
@@ -96,7 +96,7 @@ namespace cs_test
             }
             VowpalWabbitInterface.Finish(vw);
 
-            string initPredict = String.Format(" --invariant  --ngram 3 --skips  1 -t  -i {0}",modelFile);
+            string initPredict = String.Format(" --invariant  -i {0}", modelFile);
             vw = VowpalWabbitInterface.Initialize(initPredict);
             using (var sw = new StreamWriter(predictFile))
             {
