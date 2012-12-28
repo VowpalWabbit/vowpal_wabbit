@@ -1,0 +1,11 @@
+language: cpp
+compiler:
+  - clang
+  - gcc
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libboost-all-dev
+install: 
+  - make
+  - ./autogen.sh && ./configure && make
+script: make test
