@@ -5,7 +5,7 @@ MANPAGES = vw.1
 all:	
 	cd ..; $(MAKE)
 
-things:	config.h depend $(BINARIES)
+things:	config.h $(BINARIES)
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
