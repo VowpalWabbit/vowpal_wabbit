@@ -66,23 +66,28 @@ namespace cs_test
         }
 
 
-
-
         static public void RunMultiPassTest()
         {
- 
+
             const string testDir = ".\\..\\..\\..\\..\\test\\";
-            const string outDir = ".\\..\\..\\..\\..\\test\\";  // or make separate output directory before running
+            const string outDir = ".\\..\\..\\..\\..\\test\\";
             const string trainSet = testDir + "train-sets\\0001.dat";
             const string testSet = testDir + "test-sets\\0001.dat";
-            const string predictFile = outDir + "0001A.predict.tmp";
-            const string cacheFile = outDir + "00001A.cache";
-            const string modelFile = outDir + "00001A.model";
- 
-            string initTrain = String.Format(
-                " -k -l 20 --initial_t 128000 --power_t 1  -f {1} --passes 8 --invariant --ngram 3 --skips  1  --cache_file {0} ",
-                 cacheFile, modelFile);
+            const string predictFile = outDir + "0001B.predict.tmp";
+            const string cacheFile = outDir + "0001B.cache.tmp";
+            const string modelFile = outDir + "0001B.model.tmp";
 
+            RunTrainTest(trainSet, cacheFile, modelFile);
+            RunPredictTest(testSet, modelFile, predictFile);
+        }
+
+
+        static public void RunTrainTest(string trainSet, string cacheFile, string modelFile)
+        {
+            
+            string initTrain = String.Format(
+                 " -k -l 20 --initial_t 128000 --power_t 1 --passes 8 --invariant --ngram 3 --skips  1  --cache_file {0}  -f {1} ",
+                  cacheFile, modelFile);
             IntPtr vw = VowpalWabbitInterface.Initialize(initTrain);
             using (var sr = new StreamReader(trainSet))
             {
@@ -94,10 +99,14 @@ namespace cs_test
                     VowpalWabbitInterface.FinishExample(vw, example);
                 }
             }
-            VowpalWabbitInterface.Finish(vw);
+                     VowpalWabbitInterface.Finish(vw);
+        }
 
-            string initPredict = String.Format(" --invariant  -i {0}", modelFile);
-            vw = VowpalWabbitInterface.Initialize(initPredict);
+        static public void RunPredictTest(string testSet, string modelFile, string predictFile)
+        {
+
+            string initPredict = String.Format(" -t --invariant  -i {0} ", modelFile);
+            IntPtr vw = VowpalWabbitInterface.Initialize(initPredict);
             using (var sw = new StreamWriter(predictFile))
             {
                 var sr = new StreamReader(testSet);
@@ -109,13 +118,13 @@ namespace cs_test
                         IntPtr example = VowpalWabbitInterface.ReadExample(vw, line);
                         float score = VowpalWabbitInterface.Learn(vw, example);
                         VowpalWabbitInterface.FinishExample(vw, example);
-                        sw.WriteLine("{0}", score);
+                        sw.WriteLine(score.ToString("F6"));
                     }
                     sw.Flush();
                 }
             }
-            VowpalWabbitInterface.Finish(vw);
         }
+
 
 
 
