@@ -14,6 +14,8 @@ Added a test to the cs_test/program  that trains with --passes 8 and a cache and
 Added a .bat file to test that invokes the windows vw build .exe on the data for test 1.
 This produces the same result as the above library test was added
 
+Changed to use a new boolean global vw.do_reset_source rather than mucking with stdin_off and adjusting pass_length.
+
 
 changed parse_atomic_example to have an optional do_read argument that defaults to true
 if false it will not read the example, but will cache it and generate ngrams

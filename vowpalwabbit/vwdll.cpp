@@ -31,7 +31,7 @@ extern "C"
 			if (pointer->numpasses > 1)
 			{
 				adjust_used_index(*pointer);
-				pointer->pass_length = pointer->p->parsed_examples;
+				pointer->do_reset_source = true;
 				start_parser(*pointer,false);
 				pointer->driver((void*)pointer);
 				end_parser(*pointer); 

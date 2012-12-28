@@ -945,26 +945,24 @@ void *main_parse_loop(void *in)
 #endif
 {
 	vw* all = (vw*) in;
-//	size_t example_number = 0;  // for variable-size batch learning algorithms
-	size_t example_number = all->p->parsed_examples;  // 0 for batch, read examples for library
-
-	 while(!done)
-    {
-      example* ae=get_unused_example(*all);
-
-      if (example_number != all->pass_length && parse_atomic_example(*all, ae)) {	
-	setup_example(*all, ae);
-	example_number++;
-	mutex_lock(&examples_lock);
-	all->p->parsed_examples++;
-	condition_variable_signal_all(&example_available);
-	mutex_unlock(&examples_lock);
-      }
+	size_t example_number = 0;  // for variable-size batch learning algorithms
+	while(!done)
+      {
+	   example* ae = get_unused_example(*all);
+       if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  {	
+	     setup_example(*all, ae);
+	     example_number++;
+	     mutex_lock(&examples_lock);
+		 all->p->parsed_examples++;
+		 condition_variable_signal_all(&example_available);
+	     mutex_unlock(&examples_lock);
+       }
       else
 	{
 	  reset_source(*all, all->num_bits);
+	  all->do_reset_source = false;
 	  all->passes_complete++;
-	  if (all->passes_complete == all->numpasses && example_number == all->pass_length && !all->stdin_off )
+	  if (all->passes_complete == all->numpasses && example_number == all->pass_length)
 	    {
 	      all->passes_complete = 0;
 	      all->pass_length = all->pass_length*2+1;

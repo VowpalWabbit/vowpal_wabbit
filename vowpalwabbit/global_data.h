@@ -110,7 +110,7 @@ struct regressor {
   weight* weight_vectors;
   weight* regularizers;
 };
-
+           
 struct vw {
   shared_data* sd;
 
@@ -184,6 +184,7 @@ struct vw {
   bool random_weights;
   bool add_constant;
   bool nonormalize;
+  bool do_reset_source;
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
