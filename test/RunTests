@@ -642,7 +642,7 @@ __DATA__
     train-sets/ref/wiki1K.stderr
 
 # Test 15: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence --quiet
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
 
