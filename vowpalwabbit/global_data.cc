@@ -277,4 +277,5 @@ vw::vw()
   save_per_pass = false;
 
   stdin_off = false;
+  do_reset_source = false;
 }
