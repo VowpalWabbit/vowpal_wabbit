@@ -592,8 +592,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
 	  if (f == -1 && temp.size() != 0)
 	    {
-	      cerr << "can't open " << temp << ", bailing!" << endl;
-	      exit(0);
+			cerr << "can't open '" << temp << "', sailing on!" << endl;
+//	      cerr << "can't open " << temp << ", bailing!" << endl;
+//	      exit(0);
 	    }
 	  all.p->reader = read_features;
 	  all.p->hasher = getHasher(hash_function);
@@ -707,9 +708,9 @@ example* get_unused_example(vw& all)
     }
 }
 
-bool parse_atomic_example(vw& all, example *ae)
+bool parse_atomic_example(vw& all, example *ae, bool do_read = true)
 {
-  if (all.p->reader(&all, ae) <= 0)
+  if (do_read && all.p->reader(&all, ae) <= 0)
     return false;
 
   if(all.p->sort_features && ae->sorted == false)
@@ -827,6 +828,7 @@ namespace VW{
     example* ret = get_unused_example(all);
 
     read_line(all, ret, example_line);
+	parse_atomic_example(all,ret,false);
     setup_example(all, ret);
     all.p->parsed_examples++;
 
@@ -857,6 +859,7 @@ namespace VW{
 	    ret->atomics[index].push_back(vf[i].second[j]);
 	  }
       }
+	parse_atomic_example(all,ret,false);
     setup_example(all, ret);
     all.p->parsed_examples++;
     return ret;
@@ -876,6 +879,7 @@ namespace VW{
 	    ret->atomics[index].push_back(features[i].fs[j]);
 	  }
       }
+ 	parse_atomic_example(all,ret,false); // all.p->parsed_examples++;
     setup_example(all, ret);
     return ret;
   }
@@ -940,24 +944,23 @@ DWORD WINAPI main_parse_loop(LPVOID in)
 void *main_parse_loop(void *in)
 #endif
 {
-  vw* all = (vw*) in;
-  
-  size_t example_number = 0;  // for variable-size batch learning algorithms
-  while(!done)
-    {
-      example* ae=get_unused_example(*all);
-
-      if (example_number != all->pass_length && parse_atomic_example(*all, ae)) {	
-	setup_example(*all, ae);
-	example_number++;
-	mutex_lock(&examples_lock);
-	all->p->parsed_examples++;
-	condition_variable_signal_all(&example_available);
-	mutex_unlock(&examples_lock);
-      }
+	vw* all = (vw*) in;
+	size_t example_number = 0;  // for variable-size batch learning algorithms
+	while(!done)
+      {
+	   example* ae = get_unused_example(*all);
+       if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  {	
+	     setup_example(*all, ae);
+	     example_number++;
+	     mutex_lock(&examples_lock);
+		 all->p->parsed_examples++;
+		 condition_variable_signal_all(&example_available);
+	     mutex_unlock(&examples_lock);
+       }
       else
 	{
 	  reset_source(*all, all->num_bits);
+	  all->do_reset_source = false;
 	  all->passes_complete++;
 	  if (all->passes_complete == all->numpasses && example_number == all->pass_length)
 	    {
@@ -977,9 +980,13 @@ void *main_parse_loop(void *in)
 	  mutex_unlock(&examples_lock);
 	}
     }  
-
-  return NULL;
+	return NULL;
 }
+
+
+
+
+
 
 example* get_example(parser* p)
 {
@@ -1028,6 +1035,11 @@ void initialize_examples(vw& all)
     }
 }
 
+void adjust_used_index(vw& all)
+{
+	used_index=all.p->parsed_examples;
+}
+
 void initialize_parser_datastructures(vw& all)
 {
   initialize_examples(all);
@@ -1038,9 +1050,10 @@ void initialize_parser_datastructures(vw& all)
   initialize_condition_variable(&output_done);
 }
 
-void start_parser(vw& all)
+void start_parser(vw& all, bool init_structures)
 {
-  initialize_parser_datastructures(all);
+  if (init_structures)
+	initialize_parser_datastructures(all);
   #ifndef _WIN32
   pthread_create(&parse_thread, NULL, main_parse_loop, &all);
   #else
