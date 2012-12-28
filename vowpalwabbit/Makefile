@@ -17,7 +17,7 @@ vw_SOURCES = $(shell grep libvw_la_SOURCES Makefile.am | cut -d '=' -f 2)
 vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
 vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 
-%.d:	%.cc
+%.d:	%.cc config.h
 	gcc -MM $< > $@
 
 -include $(vw_DEPS)
