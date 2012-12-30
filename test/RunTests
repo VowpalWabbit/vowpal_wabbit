@@ -8,7 +8,7 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w $opt_y);
+use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w $opt_y);
 
 my $Epsilon = 1e-4;
 
@@ -30,7 +30,8 @@ sub usage(@) {
 
     Options:
         -c    print commands before running them
-        -d    print diff output on diff-failure
+        -d    print diff output on significant diff failure
+        -D    print diff output even if it is not significant
         -e    Abort on first diff error
         -w    Ignore white-space differences (diff --ignore-space-change)
         -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
@@ -89,7 +90,7 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdefyE:o') || usage();
+    getopts('wcdDefyE:o') || usage();
 
 	print STDERR "testing $^O"; 
     if ($^O =~ /MSWin/i) {
@@ -351,16 +352,19 @@ sub diff($$) {
     system("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     if (-s 'diff.tmp') {
-        if ($opt_d) {
-            printf STDERR "--- %s\n", $diff_cmd;
-            system("$Cat diff.tmp")
-        }
         # There's a difference, but is it meaningfull?
         if ($opt_f && -e $reffile && -e $outfile &&
             diff_lenient_float($reffile, $outfile) == 0) {
 
             print STDERR "$0: test $TestNo: minor (<$Epsilon) precision differences ignored\n";
             $status = 0;
+        }
+        if ($opt_D or ($opt_d && $status)) {
+            # Print the diff only iff:
+            #   1) -D is in effect  OR
+            #   2) -d is in effect and diff is significant
+            printf STDERR "--- %s\n", $diff_cmd;
+            system("$Cat diff.tmp")
         }
         if ($opt_o) {
             print STDERR "-o: overwriting reference:\n";
@@ -436,7 +440,9 @@ sub check_for_time_regression() {
 }
 
 sub run_tests() {
-    print STDERR "$0: '-d' to see diff output\n"
+    print STDERR "$0: '-D' to see any diff output\n"
+        unless ($opt_D);
+    print STDERR "$0: '-d' to see only significant diff output\n"
         unless ($opt_d);
     print STDERR "$0: '-o' to force overwrite references\n"
         unless ($opt_o);
