@@ -90,9 +90,9 @@ void copy_example_data(example* &dst, example* src, size_t label_size)
 }
 }
 
-void update_example_indicies(bool audit, example* ec, size_t amount)
+void update_example_indicies(bool audit, example* ec, uint32_t amount)
 {
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature* end = ec->atomics[*i].end;
       for (feature* f = ec->atomics[*i].begin; f!= end; f++)
@@ -100,7 +100,7 @@ void update_example_indicies(bool audit, example* ec, size_t amount)
     }
   if (audit)
     {
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
         if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
           for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
             f->weight_index += amount;

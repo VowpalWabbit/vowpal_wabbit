@@ -70,7 +70,7 @@ static int socket_sort(const void* s1, const void* s2) {
   return socket1->client_ip - socket2->client_ip;
 }
 
-int build_tree(int*  parent, uint16_t* kid_count, int source_count, int offset) {
+int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offset) {
 
   if(source_count == 1) {
     kid_count[offset] = 0;
@@ -85,7 +85,7 @@ int build_tree(int*  parent, uint16_t* kid_count, int source_count, int offset) 
   int oroot = root+offset;
   parent[left_child] = oroot;
   
-  int right_count = source_count - left_count - 1;
+  size_t right_count = source_count - left_count - 1;
   if (right_count > 0)
     {
       int right_offset = oroot+1;
@@ -100,7 +100,7 @@ int build_tree(int*  parent, uint16_t* kid_count, int source_count, int offset) 
   return oroot;
 }
 
-void fail_send(const socket_t fd, const void* buf, const size_t count)
+void fail_send(const socket_t fd, const void* buf, const int count)
 {
   if (send(fd,(char*)buf,count,0)==-1)
     {
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
       pid_file.close();
     }
   
-  map<int, partial> partial_nodesets;
+  map<size_t, partial> partial_nodesets;
   while(true) {
     listen(sock, 1024);
     

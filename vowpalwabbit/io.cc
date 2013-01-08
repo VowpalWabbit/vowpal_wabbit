@@ -85,7 +85,7 @@ size_t readto(io_buf &i, char* &pointer, char terminal)
     }
 }
 
-void buf_write(io_buf &o, char* &pointer, int n)
+void buf_write(io_buf &o, char* &pointer, size_t n)
 {//return a pointer to the next n bytes to write into.
   if (o.space.end + n <= o.space.end_array)
     {

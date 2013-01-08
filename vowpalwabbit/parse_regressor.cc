@@ -368,7 +368,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
     my_buf_write_file(io_temp,f,(char*)&all.sd->max_label, sizeof(all.sd->max_label));
   
     my_buf_write_file(io_temp,f,(char *)&all.num_bits, sizeof(all.num_bits));
-    int len = all.pairs.size();
+    size_t len = all.pairs.size();
     my_buf_write_file(io_temp,f,(char *)&len, sizeof(len));
     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
       my_buf_write_file(io_temp,f,i->c_str(),2);
@@ -430,7 +430,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
   }
   
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  uint32_t stride = all.stride;
   if (reg_vector)
     length *= 2;
   for(uint32_t i = 0; i < length; i++)
@@ -461,7 +461,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 	  if (all.rank != 0)
 	    K = all.rank*2+1;
 	  
-          for (size_t k = 0; k < K; k++)
+          for (uint32_t k = 0; k < K; k++)
             {
               weight v = all.reg.weight_vectors[stride*i+k];
               uint32_t ndx = stride*i+k;

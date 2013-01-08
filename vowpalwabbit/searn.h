@@ -18,7 +18,7 @@ license as described in the file LICENSE.
 #define MAX_ACTION_ID   10000
 
 typedef void*  state;
-typedef size_t action;     // actions are ONE-based
+typedef uint32_t action;     // actions are ONE-based
 typedef size_t* history;
 
 namespace SearnUtil
@@ -37,11 +37,9 @@ namespace SearnUtil
 
   int  random_policy(uint64_t, float, bool, int, bool, bool);
 
-  void add_policy_offset(vw&, example*, size_t, size_t);
-  void remove_policy_offset(vw&, example*, size_t, size_t);
-  //void add_policy_offset(vw&, example*, size_t, size_t, size_t);
-  //void remove_policy_offset(vw&, example*, size_t, size_t, size_t);
-
+  void add_policy_offset(vw&, example*, uint32_t, uint32_t);
+  void remove_policy_offset(vw&, example*, uint32_t, uint32_t);
+ 
   void add_history_to_example(vw&, history_info*, example*, history);
   void remove_history_from_example(vw&, history_info *, example*);
 }      

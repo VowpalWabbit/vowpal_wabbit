@@ -148,7 +148,7 @@ float inline_predict_trunc(vw& all, example* &ec)
   
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add_trunc(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, (float)all.sd->gravity);
   
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
@@ -190,7 +190,7 @@ float inline_predict(vw& all, example* &ec)
 
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
@@ -224,7 +224,7 @@ float inline_predict_rescale(vw& all, example* &ec)
 
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add_rescale(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,all.adaptive,all.normalized_idx);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
@@ -261,7 +261,7 @@ float inline_predict_trunc_rescale(vw& all, example* &ec)
 
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add_trunc_rescale(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,(float)all.sd->gravity,all.adaptive,all.normalized_idx);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
@@ -300,7 +300,7 @@ float inline_predict_rescale_general(vw& all, example* &ec)
 
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add_rescale_general(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, all.normalized_idx, power_t_norm);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
@@ -339,7 +339,7 @@ float inline_predict_trunc_rescale_general(vw& all, example* &ec)
 
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add_trunc_rescale_general(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,(float)all.sd->gravity,all.normalized_idx,power_t_norm);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
@@ -410,7 +410,7 @@ void print_audit_cubic(vw& all, weight* weights, audit_data& f0, audit_data& f1,
                  << f1.space << '^' << f1.feature << '^' 
 		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask)
 		 << ':' << ele->x*f0.x*f1.x
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], all.sd->gravity) * all.sd->contraction;
+		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * all.sd->contraction;
       string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
@@ -425,7 +425,7 @@ void print_audit_cubic(vw& all, weight* weights, audit_data& f0, audit_data& f1,
       ostringstream tempstream;
       tempstream << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask) 
 		 << ':' << (ele->x*f0.x*f1.x)
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], all.sd->gravity) * all.sd->contraction;
+		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
       string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
       features.push_back(sv);
     }
@@ -439,9 +439,9 @@ void print_features(vw& all, example* &ec)
   if (all.lda > 0)
     {
       size_t count = 0;
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
 	count += ec->audit_features[*i].size() + ec->atomics[*i].size();
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	  {
 	    cout << '\t' << f->space << '^' << f->feature << ':' << (f->weight_index/all.stride & all.parse_mask) << ':' << f->x;
@@ -454,7 +454,7 @@ void print_features(vw& all, example* &ec)
     {
       vector<string_value> features;
 
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
 	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	    {
@@ -622,7 +622,7 @@ void inline_train(vw& all, example* &ec, float update)
   float avg_norm = sqrt(all.normalized_sum_norm_x / total_weight);
 
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
   {
     feature* f = ec->atomics[*i].begin;
     for (; f != ec->atomics[*i].end; f++)
@@ -729,7 +729,7 @@ void general_train(vw& all, example* &ec, float update, float power_t)
   if(is_adaptive) power_t_norm -= power_t;
 
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
   {
     feature* f = ec->atomics[*i].begin;
     for (; f != ec->atomics[*i].end; f++)
@@ -864,7 +864,7 @@ float compute_general_norm(vw& all, example* &ec, float power_t)
   float norm = 0.;
   float norm_x = 0.;
   weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
   {
     feature* f = ec->atomics[*i].begin;
     for (; f != ec->atomics[*i].end; f++)
@@ -1018,7 +1018,7 @@ float compute_norm(vw& all, example* &ec)
   float norm = 0.;
   float norm_x = 0.;
   weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
   {
     feature* f = ec->atomics[*i].begin;
     for (; f != ec->atomics[*i].end; f++)

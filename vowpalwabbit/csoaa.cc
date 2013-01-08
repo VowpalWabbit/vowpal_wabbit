@@ -164,7 +164,7 @@ namespace CSOAA {
         } else {
           f.weight_index = 0;
           if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3) {
-            f.weight_index = hashstring(p->parse_name[0], 0);
+            f.weight_index = (uint32_t)hashstring(p->parse_name[0], 0);
             if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
               f.x = FLT_MAX;
 
@@ -182,7 +182,7 @@ namespace CSOAA {
 
     if (words.size() == 0) {
       if (sd->k != (uint32_t)-1) {
-        for (size_t i = 1; i <= sd->k; i++) {
+        for (uint32_t i = 1; i <= sd->k; i++) {
           wclass f = {FLT_MAX, i, 0., 0.};
           ld->costs.push_back(f);
         }
@@ -245,7 +245,7 @@ namespace CSOAA {
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   
-    for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print((int)*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
 
     if (all.raw_prediction > 0) {
@@ -273,12 +273,12 @@ namespace CSOAA {
     label* ld = (label*)ec->ld;
     size_t prediction = 1;
     float score = FLT_MAX;
-    size_t current_increment = 0;
-    size_t increment = (all->length()/all->base_learner_nb_w) * all->stride;
+    uint32_t current_increment = 0;
+    uint32_t increment = ((uint32_t)all->length()/all->base_learner_nb_w) * all->stride;
 
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
-        size_t i = cl->weight_index;
+        uint32_t i = cl->weight_index;
 	label_data simple_temp;
 	simple_temp.initial = 0.;
 
@@ -295,7 +295,7 @@ namespace CSOAA {
 
 	ec->ld = &simple_temp;
 
-        size_t desired_increment = increment * (i-1);
+        uint32_t desired_increment = increment * (i-1);
 
         if (desired_increment != current_increment) {
 	  update_example_indicies(all->audit, ec, desired_increment - current_increment);
@@ -347,14 +347,14 @@ namespace CSOAA {
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     //first parse for number of actions
-    size_t nb_actions = 0;
+    uint32_t nb_actions = 0;
     if( vm_file.count("csoaa") ) { //if loaded options from regressor
-      nb_actions = vm_file["csoaa"].as<size_t>();
-      if( vm.count("csoaa") && vm["csoaa"].as<size_t>() != nb_actions ) //if csoaa was also specified in commandline, warn user if its different
+      nb_actions = vm_file["csoaa"].as<uint32_t>();
+      if( vm.count("csoaa") && vm["csoaa"].as<uint32_t>() != nb_actions ) //if csoaa was also specified in commandline, warn user if its different
         std::cerr << "warning: you specified a different number of actions through --csoaa than the one loaded from predictor. Pursuing with loaded value of: " << nb_actions << endl;
     }
     else {
-      nb_actions = vm["csoaa"].as<size_t>();
+      nb_actions = vm["csoaa"].as<uint32_t>();
 
       //append csoaa with nb_actions to options_from_file so it is saved to regressor later
       std::stringstream ss;
@@ -411,7 +411,7 @@ namespace CSOAA_AND_WAP_LDF {
   {
     float norm_sq = 0.;
     size_t num_f = 0;
-    for (size_t* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
+    for (unsigned char* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
       size_t feature_index = 0;
       for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
         feature temp = { -f->x, (uint32_t) (f->weight_index & all.parse_mask) };
@@ -499,7 +499,7 @@ namespace CSOAA_AND_WAP_LDF {
 
 
 
-  void do_actual_learning_wap(vw& all, int start_K)
+  void do_actual_learning_wap(vw& all, size_t start_K)
   {
     size_t K = ec_seq.size();
     bool   isTest = CSOAA::example_is_test(ec_seq[start_K]);
@@ -588,7 +588,7 @@ namespace CSOAA_AND_WAP_LDF {
     }
   }
 
-  void do_actual_learning_oaa(vw& all, int start_K)
+  void do_actual_learning_oaa(vw& all, size_t start_K)
   {
     size_t K = ec_seq.size();
     size_t prediction = 0;
@@ -721,7 +721,7 @@ namespace CSOAA_AND_WAP_LDF {
       assert(loss >= 0);
     }
   
-    for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, (float)(*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
 
     if (all.raw_prediction > 0) {
@@ -1031,7 +1031,7 @@ namespace LabelDict {
 
 
   void add_example_namespaces_from_example(example*target, example*source) {
-    for (size_t*idx=source->indices.begin; idx!=source->indices.end; idx++) {
+    for (unsigned char* idx=source->indices.begin; idx!=source->indices.end; idx++) {
       if (*idx == constant_namespace) continue;
       add_example_namespace(target, (char)*idx, source->atomics[*idx]);
     }
@@ -1039,7 +1039,7 @@ namespace LabelDict {
 
   void del_example_namespaces_from_example(example*target, example*source) {
     //for (size_t*idx=source->indices.begin; idx!=source->indices.end; idx++) {
-    size_t*idx = source->indices.end;
+    unsigned char* idx = source->indices.end;
     idx--;
     for (; idx>=source->indices.begin; idx--) {
       if (*idx == constant_namespace) continue;

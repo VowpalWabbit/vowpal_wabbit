@@ -58,7 +58,7 @@ namespace Sequence {
     history  predictions;
     size_t   predictions_hash;
     float    loss;
-    size_t   original_label;
+    uint32_t   original_label;
     bool     same;
     bool     alive;  // false if this isn't a valid transition
     // the following are for beam search
@@ -79,19 +79,19 @@ namespace Sequence {
   size_t sequence_rollout           = 256;
   size_t sequence_passes_per_policy = 1;
   float  sequence_beta              = 0.5;
-  size_t sequence_k                 = 2;
+  uint32_t sequence_k                 = 2;
   float sequence_gamma             = 1.;
   bool   sequence_allow_current_policy = false;
   size_t sequence_beam              = 1;
 
-  size_t increment                  = 0; //for policy offset
+  uint32_t increment                  = 0; //for policy offset
 
   bool   all_transitions_allowed    = true;
   bool** valid_transition           = NULL;
 
-  size_t current_policy             = 0;
+  uint32_t current_policy             = 0;
   size_t read_example_last_pass     = 0;
-  size_t total_number_of_policies   = 1;
+  uint32_t total_number_of_policies   = 1;
 
   size_t constant_pow_length = 0;
 
@@ -226,7 +226,7 @@ namespace Sequence {
     if (current_history == NULL)
       current_history = (history)calloc_or_die(hinfo.length, sizeof(size_t));
 
-    for (size_t i = 1; i <= all.sd->k; i++)
+    for (uint32_t i = 1; i <= all.sd->k; i++)
       {
         CSOAA::wclass cost = {FLT_MAX, i, 0., 0.};
         testall_costs.costs.push_back(cost);
@@ -472,7 +472,7 @@ namespace Sequence {
 
   void simple_print_example_features(vw&all, example *ec)
   {
-    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
         feature* end = ec->atomics[*i].end;
         for (feature* f = ec->atomics[*i].begin; f!= end; f++) {
@@ -798,7 +798,7 @@ namespace Sequence {
   void run_test_common_init()
   {
     for (size_t t=0; t<ec_seq.size(); t++)
-      policy_seq[t] = (current_policy == 0) ? 0 : SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, false, true);
+      policy_seq[t] = (current_policy == 0) ? 0 : SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, (int)current_policy, false, true);
     if (PRINT_DEBUG_INFO) {
       clog << "test policies:";
       for (size_t t=0; t<ec_seq.size(); t++) clog << " " << policy_seq[t];
@@ -813,7 +813,7 @@ namespace Sequence {
       if (do_printing) global_print_label(all, ec_seq[t], pred_seq[t]);
       seq_num_features += ec_seq[t]->num_features;
     }
-    if (do_printing) print_update(all, seq_num_features);
+    if (do_printing) print_update(all, (unsigned long)seq_num_features);
   }
 
   // some edit
@@ -837,7 +837,7 @@ namespace Sequence {
       // global_print_label(ec_seq[t], pred_seq[t]);
 
       // allow us to use the optimal policy for the future
-      if (SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, current_policy, true, true) == -1)
+      if (SearnUtil::random_policy(t, sequence_beta, sequence_allow_current_policy, (int)current_policy, true, true) == -1)
         policy_seq[t] = -1;
     }
     if (PRINT_DEBUG_INFO) {
@@ -846,7 +846,7 @@ namespace Sequence {
       clog << endl;
     }
     all.sd->example_number++;
-    print_update(all, seq_num_features);
+    print_update(all, (unsigned long)seq_num_features);
   }
 
   void run_train_common_final()
@@ -879,7 +879,7 @@ namespace Sequence {
 
     for (size_t t=0; t<n; t++) {
       // we're making examples at position t
-      for (size_t i=0; i<sequence_k; i++) {
+      for (uint32_t i=0; i<sequence_k; i++) {
         copy_history(all_histories[i], current_history);
         // NOTE: have to keep all_histories and hcache[i].predictions
         // seperate to avoid copy by value versus copy by pointer issues
@@ -982,7 +982,7 @@ namespace Sequence {
       loss_vector.erase();
       for (size_t i=0; i<sequence_k; i++) {
         if (hcache[i].alive) {
-          size_t lab  = hcache[i].original_label;
+          uint32_t lab  = hcache[i].original_label;
           float cost = hcache[i].loss - min_loss;
           CSOAA::wclass temp  = { cost, lab+1, 0., 0. };
           loss_vector.push_back(temp);
@@ -1023,7 +1023,7 @@ namespace Sequence {
           for (size_t i=0; i<sequence_k; i++)
             hcache[i * sequence_beam + k].alive = false;
         else 
-          for (size_t i=0; i<sequence_k; i++) {
+          for (uint32_t i=0; i<sequence_k; i++) {
             size_t id = i * sequence_beam + k;
             hcache[id].predictions = all_histories[id];
             copy_history_item(all, &hcache[id], beam_backup[k], true, false);
@@ -1100,7 +1100,7 @@ namespace Sequence {
         for (size_t i=0; i<sequence_k; i++) {
           size_t id = k * sequence_k + i;
           if (hcache[id].alive) {
-            size_t lab  = hcache[id].original_label % sequence_k;
+            uint32_t lab  = hcache[id].original_label % sequence_k;
             float cost = hcache[id].loss - min_loss;
             CSOAA::wclass temp  = { cost, lab+1, 0., 0. };
             loss_vector.push_back(temp);
@@ -1298,9 +1298,9 @@ namespace Sequence {
     all.sequence = true;
 
     if( vm_file.count("sequence") ) { //we loaded a regressor file containing all the sequence options, use the ones in the file
-      sequence_k = vm_file["sequence"].as<size_t>();
+      sequence_k = vm_file["sequence"].as<uint32_t>();
 
-      if( vm.count("sequence") && vm["sequence"].as<size_t>() != sequence_k )
+      if( vm.count("sequence") && vm["sequence"].as<uint32_t>() != sequence_k )
         std::cerr << "warning: you specified a different number of actions through --sequence than the one loaded from regressor. Pursuing with loaded value of: " << sequence_k << endl;
 
       if (vm_file.count("sequence_bigrams"))
@@ -1326,13 +1326,13 @@ namespace Sequence {
       }
 
       if( vm_file.count("sequence_total_nb_policies") ) {
-        total_number_of_policies = vm_file["sequence_total_nb_policies"].as<size_t>();
-        if (vm.count("sequence_total_nb_policies") && vm["sequence_total_nb_policies"].as<size_t>() != total_number_of_policies)
+        total_number_of_policies = vm_file["sequence_total_nb_policies"].as<uint32_t>();
+        if (vm.count("sequence_total_nb_policies") && vm["sequence_total_nb_policies"].as<uint32_t>() != total_number_of_policies)
           std::cerr << "warning: --sequence_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << total_number_of_policies << endl;
       }
 
       if( vm_file.count("sequence_trained_nb_policies") ) {
-        current_policy = vm_file["sequence_trained_nb_policies"].as<size_t>();
+        current_policy = vm_file["sequence_trained_nb_policies"].as<uint32_t>();
       }
 
       //check if there are a discrepancies with what user has specified in command line
@@ -1357,7 +1357,7 @@ namespace Sequence {
     }
 
     else {
-      sequence_k = vm["sequence"].as<size_t>();
+      sequence_k = vm["sequence"].as<uint32_t>();
 
       if (vm.count("sequence_bigrams")) {
         hinfo.bigrams = true;
@@ -1408,7 +1408,7 @@ namespace Sequence {
       }
 
       if( vm.count("sequence_total_nb_policies") ) {
-        total_number_of_policies = vm["sequence_total_nb_policies"].as<size_t>();
+        total_number_of_policies = vm["sequence_total_nb_policies"].as<uint32_t>();
       }
 
       if (vm.count("sequence_beta"))
@@ -1457,7 +1457,7 @@ namespace Sequence {
 
     //compute total number of policies we will have at end of training
     // we add current_policy for cases where we start from an initial set of policies loaded through -i option
-    size_t tmp_number_of_policies = current_policy;
+    uint32_t tmp_number_of_policies = current_policy;
     if(all.training)
       tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)sequence_passes_per_policy));
 
@@ -1487,7 +1487,7 @@ namespace Sequence {
     VW::cmd_string_replace_value(all.options_from_file,"--sequence_total_nb_policies", ss2.str());
 
     all.base_learner_nb_w *= total_number_of_policies;
-    increment = (all.length() / all.base_learner_nb_w / 2) * all.stride;
+    increment = ((uint32_t)all.length() / all.base_learner_nb_w / 2) * all.stride;
     //cerr<<"increment=" << increment<<endl;
   }
 }

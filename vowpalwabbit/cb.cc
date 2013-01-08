@@ -15,7 +15,7 @@ license as described in the file LICENSE.
 
 namespace CB
 {
-  size_t increment = 0;
+  uint32_t increment = 0;
   size_t cb_type = 0;
   CSOAA::label cb_cs_ld; 
   float avg_loss_regressors = 0.;
@@ -140,7 +140,7 @@ namespace CB
           exit(1);
         }
 
-        f.weight_index = hashstring(p->parse_name[0], 0);
+        f.weight_index = (uint32_t)hashstring(p->parse_name[0], 0);
         if (f.weight_index < 1 || f.weight_index > sd->k)
         {
           cerr << "invalid action: " << f.weight_index << endl;
@@ -221,7 +221,7 @@ namespace CB
     cs_ld.costs.erase();
     if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
-      for( size_t i = 1; i <= all->sd->k; i++)
+      for(uint32_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
         wc.wap_value = 0.;
@@ -272,7 +272,7 @@ namespace CB
 
   }
 
-  float get_cost_pred(void* a, example* ec, size_t index)
+  float get_cost_pred(void* a, example* ec, uint32_t index)
   {
     vw* all = (vw*)a;
     CB::label* ld = (CB::label*)ec->ld;
@@ -285,7 +285,7 @@ namespace CB
     ec->ld = &simple_temp;
     ec->partial_prediction = 0.;
 
-    size_t desired_increment = increment * (2*index-1);
+    uint32_t desired_increment = increment * (2*index-1);
     
     update_example_indicies(all->audit, ec, desired_increment);
     base_learner(all, ec);
@@ -308,8 +308,8 @@ namespace CB
 
     cb_class* cl_obs = get_observed_cost(ld);
 
-    size_t desired_increment = 0;
-    size_t current_increment = 0;
+    uint32_t desired_increment = 0;
+    uint32_t current_increment = 0;
  
     label_data simple_temp;
     simple_temp.initial = 0.;
@@ -322,7 +322,7 @@ namespace CB
     cs_ld.costs.erase();  
     if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions  
-      for( size_t i = 1; i <= all->sd->k; i++)
+      for( uint32_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
         wc.wap_value = 0.;
@@ -396,7 +396,7 @@ namespace CB
     cs_ld.costs.erase();  
     if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions  
-      for( size_t i = 1; i <= all->sd->k; i++)
+      for(uint32_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
         wc.wap_value = 0.;
@@ -454,7 +454,7 @@ namespace CB
     cs_ld.costs.erase();
     if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
-      for( size_t i = 1; i <= all->sd->k; i++)
+      for(uint32_t i = 1; i <= all->sd->k; i++)
       {
         CSOAA::wclass wc;
         wc.wap_value = 0.;
@@ -579,7 +579,7 @@ namespace CB
 
       if( cl_obs != NULL )
       {
-        size_t i = cl_obs->weight_index;
+        uint32_t i = cl_obs->weight_index;
 	
         label_data simple_temp;
 	simple_temp.initial = 0.;
@@ -588,7 +588,7 @@ namespace CB
 
 	ec->ld = &simple_temp;
 
-        size_t desired_increment = increment * (2*i-1);
+        uint32_t desired_increment = increment * (2*i-1);
         update_example_indicies(all->audit, ec, desired_increment);
         ec->partial_prediction = 0.;
         base_learner(all, ec);
@@ -734,14 +734,14 @@ namespace CB
     po::store(parsed_file, vm_file);
     po::notify(vm_file);
 
-    size_t nb_actions = 0;
+    uint32_t nb_actions = 0;
     if( vm_file.count("cb") ) { //if loaded options from regressor file already
-      nb_actions = vm_file["cb"].as<size_t>();
-      if( vm.count("cb") && vm["cb"].as<size_t>() != nb_actions )
+      nb_actions = vm_file["cb"].as<uint32_t>();
+      if( vm.count("cb") && vm["cb"].as<uint32_t>() != nb_actions )
         std::cerr << "warning: you specified a different number of actions through --cb than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
     }
     else {
-      nb_actions = vm["cb"].as<size_t>();
+      nb_actions = vm["cb"].as<uint32_t>();
       //append cb with nb_actions to options_from_file so it is saved to regressor later
       std::stringstream ss;
       ss << " --cb " << nb_actions;
@@ -789,7 +789,7 @@ namespace CB
       all.options_from_file.append(" --cb_type dr");
     }
 
-    increment = (all.length()/all.base_learner_nb_w) * all.stride;
+    increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
 
     *(all.p->lp) = CB::cb_label_parser; 
 

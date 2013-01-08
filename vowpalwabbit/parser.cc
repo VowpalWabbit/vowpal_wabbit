@@ -224,7 +224,7 @@ size_t cache_numbits(io_buf* buf, int filepointer)
   return cache_numbits;
 }
 
-bool member(v_array<size_t> ids, size_t id)
+bool member(v_array<int> ids, int id)
 {
   for (size_t i = 0; i < ids.size(); i++)
     if (ids[i] == id)
@@ -269,7 +269,7 @@ void reset_source(vw& all, size_t numbits)
 	  
 	  sockaddr_in client_address;
 	  socklen_t size = sizeof(client_address);
-	  int f = accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
+	  int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
 	      cerr << "bad client socket!" << endl;
@@ -408,7 +408,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
   
   if (all.daemon)
     {
-      all.p->bound_sock = socket(PF_INET, SOCK_STREAM, 0);
+      all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
 	cerr << "can't open socket!" << endl;
 	exit(1);
@@ -423,7 +423,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       address.sin_addr.s_addr = htonl(INADDR_ANY);
       short unsigned int port = 26542;
       if (vm.count("port"))
-	port = vm["port"].as<size_t>();
+	port = vm["port"].as<uint16_t>();
       address.sin_port = htons(port);
 
       // attempt to bind to socket
@@ -535,7 +535,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       all.p->max_fd = 0;
       if (!all.quiet)
 	cerr << "calling accept" << endl;
-      int f = accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
+      int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
       if (f < 0)
 	{
 	  cerr << "bad client socket!" << endl;
@@ -677,7 +677,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
 void generateGrams(vw& all, size_t ngram, size_t skip_gram, example * &ex) {
-  for(size_t *index = ex->indices.begin; index < ex->indices.end; index++)
+  for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
     {
       size_t length = ex->atomics[*index].size();
       for (size_t n = 1; n < ngram; n++)
@@ -742,7 +742,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.ignore_some)
     {
-      for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
+      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	if (all.ignore[*i])
 	  {//delete namespace
 	    ae->atomics[*i].erase();
@@ -762,17 +762,17 @@ void setup_example(vw& all, example* ae)
   
   if(all.stride != 1) //make room for per-feature information.
     {
-      size_t stride = all.stride;
-      for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
+      uint32_t stride = all.stride;
+      for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
 	  j->weight_index = j->weight_index*stride;
       if (all.audit)
-	for (size_t* i = ae->indices.begin; i != ae->indices.end; i++)
+	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
 	    j->weight_index = j->weight_index*stride;
     }
   
-  for (size_t* i = ae->indices.begin; i != ae->indices.end; i++) 
+  for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++) 
     {
       ae->num_features += ae->atomics[*i].end - ae->atomics[*i].begin;
       ae->total_sum_feat_sq += ae->sum_feat_sq[*i];
@@ -836,7 +836,7 @@ namespace VW{
   }
 
   void add_constant_feature(vw& vw, example*ec) {
-    size_t cns = constant_namespace;
+    uint32_t cns = constant_namespace;
     ec->indices.push_back(cns);
     feature temp = {1,(uint32_t) (constant & vw.parse_mask)};
     ec->atomics[cns].push_back(temp);
@@ -851,7 +851,7 @@ namespace VW{
     all.p->lp->default_label(ret->ld);
     for (size_t i = 0; i < vf.size();i++)
       {
-	size_t index = vf[i].first;
+	uint32_t index = vf[i].first;
 	ret->indices.push_back(index);
 	for (size_t j = 0; j < vf[i].second.size(); j++)
 	  {	    
@@ -871,7 +871,7 @@ namespace VW{
     all.p->lp->default_label(ret->ld);
     for (size_t i = 0; i < len;i++)
       {
-	size_t index = features[i].name;
+	uint32_t index = features[i].name;
 	ret->indices.push_back(index);
 	for (size_t j = 0; j < features[i].len; j++)
 	  {	    
@@ -902,7 +902,7 @@ namespace VW{
     mutex_unlock(&output_lock);
     
     if (all.audit)
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	{
 	  for (audit_data* temp 
 		 = ec->audit_features[*i].begin; 
@@ -918,7 +918,7 @@ namespace VW{
 	  ec->audit_features[*i].erase();
 	}
     
-    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
       {  
 	ec->atomics[*i].erase();
 	ec->sum_feat_sq[*i]=0;

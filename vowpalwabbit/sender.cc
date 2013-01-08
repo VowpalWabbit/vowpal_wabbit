@@ -47,9 +47,9 @@ void parse_send_args(po::variables_map& vm, vector<string> pairs)
 void send_features(io_buf *b, example* ec)
 {
   // note: subtracting 1 b/c not sending constant
-  output_byte(*b,ec->indices.size()-1);
+  output_byte(*b,(unsigned char) (ec->indices.size()-1));
   
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {
     if (*i == constant_namespace)
       continue;
     output_features(*b, *i, ec->atomics[*i].begin, ec->atomics[*i].end);

@@ -19,8 +19,8 @@ using namespace std;
 
 namespace NN {
   //nonreentrant
-  size_t k=0;
-  size_t increment=0;
+  uint32_t k=0;
+  uint32_t increment=0;
   loss_function* squared_loss;
   example output_layer;
   const float hidden_min_activation = -3;
@@ -47,7 +47,7 @@ namespace NN {
   {
     float offset = (p < 0) ? 1.0f : 0.0f;
     float clipp = (p < -126) ? -126.0f : p;
-    int w = clipp;
+    int w = (int)clipp;
     float z = clipp - w + offset;
     union { uint32_t i; float f; } v = { cast_uint32_t ( (1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z) ) };
 
@@ -84,7 +84,7 @@ namespace NN {
     void (*save_set_minmax) (shared_data*, float) = all->set_minmax;
     float save_min_label;
     float save_max_label;
-    float dropscale = dropout ? 2.0 : 1.0;
+    float dropscale = dropout ? 2.0f : 1.0f;
     loss_function* save_loss = all->loss;
 
     float* hidden_units = (float*) alloca (k * sizeof (float));
@@ -135,7 +135,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     for (unsigned int i = 0; i < k; ++i)
       {
         float sigmah = 
-          (dropped_out[i]) ? 0.0 : dropscale * fasttanh (hidden_units[i]);
+          (dropped_out[i]) ? 0.0f : dropscale * fasttanh (hidden_units[i]);
         output_layer.atomics[nn_output_namespace][i+1].x = sigmah;
 
         output_layer.total_sum_feat_sq += sigmah * sigmah;
@@ -195,13 +195,13 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         save_max_label = all->sd->max_label;
         all->sd->max_label = hidden_max_activation;
 
-        for (unsigned int i = k; i > 0; --i) {
+        for (size_t i = k; i > 0; --i) {
           if (! dropped_out[i-1]) {
             float sigmah = 
               output_layer.atomics[nn_output_namespace][i].x / dropscale;
-            float sigmahprime = dropscale * (1.0 - sigmah * sigmah);
+            float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
             float nu = all->reg.weight_vectors[output_layer.atomics[nn_output_namespace][i].weight_index & all->weight_mask];
-            float gradhw = 0.5 * nu * gradient * sigmahprime;
+            float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ld->label = finalize_prediction (*all, hidden_units[i-1] - gradhw);
             if (ld->label != hidden_units[i-1]) {
@@ -301,12 +301,12 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     //first parse for number of hidden units
     k = 0;
     if( vm_file.count("nn") ) {
-      k = vm_file["nn"].as<size_t>();
-      if( vm.count("nn") && vm["nn"].as<size_t>() != k )
+      k = vm_file["nn"].as<uint32_t>();
+      if( vm.count("nn") && vm["nn"].as<uint32_t>() != k )
         std::cerr << "warning: you specified a different number of hidden units through --nn than the one loaded from predictor. Pursuing with loaded value of: " << k << endl;
     }
     else {
-      k = vm["nn"].as<size_t>();
+      k = vm["nn"].as<uint32_t>();
 
       std::stringstream ss;
       ss << " --nn " << k;
@@ -363,7 +363,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     all.learn = learn;
 
     all.base_learner_nb_w *= (inpass) ? k + 1 : k;
-    increment = (all.length()/all.base_learner_nb_w) * all.stride;
+    increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
 
     bool initialize = true;
 
@@ -391,7 +391,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
       // output weights
 
-      float sqrtk = sqrt ((double)k);
+      float sqrtk = sqrt ((float)k);
       for (unsigned int i = 0; i <= k; ++i)
         {
           weight* w = &all.reg.weight_vectors[output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
@@ -400,7 +400,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
           // prevent divide by zero error
           if (dropout && all.normalized_updates)
-            w[all.normalized_idx] = 1e-4;
+            w[all.normalized_idx] = 1e-4f;
         }
 
       // hidden biases

@@ -70,7 +70,7 @@ public:
   bool audit;
   size_t channel_hash;
   char* base;
-  size_t index;
+  unsigned char index;
   float v;
   parser* p;
   example* ae;
@@ -120,7 +120,7 @@ public:
       if(v == 0) return; //dont add 0 valued features to list of features
       size_t word_hash;
       if (feature_name.end != feature_name.begin)
-	word_hash = (p->hasher(feature_name,channel_hash)) & mask;
+	word_hash = (p->hasher(feature_name,(uint32_t)channel_hash)) & mask;
       else
 	word_hash = channel_hash + anon++;
       feature f = {v,(uint32_t)word_hash};
@@ -286,10 +286,10 @@ int read_features(void* in, example* ex)
   vw* all = (vw*)in;
   example* ae = (example*)ex;
   char *line=NULL;
-  int num_chars_initial = readto(*(all->p->input), line, '\n');
+  size_t num_chars_initial = readto(*(all->p->input), line, '\n');
   if (num_chars_initial <= 1)
-    return num_chars_initial;
-  int num_chars = num_chars_initial;
+    return (int)num_chars_initial;
+  size_t num_chars = num_chars_initial;
   if (line[num_chars-1] == '\n')
     num_chars--;
   if (line[num_chars-1] == '\r')
@@ -297,7 +297,7 @@ int read_features(void* in, example* ex)
   substring example = {line, line + num_chars};
   substring_to_example(all, ae, example);
 
-  return num_chars_initial;
+  return (int)num_chars_initial;
 }
 
 void read_line(vw& all, example* ex, char* line)

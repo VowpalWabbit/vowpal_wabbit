@@ -25,33 +25,33 @@ namespace ECT
 {
 
   //nonreentrant
-  size_t k = 1;
-  size_t errors = 0;
+  uint32_t k = 1;
+  uint32_t errors = 0;
 
   struct direction { 
     size_t id; //unique id for node
     size_t tournament; //unique id for node
-    size_t winner; //up traversal, winner
-    size_t loser; //up traversal, loser
-    size_t left; //down traversal, left
-    size_t right; //down traversal, right
+    uint32_t winner; //up traversal, winner
+    uint32_t loser; //up traversal, loser
+    uint32_t left; //down traversal, left
+    uint32_t right; //down traversal, right
     bool last;
   };
 
   v_array<direction> directions;//The nodes of the tournament datastructure
 
-  v_array<v_array<v_array<size_t > > > all_levels;
+  v_array<v_array<v_array<uint32_t > > > all_levels;
 
-  v_array<size_t> final_nodes; //The final nodes of each tournament. 
+  v_array<uint32_t> final_nodes; //The final nodes of each tournament. 
 
   v_array<size_t> up_directions; //On edge e, which node n is in the up direction?
   v_array<size_t> down_directions;//On edge e, which node n is in the down direction?
 
   size_t tree_height = 0; //The height of the final tournament.
   
-  size_t last_pair = 0;
+  uint32_t last_pair = 0;
   
-  size_t increment = 0;
+  uint32_t increment = 0;
 
   v_array<bool> tournaments_won;
   
@@ -73,7 +73,7 @@ namespace ECT
     return 31;
   }
  
-  bool not_empty(v_array<v_array<size_t > > tournaments)
+  bool not_empty(v_array<v_array<uint32_t > > tournaments)
   {
     for (size_t i = 0; i < tournaments.size(); i++)
     {
@@ -83,7 +83,7 @@ namespace ECT
     return false;
   }
 
-  void print_level(v_array<v_array<size_t> > level)
+  void print_level(v_array<v_array<uint32_t> > level)
   {
     for (size_t t = 0; t < level.size(); t++)
       {
@@ -106,16 +106,16 @@ namespace ECT
     cout << endl;
   }
 
-  void create_circuit(vw& all, size_t max_label, size_t eliminations)
+  void create_circuit(vw& all, uint32_t max_label, uint32_t eliminations)
   {
     if (max_label == 1)
       return;
 
-    v_array<v_array<size_t > > tournaments;
+    v_array<v_array<uint32_t > > tournaments;
 
-    v_array<size_t> t;
+    v_array<uint32_t> t;
 
-    for (size_t i = 0; i < max_label; i++)
+    for (uint32_t i = 0; i < max_label; i++)
       {
 	t.push_back(i);	
 	direction d = {i,0,0,0,0,0, false};
@@ -125,22 +125,22 @@ namespace ECT
     tournaments.push_back(t);
 
     for (size_t i = 0; i < eliminations-1; i++)
-      tournaments.push_back(v_array<size_t>());
+      tournaments.push_back(v_array<uint32_t>());
     
     all_levels.push_back(tournaments);
     
     size_t level = 0;
 
-    size_t node = directions.size();
+    uint32_t node = (uint32_t)directions.size();
 
     while (not_empty(all_levels[level]))
       {
-	v_array<v_array<size_t > > new_tournaments;
+	v_array<v_array<uint32_t > > new_tournaments;
 	tournaments = all_levels[level];
 
 	for (size_t t = 0; t < tournaments.size(); t++)
 	  {
-	    v_array<size_t> empty;
+	    v_array<uint32_t> empty;
 	    new_tournaments.push_back(empty);
 	  }
 
@@ -148,13 +148,13 @@ namespace ECT
 	  {
 	    for (size_t j = 0; j < tournaments[t].size()/2; j++)
 	      {
-		size_t id = node++;
-		size_t left = tournaments[t][2*j];
-		size_t right = tournaments[t][2*j+1];
+		uint32_t id = node++;
+		uint32_t left = tournaments[t][2*j];
+		uint32_t right = tournaments[t][2*j+1];
 		
 		direction d = {id,t,0,0,left,right, false};
 		directions.push_back(d);
-		size_t direction_index = directions.size()-1;
+		uint32_t direction_index = (uint32_t)directions.size()-1;
 		if (directions[left].tournament == t)
 		  directions[left].winner = direction_index;
 		else
@@ -173,7 +173,7 @@ namespace ECT
 		      new_tournaments[t+1].push_back(id);
 		    else // winner eliminated.
 		      directions[direction_index].winner = 0;
-		    final_nodes.push_back((size_t)(directions.size()-1));
+		    final_nodes.push_back((uint32_t)(directions.size()- 1));
 		  }
 		else
 		  new_tournaments[t].push_back(id);
@@ -196,19 +196,19 @@ namespace ECT
     
     if (last_pair > 0) {
       all.base_learner_nb_w *= (last_pair + (eliminations-1));
-      increment = all.length() / all.base_learner_nb_w * all.stride;
+      increment = (uint32_t) all.length() / all.base_learner_nb_w * all.stride;
     }
   }
 
   void (*base_learner)(void*, example*) = NULL;
   void (*base_finish)(void*) = NULL;
   
-  int ect_predict(vw& all, example* ec)
+  size_t ect_predict(vw& all, example* ec)
   {
     if (k == (size_t)1)
       return 1;
 
-    size_t finals_winner = 0;
+    uint32_t finals_winner = 0;
     
     //Binary final elimination tournament first
     label_data simple_temp = {FLT_MAX, 0., 0.};
@@ -216,11 +216,11 @@ namespace ECT
 
     for (size_t i = tree_height-1; i != (size_t)0 -1; i--)
       {
-        if ((finals_winner | (1 << i)) <= errors)
+        if ((finals_winner | (((size_t)1) << i)) <= errors)
           {// a real choice exists
             uint32_t offset = 0;
 	  
-            size_t problem_number = last_pair + (finals_winner | (1 << i)) - 1; //This is unique.
+            uint32_t problem_number = last_pair + (finals_winner | (((uint32_t)1) << i)) - 1; //This is unique.
 	    offset = problem_number*increment;
 	  
             update_example_indicies(all.audit, ec,offset);
@@ -232,14 +232,14 @@ namespace ECT
 	    
 	    float pred = ec->final_prediction;
 	    if (pred > 0.)
-              finals_winner = finals_winner | (1 << i);
+              finals_winner = finals_winner | (((size_t)1) << i);
           }
       }
 
-    size_t id = final_nodes[finals_winner];
+    uint32_t id = final_nodes[finals_winner];
     while (id >= k)
       {
-	size_t offset = (id-k)*increment;
+	uint32_t offset = (id-k)*increment;
 	
 	ec->partial_prediction = 0;
 	update_example_indicies(all.audit, ec,offset);
@@ -273,7 +273,7 @@ namespace ECT
 
     tournaments_won.erase();
 
-    size_t id = directions[mc->label-1].winner;
+    uint32_t id = directions[mc->label-1].winner;
     bool left = directions[id].left == mc->label - 1;
     do
       {
@@ -285,7 +285,7 @@ namespace ECT
 	simple_temp.weight = mc->weight;
 	ec->ld = &simple_temp;
 	
-	size_t offset = (id-k)*increment;
+	uint32_t offset = (id-k)*increment;
 	
 	update_example_indicies(all.audit, ec,offset);
 	
@@ -328,7 +328,7 @@ namespace ECT
     //tournaments_won is a bit vector determining which tournaments the label won.
     for (size_t i = 0; i < tree_height; i++)
       {
-        for (size_t j = 0; j < tournaments_won.size()/2; j++)
+        for (uint32_t j = 0; j < tournaments_won.size()/2; j++)
           {
             bool left = tournaments_won[j*2];
             bool right = tournaments_won[j*2+1];
@@ -345,9 +345,9 @@ namespace ECT
 		simple_temp.weight = (float)(1 << (tree_height -i -1));
                 ec->ld = & simple_temp;
 	      
-                size_t problem_number = last_pair + j*(1 << (i+1)) + (1 << i) -1;
+                uint32_t problem_number = last_pair + j*(1 << (i+1)) + (1 << i) -1;
 		
-                size_t offset = problem_number*increment;
+                uint32_t offset = problem_number*increment;
 	      
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
@@ -376,7 +376,7 @@ namespace ECT
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label > k)
       cout << "label > maximum label!  This won't work right." << endl;
-    int new_label = ect_predict(*all, ec);
+    size_t new_label = ect_predict(*all, ec);
     ec->ld = mc;
     
     if (mc->label != (uint32_t)-1 && all->training)
@@ -464,13 +464,13 @@ namespace ECT
     }
 
     if(vm_file.count("error")) {
-      errors = vm_file["error"].as<size_t>();
-      if (vm.count("error") && vm["error"].as<size_t>() != errors) {
+      errors = vm_file["error"].as<uint32_t>();
+      if (vm.count("error") && vm["error"].as<uint32_t>() != errors) {
         cerr << "warning: specified value for --error different than the one loaded from predictor file. Pursuing with loaded value of: " << errors << endl;
       }
     }
     else if (vm.count("error")) {
-      errors = vm["error"].as<size_t>();
+      errors = vm["error"].as<uint32_t>();
 
       //append error flag to options_from_file so it is saved in regressor file later
       stringstream ss;

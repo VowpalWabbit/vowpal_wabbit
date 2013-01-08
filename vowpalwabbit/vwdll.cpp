@@ -97,7 +97,8 @@ extern "C"
 		}
 		catch (...)
 		{
-			// BUGBUG: should report error here....
+			cout << "BUG: failed space conversion" <<  endl;
+			return 0;
 		}
 	}
 
@@ -111,7 +112,8 @@ extern "C"
 		}
 		catch (...)
 		{
-			// BUGBUG: should report error here....
+			cout << "failed feature conversion!" << endl;
+			return 0;
 		}
 	}
 	

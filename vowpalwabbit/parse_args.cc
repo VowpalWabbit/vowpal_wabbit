@@ -797,7 +797,7 @@ namespace VW {
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
-    argc = foo.size();
+    argc = (int)foo.size();
     free(c);
     foo.delete_v();
     return argv;

@@ -317,7 +317,7 @@ void reduce(char* buffer, const int n, const socket_t parent_sock, const socket_
       //      cout<<"Before select parent_sent_pos = "<<parent_sent_pos<<" child_read_pos[0] = "<<child_read_pos[0]<<" max fd = "<<max_fd<<endl;
       
       if(child_read_pos[0] < n || child_read_pos[1] < n) {
-	if (max_fd > 0 && select(max_fd,&fds,NULL, NULL, NULL) == -1)
+	if (max_fd > 0 && select((int)max_fd,&fds,NULL, NULL, NULL) == -1)
 	  {
 	    cerr << "Select failed!" << endl;
 	    perror(NULL);
@@ -336,7 +336,7 @@ void reduce(char* buffer, const int n, const socket_t parent_sock, const socket_
 	
 	    //float read_buf[buf_size];
 	    size_t count = min(buf_size,n - child_read_pos[i]);
-	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], count, 0);
+	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
 	    if(read_size == -1) {
 	      cerr <<" Read from child failed\n";
 	      perror(NULL);
@@ -408,7 +408,7 @@ void broadcast(char* buffer, const int n, const socket_t parent_sock, const sock
 	  exit(1);
 	}
 	size_t count = min(buf_size,n-parent_read_pos);
-	int read_size = recv(parent_sock, buffer + parent_read_pos, count, 0);
+	int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);
 	if(read_size == -1) {
 	  cerr <<" Read from parent failed\n";
 	  perror(NULL);

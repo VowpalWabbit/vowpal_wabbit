@@ -46,7 +46,7 @@ namespace Beam
 
   size_t hash_bucket(size_t id) { return 1043221*(893901 + id); }
 
-  void beam::put(size_t id, state s, size_t hs, size_t act, float loss) {
+  void beam::put(size_t id, state s, size_t hs, uint32_t act, float loss) {
     elem e = { s, hs, loss, id, last_retrieved, act, true };
     // check to see if we have this bucket yet
     bucket b = dat->get(id, hash_bucket(id));
@@ -62,7 +62,7 @@ namespace Beam
     }
   }
 
-  void beam::put_final(state s, size_t act, float loss) {
+  void beam::put_final(state s, uint32_t act, float loss) {
     elem e = { s, 0, loss, 0, last_retrieved, act, true };
     final_states->push_back(e);
   }
@@ -192,7 +192,7 @@ namespace Beam
     return next_bucket;
   }
 
-  void beam::get_best_output(std::vector<size_t>* action_seq) {
+  void beam::get_best_output(std::vector<uint32_t>* action_seq) {
     action_seq->clear();
     if (final_states->size() == 0) {
       // TODO: error
@@ -205,7 +205,7 @@ namespace Beam
       }
       // chase backpointers
       while (bestElem != NULL) {
-        std::vector<size_t>::iterator be = action_seq->begin();
+        std::vector<uint32_t>::iterator be = action_seq->begin();
         action_seq->insert( be, bestElem->last_action );
         bestElem = bestElem->backpointer;
       }

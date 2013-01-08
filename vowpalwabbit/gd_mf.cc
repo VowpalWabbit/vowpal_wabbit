@@ -35,7 +35,7 @@ float mf_inline_predict(vw& all, example* &ec)
 
   float linear_prediction = 0;
   // linear terms
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
 
   // store constant + linear prediction
@@ -91,7 +91,7 @@ void mf_inline_train(vw& all, example* &ec, float update)
       float regularization = eta_t * all.l2_lambda;
 
       // linear update
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	sd_offset_update(weights, mask, ec->atomics[*i].begin, ec->atomics[*i].end, 0, update, regularization);
       
       // quadratic update
@@ -131,7 +131,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 {
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
       for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	{

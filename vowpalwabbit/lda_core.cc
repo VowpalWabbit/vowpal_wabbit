@@ -431,7 +431,7 @@ float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
       old_gamma.push_back(0.f);
     }
   size_t num_words =0;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     num_words += ec->atomics[*i].end - ec->atomics[*i].begin;
 
   float xc_w = 0;
@@ -448,7 +448,7 @@ float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
       score = 0;
       size_t word_count = 0;
       doc_length = 0;
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
 	{
 	  feature *f = ec->atomics[*i].begin;
 	  for (; f != ec->atomics[*i].end; f++)
@@ -495,7 +495,7 @@ size_t next_pow2(size_t x) {
     x >>= 1;
     i++;
   }
-  return 1 << i;
+  return ((size_t)1) << i;
 }
 
 void lda_parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
@@ -517,7 +517,7 @@ void lda_parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& v
 
   all.p->sort_features = true;
   float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
-  all.stride = 1 << (int) temp;
+  all.stride = ((size_t)1) << (int) temp;
   all.random_weights = true;
   all.add_constant = false;
 
@@ -583,7 +583,7 @@ void drive_lda(void* in)
 	  if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	    {
 	      examples.push_back(ec);
-              for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) {
+              for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {
                 feature* f = ec->atomics[*i].begin;
                 for (; f != ec->atomics[*i].end; f++) {
                   index_feature temp = {(uint32_t)d, *f};

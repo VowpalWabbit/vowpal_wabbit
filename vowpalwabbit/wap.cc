@@ -22,7 +22,7 @@ namespace WAP {
 
   void mirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
   {
-    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
         size_t original_length = ec->atomics[*i].size();
         //cerr << "original_length = " << original_length << endl;
@@ -38,7 +38,7 @@ namespace WAP {
       }
     if (all.audit)
       {
-        for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+        for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
             {
               size_t original_length = ec->audit_features[*i].size();
@@ -68,7 +68,7 @@ namespace WAP {
 
   void unmirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
   {
-    for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
         ec->atomics[*i].end = ec->atomics[*i].begin+ec->atomics[*i].size()/2;
         feature* end = ec->atomics[*i].end;
@@ -78,7 +78,7 @@ namespace WAP {
       }
     if (all.audit)
       {
-        for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+        for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
             {
               for (audit_data *f = ec->audit_features[*i].begin + ec->audit_features[*i].size()/2; f != ec->audit_features[*i].end; f++)
@@ -262,14 +262,14 @@ namespace WAP {
 
   void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
-    size_t nb_actions = 0;
+    uint32_t nb_actions = 0;
     if( vm_file.count("wap") ) { //if loaded options from regressor
-      nb_actions = vm_file["wap"].as<size_t>();
-      if( vm.count("wap") && vm["wap"].as<size_t>() != nb_actions )
+      nb_actions = vm_file["wap"].as<uint32_t>();
+      if( vm.count("wap") && vm["wap"].as<uint32_t>() != nb_actions )
         std::cerr << "warning: you specified a different number of actions through --wap than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
     }
     else {
-      nb_actions = vm["wap"].as<size_t>();
+      nb_actions = vm["wap"].as<uint32_t>();
 
      //append wap with nb_actions to options_from_file so it is saved to regressor later
      std::stringstream ss;

@@ -22,14 +22,14 @@ struct global_prediction {
   float weight;
 };
 
-int really_read(int sock, void* in, size_t count)
+size_t really_read(int sock, void* in, size_t count)
 {
   char* buf = (char*)in;
   size_t done = 0;
   int r = 0;
   while (done < count)
     {
-      if ((r = read(sock,buf,count-done)) == 0)
+      if ((r = read(sock,buf,(unsigned int)(count-done))) == 0)
 	return 0;
       else
 	if (r < 0)
@@ -50,7 +50,7 @@ int really_read(int sock, void* in, size_t count)
 void get_prediction(int sock, float& res, float& weight)
 {
   global_prediction p;
-  int count = really_read(sock, &p, sizeof(p));
+  size_t count = really_read(sock, &p, sizeof(p));
   res = p.p;
   weight = p.weight;
   
@@ -95,7 +95,7 @@ void print_result(int f, float res, float weight, v_array<char> tag)
       print_tag(ss, tag);
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), len);
+      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
       if (t != len)
         {
           cerr << "write error" << endl;
@@ -113,7 +113,7 @@ void print_raw_text(int f, string s, v_array<char> tag)
   print_tag (ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
-  ssize_t t = write(f, ss.str().c_str(), len);
+  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
   if (t != len)
     {
       cerr << "write error" << endl;
@@ -136,7 +136,7 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
 	}
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), len);
+      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
       if (t != len)
 	cerr << "write error" << endl;
     }
@@ -156,7 +156,7 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
       print_tag(ss, tag);
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), len);
+      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
       if (t != len)
 	cerr << "write error" << endl;
     }

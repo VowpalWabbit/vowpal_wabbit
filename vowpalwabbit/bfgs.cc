@@ -205,7 +205,7 @@ float predict_and_gradient(vw& all, example* &ec)
   
   size_t mask = all.weight_mask;
   weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature *f = ec->atomics[*i].begin;
       for (; f != ec->atomics[*i].end; f++)
@@ -242,7 +242,7 @@ void update_preconditioner(vw& all, example* &ec)
   
   size_t mask = all.weight_mask;
   weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     {
       feature *f = ec->atomics[*i].begin;
       for (; f != ec->atomics[*i].end; f++)
@@ -278,7 +278,7 @@ float dot_with_direction(vw& all, example* &ec)
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
   weights +=2;//direction vector stored two advanced
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature *f = ec->atomics[*i].begin;
       for (; f != ec->atomics[*i].end; f++)
