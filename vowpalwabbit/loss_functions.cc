@@ -307,8 +307,8 @@ loss_function* getLossFunction(void* a, string funcName, float function_paramete
   } else if(funcName.compare("logistic") == 0) {
     if (all->set_minmax != noop_mm)
       {
-	all->sd->min_label = -100;
-	all->sd->max_label = 100;
+	all->sd->min_label = -50;
+	all->sd->max_label = 50;
 	all->sd->binary_label = true;
       }
     return new logloss();
