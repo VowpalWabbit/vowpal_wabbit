@@ -302,8 +302,8 @@ namespace Searn
   bool   rollout_all_actions  = true;  //by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
 
   // debug stuff
-  bool PRINT_DEBUG_INFO             = 1;
-  bool PRINT_UPDATE_EVERY_EXAMPLE   = 1 | PRINT_DEBUG_INFO;
+  bool PRINT_DEBUG_INFO             = 0;
+  bool PRINT_UPDATE_EVERY_EXAMPLE   = 0 | PRINT_DEBUG_INFO;
 
 
   // rollout
@@ -781,7 +781,7 @@ namespace Searn
 
     all.base_learner_nb_w *= total_number_of_policies;
     increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
-    cerr << "searn increment = " << increment << endl;
+    //cerr << "searn increment = " << increment << endl;
 
     all.driver = drive;
     base_learner = all.learn;
@@ -837,8 +837,8 @@ namespace Searn
             ec->ld = (void*)&allowed_labels_cb;
         }
       }
-      cerr << "searn>";
-      simple_print_example_features(all,ec);
+      //cerr << "searn>";
+      //simple_print_example_features(all,ec);
       base_learner(&all,ec);  
 	  total_predictions_made++;  
 	  searn_num_features += ec->num_features;
