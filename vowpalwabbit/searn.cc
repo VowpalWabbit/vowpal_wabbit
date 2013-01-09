@@ -21,7 +21,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "cb.h"
 #include "v_hashmap.h"
-#include "beam.h"
+//#include "beam.h"
 #include "vw.h"
 #include "rand48.h"
 
@@ -34,6 +34,8 @@ namespace SearnUtil
 
   string   audit_feature_space("history");
   uint32_t history_constant    = 8290741;
+  uint32_t example_number = 0;
+
 
   void default_info(history_info* hinfo)
   {
@@ -75,7 +77,7 @@ namespace SearnUtil
   int random_policy(uint64_t seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)
   {
     if(reset_seed) //reset_seed is false for contextual bandit, so that we only reset the seed if the base learner is not a contextual bandit learner, as this breaks the exploration.
-      msrand48(seed);
+      msrand48(seed * 2147483647);
 
     if (beta >= 1) {
       if (allow_current_policy) return (int)current_policy;
@@ -292,7 +294,7 @@ namespace Searn
   size_t passes_per_policy    = 1;     //this should be set to the same value as --passes for dagger
   float  beta                 = 0.5;
   float gamma                = 1.;
-  bool   do_recombination     = true;
+  bool   do_recombination     = false;
   bool   allow_current_policy = false; //this should be set to true for dagger
   bool   rollout_oracle       = false; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
   bool   adaptive_beta        = false; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
@@ -300,8 +302,8 @@ namespace Searn
   bool   rollout_all_actions  = true;  //by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
 
   // debug stuff
-  bool PRINT_DEBUG_INFO             = 0;
-  bool PRINT_UPDATE_EVERY_EXAMPLE   = 0 | PRINT_DEBUG_INFO;
+  bool PRINT_DEBUG_INFO             = 1;
+  bool PRINT_UPDATE_EVERY_EXAMPLE   = 1 | PRINT_DEBUG_INFO;
 
 
   // rollout
@@ -778,7 +780,8 @@ namespace Searn
     VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies", ss2.str());
 
     all.base_learner_nb_w *= total_number_of_policies;
-    increment = ((uint32_t)all.length() / all.base_learner_nb_w / 2) * all.stride;
+    increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
+    cerr << "searn increment = " << increment << endl;
 
     all.driver = drive;
     base_learner = all.learn;
@@ -789,7 +792,7 @@ namespace Searn
 
   uint32_t searn_predict(vw&all, state s0, size_t step, bool allow_oracle, bool allow_current, v_array< pair<uint32_t,float> >* partial_predictions)  // TODO: partial_predictions
   {
-    int policy = SearnUtil::random_policy(has_hash ? task.hash(s0) : step, beta, allow_current, (int)current_policy, allow_oracle, rollout_all_actions);
+    int policy = SearnUtil::random_policy(read_example_last_id * 2147483 + step * 2147483647 /* has_hash ? task.hash(s0) : step */, beta, allow_current, (int)current_policy, allow_oracle, rollout_all_actions);
     if (PRINT_DEBUG_INFO) { cerr << "predicing with policy " << policy << " (allow_oracle=" << allow_oracle << ", allow_current=" << allow_current << "), current_policy=" << current_policy << endl; }
     if (policy == -1) {
       return task.oracle(s0);
@@ -834,6 +837,8 @@ namespace Searn
             ec->ld = (void*)&allowed_labels_cb;
         }
       }
+      cerr << "searn>";
+      simple_print_example_features(all,ec);
       base_learner(&all,ec);  
 	  total_predictions_made++;  
 	  searn_num_features += ec->num_features;
@@ -1161,6 +1166,7 @@ namespace Searn
     }
   }
   
+/*
   struct beam_info_struct {
     vw&all;
     bool allow_oracle;
@@ -1208,7 +1214,7 @@ namespace Searn
   //    task.finish(s);
   //  }
 
-
+  */
   void do_actual_learning(vw&all)
   {
     // there are two cases:
@@ -1289,6 +1295,7 @@ namespace Searn
       past_states->clear();
     }
   }
+
 
   void process_next_example(vw&all, example *ec)
   {
