@@ -742,6 +742,11 @@ void setup_example(vw& all, example* ae)
 
   if (all.ignore_some)
     {
+      if (all.audit)
+	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+	  if (all.ignore[*i])
+	    ae->audit_features[*i].erase();
+      
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	if (all.ignore[*i])
 	  {//delete namespace
