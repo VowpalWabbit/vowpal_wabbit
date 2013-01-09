@@ -663,14 +663,14 @@ namespace Searn
     // and --searn_total_nb_policies contains the total number of policies in the file
     if ( vm_file.count("searn_total_nb_policies") )
     {
-	current_policy = vm_file["searn_trained_nb_policies"].as<uint32_t>();
-	total_number_of_policies = vm_file["searn_total_nb_policies"].as<uint32_t>();
-        if (vm.count("searn_total_nb_policies") && vm["searn_total_nb_policies"].as<uint32_t>() != total_number_of_policies)
+      current_policy = (uint32_t)vm_file["searn_trained_nb_policies"].as<size_t>();
+      total_number_of_policies = (uint32_t)vm_file["searn_total_nb_policies"].as<size_t>();
+      if (vm.count("searn_total_nb_policies") && (uint32_t)vm["searn_total_nb_policies"].as<size_t>() != total_number_of_policies)
           std::cerr << "warning: --searn_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << total_number_of_policies << endl;
     }
     else if (vm.count("searn_total_nb_policies"))
     {
-	total_number_of_policies = vm["searn_total_nb_policies"].as<uint32_t>();
+      total_number_of_policies = (uint32_t)vm["searn_total_nb_policies"].as<size_t>();
     }
 
     if (vm.count("searn_as_dagger"))

@@ -1298,9 +1298,9 @@ namespace Sequence {
     all.sequence = true;
 
     if( vm_file.count("sequence") ) { //we loaded a regressor file containing all the sequence options, use the ones in the file
-      sequence_k = vm_file["sequence"].as<uint32_t>();
+      sequence_k = (uint32_t)vm_file["sequence"].as<size_t>();
 
-      if( vm.count("sequence") && vm["sequence"].as<uint32_t>() != sequence_k )
+      if( vm.count("sequence") && (uint32_t)vm["sequence"].as<size_t>() != sequence_k )
         std::cerr << "warning: you specified a different number of actions through --sequence than the one loaded from regressor. Pursuing with loaded value of: " << sequence_k << endl;
 
       if (vm_file.count("sequence_bigrams"))
@@ -1326,13 +1326,13 @@ namespace Sequence {
       }
 
       if( vm_file.count("sequence_total_nb_policies") ) {
-        total_number_of_policies = vm_file["sequence_total_nb_policies"].as<uint32_t>();
-        if (vm.count("sequence_total_nb_policies") && vm["sequence_total_nb_policies"].as<uint32_t>() != total_number_of_policies)
+        total_number_of_policies = (uint32_t)vm_file["sequence_total_nb_policies"].as<size_t>();
+        if (vm.count("sequence_total_nb_policies") && (uint32_t)vm["sequence_total_nb_policies"].as<size_t>() != total_number_of_policies)
           std::cerr << "warning: --sequence_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << total_number_of_policies << endl;
       }
 
       if( vm_file.count("sequence_trained_nb_policies") ) {
-        current_policy = vm_file["sequence_trained_nb_policies"].as<uint32_t>();
+        current_policy = (uint32_t)vm_file["sequence_trained_nb_policies"].as<size_t>();
       }
 
       //check if there are a discrepancies with what user has specified in command line
@@ -1357,7 +1357,7 @@ namespace Sequence {
     }
 
     else {
-      sequence_k = vm["sequence"].as<uint32_t>();
+      sequence_k = (uint32_t)vm["sequence"].as<size_t>();
 
       if (vm.count("sequence_bigrams")) {
         hinfo.bigrams = true;
@@ -1408,7 +1408,7 @@ namespace Sequence {
       }
 
       if( vm.count("sequence_total_nb_policies") ) {
-        total_number_of_policies = vm["sequence_total_nb_policies"].as<uint32_t>();
+        total_number_of_policies = (uint32_t)vm["sequence_total_nb_policies"].as<size_t>();
       }
 
       if (vm.count("sequence_beta"))

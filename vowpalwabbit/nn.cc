@@ -301,12 +301,12 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     //first parse for number of hidden units
     k = 0;
     if( vm_file.count("nn") ) {
-      k = vm_file["nn"].as<uint32_t>();
-      if( vm.count("nn") && vm["nn"].as<uint32_t>() != k )
+      k = (uint32_t)vm_file["nn"].as<size_t>();
+      if( vm.count("nn") && (uint32_t)vm["nn"].as<size_t>() != k )
         std::cerr << "warning: you specified a different number of hidden units through --nn than the one loaded from predictor. Pursuing with loaded value of: " << k << endl;
     }
     else {
-      k = vm["nn"].as<uint32_t>();
+      k = (uint32_t)vm["nn"].as<size_t>();
 
       std::stringstream ss;
       ss << " --nn " << k;

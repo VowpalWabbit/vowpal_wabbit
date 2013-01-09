@@ -423,7 +423,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       address.sin_addr.s_addr = htonl(INADDR_ANY);
       short unsigned int port = 26542;
       if (vm.count("port"))
-	port = vm["port"].as<uint16_t>();
+	port = (uint16_t)vm["port"].as<size_t>();
       address.sin_port = htons(port);
 
       // attempt to bind to socket

@@ -349,12 +349,12 @@ namespace CSOAA {
     //first parse for number of actions
     uint32_t nb_actions = 0;
     if( vm_file.count("csoaa") ) { //if loaded options from regressor
-      nb_actions = vm_file["csoaa"].as<uint32_t>();
-      if( vm.count("csoaa") && vm["csoaa"].as<uint32_t>() != nb_actions ) //if csoaa was also specified in commandline, warn user if its different
+      nb_actions = (uint32_t)vm_file["csoaa"].as<size_t>();
+      if( vm.count("csoaa") && (uint32_t)vm["csoaa"].as<size_t>() != nb_actions ) //if csoaa was also specified in commandline, warn user if its different
         std::cerr << "warning: you specified a different number of actions through --csoaa than the one loaded from predictor. Pursuing with loaded value of: " << nb_actions << endl;
     }
     else {
-      nb_actions = vm["csoaa"].as<uint32_t>();
+      nb_actions = (uint32_t)vm["csoaa"].as<size_t>();
 
       //append csoaa with nb_actions to options_from_file so it is saved to regressor later
       std::stringstream ss;
