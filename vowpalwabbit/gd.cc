@@ -142,226 +142,6 @@ void finish_example(vw& all, example* ec)
   return_simple_example(all, ec);
 }
 
-float inline_predict_trunc(vw& all, example* &ec)
-{
-  float prediction = all.p->lp->get_initial(ec->ld);
-  
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    sd_add<vec_add_trunc>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
-    //    prediction += sd_add_trunc(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, (float)all.sd->gravity);
-  
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += one_pf_quad_predict_trunc(weights, *temp.begin,
-						    ec->atomics[(int)(*i)[1]], mask, (float)all.sd->gravity);
-	}
-    }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) ||
-        (ec->atomics[(int)(*i)[1]].size() == 0) ||
-        (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-
-      v_array<feature> f0 = ec->atomics[(int)(*i)[0]];
-      for (; f0.begin != f0.end; f0.begin++) {
-        v_array<feature> f1 = ec->atomics[(int)(*i)[1]];
-        for (; f1.begin != f1.end; f1.begin++) {
-          prediction += one_pf_cubic_predict_trunc(weights,
-                                                   *f0.begin,
-                                                   *f1.begin,
-                                                   ec->atomics[(int)(*i)[2]],
-                                                   mask,
-                                                   (float)all.sd->gravity);
-        }
-      }
-  }
-  
-  return prediction;
-}
-
-float inline_predict(vw& all, example* &ec)
-{
-  float prediction = all.p->lp->get_initial(ec->ld);
-
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
-    //    prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += one_pf_quad_predict(weights,*temp.begin,
-					      ec->atomics[(int)(*i)[1]],mask);
-	}
-    }
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++) {
-        prediction += one_pf_cubic_predict(weights,*temp1.begin,*temp2.begin,
-                                           ec->atomics[(int)(*i)[2]],mask);
-      }
-    }
-  }
-  
-  return prediction;
-}
-
-float inline_predict_rescale(vw& all, example* &ec)
-{
-  float prediction = all.p->lp->get_initial(ec->ld);
-
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    sd_add<vec_add_rescale>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
-    //    prediction += sd_add_rescale(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,all.adaptive,all.normalized_idx);
-
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += one_pf_quad_predict_rescale(weights,*temp.begin,
-					      ec->atomics[(int)(*i)[1]],mask,all.adaptive,all.normalized_idx);
-	}
-    }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++) {
-        prediction += one_pf_cubic_predict_rescale(weights,*temp1.begin,*temp2.begin,
-                                                   ec->atomics[(int)(*i)[2]],mask,all.adaptive,all.normalized_idx);
-      }
-    }
-  }
-
-  
-  return prediction;
-}
-
-float inline_predict_trunc_rescale(vw& all, example* &ec)
-{
-  float prediction = all.p->lp->get_initial(ec->ld);
-
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    sd_add<vec_add_trunc_rescale>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
-    //    prediction += sd_add_trunc_rescale(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,(float)all.sd->gravity,all.adaptive,all.normalized_idx);
-
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += one_pf_quad_predict_trunc_rescale(weights,*temp.begin,
-					      ec->atomics[(int)(*i)[1]],mask,(float)all.sd->gravity,all.adaptive,all.normalized_idx);
-	}
-    }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++) {
-        prediction += one_pf_cubic_predict_trunc_rescale(weights,*temp1.begin,*temp2.begin,
-                                                         ec->atomics[(int)(*i)[2]],mask,(float)all.sd->gravity,all.adaptive,all.normalized_idx);
-      }
-    }
-  }
-  
-  return prediction;
-}
-
-float inline_predict_rescale_general(vw& all, example* &ec)
-{
-  float prediction = all.p->lp->get_initial(ec->ld);
-
-  float power_t_norm = 1.f;
-  if(all.adaptive) power_t_norm -= all.power_t;
-
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    sd_add<vec_add_rescale_general>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
-    //    prediction += sd_add_rescale_general(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, all.normalized_idx, power_t_norm);
-
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += one_pf_quad_predict_rescale_general(weights,*temp.begin,
-					      ec->atomics[(int)(*i)[1]],mask, all.normalized_idx, power_t_norm);
-	}
-    }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++) {
-        prediction += one_pf_cubic_predict_rescale_general(weights,*temp1.begin,*temp2.begin,
-                                                           ec->atomics[(int)(*i)[2]],mask,all.normalized_idx, power_t_norm);
-      }
-    }
-  }
-  
-  return prediction;
-}
-
-float inline_predict_trunc_rescale_general(vw& all, example* &ec)
-{
-  float prediction = all.p->lp->get_initial(ec->ld);
-
-  float power_t_norm = 1.f;
-  if(all.adaptive) power_t_norm -= all.power_t;
-
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    sd_add<vec_add_trunc_rescale_general>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
-    //    prediction += sd_add_trunc_rescale_general(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,(float)all.sd->gravity,all.normalized_idx,power_t_norm);
-
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    prediction += one_pf_quad_predict_trunc_rescale_general(weights,*temp.begin,
-					      ec->atomics[(int)(*i)[1]],mask,(float)all.sd->gravity,all.normalized_idx,power_t_norm);
-	}
-    }
-  
-  return prediction;
-}
-
 struct string_value {
   float v;
   string s;
@@ -1179,22 +959,22 @@ void predict(vw& all, example* ex)
   if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
-        prediction = inline_predict_trunc_rescale(all, ex);
+        prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
       else
-        prediction = inline_predict_rescale(all, ex);
+        prediction = inline_predict<vec_add_rescale>(all, ex);
     }
     else {
       if (all.reg_mode % 2)
-        prediction = inline_predict_trunc_rescale_general(all, ex);
+        prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
       else
-        prediction = inline_predict_rescale_general(all, ex);
+        prediction = inline_predict<vec_add_rescale_general>(all, ex);
     }
   }
   else {
     if (all.reg_mode % 2)
-      prediction = inline_predict_trunc(all, ex);
+      prediction = inline_predict<vec_add_trunc>(all, ex);
     else
-      prediction = inline_predict(all, ex);
+      prediction = inline_predict<vec_add>(all, ex);
   }
 
   ex->partial_prediction += prediction;

@@ -190,7 +190,7 @@ bool test_example(example* ec)
 
   float bfgs_predict(vw& all, example* &ec)
   {
-    ec->partial_prediction = inline_predict(all,ec);
+    ec->partial_prediction = inline_predict<vec_add>(all,ec);
     return finalize_prediction(all, ec->partial_prediction);
   }
 
@@ -275,9 +275,32 @@ void update_preconditioner(vw& all, example* &ec)
 float dot_with_direction(vw& all, example* &ec)
 {
   float ret = 0;
+
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+    ret += sd_offset_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end, W_DIR);
+
+  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
+    if (ec->atomics[(int)(*i)[0]].size() > 0) {
+      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+      for (; temp.begin != temp.end; temp.begin++)
+        ret += one_pf_quad_predict_offset<vec_add>(all, *temp.begin, ec->atomics[(int)(*i)[1]], W_DIR);
+    }
+  }
+
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
+    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
+    for (; temp1.begin != temp1.end; temp1.begin++) {
+      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
+      for (; temp2.begin != temp2.end; temp2.begin++)
+        ret += one_pf_cubic_predict_offset<vec_add>(all, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], W_DIR);
+    }
+  }
+  
+  /*
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  weights +=2;//direction vector stored two advanced
+  weights +=W_DIR;//direction vector stored two advanced
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature *f = ec->atomics[*i].begin;
@@ -302,6 +325,7 @@ float dot_with_direction(vw& all, example* &ec)
         ret += one_pf_cubic_predict(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask);
     }
   }
+  */
   return ret;
 }
 

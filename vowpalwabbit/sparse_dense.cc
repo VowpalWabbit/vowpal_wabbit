@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 #include "constant.h"
 #include <math.h>
 
-
+/*
 float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, size_t offset)
 {
   float ret = 0.;
@@ -16,6 +16,7 @@ float sd_offset_add(weight* weights, size_t mask, feature* begin, feature* end, 
     ret += weights[(f->weight_index + offset) & mask] * f->x;
   return ret;
 }
+*/
 
 float sd_offset_add_trunc(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float gravity)
 {
@@ -133,13 +134,7 @@ float one_of_quad_predict(v_array<feature> &page_features, feature& offer_featur
   return prediction * offer_feature.x;
 }
 
-float one_pf_quad_predict(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask)
-{
-  size_t halfhash = quadratic_constant * f.weight_index;
-  
-  return f.x * sd_offset_add(weights, mask, cross_features.begin, cross_features.end, halfhash);
-}
-
+/*
 float one_pf_quad_predict_trunc(weight* weights, feature& f, v_array<feature> &cross_features, size_t mask, float gravity)
 {
   size_t halfhash = quadratic_constant * f.weight_index;
@@ -247,3 +242,4 @@ float one_pf_cubic_predict_trunc_rescale_general(weight* weights, feature& f0, f
   size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);  
   return f0.x * f1.x * sd_offset_add_trunc_rescale_general(weights, mask, cross_features.begin, cross_features.end, halfhash, gravity, f0.x * f1.x, idx_norm, power_t_norm);
 }
+*/
