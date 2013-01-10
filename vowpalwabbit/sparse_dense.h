@@ -130,6 +130,4 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
                const v_array<feature> &second_part, size_t thread_mask);
 
-//float one_of_quad_predict(v_array<feature> &page_features, feature& offer_feature, weight* weights, size_t mask);
-
 #endif
