@@ -274,7 +274,6 @@ namespace CSOAA {
     size_t prediction = 1;
     float score = FLT_MAX;
     uint32_t current_increment = 0;
-    uint32_t increment = ((uint32_t)all->length()/all->base_learner_nb_w) * all->stride;
 
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
@@ -295,7 +294,7 @@ namespace CSOAA {
 
 	ec->ld = &simple_temp;
 
-        uint32_t desired_increment = increment * (i-1);
+        uint32_t desired_increment = all->csoaa_increment * (i-1);
 
         if (desired_increment != current_increment) {
 	  update_example_indicies(all->audit, ec, desired_increment - current_increment);
@@ -368,6 +367,7 @@ namespace CSOAA {
 
     all.sd->k = nb_actions;
     all.base_learner_nb_w *= nb_actions;
+    all.csoaa_increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
 
     base_learner = all.learn;
     all.base_learn = all.learn;
