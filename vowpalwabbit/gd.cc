@@ -574,290 +574,105 @@ float xGx_cubic(weight* weights, feature& f0, feature& f1, v_array<feature> &cro
 }
 
 
-float general_norm_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, float power_t, 
-                         bool is_adaptive, bool is_normalized, size_t idx_norm, float power_t_norm, float& norm_x)
+template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
+void norm_add(vw& all, feature* begin, feature* end, float g, float& norm, float& norm_x, uint32_t offset=0)
 {
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float norm = 0.;
-  float x2 = page_feature.x * page_feature.x;
-  float update2 = g * x2;
-  float add_norm_x = 0.f;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-  {
-    weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    float xtmp = ele->x;
-    float xtmp2 = xtmp * xtmp;
-    float t = 1.f;
-    if(is_adaptive) {
-      w[1] += update2 * xtmp2;
-      t = powf(w[1],- power_t);
-    }
-    if(is_normalized) {
-      float range2 = w[idx_norm]*w[idx_norm];
-      t *= powf(range2,-power_t_norm);
-      add_norm_x += xtmp2 / range2;
-    }
-    norm += t * xtmp2;
-  }
-  norm_x += add_norm_x * x2;
-  return norm*x2;
+  for (feature* f = begin; f!= end; f++)
+    T(all, f->x, f->weight_index + offset, g, norm, norm_x);
 }
 
-float general_norm_cubic(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g, float power_t, 
-                         bool is_adaptive, bool is_normalized, size_t idx_norm, float power_t_norm, float& norm_x)
+template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
+void norm_add_quad(vw& all, feature& f0, v_array<feature> &cross_features, float g, float& norm, float& norm_x, uint32_t offset=0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  float norm = 0.;
-  float x2 = f0.x * f0.x * f1.x * f1.x;
-  float update2 = g * x2;
-  float add_norm_x = 0.f;
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
-  {
-    weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    float xtmp = ele->x;
-    float xtmp2 = xtmp * xtmp;
-    float t = 1.f;
-    if(is_adaptive) {
-      w[1] += update2 * xtmp2;
-      t = powf(w[1],- power_t);
-    }
-    if(is_normalized) {
-      float range2 = w[idx_norm]*w[idx_norm];
-      t *= powf(range2,-power_t_norm);
-      add_norm_x += xtmp2 / range2;
-    }
-    norm += t * xtmp2;
-  }
-  norm_x += add_norm_x * x2;
-  return norm*x2;
+  size_t halfhash = quadratic_constant * (f0.weight_index + offset);
+  float norm_new = 0.f;
+  float norm_x_new = 0.f;
+  norm_add<T>(all, cross_features.begin, cross_features.end, g * f0.x * f0.x, norm_new, norm_x_new, halfhash + offset);
+  norm   += norm_new   * f0.x * f0.x;
+  norm_x += norm_x_new * f0.x * f0.x;
 }
 
+template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
+void norm_add_cubic(vw& all, feature& f0, feature& f1, v_array<feature> &cross_features, float g, float& norm, float& norm_x, uint32_t offset=0)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
+  float norm_new = 0.f;
+  float norm_x_new = 0.f;
+  norm_add<T>(all, cross_features.begin, cross_features.end, g * f0.x * f0.x * f1.x * f1.x, norm_new, norm_x_new, halfhash + offset);
+  norm   += norm_new   * f0.x * f0.x * f1.x * f1.x;
+  norm_x += norm_x_new * f0.x * f0.x * f1.x * f1.x;
+}
 
-float compute_general_norm(vw& all, example* &ec, float power_t)
+inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
+  weight* w = &all.reg.weight_vectors[fi & all.weight_mask];
+  float x2 = x * x;
+  float t = 1.f;
+  float inv_norm = 1.f;
+  float inv_norm2 = 1.f;
+  if(all.normalized_updates) {
+    inv_norm /= w[all.normalized_idx];
+    inv_norm2 = inv_norm*inv_norm;
+    norm_x += x2 * inv_norm2;
+  }
+  if(all.adaptive){
+    w[1] += g * x2;
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+    __m128 eta = _mm_load_ss(&w[1]);
+    eta = _mm_rsqrt_ss(eta);
+    _mm_store_ss(&t, eta);
+    t *= inv_norm;
+#else
+    t = InvSqrt(w[1]) * inv_norm;
+#endif
+  } else {
+    t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
+  }
+  norm += x2 * t;
+}
+
+inline void powert_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
+  float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
+
+  weight* w = &all.reg.weight_vectors[fi & all.weight_mask];
+  float x2 = x * x;
+  float t = 1.f;
+  if(all.adaptive){
+    w[1] += g * x2;
+    t = powf(w[1], -all.power_t);
+  }
+  if(all.normalized_updates) {
+    float range2 = w[all.normalized_idx] * w[all.normalized_idx];
+    t *= powf(range2, -power_t_norm);
+    norm_x += x2 / range2;
+  }
+  norm += x2 * t;
+}
+
+template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
+float compute_norm(vw& all, example* &ec, uint32_t offset=0)
 {//We must traverse the features in _precisely_ the same order as during training.
-  size_t mask = all.weight_mask;
   label_data* ld = (label_data*)ec->ld;
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   if (g==0) return 1.;
 
-  size_t idx_norm = all.normalized_idx;
-  bool is_adaptive = all.adaptive;
-  bool is_normalized = all.normalized_updates;
-
-  float power_t_norm = 1.f;
-  if(is_adaptive) power_t_norm -= power_t;
-
   float norm = 0.;
   float norm_x = 0.;
-  weight* weights = all.reg.weight_vectors;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-  {
-    feature* f = ec->atomics[*i].begin;
-    for (; f != ec->atomics[*i].end; f++)
-    {
-      weight* w = &weights[f->weight_index & mask];
-      float x = f->x;
-      float x2 = x * x;
-      float t = 1.f;
-      if(is_adaptive) {
-        w[1] += g * x2;
-        t = powf(w[1],- power_t);
-      }
-      if(is_normalized) {
-        float range2 = w[idx_norm]*w[idx_norm];
-        t *= powf(range2,-power_t_norm);
-        norm_x += x2 / range2;
-      }
-      norm += t * x2;
-    }
-  }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-  {
+
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
+    norm_add<T>(all, ec->atomics[*i].begin, ec->atomics[*i].end, g, norm, norm_x, offset);
+
+  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
     if (ec->atomics[(int)(*i)[0]].size() > 0)
-    {
-      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-      for (; temp.begin != temp.end; temp.begin++)
-        norm += general_norm_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, power_t, is_adaptive, is_normalized, idx_norm, power_t_norm, norm_x);
-    }
-  }
+      for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
+        norm_add_quad<T>(all, *f0, ec->atomics[(int)(*i)[1]], g, norm, norm_x, offset);
 
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        norm += general_norm_cubic(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, g, power_t, is_adaptive, is_normalized, idx_norm, power_t_norm, norm_x);
-    } 
-  }
-
-  if(is_normalized) {
-    float total_weight = 0;
-    if(all.active)
-      total_weight = (float)all.sd->weighted_unlabeled_examples;
-    else
-      total_weight = ec->example_t;
-
-    all.normalized_sum_norm_x += ld->weight * norm_x;
-    float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
-    norm *= powf(avg_sq_norm,-power_t_norm);
-  }
+  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
+    if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
+      for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
+        for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
+          norm_add_cubic<T>(all, *f0, *f1, ec->atomics[(int)(*i)[2]], g, norm, norm_x, offset);
   
-  return norm;
-}
-
-float norm_quad(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g, bool is_adaptive, bool is_normalized, size_t idx_norm, float& norm_x)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float norm = 0.;
-  float x2 = page_feature.x * page_feature.x;
-  float update2 = g * x2;
-
-  float add_norm_x = 0.f;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-  {
-    weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    float xtmp = ele->x;
-    float xtmp2 = xtmp * xtmp;
-    float t = 1.f;
-    float inv_norm = 1.f;
-    float inv_norm2 = 1.f;
-    if(is_normalized) {
-      inv_norm /= w[idx_norm];
-      inv_norm2 = inv_norm * inv_norm;
-      add_norm_x += xtmp2 * inv_norm2; 
-    }
-    if(is_adaptive) {
-      w[1] += update2*xtmp2;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      __m128 eta = _mm_load_ss(&w[1]);
-      eta = _mm_rsqrt_ss(eta);
-      _mm_store_ss(&t, eta);
-      t *= inv_norm;
-#else
-      t = InvSqrt(w[1]) * inv_norm;
-#endif
-    }
-    else {
-      t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
-    }
-    
-    norm += xtmp2 * t;
-  }
-  norm_x += add_norm_x*x2;
-  return norm*x2;
-}
-
-float norm_cubic(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g, bool is_adaptive, bool is_normalized, size_t idx_norm, float& norm_x)
-{
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  float norm = 0.;
-  float x2 = f0.x * f0.x * f1.x * f1.x;
-  float update2 = g * x2;
-
-  float add_norm_x = 0.f;
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
-  {
-    weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    float xtmp = ele->x;
-    float xtmp2 = xtmp * xtmp;
-    float t = 1.f;
-    float inv_norm = 1.f;
-    float inv_norm2 = 1.f;
-    if(is_normalized) {
-      inv_norm /= w[idx_norm];
-      inv_norm2 = inv_norm * inv_norm;
-      add_norm_x += xtmp2 * inv_norm2; 
-    }
-    if(is_adaptive) {
-      w[1] += update2*xtmp2;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-      __m128 eta = _mm_load_ss(&w[1]);
-      eta = _mm_rsqrt_ss(eta);
-      _mm_store_ss(&t, eta);
-      t *= inv_norm;
-#else
-      t = InvSqrt(w[1]) * inv_norm;
-#endif
-    }
-    else {
-      t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
-    }
-    
-    norm += xtmp2 * t;
-  }
-  norm_x += add_norm_x*x2;
-  return norm*x2;
-}
-
-float compute_norm(vw& all, example* &ec)
-{//We must traverse the features in _precisely_ the same order as during training.
-  size_t mask = all.weight_mask;
-  label_data* ld = (label_data*)ec->ld;
-  float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
-  if (g==0) return 1.;
-
-  size_t idx_norm = all.normalized_idx;
-  bool is_adaptive = all.adaptive;
-  bool is_normalized = all.normalized_updates;
-
-  float norm = 0.;
-  float norm_x = 0.;
-  weight* weights = all.reg.weight_vectors;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-  {
-    feature* f = ec->atomics[*i].begin;
-    for (; f != ec->atomics[*i].end; f++)
-    {
-      weight* w = &weights[f->weight_index & mask];
-      float x = f->x;
-      float x2 = x * x;
-      float t = 1.f;
-      float inv_norm = 1.f;
-      float inv_norm2 = 1.f;
-      if(is_normalized) {
-        inv_norm /= w[idx_norm];
-        inv_norm2 = inv_norm*inv_norm;
-        norm_x += x2 * inv_norm2;
-      }
-      if(is_adaptive){
-        w[1] += g * x2;
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-        __m128 eta = _mm_load_ss(&w[1]);
-        eta = _mm_rsqrt_ss(eta);
-        _mm_store_ss(&t, eta);
-        t *= inv_norm;
-#else
-        t = InvSqrt(w[1]) * inv_norm;
-#endif
-      }
-      else {
-        t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
-      }
-      norm += x2 * t;
-    }
-  }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-  {
-    if (ec->atomics[(int)(*i)[0]].size() > 0)
-      {
-        v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-        for (; temp.begin != temp.end; temp.begin++)
-          norm += norm_quad(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, g, is_adaptive, is_normalized, idx_norm, norm_x);
-      }
-  }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++)  {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        norm += norm_cubic(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, g, is_adaptive, is_normalized, idx_norm, norm_x);
-    } 
-  }
-  
-  if(is_normalized) {
+  if(all.normalized_updates) {
     float total_weight = 0;
     if(all.active)
       total_weight = (float)all.sd->weighted_unlabeled_examples;
@@ -867,18 +682,16 @@ float compute_norm(vw& all, example* &ec)
     all.normalized_sum_norm_x += ld->weight * norm_x;
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
 
-    if(is_adaptive) norm /= sqrt(avg_sq_norm);
-    else norm /= avg_sq_norm;
+    if(all.power_t == 0.5) {
+      if(all.adaptive) norm /= sqrt(avg_sq_norm);
+      else norm /= avg_sq_norm;
+    } else {
+      float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
+      norm *= powf(avg_sq_norm,-power_t_norm);
+    }
   }
   
   return norm;
-}
-
-void train(weight* weights, const v_array<feature> &features, float update)
-{
-  if (fabs(update) > 0.)
-    for (feature* j = features.begin; j != features.end; j++)
-      weights[j->weight_index] += update * j->x;
 }
 
 void local_predict(vw& all, example* ec)
@@ -917,9 +730,9 @@ void local_predict(vw& all, example* ec)
 	  float norm;
           if(all.adaptive || all.normalized_updates) {
             if(all.power_t == 0.5)
-              norm = compute_norm(all,ec);
+              norm = compute_norm<simple_norm_compute>(all,ec);
             else
-              norm = compute_general_norm(all,ec,all.power_t);
+              norm = compute_norm<powert_norm_compute>(all,ec,all.power_t);
           }
           else {
             norm = ec->total_sum_feat_sq;  
