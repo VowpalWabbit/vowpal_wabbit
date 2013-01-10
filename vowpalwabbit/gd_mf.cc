@@ -27,16 +27,14 @@ float mf_inline_predict(vw& all, example* &ec)
 {
   float prediction = 0.0;
 
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-
   // clear stored predictions
   ec->topic_predictions.erase();
 
   float linear_prediction = 0;
   // linear terms
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
+    linear_prediction += sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end);
+    //linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -53,10 +51,12 @@ float mf_inline_predict(vw& all, example* &ec)
 	    {
 	      // x_l * l^k
 	      // l^k is from index+1 to index+all.rank
-	      float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+	      //float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+              float x_dot_l = sd_add<vec_add>(all, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
 	      // x_r * r^k
 	      // r^k is from index+all.rank+1 to index+2*all.rank
-	      float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+	      //float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+              float x_dot_r = sd_add<vec_add>(all, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
 
 	      prediction += x_dot_l * x_dot_r;
 

@@ -186,6 +186,8 @@ struct vw {
   bool nonormalize;
   bool do_reset_source;
 
+  uint32_t csoaa_increment;
+
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
