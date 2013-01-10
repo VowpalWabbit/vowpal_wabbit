@@ -17,16 +17,7 @@ inline float trunc_weight(float w, float gravity){
 }
 
 template <float (*T)(vw&,float,uint32_t)>
-float sd_add(vw& all, feature* begin, feature* end)
-{
-  float ret = 0.;
-  for (feature* f = begin; f!= end; f++)
-    ret += T(all, f->x, f->weight_index);
-  return ret;
-}
-
-template <float (*T)(vw&,float,uint32_t)>
-float sd_offset_add(vw& all, feature* begin, feature* end, uint32_t offset)
+float sd_add(vw& all, feature* begin, feature* end, uint32_t offset=0)
 {
   float ret = 0.;
   for (feature* f = begin; f!= end; f++)
@@ -35,33 +26,18 @@ float sd_offset_add(vw& all, feature* begin, feature* end, uint32_t offset)
 }
 
 template <float (*T)(vw&,float,uint32_t)>
-float one_pf_quad_predict(vw& all, feature& f, v_array<feature> cross_features)
+float one_pf_quad_predict(vw& all, feature& f, v_array<feature> cross_features, uint32_t offset=0)
 {
   size_t halfhash = quadratic_constant * f.weight_index;
-  return f.x * sd_offset_add<T>(all, cross_features.begin, cross_features.end, halfhash);
+  return f.x * sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
 }
 
 template <float (*T)(vw&,float,uint32_t)>
-float one_pf_quad_predict_offset(vw& all, feature& f, v_array<feature> cross_features, uint32_t offset)
-{
-  size_t halfhash = quadratic_constant * f.weight_index;
-  return f.x * sd_offset_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
-}
-
-template <float (*T)(vw&,float,uint32_t)>
-float one_pf_cubic_predict(vw& all, feature& f0, feature& f1, v_array<feature> cross_features)
+float one_pf_cubic_predict(vw& all, feature& f0, feature& f1, v_array<feature> cross_features, uint32_t offset=0)
 {
   size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  return f0.x * f1.x * sd_offset_add<T>(all, cross_features.begin, cross_features.end, halfhash);
+  return f0.x * f1.x * sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
 }
-
-template <float (*T)(vw&,float,uint32_t)>
-float one_pf_cubic_predict_offset(vw& all, feature& f0, feature& f1, v_array<feature> cross_features, uint32_t offset)
-{
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  return f0.x * f1.x * sd_offset_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
-}
-
 
 inline float vec_add(vw& all, float fx, uint32_t fi) {
   return all.reg.weight_vectors[fi & all.weight_mask] * fx;

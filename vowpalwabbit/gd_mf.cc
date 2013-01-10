@@ -52,11 +52,11 @@ float mf_inline_predict(vw& all, example* &ec)
 	      // x_l * l^k
 	      // l^k is from index+1 to index+all.rank
 	      //float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
-              float x_dot_l = sd_offset_add<vec_add>(all, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+              float x_dot_l = sd_add<vec_add>(all, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
 	      // x_r * r^k
 	      // r^k is from index+all.rank+1 to index+2*all.rank
 	      //float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
-              float x_dot_r = sd_offset_add<vec_add>(all, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+              float x_dot_r = sd_add<vec_add>(all, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
 
 	      prediction += x_dot_l * x_dot_r;
 
