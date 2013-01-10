@@ -535,7 +535,7 @@ void local_predict(vw& all, example* ec)
             if(all.power_t == 0.5)
               norm = compute_norm<simple_norm_compute>(all,ec);
             else
-              norm = compute_norm<powert_norm_compute>(all,ec,all.power_t);
+              norm = compute_norm<powert_norm_compute>(all,ec);
           }
           else {
             norm = ec->total_sum_feat_sq;  
