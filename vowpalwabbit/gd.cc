@@ -149,7 +149,8 @@ float inline_predict_trunc(vw& all, example* &ec)
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add_trunc(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, (float)all.sd->gravity);
+    sd_add<vec_add_trunc>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
+    //    prediction += sd_add_trunc(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, (float)all.sd->gravity);
   
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
@@ -191,7 +192,8 @@ float inline_predict(vw& all, example* &ec)
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
+    sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
+    //    prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
       if (ec->atomics[(int)(*i)[0]].size() > 0)
@@ -225,7 +227,8 @@ float inline_predict_rescale(vw& all, example* &ec)
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add_rescale(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,all.adaptive,all.normalized_idx);
+    sd_add<vec_add_rescale>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
+    //    prediction += sd_add_rescale(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,all.adaptive,all.normalized_idx);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
@@ -262,7 +265,8 @@ float inline_predict_trunc_rescale(vw& all, example* &ec)
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add_trunc_rescale(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,(float)all.sd->gravity,all.adaptive,all.normalized_idx);
+    sd_add<vec_add_trunc_rescale>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
+    //    prediction += sd_add_trunc_rescale(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,(float)all.sd->gravity,all.adaptive,all.normalized_idx);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
@@ -301,7 +305,8 @@ float inline_predict_rescale_general(vw& all, example* &ec)
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add_rescale_general(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, all.normalized_idx, power_t_norm);
+    sd_add<vec_add_rescale_general>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
+    //    prediction += sd_add_rescale_general(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end, all.normalized_idx, power_t_norm);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
@@ -340,7 +345,8 @@ float inline_predict_trunc_rescale_general(vw& all, example* &ec)
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add_trunc_rescale_general(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,(float)all.sd->gravity,all.normalized_idx,power_t_norm);
+    sd_add<vec_add_trunc_rescale_general>(all, ec->atomics[*i].begin, ec->atomics[*i].end, prediction);
+    //    prediction += sd_add_trunc_rescale_general(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end,(float)all.sd->gravity,all.normalized_idx,power_t_norm);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {

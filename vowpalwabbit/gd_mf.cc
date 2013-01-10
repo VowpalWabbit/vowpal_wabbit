@@ -36,7 +36,8 @@ float mf_inline_predict(vw& all, example* &ec)
   float linear_prediction = 0;
   // linear terms
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
+    sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end, linear_prediction);
+    //linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
 
   // store constant + linear prediction
   // note: constant is now automatically added
