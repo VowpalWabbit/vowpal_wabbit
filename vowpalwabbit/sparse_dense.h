@@ -28,14 +28,14 @@ float sd_add(vw& all, feature* begin, feature* end, uint32_t offset=0)
 template <float (*T)(vw&,float,uint32_t)>
 float one_pf_quad_predict(vw& all, feature& f, v_array<feature> cross_features, uint32_t offset=0)
 {
-  size_t halfhash = quadratic_constant * f.weight_index;
+  size_t halfhash = quadratic_constant * (f.weight_index + offset);
   return f.x * sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
 }
 
 template <float (*T)(vw&,float,uint32_t)>
 float one_pf_cubic_predict(vw& all, feature& f0, feature& f1, v_array<feature> cross_features, uint32_t offset=0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
   return f0.x * f1.x * sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
 }
 
