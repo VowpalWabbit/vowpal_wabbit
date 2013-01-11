@@ -200,7 +200,6 @@ vw::vw()
 
   bfgs = false;
   hessian_on = false;
-  sequence = false;
   stride = 1;
   num_bits = 18;
   default_bits = true;
