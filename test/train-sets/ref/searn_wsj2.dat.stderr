@@ -1,24 +1,2 @@
-Num weight bits = 19
-learning rate = 10
-initial_t = 1
-power_t = 0.5
-decay_learning_rate = 1
-creating cache_file = train-sets/wsj_small.dat.gz.cache
-Reading from train-sets/wsj_small.dat.gz
-num sources = 1
 average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
 loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
-24.666667  24.666667         3        3.000000   [14 10 13 9 1 2 1 4..] [1 2 1 1 2 3 1 4 5 ..]     2659     0     0              93              64
-24.166667  23.666667         6        6.000000   [19 2 22 4 3 9 1 1 ..] [1 2 3 1 1 2 1 1 2 ..]     3324     0     0             196             160
-21.727273  18.800000        11       11.000000   [29 4 3 9 1 1 23 8 ..] [1 2 3 1 2 1 1 1 2 ..]     1424     0     0             328             312
-19.227273  16.727273        22       22.000000   [11 11 21 3 10 13 3..] [3 1 2 3 1 2 3 1 4 ..]     3419     0     0             613             576
-17.272727  15.318182        44       44.000000   [3 26 9 1 4 3 1 2 5..] [3 1 1 1 2 3 1 2 3 ..]     1139     0     0            1120            1107
-17.505747  17.744186        87       87.000000   [11 11 12 9 1 2 11 ..] [5 1 1 2 1 2 1 4 1 ..]     2564     1     1           12575            2192
-
-finished run
-number of examples = 156
-weighted example sum = 156
-weighted label sum = 0
-average loss = 16.58
-best constant = -0.006452
-total feature number = 6315016
