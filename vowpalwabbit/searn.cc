@@ -401,10 +401,17 @@ namespace Searn
     out[max_len] = 0;
   }
 
+  bool will_global_print_label(vw& all)
+  {
+    if (!task.to_string) return false;
+    if (all.final_prediction_sink.size() == 0) return false;
+    return true;
+  }
+
   void global_print_label(vw& all, example*ec, state s0, std::vector<action> last_action_sequence)
   {
-    if (!task.to_string)
-      return;
+    if (!task.to_string) return;
+    if (all.final_prediction_sink.size() == 0) return;
 
     string str = task.to_string(s0, false, last_action_sequence);
     for (size_t i=0; i<all.final_prediction_sink.size(); i++) {
@@ -1239,21 +1246,16 @@ namespace Searn
       all.sd->total_features    += searn_num_features;
       all.sd->weighted_examples += 1.;
     }
-    bool will_print = is_test || should_print_update(all);
+    bool will_print = is_test || should_print_update(all) || will_global_print_label(all);
 
     searn_num_features = 0;
     std::vector<action> action_sequence;
-    if (will_print)
-      action_sequence = std::vector<action>();
 
     // if we are using adaptive beta, update it to take into account the latest updates
     if( adaptive_beta ) beta = 1.f - powf(1.f - alpha,(float)total_examples_generated);
     
     run_prediction(all, s0, false, true, will_print, &action_sequence);
-
-    if (is_test) {
-      global_print_label(all, ec_seq[0], s0, action_sequence);
-    }
+    global_print_label(all, ec_seq[0], s0, action_sequence);
 
     if (!is_test) {
       float loss = task.loss(s0);
