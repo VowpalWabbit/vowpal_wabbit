@@ -20,7 +20,6 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "wap.h"
 #include "cb.h"
-#include "sequence.h"
 #include "searn.h"
 #include "bfgs.h"
 #include "lda_core.h"
@@ -126,7 +125,6 @@ vw parse_args(int argc, char *argv[])
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring")
     ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("sequence", po::value<size_t>(), "Do sequence prediction with <k> labels per element")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
@@ -161,9 +159,7 @@ vw parse_args(int argc, char *argv[])
 
   all.data_filename = "";
 
-  all.sequence = false;
   all.searn = false;
-
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
@@ -679,26 +675,7 @@ vw parse_args(int argc, char *argv[])
     got_cb = true;
   }
 
-  if (vm.count("searn") || all.searn) { //all.searn can be set to true while loading regressor
-    if (vm.count("sequence")) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
-  }
-
-  if (vm.count("sequence") || vm_file.count("sequence") ) {
-    if (!got_cs) {
-      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
-      if( vm_file.count("sequence") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["sequence"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["sequence"]));
-      
-      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
-      got_cs = true;
-    }
-
-    Sequence::parse_flags(all, to_pass_further, vm, vm_file);
-  }
-
   if (vm.count("searn") || vm_file.count("searn") ) { 
-    if (vm.count("sequence") || vm_file.count("sequence") ) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
-
     if (!got_cs && !got_cb) {
       //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
