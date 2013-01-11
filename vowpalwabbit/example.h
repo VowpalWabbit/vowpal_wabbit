@@ -35,6 +35,7 @@ struct example // core example datatype.
 
   v_array<unsigned char> indices;
   v_array<feature> atomics[256]; // raw parsed data
+  uint32_t ft_offset;
   
   v_array<audit_data> audit_features[256];
   
