@@ -14,6 +14,7 @@ example *alloc_example(size_t label_size)
   if (ec == NULL) return NULL;
   ec->ld = calloc(1, label_size);
   ec->in_use = true;
+  ec->ft_offset = 0;
   //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   return ec;
 }
@@ -70,6 +71,7 @@ void copy_example_data(example* &dst, example* src, size_t label_size)
   copy_array(dst->indices, src->indices);
   for (size_t i=0; i<256; i++)
     copy_array(dst->atomics[i], src->atomics[i], copy_feature);
+  dst->ft_offset = src->ft_offset;
 
   dst->num_features = src->num_features;
   dst->pass = src->pass;
@@ -90,19 +92,4 @@ void copy_example_data(example* &dst, example* src, size_t label_size)
 }
 }
 
-void update_example_indicies(bool audit, example* ec, uint32_t amount)
-{
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature* end = ec->atomics[*i].end;
-      for (feature* f = ec->atomics[*i].begin; f!= end; f++)
-        f->weight_index += amount;
-    }
-  if (audit)
-    {
-      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-        if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-          for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
-            f->weight_index += amount;
-    }
-}
+void update_example_indicies(bool audit, example* ec, uint32_t amount) { ec->ft_offset += amount; }
