@@ -101,6 +101,34 @@ inline float vec_add_trunc_rescale_general(vw& all, float fx, uint32_t fi) {
   return trunc_weight(w[0], all.sd->gravity) * fx;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+template <void (*T)(vw&,float,uint32_t,float)>
+void sd_update(vw& all, feature* begin, feature* end, float update, uint32_t offset=0)
+{
+  for (feature* f = begin; f!= end; f++)
+    T(all, f->x, f->weight_index + offset, update);
+}
+
+template <void (*T)(vw&,float,uint32_t,float)>
+void sd_quad_update(vw& all, feature& f, v_array<feature> cross_features, float update, uint32_t offset=0)
+{
+  size_t halfhash = quadratic_constant * (f.weight_index + offset);
+  sd_update<T>(all, cross_features.begin, cross_features.end, halfhash + offset, update * f.x);
+}
+
+template <void (*T)(vw&,float,uint32_t,float)>
+void sd_cubic_update(vw& all, feature& f0, feature& f1, v_array<feature> cross_features, float update, uint32_t offset=0)
+{
+  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
+  sd_update<T>(all, cross_features.begin, cross_features.end, update * f0.x * f1.x, halfhash + offset);
+}
+
+inline void upd_add(vw& all, float fx, uint32_t fi, float update) {
+  all.reg.weight_vectors[fi] += update * fx;
+}
+
+
 void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update, float regularization);
 
 void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
