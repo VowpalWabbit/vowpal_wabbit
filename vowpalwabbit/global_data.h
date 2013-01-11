@@ -142,7 +142,6 @@ struct vw {
   char** options_from_file_argv;
   int options_from_file_argc;
 
-  bool sequence;
   bool searn;
 
   uint32_t base_learner_nb_w; //this stores the current number of "weight vector" required by the based learner, which is used to compute offsets when composing reductions
