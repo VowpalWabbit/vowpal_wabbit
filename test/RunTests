@@ -638,7 +638,7 @@ __DATA__
     train-sets/ref/searn_wsj.stderr
 
 # Test 13: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 5 --wap 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
+{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 5 --wap 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet
     train-sets/ref/searn_wsj2.dat.stdout
     train-sets/ref/searn_wsj2.dat.stderr
 

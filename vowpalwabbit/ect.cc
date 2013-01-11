@@ -464,13 +464,13 @@ namespace ECT
     }
 
     if(vm_file.count("error")) {
-      errors = vm_file["error"].as<uint32_t>();
-      if (vm.count("error") && vm["error"].as<uint32_t>() != errors) {
+      errors = (uint32_t)vm_file["error"].as<size_t>();
+      if (vm.count("error") && (uint32_t)vm["error"].as<size_t>() != errors) {
         cerr << "warning: specified value for --error different than the one loaded from predictor file. Pursuing with loaded value of: " << errors << endl;
       }
     }
     else if (vm.count("error")) {
-      errors = vm["error"].as<uint32_t>();
+      errors = (uint32_t)vm["error"].as<size_t>();
 
       //append error flag to options_from_file so it is saved in regressor file later
       stringstream ss;

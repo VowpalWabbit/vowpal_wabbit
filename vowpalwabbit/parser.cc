@@ -423,7 +423,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       address.sin_addr.s_addr = htonl(INADDR_ANY);
       short unsigned int port = 26542;
       if (vm.count("port"))
-	port = vm["port"].as<uint16_t>();
+	port = (uint16_t)vm["port"].as<size_t>();
       address.sin_port = htons(port);
 
       // attempt to bind to socket
@@ -742,6 +742,11 @@ void setup_example(vw& all, example* ae)
 
   if (all.ignore_some)
     {
+      if (all.audit)
+	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
+	  if (all.ignore[*i])
+	    ae->audit_features[*i].erase();
+      
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	if (all.ignore[*i])
 	  {//delete namespace

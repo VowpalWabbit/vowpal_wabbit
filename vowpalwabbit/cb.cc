@@ -736,12 +736,12 @@ namespace CB
 
     uint32_t nb_actions = 0;
     if( vm_file.count("cb") ) { //if loaded options from regressor file already
-      nb_actions = vm_file["cb"].as<uint32_t>();
-      if( vm.count("cb") && vm["cb"].as<uint32_t>() != nb_actions )
+      nb_actions = (uint32_t)vm_file["cb"].as<size_t>();
+      if( vm.count("cb") && (uint32_t)vm["cb"].as<size_t>() != nb_actions )
         std::cerr << "warning: you specified a different number of actions through --cb than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
     }
     else {
-      nb_actions = vm["cb"].as<uint32_t>();
+      nb_actions = (uint32_t)vm["cb"].as<size_t>();
       //append cb with nb_actions to options_from_file so it is saved to regressor later
       std::stringstream ss;
       ss << " --cb " << nb_actions;

@@ -90,7 +90,7 @@ namespace SequenceTask {
       if( vm.count("searn_sequencetask_bigram_features") && !hinfo.bigram_features )
         std::cerr << "warning: you specified --searn_sequencetask_bigram_features but loaded regressor not using bigram_features. Pursuing without bigram_features." << endl;
 
-      seq_max_action = vm_file["searn"].as<uint32_t>();
+      seq_max_action = (uint32_t)vm_file["searn"].as<size_t>();
     }    
     else {
       if (vm.count("searn_sequencetask_bigrams")) {
@@ -119,7 +119,7 @@ namespace SequenceTask {
         all.options_from_file.append(ss.str());
       }
 
-      seq_max_action = vm["searn"].as<uint32_t>();
+      seq_max_action = (uint32_t)vm["searn"].as<size_t>();
     }
 
     constant_pow_length = 1;

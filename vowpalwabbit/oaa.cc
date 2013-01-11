@@ -227,12 +227,12 @@ namespace OAA {
     //first parse for number of actions
     k = 0;
     if( vm_file.count("oaa") ) {
-      k = vm_file["oaa"].as<uint32_t>();
-      if( vm.count("oaa") && vm["oaa"].as<uint32_t>() != k )
+      k = (uint32_t)vm_file["oaa"].as<size_t>();
+      if( vm.count("oaa") && (uint32_t)vm["oaa"].as<size_t>() != k )
         std::cerr << "warning: you specified a different number of actions through --oaa than the one loaded from predictor. Pursuing with loaded value of: " << k << endl;
     }
     else {
-      k = vm["oaa"].as<uint32_t>();
+      k = (uint32_t)vm["oaa"].as<size_t>();
 
       //append oaa with nb_actions to options_from_file so it is saved to regressor later
       std::stringstream ss;

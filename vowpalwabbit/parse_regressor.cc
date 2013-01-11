@@ -141,7 +141,7 @@ void read_vector(vw& all, const char* file, bool& initialized, bool reg_vector)
 	exit (1);
       }
   
-  int len;
+  size_t len;
   source.read((char *)&len, sizeof(len));
   
   vector<string> local_pairs;
