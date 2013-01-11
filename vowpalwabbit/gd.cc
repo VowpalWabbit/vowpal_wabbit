@@ -36,10 +36,8 @@ size_t gd_current_pass = 0;
 void predict(vw& all, example* ex);
 void sync_weights(vw& all);
 
-void inline_train(vw& all, example* &ec, float update);
-
 template <void (*T)(vw&, float, uint32_t, float, float)>
-void generic_train(vw& all, example* &ec, float update, bool sqrt_norm, uint32_t offset=0)
+void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
 {
   if (fabs(update) == 0.)
     return;
@@ -50,6 +48,7 @@ void generic_train(vw& all, example* &ec, float update, bool sqrt_norm, uint32_t
   else
     total_weight = ec->example_t;
 
+  uint32_t offset = ec->ft_offset;
   float avg_norm = all.normalized_sum_norm_x / total_weight;
   if (sqrt_norm) avg_norm = sqrt(avg_norm);
 
@@ -457,7 +456,7 @@ inline void powert_norm_compute(vw& all, float x, uint32_t fi, float g, float& n
 }
 
 template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
-float compute_norm(vw& all, example* &ec, uint32_t offset=0)
+float compute_norm(vw& all, example* &ec)
 {//We must traverse the features in _precisely_ the same order as during training.
   label_data* ld = (label_data*)ec->ld;
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
@@ -465,6 +464,7 @@ float compute_norm(vw& all, example* &ec, uint32_t offset=0)
 
   float norm = 0.;
   float norm_x = 0.;
+  uint32_t offset = ec->ft_offset;
 
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     norm_add<T>(all, ec->atomics[*i].begin, ec->atomics[*i].end, g, norm, norm_x, offset);

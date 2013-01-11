@@ -44,13 +44,13 @@ float inline_predict(vw& all, example* &ec)
   float prediction = all.p->lp->get_initial(ec->ld);
 
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    prediction += sd_add<T>(all, ec->atomics[*i].begin, ec->atomics[*i].end);
+    prediction += sd_add<T>(all, ec->atomics[*i].begin, ec->atomics[*i].end, ec->ft_offset);
 
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
     if (ec->atomics[(int)(*i)[0]].size() > 0) {
       v_array<feature> temp = ec->atomics[(int)(*i)[0]];
       for (; temp.begin != temp.end; temp.begin++)
-        prediction += one_pf_quad_predict<T>(all,*temp.begin,ec->atomics[(int)(*i)[1]]);
+        prediction += one_pf_quad_predict<T>(all,*temp.begin,ec->atomics[(int)(*i)[1]], ec->ft_offset);
     }
   }
 
@@ -60,7 +60,7 @@ float inline_predict(vw& all, example* &ec)
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
       for (; temp2.begin != temp2.end; temp2.begin++) {
-        prediction += one_pf_cubic_predict<T>(all,*temp1.begin,*temp2.begin,ec->atomics[(int)(*i)[2]]);
+        prediction += one_pf_cubic_predict<T>(all,*temp1.begin,*temp2.begin,ec->atomics[(int)(*i)[2]], ec->ft_offset);
       }
     }
   }
