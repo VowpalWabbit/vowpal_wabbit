@@ -86,11 +86,11 @@ float InvSqrt(float x){
 inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
 {
   weight* w = &all.reg.weight_vectors[fi & all.weight_mask];
-  float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
   float t = 1.f;
   if(all.adaptive) t = powf(w[1],-all.power_t);
   if(all.normalized_updates) {
     float norm = w[all.normalized_idx] * avg_norm;
+    float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
     t *= powf(norm*norm,-power_t_norm);
   }
   w[0] += update * x * t;
