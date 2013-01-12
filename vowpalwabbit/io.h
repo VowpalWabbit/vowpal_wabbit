@@ -17,6 +17,8 @@ license as described in the file LICENSE.
 #include "v_array.h"
 #include<iostream>
 
+using namespace std;
+
 #ifndef O_LARGEFILE //for OSX
 #define O_LARGEFILE 0
 #endif
@@ -79,6 +81,11 @@ class io_buf {
 #endif
       if(ret!=-1)
         files.push_back(ret);
+      else
+	{
+	  cout << "can't open: " << name << " for read or write, exiting" << endl;
+	  exit(1);
+	}
       break;
 
     default:
