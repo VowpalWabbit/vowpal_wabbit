@@ -351,7 +351,8 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
 		  v = &(all->reg.regularizers[i]);
 		else
 		  v = &(all->reg.weight_vectors[stride*i]);
-		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+		if (brw > 0)
+		  brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
 	      }
 	    else // write binary or text
 	      {

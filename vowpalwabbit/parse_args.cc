@@ -811,6 +811,10 @@ namespace VW {
     for (int i = 0; i < all.options_from_file_argc; i++)
       free(all.options_from_file_argv[i]);
     free(all.options_from_file_argv);
+    for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+      if (all.final_prediction_sink[i] != 1)
+	close(all.final_prediction_sink[i]);
+    all.final_prediction_sink.delete_v();
     delete all.loss;
   }
 }
