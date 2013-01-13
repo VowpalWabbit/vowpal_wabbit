@@ -8,7 +8,7 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w $opt_y);
+use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w $opt_y);
 
 my $Epsilon = 1e-4;
 
@@ -30,7 +30,8 @@ sub usage(@) {
 
     Options:
         -c    print commands before running them
-        -d    print diff output on diff-failure
+        -d    print diff output on significant diff failure
+        -D    print diff output even if it is not significant
         -e    Abort on first diff error
         -w    Ignore white-space differences (diff --ignore-space-change)
         -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
@@ -89,15 +90,26 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdefyE:o') || usage();
+    getopts('wcdDefyE:o') || usage();
 
+	print STDERR "testing $^O"; 
     if ($^O =~ /MSWin/i) {
+	print STDERR "in windows branch"; 
         # On MS Windows we need to change paths to external executables
         # Assumes cygwin is installed
         $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
         # And just to be safe (probably not needed):
         $Diff  = 'c:\cygwin\bin\diff.exe';
         $Cat   = 'c:\cygwin\bin\cat.exe';
+    }
+    elsif ($^O =~ /cygwin/i){
+	print STDERR "in windows branch"; 
+        # On MS Windows we need to change paths to external executables
+        # Assumes cygwin is installed
+        $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
+        # And just to be safe (probably not needed):
+        $Diff  = 'c:/cygwin/bin/diff.exe';
+        $Cat   = 'c:/cygwin/bin/cat.exe';
     }
     $Epsilon = $opt_E if ($opt_E);
     $Diff .= ' --ignore-space-change' if ($opt_w);
@@ -274,7 +286,7 @@ sub lenient_array_compare($$) {
 sub diff_lenient_float($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
-    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines';
+    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr';
     my $tmpf = 'lenient-diff.tmp';
     system("$Diff $diff_opts $reffile $outfile >$tmpf");
     $status = $? >> 8;
@@ -340,16 +352,19 @@ sub diff($$) {
     system("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     if (-s 'diff.tmp') {
-        if ($opt_d) {
-            printf STDERR "--- %s\n", $diff_cmd;
-            system("$Cat diff.tmp")
-        }
         # There's a difference, but is it meaningfull?
         if ($opt_f && -e $reffile && -e $outfile &&
             diff_lenient_float($reffile, $outfile) == 0) {
 
             print STDERR "$0: test $TestNo: minor (<$Epsilon) precision differences ignored\n";
             $status = 0;
+        }
+        if ($opt_D or ($opt_d && $status)) {
+            # Print the diff only iff:
+            #   1) -D is in effect  OR
+            #   2) -d is in effect and diff is significant
+            printf STDERR "--- %s\n", $diff_cmd;
+            system("$Cat diff.tmp")
         }
         if ($opt_o) {
             print STDERR "-o: overwriting reference:\n";
@@ -425,7 +440,9 @@ sub check_for_time_regression() {
 }
 
 sub run_tests() {
-    print STDERR "$0: '-d' to see diff output\n"
+    print STDERR "$0: '-D' to see any diff output\n"
+        unless ($opt_D);
+    print STDERR "$0: '-d' to see only significant diff output\n"
         unless ($opt_d);
     print STDERR "$0: '-o' to force overwrite references\n"
         unless ($opt_o);
@@ -610,68 +627,53 @@ __DATA__
     train-sets/ref/cs_test.ldf.wap.stderr
     train-sets/ref/cs_test.ldf.wap.predict
 
-# Test 11: Run sequence on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --sequence_passes_per_policy 4 --sequence 4
-    train-sets/ref/seq_small.stdout
-    train-sets/ref/seq_small.stderr
-
-# Test 12: Run sequence (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --sequence_passes_per_policy 1 --sequence 45 --wap 45 --sequence_history 2 --sequence_bigrams --sequence_features 1
-    train-sets/ref/wsj_small.dat.stdout
-    train-sets/ref/wsj_small.dat.stderr
-
-# Test 13: Run sequence (wap) on wsj_small for 1 passes, current policy, limited transitions
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 1 --invariant --sequence_allow_current_policy --sequence 45 --wap 45 --sequence_transition_file train-sets/wsj.train.tm2
-    train-sets/ref/wsj_small-tm.dat.stdout
-    train-sets/ref/wsj_small-tm.dat.stderr
-
-# Test 14: Error Correcting Tournament
-{VW} --ect 10 --error 3 -c --passes 10 --invariant train-sets/multiclass && rm train-sets/multiclass.cache
+# Test 11: Error Correcting Tournament
+{VW} -k --ect 10 --error 3 -c --passes 10 --invariant train-sets/multiclass
     train-sets/ref/multiclass.stdout
     train-sets/ref/multiclass.stderr
 
-# Test 15: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --searn_passes_per_policy 4 --searn_task sequence --searn 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
+# Test 12: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --searn_passes_per_policy 4 --searn_task sequence --searn 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet
     train-sets/ref/searn_wsj.stdout
     train-sets/ref/searn_wsj.stderr
 
-# Test 16: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 45 --wap 45 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1
+# Test 13: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
+{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 5 --wap 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet
     train-sets/ref/searn_wsj2.dat.stdout
     train-sets/ref/searn_wsj2.dat.stderr
 
-# Test 17: LBFGS on zero derivative input
+# Test 14: LBFGS on zero derivative input
 {VW} -k -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0
     train-sets/ref/zero.stdout
     train-sets/ref/zero.stderr
 
-# Test 18: LBFGS early termination
+# Test 15: LBFGS early termination
 {VW} -k -c -d train-sets/rcv1_small.dat --loss_function=logistic -b 20 --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0
     train-sets/ref/rcv1_small.stdout
     train-sets/ref/rcv1_small.stderr
 
-# Test 19: Run LDA with 100 topics on 1000 Wikipedia articles
+# Test 16: Run LDA with 100 topics on 1000 Wikipedia articles
 {LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 --invariant train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr
 
-# Test 20: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence
+# Test 17: Run searn on seq_small for 12 passes, 4 passes per policy
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence --quiet
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
 
-# Test 21: neural network 3-parity with 2 hidden units
-{VW} -k -c -d train-sets/3parity --hash all --passes 2000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 14
+# Test 18: neural network 3-parity with 2 hidden units
+{VW} -k -c -d train-sets/3parity --hash all --passes 2000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 11 --quiet
     train-sets/ref/3parity.stdout
     train-sets/ref/3parity.stderr
 
-# Test 22: neural network 3-parity with 2 hidden units (predict)
+# Test 19: neural network 3-parity with 2 hidden units (predict)
 {VW} -d train-sets/3parity --hash all -t -i models/0021.model -p 0022.predict.tmp
     pred-sets/ref/0022.stdout
     pred-sets/ref/0022.stderr
     pred-sets/ref/0022.predict
 
-# Test 23: cubic features -- on a parity test case
+# Test 20: cubic features -- on a parity test case
 {VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100
     train-sets/ref/xxor.stdout
     train-sets/ref/xxor.stderr

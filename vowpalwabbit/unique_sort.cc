@@ -44,15 +44,15 @@ void unique_audit_features(v_array<audit_data> &features)
 void unique_sort_features(bool audit, example* ae)
 {
   ae->sorted=true;
-  for (size_t* b = ae->indices.begin; b != ae->indices.end; b++)
+  for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
     {
-      qsort(ae->atomics[*b].begin, ae->atomics[*b].index(), sizeof(feature), 
+      qsort(ae->atomics[*b].begin, ae->atomics[*b].size(), sizeof(feature), 
 	    order_features);
       unique_features(ae->atomics[*b]);
       
       if (audit)
 	{
-	  qsort(ae->audit_features[*b].begin, ae->audit_features[*b].index(), sizeof(audit_data), 
+	  qsort(ae->audit_features[*b].begin, ae->audit_features[*b].size(), sizeof(audit_data), 
 		order_audit_features);
 	  unique_audit_features(ae->audit_features[*b]);
 	}

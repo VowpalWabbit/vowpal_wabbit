@@ -49,7 +49,7 @@ int open_socket(const char* host)
       cerr << "can't resolve hostname: " << host << endl;
       exit(1);
     }
-  int sd = socket(PF_INET, SOCK_STREAM, 0);
+  int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
       cerr << "can't get socket " << endl;

@@ -171,7 +171,7 @@
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
     <OutDir>$(SolutionDir)x64\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)x64\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)x64\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
     <OutDir>$(SolutionDir)x86\$(Configuration)\</OutDir>

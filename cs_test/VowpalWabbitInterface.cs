@@ -8,18 +8,6 @@ namespace Microsoft.Research.MachineLearning
 {
     public sealed class VowpalWabbitInterface
     {
-        public class FeatureSpace
-        {
-            public string Name;
-            public Feature[] Features;
-        }
-
-        public class Feature
-        {
-            public float X;
-            public UInt32 WeightIndex;
-        }
-
         [StructLayout(LayoutKind.Sequential)]
         public struct FEATURE_SPACE
         {
@@ -35,6 +23,26 @@ namespace Microsoft.Research.MachineLearning
             public uint weight_index;
         }
 
+	[StructLayout(LayoutKind.Sequential)]
+	public struct StartOfExample{
+	       public IntPtr labeldata;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Label_Data {
+	       public float label;
+	       public float weight;
+	       public float initial;
+	}
+
+	public static Label_Data DefaultLabelData() {
+	       Label_Data ld;
+	       ld.label = float.MaxValue;
+	       ld.weight = 1;
+	       ld.initial = 0;
+	       return ld;
+	}
+
         [DllImport("libvw.dll", EntryPoint="VW_Initialize", CallingConvention=CallingConvention.StdCall)]
         public static extern IntPtr Initialize(string arguments);
 
@@ -42,10 +50,7 @@ namespace Microsoft.Research.MachineLearning
         public static extern void Finish(IntPtr vw);
 
         [DllImport("libvw.dll", EntryPoint = "VW_ImportExample", CallingConvention = CallingConvention.StdCall)]
-        public static extern IntPtr ImportExample(IntPtr vw,
-            [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)]
-            FEATURE_SPACE[] features,
-            int length);
+        public static extern IntPtr ImportExample(IntPtr vw, IntPtr features, int length);
 
         [DllImport("libvw.dll", EntryPoint="VW_ReadExample", CallingConvention=CallingConvention.StdCall)]
         public static extern IntPtr ReadExample(IntPtr vw, string exampleString);

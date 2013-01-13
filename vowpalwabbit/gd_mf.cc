@@ -27,42 +27,42 @@ float mf_inline_predict(vw& all, example* &ec)
 {
   float prediction = 0.0;
 
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-
   // clear stored predictions
   ec->topic_predictions.erase();
 
   float linear_prediction = 0;
   // linear terms
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+    linear_prediction += sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end);
+    //linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
 
   // store constant + linear prediction
   // note: constant is now automatically added
-  push(ec->topic_predictions, linear_prediction);
+  ec->topic_predictions.push_back(linear_prediction);
   
   prediction += linear_prediction;
 
   // interaction terms
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0 && ec->atomics[(int)(*i)[1]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
 	{
 	  for (size_t k = 1; k <= all.rank; k++)
 	    {
 	      // x_l * l^k
 	      // l^k is from index+1 to index+all.rank
-	      float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+	      //float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+              float x_dot_l = sd_add<vec_add>(all, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
 	      // x_r * r^k
 	      // r^k is from index+all.rank+1 to index+2*all.rank
-	      float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+	      //float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+              float x_dot_r = sd_add<vec_add>(all, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
 
 	      prediction += x_dot_l * x_dot_r;
 
 	      // store prediction from interaction terms
-	      push(ec->topic_predictions, x_dot_l);
-	      push(ec->topic_predictions, x_dot_r);
+	      ec->topic_predictions.push_back(x_dot_l);
+	      ec->topic_predictions.push_back(x_dot_r);
 	    }
 	}
     }
@@ -91,13 +91,13 @@ void mf_inline_train(vw& all, example* &ec, float update)
       float regularization = eta_t * all.l2_lambda;
 
       // linear update
-      for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	sd_offset_update(weights, mask, ec->atomics[*i].begin, ec->atomics[*i].end, 0, update, regularization);
       
       // quadratic update
       for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
 	{
-	  if (ec->atomics[(int)(*i)[0]].index() > 0 && ec->atomics[(int)(*i)[1]].index() > 0)
+	  if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
 	    {
 
 	      // update l^k weights
@@ -131,7 +131,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 {
   weight* weights = all.reg.weight_vectors;
   size_t mask = all.weight_mask;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
       for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	{
@@ -146,7 +146,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 	  cout << ':' << weights[(f->weight_index + offset) & mask];
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    if (ec->atomics[(int)(*i)[0]].index() > 0 && ec->atomics[(int)(*i)[1]].index() > 0)
+    if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
       {
 	/* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
 	for (size_t k = 1; k <= all.rank; k++)

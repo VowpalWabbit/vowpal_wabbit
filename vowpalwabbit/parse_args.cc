@@ -20,13 +20,13 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "wap.h"
 #include "cb.h"
-#include "sequence.h"
 #include "searn.h"
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
 #include "gd_mf.h"
 #include "vw.h"
+#include "rand48.h"
 
 using namespace std;
 //
@@ -46,7 +46,7 @@ vw parse_args(int argc, char *argv[])
   po::options_description desc("VW options");
   
   vw all;
-  long int random_seed = 0;
+  size_t random_seed = 0;
   all.program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
@@ -66,6 +66,7 @@ vw parse_args(int argc, char *argv[])
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
+    ("no_stdin", "do not default to reading from stdin")
     ("conjugate_gradient", "use conjugate gradient based optimization")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
@@ -118,13 +119,12 @@ vw parse_args(int argc, char *argv[])
     ("quiet", "Don't output diagnostics")
     ("rank", po::value<size_t>(&all.rank), "rank for matrix factorization.")
     ("random_weights", po::value<bool>(&all.random_weights), "make initial weights random")
-    ("random_seed", po::value<long int>(&random_seed), "seed random number generator")
+    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring")
     ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("sequence", po::value<size_t>(), "Do sequence prediction with <k> labels per element")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
@@ -159,9 +159,7 @@ vw parse_args(int argc, char *argv[])
 
   all.data_filename = "";
 
-  all.sequence = false;
   all.searn = false;
-
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
@@ -182,17 +180,16 @@ vw parse_args(int argc, char *argv[])
   else
     all.quiet = false;
 
-#ifdef _WIN32
-  srand(random_seed);
-#else
-  srand48(random_seed);
-#endif
+  msrand48(random_seed);
 
   if (vm.count("active_simulation"))
       all.active_simulation = true;
 
   if (vm.count("active_learning") && !all.active_simulation)
     all.active = true;
+
+  if (vm.count("no_stdin"))
+    all.stdin_off = true;
 
   if (vm.count("testonly") || all.eta == 0.)
     {
@@ -204,6 +201,12 @@ vw parse_args(int argc, char *argv[])
     }
   else
     all.training = true;
+
+  if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
+    {
+      cout << "you must specificy unique_id, total, and node if you specify any" << endl;
+      exit (1);
+    }
 
   all.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
@@ -540,7 +543,7 @@ vw parse_args(int argc, char *argv[])
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
     if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
       {
-	push(all.final_prediction_sink, (size_t) 1);//stdout
+	all.final_prediction_sink.push_back((size_t) 1);//stdout
       }
     else
       {
@@ -554,7 +557,7 @@ vw parse_args(int argc, char *argv[])
 	int f = fileno(foo);
 	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
-	push(all.final_prediction_sink, (size_t) f);
+	all.final_prediction_sink.push_back((size_t) f);
       }
   }
 
@@ -672,26 +675,7 @@ vw parse_args(int argc, char *argv[])
     got_cb = true;
   }
 
-  if (vm.count("searn") || all.searn) { //all.searn can be set to true while loading regressor
-    if (vm.count("sequence")) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
-  }
-
-  if (vm.count("sequence") || vm_file.count("sequence") ) {
-    if (!got_cs) {
-      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
-      if( vm_file.count("sequence") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["sequence"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["sequence"]));
-      
-      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
-      got_cs = true;
-    }
-
-    Sequence::parse_flags(all, to_pass_further, vm, vm_file);
-  }
-
   if (vm.count("searn") || vm_file.count("searn") ) { 
-    if (vm.count("sequence") || vm_file.count("sequence") ) { cerr << "error: you cannot use searn and sequence simultaneously" << endl; exit(-1); }
-
     if (!got_cs && !got_cb) {
       //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
@@ -715,7 +699,7 @@ vw parse_args(int argc, char *argv[])
     if ((to_pass_further.size() == 1) &&
         (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
 
-      int f = io_buf().open_file(last_unrec_arg.c_str(), io_buf::READ);
+      int f = io_buf().open_file(last_unrec_arg.c_str(), all.stdin_off, io_buf::READ);
       if (f != -1) {
         close(f);
         //cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
@@ -782,24 +766,24 @@ namespace VW {
     foo.end_array = foo.begin = foo.end = NULL;
     tokenize(' ', ss, foo);
     
-    char** argv = (char**)calloc(foo.index(), sizeof(char*));
-    for (size_t i = 0; i < foo.index(); i++)
+    char** argv = (char**)calloc(foo.size(), sizeof(char*));
+    for (size_t i = 0; i < foo.size(); i++)
       {
 	*(foo[i].end) = '\0';
 	argv[i] = (char*)calloc(foo[i].end-foo[i].begin+1, sizeof(char));
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
-    argc = foo.index();
+    argc = (int)foo.size();
     free(c);
-    if (foo.begin != NULL)
-      free(foo.begin);
+    foo.delete_v();
     return argv;
   }
  
   vw initialize(string s)
   {
     int argc = 0;
+    s += " --no_stdin";
     char** argv = get_argv_from_string(s,argc);
     
     vw all = parse_args(argc, argv);
@@ -821,13 +805,16 @@ namespace VW {
     finalize_source(all.p);
     free(all.p->lp);
     all.p->parse_name.erase();
-    if (all.p->parse_name.begin != NULL)
-      free(all.p->parse_name.begin);
+    all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
     for (int i = 0; i < all.options_from_file_argc; i++)
       free(all.options_from_file_argv[i]);
     free(all.options_from_file_argv);
+    for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
+      if (all.final_prediction_sink[i] != 1)
+	close(all.final_prediction_sink[i]);
+    all.final_prediction_sink.delete_v();
     delete all.loss;
   }
 }

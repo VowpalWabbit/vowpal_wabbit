@@ -108,7 +108,7 @@ void zero_derivative(vw& all)
   size_t stride = all.stride;
   weight* weights = all.reg.weight_vectors;
   for(uint32_t i = 0; i < length; i++)
-    weights[stride*i+1] = 0;
+    weights[stride*i+W_GT] = 0;
 }
 
 void zero_preconditioner(vw& all)
@@ -117,7 +117,7 @@ void zero_preconditioner(vw& all)
   size_t stride = all.stride;
   weight* weights = all.reg.weight_vectors;
   for(uint32_t i = 0; i < length; i++)
-    weights[stride*i+3] = 0;
+    weights[stride*i+W_COND] = 0;
 }
 
 void reset_state(vw& all, bool zero)
@@ -143,7 +143,7 @@ void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[1] += update * ele->x;
+      w[W_GT] += update * ele->x;
     }
 }
 
@@ -153,7 +153,7 @@ void cubic_grad_update(weight* weights, feature& f0, feature& f1, v_array<featur
   float update = g * f0.x * f1.x;
   for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
     weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    w[1] += update * ele->x;
+    w[W_GT] += update * ele->x;
   }
 }
 
@@ -164,7 +164,7 @@ void quad_precond_update(weight* weights, feature& page_feature, v_array<feature
   for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
     {
       weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[3] += update * ele->x * ele->x;
+      w[W_COND] += update * ele->x * ele->x;
     }
 }
 
@@ -174,7 +174,7 @@ void cubic_precond_update(weight* weights, feature& f0, feature& f1, v_array<fea
   float update = g * f0.x * f0.x * f1.x * f1.x;
   for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
     weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    w[3] += update * ele->x * ele->x;
+    w[W_COND] += update * ele->x * ele->x;
   }
 }
 
@@ -190,7 +190,7 @@ bool test_example(example* ec)
 
   float bfgs_predict(vw& all, example* &ec)
   {
-    ec->partial_prediction = inline_predict(all,ec);
+    ec->partial_prediction = inline_predict<vec_add>(all,ec);
     return finalize_prediction(all, ec->partial_prediction);
   }
 
@@ -205,18 +205,18 @@ float predict_and_gradient(vw& all, example* &ec)
   
   size_t mask = all.weight_mask;
   weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature *f = ec->atomics[*i].begin;
       for (; f != ec->atomics[*i].end; f++)
 	{
 	  weight* w = &weights[f->weight_index & mask];
-	  w[1] += loss_grad * f->x;
+	  w[W_GT] += loss_grad * f->x;
 	}
     }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
 	{
 	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
 	  for (; temp.begin != temp.end; temp.begin++)
@@ -224,7 +224,7 @@ float predict_and_gradient(vw& all, example* &ec)
 	} 
     }
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
@@ -242,18 +242,18 @@ void update_preconditioner(vw& all, example* &ec)
   
   size_t mask = all.weight_mask;
   weight* weights = all.reg.weight_vectors;
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++)
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     {
       feature *f = ec->atomics[*i].begin;
       for (; f != ec->atomics[*i].end; f++)
         {
           weight* w = &weights[f->weight_index & mask];
-          w[3] += f->x * f->x * curvature;
+          w[W_COND] += f->x * f->x * curvature;
         }
     }
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
     {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
+      if (ec->atomics[(int)(*i)[0]].size() > 0)
         {
           v_array<feature> temp = ec->atomics[(int)(*i)[0]];
           for (; temp.begin != temp.end; temp.begin++)
@@ -261,7 +261,7 @@ void update_preconditioner(vw& all, example* &ec)
         }
     }
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
@@ -275,31 +275,25 @@ void update_preconditioner(vw& all, example* &ec)
 float dot_with_direction(vw& all, example* &ec)
 {
   float ret = 0;
-  weight* weights = all.reg.weight_vectors;
-  size_t mask = all.weight_mask;
-  weights +=2;//direction vector stored two advanced
-  for (size_t* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	ret += weights[f->weight_index & mask] * f->x;
+
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+    ret += sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end, W_DIR);
+
+  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
+    if (ec->atomics[(int)(*i)[0]].size() > 0) {
+      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+      for (; temp.begin != temp.end; temp.begin++)
+        ret += one_pf_quad_predict<vec_add>(all, *temp.begin, ec->atomics[(int)(*i)[1]], W_DIR);
     }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].index() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    ret += one_pf_quad_predict(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask);
-	} 
-    }
+  }
+
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].index() == 0) || (ec->atomics[(int)(*i)[1]].index() == 0) || (ec->atomics[(int)(*i)[2]].index() == 0)) { continue; }
+    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
     v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
     for (; temp1.begin != temp1.end; temp1.begin++) {
       v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
       for (; temp2.begin != temp2.end; temp2.begin++)
-        ret += one_pf_cubic_predict(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask);
+        ret += one_pf_cubic_predict<vec_add>(all, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], W_DIR);
     }
   }
   return ret;
@@ -317,10 +311,10 @@ double regularizer_direction_magnitude(vw& all, float regularizer)
   weight* weights = all.reg.weight_vectors;
   if (all.reg.regularizers == NULL)
     for(uint32_t i = 0; i < length; i++)
-      ret += regularizer*weights[stride*i+2]*weights[stride*i+2];
+      ret += regularizer*weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
   else
     for(uint32_t i = 0; i < length; i++) 
-      ret += all.reg.regularizers[2*i]*weights[stride*i+2]*weights[stride*i+2];
+      ret += all.reg.regularizers[2*i]*weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
 
   return ret;
 }
@@ -332,7 +326,7 @@ float direction_magnitude(vw& all)
   size_t stride = all.stride;
   weight* weights = all.reg.weight_vectors;
   for(uint32_t i = 0; i < length; i++)
-    ret += weights[stride*i+2]*weights[stride*i+2];
+    ret += weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
   
   return (float)ret;
 }
@@ -521,7 +515,7 @@ double add_regularization(vw& all, float regularization)
   if (all.reg.regularizers == NULL)
     {
       for(uint32_t i = 0; i < length; i++) {
-	weights[stride*i+1] += regularization*weights[stride*i];
+	weights[stride*i+W_GT] += regularization*weights[stride*i];
 	ret += 0.5*regularization*weights[stride*i]*weights[stride*i];
       }
     }
@@ -529,7 +523,7 @@ double add_regularization(vw& all, float regularization)
     {
       for(uint32_t i = 0; i < length; i++) {
 	weight delta_weight = weights[stride*i] - all.reg.regularizers[2*i+1];
-	weights[stride*i+1] += all.reg.regularizers[2*i]*delta_weight;
+	weights[stride*i+W_GT] += all.reg.regularizers[2*i]*delta_weight;
 	ret += 0.5*all.reg.regularizers[2*i]*delta_weight*delta_weight;
       }
     }
@@ -544,15 +538,15 @@ void finalize_preconditioner(vw& all, float regularization)
 
   if (all.reg.regularizers == NULL)
     for(uint32_t i = 0; i < length; i++) {
-      weights[stride*i+3] += regularization;
-      if (weights[stride*i+3] > 0)
-	weights[stride*i+3] = 1.f / weights[stride*i+3];
+      weights[stride*i+W_COND] += regularization;
+      if (weights[stride*i+W_COND] > 0)
+	weights[stride*i+W_COND] = 1.f / weights[stride*i+W_COND];
     }
   else
     for(uint32_t i = 0; i < length; i++) {
-      weights[stride*i+3] += all.reg.regularizers[2*i];
-      if (weights[stride*i+3] > 0)
-	weights[stride*i+3] = 1.f / weights[stride*i+3];
+      weights[stride*i+W_COND] += all.reg.regularizers[2*i];
+      if (weights[stride*i+W_COND] > 0)
+	weights[stride*i+W_COND] = 1.f / weights[stride*i+W_COND];
     }
 }
 
@@ -571,11 +565,11 @@ void preconditioner_to_regularizer(vw& all, float regularization)
 	  exit (1);
 	}
       for(uint32_t i = 0; i < length; i++) 
-	all.reg.regularizers[2*i] = weights[stride*i+3] + regularization;
+	all.reg.regularizers[2*i] = weights[stride*i+W_COND] + regularization;
     }
   else
     for(uint32_t i = 0; i < length; i++) 
-      all.reg.regularizers[2*i] = weights[stride*i+3] + all.reg.regularizers[2*i];
+      all.reg.regularizers[2*i] = weights[stride*i+W_COND] + all.reg.regularizers[2*i];
   for(uint32_t i = 0; i < length; i++) 
     all.reg.regularizers[2*i+1] = weights[stride*i];
 }
@@ -587,9 +581,9 @@ void zero_state(vw& all)
   weight* weights = all.reg.weight_vectors;
   for(uint32_t i = 0; i < length; i++) 
     {
-      weights[stride*i+1] = 0;
-      weights[stride*i+2] = 0;
-      weights[stride*i+3] = 0;
+      weights[stride*i+W_GT] = 0;
+      weights[stride*i+W_DIR] = 0;
+      weights[stride*i+W_COND] = 0;
     }
 }
 
@@ -625,7 +619,7 @@ int process_pass(vw& all) {
     if (first_pass) {
       if(all.span_server != "")
 	{
-	  accumulate(all, all.span_server, all.reg, 3); //Accumulate preconditioner
+	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
 	  importance_weight_sum = accumulate_scalar(all, all.span_server, (float)importance_weight_sum);
 	}
       finalize_preconditioner(all, all.l2_lambda);
@@ -801,7 +795,7 @@ void process_example(vw& all, example *ec)
       ec->final_prediction = predict_and_gradient(all, ec);//w[0] & w[1]
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       loss_sum += ec->loss;
-      push(predictions,ec->final_prediction);
+      predictions.push_back(ec->final_prediction);
     }
   /********************************************************************/
   /* II) CURVATURE CALCULATION ****************************************/
@@ -809,8 +803,8 @@ void process_example(vw& all, example *ec)
   else //computing curvature
     {
       float d_dot_x = dot_with_direction(all, ec);//w[2]
-      if (example_number >= predictions.index())//Make things safe in case example source is strange.
-	example_number = predictions.index()-1;
+      if (example_number >= predictions.size())//Make things safe in case example source is strange.
+	example_number = predictions.size()-1;
       ec->final_prediction = predictions[example_number];
       ec->partial_prediction = predictions[example_number];
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;	      
@@ -852,13 +846,13 @@ void finish(void* a)
   if (output_regularizer)//need to accumulate and place the regularizer.
     {
       if(all->span_server != "")
-	accumulate(*all, all->span_server, all->reg, 3); //Accumulate preconditioner
+	accumulate(*all, all->span_server, all->reg, W_COND); //Accumulate preconditioner
       preconditioner_to_regularizer(*all, all->l2_lambda);
     }
   ftime(&t_end_global);
   net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 
-  free(predictions.begin);
+  predictions.delete_v();
   free(mem);
   free(rho);
   free(alpha);

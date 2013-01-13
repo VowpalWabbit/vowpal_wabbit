@@ -19,9 +19,9 @@ license as described in the file LICENSE.
 
 namespace SequenceTask {
   SearnUtil::history_info hinfo;
-  size_t seq_max_action = 1;
+  uint32_t seq_max_action = 1;
   size_t constant_pow_length = 0;
-  size_t increment = 0;  // this is just for fake LDF
+  uint32_t increment = 0;  // this is just for fake LDF
 
   struct seq_state {
     // global stuff -- common to any state in a trajectory
@@ -90,7 +90,7 @@ namespace SequenceTask {
       if( vm.count("searn_sequencetask_bigram_features") && !hinfo.bigram_features )
         std::cerr << "warning: you specified --searn_sequencetask_bigram_features but loaded regressor not using bigram_features. Pursuing without bigram_features." << endl;
 
-      seq_max_action = vm_file["searn"].as<size_t>();
+      seq_max_action = (uint32_t)vm_file["searn"].as<size_t>();
     }    
     else {
       if (vm.count("searn_sequencetask_bigrams")) {
@@ -119,14 +119,14 @@ namespace SequenceTask {
         all.options_from_file.append(ss.str());
       }
 
-      seq_max_action = vm["searn"].as<size_t>();
+      seq_max_action = (uint32_t)vm["searn"].as<size_t>();
     }
 
     constant_pow_length = 1;
     for (size_t i=0; i < hinfo.length; i++)
       constant_pow_length *= quadratic_constant;
 
-    increment = (all.length() * all.stride + 132489)/seq_max_action;
+    increment = ((uint32_t)all.length() * all.stride + 132489)/seq_max_action;
 
     return true;
   }
@@ -149,7 +149,7 @@ namespace SequenceTask {
     s->cum_loss += (oracle(s0) == a) ? 0.0f : 1.0f;
 
     if (hinfo.length > 0) {
-      int old_val = s->predictions[0];
+      size_t old_val = s->predictions[0];
       s->predictions_hash -= old_val * constant_pow_length;
       s->predictions_hash += a;
       s->predictions_hash *= quadratic_constant;

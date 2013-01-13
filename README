@@ -4,9 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 
-This is the vowpal wabbit fast online learning code.  
-
-For Windows, look at README.windows.txt
+This is the vowpal wabbit fast online learning code.  For Windows, look at README.windows.txt
 
 You can download the latest version from here:
 

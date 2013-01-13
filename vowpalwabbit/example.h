@@ -33,8 +33,9 @@ struct example // core example datatype.
   v_array<char> tag;//An identifier for the example.
   size_t example_counter;
 
-  v_array<size_t> indices;
+  v_array<unsigned char> indices;
   v_array<feature> atomics[256]; // raw parsed data
+  uint32_t ft_offset;
   
   v_array<audit_data> audit_features[256];
   
@@ -61,6 +62,6 @@ void dealloc_example(void(*delete_label)(void*), example&);
 namespace VW {
 void copy_example_data(example*&, example*, size_t);
 }
-void update_example_indicies(bool audit, example* ec, size_t amount);
+void update_example_indicies(bool audit, example* ec, uint32_t amount);
 
 #endif

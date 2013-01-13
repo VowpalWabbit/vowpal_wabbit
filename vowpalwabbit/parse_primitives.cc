@@ -21,7 +21,7 @@ void tokenize(char delim, substring s, v_array<substring>& ret)
       if (s.begin != last)
 	{
 	  substring temp = {last, s.begin};
-	  push(ret, temp);
+	  ret.push_back(temp);
 	}
       last = s.begin+1;
     }
@@ -29,7 +29,7 @@ void tokenize(char delim, substring s, v_array<substring>& ret)
   if (s.begin != last)
     {
       substring final = {last, s.begin};
-      push(ret, final);
+      ret.push_back(final);
     }
 }
 

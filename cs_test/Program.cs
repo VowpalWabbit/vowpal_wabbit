@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 using Microsoft.Research.MachineLearning;
 using System.Runtime.InteropServices;
@@ -12,49 +13,73 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            IntPtr vw = VowpalWabbitInterface.Initialize("--hash all -q st --noconstant -i .\\..\\..\\..\\..\\library\\train.w");
+            RunFeaturesTest();
+        }
 
-            IntPtr example = VowpalWabbitInterface.ReadExample(vw, "|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+        private static void RunFeaturesTest()
+        {
+            // this usually requires that the library script to update train.w or its moral equivalent needs to have been run 
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st --noconstant --quiet");
+
+            IntPtr example = VowpalWabbitInterface.ReadExample(vw, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
             float score = VowpalWabbitInterface.Learn(vw, example);
             VowpalWabbitInterface.FinishExample(vw, example);
 
-            uint nnum = VowpalWabbitInterface.HashSpace(vw, "p");
-            uint fnum = VowpalWabbitInterface.HashFeature(vw, "s p^the_man w^the w^man", nnum);
+            VowpalWabbitInterface.FEATURE_SPACE[] featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[2];//maximum number of index spaces
 
-            VowpalWabbitInterface.FEATURE_SPACE[] featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[11];
-            for (int i = 0; i < featureSpace.Length; i++)
-            {
-                featureSpace[i].name = (byte)('a' + i);
+            VowpalWabbitInterface.FEATURE[] sfeatures = new VowpalWabbitInterface.FEATURE[3];// the maximum number of features
+            VowpalWabbitInterface.FEATURE[] tfeatures = new VowpalWabbitInterface.FEATURE[3];// the maximum number of features
 
-                // create an array of features for this feature space
-                VowpalWabbitInterface.FEATURE[] features = new VowpalWabbitInterface.FEATURE[2];
-                
-                // allocate some space for the unmanaged copies of these features
-                featureSpace[i].features = Marshal.AllocHGlobal(features.Length * Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE)));
-                featureSpace[i].len = features.Length;
-                
-                // fill the features, and copy them to the allocated memory
-                for (int j = 0; j < features.Length; j++)
-                {
-                    // fill the feature
-                    features[j].x = 1.1F;
-                    features[j].weight_index = 100;
+            GCHandle pinnedsFeatures = GCHandle.Alloc(sfeatures, GCHandleType.Pinned);
+            GCHandle pinnedtFeatures = GCHandle.Alloc(tfeatures, GCHandleType.Pinned);
 
-                    // copy the feature to the unmanaged heap
-                    Marshal.StructureToPtr(features[j], IntPtr.Add(featureSpace[i].features, j * Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE))), false);
-                }
-            }
+            featureSpace[0].features = pinnedsFeatures.AddrOfPinnedObject();
+            featureSpace[1].features = pinnedtFeatures.AddrOfPinnedObject();
 
-            IntPtr importedExample = VowpalWabbitInterface.ImportExample(vw, featureSpace, featureSpace.Length);
+            GCHandle pinnedFeatureSpace = GCHandle.Alloc(featureSpace, GCHandleType.Pinned);
 
+            IntPtr featureSpacePtr = pinnedFeatureSpace.AddrOfPinnedObject();
+
+            uint snum = VowpalWabbitInterface.HashSpace(vw, "s");
+            featureSpace[0].name = (byte)'s';
+            sfeatures[0].weight_index = VowpalWabbitInterface.HashFeature(vw, "p^the_man", snum);
+            sfeatures[0].x = 1;
+            sfeatures[1].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^the", snum);
+            sfeatures[1].x = 1;
+            sfeatures[2].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^man", snum);
+            sfeatures[2].x = 1;
+            featureSpace[0].len = 3;
+
+            uint tnum = VowpalWabbitInterface.HashSpace(vw, "t");
+            featureSpace[1].name = (byte)'t';
+            tfeatures[0].weight_index = VowpalWabbitInterface.HashFeature(vw, "p^un_homme", tnum);
+            tfeatures[0].x = 1;
+            tfeatures[1].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^un", tnum);
+            tfeatures[1].x = 1;
+            tfeatures[2].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^homme", tnum);
+            tfeatures[2].x = 1;
+            featureSpace[1].len = 3;
+
+            IntPtr importedExample = VowpalWabbitInterface.ImportExample(vw, featureSpacePtr, featureSpace.Length);
+
+            VowpalWabbitInterface.Label_Data labelData = VowpalWabbitInterface.DefaultLabelData();
+            labelData.label = 1;
+            labelData.weight = 1;
+            // Put it in the example
+            VowpalWabbitInterface.StartOfExample startOfExample = (VowpalWabbitInterface.StartOfExample)Marshal.PtrToStructure(importedExample, typeof(VowpalWabbitInterface.StartOfExample));
+            Marshal.StructureToPtr(labelData, startOfExample.labeldata, false);
+
+            score = VowpalWabbitInterface.Learn(vw, importedExample);
 
             Console.Error.WriteLine("p2 = {0}", score);
 
             VowpalWabbitInterface.Finish(vw);
 
             // clean up the memory we allocated
-            for (int i = 0; i < featureSpace.Length; i++)
-                Marshal.FreeHGlobal(featureSpace[i].features);
+            
+            pinnedsFeatures.Free();
+            pinnedtFeatures.Free();
+            pinnedFeatureSpace.Free();
         }
     }
 }

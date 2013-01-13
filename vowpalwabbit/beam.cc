@@ -40,36 +40,36 @@ namespace Beam
   beam::~beam() {
     // TODO: really free the elements
     delete dat;
-    free(empty_bucket->begin);
+    empty_bucket->delete_v();
     delete empty_bucket;
   }
 
   size_t hash_bucket(size_t id) { return 1043221*(893901 + id); }
 
-  void beam::put(size_t id, state s, size_t hs, size_t act, float loss) {
+  void beam::put(size_t id, state s, size_t hs, uint32_t act, float loss) {
     elem e = { s, hs, loss, id, last_retrieved, act, true };
     // check to see if we have this bucket yet
     bucket b = dat->get(id, hash_bucket(id));
-    if (b->index() > 0) { // this one exists: just add to it
-      push(*b, e);
+    if (b->size() > 0) { // this one exists: just add to it
+      b->push_back(e);
       //dat->put_after_get(id, hash_bucket(id), b);
-      if (b->index() >= max_size * MULTIPLIER)
+      if (b->size() >= max_size * MULTIPLIER)
         prune(id);
     } else {
       bucket bnew = new v_array<elem>();
-      push(*bnew, e);
+      bnew->push_back(e);
       dat->put_after_get(id, hash_bucket(id), bnew);
     }
   }
 
-  void beam::put_final(state s, size_t act, float loss) {
+  void beam::put_final(state s, uint32_t act, float loss) {
     elem e = { s, 0, loss, 0, last_retrieved, act, true };
-    push(*final_states, e);
+    final_states->push_back(e);
   }
 
   void beam::iterate(size_t id, void (*f)(beam*,size_t,state,float,void*), void*args) {
     bucket b = dat->get(id, hash_bucket(id));
-    if (b->index() == 0) return;
+    if (b->size() == 0) return;
 
     cout << "before prune" << endl;
     prune(id);
@@ -130,22 +130,22 @@ namespace Beam
 
   void beam::prune(size_t id) {
     bucket b = dat->get(id, hash_bucket(id));
-    if (b->index() == 0) return;
+    if (b->size() == 0) return;
 
     size_t num_alive = 0;
     if (equivalent == NULL) {
-      for (size_t i=1; i<b->index(); i++) {
+      for (size_t i=1; i<b->size(); i++) {
         (*b)[i].alive = true;
       }
-      num_alive = b->index();
+      num_alive = b->size();
     } else {
       // first, sort on hash, backing off to loss
-      qsort(b->begin, b->index(), sizeof(elem), compare_elem);
+      qsort(b->begin, b->size(), sizeof(elem), compare_elem);
 
       // now, check actual equivalence
       size_t last_pos = 0;
       size_t last_hash = (*b)[0].hash;
-      for (size_t i=1; i<b->index(); i++) {
+      for (size_t i=1; i<b->size(); i++) {
         (*b)[i].alive = true;
         if ((*b)[i].hash != last_hash) {
           last_pos = i;
@@ -173,7 +173,7 @@ namespace Beam
     bucket bnew = new v_array<elem>();
     for (elem*e=b->begin; e!=b->end; e++) {
       if (e->loss > cutoff) continue;
-      push(*bnew, *e);
+      bnew->push_back(*e);
       if (num_alive == 0) break;
       num_alive--;
     }
@@ -192,20 +192,20 @@ namespace Beam
     return next_bucket;
   }
 
-  void beam::get_best_output(std::vector<size_t>* action_seq) {
+  void beam::get_best_output(std::vector<uint32_t>* action_seq) {
     action_seq->clear();
-    if (final_states->index() == 0) {
+    if (final_states->size() == 0) {
       // TODO: error
       return;
     } else {
       elem *bestElem   = NULL;
-      for (size_t i=0; i<final_states->index(); i++) {
+      for (size_t i=0; i<final_states->size(); i++) {
         if ((bestElem == NULL) || ((*final_states)[i].loss < bestElem->loss))
           bestElem = &(*final_states)[i];
       }
       // chase backpointers
       while (bestElem != NULL) {
-        std::vector<size_t>::iterator be = action_seq->begin();
+        std::vector<uint32_t>::iterator be = action_seq->begin();
         action_seq->insert( be, bestElem->last_action );
         bestElem = bestElem->backpointer;
       }

@@ -28,7 +28,16 @@ extern "C"
 		try
 		{
 			vw * pointer = static_cast<vw*>(handle);
-			release_parser_datastructures(*pointer);
+			if (pointer->numpasses > 1)
+			{
+				adjust_used_index(*pointer);
+				pointer->do_reset_source = true;
+				start_parser(*pointer,false);
+				pointer->driver((void*)pointer);
+				end_parser(*pointer); 
+			}
+			else
+				release_parser_datastructures(*pointer);
 			VW::finish(*pointer);
 			delete pointer;
 		}
@@ -88,7 +97,8 @@ extern "C"
 		}
 		catch (...)
 		{
-			// BUGBUG: should report error here....
+			cout << "BUG: failed space conversion" <<  endl;
+			return 0;
 		}
 	}
 
@@ -102,7 +112,8 @@ extern "C"
 		}
 		catch (...)
 		{
-			// BUGBUG: should report error here....
+			cout << "failed feature conversion!" << endl;
+			return 0;
 		}
 	}
 	

@@ -27,17 +27,11 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-#ifdef _WIN32
-  srand(0);
-#else
-  srand48(0);
-#endif
-
   vw all = parse_args(argc, argv);
   struct timeb t_start, t_end;
   ftime(&t_start);
   
-  if (!all.quiet && !all.bfgs && !all.sequence && !all.searn)
+  if (!all.quiet && !all.bfgs && !all.searn)
     {
       const char * header_fmt = "%-10s %-10s %10s %11s %8s %8s %8s\n";
       fprintf(stderr, header_fmt,

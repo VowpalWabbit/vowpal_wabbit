@@ -66,20 +66,21 @@ public:
   float cur_channel_v;
   bool  new_index;
   size_t mask;
+  size_t anon; 
   bool audit;
   size_t channel_hash;
   char* base;
-  size_t index;
+  unsigned char index;
   float v;
   parser* p;
   example* ae;
   
   ~TC_parser(){ }
   
-  inline void featureValue(){
-    if(reading_head == endLine || *reading_head == '|' || *reading_head == ' ' || *reading_head == '\r'){
-      // featureValue --> ø
-    }else if(*reading_head == ':'){
+  inline float featureValue(){
+    if(reading_head == endLine || *reading_head == '|' || *reading_head == ' ' || *reading_head == '\r')
+      return 1.;
+    else if(*reading_head == ':'){
       // featureValue --> ':' 'Float'
       ++reading_head;
       char *end_read = NULL;
@@ -92,43 +93,46 @@ public:
         cout << "warning: invalid feature value:\"" << std::string(reading_head, end_read - reading_head).c_str() << "\" read as NaN. Replacing with 0." << endl;
       }
       reading_head = end_read;
+      return v;
     }else{
       // syntax error
       cout << "malformed example !\n'|' , ':' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
+      return 0.f;
     }
+  }
+
+  inline substring read_name(){
+    substring ret;
+    ret.begin = reading_head;
+    while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine || *reading_head == '\r' ))
+      ++reading_head;
+    ret.end = reading_head;
+    return ret;
   }
   
   inline void maybeFeature(){
     if(*reading_head == ' ' || *reading_head == '|'|| reading_head == endLine || *reading_head == '\r' ){
       // maybeFeature --> ø
-    }else if(*reading_head != ':'){
+    }else {
       // maybeFeature --> 'String' FeatureValue
-      substring feature_name ;
-      feature_name.begin = reading_head;
-      v_array<char> feature_v;
-      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' ||reading_head == endLine || *reading_head == '\r')){
-	if(audit){
-	  push(feature_v,*reading_head);
-	}
-	++reading_head;
-      }
-      feature_name.end = reading_head;
-      v = 1.;
-      featureValue();
-      v *= cur_channel_v;
+      substring feature_name=read_name();
+      v = cur_channel_v * featureValue();
       if(v == 0) return; //dont add 0 valued features to list of features
-      size_t word_hash = (p->hasher(feature_name,channel_hash)) & mask;
+      size_t word_hash;
+      if (feature_name.end != feature_name.begin)
+	word_hash = (p->hasher(feature_name,(uint32_t)channel_hash)) & mask;
+      else
+	word_hash = channel_hash + anon++;
       feature f = {v,(uint32_t)word_hash};
       ae->sum_feat_sq[index] += v*v;
-      push(ae->atomics[index],f);
+      ae->atomics[index].push_back(f);
       if(audit){
-	push(feature_v,'\0');
+	v_array<char> feature_v;
+	push_many(feature_v, feature_name.begin, feature_name.end - feature_name.begin);
+	feature_v.push_back('\0');
 	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
-	push(ae->audit_features[index],ad);
+	ae->audit_features[index].push_back(ad);
       }
-    }else{
-      // syntax error
-      cout << "malformed example !\n'|' , space, String or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
     }
   }
   
@@ -163,21 +167,13 @@ public:
       index = (unsigned char)(*reading_head);
       if(ae->atomics[index].begin == ae->atomics[index].end)
 	new_index = true;
-      substring name;
-      name.begin = reading_head;
-      v_array<char> base_v_array;
-      
-      while( !(*reading_head == ' ' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine || *reading_head == '\r' )){
-	if(audit){
-	  push(base_v_array,*reading_head);
-	}
-	++reading_head;
-      }
+      substring name = read_name();
       if(audit){
-	push(base_v_array,'\0');
+	v_array<char> base_v_array;
+	push_many(base_v_array, name.begin, name.end - name.begin);
+	base_v_array.push_back('\0');
 	base = base_v_array.begin;
       }
-      name.end = reading_head;
       channel_hash = p->hasher(name, hash_base);
       nameSpaceInfoValue();
     }
@@ -201,6 +197,7 @@ public:
     base = NULL;
     index = 0;
     new_index = false;
+    anon = 0;
     if(*reading_head == ' ' || reading_head == endLine || *reading_head == '|' || *reading_head == '\r' ){
       // NameSpace --> ListFeatures
       index = (unsigned char)' ';
@@ -223,7 +220,7 @@ public:
       cout << "malformed example !\n'|' , String, space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str()<< "\"" << endl;
     }
     if(new_index && ae->atomics[index].begin != ae->atomics[index].end)
-      push(ae->indices,index);
+      ae->indices.push_back(index);
   }
   
   inline void listNameSpace(){
@@ -269,7 +266,7 @@ void substring_to_example(vw* all, example* ae, substring example)
     all->p->words.erase();
   } else 	{
     tokenize(' ', label_space, all->p->words);
-    if (all->p->words.index() > 0 && (all->p->words.last().end == label_space.end	|| *(all->p->words.last().begin) == '\'')) //The last field is a tag, so record and strip it off
+    if (all->p->words.size() > 0 && (all->p->words.last().end == label_space.end	|| *(all->p->words.last().begin) == '\'')) //The last field is a tag, so record and strip it off
       {
 	substring tag = all->p->words.pop();
 	if (*tag.begin == '\'')
@@ -278,7 +275,7 @@ void substring_to_example(vw* all, example* ae, substring example)
       }
   }
 
-  if (all->p->words.index() > 0)
+  if (all->p->words.size() > 0)
     all->p->lp->parse_label(all->p, all->sd, ae->ld, all->p->words);
   
   TC_parser parser_line(bar_location,example.end,*all,ae);
@@ -289,10 +286,10 @@ int read_features(void* in, example* ex)
   vw* all = (vw*)in;
   example* ae = (example*)ex;
   char *line=NULL;
-  int num_chars_initial = readto(*(all->p->input), line, '\n');
+  size_t num_chars_initial = readto(*(all->p->input), line, '\n');
   if (num_chars_initial <= 1)
-    return num_chars_initial;
-  int num_chars = num_chars_initial;
+    return (int)num_chars_initial;
+  size_t num_chars = num_chars_initial;
   if (line[num_chars-1] == '\n')
     num_chars--;
   if (line[num_chars-1] == '\r')
@@ -300,7 +297,7 @@ int read_features(void* in, example* ex)
   substring example = {line, line + num_chars};
   substring_to_example(all, ae, example);
 
-  return num_chars_initial;
+  return (int)num_chars_initial;
 }
 
 void read_line(vw& all, example* ex, char* line)

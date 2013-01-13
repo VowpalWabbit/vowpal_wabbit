@@ -17,6 +17,8 @@ license as described in the file LICENSE.
 #include "v_array.h"
 #include<iostream>
 
+using namespace std;
+
 #ifndef O_LARGEFILE //for OSX
 #define O_LARGEFILE 0
 #endif
@@ -25,7 +27,6 @@ license as described in the file LICENSE.
 #define ssize_t size_t
 #include <io.h>
 #include <sys/stat.h>
-#define fsync(x) ;
 #endif
 
 class io_buf {
@@ -43,14 +44,14 @@ class io_buf {
 
   void init(){
     size_t s = 1 << 16;
-    reserve(space, s);
+    space.resize(s);
     current = 0;
     count = 0;
     endloaded = space.begin;
   }
 
-  virtual int open_file(const char* name, int flag=READ){
-	int ret;
+  virtual int open_file(const char* name, bool stdin_off, int flag=READ){
+    int ret = -1;
     switch(flag){
     case READ:
       if (*name != '\0')
@@ -62,10 +63,14 @@ class io_buf {
 	  ret = open(name, O_RDONLY|O_LARGEFILE);
 #endif
 	}
-      else
-	ret = fileno(stdin);
+      else if (!stdin_off)
+#ifdef _WIN32
+	ret = _fileno(stdin);
+#else
+      ret = fileno(stdin);
+#endif
       if(ret!=-1)
-	push(files,ret);
+	files.push_back(ret);
       break;
 
     case WRITE:
@@ -75,7 +80,12 @@ class io_buf {
 		ret = open(name, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
       if(ret!=-1)
-        push(files,ret);
+        files.push_back(ret);
+      else
+	{
+	  cout << "can't open: " << name << " for read or write, exiting" << endl;
+	  exit(1);
+	}
       break;
 
     default:
@@ -96,8 +106,8 @@ class io_buf {
   }
 
   virtual ~io_buf(){
-    free(files.begin);
-    free(space.begin);
+    files.delete_v();
+    space.delete_v();
   }
 
   void set(char *p){space.end = p;}
@@ -110,7 +120,7 @@ class io_buf {
     if (space.end_array - endloaded == 0)
       {
 	size_t offset = endloaded - space.begin;
-	reserve(space, 2 * (space.end_array - space.begin));
+	space.resize(2 * (space.end_array - space.begin));
 	endloaded = space.begin+offset;
       }
     ssize_t num_read = read_file(f, endloaded, space.end_array - endloaded);
@@ -129,12 +139,12 @@ class io_buf {
   }
 
   virtual void flush() {
-	  if (write_file(files[0], space.begin, space.index()) != (int) space.index())
+	  if (write_file(files[0], space.begin, space.size()) != (int) space.size())
       std::cerr << "error, failed to write example\n";
     space.end = space.begin; }
 
   virtual bool close_file(){
-    if(files.index()>0){
+    if(files.size()>0){
       close(files.pop());
       return true;
     }
@@ -146,7 +156,7 @@ class io_buf {
   }
 };
 
-void buf_write(io_buf &o, char* &pointer, int n);
+void buf_write(io_buf &o, char* &pointer, size_t n);
 size_t buf_read(io_buf &i, char* &pointer, size_t n);
 bool isbinary(io_buf &i);
 size_t readto(io_buf &i, char* &pointer, char terminal);

@@ -19,7 +19,7 @@ namespace OAA {
 
   char* bufread_label(mc_label* ld, char* c)
   {
-    ld->label = *(size_t *)c;
+    ld->label = *(uint32_t *)c;
     c += sizeof(ld->label);
     ld->weight = *(float *)c;
     c += sizeof(ld->weight);
@@ -81,7 +81,7 @@ namespace OAA {
   {
     mc_label* ld = (mc_label*)v;
 
-    switch(words.index()) {
+    switch(words.size()) {
     case 0:
       break;
     case 1:
@@ -94,14 +94,14 @@ namespace OAA {
       break;
     default:
       cerr << "malformed example!\n";
-      cerr << "words.index() = " << words.index() << endl;
+      cerr << "words.size() = " << words.size() << endl;
     }
   }
 
   //nonreentrant
-  size_t k=0;
-  size_t increment=0;
-  size_t total_increment=0;
+  uint32_t k=0;
+  uint32_t increment=0;
+  uint32_t total_increment=0;
 
   void print_update(vw& all, example *ec)
   {
@@ -140,7 +140,7 @@ namespace OAA {
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   
-    for (size_t* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
+    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, (float)(*(prediction_t*)&(ec->final_prediction)), 0, ec->tag);
   
     all.sd->example_number++;
@@ -227,12 +227,12 @@ namespace OAA {
     //first parse for number of actions
     k = 0;
     if( vm_file.count("oaa") ) {
-      k = vm_file["oaa"].as<size_t>();
-      if( vm.count("oaa") && vm["oaa"].as<size_t>() != k )
+      k = (uint32_t)vm_file["oaa"].as<size_t>();
+      if( vm.count("oaa") && (uint32_t)vm["oaa"].as<size_t>() != k )
         std::cerr << "warning: you specified a different number of actions through --oaa than the one loaded from predictor. Pursuing with loaded value of: " << k << endl;
     }
     else {
-      k = vm["oaa"].as<size_t>();
+      k = (uint32_t)vm["oaa"].as<size_t>();
 
       //append oaa with nb_actions to options_from_file so it is saved to regressor later
       std::stringstream ss;
@@ -247,7 +247,7 @@ namespace OAA {
     all.learn = learn;
 
     all.base_learner_nb_w *= k;
-    increment = (all.length()/all.base_learner_nb_w) * all.stride;
+    increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
     total_increment = increment*(k-1);
   }
 }

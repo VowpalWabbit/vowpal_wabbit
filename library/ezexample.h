@@ -75,7 +75,7 @@ class ezexample {
   bool ensure_ns_exists(char c) {  // returns TRUE iff we should ignore it :)
     if (vw_ref->ignore_some && vw_ref->ignore[c]) return true;
     if (ns_exists[c]) return false;
-    push(ec->indices, (size_t)c);
+    ec->indices.push_back((size_t)c);
     ns_exists[c] = true;
     return false;
   }
@@ -92,14 +92,14 @@ class ezexample {
   }
 
   void remns() {
-    if (ec->indices.index() == 0) {
+    if (ec->indices.size() == 0) {
       current_seed = 0;
       current_ns = 0;
     } else {
       if (ns_exists[current_ns]) {
         ec->total_sum_feat_sq -= ec->sum_feat_sq[current_ns];
         ec->sum_feat_sq[current_ns] = 0;
-        ec->num_features -= ec->atomics[current_ns].index();
+        ec->num_features -= ec->atomics[current_ns].size();
         ec->atomics[current_ns].erase();
 
         ns_exists[current_ns] = false;
@@ -118,7 +118,7 @@ class ezexample {
     if (ensure_ns_exists(to_ns)) return 0;
 
     feature f = { v, fint * vw_ref->stride };
-    push(ec->atomics[to_ns], f);
+    ec->atomics[to_ns].push_back(f);
     ec->sum_feat_sq[to_ns] += v * v;
     ec->total_sum_feat_sq += v * v;
     ec->num_features++;
@@ -181,7 +181,7 @@ class ezexample {
       example* copy = get_new_example();
       VW::copy_example_data(copy, ec, vw_ref->p->lp->label_size);
       vw_ref->learn(vw_ref, copy);
-      push(example_copies, copy);
+      example_copies.push_back(copy);
     }
   }
 

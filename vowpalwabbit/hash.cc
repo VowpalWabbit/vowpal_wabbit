@@ -76,7 +76,7 @@ FORCE_INLINE uint32_t fmix (uint32_t h)
 uint32_t uniform_hash (const void * key, size_t len, uint32_t seed)
 {
     const uint8_t * data = (const uint8_t*)key;
-    const int nblocks = len / 4;
+    const int nblocks = (int)len / 4;
 
     uint32_t h1 = seed;
 

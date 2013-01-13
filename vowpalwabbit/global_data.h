@@ -110,7 +110,7 @@ struct regressor {
   weight* weight_vectors;
   weight* regularizers;
 };
-
+           
 struct vw {
   shared_data* sd;
 
@@ -142,12 +142,11 @@ struct vw {
   char** options_from_file_argv;
   int options_from_file_argc;
 
-  bool sequence;
   bool searn;
 
-  size_t base_learner_nb_w; //this stores the current number of "weight vector" required by the based learner, which is used to compute offsets when composing reductions
+  uint32_t base_learner_nb_w; //this stores the current number of "weight vector" required by the based learner, which is used to compute offsets when composing reductions
 
-  size_t stride;
+  uint32_t stride;
 
   std::string per_feature_regularizer_input;
   std::string per_feature_regularizer_output;
@@ -184,6 +183,9 @@ struct vw {
   bool random_weights;
   bool add_constant;
   bool nonormalize;
+  bool do_reset_source;
+
+  uint32_t csoaa_increment;
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
@@ -202,7 +204,7 @@ struct vw {
   size_t rank;
 
   //Prediction output
-  v_array<size_t> final_prediction_sink; // set to send global predictions to.
+  v_array<int> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
   size_t total; //total number of nodes
@@ -214,6 +216,8 @@ struct vw {
   loss_function* loss;
 
   char* program_name;
+
+  bool stdin_off;
 
   //runtime accounting variables. 
   float initial_t;

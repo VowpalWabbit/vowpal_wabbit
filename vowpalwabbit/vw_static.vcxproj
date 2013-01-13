@@ -211,6 +211,7 @@
       <FavorSizeOrSpeed Condition="'$(Configuration)'=='Release'">Speed</FavorSizeOrSpeed>
       <OmitFramePointers Condition="'$(Configuration)'=='Release'">true</OmitFramePointers>
       <EnableFiberSafeOptimizations Condition="'$(Configuration)'=='Release'">false</EnableFiberSafeOptimizations>
+      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -258,6 +259,7 @@
     <ClInclude Include="parse_example.h" />
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
+    <ClInclude Include="rand48.h" />
     <ClInclude Include="searn.h" />
     <ClInclude Include="searn_sequencetask.h" />
     <ClInclude Include="sender.h" />
@@ -297,6 +299,7 @@
     <ClCompile Include="parse_example.cc" />
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
+    <ClCompile Include="rand48.cc" />
     <ClCompile Include="searn.cc" />
     <ClCompile Include="searn_sequencetask.cc" />
     <ClCompile Include="sender.cc" />
