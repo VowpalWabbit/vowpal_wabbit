@@ -201,7 +201,7 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
 
   if (model_file.files.size() > 0)
     {
-      size_t v_length = version.to_string().length()+1;
+      uint32_t v_length = version.to_string().length()+1;
       text_len = sprintf(buff, "Version %s\n", version.to_string().c_str());
       memcpy(buff2,version.to_string().c_str(),v_length);
       if (read)
@@ -232,7 +232,7 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
 				buff, text_len, text);
       
       text_len = sprintf(buff, "bits:%d\n", (int)all->num_bits);
-      size_t local_num_bits = all->num_bits;
+      uint32_t local_num_bits = all->num_bits;
       bin_text_read_write_fixed(model_file,(char *)&local_num_bits, sizeof(all->num_bits), 
 				"", read, 
 				buff, text_len, text);
@@ -244,7 +244,7 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
       all->default_bits = false;
       all->num_bits = local_num_bits;
       
-      size_t pair_len = all->pairs.size();
+      uint32_t pair_len = all->pairs.size();
       text_len = sprintf(buff, "%d pairs: ", (int)pair_len);
       bin_text_read_write_fixed(model_file,(char *)&pair_len, sizeof(pair_len), 
 				"", read, 
@@ -268,7 +268,7 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
 				"", read,
 				"\n",1,text);
       
-      size_t triple_len = all->triples.size();
+      uint32_t triple_len = all->triples.size();
       text_len = sprintf(buff, "%d triples: ", (int)triple_len);
       bin_text_read_write_fixed(model_file,(char *)&triple_len, sizeof(triple_len), 
 				"", read, 
@@ -313,7 +313,7 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
 				buff, text_len, text);
       
       text_len = sprintf(buff, "options:%s\n", all->options_from_file.c_str());
-      size_t len = all->options_from_file.length()+1;
+      uint32_t len = all->options_from_file.length()+1;
       memcpy(buff2, all->options_from_file.c_str(),len);
       if (read)
 	len = buf_size;
