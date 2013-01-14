@@ -124,6 +124,7 @@ vw parse_args(int argc, char *argv[])
      "File to output unnormalized predictions to")
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring")
     ("save_per_pass", "Save the model after every pass over data")
+    ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("searnimp", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
@@ -262,15 +263,7 @@ vw parse_args(int argc, char *argv[])
 	cout << "you must make at least 2 passes to use BFGS" << endl;
 	exit(1);
       }
-
-    //default initial_t to 1 instead of 0
-    if(!vm.count("initial_t")) {
-      all.sd->t = 1.f;
-      all.sd->weighted_unlabeled_examples = 1.f;
-      all.initial_t = 1.f;
-    }
   }
-
 
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
@@ -494,6 +487,9 @@ vw parse_args(int argc, char *argv[])
   
   if (vm.count("save_per_pass"))
     all.save_per_pass = true;
+
+  if (vm.count("save_resume"))
+    all.save_resume = true;
 
   if (vm.count("min_prediction"))
     all.sd->min_label = vm["min_prediction"].as<float>();

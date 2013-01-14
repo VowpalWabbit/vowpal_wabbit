@@ -890,15 +890,12 @@ void save_load_regularizer(vw& all, io_buf& model_file, bool read, bool text)
 	    {
 	      c++;
 	      int text_len = sprintf(buff, "%d", i);
-	      brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-					      "", read,
-					      buff, text_len, text);
-	      
+	      brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
+					 buff, text_len, text);
 	      
 	      text_len = sprintf(buff, ":%f\n", *v);
-	      brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-					      "", read,
-					      buff, text_len, text);
+	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
+					 buff, text_len, text);
 	      if (read && i%2 == 1) // This is the prior mean
 		all.reg.weight_vector[(i/2*stride)] = *v;
 	    }
@@ -960,6 +957,12 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
   bool reg_vector = output_regularizer || all->per_feature_regularizer_input.length() > 0;
   if (model_file.files.size() > 0)
     {
+      char buff[512];
+      uint32_t text_len = sprintf(buff, ":%d\n", reg_vector);
+      bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
+				"", read,
+				buff, text_len, text);
+      
       if (reg_vector)
 	save_load_regularizer(*all, model_file, read, text);
       else

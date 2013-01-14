@@ -174,23 +174,10 @@ void noop_mm(shared_data* sd, float label)
 
 vw::vw()
 {
-  sd = (shared_data *) malloc(sizeof(shared_data));
-  sd->queries = 0;
-  sd->example_number = 0;
-  sd->weighted_examples = 0.;
-  sd->old_weighted_examples = 0.;
-  sd->weighted_labels = 0.;
-  sd->total_features = 0;
-  sd->sum_loss = 0.0;
-  sd->sum_loss_since_last_dump = 0.0;
+  sd = (shared_data *) calloc(1, sizeof(shared_data));
   sd->dump_interval = (float)exp(1.);
-  sd->gravity = 0.;
   sd->contraction = 1.;
-  sd->min_label = 0.;
   sd->max_label = 1.;
-  sd->t = 0.;
-  sd->binary_label = false;
-  sd->k = 0;
   
   p = new_parser();
   p->lp = (label_parser*)malloc(sizeof(label_parser));
@@ -211,6 +198,7 @@ vw::vw()
   minibatch = 1;
   span_server = "";
   m = 15; 
+  save_resume = false;
 
   driver = GD::drive_gd;
   learn = GD::learn_gd;
