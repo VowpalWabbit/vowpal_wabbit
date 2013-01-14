@@ -207,7 +207,7 @@ namespace ImperativeSearn {
 
   struct searn_struct {
     // functions that you will call
-    uint32_t (*predict)(vw&,example**,size_t,vector<uint32_t>*,vector<uint32_t>*);
+    uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
     void     (*declare_loss)(vw&,size_t,float);
     void     (*snapshot)(vw&,size_t,size_t,void*,size_t);
 
@@ -219,9 +219,9 @@ namespace ImperativeSearn {
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
     uint32_t learn_a;     //   and this is the a we're varying it to
-    vector< pair<size_t, vector< pair<void*,size_t> > > > snapshot_data; // pair<time,data>, where data item is <data, sizeof(data)>
-    vector<uint32_t> train_action;  // which actions did we actually take in the train pass?
-    vector< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
+    v_array< pair<size_t, v_array< pair<void*,size_t> > > > snapshot_data; // pair<time,data>, where data item is <data, sizeof(data)>
+    v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
+    v_array< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
 
     size_t t;              // the current time step
     size_t T;              // the length of the (training) trajectory
@@ -230,7 +230,7 @@ namespace ImperativeSearn {
     float  train_loss;     // total training loss for this example
     float  learn_loss;     // total loss for this "varied" example
 
-    vector<float> learn_losses;   // losses for all (valid) actions at learn_t
+    v_array<float> learn_losses;   // losses for all (valid) actions at learn_t
     example** learn_example_copy; // copy of example(s) at learn_t
     size_t learn_example_len;     // number of example(s) at learn_t
 

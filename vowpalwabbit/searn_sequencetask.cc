@@ -324,36 +324,49 @@ namespace SequenceTask_Easy {
   using namespace ImperativeSearn;
 
   SearnUtil::history_info hinfo;
-  vector<size_t> yhat;
-  size_t unknown_label = (size_t)-1;
+  v_array<size_t> yhat;
 
   void initialize(vw& vw, int& num_actions) {
   }
 
   void finish(vw& vw) {
+    yhat.delete_v();
   }
 
   void structured_predict_v1(vw& vw, example**ec, size_t len) {
     searn_struct srn = *(searn_struct*)vw.searnstr;
     float total_loss  = 0;
 
-    yhat.clear();
+    yhat.erase();
     for (size_t n=0; n<hinfo.length; n++)
       yhat.push_back(0);  // pad the beginning with zeros for <s>
 
-    vector<uint32_t> ystar;
+    v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
-      ystar.clear();
-      if (!OAA::example_is_test(ec[i]))
-        ystar.push_back( ((OAA::mc_label*)ec[i]->ld)->label );
+      ystar.erase();
+      if (!CSOAA::example_is_test(ec[i])) {
+        CSOAA::label *lab = (CSOAA::label*)ec[i]->ld;
+        float min_cost = lab->costs[0].x;
+        for (size_t l=1; l<lab->costs.size(); l++)
+          if (lab->costs[l].x < min_cost) min_cost = lab->costs[l].x;
+          
+        for (size_t l=0; l<lab->costs.size(); l++)
+          if (lab->costs[l].x <= min_cost)
+            ystar.push_back( lab->costs[l].weight_index );
+      }
 
-      SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.data()+i);
+      SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.begin+i);
       yhat.push_back( srn.predict(vw, &ec[i], 0, NULL, &ystar) );
       SearnUtil::remove_history_from_example(vw, &hinfo, ec[i]);
 
-      if (!OAA::example_is_test(ec[i]) && (yhat.back() != ystar.back()))
+      cerr << "i=" << i << "\tpred=" << yhat.last() << endl;
+
+      if (!CSOAA::example_is_test(ec[i]) && (yhat.last() != ystar.last()))
         total_loss += 1.0;
+
+      ystar.erase();
     }
+    ystar.delete_v();
       
     srn.declare_loss(vw, len, total_loss);
   }
