@@ -1394,3 +1394,231 @@ namespace Searn
 }
 
 
+namespace ImperativeSearn {
+  char INIT_TEST  = 0;
+  char INIT_TRAIN = 1;
+  char LEARN      = 2;
+
+  inline bool isLDF(searn_struct& srn) { return (srn.A == 0); }
+
+  size_t choose_policy(searn_struct& srn, bool allow_optimal)
+  {
+    uint32_t seed = srn.read_example_last_id * 2147483 + srn.t * 2147483647;
+    return Searn::random_policy(seed, srn.beta, srn.allow_current_policy, srn.current_policy, allow_optimal, srn.rollout_all_actions);
+  }
+
+  vector<size_t> get_all_labels(example** ecs, size_t num_ec)
+  {
+    vector<size_t> lab;
+    // TODO
+    return lab;
+  }
+
+  uint32_t single_prediction(vw& all, example** ecs, size_t num_ec, size_t pol)
+  {
+    // TODO
+    return 0;
+  }
+
+  void clear_snapshot(vw& all)
+  {
+    searn_struct srn = *(searn_struct*)all.searnstr;
+    for (size_t i=0; i<srn.snapshot_data.size(); i++) {
+      vector< pair<void*,size_t> > data = srn.snapshot_data[i].second;
+      for (size_t j=0; j<data.size(); j++)
+        free(data[j].first);
+      data.clear();
+    }
+    srn.snapshot_data.clear();
+  }
+
+  void searn_initialize(vw& all)
+  {
+    searn_struct srn = *(searn_struct*)all.searnstr;
+
+    srn.A = 3; // TODO
+    srn.beta = 0.5;  // TODO
+    srn.allow_current_policy = false;  // TODO
+    srn.rollout_all_actions = true; // TODO
+    srn.current_policy = 1;
+  }
+
+  void searn_finalize(vw& all)
+  {
+    clear_snapshot();
+  }
+
+  // if not LDF:
+  //   
+  uint32_t searn_predict(vw& all, example** ecs, size_t num_ec, vector<uint32_t> *yallowed, vector<uint32_t> *ystar)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know
+  {
+    searn_struct srn = *(searn_struct*)all.searnstr;
+
+    // check ldf sanity
+    if (isLDF(srn) && (num_ec == 0)) {
+      cerr << "fail: searntask is trying to define a non-ldf example in an ldf problem" << endl;
+      exit(-1);
+    }
+    if ((!isLDF(srn)) && (num_ec > 0)) {
+      cerr << "fail: searntask is trying to define a ldf example in a non-ldf problem" << endl;
+      exit(-1);
+    }
+
+    if (srn.state == INIT_TEST) {
+      size_t pol = choose_policy(srn, false);
+      return single_prediction(all, ecs, num_ec, pol);
+    } else if (srn.state == INIT_TRAIN) {
+      size_t pol = choose_policy(srn, true);
+      uint32_t a = single_prediction(all, ecs, num_ec, pol);
+      vector<uint32_t> valid_labels = get_all_labels(ecs, num_ec);
+      srn.train_action.push_back(a);
+      srn.train_labels.push_back(valid_labels);
+      srn.t++;
+    } else if (srn.state == LEARN) {
+      if (srn.t < srn.learn_t) {
+        assert(srn.t < srn.train_action.size());
+        return srn.train_action[srn.t];
+      } else if (srn.t == srn.learn_t) {
+        if (srn.learn_example_copy == NULL) {
+          srn.learn_example_len = num_ec;
+          srn.learn_example_copy = (example**)SearnUtil::calloc_or_die(num_ec, sizeof(example*));
+          for (size_t n=0; n<num_ec; n++) {
+            srn.learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
+            VW::copy_example_data(srn.learn_example_copy[n], ecs[n], sizeof(OAA::mc_label));
+            memcpy(srn.learn_example_copy[n]->ld, ecs[n]->ld, sizeof(OAA::mc_label));
+          }
+        }
+        return srn.learn_a;
+      } else {
+        size_t pol = choose_policy(srn, true);
+        return single_prediction(all, ecs, num_ec, pol);
+      }
+    }
+    assert(false);
+    return 1;
+  }
+
+  void searn_declare_loss(vw& all, size_t predictions_since_last, float incr_loss)
+  {
+    searn_struct srn = *(searn_struct*)all.searnstr;
+
+    if (srn.t != srn.loss_last_step + predictions_since_last) {
+      cerr << "fail: searntask hasn't counted its predictions correctly" << endl;
+      exit(-1);
+    }
+    srn.loss_last_step = srn.t;
+    if (srn.state == INIT_TEST)
+      srn.test_loss += incr_loss;
+    else if (srn.state == INIT_TRAIN)
+      srn.train_loss += incr_loss;
+    else
+      srn.learn_loss += incr_loss;
+  }
+
+  void snapshot(vw& all, size_t index, size_t tag, void* data, size_t sizeof_data)
+  {
+    searn_struct srn = *(searn_struct*)all.searnstr;
+    return;
+  }
+
+  vector<size_t> get_training_timesteps(vw& all)
+  {
+    searn_struct srn = *(searn_struct*)all.searnstr;
+    vector<size_t> timesteps;
+    for (size_t t=0; t<srn.T; t++)
+      timesteps.push_back(t);
+    return timesteps;
+  }
+
+  vector<uint32_t> get_valid_actions(vw& all, size_t t)
+  {
+    searn_struct srn = *(searn_struct*)all.searnstr;
+    vector<uint32_t> actions;
+    // TODO
+    return actions;
+  }
+
+  void generate_training_example(vw& all, example** ec, size_t len, vector<uint32_t> labels, vector<float> losses)
+  {
+  }
+
+  void train_single_example(vw& all, example**ec, size_t len)
+  {
+    searn_struct srn = *(searn_struct*)all.searnstr;
+
+    // do an initial test pass to compute output (and loss)
+    srn.state = INIT_TEST;
+    srn.t = 0;
+    srn.T = 0;
+    srn.loss_last_step = 0;
+    srn.test_loss = 0.f;
+    srn.train_loss = 0.f;
+    srn.learn_loss = 0.f;
+    srn.learn_example_copy = NULL;
+    srn.learn_example_len  = 0;
+    srn.train_action.clear();
+ 
+    srn.task.structured_predict(all, ec, len);
+
+    if (srn.t == 0)
+      return;  // there was no data!
+
+    // do a pass over the data allowing oracle and snapshotting
+    srn.state = INIT_TRAIN;
+    srn.t = 0;
+    srn.loss_last_step = 0;
+    clear_snapshot(all);
+
+    srn.task.structured_predict(all, ec, len);
+
+    if (srn.t == 0) {
+      clear_snapshot(all);
+      return;  // there was no data
+    }
+
+    srn.T = srn.t;
+
+    // generate training examples on which to learn
+    srn.state = LEARN;
+    vector<size_t> tset = get_training_timesteps(all);
+    for (vector<size_t>::iterator tt = tset.begin(); tt != tset.end(); tt++) {
+      vector<uint32_t> aset = get_valid_actions(all, *tt);
+      srn.learn_t = *tt;
+      srn.learn_losses.clear();
+
+      for (vector<uint32_t>::iterator aa = aset.begin(); aa != aset.end(); aa++) {
+        if (*aa == srn.train_action[srn.learn_t])
+          srn.learn_losses.push_back( srn.train_loss );
+        else {
+          srn.t = 0;
+          srn.learn_a = *aa;
+          srn.loss_last_step = 0;
+          srn.learn_loss = 0.f;
+
+          srn.task.structured_predict(all, ec, len);
+
+          srn.learn_losses.push_back( srn.learn_loss );
+        }
+      }
+
+      if (srn.learn_example_copy != NULL) {
+        generate_training_example(all, srn.learn_example_copy, srn.learn_example_len, aset, srn.learn_losses);
+
+        for (size_t n=0; n<srn.learn_example_len; n++) {
+          dealloc_example(OAA::delete_label, *srn.learn_example_copy[n]);
+          free(srn.learn_example_copy[n]);
+        }
+        free(srn.learn_example_copy);
+        srn.learn_example_copy = NULL;
+        srn.learn_example_len  = 0;
+      } else {
+        cerr << "warning: searn did not generate an example for a given time-step" << endl;
+      }
+    }
+
+    clear_snapshot(all);
+    srn.train_action.clear();
+    srn.train_labels.clear();
+  }
+
+}
