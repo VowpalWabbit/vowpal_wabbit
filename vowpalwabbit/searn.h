@@ -197,4 +197,48 @@ namespace Searn
   void drive(void*);
 }
 
+namespace ImperativeSearn {
+  struct searn_task {
+    void (*initialize)(vw&,int&);
+    void (*finalize)(vw&);
+    void (*structured_predict)(vw&,example**,size_t);
+  };
+
+  struct searn_struct {
+    // functions that you will call
+    uint32_t (*predict)(vw&,example**,size_t,vector<uint32_t>);
+    void     (*declare_loss)(vw&,size_t,float);
+    void     (*snapshot)(vw&,size_t,size_t,void*,size_t);
+
+    // structure that you must set
+    searn_task task;
+
+    // data that you should not look at.  ever.
+    uint32_t A;           // total number of actions, [1..A]; 0 means ldf
+    char state;           // current state of learning
+    size_t learn_t;       // when LEARN, this is the t at which we're varying a
+    uint32_t learn_a;     //   and this is the a we're varying it to
+    vector< pair<size_t, vector< pair<void*,size_t> > > > snapshot_data; // pair<time,data>, where data item is <data, sizeof(data)>
+    vector<uint32_t> train_action;  // which actions did we actually take in the train pass?
+    vector< vector<size_t> > train_labels;  // which labels are valid at any given time
+
+    size_t t;              // the current time step
+    size_t T;              // the length of the (training) trajectory
+    size_t loss_last_step; // at what time step did they last declare their loss?
+    float  test_loss;      // total test loss for this example
+    float  train_loss;     // total training loss for this example
+    float  learn_loss;     // total loss for this "varied" example
+
+    vector<float> learn_losses;   // losses for all (valid) actions at learn_t
+    example** learn_example_copy; // copy of example(s) at learn_t
+    size_t learn_example_len;     // number of example(s) at learn_t
+
+    float  beta;                  // interpolation rate
+    bool   allow_current_policy;  // should the current policy be used for training? true for dagger
+    bool   rollout_all_actions;   // false for contextual bandits
+    uint32_t current_policy;      // what policy are we training right now?
+  };
+
+}
+
 #endif

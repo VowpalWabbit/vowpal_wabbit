@@ -35,6 +35,7 @@ namespace OAA
   const label_parser mc_label_parser = {default_label, parse_label, 
 					cache_label, read_cached_label, 
 					delete_label, weight, initial, 
+                                        NULL,
 					sizeof(mc_label)};
   
   void output_example(vw& all, example* ec);
