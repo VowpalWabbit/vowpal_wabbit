@@ -8,6 +8,12 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "parser.h"
 #include "gd.h"
+#include "simple_label.h"
+
+namespace NOOP {
+void learn_noop(void*in, example*ec) {}
+
+void save_load(void* in, io_buf& model_file, bool read, bool text) {}
 
 void drive_noop(void* in)
 {
@@ -17,9 +23,8 @@ void drive_noop(void* in)
   while ( !parser_done(all->p)){
     ec = get_example(all->p);
     if (ec != NULL)
-      finish_example(*all, ec);
+      return_simple_example(*all, ec);
   }
 }
 
-void learn_noop(void*in, example*ec) {}
-
+}

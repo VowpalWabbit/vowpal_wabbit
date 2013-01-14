@@ -1,19 +1,17 @@
 enabling BFGS based optimization **without** curvature calculation
+m = 7
+Allocated 72M for weights and mem
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 	time      
 Num weight bits = 20
 learning rate = 0.5
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
 using l2 regularization = 1
-m = 7
-Allocated 72M for weights and mem
-## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 	time      
 creating cache_file = train-sets/zero.dat.cache
 Reading from train-sets/zero.dat
 num sources = 1
- 1 0.00000   	41943.04000	209549.29466	          	          	          	223389.53172	1047595.31250	0.93804   	0.110
- 3 92180.76430	36872.30572	184355.15850	 -0.468955 	-0.937909 	          	          	(revise x 0.5)	0.46902   	0.133
- 4 23045.19108	9218.07643	46088.78962	 -0.234477 	-0.468955 	          	          	(revise x 0.5)	0.23451   	0.170
+ 1 0.00000   	0.00000   	0.00000   	          	          	          	0.00000   	0.00000   	0.00000   	0.048
 
 finished run
 number of examples = 25
@@ -22,5 +20,5 @@ weighted label sum = 0
 average loss = 0
 best constant = -0.04167
 total feature number = 15005
- 5 5761.29777	2304.51911	11522.19741	 -0.117239 	-0.234477 	          	          	(revise x 0.5)	0.11726   	0.207
+ 3 0.00000   	0.00000   	0.00000   	 -nan      	-nan      	
 

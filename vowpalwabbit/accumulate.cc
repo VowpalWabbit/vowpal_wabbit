@@ -21,7 +21,7 @@ void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
   uint32_t length = 1 << all.num_bits; //This is size of gradient
   size_t stride = all.stride;
   float* local_grad = new float[length];
-  weight* weights = reg.weight_vectors;
+  weight* weights = reg.weight_vector;
   for(uint32_t i = 0;i < length;i++) 
     {
       local_grad[i] = weights[stride*i+o];
@@ -45,7 +45,7 @@ void accumulate_avg(vw& all, string master_location, regressor& reg, size_t o) {
   uint32_t length = 1 << all.num_bits; //This is size of gradient
   size_t stride = all.stride;
   float* local_grad = new float[length];
-  weight* weights = reg.weight_vectors;
+  weight* weights = reg.weight_vector;
   float numnodes = 1.;
   all_reduce(&numnodes, 1, master_location, all.unique_id, all.total, all.node);
   for(uint32_t i = 0;i < length;i++) 
@@ -82,7 +82,7 @@ void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
   }
   uint32_t length = 1 << all.num_bits; //This is size of gradient
   size_t stride = all.stride;
-  weight* weights = reg.weight_vectors;
+  weight* weights = reg.weight_vector;
   float* local_weights = new float[length];
 
   for(uint32_t i = 0;i < length;i++) 

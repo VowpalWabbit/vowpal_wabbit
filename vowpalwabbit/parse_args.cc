@@ -240,6 +240,7 @@ vw parse_args(int argc, char *argv[])
     all.driver = BFGS::drive_bfgs;
     all.learn = BFGS::learn;
     all.finish = BFGS::finish;
+    all.save_load = BFGS::save_load;
     all.bfgs = true;
     all.stride = 4;
     
@@ -468,8 +469,9 @@ vw parse_args(int argc, char *argv[])
       all.initial_t = 1.f;
     }
 
-    lda_parse_flags(all, to_pass_further, vm);
-    all.driver = drive_lda;
+    LDA::lda_parse_flags(all, to_pass_further, vm);
+    all.driver = LDA::drive_lda;
+    all.save_load = LDA::save_load;
   }
 
   if (!vm.count("lda") && !all.adaptive && !all.normalized_updates) 
@@ -511,13 +513,15 @@ vw parse_args(int argc, char *argv[])
 
   all.is_noop = false;
   if (vm.count("noop")) {
-    all.driver = drive_noop;
-    all.learn = learn_noop;
+    all.driver = NOOP::drive_noop;
+    all.learn = NOOP::learn_noop;
+    all.save_load = NOOP::save_load;
     all.is_noop = true;
   }
   
   if (all.rank != 0) {
-    all.driver = drive_gd_mf;
+    all.driver = GDMF::drive_gd_mf;
+    all.save_load = GDMF::save_load;
     loss_function = "classic";
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
   }
@@ -550,13 +554,12 @@ vw parse_args(int argc, char *argv[])
     else
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	FILE* foo;
+	int f;
 #ifdef _WIN32
-	foo = fopen(fstr, "wb");
+	_sopen_s(&f, fstr, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
-	foo = fopen(fstr, "w");
+	f = open(fstr, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
-	int f = fileno(foo);
 	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
 	all.final_prediction_sink.push_back((size_t) f);
@@ -571,13 +574,13 @@ vw parse_args(int argc, char *argv[])
     else
 	{
 	  const char* t = vm["raw_predictions"].as< string >().c_str();
-	  FILE* f;
+	  int f;
 #ifdef _WIN32
-	  f = fopen(t, "wb");
+	  _sopen_s(&f, t, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
-	  f = fopen(t, "w");
+	  f = open(t, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
-      all.raw_prediction = fileno(f);
+	  all.raw_prediction = f;
 	}
   }
 
@@ -586,8 +589,9 @@ vw parse_args(int argc, char *argv[])
 
   if (vm.count("sendto"))
     {
-      all.driver = drive_send;
-      parse_send_args(vm, all.pairs);
+      all.driver = SENDER::drive_send;
+      all.save_load = SENDER::save_load;
+      SENDER::parse_send_args(vm, all.pairs);
     }
 
   if (all.l1_lambda < 0.) {
@@ -607,10 +611,6 @@ vw parse_args(int argc, char *argv[])
       if (all.reg_mode > 1)
 	cerr << "using l2 regularization = " << all.l2_lambda << endl;
     }
-
-  if (all.bfgs) {
-    BFGS::initializer(all);
-  }
 
   bool got_mc = false;
   bool got_cs = false;

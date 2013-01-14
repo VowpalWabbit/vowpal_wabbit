@@ -107,8 +107,7 @@ const version_struct version(PACKAGE_VERSION);
 typedef float weight;
 
 struct regressor {
-  weight* weight_vectors;
-  weight* regularizers;
+  weight* weight_vector;
 };
            
 struct vw {
@@ -120,6 +119,7 @@ struct vw {
   void (*learn)(void *, example*);
   void (*base_learn)(void *, example*);
   void (*finish)(void *);
+  void (*save_load)(void *, io_buf&, bool, bool);
   void (*set_minmax)(shared_data* sd, float label);
 
   size_t num_bits; // log_2 of the number of features.

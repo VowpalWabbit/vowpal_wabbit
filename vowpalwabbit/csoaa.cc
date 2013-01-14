@@ -827,6 +827,8 @@ namespace CSOAA_AND_WAP_LDF {
   void finish(void* a)
   {
     vw* all = (vw*)a;
+    clear_seq(*all);
+    ec_seq.delete_v();
     base_finish(all);
     LabelDict::free_label_features();
   }

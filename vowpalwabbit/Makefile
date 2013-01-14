@@ -5,6 +5,9 @@ MANPAGES = vw.1
 all:	
 	cd ..; $(MAKE)
 
+test:
+	cd ..; $(MAKE) test
+
 things:	config.h $(BINARIES)
 
 %.1:	%

@@ -6,7 +6,10 @@ license as described in the file LICENSE.
 #ifndef LDA_CORE_H
 #define LDA_CORE_H
 
+namespace LDA{
 void drive_lda(void*);
+void save_load(void* in, io_buf& model_file, bool read, bool text);
 void lda_parse_flags(vw&, std::vector<std::string>&, po::variables_map&);
+}
 
 #endif

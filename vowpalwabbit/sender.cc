@@ -23,6 +23,7 @@
 
 using namespace std;
 
+namespace SENDER {
 //nonreentrant
 io_buf* buf;
 
@@ -57,6 +58,8 @@ void send_features(io_buf *b, example* ec)
   b->flush();
 }
 
+void save_load(void* in, io_buf& model_file, bool read, bool text) {}
+
 void drive_send(void* in)
 {
   vw* all = (vw*)in;
@@ -83,7 +86,7 @@ void drive_send(void* in)
 	  
 	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
 	  
-	  finish_example(*all, ec);
+	  return_simple_example(*all, ec);
 	}
       else if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
         {
@@ -110,4 +113,6 @@ void drive_send(void* in)
 	;
     }
   return;
+}
+
 }

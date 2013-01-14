@@ -18,9 +18,11 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "cache.h"
 #include "simple_label.h"
+#include "rand48.h"
 
 using namespace std;
 
+namespace GDMF {
 void mf_local_predict(example* ec, regressor& reg);
 
 float mf_inline_predict(vw& all, example* &ec)
@@ -79,7 +81,7 @@ float mf_inline_predict(vw& all, example* &ec)
 
 void mf_inline_train(vw& all, example* &ec, float update)
 {
-      weight* weights = all.reg.weight_vectors;
+      weight* weights = all.reg.weight_vector;
       size_t mask = all.weight_mask;
       label_data* ld = (label_data*)ec->ld;
 
@@ -129,7 +131,7 @@ void mf_inline_train(vw& all, example* &ec, float update)
 
 void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 {
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
   size_t mask = all.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -184,7 +186,7 @@ void mf_local_predict(vw& all, example* ec)
   label_data* ld = (label_data*)ec->ld;
   all.set_minmax(all.sd, ld->label);
 
-  ec->final_prediction = finalize_prediction(all, ec->partial_prediction);
+  ec->final_prediction = GD::finalize_prediction(all, ec->partial_prediction);
 
   if (ld->label != FLT_MAX)
     {
@@ -193,7 +195,6 @@ void mf_local_predict(vw& all, example* ec)
 
   if (all.audit)
     mf_print_audit_features(all, ec, 0);
-
 }
 
 float mf_predict(vw& all, example* ex)
@@ -204,6 +205,62 @@ float mf_predict(vw& all, example* ex)
   mf_local_predict(all, ex);
 
   return ex->final_prediction;
+}
+
+void save_load(void* in, io_buf& model_file, bool read, bool text)
+{
+  vw* all = (vw*)in;
+  uint32_t length = 1 << all->num_bits;
+  uint32_t stride = all->stride;
+  
+  if(read)
+    {
+      initialize_regressor(*all);
+      if(all->random_weights)
+	for (size_t j = 0; j < all->stride*length; j++)
+	  all->reg.weight_vector[j] = (float) (0.1 * frand48()); 
+    }
+
+  if (model_file.files.size() > 0)
+    {
+      uint32_t i = 0;
+      uint32_t text_len;
+      char buff[512];
+      size_t brw = 1;
+      do 
+	{
+	  brw = 1;
+	  size_t K = all->rank*2+1;
+	  
+	  for (uint32_t k = 0; k < K; k++)
+	    {
+	      uint32_t ndx = stride*i+k;
+	      
+	      bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
+					"", read,
+					"", 0, text);
+	      
+	      weight* v = &(all->reg.weight_vector[ndx]);
+	      if (all->rank != 0)
+		text_len = sprintf(buff, "%f ", *v);
+	      else
+		text_len = sprintf(buff, "%f ", *v + all->lda_rho);
+	      
+	      bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+					"", read,
+					buff, text_len, text);
+	      
+	    }
+	  if (text)
+	    bin_text_read_write_fixed(model_file,buff,0,
+				      "", read,
+				      "\n",1,text);
+      
+	  if (!read)
+	    i++;
+	}  
+      while ((!read && i < length) || (read && brw >0));
+    }
 }
 
 void drive_gd_mf(void* in)
@@ -221,17 +278,19 @@ void drive_gd_mf(void* in)
 	    save_predictor(*all, all->final_regressor_name, current_pass);
 	    current_pass = ec->pass;
 	  }
-	  if (!command_example(*all, ec))
+	  if (!GD::command_example(*all, ec))
 	    {
 	      mf_predict(*all,ec);
 	      if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
 		mf_inline_train(*all, ec, ec->eta_round);
 	    }
-	  finish_example(*all, ec);
+	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
 	return;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
+}
+
 }

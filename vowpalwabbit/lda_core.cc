@@ -21,7 +21,9 @@ license as described in the file LICENSE.
 #include "lda_core.h"
 #include "cache.h"
 #include "simple_label.h"
+#include "rand48.cc"
 
+namespace LDA {
 #ifdef _WIN32
 inline float fmax(float f1, float f2) { return (f1 < f2 ? f2 : f1); }
 inline float fmin(float f1, float f2) { return (f1 > f2 ? f2 : f1); }
@@ -498,6 +500,70 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
+void save_load(void* in, io_buf& model_file, bool read, bool text)
+{
+  vw* all = (vw*)in;
+  uint32_t length = 1 << all->num_bits;
+  uint32_t stride = all->stride;
+  
+  if (read)
+    {
+      initialize_regressor(*all);
+      for (size_t j = 0; j < stride*length; j+=stride)
+	{
+	  for (size_t k = 0; k < all->lda; k++) {
+	    if (all->random_weights) {
+	      all->reg.weight_vector[j+k] = (float)(-log(frand48()) + 1.0f);
+	      all->reg.weight_vector[j+k] *= (float)(all->lda_D / all->lda / all->length() * 200);
+	    }
+	  }
+	  all->reg.weight_vector[j+all->lda] = all->initial_t;
+	}
+    }
+    
+  if (model_file.files.size() > 0)
+    {
+      uint32_t i = 0;
+      uint32_t text_len;
+      char buff[512];
+      size_t brw = 1;
+      do 
+	{
+	  brw = 1;
+	  size_t K = all->lda;
+	  
+	  for (uint32_t k = 0; k < K; k++)
+	    {
+	      uint32_t ndx = stride*i+k;
+	      
+	      bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
+					"", read,
+					"", 0, text);
+	      
+	      weight* v = &(all->reg.weight_vector[ndx]);
+	      if (all->rank != 0)
+		text_len = sprintf(buff, "%f ", *v);
+	      else
+		text_len = sprintf(buff, "%f ", *v + all->lda_rho);
+	      
+	      bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+					"", read,
+					buff, text_len, text);
+	      
+	    }
+	  if (text)
+	    bin_text_read_write_fixed(model_file,buff,0,
+				      "", read,
+				      "\n",1,text);
+	  
+	  if (!read)
+	    i++;
+	}  
+      while ((!read && i < length) || (read && brw >0));
+    }
+}
+
+
 void lda_parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
 
@@ -554,7 +620,7 @@ void drive_lda(void* in)
   for (size_t k = 0; k < all->lda; k++)
     total_lambda.push_back(0.f);
   size_t stride = all->stride;
-  weight* weights = reg.weight_vectors;
+  weight* weights = reg.weight_vector;
 
   for (size_t i =0; i <= all->weight_mask;i+=stride)
     for (size_t k = 0; k < all->lda; k++)
@@ -634,13 +700,13 @@ void drive_lda(void* in)
 	{
           float score = lda_loop(*all, &v[d*all->lda], weights, examples[d],all->power_t);
           if (all->audit)
-	    print_audit_features(*all, examples[d]);
+	    GD::print_audit_features(*all, examples[d]);
           // If the doc is empty, give it loss of 0.
           if (doc_lengths[d] > 0) {
             all->sd->sum_loss -= score;
             all->sd->sum_loss_since_last_dump -= score;
           }
-          finish_example(*all, examples[d]);
+	  return_simple_example(*all, examples[d]);
 	}
 
       for (index_feature* s = &sorted_features[0]; s <= &sorted_features.back();)
@@ -686,3 +752,4 @@ void drive_lda(void* in)
     }
 }
 
+}

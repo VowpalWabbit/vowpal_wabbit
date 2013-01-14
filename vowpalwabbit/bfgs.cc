@@ -85,6 +85,7 @@ float* mem;
 double* rho;
 double* alpha;
 
+  weight* regularizers = NULL;
   // the below needs to be included when resetting, in addition to preconditioner and derivative
   int lastj, origin;
   double loss_sum, previous_loss_sum;
@@ -106,7 +107,7 @@ void zero_derivative(vw& all)
 {//set derivative to 0.
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
     weights[stride*i+W_GT] = 0;
 }
@@ -115,7 +116,7 @@ void zero_preconditioner(vw& all)
 {//set derivative to 0.
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
     weights[stride*i+W_COND] = 0;
 }
@@ -190,8 +191,8 @@ bool test_example(example* ec)
 
   float bfgs_predict(vw& all, example* &ec)
   {
-    ec->partial_prediction = inline_predict<vec_add>(all,ec);
-    return finalize_prediction(all, ec->partial_prediction);
+    ec->partial_prediction = GD::inline_predict<vec_add>(all,ec);
+    return GD::finalize_prediction(all, ec->partial_prediction);
   }
 
 float predict_and_gradient(vw& all, example* &ec)
@@ -204,7 +205,7 @@ float predict_and_gradient(vw& all, example* &ec)
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
   
   size_t mask = all.weight_mask;
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
       feature *f = ec->atomics[*i].begin;
@@ -241,7 +242,7 @@ void update_preconditioner(vw& all, example* &ec)
   float curvature = all.loss->second_derivative(all.sd, ec->final_prediction,ld->label) * ld->weight;
   
   size_t mask = all.weight_mask;
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     {
       feature *f = ec->atomics[*i].begin;
@@ -308,13 +309,13 @@ double regularizer_direction_magnitude(vw& all, float regularizer)
 
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* weights = all.reg.weight_vectors;
-  if (all.reg.regularizers == NULL)
+  weight* weights = all.reg.weight_vector;
+  if (regularizers == NULL)
     for(uint32_t i = 0; i < length; i++)
       ret += regularizer*weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
   else
     for(uint32_t i = 0; i < length; i++) 
-      ret += all.reg.regularizers[2*i]*weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
+      ret += regularizers[2*i]*weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
 
   return ret;
 }
@@ -324,7 +325,7 @@ float direction_magnitude(vw& all)
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
     ret += weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
   
@@ -335,7 +336,7 @@ float direction_magnitude(vw& all)
 {
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* w = all.reg.weight_vectors;
+  weight* w = all.reg.weight_vector;
 
   double g1_Hg1 = 0.;
   double g1_g1 = 0.;
@@ -361,7 +362,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
 {  
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* w = all.reg.weight_vectors;
+  weight* w = all.reg.weight_vector;
   
   float* mem0 = mem;
   float* w0 = w;
@@ -482,7 +483,7 @@ void bfgs_iter_middle(vw& all, float* mem, double* rho, double* alpha, int& last
 double wolfe_eval(vw& all, float* mem, double loss_sum, double previous_loss_sum, double step_size, double importance_weight_sum, int &origin, double& wolfe1) { 
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* w = all.reg.weight_vectors;
+  weight* w = all.reg.weight_vector;
   
   double g0_d = 0.;
   double g1_d = 0.;
@@ -511,8 +512,8 @@ double add_regularization(vw& all, float regularization)
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* weights = all.reg.weight_vectors;
-  if (all.reg.regularizers == NULL)
+  weight* weights = all.reg.weight_vector;
+  if (regularizers == NULL)
     {
       for(uint32_t i = 0; i < length; i++) {
 	weights[stride*i+W_GT] += regularization*weights[stride*i];
@@ -522,9 +523,9 @@ double add_regularization(vw& all, float regularization)
   else
     {
       for(uint32_t i = 0; i < length; i++) {
-	weight delta_weight = weights[stride*i] - all.reg.regularizers[2*i+1];
-	weights[stride*i+W_GT] += all.reg.regularizers[2*i]*delta_weight;
-	ret += 0.5*all.reg.regularizers[2*i]*delta_weight*delta_weight;
+	weight delta_weight = weights[stride*i] - regularizers[2*i+1];
+	weights[stride*i+W_GT] += regularizers[2*i]*delta_weight;
+	ret += 0.5*regularizers[2*i]*delta_weight*delta_weight;
       }
     }
   return ret;
@@ -534,9 +535,9 @@ void finalize_preconditioner(vw& all, float regularization)
 {
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
 
-  if (all.reg.regularizers == NULL)
+  if (regularizers == NULL)
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+W_COND] += regularization;
       if (weights[stride*i+W_COND] > 0)
@@ -544,7 +545,7 @@ void finalize_preconditioner(vw& all, float regularization)
     }
   else
     for(uint32_t i = 0; i < length; i++) {
-      weights[stride*i+W_COND] += all.reg.regularizers[2*i];
+      weights[stride*i+W_COND] += regularizers[2*i];
       if (weights[stride*i+W_COND] > 0)
 	weights[stride*i+W_COND] = 1.f / weights[stride*i+W_COND];
     }
@@ -554,31 +555,31 @@ void preconditioner_to_regularizer(vw& all, float regularization)
 {
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* weights = all.reg.weight_vectors;
-  if (all.reg.regularizers == NULL)
+  weight* weights = all.reg.weight_vector;
+  if (regularizers == NULL)
     {
-      all.reg.regularizers = (weight *)calloc(2*length, sizeof(weight));
+      regularizers = (weight *)calloc(2*length, sizeof(weight));
       
-      if (all.reg.regularizers == NULL)
+      if (regularizers == NULL)
 	{
 	  cerr << all.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
 	  exit (1);
 	}
       for(uint32_t i = 0; i < length; i++) 
-	all.reg.regularizers[2*i] = weights[stride*i+W_COND] + regularization;
+	regularizers[2*i] = weights[stride*i+W_COND] + regularization;
     }
   else
     for(uint32_t i = 0; i < length; i++) 
-      all.reg.regularizers[2*i] = weights[stride*i+W_COND] + all.reg.regularizers[2*i];
+      regularizers[2*i] = weights[stride*i+W_COND] + regularizers[2*i];
   for(uint32_t i = 0; i < length; i++) 
-    all.reg.regularizers[2*i+1] = weights[stride*i];
+    regularizers[2*i+1] = weights[stride*i];
 }
 
 void zero_state(vw& all)
 {
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++) 
     {
       weights[stride*i+W_GT] = 0;
@@ -592,7 +593,7 @@ double derivative_in_direction(vw& all, float* mem, int &origin)
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
-  weight* w = all.reg.weight_vectors;
+  weight* w = all.reg.weight_vector;
   
   for(uint32_t i = 0; i < length; i++, w+=stride, mem+=mem_stride)
     ret += mem[(MEM_GT+origin)%mem_stride]*w[W_DIR];
@@ -603,7 +604,7 @@ void update_weight(vw& all, string& reg_name, float step_size, size_t current_pa
   {
     uint32_t length = 1 << all.num_bits;
     size_t stride = all.stride;
-    weight* w = all.reg.weight_vectors;
+    weight* w = all.reg.weight_vector;
     
     for(uint32_t i = 0; i < length; i++, w+=stride)
       w[W_XT] += step_size * w[W_DIR];
@@ -858,35 +859,110 @@ void finish(void* a)
   free(alpha);
 }
 
-void initializer(vw& all)
+void save_load(void* in, io_buf& model_file, bool read, bool text)
 {
-  int m = all.m;
-
-  mem_stride = (m==0) ? CG_EXTRA : 2*m;
-  mem = (float*) malloc(sizeof(float)*all.length()*(mem_stride));
-  rho = (double*) malloc(sizeof(double)*m);
-  alpha = (double*) malloc(sizeof(double)*m);
-
-  if (!all.quiet) 
-    {
-      fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all.length()*(sizeof(float)*(mem_stride)+sizeof(weight)*all.stride) >> 20);
-    }
-
-  net_time = 0.0;
-  ftime(&t_start_global);
+  vw* all = (vw*)in;
   
-  if (!all.quiet)
+  uint32_t length = 1 << all->num_bits;
+
+  if (read)
     {
-      const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
-      fprintf(stderr, header_fmt,
-	      "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size", "time");
-      cerr.precision(5);
+      initialize_regressor(*all);
+      if (all->per_feature_regularizer_input != "")
+	{
+	  regularizers = (weight *)calloc(2*length, sizeof(weight));
+	  if (regularizers == NULL)
+	    {
+	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
+	      exit (1);
+	    }
+	}
+      int m = all->m;
+      
+      mem_stride = (m==0) ? CG_EXTRA : 2*m;
+      mem = (float*) malloc(sizeof(float)*all->length()*(mem_stride));
+      rho = (double*) malloc(sizeof(double)*m);
+      alpha = (double*) malloc(sizeof(double)*m);
+      
+      if (!all->quiet) 
+	{
+	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(mem_stride)+sizeof(weight)*all->stride) >> 20);
+	}
+      
+      net_time = 0.0;
+      ftime(&t_start_global);
+      
+      if (!all->quiet)
+	{
+	  const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
+	  fprintf(stderr, header_fmt,
+		  "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size", "time");
+	  cerr.precision(5);
+	}
+      
+      if (regularizers != NULL)
+	all->l2_lambda = 1; // To make sure we are adding the regularization
+      output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
+      reset_state(*all, false);
     }
 
-  if (all.reg.regularizers != NULL)
-      all.l2_lambda = 1; // To make sure we are adding the regularization
-  output_regularizer =  (all.per_feature_regularizer_output != "" || all.per_feature_regularizer_text != "");
-  reset_state(all, false);
+  if (model_file.files.size() > 0)
+    {
+      char buff[512];
+      bool reg_vector = output_regularizer || all->per_feature_regularizer_input.length() > 0;
+      int c = 0;
+      uint32_t stride = all->stride;
+      if (reg_vector)
+	length *= 2;
+      uint32_t i = 0;
+      size_t brw = 1;
+      do 
+	{
+	  brw = 1;
+	  weight* v;
+	  if (read)
+	    {
+	      c++;
+	      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+	      if (brw > 0)
+		{
+		  assert (i< length);		
+		  if (reg_vector)
+		    v = &(regularizers[i]);
+		  else
+		    v = &(all->reg.weight_vector[stride*i]);
+		  if (brw > 0)
+		    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+		}
+	    }
+	  else // write binary or text
+	    {
+	      if (reg_vector)
+		v = &(regularizers[i]);
+	      else
+		v = &(all->reg.weight_vector[stride*i]);
+	      if (*v != 0.)
+		{
+		  c++;
+		  int text_len = sprintf(buff, "%d", i);
+		  brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
+						  "", read,
+						  buff, text_len, text);
+		  
+		  
+		  text_len = sprintf(buff, ":%f\n", *v);
+		  brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+						  "", read,
+						  buff, text_len, text);
+		  if (read && reg_vector && i%2 == 1) // This is the prior mean
+		    all->reg.weight_vector[(i/2*stride)] = *v;
+		}
+	    }
+	  if (!read)
+	    i++;
+	}  
+      while ((!read && i < length) || (read && brw >0));
+    }
 }
 
 void drive_bfgs(void* in)
@@ -919,7 +995,7 @@ void drive_bfgs(void* in)
 	    process_example(*all, ec);
 	  }
 
-	  finish_example(*all, ec);
+	  return_simple_example(*all, ec);
 	}
      else if (parser_done(all->p))
 	{

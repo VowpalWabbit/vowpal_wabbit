@@ -18,6 +18,8 @@ using namespace std;
 void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regressor_name, bool quiet);
 
 void finalize_regressor(vw& all, std::string reg_name);
+void initialize_regressor(vw& all);
+
 void save_predictor(vw& all, std::string reg_name, size_t current_pass);
 
 #endif

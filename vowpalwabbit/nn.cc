@@ -70,7 +70,7 @@ namespace NN {
 
   void learn_with_output(vw*all, example* ec, bool shouldOutput)
   {
-    if (command_example(*all, ec)) {
+    if (GD::command_example(*all, ec)) {
       return;
     }
 
@@ -107,7 +107,7 @@ namespace NN {
 
         ec->partial_prediction = 0.;
         base_learner(all,ec);
-        hidden_units[i] = finalize_prediction (*all, ec->partial_prediction);
+        hidden_units[i] = GD::finalize_prediction (*all, ec->partial_prediction);
 
         dropped_out[i] = (dropout && merand48 (xsubi) < 0.5);
 
@@ -175,7 +175,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       output_layer.ld = 0;
     }
 
-    output_layer.final_prediction = finalize_prediction (*all, output_layer.partial_prediction);
+    output_layer.final_prediction = GD::finalize_prediction (*all, output_layer.partial_prediction);
 
     if (shouldOutput) {
       outputStringStream << ' ' << output_layer.partial_prediction;
@@ -200,10 +200,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            float nu = all->reg.weight_vectors[output_layer.atomics[nn_output_namespace][i].weight_index & all->weight_mask];
+            float nu = all->reg.weight_vector[output_layer.atomics[nn_output_namespace][i].weight_index & all->weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ld->label = finalize_prediction (*all, hidden_units[i-1] - gradhw);
+            ld->label = GD::finalize_prediction (*all, hidden_units[i-1] - gradhw);
             if (ld->label != hidden_units[i-1]) {
               ec->partial_prediction = 0.;
               base_learner(all,ec);
@@ -373,13 +373,13 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     output_layer.indices.push_back(nn_output_namespace);
     feature output = {1., nn_constant*all.stride};
     output_layer.atomics[nn_output_namespace].push_back(output);
-    initialize &= (all.reg.weight_vectors[output_layer.atomics[nn_output_namespace][0].weight_index & all.weight_mask] == 0);
+    initialize &= (all.reg.weight_vector[output_layer.atomics[nn_output_namespace][0].weight_index & all.weight_mask] == 0);
 
     for (unsigned int i = 0; i < k; ++i)
       {
         output.weight_index += all.stride;
         output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vectors[output_layer.atomics[nn_output_namespace][i+1].weight_index & all.weight_mask] == 0);
+        initialize &= (all.reg.weight_vector[output_layer.atomics[nn_output_namespace][i+1].weight_index & all.weight_mask] == 0);
       }
 
     output_layer.num_features = k + 1;
@@ -394,7 +394,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       float sqrtk = sqrt ((float)k);
       for (unsigned int i = 0; i <= k; ++i)
         {
-          weight* w = &all.reg.weight_vectors[output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
+          weight* w = &all.reg.weight_vector[output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
 
           w[0] = (float) (frand48 () - 0.5) / sqrtk;
 
@@ -409,7 +409,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
       for (unsigned int i = 0; i < k; ++i)
         {
-          all.reg.weight_vectors[weight_index & all.weight_mask] = (float) (frand48 () - 0.5);
+          all.reg.weight_vector[weight_index & all.weight_mask] = (float) (frand48 () - 0.5);
           weight_index += increment;
         }
     }

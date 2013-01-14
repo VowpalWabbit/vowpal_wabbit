@@ -30,6 +30,9 @@ license as described in the file LICENSE.
 
 using namespace std;
 
+namespace GD
+{
+
 //nonreentrant
 size_t gd_current_pass = 0;
 
@@ -85,7 +88,7 @@ float InvSqrt(float x){
 
 inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
 {
-  weight* w = &all.reg.weight_vectors[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float t = 1.f;
   if(all.adaptive) t = powf(w[1],-all.power_t);
   if(all.normalized_updates) {
@@ -98,7 +101,7 @@ inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float 
 
 inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
 {
-  weight* w = &all.reg.weight_vectors[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
   if(all.normalized_updates) inv_norm /= (w[all.normalized_idx] * avg_norm);
@@ -116,7 +119,6 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   }
   w[0] += update * x * t;
 }
-
 
 void learn_gd(void* a, example* ec)
 {
@@ -179,7 +181,7 @@ void sync_weights(vw& all) {
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.stride;
   for(uint32_t i = 0; i < length && all.reg_mode; i++)
-    all.reg.weight_vectors[stride*i] = trunc_weight(all.reg.weight_vectors[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
+    all.reg.weight_vector[stride*i] = trunc_weight(all.reg.weight_vector[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
   all.sd->contraction = 1.;
 }
@@ -216,11 +218,6 @@ float finalize_prediction(vw& all, float ret)
   if (ret < all.sd->min_label)
     return (float)all.sd->min_label;
   return ret;
-}
-
-void finish_example(vw& all, example* ec)
-{
-  return_simple_example(all, ec);
 }
 
 struct string_value {
@@ -300,7 +297,7 @@ void print_audit_cubic(vw& all, weight* weights, audit_data& f0, audit_data& f1,
 
 void print_features(vw& all, example* &ec)
 {
-  weight* weights = all.reg.weight_vectors;
+  weight* weights = all.reg.weight_vector;
   size_t stride = all.stride;
 
   if (all.lda > 0)
@@ -411,7 +408,7 @@ void norm_add_cubic(vw& all, feature& f0, feature& f1, v_array<feature> &cross_f
 }
 
 inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
-  weight* w = &all.reg.weight_vectors[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x2 = x * x;
   float t = 1.f;
   float inv_norm = 1.f;
@@ -440,7 +437,7 @@ inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& n
 inline void powert_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
 
-  weight* w = &all.reg.weight_vectors[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x2 = x * x;
   float t = 1.f;
   if(all.adaptive){
@@ -604,6 +601,74 @@ void predict(vw& all, example* ex)
   ex->done = true;
 }
 
+void save_load(void* in, io_buf& model_file, bool read, bool text)
+{
+  vw* all=(vw*)in;
+  int c = 0;
+  uint32_t length = 1 << all->num_bits;
+  uint32_t stride = all->stride;
+  
+  if(read)
+    {
+      initialize_regressor(*all);
+      if(all->adaptive && all->initial_t > 0)
+	{
+	  for (size_t j = 1; j < all->stride*length; j+=all->stride)
+	    {
+	      all->reg.weight_vector[j] = all->initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+	      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be 
+	      //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients 
+	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
+	    }
+	}
+    }
+
+  if (model_file.files.size() > 0)
+    {
+      uint32_t i = 0;
+      size_t brw = 1;
+      do 
+	{
+	  brw = 1;
+	  weight* v;
+	  if (read)
+	    {
+	      c++;
+	      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+	      if (brw > 0)
+		{
+		  assert (i< length);		
+		  v = &(all->reg.weight_vector[stride*i]);
+		  if (brw > 0)
+		    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+		}
+	    }
+	  else // write binary or text
+	    {
+	      v = &(all->reg.weight_vector[stride*i]);
+	      if (*v != 0.)
+		{
+		  c++;
+		  char buff[512];
+		  int text_len = sprintf(buff, "%d", i);
+		  brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
+						  "", read,
+						  buff, text_len, text);
+		  
+		  
+		  text_len = sprintf(buff, ":%f\n", *v);
+		  brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+						  "", read,
+						  buff, text_len, text);
+		}
+	    }
+	  if (!read)
+	    i++;
+	}
+      while ((!read && i < length) || (read && brw >0));
+    }
+}
+
 void drive_gd(void* in)
 {
   vw* all = (vw*)in;
@@ -614,7 +679,7 @@ void drive_gd(void* in)
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
 	  learn_gd(all, ec);
-	  finish_example(*all, ec);
+	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
 	{
@@ -624,4 +689,5 @@ void drive_gd(void* in)
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
+}
 }
