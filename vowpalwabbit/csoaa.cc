@@ -895,8 +895,10 @@ namespace CSOAA_AND_WAP_LDF {
     if(vm_file.count("csoaa_ldf")) {
       ldf_arg = vm_file["csoaa_ldf"].as<string>();
       
-      if(vm.count("csoaa_ldf") && ldf_arg.compare(vm["csoaa_ldf"].as<string>()) != 0)
+      if(vm.count("csoaa_ldf") && ldf_arg.compare(vm["csoaa_ldf"].as<string>()) != 0) {
+        ldf_arg = vm["csoaa_ldf"].as<string>();
         std::cerr << "warning: you specified a different ldf argument through --csoaa_ldf than the one loaded from regressor. Pursuing with loaded value of: " << ldf_arg << endl;
+      }
     }
     else if( vm.count("csoaa_ldf") ){
       ldf_arg = vm["csoaa_ldf"].as<string>();
@@ -907,8 +909,10 @@ namespace CSOAA_AND_WAP_LDF {
       ldf_arg = vm_file["wap_ldf"].as<string>();
       is_wap = true;
       
-      if(vm.count("wap_ldf") && ldf_arg.compare(vm["wap_ldf"].as<string>()) != 0)
+      if(vm.count("wap_ldf") && ldf_arg.compare(vm["wap_ldf"].as<string>()) != 0) {
+        ldf_arg = vm["csoaa_ldf"].as<string>();
         std::cerr << "warning: you specified a different value for --wap_ldf than the one loaded from regressor. Pursuing with loaded value of: " << ldf_arg << endl;
+      }
     }
     else {
       ldf_arg = vm["wap_ldf"].as<string>();
