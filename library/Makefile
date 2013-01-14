@@ -1,3 +1,5 @@
+all: ezexample_predict ezexample_train library_example
+
 ezexample_predict: ezexample_predict.cc ../vowpalwabbit/libvw.a ezexample.h
 	g++ -g -o $@ $< -L ../vowpalwabbit -l vw -l allreduce -l boost_program_options -l z -l pthread
 
