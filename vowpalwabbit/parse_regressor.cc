@@ -348,13 +348,16 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
 	      {
 		c++;
 		brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
-		assert (i< length);		
-		if (reg_vector)
-		  v = &(all->reg.regularizers[i]);
-		else
-		  v = &(all->reg.weight_vectors[stride*i]);
 		if (brw > 0)
-		  brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+		  {
+		    assert (i< length);		
+		    if (reg_vector)
+		      v = &(all->reg.regularizers[i]);
+		    else
+		      v = &(all->reg.weight_vectors[stride*i]);
+		    if (brw > 0)
+		      brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+		  }
 	      }
 	    else // write binary or text
 	      {
