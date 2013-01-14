@@ -43,5 +43,5 @@ int main(int argc, char *argv[])
   }
 
   // AND FINISH UP
-  vw.finish(&vw);
+  VW::finish(vw);
 }
