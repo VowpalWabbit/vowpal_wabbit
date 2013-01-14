@@ -316,3 +316,72 @@ namespace SequenceTask {
     }
   }
 }
+
+
+
+
+namespace SequenceTask_Easy {
+  using namespace ImperativeSearn;
+
+  SearnUtil::history_info hinfo;
+  vector<size_t> yhat;
+  size_t unknown_label = (size_t)-1;
+
+  void initialize(vw& vw, int& num_actions) {
+  }
+
+  void finish(vw& vw) {
+  }
+
+  void structured_predict_v1(vw& vw, example**ec, size_t len) {
+    searn_struct srn = *(searn_struct*)vw.searnstr;
+    float total_loss  = 0;
+
+    yhat.clear();
+    for (size_t n=0; n<hinfo.length; n++)
+      yhat.push_back(0);  // pad the beginning with zeros for <s>
+
+    vector<uint32_t> ystar;
+    for (size_t i=0; i<len; i++) {
+      ystar.clear();
+      if (!OAA::example_is_test(ec[i]))
+        ystar.push_back( ((OAA::mc_label*)ec[i]->ld)->label );
+
+      SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.data()+i);
+      yhat.push_back( srn.predict(vw, &ec[i], 0, NULL, &ystar) );
+      SearnUtil::remove_history_from_example(vw, &hinfo, ec[i]);
+
+      if (!OAA::example_is_test(ec[i]) && (yhat.back() != ystar.back()))
+        total_loss += 1.0;
+    }
+      
+    srn.declare_loss(vw, len, total_loss);
+  }
+
+  /*
+  void structured_predict_v2(vw& vw, example**ec, size_t len) {
+    float total_loss  = 0;
+
+    yhat.clear();
+    for (size_t n=0; n<hinfo.length; n++)
+      yhat.push_back(0);  // pad the beginning with zeros for <s>
+
+    for (int i=0; i<len; i++) {
+      vw.searn.snapshot(vw, i, 1, &i, sizeof(int));
+      vw.searn.snapshot(vw, i, 2, yhat.data()+i, sizeof(size_t)*hinfo.length);
+
+      size_t y = OAA::example_is_test(ec[i]) ? unknown_label : ((OAA::mc_label*)ec[i]->ld)->label;
+
+      SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.data()+i);
+      yhat.push_back( vw.searn.predict(vw, ec[i], y) );
+      SearnUtil::remove_history_from_example(vw, &hinfo, ec[i]);
+
+      if ((y != unknown_label) && (yhat.back != y))
+        total_loss += 1.0;
+    }
+      
+    vw.searn.declare_loss(vw, total_loss);
+  }
+  */
+}
+
