@@ -233,7 +233,7 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
       
       text_len = sprintf(buff, "bits:%d\n", (int)all->num_bits);
       uint32_t local_num_bits = all->num_bits;
-      bin_text_read_write_fixed(model_file,(char *)&local_num_bits, sizeof(all->num_bits), 
+      bin_text_read_write_fixed(model_file,(char *)&local_num_bits, sizeof(local_num_bits), 
 				"", read, 
 				buff, text_len, text);
       if (all->default_bits != true && all->num_bits != local_num_bits)
@@ -251,10 +251,12 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
 				buff, text_len, text);
       for (size_t i = 0; i < pair_len; i++)
 	{
-	  text_len = sprintf(buff, "%s ", all->pairs[i].c_str());
 	  char pair[2];
 	  if (!read)
-	    memcpy(pair,all->pairs[i].c_str(),2);
+	    {
+	      memcpy(pair,all->pairs[i].c_str(),2);
+	      text_len = sprintf(buff, "%s ", all->pairs[i].c_str());
+	    }
 	  bin_text_read_write_fixed(model_file, pair,2, 
 				    "", read,
 				    buff, text_len, text);
