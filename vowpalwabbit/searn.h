@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "oaa.h"
 #include "parse_primitives.h"
 #include "v_hashmap.h"
+#include "csoaa.h"
 
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
 
@@ -200,13 +201,13 @@ namespace Searn
 namespace ImperativeSearn {
   struct searn_task {
     void (*initialize)(vw&,int&);
-    void (*finalize)(vw&);
+    void (*finish)(vw&);
     void (*structured_predict)(vw&,example**,size_t);
   };
 
   struct searn_struct {
     // functions that you will call
-    uint32_t (*predict)(vw&,example**,size_t,vector<uint32_t>);
+    uint32_t (*predict)(vw&,example**,size_t,vector<uint32_t>*,vector<uint32_t>*);
     void     (*declare_loss)(vw&,size_t,float);
     void     (*snapshot)(vw&,size_t,size_t,void*,size_t);
 
@@ -220,7 +221,7 @@ namespace ImperativeSearn {
     uint32_t learn_a;     //   and this is the a we're varying it to
     vector< pair<size_t, vector< pair<void*,size_t> > > > snapshot_data; // pair<time,data>, where data item is <data, sizeof(data)>
     vector<uint32_t> train_action;  // which actions did we actually take in the train pass?
-    vector< vector<uint32_t> > train_labels;  // which labels are valid at any given time
+    vector< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
 
     size_t t;              // the current time step
     size_t T;              // the length of the (training) trajectory
@@ -237,8 +238,29 @@ namespace ImperativeSearn {
     bool   allow_current_policy;  // should the current policy be used for training? true for dagger
     bool   rollout_all_actions;   // false for contextual bandits
     uint32_t current_policy;      // what policy are we training right now?
+    size_t increment;
+    size_t num_features;
+    size_t total_number_of_policies;
+
+    size_t read_example_this_loop;
+    size_t read_example_last_id;
+    size_t passes_since_new_policy;
+    size_t read_example_last_pass;
+    size_t total_examples_generated;
+    size_t total_predictions_made;
+
+    size_t passes_per_policy;
+
+    v_array<example*> ec_seq;
+
+    void (*base_finish)(void*);
+    void (*base_learner)(void*,example*);
   };
 
+  void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  void searn_finish(void*);
+  void searn_drive(void*);
+  void searn_learn(void*,example*);
 }
 
 #endif
