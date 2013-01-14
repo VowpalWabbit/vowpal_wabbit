@@ -1403,8 +1403,8 @@ namespace ImperativeSearn {
 
   size_t choose_policy(searn_struct& srn, bool allow_optimal)
   {
-    uint32_t seed = srn.read_example_last_id * 2147483 + srn.t * 2147483647;
-    return Searn::random_policy(seed, srn.beta, srn.allow_current_policy, srn.current_policy, allow_optimal, srn.rollout_all_actions);
+    uint32_t seed = 0; // TODO: srn.read_example_last_id * 2147483 + srn.t * 2147483647;
+    return SearnUtil::random_policy(seed, srn.beta, srn.allow_current_policy, srn.current_policy, allow_optimal, srn.rollout_all_actions);
   }
 
   vector<size_t> get_all_labels(example** ecs, size_t num_ec)
@@ -1445,7 +1445,7 @@ namespace ImperativeSearn {
 
   void searn_finalize(vw& all)
   {
-    clear_snapshot();
+    clear_snapshot(all);
   }
 
   // if not LDF:
@@ -1484,7 +1484,7 @@ namespace ImperativeSearn {
           srn.learn_example_copy = (example**)SearnUtil::calloc_or_die(num_ec, sizeof(example*));
           for (size_t n=0; n<num_ec; n++) {
             srn.learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
-            VW::copy_example_data(srn.learn_example_copy[n], ecs[n], sizeof(OAA::mc_label));
+            VW::copy_example_data(srn.learn_example_copy[n], ecs[n], sizeof(OAA::mc_label), NULL);
             memcpy(srn.learn_example_copy[n]->ld, ecs[n]->ld, sizeof(OAA::mc_label));
           }
         }

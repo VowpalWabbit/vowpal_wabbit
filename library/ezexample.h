@@ -65,9 +65,11 @@ class ezexample {
   }
 
   ~ezexample() {
-    VW::finish_example(*vw_ref, ec);
+    if (ec->in_use)
+      VW::finish_example(*vw_ref, ec);
     for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
-      VW::finish_example(*vw_ref, *ecc);
+      if ((*ecc)->in_use)
+        VW::finish_example(*vw_ref, *ecc);
     example_copies.erase();
     free(example_copies.begin);
   }
@@ -179,7 +181,9 @@ class ezexample {
     } else {   // is multiline
       // we need to make a copy
       example* copy = get_new_example();
-      VW::copy_example_data(copy, ec, vw_ref->p->lp->label_size);
+      assert(ec->in_use);
+      VW::copy_example_data(copy, ec, vw_ref->p->lp->label_size, vw_ref->p->lp->copy_label);
+      assert(copy->in_use);
       vw_ref->learn(vw_ref, copy);
       example_copies.push_back(copy);
     }

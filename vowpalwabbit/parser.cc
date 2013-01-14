@@ -824,6 +824,7 @@ void setup_example(vw& all, example* ae)
 namespace VW{
   example* new_unused_example(vw& all) { 
     example* ec = get_unused_example(all);
+    all.p->lp->default_label(ec->ld);
     all.p->parsed_examples++;
     ec->example_counter = all.p->parsed_examples;
     return ec;

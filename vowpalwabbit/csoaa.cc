@@ -127,7 +127,15 @@ namespace CSOAA {
   void delete_label(void* v)
   {
     label* ld = (label*)v;
+    //cerr << "ld=[size=" << ld->costs.size() << " begin=" << ld->costs.begin <<  "|" << ld->costs[0].weight_index << ":" << ld->costs[0].x << "...]";
     ld->costs.delete_v();
+  }
+
+  void copy_label(void*&dst, void*src)
+  {
+    label*&ldD = (label*&)dst;
+    label* ldS = (label* )src;
+    copy_array(ldD->costs, ldS->costs);
   }
 
   bool substring_eq(substring ss, const char* str) {
@@ -331,7 +339,8 @@ namespace CSOAA {
           {
             learn(all, ec);
             output_example(*all, ec);
-	    VW::finish_example(*all, ec);
+            if (ec->in_use)
+              VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
           {
@@ -758,7 +767,8 @@ namespace CSOAA_AND_WAP_LDF {
   {
     if (ec_seq.size() > 0) 
       for (example** ecc=ec_seq.begin; ecc!=ec_seq.end; ecc++)
-        VW::finish_example(all, *ecc);
+        if ((*ecc)->in_use)
+          VW::finish_example(all, *ecc);
     ec_seq.erase();
   }
 
@@ -794,13 +804,15 @@ namespace CSOAA_AND_WAP_LDF {
       do_actual_learning(*all);
       if (!LabelDict::ec_seq_is_label_definition(ec_seq))
         global_print_newline(*all);
-      VW::finish_example(*all, ec);
+      if (ec->in_use)
+        VW::finish_example(*all, ec);
       need_to_clear = true;
     } else if (LabelDict::ec_is_label_definition(ec)) {
       if (ec_seq.size() > 0)
         cerr << "warning: label definition encountered in data block -- ignoring data!" << endl;
       learn_singleline(all, ec);
-      VW::finish_example(*all, ec);
+      if (ec->in_use)
+        VW::finish_example(*all, ec);
     } else {
       ec_seq.push_back(ec);
     }
@@ -835,7 +847,8 @@ namespace CSOAA_AND_WAP_LDF {
         }
         bool hit_loss = false;
         output_example(*all, ec, hit_loss);
-        VW::finish_example(*all, ec);
+        if (ec->in_use)
+          VW::finish_example(*all, ec);
       } else if (parser_done(all->p)) {
         return;
       }
