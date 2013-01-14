@@ -126,6 +126,7 @@ vw parse_args(int argc, char *argv[])
     ("save_per_pass", "Save the model after every pass over data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
+    ("searnimp", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
@@ -160,6 +161,7 @@ vw parse_args(int argc, char *argv[])
   all.data_filename = "";
 
   all.searn = false;
+  all.searnstr = NULL;
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
@@ -676,6 +678,10 @@ vw parse_args(int argc, char *argv[])
   }
 
   if (vm.count("searn") || vm_file.count("searn") ) { 
+    if (vm.count("searnimp") || vm_file.count("searnimp")) {
+      cerr << "fail: cannot have both --searn and --searnimp" << endl;
+      exit(-1);
+    }
     if (!got_cs && !got_cb) {
       //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
@@ -686,6 +692,21 @@ vw parse_args(int argc, char *argv[])
     }
     Searn::parse_flags(all, to_pass_further, vm, vm_file);
   }
+
+  if (vm.count("searnimp") || vm_file.count("searnimp") ) { 
+    if (!got_cs && !got_cb) {
+      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
+      if( vm_file.count("searnimp") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searnimp"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searnimp"]));
+      
+      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      got_cs = true;
+    }
+    all.searnstr = (ImperativeSearn::searn_struct*)calloc(1, sizeof(ImperativeSearn::searn_struct));
+    ImperativeSearn::parse_flags(all, to_pass_further, vm, vm_file);
+  }
+
+
 
   if (got_cb && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
@@ -800,6 +821,7 @@ namespace VW {
   void finish(vw& all)
   {
     all.finish(&all);
+    if (all.searnstr != NULL) free(all.searnstr);
     free_parser(all);
     finalize_regressor(all, all.final_regressor_name);
     finalize_source(all.p);
