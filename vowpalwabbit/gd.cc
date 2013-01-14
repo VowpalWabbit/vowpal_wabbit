@@ -601,19 +601,65 @@ void predict(vw& all, example* ex)
   ex->done = true;
 }
 
+void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
+{
+  uint32_t length = 1 << all.num_bits;
+  uint32_t stride = all.stride;
+  int c = 0;
+  uint32_t i = 0;
+  size_t brw = 1;
+  do 
+    {
+      brw = 1;
+      weight* v;
+      if (read)
+	{
+	  c++;
+	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+	  if (brw > 0)
+	    {
+	      assert (i< length);		
+	      v = &(all.reg.weight_vector[stride*i]);
+	      if (brw > 0)
+		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+	    }
+	}
+      else // write binary or text
+	{
+	  v = &(all.reg.weight_vector[stride*i]);
+	  if (*v != 0.)
+	    {
+	      c++;
+	      char buff[512];
+	      int text_len = sprintf(buff, "%d", i);
+	      brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
+					      "", read,
+					      buff, text_len, text);
+	      
+	      
+	      text_len = sprintf(buff, ":%f\n", *v);
+	      brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+					      "", read,
+					      buff, text_len, text);
+	    }
+	}
+      if (!read)
+	i++;
+    }
+  while ((!read && i < length) || (read && brw >0));  
+}
+
 void save_load(void* in, io_buf& model_file, bool read, bool text)
 {
   vw* all=(vw*)in;
-  int c = 0;
-  uint32_t length = 1 << all->num_bits;
-  uint32_t stride = all->stride;
-  
   if(read)
     {
       initialize_regressor(*all);
       if(all->adaptive && all->initial_t > 0)
 	{
-	  for (size_t j = 1; j < all->stride*length; j+=all->stride)
+	  uint32_t length = 1 << all->num_bits;
+	  uint32_t stride = all->stride;
+	  for (size_t j = 1; j < stride*length; j+=stride)
 	    {
 	      all->reg.weight_vector[j] = all->initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
 	      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be 
@@ -624,49 +670,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
     }
 
   if (model_file.files.size() > 0)
-    {
-      uint32_t i = 0;
-      size_t brw = 1;
-      do 
-	{
-	  brw = 1;
-	  weight* v;
-	  if (read)
-	    {
-	      c++;
-	      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
-	      if (brw > 0)
-		{
-		  assert (i< length);		
-		  v = &(all->reg.weight_vector[stride*i]);
-		  if (brw > 0)
-		    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
-		}
-	    }
-	  else // write binary or text
-	    {
-	      v = &(all->reg.weight_vector[stride*i]);
-	      if (*v != 0.)
-		{
-		  c++;
-		  char buff[512];
-		  int text_len = sprintf(buff, "%d", i);
-		  brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-						  "", read,
-						  buff, text_len, text);
-		  
-		  
-		  text_len = sprintf(buff, ":%f\n", *v);
-		  brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-						  "", read,
-						  buff, text_len, text);
-		}
-	    }
-	  if (!read)
-	    i++;
-	}
-      while ((!read && i < length) || (read && brw >0));
-    }
+    save_load_regressor(*all, model_file, read, text);
 }
 
 void drive_gd(void* in)

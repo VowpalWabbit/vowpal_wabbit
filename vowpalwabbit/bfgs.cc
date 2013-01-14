@@ -859,6 +859,57 @@ void finish(void* a)
   free(alpha);
 }
 
+void save_load_regularizer(vw& all, io_buf& model_file, bool read, bool text)
+{
+  char buff[512];
+  int c = 0;
+  uint32_t stride = all.stride;
+  uint32_t length = 2*(1 << all.num_bits);
+  uint32_t i = 0;
+  size_t brw = 1;
+  do 
+    {
+      brw = 1;
+      weight* v;
+      if (read)
+	{
+	  c++;
+	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+	  if (brw > 0)
+	    {
+	      assert (i< length);		
+	      v = &(regularizers[i]);
+	      if (brw > 0)
+		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+	    }
+	}
+      else // write binary or text
+	{
+	  v = &(regularizers[i]);
+	  if (*v != 0.)
+	    {
+	      c++;
+	      int text_len = sprintf(buff, "%d", i);
+	      brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
+					      "", read,
+					      buff, text_len, text);
+	      
+	      
+	      text_len = sprintf(buff, ":%f\n", *v);
+	      brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+					      "", read,
+					      buff, text_len, text);
+	      if (read && i%2 == 1) // This is the prior mean
+		all.reg.weight_vector[(i/2*stride)] = *v;
+	    }
+	}
+      if (!read)
+	i++;
+    }  
+  while ((!read && i < length) || (read && brw >0));
+}
+
+
 void save_load(void* in, io_buf& model_file, bool read, bool text)
 {
   vw* all = (vw*)in;
@@ -906,62 +957,13 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
       reset_state(*all, false);
     }
 
+  bool reg_vector = output_regularizer || all->per_feature_regularizer_input.length() > 0;
   if (model_file.files.size() > 0)
     {
-      char buff[512];
-      bool reg_vector = output_regularizer || all->per_feature_regularizer_input.length() > 0;
-      int c = 0;
-      uint32_t stride = all->stride;
       if (reg_vector)
-	length *= 2;
-      uint32_t i = 0;
-      size_t brw = 1;
-      do 
-	{
-	  brw = 1;
-	  weight* v;
-	  if (read)
-	    {
-	      c++;
-	      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
-	      if (brw > 0)
-		{
-		  assert (i< length);		
-		  if (reg_vector)
-		    v = &(regularizers[i]);
-		  else
-		    v = &(all->reg.weight_vector[stride*i]);
-		  if (brw > 0)
-		    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
-		}
-	    }
-	  else // write binary or text
-	    {
-	      if (reg_vector)
-		v = &(regularizers[i]);
-	      else
-		v = &(all->reg.weight_vector[stride*i]);
-	      if (*v != 0.)
-		{
-		  c++;
-		  int text_len = sprintf(buff, "%d", i);
-		  brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-						  "", read,
-						  buff, text_len, text);
-		  
-		  
-		  text_len = sprintf(buff, ":%f\n", *v);
-		  brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-						  "", read,
-						  buff, text_len, text);
-		  if (read && reg_vector && i%2 == 1) // This is the prior mean
-		    all->reg.weight_vector[(i/2*stride)] = *v;
-		}
-	    }
-	  if (!read)
-	    i++;
-	}  
-      while ((!read && i < length) || (read && brw >0));
+	save_load_regularizer(*all, model_file, read, text);
+      else
+	GD::save_load_regressor(*all, model_file, read, text);
     }
 }
 
