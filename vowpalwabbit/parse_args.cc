@@ -548,13 +548,12 @@ vw parse_args(int argc, char *argv[])
     else
       {
 	const char* fstr = (vm["predictions"].as< string >().c_str());
-	FILE* foo;
+	int f;
 #ifdef _WIN32
-	foo = fopen(fstr, "wb");
+	_sopen_s(&f, fstr, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
-	foo = fopen(fstr, "w");
+	f = open(fstr, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
-	int f = fileno(foo);
 	if (f < 0)
 	  cerr << "Error opening the predictions file: " << fstr << endl;
 	all.final_prediction_sink.push_back((size_t) f);
@@ -569,13 +568,13 @@ vw parse_args(int argc, char *argv[])
     else
 	{
 	  const char* t = vm["raw_predictions"].as< string >().c_str();
-	  FILE* f;
+	  int f;
 #ifdef _WIN32
-	  f = fopen(t, "wb");
+	  _sopen_s(&f, t, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
-	  f = fopen(t, "w");
+	  f = open(t, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
-      all.raw_prediction = fileno(f);
+	  all.raw_prediction = f;
 	}
   }
 
