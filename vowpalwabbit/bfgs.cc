@@ -965,7 +965,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive_bfgs(void* in)
+void drive(void* in)
 {
   vw* all = (vw*)in;
 

@@ -235,7 +235,7 @@ vw parse_args(int argc, char *argv[])
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
-    all.driver = BFGS::drive_bfgs;
+    all.driver = BFGS::drive;
     all.learn = BFGS::learn;
     all.finish = BFGS::finish;
     all.save_load = BFGS::save_load;
@@ -467,8 +467,8 @@ vw parse_args(int argc, char *argv[])
       all.initial_t = 1.f;
     }
 
-    LDA::lda_parse_flags(all, to_pass_further, vm);
-    all.driver = LDA::drive_lda;
+    LDA::parse_flags(all, to_pass_further, vm);
+    all.driver = LDA::drive;
     all.save_load = LDA::save_load;
   }
 
@@ -511,14 +511,14 @@ vw parse_args(int argc, char *argv[])
 
   all.is_noop = false;
   if (vm.count("noop")) {
-    all.driver = NOOP::drive_noop;
-    all.learn = NOOP::learn_noop;
+    all.driver = NOOP::drive;
+    all.learn = NOOP::learn;
     all.save_load = NOOP::save_load;
     all.is_noop = true;
   }
   
   if (all.rank != 0) {
-    all.driver = GDMF::drive_gd_mf;
+    all.driver = GDMF::drive;
     all.save_load = GDMF::save_load;
     loss_function = "classic";
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
