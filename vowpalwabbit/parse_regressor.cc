@@ -27,171 +27,31 @@ void initialize_regressor(vw& all)
 {
   size_t length = ((size_t)1) << all.num_bits;
   all.weight_mask = (all.stride * length) - 1;
-  all.reg.weight_vectors = (weight *)calloc(all.stride*length, sizeof(weight));
-  if (all.reg.weight_vectors == NULL)
+  all.reg.weight_vector = (weight *)calloc(all.stride*length, sizeof(weight));
+  if (all.reg.weight_vector == NULL)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
       exit (1);
     }
-  
-  if (all.per_feature_regularizer_input != "")
-    {
-      all.reg.regularizers = (weight *)calloc(2*length, sizeof(weight));
-      if (all.reg.regularizers == NULL)
-	{
-	  cerr << all.program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
-	  exit (1);
-	}
-    }
-  else
-    all.reg.regularizers = NULL;
-
-  // random weight initialization for matrix factorization
   if (all.random_weights)
     {
-      if (all.rank > 0)
-	for (size_t j = 0; j < all.stride*length; j++)
-	  all.reg.weight_vectors[j] = (float) (0.1 * frand48()); 
-      else
-	for (size_t j = 0; j < length; j++)
-	  all.reg.weight_vectors[j*all.stride] = (float)(frand48() - 0.5);
+      for (size_t j = 0; j < length; j++)
+	all.reg.weight_vector[j*all.stride] = (float)(frand48() - 0.5);
     }
   if (all.initial_weight != 0.)
     for (size_t j = 0; j < all.stride*length; j+=all.stride)
-      all.reg.weight_vectors[j] = all.initial_weight;
-  if (all.lda)
-    {
-      size_t stride = all.stride;
-      
-      for (size_t j = 0; j < stride*length; j+=stride)
-	{
-	  for (size_t k = 0; k < all.lda; k++) {
-	    if (all.random_weights) {
-	      all.reg.weight_vectors[j+k] = (float)(-log(frand48()) + 1.0f);
-		  all.reg.weight_vectors[j+k] *= (float)(all.lda_D / all.lda / all.length() * 200);
-	    }
-	  }
-	  all.reg.weight_vectors[j+all.lda] = all.initial_t;
-	}
-    }
-  if(all.adaptive && all.initial_t > 0)
-  {
-    for (size_t j = 1; j < all.stride*length; j+=all.stride)
-    {
-      all.reg.weight_vectors[j] = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
-      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be 
-      //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients 
-      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
-    }
-  }
+      all.reg.weight_vector[j] = all.initial_weight;
 }
 
 void free_regressor(regressor &r)
 {
-  if (r.weight_vectors != NULL)
-    free(r.weight_vectors);
-  if (r.regularizers != NULL)
-    free(r.regularizers);
-}
-
-//if read_message is null, just read it in.  Otherwise do a comparison and barf on read_message.
-size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read_message)
-{
-  if (len > 0)
-    {
-      char* p;
-      size_t ret = buf_read(i,p,len);
-      if (*read_message == '\0')
-	memcpy(data,p,len);
-      else
-	if (memcmp(data,p,len) != 0)
-	  {
-	    cout << read_message << endl;
-	    exit(1);
-	  }
-      return ret;
-    }
-  return 0;
-}
-
-size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
-{
-  uint32_t obj_len;
-  size_t ret = bin_read_fixed(i,(char*)&obj_len,sizeof(obj_len),"");
-  if (obj_len > len || ret < sizeof(uint32_t))
-    {
-      cerr << "bad model format!" <<endl;
-      exit(1);
-    }
-  ret += bin_read_fixed(i,data,obj_len,read_message);
-
-  return ret;
-}
-
-size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
-{
-  if (len > 0)
-    {
-      char* p;
-      buf_write (o, p, len);
-      memcpy (p, data, len);
-    }
-  return len;
-}
-
-size_t bin_write(io_buf& o, const char* data, uint32_t len)
-{
-  bin_write_fixed(o,(char*)&len, sizeof(len));
-  bin_write_fixed(o,data,len);
-  return (len + sizeof(len));
-}
-
-size_t bin_text_write(io_buf& io, char* data, size_t len, 
-		      const char* text_data, size_t text_len, bool text)
-{
-  if (text)
-    return bin_write_fixed (io, text_data, text_len);
-  else 
-    if (len > 0)
-      return bin_write (io, data, len);
-  return 0;
-}
-
-//a unified function for read(in binary), write(in binary), and write(in text)
-size_t bin_text_read_write(io_buf& io, char* data, size_t len, 
-			 const char* read_message, bool read, 
-			 const char* text_data, size_t text_len, bool text)
-{
-  if (read)
-    return bin_read(io, data, len, read_message);
-  else
-    return bin_text_write(io,data,len, text_data, text_len, text);
-}
-
-size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, 
-		      const char* text_data, size_t text_len, bool text)
-{
-  if (text)
-    return bin_write_fixed (io, text_data, text_len);
-  else 
-    return bin_write_fixed (io, data, len);
-  return 0;
-}
-
-//a unified function for read(in binary), write(in binary), and write(in text)
-size_t bin_text_read_write_fixed(io_buf& io, char* data, size_t len, 
-			       const char* read_message, bool read, 
-			       const char* text_data, size_t text_len, bool text)
-{
-  if (read)
-    return bin_read_fixed(io, data, len, read_message);
-  else
-    return bin_text_write_fixed(io, data, len, text_data, text_len, text);
+  if (r.weight_vector != NULL)
+    free(r.weight_vector);
 }
 
 const size_t buf_size = 512;
 
-void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool text)
+void save_load(void* in, io_buf& model_file, bool read, bool text)
 {
   vw* all = (vw*)in;
 
@@ -327,100 +187,10 @@ void save_load(void* in, io_buf& model_file, bool reg_vector, bool read, bool te
     }
 
   //optimizer specific stuff
-  if (read)
-    initialize_regressor(*all);
-
-  int c = 0;
-  if (model_file.files.size() > 0)
-    {
-      uint32_t length = 1 << all->num_bits;
-      uint32_t stride = all->stride;
-      if (reg_vector)
-	length *= 2;
-      uint32_t i = 0;
-      size_t brw = 1;
-      do 
-	{
-	  brw = 1;
-	  weight* v;
-	  if ((all->lda == 0) && (all->rank == 0))
-	    if (read)
-	      {
-		c++;
-		brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
-		if (brw > 0)
-		  {
-		    assert (i< length);		
-		    if (reg_vector)
-		      v = &(all->reg.regularizers[i]);
-		    else
-		      v = &(all->reg.weight_vectors[stride*i]);
-		    if (brw > 0)
-		      brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
-		  }
-	      }
-	    else // write binary or text
-	      {
-		if (reg_vector)
-		  v = &(all->reg.regularizers[i]);
-		else
-		  v = &(all->reg.weight_vectors[stride*i]);
-		if (*v != 0.)
-		  {
-		    c++;
-		    int text_len = sprintf(buff, "%d", i);
-		    brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-						  "", read,
-						    buff, text_len, text);
-		    
-		    
-		    text_len = sprintf(buff, ":%f\n", *v);
-		    brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-						    "", read,
-						    buff, text_len, text);
-		    if (read && reg_vector && i%2 == 1) // This is the prior mean
-		      all->reg.weight_vectors[(i/2*stride)] = *v;
-		  }
-	      }
-	  else
-	    {
-	      size_t K = all->lda;
-	      
-	      if (all->rank != 0)
-		K = all->rank*2+1;
-	      
-	      for (uint32_t k = 0; k < K; k++)
-		{
-		  uint32_t ndx = stride*i+k;
-		  
-		  bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
-					    "", read,
-					    "", 0, text);
-		  
-		  weight* v = &(all->reg.weight_vectors[ndx]);
-		  if (all->rank != 0)
-		    text_len = sprintf(buff, "%f ", *v);
-		  else
-		    text_len = sprintf(buff, "%f ", *v + all->lda_rho);
-		  
-		  bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-					    "", read,
-					    buff, text_len, text);
-		  
-		}
-	      if (text)
-		bin_text_read_write_fixed(model_file,buff,0,
-					  "", read,
-					  "\n",1,text);
-	    }
-	  if (!read)
-	    i++;
-	}  
-      while ((!read && i < length) || (read && brw >0));
-    }
+  all->save_load(all, model_file, read, text);
 }
 
-void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
+void dump_regressor(vw& all, string reg_name, bool as_text)
 {
   if (reg_name == string(""))
     return;
@@ -429,7 +199,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text, bool reg_vector)
 
   io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
   
-  save_load(&all, io_temp, reg_vector, false, as_text);
+  save_load(&all, io_temp, false, as_text);
 
   io_temp.flush(); // close_file() should do this for me ...
   io_temp.close_file();
@@ -444,16 +214,20 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
     sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
   else
     sprintf(filename,"%s",reg_name.c_str());
-  dump_regressor(all, string(filename), false, false);
+  dump_regressor(all, string(filename), false);
   delete[] filename;
 }
 
 void finalize_regressor(vw& all, string reg_name)
 {
-  dump_regressor(all, reg_name, false, false);
-  dump_regressor(all, all.text_regressor_name, true, false);
-  dump_regressor(all, all.per_feature_regularizer_output, false, true);
-  dump_regressor(all, all.per_feature_regularizer_text, true, true);
+  if (all.per_feature_regularizer_output.length() > 0)
+    dump_regressor(all, all.per_feature_regularizer_output, false);
+  else
+    dump_regressor(all, reg_name, false);
+  if (all.per_feature_regularizer_text.length() > 0)
+    dump_regressor(all, all.per_feature_regularizer_text, true);
+  else
+    dump_regressor(all, all.text_regressor_name, true);
   free_regressor(all.reg);
 }
 
@@ -477,20 +251,7 @@ void parse_regressor_args(vw& all, po::variables_map& vm, string& final_regresso
   if (regs.size() > 0)
     io_temp.open_file(regs[0].c_str(), all.stdin_off, io_buf::READ);
 
-  save_load(&all, io_temp, false, true, false);
+  save_load(&all, io_temp, true, false);
   io_temp.close_file();
-
-  if (all.per_feature_regularizer_input != "")
-    {
-      io_temp.open_file(all.per_feature_regularizer_input.c_str(), all.stdin_off, io_buf::READ);
-      save_load(&all, io_temp, true, true, false);
-      io_temp.close_file();
-    }
- 
-  if(vm.count("noop") || vm.count("sendto"))
-    {
-      all.reg.weight_vectors = NULL;
-      all.reg.regularizers = NULL;
-    }
 }
 

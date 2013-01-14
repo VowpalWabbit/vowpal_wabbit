@@ -469,9 +469,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 
 	  size_t float_count = all.stride * all.length();
 	  weight* dest = shared_weights;
-	  memcpy(dest, all.reg.weight_vectors, float_count*sizeof(float));
-	  free(all.reg.weight_vectors);
-	  all.reg.weight_vectors = dest;
+	  memcpy(dest, all.reg.weight_vector, float_count*sizeof(float));
+	  free(all.reg.weight_vector);
+	  all.reg.weight_vector = dest;
 	  
 	  // learning state to be shared across children
 	  shared_data* sd = (shared_data *)mmap(0,sizeof(shared_data),

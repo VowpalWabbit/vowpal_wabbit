@@ -12,6 +12,8 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "gd.h"
 
+namespace GDMF{
 void drive_gd_mf(void*);
-
+ void save_load(void* in, io_buf& model_file, bool read, bool text);
+}
 #endif

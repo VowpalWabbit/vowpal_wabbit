@@ -212,9 +212,10 @@ vw::vw()
   span_server = "";
   m = 15; 
 
-  driver = drive_gd;
-  learn = learn_gd;
-  finish = finish_gd;
+  driver = GD::drive_gd;
+  learn = GD::learn_gd;
+  finish = GD::finish_gd;
+  save_load = GD::save_load;
   set_minmax = set_mm;
 
   base_learn = NULL;
@@ -268,8 +269,7 @@ vw::vw()
   active = false;
   active_c0 = 8.;
   active_simulation = false;
-  reg.weight_vectors = NULL;
-  reg.regularizers = NULL;
+  reg.weight_vector = NULL;
   pass_length = (size_t)-1;
   passes_complete = 0;
 

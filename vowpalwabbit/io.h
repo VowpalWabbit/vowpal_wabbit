@@ -160,4 +160,100 @@ void buf_write(io_buf &o, char* &pointer, size_t n);
 size_t buf_read(io_buf &i, char* &pointer, size_t n);
 bool isbinary(io_buf &i);
 size_t readto(io_buf &i, char* &pointer, char terminal);
+
+//if read_message is null, just read it in.  Otherwise do a comparison and barf on read_message.
+inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read_message)
+{
+  if (len > 0)
+    {
+      char* p;
+      size_t ret = buf_read(i,p,len);
+      if (*read_message == '\0')
+	memcpy(data,p,len);
+      else
+	if (memcmp(data,p,len) != 0)
+	  {
+	    cout << read_message << endl;
+	    exit(1);
+	  }
+      return ret;
+    }
+  return 0;
+}
+
+inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_message)
+{
+  uint32_t obj_len;
+  size_t ret = bin_read_fixed(i,(char*)&obj_len,sizeof(obj_len),"");
+  if (obj_len > len || ret < sizeof(uint32_t))
+    {
+      cerr << "bad model format!" <<endl;
+      exit(1);
+    }
+  ret += bin_read_fixed(i,data,obj_len,read_message);
+
+  return ret;
+}
+
+inline size_t bin_write_fixed(io_buf& o, const char* data, uint32_t len)
+{
+  if (len > 0)
+    {
+      char* p;
+      buf_write (o, p, len);
+      memcpy (p, data, len);
+    }
+  return len;
+}
+
+inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
+{
+  bin_write_fixed(o,(char*)&len, sizeof(len));
+  bin_write_fixed(o,data,len);
+  return (len + sizeof(len));
+}
+
+inline size_t bin_text_write(io_buf& io, char* data, size_t len, 
+		      const char* text_data, size_t text_len, bool text)
+{
+  if (text)
+    return bin_write_fixed (io, text_data, text_len);
+  else 
+    if (len > 0)
+      return bin_write (io, data, len);
+  return 0;
+}
+
+//a unified function for read(in binary), write(in binary), and write(in text)
+inline size_t bin_text_read_write(io_buf& io, char* data, size_t len, 
+			 const char* read_message, bool read, 
+			 const char* text_data, size_t text_len, bool text)
+{
+  if (read)
+    return bin_read(io, data, len, read_message);
+  else
+    return bin_text_write(io,data,len, text_data, text_len, text);
+}
+
+inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, 
+		      const char* text_data, size_t text_len, bool text)
+{
+  if (text)
+    return bin_write_fixed (io, text_data, text_len);
+  else 
+    return bin_write_fixed (io, data, len);
+  return 0;
+}
+
+//a unified function for read(in binary), write(in binary), and write(in text)
+inline size_t bin_text_read_write_fixed(io_buf& io, char* data, size_t len, 
+			       const char* read_message, bool read, 
+			       const char* text_data, size_t text_len, bool text)
+{
+  if (read)
+    return bin_read_fixed(io, data, len, read_message);
+  else
+    return bin_text_write_fixed(io, data, len, text_data, text_len, text);
+}
+
 #endif

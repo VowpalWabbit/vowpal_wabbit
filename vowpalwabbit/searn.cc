@@ -356,7 +356,7 @@ namespace Searn
       {
         feature* end = ec->atomics[*i].end;
         for (feature* f = ec->atomics[*i].begin; f!= end; f++) {
-          cerr << "\t" << f->weight_index << ":" << f->x << ":" << all.reg.weight_vectors[f->weight_index & all.weight_mask];
+          cerr << "\t" << f->weight_index << ":" << f->x << ":" << all.reg.weight_vector[f->weight_index & all.weight_mask];
         }
       }
     cerr << endl;

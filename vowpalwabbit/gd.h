@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "allreduce.h"
 #include "sparse_dense.h"
 
+namespace GD{
 void print_result(int f, float res, v_array<char> tag);
 void print_audit_features(regressor &reg, example* ec, size_t offset);
 float finalize_prediction(vw&, float ret);
@@ -33,8 +34,8 @@ void train_one_example_single_thread(regressor& r, example* ex);
 void drive_gd(void*);
 void finish_gd(void*);
 void learn_gd(void*, example* ec);
+ void save_load(void* in, io_buf& model_file, bool read, bool text);
 void output_and_account_example(example* ec);
-void finish_example(vw&, example* ec);
 bool command_example(vw&, example* ec);
 
 
@@ -67,6 +68,6 @@ float inline_predict(vw& all, example* &ec)
   
   return prediction;
 }
-
+}
 
 #endif
