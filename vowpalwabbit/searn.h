@@ -220,7 +220,7 @@ namespace ImperativeSearn {
     uint32_t learn_a;     //   and this is the a we're varying it to
     vector< pair<size_t, vector< pair<void*,size_t> > > > snapshot_data; // pair<time,data>, where data item is <data, sizeof(data)>
     vector<uint32_t> train_action;  // which actions did we actually take in the train pass?
-    vector< vector<size_t> > train_labels;  // which labels are valid at any given time
+    vector< vector<uint32_t> > train_labels;  // which labels are valid at any given time
 
     size_t t;              // the current time step
     size_t T;              // the length of the (training) trajectory

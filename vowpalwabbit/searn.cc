@@ -1407,9 +1407,9 @@ namespace ImperativeSearn {
     return SearnUtil::random_policy(seed, srn.beta, srn.allow_current_policy, srn.current_policy, allow_optimal, srn.rollout_all_actions);
   }
 
-  vector<size_t> get_all_labels(example** ecs, size_t num_ec)
+  vector<uint32_t> get_all_labels(example** ecs, size_t num_ec)
   {
-    vector<size_t> lab;
+    vector<uint32_t> lab;
     // TODO
     return lab;
   }
