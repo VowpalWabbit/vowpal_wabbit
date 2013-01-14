@@ -124,6 +124,13 @@ namespace CB
     ld->costs.delete_v();
   }
 
+  void copy_label(void*&dst, void*src)
+  {
+    CB::label*&ldD = (CB::label*&)dst;
+    CB::label* ldS = (CB::label* )src;
+    copy_array(ldD->costs, ldS->costs);
+  }
+
   void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
   {
     CB::label* ld = (CB::label*)v;

@@ -33,16 +33,18 @@ template<class T> class v_array{
   v_array() { begin= NULL; end = NULL; end_array=NULL; erase_count = 0;}
   T& operator[](size_t i) { return begin[i]; }
   size_t size(){return end-begin;}
-  void resize(size_t length)
+  void resize(size_t length, bool zero_everything=false)
     {
       if ((size_t)(end_array-begin) != length)
 	{
 	  size_t old_len = end-begin;
 	  begin = (T *)realloc(begin, sizeof(T) * length);
 	  if ((begin == NULL) && ((sizeof(T)*length) > 0)) {
-	    std::cerr << "realloc of " << length << " failed in reserve().  out of memory?" << std::endl;
+	    std::cerr << "realloc of " << length << " failed in resize().  out of memory?" << std::endl;
 	    exit(-1);
 	  }
+          if (zero_everything && (old_len < length))
+            memset(begin+old_len, 0, (length-old_len)*sizeof(T));
 	  end = begin+old_len;
 	  end_array = begin + length;
 	}
