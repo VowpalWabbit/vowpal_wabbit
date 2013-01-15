@@ -542,7 +542,6 @@ void local_predict(vw& all, example* ec)
           else {
             norm = ec->total_sum_feat_sq;  
           }
-
           eta_t = all.eta * norm * ld->weight;
           if(!all.adaptive) eta_t *= powf(t,-all.power_t);
 
@@ -648,9 +647,15 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 
 void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 {
-  char buff[312];
+  char buff[512];
+  
   uint32_t text_len = sprintf(buff, "initial_t %f\n", all.initial_t);
   bin_text_read_write_fixed(model_file,(char*)&all.initial_t, sizeof(all.initial_t), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "norm normalizer %f\n", all.normalized_sum_norm_x);
+  bin_text_read_write_fixed(model_file,(char*)&all.normalized_sum_norm_x, sizeof(all.normalized_sum_norm_x), 
 			    "", read, 
 			    buff, text_len, text);
 
@@ -685,7 +690,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 			    buff, text_len, text);
 
   text_len = sprintf(buff, "total_features %u\n", (uint32_t)all.sd->total_features);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->example_number, sizeof(all.sd->total_features), 
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
 			    "", read, 
 			    buff, text_len, text);
 
