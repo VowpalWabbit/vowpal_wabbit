@@ -200,7 +200,7 @@ namespace Searn
 
 namespace ImperativeSearn {
   struct searn_task {
-    void (*initialize)(vw&,int&);
+    void (*initialize)(vw&,uint32_t&);
     void (*finish)(vw&);
     void (*structured_predict)(vw&,example**,size_t,stringstream*,stringstream*);
   };

@@ -326,7 +326,11 @@ namespace SequenceTask_Easy {
   SearnUtil::history_info hinfo;
   v_array<size_t> yhat;
 
-  void initialize(vw& vw, int& num_actions) {
+  void initialize(vw& vw, uint32_t& num_actions) {
+    hinfo.length          = 2;
+    hinfo.bigrams         = false;
+    hinfo.features        = 0;
+    hinfo.bigram_features = false;
   }
 
   void finish(vw& vw) {
@@ -334,6 +338,9 @@ namespace SequenceTask_Easy {
   }
 
   void get_oracle_labels(example*ec, v_array<uint32_t>*out) {
+    out->erase();
+    if (CSOAA::example_is_test(ec))
+      return;
     CSOAA::label *lab = (CSOAA::label*)ec->ld;
     float min_cost = lab->costs[0].x;
     for (size_t l=1; l<lab->costs.size(); l++)
@@ -347,45 +354,42 @@ namespace SequenceTask_Easy {
   void structured_predict_v1(vw& vw, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
     searn_struct srn = *(searn_struct*)vw.searnstr;
     float total_loss  = 0;
+    size_t history_length = max(hinfo.features, hinfo.length);
 
     yhat.erase();
-    for (size_t n=0; n<hinfo.length; n++)
+    for (size_t n=0; n<history_length; n++)
       yhat.push_back(0);  // pad the beginning with zeros for <s>
 
     v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
-      ystar.erase();
-      if (!CSOAA::example_is_test(ec[i]))
-        get_oracle_labels(ec[i], &ystar);
+      get_oracle_labels(ec[i], &ystar);
 
       SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.begin+i);
       yhat.push_back( srn.predict(vw, &ec[i], 0, NULL, &ystar) );
       SearnUtil::remove_history_from_example(vw, &hinfo, ec[i]);
 
-      cerr << "i=" << i << "\tpred=" << yhat.last() << endl;
+      //cerr << "i=" << i << "\tpred=" << yhat.last() << endl;
 
       if (!CSOAA::example_is_test(ec[i]) && (yhat.last() != ystar.last()))
         total_loss += 1.0;
-
-      ystar.erase();
     }
       
     if (output_ss != NULL) {
-      for (size_t i=0; i<yhat.size(); i++) {
-        if (i > 0) (*output_ss) << ' ';
+      for (size_t i=history_length; i<yhat.size(); i++) {
+        if (i > history_length) (*output_ss) << ' ';
         (*output_ss) << yhat[i];
       }
     }
     if (truth_ss != NULL) {
-      for (size_t i=0; i<yhat.size(); i++) {
-        if (i > 0) (*truth_ss) << ' ';
+      for (size_t i=0; i<len; i++) {
         get_oracle_labels(ec[i], &ystar);
-        (*truth_ss) << (ystar.size() > 0) ? ystar[0] : '?';
-        ystar.erase();
+        if (i > 0) (*truth_ss) << ' ';
+        if (ystar.size() > 0) (*truth_ss) << ystar[0];
+        else (*truth_ss) << '?';
       }
     }
     
-    ystar.delete_v();
+    ystar.erase();  ystar.delete_v();
     srn.declare_loss(vw, len, total_loss);
   }
 

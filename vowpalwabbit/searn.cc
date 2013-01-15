@@ -301,7 +301,7 @@ namespace Searn
   bool   rollout_all_actions  = true;  //by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
 
   // debug stuff
-  bool PRINT_DEBUG_INFO             = 0;
+  bool PRINT_DEBUG_INFO             = 1;
   bool PRINT_UPDATE_EVERY_EXAMPLE   = 0 | PRINT_DEBUG_INFO;
 
 
@@ -1399,10 +1399,10 @@ namespace ImperativeSearn {
 
   inline bool isLDF(searn_struct* srn) { return (srn->A == 0); }
 
-  size_t choose_policy(searn_struct* srn, bool allow_optimal)
+  size_t choose_policy(searn_struct* srn, bool allow_current, bool allow_optimal)
   {
     uint32_t seed = 0; // TODO: srn->read_example_last_id * 2147483 + srn->t * 2147483647;
-    return SearnUtil::random_policy(seed, srn->beta, srn->allow_current_policy, srn->current_policy, allow_optimal, srn->rollout_all_actions);
+    return SearnUtil::random_policy(seed, srn->beta, allow_current, srn->current_policy, allow_optimal, srn->rollout_all_actions);
   }
 
   v_array<CSOAA::wclass> get_all_labels(searn_struct* srn, size_t num_ec, v_array<uint32_t> *yallowed)
@@ -1466,7 +1466,7 @@ namespace ImperativeSearn {
   }
 
   uint32_t single_action(vw& all, example** ecs, size_t num_ec, v_array<CSOAA::wclass> valid_labels, size_t pol, v_array<uint32_t> *ystar) {
-    cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
+    //cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
     if (pol == 0) { // optimal policy
       if ((ystar == NULL) || (ystar->size() == 0))
         return choose_random<CSOAA::wclass>(valid_labels).weight_index;
@@ -1520,7 +1520,7 @@ namespace ImperativeSearn {
     }
 
     if (srn->state == INIT_TEST) {
-      size_t pol = choose_policy(srn, false);
+      size_t pol = choose_policy(srn, true, false);
       v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
       uint32_t a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
       srn->t++;
@@ -1528,7 +1528,7 @@ namespace ImperativeSearn {
       return a;
     }
     if (srn->state == INIT_TRAIN) {
-      size_t pol = choose_policy(srn, true);
+      size_t pol = choose_policy(srn, srn->allow_current_policy, true);
       v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
       uint32_t a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
       srn->train_action.push_back(a);
@@ -1550,12 +1550,12 @@ namespace ImperativeSearn {
             srn->learn_example_copy[n] = alloc_example(sizeof(CSOAA::label));
             VW::copy_example_data(srn->learn_example_copy[n], ecs[n], sizeof(CSOAA::label), all.p->lp->copy_label);
           }
-          cerr << "copying example to " << srn->learn_example_copy << endl;
+          //cerr << "copying example to " << srn->learn_example_copy << endl;
         }
         srn->t++;
         return srn->learn_a;
       } else {
-        size_t pol = choose_policy(srn, true);
+        size_t pol = choose_policy(srn, srn->allow_current_policy, true);
         v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
         uint32_t a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
         srn->t++;
@@ -1627,7 +1627,7 @@ namespace ImperativeSearn {
     searn_struct *srn = (searn_struct*)all.searnstr;
 
     // do an initial test pass to compute output (and loss)
-    cerr << "======================================== INIT TEST ========================================" << endl;
+    //cerr << "======================================== INIT TEST ========================================" << endl;
     srn->state = INIT_TEST;
     srn->t = 0;
     srn->T = 0;
@@ -1645,7 +1645,7 @@ namespace ImperativeSearn {
       return;  // there was no data!
 
     // do a pass over the data allowing oracle and snapshotting
-    cerr << "======================================== INIT TRAIN ========================================" << endl;
+    //cerr << "======================================== INIT TRAIN ========================================" << endl;
     srn->state = INIT_TRAIN;
     srn->t = 0;
     srn->loss_last_step = 0;
@@ -1661,7 +1661,7 @@ namespace ImperativeSearn {
     srn->T = srn->t;
 
     // generate training examples on which to learn
-    cerr << "======================================== LEARN ========================================" << endl;
+    //cerr << "======================================== LEARN ========================================" << endl;
     srn->state = LEARN;
     v_array<size_t> tset = get_training_timesteps(all);
     for (size_t t=0; t<tset.size(); t++) {
@@ -1678,11 +1678,11 @@ namespace ImperativeSearn {
           srn->loss_last_step = 0;
           srn->learn_loss = 0.f;
 
-          cerr << "learn_t = " << srn->learn_t << " || learn_a = " << srn->learn_a << endl;
+          //cerr << "learn_t = " << srn->learn_t << " || learn_a = " << srn->learn_a << endl;
           srn->task.structured_predict(all, ec, len, NULL, NULL);
 
           srn->learn_losses.push_back( srn->learn_loss );
-          cerr << "total loss: " << srn->learn_loss << endl;
+          //cerr << "total loss: " << srn->learn_loss << endl;
         }
       }
 
@@ -1731,10 +1731,10 @@ namespace ImperativeSearn {
     if (!Searn::should_print_update(all))
       return;
 
-    char pred_label[21];
     char true_label[21];
-    Searn::to_short_string(srn->pred_string ? srn->pred_string->str() : "", 20, pred_label);
+    char pred_label[21];
     Searn::to_short_string(srn->truth_string ? srn->truth_string->str() : "", 20, true_label);
+    Searn::to_short_string(srn->pred_string  ? srn->pred_string->str()  : "", 20, pred_label);
 
     fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
             all.sd->sum_loss/all.sd->weighted_examples,
@@ -1925,6 +1925,8 @@ namespace ImperativeSearn {
 
     srn->task = mytask;
     
+    srn->task.initialize(all, srn->A);
+
     all.driver = searn_drive;
     srn->base_learner = all.learn;
     all.learn = searn_learn;
