@@ -149,7 +149,7 @@ namespace CSOAA {
   {
     label* ld = (label*)v;
 
-    cerr << "csoaa::parse_label words.size()=" << words.size() << endl;
+    //cerr << "csoaa::parse_label words.size()=" << words.size() << endl;
     ld->costs.erase();
     for (unsigned int i = 0; i < words.size(); i++) {
       wclass f = {0.,0,0.,0.};

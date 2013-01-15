@@ -301,8 +301,8 @@ namespace Searn
   bool   rollout_all_actions  = true;  //by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
 
   // debug stuff
-  bool PRINT_DEBUG_INFO             = 1;
-  bool PRINT_UPDATE_EVERY_EXAMPLE   = 0 | PRINT_DEBUG_INFO;
+  bool PRINT_DEBUG_INFO             = 0;
+  bool PRINT_UPDATE_EVERY_EXAMPLE   = 1 | PRINT_DEBUG_INFO;
 
 
   // rollout
@@ -1171,56 +1171,7 @@ namespace Searn
       step++;
     }
   }
-  
-/*
-  struct beam_info_struct {
-    vw&all;
-    bool allow_oracle;
-    bool allow_current;
-  };
 
-  void run_prediction_beam_iter(Beam::beam*b, size_t bucket_id, state s0, float cur_loss, void*args)
-  {
-    beam_info_struct* bi = (beam_info_struct*)args;
-
-    if (task.final(s0)) return;
-
-    v_array< pair<uint32_t,float> > partial_predictions;
-    searn_predict(bi->all, s0, bucket_id, bi->allow_oracle, bi->allow_current, &partial_predictions);
-    for (size_t i=0; i<partial_predictions.size(); i++) {
-      state s1 = task.copy(s0);
-      float new_loss = cur_loss + partial_predictions[i].second;
-      uint32_t action = partial_predictions[i].first;
-      task.step( s1, action );
-      b->put( task.bucket(s1), s1, action, new_loss );
-    }
-  }
-
-  void run_prediction_beam(vw&all, size_t max_beam_size, state s0, bool allow_oracle, bool allow_current, bool track_actions, std::vector<action>* action_sequence)
-  {
-    Beam::beam *b = new Beam::beam(task.equivalent, task.hash, max_beam_size);
-
-    beam_info_struct bi = { all, allow_oracle, allow_current };
-
-    b->put(task.bucket(s0), s0, 0, 0.);
-    size_t current_bucket = 0;
-    while (true) {
-      current_bucket = b->get_next_bucket(current_bucket);
-      if (current_bucket == 0) break;
-      b->iterate(current_bucket, run_prediction_beam_iter, &bi);
-    }
-
-    if (track_actions && (action_sequence != NULL))
-      b->get_best_output(action_sequence);
-
-    delete b;
-  }
-
-  //  void hm_free_state_copies(state s, action a) { 
-  //    task.finish(s);
-  //  }
-
-  */
   void do_actual_learning(vw&all)
   {
     // there are two cases:
@@ -1638,6 +1589,7 @@ namespace ImperativeSearn {
     srn->learn_example_copy = NULL;
     srn->learn_example_len  = 0;
     srn->train_action.erase();
+    srn->num_features = 0;
  
     srn->task.structured_predict(all, ec, len, srn->pred_string, srn->truth_string);
 
@@ -1724,7 +1676,7 @@ namespace ImperativeSearn {
     srn->ec_seq.erase();
   }
 
-
+  float safediv(float a,float b) { if (b == 0.f) return 0.f; else return (a/b); }
   void print_update(vw& all)
   {
     searn_struct *srn = (searn_struct*)all.searnstr;
@@ -1737,8 +1689,8 @@ namespace ImperativeSearn {
     Searn::to_short_string(srn->pred_string  ? srn->pred_string->str()  : "", 20, pred_label);
 
     fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
-            all.sd->sum_loss/all.sd->weighted_examples,
-            all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
+            safediv(all.sd->sum_loss, all.sd->weighted_examples),
+            safediv(all.sd->sum_loss_since_last_dump, all.sd->weighted_examples - all.sd->old_weighted_examples),
             (long int)all.sd->example_number,
             all.sd->weighted_examples,
             true_label,
@@ -1767,6 +1719,14 @@ namespace ImperativeSearn {
     }
 
     train_single_example(all, srn->ec_seq.begin, srn->ec_seq.size());
+    if (srn->test_loss >= 0.f) {
+      all.sd->sum_loss += srn->test_loss;
+      all.sd->sum_loss_since_last_dump += srn->test_loss;
+      all.sd->example_number++;
+      all.sd->total_features += srn->num_features;
+      all.sd->weighted_examples += 1.f;
+    }
+
     print_update(all);
 
     if (srn->truth_string != NULL) {
@@ -1856,7 +1816,6 @@ namespace ImperativeSearn {
     }
   }
 
-
   void searn_initialize(vw& all)
   {
     searn_struct *srn = (searn_struct*)all.searnstr;
@@ -1865,17 +1824,14 @@ namespace ImperativeSearn {
     srn->declare_loss = searn_declare_loss;
     srn->snapshot = searn_snapshot;
 
-    srn->A = 3; // TODO
-    srn->beta = 0.5;  // TODO
-    srn->allow_current_policy = false;  // TODO
-    srn->rollout_all_actions = true; // TODO
-    srn->increment = 99999; // TODO
-    srn->base_learner = NULL; // TODO
+    srn->beta = 0.5;
+    srn->allow_current_policy = false;
+    srn->rollout_all_actions = true;
     srn->num_features = 0;
     srn->current_policy = 1;
     srn->state = 0;
 
-    srn->passes_per_policy = 100;     //this should be set to the same value as --passes for dagger
+    srn->passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
     srn->read_example_this_loop = 0;
     srn->read_example_last_id = 0;
@@ -1903,7 +1859,6 @@ namespace ImperativeSearn {
     }
     srn->train_labels.erase(); srn->train_labels.delete_v();
     srn->train_action.erase(); srn->train_action.delete_v();
-
     srn->learn_losses.erase(); srn->learn_losses.delete_v();
 
     if (srn->task.finish != NULL)
@@ -1912,19 +1867,132 @@ namespace ImperativeSearn {
       srn->base_finish(all);
   }
 
+  void ensure_param(float &v, float lo, float hi, float def, const char* string) {
+    if ((v < lo) || (v > hi)) {
+      cerr << string << endl;
+      v = def;
+    }
+  }
+
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
+    if (vm_file.count(opt_name)) { // loaded from regressor file
+      ret = vm_file[opt_name].as<T>();
+      if (vm.count(opt_name) && !equal(ret, vm[opt_name].as<T>())) {
+        if (default_to_cmdline)
+          ret = vm[opt_name].as<T>();
+        std::cerr << mismatch_error_string << ret << endl;
+      }
+    } else if (vm.count(opt_name)) {
+      ret = vm[opt_name].as<T>();
+      stringstream ss;
+      ss << " " << opt_name << " " << ret;
+      all.options_from_file.append(ss.str());
+    } else if (strlen(required_error_string)>0) {
+      std::cerr << required_error_string << endl;
+      exit(-1);
+    }
+  }  
+
+  bool string_equal(string a, string b) { return a.compare(b) == 0; }
+  bool float_equal(float a, float b) { return fabs(a-b) < 1e-6; }
+  bool sizet_equal(size_t a, size_t b) { return a==b; }
+
   void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     searn_struct *srn = (searn_struct*)all.searnstr;
 
     searn_initialize(all);
 
-    searn_task mytask = { SequenceTask_Easy::initialize, 
-                          SequenceTask_Easy::finish, 
-                          SequenceTask_Easy::structured_predict_v1
-                        };
+    po::options_description desc("Imperative Searn options");
+    desc.add_options()
+      ("searn_task", po::value<string>(), "the searn task")
+      ("searn_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
+      ("searn_beta", po::value<float>(), "interpolation rate for policies")
+      ("searn_allow_current_policy", "allow searn labeling to use the current policy")
+      ("searn_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained");
 
-    srn->task = mytask;
-    
+    po::options_description add_desc_file("Searn options only available in regressor file");
+    add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
+
+    po::options_description desc_file;
+    desc_file.add(desc).add(add_desc_file);
+
+    po::parsed_options parsed = po::command_line_parser(opts).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+
+    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc_file).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
+  
+    std::string task_string;
+
+    check_option<string>(task_string, all, vm, vm_file, "searn_task", false, string_equal,
+                         "warning: specified --searn_task different than the one loaded from regressor. using loaded value of: ",
+                         "error: you must specify a task using --searn_task");
+    check_option<size_t>(srn->A, all, vm, vm_file, "searnimp", false, sizet_equal,
+                         "warning: you specified a different number of actions through --searnimp than the one loaded from predictor. using loaded value of: ", "");
+    check_option<float >(srn->beta, all, vm, vm_file, "searn_beta", false, float_equal,
+                         "warning: you specified a different value through --searn_beta than the one loaded from predictor. using loaded value of: ", "");
+
+    if (vm.count("searn_passes_per_policy"))       srn->passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
+    if (vm.count("searn_allow_current_policy"))    srn->allow_current_policy = true;
+
+    //if we loaded a regressor with -i option, --searn_trained_nb_policies contains the number of trained policies in the file
+    // and --searn_total_nb_policies contains the total number of policies in the file
+    if ( vm_file.count("searn_total_nb_policies") ) {
+      srn->current_policy = (uint32_t)vm_file["searn_trained_nb_policies"].as<size_t>();
+      srn->total_number_of_policies = (uint32_t)vm_file["searn_total_nb_policies"].as<size_t>();
+      if (vm.count("searn_total_nb_policies") && (uint32_t)vm["searn_total_nb_policies"].as<size_t>() != srn->total_number_of_policies)
+        std::cerr << "warning: --searn_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << srn->total_number_of_policies << endl;
+    } else if (vm.count("searn_total_nb_policies"))
+      srn->total_number_of_policies = (uint32_t)vm["searn_total_nb_policies"].as<size_t>();
+
+    ensure_param(srn->beta , 0.0, 1.0, 0.5, "warning: searn_beta must be in (0,1); resetting to 0.5");
+
+    //compute total number of policies we will have at end of training
+    // we add current_policy for cases where we start from an initial set of policies loaded through -i option
+    uint32_t tmp_number_of_policies = srn->current_policy; 
+    if( all.training )
+	tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)srn->passes_per_policy));
+
+    //the user might have specified the number of policies that will eventually be trained through multiple vw calls, 
+    //so only set total_number_of_policies to computed value if it is larger
+    if( tmp_number_of_policies > srn->total_number_of_policies ) {
+      srn->total_number_of_policies = tmp_number_of_policies;
+      if( srn->current_policy > 0 ) //we loaded a file but total number of policies didn't match what is needed for training
+        std::cerr << "warning: you're attempting to train more classifiers than was allocated initially. Likely to cause bad performance." << endl;
+    }
+
+    //current policy currently points to a new policy we would train
+    //if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
+    //so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
+    if( !all.training && srn->current_policy > 0 )
+      srn->current_policy--;
+
+    std::stringstream ss1, ss2;
+    ss1 << srn->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss1.str()); 
+    ss2 << srn->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies",   ss2.str());
+
+    all.base_learner_nb_w *= srn->total_number_of_policies;
+    srn->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
+
+    if (task_string.compare("sequence") == 0) {
+      searn_task mytask = { SequenceTask_Easy::initialize, 
+                            SequenceTask_Easy::finish, 
+                            SequenceTask_Easy::structured_predict_v1
+                          };
+      srn->task = mytask;
+    } else {
+      cerr << "fail: unknown task for --searn_task: " << task_string << endl;
+      exit(-1);
+    }
+
     srn->task.initialize(all, srn->A);
 
     all.driver = searn_drive;

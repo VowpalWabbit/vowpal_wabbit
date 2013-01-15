@@ -327,7 +327,7 @@ namespace SequenceTask_Easy {
   v_array<size_t> yhat;
 
   void initialize(vw& vw, uint32_t& num_actions) {
-    hinfo.length          = 2;
+    hinfo.length          = 1;
     hinfo.bigrams         = false;
     hinfo.features        = 0;
     hinfo.bigram_features = false;
@@ -355,6 +355,7 @@ namespace SequenceTask_Easy {
     searn_struct srn = *(searn_struct*)vw.searnstr;
     float total_loss  = 0;
     size_t history_length = max(hinfo.features, hinfo.length);
+    bool is_train = false;
 
     yhat.erase();
     for (size_t n=0; n<history_length; n++)
@@ -370,8 +371,11 @@ namespace SequenceTask_Easy {
 
       //cerr << "i=" << i << "\tpred=" << yhat.last() << endl;
 
-      if (!CSOAA::example_is_test(ec[i]) && (yhat.last() != ystar.last()))
-        total_loss += 1.0;
+      if (!CSOAA::example_is_test(ec[i])) {
+        is_train = true;
+        if (yhat.last() != ystar.last())
+          total_loss += 1.0;
+      }
     }
       
     if (output_ss != NULL) {
@@ -390,7 +394,7 @@ namespace SequenceTask_Easy {
     }
     
     ystar.erase();  ystar.delete_v();
-    srn.declare_loss(vw, len, total_loss);
+    srn.declare_loss(vw, len, is_train ? total_loss : -1.f);
   }
 
   /*

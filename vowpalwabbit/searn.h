@@ -208,7 +208,7 @@ namespace ImperativeSearn {
   struct searn_struct {
     // functions that you will call
     uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
-    void     (*declare_loss)(vw&,size_t,float);
+    void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot)(vw&,size_t,size_t,void*,size_t);
 
     // structure that you must set
