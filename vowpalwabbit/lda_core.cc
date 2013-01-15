@@ -541,10 +541,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 					"", 0, text);
 	      
 	      weight* v = &(all->reg.weight_vector[ndx]);
-	      if (all->rank != 0)
-		text_len = sprintf(buff, "%f ", *v);
-	      else
-		text_len = sprintf(buff, "%f ", *v + all->lda_rho);
+	      text_len = sprintf(buff, "%f ", *v + all->lda_rho);
 	      
 	      bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
 					"", read,
@@ -564,7 +561,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 }
 
 
-void lda_parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
 
   po::options_description desc("Searn options");
@@ -601,7 +598,7 @@ void lda_parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& v
 
 }
 
-void drive_lda(void* in)
+void drive(void* in)
 {
   vw* all = (vw*)in;
   regressor reg = all->reg;

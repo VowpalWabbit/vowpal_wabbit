@@ -9,7 +9,7 @@ license as described in the file LICENSE.
 
 namespace BFGS {
 
-  void drive_bfgs(void*);
+  void drive(void*);
   void finish(void*);
   void learn(void*, example* ec);
   void save_load(void* in, io_buf& model_file, bool read, bool text);

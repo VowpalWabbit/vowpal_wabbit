@@ -124,6 +124,7 @@ vw parse_args(int argc, char *argv[])
      "File to output unnormalized predictions to")
     ("ring_size", po::value<size_t>(&(all.p->ring_size)), "size of example ring")
     ("save_per_pass", "Save the model after every pass over data")
+    ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("searnimp", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
@@ -237,7 +238,7 @@ vw parse_args(int argc, char *argv[])
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
-    all.driver = BFGS::drive_bfgs;
+    all.driver = BFGS::drive;
     all.learn = BFGS::learn;
     all.finish = BFGS::finish;
     all.save_load = BFGS::save_load;
@@ -262,15 +263,7 @@ vw parse_args(int argc, char *argv[])
 	cout << "you must make at least 2 passes to use BFGS" << endl;
 	exit(1);
       }
-
-    //default initial_t to 1 instead of 0
-    if(!vm.count("initial_t")) {
-      all.sd->t = 1.f;
-      all.sd->weighted_unlabeled_examples = 1.f;
-      all.initial_t = 1.f;
-    }
   }
-
 
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
@@ -374,6 +367,19 @@ vw parse_args(int argc, char *argv[])
 	}
     }
 
+  io_buf io_temp;
+  parse_regressor_args(all, vm, io_temp);
+
+  //parse flags from regressor file
+  all.options_from_file_argv = VW::get_argv_from_string(all.options_from_file,all.options_from_file_argc);
+
+  po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(desc).allow_unregistered().run();
+
+  po::store(parsed_file, vm_file);
+  po::notify(vm_file);
+
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
   all.ignore_some = false;
@@ -469,31 +475,22 @@ vw parse_args(int argc, char *argv[])
       all.initial_t = 1.f;
     }
 
-    LDA::lda_parse_flags(all, to_pass_further, vm);
-    all.driver = LDA::drive_lda;
+    LDA::parse_flags(all, to_pass_further, vm);
+    all.driver = LDA::drive;
     all.save_load = LDA::save_load;
   }
 
   if (!vm.count("lda") && !all.adaptive && !all.normalized_updates) 
     all.eta *= powf((float)(all.sd->t), all.power_t);
-
-  parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
-
-  //parse flags from regressor file
-  all.options_from_file_argv = VW::get_argv_from_string(all.options_from_file,all.options_from_file_argc);
-
-  po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();
-
-  po::store(parsed_file, vm_file);
-  po::notify(vm_file);
   
   if (vm.count("readable_model"))
     all.text_regressor_name = vm["readable_model"].as<string>();
   
   if (vm.count("save_per_pass"))
     all.save_per_pass = true;
+
+  if (vm.count("save_resume"))
+    all.save_resume = true;
 
   if (vm.count("min_prediction"))
     all.sd->min_label = vm["min_prediction"].as<float>();
@@ -513,14 +510,14 @@ vw parse_args(int argc, char *argv[])
 
   all.is_noop = false;
   if (vm.count("noop")) {
-    all.driver = NOOP::drive_noop;
-    all.learn = NOOP::learn_noop;
+    all.driver = NOOP::drive;
+    all.learn = NOOP::learn;
     all.save_load = NOOP::save_load;
     all.is_noop = true;
   }
   
   if (all.rank != 0) {
-    all.driver = GDMF::drive_gd_mf;
+    all.driver = GDMF::drive;
     all.save_load = GDMF::save_load;
     loss_function = "classic";
     cerr << "Forcing classic squared loss for matrix factorization" << endl;
@@ -593,6 +590,10 @@ vw parse_args(int argc, char *argv[])
       all.save_load = SENDER::save_load;
       SENDER::parse_send_args(vm, all.pairs);
     }
+
+  // load rest of regressor
+  all.save_load(&all, io_temp, true, false);
+  io_temp.close_file();
 
   if (all.l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;

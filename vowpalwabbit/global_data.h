@@ -138,6 +138,8 @@ struct vw {
   bool hessian_on;
   int m;
 
+  bool save_resume;
+
   std::string options_from_file;
   char** options_from_file_argv;
   int options_from_file_argc;

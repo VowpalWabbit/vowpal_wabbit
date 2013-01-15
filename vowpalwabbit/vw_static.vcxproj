@@ -263,7 +263,6 @@
     <ClInclude Include="searn.h" />
     <ClInclude Include="searn_sequencetask.h" />
     <ClInclude Include="sender.h" />
-    <ClInclude Include="sequence.h" />
     <ClInclude Include="simple_label.h" />
     <ClInclude Include="sparse_dense.h" />
     <ClInclude Include="targetver.h" />
@@ -303,7 +302,6 @@
     <ClCompile Include="searn.cc" />
     <ClCompile Include="searn_sequencetask.cc" />
     <ClCompile Include="sender.cc" />
-    <ClCompile Include="sequence.cc" />
     <ClCompile Include="simple_label.cc" />
     <ClCompile Include="sparse_dense.cc" />
     <ClCompile Include="unique_sort.cc" />

@@ -647,7 +647,7 @@ int process_pass(vw& all) {
 	ftime(&t_end_global);
 	net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 	if (!all.quiet)
-	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, step_size);
 	predictions.erase();
 	update_weight(all, all.final_regressor_name, step_size, current_pass);		     		           }
     }
@@ -688,10 +688,9 @@ int process_pass(vw& all) {
 		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		      float ratio = (step_size==0.f) ? 0.f : (float)new_step/(float)step_size;
 		      if (!all.quiet)
-			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10.5f\t%-.3f\n",
+			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10.5f\n",
 				"","",ratio,
-				new_step,
-				net_time/1000.);
+				new_step);
 			predictions.erase();
 			update_weight(all, all.final_regressor_name, (float)(-step_size+new_step), current_pass);		     		      			
 			step_size = (float)new_step;
@@ -733,7 +732,7 @@ int process_pass(vw& all) {
 			ftime(&t_end_global);
 			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!all.quiet)
-			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, step_size);
 			predictions.erase();
 			update_weight(all, all.final_regressor_name, step_size, current_pass);		     		      
 		      }
@@ -773,7 +772,7 @@ int process_pass(vw& all) {
 		  ftime(&t_end_global);
 		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		  if (!all.quiet)
-		    fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
+		    fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\n", curvature / importance_weight_sum, d_mag, step_size);
 		  gradient_pass = true;
 		}//now start computing derivatives.    
     current_pass++;
@@ -859,6 +858,54 @@ void finish(void* a)
   free(alpha);
 }
 
+void save_load_regularizer(vw& all, io_buf& model_file, bool read, bool text)
+{
+  char buff[512];
+  int c = 0;
+  uint32_t stride = all.stride;
+  uint32_t length = 2*(1 << all.num_bits);
+  uint32_t i = 0;
+  size_t brw = 1;
+  do 
+    {
+      brw = 1;
+      weight* v;
+      if (read)
+	{
+	  c++;
+	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+	  if (brw > 0)
+	    {
+	      assert (i< length);		
+	      v = &(regularizers[i]);
+	      if (brw > 0)
+		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+	    }
+	}
+      else // write binary or text
+	{
+	  v = &(regularizers[i]);
+	  if (*v != 0.)
+	    {
+	      c++;
+	      int text_len = sprintf(buff, "%d", i);
+	      brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
+					 buff, text_len, text);
+	      
+	      text_len = sprintf(buff, ":%f\n", *v);
+	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
+					 buff, text_len, text);
+	      if (read && i%2 == 1) // This is the prior mean
+		all.reg.weight_vector[(i/2*stride)] = *v;
+	    }
+	}
+      if (!read)
+	i++;
+    }  
+  while ((!read && i < length) || (read && brw >0));
+}
+
+
 void save_load(void* in, io_buf& model_file, bool read, bool text)
 {
   vw* all = (vw*)in;
@@ -894,9 +941,9 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
       
       if (!all->quiet)
 	{
-	  const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
+	  const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
 	  fprintf(stderr, header_fmt,
-		  "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size", "time");
+		  "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size");
 	  cerr.precision(5);
 	}
       
@@ -906,66 +953,23 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
       reset_state(*all, false);
     }
 
+  bool reg_vector = output_regularizer || all->per_feature_regularizer_input.length() > 0;
   if (model_file.files.size() > 0)
     {
       char buff[512];
-      bool reg_vector = output_regularizer || all->per_feature_regularizer_input.length() > 0;
-      int c = 0;
-      uint32_t stride = all->stride;
+      uint32_t text_len = sprintf(buff, ":%d\n", reg_vector);
+      bin_text_read_write_fixed(model_file,(char *)&reg_vector, sizeof (reg_vector),
+				"", read,
+				buff, text_len, text);
+      
       if (reg_vector)
-	length *= 2;
-      uint32_t i = 0;
-      size_t brw = 1;
-      do 
-	{
-	  brw = 1;
-	  weight* v;
-	  if (read)
-	    {
-	      c++;
-	      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
-	      if (brw > 0)
-		{
-		  assert (i< length);		
-		  if (reg_vector)
-		    v = &(regularizers[i]);
-		  else
-		    v = &(all->reg.weight_vector[stride*i]);
-		  if (brw > 0)
-		    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
-		}
-	    }
-	  else // write binary or text
-	    {
-	      if (reg_vector)
-		v = &(regularizers[i]);
-	      else
-		v = &(all->reg.weight_vector[stride*i]);
-	      if (*v != 0.)
-		{
-		  c++;
-		  int text_len = sprintf(buff, "%d", i);
-		  brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-						  "", read,
-						  buff, text_len, text);
-		  
-		  
-		  text_len = sprintf(buff, ":%f\n", *v);
-		  brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-						  "", read,
-						  buff, text_len, text);
-		  if (read && reg_vector && i%2 == 1) // This is the prior mean
-		    all->reg.weight_vector[(i/2*stride)] = *v;
-		}
-	    }
-	  if (!read)
-	    i++;
-	}  
-      while ((!read && i < length) || (read && brw >0));
+	save_load_regularizer(*all, model_file, read, text);
+      else
+	GD::save_load_regressor(*all, model_file, read, text);
     }
 }
 
-void drive_bfgs(void* in)
+void drive(void* in)
 {
   vw* all = (vw*)in;
 

@@ -156,7 +156,7 @@ namespace OAA {
     size_t prediction = 1;
     float score = INT_MIN;
   
-    if (mc_label_data->label > k && mc_label_data->label != (size_t)-1)
+    if (mc_label_data->label > k && mc_label_data->label != (uint32_t)-1)
       cerr << "warning: label " << mc_label_data->label << " is greater than " << k << endl;
   
     string outputString;

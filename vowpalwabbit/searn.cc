@@ -302,7 +302,7 @@ namespace Searn
 
   // debug stuff
   bool PRINT_DEBUG_INFO             = 0;
-  bool PRINT_UPDATE_EVERY_EXAMPLE   = 1 | PRINT_DEBUG_INFO;
+  bool PRINT_UPDATE_EVERY_EXAMPLE   = 0 | PRINT_DEBUG_INFO;
 
 
   // rollout

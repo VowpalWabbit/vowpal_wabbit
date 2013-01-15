@@ -50,7 +50,7 @@ namespace OAA
 
   inline int example_is_test(example* ec)
   {
-    return (((OAA::mc_label*)ec->ld)->label == (size_t)-1);
+    return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
   }
 
 

@@ -542,7 +542,6 @@ void local_predict(vw& all, example* ec)
           else {
             norm = ec->total_sum_feat_sq;  
           }
-
           eta_t = all.eta * norm * ld->weight;
           if(!all.adaptive) eta_t *= powf(t,-all.power_t);
 
@@ -601,19 +600,165 @@ void predict(vw& all, example* ex)
   ex->done = true;
 }
 
+void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
+{
+  uint32_t length = 1 << all.num_bits;
+  uint32_t stride = all.stride;
+  int c = 0;
+  uint32_t i = 0;
+  size_t brw = 1;
+  do 
+    {
+      brw = 1;
+      weight* v;
+      if (read)
+	{
+	  c++;
+	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+	  if (brw > 0)
+	    {
+	      assert (i< length);		
+	      v = &(all.reg.weight_vector[stride*i]);
+	      brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+	    }
+	}
+      else // write binary or text
+	{
+	  v = &(all.reg.weight_vector[stride*i]);
+	  if (*v != 0.)
+	    {
+	      c++;
+	      char buff[512];
+	      int text_len = sprintf(buff, "%d", i);
+	      brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
+					 buff, text_len, text);
+	      
+	      
+	      text_len = sprintf(buff, ":%f\n", *v);
+	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
+					 buff, text_len, text);
+	    }
+	}
+      if (!read)
+	i++;
+    }
+  while ((!read && i < length) || (read && brw >0));  
+}
+
+void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
+{
+  char buff[512];
+  
+  uint32_t text_len = sprintf(buff, "initial_t %f\n", all.initial_t);
+  bin_text_read_write_fixed(model_file,(char*)&all.initial_t, sizeof(all.initial_t), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "norm normalizer %f\n", all.normalized_sum_norm_x);
+  bin_text_read_write_fixed(model_file,(char*)&all.normalized_sum_norm_x, sizeof(all.normalized_sum_norm_x), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "t %f\n", all.sd->t);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->t, sizeof(all.sd->t), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "sum_loss %f\n", all.sd->sum_loss);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss, sizeof(all.sd->sum_loss), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "weighted_examples %f\n", all.sd->weighted_examples);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "weighted_labels %f\n", all.sd->weighted_labels);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_labels, sizeof(all.sd->weighted_labels), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "weighted_unlabeled_examples %f\n", all.sd->weighted_unlabeled_examples);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_unlabeled_examples, sizeof(all.sd->weighted_unlabeled_examples), 
+			    "", read, 
+			    buff, text_len, text);
+  
+  text_len = sprintf(buff, "example_number %u\n", (uint32_t)all.sd->example_number);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->example_number, sizeof(all.sd->example_number), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "total_features %u\n", (uint32_t)all.sd->total_features);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
+			    "", read, 
+			    buff, text_len, text);
+
+  uint32_t length = 1 << all.num_bits;
+  uint32_t stride = all.stride;
+  int c = 0;
+  uint32_t i = 0;
+  size_t brw = 1;
+  do 
+    {
+      brw = 1;
+      weight* v;
+      if (read)
+	{
+	  c++;
+	  brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+	  if (brw > 0)
+	    {
+	      assert (i< length);		
+	      v = &(all.reg.weight_vector[stride*i]);
+	      if (stride == 2) //either adaptive or normalized
+		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*2, "");
+	      else //adaptive and normalized
+		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*3, "");	
+	    }
+	}
+      else // write binary or text
+	{
+	  v = &(all.reg.weight_vector[stride*i]);
+	  if (*v != 0.)
+	    {
+	      c++;
+	      char buff[512];
+	      int text_len = sprintf(buff, "%d", i);
+	      brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
+					 buff, text_len, text);
+	      
+	      if (stride == 2)
+		{//either adaptive or normalized
+		  text_len = sprintf(buff, ":%f %f\n", *v, *(v+1));
+		  brw+= bin_text_write_fixed(model_file,(char *)v, 2*sizeof (*v),
+					     buff, text_len, text);
+		}
+	      else
+		{//adaptive and normalized
+		  text_len = sprintf(buff, ":%f %f %f\n", *v, *(v+1), *(v+2));
+		  brw+= bin_text_write_fixed(model_file,(char *)v, 3*sizeof (*v),
+					     buff, text_len, text);
+		}
+	    }
+	}
+      if (!read)
+	i++;
+    }
+  while ((!read && i < length) || (read && brw >0));  
+}
+
 void save_load(void* in, io_buf& model_file, bool read, bool text)
 {
   vw* all=(vw*)in;
-  int c = 0;
-  uint32_t length = 1 << all->num_bits;
-  uint32_t stride = all->stride;
-  
   if(read)
     {
       initialize_regressor(*all);
       if(all->adaptive && all->initial_t > 0)
 	{
-	  for (size_t j = 1; j < all->stride*length; j+=all->stride)
+	  uint32_t length = 1 << all->num_bits;
+	  uint32_t stride = all->stride;
+	  for (size_t j = 1; j < stride*length; j+=stride)
 	    {
 	      all->reg.weight_vector[j] = all->initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
 	      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be 
@@ -625,47 +770,16 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 
   if (model_file.files.size() > 0)
     {
-      uint32_t i = 0;
-      size_t brw = 1;
-      do 
-	{
-	  brw = 1;
-	  weight* v;
-	  if (read)
-	    {
-	      c++;
-	      brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
-	      if (brw > 0)
-		{
-		  assert (i< length);		
-		  v = &(all->reg.weight_vector[stride*i]);
-		  if (brw > 0)
-		    brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
-		}
-	    }
-	  else // write binary or text
-	    {
-	      v = &(all->reg.weight_vector[stride*i]);
-	      if (*v != 0.)
-		{
-		  c++;
-		  char buff[512];
-		  int text_len = sprintf(buff, "%d", i);
-		  brw = bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
-						  "", read,
-						  buff, text_len, text);
-		  
-		  
-		  text_len = sprintf(buff, ":%f\n", *v);
-		  brw+= bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-						  "", read,
-						  buff, text_len, text);
-		}
-	    }
-	  if (!read)
-	    i++;
-	}
-      while ((!read && i < length) || (read && brw >0));
+      bool resume = all->save_resume;
+      char buff[512];
+      uint32_t text_len = sprintf(buff, ":%d\n", resume);
+      bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume),
+				"", read,
+				buff, text_len, text);
+      if (resume)
+	save_load_online_state(*all, model_file, read, text);
+      else
+	save_load_regressor(*all, model_file, read, text);
     }
 }
 
