@@ -324,42 +324,85 @@ namespace SequenceTask_Easy {
   using namespace ImperativeSearn;
 
   SearnUtil::history_info hinfo;
-  vector<size_t> yhat;
-  size_t unknown_label = (size_t)-1;
+  v_array<size_t> yhat;
 
-  void initialize(vw& vw, int& num_actions) {
+  void initialize(vw& vw, uint32_t& num_actions) {
+    hinfo.length          = 1;
+    hinfo.bigrams         = false;
+    hinfo.features        = 0;
+    hinfo.bigram_features = false;
   }
 
   void finish(vw& vw) {
+    yhat.delete_v();
   }
 
-  void structured_predict_v1(vw& vw, example**ec, size_t len) {
+  void get_oracle_labels(example*ec, v_array<uint32_t>*out) {
+    out->erase();
+    if (CSOAA::example_is_test(ec))
+      return;
+    CSOAA::label *lab = (CSOAA::label*)ec->ld;
+    float min_cost = lab->costs[0].x;
+    for (size_t l=1; l<lab->costs.size(); l++)
+      if (lab->costs[l].x < min_cost) min_cost = lab->costs[l].x;
+    
+    for (size_t l=0; l<lab->costs.size(); l++)
+      if (lab->costs[l].x <= min_cost)
+        out->push_back( lab->costs[l].weight_index );
+  }
+
+  void structured_predict_v1(vw& vw, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
     searn_struct srn = *(searn_struct*)vw.searnstr;
     float total_loss  = 0;
+    size_t history_length = max(hinfo.features, hinfo.length);
+    bool is_train = false;
 
-    yhat.clear();
-    for (size_t n=0; n<hinfo.length; n++)
-      yhat.push_back(0);  // pad the beginning with zeros for <s>
+    yhat.erase();
+    yhat.resize(history_length + len, true); // pad the beginning with zeros for <s>
 
-    vector<uint32_t> ystar;
+    v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
-      ystar.clear();
-      if (!OAA::example_is_test(ec[i]))
-        ystar.push_back( ((OAA::mc_label*)ec[i]->ld)->label );
+      srn.snapshot(vw, i, 1, &i, sizeof(i));
+      srn.snapshot(vw, i, 2, yhat.begin+i, sizeof(size_t)*history_length);
+      srn.snapshot(vw, i, 3, &total_loss, sizeof(total_loss));
+      //cerr << "i=" << i << " --------------------------------------" << endl;
 
-      SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.data()+i);
-      yhat.push_back( srn.predict(vw, &ec[i], 0, NULL, &ystar) );
+      get_oracle_labels(ec[i], &ystar);
+
+      SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.begin+i);
+      yhat[i+history_length] = srn.predict(vw, &ec[i], 0, NULL, &ystar);
       SearnUtil::remove_history_from_example(vw, &hinfo, ec[i]);
 
-      if (!OAA::example_is_test(ec[i]) && (yhat.back() != ystar.back()))
-        total_loss += 1.0;
+      //cerr << "i=" << i << "\tpred=" << yhat.last() << endl;
+
+      if (!CSOAA::example_is_test(ec[i])) {
+        is_train = true;
+        if (yhat[i+history_length] != ystar.last())
+          total_loss += 1.0;
+      }
     }
       
-    srn.declare_loss(vw, len, total_loss);
+    if (output_ss != NULL) {
+      for (size_t i=0; i<len; i++) {
+        if (i > 0) (*output_ss) << ' ';
+        (*output_ss) << yhat[i+history_length];
+      }
+    }
+    if (truth_ss != NULL) {
+      for (size_t i=0; i<len; i++) {
+        get_oracle_labels(ec[i], &ystar);
+        if (i > 0) (*truth_ss) << ' ';
+        if (ystar.size() > 0) (*truth_ss) << ystar[0];
+        else (*truth_ss) << '?';
+      }
+    }
+    
+    ystar.erase();  ystar.delete_v();
+    srn.declare_loss(vw, len, is_train ? total_loss : -1.f);
   }
 
   /*
-  void structured_predict_v2(vw& vw, example**ec, size_t len) {
+  void structured_predict_v2(vw& vw, example**ec, size_t len, string*output_str) {
     float total_loss  = 0;
 
     yhat.clear();
