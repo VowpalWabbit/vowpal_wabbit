@@ -358,30 +358,34 @@ namespace SequenceTask_Easy {
     bool is_train = false;
 
     yhat.erase();
-    for (size_t n=0; n<history_length; n++)
-      yhat.push_back(0);  // pad the beginning with zeros for <s>
+    yhat.resize(history_length + len, true); // pad the beginning with zeros for <s>
 
     v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
+      srn.snapshot(vw, i, 1, &i, sizeof(i));
+      srn.snapshot(vw, i, 2, yhat.begin+i, sizeof(size_t)*history_length);
+      srn.snapshot(vw, i, 3, &total_loss, sizeof(total_loss));
+      //cerr << "i=" << i << " --------------------------------------" << endl;
+
       get_oracle_labels(ec[i], &ystar);
 
       SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.begin+i);
-      yhat.push_back( srn.predict(vw, &ec[i], 0, NULL, &ystar) );
+      yhat[i+history_length] = srn.predict(vw, &ec[i], 0, NULL, &ystar);
       SearnUtil::remove_history_from_example(vw, &hinfo, ec[i]);
 
       //cerr << "i=" << i << "\tpred=" << yhat.last() << endl;
 
       if (!CSOAA::example_is_test(ec[i])) {
         is_train = true;
-        if (yhat.last() != ystar.last())
+        if (yhat[i+history_length] != ystar.last())
           total_loss += 1.0;
       }
     }
       
     if (output_ss != NULL) {
-      for (size_t i=history_length; i<yhat.size(); i++) {
-        if (i > history_length) (*output_ss) << ' ';
-        (*output_ss) << yhat[i];
+      for (size_t i=0; i<len; i++) {
+        if (i > 0) (*output_ss) << ' ';
+        (*output_ss) << yhat[i+history_length];
       }
     }
     if (truth_ss != NULL) {

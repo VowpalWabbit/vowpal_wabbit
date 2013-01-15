@@ -1434,12 +1434,8 @@ namespace ImperativeSearn {
   void clear_snapshot(vw& all)
   {
     searn_struct *srn = (searn_struct*)all.searnstr;
-    for (size_t i=0; i<srn->snapshot_data.size(); i++) {
-      v_array< pair<void*,size_t> > data = srn->snapshot_data[i].second;
-      for (size_t j=0; j<data.size(); j++)
-        free(data[j].first);
-      data.erase();
-    }
+    for (size_t i=0; i<srn->snapshot_data.size(); i++)
+      free(srn->snapshot_data[i].data_ptr);
     srn->snapshot_data.erase();
   }
 
@@ -1536,10 +1532,65 @@ namespace ImperativeSearn {
       srn->learn_loss += incr_loss;
   }
 
-  void searn_snapshot(vw& all, size_t index, size_t tag, void* data, size_t sizeof_data)
+  bool snapshot_linear_search(v_array<snapshot_item> a, size_t desired_t, size_t tag, size_t &pos) {
+    if (a.size() == 0) return false;
+    for (pos=a.size()-1; ; pos--) {
+      if ((a[pos].pred_step <= desired_t) && (tag == a[pos].tag))
+        return true;
+      if (pos == 0) return false;
+    }
+    return false;
+  }
+
+  void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data)
   {
-    //searn_struct *srn = (searn_struct*)all.searnstr;
-    return;
+    searn_struct *srn = (searn_struct*)all.searnstr;
+    if (! srn->do_snapshot) return;
+
+    //cerr << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(size_t*)data_ptr << ", t=" << srn->t << " }" << endl;
+    
+
+    if (srn->state == INIT_TEST) return;
+    if (srn->state == INIT_TRAIN) {  // training means "record snapshots"
+      if ((srn->snapshot_data.size() > 0) &&
+          ((srn->snapshot_data.last().index > index) ||
+           ((srn->snapshot_data.last().index == index) && (srn->snapshot_data.last().tag > tag)))) 
+        cerr << "warning: trying to snapshot in a non-monotonic order! ignoring this snapshot" << endl;
+      else {
+        void* new_data = malloc(sizeof_data);
+        memcpy(new_data, data_ptr, sizeof_data);
+        snapshot_item item = { index, tag, new_data, sizeof_data, srn->t };
+        srn->snapshot_data.push_back(item);
+      }
+      return;
+    }
+    if (srn->t > srn->learn_t) return;
+
+    //cerr << "index=" << index << " tag=" << tag << endl;
+
+    // otherwise, we're restoring snapshots -- we want to find the index of largest value that has .t<=learn_t
+    size_t i;
+    bool found;
+    found = snapshot_linear_search(srn->snapshot_data, srn->learn_t, tag, i);
+    if (!found) return;  // can't do anything
+
+    snapshot_item item = srn->snapshot_data[i];
+
+    /*
+    //cerr << "restoring snapshot @ " << item.pred_step << " (learn_t=" << srn->learn_t << ") with " << index << "." << tag << ", value=" << *(size_t*)item.data_ptr << endl;
+    cerr << "would restore snapshot: { index=" << item.index << ", tag=" << item.tag << ", data_ptr=";
+    if (item.tag == 1) { cerr << *(size_t*)item.data_ptr; }
+    if (item.tag == 2) {
+      size_t *tmp = (size_t*)item.data_ptr;
+      cerr << tmp[0];
+    }
+    if (item.tag == 3) { cerr << *(float*)item.data_ptr; }
+    cerr << ", pred_step=" << item.pred_step << ", moving from t=" << srn->t << " }" << endl;
+    */
+    assert(sizeof_data == item.data_size);
+
+    memcpy(data_ptr, item.data_ptr, sizeof_data);
+    srn->t = item.pred_step;
   }
 
   v_array<size_t> get_training_timesteps(vw& all)
@@ -1830,6 +1881,7 @@ namespace ImperativeSearn {
     srn->num_features = 0;
     srn->current_policy = 1;
     srn->state = 0;
+    srn->do_snapshot = true;
 
     srn->passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
@@ -1846,12 +1898,13 @@ namespace ImperativeSearn {
     vw*all = (vw*)in;
     searn_struct *srn = (searn_struct*)all->searnstr;
 
-    cerr << "searn_finish" << endl;
+    //cerr << "searn_finish" << endl;
 
     clear_seq(*all);
     srn->ec_seq.delete_v();
 
     clear_snapshot(*all);
+    srn->snapshot_data.delete_v();
 
     for (size_t i=0; i<srn->train_labels.size(); i++) {
       srn->train_labels[i].erase();
@@ -1909,7 +1962,8 @@ namespace ImperativeSearn {
       ("searn_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
       ("searn_beta", po::value<float>(), "interpolation rate for policies")
       ("searn_allow_current_policy", "allow searn labeling to use the current policy")
-      ("searn_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained");
+      ("searn_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
+      ("searn_no_snapshot", "turn off snapshotting capabilities");
 
     po::options_description add_desc_file("Searn options only available in regressor file");
     add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
@@ -1942,6 +1996,7 @@ namespace ImperativeSearn {
 
     if (vm.count("searn_passes_per_policy"))       srn->passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
     if (vm.count("searn_allow_current_policy"))    srn->allow_current_policy = true;
+    if (vm.count("searn_no_snapshot"))             srn->do_snapshot          = false;
 
     //if we loaded a regressor with -i option, --searn_trained_nb_policies contains the number of trained policies in the file
     // and --searn_total_nb_policies contains the total number of policies in the file
@@ -2003,3 +2058,10 @@ namespace ImperativeSearn {
   }
 
 }
+/*
+time ./vw --searn 45 --searn_task sequence -k -c -d ../test/train-sets/wsj_small.dat2.gz --passes 5 --searn_passes_per_policy 4
+
+old searn: 11.524 11.450 11.448 || 3.333 4.035
+new searn: 28.377 28.443 28.160 || 2.756 4.623
+snapshots: 27.681 28.495 27.838 || 2.756 4.623
+*/
