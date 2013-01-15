@@ -555,7 +555,7 @@ namespace CSOAA_AND_WAP_LDF {
       float example_t1 = ec1->example_t;
 
       for (size_t j1=0; j1<costs1.size(); j1++) {
-        if (costs1[j1].weight_index == (size_t)-1) continue;
+        if (costs1[j1].weight_index == (uint32_t)-1) continue;
         if (all.training && !isTest) {
           LabelDict::add_example_namespace_from_memory(ec1, costs1[j1].weight_index);
 
@@ -565,7 +565,7 @@ namespace CSOAA_AND_WAP_LDF {
             v_array<CSOAA::wclass> costs2 = ld2->costs;
 
             for (size_t j2=0; j2<costs2.size(); j2++) {
-              if (costs2[j2].weight_index == (size_t)-1) continue;
+              if (costs2[j2].weight_index == (uint32_t)-1) continue;
               float value_diff = fabs(costs2[j2].wap_value - costs1[j1].wap_value);
               //float value_diff = fabs(costs2[j2].x - costs1[j1].x);
               if (value_diff < 1e-6)

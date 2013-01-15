@@ -367,6 +367,19 @@ vw parse_args(int argc, char *argv[])
 	}
     }
 
+  io_buf io_temp;
+  parse_regressor_args(all, vm, io_temp);
+
+  //parse flags from regressor file
+  all.options_from_file_argv = VW::get_argv_from_string(all.options_from_file,all.options_from_file_argc);
+
+  po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(desc).allow_unregistered().run();
+
+  po::store(parsed_file, vm_file);
+  po::notify(vm_file);
+
   for (size_t i = 0; i < 256; i++)
     all.ignore[i] = false;
   all.ignore_some = false;
@@ -469,18 +482,6 @@ vw parse_args(int argc, char *argv[])
 
   if (!vm.count("lda") && !all.adaptive && !all.normalized_updates) 
     all.eta *= powf((float)(all.sd->t), all.power_t);
-
-  parse_regressor_args(all, vm, all.final_regressor_name, all.quiet);
-
-  //parse flags from regressor file
-  all.options_from_file_argv = VW::get_argv_from_string(all.options_from_file,all.options_from_file_argc);
-
-  po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();
-
-  po::store(parsed_file, vm_file);
-  po::notify(vm_file);
   
   if (vm.count("readable_model"))
     all.text_regressor_name = vm["readable_model"].as<string>();
@@ -589,6 +590,10 @@ vw parse_args(int argc, char *argv[])
       all.save_load = SENDER::save_load;
       SENDER::parse_send_args(vm, all.pairs);
     }
+
+  // load rest of regressor
+  all.save_load(&all, io_temp, true, false);
+  io_temp.close_file();
 
   if (all.l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;

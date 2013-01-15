@@ -212,7 +212,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
   vw* all = (vw*)in;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->stride;
-  
+
   if(read)
     {
       initialize_regressor(*all);
@@ -231,7 +231,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 	{
 	  brw = 1;
 	  size_t K = all->rank*2+1;
-	  
+
 	  for (uint32_t k = 0; k < K; k++)
 	    {
 	      uint32_t ndx = stride*i+k;
