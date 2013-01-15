@@ -677,3 +677,13 @@ __DATA__
 {VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100
     train-sets/ref/xxor.stdout
     train-sets/ref/xxor.stderr
+
+# Test 21: matrix factorization -- training
+{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 0.001 --learning_rate 0.025 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f movielens.reg --cache_file movielens.cache
+    train-sets/ref/ml100k_small.stdout
+    train-sets/ref/ml100k_small.stderr
+
+# Test 22: matrix factorization -- testing
+{VW} -i movielens.reg -t -d test-sets/ml100k_small_test
+    test-sets/ref/ml100k_small.stdout
+    test-sets/ref/ml100k_small.stderr
