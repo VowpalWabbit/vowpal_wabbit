@@ -647,7 +647,7 @@ int process_pass(vw& all) {
 	ftime(&t_end_global);
 	net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 	if (!all.quiet)
-	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, step_size);
 	predictions.erase();
 	update_weight(all, all.final_regressor_name, step_size, current_pass);		     		           }
     }
@@ -688,10 +688,9 @@ int process_pass(vw& all) {
 		      net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		      float ratio = (step_size==0.f) ? 0.f : (float)new_step/(float)step_size;
 		      if (!all.quiet)
-			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10.5f\t%-.3f\n",
+			fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-10.5f\n",
 				"","",ratio,
-				new_step,
-				net_time/1000.);
+				new_step);
 			predictions.erase();
 			update_weight(all, all.final_regressor_name, (float)(-step_size+new_step), current_pass);		     		      			
 			step_size = (float)new_step;
@@ -733,7 +732,7 @@ int process_pass(vw& all) {
 			ftime(&t_end_global);
 			net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 			if (!all.quiet)
-			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\t%-10.3f\n", "", d_mag, step_size, (net_time/1000.));
+			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, step_size);
 			predictions.erase();
 			update_weight(all, all.final_regressor_name, step_size, current_pass);		     		      
 		      }
@@ -773,7 +772,7 @@ int process_pass(vw& all) {
 		  ftime(&t_end_global);
 		  net_time = (int) (1000.0 * (t_end_global.time - t_start_global.time) + (t_end_global.millitm - t_start_global.millitm)); 
 		  if (!all.quiet)
-		    fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\t%-.3f\n", curvature / importance_weight_sum, d_mag, step_size,(net_time/1000.));
+		    fprintf(stderr, "%-10.5f\t%-10.5f\t%-10.5f\n", curvature / importance_weight_sum, d_mag, step_size);
 		  gradient_pass = true;
 		}//now start computing derivatives.    
     current_pass++;
@@ -942,9 +941,9 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
       
       if (!all->quiet)
 	{
-	  const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
+	  const char * header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10s\n";
 	  fprintf(stderr, header_fmt,
-		  "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size", "time");
+		  "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size");
 	  cerr.precision(5);
 	}
       
