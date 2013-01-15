@@ -1,3 +1,4 @@
+BOOST_PROGRAM_OPTIONS = boost_program_options
 ifeq ($(UNAME), FreeBSD)
 BOOST_PROGRAM_OPTIONS = boost_program_options
 endif

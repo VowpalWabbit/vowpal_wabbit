@@ -227,31 +227,34 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
       uint32_t text_len;
       char buff[512];
       size_t brw = 1;
+
       do 
 	{
-	  brw = 1;
+	  brw = 0;
 	  size_t K = all->rank*2+1;
 
 	  for (uint32_t k = 0; k < K; k++)
 	    {
 	      uint32_t ndx = stride*i+k;
 	      
-	      bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
-					"", read,
-					"", 0, text);
-	      
+	      brw += bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
+					       "", read,
+					       "", 0, text);
+	      if (brw == 0)
+		break;
+
 	      weight* v = &(all->reg.weight_vector[ndx]);
 	      text_len = sprintf(buff, "%f ", *v);
-	      bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-					"", read,
-					buff, text_len, text);
+	      brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+					       "", read,
+					       buff, text_len, text);
 	      
 	    }
 	  if (text)
-	    bin_text_read_write_fixed(model_file,buff,0,
-				      "", read,
-				      "\n",1,text);
-      
+	    brw += bin_text_read_write_fixed(model_file,buff,0,
+					     "", read,
+					     "\n",1,text);
+	  
 	  if (!read)
 	    i++;
 	}  
@@ -271,7 +274,7 @@ void drive(void* in)
 	{
 	  if (ec->pass != current_pass) {
 	    all->eta *= all->eta_decay_rate;
-	    save_predictor(*all, all->final_regressor_name, current_pass);
+	    //save_predictor(*all, all->final_regressor_name, current_pass);
 	    current_pass = ec->pass;
 	  }
 	  if (!GD::command_example(*all, ec))
