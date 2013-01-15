@@ -1639,7 +1639,7 @@ namespace ImperativeSearn {
     srn->learn_example_len  = 0;
     srn->train_action.erase();
  
-    srn->task.structured_predict(all, ec, len);
+    srn->task.structured_predict(all, ec, len, srn->pred_string, srn->truth_string);
 
     if (srn->t == 0)
       return;  // there was no data!
@@ -1651,7 +1651,7 @@ namespace ImperativeSearn {
     srn->loss_last_step = 0;
     clear_snapshot(all);
 
-    srn->task.structured_predict(all, ec, len);
+    srn->task.structured_predict(all, ec, len, NULL, NULL);
 
     if (srn->t == 0) {
       clear_snapshot(all);
@@ -1679,7 +1679,7 @@ namespace ImperativeSearn {
           srn->learn_loss = 0.f;
 
           cerr << "learn_t = " << srn->learn_t << " || learn_a = " << srn->learn_a << endl;
-          srn->task.structured_predict(all, ec, len);
+          srn->task.structured_predict(all, ec, len, NULL, NULL);
 
           srn->learn_losses.push_back( srn->learn_loss );
           cerr << "total loss: " << srn->learn_loss << endl;
@@ -1724,13 +1724,59 @@ namespace ImperativeSearn {
     srn->ec_seq.erase();
   }
 
+
+  void print_update(vw& all)
+  {
+    searn_struct *srn = (searn_struct*)all.searnstr;
+    if (!Searn::should_print_update(all))
+      return;
+
+    char pred_label[21];
+    char true_label[21];
+    Searn::to_short_string(srn->pred_string ? srn->pred_string->str() : "", 20, pred_label);
+    Searn::to_short_string(srn->truth_string ? srn->truth_string->str() : "", 20, true_label);
+
+    fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
+            all.sd->sum_loss/all.sd->weighted_examples,
+            all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
+            (long int)all.sd->example_number,
+            all.sd->weighted_examples,
+            true_label,
+            pred_label,
+            (long unsigned int)srn->num_features,
+            (int)srn->read_example_last_pass,
+            (int)srn->current_policy,
+            (long unsigned int)srn->total_predictions_made,
+            (long unsigned int)srn->total_examples_generated);
+
+    all.sd->sum_loss_since_last_dump = 0.0;
+    all.sd->old_weighted_examples = all.sd->weighted_examples;
+    all.sd->dump_interval *= 2;
+  }
+
+
   void do_actual_learning(vw&all)
   {
     searn_struct *srn = (searn_struct*)all.searnstr;
     if (srn->ec_seq.size() == 0)
       return;  // nothing to do :)
 
+    if (Searn::should_print_update(all) || Searn::will_global_print_label(all)) {
+      srn->truth_string = new stringstream();
+      srn->pred_string  = new stringstream();
+    }
+
     train_single_example(all, srn->ec_seq.begin, srn->ec_seq.size());
+    print_update(all);
+
+    if (srn->truth_string != NULL) {
+      delete srn->truth_string;
+      srn->truth_string = NULL;
+    }
+    if (srn->pred_string != NULL) {
+      delete srn->pred_string;
+      srn->pred_string = NULL;
+    }
   }
 
   void searn_learn(void*in, example*ec) {

@@ -202,7 +202,7 @@ namespace ImperativeSearn {
   struct searn_task {
     void (*initialize)(vw&,int&);
     void (*finish)(vw&);
-    void (*structured_predict)(vw&,example**,size_t);
+    void (*structured_predict)(vw&,example**,size_t,stringstream*,stringstream*);
   };
 
   struct searn_struct {
@@ -222,6 +222,9 @@ namespace ImperativeSearn {
     v_array< pair<size_t, v_array< pair<void*,size_t> > > > snapshot_data; // pair<time,data>, where data item is <data, sizeof(data)>
     v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
     v_array< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
+
+    stringstream* pred_string;
+    stringstream* truth_string;
 
     size_t t;              // the current time step
     size_t T;              // the length of the (training) trajectory

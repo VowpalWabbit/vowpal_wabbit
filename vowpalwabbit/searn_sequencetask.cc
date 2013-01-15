@@ -333,7 +333,18 @@ namespace SequenceTask_Easy {
     yhat.delete_v();
   }
 
-  void structured_predict_v1(vw& vw, example**ec, size_t len) {
+  void get_oracle_labels(example*ec, v_array<uint32_t>*out) {
+    CSOAA::label *lab = (CSOAA::label*)ec->ld;
+    float min_cost = lab->costs[0].x;
+    for (size_t l=1; l<lab->costs.size(); l++)
+      if (lab->costs[l].x < min_cost) min_cost = lab->costs[l].x;
+    
+    for (size_t l=0; l<lab->costs.size(); l++)
+      if (lab->costs[l].x <= min_cost)
+        out->push_back( lab->costs[l].weight_index );
+  }
+
+  void structured_predict_v1(vw& vw, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
     searn_struct srn = *(searn_struct*)vw.searnstr;
     float total_loss  = 0;
 
@@ -344,16 +355,8 @@ namespace SequenceTask_Easy {
     v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
       ystar.erase();
-      if (!CSOAA::example_is_test(ec[i])) {
-        CSOAA::label *lab = (CSOAA::label*)ec[i]->ld;
-        float min_cost = lab->costs[0].x;
-        for (size_t l=1; l<lab->costs.size(); l++)
-          if (lab->costs[l].x < min_cost) min_cost = lab->costs[l].x;
-          
-        for (size_t l=0; l<lab->costs.size(); l++)
-          if (lab->costs[l].x <= min_cost)
-            ystar.push_back( lab->costs[l].weight_index );
-      }
+      if (!CSOAA::example_is_test(ec[i]))
+        get_oracle_labels(ec[i], &ystar);
 
       SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.begin+i);
       yhat.push_back( srn.predict(vw, &ec[i], 0, NULL, &ystar) );
@@ -366,13 +369,28 @@ namespace SequenceTask_Easy {
 
       ystar.erase();
     }
-    ystar.delete_v();
       
+    if (output_ss != NULL) {
+      for (size_t i=0; i<yhat.size(); i++) {
+        if (i > 0) (*output_ss) << ' ';
+        (*output_ss) << yhat[i];
+      }
+    }
+    if (truth_ss != NULL) {
+      for (size_t i=0; i<yhat.size(); i++) {
+        if (i > 0) (*truth_ss) << ' ';
+        get_oracle_labels(ec[i], &ystar);
+        (*truth_ss) << (ystar.size() > 0) ? ystar[0] : '?';
+        ystar.erase();
+      }
+    }
+    
+    ystar.delete_v();
     srn.declare_loss(vw, len, total_loss);
   }
 
   /*
-  void structured_predict_v2(vw& vw, example**ec, size_t len) {
+  void structured_predict_v2(vw& vw, example**ec, size_t len, string*output_str) {
     float total_loss  = 0;
 
     yhat.clear();
