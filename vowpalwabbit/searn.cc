@@ -1948,7 +1948,7 @@ namespace ImperativeSearn {
 
   bool string_equal(string a, string b) { return a.compare(b) == 0; }
   bool float_equal(float a, float b) { return fabs(a-b) < 1e-6; }
-  bool sizet_equal(size_t a, size_t b) { return a==b; }
+  bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
 
   void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
@@ -1986,13 +1986,13 @@ namespace ImperativeSearn {
   
     std::string task_string;
 
+    check_option<float >(srn->beta, all, vm, vm_file, "searn_beta", false, float_equal,
+                         "warning: you specified a different value through --searn_beta than the one loaded from predictor. using loaded value of: ", "");
     check_option<string>(task_string, all, vm, vm_file, "searn_task", false, string_equal,
                          "warning: specified --searn_task different than the one loaded from regressor. using loaded value of: ",
                          "error: you must specify a task using --searn_task");
-    check_option<size_t>(srn->A, all, vm, vm_file, "searnimp", false, sizet_equal,
+    check_option<uint32_t>(srn->A, all, vm, vm_file, "searnimp", false, uint32_equal,
                          "warning: you specified a different number of actions through --searnimp than the one loaded from predictor. using loaded value of: ", "");
-    check_option<float >(srn->beta, all, vm, vm_file, "searn_beta", false, float_equal,
-                         "warning: you specified a different value through --searn_beta than the one loaded from predictor. using loaded value of: ", "");
 
     if (vm.count("searn_passes_per_policy"))       srn->passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
     if (vm.count("searn_allow_current_policy"))    srn->allow_current_policy = true;
