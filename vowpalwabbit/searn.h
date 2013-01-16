@@ -200,15 +200,23 @@ namespace Searn
 
 namespace ImperativeSearn {
   struct searn_task {
-    void (*initialize)(vw&,int&);
+    void (*initialize)(vw&,uint32_t&);
     void (*finish)(vw&);
-    void (*structured_predict)(vw&,example**,size_t);
+    void (*structured_predict)(vw&,example**,size_t,stringstream*,stringstream*);
+  };
+
+  struct snapshot_item {
+    size_t index;
+    size_t tag;
+    void  *data_ptr;
+    size_t data_size;  // sizeof(data_ptr)
+    size_t pred_step;  // srn->t when snapshot is made
   };
 
   struct searn_struct {
     // functions that you will call
-    uint32_t (*predict)(vw&,example**,size_t,vector<uint32_t>*,vector<uint32_t>*);
-    void     (*declare_loss)(vw&,size_t,float);
+    uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
+    void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot)(vw&,size_t,size_t,void*,size_t);
 
     // structure that you must set
@@ -219,9 +227,12 @@ namespace ImperativeSearn {
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
     uint32_t learn_a;     //   and this is the a we're varying it to
-    vector< pair<size_t, vector< pair<void*,size_t> > > > snapshot_data; // pair<time,data>, where data item is <data, sizeof(data)>
-    vector<uint32_t> train_action;  // which actions did we actually take in the train pass?
-    vector< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
+    v_array<snapshot_item> snapshot_data;
+    v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
+    v_array< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
+
+    stringstream* pred_string;
+    stringstream* truth_string;
 
     size_t t;              // the current time step
     size_t T;              // the length of the (training) trajectory
@@ -230,7 +241,7 @@ namespace ImperativeSearn {
     float  train_loss;     // total training loss for this example
     float  learn_loss;     // total loss for this "varied" example
 
-    vector<float> learn_losses;   // losses for all (valid) actions at learn_t
+    v_array<float> learn_losses;   // losses for all (valid) actions at learn_t
     example** learn_example_copy; // copy of example(s) at learn_t
     size_t learn_example_len;     // number of example(s) at learn_t
 
@@ -241,6 +252,7 @@ namespace ImperativeSearn {
     size_t increment;
     size_t num_features;
     size_t total_number_of_policies;
+    bool do_snapshot;
 
     size_t read_example_this_loop;
     size_t read_example_last_id;
