@@ -462,15 +462,15 @@ float compute_norm(vw& all, example* &ec)
   float norm = 0.;
   float norm_x = 0.;
   uint32_t offset = ec->ft_offset;
-
+  
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     norm_add<T>(all, ec->atomics[*i].begin, ec->atomics[*i].end, g, norm, norm_x, offset);
-
+  
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
     if (ec->atomics[(int)(*i)[0]].size() > 0)
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
         norm_add_quad<T>(all, *f0, ec->atomics[(int)(*i)[1]], g, norm, norm_x, offset);
-
+  
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
     if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
@@ -483,10 +483,10 @@ float compute_norm(vw& all, example* &ec)
       total_weight = (float)all.sd->weighted_unlabeled_examples;
     else
       total_weight = ec->example_t;
-
+    
     all.normalized_sum_norm_x += ld->weight * norm_x;
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
-
+    
     if(all.power_t == 0.5) {
       if(all.adaptive) norm /= sqrt(avg_sq_norm);
       else norm /= avg_sq_norm;

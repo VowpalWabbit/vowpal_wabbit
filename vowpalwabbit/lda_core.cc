@@ -21,7 +21,7 @@ license as described in the file LICENSE.
 #include "lda_core.h"
 #include "cache.h"
 #include "simple_label.h"
-#include "rand48.cc"
+#include "rand48.h"
 
 namespace LDA {
 #ifdef _WIN32
