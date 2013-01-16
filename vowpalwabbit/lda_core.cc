@@ -529,29 +529,31 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
       size_t brw = 1;
       do 
 	{
-	  brw = 1;
+	  brw = 0;
 	  size_t K = all->lda;
 	  
 	  for (uint32_t k = 0; k < K; k++)
 	    {
 	      uint32_t ndx = stride*i+k;
 	      
-	      bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
-					"", read,
-					"", 0, text);
-	      
+	      brw += bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
+					       "", read,
+					       "", 0, text);
+	      if (brw == 0)
+		break;
+
 	      weight* v = &(all->reg.weight_vector[ndx]);
 	      text_len = sprintf(buff, "%f ", *v + all->lda_rho);
 	      
-	      bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+	      brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
 					"", read,
 					buff, text_len, text);
 	      
 	    }
 	  if (text)
-	    bin_text_read_write_fixed(model_file,buff,0,
-				      "", read,
-				      "\n",1,text);
+	    brw += bin_text_read_write_fixed(model_file,buff,0,
+					     "", read,
+					     "\n",1,text);
 	  
 	  if (!read)
 	    i++;
