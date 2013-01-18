@@ -232,24 +232,23 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 	{
 	  brw = 0;
 	  size_t K = all->rank*2+1;
-
-	  for (uint32_t k = 0; k < K; k++)
-	    {
-	      uint32_t ndx = stride*i+k;
-	      
-	      brw += bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
-					       "", read,
-					       "", 0, text);
-	      if (brw == 0)
-		break;
-
-	      weight* v = &(all->reg.weight_vector[ndx]);
-	      text_len = sprintf(buff, "%f ", *v);
-	      brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-					       "", read,
-					       buff, text_len, text);
-	      
-	    }
+	  
+	  text_len = sprintf(buff, "%d ", i);
+	  brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
+					   "", read,
+					   buff, text_len, text);
+	  if (brw != 0)
+	    for (uint32_t k = 0; k < K; k++)
+	      {
+		uint32_t ndx = stride*i+k;
+		
+		weight* v = &(all->reg.weight_vector[ndx]);
+		text_len = sprintf(buff, "%f ", *v);
+		brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+						 "", read,
+						 buff, text_len, text);
+		
+	      }
 	  if (text)
 	    brw += bin_text_read_write_fixed(model_file,buff,0,
 					     "", read,
