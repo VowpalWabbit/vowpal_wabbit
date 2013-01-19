@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Microsoft.Research.MachineLearning
 {
+
     public sealed class VowpalWabbitInterface
     {
         [StructLayout(LayoutKind.Sequential)]

@@ -16,7 +16,7 @@
 // a future optimization would be to write an inner version of hash feature which either hashed the
 // wide string directly (and live with the different hash values) or incorporate the UTF-16 to UTF-8 conversion
 // in the hashing to avoid allocating an intermediate string.
-
+ 
 extern "C"
 {
 

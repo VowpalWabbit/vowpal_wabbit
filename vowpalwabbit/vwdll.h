@@ -21,7 +21,7 @@ extern "C"
 	typedef void * VW_HANDLE;
 	typedef void * VW_EXAMPLE;
 	typedef void * VW_FEATURE_SPACE;
-
+ 
 	const VW_HANDLE INVALID_VW_HANDLE = NULL;
 	const VW_HANDLE INVALID_VW_EXAMPLE = NULL;
 
