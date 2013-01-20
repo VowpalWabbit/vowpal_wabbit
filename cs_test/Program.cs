@@ -44,7 +44,10 @@ namespace cs_test
             featureSpace[0].name = (byte)'s';
             sfeatures[0].weight_index = VowpalWabbitInterface.HashFeature(vw, "p^the_man", snum);
             sfeatures[0].x = 1;
-            sfeatures[1].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^the", snum);
+            // add the character "delta" to test unicode
+            // do it as a string to test the marshaling is doing pinning correctly.
+            const string s = "w^thew^man\u0394";
+            sfeatures[1].weight_index = VowpalWabbitInterface.HashFeature(vw, s, snum);
             sfeatures[1].x = 1;
             sfeatures[2].weight_index = VowpalWabbitInterface.HashFeature(vw, "w^man", snum);
             sfeatures[2].x = 1;
@@ -81,5 +84,6 @@ namespace cs_test
             pinnedtFeatures.Free();
             pinnedFeatureSpace.Free();
         }
+
     }
 }
