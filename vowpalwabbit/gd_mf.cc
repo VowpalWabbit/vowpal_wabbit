@@ -49,7 +49,7 @@ float mf_inline_predict(vw& all, example* &ec)
     {
       if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
 	{
-	  for (size_t k = 1; k <= all.rank; k++)
+	  for (uint32_t k = 1; k <= all.rank; k++)
 	    {
 	      // x_l * l^k
 	      // l^k is from index+1 to index+all.rank

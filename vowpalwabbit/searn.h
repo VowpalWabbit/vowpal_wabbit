@@ -249,9 +249,9 @@ namespace ImperativeSearn {
     bool   allow_current_policy;  // should the current policy be used for training? true for dagger
     bool   rollout_all_actions;   // false for contextual bandits
     uint32_t current_policy;      // what policy are we training right now?
-    size_t increment;
+    uint32_t increment;
     size_t num_features;
-    size_t total_number_of_policies;
+    uint32_t total_number_of_policies;
     bool do_snapshot;
 
     size_t read_example_this_loop;

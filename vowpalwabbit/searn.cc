@@ -1350,7 +1350,7 @@ namespace ImperativeSearn {
 
   inline bool isLDF(searn_struct* srn) { return (srn->A == 0); }
 
-  size_t choose_policy(searn_struct* srn, bool allow_current, bool allow_optimal)
+  uint32_t choose_policy(searn_struct* srn, bool allow_current, bool allow_optimal)
   {
     uint32_t seed = 0; // TODO: srn->read_example_last_id * 2147483 + srn->t * 2147483647;
     return SearnUtil::random_policy(seed, srn->beta, allow_current, srn->current_policy, allow_optimal, srn->rollout_all_actions);
@@ -1390,7 +1390,7 @@ namespace ImperativeSearn {
     return 0;
   }
 
-  uint32_t single_prediction_notLDF(vw& all, example* ec, v_array<CSOAA::wclass> valid_labels, size_t pol)
+  uint32_t single_prediction_notLDF(vw& all, example* ec, v_array<CSOAA::wclass> valid_labels, uint32_t pol)
   {
     searn_struct *srn = (searn_struct*)all.searnstr;
     assert(pol > 0);
@@ -1413,10 +1413,10 @@ namespace ImperativeSearn {
   template<class T> T choose_random(v_array<T> opts) {
     float r = frand48();
     assert(opts.size() > 0);
-    return opts[((float)opts.size()) * r];
+    return opts[(size_t)(((float)opts.size()) * r)];
   }
 
-  uint32_t single_action(vw& all, example** ecs, size_t num_ec, v_array<CSOAA::wclass> valid_labels, size_t pol, v_array<uint32_t> *ystar) {
+  uint32_t single_action(vw& all, example** ecs, size_t num_ec, v_array<CSOAA::wclass> valid_labels, uint32_t pol, v_array<uint32_t> *ystar) {
     //cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
     if (pol == 0) { // optimal policy
       if ((ystar == NULL) || (ystar->size() == 0))
@@ -1467,7 +1467,7 @@ namespace ImperativeSearn {
     }
 
     if (srn->state == INIT_TEST) {
-      size_t pol = choose_policy(srn, true, false);
+      uint32_t pol = choose_policy(srn, true, false);
       v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
       uint32_t a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
       srn->t++;
@@ -1475,7 +1475,7 @@ namespace ImperativeSearn {
       return a;
     }
     if (srn->state == INIT_TRAIN) {
-      size_t pol = choose_policy(srn, srn->allow_current_policy, true);
+      uint32_t pol = choose_policy(srn, srn->allow_current_policy, true);
       v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
       uint32_t a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
       srn->train_action.push_back(a);
@@ -1502,7 +1502,7 @@ namespace ImperativeSearn {
         srn->t++;
         return srn->learn_a;
       } else {
-        size_t pol = choose_policy(srn, srn->allow_current_policy, true);
+        uint32_t pol = choose_policy(srn, srn->allow_current_policy, true);
         v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
         uint32_t a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
         srn->t++;
@@ -1740,8 +1740,8 @@ namespace ImperativeSearn {
     Searn::to_short_string(srn->pred_string  ? srn->pred_string->str()  : "", 20, pred_label);
 
     fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
-            safediv(all.sd->sum_loss, all.sd->weighted_examples),
-            safediv(all.sd->sum_loss_since_last_dump, all.sd->weighted_examples - all.sd->old_weighted_examples),
+            safediv((float)all.sd->sum_loss, (float)all.sd->weighted_examples),
+            safediv((float)all.sd->sum_loss_since_last_dump, (float) (all.sd->weighted_examples - all.sd->old_weighted_examples)),
             (long int)all.sd->example_number,
             all.sd->weighted_examples,
             true_label,

@@ -122,7 +122,7 @@ struct vw {
   void (*save_load)(void *, io_buf&, bool, bool);
   void (*set_minmax)(shared_data* sd, float label);
 
-  size_t num_bits; // log_2 of the number of features.
+  uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
 
   string data_filename; // was vm["data"]
@@ -204,7 +204,7 @@ struct vw {
 
   size_t length () { return ((size_t)1) << num_bits; };
 
-  size_t rank;
+  uint32_t rank;
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.

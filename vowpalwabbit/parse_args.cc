@@ -117,7 +117,7 @@ vw parse_args(int argc, char *argv[])
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features")
     ("quiet", "Don't output diagnostics")
-    ("rank", po::value<size_t>(&all.rank), "rank for matrix factorization.")
+    ("rank", po::value<uint32_t>(&all.rank), "rank for matrix factorization.")
     ("random_weights", po::value<bool>(&all.random_weights), "make initial weights random")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
     ("raw_predictions,r", po::value< string >(),
@@ -300,7 +300,7 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("bit_precision"))
     {
       all.default_bits = false;
-      all.num_bits = vm["bit_precision"].as< size_t>();
+      all.num_bits = (uint32_t)vm["bit_precision"].as< size_t>();
       if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
 	{
 	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;

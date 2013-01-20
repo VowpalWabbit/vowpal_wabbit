@@ -55,11 +55,11 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 {
   char buff[buf_size];
   char buff2[buf_size];
-  size_t text_len;
+  uint32_t text_len;
 
   if (model_file.files.size() > 0)
     {
-      uint32_t v_length = version.to_string().length()+1;
+      uint32_t v_length = (uint32_t)version.to_string().length()+1;
       text_len = sprintf(buff, "Version %s\n", version.to_string().c_str());
       memcpy(buff2,version.to_string().c_str(),v_length);
       if (read)
@@ -102,7 +102,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       all.default_bits = false;
       all.num_bits = local_num_bits;
       
-      uint32_t pair_len = all.pairs.size();
+      uint32_t pair_len = (uint32_t)all.pairs.size();
       text_len = sprintf(buff, "%d pairs: ", (int)pair_len);
       bin_text_read_write_fixed(model_file,(char *)&pair_len, sizeof(pair_len), 
 				"", read, 
@@ -128,7 +128,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read,
 				"\n",1,text);
       
-      uint32_t triple_len = all.triples.size();
+      uint32_t triple_len = (uint32_t)all.triples.size();
       text_len = sprintf(buff, "%d triples: ", (int)triple_len);
       bin_text_read_write_fixed(model_file,(char *)&triple_len, sizeof(triple_len), 
 				"", read, 
@@ -173,7 +173,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				buff, text_len, text);
       
       text_len = sprintf(buff, "options:%s\n", all.options_from_file.c_str());
-      uint32_t len = all.options_from_file.length()+1;
+      uint32_t len = (uint32_t)all.options_from_file.length()+1;
       memcpy(buff2, all.options_from_file.c_str(),len);
       if (read)
 	len = buf_size;

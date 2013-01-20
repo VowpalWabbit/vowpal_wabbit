@@ -62,7 +62,7 @@ void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0))
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++) {
-        size_t halfhash = quadratic_constant * (f0->weight_index + offset);
+        uint32_t halfhash = quadratic_constant * (f0->weight_index + offset);
         for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
           T(all, f1->x, f1->weight_index + halfhash + offset, avg_norm, f0->x * update);
       }
@@ -71,7 +71,7 @@ void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
     if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
         for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++) {
-          size_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
+          uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
           for (feature* f2 = ec->atomics[(int)(*i)[2]].begin; f2 != ec->atomics[(int)(*i)[2]].end; f2++)
             T(all, f2->x, f2->weight_index + halfhash + offset, avg_norm, f0->x * f1->x * update);
         }
@@ -388,7 +388,7 @@ void norm_add(vw& all, feature* begin, feature* end, float g, float& norm, float
 template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
 void norm_add_quad(vw& all, feature& f0, v_array<feature> &cross_features, float g, float& norm, float& norm_x, uint32_t offset=0)
 {
-  size_t halfhash = quadratic_constant * (f0.weight_index + offset);
+  uint32_t halfhash = quadratic_constant * (f0.weight_index + offset);
   float norm_new = 0.f;
   float norm_x_new = 0.f;
   norm_add<T>(all, cross_features.begin, cross_features.end, g * f0.x * f0.x, norm_new, norm_x_new, halfhash + offset);
@@ -399,7 +399,7 @@ void norm_add_quad(vw& all, feature& f0, v_array<feature> &cross_features, float
 template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
 void norm_add_cubic(vw& all, feature& f0, feature& f1, v_array<feature> &cross_features, float g, float& norm, float& norm_x, uint32_t offset=0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
+  uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
   float norm_new = 0.f;
   float norm_x_new = 0.f;
   norm_add<T>(all, cross_features.begin, cross_features.end, g * f0.x * f0.x * f1.x * f1.x, norm_new, norm_x_new, halfhash + offset);
