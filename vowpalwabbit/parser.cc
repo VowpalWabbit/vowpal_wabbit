@@ -304,7 +304,12 @@ void reset_source(vw& all, size_t numbits)
 
 void finalize_source(parser* p)
 {
-  while (!p->input->files.empty() && p->input->files.last() == fileno(stdin))
+#ifdef _WIN32
+  int f = _fileno(stdin);
+#else
+  int f = fileno(stdin);
+#endif
+  while (!p->input->files.empty() && p->input->files.last() == f)
     p->input->files.pop();
   p->input->close_files();
 

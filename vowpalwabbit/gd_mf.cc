@@ -177,7 +177,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 
 void mf_print_audit_features(vw& all, example* ec, size_t offset)
 {
-  print_result(fileno(stdout),ec->final_prediction,-1,ec->tag);
+  print_result(all.stdout_fileno,ec->final_prediction,-1,ec->tag);
   mf_print_offset_features(all, ec, offset);
 }
 
