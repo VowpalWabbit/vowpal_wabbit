@@ -17,6 +17,13 @@ using namespace std;
 
 namespace OAA {
 
+  struct oaa{
+    uint32_t k;
+    uint32_t increment;
+    uint32_t total_increment;
+    learner base;
+  };
+
   char* bufread_label(mc_label* ld, char* c)
   {
     ld->label = *(uint32_t *)c;
@@ -98,11 +105,6 @@ namespace OAA {
     }
   }
 
-  //nonreentrant
-  uint32_t k=0;
-  uint32_t increment=0;
-  uint32_t total_increment=0;
-
   void print_update(vw& all, example *ec)
   {
     if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
@@ -148,21 +150,19 @@ namespace OAA {
     print_update(all, ec);
   }
 
-  void (*base_learner)(void*,example*) = NULL;
-
-  void learn_with_output(vw*all, example* ec, bool shouldOutput)
+  void learn_with_output(vw*all,oaa* d, example* ec, bool shouldOutput)
   {
     mc_label* mc_label_data = (mc_label*)ec->ld;
     size_t prediction = 1;
     float score = INT_MIN;
   
-    if (mc_label_data->label > k && mc_label_data->label != (uint32_t)-1)
-      cerr << "warning: label " << mc_label_data->label << " is greater than " << k << endl;
+    if (mc_label_data->label > d->k && mc_label_data->label != (uint32_t)-1)
+      cerr << "warning: label " << mc_label_data->label << " is greater than " << d->k << endl;
   
     string outputString;
     stringstream outputStringStream(outputString);
 
-    for (size_t i = 1; i <= k; i++)
+    for (size_t i = 1; i <= d->k; i++)
       {
         label_data simple_temp;
         simple_temp.initial = 0.;
@@ -173,8 +173,8 @@ namespace OAA {
         simple_temp.weight = mc_label_data->weight;
         ec->ld = &simple_temp;
         if (i != 1)
-          update_example_indicies(all->audit, ec, increment);
-        base_learner(all,ec);
+          update_example_indicies(all->audit, ec, d->increment);
+        d->base.learn((void*)all,d->base.data,ec);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -190,7 +190,7 @@ namespace OAA {
       }
     ec->ld = mc_label_data;
     *(prediction_t*)&(ec->final_prediction) = prediction;
-    update_example_indicies(all->audit, ec, -total_increment);
+    update_example_indicies(all->audit, ec, -d->total_increment);
 
     if (shouldOutput) {
       outputStringStream << endl;
@@ -198,12 +198,11 @@ namespace OAA {
     }
   }
 
-  void learn(void*a, example* ec) {
-    vw* all = (vw*)a;
-    learn_with_output(all, ec, false);
+  void learn(void*a, void* d, example* ec) {
+    learn_with_output((vw*)a, (oaa*)d, ec, false);
   }
 
-  void drive_oaa(void *in)
+  void drive(void *in, void* d)
   {
     vw* all = (vw*)in;
     example* ec = NULL;
@@ -211,7 +210,7 @@ namespace OAA {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn_with_output(all, ec, all->raw_prediction > 0);
+            learn_with_output(all, (oaa*)d, ec, all->raw_prediction > 0);
             output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
@@ -222,32 +221,38 @@ namespace OAA {
       }
   }
 
+  void finish(void* all, void* data)
+  {    
+    oaa* o=(oaa*)data;
+    o->base.finish(all,o->base.data);
+    free(o);
+  }
+
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
+    oaa* data = (oaa*)calloc(1, sizeof(oaa));
     //first parse for number of actions
-    k = 0;
     if( vm_file.count("oaa") ) {
-      k = (uint32_t)vm_file["oaa"].as<size_t>();
-      if( vm.count("oaa") && (uint32_t)vm["oaa"].as<size_t>() != k )
-        std::cerr << "warning: you specified a different number of actions through --oaa than the one loaded from predictor. Pursuing with loaded value of: " << k << endl;
+      data->k = (uint32_t)vm_file["oaa"].as<size_t>();
+      if( vm.count("oaa") && (uint32_t)vm["oaa"].as<size_t>() != data->k )
+        std::cerr << "warning: you specified a different number of actions through --oaa than the one loaded from predictor. Pursuing with loaded value of: " << data->k << endl;
     }
     else {
-      k = (uint32_t)vm["oaa"].as<size_t>();
+      data->k = (uint32_t)vm["oaa"].as<size_t>();
 
       //append oaa with nb_actions to options_from_file so it is saved to regressor later
       std::stringstream ss;
-      ss << " --oaa " << k;
+      ss << " --oaa " << data->k;
       all.options_from_file.append(ss.str());
     }
 
     *(all.p->lp) = mc_label_parser;
-    all.driver = drive_oaa;
-    base_learner = all.learn;
-    all.base_learn = all.learn;
-    all.learn = learn;
+    data->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    data->total_increment = data->increment*(data->k-1);
+    data->base = all.l;
+    learner l = {data, drive, learn, finish, all.l.save_load};
+    all.l = l;
 
-    all.base_learner_nb_w *= k;
-    increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
-    total_increment = increment*(k-1);
+    all.base_learner_nb_w *= data->k;
   }
 }

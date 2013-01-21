@@ -237,33 +237,8 @@ vw parse_args(int argc, char *argv[])
     }
   }
 
-  if (vm.count("bfgs") || vm.count("conjugate_gradient")) {
-    all.driver = BFGS::drive;
-    all.learn = BFGS::learn;
-    all.finish = BFGS::finish;
-    all.save_load = BFGS::save_load;
-    all.bfgs = true;
-    all.stride = 4;
-    
-    if (vm.count("hessian_on") || all.m==0) {
-      all.hessian_on = true;
-    }
-    if (!all.quiet) {
-      if (all.m>0)
-	cerr << "enabling BFGS based optimization ";
-      else
-	cerr << "enabling conjugate gradient optimization via BFGS ";
-      if (all.hessian_on)
-	cerr << "with curvature calculation" << endl;
-      else
-	cerr << "**without** curvature calculation" << endl;
-    }
-    if (all.numpasses < 2)
-      {
-	cout << "you must make at least 2 passes to use BFGS" << endl;
-	exit(1);
-      }
-  }
+  if (vm.count("bfgs") || vm.count("conjugate_gradient")) 
+    BFGS::parse_args(all, to_pass_further, vm, vm_file);
 
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
@@ -467,18 +442,8 @@ vw parse_args(int argc, char *argv[])
   //if (vm.count("nonormalize"))
   //  all.nonormalize = true;
 
-  if (vm.count("lda")) {
-    //default initial_t to 1 instead of 0
-    if(!vm.count("initial_t")) {
-      all.sd->t = 1.f;
-      all.sd->weighted_unlabeled_examples = 1.f;
-      all.initial_t = 1.f;
-    }
-
+  if (vm.count("lda")) 
     LDA::parse_flags(all, to_pass_further, vm);
-    all.driver = LDA::drive;
-    all.save_load = LDA::save_load;
-  }
 
   if (!vm.count("lda") && !all.adaptive && !all.normalized_updates) 
     all.eta *= powf((float)(all.sd->t), all.power_t);
@@ -509,19 +474,11 @@ vw parse_args(int argc, char *argv[])
     loss_parameter = vm["quantile_tau"].as<float>();
 
   all.is_noop = false;
-  if (vm.count("noop")) {
-    all.driver = NOOP::drive;
-    all.learn = NOOP::learn;
-    all.save_load = NOOP::save_load;
-    all.is_noop = true;
-  }
+  if (vm.count("noop")) 
+    NOOP::parse_flags(all);
   
-  if (all.rank != 0) {
-    all.driver = GDMF::drive;
-    all.save_load = GDMF::save_load;
-    loss_function = "classic";
-    cerr << "Forcing classic squared loss for matrix factorization" << endl;
-  }
+  if (all.rank != 0) 
+    GDMF::parse_flags(all);
 
   all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
 
@@ -585,14 +542,10 @@ vw parse_args(int argc, char *argv[])
     all.audit = true;
 
   if (vm.count("sendto"))
-    {
-      all.driver = SENDER::drive_send;
-      all.save_load = SENDER::save_load;
-      SENDER::parse_send_args(vm, all.pairs);
-    }
+    SENDER::parse_send_args(all, vm, all.pairs);
 
   // load rest of regressor
-  all.save_load(&all, io_temp, true, false);
+  all.l.save_load(&all, all.l.data, io_temp, true, false);
   io_temp.close_file();
 
   if (all.l1_lambda < 0.) {
@@ -703,7 +656,7 @@ vw parse_args(int argc, char *argv[])
       CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
-    all.searnstr = (ImperativeSearn::searn_struct*)calloc(1, sizeof(ImperativeSearn::searn_struct));
+    all.searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
     ImperativeSearn::parse_flags(all, to_pass_further, vm, vm_file);
   }
 
@@ -821,7 +774,7 @@ namespace VW {
 
   void finish(vw& all)
   {
-    all.finish(&all);
+    all.l.finish(&all, all.l.data);
     if (all.searnstr != NULL) free(all.searnstr);
     free_parser(all);
     finalize_regressor(all, all.final_regressor_name);

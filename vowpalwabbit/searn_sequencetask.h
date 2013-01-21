@@ -8,6 +8,7 @@ license as described in the file LICENSE.
 
 #include "oaa.h"
 #include "parse_primitives.h"
+#include "searn.h"
 
 namespace SequenceTask {
   bool   final(state);
@@ -30,7 +31,7 @@ namespace SequenceTask {
 namespace SequenceTask_Easy {
   void initialize(vw&, uint32_t&);
   void finish(vw&);
-  void structured_predict_v1(vw&,example**,size_t,stringstream*,stringstream*);
+  void structured_predict_v1(vw&, ImperativeSearn::searn&, example**,size_t,stringstream*,stringstream*);
 }
 
 

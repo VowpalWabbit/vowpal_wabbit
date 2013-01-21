@@ -351,8 +351,7 @@ namespace SequenceTask_Easy {
         out->push_back( lab->costs[l].weight_index );
   }
 
-  void structured_predict_v1(vw& vw, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
-    searn_struct srn = *(searn_struct*)vw.searnstr;
+  void structured_predict_v1(vw& vw, searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
     float total_loss  = 0;
     size_t history_length = max(hinfo.features, hinfo.length);
     bool is_train = false;

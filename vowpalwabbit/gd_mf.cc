@@ -207,7 +207,7 @@ float mf_predict(vw& all, example* ex)
   return ex->final_prediction;
 }
 
-void save_load(void* in, io_buf& model_file, bool read, bool text)
+  void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
 {
   vw* all = (vw*)in;
   uint32_t length = 1 << all->num_bits;
@@ -261,27 +261,39 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive(void* in)
+  void learn(void* in, void* d, example* ec)
+  {
+    vw* all = (vw*)in;
+    size_t* current_pass = (size_t*) d;
+    if (ec->pass != *current_pass) {
+      all->eta *= all->eta_decay_rate;
+      *current_pass = ec->pass;
+    }
+    if (!GD::command_example(*all, ec))
+      {
+	mf_predict(*all,ec);
+	if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
+	  mf_inline_train(*all, ec, ec->eta_round);
+      }    
+  }
+
+  void finish(void* a, void* d)
+  {
+    size_t* current_pass = (size_t*)d;
+    free(current_pass);
+  }
+
+  void drive(void* in, void* d)
 {
   vw* all = (vw*)in;
+  
   example* ec = NULL;
   
-  size_t current_pass = 0;
   while ( true )
     {
       if ((ec = get_example(all->p)) != NULL)//blocking operation.
 	{
-	  if (ec->pass != current_pass) {
-	    all->eta *= all->eta_decay_rate;
-	    //save_predictor(*all, all->final_regressor_name, current_pass);
-	    current_pass = ec->pass;
-	  }
-	  if (!GD::command_example(*all, ec))
-	    {
-	      mf_predict(*all,ec);
-	      if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
-		mf_inline_train(*all, ec, ec->eta_round);
-	    }
+	  learn(in,d,ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
@@ -291,4 +303,10 @@ void drive(void* in)
     }
 }
 
+  void parse_flags(vw& all)
+  {
+    size_t* current_pass = (size_t*)calloc(1, sizeof(size_t));
+    learner t = {current_pass,drive,learn,finish,save_load};
+    all.l = t;
+  }
 }

@@ -172,6 +172,12 @@ void set_mm(shared_data* sd, float label)
 void noop_mm(shared_data* sd, float label)
 {}
 
+void vw::learn(void* a, example* ec)
+{
+  vw* all = (vw*)a;
+  all->l.learn(a,all->l.data,ec);
+}
+
 vw::vw()
 {
   sd = (shared_data *) calloc(1, sizeof(shared_data));
@@ -184,6 +190,8 @@ vw::vw()
   *(p->lp) = simple_label;
 
   reg_mode = 0;
+
+  current_pass = 0;
 
   bfgs = false;
   hessian_on = false;
@@ -200,13 +208,10 @@ vw::vw()
   m = 15; 
   save_resume = false;
 
-  driver = GD::drive_gd;
-  learn = GD::learn_gd;
-  finish = GD::finish_gd;
-  save_load = GD::save_load;
-  set_minmax = set_mm;
+  l = GD::get_learner();
+  scorer = l;
 
-  base_learn = NULL;
+  set_minmax = set_mm;
 
   base_learner_nb_w = 1;
 

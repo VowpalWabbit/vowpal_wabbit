@@ -564,8 +564,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 
 void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
-
-  po::options_description desc("Searn options");
+  po::options_description desc("LDA options");
   desc.add_options()
     ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
@@ -749,5 +748,9 @@ void drive(void* in)
 	}
     }
 }
+
+  void parse_args()
+  {
+  }
 
 }

@@ -27,14 +27,12 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "allreduce.h"
 #include "accumulate.h"
+#include "learner.h"
 
 using namespace std;
 
 namespace GD
 {
-
-//nonreentrant
-size_t gd_current_pass = 0;
 
 void predict(vw& all, example* ex);
 void sync_weights(vw& all);
@@ -120,11 +118,11 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   w[0] += update * x * t;
 }
 
-void learn_gd(void* a, example* ec)
+void learn(void* a, void* d, example* ec)
 {
   vw* all = (vw*)a;
   assert(ec->in_use);
-  if (ec->pass != gd_current_pass)
+  if (ec->pass != all->current_pass)
     {
       
       if(all->span_server != "") {
@@ -137,11 +135,11 @@ void learn_gd(void* a, example* ec)
       if (all->save_per_pass)
 	{
 	  sync_weights(*all);
-	  save_predictor(*all, all->final_regressor_name, gd_current_pass);
+	  save_predictor(*all, all->final_regressor_name, all->current_pass);
 	}
       all->eta *= all->eta_decay_rate;
       
-      gd_current_pass = ec->pass;
+      all->current_pass = ec->pass;
     }
   
   if (!command_example(*all, ec))
@@ -163,7 +161,7 @@ void learn_gd(void* a, example* ec)
     }
 }
 
-void finish_gd(void* a)
+  void finish(void* a, void* d)
 {
   vw* all = (vw*)a;
   sync_weights(*all);
@@ -173,6 +171,8 @@ void finish_gd(void* a)
     else
       accumulate_avg(*all, all->span_server, all->reg, 0);
   }
+  size_t* current_pass = (size_t*)d;
+  free(current_pass);
 }
 
 void sync_weights(vw& all) {
@@ -748,7 +748,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load(void* in, io_buf& model_file, bool read, bool text)
+void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
 {
   vw* all=(vw*)in;
   if(read)
@@ -783,7 +783,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive_gd(void* in)
+void driver(void* in, void* data)
 {
   vw* all = (vw*)in;
   example* ec = NULL;
@@ -792,16 +792,20 @@ void drive_gd(void* in)
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn_gd(all, ec);
+	  learn(all, data, ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
-	{
-	  finish_gd(all);
-	  return;
-	}
+	return;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
 }
+
+  learner get_learner()
+  {
+    size_t* current_pass = (size_t*)calloc(1, sizeof(size_t));
+    learner ret = {current_pass,driver,learn,finish,save_load};
+    return ret;
+  }
 }

@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
   start_parser(all);
 
-  all.driver(&all);
+  all.l.driver(&all, &all.l.data);
 
   end_parser(all);
   

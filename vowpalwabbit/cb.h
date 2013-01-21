@@ -34,7 +34,6 @@ namespace CB {
 
   void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 
-  void output_example(vw& all, example* ec);
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
   void default_label(void* v);

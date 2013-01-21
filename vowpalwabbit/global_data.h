@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "comp_io.h"
 #include "example.h"
 #include "config.h"
+#include "learner.h"
 
 struct version_struct {
   int major;
@@ -115,12 +116,14 @@ struct vw {
 
   parser* p;
 
-  void (*driver)(void *);
-  void (*learn)(void *, example*);
-  void (*base_learn)(void *, example*);
-  void (*finish)(void *);
-  void (*save_load)(void *, io_buf&, bool, bool);
+  learner l;//the top level leaner
+  learner scorer;//a scoring function
+
+  void learn(void*, example*);
+
   void (*set_minmax)(shared_data* sd, float label);
+
+  size_t current_pass;
 
   uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
@@ -187,8 +190,6 @@ struct vw {
   bool add_constant;
   bool nonormalize;
   bool do_reset_source;
-
-  uint32_t csoaa_increment;
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
