@@ -500,7 +500,7 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
-void save_load(void* in, io_buf& model_file, bool read, bool text)
+  void save_load(void* in, void*, io_buf& model_file, bool read, bool text)
 {
   vw* all = (vw*)in;
   uint32_t length = 1 << all->num_bits;
@@ -562,43 +562,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 }
 
 
-void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
-{
-  po::options_description desc("LDA options");
-  desc.add_options()
-    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
-    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
-    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
-    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
-
-  po::parsed_options parsed = po::command_line_parser(opts).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();
-  opts = po::collect_unrecognized(parsed.options, po::include_positional);
-  po::store(parsed, vm);
-  po::notify(vm);
-
-  all.p->sort_features = true;
-  float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
-  all.stride = ((size_t)1) << (int) temp;
-  all.random_weights = true;
-  all.add_constant = false;
-
-  if (vm.count("lda") && all.eta > 1.)
-    {
-      cerr << "your learning rate is too high, setting it to 1" << endl;
-      all.eta = min(all.eta,1.f);
-    }
-
-  if (vm.count("minibatch")) {
-    size_t minibatch2 = next_pow2(all.minibatch);
-    all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
-  }
-
-
-}
-
-void drive(void* in)
+  void drive(void* in, void*)
 {
   vw* all = (vw*)in;
   regressor reg = all->reg;
@@ -749,8 +713,47 @@ void drive(void* in)
     }
 }
 
-  void parse_args()
+  void learn(void*, void*, example*)
   {
+    cout << "LDA can't be used as a reduction" << endl;
   }
 
+  void finish(void*, void*) {}
+
+void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+{
+  po::options_description desc("LDA options");
+  desc.add_options()
+    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
+    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
+
+  po::parsed_options parsed = po::command_line_parser(opts).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(desc).allow_unregistered().run();
+  opts = po::collect_unrecognized(parsed.options, po::include_positional);
+  po::store(parsed, vm);
+  po::notify(vm);
+
+  all.p->sort_features = true;
+  float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
+  all.stride = ((size_t)1) << (int) temp;
+  all.random_weights = true;
+  all.add_constant = false;
+
+  if (vm.count("lda") && all.eta > 1.)
+    {
+      cerr << "your learning rate is too high, setting it to 1" << endl;
+      all.eta = min(all.eta,1.f);
+    }
+
+  if (vm.count("minibatch")) {
+    size_t minibatch2 = next_pow2(all.minibatch);
+    all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
+  }
+
+  learner l = {NULL, drive, learn, finish, save_load};
+  all.l = l;
+}
 }

@@ -1,6 +1,5 @@
 creating quadratic features for pairs: ui 
 final_regressor = movielens.reg
-Forcing classic squared loss for matrix factorization
 Num weight bits = 16
 learning rate = 0.025
 initial_t = 1
