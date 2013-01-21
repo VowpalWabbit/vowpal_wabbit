@@ -469,10 +469,10 @@ namespace ECT
     }
 
     *(all.p->lp) = OAA::mc_label_parser;
-    data->base = all.l;
     create_circuit(all, *data, data->k, data->errors+1);
     
     learner l = {data, drive, learn, finish, all.l.save_load};
+    data->base = all.l;
     all.l = l;
   }
 }

@@ -380,6 +380,7 @@ namespace CSOAA {
     all.base_learner_nb_w *= nb_actions;
 
     learner l = {c, drive, learn, finish, all.l.save_load};
+    c->base = all.l;
     all.l = l;
   }
 
@@ -1030,6 +1031,7 @@ namespace LabelDict {
   void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
+
     ld->need_to_clear = true;
     ld->is_singleline = true;
     
@@ -1079,9 +1081,11 @@ namespace LabelDict {
     if (all.add_constant) {
       all.add_constant = false;
     }
-    ld->label_features = v_hashmap<size_t, v_array<feature> >::v_hashmap(256, v_array<feature>(), LabelDict::size_t_eq);
+    ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
+    ld->label_features.get(1, 94717244);
     
     learner l = {ld, drive, learn, finish, all.l.save_load};
+    ld->base = all.l;
     all.l = l;
   }
 

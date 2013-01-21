@@ -368,6 +368,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << std::endl;
 
     learner t = {n,drive_nn,learn,finish,all.l.save_load};
+    n->base = all.l;
     all.l = t;
 
     all.base_learner_nb_w *= (n->inpass) ? n->k + 1 : n->k;

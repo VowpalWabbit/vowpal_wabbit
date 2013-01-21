@@ -815,6 +815,7 @@ namespace Searn
     //cerr << "searn increment = " << s->increment << endl;
     
     learner l = {s, drive, learn, finish, all.l.save_load};
+    s->base = all.l;
     all.l = l;
   }
 
@@ -2062,9 +2063,9 @@ namespace ImperativeSearn {
 
     srn->task->initialize(all, srn->A);
 
-    srn->base = all.l;
     
     learner l = {srn, searn_drive, searn_learn, searn_finish, all.l.save_load};
+    srn->base = all.l;
     all.l = l;
   }
 }

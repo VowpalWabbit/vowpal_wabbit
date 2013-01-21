@@ -801,6 +801,7 @@ namespace CB
     all.sd->k = nb_actions;
 
     learner l = {c, drive, learn, finish, all.l.save_load};
+    c->base = all.l;
     all.l = l;
   }
 }
