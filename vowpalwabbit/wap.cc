@@ -128,8 +128,6 @@ namespace WAP {
   }
   v_array<float_wclass> vs;
 
-  void (*base_learner)(void*, example*) = NULL;
-
   void train(vw& all, wap& w, example* ec)
   {
     CSOAA::label* ld = (CSOAA::label*)ec->ld;
@@ -186,7 +184,7 @@ namespace WAP {
 
               mirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
 
-              base_learner(&all, ec);
+              w.base.learn(&all,w.base.data,ec);
               unmirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
             }
         }
@@ -213,7 +211,7 @@ namespace WAP {
           update_example_indicies(all.audit, ec, w.increment*(myi-1));
         ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
-        base_learner(&all, ec);
+        w.base.learn(&all,w.base.data, ec);
         if (myi != 1)
           update_example_indicies(all.audit, ec, -w.increment*(myi-1));
         if (ec->partial_prediction > score)
@@ -233,7 +231,6 @@ namespace WAP {
     wap* w = (wap*)d;
     
     size_t prediction = test(*all, *w, ec);
-
     ec->ld = cost_label;
     
     if (cost_label->costs.size() > 0)
