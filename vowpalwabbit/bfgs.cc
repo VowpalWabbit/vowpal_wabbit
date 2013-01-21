@@ -622,7 +622,7 @@ int process_pass(vw& all, bfgs& b) {
       if(all.span_server != "")
 	{
 	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
-	  float temp = b.importance_weight_sum;
+	  float temp = (float)b.importance_weight_sum;
 	  b.importance_weight_sum = accumulate_scalar(all, all.span_server, temp);
 	}
       finalize_preconditioner(all, b, all.l2_lambda);

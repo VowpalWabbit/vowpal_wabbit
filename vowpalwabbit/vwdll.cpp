@@ -55,7 +55,7 @@ extern "C"
 				adjust_used_index(*pointer);
 				pointer->do_reset_source = true;
 				start_parser(*pointer,false);
-				pointer->driver((void*)pointer);
+				pointer->l.driver((void*)pointer, pointer->l.data);
 				end_parser(*pointer); 
 			}
 			else
