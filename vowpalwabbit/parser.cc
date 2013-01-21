@@ -176,11 +176,11 @@ void set_compressed(parser* par){
   par->output = new comp_io_buf;
 }
 
-size_t cache_numbits(io_buf* buf, int filepointer)
+uint32_t cache_numbits(io_buf* buf, int filepointer)
 {
   v_array<char> t;
 
-  size_t v_length;
+  uint32_t v_length;
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
   if(v_length>29){
     cerr << "cache version too long, cache file is probably invalid" << endl;
@@ -213,14 +213,14 @@ size_t cache_numbits(io_buf* buf, int filepointer)
 
   t.delete_v();
   
-  const int total = sizeof(size_t);
+  const int total = sizeof(uint32_t);
   char* p[total];
   if (buf->read_file(filepointer, p, total) < total) 
     {
       return true;
     }
 
-  size_t cache_numbits = *(size_t *)p;
+  uint32_t cache_numbits = *(uint32_t *)p;
   return cache_numbits;
 }
 
@@ -335,12 +335,12 @@ void make_write_cache(vw& all, string &newname, bool quiet)
     return;
   }
 
-  size_t v_length = version.to_string().length()+1;
+  uint32_t v_length = (uint32_t)version.to_string().length()+1;
 
-  output->write_file(f, &v_length, sizeof(size_t));
+  output->write_file(f, &v_length, sizeof(v_length));
   output->write_file(f,version.to_string().c_str(),v_length);
   output->write_file(f,"c",1);
-  output->write_file(f, &all.num_bits, sizeof(size_t));
+  output->write_file(f, &all.num_bits, sizeof(all.num_bits));
   
   push_many(output->finalname,newname.c_str(),newname.length()+1);
   all.p->write_cache = true;
@@ -367,7 +367,7 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
       if (f == -1)
 	make_write_cache(all, caches[i], quiet);
       else {
-	size_t c = cache_numbits(all.p->input, f);
+	uint32_t c = cache_numbits(all.p->input, f);
 	if (all.default_bits)
 	  all.num_bits = c;
 	if (c < all.num_bits) {

@@ -8,11 +8,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 
 namespace BFGS {
-
-  void drive(void*);
-  void finish(void*);
-  void learn(void*, example* ec);
-  void save_load(void* in, io_buf& model_file, bool read, bool text);
+  void parse_args(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 #endif

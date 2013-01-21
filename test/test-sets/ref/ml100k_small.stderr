@@ -1,5 +1,4 @@
 only testing
-Forcing classic squared loss for matrix factorization
 Num weight bits = 16
 learning rate = 10
 initial_t = 1

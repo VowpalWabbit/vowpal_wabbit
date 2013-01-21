@@ -17,9 +17,11 @@ license as described in the file LICENSE.
 using namespace std;
 
 namespace WAP {
-  //nonreentrant
-  uint32_t increment=0;
-
+  struct wap{
+    uint32_t increment;
+    learner base;
+  };
+  
   void mirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
   {
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
@@ -126,9 +128,7 @@ namespace WAP {
   }
   v_array<float_wclass> vs;
 
-  void (*base_learner)(void*, example*) = NULL;
-
-  void train(vw& all, example* ec)
+  void train(vw& all, wap& w, example* ec)
   {
     CSOAA::label* ld = (CSOAA::label*)ec->ld;
 
@@ -182,10 +182,10 @@ namespace WAP {
               uint32_t myi = (uint32_t)vs[i].ci.weight_index;
               uint32_t myj = (uint32_t)vs[j].ci.weight_index;
 
-              mirror_features(all, ec,(myi-1)*increment, (myj-1)*increment);
+              mirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
 
-              base_learner(&all, ec);
-              unmirror_features(all, ec,(myi-1)*increment, (myj-1)*increment);
+              w.base.learn(&all,w.base.data,ec);
+              unmirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
             }
         }
 
@@ -193,7 +193,7 @@ namespace WAP {
     ec->ld = ld;
   }
 
-  size_t test(vw& all, example* ec)
+  size_t test(vw& all, wap& w, example* ec)
   {
     size_t prediction = 1;
     float score = -FLT_MAX;
@@ -208,12 +208,12 @@ namespace WAP {
         simple_temp.label = FLT_MAX;
         uint32_t myi = (uint32_t)cost_label->costs[i].weight_index;
         if (myi!= 1)
-          update_example_indicies(all.audit, ec, increment*(myi-1));
+          update_example_indicies(all.audit, ec, w.increment*(myi-1));
         ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
-        base_learner(&all, ec);
+        w.base.learn(&all,w.base.data, ec);
         if (myi != 1)
-          update_example_indicies(all.audit, ec, -increment*(myi-1));
+          update_example_indicies(all.audit, ec, -w.increment*(myi-1));
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -224,21 +224,28 @@ namespace WAP {
     return prediction;
   }
 
-  void learn(void* a, example* ec)
+  void learn(void* a, void* d, example* ec)
   {
     vw* all = (vw*)a;
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
+    wap* w = (wap*)d;
     
-    size_t prediction = test(*all, ec);
-
+    size_t prediction = test(*all, *w, ec);
     ec->ld = cost_label;
     
     if (cost_label->costs.size() > 0)
-      train(*all, ec);
+      train(*all, *w, ec);
     *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
   }
-
-  void drive_wap(void* in)
+  
+  void finish(void* a, void* d)
+  {
+    wap* w=(wap*)d;
+    w->base.finish(a,w->base.data);
+    free(w);
+  }
+  
+  void drive(void* in, void* d)
   {
     vw* all = (vw*)in;
     example* ec = NULL;
@@ -246,22 +253,20 @@ namespace WAP {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-	    learn(all,ec);
+	    learn(all, d, ec);
             CSOAA::output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
-          {
-            all->finish(all);
-            return;
-          }
+	  return;
         else 
           ;
       }
   }
-
+  
   void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
+    wap* w=(wap*)calloc(1,sizeof(wap));
     uint32_t nb_actions = 0;
     if( vm_file.count("wap") ) { //if loaded options from regressor
       nb_actions = (uint32_t)vm_file["wap"].as<size_t>();
@@ -281,11 +286,10 @@ namespace WAP {
 
     all.sd->k = (uint32_t)nb_actions;
     all.base_learner_nb_w *= nb_actions;
-    increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.stride);
+    w->increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.stride);
 
-    all.driver = drive_wap;
-    base_learner = all.learn;
-    all.base_learn = all.learn;
-    all.learn = learn;
+    learner l = {w, drive, learn, finish, all.l.save_load};
+    w->base = all.l;
+    all.l = l;
   }
 }

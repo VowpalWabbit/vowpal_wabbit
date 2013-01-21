@@ -58,16 +58,4 @@ namespace CSOAA_AND_WAP_LDF {
   const label_parser cs_label_parser = CSOAA::cs_label_parser;
 }
 
-namespace LabelDict {
-  bool ec_is_label_definition(example*ec);
-  bool ec_is_example_header(example*ec);
-  bool ec_seq_is_label_definition(v_array<example*>ec_seq);
-  void add_example_namespaces_from_example(example*target, example*source);
-  void del_example_namespaces_from_example(example*target, example*source);
-  void add_example_namespace_from_memory(example*ec, size_t lab);
-  void del_example_namespace_from_memory(example* ec, size_t lab);
-  void set_label_features(size_t lab, v_array<feature>features);
-  void free_label_features();
-}
-
 #endif

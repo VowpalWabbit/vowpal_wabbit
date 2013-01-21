@@ -213,8 +213,8 @@ inline size_t bin_write(io_buf& o, const char* data, uint32_t len)
   return (len + sizeof(len));
 }
 
-inline size_t bin_text_write(io_buf& io, char* data, size_t len, 
-		      const char* text_data, size_t text_len, bool text)
+inline size_t bin_text_write(io_buf& io, char* data, uint32_t len, 
+		      const char* text_data, uint32_t text_len, bool text)
 {
   if (text)
     return bin_write_fixed (io, text_data, text_len);
@@ -225,9 +225,9 @@ inline size_t bin_text_write(io_buf& io, char* data, size_t len,
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write(io_buf& io, char* data, size_t len, 
+inline size_t bin_text_read_write(io_buf& io, char* data, uint32_t len, 
 			 const char* read_message, bool read, 
-			 const char* text_data, size_t text_len, bool text)
+			 const char* text_data, uint32_t text_len, bool text)
 {
   if (read)
     return bin_read(io, data, len, read_message);
@@ -235,8 +235,8 @@ inline size_t bin_text_read_write(io_buf& io, char* data, size_t len,
     return bin_text_write(io,data,len, text_data, text_len, text);
 }
 
-inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len, 
-		      const char* text_data, size_t text_len, bool text)
+inline size_t bin_text_write_fixed(io_buf& io, char* data, uint32_t len, 
+		      const char* text_data, uint32_t text_len, bool text)
 {
   if (text)
     return bin_write_fixed (io, text_data, text_len);
@@ -246,9 +246,9 @@ inline size_t bin_text_write_fixed(io_buf& io, char* data, size_t len,
 }
 
 //a unified function for read(in binary), write(in binary), and write(in text)
-inline size_t bin_text_read_write_fixed(io_buf& io, char* data, size_t len, 
+inline size_t bin_text_read_write_fixed(io_buf& io, char* data, uint32_t len, 
 			       const char* read_message, bool read, 
-			       const char* text_data, size_t text_len, bool text)
+			       const char* text_data, uint32_t text_len, bool text)
 {
   if (read)
     return bin_read_fixed(io, data, len, read_message);
