@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "config.h"
 #include "learner.h"
+#include "allreduce.h"
 
 struct version_struct {
   int major;
@@ -115,6 +116,8 @@ struct vw {
   shared_data* sd;
 
   parser* p;
+
+  node_socks socks;
 
   learner l;//the top level leaner
   learner scorer;//a scoring function

@@ -62,8 +62,6 @@ namespace NN {
     return -1.0f + 2.0f / (1.0f + fastexp (-2.0f * p));
   }
 
-  void (*base_learner)(void*,example*) = NULL;
-
   void learn_with_output(vw& all, nn& n, example* ec, bool shouldOutput)
   {
     if (GD::command_example(all, ec)) {
