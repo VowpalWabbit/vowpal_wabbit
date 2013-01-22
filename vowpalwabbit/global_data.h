@@ -116,6 +116,11 @@ struct vw {
   shared_data* sd;
 
   parser* p;
+#ifndef _WIN32
+  pthread_t parse_thread;
+#else
+  HANDLE parse_thread;
+#endif
 
   node_socks socks;
 

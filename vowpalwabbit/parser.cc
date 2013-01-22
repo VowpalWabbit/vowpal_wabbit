@@ -58,15 +58,6 @@ namespace po = boost::program_options;
 
 using namespace std;
 
-#ifndef _WIN32
-typedef pthread_mutex_t MUTEX;
-typedef pthread_cond_t CV;
-#else
-#include <Windows.h>
-typedef CRITICAL_SECTION MUTEX;
-typedef CONDITION_VARIABLE CV;
-#endif
-
 void initialize_mutex(MUTEX * pm)
 {
 #ifndef _WIN32
@@ -139,13 +130,7 @@ void condition_variable_signal_all(CV * pcv)
 #endif
 }
 
-//nonreentrant
-MUTEX examples_lock;
-CV example_available;
-CV example_unused;
-MUTEX output_lock;
-CV output_done;
-
+//This should not? matter in a library mode.
 bool got_sigterm;
 
 void handle_sigterm (int)
@@ -253,10 +238,10 @@ void reset_source(vw& all, size_t numbits)
       if (all.daemon)
 	{
 	  // wait for all predictions to be sent back to client
-	  mutex_lock(&output_lock);
+	  mutex_lock(&all.p->output_lock);
 	  while (all.p->local_example_number != all.p->parsed_examples)
-	    condition_variable_wait(&output_done, &output_lock);
-	  mutex_unlock(&output_lock);
+	    condition_variable_wait(&all.p->output_done, &all.p->output_lock);
+	  mutex_unlock(&all.p->output_lock);
 	  
 	  // close socket, erase final prediction sink and socket
 	  close(all.p->input->files[0]);
@@ -696,16 +681,16 @@ example* get_unused_example(vw& all)
 {
   while (true)
     {
-      mutex_lock(&examples_lock);
+      mutex_lock(&all.p->examples_lock);
       if (all.p->examples[all.p->parsed_examples % all.p->ring_size].in_use == false)
 	{
 	  all.p->examples[all.p->parsed_examples % all.p->ring_size].in_use = true;
-	  mutex_unlock(&examples_lock);
+	  mutex_unlock(&all.p->examples_lock);
 	  return all.p->examples + (all.p->parsed_examples % all.p->ring_size);
 	}
       else 
-	condition_variable_wait(&example_unused, &examples_lock);
-      mutex_unlock(&examples_lock);
+	condition_variable_wait(&all.p->example_unused, &all.p->examples_lock);
+      mutex_unlock(&all.p->examples_lock);
     }
 }
 
@@ -903,10 +888,10 @@ namespace VW{
   
   void finish_example(vw& all, example* ec)
   {
-    mutex_lock(&output_lock);
+    mutex_lock(&all.p->output_lock);
     all.p->local_example_number++;
-    condition_variable_signal(&output_done);
-    mutex_unlock(&output_lock);
+    condition_variable_signal(&all.p->output_done);
+    mutex_unlock(&all.p->output_lock);
     
     if (all.audit)
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
@@ -935,13 +920,13 @@ namespace VW{
     ec->tag.erase();
     ec->sorted = false;
     
-    mutex_lock(&examples_lock);
+    mutex_lock(&all.p->examples_lock);
     assert(ec->in_use);
     ec->in_use = false;
-    condition_variable_signal(&example_unused);
+    condition_variable_signal(&all.p->example_unused);
     if (all.p->done)
-      condition_variable_signal_all(&example_available);
-    mutex_unlock(&examples_lock);
+      condition_variable_signal_all(&all.p->example_available);
+    mutex_unlock(&all.p->examples_lock);
   }
 }
 
@@ -959,10 +944,10 @@ void *main_parse_loop(void *in)
        if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  {	
 	     setup_example(*all, ae);
 	     example_number++;
-	     mutex_lock(&examples_lock);
+	     mutex_lock(&all->p->examples_lock);
 		 all->p->parsed_examples++;
-		 condition_variable_signal_all(&example_available);
-	     mutex_unlock(&examples_lock);
+		 condition_variable_signal_all(&all->p->example_available);
+	     mutex_unlock(&all->p->examples_lock);
        }
       else
 	{
@@ -977,14 +962,14 @@ void *main_parse_loop(void *in)
 	  example_number = 0;
 	  if (all->passes_complete >= all->numpasses)
 	    {
-	      mutex_lock(&examples_lock);
+	      mutex_lock(&all->p->examples_lock);
 	      all->p->done = true;
-	      mutex_unlock(&examples_lock);
+	      mutex_unlock(&all->p->examples_lock);
 	    }
-	  mutex_lock(&examples_lock);
+	  mutex_lock(&all->p->examples_lock);
 	  ae->in_use = false;
-	  condition_variable_signal_all(&example_available);
-	  mutex_unlock(&examples_lock);
+	  condition_variable_signal_all(&all->p->example_available);
+	  mutex_unlock(&all->p->examples_lock);
 	}
     }  
 	return NULL;
@@ -992,35 +977,29 @@ void *main_parse_loop(void *in)
 
 example* get_example(parser* p)
 {
-  mutex_lock(&examples_lock);
+  mutex_lock(&p->examples_lock);
   if (p->parsed_examples != p->used_index) {
     size_t ring_index = p->used_index++ % p->ring_size;
     if (!(p->examples+ring_index)->in_use)
       cout << p->used_index << " " << p->parsed_examples << " " << ring_index << endl;
     assert((p->examples+ring_index)->in_use);
-    mutex_unlock(&examples_lock);
+    mutex_unlock(&p->examples_lock);
     
     return p->examples + ring_index;
   }
   else {
     if (!p->done)
       {
-	condition_variable_wait(&example_available, &examples_lock);
-	mutex_unlock(&examples_lock);
+	condition_variable_wait(&p->example_available, &p->examples_lock);
+	mutex_unlock(&p->examples_lock);
 	return get_example(p);
       }
     else {
-      mutex_unlock(&examples_lock);
+      mutex_unlock(&p->examples_lock);
       return NULL;
     }
   }
 }
-
-#ifndef _WIN32
-pthread_t parse_thread;
-#else
-HANDLE parse_thread;
-#endif
 
 void initialize_examples(vw& all)
 {
@@ -1045,11 +1024,11 @@ void adjust_used_index(vw& all)
 void initialize_parser_datastructures(vw& all)
 {
   initialize_examples(all);
-  initialize_mutex(&examples_lock);
-  initialize_condition_variable(&example_available);
-  initialize_condition_variable(&example_unused);
-  initialize_mutex(&output_lock);
-  initialize_condition_variable(&output_done);
+  initialize_mutex(&all.p->examples_lock);
+  initialize_condition_variable(&all.p->example_available);
+  initialize_condition_variable(&all.p->example_unused);
+  initialize_mutex(&all.p->output_lock);
+  initialize_condition_variable(&all.p->output_done);
 }
 
 void start_parser(vw& all, bool init_structures)
@@ -1057,7 +1036,7 @@ void start_parser(vw& all, bool init_structures)
   if (init_structures)
 	initialize_parser_datastructures(all);
   #ifndef _WIN32
-  pthread_create(&parse_thread, NULL, main_parse_loop, &all);
+  pthread_create(&all.parse_thread, NULL, main_parse_loop, &all);
   #else
   parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
   #endif
@@ -1090,14 +1069,14 @@ void free_parser(vw& all)
 
 void release_parser_datastructures(vw& all)
 {
-  delete_mutex(&examples_lock);
-  delete_mutex(&output_lock);
+  delete_mutex(&all.p->examples_lock);
+  delete_mutex(&all.p->output_lock);
 }
 
 void end_parser(vw& all)
 {
   #ifndef _WIN32
-  pthread_join(parse_thread, NULL);
+  pthread_join(all.parse_thread, NULL);
   #else
   ::WaitForSingleObject(parse_thread, INFINITE);
   ::CloseHandle(parse_thread);
