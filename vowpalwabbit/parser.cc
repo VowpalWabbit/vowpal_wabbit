@@ -58,9 +58,6 @@ namespace po = boost::program_options;
 
 using namespace std;
 
-//nonreentrant
-example* examples;//A Ring of examples.
-
 #ifndef _WIN32
 typedef pthread_mutex_t MUTEX;
 typedef pthread_cond_t CV;
@@ -142,17 +139,14 @@ void condition_variable_signal_all(CV * pcv)
 #endif
 }
 
+//nonreentrant
 MUTEX examples_lock;
 CV example_available;
 CV example_unused;
 MUTEX output_lock;
 CV output_done;
 
-uint64_t used_index = 0; // The index of the example currently used by thread i.
-bool done=false;
-v_array<size_t> gram_mask;
-
-bool got_sigterm = false;
+bool got_sigterm;
 
 void handle_sigterm (int)
 {
@@ -166,6 +160,8 @@ parser* new_parser()
   ret->output = new io_buf;
   ret->local_example_number = 0;
   ret->ring_size = 1 << 8;
+  ret->done = false;
+  ret->used_index = 0;
 
   return ret;
 }
@@ -619,9 +615,9 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 
 bool parser_done(parser* p)
 {
-  if (done)
+  if (p->done)
     {
-      if (used_index != p->parsed_examples)
+      if (p->used_index != p->parsed_examples)
 	return false;
       return true;
     }
@@ -687,11 +683,11 @@ void generateGrams(vw& all, size_t ngram, size_t skip_gram, example * &ex) {
       size_t length = ex->atomics[*index].size();
       for (size_t n = 1; n < ngram; n++)
 	{
-	  gram_mask.erase();
-	  gram_mask.push_back((size_t)0);
+	  all.p->gram_mask.erase();
+	  all.p->gram_mask.push_back((size_t)0);
 	  addgrams(all, n, skip_gram, ex->atomics[*index], 
 		   ex->audit_features[*index], 
-		   length, gram_mask, 0);
+		   length, all.p->gram_mask, 0);
 	}
     }
 }
@@ -701,11 +697,11 @@ example* get_unused_example(vw& all)
   while (true)
     {
       mutex_lock(&examples_lock);
-      if (examples[all.p->parsed_examples % all.p->ring_size].in_use == false)
+      if (all.p->examples[all.p->parsed_examples % all.p->ring_size].in_use == false)
 	{
-	  examples[all.p->parsed_examples % all.p->ring_size].in_use = true;
+	  all.p->examples[all.p->parsed_examples % all.p->ring_size].in_use = true;
 	  mutex_unlock(&examples_lock);
-	  return examples + (all.p->parsed_examples % all.p->ring_size);
+	  return all.p->examples + (all.p->parsed_examples % all.p->ring_size);
 	}
       else 
 	condition_variable_wait(&example_unused, &examples_lock);
@@ -943,7 +939,7 @@ namespace VW{
     assert(ec->in_use);
     ec->in_use = false;
     condition_variable_signal(&example_unused);
-    if (done)
+    if (all.p->done)
       condition_variable_signal_all(&example_available);
     mutex_unlock(&examples_lock);
   }
@@ -957,7 +953,7 @@ void *main_parse_loop(void *in)
 {
 	vw* all = (vw*) in;
 	size_t example_number = 0;  // for variable-size batch learning algorithms
-	while(!done)
+	while(!all->p->done)
       {
 	   example* ae = get_unused_example(*all);
        if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  {	
@@ -982,7 +978,7 @@ void *main_parse_loop(void *in)
 	  if (all->passes_complete >= all->numpasses)
 	    {
 	      mutex_lock(&examples_lock);
-	      done = true;
+	      all->p->done = true;
 	      mutex_unlock(&examples_lock);
 	    }
 	  mutex_lock(&examples_lock);
@@ -997,17 +993,17 @@ void *main_parse_loop(void *in)
 example* get_example(parser* p)
 {
   mutex_lock(&examples_lock);
-  if (p->parsed_examples != used_index) {
-    size_t ring_index = used_index++ % p->ring_size;
-    if (!(examples+ring_index)->in_use)
-      cout << used_index << " " << p->parsed_examples << " " << ring_index << endl;
-    assert((examples+ring_index)->in_use);
+  if (p->parsed_examples != p->used_index) {
+    size_t ring_index = p->used_index++ % p->ring_size;
+    if (!(p->examples+ring_index)->in_use)
+      cout << p->used_index << " " << p->parsed_examples << " " << ring_index << endl;
+    assert((p->examples+ring_index)->in_use);
     mutex_unlock(&examples_lock);
     
-    return examples + ring_index;
+    return p->examples + ring_index;
   }
   else {
-    if (!done)
+    if (!p->done)
       {
 	condition_variable_wait(&example_available, &examples_lock);
 	mutex_unlock(&examples_lock);
@@ -1028,22 +1024,22 @@ HANDLE parse_thread;
 
 void initialize_examples(vw& all)
 {
-  used_index = 0;
+  all.p->used_index = 0;
   all.p->parsed_examples = 0;
-  done = false;
+  all.p->done = false;
 
-  examples = (example*)calloc(all.p->ring_size, sizeof(example));
+  all.p->examples = (example*)calloc(all.p->ring_size, sizeof(example));
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      examples[i].ld = calloc(1,all.p->lp->label_size);
-      examples[i].in_use = false;
+      all.p->examples[i].ld = calloc(1,all.p->lp->label_size);
+      all.p->examples[i].in_use = false;
     }
 }
 
 void adjust_used_index(vw& all)
 {
-	used_index=all.p->parsed_examples;
+	all.p->used_index=all.p->parsed_examples;
 }
 
 void initialize_parser_datastructures(vw& all)
@@ -1074,13 +1070,13 @@ void free_parser(vw& all)
   all.p->name.delete_v();
 
   if(all.ngram > 1)
-    gram_mask.delete_v();
+    all.p->gram_mask.delete_v();
   
   for (size_t i = 0; i < all.p->ring_size; i++) 
     {
-      dealloc_example(all.p->lp->delete_label, examples[i]);
+      dealloc_example(all.p->lp->delete_label, all.p->examples[i]);
     }
-  free(examples);
+  free(all.p->examples);
   
   io_buf* output = all.p->output;
   if (output != NULL)

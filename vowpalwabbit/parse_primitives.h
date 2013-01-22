@@ -74,6 +74,10 @@ struct parser {
   size_t ring_size;
   uint64_t parsed_examples; // The index of the parsed example.
   uint64_t local_example_number; 
+  example* examples;
+  uint64_t used_index;
+  bool done;
+  v_array<size_t> gram_mask;
 
   v_array<size_t> ids; //unique ids for sources
   v_array<size_t> counts; //partial examples received from sources
