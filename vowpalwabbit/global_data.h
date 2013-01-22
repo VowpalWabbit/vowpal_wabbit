@@ -153,6 +153,7 @@ struct vw {
   uint32_t base_learner_nb_w; //this stores the current number of "weight vector" required by the based learner, which is used to compute offsets when composing reductions
 
   uint32_t stride;
+  int stdout_fileno;
 
   std::string per_feature_regularizer_input;
   std::string per_feature_regularizer_output;

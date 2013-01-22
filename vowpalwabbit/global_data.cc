@@ -233,6 +233,12 @@ vw::vw()
 
   options_from_file = "";
 
+  #ifdef _WIN32
+  stdout_fileno = _fileno(stdout);
+  #else
+  stdout_fileno = fileno(stdout);
+  #endif
+
   searn = false;
 
   nonormalize = false;
