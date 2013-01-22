@@ -381,11 +381,8 @@ float average_diff(vw& all, float* oldgamma, float* newgamma)
   return sum / normalizer;
 }
 
-//nonreentrant
-v_array<float> Elogtheta;
-
 // Returns E_q[log p(\theta)] - E_q[log q(\theta)].
-float theta_kl(vw& all, float* gamma)
+  float theta_kl(vw& all, v_array<float>& Elogtheta, float* gamma)
 {
   float gammasum = 0;
   Elogtheta.erase();
@@ -422,7 +419,7 @@ v_array<float> old_gamma;
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
+  float lda_loop(vw& all, v_array<float>& Elogtheta, float* v,weight* weights,example* ec, float power_t)
 {
   new_gamma.erase();
   old_gamma.erase();
@@ -476,7 +473,7 @@ float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
   ec->topic_predictions.resize(all.lda);
   memcpy(ec->topic_predictions.begin,new_gamma.begin,all.lda*sizeof(float));
 
-  score += theta_kl(all, new_gamma.begin);
+  score += theta_kl(all, Elogtheta, new_gamma.begin);
 
   return score / doc_length;
 }
@@ -562,9 +559,10 @@ size_t next_pow2(size_t x) {
 }
 
 
-  void drive(void* in, void*)
+  void drive(void* in, void* d)
 {
   vw* all = (vw*)in;
+  v_array<float>* Elogtheta = (v_array<float>*)d;
   regressor reg = all->reg;
   example* ec = NULL;
 
@@ -659,7 +657,7 @@ size_t next_pow2(size_t x) {
 
       for (size_t d = 0; d < batch_size; d++)
 	{
-          float score = lda_loop(*all, &v[d*all->lda], weights, examples[d],all->power_t);
+          float score = lda_loop(*all, *Elogtheta, &v[d*all->lda], weights, examples[d],all->power_t);
           if (all->audit)
 	    GD::print_audit_features(*all, examples[d]);
           // If the doc is empty, give it loss of 0.
@@ -718,10 +716,14 @@ size_t next_pow2(size_t x) {
     cout << "LDA can't be used as a reduction" << endl;
   }
 
-  void finish(void*, void*) {}
+  void finish(void*, void*d) {
+    free(d);
+  }
 
 void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
+  v_array<float> *Elogtheta = (v_array<float>*)calloc(1,sizeof(v_array<float>));
+
   po::options_description desc("LDA options");
   desc.add_options()
     ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
@@ -753,7 +755,7 @@ void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
   }
 
-  learner l = {NULL, drive, learn, finish, save_load};
+  learner l = {Elogtheta, drive, learn, finish, save_load};
   all.l = l;
 }
 }

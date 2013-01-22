@@ -989,11 +989,6 @@ void *main_parse_loop(void *in)
 	return NULL;
 }
 
-
-
-
-
-
 example* get_example(parser* p)
 {
   mutex_lock(&examples_lock);
