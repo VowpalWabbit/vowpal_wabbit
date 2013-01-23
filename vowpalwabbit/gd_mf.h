@@ -13,7 +13,6 @@ license as described in the file LICENSE.
 #include "gd.h"
 
 namespace GDMF{
-  void drive(void*);
-  void save_load(void* in, io_buf& model_file, bool read, bool text);
+  void parse_flags(vw& all);
 }
 #endif

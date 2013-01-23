@@ -27,14 +27,12 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "allreduce.h"
 #include "accumulate.h"
+#include "learner.h"
 
 using namespace std;
 
 namespace GD
 {
-
-//nonreentrant
-size_t gd_current_pass = 0;
 
 void predict(vw& all, example* ex);
 void sync_weights(vw& all);
@@ -62,7 +60,7 @@ void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0))
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++) {
-        size_t halfhash = quadratic_constant * (f0->weight_index + offset);
+        uint32_t halfhash = quadratic_constant * (f0->weight_index + offset);
         for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
           T(all, f1->x, f1->weight_index + halfhash + offset, avg_norm, f0->x * update);
       }
@@ -71,7 +69,7 @@ void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
     if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
         for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++) {
-          size_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
+          uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
           for (feature* f2 = ec->atomics[(int)(*i)[2]].begin; f2 != ec->atomics[(int)(*i)[2]].end; f2++)
             T(all, f2->x, f2->weight_index + halfhash + offset, avg_norm, f0->x * f1->x * update);
         }
@@ -120,11 +118,11 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   w[0] += update * x * t;
 }
 
-void learn_gd(void* a, example* ec)
+void learn(void* a, void* d, example* ec)
 {
   vw* all = (vw*)a;
   assert(ec->in_use);
-  if (ec->pass != gd_current_pass)
+  if (ec->pass != all->current_pass)
     {
       
       if(all->span_server != "") {
@@ -137,11 +135,11 @@ void learn_gd(void* a, example* ec)
       if (all->save_per_pass)
 	{
 	  sync_weights(*all);
-	  save_predictor(*all, all->final_regressor_name, gd_current_pass);
+	  save_predictor(*all, all->final_regressor_name, all->current_pass);
 	}
       all->eta *= all->eta_decay_rate;
       
-      gd_current_pass = ec->pass;
+      all->current_pass = ec->pass;
     }
   
   if (!command_example(*all, ec))
@@ -163,7 +161,7 @@ void learn_gd(void* a, example* ec)
     }
 }
 
-void finish_gd(void* a)
+  void finish(void* a, void* d)
 {
   vw* all = (vw*)a;
   sync_weights(*all);
@@ -173,6 +171,8 @@ void finish_gd(void* a)
     else
       accumulate_avg(*all, all->span_server, all->reg, 0);
   }
+  size_t* current_pass = (size_t*)d;
+  free(current_pass);
 }
 
 void sync_weights(vw& all) {
@@ -372,8 +372,7 @@ void print_features(vw& all, example* &ec)
 
 void print_audit_features(vw& all, example* ec)
 {
-  fflush(stdout);
-  print_result(fileno(stdout),ec->final_prediction,-1,ec->tag);
+  print_result(all.stdout_fileno,ec->final_prediction,-1,ec->tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -388,7 +387,7 @@ void norm_add(vw& all, feature* begin, feature* end, float g, float& norm, float
 template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
 void norm_add_quad(vw& all, feature& f0, v_array<feature> &cross_features, float g, float& norm, float& norm_x, uint32_t offset=0)
 {
-  size_t halfhash = quadratic_constant * (f0.weight_index + offset);
+  uint32_t halfhash = quadratic_constant * (f0.weight_index + offset);
   float norm_new = 0.f;
   float norm_x_new = 0.f;
   norm_add<T>(all, cross_features.begin, cross_features.end, g * f0.x * f0.x, norm_new, norm_x_new, halfhash + offset);
@@ -399,7 +398,7 @@ void norm_add_quad(vw& all, feature& f0, v_array<feature> &cross_features, float
 template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
 void norm_add_cubic(vw& all, feature& f0, feature& f1, v_array<feature> &cross_features, float g, float& norm, float& norm_x, uint32_t offset=0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
+  uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
   float norm_new = 0.f;
   float norm_x_new = 0.f;
   norm_add<T>(all, cross_features.begin, cross_features.end, g * f0.x * f0.x * f1.x * f1.x, norm_new, norm_x_new, halfhash + offset);
@@ -462,15 +461,15 @@ float compute_norm(vw& all, example* &ec)
   float norm = 0.;
   float norm_x = 0.;
   uint32_t offset = ec->ft_offset;
-
+  
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     norm_add<T>(all, ec->atomics[*i].begin, ec->atomics[*i].end, g, norm, norm_x, offset);
-
+  
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
     if (ec->atomics[(int)(*i)[0]].size() > 0)
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
         norm_add_quad<T>(all, *f0, ec->atomics[(int)(*i)[1]], g, norm, norm_x, offset);
-
+  
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
     if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
@@ -483,10 +482,10 @@ float compute_norm(vw& all, example* &ec)
       total_weight = (float)all.sd->weighted_unlabeled_examples;
     else
       total_weight = ec->example_t;
-
+    
     all.normalized_sum_norm_x += ld->weight * norm_x;
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
-
+    
     if(all.power_t == 0.5) {
       if(all.adaptive) norm /= sqrt(avg_sq_norm);
       else norm /= avg_sq_norm;
@@ -748,7 +747,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load(void* in, io_buf& model_file, bool read, bool text)
+void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
 {
   vw* all=(vw*)in;
   if(read)
@@ -783,7 +782,7 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive_gd(void* in)
+void driver(void* in, void* data)
 {
   vw* all = (vw*)in;
   example* ec = NULL;
@@ -792,16 +791,20 @@ void drive_gd(void* in)
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn_gd(all, ec);
+	  learn(all, data, ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
-	{
-	  finish_gd(all);
-	  return;
-	}
+	return;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
 }
+
+  learner get_learner()
+  {
+    size_t* current_pass = (size_t*)calloc(1, sizeof(size_t));
+    learner ret = {current_pass,driver,learn,finish,save_load};
+    return ret;
+  }
 }

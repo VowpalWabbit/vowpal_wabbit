@@ -195,16 +195,9 @@ namespace Searn
   };
 
   void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
-  void drive(void*);
 }
 
 namespace ImperativeSearn {
-  struct searn_task {
-    void (*initialize)(vw&,uint32_t&);
-    void (*finish)(vw&);
-    void (*structured_predict)(vw&,example**,size_t,stringstream*,stringstream*);
-  };
-
   struct snapshot_item {
     size_t index;
     size_t tag;
@@ -213,15 +206,17 @@ namespace ImperativeSearn {
     size_t pred_step;  // srn->t when snapshot is made
     bool   req_for_recomb;
   };
+  
+  struct searn_task;
 
-  struct searn_struct {
+  struct searn {
     // functions that you will call
     uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
     void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot)(vw&,size_t,size_t,void*,size_t,bool);
 
     // structure that you must set
-    searn_task task;
+    searn_task* task;
 
     // data that you should not look at.  ever.
     uint32_t A;           // total number of actions, [1..A]; 0 means ldf
@@ -251,9 +246,9 @@ namespace ImperativeSearn {
     bool   allow_current_policy;  // should the current policy be used for training? true for dagger
     bool   rollout_all_actions;   // false for contextual bandits
     uint32_t current_policy;      // what policy are we training right now?
-    size_t increment;
+    uint32_t increment;
     size_t num_features;
-    size_t total_number_of_policies;
+    uint32_t total_number_of_policies;
     bool do_snapshot;
     bool do_recombination;
 
@@ -268,8 +263,13 @@ namespace ImperativeSearn {
 
     v_array<example*> ec_seq;
 
-    void (*base_finish)(void*);
-    void (*base_learner)(void*,example*);
+    learner base;
+  };
+
+  struct searn_task {
+    void (*initialize)(vw&,uint32_t&);
+    void (*finish)(vw&);
+    void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
   };
 
   void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);

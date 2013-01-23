@@ -679,7 +679,7 @@ __DATA__
     train-sets/ref/xxor.stderr
 
 # Test 21: matrix factorization -- training
-{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 0.001 --learning_rate 0.025 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f movielens.reg --cache_file movielens.cache
+{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 0.001 --learning_rate 0.025 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f movielens.reg --cache_file movielens.cache --loss_function classic
     train-sets/ref/ml100k_small.stdout
     train-sets/ref/ml100k_small.stderr
 

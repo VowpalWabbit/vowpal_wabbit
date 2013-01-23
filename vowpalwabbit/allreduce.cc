@@ -11,26 +11,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <cstdio>
 #include <cmath>
 #include <ctime>
-#ifdef _WIN32
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-typedef unsigned int uint32_t;
-typedef unsigned short uint16_t;
-typedef int socklen_t;
-typedef SOCKET socket_t;
-#define SHUT_RDWR SD_BOTH
-#else
-#include <sys/socket.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
-typedef int socket_t;
-#endif
 #include <errno.h>
-#ifndef _WIN32
-#include <strings.h>
-#endif
 #include <string.h>
 #include <stdlib.h>
 #ifdef _WIN32
@@ -41,21 +22,9 @@ typedef int socket_t;
 #include <sys/timeb.h>
 #include "allreduce.h"
 
- //nonreentrant
-
 using namespace std;
 
-struct node_socks {
-  socket_t parent;
-  socket_t children[2];
-  ~node_socks();
-};
-
 const int buf_size = 1<<16;
-
-string current_master="";
-
-node_socks socks;
 
 // port is already in network order
 socket_t sock_connect(const uint32_t ip, const int port) {
@@ -120,7 +89,7 @@ socket_t getsock()
   return sock;
 }
 
-void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node)
+void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks)
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -134,7 +103,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     cerr << "can't resolve hostname: " << master_location << endl;
     exit(1);
   }
-  current_master = master_location;
+  socks.current_master = master_location;
 
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
   int port = 26543;
@@ -418,22 +387,11 @@ void broadcast(char* buffer, const int n, const socket_t parent_sock, const sock
     }
 }
 
-void all_reduce(float* buffer, const int n, const string master_location, const size_t unique_id, const size_t total, const size_t node) 
+void all_reduce(float* buffer, const int n, const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks) 
 {
-  if(master_location != current_master) 
-    all_reduce_init(master_location, unique_id, total, node);
+  if(master_location != socks.current_master) 
+    all_reduce_init(master_location, unique_id, total, node, socks);
   reduce((char*)buffer, n*sizeof(float), socks.parent, socks.children);
   broadcast((char*)buffer, n*sizeof(float), socks.parent, socks.children);
 }
 
-node_socks::~node_socks()
-{
-  if(current_master != "") {
-    if(this->parent != -1)
-      shutdown(this->parent, SHUT_RDWR);
-    if(this->children[0] != -1) 
-      shutdown(this->children[0], SHUT_RDWR);
-    if(this->children[1] != -1)
-      shutdown(this->children[1], SHUT_RDWR);  
-  }
-}

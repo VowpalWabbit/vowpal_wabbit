@@ -21,7 +21,7 @@ license as described in the file LICENSE.
 #include "lda_core.h"
 #include "cache.h"
 #include "simple_label.h"
-#include "rand48.cc"
+#include "rand48.h"
 
 namespace LDA {
 #ifdef _WIN32
@@ -381,11 +381,8 @@ float average_diff(vw& all, float* oldgamma, float* newgamma)
   return sum / normalizer;
 }
 
-//nonreentrant
-v_array<float> Elogtheta;
-
 // Returns E_q[log p(\theta)] - E_q[log q(\theta)].
-float theta_kl(vw& all, float* gamma)
+  float theta_kl(vw& all, v_array<float>& Elogtheta, float* gamma)
 {
   float gammasum = 0;
   Elogtheta.erase();
@@ -422,7 +419,7 @@ v_array<float> old_gamma;
 // setting of lambda based on the document passed in. The value is
 // divided by the total number of words in the document This can be
 // used as a (possibly very noisy) estimate of held-out likelihood.
-float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
+  float lda_loop(vw& all, v_array<float>& Elogtheta, float* v,weight* weights,example* ec, float power_t)
 {
   new_gamma.erase();
   old_gamma.erase();
@@ -476,7 +473,7 @@ float lda_loop(vw& all, float* v,weight* weights,example* ec, float power_t)
   ec->topic_predictions.resize(all.lda);
   memcpy(ec->topic_predictions.begin,new_gamma.begin,all.lda*sizeof(float));
 
-  score += theta_kl(all, new_gamma.begin);
+  score += theta_kl(all, Elogtheta, new_gamma.begin);
 
   return score / doc_length;
 }
@@ -500,7 +497,7 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
-void save_load(void* in, io_buf& model_file, bool read, bool text)
+  void save_load(void* in, void*, io_buf& model_file, bool read, bool text)
 {
   vw* all = (vw*)in;
   uint32_t length = 1 << all->num_bits;
@@ -529,29 +526,30 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
       size_t brw = 1;
       do 
 	{
-	  brw = 1;
+	  brw = 0;
 	  size_t K = all->lda;
 	  
-	  for (uint32_t k = 0; k < K; k++)
-	    {
-	      uint32_t ndx = stride*i+k;
-	      
-	      bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
-					"", read,
-					"", 0, text);
-	      
-	      weight* v = &(all->reg.weight_vector[ndx]);
-	      text_len = sprintf(buff, "%f ", *v + all->lda_rho);
-	      
-	      bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-					"", read,
-					buff, text_len, text);
-	      
-	    }
+	  text_len = sprintf(buff, "%d ", i);
+	  brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
+					   "", read,
+					   buff, text_len, text);
+	  if (brw != 0)
+	    for (uint32_t k = 0; k < K; k++)
+	      {
+		uint32_t ndx = stride*i+k;
+		
+		weight* v = &(all->reg.weight_vector[ndx]);
+		text_len = sprintf(buff, "%f ", *v + all->lda_rho);
+		
+		brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+						 "", read,
+						 buff, text_len, text);
+		
+	      }
 	  if (text)
-	    bin_text_read_write_fixed(model_file,buff,0,
-				      "", read,
-				      "\n",1,text);
+	    brw += bin_text_read_write_fixed(model_file,buff,0,
+					     "", read,
+					     "\n",1,text);
 	  
 	  if (!read)
 	    i++;
@@ -561,46 +559,10 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 }
 
 
-void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
-{
-
-  po::options_description desc("Searn options");
-  desc.add_options()
-    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
-    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
-    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
-    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
-
-  po::parsed_options parsed = po::command_line_parser(opts).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();
-  opts = po::collect_unrecognized(parsed.options, po::include_positional);
-  po::store(parsed, vm);
-  po::notify(vm);
-
-  all.p->sort_features = true;
-  float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
-  all.stride = ((size_t)1) << (int) temp;
-  all.random_weights = true;
-  all.add_constant = false;
-
-  if (vm.count("lda") && all.eta > 1.)
-    {
-      cerr << "your learning rate is too high, setting it to 1" << endl;
-      all.eta = min(all.eta,1.f);
-    }
-
-  if (vm.count("minibatch")) {
-    size_t minibatch2 = next_pow2(all.minibatch);
-    all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
-  }
-
-
-}
-
-void drive(void* in)
+  void drive(void* in, void* d)
 {
   vw* all = (vw*)in;
+  v_array<float>* Elogtheta = (v_array<float>*)d;
   regressor reg = all->reg;
   example* ec = NULL;
 
@@ -695,7 +657,7 @@ void drive(void* in)
 
       for (size_t d = 0; d < batch_size; d++)
 	{
-          float score = lda_loop(*all, &v[d*all->lda], weights, examples[d],all->power_t);
+          float score = lda_loop(*all, *Elogtheta, &v[d*all->lda], weights, examples[d],all->power_t);
           if (all->audit)
 	    GD::print_audit_features(*all, examples[d]);
           // If the doc is empty, give it loss of 0.
@@ -749,4 +711,51 @@ void drive(void* in)
     }
 }
 
+  void learn(void*, void*, example*)
+  {
+    cout << "LDA can't be used as a reduction" << endl;
+  }
+
+  void finish(void*, void*d) {
+    free(d);
+  }
+
+void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+{
+  v_array<float> *Elogtheta = (v_array<float>*)calloc(1,sizeof(v_array<float>));
+
+  po::options_description desc("LDA options");
+  desc.add_options()
+    ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
+    ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
+    ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
+    ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
+
+  po::parsed_options parsed = po::command_line_parser(opts).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(desc).allow_unregistered().run();
+  opts = po::collect_unrecognized(parsed.options, po::include_positional);
+  po::store(parsed, vm);
+  po::notify(vm);
+
+  all.p->sort_features = true;
+  float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
+  all.stride = ((size_t)1) << (int) temp;
+  all.random_weights = true;
+  all.add_constant = false;
+
+  if (vm.count("lda") && all.eta > 1.)
+    {
+      cerr << "your learning rate is too high, setting it to 1" << endl;
+      all.eta = min(all.eta,1.f);
+    }
+
+  if (vm.count("minibatch")) {
+    size_t minibatch2 = next_pow2(all.minibatch);
+    all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
+  }
+
+  learner l = {Elogtheta, drive, learn, finish, save_load};
+  all.l = l;
+}
 }

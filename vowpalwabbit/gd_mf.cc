@@ -49,7 +49,7 @@ float mf_inline_predict(vw& all, example* &ec)
     {
       if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
 	{
-	  for (size_t k = 1; k <= all.rank; k++)
+	  for (uint32_t k = 1; k <= all.rank; k++)
 	    {
 	      // x_l * l^k
 	      // l^k is from index+1 to index+all.rank
@@ -177,7 +177,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 
 void mf_print_audit_features(vw& all, example* ec, size_t offset)
 {
-  print_result(fileno(stdout),ec->final_prediction,-1,ec->tag);
+  print_result(all.stdout_fileno,ec->final_prediction,-1,ec->tag);
   mf_print_offset_features(all, ec, offset);
 }
 
@@ -207,7 +207,7 @@ float mf_predict(vw& all, example* ex)
   return ex->final_prediction;
 }
 
-void save_load(void* in, io_buf& model_file, bool read, bool text)
+  void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
 {
   vw* all = (vw*)in;
   uint32_t length = 1 << all->num_bits;
@@ -232,24 +232,23 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
 	{
 	  brw = 0;
 	  size_t K = all->rank*2+1;
-
-	  for (uint32_t k = 0; k < K; k++)
-	    {
-	      uint32_t ndx = stride*i+k;
-	      
-	      brw += bin_text_read_write_fixed(model_file,(char *)&ndx, sizeof (ndx),
-					       "", read,
-					       "", 0, text);
-	      if (brw == 0)
-		break;
-
-	      weight* v = &(all->reg.weight_vector[ndx]);
-	      text_len = sprintf(buff, "%f ", *v);
-	      brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
-					       "", read,
-					       buff, text_len, text);
-	      
-	    }
+	  
+	  text_len = sprintf(buff, "%d ", i);
+	  brw += bin_text_read_write_fixed(model_file,(char *)&i, sizeof (i),
+					   "", read,
+					   buff, text_len, text);
+	  if (brw != 0)
+	    for (uint32_t k = 0; k < K; k++)
+	      {
+		uint32_t ndx = stride*i+k;
+		
+		weight* v = &(all->reg.weight_vector[ndx]);
+		text_len = sprintf(buff, "%f ", *v);
+		brw += bin_text_read_write_fixed(model_file,(char *)v, sizeof (*v),
+						 "", read,
+						 buff, text_len, text);
+		
+	      }
 	  if (text)
 	    brw += bin_text_read_write_fixed(model_file,buff,0,
 					     "", read,
@@ -262,27 +261,39 @@ void save_load(void* in, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive(void* in)
+  void learn(void* in, void* d, example* ec)
+  {
+    vw* all = (vw*)in;
+    size_t* current_pass = (size_t*) d;
+    if (ec->pass != *current_pass) {
+      all->eta *= all->eta_decay_rate;
+      *current_pass = ec->pass;
+    }
+    if (!GD::command_example(*all, ec))
+      {
+	mf_predict(*all,ec);
+	if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
+	  mf_inline_train(*all, ec, ec->eta_round);
+      }    
+  }
+
+  void finish(void* a, void* d)
+  {
+    size_t* current_pass = (size_t*)d;
+    free(current_pass);
+  }
+
+  void drive(void* in, void* d)
 {
   vw* all = (vw*)in;
+  
   example* ec = NULL;
   
-  size_t current_pass = 0;
   while ( true )
     {
       if ((ec = get_example(all->p)) != NULL)//blocking operation.
 	{
-	  if (ec->pass != current_pass) {
-	    all->eta *= all->eta_decay_rate;
-	    //save_predictor(*all, all->final_regressor_name, current_pass);
-	    current_pass = ec->pass;
-	  }
-	  if (!GD::command_example(*all, ec))
-	    {
-	      mf_predict(*all,ec);
-	      if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
-		mf_inline_train(*all, ec, ec->eta_round);
-	    }
+	  learn(in,d,ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
@@ -292,4 +303,10 @@ void drive(void* in)
     }
 }
 
+  void parse_flags(vw& all)
+  {
+    size_t* current_pass = (size_t*)calloc(1, sizeof(size_t));
+    learner t = {current_pass,drive,learn,finish,save_load};
+    all.l = t;
+  }
 }

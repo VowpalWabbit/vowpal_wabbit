@@ -13,6 +13,15 @@ license as described in the file LICENSE.
 #include "io.h"
 #include "example.h"
 
+#ifndef _WIN32
+typedef pthread_mutex_t MUTEX;
+typedef pthread_cond_t CV;
+#else
+#include <Windows.h>
+typedef CRITICAL_SECTION MUTEX;
+typedef CONDITION_VARIABLE CV;
+#endif
+
 struct substring {
   char *begin;
   char *end;
@@ -74,6 +83,16 @@ struct parser {
   size_t ring_size;
   uint64_t parsed_examples; // The index of the parsed example.
   uint64_t local_example_number; 
+  example* examples;
+  uint64_t used_index;
+  MUTEX examples_lock;
+  CV example_available;
+  CV example_unused;
+  MUTEX output_lock;
+  CV output_done;
+
+  bool done;
+  v_array<size_t> gram_mask;
 
   v_array<size_t> ids; //unique ids for sources
   v_array<size_t> counts; //partial examples received from sources

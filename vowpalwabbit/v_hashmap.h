@@ -34,7 +34,7 @@ template<class K, class V> class v_hashmap{
     return dat.end_array-dat.begin;
   }
 
-  v_hashmap(size_t min_size, V def, bool (*eq)(K,K)) {
+  void init(size_t min_size, V def, bool (*eq)(K,K)) {
     dat = v_array<hash_elem>();
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
@@ -44,6 +44,10 @@ template<class K, class V> class v_hashmap{
 
     last_position = 0;
     num_occupants = 0;
+  }
+
+  v_hashmap(size_t min_size, V def, bool (*eq)(K,K)) {
+    init(min_size, def, eq);
   }
 
   void set_equivalent(bool (*eq)(K,K)) { equivalent = eq; }

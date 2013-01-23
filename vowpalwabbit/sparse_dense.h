@@ -28,14 +28,14 @@ float sd_add(vw& all, feature* begin, feature* end, uint32_t offset=0)
 template <float (*T)(vw&,float,uint32_t)>
 float one_pf_quad_predict(vw& all, feature& f, v_array<feature> cross_features, uint32_t offset=0)
 {
-  size_t halfhash = quadratic_constant * (f.weight_index + offset);
+  uint32_t halfhash = quadratic_constant * (f.weight_index + offset);
   return f.x * sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
 }
 
 template <float (*T)(vw&,float,uint32_t)>
 float one_pf_cubic_predict(vw& all, feature& f0, feature& f1, v_array<feature> cross_features, uint32_t offset=0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
+  uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
   return f0.x * f1.x * sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
 }
 
@@ -44,7 +44,7 @@ inline float vec_add(vw& all, float fx, uint32_t fi) {
 }
 
 inline float vec_add_trunc(vw& all, float fx, uint32_t fi) {
-  return trunc_weight(all.reg.weight_vector[fi & all.weight_mask], all.sd->gravity) * fx;
+  return trunc_weight(all.reg.weight_vector[fi & all.weight_mask], (float)all.sd->gravity) * fx;
 }
 
 inline float vec_add_rescale(vw& all, float fx, uint32_t fi) {
@@ -70,7 +70,7 @@ inline float vec_add_trunc_rescale(vw& all, float fx, uint32_t fi) {
     }
     w[all.normalized_idx] = x_abs;
   }
-  return trunc_weight(w[0], all.sd->gravity) * fx;
+  return trunc_weight(w[0], (float)all.sd->gravity) * fx;
 }
 
 inline float vec_add_rescale_general(vw& all, float fx, uint32_t fi) {
@@ -98,7 +98,7 @@ inline float vec_add_trunc_rescale_general(vw& all, float fx, uint32_t fi) {
     }
     w[all.normalized_idx] = x_abs;
   }
-  return trunc_weight(w[0], all.sd->gravity) * fx;
+  return trunc_weight(w[0], (float)all.sd->gravity) * fx;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

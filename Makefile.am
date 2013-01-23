@@ -17,7 +17,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h vowpalwabbit/oaa.h		\
        vowpalwabbit/v_array.h vowpalwabbit/lda_core.h			\
        vowpalwabbit/v_hashmap.h vowpalwabbit/loss_functions.h		\
        vowpalwabbit/network.h vowpalwabbit/wap.h vowpalwabbit/noop.h	\
-       vowpalwabbit/nn.h
+       vowpalwabbit/nn.h vowpalwabbit/learner.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
