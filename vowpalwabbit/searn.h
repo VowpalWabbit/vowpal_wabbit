@@ -211,13 +211,14 @@ namespace ImperativeSearn {
     void  *data_ptr;
     size_t data_size;  // sizeof(data_ptr)
     size_t pred_step;  // srn->t when snapshot is made
+    bool   req_for_recomb;
   };
 
   struct searn_struct {
     // functions that you will call
     uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
     void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
-    void     (*snapshot)(vw&,size_t,size_t,void*,size_t);
+    void     (*snapshot)(vw&,size_t,size_t,void*,size_t,bool);
 
     // structure that you must set
     searn_task task;
@@ -228,6 +229,7 @@ namespace ImperativeSearn {
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
     uint32_t learn_a;     //   and this is the a we're varying it to
     v_array<snapshot_item> snapshot_data;
+    v_hashmap<size_t,uint32_t> *recombination_table;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
     v_array< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
 
@@ -253,6 +255,7 @@ namespace ImperativeSearn {
     size_t num_features;
     size_t total_number_of_policies;
     bool do_snapshot;
+    bool do_recombination;
 
     size_t read_example_this_loop;
     size_t read_example_last_id;

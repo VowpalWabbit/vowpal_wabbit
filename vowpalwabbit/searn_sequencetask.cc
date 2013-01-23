@@ -362,9 +362,9 @@ namespace SequenceTask_Easy {
 
     v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
-      srn.snapshot(vw, i, 1, &i, sizeof(i));
-      srn.snapshot(vw, i, 2, yhat.begin+i, sizeof(size_t)*history_length);
-      srn.snapshot(vw, i, 3, &total_loss, sizeof(total_loss));
+      srn.snapshot(vw, i, 1, &i, sizeof(i), true);
+      srn.snapshot(vw, i, 2, yhat.begin+i, sizeof(size_t)*history_length, true);
+      srn.snapshot(vw, i, 3, &total_loss, sizeof(total_loss), false);  // TODO: do we need this?
       //cerr << "i=" << i << " --------------------------------------" << endl;
 
       get_oracle_labels(ec[i], &ystar);

@@ -1439,6 +1439,21 @@ namespace ImperativeSearn {
     srn->snapshot_data.erase();
   }
 
+  size_t hash_last_snapshot(searn_struct *srn) {
+    snapshot_item *si = srn->snapshot_data.end-1;
+    size_t hash = 28931;
+    size_t index = si->index;
+    for ( ; si >= srn->snapshot_data.begin; si--) {
+      if (si->index != index) break;
+      if (si->req_for_recomb) {
+        char*d = (char*)si->data_ptr;
+        for (size_t i=0; i<si->data_size; i++)
+          hash = hash * 31093187 + d[i];
+      }
+    }
+    return hash;
+  }
+
   // if not LDF:
   //   *ecs should be a pointer to THE example
   //   num_ec == 0
@@ -1478,6 +1493,12 @@ namespace ImperativeSearn {
       size_t pol = choose_policy(srn, srn->allow_current_policy, true);
       v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
       uint32_t a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
+
+      if (srn->do_recombination && (srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().pred_step == srn->t)) {
+        size_t hash = hash_last_snapshot(srn);
+        srn->recombination_table->put(hash,hash,a);
+      }
+
       srn->train_action.push_back(a);
       srn->train_labels.push_back(valid_labels);
       srn->t++;
@@ -1502,11 +1523,22 @@ namespace ImperativeSearn {
         srn->t++;
         return srn->learn_a;
       } else {
-        size_t pol = choose_policy(srn, srn->allow_current_policy, true);
-        v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
-        uint32_t a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
+        uint32_t a = 0;
+        bool recomb_succeeded = false;
+        if (srn->do_recombination && (srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().pred_step == srn->t)) {
+          size_t hash = hash_last_snapshot(srn);
+          if (srn->recombination_table->contains(hash,hash)) {
+            a = srn->recombination_table->get(hash,hash);
+            recomb_succeeded = true;
+          }
+        }
+        if (!recomb_succeeded) {
+          size_t pol = choose_policy(srn, srn->allow_current_policy, true);
+          v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
+          a = single_action(all, ecs, num_ec, valid_labels, pol, ystar);
+          valid_labels.erase(); valid_labels.delete_v();
+        }
         srn->t++;
-        valid_labels.erase(); valid_labels.delete_v();
         return a;
       }
       assert(false);
@@ -1542,7 +1574,7 @@ namespace ImperativeSearn {
     return false;
   }
 
-  void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data)
+  void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool necessary_for_recomb)
   {
     searn_struct *srn = (searn_struct*)all.searnstr;
     if (! srn->do_snapshot) return;
@@ -1559,7 +1591,7 @@ namespace ImperativeSearn {
       else {
         void* new_data = malloc(sizeof_data);
         memcpy(new_data, data_ptr, sizeof_data);
-        snapshot_item item = { index, tag, new_data, sizeof_data, srn->t };
+        snapshot_item item = { index, tag, new_data, sizeof_data, srn->t, necessary_for_recomb };
         srn->snapshot_data.push_back(item);
       }
       return;
@@ -1882,6 +1914,9 @@ namespace ImperativeSearn {
     srn->current_policy = 1;
     srn->state = 0;
     srn->do_snapshot = true;
+    srn->do_recombination = true;
+
+    srn->recombination_table = new v_hashmap<size_t,uint32_t>(1023, 0, NULL);
 
     srn->passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
@@ -1913,6 +1948,8 @@ namespace ImperativeSearn {
     srn->train_labels.erase(); srn->train_labels.delete_v();
     srn->train_action.erase(); srn->train_action.delete_v();
     srn->learn_losses.erase(); srn->learn_losses.delete_v();
+
+    delete srn->recombination_table;
 
     if (srn->task.finish != NULL)
       srn->task.finish(*all);
@@ -1963,7 +2000,8 @@ namespace ImperativeSearn {
       ("searn_beta", po::value<float>(), "interpolation rate for policies")
       ("searn_allow_current_policy", "allow searn labeling to use the current policy")
       ("searn_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
-      ("searn_no_snapshot", "turn off snapshotting capabilities");
+      ("searn_no_recomb", "turn off recombination capabilities")
+      ("searn_no_snapshot", "turn off snapshotting capabilities  (=> searn_no_recomb)");
 
     po::options_description add_desc_file("Searn options only available in regressor file");
     add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
@@ -1997,6 +2035,12 @@ namespace ImperativeSearn {
     if (vm.count("searn_passes_per_policy"))       srn->passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
     if (vm.count("searn_allow_current_policy"))    srn->allow_current_policy = true;
     if (vm.count("searn_no_snapshot"))             srn->do_snapshot          = false;
+    if (vm.count("searn_no_recomb"))               srn->do_recombination     = false;
+
+    if (srn->do_recombination && !srn->do_snapshot) {
+      cerr << "warning: you turned off snapshotting but are still trying to recombine. turning recombination off." << endl;
+      srn->do_recombination = false;
+    }
 
     //if we loaded a regressor with -i option, --searn_trained_nb_policies contains the number of trained policies in the file
     // and --searn_total_nb_policies contains the total number of policies in the file
