@@ -290,6 +290,10 @@ int read_features(void* in, example* ex)
   if (num_chars_initial <= 1)
     return (int)num_chars_initial;
   size_t num_chars = num_chars_initial;
+  if (line[0] =='\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf') {
+    line += 3;
+    num_chars -= 3;
+  }
   if (line[num_chars-1] == '\n')
     num_chars--;
   if (line[num_chars-1] == '\r')
