@@ -287,7 +287,7 @@ int read_features(void* in, example* ex)
   example* ae = (example*)ex;
   char *line=NULL;
   size_t num_chars_initial = readto(*(all->p->input), line, '\n');
-  if (num_chars_initial <= 1)
+  if (num_chars_initial < 1)
     return (int)num_chars_initial;
   size_t num_chars = num_chars_initial;
   if (line[0] =='\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf') {
