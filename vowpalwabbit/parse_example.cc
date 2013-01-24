@@ -24,7 +24,7 @@ size_t hashstring (substring s, uint32_t h)
 
   char *p = s.begin;
   while (p != s.end)
-    if (isdigit(*p))
+    if (*p >= '0' && *p <= '9')
       ret = 10*ret + *(p++) - '0';
     else
       return uniform_hash((unsigned char *)s.begin, s.end - s.begin, h);
