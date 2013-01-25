@@ -5,7 +5,7 @@ learning rate = 10
 initial_t = 1
 power_t = 0.5
 using no cache
-Reading from train-sets/0002.dat
+Reading datafile = train-sets/0002.dat
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features

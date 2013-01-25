@@ -574,7 +574,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	{
 	  string temp = all.data_filename;
 	  if (!quiet)
-	    cerr << "Reading from " << temp << endl;
+	    cerr << "Reading datafile = " << temp << endl;
 	  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
 	  if (f == -1 && temp.size() != 0)
 	    {

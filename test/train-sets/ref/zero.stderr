@@ -9,7 +9,7 @@ Allocated 72M for weights and mem
 ## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 
 using l2 regularization = 1
 creating cache_file = train-sets/zero.dat.cache
-Reading from train-sets/zero.dat
+Reading datafile = train-sets/zero.dat
 num sources = 1
  1 0.00000   	0.00000   	0.00000   	          	          	          	0.00000   	0.00000   	0.00000   
 
