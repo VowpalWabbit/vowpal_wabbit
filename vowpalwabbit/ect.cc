@@ -361,8 +361,8 @@ namespace ECT
     ect* e=(ect*)d;
 
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
-    if (mc->label > e->k)
-      cout << "label > maximum label!  This won't work right." << endl;
+    if (mc->label <= 0 || mc->label > e->k)
+      cout << "label not in {1..maximum label}!  This won't work right." << endl;
     size_t new_label = ect_predict(*all, *e, ec);
     ec->ld = mc;
     
