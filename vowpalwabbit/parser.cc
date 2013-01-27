@@ -574,7 +574,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	{
 	  string temp = all.data_filename;
 	  if (!quiet)
-	    cerr << "Reading from " << temp << endl;
+	    cerr << "Reading datafile = " << temp << endl;
 	  int f = all.p->input->open_file(temp.c_str(), all.stdin_off, io_buf::READ);
 	  if (f == -1 && temp.size() != 0)
 	    {
@@ -1038,7 +1038,7 @@ void start_parser(vw& all, bool init_structures)
   #ifndef _WIN32
   pthread_create(&all.parse_thread, NULL, main_parse_loop, &all);
   #else
-  parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
+  all.parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
   #endif
 }
 
@@ -1078,8 +1078,8 @@ void end_parser(vw& all)
   #ifndef _WIN32
   pthread_join(all.parse_thread, NULL);
   #else
-  ::WaitForSingleObject(parse_thread, INFINITE);
-  ::CloseHandle(parse_thread);
+  ::WaitForSingleObject(all.parse_thread, INFINITE);
+  ::CloseHandle(all.parse_thread);
   #endif
   release_parser_datastructures(all);
 }

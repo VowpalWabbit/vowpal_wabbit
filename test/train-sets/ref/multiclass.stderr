@@ -4,7 +4,7 @@ initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
 creating cache_file = train-sets/multiclass.cache
-Reading from train-sets/multiclass
+Reading datafile = train-sets/multiclass
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features

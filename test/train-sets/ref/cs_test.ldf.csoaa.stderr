@@ -5,7 +5,7 @@ power_t = 0.5
 decay_learning_rate = 1
 predictions = cs_test.ldf.csoaa.predict
 creating cache_file = train-sets/cs_test.ldf.cache
-Reading from train-sets/cs_test.ldf
+Reading datafile = train-sets/cs_test.ldf
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features

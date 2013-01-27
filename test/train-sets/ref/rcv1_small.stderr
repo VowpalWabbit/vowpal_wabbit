@@ -9,7 +9,7 @@ Allocated 72M for weights and mem
 ## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 
 using l2 regularization = 1
 creating cache_file = train-sets/rcv1_small.dat.cache
-Reading from train-sets/rcv1_small.dat
+Reading datafile = train-sets/rcv1_small.dat
 num sources = 1
  1 0.69315   	0.00186   	3.76860   	          	          	          	34.14409  	19774.77734	0.11037   
  3 0.46246   	0.01086   	1.93693   	 0.554592  	0.194583  	          	          	220.86601 	1.00000   

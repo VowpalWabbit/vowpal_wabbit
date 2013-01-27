@@ -13,13 +13,14 @@ license as described in the file LICENSE.
 #include "io.h"
 #include "example.h"
 
-#ifndef _WIN32
-typedef pthread_mutex_t MUTEX;
-typedef pthread_cond_t CV;
-#else
+#ifdef _WIN32
+#include <WinSock2.h>
 #include <Windows.h>
 typedef CRITICAL_SECTION MUTEX;
 typedef CONDITION_VARIABLE CV;
+#else
+typedef pthread_mutex_t MUTEX;
+typedef pthread_cond_t CV;
 #endif
 
 struct substring {

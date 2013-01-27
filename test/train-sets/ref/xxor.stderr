@@ -6,7 +6,7 @@ initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
 creating cache_file = train-sets/xxor.dat.cache
-Reading from train-sets/xxor.dat
+Reading datafile = train-sets/xxor.dat
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
