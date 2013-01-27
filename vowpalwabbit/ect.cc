@@ -355,7 +355,7 @@ namespace ECT
       }
   }
 
-  void learn(void*a, void* d, example* ec)
+  void learn_with_output(void* a, void* d, example* ec, bool shouldOutput)
   {
     vw* all = (vw*)a;
     ect* e=(ect*)d;
@@ -364,6 +364,11 @@ namespace ECT
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
       cout << "label is not in {1,"<< e->k << "} This won't work right." << endl;
     size_t new_label = ect_predict(*all, *e, ec);
+    if (shouldOutput) {
+        stringstream out;
+        out << new_label << ":1";
+        all->print_text(all->raw_prediction, out.str(), ec->tag);
+    }
     ec->ld = mc;
     
     if (mc->label != (uint32_t)-1 && all->training)
@@ -371,6 +376,10 @@ namespace ECT
     ec->ld = mc;
     
     *(OAA::prediction_t*)&(ec->final_prediction) = new_label;
+  }
+  void learn(void*a, void* d, example* ec)
+  {
+      learn_with_output(a, d, ec, false);
   }
 
   void finish(void* all, void* d)
@@ -402,7 +411,7 @@ namespace ECT
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(all, d, ec);
+            learn_with_output(all, d, ec, all->raw_prediction > 0);
             OAA::output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
