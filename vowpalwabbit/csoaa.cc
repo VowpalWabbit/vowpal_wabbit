@@ -373,11 +373,10 @@ namespace CSOAA {
     }
 
     *(all.p->lp) = cs_label_parser;
+    all.base_learner_nb_w *= nb_actions;
     c->base=all.l;
     c->csoaa_increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
-
     all.sd->k = nb_actions;
-    all.base_learner_nb_w *= nb_actions;
 
     learner l = {c, drive, learn, finish, all.l.save_load};
     c->base = all.l;
