@@ -156,8 +156,8 @@ namespace OAA {
     size_t prediction = 1;
     float score = INT_MIN;
   
-    if (mc_label_data->label > d->k && mc_label_data->label != (uint32_t)-1)
-      cerr << "warning: label " << mc_label_data->label << " is greater than " << d->k << endl;
+    if (mc_label_data->label == 0 || (mc_label_data->label > d->k && mc_label_data->label != (uint32_t)-1))
+      cout << "label is not in {1,"<< d->k << "} This won't work right." << endl;
   
     string outputString;
     stringstream outputStringStream(outputString);

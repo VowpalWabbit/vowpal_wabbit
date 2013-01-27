@@ -868,7 +868,7 @@ namespace Searn
       }
       //cerr << "searn>";
       //simple_print_example_features(all,ec);
-      s.base.learn(&all,s.base.data,ec);  
+      s.base.learn(&all,s.base.data,ec); 
       s.total_predictions_made++;  
       s.searn_num_features += ec->num_features;
       uint32_t final_prediction = (uint32_t)(*(OAA::prediction_t*)&(ec->final_prediction));
