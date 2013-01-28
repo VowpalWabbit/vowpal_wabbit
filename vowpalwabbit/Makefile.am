@@ -1,7 +1,6 @@
 lib_LTLIBRARIES = liballreduce.la libvw.la
 
 liballreduce_la_SOURCES = allreduce.cc
-include_HEADERS = allreduce.h
 
 bin_PROGRAMS = vw active_interactor
 
