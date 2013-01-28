@@ -366,7 +366,12 @@ namespace ECT
     size_t new_label = ect_predict(*all, *e, ec);
     if (shouldOutput) {
         stringstream out;
-        out << new_label << ":1";
+        for (int k = 1; k <= e->k; ++k) {
+            out << k;
+            if (k == new_label) out << ":1";
+            else out << ":0";
+            if (k != e->k) out << ' ';
+        }
         all->print_text(all->raw_prediction, out.str(), ec->tag);
     }
     ec->ld = mc;
