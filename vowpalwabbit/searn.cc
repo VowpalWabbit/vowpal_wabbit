@@ -871,7 +871,7 @@ namespace Searn
       s.base.learn(&all,s.base.data,ec); 
       s.total_predictions_made++;  
       s.searn_num_features += ec->num_features;
-      uint32_t final_prediction = (uint32_t)(*(OAA::prediction_t*)&(ec->final_prediction));
+      uint32_t final_prediction = (uint32_t)ec->final_prediction;
       ec->ld = old_label;
 
       SearnUtil::remove_policy_offset(all, ec, s.increment, policy);
@@ -1425,7 +1425,7 @@ namespace ImperativeSearn {
     srn.base.learn(&all,srn.base.data, ec);
     srn.total_predictions_made++;
     srn.num_features += ec->num_features;
-    uint32_t final_prediction = (uint32_t)(*(OAA::prediction_t*)&(ec->final_prediction));
+    uint32_t final_prediction = (uint32_t)ec->final_prediction;
 
     SearnUtil::remove_policy_offset(all, ec, srn.increment, pol);
     ec->ld = old_label;

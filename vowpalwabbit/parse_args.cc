@@ -27,6 +27,8 @@ license as described in the file LICENSE.
 #include "gd_mf.h"
 #include "vw.h"
 #include "rand48.h"
+#include "parse_args.h"
+#include "binary.h"
 
 using namespace std;
 //
@@ -54,6 +56,7 @@ vw parse_args(int argc, char *argv[])
     ("active_learning", "active learning mode")
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&all.active_c0), "active learning mellowness parameter c_0. Default 8")
+    ("binary", "report loss as binary classification on -1,1")
     ("sgd", "use regular stochastic gradient descent update.")
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
@@ -574,6 +577,9 @@ vw parse_args(int argc, char *argv[])
     NN::parse_flags(all, to_pass_further, vm, vm_file);
   }
   
+  if (vm.count("binary") || vm_file.count("binary"))
+    BINARY::parse_flags(all, to_pass_further, vm, vm_file);
+
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
 

@@ -17,11 +17,9 @@ namespace OAA
 {
 
   struct mc_label {
-    uint32_t label;
+    float label;
     float weight;
   };
-  
-  typedef size_t prediction_t;
   
   void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   

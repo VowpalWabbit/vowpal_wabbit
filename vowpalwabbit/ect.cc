@@ -189,7 +189,7 @@ namespace ECT
     }
   }
 
-  size_t ect_predict(vw& all, ect& e, example* ec)
+  float ect_predict(vw& all, ect& e, example* ec)
   {
     if (e.k == (size_t)1)
       return 1;
@@ -363,14 +363,14 @@ namespace ECT
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
       cout << "label is not in {1,"<< e->k << "} This won't work right." << endl;
-    size_t new_label = ect_predict(*all, *e, ec);
+    float new_label = ect_predict(*all, *e, ec);
     ec->ld = mc;
     
     if (mc->label != (uint32_t)-1 && all->training)
       ect_train(*all, *e, ec);
     ec->ld = mc;
     
-    *(OAA::prediction_t*)&(ec->final_prediction) = new_label;
+    ec->final_prediction = new_label;
   }
 
   void finish(void* all, void* d)

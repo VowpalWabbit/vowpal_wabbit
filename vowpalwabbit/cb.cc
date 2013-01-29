@@ -624,7 +624,7 @@ namespace CB
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)*(OAA::prediction_t*)&ec->final_prediction,
+                (long unsigned int)ec->final_prediction,
                 (long unsigned int)ec->num_features,
                 c.avg_loss_regressors,
                 c.last_pred_reg,
@@ -644,7 +644,7 @@ namespace CB
     float loss = 0.;
     if (!CB::is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
+        size_t pred = (size_t)ec->final_prediction;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
@@ -681,7 +681,7 @@ namespace CB
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
         int f = all.final_prediction_sink[i];
-        all.print(f, (float) (*(OAA::prediction_t*)&ec->final_prediction), 0, ec->tag);
+        all.print(f, ec->final_prediction, 0, ec->tag);
       }
   
     all.sd->example_number++;

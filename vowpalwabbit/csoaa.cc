@@ -222,7 +222,7 @@ namespace CSOAA {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)*(OAA::prediction_t*)&ec->final_prediction,
+                (long unsigned int)ec->final_prediction,
                 (long unsigned int)ec->num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -239,7 +239,7 @@ namespace CSOAA {
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
+        size_t pred = (size_t)ec->final_prediction;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
@@ -259,7 +259,7 @@ namespace CSOAA {
     all.sd->sum_loss_since_last_dump += loss;
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print((int)*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
+      all.print((int)*sink, ec->final_prediction, 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
@@ -321,7 +321,7 @@ namespace CSOAA {
 	ec->partial_prediction = 0.;
       }
     ec->ld = ld;
-    *(OAA::prediction_t*)&(ec->final_prediction) = (size_t)prediction;
+    ec->final_prediction = (float)prediction;
     if (current_increment != 0)
       update_example_indicies(all->audit, ec, -current_increment);
   }
@@ -727,7 +727,7 @@ namespace LabelDict {
 
         if (prediction == costs1[j1].weight_index) prediction_is_me = true;
       }
-      *(OAA::prediction_t*)&(ec1->final_prediction) = prediction_is_me ? prediction : 0;
+      ec1->final_prediction = prediction_is_me ? prediction : 0;
       ec1->ld = ld1;
       ec1->example_t = example_t1;
     }
@@ -783,7 +783,7 @@ namespace LabelDict {
         ec->partial_prediction = costs[j].partial_prediction;
         if (prediction == costs[j].weight_index) prediction_is_me = true;
       }
-      *(OAA::prediction_t*)&(ec->final_prediction) = prediction_is_me ? prediction : 0;
+      ec->final_prediction = prediction_is_me ? prediction : 0;
 
       if (isTest && (costs.size() == 1)) {
         ec->final_prediction = costs[0].partial_prediction;
@@ -850,7 +850,7 @@ namespace LabelDict {
     all.sd->total_features += ec->num_features;
 
     float loss = 0.;
-    size_t final_pred = *(OAA::prediction_t*)&(ec->final_prediction);
+    size_t final_pred = (size_t)ec->final_prediction;
 
     if (!CSOAA::example_is_test(ec)) {
       for (size_t j=0; j<costs.size(); j++) {
@@ -867,7 +867,7 @@ namespace LabelDict {
     }
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)(*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
+      all.print(*sink, ec->final_prediction, 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;

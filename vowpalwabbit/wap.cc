@@ -235,7 +235,7 @@ namespace WAP {
     
     if (cost_label->costs.size() > 0)
       train(*all, *w, ec);
-    *(OAA::prediction_t*)&(ec->final_prediction) = prediction;
+    ec->final_prediction = (float)prediction;
   }
   
   void finish(void* a, void* d)

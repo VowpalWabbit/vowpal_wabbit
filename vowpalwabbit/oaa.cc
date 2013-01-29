@@ -114,15 +114,15 @@ namespace OAA {
         if (ld->label == INT_MAX)
           strcpy(label_buf," unknown");
         else
-          sprintf(label_buf,"%8lu",(long unsigned int)ld->label);
+          sprintf(label_buf,"%8ld",(long int)ld->label);
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu\n",
+        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8ld %8lu\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)*(prediction_t*)&ec->final_prediction,
+                (long int)ec->final_prediction,
                 (long unsigned int)ec->num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -137,13 +137,13 @@ namespace OAA {
     all.sd->weighted_examples += ld->weight;
     all.sd->total_features += ec->num_features;
     size_t loss = 1;
-    if (ld->label == *(prediction_t*)&(ec->final_prediction))
+    if (ld->label == ec->final_prediction)
       loss = 0;
     all.sd->sum_loss += loss;
     all.sd->sum_loss_since_last_dump += loss;
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)(*(prediction_t*)&(ec->final_prediction)), 0, ec->tag);
+      all.print(*sink, ec->final_prediction, 0, ec->tag);
   
     all.sd->example_number++;
 
@@ -153,7 +153,7 @@ namespace OAA {
   void learn_with_output(vw*all,oaa* d, example* ec, bool shouldOutput)
   {
     mc_label* mc_label_data = (mc_label*)ec->ld;
-    size_t prediction = 1;
+    float prediction = 1;
     float score = INT_MIN;
   
     if (mc_label_data->label == 0 || (mc_label_data->label > d->k && mc_label_data->label != (uint32_t)-1))
@@ -187,9 +187,9 @@ namespace OAA {
         }
 
         ec->partial_prediction = 0.;
-      }
+      }	
     ec->ld = mc_label_data;
-    *(prediction_t*)&(ec->final_prediction) = prediction;
+    ec->final_prediction = prediction;
     update_example_indicies(all->audit, ec, -d->total_increment);
 
     if (shouldOutput) {
