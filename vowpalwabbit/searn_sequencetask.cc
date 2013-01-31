@@ -326,14 +326,14 @@ namespace SequenceTask_Easy {
   SearnUtil::history_info hinfo;
   v_array<size_t> yhat;
 
-  void initialize(vw& vw, uint32_t& num_actions) {
+  void initialize(searn& srn, uint32_t& num_actions) {
     hinfo.length          = 1;
     hinfo.bigrams         = false;
     hinfo.features        = 0;
     hinfo.bigram_features = false;
   }
 
-  void finish(vw& vw) {
+  void finish(searn& srn) {
     yhat.delete_v();
   }
 
@@ -351,7 +351,7 @@ namespace SequenceTask_Easy {
         out->push_back( lab->costs[l].weight_index );
   }
 
-  void structured_predict_v1(vw& vw, searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
+  void structured_predict_v1(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
     float total_loss  = 0;
     size_t history_length = max(hinfo.features, hinfo.length);
     bool is_train = false;
@@ -361,16 +361,16 @@ namespace SequenceTask_Easy {
 
     v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
-      srn.snapshot(vw, i, 1, &i, sizeof(i), true);
-      srn.snapshot(vw, i, 2, yhat.begin+i, sizeof(size_t)*history_length, true);
-      srn.snapshot(vw, i, 3, &total_loss, sizeof(total_loss), false);  // TODO: do we need this?
+      srn.snapshot(srn, i, 1, &i, sizeof(i), true);
+      srn.snapshot(srn, i, 2, yhat.begin+i, sizeof(size_t)*history_length, true);
+      srn.snapshot(srn, i, 3, &total_loss, sizeof(total_loss), false);  // TODO: do we need this?
       //cerr << "i=" << i << " --------------------------------------" << endl;
 
       get_oracle_labels(ec[i], &ystar);
 
-      SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.begin+i);
-      yhat[i+history_length] = srn.predict(vw, &ec[i], 0, NULL, &ystar);
-      SearnUtil::remove_history_from_example(vw, &hinfo, ec[i]);
+      SearnUtil::add_history_to_example(*srn.all, &hinfo, ec[i], yhat.begin+i);
+      yhat[i+history_length] = srn.predict(srn, &ec[i], 0, NULL, &ystar);
+      SearnUtil::remove_history_from_example(*srn.all, &hinfo, ec[i]);
 
       //cerr << "i=" << i << "\tpred=" << yhat.last() << endl;
 
@@ -397,7 +397,7 @@ namespace SequenceTask_Easy {
     }
     
     ystar.erase();  ystar.delete_v();
-    srn.declare_loss(vw, len, is_train ? total_loss : -1.f);
+    srn.declare_loss(srn, len, is_train ? total_loss : -1.f);
   }
 
   /*

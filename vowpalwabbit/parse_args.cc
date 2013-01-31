@@ -162,7 +162,7 @@ vw parse_args(int argc, char *argv[])
   all.data_filename = "";
 
   all.searn = false;
-  all.searnstr = NULL;
+  //all.searnstr = NULL;
 
   all.sd->weighted_unlabeled_examples = all.sd->t;
   all.initial_t = (float)all.sd->t;
@@ -656,7 +656,7 @@ vw parse_args(int argc, char *argv[])
       CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
-    all.searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
+    //all.searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
     ImperativeSearn::parse_flags(all, to_pass_further, vm, vm_file);
   }
 
@@ -775,7 +775,7 @@ namespace VW {
   void finish(vw& all)
   {
     all.l.finish(&all, all.l.data);
-    if (all.searnstr != NULL) free(all.searnstr);
+    //if (all.searnstr != NULL) free(all.searnstr);
     free_parser(all);
     finalize_regressor(all, all.final_regressor_name);
     finalize_source(all.p);

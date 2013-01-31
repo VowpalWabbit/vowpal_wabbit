@@ -1372,7 +1372,9 @@ namespace ImperativeSearn {
   const char INIT_TRAIN = 1;
   const char LEARN      = 2;
 
-  inline bool isLDF(searn& srn) { return (srn.A == 0); }
+  inline bool isLDF(searn& srn) { 
+    return (srn.A == 0); 
+  }
 
   uint32_t choose_policy(searn& srn, bool allow_current, bool allow_optimal)
   {
@@ -1407,27 +1409,27 @@ namespace ImperativeSearn {
     return ret;
   }
 
-  uint32_t single_prediction_LDF(vw& all, example** ecs, size_t num_ec, size_t pol)
+  uint32_t single_prediction_LDF(searn&srn, example** ecs, size_t num_ec, size_t pol)
   {
     assert(pol > 0);
     // TODO
     return 0;
   }
 
-  uint32_t single_prediction_notLDF(vw& all, searn& srn, example* ec, v_array<CSOAA::wclass> valid_labels, uint32_t pol)
+  uint32_t single_prediction_notLDF(searn& srn, example* ec, v_array<CSOAA::wclass> valid_labels, uint32_t pol)
   {
     assert(pol > 0);
 
     void* old_label = ec->ld;
     ec->ld = (void*)&valid_labels;
-    SearnUtil::add_policy_offset(all, ec, srn.increment, pol);
+    SearnUtil::add_policy_offset(*srn.all, ec, srn.increment, pol);
 
-    srn.base.learn(&all,srn.base.data, ec);
+    srn.base.learn(srn.all,srn.base.data, ec);
     srn.total_predictions_made++;
     srn.num_features += ec->num_features;
     uint32_t final_prediction = (uint32_t)(*(OAA::prediction_t*)&(ec->final_prediction));
 
-    SearnUtil::remove_policy_offset(all, ec, srn.increment, pol);
+    SearnUtil::remove_policy_offset(*srn.all, ec, srn.increment, pol);
     ec->ld = old_label;
 
     return final_prediction;
@@ -1439,7 +1441,7 @@ namespace ImperativeSearn {
     return opts[(size_t)(((float)opts.size()) * r)];
   }
 
-  uint32_t single_action(vw& all, searn& srn, example** ecs, size_t num_ec, v_array<CSOAA::wclass> valid_labels, uint32_t pol, v_array<uint32_t> *ystar) {
+  uint32_t single_action(searn& srn, example** ecs, size_t num_ec, v_array<CSOAA::wclass> valid_labels, uint32_t pol, v_array<uint32_t> *ystar) {
     //cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
     if (pol == 0) { // optimal policy
       if ((ystar == NULL) || (ystar->size() == 0))
@@ -1448,9 +1450,9 @@ namespace ImperativeSearn {
         return choose_random<uint32_t>(*ystar);
     } else {        // learned policy
       if (isLDF(srn))
-        return single_prediction_LDF(all, ecs, num_ec, pol);
+        return single_prediction_LDF(srn, ecs, num_ec, pol);
       else
-        return single_prediction_notLDF(all, srn, *ecs, valid_labels, pol);
+        return single_prediction_notLDF(srn, *ecs, valid_labels, pol);
     }
   }
 
@@ -1461,11 +1463,11 @@ namespace ImperativeSearn {
     srn.snapshot_data.erase();
   }
 
-  size_t hash_last_snapshot(searn *srn) {
-    snapshot_item *si = srn->snapshot_data.end-1;
+  size_t hash_last_snapshot(searn& srn) {
+    snapshot_item *si = srn.snapshot_data.end-1;
     size_t hash = 28931;
     size_t index = si->index;
-    for ( ; si >= srn->snapshot_data.begin; si--) {
+    for ( ; si >= srn.snapshot_data.begin; si--) {
       if (si->index != index) break;
       if (si->req_for_recomb) {
         char*d = (char*)si->data_ptr;
@@ -1491,99 +1493,96 @@ namespace ImperativeSearn {
   //   ystar:
   //     == NULL (or empty) means we don't know the oracle label
   //     otherwise          means the oracle could do any of the listed actions
-  uint32_t searn_predict(vw& all, example** ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know
+  uint32_t searn_predict(searn& srn, example** ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know
   {
-    searn* srn=(searn*)all.searnstr;
-
     // check ldf sanity
-    if (!isLDF(*srn)) {
+    if (!isLDF(srn)) {
       assert(num_ec == 0); // searntask is trying to define an ldf example in a non-ldf problem
     } else { // is LDF
       assert(num_ec != 0); // searntask is trying to define a non-ldf example in an ldf problem" << endl;
       assert(yallowed == NULL); // searntask is trying to specify allowed actions in an ldf problem" << endl;
     }
 
-    if (srn->state == INIT_TEST) {
-      uint32_t pol = choose_policy(*srn, true, false);
-      v_array<CSOAA::wclass> valid_labels = get_all_labels(*srn, num_ec, yallowed);
-      uint32_t a = single_action(all, *srn, ecs, num_ec, valid_labels, pol, ystar);
-      srn->t++;
+    if (srn.state == INIT_TEST) {
+      uint32_t pol = choose_policy(srn, true, false);
+      v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
+      uint32_t a = single_action(srn, ecs, num_ec, valid_labels, pol, ystar);
+      srn.t++;
       valid_labels.erase(); valid_labels.delete_v();
       return a;
     }
-    if (srn->state == INIT_TRAIN) {
-      size_t pol = choose_policy(*srn, srn->allow_current_policy, true);
-      v_array<CSOAA::wclass> valid_labels = get_all_labels(*srn, num_ec, yallowed);
-      uint32_t a = single_action(all, *srn, ecs, num_ec, valid_labels, pol, ystar);
+    if (srn.state == INIT_TRAIN) {
+      size_t pol = choose_policy(srn, srn.allow_current_policy, true);
+      v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
+      uint32_t a = single_action(srn, ecs, num_ec, valid_labels, pol, ystar);
 
-      if (srn->do_recombination && (srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().pred_step == srn->t)) {
+      if (srn.do_recombination && (srn.snapshot_data.size() > 0) && (srn.snapshot_data.last().pred_step == srn.t)) {
         size_t hash = hash_last_snapshot(srn);
-        srn->recombination_table->put(hash,hash,a);
+        srn.recombination_table->put(hash,hash,a);
       }
 
-      srn->train_action.push_back(a);
-      srn->train_labels.push_back(valid_labels);
-      srn->t++;
+      srn.train_action.push_back(a);
+      srn.train_labels.push_back(valid_labels);
+      srn.t++;
       return a;
     }
-    if (srn->state == LEARN) {
-      if (srn->t < srn->learn_t) {
-        assert(srn->t < srn->train_action.size());
-        srn->t++;
-        return srn->train_action[srn->t-1];
-      } else if (srn->t == srn->learn_t) {
-        if (srn->learn_example_copy == NULL) {
+    if (srn.state == LEARN) {
+      if (srn.t < srn.learn_t) {
+        assert(srn.t < srn.train_action.size());
+        srn.t++;
+        return srn.train_action[srn.t-1];
+      } else if (srn.t == srn.learn_t) {
+        if (srn.learn_example_copy == NULL) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
-          srn->learn_example_len = num_to_copy;
-          srn->learn_example_copy = (example**)SearnUtil::calloc_or_die(num_to_copy, sizeof(example*));
+          srn.learn_example_len = num_to_copy;
+          srn.learn_example_copy = (example**)SearnUtil::calloc_or_die(num_to_copy, sizeof(example*));
           for (size_t n=0; n<num_to_copy; n++) {
-            srn->learn_example_copy[n] = alloc_example(sizeof(CSOAA::label));
-            VW::copy_example_data(srn->learn_example_copy[n], ecs[n], sizeof(CSOAA::label), all.p->lp->copy_label);
+            srn.learn_example_copy[n] = alloc_example(sizeof(CSOAA::label));
+            VW::copy_example_data(srn.learn_example_copy[n], ecs[n], sizeof(CSOAA::label), srn.all->p->lp->copy_label);
           }
-          //cerr << "copying example to " << srn->learn_example_copy << endl;
+          //cerr << "copying example to " << srn.learn_example_copy << endl;
         }
-        srn->t++;
-        return srn->learn_a;
+        srn.t++;
+        return srn.learn_a;
       } else {
         uint32_t a = 0;
         bool recomb_succeeded = false;
-        if (srn->do_recombination && (srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().pred_step == srn->t)) {
+        if (srn.do_recombination && (srn.snapshot_data.size() > 0) && (srn.snapshot_data.last().pred_step == srn.t)) {
           size_t hash = hash_last_snapshot(srn);
-          if (srn->recombination_table->contains(hash,hash)) {
-            a = srn->recombination_table->get(hash,hash);
+          if (srn.recombination_table->contains(hash,hash)) {
+            a = srn.recombination_table->get(hash,hash);
             recomb_succeeded = true;
           }
         }
         if (!recomb_succeeded) {
-          size_t pol = choose_policy(*srn, srn->allow_current_policy, true);
-          v_array<CSOAA::wclass> valid_labels = get_all_labels(*srn, num_ec, yallowed);
-          a = single_action(all, *srn, ecs, num_ec, valid_labels, pol, ystar);
+          size_t pol = choose_policy(srn, srn.allow_current_policy, true);
+          v_array<CSOAA::wclass> valid_labels = get_all_labels(srn, num_ec, yallowed);
+          a = single_action(srn, ecs, num_ec, valid_labels, pol, ystar);
           valid_labels.erase(); valid_labels.delete_v();
         }
 
-        srn->t++;
+        srn.t++;
         return a;
       }
       assert(false);
     }
-    cerr << "fail: searn got into ill-defined state (" << (int)srn->state << ")" << endl;
+    cerr << "fail: searn got into ill-defined state (" << (int)srn.state << ")" << endl;
     exit(-1);
   }
 
-  void searn_declare_loss(vw& all, size_t predictions_since_last, float incr_loss)
+  void searn_declare_loss(searn&srn, size_t predictions_since_last, float incr_loss)
   {
-    searn* srn=(searn*)all.searnstr;
-    if (srn->t != srn->loss_last_step + predictions_since_last) {
-      cerr << "fail: searntask hasn't counted its predictions correctly.  current time step=" << srn->t << ", last declaration at " << srn->loss_last_step << ", declared # of predictions since then is " << predictions_since_last << endl;
+    if (srn.t != srn.loss_last_step + predictions_since_last) {
+      cerr << "fail: searntask hasn't counted its predictions correctly.  current time step=" << srn.t << ", last declaration at " << srn.loss_last_step << ", declared # of predictions since then is " << predictions_since_last << endl;
       exit(-1);
     }
-    srn->loss_last_step = srn->t;
-    if (srn->state == INIT_TEST)
-      srn->test_loss += incr_loss;
-    else if (srn->state == INIT_TRAIN)
-      srn->train_loss += incr_loss;
+    srn.loss_last_step = srn.t;
+    if (srn.state == INIT_TEST)
+      srn.test_loss += incr_loss;
+    else if (srn.state == INIT_TRAIN)
+      srn.train_loss += incr_loss;
     else
-      srn->learn_loss += incr_loss;
+      srn.learn_loss += incr_loss;
   }
 
   bool snapshot_linear_search(v_array<snapshot_item> a, size_t desired_t, size_t tag, size_t &pos) {
@@ -1596,42 +1595,41 @@ namespace ImperativeSearn {
     return false;
   }
 
-  void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool necessary_for_recomb)
+  void searn_snapshot(searn&srn, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool necessary_for_recomb)
   {
-    searn* srn=(searn*)all.searnstr;
-    if (! srn->do_snapshot) return;
+    if (! srn.do_snapshot) return;
 
-    //cerr << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(size_t*)data_ptr << ", t=" << srn->t << " }" << endl;
+    //cerr << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(size_t*)data_ptr << ", t=" << srn.t << " }" << endl;
     
 
-    if (srn->state == INIT_TEST) return;
-    if (srn->state == INIT_TRAIN) {  // training means "record snapshots"
-      if ((srn->snapshot_data.size() > 0) &&
-          ((srn->snapshot_data.last().index > index) ||
-           ((srn->snapshot_data.last().index == index) && (srn->snapshot_data.last().tag > tag)))) 
+    if (srn.state == INIT_TEST) return;
+    if (srn.state == INIT_TRAIN) {  // training means "record snapshots"
+      if ((srn.snapshot_data.size() > 0) &&
+          ((srn.snapshot_data.last().index > index) ||
+           ((srn.snapshot_data.last().index == index) && (srn.snapshot_data.last().tag > tag)))) 
         cerr << "warning: trying to snapshot in a non-monotonic order! ignoring this snapshot" << endl;
       else {
         void* new_data = malloc(sizeof_data);
         memcpy(new_data, data_ptr, sizeof_data);
-        snapshot_item item = { index, tag, new_data, sizeof_data, srn->t, necessary_for_recomb };
-        srn->snapshot_data.push_back(item);
+        snapshot_item item = { index, tag, new_data, sizeof_data, srn.t, necessary_for_recomb };
+        srn.snapshot_data.push_back(item);
       }
       return;
     }
-    if (srn->t > srn->learn_t) return;
+    if (srn.t > srn.learn_t) return;
 
     //cerr << "index=" << index << " tag=" << tag << endl;
 
     // otherwise, we're restoring snapshots -- we want to find the index of largest value that has .t<=learn_t
     size_t i;
     bool found;
-    found = snapshot_linear_search(srn->snapshot_data, srn->learn_t, tag, i);
+    found = snapshot_linear_search(srn.snapshot_data, srn.learn_t, tag, i);
     if (!found) return;  // can't do anything
 
-    snapshot_item item = srn->snapshot_data[i];
+    snapshot_item item = srn.snapshot_data[i];
 
     /*
-    //cerr << "restoring snapshot @ " << item.pred_step << " (learn_t=" << srn->learn_t << ") with " << index << "." << tag << ", value=" << *(size_t*)item.data_ptr << endl;
+    //cerr << "restoring snapshot @ " << item.pred_step << " (learn_t=" << srn.learn_t << ") with " << index << "." << tag << ", value=" << *(size_t*)item.data_ptr << endl;
     cerr << "would restore snapshot: { index=" << item.index << ", tag=" << item.tag << ", data_ptr=";
     if (item.tag == 1) { cerr << *(size_t*)item.data_ptr; }
     if (item.tag == 2) {
@@ -1639,12 +1637,12 @@ namespace ImperativeSearn {
       cerr << tmp[0];
     }
     if (item.tag == 3) { cerr << *(float*)item.data_ptr; }
-    cerr << ", pred_step=" << item.pred_step << ", moving from t=" << srn->t << " }" << endl;
+    cerr << ", pred_step=" << item.pred_step << ", moving from t=" << srn.t << " }" << endl;
     */
     assert(sizeof_data == item.data_size);
 
     memcpy(data_ptr, item.data_ptr, sizeof_data);
-    srn->t = item.pred_step;
+    srn.t = item.pred_step;
   }
 
   v_array<size_t> get_training_timesteps(vw& all, searn& srn)
@@ -1691,7 +1689,7 @@ namespace ImperativeSearn {
     srn.train_action.erase();
     srn.num_features = 0;
  
-    srn.task->structured_predict(all, srn, ec, len, srn.pred_string, srn.truth_string);
+    srn.task->structured_predict(srn, ec, len, srn.pred_string, srn.truth_string);
 
     if (srn.t == 0)
       return;  // there was no data!
@@ -1703,7 +1701,7 @@ namespace ImperativeSearn {
     srn.loss_last_step = 0;
     clear_snapshot(all, srn);
 
-    srn.task->structured_predict(all, srn, ec, len, NULL, NULL);
+    srn.task->structured_predict(srn, ec, len, NULL, NULL);
 
     if (srn.t == 0) {
       clear_snapshot(all, srn);
@@ -1730,11 +1728,8 @@ namespace ImperativeSearn {
           srn.loss_last_step = 0;
           srn.learn_loss = 0.f;
 
-          //cerr << "learn_t = " << srn.learn_t << " || learn_a = " << srn.learn_a << endl;
-          srn.task->structured_predict(all, srn, ec, len, NULL, NULL);
-
+          srn.task->structured_predict(srn, ec, len, NULL, NULL);
           srn.learn_losses.push_back( srn.learn_loss );
-          //cerr << "total loss: " << srn.learn_loss << endl;
         }
       }
 
@@ -1811,6 +1806,8 @@ namespace ImperativeSearn {
     if (srn.ec_seq.size() == 0)
       return;  // nothing to do :)
 
+    all.sd->example_number++;
+    all.sd->weighted_examples += 1.f;
     if (Searn::should_print_update(all)) {
       srn.truth_string = new stringstream();
       srn.pred_string  = new stringstream();
@@ -1820,9 +1817,7 @@ namespace ImperativeSearn {
     if (srn.test_loss >= 0.f) {
       all.sd->sum_loss += srn.test_loss;
       all.sd->sum_loss_since_last_dump += srn.test_loss;
-      all.sd->example_number++;
       all.sd->total_features += srn.num_features;
-      all.sd->weighted_examples += 1.f;
     }
 
     print_update(all, srn);
@@ -1965,7 +1960,7 @@ namespace ImperativeSearn {
     delete srn->recombination_table;
 
     if (srn->task->finish != NULL)
-      srn->task->finish(*all);
+      srn->task->finish(*srn);
     if (srn->base.finish != NULL)
       srn->base.finish(all, d);
   }
@@ -2004,6 +1999,7 @@ namespace ImperativeSearn {
   {
     searn* srn = (searn*)calloc(1,sizeof(searn));
 
+    srn->all = &all;
     searn_initialize(all, *srn);
 
     po::options_description desc("Imperative Searn options");
@@ -2106,8 +2102,7 @@ namespace ImperativeSearn {
       exit(-1);
     }
 
-    srn->task->initialize(all, srn->A);
-
+    srn->task->initialize(*srn, srn->A);
     
     learner l = {srn, searn_drive, searn_learn, searn_finish, all.l.save_load};
     srn->base = all.l;

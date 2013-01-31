@@ -211,9 +211,9 @@ namespace ImperativeSearn {
 
   struct searn {
     // functions that you will call
-    uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
-    void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
-    void     (*snapshot)(vw&,size_t,size_t,void*,size_t,bool);
+    uint32_t (*predict)(searn&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
+    void     (*declare_loss)(searn&,size_t,float);   // <0 means it was a test example!
+    void     (*snapshot)(searn&,size_t,size_t,void*,size_t,bool);
 
     // structure that you must set
     searn_task* task;
@@ -264,12 +264,14 @@ namespace ImperativeSearn {
     v_array<example*> ec_seq;
 
     learner base;
+
+    vw*all;
   };
 
   struct searn_task {
-    void (*initialize)(vw&,uint32_t&);
-    void (*finish)(vw&);
-    void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
+    void (*initialize)(searn&,uint32_t&);
+    void (*finish)(searn&);
+    void (*structured_predict)(searn&, example**,size_t,stringstream*,stringstream*);
   };
 
   void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);

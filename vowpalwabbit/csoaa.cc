@@ -216,7 +216,7 @@ namespace CSOAA {
         else
           sprintf(label_buf," known");
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu\n",
+        fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f   %s %8lu %8lu\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
@@ -753,30 +753,32 @@ namespace LabelDict {
       make_single_prediction(all, l, ec, &prediction, &min_score);
     }
 
+    label_data simple_label;
+    simple_label.initial = 0.;
+    simple_label.weight = 1.;
+
     // do actual learning
-    if (all.training && !isTest)
-      l.csoaa_example_t += 1.;
+    //if (all.training && !isTest)
+    //l.csoaa_example_t += 1.;
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
       v_array<CSOAA::wclass> costs = ld->costs;
+      ec->ld = &simple_label;
 
       // learn
-      label_data simple_label;
       bool prediction_is_me = false;
       for (size_t j=0; j<costs.size(); j++) {
         if (all.training && !isTest) {
-          float example_t = ec->example_t;
+          float old_example_t = ec->example_t;
+          l.csoaa_example_t += 1.;
           ec->example_t = l.csoaa_example_t;
-          simple_label.initial = 0.;
           simple_label.label = costs[j].x;
-          simple_label.weight = 1.;
-          ec->ld = &simple_label;
           ec->partial_prediction = 0.;
           LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
           l.base.learn(&all, l.base.data, ec);
           LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
-          ec->example_t = example_t;
+          ec->example_t = old_example_t;
         }
 
         // fill in test predictions
