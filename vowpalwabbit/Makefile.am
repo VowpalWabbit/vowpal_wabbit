@@ -1,11 +1,13 @@
 lib_LTLIBRARIES = liballreduce.la libvw.la
 
 liballreduce_la_SOURCES = allreduce.cc
-include_HEADERS = allreduce.h
 
 bin_PROGRAMS = vw active_interactor
 
 libvw_la_SOURCES = hash.cc global_data.cc io.cc parse_regressor.cc parse_primitives.cc unique_sort.cc cache.cc rand48.cc simple_label.cc oaa.cc ect.cc binary.cc csoaa.cc cb.cc wap.cc beam.cc searn.cc searn_sequencetask.cc parse_example.cc sparse_dense.cc network.cc parse_args.cc accumulate.cc gd.cc lda_core.cc gd_mf.cc bfgs.cc noop.cc example.cc parser.cc vw.cc loss_functions.cc sender.cc nn.cc 
+
+# accumulate.cc uses all_reduce
+libvw_la_LIBADD = liballreduce.la
 
 vw_SOURCES = vw.cc
 vw_CXXFLAGS = $(AM_CXXFLAGS)
