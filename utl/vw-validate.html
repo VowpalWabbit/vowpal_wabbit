@@ -16,7 +16,7 @@ p {
   padding: 1em;
   border-style: solid;
   border-width: 1px;
-  border-color: #16b5b8;
+  border-color: white;
 }
 
 .vwFeedbackMsg {
@@ -118,24 +118,27 @@ p {
         else {
           addExampleFeedback(i, "Example label / response / class is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel[0]) + "</span>&rdquo;.");
           
-          if (vwExLabelBarSpace) {
-            if ((vwExLabel.length == 2) && (! isFloat(vwExLabel[1]))) {
-              addExampleFeedback(i, "Extra space before the bar | that separates the label section from the features!");
-            }
-            if ((vwExLabel.length >= 2) && isFloat(vwExLabel[1])) {
-              addExampleFeedback(i, "Importance weight is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel[1]) + "</span>&rdquo;.");
-            }
-            if ((vwExLabel.length >= 3) && isFloat(vwExLabel[2])) {
-              addExampleFeedback(i, "Initial prediction is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel[2]) + "</span>&rdquo;.");
-            }
+          if ((vwExLabel.length >= 2) && isFloat(vwExLabel[1])) {
+            addExampleFeedback(i, "Importance weight is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel[1]) + "</span>&rdquo;.");
+          }
+          if ((vwExLabel.length >= 3) && isFloat(vwExLabel[2])) {
+            addExampleFeedback(i, "Initial prediction is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel[2]) + "</span>&rdquo;.");
           }
           
           if (! isFloat(vwExLabel[vwExLabel.length - 1])) {
             var vwExTag = vwExLabel[vwExLabel.length - 1];
             if (vwExTag.match(/^'/)) {
               vwExTag = vwExTag.substring(1);
+              addExampleFeedback(i, "Tag is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExTag) + "</span>&rdquo;.");
             }
-            addExampleFeedback(i, "Tag is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExTag) + "</span>&rdquo;.");
+            else {
+              if (vwExLabelBarSpace) {
+                addExampleFeedback(i, "Badly formatted example, with an extra space before the pipe, and tag in the legacy format should be preceded by a single quote!");
+              }
+              else {
+                addExampleFeedback(i, "Tag is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExTag) + "</span>&rdquo; in the legacy format, should be preceded by a single quote!");
+              }
+            }
           }
         }
         
@@ -218,8 +221,9 @@ p {
     <p style="width: 80%; margin-top: 1em;">Not sure if your training data is in the right format for Vowpal Wabbit? Not seeing the results you expect from Vowpal Wabbit, in general? Paste a few lines of your training data into this text box, and then hit the &ldquo;Validate&rdquo; button:</p>
     
     <textarea id="vwData" style="width: 80%; height: 8em; font-family: monospace; margin-top: 1.5em; margin-bottom: 1.5em;">1 1.0 |MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes
-0 a| a:2
-1 b | a:3
+1 2 'tag| a:2 b:3
+1 2 'tag | a:2 b:3
+1 2 tag | a:2 b:3
 0 | price:.23 sqft:.25 age:.05 2006
 1 2 'second_house | price:.18 sqft:.15 age:.35 1976
 0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924</textarea><br>
