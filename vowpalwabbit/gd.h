@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "parse_regressor.h"
 #include "parser.h"
-#include "allreduce.h"
 #include "sparse_dense.h"
 #include "learner.h"
 

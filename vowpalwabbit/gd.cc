@@ -25,7 +25,6 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "cache.h"
 #include "simple_label.h"
-#include "allreduce.h"
 #include "accumulate.h"
 #include "learner.h"
 
