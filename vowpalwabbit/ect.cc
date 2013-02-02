@@ -259,7 +259,7 @@ namespace ECT
 
     e.tournaments_won.erase();
 
-    uint32_t id = e.directions[mc->label-1].winner;
+    uint32_t id = e.directions[(uint32_t)(mc->label)-1].winner;
     bool left = e.directions[id].left == mc->label - 1;
     do
       {
@@ -362,7 +362,7 @@ namespace ECT
 
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
-      cout << "label is not in {1,"<< e->k << "} This won't work right." << endl;
+      cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
     float new_label = ect_predict(*all, *e, ec);
     ec->ld = mc;
     

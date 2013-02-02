@@ -26,7 +26,7 @@ namespace OAA {
 
   char* bufread_label(mc_label* ld, char* c)
   {
-    ld->label = *(uint32_t *)c;
+    ld->label = *(float *)c;
     c += sizeof(ld->label);
     ld->weight = *(float *)c;
     c += sizeof(ld->weight);
@@ -58,7 +58,7 @@ namespace OAA {
 
   char* bufcache_label(mc_label* ld, char* c)
   {
-    *(size_t *)c = ld->label;
+    *(float *)c = ld->label;
     c += sizeof(ld->label);
     *(float *)c = ld->weight;
     c += sizeof(ld->weight);
@@ -157,7 +157,7 @@ namespace OAA {
     float score = INT_MIN;
   
     if (mc_label_data->label == 0 || (mc_label_data->label > d->k && mc_label_data->label != (uint32_t)-1))
-      cout << "label is not in {1,"<< d->k << "} This won't work right." << endl;
+      cout << "label " << mc_label_data->label << " is not in {1,"<< d->k << "} This won't work right." << endl;
   
     string outputString;
     stringstream outputStringStream(outputString);

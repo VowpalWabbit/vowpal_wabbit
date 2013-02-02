@@ -164,7 +164,7 @@ namespace SequenceTask {
   action oracle(state s0)
   {
     seq_state* s = (seq_state*)s0;
-    return ((OAA::mc_label*)s->ec_start[s->pos]->ld)->label;
+    return (action)(((OAA::mc_label*)s->ec_start[s->pos]->ld)->label);
   }
 
   state copy(state src0)
@@ -266,7 +266,7 @@ namespace SequenceTask {
 
     if (return_truth) {
       for (size_t i=0; i<len; i++) {
-        size_t l = ((OAA::mc_label*)s->ec_start[i]->ld)->label;
+        size_t l = (size_t)(((OAA::mc_label*)s->ec_start[i]->ld)->label);
         if (i > 0) ss << ' ';
         ss << l;
       }
