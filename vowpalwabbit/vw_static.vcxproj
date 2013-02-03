@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -237,6 +237,7 @@
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="allreduce.h" />
     <ClInclude Include="bfgs.h" />
+    <ClInclude Include="binary.h" />
     <ClInclude Include="cache.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="constant.h" />
@@ -276,6 +277,7 @@
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="allreduce.cc" />
     <ClCompile Include="beam.cc" />
+    <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb.cc" />

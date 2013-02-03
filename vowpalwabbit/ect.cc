@@ -238,7 +238,7 @@ namespace ECT
 	else
 	  id = e.directions[id].left;
       }
-    return id+1;
+    return (float)(id+1);
   }
 
   bool member(size_t t, v_array<size_t> ar)

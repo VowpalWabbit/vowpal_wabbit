@@ -92,11 +92,11 @@ namespace OAA {
     case 0:
       break;
     case 1:
-      ld->label = int_of_substring(words[0]);
+      ld->label = (float)int_of_substring(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = int_of_substring(words[0]);
+      ld->label = (float)int_of_substring(words[0]);
       ld->weight = float_of_substring(words[1]);
       break;
     default:
@@ -178,7 +178,7 @@ namespace OAA {
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
-            prediction = i;
+            prediction = (float)i;
           }
 
         if (shouldOutput) {

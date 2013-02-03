@@ -727,7 +727,7 @@ namespace LabelDict {
 
         if (prediction == costs1[j1].weight_index) prediction_is_me = true;
       }
-      ec1->final_prediction = prediction_is_me ? prediction : 0;
+      ec1->final_prediction = prediction_is_me ? (float)prediction : 0;
       ec1->ld = ld1;
       ec1->example_t = example_t1;
     }
@@ -783,7 +783,7 @@ namespace LabelDict {
         ec->partial_prediction = costs[j].partial_prediction;
         if (prediction == costs[j].weight_index) prediction_is_me = true;
       }
-      ec->final_prediction = prediction_is_me ? prediction : 0;
+      ec->final_prediction = prediction_is_me ? (float)prediction : 0;
 
       if (isTest && (costs.size() == 1)) {
         ec->final_prediction = costs[0].partial_prediction;

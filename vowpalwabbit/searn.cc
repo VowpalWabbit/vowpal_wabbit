@@ -1144,10 +1144,10 @@ namespace Searn
 
       for (uint32_t k=1; k<=s.max_action; k++) {
         if (s.rollout[k-1].alive) {
-          OAA::mc_label ld = { k, s.loss_vector[k-1].x };
+          OAA::mc_label ld = { (float)k, s.loss_vector[k-1].x };
           s.new_labels.push_back(ld);
         } else {
-          OAA::mc_label ld = { k, 0. };
+          OAA::mc_label ld = { (float)k, 0. };
           s.new_labels.push_back(ld);
         }
       }
