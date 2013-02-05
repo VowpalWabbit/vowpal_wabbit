@@ -43,12 +43,6 @@ void initialize_regressor(vw& all)
       all.reg.weight_vector[j] = all.initial_weight;
 }
 
-void free_regressor(regressor &r)
-{
-  if (r.weight_vector != NULL)
-    free(r.weight_vector);
-}
-
 const size_t buf_size = 512;
 
 void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
@@ -225,7 +219,6 @@ void finalize_regressor(vw& all, string reg_name)
     dump_regressor(all, all.per_feature_regularizer_text, true);
   else
     dump_regressor(all, all.text_regressor_name, true);
-  free_regressor(all.reg);
 }
 
 void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)

@@ -780,10 +780,12 @@ namespace VW {
 
   void finish(vw& all)
   {
+    finalize_regressor(all, all.final_regressor_name);
     all.l.finish(&all, all.l.data);
+    if (all.reg.weight_vector != NULL)
+      free(all.reg.weight_vector);
     if (all.searnstr != NULL) free(all.searnstr);
     free_parser(all);
-    finalize_regressor(all, all.final_regressor_name);
     finalize_source(all.p);
     free(all.p->lp);
     all.p->parse_name.erase();

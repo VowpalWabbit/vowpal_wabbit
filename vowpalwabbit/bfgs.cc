@@ -843,26 +843,13 @@ void learn(void* a, void* d, example* ec)
 
 void finish(void* a, void* d)
 {
-  vw* all = (vw*)a;
   bfgs* b = (bfgs*)d;
-  if (b->current_pass != 0 && !b->output_regularizer)
-    process_pass(*all, *b);
-  if (!all->quiet)
-    fprintf(stderr, "\n");
-
-  if (b->output_regularizer)//need to accumulate and place the regularizer.
-    {
-      if(all->span_server != "")
-	accumulate(*all, all->span_server, all->reg, W_COND); //Accumulate preconditioner
-      preconditioner_to_regularizer(*all, *b, all->l2_lambda);
-    }
-  ftime(&b->t_end_global);
-  b->net_time = (int) (1000.0 * (b->t_end_global.time - b->t_start_global.time) + (b->t_end_global.millitm - b->t_start_global.millitm)); 
 
   b->predictions.delete_v();
   free(b->mem);
   free(b->rho);
   free(b->alpha);
+  free(b);
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
@@ -960,6 +947,21 @@ void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
       b->output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
       reset_state(*all, *b, false);
     }
+  else {
+    if (b->current_pass != 0 && !b->output_regularizer)
+      process_pass(*all, *b);
+    if (!all->quiet)
+      fprintf(stderr, "\n");
+    
+    if (b->output_regularizer)//need to accumulate and place the regularizer.
+      {
+	if(all->span_server != "")
+	  accumulate(*all, all->span_server, all->reg, W_COND); //Accumulate preconditioner
+	preconditioner_to_regularizer(*all, *b, all->l2_lambda);
+      }
+    ftime(&b->t_end_global);
+    b->net_time = (int) (1000.0 * (b->t_end_global.time - b->t_start_global.time) + (b->t_end_global.millitm - b->t_start_global.millitm)); 
+  }
 
   bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
   if (model_file.files.size() > 0)
