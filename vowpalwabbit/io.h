@@ -16,6 +16,7 @@ license as described in the file LICENSE.
 #include <fcntl.h>
 #include "v_array.h"
 #include<iostream>
+#include <errno.h>
 
 using namespace std;
 
@@ -83,7 +84,7 @@ class io_buf {
         files.push_back(ret);
       else
 	{
-	  cout << "can't open: " << name << " for read or write, exiting" << endl;
+	  cout << "can't open: " << name << " for read or write, exiting on error" << strerror(errno) << endl;
 	  exit(1);
 	}
       break;

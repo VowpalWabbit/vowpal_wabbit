@@ -601,7 +601,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
   return ret;
 }
   
-void update_weight(vw& all, string& reg_name, float step_size, size_t current_pass)
+void update_weight(vw& all, float step_size, size_t current_pass)
   {
     uint32_t length = 1 << all.num_bits;
     size_t stride = all.stride;
@@ -609,7 +609,6 @@ void update_weight(vw& all, string& reg_name, float step_size, size_t current_pa
     
     for(uint32_t i = 0; i < length; i++, w+=stride)
       w[W_XT] += step_size * w[W_DIR];
-    save_predictor(all, reg_name, current_pass);
   }
 
 int process_pass(vw& all, bfgs& b) {
@@ -652,7 +651,7 @@ int process_pass(vw& all, bfgs& b) {
 	if (!all.quiet)
 	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 	b.predictions.erase();
-	update_weight(all, all.final_regressor_name, b.step_size, b.current_pass);		     		           }
+	update_weight(all, b.step_size, b.current_pass);		     		           }
     }
     else
   /********************************************************************/
@@ -696,7 +695,7 @@ int process_pass(vw& all, bfgs& b) {
 				"","",ratio,
 				new_step);
 			b.predictions.erase();
-			update_weight(all, all.final_regressor_name, (float)(-b.step_size+new_step), b.current_pass);		     		      			
+			update_weight(all, (float)(-b.step_size+new_step), b.current_pass);		     		      			
 			b.step_size = (float)new_step;
 			zero_derivative(all);
 			b.loss_sum = 0.;
@@ -738,7 +737,7 @@ int process_pass(vw& all, bfgs& b) {
 			if (!all.quiet)
 			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 			b.predictions.erase();
-			update_weight(all, all.final_regressor_name, b.step_size, b.current_pass);		     		      
+			update_weight(all, b.step_size, b.current_pass);		     		      
 		      }
 		    }
 		}
@@ -773,7 +772,7 @@ int process_pass(vw& all, bfgs& b) {
 		  float d_mag = direction_magnitude(all);
 
 		  b.predictions.erase();
-		  update_weight(all, all.final_regressor_name , b.step_size, b.current_pass);
+		  update_weight(all, b.step_size, b.current_pass);
 		  ftime(&b.t_end_global);
 		  b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
 		  if (!all.quiet)
@@ -783,6 +782,18 @@ int process_pass(vw& all, bfgs& b) {
     b.current_pass++;
     b.first_pass = false;
     b.preconditioner_pass = false;
+    
+    if (b.output_regularizer)//need to accumulate and place the regularizer.
+      {
+	if(all.span_server != "")
+	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
+	preconditioner_to_regularizer(all, b, all.l2_lambda);
+      }
+    ftime(&b.t_end_global);
+    b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
+
+    if (all.save_per_pass)
+      save_predictor(all, all.final_regressor_name, b.current_pass);
     return status;
 }
 
@@ -947,21 +958,6 @@ void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
       b->output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
       reset_state(*all, *b, false);
     }
-  else {
-    if (b->current_pass != 0 && !b->output_regularizer)
-      process_pass(*all, *b);
-    if (!all->quiet)
-      fprintf(stderr, "\n");
-    
-    if (b->output_regularizer)//need to accumulate and place the regularizer.
-      {
-	if(all->span_server != "")
-	  accumulate(*all, all->span_server, all->reg, W_COND); //Accumulate preconditioner
-	preconditioner_to_regularizer(*all, *b, all->l2_lambda);
-      }
-    ftime(&b->t_end_global);
-    b->net_time = (int) (1000.0 * (b->t_end_global.time - b->t_start_global.time) + (b->t_end_global.millitm - b->t_start_global.millitm)); 
-  }
 
   bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
   if (model_file.files.size() > 0)
@@ -1014,7 +1010,7 @@ void drive(void* in, void* d)
 	}
       else if (parser_done(all->p))
 	{
-          //	  finish(all);
+	  process_pass(*all, *b);
 	  return;
 	}
       else 
