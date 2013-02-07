@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 #ifndef SCE
 #define SCE
 
-#include "io.h"
+#include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
 

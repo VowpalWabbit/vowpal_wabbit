@@ -5,7 +5,7 @@ license as described in the file LICENSE.
  */
 #include <string.h>
 
-#include "io.h"
+#include "io_buf.h"
 
 size_t buf_read(io_buf &i, char* &pointer, size_t n)
 {//return a pointer to the next n bytes.  n must be smaller than the maximum size.

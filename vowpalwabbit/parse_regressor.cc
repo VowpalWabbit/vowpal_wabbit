@@ -16,7 +16,7 @@ using namespace std;
 #include "parse_regressor.h"
 #include "loss_functions.h"
 #include "global_data.h"
-#include "io.h"
+#include "io_buf.h"
 #include "rand48.h"
 
 /* Define the last version where files are backward compatible. */

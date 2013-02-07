@@ -15,7 +15,7 @@
 #else
 #include <netdb.h>
 #endif
-#include "io.h"
+#include "io_buf.h"
 #include "parse_args.h"
 #include "cache.h"
 #include "simple_label.h"

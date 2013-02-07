@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 #ifndef SL_H
 #define SL_H
 
-#include "io.h"
+#include "io_buf.h"
 #include "parse_primitives.h"
 #include "global_data.h"
 #include "example.h"

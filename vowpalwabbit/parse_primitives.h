@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include <math.h>
 #include "v_array.h"
-#include "io.h"
+#include "io_buf.h"
 #include "example.h"
 
 #ifdef _WIN32

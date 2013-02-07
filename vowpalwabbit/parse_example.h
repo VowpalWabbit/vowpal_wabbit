@@ -6,7 +6,6 @@ license as described in the file LICENSE.
 #ifndef PE_H
 #define PE_H
 #include <stdint.h>
-#include "io.h"
 #include "parse_regressor.h"
 #include "parse_primitives.h"
 #include "parser.h"

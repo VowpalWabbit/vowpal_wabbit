@@ -10,7 +10,6 @@ license as described in the file LICENSE.
 #include <vector>
 #include "searn.h"
 #include "gd.h"
-#include "io.h"
 #include "parser.h"
 #include "constant.h"
 #include "oaa.h"

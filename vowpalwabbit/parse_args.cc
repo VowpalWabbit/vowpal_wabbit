@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #include <float.h>
 
 #include "cache.h"
-#include "io.h"
+#include "io_buf.h"
 #include "parse_regressor.h"
 #include "parser.h"
 #include "parse_args.h"

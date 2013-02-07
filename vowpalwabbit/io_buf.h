@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef IO_H__
-#define IO_H__
+#ifndef IOBUF_H
+#define IOBUF_H
 
 
 #ifndef _WIN32

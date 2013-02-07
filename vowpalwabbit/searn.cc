@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #include <math.h>
 #include "searn.h"
 #include "gd.h"
-#include "io.h"
 #include "parser.h"
 #include "constant.h"
 #include "oaa.h"
