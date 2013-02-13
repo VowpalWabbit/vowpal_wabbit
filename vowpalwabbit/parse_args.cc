@@ -682,7 +682,11 @@ vw parse_args(int argc, char *argv[])
 
       int f = io_buf().open_file(last_unrec_arg.c_str(), all.stdin_off, io_buf::READ);
       if (f != -1) {
-        close(f);
+#ifdef _WIN32
+		 _close(f);
+#else
+		  close(f);
+#endif
         //cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
         all.data_filename = last_unrec_arg;
         if (ends_with(last_unrec_arg, ".gz"))
@@ -797,7 +801,11 @@ namespace VW {
     free(all.options_from_file_argv);
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
+#ifdef _WIN32
+	_close(all.final_prediction_sink[i]);
+#else
 	close(all.final_prediction_sink[i]);
+#endif
     all.final_prediction_sink.delete_v();
     delete all.loss;
   }

@@ -92,7 +92,7 @@ sub init() {
     $0 =~ s{.*/}{};
     getopts('wcdDefyE:o') || usage();
 
-	print STDERR "testing $^O"; 
+	print STDERR "testing $^O "; 
     if ($^O =~ /MSWin/i) {
 	print STDERR "in windows branch"; 
         # On MS Windows we need to change paths to external executables

@@ -1094,7 +1094,12 @@ namespace LabelDict {
     temp[0] = '\n';
     for (size_t i=0; i<all.final_prediction_sink.size(); i++) {
       int f = all.final_prediction_sink[i];
-      ssize_t t = write(f, temp, 1);
+      ssize_t t;
+#ifdef _WIN32
+      t = _write(f, temp, 1);
+#else
+      t = write(f, temp, 1);
+#endif
       if (t != 1)
         std::cerr << "write error" << std::endl;
     }

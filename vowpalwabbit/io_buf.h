@@ -97,7 +97,11 @@ class io_buf {
   }
 
   virtual void reset_file(int f){
+#ifdef _WIN32
+	_lseek(f, 0, SEEK_SET);
+#else
     lseek(f, 0, SEEK_SET);
+#endif
     endloaded = space.begin;
     space.end = space.begin;
   }
@@ -114,7 +118,11 @@ class io_buf {
   void set(char *p){space.end = p;}
 
   virtual ssize_t read_file(int f, void* buf, size_t nbytes){
+#ifdef _WIN32
+	  return _read(f, buf, (unsigned int)nbytes); 
+#else
 	  return read(f, buf, (unsigned int)nbytes); 
+#endif
   }
 
   size_t fill(int f) {
@@ -136,7 +144,11 @@ class io_buf {
 
   virtual ssize_t write_file(int f, const void* buf, size_t nbytes)
   {
+#ifdef _WIN32
+    return _write(f, buf, (unsigned int)nbytes);
+#else
     return write(f, buf, (unsigned int)nbytes);
+#endif
   }
 
   virtual void flush() {
@@ -146,7 +158,11 @@ class io_buf {
 
   virtual bool close_file(){
     if(files.size()>0){
-      close(files.pop());
+#ifdef _WIN32
+		_close(files.pop());
+#else
+		close(files.pop());
+#endif
       return true;
     }
     return false;

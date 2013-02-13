@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -206,7 +206,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS"  /D "_CRT_NONSTDC_NO_DEPRECATE" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed Condition="'$(Configuration)'=='Release'">Speed</FavorSizeOrSpeed>
       <OmitFramePointers Condition="'$(Configuration)'=='Release'">true</OmitFramePointers>
@@ -248,7 +248,7 @@
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
-    <ClInclude Include="io.h" />
+    <ClInclude Include="io_buf.h" />
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="loss_functions.h" />
     <ClInclude Include="network.h" />
@@ -288,7 +288,7 @@
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
-    <ClCompile Include="io.cc" />
+    <ClCompile Include="io_buf.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="loss_functions.cc" />
     <ClCompile Include="network.cc" />

@@ -71,7 +71,13 @@ int open_socket(const char* host)
       exit(1);
     }
   char id = '\0';
-  if (write(sd, &id, sizeof(id)) < (int)sizeof(id))
+  if (
+#ifdef _WIN32
+      _write(sd, &id, sizeof(id)) < (int)sizeof(id)
+#else
+      write(sd, &id, sizeof(id)) < (int)sizeof(id)
+#endif
+      )
     cerr << "write failed!" << endl;
   return sd;
 }

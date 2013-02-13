@@ -29,7 +29,13 @@ size_t really_read(int sock, void* in, size_t count)
   int r = 0;
   while (done < count)
     {
-      if ((r = read(sock,buf,(unsigned int)(count-done))) == 0)
+      if ((r = 
+#ifdef _WIN32
+		  _read(sock,buf,(unsigned int)(count-done))
+#else
+		  read(sock,buf,(unsigned int)(count-done))
+#endif
+		  ) == 0)
 	return 0;
       else
 	if (r < 0)
@@ -59,7 +65,13 @@ void get_prediction(int sock, float& res, float& weight)
 
 void send_prediction(int sock, global_prediction p)
 {
-  if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
+  if (
+#ifdef _WIN32
+	  _write(sock, &p, sizeof(p)) 
+#else
+	  write(sock, &p, sizeof(p)) 
+#endif 
+	  < (int)sizeof(p))
     {
       cerr << "argh! bad global write! " << sock << endl;
       perror(NULL);
@@ -95,7 +107,11 @@ void print_result(int f, float res, float weight, v_array<char> tag)
       print_tag(ss, tag);
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#ifdef _WIN32
+	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else
+	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif
       if (t != len)
         {
           cerr << "write error" << endl;
@@ -113,7 +129,11 @@ void print_raw_text(int f, string s, v_array<char> tag)
   print_tag (ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
+#ifdef _WIN32
+  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else  
   ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif
   if (t != len)
     {
       cerr << "write error" << endl;
@@ -136,7 +156,11 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
 	}
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#ifdef _WIN32
+	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else
+	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif
       if (t != len)
 	cerr << "write error" << endl;
     }
@@ -156,7 +180,11 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
       print_tag(ss, tag);
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#ifdef _WIN32
+	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else	  
+	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif 
       if (t != len)
 	cerr << "write error" << endl;
     }
