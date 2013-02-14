@@ -1120,14 +1120,11 @@ namespace Searn
       s.task.cs_example(all, s0, ec, true);
       void* old_label = ec->ld;
 
-      if(s.rollout_all_actions) {
-        CSOAA::label ld = { s.loss_vector };
-        ec->ld = (void*)&ld;
-      } 
-      else {
-        CB::label ld = { s.loss_vector_cb };
-        ec->ld = (void*)&ld;
-      }
+      if(s.rollout_all_actions) 
+        ec->ld = (void*)&s.loss_vector;
+      else 
+        ec->ld = (void*)&s.loss_vector_cb;
+ 
       SearnUtil::add_policy_offset(all, ec, s.increment, s.current_policy);
 	  
 	  s.base.learn(&all,s.base.data,ec);

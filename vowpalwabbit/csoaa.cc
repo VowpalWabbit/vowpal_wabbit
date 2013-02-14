@@ -285,7 +285,6 @@ namespace CSOAA {
     size_t prediction = 1;
     float score = FLT_MAX;
     uint32_t current_increment = 0;
-	
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
         uint32_t i = cl->weight_index;
