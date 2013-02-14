@@ -1622,7 +1622,7 @@ namespace ImperativeSearn {
 
   void generate_training_example(vw& all, searn& srn, example** ec, size_t len, CSOAA::label labels, v_array<float> losses)
   {
-    assert(labels.size() == losses.size());
+    assert(labels.costs.size() == losses.size());
 	for (size_t i=0; i<labels.costs.size(); i++)
       labels.costs[i].x = losses[i];
 
