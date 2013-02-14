@@ -224,7 +224,7 @@ namespace ImperativeSearn {
     uint32_t learn_a;     //   and this is the a we're varying it to
     v_array<snapshot_item> snapshot_data;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
-    v_array< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
+    v_array< CSOAA::label > train_labels;  // which labels are valid at any given time
 
     stringstream* pred_string;
     stringstream* truth_string;

@@ -893,15 +893,10 @@ namespace VW{
     words.erase();
     words.delete_v();
   }
-  
-  void finish_example(vw& all, example* ec)
+
+  void empty_example(vw& all, example* ec)
   {
-    mutex_lock(&all.p->output_lock);
-    all.p->local_example_number++;
-    condition_variable_signal(&all.p->output_done);
-    mutex_unlock(&all.p->output_lock);
-    
-    if (all.audit)
+	if (all.audit)
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	{
 	  for (audit_data* temp 
@@ -927,6 +922,16 @@ namespace VW{
     ec->indices.erase();
     ec->tag.erase();
     ec->sorted = false;
+  }
+
+  void finish_example(vw& all, example* ec)
+  {
+    mutex_lock(&all.p->output_lock);
+    all.p->local_example_number++;
+    condition_variable_signal(&all.p->output_done);
+    mutex_unlock(&all.p->output_lock);
+    
+	empty_example(all, ec);
     
     mutex_lock(&all.p->examples_lock);
     assert(ec->in_use);
