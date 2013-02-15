@@ -250,7 +250,7 @@ vw::vw()
   rank = 0;
 
   final_prediction_sink.begin = final_prediction_sink.end=final_prediction_sink.end_array = NULL;
-  raw_prediction = -1;
+  raw_prediction_sink.begin = raw_prediction_sink.end=raw_prediction_sink.end_array = NULL;
   print = print_result;
   print_text = print_raw_text;
   lda = 0;

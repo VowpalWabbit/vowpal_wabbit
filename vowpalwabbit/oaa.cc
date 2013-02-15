@@ -193,8 +193,8 @@ namespace OAA {
     update_example_indicies(all->audit, ec, -d->total_increment);
 
     if (shouldOutput) {
-      outputStringStream << endl;
-      all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
+      for (int* sink = all->raw_prediction_sink.begin; sink != all->raw_prediction_sink.end; sink++)
+        all->print_text((int)*sink, outputStringStream.str(), ec->tag);
     }
   }
 
@@ -210,7 +210,7 @@ namespace OAA {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn_with_output(all, (oaa*)d, ec, all->raw_prediction > 0);
+            learn_with_output(all, (oaa*)d, ec, !all->raw_prediction_sink.empty());
             output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }

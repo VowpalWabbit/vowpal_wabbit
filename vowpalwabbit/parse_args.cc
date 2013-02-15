@@ -80,6 +80,7 @@ vw parse_args(int argc, char *argv[])
     ("l2", po::value<float>(&all.l2_lambda), "l_2 lambda")
     ("data,d", po::value< string >(), "Example Set")
     ("daemon", "persistent daemon mode on port 26542")
+    ("return_raw", "return raw predictions in daemon mode")
     ("num_children", po::value<size_t>(&all.num_children), "number of children for persistent daemon mode")
     ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
     ("decay_learning_rate",    po::value<float>(&all.eta_decay_rate),
@@ -291,6 +292,10 @@ vw parse_args(int argc, char *argv[])
 
     // allow each child to process up to 1e5 connections
     all.numpasses = (size_t) 1e5;
+  }
+
+  if (vm.count("return_raw")) {
+    all.return_raw = true;
   }
 
   if (vm.count("compressed"))
@@ -527,17 +532,19 @@ vw parse_args(int argc, char *argv[])
     if (!all.quiet)
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
-      all.raw_prediction = 1;//stdout
+      all.raw_prediction_sink.push_back((size_t) 1);//stdout
     else
 	{
-	  const char* t = vm["raw_predictions"].as< string >().c_str();
+	  const char* fstr = vm["raw_predictions"].as< string >().c_str();
 	  int f;
 #ifdef _WIN32
-	  _sopen_s(&f, t, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
+	  _sopen_s(&f, fstr, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
 #else
-	  f = open(t, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+	  f = open(fstr, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
 #endif
-	  all.raw_prediction = f;
+	if (f < 0)
+	  cerr << "Error opening the raw predictions file: " << fstr << endl;
+	all.raw_prediction_sink.push_back((size_t) f);
 	}
   }
 

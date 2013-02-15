@@ -261,7 +261,7 @@ namespace CSOAA {
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print((int)*sink, ec->final_prediction, 0, ec->tag);
 
-    if (all.raw_prediction > 0) {
+    if (!all.raw_prediction_sink.empty()) {
       string outputString;
       stringstream outputStringStream(outputString);
       for (unsigned int i = 0; i < ld->costs.size(); i++) {
@@ -270,7 +270,9 @@ namespace CSOAA {
         outputStringStream << cl.weight_index << ':' << cl.partial_prediction;
       }
       //outputStringStream << endl;
-      all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
+
+      for (int* sink = all.raw_prediction_sink.begin; sink != all.raw_prediction_sink.end; sink++)
+        all.print_text((int)*sink, outputStringStream.str(), ec->tag);
     }
 
     all.sd->example_number++;
@@ -868,7 +870,7 @@ namespace LabelDict {
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, ec->final_prediction, 0, ec->tag);
 
-    if (all.raw_prediction > 0) {
+    if (!all.raw_prediction_sink.empty()) {
       string outputString;
       stringstream outputStringStream(outputString);
       for (size_t i = 0; i < costs.size(); i++) {
@@ -876,7 +878,8 @@ namespace LabelDict {
         outputStringStream << costs[i].weight_index << ':' << costs[i].partial_prediction;
       }
       //outputStringStream << endl;
-      all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
+      for (int* sink = all.raw_prediction_sink.begin; sink != all.raw_prediction_sink.end; sink++)
+        all.print_text((int)*sink, outputStringStream.str(), ec->tag);
     }
     
 
@@ -893,8 +896,9 @@ namespace LabelDict {
       for (example** ecc=l.ec_seq.begin; ecc!=l.ec_seq.end; ecc++)
         output_example(all, *ecc, hit_loss);
 
-      if (all.raw_prediction > 0)
-        all.print_text(all.raw_prediction, "", l.ec_seq[0]->tag);
+      if (!all.raw_prediction_sink.empty())
+        for (int* sink = all.raw_prediction_sink.begin; sink != all.raw_prediction_sink.end; sink++)
+	  all.print_text((int)*sink, "", l.ec_seq[0]->tag);
     }
   }
 
