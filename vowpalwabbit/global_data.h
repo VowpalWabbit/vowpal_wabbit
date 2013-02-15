@@ -139,6 +139,7 @@ struct vw {
   string data_filename; // was vm["data"]
 
   bool daemon; 
+  bool return_raw;
   size_t num_children;
 
   bool save_per_pass;
@@ -218,7 +219,7 @@ struct vw {
 
   //Prediction output
   v_array<int> final_prediction_sink; // set to send global predictions to.
-  int raw_prediction; // file descriptors for text output.
+  v_array<int> raw_prediction_sink; // file descriptors for text output.
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
   size_t total; //total number of nodes
   size_t node; //node id number

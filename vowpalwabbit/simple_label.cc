@@ -158,7 +158,7 @@ void print_update(vw& all, example *ec)
     }
 }
 
-void output_and_account_example(vw& all, example* ec)
+void output_and_account_example(vw& all, example* ec, bool shouldOutput)
 {
   label_data* ld = (label_data*)ec->ld;
   all.sd->weighted_examples += ld->weight;
@@ -167,7 +167,9 @@ void output_and_account_example(vw& all, example* ec)
   all.sd->sum_loss += ec->loss;
   all.sd->sum_loss_since_last_dump += ec->loss;
   
-  all.print(all.raw_prediction, ec->partial_prediction, -1, ec->tag);
+  if(shouldOutput)
+    for (int* sink = all.raw_prediction_sink.begin; sink != all.raw_prediction_sink.end; sink++)
+      all.print((int)*sink, ec->partial_prediction, -1, ec->tag);
 
   float ai=-1; 
   if(all.active && ld->label == FLT_MAX)
@@ -192,7 +194,12 @@ void output_and_account_example(vw& all, example* ec)
 
 void return_simple_example(vw& all, example* ec)
 {
-  output_and_account_example(all, ec);
+  return_simple_example(all, ec, false);
+}
+
+void return_simple_example(vw& all, example* ec, bool shouldOutput)
+{
+  output_and_account_example(all, ec, shouldOutput);
   VW::finish_example(all,ec);
 }
 

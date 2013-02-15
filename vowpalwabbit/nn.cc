@@ -173,7 +173,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (shouldOutput) {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
-      all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
+      for (int* sink = all.raw_prediction_sink.begin; sink != all.raw_prediction_sink.end; sink++)
+	all.print_text((int)*sink, outputStringStream.str(), ec->tag);
     }
 
     if (all.training && ld->label != FLT_MAX) {
@@ -260,11 +261,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn_with_output(*all, *n, ec, all->raw_prediction > 0);
-            int save_raw_prediction = all->raw_prediction;
-            all->raw_prediction = -1;
-            return_simple_example(*all, ec);
-            all->raw_prediction = save_raw_prediction;
+            learn_with_output(*all, *n, ec, !all->raw_prediction_sink.empty());
+            return_simple_example(*all, ec, false);
           }
         else if (parser_done(all->p))
 	  return;
