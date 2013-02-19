@@ -152,7 +152,7 @@ sub get_args {
                 $skip_ts = 1;
             }
             if ($skip_ts) {
-                warn "ignoring trainset: $arg in vw-args\n";
+                warn "ignoring trainset: $arg in vw-args: train-set must be last arg\n";
                 next;
             }
         }
@@ -367,6 +367,9 @@ sub read_features($) {
 sub do_train($$) {
     my ($trainset, $model) = @_;
     my $cmd = "$VW --quiet $VWARGS";
+    unless ($cmd =~ /(?:\s(?:-d|--data)\s)/) {
+        $cmd .= " $trainset";
+    }
     unless ($cmd =~ /(?:\s(?:-f|--final_regressor))/) {
         $cmd .= " -f $model";
     }
@@ -375,7 +378,6 @@ sub do_train($$) {
         $cmd =~ s/ --quiet / /;
     }
 
-    $cmd .= " $trainset";
     v("training: %s\n", $cmd);
     system($cmd);
     die "$0: vw training failed (see details above)\n"
