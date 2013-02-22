@@ -13,6 +13,7 @@ using namespace std;
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <algorithm>
 #include "parse_regressor.h"
 #include "loss_functions.h"
 #include "global_data.h"
@@ -115,7 +116,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 	  if (read)
 	    {
 	      string temp(pair, 2);
-	      all.pairs.push_back(temp);
+	      if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
+		all.pairs.push_back(temp);
 	    }
 	}
       bin_text_read_write_fixed(model_file,buff,0,
