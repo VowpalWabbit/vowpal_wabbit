@@ -844,6 +844,13 @@ namespace VW{
     ec->num_features++;
   }
 
+  void add_label(vw& all, example* ec, float label, float weight = 1, float base = 0)
+  {
+    label_data* l = (label_data*)ec->ld;
+    l->label = label;
+    l->weight = weight;
+    l->base = base;
+  }
 
   example* import_example(vw& all, vector<feature_space> vf)
   {
