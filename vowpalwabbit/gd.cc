@@ -132,10 +132,7 @@ void learn(void* a, void* d, example* ec)
       }
       
       if (all->save_per_pass)
-	{
-	  sync_weights(*all);
-	  save_predictor(*all, all->final_regressor_name, all->current_pass);
-	}
+	save_predictor(*all, all->final_regressor_name, all->current_pass);
       all->eta *= all->eta_decay_rate;
       
       all->current_pass = ec->pass;
@@ -162,14 +159,6 @@ void learn(void* a, void* d, example* ec)
 
   void finish(void* a, void* d)
 {
-  vw* all = (vw*)a;
-  sync_weights(*all);
-  if(all->span_server != "") {
-    if(all->adaptive)
-      accumulate_weighted_avg(*all, all->span_server, all->reg);
-    else
-      accumulate_avg(*all, all->span_server, all->reg, 0);
-  }
   size_t* current_pass = (size_t*)d;
   free(current_pass);
 }
@@ -605,6 +594,8 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   int c = 0;
   uint32_t i = 0;
   size_t brw = 1;
+
+  sync_weights(all); 
   do 
     {
       brw = 1;
@@ -764,6 +755,16 @@ void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
 	    }
 	}
+    }
+  else
+    {
+      sync_weights(*all); 
+      if(all->span_server != "") {
+	if(all->adaptive)
+	  accumulate_weighted_avg(*all, all->span_server, all->reg);
+	else
+	  accumulate_avg(*all, all->span_server, all->reg, 0);
+      }
     }
 
   if (model_file.files.size() > 0)
