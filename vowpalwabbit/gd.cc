@@ -221,73 +221,65 @@ bool operator<(const string_value& first, const string_value& second)
 
 #include <algorithm>
 
-void print_audit_quad(vw& all, weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, vector<string_value>& features)
+void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, uint32_t offset = 0)
 {
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-
-  for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      ostringstream tempstream;
-      tempstream << page_feature.space << '^' << page_feature.feature << '^' 
-		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask)
-		 << ':' << ele->x*page_feature.x
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-      string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
-      features.push_back(sv);
-    }
+  ostringstream tempstream;
+  uint32_t index = (f->weight_index + offset) & all.weight_mask;
+  weight* weights = all.reg.weight_vector;
+  size_t stride = all.stride;
+  
+  tempstream << prepend;
+  if (a != NULL)
+    tempstream << a->space << '^' << a->feature << ':';
+  else 	if ( index == ((constant*stride)&all.weight_mask))
+    tempstream << "Constant:";
+  
+  tempstream << (index/stride & all.parse_mask) << ':' << f->x;
+  tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
+  if(all.adaptive)
+    tempstream << '@' << weights[index+1];
+  string_value sv = {weights[index]*f->x, tempstream.str()};
+  results.push_back(sv);
 }
 
-void print_quad(vw& all, weight* weights, feature& page_feature, v_array<feature> &offer_features, vector<string_value>& features)
+void audit_features(vw& all, v_array<feature>& fs, v_array<audit_data>& as, vector<string_value>& results, string prepend, uint32_t offset = 0)
 {
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      ostringstream tempstream;
-      tempstream << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask) 
-		 << ':' << (ele->x*page_feature.x)
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-      string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
-      features.push_back(sv);
-    }
+  for (size_t j = 0; j< fs.size(); j++)
+    if (as.begin != as.end)
+      audit_feature(all, & fs[j], & as[j], results, prepend, offset);
+    else
+      audit_feature(all, & fs[j], NULL, results, prepend, offset);
 }
 
-void print_audit_cubic(vw& all, weight* weights, audit_data& f0, audit_data& f1, v_array<audit_data> &cross_features, vector<string_value>& features)
+void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, uint32_t offset = 0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  size_t halfhash = quadratic_constant * (left_feature.weight_index + offset);
 
-  for (audit_data* ele = cross_features.begin; ele != cross_features.end; ele++)
-    {
-      ostringstream tempstream;
-      tempstream << f0.space << '^' << f0.feature << '^' 
-                 << f1.space << '^' << f1.feature << '^' 
-		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask)
-		 << ':' << ele->x*f0.x*f1.x
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * all.sd->contraction;
-      string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
-      features.push_back(sv);
-    }
+  ostringstream tempstream;
+  if (audit_right.size() != 0 && left_audit)
+    tempstream << left_audit->space << '^' << left_audit->feature << '^';
+  string prepend = tempstream.str();
+
+  audit_features(all, right_features, audit_right, results, prepend, halfhash + offset);
 }
 
- void print_cubic(vw& all, weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, vector<string_value>& features)
+void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit_data* f1_audit, 
+		  v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, uint32_t offset = 0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
 
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
-    {
-      ostringstream tempstream;
-      tempstream << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask) 
-		 << ':' << (ele->x*f0.x*f1.x)
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-      string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
-      features.push_back(sv);
-    }
+  ostringstream tempstream;
+  if (audit_right.size() > 0 && f0_audit && f1_audit)
+    tempstream << f0_audit->space << '^' << f0_audit->feature << '^' 
+	       << f1_audit->space << '^' << f1_audit->feature << '^';
+  string prepend = tempstream.str();
+  audit_features(all, right_features, audit_right, results, prepend, halfhash + offset);  
 }
 
 void print_features(vw& all, example* &ec)
 {
   weight* weights = all.reg.weight_vector;
-  size_t stride = all.stride;
-
+  
   if (all.lda > 0)
     {
       size_t count = 0;
@@ -305,50 +297,42 @@ void print_features(vw& all, example* &ec)
   else
     {
       vector<string_value> features;
-
+      string empty;
+      
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
-	    {
-	      ostringstream tempstream;
-	      tempstream << f->space << '^' << f->feature << ':' << (f->weight_index/stride & all.parse_mask) << ':' << f->x;
-	      tempstream  << ':' << trunc_weight(weights[f->weight_index & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-	      if(all.adaptive)
-		tempstream << '@' << weights[(f->weight_index+1) & all.weight_mask];
-	      string_value sv = {weights[f->weight_index & all.weight_mask]*f->x, tempstream.str()};
-	      features.push_back(sv);
-	    }
-	else
-	  for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-	    {
-	      ostringstream tempstream;
-	      if ( f->weight_index == ((constant*stride)&all.weight_mask))
-		tempstream << "Constant:";
-	      tempstream << (f->weight_index/stride & all.parse_mask) << ':' << f->x;
-	      tempstream << ':' << trunc_weight(weights[f->weight_index & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-	      if(all.adaptive)
-		tempstream << '@' << weights[(f->weight_index+1) & all.weight_mask];
-	      string_value sv = {weights[f->weight_index & all.weight_mask]*f->x, tempstream.str()};
-	      features.push_back(sv);
-	    }
+	audit_features(all, ec->atomics[*i], ec->audit_features[*i], features, empty, ec->ft_offset);
       for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
-	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	    print_audit_quad(all, weights, *f, ec->audit_features[(int)(*i)[1]], features);
-	else
-	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	    print_quad(all, weights, *f, ec->atomics[(int)(*i)[1]], features);      
+	{
+	  int fst = (*i)[0];
+	  int snd = (*i)[1];
+	  for (size_t j = 0; j < ec->atomics[fst].size(); j++)
+	    {
+	      audit_data* a = NULL;
+	      if (ec->audit_features[fst].size() > 0)
+		a = & ec->audit_features[fst][j];
+	      audit_quad(all, ec->atomics[fst][j], a, ec->atomics[snd], ec->audit_features[snd], features);
+	    }
+	}
 
       for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
-	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end) {
-	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-            for (audit_data* f2 = ec->audit_features[(int)(*i)[1]].begin; f2 != ec->audit_features[(int)(*i)[1]].end; f2++)
-              print_audit_cubic(all, weights, *f, *f2, ec->audit_features[(int)(*i)[2]], features);
-        } else {
-	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-            for (feature* f2 = ec->atomics[(int)(*i)[1]].begin; f2 != ec->atomics[(int)(*i)[1]].end; f2++)
-              print_cubic(all, weights, *f, *f2, ec->atomics[(int)(*i)[2]], features);
-        }
+	{
+	  int fst = (*i)[0];
+	  int snd = (*i)[1];
+	  int trd = (*i)[2];
+	  for (size_t j = 0; j < ec->atomics[fst].size(); j++)
+	    {
+	      audit_data* a1 = NULL;
+	      if (ec->audit_features[fst].size() > 0)
+		a1 = & ec->audit_features[fst][j];
+	      for (size_t k = 0; k < ec->atomics[snd].size(); k++)
+		{
+		  audit_data* a2 = NULL;
+		  if (ec->audit_features[snd].size() > 0)
+		    a2 = & ec->audit_features[snd][k];
+		  audit_triple(all, ec->atomics[fst][j], a1, ec->atomics[snd][k], a2, ec->atomics[trd], ec->audit_features[trd], features);
+		}
+	    }
+	}
 
       sort(features.begin(),features.end());
 
