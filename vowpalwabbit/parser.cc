@@ -254,6 +254,7 @@ void reset_source(vw& all, size_t numbits)
 	  close(all.p->input->files[0]);
 #endif
 	  all.final_prediction_sink.erase();
+	  all.raw_prediction_sink.erase();
 	  all.p->input->files.erase();
 	  
 	  sockaddr_in client_address;
@@ -267,7 +268,10 @@ void reset_source(vw& all, size_t numbits)
 	  
 	  // note: breaking cluster parallel online learning by dropping support for id
 	  
-	  all.final_prediction_sink.push_back((size_t) f);
+	  if(all.return_raw)
+            all.raw_prediction_sink.push_back((size_t) f);
+	  else
+            all.final_prediction_sink.push_back((size_t) f);
 	  all.p->input->files.push_back(f);
 
 	  if (isbinary(*(all.p->input))) {
@@ -539,7 +543,10 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       all.p->label_sock = f;
       all.print = print_result;
       
-      all.final_prediction_sink.push_back((size_t) f);
+      if(all.return_raw)
+	all.raw_prediction_sink.push_back((size_t) f);
+      else
+        all.final_prediction_sink.push_back((size_t) f);
       
       all.p->input->files.push_back(f);
       all.p->max_fd = max(f, all.p->max_fd);
