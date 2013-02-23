@@ -33,7 +33,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   if (sock == -1)
     {
       cerr << "can't get socket " << endl;
-      exit(1);
+	  throw exception();
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -66,7 +66,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
     }
     cerr << ':' << ntohs(port) << endl;
     perror(NULL);
-    exit(1);
+    throw exception();
   }
   return sock;
 }

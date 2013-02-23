@@ -221,10 +221,10 @@ bool operator<(const string_value& first, const string_value& second)
 
 #include <algorithm>
 
-void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, uint32_t offset = 0)
+void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, size_t offset = 0)
 {
   ostringstream tempstream;
-  uint32_t index = (f->weight_index + offset) & all.weight_mask;
+  size_t index = (f->weight_index + offset) & all.weight_mask;
   weight* weights = all.reg.weight_vector;
   size_t stride = all.stride;
   
@@ -242,7 +242,7 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   results.push_back(sv);
 }
 
-void audit_features(vw& all, v_array<feature>& fs, v_array<audit_data>& as, vector<string_value>& results, string prepend, uint32_t offset = 0)
+void audit_features(vw& all, v_array<feature>& fs, v_array<audit_data>& as, vector<string_value>& results, string prepend, size_t offset = 0)
 {
   for (size_t j = 0; j< fs.size(); j++)
     if (as.begin != as.end)
