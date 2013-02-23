@@ -76,7 +76,7 @@ socket_t getsock()
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
       cerr << "can't open socket!" << endl;
-      exit(1);
+      throw exception();
   }
 
   // SO_REUSEADDR will allow port rebinding on Windows, causing multiple instances
@@ -101,7 +101,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 
   if (master == NULL) {
     cerr << "can't resolve hostname: " << master_location << endl;
-    exit(1);
+    throw exception();
   }
   socks.current_master = master_location;
 
@@ -120,7 +120,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     cerr << "read 1 failed!" << endl;
   if (!ok) {
     cerr << "mapper already connected" << endl;
-    exit(1);
+    throw exception();
   }
 
   uint16_t kid_count;
@@ -156,7 +156,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
         else
         {
           perror("Bind failed ");
-          exit(1);
+          throw exception();
         }
       }
       else
@@ -200,7 +200,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     if (f < 0)
     {
       cerr << "bad client socket!" << endl;
-      exit (1);
+      throw exception();
     }
     socks.children[i] = f;
   }
@@ -290,7 +290,7 @@ void reduce(char* buffer, const int n, const socket_t parent_sock, const socket_
 	  {
 	    cerr << "Select failed!" << endl;
 	    perror(NULL);
-	    exit (1);
+	    throw exception();
 	  }
       
 	for(int i = 0;i < 2;i++) {
@@ -299,7 +299,7 @@ void reduce(char* buffer, const int n, const socket_t parent_sock, const socket_
 	    if(child_read_pos[i] == n) {
 	      cerr<<"I think child has no data to send but he thinks he has "<<FD_ISSET(child_sockets[0],&fds)<<" "<<FD_ISSET(child_sockets[1],&fds)<<endl;
 	      fflush(stderr);
-	      exit(1);
+	      throw exception();
 	    }
 	  
 	
@@ -309,7 +309,7 @@ void reduce(char* buffer, const int n, const socket_t parent_sock, const socket_
 	    if(read_size == -1) {
 	      cerr <<" Read from child failed\n";
 	      perror(NULL);
-	      exit(1);
+	      throw exception();
 	    }
 	    
 	    //cout<<"Read "<<read_size<<" bytes\n";
@@ -374,7 +374,7 @@ void broadcast(char* buffer, const int n, const socket_t parent_sock, const sock
 	//there is data to be read from the parent
 	if(parent_read_pos == n) {
 	  cerr<<"I think parent has no data to send but he thinks he has\n";
-	  exit(1);
+	  throw exception();
 	}
 	size_t count = min(buf_size,n-parent_read_pos);
 	int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);

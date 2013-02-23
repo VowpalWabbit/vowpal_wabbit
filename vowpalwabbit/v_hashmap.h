@@ -155,7 +155,7 @@ template<class K, class V> class v_hashmap{
       // check to make sure we haven't cycled around -- this is a bug!
       if (last_position == first_position) {
         std::cerr << "error: v_hashmap did not grow enough!" << std::endl;
-        exit(-1);
+        throw std::exception();
       }
     }
   }
@@ -183,7 +183,7 @@ template<class K, class V> class v_hashmap{
       // check to make sure we haven't cycled around -- this is a bug!
       if (last_position == first_position) {
         std::cerr << "error: v_hashmap did not grow enough!" << std::endl;
-        exit(-1);
+        throw std::exception();
       }
     }
   }

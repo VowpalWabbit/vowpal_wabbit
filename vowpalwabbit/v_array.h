@@ -41,7 +41,7 @@ template<class T> class v_array{
 	  begin = (T *)realloc(begin, sizeof(T) * length);
 	  if ((begin == NULL) && ((sizeof(T)*length) > 0)) {
 	    std::cerr << "realloc of " << length << " failed in resize().  out of memory?" << std::endl;
-	    exit(-1);
+	    throw std::exception();
 	  }
           if (zero_everything && (old_len < length))
             memset(begin+old_len, 0, (length-old_len)*sizeof(T));

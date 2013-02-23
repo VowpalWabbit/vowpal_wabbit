@@ -85,7 +85,7 @@ class io_buf {
       else
 	{
 	  cout << "can't open: " << name << " for read or write, exiting on error" << strerror(errno) << endl;
-	  exit(1);
+	  throw exception();
 	}
       break;
 
@@ -191,7 +191,7 @@ inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read
 	if (memcmp(data,p,len) != 0)
 	  {
 	    cout << read_message << endl;
-	    exit(1);
+	    throw exception();
 	  }
       return ret;
     }
@@ -205,7 +205,7 @@ inline size_t bin_read(io_buf& i, char* data, size_t len, const char* read_messa
   if (obj_len > len || ret < sizeof(uint32_t))
     {
       cerr << "bad model format!" <<endl;
-      exit(1);
+      throw exception();
     }
   ret += bin_read_fixed(i,data,obj_len,read_message);
 

@@ -42,7 +42,7 @@ size_t really_read(int sock, void* in, size_t count)
 	  {
 	    cerr << "argh! bad read! on message from " << sock << endl;
 	    perror(NULL);
-	    exit(0);
+	    throw exception();
 	  }
 	else
 	  {
@@ -75,7 +75,7 @@ void send_prediction(int sock, global_prediction p)
     {
       cerr << "argh! bad global write! " << sock << endl;
       perror(NULL);
-      exit(0);
+      throw exception();
     }
 }
 

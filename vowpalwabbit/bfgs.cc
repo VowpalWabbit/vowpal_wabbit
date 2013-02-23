@@ -564,7 +564,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
       if (b.regularizers == NULL)
 	{
 	  cerr << all.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
-	  exit (1);
+	  throw exception();
 	}
       for(uint32_t i = 0; i < length; i++) 
 	b.regularizers[2*i] = weights[stride*i+W_COND] + regularization;
@@ -927,7 +927,7 @@ void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
 	  if (b->regularizers == NULL)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
-	      exit (1);
+	      throw exception();
 	    }
 	}
       int m = all->m;
@@ -1049,7 +1049,7 @@ void parse_args(vw& all, std::vector<std::string>&opts, po::variables_map& vm, p
   if (all.numpasses < 2)
     {
       cout << "you must make at least 2 passes to use BFGS" << endl;
-      exit(1);
+      throw exception();
     }
 }
 }

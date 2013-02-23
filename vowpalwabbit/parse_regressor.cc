@@ -32,7 +32,7 @@ void initialize_regressor(vw& all)
   if (all.reg.weight_vector == NULL)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
-      exit (1);
+      throw exception();
     }
   if (all.random_weights)
     {
@@ -66,7 +66,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (v_tmp < LAST_COMPATIBLE_VERSION)
 	{
 	  cout << "Model has possibly incompatible version! " << v_tmp.to_string() << endl;
-	  exit(1);
+	  throw exception();
 	}
       
       char model = 'm';
@@ -92,7 +92,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (all.default_bits != true && all.num_bits != local_num_bits)
 	{
 	  cout << "Wrong number of bits for source!" << endl;
-	  exit (1);
+	  throw exception();
 	}
       all.default_bits = false;
       all.num_bits = local_num_bits;

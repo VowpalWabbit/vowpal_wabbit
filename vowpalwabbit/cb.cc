@@ -148,7 +148,7 @@ namespace CB
         {
           cerr << "malformed cost specification!" << endl;
 	  cerr << "terminating." << endl;
-          exit(1);
+          throw exception();
         }
 
         f.weight_index = (uint32_t)hashstring(p->parse_name[0], 0);
@@ -156,7 +156,7 @@ namespace CB
         {
           cerr << "invalid action: " << f.weight_index << endl;
           cerr << "terminating." << endl;
-          exit(1);
+          throw exception();
         }
 
         f.x = FLT_MAX;
@@ -168,7 +168,7 @@ namespace CB
 	  cerr << "error NaN cost for action: ";
 	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
 	  cerr << " terminating." << endl;
-	  exit(1);
+	  throw exception();
         }
       
         f.prob_action = .0;
@@ -180,7 +180,7 @@ namespace CB
 	  cerr << "error NaN probability for action: ";
 	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
 	  cerr << " terminating." << endl;
-	  exit(1);
+	  throw exception();
         }
         
         if( f.prob_action > 1.0 )
@@ -561,7 +561,7 @@ namespace CB
         break;
       default:
         std::cerr << "Unknown cb_type specified for contextual bandit learning: " << c->cb_type << ". Exiting." << endl;
-        exit(1);
+        throw exception();
     }
 
     //update classifiers with cost-sensitive exemple

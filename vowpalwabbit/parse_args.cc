@@ -211,7 +211,7 @@ vw parse_args(int argc, char *argv[])
   if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
     {
       cout << "you must specificy unique_id, total, and node if you specify any" << endl;
-      exit (1);
+      throw exception();
     }
 
   all.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
@@ -256,7 +256,7 @@ vw parse_args(int argc, char *argv[])
     if(vm.count("sort_features"))
       {
 	cerr << "ngram is incompatible with sort_features.  " << endl;
-	exit(1);
+	throw exception();
       }
   }
   if(vm.count("skips"))
@@ -265,7 +265,7 @@ vw parse_args(int argc, char *argv[])
     if(!vm.count("ngram"))
       {
 	cout << "You can not skip unless ngram is > 1" << endl;
-	exit(1);
+	throw exception();
       }
     cerr << "You have chosen to generate " << all.skips << "-skip-" << all.ngram << "-grams" << endl;
     if(all.skips > 4)
@@ -282,7 +282,7 @@ vw parse_args(int argc, char *argv[])
       if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
 	{
 	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
-	  exit(1);
+	  throw exception();
 	}
     }
   
@@ -319,7 +319,7 @@ vw parse_args(int argc, char *argv[])
 	      cerr << endl << "warning, ignoring characters after the 2nd.\n";
 	    if (i->length() < 2) {
 	      cerr << endl << "error, quadratic features must involve two sets.\n";
-	      exit(0);
+	      throw exception();
 	    }
 	  }
 	  cerr << endl;
@@ -338,7 +338,7 @@ vw parse_args(int argc, char *argv[])
 	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
 	    if (i->length() < 3) {
 	      cerr << endl << "error, cubic features must involve three sets.\n";
-	      exit(0);
+	      throw exception();
 	    }
 	  }
 	  cerr << endl;
@@ -413,22 +413,22 @@ vw parse_args(int argc, char *argv[])
     if ( vm.count("adaptive") )
       {
 	cerr << "adaptive is not implemented for matrix factorization" << endl;
-        exit(1);
+        throw exception();
       }
     if ( vm.count("normalized") )
       {
 	cerr << "normalized is not implemented for matrix factorization" << endl;
-        exit(1);
+        throw exception();
       }
     if ( vm.count("exact_adaptive_norm") )
       {
 	cerr << "normalized adaptive updates is not implemented for matrix factorization" << endl;
-        exit(1);
+        throw exception();
       }
     if (vm.count("bfgs") || vm.count("conjugate_gradient"))
       {
 	cerr << "bfgs is not implemented for matrix factorization" << endl;
-	exit (1);
+	throw exception();
       }	
 
     //default initial_t to 1 instead of 0
@@ -581,42 +581,42 @@ vw parse_args(int argc, char *argv[])
     BINARY::parse_flags(all, to_pass_further, vm, vm_file);
 
   if(vm.count("oaa") || vm_file.count("oaa") ) {
-    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
+    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
 
     OAA::parse_flags(all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
   
   if (vm.count("ect") || vm_file.count("ect") ) {
-    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; exit(-1); }
+    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
 
     ECT::parse_flags(all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
 
   if(vm.count("csoaa") || vm_file.count("csoaa") ) {
-    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
     
     CSOAA::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("wap") || vm_file.count("wap") ) {
-    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
     
     WAP::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("csoaa_ldf") || vm_file.count("csoaa_ldf")) {
-    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     CSOAA_AND_WAP_LDF::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("wap_ldf") || vm_file.count("wap_ldf") ) {
-    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; exit(-1); }
+    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     CSOAA_AND_WAP_LDF::parse_flags(all, to_pass_further, vm, vm_file);
     got_cs = true;
@@ -640,7 +640,7 @@ vw parse_args(int argc, char *argv[])
   if (vm.count("searn") || vm_file.count("searn") ) { 
     if (vm.count("searnimp") || vm_file.count("searnimp")) {
       cerr << "fail: cannot have both --searn and --searnimp" << endl;
-      exit(-1);
+      throw exception();
     }
     if (!got_cs && !got_cb) {
       //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
@@ -670,7 +670,7 @@ vw parse_args(int argc, char *argv[])
 
   if (got_cb && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
-    exit(-1);
+    throw exception();
   }
 
   if (to_pass_further.size() > 0) {
@@ -700,7 +700,7 @@ vw parse_args(int argc, char *argv[])
       for (size_t i=0; i<to_pass_further.size(); i++)
         cerr << " " << to_pass_further[i];
       cerr << endl;
-      exit(-1);
+      throw exception();
     }
   }
 

@@ -47,13 +47,13 @@ int open_socket(const char* host)
   if (he == NULL)
     {
       cerr << "can't resolve hostname: " << host << endl;
-      exit(1);
+      throw exception();
     }
   int sd = (int)socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
       cerr << "can't get socket " << endl;
-      exit(1);
+      throw exception();
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -68,7 +68,7 @@ int open_socket(const char* host)
 #else
       cerr << "can't connect to: " << host << ':' << port << endl;
 #endif
-      exit(1);
+      throw exception();
     }
   char id = '\0';
   if (

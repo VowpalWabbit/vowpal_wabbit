@@ -165,7 +165,7 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
   if(v_length>29){
     cerr << "cache version too long, cache file is probably invalid" << endl;
-    exit(1);
+    throw exception();
   }
   t.erase();
   if (t.size() < v_length)
@@ -184,12 +184,12 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   if (buf->read_file(filepointer, &temp, 1) < 1) 
     {
       cout << "failed to read" << endl;
-      exit(0);
+      throw exception();
     }
   if (temp != 'c')
     {
       cout << "data file is not a cache file" << endl;
-      exit (0);
+      throw exception();
     }
 
   t.delete_v();
@@ -262,7 +262,7 @@ void reset_source(vw& all, size_t numbits)
 	  if (f < 0)
 	    {
 	      cerr << "bad client socket!" << endl;
-	      exit (1);
+	      throw exception();
 	    }
 	  
 	  // note: breaking cluster parallel online learning by dropping support for id
@@ -284,7 +284,7 @@ void reset_source(vw& all, size_t numbits)
 	    input->reset_file(input->files[i]);
 	    if (cache_numbits(input, input->files[i]) < numbits) {
 	      cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
-	      exit(1);
+	      throw exception();
 	    }
 	  }
       }
@@ -405,7 +405,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
 	cerr << "can't open socket!" << endl;
-	exit(1);
+	throw exception();
       }
 
       int on = 1;
@@ -424,7 +424,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
 	{
 	  cerr << "failure to bind!" << endl;
-	  exit(1);
+	  throw exception();
 	}
       int source_count = 1;
       
@@ -435,7 +435,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if (daemon(1,1))
 	{
 	  cerr << "failure to background!" << endl;
-	  exit(1);
+	  throw exception();
 	}
       // write pid file
       if (vm.count("pid_file"))
@@ -445,7 +445,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	  if (!pid_file.is_open())
 	    {
 	      cerr << "error writing pid file" << endl;
-	      exit(1);
+	      throw exception();
 	    }
 	  pid_file << getpid() << endl;
 	  pid_file.close();
@@ -454,7 +454,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if (all.daemon)
 	{
 #ifdef _WIN32
-		exit(1);
+		throw exception();
 #else
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights = 
@@ -533,7 +533,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if (f < 0)
 	{
 	  cerr << "bad client socket!" << endl;
-	  exit (1);
+	  throw exception();
 	}
       
       all.p->label_sock = f;
@@ -587,8 +587,6 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	  if (f == -1 && temp.size() != 0)
 	    {
 			cerr << "can't open '" << temp << "', sailing on!" << endl;
-//	      cerr << "can't open " << temp << ", bailing!" << endl;
-//	      exit(0);
 	    }
 	  all.p->reader = read_features;
 	  all.p->hasher = getHasher(hash_function);
@@ -599,7 +597,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
   if (passes > 1 && !all.p->resettable)
     {
       cerr << all.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
-      exit(1);
+      throw exception();
     }
   all.p->input->count = all.p->input->files.size();
   if (!quiet)

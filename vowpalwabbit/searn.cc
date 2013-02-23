@@ -51,7 +51,7 @@ namespace SearnUtil
     void* data = calloc(nmemb, size);
     if (data == NULL) {
       std::cerr << "internal error: memory allocation failed; dying!" << std::endl;
-      exit(-1);
+      throw exception();
     }
     return data;
   }
@@ -124,7 +124,7 @@ namespace SearnUtil
     if (total_length == 0) return;
     if (h == NULL) {
       cerr << "error: got empty history in add_history_to_example" << endl;
-      exit(-1);
+      throw exception();
     }
 
     if (all.audit) {
@@ -607,7 +607,7 @@ namespace Searn
     else {
       if (vm.count("searn_task") == 0) {
         cerr << "must specify --searn_task" << endl;
-        exit(-1);
+        throw exception();
       }
       task_string = vm["searn_task"].as<std::string>();
 
@@ -643,7 +643,7 @@ namespace Searn
       s->task.to_string = SequenceTask::to_string;
     } else {
       std::cerr << "error: unknown search task '" << task_string << "'" << std::endl;
-      exit(-1);
+      throw exception();
     }
 
     *(all.p->lp)=s->task.searn_label_parser;
@@ -734,7 +734,7 @@ namespace Searn
     if (s->task.initialize != NULL)
       if (!s->task.initialize(all, opts, vm, vm_file)) {
         std::cerr << "error: task did not initialize properly" << std::endl;
-        exit(-1);
+        throw exception();
       }
 
     // check to make sure task is valid and set up our variables
@@ -747,7 +747,7 @@ namespace Searn
         ((s->task.start_state == NULL) == (s->task.start_state_multiline == NULL)) ||
         ((s->task.cs_example  == NULL) == (s->task.cs_ldf_example        == NULL))) {
       std::cerr << "error: searn task malformed" << std::endl;
-      exit(-1);
+      throw exception();
     }
 
     s->is_singleline  = (s->task.start_state != NULL);
@@ -766,7 +766,7 @@ namespace Searn
 
     if (s->is_ldf && !s->constrainted_actions) {
       std::cerr << "error: LDF requires allowed" << std::endl;
-      exit(-1);
+      throw exception();
     }
 
     all.searn = true;
@@ -903,7 +903,7 @@ namespace Searn
 
       if (best_action < 1) {
         std::cerr << "warning: internal error on search -- could not find an available action; quitting!" << std::endl;
-        exit(-1);
+        throw exception();
       }
       return best_action;
     }
@@ -957,7 +957,7 @@ namespace Searn
     float l = s.task.loss(s.rollout[action-1].st);
     if ((l == FLT_MAX) && (!s.rollout[action-1].is_finished) && (s.max_rollout < INT_MAX)) {
       std::cerr << "error: you asked for short rollouts, but your task does not support pre-final losses" << std::endl;
-      exit(-1);
+      throw exception();
     }
     s.task.finish(s.rollout[action-1].st);
 
@@ -1029,7 +1029,7 @@ namespace Searn
       float l = s.task.loss(s.rollout[k-1].st);
       if ((l == FLT_MAX) && (!s.rollout[k-1].is_finished) && (s.max_rollout < INT_MAX)) {
         std::cerr << "error: you asked for short rollouts, but your task does not support pre-final losses" << std::endl;
-        exit(-1);
+        throw exception();
       }
 
       CSOAA::wclass temp = { l, k, 1., 0. };
@@ -1532,7 +1532,7 @@ namespace ImperativeSearn {
       assert(false);
     }
     cerr << "fail: searn got into ill-defined state (" << (int)srn->state << ")" << endl;
-    exit(-1);
+    throw exception();
   }
 
   void searn_declare_loss(vw& all, size_t predictions_since_last, float incr_loss)
@@ -1540,7 +1540,7 @@ namespace ImperativeSearn {
     searn* srn=(searn*)all.searnstr;
     if (srn->t != srn->loss_last_step + predictions_since_last) {
       cerr << "fail: searntask hasn't counted its predictions correctly.  current time step=" << srn->t << ", last declaration at " << srn->loss_last_step << ", declared # of predictions since then is " << predictions_since_last << endl;
-      exit(-1);
+      throw exception();
     }
     srn->loss_last_step = srn->t;
     if (srn->state == INIT_TEST)
@@ -1950,7 +1950,7 @@ namespace ImperativeSearn {
       all.options_from_file.append(ss.str());
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
-      exit(-1);
+      throw exception();
     }
   }  
 
@@ -2054,7 +2054,7 @@ namespace ImperativeSearn {
       srn->task = mytask;
     } else {
       cerr << "fail: unknown task for --searn_task: " << task_string << endl;
-      exit(-1);
+      throw exception();
     }
 
     srn->task->initialize(all, srn->A);

@@ -44,7 +44,7 @@ hash_func_t getHasher(const string& s){
     return hashall;
   else{
     cerr << "Unknown hash function: " << s << ". Exiting " << endl;
-    exit(1);
+    throw exception();
   }
 }
 

@@ -316,7 +316,7 @@ loss_function* getLossFunction(void* a, string funcName, float function_paramete
     return new quantileloss(function_parameter);
   } else {
     cout << "Invalid loss function name: \'" << funcName << "\' Bailing!" << endl;
-    exit(1);
+    throw exception();
   }
   cout << "end getLossFunction" << endl;
 }

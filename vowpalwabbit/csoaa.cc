@@ -38,7 +38,7 @@ namespace CSOAA {
 	  cerr << "error NaN value for: ";
 	  cerr.write(name[0].begin, name[0].end - name[0].begin);
 	  cerr << " terminating." << endl;
-	  exit(1);
+	  throw exception();
 	}
       break;
     default:
@@ -201,7 +201,7 @@ namespace CSOAA {
         }
       } else {
         //cerr << "ldf test examples must have possible labels listed" << endl;
-        //exit(-1);
+        //throw exception();
       }
     }
   }
@@ -440,7 +440,7 @@ namespace LabelDict {
       if (is_lab != ec_is_label_definition(l.ec_seq[i])) {
         if (!((i == l.ec_seq.size()-1) && (OAA::example_is_newline(l.ec_seq[i])))) {
           cerr << "error: mixed label definition and examples in ldf data!" << endl;
-          exit(-1);
+          throw exception();
         }
       }
     }
@@ -661,7 +661,7 @@ namespace LabelDict {
       }
       if (LabelDict::ec_is_example_header(l.ec_seq[k])) {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
-        exit(-1);
+        throw exception();
       }
 
       make_single_prediction(all, l, ec, &prediction, &min_score);
@@ -747,7 +747,7 @@ namespace LabelDict {
       }
       if (LabelDict::ec_is_example_header(l.ec_seq[k])) {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
-        exit(-1);
+        throw exception();
       }
       make_single_prediction(all, l, ec, &prediction, &min_score);
     }
@@ -977,7 +977,7 @@ namespace LabelDict {
 
         if (LabelDict::ec_is_example_header(ec)) {
           cerr << "error: example headers not allowed in ldf singleline mode" << endl;
-          exit(-1);
+          throw exception();
         }
         learn_singleline(all, l, ec);
         if (! LabelDict::ec_is_label_definition(ec)) {
@@ -1073,7 +1073,7 @@ namespace LabelDict {
       ld->is_singleline = false;
     else {
       cerr << "ldf requires either [s]ingleline or [m]ultiline argument" << endl;
-      exit(-1);
+      throw exception();
     }
 
     if (all.add_constant) {
