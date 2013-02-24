@@ -842,7 +842,7 @@ namespace VW{
     ec->num_features++;
   }
 #include "simple_label.h"
-  void add_label(vw& all, example* ec, float label, float weight = 1, float base = 0)
+  void add_label(example* ec, float label, float weight, float base)
   {
     label_data* l = (label_data*)ec->ld;
     l->label = label;
