@@ -127,7 +127,7 @@ ns)</PreprocessorDefinitions>
 (6) Get a copy of VW in %ROOT%. I ran "cd \src\vw" and "git clone http
 
     (a) Change to root (for me, "cd \src\vw")
-    (b) "git clone https://github.com/chrisquirk/vowpal_wabbit.git"
+    (b) "git clone https://github.com/JohnLangford/vowpal_wabbit.git"
 
 (7) Open %ROOT%\vowpal_wabbit\vowpalwabbit\vw.sln in Visual Studio 2010 and hit Build.
 
