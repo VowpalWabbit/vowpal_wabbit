@@ -114,6 +114,12 @@ extern "C"
 		return VW::hash_feature(*pointer, str, u);
 	}
 	
+	VW_DLL_MEMBER void  VW_CALLING_CONV VW_AddLabel(VW_EXAMPLE e, float label, float weight, float base)
+	{
+		example* ex = static_cast<example*>(e);
+		return VW::add_label(ex, label, weight, base);
+	}
+
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e)
 	{
 		vw * pointer = static_cast<vw*>(handle);
