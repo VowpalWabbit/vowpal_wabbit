@@ -68,9 +68,13 @@ namespace NN {
       return;
     }
 
-    if (all.bfgs && ec->pass != n.nn_current_pass) {
-      n.xsubi = n.save_xsubi;
-      n.nn_current_pass = ec->pass;
+    if (ec->pass != n.nn_current_pass) {
+      size_t tmp = ec->pass;
+      ec->pass = n.nn_current_pass;
+      n.nn_current_pass = tmp;
+
+      if (all.bfgs)
+        n.xsubi = n.save_xsubi;
     }
 
     label_data* ld = (label_data*)ec->ld;
@@ -115,6 +119,8 @@ namespace NN {
     all.set_minmax = save_set_minmax;
     all.sd->min_label = save_min_label;
     all.sd->max_label = save_max_label;
+
+    ec->pass = n.nn_current_pass;
 
     bool converse = false;
     float save_partial_prediction = 0;
