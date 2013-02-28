@@ -50,18 +50,12 @@ inline float vec_add_trunc(vw& all, float fx, uint32_t fi) {
 
 inline float vec_add_rescale(vw& all, float fx, uint32_t fi) {
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
-  float x_abs = fabs(fx);
-  if( x_abs > w[all.normalized_idx] ) {// new scale discovered
-    if( w[all.normalized_idx] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
-      float rescale = (w[all.normalized_idx]/x_abs);
-      w[0] *= (all.adaptive ? rescale : rescale*rescale);
-    }
-    w[all.normalized_idx] = x_abs;
-  }
+  w[all.normalized_idx] += fx * fx;
   return w[0] * fx;
 }
 
 inline float vec_add_trunc_rescale(vw& all, float fx, uint32_t fi) {
+    abort(); // make sure this code path is not invoked for now
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x_abs = fabs(fx);
   if( x_abs > w[all.normalized_idx] ) {
@@ -75,6 +69,7 @@ inline float vec_add_trunc_rescale(vw& all, float fx, uint32_t fi) {
 }
 
 inline float vec_add_rescale_general(vw& all, float fx, uint32_t fi) {
+    abort(); // make sure this code path is not invoked for now
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
@@ -89,6 +84,7 @@ inline float vec_add_rescale_general(vw& all, float fx, uint32_t fi) {
 }
 
 inline float vec_add_trunc_rescale_general(vw& all, float fx, uint32_t fi) {
+    abort(); // make sure this code path is not invoked for now
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
