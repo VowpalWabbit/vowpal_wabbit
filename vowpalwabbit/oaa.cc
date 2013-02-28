@@ -152,6 +152,10 @@ namespace OAA {
 
   void learn_with_output(vw*all,oaa* d, example* ec, bool shouldOutput)
   {
+    if (GD::command_example(*all, ec)) {
+      return;
+    }
+
     mc_label* mc_label_data = (mc_label*)ec->ld;
     float prediction = 1;
     float score = INT_MIN;
