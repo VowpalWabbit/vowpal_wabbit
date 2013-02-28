@@ -85,6 +85,7 @@ float InvSqrt(float x){
 
 inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
 {
+    abort(); // make sure this code path is not invoked for now
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float t = 1.f;
   if(all.adaptive) t = powf(w[1],-all.power_t);
@@ -101,7 +102,7 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
-  if(all.normalized_updates) inv_norm /= (w[all.normalized_idx] * avg_norm);
+  if(all.normalized_updates) inv_norm /= sqrt (w[all.normalized_idx]/all.global_ugly_hack);
   if(all.adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
@@ -145,7 +146,9 @@ void learn(void* a, void* d, example* ec)
 	{
           if(all->power_t == 0.5)
             //inline_train(*all, ec, ec->eta_round);
+            {            all->global_ugly_hack = ec->example_t;
             generic_train<specialized_update>(*all,ec,ec->eta_round,true);
+            }
           else
             //general_train(*all, ec, ec->eta_round, all->power_t);
             generic_train<general_update>(*all,ec,ec->eta_round,false);
@@ -385,7 +388,7 @@ inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& n
   float inv_norm = 1.f;
   float inv_norm2 = 1.f;
   if(all.normalized_updates) {
-    inv_norm /= w[all.normalized_idx];
+    inv_norm /= sqrt(w[all.normalized_idx]/all.global_ugly_hack);
     inv_norm2 = inv_norm*inv_norm;
     norm_x += x2 * inv_norm2;
   }
@@ -406,6 +409,8 @@ inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& n
 }
 
 inline void powert_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
+    abort(); // make sure this code path is not invoked for now
+
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
 
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
@@ -506,7 +511,9 @@ void local_predict(vw& all, example* ec)
 	  float norm;
           if(all.adaptive || all.normalized_updates) {
             if(all.power_t == 0.5)
+          { all.global_ugly_hack = ec->example_t; 
               norm = compute_norm<simple_norm_compute>(all,ec);
+          }
             else
               norm = compute_norm<powert_norm_compute>(all,ec);
           }

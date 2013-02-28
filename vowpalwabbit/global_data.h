@@ -240,6 +240,8 @@ struct vw {
   std::string final_regressor_name;
   regressor reg;
 
+  float global_ugly_hack;
+
   vw();
 };
 
