@@ -102,7 +102,7 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
-  if(all.normalized_updates) inv_norm /= sqrt (w[all.normalized_idx]/all.global_ugly_hack);
+  if(all.normalized_updates) inv_norm /= sqrt (w[all.normalized_idx]/all.global_ugly_hack) * avg_norm;
   if(all.adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
