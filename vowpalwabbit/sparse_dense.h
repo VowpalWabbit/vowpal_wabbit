@@ -29,11 +29,7 @@ template <float (*T)(vw&,float,uint32_t)>
 float one_pf_quad_predict(vw& all, feature& f, v_array<feature> cross_features, uint32_t offset=0)
 {
   uint32_t halfhash = quadratic_constant * (f.weight_index + offset);
-  weight* w = &all.reg.weight_vector[f.weight_index & all.weight_mask];
-  float x = f.x;
-  if (all.normalized_updates)
-    x /= sqrt (w[all.normalized_idx] / all.global_ugly_hack);
-  return sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset, x);
+  return sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset, f.x);
 }
 
 template <float (*T)(vw&,float,uint32_t)>
@@ -112,11 +108,7 @@ template <void (*T)(vw&,float,uint32_t,float)>
 void sd_quad_update(vw& all, feature& f, v_array<feature> cross_features, float update, uint32_t offset=0)
 {
   size_t halfhash = quadratic_constant * (f.weight_index + offset);
-  weight* w = &all.reg.weight_vector[f.weight_index & all.weight_mask];
-  float x = f.x;
-  if (all.normalized_updates)
-    x /= sqrt (w[all.normalized_idx] / all.global_ugly_hack);
-  sd_update<T>(all, cross_features.begin, cross_features.end, halfhash + offset, update * x);
+  sd_update<T>(all, cross_features.begin, cross_features.end, halfhash + offset, update * f.x);
 }
 
 template <void (*T)(vw&,float,uint32_t,float)>

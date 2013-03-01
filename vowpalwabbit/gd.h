@@ -44,8 +44,6 @@ float inline_predict(vw& all, example* &ec)
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     prediction += sd_add<T>(all, ec->atomics[*i].begin, ec->atomics[*i].end, ec->ft_offset);
 
-//  std::cerr << "linear prediction = " << prediction << std::endl;
-
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
     if (ec->atomics[(int)(*i)[0]].size() > 0) {
       v_array<feature> temp = ec->atomics[(int)(*i)[0]];
@@ -64,8 +62,6 @@ float inline_predict(vw& all, example* &ec)
       }
     }
   }
-
-//  std::cerr << "prediction = " << prediction << std::endl;
   
   return prediction;
 }
