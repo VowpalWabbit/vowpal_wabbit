@@ -17,11 +17,11 @@ inline float trunc_weight(float w, float gravity){
 }
 
 template <float (*T)(vw&,float,uint32_t)>
-float sd_add(vw& all, feature* begin, feature* end, uint32_t offset=0)
+float sd_add(vw& all, feature* begin, feature* end, uint32_t offset=0, float mult = 1.)
 {
   float ret = 0.;
   for (feature* f = begin; f!= end; f++)
-    ret += T(all, f->x, f->weight_index + offset);
+    ret += T(all, mult*f->x, f->weight_index + offset);
   return ret;
 }
 
@@ -29,14 +29,19 @@ template <float (*T)(vw&,float,uint32_t)>
 float one_pf_quad_predict(vw& all, feature& f, v_array<feature> cross_features, uint32_t offset=0)
 {
   uint32_t halfhash = quadratic_constant * (f.weight_index + offset);
-  return f.x * sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
+  weight* w = &all.reg.weight_vector[f.weight_index & all.weight_mask];
+  float x = f.x;
+  if (all.normalized_updates)
+    x /= sqrt (w[all.normalized_idx] / all.global_ugly_hack);
+  return sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset, x);
 }
 
 template <float (*T)(vw&,float,uint32_t)>
 float one_pf_cubic_predict(vw& all, feature& f0, feature& f1, v_array<feature> cross_features, uint32_t offset=0)
 {
   uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
-  return f0.x * f1.x * sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset);
+  float mult = f0.x * f1.x;
+  return sd_add<T>(all, cross_features.begin, cross_features.end, halfhash + offset, mult);
 }
 
 inline float vec_add(vw& all, float fx, uint32_t fi) {
@@ -50,11 +55,10 @@ inline float vec_add_trunc(vw& all, float fx, uint32_t fi) {
 inline float vec_add_rescale(vw& all, float fx, uint32_t fi) {
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   w[all.normalized_idx] += fx * fx;
-  return w[0] * fx;
+  return w[0] * fx / sqrt (w[all.normalized_idx] / all.global_ugly_hack);
 }
 
 inline float vec_add_trunc_rescale(vw& all, float fx, uint32_t fi) {
-    abort(); // make sure this code path is not invoked for now
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x_abs = fabs(fx);
   if( x_abs > w[all.normalized_idx] ) {
@@ -68,7 +72,6 @@ inline float vec_add_trunc_rescale(vw& all, float fx, uint32_t fi) {
 }
 
 inline float vec_add_rescale_general(vw& all, float fx, uint32_t fi) {
-    abort(); // make sure this code path is not invoked for now
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
@@ -83,7 +86,6 @@ inline float vec_add_rescale_general(vw& all, float fx, uint32_t fi) {
 }
 
 inline float vec_add_trunc_rescale_general(vw& all, float fx, uint32_t fi) {
-    abort(); // make sure this code path is not invoked for now
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
@@ -110,7 +112,11 @@ template <void (*T)(vw&,float,uint32_t,float)>
 void sd_quad_update(vw& all, feature& f, v_array<feature> cross_features, float update, uint32_t offset=0)
 {
   size_t halfhash = quadratic_constant * (f.weight_index + offset);
-  sd_update<T>(all, cross_features.begin, cross_features.end, halfhash + offset, update * f.x);
+  weight* w = &all.reg.weight_vector[f.weight_index & all.weight_mask];
+  float x = f.x;
+  if (all.normalized_updates)
+    x /= sqrt (w[all.normalized_idx] / all.global_ugly_hack);
+  sd_update<T>(all, cross_features.begin, cross_features.end, halfhash + offset, update * x);
 }
 
 template <void (*T)(vw&,float,uint32_t,float)>
