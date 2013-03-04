@@ -36,7 +36,6 @@ class ezexample {
   example* get_new_example() {
     example* new_ec = VW::new_unused_example(*vw_ref);
     vw_ref->p->lp->default_label(new_ec->ld);
-    new_ec->pass = vw_ref->passes_complete;
     return new_ec;
   }
 

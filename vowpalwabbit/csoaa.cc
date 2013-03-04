@@ -410,6 +410,7 @@ namespace CSOAA_AND_WAP_LDF {
     bool need_to_clear;
     bool is_singleline;
     bool is_wap;
+    bool first_pass;
     float csoaa_example_t;
     learner base;
   };
@@ -934,7 +935,7 @@ namespace LabelDict {
 
   void learn_multiline(vw& all, ldf& l, example *ec) {
     if (OAA::example_is_newline(ec) || l.ec_seq.size() >= all.p->ring_size - 2 || command_example(&all,ec)) {
-      if (l.ec_seq.size() >= all.p->ring_size - 2 && l.ec_seq[0]->pass == 0)
+      if (l.ec_seq.size() >= all.p->ring_size - 2 && l.first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
 	
       do_actual_learning(all, l);
@@ -962,6 +963,9 @@ namespace LabelDict {
 
     if (command_example(&all, ec))
       {
+	if (ec->end_pass)
+	  l.first_pass = false;
+
 	l.base.learn(&all, l.base.data, ec);
 	return;
       }
@@ -1047,7 +1051,8 @@ namespace LabelDict {
 
     ld->need_to_clear = true;
     ld->is_singleline = true;
-    
+    ld->first_pass = true;
+ 
     string ldf_arg;
     if(vm_file.count("csoaa_ldf")) {
       ldf_arg = vm_file["csoaa_ldf"].as<string>();

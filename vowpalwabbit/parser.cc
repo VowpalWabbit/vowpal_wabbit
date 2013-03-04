@@ -725,12 +725,10 @@ void end_pass_example(vw& all, example* ae)
 {
   all.p->lp->default_label(ae->ld);
   ae->end_pass = true;
-  ae->pass = all.passes_complete;
 }
 
 void setup_example(vw& all, example* ae)
 {
-  ae->pass = all.passes_complete;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;

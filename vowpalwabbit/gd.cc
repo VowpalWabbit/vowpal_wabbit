@@ -121,7 +121,7 @@ void learn(void* a, void* d, example* ec)
 {
   vw* all = (vw*)a;
   assert(ec->in_use);
-  if (ec->pass != all->current_pass)
+  if (ec->end_pass)
     {
       
       if(all->span_server != "") {
@@ -135,7 +135,7 @@ void learn(void* a, void* d, example* ec)
 	save_predictor(*all, all->final_regressor_name, all->current_pass);
       all->eta *= all->eta_decay_rate;
       
-      all->current_pass = ec->pass;
+      all->current_pass++;
     }
   
   if (!command_example(all, ec))

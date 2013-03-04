@@ -264,11 +264,9 @@ float mf_predict(vw& all, example* ex)
   void learn(void* in, void* d, example* ec)
   {
     vw* all = (vw*)in;
-    size_t* current_pass = (size_t*) d;
-    if (ec->pass != *current_pass) {
+    if (ec->end_pass) 
       all->eta *= all->eta_decay_rate;
-      *current_pass = ec->pass;
-    }
+
     if (!command_example(all, ec))
       {
 	mf_predict(*all,ec);
@@ -278,10 +276,7 @@ float mf_predict(vw& all, example* ex)
   }
 
   void finish(void* a, void* d)
-  {
-    size_t* current_pass = (size_t*)d;
-    free(current_pass);
-  }
+  { }
 
   void drive(void* in, void* d)
 {
@@ -305,8 +300,7 @@ float mf_predict(vw& all, example* ex)
 
   void parse_flags(vw& all)
   {
-    size_t* current_pass = (size_t*)calloc(1, sizeof(size_t));
-    learner t = {current_pass,drive,learn,finish,save_load};
+    learner t = {NULL,drive,learn,finish,save_load};
     all.l = t;
   }
 }

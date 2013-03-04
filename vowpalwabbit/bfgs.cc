@@ -839,8 +839,7 @@ void learn(void* a, void* d, example* ec)
   bfgs* b = (bfgs*)d;
   assert(ec->in_use);
 
-  if (ec->pass <= b->final_pass +1)
-    if (ec->pass != b->current_pass) 
+  if (ec->end_pass && b->current_pass <= b->final_pass +1) 
       {
 	int status = process_pass(*all, *b);
 	if (status != LEARN_OK && b->final_pass > b->current_pass) {
@@ -850,9 +849,9 @@ void learn(void* a, void* d, example* ec)
 	  zero_preconditioner(*all);
 	  b->preconditioner_pass = true;
 	}
-	
       }
-  if (ec->pass <= b->final_pass)
+
+  if (b->current_pass <= b->final_pass)
     if (!command_example(all,ec))
       {
 	if (test_example(ec))

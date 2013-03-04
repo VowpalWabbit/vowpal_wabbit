@@ -30,7 +30,6 @@ namespace NN {
     bool dropout;
     uint64_t xsubi;
     uint64_t save_xsubi;
-    size_t nn_current_pass;
     bool inpass;
 
     learner base;
@@ -64,18 +63,14 @@ namespace NN {
 
   void learn_with_output(vw& all, nn& n, example* ec, bool shouldOutput)
   {
+    if (ec->end_pass) {
+      if (all.bfgs)
+        n.xsubi = n.save_xsubi;
+    }
+
     if (command_example(&all, ec)) {
       n.base.learn(&all,n.base.data, ec);
       return;
-    }
-
-    if (ec->pass != n.nn_current_pass) {
-      size_t tmp = ec->pass;
-      ec->pass = n.nn_current_pass;
-      n.nn_current_pass = tmp;
-
-      if (all.bfgs)
-        n.xsubi = n.save_xsubi;
     }
 
     label_data* ld = (label_data*)ec->ld;
@@ -121,8 +116,6 @@ namespace NN {
     all.sd->min_label = save_min_label;
     all.sd->max_label = save_max_label;
 
-    ec->pass = n.nn_current_pass;
-
     bool converse = false;
     float save_partial_prediction = 0;
     float save_final_prediction = 0;
@@ -166,7 +159,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     }
     else {
       n.output_layer.ld = ec->ld;
-      n.output_layer.pass = ec->pass;
       n.output_layer.partial_prediction = 0;
       n.output_layer.eta_round = ec->eta_round;
       n.output_layer.eta_global = ec->eta_global;

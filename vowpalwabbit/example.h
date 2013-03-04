@@ -40,7 +40,6 @@ struct example // core example datatype.
   v_array<audit_data> audit_features[256];
   
   size_t num_features;//precomputed, cause it's fast&easy.
-  size_t pass;
   float partial_prediction;//shared data for prediction.
   v_array<float> topic_predictions;
   float loss;

@@ -1303,8 +1303,8 @@ namespace Searn
     if (is_real_example) {
       s.read_example_this_loop++;
       s.read_example_last_id = ec->example_counter;
-      if (ec->pass != s.read_example_last_pass) {
-        s.read_example_last_pass = ec->pass;
+      if (ec->end_pass) {
+        s.read_example_last_pass++;
         s.passes_since_new_policy++;
         if (s.passes_since_new_policy >= s.passes_per_policy) {
           s.passes_since_new_policy = 0;
@@ -1825,8 +1825,8 @@ namespace ImperativeSearn {
     if (is_real_example) {
       srn->read_example_this_loop++;
       srn->read_example_last_id = ec->example_counter;
-      if (ec->pass != srn->read_example_last_pass) {
-        srn->read_example_last_pass = ec->pass;
+      if (ec->end_pass) {
+        srn->read_example_last_pass++;
         srn->passes_since_new_policy++;
         if (srn->passes_since_new_policy >= srn->passes_per_policy) {
           srn->passes_since_new_policy = 0;

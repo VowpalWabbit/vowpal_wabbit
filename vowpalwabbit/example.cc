@@ -82,7 +82,6 @@ namespace VW {
   dst->ft_offset = src->ft_offset;
 
   dst->num_features = src->num_features;
-  dst->pass = src->pass;
   dst->partial_prediction = src->partial_prediction;
   copy_array(dst->topic_predictions, src->topic_predictions);
   dst->loss = src->loss;
