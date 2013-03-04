@@ -360,6 +360,12 @@ namespace ECT
     vw* all = (vw*)a;
     ect* e=(ect*)d;
 
+    if (command_example(all, ec))
+      {
+	e->base.learn(a, e->base.data, ec);
+	return;
+      }
+
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
       cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;

@@ -152,7 +152,6 @@ void learn(void* a, void* d, example* ec)
 
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
-	  
 	}
     }
 }

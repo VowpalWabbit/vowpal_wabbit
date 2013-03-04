@@ -533,6 +533,12 @@ namespace CB
     CB::label* ld = (CB::label*)ec->ld;
     float prediction = 1;
 
+    if (command_example(all, ec))
+      {
+	c->base.learn(a, c->base.data, ec);
+	return;
+      }
+
     //check if this is a test example where we just want a prediction
     if( CB::is_test_label(ld) )
     {

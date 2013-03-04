@@ -230,6 +230,12 @@ namespace WAP {
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
     wap* w = (wap*)d;
     
+    if (command_example(all, ec))
+      {
+	w->base.learn(a, w->base.data, ec);
+	return;
+      }
+
     size_t prediction = test(*all, *w, ec);
     ec->ld = cost_label;
     

@@ -65,6 +65,7 @@ namespace NN {
   void learn_with_output(vw& all, nn& n, example* ec, bool shouldOutput)
   {
     if (command_example(&all, ec)) {
+      n.base.learn(&all,n.base.data, ec);
       return;
     }
 

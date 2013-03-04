@@ -724,6 +724,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 void end_pass_example(vw& all, example* ae)
 {
   all.p->lp->default_label(ae->ld);
+  ae->end_pass = true;
   ae->pass = all.passes_complete;
 }
 
@@ -934,6 +935,7 @@ namespace VW{
     ec->indices.erase();
     ec->tag.erase();
     ec->sorted = false;
+    ec->end_pass = false;
   }
 
   void finish_example(vw& all, example* ec)
@@ -943,7 +945,7 @@ namespace VW{
     condition_variable_signal(&all.p->output_done);
     mutex_unlock(&all.p->output_lock);
     
-	empty_example(all, ec);
+    empty_example(all, ec);
     
     mutex_lock(&all.p->examples_lock);
     assert(ec->in_use);

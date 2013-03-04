@@ -846,10 +846,13 @@ void learn(void* a, void* d, example* ec)
       b->preconditioner_pass = true;
     }
   }
-  if (test_example(ec))
-    ec->final_prediction = bfgs_predict(*all,ec);//w[0]
-  else
-    process_example(*all, *b, ec);
+  if (!command_example(all,ec))
+    {
+      if (test_example(ec))
+	ec->final_prediction = bfgs_predict(*all,ec);//w[0]
+      else
+	process_example(*all, *b, ec);
+    }
 }
 
 void finish(void* a, void* d)
@@ -982,7 +985,6 @@ void drive(void* in, void* d)
 
   example* ec = NULL;
 
-  size_t final_pass=all->numpasses-1;
   b->first_hessian_on = true;
   b->backstep_on = true;
 
@@ -990,29 +992,11 @@ void drive(void* in, void* d)
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  assert(ec->in_use);	  
-
-	  if (ec->pass<=final_pass) {
-	    if (ec->pass != b->current_pass) {
-	      int status = process_pass(*all, *b);
-	      if (status != LEARN_OK && final_pass>b->current_pass) {
-		final_pass = b->current_pass;
-	      }
-	      if (b->output_regularizer && b->current_pass==final_pass) {
-		zero_preconditioner(*all);
-		b->preconditioner_pass = true;
-	      }
-	    }
-	    process_example(*all, *b, ec);
-	  }
-	  
+	  learn(all, b, ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
-	{
-	  process_pass(*all, *b);
-	  return;
-	}
+	return;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }

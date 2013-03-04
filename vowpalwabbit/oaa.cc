@@ -156,7 +156,10 @@ namespace OAA {
   void learn_with_output(vw* all, oaa* d, example* ec, bool shouldOutput)
   {
     if (command_example(all,ec))
-      return;
+      {
+	d->base.learn(all, d->base.data, ec);
+	return;
+      }
 
     mc_label* mc_label_data = (mc_label*)ec->ld;
     float prediction = 1;

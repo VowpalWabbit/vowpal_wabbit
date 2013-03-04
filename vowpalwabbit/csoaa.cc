@@ -282,6 +282,13 @@ namespace CSOAA {
     vw* all = (vw*)a;
     csoaa* c = (csoaa*)d;
     label* ld = (label*)ec->ld;
+
+    if (command_example(all, ec))
+      {
+	c->base.learn(a, c->base.data, ec);
+	return;
+      }
+
     size_t prediction = 1;
     float score = FLT_MAX;
     uint32_t current_increment = 0;
@@ -815,7 +822,6 @@ namespace LabelDict {
       }
       return;
     }
-
     /////////////////////// check for headers
     size_t K = l.ec_seq.size();
     size_t start_K = 0;
@@ -824,7 +830,6 @@ namespace LabelDict {
       for (size_t k=1; k<K; k++)
         LabelDict::add_example_namespaces_from_example(l.ec_seq[k], l.ec_seq[0]);
     }
-
 
     /////////////////////// learn
     if (l.is_wap) do_actual_learning_wap(all, l, start_K);
@@ -909,6 +914,12 @@ namespace LabelDict {
 
 
   void learn_singleline(vw& all, ldf& l, example*ec) {
+    if (command_example(&all, ec))
+      {
+	l.base.learn(&all, l.base.data, ec);
+	return;
+      }
+    
     if ((!all.training) || CSOAA::example_is_test(ec)) {
       size_t prediction = 0;
       float  min_score = FLT_MAX;
@@ -922,21 +933,12 @@ namespace LabelDict {
   }
 
   void learn_multiline(vw& all, ldf& l, example *ec) {
-    if (l.ec_seq.size() >= all.p->ring_size - 2) { // give some wiggle room
-      if (l.ec_seq[0]->pass == 0)
+    if (OAA::example_is_newline(ec) || l.ec_seq.size() >= all.p->ring_size - 2 || command_example(&all,ec)) {
+      if (l.ec_seq.size() >= all.p->ring_size - 2 && l.ec_seq[0]->pass == 0)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
+	
       do_actual_learning(all, l);
-      l.need_to_clear = true;
-    }
 
-    if (l.need_to_clear) {
-      output_example_seq(all, l);
-      clear_seq(all, l);
-      l.need_to_clear = false;
-    }
-
-    if (OAA::example_is_newline(ec)) {
-      do_actual_learning(all, l);
       if (!LabelDict::ec_seq_is_label_definition(l, l.ec_seq) && l.ec_seq.size() > 0)
         global_print_newline(all);
       if (ec->in_use)
@@ -951,6 +953,18 @@ namespace LabelDict {
     } else {
       l.ec_seq.push_back(ec);
     }
+    
+    if (l.need_to_clear) {
+      output_example_seq(all, l);
+      clear_seq(all, l);
+      l.need_to_clear = false;
+    }
+
+    if (command_example(&all, ec))
+      {
+	l.base.learn(&all, l.base.data, ec);
+	return;
+      }
   }
 
   void learn(void*a, void* d, example*ec) {
