@@ -123,7 +123,7 @@ void learn(void* a, void* d, example* ec)
   assert(ec->in_use);
   if (ec->end_pass)
     {
-      
+      sync_weights(*all);
       if(all->span_server != "") {
 	if(all->adaptive)
 	  accumulate_weighted_avg(*all, all->span_server, all->reg);
@@ -558,7 +558,6 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   uint32_t i = 0;
   size_t brw = 1;
 
-  sync_weights(all); 
   do 
     {
       brw = 1;
@@ -718,16 +717,6 @@ void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
 	    }
 	}
-    }
-  else
-    {
-      sync_weights(*all); 
-      if(all->span_server != "") {
-	if(all->adaptive)
-	  accumulate_weighted_avg(*all, all->span_server, all->reg);
-	else
-	  accumulate_avg(*all, all->span_server, all->reg, 0);
-      }
     }
 
   if (model_file.files.size() > 0)
