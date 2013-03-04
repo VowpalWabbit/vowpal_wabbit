@@ -64,6 +64,7 @@ namespace BFGS
   struct bfgs {
     double wolfe1_bound;
     
+    size_t final_pass;
     struct timeb t_start, t_end;
     double net_comm_time;
     
@@ -837,22 +838,28 @@ void learn(void* a, void* d, example* ec)
   vw* all = (vw*)a;
   bfgs* b = (bfgs*)d;
   assert(ec->in_use);
-  if (ec->pass != b->current_pass) {
-    int status = process_pass(*all, *b);
-    if (status != LEARN_OK)
-      reset_state(*all, *b, true);
-    else if (b->output_regularizer && b->current_pass==all->numpasses-1) {
-      zero_preconditioner(*all);
-      b->preconditioner_pass = true;
-    }
-  }
-  if (!command_example(all,ec))
-    {
-      if (test_example(ec))
-	ec->final_prediction = bfgs_predict(*all,ec);//w[0]
-      else
-	process_example(*all, *b, ec);
-    }
+
+  if (ec->pass <= b->final_pass +1)
+    if (ec->pass != b->current_pass) 
+      {
+	int status = process_pass(*all, *b);
+	if (status != LEARN_OK && b->final_pass > b->current_pass) {
+	  b->final_pass = b->current_pass;
+	}
+	if (b->output_regularizer && b->current_pass== b->final_pass) {
+	  zero_preconditioner(*all);
+	  b->preconditioner_pass = true;
+	}
+	
+      }
+  if (ec->pass <= b->final_pass)
+    if (!command_example(all,ec))
+      {
+	if (test_example(ec))
+	  ec->final_prediction = bfgs_predict(*all,ec);//w[0]
+	else
+	  process_example(*all, *b, ec);
+      }
 }
 
 void finish(void* a, void* d)
@@ -1010,6 +1017,7 @@ void parse_args(vw& all, std::vector<std::string>&opts, po::variables_map& vm, p
   b->first_pass = true;
   b->gradient_pass = true;
   b->preconditioner_pass = true;
+  b->final_pass=all.numpasses;  
   
   learner t = {b,drive,learn,finish,save_load};
   all.l = t;
