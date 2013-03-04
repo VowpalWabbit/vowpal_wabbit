@@ -668,7 +668,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
  * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
-void generateGrams(vw& all, size_t ngram, size_t skip_gram, example * &ex) {
+void generateGrams(vw& all, size_t ngram, size_t skip_gram, example* &ex) {
   for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
     {
       size_t length = ex->atomics[*index].size();
@@ -700,7 +700,7 @@ example* get_unused_example(vw& all)
     }
 }
 
-bool parse_atomic_example(vw& all, example *ae, bool do_read = true)
+bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 {
   if (do_read && all.p->reader(&all, ae) <= 0)
     return false;
@@ -718,6 +718,12 @@ bool parse_atomic_example(vw& all, example *ae, bool do_read = true)
     generateGrams(all, all.ngram, all.skips, ae);
     
   return true;
+}
+
+void end_pass_example(vw& all, example* ae)
+{
+  all.p->lp->default_label(ae->ld);
+  ae->pass = all.passes_complete;
 }
 
 void setup_example(vw& all, example* ae)
@@ -957,39 +963,35 @@ void *main_parse_loop(void *in)
 	vw* all = (vw*) in;
 	size_t example_number = 0;  // for variable-size batch learning algorithms
 	while(!all->p->done)
-      {
-	   example* ae = get_unused_example(*all);
-       if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  {	
+	  {
+	    example* ae = get_unused_example(*all);
+	   if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  
 	     setup_example(*all, ae);
-	     example_number++;
-	     mutex_lock(&all->p->examples_lock);
-		 all->p->parsed_examples++;
-		 condition_variable_signal_all(&all->p->example_available);
-	     mutex_unlock(&all->p->examples_lock);
-       }
-      else
-	{
-	  reset_source(*all, all->num_bits);
-	  all->do_reset_source = false;
-	  all->passes_complete++;
-	  if (all->passes_complete == all->numpasses && example_number == all->pass_length)
-	    {
-	      all->passes_complete = 0;
-	      all->pass_length = all->pass_length*2+1;
-	    }
-	  example_number = 0;
-	  if (all->passes_complete >= all->numpasses)
-	    {
-	      mutex_lock(&all->p->examples_lock);
-	      all->p->done = true;
-	      mutex_unlock(&all->p->examples_lock);
-	    }
-	  mutex_lock(&all->p->examples_lock);
-	  ae->in_use = false;
-	  condition_variable_signal_all(&all->p->example_available);
-	  mutex_unlock(&all->p->examples_lock);
-	}
-    }  
+	   else
+	     {
+	       reset_source(*all, all->num_bits);
+	       all->do_reset_source = false;
+	       all->passes_complete++;
+	       end_pass_example(*all, ae);
+	       if (all->passes_complete == all->numpasses && example_number == all->pass_length)
+		 {
+		   all->passes_complete = 0;
+		   all->pass_length = all->pass_length*2+1;
+		 }
+	       example_number = 0;
+	       if (all->passes_complete >= all->numpasses)
+		 {
+		   mutex_lock(&all->p->examples_lock);
+		   all->p->done = true;
+		   mutex_unlock(&all->p->examples_lock);
+		 }
+	     }
+	   example_number++;
+	   mutex_lock(&all->p->examples_lock);
+	   all->p->parsed_examples++;
+	   condition_variable_signal_all(&all->p->example_available);
+	   mutex_unlock(&all->p->examples_lock);
+	  }  
 	return NULL;
 }
 

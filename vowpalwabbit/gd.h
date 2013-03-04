@@ -34,7 +34,6 @@ void train_one_example_single_thread(regressor& r, example* ex);
  learner get_learner();
  void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void output_and_account_example(example* ec);
-bool command_example(vw&, example* ec);
 
 template <float (*T)(vw&,float,uint32_t)>
 float inline_predict(vw& all, example* &ec)

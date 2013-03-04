@@ -937,7 +937,7 @@ namespace LabelDict {
 
     if (OAA::example_is_newline(ec)) {
       do_actual_learning(all, l);
-      if (!LabelDict::ec_seq_is_label_definition(l, l.ec_seq))
+      if (!LabelDict::ec_seq_is_label_definition(l, l.ec_seq) && l.ec_seq.size() > 0)
         global_print_newline(all);
       if (ec->in_use)
         VW::finish_example(all, ec);
@@ -1002,7 +1002,8 @@ namespace LabelDict {
       if ((ec = get_example(all.p)) != NULL) { // semiblocking operation
         learn_multiline(all, l, ec);
         if (l.need_to_clear) {
-          output_example_seq(all, l);
+	  if (l.ec_seq.size() > 0)
+	    output_example_seq(all, l);
           clear_seq(all, l);
           l.need_to_clear = false;
         }

@@ -64,7 +64,7 @@ namespace NN {
 
   void learn_with_output(vw& all, nn& n, example* ec, bool shouldOutput)
   {
-    if (GD::command_example(all, ec)) {
+    if (command_example(&all, ec)) {
       return;
     }
 

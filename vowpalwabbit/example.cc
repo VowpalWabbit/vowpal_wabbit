@@ -101,3 +101,33 @@ namespace VW {
 }
 
 void update_example_indicies(bool audit, example* ec, uint32_t amount) { ec->ft_offset += amount; }
+
+#include "global_data.h"
+void save_predictor(vw& all, string reg_name, size_t current_pass);
+
+bool command_example(void* a, example* ec) 
+{
+  vw* all=(vw*)a;
+  if(ec->indices.size() == 0) // no features, not even constant.
+    return true;
+
+  if (ec->indices.size() > 1) // one nonconstant feature.
+    return false;
+
+  if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4) && all->current_command != ec->example_counter)
+    {//save state
+      string final_regressor_name = all->final_regressor_name;
+      
+      if ((ec->tag).size() >= 6 && (ec->tag)[4] == '_')
+	final_regressor_name = string(ec->tag.begin+5, (ec->tag).size()-5);
+      
+      if (!all->quiet)
+	cerr << "saving regressor to " << final_regressor_name << endl;
+      save_predictor(*all, final_regressor_name, 0);
+      
+      all->current_command = ec->example_counter;
+      
+      return true;
+    }
+  return false;
+}

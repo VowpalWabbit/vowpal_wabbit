@@ -138,7 +138,7 @@ void learn(void* a, void* d, example* ec)
       all->current_pass = ec->pass;
     }
   
-  if (!command_example(*all, ec))
+  if (!command_example(all, ec))
     {
       predict(*all,ec);
       if (ec->eta_round != 0.)
@@ -172,26 +172,6 @@ void sync_weights(vw& all) {
     all.reg.weight_vector[stride*i] = trunc_weight(all.reg.weight_vector[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
   all.sd->contraction = 1.;
-}
-
-bool command_example(vw& all, example* ec) {
-  if (ec->indices.size() > 1)
-    return false;
-
-  if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
-    {//save state
-      string final_regressor_name = all.final_regressor_name;
-
-      if ((ec->tag).size() >= 6 && (ec->tag)[4] == '_')
-	final_regressor_name = string(ec->tag.begin+5, (ec->tag).size()-5);
-
-      if (!all.quiet)
-	cerr << "saving regressor to " << final_regressor_name << endl;
-      save_predictor(all, final_regressor_name, 0);
-
-      return true;
-    }
-  return false;
 }
 
 float finalize_prediction(vw& all, float ret) 

@@ -63,5 +63,6 @@ namespace VW {
   void copy_example_data(example*&, example*, size_t, void(*copy_example)(void*&,void*));
 }
 void update_example_indicies(bool audit, example* ec, uint32_t amount);
+bool command_example(void*a, example* ec); 
 
 #endif

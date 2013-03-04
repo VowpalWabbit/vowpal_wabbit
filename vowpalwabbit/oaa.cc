@@ -133,6 +133,9 @@ namespace OAA {
 
   void output_example(vw& all, example* ec)
   {
+    if (command_example(&all,ec))
+      return;
+
     mc_label* ld = (mc_label*)ec->ld;
     all.sd->weighted_examples += ld->weight;
     all.sd->total_features += ec->num_features;
@@ -150,8 +153,11 @@ namespace OAA {
     print_update(all, ec);
   }
 
-  void learn_with_output(vw*all,oaa* d, example* ec, bool shouldOutput)
+  void learn_with_output(vw* all, oaa* d, example* ec, bool shouldOutput)
   {
+    if (command_example(all,ec))
+      return;
+
     mc_label* mc_label_data = (mc_label*)ec->ld;
     float prediction = 1;
     float score = INT_MIN;

@@ -220,6 +220,7 @@ vw::vw()
   reg_mode = 0;
 
   current_pass = 0;
+  current_command = 0;
 
   bfgs = false;
   hessian_on = false;

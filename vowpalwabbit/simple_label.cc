@@ -192,7 +192,8 @@ void output_and_account_example(vw& all, example* ec)
 
 void return_simple_example(vw& all, example* ec)
 {
-  output_and_account_example(all, ec);
+  if (!command_example(&all, ec))
+    output_and_account_example(all, ec);
   VW::finish_example(all,ec);
 }
 

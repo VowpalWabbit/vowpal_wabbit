@@ -269,7 +269,7 @@ float mf_predict(vw& all, example* ex)
       all->eta *= all->eta_decay_rate;
       *current_pass = ec->pass;
     }
-    if (!GD::command_example(*all, ec))
+    if (!command_example(all, ec))
       {
 	mf_predict(*all,ec);
 	if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)

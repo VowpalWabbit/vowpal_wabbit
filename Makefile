@@ -22,7 +22,7 @@ ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
 
-OPTIM_FLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing -ffast-math #uncomment for speed, comment for testability
+OPTIM_FLAGS = -O0 -fomit-frame-pointer -fno-strict-aliasing -ffast-math #uncomment for speed, comment for testability
 ifeq ($(UNAME), FreeBSD)
 
 WARN_FLAGS = -Wall
@@ -31,13 +31,13 @@ WARN_FLAGS = -Wall -pedantic
 endif
 
 # for normal fast execution.
-FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
+#FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
 
 # for profiling
 #FLAGS = $(ARCH) $(WARN_FLAGS) -O3 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg #-DVW_LDA_NO_SSE
 
 # for valgrind
-#FLAGS = $(ARCH) $(WARN_FLAGS) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
+FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
 #FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
