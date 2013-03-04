@@ -1284,42 +1284,42 @@ namespace Searn
       do_actual_learning(all, s);
     } else {  
       // is multiline
-      if (s.ec_seq.size() >= all.p->ring_size - 2) { // give some wiggle room
+      if (ec->end_pass || OAA::example_is_newline(ec) || s.ec_seq.size() >= all.p->ring_size - 2) { // give some wiggle room
+	if (s.ec_seq.size() >= all.p->ring_size - 2)
         std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
         do_actual_learning(all, s);
-      }
-
-      if (OAA::example_is_newline(ec)) {
-        do_actual_learning(all, s);
-        //CSOAA_LDF::global_print_newline(all);
+	
+	if (ec->end_pass)
+	  {
+	    is_real_example = false;
+	    s.read_example_last_pass++;
+	    s.passes_since_new_policy++;
+	    if (s.passes_since_new_policy >= s.passes_per_policy) {
+	      s.passes_since_new_policy = 0;
+	      if(all.training)
+		s.current_policy++;
+	      if (s.current_policy > s.total_number_of_policies) {
+		std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
+		s.current_policy = s.total_number_of_policies;
+	      }
+	      //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
+	      std::stringstream ss;
+	      ss << s.current_policy;
+	      VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss.str());
+	    }
+	  }
+	
 	VW::finish_example(all, ec);
         is_real_example = false;
-      } else {
-        s.ec_seq.push_back(ec);
       }
+      else
+	s.ec_seq.push_back(ec);
     }
-
+    
     // for both single and multiline
     if (is_real_example) {
       s.read_example_this_loop++;
       s.read_example_last_id = ec->example_counter;
-      if (ec->end_pass) {
-        s.read_example_last_pass++;
-        s.passes_since_new_policy++;
-        if (s.passes_since_new_policy >= s.passes_per_policy) {
-          s.passes_since_new_policy = 0;
-          if(all.training)
-            s.current_policy++;
-          if (s.current_policy > s.total_number_of_policies) {
-            std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
-            s.current_policy = s.total_number_of_policies;
-          }
-          //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
-          std::stringstream ss;
-          ss << s.current_policy;
-          VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss.str());
-        }
-      }
     }
   }
 
@@ -1805,26 +1805,14 @@ namespace ImperativeSearn {
     vw* all = (vw*)in;
     searn *srn = (searn*)d;
 
-    if (srn->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
-      std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
-      do_actual_learning(*all, *srn);
-      clear_seq(*all, *srn);
-    }
-    
     bool is_real_example = true;
+    if (ec->end_pass || OAA::example_is_newline(ec) || srn->ec_seq.size() >= all->p->ring_size - 2) { 
+      if (srn->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
+	std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
+    }
 
-    if (OAA::example_is_newline(ec)) {
       do_actual_learning(*all, *srn);
       clear_seq(*all, *srn);
-      VW::finish_example(*all, ec);
-      is_real_example = false;
-    } else {
-      srn->ec_seq.push_back(ec);
-    }
-        
-    if (is_real_example) {
-      srn->read_example_this_loop++;
-      srn->read_example_last_id = ec->example_counter;
       if (ec->end_pass) {
         srn->read_example_last_pass++;
         srn->passes_since_new_policy++;
@@ -1842,9 +1830,19 @@ namespace ImperativeSearn {
           VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss.str());
         }
       }
+      
+      VW::finish_example(*all, ec);
+      is_real_example = false;
+    } else {
+      srn->ec_seq.push_back(ec);
+    }
+    
+    if (is_real_example) {
+      srn->read_example_this_loop++;
+      srn->read_example_last_id = ec->example_counter;
     }
   }
-
+  
   void searn_drive(void*in, void *d) {
     vw* all = (vw*)in;
     searn *srn = (searn*)d;
