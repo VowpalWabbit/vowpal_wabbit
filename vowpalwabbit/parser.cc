@@ -54,6 +54,7 @@ namespace po = boost::program_options;
 #include "unique_sort.h"
 #include "constant.h"
 #include "example.h"
+#include "simple_label.h"
 #include "vw.h"
 
 using namespace std;
@@ -841,7 +842,7 @@ namespace VW{
     ec->total_sum_feat_sq++;
     ec->num_features++;
   }
-#include "simple_label.h"
+
   void add_label(example* ec, float label, float weight, float base)
   {
     label_data* l = (label_data*)ec->ld;
