@@ -669,15 +669,15 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
  * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
-void generateGrams(vw& all, size_t ngram, size_t skip_gram, example* &ex) {
+void generateGrams(vw& all, example* &ex) {
   for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
     {
       size_t length = ex->atomics[*index].size();
-      for (size_t n = 1; n < ngram; n++)
+      for (size_t n = 1; n < all.ngram[*index]; n++)
 	{
 	  all.p->gram_mask.erase();
 	  all.p->gram_mask.push_back((size_t)0);
-	  addgrams(all, n, skip_gram, ex->atomics[*index], 
+	  addgrams(all, n, all.skips[*index], ex->atomics[*index], 
 		   ex->audit_features[*index], 
 		   length, all.p->gram_mask, 0);
 	}
@@ -715,9 +715,6 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
       cache_features(*(all.p->output), ae);
     }
 
-  if(all.ngram > 1)
-    generateGrams(all, all.ngram, all.skips, ae);
-    
   return true;
 }
 
@@ -754,6 +751,9 @@ void setup_example(vw& all, example* ae)
 	    i--;
 	  }
     }
+
+  if(all.ngram_strings.size() > 0)
+    generateGrams(all, ae);    
 
   if (all.add_constant) {
     //add constant feature
@@ -1069,7 +1069,7 @@ void free_parser(vw& all)
   all.p->words.delete_v();
   all.p->name.delete_v();
 
-  if(all.ngram > 1)
+  if(all.ngram_strings.size() > 0)
     all.p->gram_mask.delete_v();
   
   for (size_t i = 0; i < all.p->ring_size; i++) 

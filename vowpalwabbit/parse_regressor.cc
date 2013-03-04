@@ -131,10 +131,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			    buff,text_len, text);
       for (size_t i = 0; i < triple_len; i++)
 	{
-	  text_len = sprintf(buff, "%s ", all.triples[i].c_str());
 	  char triple[3];
 	  if (!read)
-	    memcpy(triple, all.triples[i].c_str(), 3);
+	    {
+	      text_len = sprintf(buff, "%s ", all.triples[i].c_str());
+	      memcpy(triple, all.triples[i].c_str(), 3);
+	    }
 	  bin_text_read_write_fixed(model_file,triple,3, 
 				    "", read,
 				    buff,text_len,text);
@@ -158,15 +160,60 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				buff, text_len,text);
       
-      text_len = sprintf(buff, "ngram:%d\n", (int)all.ngram); 
-      bin_text_read_write_fixed(model_file,(char*)&all.ngram, sizeof(all.ngram), 
+      uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
+      text_len = sprintf(buff, "%d ngram: ", (int)ngram_len);
+      bin_text_read_write_fixed(model_file,(char *)&ngram_len, sizeof(ngram_len), 
 				"", read, 
-				buff, text_len, text);
+				buff,text_len, text);
+      for (size_t i = 0; i < ngram_len; i++)
+	{
+	  char ngram[3];
+	  if (!read) {
+	    text_len = sprintf(buff, "%s ", all.ngram_strings[i].c_str());
+	    memcpy(ngram, all.ngram_strings[i].c_str(), min(3, all.ngram_strings[i].size()));
+	  }
+	  bin_text_read_write_fixed(model_file,ngram,3, 
+				    "", read,
+				    buff,text_len,text);
+	  if (read)
+	    {
+	      string temp(ngram,3);
+	      all.ngram_strings.push_back(temp);
+	    }
+	}
+      if(read)
+	compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
       
-      text_len = sprintf(buff, "skips:%d\n", (int)all.skips);
-      bin_text_read_write_fixed(model_file,(char*)&all.skips, sizeof(all.skips), 
+      bin_text_read_write_fixed(model_file,buff,0,
 				"", read, 
-				buff, text_len, text);
+				"\n",1, text);
+      
+      uint32_t skip_len = (uint32_t)all.skip_strings.size();
+      text_len = sprintf(buff, "%d skip: ", (int)skip_len);
+      bin_text_read_write_fixed(model_file,(char *)&skip_len, sizeof(skip_len), 
+				"", read, 
+				buff,text_len, text);
+      for (size_t i = 0; i < skip_len; i++)
+	{
+	  char skip[3];
+	  if (!read) {
+	    text_len = sprintf(buff, "%s ", all.skip_strings[i].c_str());
+	    memcpy(skip, all.skip_strings[i].c_str(), min(3, all.skip_strings[i].size()));
+	  }
+	  bin_text_read_write_fixed(model_file,skip,3, 
+				    "", read,
+				    buff,text_len,text);
+	  if (read)
+	    {
+	      string temp(skip,3);
+	      all.skip_strings.push_back(temp);
+	    }
+	}
+      if(read)
+	compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
+      bin_text_read_write_fixed(model_file,buff,0,
+				"", read, 
+				"\n",1, text);
       
       text_len = sprintf(buff, "options:%s\n", all.options_from_file.c_str());
       uint32_t len = (uint32_t)all.options_from_file.length()+1;

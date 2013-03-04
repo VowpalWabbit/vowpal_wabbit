@@ -206,6 +206,30 @@ void vw::learn(void* a, example* ec)
   all->l.learn(a,all->l.data,ec);
 }
 
+void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
+{
+  for (size_t i = 0; i < grams.size(); i++)
+    {
+      string ngram = grams[i];
+      if ( isdigit(ngram[0]) )
+	{
+	  int n = atoi(ngram.c_str());
+	  if (!quiet)
+	    cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << endl;
+	  for (size_t j = 0; j < 256; j++)
+	    dest[j] = n;
+	}
+      else if ( ngram.size() == 1)
+	cout << "You must specify the namespace index before the n" << endl;
+      else {
+	int n = atoi(ngram.c_str()+1);
+	dest[(uint32_t)ngram[0]] = n;
+	if (!quiet)
+	  cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << endl;
+      }
+    }
+}
+
 vw::vw()
 {
   sd = (shared_data *) calloc(1, sizeof(shared_data));
@@ -281,8 +305,11 @@ vw::vw()
   total = 1;
   node = 0;
 
-  ngram = 0;
-  skips = 0;
+  for (size_t i = 0; i < 256; i++)
+    {
+      ngram[i] = 0;
+      skips[i] = 0;
+    }
 
   //by default use invariant normalized adaptive updates
   adaptive = true;

@@ -186,8 +186,11 @@ struct vw {
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
-  size_t ngram;//ngrams to generate.
-  size_t skips;//skips in ngrams.
+
+  std::vector<std::string> ngram_strings; // pairs of features to cross.
+  std::vector<std::string> skip_strings; // triples of features to cross.
+  uint32_t ngram[256];//ngrams to generate.
+  uint32_t skips[256];//skips in ngrams.
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
@@ -250,5 +253,6 @@ void active_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, float label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
+void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
 
 #endif

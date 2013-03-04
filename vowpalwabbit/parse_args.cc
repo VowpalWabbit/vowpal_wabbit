@@ -140,8 +140,8 @@ vw parse_args(int argc, char *argv[])
     ("node", po::value<size_t>(&all.node),"node number in cluster parallel job")    
 
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
-    ("ngram", po::value<size_t>(), "Generate N grams")
-    ("skips", po::value<size_t>(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
+    ("ngram", po::value< vector<string> >(), "Generate N grams")
+    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
 
   //po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
@@ -251,29 +251,26 @@ vw parse_args(int argc, char *argv[])
 
 
   if(vm.count("ngram")){
-    all.ngram = vm["ngram"].as<size_t>();
-    if(!vm.count("skip_gram")) cerr << "You have chosen to generate " << all.ngram << "-grams" << endl;
     if(vm.count("sort_features"))
       {
 	cerr << "ngram is incompatible with sort_features.  " << endl;
 	throw exception();
       }
+
+    all.ngram_strings = vm["ngram"].as< vector<string> >();
+    compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
   }
+
   if(vm.count("skips"))
     {
-    all.skips = vm["skips"].as<size_t>();
-    if(!vm.count("ngram"))
-      {
-	cout << "You can not skip unless ngram is > 1" << endl;
-	throw exception();
-      }
-    cerr << "You have chosen to generate " << all.skips << "-skip-" << all.ngram << "-grams" << endl;
-    if(all.skips > 4)
-      {
-      cout << "*********************************" << endl;
-      cout << "Generating these features might take quite some time" << endl;
-      cout << "*********************************" << endl;
-      }
+      if(!vm.count("ngram"))
+	{
+	  cout << "You can not skip unless ngram is > 1" << endl;
+	  throw exception();
+	}
+      
+      all.skip_strings = vm["skips"].as<vector<string> >();
+      compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
     }
   if (vm.count("bit_precision"))
     {
