@@ -1,0 +1,8 @@
+#! /bin/zsh
+
+paste -d' '					\
+  <(bzcat dna_train.lab.bz2) 			\
+  <(bzcat dna_train.dat.bz2) |	                \
+head -n +1000000 |				\
+./quaddna2vw |                                  \
+../../vowpalwabbit/vw -t --loss_function logistic -i $1 -p $2
