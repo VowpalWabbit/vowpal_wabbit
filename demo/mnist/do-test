@@ -21,4 +21,4 @@ test -e t10k-images-idx3-ubyte.gz || {
 paste -d' '                                                     \
   <(zcat t10k-labels-idx1-ubyte.gz | ./extract-labels)          \
   <(zcat t10k-images-idx3-ubyte.gz | ./extractfeatures) |       \
-vw -t -i $1.model -p $1.test.predictions
+../../vowpalwabbit/vw -t -i $1.model -p $1.test.predictions

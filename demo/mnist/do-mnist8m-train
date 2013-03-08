@@ -15,7 +15,7 @@ test -e train8m-labels-idx1-ubyte.gz || {
 paste -d' '                                                             \
   <(gunzip -dc train8m-labels-idx1-ubyte.gz | ./extract-labels)         \
   <(gunzip -dc train8m-images-idx3-ubyte.gz | ./extractfeatures) |      \
-time vw --oaa 10 -f mnist8m.model                                       \
+time ../../vowpalwabbit/vw --oaa 10 -f mnist8m.model                    \
    --loss_function logistic                                             \
    -b 24 --adaptive --invariant                                         \
    -l 1 --nn 49
