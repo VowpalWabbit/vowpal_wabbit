@@ -1,5 +1,5 @@
   * make mnist8m.test.confusion
-      this will download the original and mnist8m data sets, 
+      this will download the mnist test set and the mnist8m training set
       train a (neural network) model on mnist8m, evaluate on the 
       original mnist test set and report a confusion matrix
       results in test errors: 107 out of 10000
