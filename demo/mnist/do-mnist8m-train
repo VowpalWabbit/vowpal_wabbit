@@ -1,0 +1,21 @@
+#! /bin/zsh
+
+test -e train8m-images-idx3-ubyte.gz || {
+  echo "ERROR: you need to download train8m-image-idx3-ubyte.gz" 1>&2
+  echo "ERROR: from http://ml.nec-labs.com/download/data/mnist8m/train8m-images-idx3-ubyte.gz" 1>&2
+  exit 1
+}
+
+test -e train8m-labels-idx1-ubyte.gz || {
+  echo "ERROR: you need to download train8m-labels-idx1-ubyte.gz" 1>&2
+  echo "ERROR: from http://ml.nec-labs.com/download/data/mnist8m/train8m-labels-idx1-ubyte.gz" 1>&2
+  exit 1
+}
+
+paste -d' '                                                             \
+  <(gunzip -dc train8m-labels-idx1-ubyte.gz | ./extract-labels)         \
+  <(gunzip -dc train8m-images-idx3-ubyte.gz | ./extractfeatures) |      \
+time vw --oaa 10 -f mnist8m.model                                       \
+   --loss_function logistic                                             \
+   -b 24 --adaptive --invariant                                         \
+   -l 1 --nn 49
