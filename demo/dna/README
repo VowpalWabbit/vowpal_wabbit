@@ -4,8 +4,9 @@ Scale Learning Challenge (http://largescale.ml.tu-berlin.de/summary/).
 === WARNINGS ===
 
   * you need a beefy machine to comfortably run these demos 
-      SSD or lots of RAM helps because the demo is I/O bound
-  * it will work under cygwin, but intolerably slowly (pipes are slow)
+      4 cores or more
+      SSD or lots of RAM because the demo is I/O bound
+  * the demos are intolerably slow under cygwin (pipes do not work well)
 
 === INSTRUCTIONS ===
 
@@ -13,14 +14,14 @@ Scale Learning Challenge (http://largescale.ml.tu-berlin.de/summary/).
       downloads the dna dataset, trains a 4-gram logistic regression
       in parallel on 4 cores and computes test set statistics
         disk space requirements: about 3 gigabytes
-        training time requirements: about 7 cores for about 16 minutes
+        training time requirements: about 7 cores for about 15 minutes
           ultimately I/O bound: bzcat is the limiting factor
         memory requirements: less than 512 megabytes
       results in APR of 0.512
 
   * make dnann.perf
       as above but with additionally 4 neural network nodes
-      slightly slower (circa 30 seconds slower) and slightly better
+      slower (by circa 60 seconds) but better
       results in APR of 0.522
 
   * make dnasmash.perf

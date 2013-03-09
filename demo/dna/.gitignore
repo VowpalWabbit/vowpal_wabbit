@@ -4,3 +4,4 @@ quaddna2vw
 *.model
 *cache*
 *.predictions
+*.pid
