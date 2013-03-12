@@ -14,7 +14,7 @@ testclean:
 	rm -f $(wildcard *.test.predictions)
 
 clean:
-	rm -f $(wildcard mnistpng.*) $(wildcard mnist8m.*)
+	rm -f $(wildcard mnist11png.*) $(wildcard mnistpng.*) $(wildcard mnist8m.*)
 
 train8m-%.gz: wget.check
 	wget http://ml.nec-labs.com/download/data/mnist8m/train8m-$*.gz
@@ -31,11 +31,8 @@ extractpixels: extractpixels.cpp
 
 extractfeatures: extractfeatures.cpp
 
-mnistpng.model: train-labels-idx1-ubyte.gz train-images-idx3-ubyte.gz extractpixels zsh.check perl.check paste.check
-	./do-mnistpng-train
-
-mnist8mpng.model: train8m-labels-idx1-ubyte.gz train8m-images-idx3-ubyte.gz extractpixels zsh.check perl.check paste.check
-	./do-mnist8mpng-train
+%png.model: train-labels-idx1-ubyte.gz train-images-idx3-ubyte.gz extractpixels zsh.check perl.check paste.check
+	./do-$*png-train
 
 mnist8m.model: train8m-labels-idx1-ubyte.gz train8m-images-idx3-ubyte.gz extractfeatures zsh.check perl.check paste.check
 	./do-mnist8m-train
