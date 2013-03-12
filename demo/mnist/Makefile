@@ -31,7 +31,7 @@ extractpixels: extractpixels.cpp
 
 extractfeatures: extractfeatures.cpp
 
-%png.model: train-labels-idx1-ubyte.gz train-images-idx3-ubyte.gz extractpixels zsh.check perl.check paste.check
+%png.model: train-labels-idx1-ubyte.gz train-images-idx3-ubyte.gz extractpixels pixelngrams zsh.check perl.check paste.check
 	./do-$*png-train
 
 mnist8m.model: train8m-labels-idx1-ubyte.gz train8m-images-idx3-ubyte.gz extractfeatures zsh.check perl.check paste.check
