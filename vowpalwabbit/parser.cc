@@ -746,7 +746,7 @@ void setup_example(vw& all, example* ae)
 	if (all.ignore[*i])
 	  {//delete namespace
 	    ae->atomics[*i].erase();
-	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(size_t));
+	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(*i));
 	    ae->indices.end--;
 	    i--;
 	  }
