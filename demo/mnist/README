@@ -11,14 +11,14 @@ the original mnist training set augmented with deformations.
       evaluate on the original mnist test set and report a confusion matrix
       results in test errors: 175 out of 10000
         disk requirements: about 10 megabytes
-        training time requirements: about 90 seconds on 1.5 cores
+        training time requirements: about 100 seconds on 1.5 cores
         memory requirements: less than 256 megabytes
 
   * make mnist11png.test.confusion
       ibid with 1 neural network hidden unit ("goes to eleven")
       results in test errors: 163 out of 10000
         disk requirements: about 10 megabytes
-        training time requirements: about 90 seconds on 1.5 cores
+        training time requirements: about 110 seconds on 1.5 cores
         memory requirements: less than 256 megabytes
 
   * make mnist8m.test.confusion
