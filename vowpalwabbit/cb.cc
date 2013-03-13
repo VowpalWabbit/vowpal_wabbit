@@ -25,6 +25,9 @@ namespace CB
     float last_correct_cost;
     bool first_print_call;
 
+    float min_cost;
+    float max_cost;
+
     learner base;
   };
 
@@ -237,7 +240,6 @@ namespace CB
         if( cl_obs != NULL && i == cl_obs->weight_index )
         {
           wc.x = cl_obs->x / cl_obs->prob_action; //use importance weighted cost for observed action, 0 otherwise 
-
           //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
           //update the loss of this regressor 
           c.nb_ex_regressors++;
@@ -277,6 +279,22 @@ namespace CB
 
   }
 
+  void call_scorer(vw& all, cb& c, example* ec, uint32_t index)
+  {
+    uint32_t desired_increment = c.increment * (2*index-1);
+   
+    float old_min = all.sd->min_label;
+    all.sd->min_label = c.min_cost;
+    float old_max = all.sd->max_label;
+    all.sd->max_label = c.max_cost;
+    update_example_indicies(all.audit, ec, desired_increment);
+    ec->partial_prediction = 0.;
+    all.scorer.learn(&all, all.scorer.data, ec);
+    all.sd->min_label = old_min;
+    all.sd->max_label = old_max;
+    update_example_indicies(all.audit, ec, -desired_increment);
+  }
+  
   float get_cost_pred(vw& all, cb& c, example* ec, uint32_t index)
   {
     CB::label* ld = (CB::label*)ec->ld;
@@ -289,15 +307,10 @@ namespace CB
     ec->ld = &simple_temp;
     ec->partial_prediction = 0.;
 
-    uint32_t desired_increment = c.increment * (2*index-1);
-    
-    update_example_indicies(all.audit, ec, desired_increment);
-    all.scorer.learn(&all, all.scorer.data, ec);
-    update_example_indicies(all.audit, ec, -desired_increment);
-
+    call_scorer(all, c, ec, index);
     ec->ld = ld;
 
-    float cost = ec->partial_prediction;
+    float cost = ec->final_prediction;
     ec->partial_prediction = 0.;
 
     return cost;
@@ -393,7 +406,7 @@ namespace CB
     CB::label* ld = (CB::label*)ec->ld;
 
     cb_class* cl_obs = get_observed_cost(ld);
-
+    
     //generate cost sensitive example
     cs_ld.costs.erase();  
     if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
@@ -552,6 +565,9 @@ namespace CB
     }
 
     //now this is a training example
+    cb_class* cl_obs = get_observed_cost(ld);
+    c->min_cost = min (c->min_cost, cl_obs->x);
+    c->max_cost = max (c->max_cost, cl_obs->x);
     
     //generate a cost-sensitive example to update classifiers
     switch(c->cb_type)
@@ -595,11 +611,7 @@ namespace CB
 
 	ec->ld = &simple_temp;
 
-        uint32_t desired_increment = c->increment * (2*i-1);
-        update_example_indicies(all->audit, ec, desired_increment);
-        ec->partial_prediction = 0.;
-        all->scorer.learn(all, all->scorer.data, ec);
-        update_example_indicies(all->audit, ec, -desired_increment);
+	call_scorer(*all, *c, ec, i);
 
         ec->ld = ld;
       }
@@ -653,15 +665,10 @@ namespace CB
         size_t pred = (size_t)ec->final_prediction;
 
         float chosen_loss = FLT_MAX;
-        float min = FLT_MAX;
         if( know_all_cost_example(ld) ) {
           for (cb_class *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
             if (cl->weight_index == pred)
               chosen_loss = cl->x;
-            if (cl->x < min)
-            {
-              min = cl->x;
-            }
           }
         }
         else {
@@ -669,16 +676,12 @@ namespace CB
           for (CSOAA::wclass *cl = c.cb_cs_ld.costs.begin; cl != c.cb_cs_ld.costs.end; cl ++) {
             if (cl->weight_index == pred)
               chosen_loss = cl->x;
-            if (cl->x < min)
-            {
-              min = cl->x;
-            }
           }
         }
         if (chosen_loss == FLT_MAX)
           cerr << "warning: cb predicted an invalid class" << endl;
 
-        loss = chosen_loss - min;
+        loss = chosen_loss;
       }
 
     all.sd->sum_loss += loss;
@@ -728,6 +731,8 @@ namespace CB
   {
     cb* c = (cb*)calloc(1, sizeof(cb));
     c->first_print_call = true;
+    c->min_cost = 0.;
+    c->max_cost = 1.;
     po::options_description desc("CB options");
     desc.add_options()
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
