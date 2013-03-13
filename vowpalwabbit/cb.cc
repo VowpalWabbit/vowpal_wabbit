@@ -288,7 +288,6 @@ namespace CB
     float old_max = all.sd->max_label;
     all.sd->max_label = c.max_cost;
     update_example_indicies(all.audit, ec, desired_increment);
-    ec->partial_prediction = 0.;
     all.scorer.learn(&all, all.scorer.data, ec);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
@@ -305,13 +304,11 @@ namespace CB
     simple_temp.weight = 0.;
 
     ec->ld = &simple_temp;
-    ec->partial_prediction = 0.;
 
     call_scorer(all, c, ec, index);
     ec->ld = ld;
 
     float cost = ec->final_prediction;
-    ec->partial_prediction = 0.;
 
     return cost;
   }
@@ -343,7 +340,6 @@ namespace CB
         CSOAA::wclass wc;
         wc.wap_value = 0.;
 
-        ec->partial_prediction = 0.;
         desired_increment = c.increment * (2*i-1);
         update_example_indicies(all.audit, ec, desired_increment-current_increment);
         current_increment = desired_increment;
@@ -372,7 +368,6 @@ namespace CB
         CSOAA::wclass wc;
         wc.wap_value = 0.;
 
-        ec->partial_prediction = 0.;
         desired_increment = c.increment * (2*cl->weight_index-1);
         update_example_indicies(all.audit, ec, desired_increment-current_increment);
         current_increment = desired_increment;
@@ -396,7 +391,6 @@ namespace CB
     }
 
     ec->ld = ld;
-    ec->partial_prediction = 0.;
     update_example_indicies(all.audit, ec, -current_increment);
   }
 
@@ -588,7 +582,6 @@ namespace CB
 
     //update classifiers with cost-sensitive exemple
     ec->ld = &c->cb_cs_ld;
-    ec->partial_prediction = 0.;
     c->base.learn(all,c->base.data,ec);
     ec->ld = ld;
 

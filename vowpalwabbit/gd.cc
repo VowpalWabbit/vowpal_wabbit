@@ -544,7 +544,7 @@ void predict(vw& all, example* ex)
       prediction = inline_predict<vec_add>(all, ex);
   }
 
-  ex->partial_prediction += prediction;
+  ex->partial_prediction = prediction;
 
   local_predict(all, ex);
   ex->done = true;
