@@ -19,9 +19,9 @@ SHUFFLE='BEGIN { srand 69; };
 
 paste -d' '                                                             \
   <(zcat train-labels-idx1-ubyte.gz | ./extract-labels)                 \
-  <(zcat train-images-idx3-ubyte.gz |                                   \
-    ./extractpixels | ./pixelngrams) |                                  \
+  <(zcat train-images-idx3-ubyte.gz | ./extractpixels) |                \
 perl -ne ${SHUFFLE} |                                                   \
+./roundrobin ./pixelngrams 2 |                                          \
 time ../../vowpalwabbit/vw --oaa 10 -f mnistpng.model                   \
    -b 20 --adaptive --invariant                                         \
    -l 0.05 --passes 15 -k --compressed --cache_file mnistpng.cache &&   \

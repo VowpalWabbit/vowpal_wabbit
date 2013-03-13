@@ -58,6 +58,7 @@ main (void)
   using std::cout;
   using std::getline;
   using std::endl;
+  using std::flush;
   using std::string;
 
   size_t n_rows = 28;
@@ -77,6 +78,15 @@ main (void)
           unsigned int value;
           size_t start = 0;
           int increment;
+
+          char* pipe = const_cast<char*> (strchr (line.c_str (), '|'));
+
+          if (pipe)
+            {
+              *pipe++ = '\0';
+              cout << line.c_str ();
+              start = pipe - line.c_str ();
+            }
 
           ::memset (buf, 0, n_rows * n_columns * sizeof (buf[0]));
 
@@ -111,7 +121,7 @@ main (void)
               offset += 13;
             }
     
-          cout << endl;
+          cout << endl << flush;
         }
     }
 
