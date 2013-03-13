@@ -61,7 +61,7 @@ void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++) {
         uint32_t halfhash = quadratic_constant * (f0->weight_index + offset);
         for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
-          T(all, f1->x, f1->weight_index + halfhash + offset, avg_norm, f0->x * update);
+          T(all, f0->x * f1->x, f1->weight_index + halfhash + offset, avg_norm, update);
       }
 
   for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
@@ -101,7 +101,7 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
-  if(all.normalized_updates) inv_norm /= (w[all.normalized_idx] * avg_norm);
+  if(all.normalized_updates) x *= sqrt (all.global_ugly_hack / w[all.normalized_idx]) / avg_norm;
   if(all.adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
@@ -120,6 +120,7 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
 void learn(void* a, void* d, example* ec)
 {
   vw* all = (vw*)a;
+  all->global_ugly_hack = ec->example_t;
   assert(ec->in_use);
   if (ec->end_pass)
     {
@@ -329,10 +330,10 @@ void print_audit_features(vw& all, example* ec)
 }
 
 template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
-void norm_add(vw& all, feature* begin, feature* end, float g, float& norm, float& norm_x, uint32_t offset=0)
+void norm_add(vw& all, feature* begin, feature* end, float g, float& norm, float& norm_x, uint32_t offset=0,float mult=1.)
 {
   for (feature* f = begin; f!= end; f++)
-    T(all, f->x, f->weight_index + offset, g, norm, norm_x);
+    T(all, mult*f->x, f->weight_index + offset, g, norm, norm_x);
 }
 
 template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
@@ -341,9 +342,9 @@ void norm_add_quad(vw& all, feature& f0, v_array<feature> &cross_features, float
   uint32_t halfhash = quadratic_constant * (f0.weight_index + offset);
   float norm_new = 0.f;
   float norm_x_new = 0.f;
-  norm_add<T>(all, cross_features.begin, cross_features.end, g * f0.x * f0.x, norm_new, norm_x_new, halfhash + offset);
-  norm   += norm_new   * f0.x * f0.x;
-  norm_x += norm_x_new * f0.x * f0.x;
+  norm_add<T>(all, cross_features.begin, cross_features.end, g, norm_new, norm_x_new, halfhash + offset, f0.x);
+  norm   += norm_new;
+  norm_x += norm_x_new;
 }
 
 template <void (*T)(vw&,float,uint32_t,float,float&,float&)>
@@ -364,9 +365,8 @@ inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& n
   float inv_norm = 1.f;
   float inv_norm2 = 1.f;
   if(all.normalized_updates) {
-    inv_norm /= w[all.normalized_idx];
-    inv_norm2 = inv_norm*inv_norm;
-    norm_x += x2 * inv_norm2;
+    x2 *= all.global_ugly_hack / w[all.normalized_idx];
+    norm_x += x2;
   }
   if(all.adaptive){
     w[1] += g * x2;
