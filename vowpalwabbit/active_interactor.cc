@@ -1,0 +1,142 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
+#include <iostream>
+#include <string>
+#include <cstring>
+#include <cstdlib>
+#ifdef _WIN32
+#include <WinSock2.h>
+#else
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <netdb.h>
+#endif
+
+using std::cin;
+using std::endl;
+using std::cout;
+using std::cerr;
+using std::string;
+
+using namespace std;
+
+int open_socket(const char* host, unsigned short port)
+{
+  hostent* he;
+  he = gethostbyname(host);
+
+  if (he == NULL)
+    {
+      cerr << "can't resolve hostname: " << host << endl;
+      throw exception();
+    }
+  int sd = socket(PF_INET, SOCK_STREAM, 0);
+  if (sd == -1)
+    {
+      cerr << "can't get socket " << endl;
+      throw exception();
+    }
+  sockaddr_in far_end;
+  far_end.sin_family = AF_INET;
+  far_end.sin_port = htons(port);
+  far_end.sin_addr = *(in_addr*)(he->h_addr);
+  memset(&far_end.sin_zero, '\0',8);
+  if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
+    {
+      cerr << "can't connect to: " << host << ':' << port << endl;
+      throw exception();
+    }
+  return sd;
+}
+
+int recvall(int s, char* buf, int n){
+    int total=0;
+    int ret=recv(s, buf, n, 0);
+    while(ret>0 && total<n){
+        total+=ret;
+        if(buf[total-1]=='\n')
+            break;
+        ret=recv(s, buf+total, n, 0);
+    }
+    return total;
+}
+
+int main(int argc, char* argv[]){
+    char buf[256]; 
+    char* toks,*itok;
+    const char* host="localhost";
+    unsigned short port=~0;
+    ssize_t pos;
+    int s,ret,queries=0;
+    string line;
+    
+    if(argc>1){
+        host = argv[1];
+    }
+    if(argc>2){
+        port=atoi(argv[2]);
+    }
+    if(port <= 1024 || port==(unsigned short)(~0)){
+        port = 26542;
+    }
+    
+    s=open_socket(host, port);
+    size_t id=0;
+    ret=send(s,&id,sizeof(id),0);
+    if(ret<0){
+        cerr << "Could not perform handshake!" << endl;
+        throw exception();
+    }
+    
+    while(getline(cin,line)){
+        line.append("\n");
+        int len=line.size();
+        const char* cstr = line.c_str();
+        const char* sp = strchr(cstr,' ');
+        ret=send(s,sp,len-(sp-cstr),0);
+        if(ret<0){
+            cerr << "Could not send unlabeled data!" << endl;
+            throw exception();
+        }
+        ret=recvall(s, buf, 256);
+        if(ret<0){
+            cerr << "Could not receive queries!" << endl;
+            throw exception();
+        }
+        buf[ret]='\0';
+        toks=&buf[0];
+        strsep(&toks," ");
+        strsep(&toks," ");
+        itok=strsep(&toks,"\n");
+        if(itok==NULL || itok[0]=='\0'){
+            continue;
+        }
+
+        queries+=1;
+        string imp=string(itok)+" |";
+        pos = line.find_first_of ("|");
+        line.replace(pos,1,imp); 
+        cstr = line.c_str();
+        len = line.size();
+        ret = send(s,cstr,len,0);
+        if(ret<0){
+            cerr << "Could not send labeled data!" << endl;
+            throw exception();
+        }
+        ret=recvall(s, buf, 256);
+        if(ret<0){
+            cerr << "Could not receive predictions!" << endl;
+            throw exception();
+        }
+    }
+    close(s);
+    cout << "Went through the data by doing " << queries << " queries" << endl;
+    return 0;
+}
+

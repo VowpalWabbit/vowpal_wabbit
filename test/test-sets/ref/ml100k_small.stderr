@@ -1,0 +1,23 @@
+only testing
+Num weight bits = 16
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+rank = 10
+using no cache
+Reading datafile = test-sets/ml100k_small_test
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+2.640166   2.640166            3         3.0   5.0000   3.3590       23
+1.539937   0.439708            6         6.0   4.0000   3.3826       23
+1.467355   1.380256           11        11.0   1.0000   3.3434       23
+1.178384   0.889414           22        22.0   3.0000   3.3272       23
+
+finished run
+number of examples = 30
+weighted example sum = 30
+weighted label sum = 110
+average loss = 1.399
+best constant = 3.759
+total feature number = 690

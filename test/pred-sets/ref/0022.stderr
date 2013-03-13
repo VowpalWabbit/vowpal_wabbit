@@ -1,0 +1,21 @@
+only testing
+Num weight bits = 16
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+predictions = 0022.predict.tmp
+using no cache
+Reading datafile = train-sets/3parity
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.000000   0.000000            3         3.0   1.0000   1.0000        4
+0.000000   0.000000            6         6.0   1.0000   1.0000        4
+
+finished run
+number of examples = 8
+weighted example sum = 8
+weighted label sum = 0
+average loss = 0
+best constant = -0.1429
+total feature number = 32

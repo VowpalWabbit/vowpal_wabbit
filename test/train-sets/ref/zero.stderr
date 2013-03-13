@@ -1,0 +1,23 @@
+enabling BFGS based optimization **without** curvature calculation
+Num weight bits = 20
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+m = 7
+Allocated 72M for weights and mem
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 
+using l2 regularization = 1
+creating cache_file = train-sets/zero.dat.cache
+Reading datafile = train-sets/zero.dat
+num sources = 1
+ 1 0.00000   	0.00000   	0.00000   	          	          	          	0.00000   	0.00000   	0.00000   
+ 3 0.00000   	0.00000   	0.00000   	 -nan      	-nan      	
+
+finished run
+number of examples = 25
+weighted example sum = 25
+weighted label sum = 0
+average loss = 0
+best constant = 0
+total feature number = 15005

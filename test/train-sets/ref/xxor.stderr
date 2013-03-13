@@ -1,0 +1,30 @@
+creating cubic features for triples: abc 
+final_regressor = models/xxor.model
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/xxor.dat.cache
+Reading datafile = train-sets/xxor.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.422704   0.422704            3         3.0   0.0000   0.3241        5
+0.527970   0.633235            6         6.0   1.0000   0.1235        5
+0.407022   0.261884           11        11.0   0.0000   0.4429        5
+0.287053   0.167084           22        22.0   1.0000   0.6240        5
+0.171279   0.055506           44        44.0   1.0000   0.8231        5
+0.091532   0.009931           87        87.0   1.0000   0.9575        5
+0.046001   0.000470          174       174.0   1.0000   0.9966        5
+0.023001   0.000002          348       348.0   1.0000   1.0000        5
+0.011501   0.000000          696       696.0   0.0000   0.0000        5
+
+finished run
+number of examples = 800
+weighted example sum = 800
+weighted label sum = 400
+average loss = 0.01001
+best constant = 0.5
+best constant's loss = 0.25
+total feature number = 4000
