@@ -284,9 +284,9 @@ namespace CB
     uint32_t desired_increment = c.increment * (2*index-1);
    
     float old_min = all.sd->min_label;
-    all.sd->min_label = c.min_cost;
+    //    all.sd->min_label = c.min_cost;
     float old_max = all.sd->max_label;
-    all.sd->max_label = c.max_cost;
+    //    all.sd->max_label = c.max_cost;
     update_example_indicies(all.audit, ec, desired_increment);
     all.scorer.learn(&all, all.scorer.data, ec);
     all.sd->min_label = old_min;
