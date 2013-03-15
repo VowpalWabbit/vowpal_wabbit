@@ -37,12 +37,10 @@ main (void)
        ! cin.eof (); 
        cin.read (reinterpret_cast<char*> (buf), rc))
     {
-      cout << "|p";
-
       for (unsigned int p = 0; p < n_rows * n_columns; ++p)
         {
           if (buf[p])
-            cout << " " << p << ":" << setprecision (8) << static_cast<double>(buf[p])/256.0;
+            cout << " " << p << ":" << static_cast<unsigned int>(buf[p]);
         }
 
       cout << endl;
