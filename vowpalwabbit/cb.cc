@@ -284,9 +284,9 @@ namespace CB
     uint32_t desired_increment = c.increment * (2*index-1);
    
     float old_min = all.sd->min_label;
-    //    all.sd->min_label = c.min_cost;
+    //all.sd->min_label = c.min_cost;
     float old_max = all.sd->max_label;
-    //    all.sd->max_label = c.max_cost;
+    //all.sd->max_label = c.max_cost;
     update_example_indicies(all.audit, ec, desired_increment);
     all.scorer.learn(&all, all.scorer.data, ec);
     all.sd->min_label = old_min;
@@ -300,9 +300,17 @@ namespace CB
 
     label_data simple_temp;
     simple_temp.initial = 0.;
-    simple_temp.label = FLT_MAX;
-    simple_temp.weight = 0.;
-
+    if (c.known_cost != NULL && index == c.known_cost->weight_index)
+      {
+	simple_temp.label = c.known_cost->x;
+	simple_temp.weight = 1.;
+      }
+    else 
+      {
+	simple_temp.label = FLT_MAX;
+	simple_temp.weight = 0.;
+      }
+    
     ec->ld = &simple_temp;
 
     call_scorer(all, c, ec, index);
@@ -469,7 +477,6 @@ namespace CB
     vw* all = (vw*)a;
     cb* c = (cb*)d;
     CB::label* ld = (CB::label*)ec->ld;
-    float prediction = 1;
 
     if (command_example(all, ec))
       {
@@ -514,31 +521,6 @@ namespace CB
     ec->ld = &c->cb_cs_ld;
     c->base.learn(all,c->base.data,ec);
     ec->ld = ld;
-
-    //store current class prediction
-    prediction = ec->final_prediction;
-
-    //update our regressors if we are training regressors
-    if( c->cb_type == CB_TYPE_DM || c->cb_type == CB_TYPE_DR )
-    {
-      if( c->known_cost != NULL )
-      {
-        uint32_t i = c->known_cost->weight_index;
-	
-        label_data simple_temp;
-	simple_temp.initial = 0.;
-	simple_temp.label = c->known_cost->x;
-	simple_temp.weight = 1.;
-
-	ec->ld = &simple_temp;
-
-	call_scorer(*all, *c, ec, i);
-
-        ec->ld = ld;
-      }
-    }
-
-    ec->final_prediction = prediction;
   }
 
   void print_update(vw& all, cb& c, bool is_test, example *ec)
@@ -646,10 +628,7 @@ namespace CB
 	VW::finish_example(*all, ec);
       }
       else if (parser_done(all->p))
-      {
-        //finish(all); this is already called by main function
-        return;
-      }
+	return;
     }
   }
 
