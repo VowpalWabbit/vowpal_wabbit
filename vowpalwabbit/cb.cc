@@ -518,9 +518,12 @@ namespace CB
         throw exception();
     }
 
-    ec->ld = &c->cb_cs_ld;
-    c->base.learn(all,c->base.data,ec);
-    ec->ld = ld;
+    if (c->cb_type != CB_TYPE_DM)
+      {
+	ec->ld = &c->cb_cs_ld;
+	c->base.learn(all,c->base.data,ec);
+	ec->ld = ld;
+      }
   }
 
   void print_update(vw& all, cb& c, bool is_test, example *ec)
@@ -624,7 +627,8 @@ namespace CB
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
       {
         learn(all, d, ec);
-        output_example(*all, *c, ec);
+	if (!command_example(&all, ec))
+	  output_example(*all, *c, ec);
 	VW::finish_example(*all, ec);
       }
       else if (parser_done(all->p))

@@ -220,7 +220,8 @@ namespace OAA {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output(all, (oaa*)d, ec, all->raw_prediction > 0);
-            output_example(*all, ec);
+	    if (!command_example(&all, ec))
+	      output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
