@@ -355,14 +355,13 @@ namespace ECT
       }
   }
 
-  void learn(void*a, void* d, example* ec)
+  void learn(vw* all, void* d, example* ec)
   {
-    vw* all = (vw*)a;
     ect* e=(ect*)d;
 
     if (command_example(all, ec))
       {
-	e->base.learn(a, e->base.data, ec);
+	e->base.learn(all, e->base.data, ec);
 	return;
       }
 
@@ -379,7 +378,7 @@ namespace ECT
     ec->final_prediction = new_label;
   }
 
-  void finish(void* all, void* d)
+  void finish(vw* all, void* d)
   {
     ect* e = (ect*)d;
     e->base.finish(all, e->base.data);
@@ -400,9 +399,8 @@ namespace ECT
     e->tournaments_won.delete_v();
   }
   
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {

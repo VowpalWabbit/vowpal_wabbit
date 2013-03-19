@@ -5,7 +5,7 @@ namespace BINARY {
     learner base;
   };
 
-  void learn(void*a, void* d, example* ec)
+  void learn(vw* a, void* d, example* ec)
   {
     binary* b = (binary*)d;
     b->base.learn(a, b->base.data, ec);
@@ -16,16 +16,15 @@ namespace BINARY {
     ec->final_prediction = prediction;
   }
 
-  void finish(void*a, void* d)
+  void finish(vw* a, void* d)
   {
     binary* b = (binary*)d;
     b->base.finish(a,b->base.data);
     free(b);
   }
 
-  void drive(void *in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {

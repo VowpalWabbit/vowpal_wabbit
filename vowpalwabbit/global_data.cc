@@ -203,7 +203,7 @@ void noop_mm(shared_data* sd, float label)
 void vw::learn(void* a, example* ec)
 {
   vw* all = (vw*)a;
-  all->l.learn(a,all->l.data,ec);
+  all->l.learn(all,all->l.data,ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)

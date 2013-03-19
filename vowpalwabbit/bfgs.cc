@@ -833,9 +833,8 @@ void process_example(vw& all, bfgs& b, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void learn(void* a, void* d, example* ec)
+void learn(vw* all, void* d, example* ec)
 {
-  vw* all = (vw*)a;
   bfgs* b = (bfgs*)d;
   assert(ec->in_use);
 
@@ -861,7 +860,7 @@ void learn(void* a, void* d, example* ec)
       }
 }
 
-void finish(void* a, void* d)
+void finish(vw*, void* d)
 {
   bfgs* b = (bfgs*)d;
 
@@ -920,9 +919,8 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 }
 
 
-void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
+void save_load(vw* all, void* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)in;
   bfgs* b = (bfgs*)d;
   
   uint32_t length = 1 << all->num_bits;
@@ -984,9 +982,8 @@ void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive(void* in, void* d)
+void drive(vw* all, void* d)
 {
-  vw* all = (vw*)in;
   bfgs* b = (bfgs*)d;
 
   example* ec = NULL;

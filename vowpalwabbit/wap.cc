@@ -224,15 +224,14 @@ namespace WAP {
     return prediction;
   }
 
-  void learn(void* a, void* d, example* ec)
+  void learn(vw* all, void* d, example* ec)
   {
-    vw* all = (vw*)a;
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
     wap* w = (wap*)d;
     
     if (command_example(all, ec))
       {
-	w->base.learn(a, w->base.data, ec);
+	w->base.learn(all, w->base.data, ec);
 	return;
       }
 
@@ -244,16 +243,15 @@ namespace WAP {
     ec->final_prediction = (float)prediction;
   }
   
-  void finish(void* a, void* d)
+  void finish(vw* a, void* d)
   {
     wap* w=(wap*)d;
     w->base.finish(a,w->base.data);
     free(w);
   }
   
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {

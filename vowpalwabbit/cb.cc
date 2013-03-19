@@ -473,14 +473,13 @@ namespace CB
     }
   }
 
-  void learn(void* a, void* d, example* ec) {
-    vw* all = (vw*)a;
+  void learn(vw* all, void* d, example* ec) {
     cb* c = (cb*)d;
     CB::label* ld = (CB::label*)ec->ld;
 
     if (command_example(all, ec))
       {
-	c->base.learn(a, c->base.data, ec);
+	c->base.learn(all, c->base.data, ec);
 	return;
       }
 
@@ -609,7 +608,7 @@ namespace CB
     print_update(all, c, CB::is_test_label((CB::label*)ec->ld), ec);
   }
 
-  void finish(void* a, void* d)
+  void finish(vw* a, void* d)
   {
     cb* c=(cb*)d;
     c->base.finish(a,c->base.data);
@@ -617,9 +616,8 @@ namespace CB
     free(c);
   }
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw*all = (vw*)in;
     cb* c = (cb*)d;
     example* ec = NULL;
     while ( true )

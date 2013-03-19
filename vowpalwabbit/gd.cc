@@ -118,9 +118,8 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   w[0] += update * x * t;
 }
 
-void learn(void* a, void* d, example* ec)
+void learn(vw* all, void* d, example* ec)
 {
-  vw* all = (vw*)a;
   assert(ec->in_use);
   if (ec->end_pass)
     {
@@ -172,7 +171,7 @@ void learn(void* a, void* d, example* ec)
     }
 }
 
-  void finish(void* a, void* d)
+  void finish(vw* a, void* d)
 {
   size_t* current_pass = (size_t*)d;
   free(current_pass);
@@ -722,9 +721,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
+void save_load(vw* all, void* data, io_buf& model_file, bool read, bool text)
 {
-  vw* all=(vw*)in;
   if(read)
     {
       initialize_regressor(*all);
@@ -757,9 +755,8 @@ void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
     }
 }
 
-void driver(void* in, void* data)
+void driver(vw* all, void* data)
 {
-  vw* all = (vw*)in;
   example* ec = NULL;
   
   while ( true )

@@ -497,9 +497,8 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
-  void save_load(void* in, void*, io_buf& model_file, bool read, bool text)
+  void save_load(vw* all, void*, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)in;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->stride;
   
@@ -559,9 +558,8 @@ size_t next_pow2(size_t x) {
 }
 
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
 {
-  vw* all = (vw*)in;
   v_array<float>* Elogtheta = (v_array<float>*)d;
   regressor reg = all->reg;
   example* ec = NULL;
@@ -711,12 +709,12 @@ size_t next_pow2(size_t x) {
     }
 }
 
-  void learn(void*, void*, example*)
+  void learn(vw*, void*, example*)
   {
     cout << "LDA can't be used as a reduction" << endl;
   }
 
-  void finish(void*, void*d) {
+  void finish(vw*, void*d) {
     free(d);
   }
 

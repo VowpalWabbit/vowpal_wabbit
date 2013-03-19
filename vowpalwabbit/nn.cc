@@ -244,15 +244,13 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec->loss = save_ec_loss;
   }
 
-  void learn(void*a, void* d,example* ec) {
-    vw* all = (vw*)a;
+  void learn(vw* all, void* d,example* ec) {
     nn* n = (nn*)d;
     learn_with_output(*all, *n, ec, false);
   }
 
-  void drive_nn(void *in, void* d)
+  void drive_nn(vw *all, void* d)
   {
-    vw* all = (vw*)in;
     nn* n = (nn*)d;
     example* ec = NULL;
     while ( true )
@@ -272,7 +270,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
   }
 
-  void finish(void* a, void* d)
+  void finish(vw* a, void* d)
   {
     nn* n =(nn*)d;
     n->base.finish(a,n->base.data);

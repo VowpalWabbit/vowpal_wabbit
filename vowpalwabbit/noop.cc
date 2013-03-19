@@ -11,14 +11,13 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 
 namespace NOOP {
-  void learn(void*in, void* d, example*ec) {}
-  void finish(void*in, void* d) {}
+  void learn(vw*, void* d, example*ec) {}
+  void finish(vw*, void* d) {}
 
-  void save_load(void* in, void* d, io_buf& model_file, bool read, bool text) {}
+  void save_load(vw*, void* d, io_buf& model_file, bool read, bool text) {}
   
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     
     while ( !parser_done(all->p)){

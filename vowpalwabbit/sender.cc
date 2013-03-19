@@ -50,11 +50,10 @@ void send_features(io_buf *b, example* ec)
   b->flush();
 }
 
-  void save_load(void* in, void* d, io_buf& model_file, bool read, bool text) {}
+  void save_load(vw*, void* d, io_buf& model_file, bool read, bool text) {}
 
-  void drive_send(void* in, void* d)
+  void drive_send(vw* all, void* d)
 {
-  vw* all = (vw*)in;
   sender* s = (sender*)d;
   example* ec = NULL;
   v_array<char> null_tag;
@@ -107,8 +106,8 @@ void send_features(io_buf *b, example* ec)
     }
   return;
 }
-  void learn(void*in, void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
-  void finish(void*in, void* d) { cout << "sender can't be used under reduction" << endl; }
+  void learn(vw*, void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
+  void finish(vw*, void* d) { cout << "sender can't be used under reduction" << endl; }
 
   void setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {

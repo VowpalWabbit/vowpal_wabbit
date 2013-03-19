@@ -278,14 +278,13 @@ namespace CSOAA {
     print_update(all, is_test_label((label*)ec->ld), ec);
   }
 
-  void learn(void* a, void* d, example* ec) {
-    vw* all = (vw*)a;
+  void learn(vw* all, void* d, example* ec) {
     csoaa* c = (csoaa*)d;
     label* ld = (label*)ec->ld;
 
     if (command_example(all, ec))
       {
-	c->base.learn(a, c->base.data, ec);
+	c->base.learn(all, c->base.data, ec);
 	return;
       }
 
@@ -332,16 +331,15 @@ namespace CSOAA {
       update_example_indicies(all->audit, ec, -current_increment);
   }
 
-  void finish(void* a, void* d)
+  void finish(vw* a, void* d)
   {
     csoaa* c=(csoaa*)d;
     c->base.finish(a,c->base.data);
     free(c);
   }
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {
@@ -971,18 +969,16 @@ namespace LabelDict {
       }
   }
 
-  void learn(void*a, void* d, example*ec) {
-    vw* all = (vw*)a;
+  void learn(vw* all, void* d, example*ec) {
     ldf* l = (ldf*)d;
     if (l->is_singleline) learn_singleline(*all,*l, ec);
     else learn_multiline(*all,*l, ec);
   }
 
-  void finish(void* a, void* d)
+  void finish(vw* all, void* d)
   {
     ldf* l=(ldf*)d;
-    l->base.finish(a,l->base.data);
-    vw* all = (vw*)a;    
+    l->base.finish(all,l->base.data);
     clear_seq(*all, *l);
     l->ec_seq.delete_v();
     LabelDict::free_label_features(*l);
@@ -1035,9 +1031,8 @@ namespace LabelDict {
     }
   }
 
-  void drive(void*in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all =(vw*)in;
     ldf* l = (ldf*)d;
     if (l->is_singleline)
       drive_ldf_singleline(*all, *l);

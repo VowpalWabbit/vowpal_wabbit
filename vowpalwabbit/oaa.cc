@@ -183,7 +183,7 @@ namespace OAA {
         ec->ld = &simple_temp;
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
-        d->base.learn((void*)all,d->base.data,ec);
+        d->base.learn(all,d->base.data,ec);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -207,13 +207,12 @@ namespace OAA {
     }
   }
 
-  void learn(void*a, void* d, example* ec) {
-    learn_with_output((vw*)a, (oaa*)d, ec, false);
+  void learn(vw* a, void* d, example* ec) {
+    learn_with_output(a, (oaa*)d, ec, false);
   }
 
-  void drive(void *in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {
@@ -231,7 +230,7 @@ namespace OAA {
       }
   }
 
-  void finish(void* all, void* data)
+  void finish(vw* all, void* data)
   {    
     oaa* o=(oaa*)data;
     o->base.finish(all,o->base.data);

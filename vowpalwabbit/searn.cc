@@ -347,7 +347,7 @@ namespace Searn
     learner base;
   };
 
-  void drive(void*in, void*d);
+  void drive(vw* all, void*d);
   
   void simple_print_example_features(vw&all, example *ec)
   {
@@ -521,17 +521,16 @@ namespace Searn
 
 
 
-  void learn(void*in, void*d, example *ec)
+  void learn(vw* all, void*d, example *ec)
   {
     //vw*all = (vw*)in;
     // TODO
   }
 
-  void finish(void*in, void*d)
+  void finish(vw* all, void* d)
   {
     searn* s = (searn*)d;
-    s->base.finish(in,s->base.data);
-    vw*all = (vw*)in;
+    s->base.finish(all,s->base.data);
     // free everything
     if (s->task.finalize != NULL)
       s->task.finalize();
@@ -1323,9 +1322,8 @@ namespace Searn
     }
   }
 
-  void drive(void*in, void*d)
+  void drive(vw* all, void*d)
   {
-    vw*all = (vw*)in;
     // initialize everything
     searn* s = (searn*)d;
 
@@ -1801,8 +1799,7 @@ namespace ImperativeSearn {
     }
   }
 
-  void searn_learn(void*in, void*d, example*ec) {
-    vw* all = (vw*)in;
+  void searn_learn(vw* all, void*d, example*ec) {
     searn *srn = (searn*)d;
 
     bool is_real_example = true;
@@ -1843,8 +1840,7 @@ namespace ImperativeSearn {
     }
   }
   
-  void searn_drive(void*in, void *d) {
-    vw* all = (vw*)in;
+  void searn_drive(vw* all, void *d) {
     searn *srn = (searn*)d;
 
     const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
@@ -1857,7 +1853,7 @@ namespace ImperativeSearn {
     srn->read_example_this_loop = 0;
     while (true) {
       if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
-        searn_learn(in,d, ec);
+        searn_learn(all,d, ec);
       } else if (parser_done(all->p)) {
         do_actual_learning(*all, *srn);
         break;
@@ -1900,9 +1896,8 @@ namespace ImperativeSearn {
     srn.total_predictions_made = 0;
   }
 
-  void searn_finish(void*in, void* d)
+  void searn_finish(vw* all, void* d)
   {
-    vw*all = (vw*)in;
     searn *srn = (searn*)d;
 
     //cerr << "searn_finish" << endl;
