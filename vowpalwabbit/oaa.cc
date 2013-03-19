@@ -238,7 +238,7 @@ namespace OAA {
     free(o);
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     oaa* data = (oaa*)calloc(1, sizeof(oaa));
     //first parse for number of actions

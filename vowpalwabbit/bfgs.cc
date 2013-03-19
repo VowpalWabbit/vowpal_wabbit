@@ -1008,7 +1008,7 @@ void drive(void* in, void* d)
     }
 }
 
-void parse_args(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
 {
   bfgs* b = (bfgs*)calloc(1,sizeof(bfgs));
   b->wolfe1_bound = 0.01;

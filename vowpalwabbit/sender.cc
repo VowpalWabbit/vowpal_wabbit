@@ -110,7 +110,7 @@ void send_features(io_buf *b, example* ec)
   void learn(void*in, void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
   void finish(void*in, void* d) { cout << "sender can't be used under reduction" << endl; }
 
-  void parse_send_args(vw& all, po::variables_map& vm, vector<string> pairs)
+  void setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender* s = (sender*)calloc(1,sizeof(sender));
   s->sd = -1;

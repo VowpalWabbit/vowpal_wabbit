@@ -298,7 +298,7 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
-  void parse_flags(vw& all)
+  void setup(vw& all)
   {
     learner t = {NULL,drive,learn,finish,save_load};
     all.l = t;

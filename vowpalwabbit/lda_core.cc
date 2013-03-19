@@ -720,7 +720,7 @@ size_t next_pow2(size_t x) {
     free(d);
   }
 
-void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+void setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
   v_array<float> *Elogtheta = (v_array<float>*)calloc(1,sizeof(v_array<float>));
 

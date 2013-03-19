@@ -270,7 +270,7 @@ namespace WAP {
       }
   }
   
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
+  void setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
     wap* w=(wap*)calloc(1,sizeof(wap));
     uint32_t nb_actions = 0;

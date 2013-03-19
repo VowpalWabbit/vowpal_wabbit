@@ -28,11 +28,10 @@ namespace NOOP {
     }
   }
   
-  void parse_flags(vw& all)
+  void setup(vw& all)
   {
     learner t = {NULL,drive,learn,finish,save_load};
     all.l = t;
     all.is_noop = true;
   }
-
 }
