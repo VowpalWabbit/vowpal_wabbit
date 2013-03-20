@@ -13,6 +13,6 @@ license as described in the file LICENSE.
 #include "gd.h"
 
 namespace GDMF{
-  void parse_flags(vw& all);
+  learner setup(vw& all);
 }
 #endif

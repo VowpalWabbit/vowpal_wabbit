@@ -194,7 +194,7 @@ namespace Searn
     std::string (*to_string)(state, bool, std::vector<action>);
   };
 
-  void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner setup(vw&all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 namespace ImperativeSearn {
@@ -261,6 +261,7 @@ namespace ImperativeSearn {
     v_array<example*> ec_seq;
 
     learner base;
+    vw* all;
   };
 
   struct searn_task {
@@ -269,7 +270,7 @@ namespace ImperativeSearn {
     void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
   };
 
-  void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  learner setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);

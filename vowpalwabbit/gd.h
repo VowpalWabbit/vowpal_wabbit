@@ -15,7 +15,6 @@ license as described in the file LICENSE.
 #include "parse_regressor.h"
 #include "parser.h"
 #include "sparse_dense.h"
-#include "learner.h"
 
 namespace GD{
 void print_result(int f, float res, v_array<char> tag);
@@ -31,7 +30,7 @@ void train_offset_example(regressor& r, example* ex, size_t offset);
 void compute_update(example* ec);
 void offset_train(regressor &reg, example* &ec, float update, size_t offset);
 void train_one_example_single_thread(regressor& r, example* ex);
- learner get_learner();
+ learner setup(vw& all);
  void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void output_and_account_example(example* ec);
 

@@ -32,47 +32,50 @@ using namespace std;
 
 namespace GD
 {
-
-void predict(vw& all, example* ex);
-void sync_weights(vw& all);
-
-template <void (*T)(vw&, float, uint32_t, float, float)>
-void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
-{
-  if (fabs(update) == 0.)
-    return;
+  struct gd{
+    size_t current_pass;
+    vw* all;
+  };
+  void predict(vw& all, example* ex);
+  void sync_weights(vw& all);
   
-  float total_weight = 0.f;
-  if(all.active)
-    total_weight = (float)all.sd->weighted_unlabeled_examples;
-  else
-    total_weight = ec->example_t;
-
-  uint32_t offset = ec->ft_offset;
-  float avg_norm = all.normalized_sum_norm_x / total_weight;
-  if (sqrt_norm) avg_norm = sqrt(avg_norm);
-
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-      T(all, f->x, f->weight_index + offset, avg_norm, update);
-
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0))
-      for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++) {
-        uint32_t halfhash = quadratic_constant * (f0->weight_index + offset);
-        for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
-          T(all, f1->x, f1->weight_index + halfhash + offset, avg_norm, f0->x * update);
-      }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
-    if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
-      for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
-        for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++) {
-          uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
-          for (feature* f2 = ec->atomics[(int)(*i)[2]].begin; f2 != ec->atomics[(int)(*i)[2]].end; f2++)
-            T(all, f2->x, f2->weight_index + halfhash + offset, avg_norm, f0->x * f1->x * update);
-        }
-}
+  template <void (*T)(vw&, float, uint32_t, float, float)>
+  void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
+  {
+    if (fabs(update) == 0.)
+      return;
+    
+    float total_weight = 0.f;
+    if(all.active)
+      total_weight = (float)all.sd->weighted_unlabeled_examples;
+    else
+      total_weight = ec->example_t;
+    
+    uint32_t offset = ec->ft_offset;
+    float avg_norm = all.normalized_sum_norm_x / total_weight;
+    if (sqrt_norm) avg_norm = sqrt(avg_norm);
+    
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
+	T(all, f->x, f->weight_index + offset, avg_norm, update);
+    
+    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+      if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0))
+	for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++) {
+	  uint32_t halfhash = quadratic_constant * (f0->weight_index + offset);
+	  for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
+	    T(all, f1->x, f1->weight_index + halfhash + offset, avg_norm, f0->x * update);
+	}
+    
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
+      if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
+	for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
+	  for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++) {
+	    uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
+	    for (feature* f2 = ec->atomics[(int)(*i)[2]].begin; f2 != ec->atomics[(int)(*i)[2]].end; f2++)
+	      T(all, f2->x, f2->weight_index + halfhash + offset, avg_norm, f0->x * f1->x * update);
+	  }
+  }
 
 float InvSqrt(float x){
   float xhalf = 0.5f * x;
@@ -96,13 +99,14 @@ inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float 
   w[0] += update * x * t;
 }
 
+template<bool adaptive, bool normalized>
 inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
 {
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
-  if(all.normalized_updates) inv_norm /= (w[all.normalized_idx] * avg_norm);
-  if(all.adaptive) {
+  if(normalized) inv_norm /= (w[all.normalized_idx] * avg_norm);
+  if(adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
     eta = _mm_rsqrt_ss(eta);
@@ -117,9 +121,10 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   w[0] += update * x * t;
 }
 
-void learn(void* a, void* d, example* ec)
+void learn(void* d, example* ec)
 {
-  vw* all = (vw*)a;
+  gd* g = (gd*)d;
+  vw* all = g->all;
   assert(ec->in_use);
   if (ec->end_pass)
     {
@@ -143,9 +148,24 @@ void learn(void* a, void* d, example* ec)
       predict(*all,ec);
       if (ec->eta_round != 0.)
 	{
-          if(all->power_t == 0.5)
-            //inline_train(*all, ec, ec->eta_round);
-            generic_train<specialized_update>(*all,ec,ec->eta_round,true);
+          if(all->power_t == 0.5) {
+            if (all->adaptive) {
+              if (all->normalized_updates) 
+                generic_train<specialized_update<true, true> >
+                  (*all,ec,ec->eta_round,true);
+              else
+                generic_train<specialized_update<true, false> >
+                  (*all,ec,ec->eta_round,true);
+            }
+            else {
+              if (all->normalized_updates) 
+                generic_train<specialized_update<false, true> >
+                  (*all,ec,ec->eta_round,true);
+              else
+                generic_train<specialized_update<false, false> >
+                  (*all,ec,ec->eta_round,true);
+            }
+          }
           else
             //general_train(*all, ec, ec->eta_round, all->power_t);
             generic_train<general_update>(*all,ec,ec->eta_round,false);
@@ -156,10 +176,10 @@ void learn(void* a, void* d, example* ec)
     }
 }
 
-  void finish(void* a, void* d)
+  void finish(void* d)
 {
-  size_t* current_pass = (size_t*)d;
-  free(current_pass);
+  gd* g = (gd*)d;
+  free(g);
 }
 
 void sync_weights(vw& all) {
@@ -357,18 +377,19 @@ void norm_add_cubic(vw& all, feature& f0, feature& f1, v_array<feature> &cross_f
   norm_x += norm_x_new * f0.x * f0.x * f1.x * f1.x;
 }
 
+template<bool adaptive, bool normalized>
 inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x2 = x * x;
   float t = 1.f;
   float inv_norm = 1.f;
   float inv_norm2 = 1.f;
-  if(all.normalized_updates) {
+  if(normalized) {
     inv_norm /= w[all.normalized_idx];
     inv_norm2 = inv_norm*inv_norm;
     norm_x += x2 * inv_norm2;
   }
-  if(all.adaptive){
+  if(adaptive){
     w[1] += g * x2;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
@@ -484,8 +505,14 @@ void local_predict(vw& all, example* ec)
 	  float eta_t;
 	  float norm;
           if(all.adaptive || all.normalized_updates) {
-            if(all.power_t == 0.5)
-              norm = compute_norm<simple_norm_compute>(all,ec);
+            if(all.power_t == 0.5) {
+                if (all.adaptive && all.normalized_updates)
+                  norm = compute_norm<simple_norm_compute<true, true> >(all,ec);
+                else if (all.adaptive)
+                  norm = compute_norm<simple_norm_compute<true, false> >(all,ec);
+                else 
+                  norm = compute_norm<simple_norm_compute<false, true> >(all,ec);
+            }
             else
               norm = compute_norm<powert_norm_compute>(all,ec);
           }
@@ -699,9 +726,10 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
+void save_load(void* data, io_buf& model_file, bool read, bool text)
 {
-  vw* all=(vw*)in;
+  gd* g = (gd*)data;
+  vw* all = g->all;
   if(read)
     {
       initialize_regressor(*all);
@@ -734,16 +762,15 @@ void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
     }
 }
 
-void driver(void* in, void* data)
+void driver(vw* all, void* data)
 {
-  vw* all = (vw*)in;
   example* ec = NULL;
   
   while ( true )
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn(all, data, ec);
+	  learn(data, ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
@@ -753,10 +780,12 @@ void driver(void* in, void* data)
     }
 }
 
-  learner get_learner()
-  {
-    size_t* current_pass = (size_t*)calloc(1, sizeof(size_t));
-    learner ret = {current_pass,driver,learn,finish,save_load};
-    return ret;
-  }
+learner setup(vw& all)
+{
+  gd* g = (gd*)calloc(1, sizeof(gd));
+  g->all = &all;
+  sl_t sl = {g,save_load};
+  learner ret = {g,driver,learn,finish,sl};
+  return ret;
+}
 }

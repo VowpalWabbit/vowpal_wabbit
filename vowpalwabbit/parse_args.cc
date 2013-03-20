@@ -241,7 +241,7 @@ vw parse_args(int argc, char *argv[])
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) 
-    BFGS::parse_args(all, to_pass_further, vm, vm_file);
+    BFGS::setup(all, to_pass_further, vm, vm_file);
 
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
@@ -443,7 +443,7 @@ vw parse_args(int argc, char *argv[])
   //  all.nonormalize = true;
 
   if (vm.count("lda")) 
-    LDA::parse_flags(all, to_pass_further, vm);
+    all.l = LDA::setup(all, to_pass_further, vm);
 
   if (!vm.count("lda") && !all.adaptive && !all.normalized_updates) 
     all.eta *= powf((float)(all.sd->t), all.power_t);
@@ -475,10 +475,10 @@ vw parse_args(int argc, char *argv[])
 
   all.is_noop = false;
   if (vm.count("noop")) 
-    NOOP::parse_flags(all);
+    all.l = NOOP::setup(all);
   
   if (all.rank != 0) 
-    GDMF::parse_flags(all);
+    all.l = GDMF::setup(all);
 
   all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
 
@@ -542,10 +542,10 @@ vw parse_args(int argc, char *argv[])
     all.audit = true;
 
   if (vm.count("sendto"))
-    SENDER::parse_send_args(all, vm, all.pairs);
+    all.l = SENDER::setup(all, vm, all.pairs);
 
   // load rest of regressor
-  all.l.save_load(&all, all.l.data, io_temp, true, false);
+  all.l.sl.save_load(all.l.sl.sldata, io_temp, true, false);
   io_temp.close_file();
 
   if (all.l1_lambda < 0.) {
@@ -570,67 +570,65 @@ vw parse_args(int argc, char *argv[])
   bool got_cs = false;
   bool got_cb = false;
 
-  if(vm.count("nn") || vm_file.count("nn") ) {
-    NN::parse_flags(all, to_pass_further, vm, vm_file);
-  }
+  if(vm.count("nn") || vm_file.count("nn") ) 
+    all.l = NN::setup(all, to_pass_further, vm, vm_file);
   
   if (vm.count("binary") || vm_file.count("binary"))
-    BINARY::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = BINARY::setup(all, to_pass_further, vm, vm_file);
 
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
 
-    OAA::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = OAA::setup(all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
   
   if (vm.count("ect") || vm_file.count("ect") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
 
-    ECT::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = ECT::setup(all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
 
   if(vm.count("csoaa") || vm_file.count("csoaa") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
     
-    CSOAA::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("wap") || vm_file.count("wap") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
     
-    WAP::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = WAP::setup(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("csoaa_ldf") || vm_file.count("csoaa_ldf")) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
-    CSOAA_AND_WAP_LDF::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = CSOAA_AND_WAP_LDF::setup(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if(vm.count("wap_ldf") || vm_file.count("wap_ldf") ) {
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
-    CSOAA_AND_WAP_LDF::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = CSOAA_AND_WAP_LDF::setup(all, to_pass_further, vm, vm_file);
     got_cs = true;
   }
 
   if( vm.count("cb") || vm_file.count("cb") )
   {
     if(!got_cs) {
-      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
       if( vm_file.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cb"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 
-      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+      all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
       got_cs = true;
     }
 
-    CB::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = CB::setup(all, to_pass_further, vm, vm_file);
     got_cb = true;
   }
 
@@ -640,27 +638,25 @@ vw parse_args(int argc, char *argv[])
       throw exception();
     }
     if (!got_cs && !got_cb) {
-      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
       
-      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
-    Searn::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = Searn::setup(all, to_pass_further, vm, vm_file);
   }
 
   if (vm.count("searnimp") || vm_file.count("searnimp") ) { 
     if (!got_cs && !got_cb) {
-      //add csoaa flag to vm so that it is parsed in csoaa::parse_flags
       if( vm_file.count("searnimp") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searnimp"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searnimp"]));
       
-      CSOAA::parse_flags(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
     all.searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
-    ImperativeSearn::parse_flags(all, to_pass_further, vm, vm_file);
+    all.l = ImperativeSearn::setup(all, to_pass_further, vm, vm_file);
   }
 
 
@@ -782,7 +778,7 @@ namespace VW {
   void finish(vw& all)
   {
     finalize_regressor(all, all.final_regressor_name);
-    all.l.finish(&all, all.l.data);
+    all.l.finish(all.l.data);
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
     if (all.searnstr != NULL) free(all.searnstr);

@@ -62,6 +62,7 @@ namespace BFGS
 
  //nonrentrant
   struct bfgs {
+    vw* all;
     double wolfe1_bound;
     
     size_t final_pass;
@@ -833,10 +834,10 @@ void process_example(vw& all, bfgs& b, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void learn(void* a, void* d, example* ec)
+void learn(void* d, example* ec)
 {
-  vw* all = (vw*)a;
   bfgs* b = (bfgs*)d;
+  vw* all = b->all;
   assert(ec->in_use);
 
   if (ec->end_pass && b->current_pass <= b->final_pass) 
@@ -861,7 +862,7 @@ void learn(void* a, void* d, example* ec)
       }
 }
 
-void finish(void* a, void* d)
+void finish(void* d)
 {
   bfgs* b = (bfgs*)d;
 
@@ -920,11 +921,11 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 }
 
 
-void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
+void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)in;
   bfgs* b = (bfgs*)d;
-  
+  vw* all = b->all;
+
   uint32_t length = 1 << all->num_bits;
 
   if (read)
@@ -984,9 +985,8 @@ void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive(void* in, void* d)
+void drive(vw* all, void* d)
 {
-  vw* all = (vw*)in;
   bfgs* b = (bfgs*)d;
 
   example* ec = NULL;
@@ -998,7 +998,7 @@ void drive(void* in, void* d)
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn(all, b, ec);
+	  learn(b, ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
@@ -1008,9 +1008,10 @@ void drive(void* in, void* d)
     }
 }
 
-void parse_args(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
 {
   bfgs* b = (bfgs*)calloc(1,sizeof(bfgs));
+  b->all = &all;
   b->wolfe1_bound = 0.01;
   b->first_hessian_on=true;
   b->first_pass = true;
@@ -1018,7 +1019,8 @@ void parse_args(vw& all, std::vector<std::string>&opts, po::variables_map& vm, p
   b->preconditioner_pass = true;
   b->final_pass=all.numpasses;  
   
-  learner t = {b,drive,learn,finish,save_load};
+  sl_t sl = {b, save_load};
+  learner t = {b,drive,learn,finish,sl};
   all.l = t;
 
   all.bfgs = true;

@@ -202,10 +202,9 @@ void set_mm(shared_data* sd, float label)
 void noop_mm(shared_data* sd, float label)
 {}
 
-void vw::learn(void* a, example* ec)
+void vw::learn(example* ec)
 {
-  vw* all = (vw*)a;
-  all->l.learn(a,all->l.data,ec);
+  this->l.learn(this->l.data,ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
@@ -263,7 +262,7 @@ vw::vw()
   m = 15; 
   save_resume = false;
 
-  l = GD::get_learner();
+  l = GD::setup(*this);
   scorer = l;
 
   set_minmax = set_mm;

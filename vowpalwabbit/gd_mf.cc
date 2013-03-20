@@ -207,9 +207,9 @@ float mf_predict(vw& all, example* ex)
   return ex->final_prediction;
 }
 
-  void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
+  void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)in;
+  vw* all = (vw*)d;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->stride;
 
@@ -261,9 +261,9 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
-  void learn(void* in, void* d, example* ec)
+  void learn(void* d, example* ec)
   {
-    vw* all = (vw*)in;
+    vw* all = (vw*)d;
     if (ec->end_pass) 
       all->eta *= all->eta_decay_rate;
 
@@ -275,20 +275,18 @@ float mf_predict(vw& all, example* ex)
       }    
   }
 
-  void finish(void* a, void* d)
+  void finish(void* d)
   { }
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
 {
-  vw* all = (vw*)in;
-  
   example* ec = NULL;
   
   while ( true )
     {
       if ((ec = get_example(all->p)) != NULL)//blocking operation.
 	{
-	  learn(in,d,ec);
+	  learn(d,ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
@@ -298,9 +296,10 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
-  void parse_flags(vw& all)
+  learner setup(vw& all)
   {
-    learner t = {NULL,drive,learn,finish,save_load};
-    all.l = t;
+    sl_t sl = {&all, save_load};
+    learner l = {&all,drive,learn,finish,sl};
+    return l;
   }
 }
