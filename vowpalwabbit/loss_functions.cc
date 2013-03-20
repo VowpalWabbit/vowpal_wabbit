@@ -7,6 +7,7 @@ license as described in the file LICENSE.
 #include<iostream>
 #include<stdlib.h>
 #include<assert.h>
+#include<float.h>
 using namespace std;
 
 #include "loss_functions.h"
@@ -170,7 +171,7 @@ public:
   }
   
   float getLoss(shared_data*, float prediction, float label) {
-    assert(label == -1.f || label == 1.f);
+    assert(label == -1.f || label == 1.f || label == FLT_MAX);
     return log(1 + exp(-label * prediction));
   }
   
