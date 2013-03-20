@@ -22,6 +22,7 @@ namespace OAA {
     uint32_t increment;
     uint32_t total_increment;
     learner base;
+    vw* all;
   };
 
   char* bufread_label(mc_label* ld, char* c)
@@ -153,11 +154,12 @@ namespace OAA {
     print_update(all, ec);
   }
 
-  void learn_with_output(vw* all, oaa* d, example* ec, bool shouldOutput)
+  void learn_with_output(oaa* d, example* ec, bool shouldOutput)
   {
+    vw* all = d->all;
     if (command_example(all,ec))
       {
-	d->base.learn(all, d->base.data, ec);
+	d->base.learn(d->base.data, ec);
 	return;
       }
 
@@ -183,7 +185,7 @@ namespace OAA {
         ec->ld = &simple_temp;
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
-        d->base.learn(all,d->base.data,ec);
+        d->base.learn(d->base.data,ec);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -207,8 +209,8 @@ namespace OAA {
     }
   }
 
-  void learn(vw* a, void* d, example* ec) {
-    learn_with_output(a, (oaa*)d, ec, false);
+  void learn(void* d, example* ec) {
+    learn_with_output((oaa*)d, ec, false);
   }
 
   void drive(vw* all, void* d)
@@ -218,8 +220,8 @@ namespace OAA {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn_with_output(all, (oaa*)d, ec, all->raw_prediction > 0);
-	    if (!command_example(&all, ec))
+            learn_with_output((oaa*)d, ec, all->raw_prediction > 0);
+	    if (!command_example(all, ec))
 	      output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
@@ -230,10 +232,10 @@ namespace OAA {
       }
   }
 
-  void finish(vw* all, void* data)
+  void finish(void* data)
   {    
     oaa* o=(oaa*)data;
-    o->base.finish(all,o->base.data);
+    o->base.finish(o->base.data);
     free(o);
   }
 
@@ -255,12 +257,13 @@ namespace OAA {
       all.options_from_file.append(ss.str());
     }
 
+    data->all = &all;
     *(all.p->lp) = mc_label_parser;
     all.base_learner_nb_w *= data->k;
     data->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
-    learner l = {data, drive, learn, finish, all.l.save_load};
+    learner l = {data, drive, learn, finish, all.l.sl};
     all.l = l;
   }
 }

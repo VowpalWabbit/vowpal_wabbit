@@ -261,6 +261,7 @@ namespace ImperativeSearn {
     v_array<example*> ec_seq;
 
     learner base;
+    vw* all;
   };
 
   struct searn_task {

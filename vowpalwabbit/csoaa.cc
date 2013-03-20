@@ -20,6 +20,7 @@ namespace CSOAA {
   struct csoaa{
     uint32_t csoaa_increment;
     learner base;
+    vw* all;
   };
 
   void name_value(substring &s, v_array<substring>& name, float &v)
@@ -278,13 +279,14 @@ namespace CSOAA {
     print_update(all, is_test_label((label*)ec->ld), ec);
   }
 
-  void learn(vw* all, void* d, example* ec) {
+  void learn(void* d, example* ec) {
     csoaa* c = (csoaa*)d;
+    vw* all = c->all;
     label* ld = (label*)ec->ld;
 
     if (command_example(all, ec))
       {
-	c->base.learn(all, c->base.data, ec);
+	c->base.learn(c->base.data, ec);
 	return;
       }
 
@@ -317,7 +319,7 @@ namespace CSOAA {
           current_increment = desired_increment;
         }
 
-	c->base.learn(all, c->base.data, ec);
+	c->base.learn(c->base.data, ec);
         cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
@@ -331,10 +333,10 @@ namespace CSOAA {
       update_example_indicies(all->audit, ec, -current_increment);
   }
 
-  void finish(vw* a, void* d)
+  void finish(void* d)
   {
     csoaa* c=(csoaa*)d;
-    c->base.finish(a,c->base.data);
+    c->base.finish(c->base.data);
     free(c);
   }
 
@@ -345,7 +347,7 @@ namespace CSOAA {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(all, d, ec);
+            learn(d, ec);
             output_example(*all, ec);
             if (ec->in_use)
               VW::finish_example(*all, ec);
@@ -360,6 +362,7 @@ namespace CSOAA {
   void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     csoaa* c=(csoaa*)calloc(1,sizeof(csoaa));
+    c->all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
     if( vm_file.count("csoaa") ) { //if loaded options from regressor
@@ -382,7 +385,7 @@ namespace CSOAA {
     c->csoaa_increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
     all.sd->k = nb_actions;
 
-    learner l = {c, drive, learn, finish, all.l.save_load};
+    learner l = {c, drive, learn, finish, all.l.sl};
     c->base = all.l;
     all.l = l;
   }
@@ -411,6 +414,7 @@ namespace CSOAA_AND_WAP_LDF {
     bool first_pass;
     float csoaa_example_t;
     learner base;
+    vw* all;
   };
 
 namespace LabelDict { 
@@ -633,7 +637,7 @@ namespace LabelDict {
       LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
       
       ec->ld = &simple_label;
-      l.base.learn(&all, l.base.data, ec); // make a prediction
+      l.base.learn(l.base.data, ec); // make a prediction
       costs[j].partial_prediction = ec->partial_prediction;
 
       if (ec->partial_prediction < *min_score) {
@@ -721,7 +725,7 @@ namespace LabelDict {
               simple_label.weight = value_diff;
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
-              l.base.learn(&all, l.base.data, ec1);
+              l.base.learn(l.base.data, ec1);
               unsubtract_example(all, ec1);
               
               LabelDict::del_example_namespace_from_memory(l, ec2, costs2[j2].weight_index);
@@ -779,7 +783,7 @@ namespace LabelDict {
           ec->ld = &simple_label;
           ec->partial_prediction = 0.;
           LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
-          l.base.learn(&all, l.base.data, ec);
+          l.base.learn(l.base.data, ec);
           LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
           ec->example_t = example_t;
         }
@@ -915,7 +919,7 @@ namespace LabelDict {
   void learn_singleline(vw& all, ldf& l, example*ec) {
     if (command_example(&all, ec))
       {
-	l.base.learn(&all, l.base.data, ec);
+	l.base.learn(l.base.data, ec);
 	return;
       }
     
@@ -964,21 +968,23 @@ namespace LabelDict {
 	if (ec->end_pass)
 	  l.first_pass = false;
 
-	l.base.learn(&all, l.base.data, ec);
+	l.base.learn(l.base.data, ec);
 	return;
       }
   }
 
-  void learn(vw* all, void* d, example*ec) {
+  void learn(void* d, example*ec) {
     ldf* l = (ldf*)d;
+    vw* all = l->all;
     if (l->is_singleline) learn_singleline(*all,*l, ec);
     else learn_multiline(*all,*l, ec);
   }
 
-  void finish(vw* all, void* d)
+  void finish(void* d)
   {
     ldf* l=(ldf*)d;
-    l->base.finish(all,l->base.data);
+    vw* all = l->all;
+    l->base.finish(l->base.data);
     clear_seq(*all, *l);
     l->ec_seq.delete_v();
     LabelDict::free_label_features(*l);
@@ -1044,6 +1050,7 @@ namespace LabelDict {
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
 
+    ld->all = &all;
     ld->need_to_clear = true;
     ld->is_singleline = true;
     ld->first_pass = true;
@@ -1097,7 +1104,7 @@ namespace LabelDict {
     ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
     ld->label_features.get(1, 94717244);
     
-    learner l = {ld, drive, learn, finish, all.l.save_load};
+    learner l = {ld, drive, learn, finish, all.l.sl};
     ld->base = all.l;
     all.l = l;
   }

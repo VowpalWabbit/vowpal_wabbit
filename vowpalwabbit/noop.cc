@@ -11,10 +11,10 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 
 namespace NOOP {
-  void learn(vw*, void* d, example*ec) {}
-  void finish(vw*, void* d) {}
+  void learn(void* d, example*ec) {}
+  void finish(void* d) {}
 
-  void save_load(vw*, void* d, io_buf& model_file, bool read, bool text) {}
+  void save_load(void* d, io_buf& model_file, bool read, bool text) {}
   
   void drive(vw* all, void* d)
   {
@@ -29,7 +29,8 @@ namespace NOOP {
   
   void setup(vw& all)
   {
-    learner t = {NULL,drive,learn,finish,save_load};
+    sl_t sl = {NULL,save_load};
+    learner t = {NULL,drive,learn,finish,sl};
     all.l = t;
     all.is_noop = true;
   }

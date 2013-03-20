@@ -8,12 +8,17 @@ license as described in the file LICENSE.
 // This is the interface for a learning algorithm
 struct vw;
 
+struct sl_t {
+  void* sldata;
+  void (*save_load)(void* sldata, io_buf&, bool read, bool text);
+};
+
 struct learner {
   void* data;
-  
   void (*driver)(vw* all, void* data);
-  void (*learn)(vw* all, void* data, example*);
-  void (*finish)(vw* all, void* data);
-  void (*save_load)(vw* all, void* data, io_buf&, bool read, bool text);
+  void (*learn)(void* data, example*);
+  void (*finish)(void* data);
+
+  sl_t sl;
 };
 #endif

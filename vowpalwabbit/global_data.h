@@ -127,7 +127,7 @@ struct vw {
   learner l;//the top level leaner
   learner scorer;//a scoring function
 
-  void learn(void*, example*);
+  void learn(example*);
 
   void (*set_minmax)(shared_data* sd, float label);
 

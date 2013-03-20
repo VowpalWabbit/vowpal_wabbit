@@ -33,6 +33,7 @@ namespace NN {
     bool inpass;
 
     learner base;
+    vw* all;
   };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -69,7 +70,7 @@ namespace NN {
     }
 
     if (command_example(&all, ec)) {
-      n.base.learn(&all,n.base.data, ec);
+      n.base.learn(n.base.data, ec);
       return;
     }
 
@@ -100,7 +101,7 @@ namespace NN {
           update_example_indicies(all.audit, ec, n.increment);
 
         ec->partial_prediction = 0.;
-        n.base.learn(&all,n.base.data,ec);
+        n.base.learn(n.base.data,ec);
         hidden_units[i] = GD::finalize_prediction (all, ec->partial_prediction);
 
         dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
@@ -148,7 +149,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->sum_feat_sq[nn_output_namespace] = n.output_layer.sum_feat_sq[nn_output_namespace];
       ec->total_sum_feat_sq += n.output_layer.sum_feat_sq[nn_output_namespace];
       ec->partial_prediction = 0.;
-      n.base.learn(&all, n.base.data, ec);
+      n.base.learn(n.base.data, ec);
       n.output_layer.partial_prediction = ec->partial_prediction;
       n.output_layer.loss = ec->loss;
       ec->total_sum_feat_sq -= n.output_layer.sum_feat_sq[nn_output_namespace];
@@ -164,7 +165,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.eta_global = ec->eta_global;
       n.output_layer.global_weight = ec->global_weight;
       n.output_layer.example_t = ec->example_t;
-      n.base.learn(&all,n.base.data,&n.output_layer);
+      n.base.learn(n.base.data,&n.output_layer);
       n.output_layer.ld = 0;
     }
 
@@ -199,7 +200,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             ld->label = GD::finalize_prediction (all, hidden_units[i-1] - gradhw);
             if (ld->label != hidden_units[i-1]) {
               ec->partial_prediction = 0.;
-              n.base.learn(&all,n.base.data,ec);
+              n.base.learn(n.base.data,ec);
             }
           }
           if (i != 1) {
@@ -244,8 +245,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec->loss = save_ec_loss;
   }
 
-  void learn(vw* all, void* d,example* ec) {
+  void learn(void* d,example* ec) {
     nn* n = (nn*)d;
+    vw* all = n->all;
     learn_with_output(*all, *n, ec, false);
   }
 
@@ -270,10 +272,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
   }
 
-  void finish(vw* a, void* d)
+  void finish(void* d)
   {
     nn* n =(nn*)d;
-    n->base.finish(a,n->base.data);
+    n->base.finish(n->base.data);
     delete n->squared_loss;
     free (n->output_layer.indices.begin);
     free (n->output_layer.atomics[nn_output_namespace].begin);
@@ -283,6 +285,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     nn* n = (nn*)calloc(1,sizeof(nn));
+    n->all = &all;
 
     po::options_description desc("NN options");
     desc.add_options()
@@ -362,7 +365,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << (all.training ? "training" : "testing") 
                 << std::endl;
 
-    learner t = {n,drive_nn,learn,finish,all.l.save_load};
+    learner t = {n,drive_nn,learn,finish,all.l.sl};
     n->base = all.l;
     all.l = t;
 

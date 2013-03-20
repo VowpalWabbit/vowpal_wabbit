@@ -54,6 +54,7 @@ namespace ECT
     v_array<bool> tournaments_won;
 
     learner base;
+    vw* all;
   };
 
   bool exists(v_array<size_t> db)
@@ -212,7 +213,7 @@ namespace ECT
             update_example_indicies(all.audit, ec,offset);
             ec->partial_prediction = 0;
 	  
-            e.base.learn(&all,e.base.data, ec);
+            e.base.learn(e.base.data, ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
 	    
@@ -229,7 +230,7 @@ namespace ECT
 	
 	ec->partial_prediction = 0;
 	update_example_indicies(all.audit, ec,offset);
-	e.base.learn(&all,e.base.data, ec);
+	e.base.learn(e.base.data, ec);
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -276,10 +277,10 @@ namespace ECT
 	update_example_indicies(all.audit, ec,offset);
 	
 	ec->partial_prediction = 0;
-	e.base.learn(&all,e.base.data, ec);
+	e.base.learn(e.base.data, ec);
 	simple_temp.weight = 0.;
 	ec->partial_prediction = 0;
-	e.base.learn(&all,e.base.data, ec);//inefficient, we should extract final prediction exactly.
+	e.base.learn(e.base.data, ec);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -338,7 +339,7 @@ namespace ECT
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
-		e.base.learn(&all,e.base.data, ec);
+		e.base.learn(e.base.data, ec);
 		
                 update_example_indicies(all.audit, ec,-offset);
 		
@@ -355,13 +356,14 @@ namespace ECT
       }
   }
 
-  void learn(vw* all, void* d, example* ec)
+  void learn(void* d, example* ec)
   {
     ect* e=(ect*)d;
-
+    vw* all = e->all;
+    
     if (command_example(all, ec))
       {
-	e->base.learn(all, e->base.data, ec);
+	e->base.learn(e->base.data, ec);
 	return;
       }
 
@@ -378,10 +380,10 @@ namespace ECT
     ec->final_prediction = new_label;
   }
 
-  void finish(vw* all, void* d)
+  void finish(void* d)
   {
     ect* e = (ect*)d;
-    e->base.finish(all, e->base.data);
+    e->base.finish(e->base.data);
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
@@ -406,7 +408,7 @@ namespace ECT
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(all, d, ec);
+            learn(d, ec);
             OAA::output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
@@ -474,8 +476,9 @@ namespace ECT
 
     *(all.p->lp) = OAA::mc_label_parser;
     create_circuit(all, *data, data->k, data->errors+1);
+    data->all = &all;
     
-    learner l = {data, drive, learn, finish, all.l.save_load};
+    learner l = {data, drive, learn, finish, all.l.sl};
     data->base = all.l;
     all.l = l;
   }

@@ -545,7 +545,7 @@ vw parse_args(int argc, char *argv[])
     SENDER::setup(all, vm, all.pairs);
 
   // load rest of regressor
-  all.l.save_load(&all, all.l.data, io_temp, true, false);
+  all.l.sl.save_load(all.l.sl.sldata, io_temp, true, false);
   io_temp.close_file();
 
   if (all.l1_lambda < 0.) {
@@ -779,7 +779,7 @@ namespace VW {
   void finish(vw& all)
   {
     finalize_regressor(all, all.final_regressor_name);
-    all.l.finish(&all, all.l.data);
+    all.l.finish(all.l.data);
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
     if (all.searnstr != NULL) free(all.searnstr);

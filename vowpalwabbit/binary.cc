@@ -5,10 +5,10 @@ namespace BINARY {
     learner base;
   };
 
-  void learn(vw* a, void* d, example* ec)
+  void learn(void* d, example* ec)
   {
     binary* b = (binary*)d;
-    b->base.learn(a, b->base.data, ec);
+    b->base.learn(b->base.data, ec);
     
     float prediction = -1;
     if ( ec->final_prediction > 0)
@@ -16,10 +16,10 @@ namespace BINARY {
     ec->final_prediction = prediction;
   }
 
-  void finish(vw* a, void* d)
+  void finish(void* d)
   {
     binary* b = (binary*)d;
-    b->base.finish(a,b->base.data);
+    b->base.finish(b->base.data);
     free(b);
   }
 
@@ -30,7 +30,7 @@ namespace BINARY {
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(all, d, ec);
+            learn(d, ec);
 	    OAA::output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
@@ -53,7 +53,7 @@ namespace BINARY {
     all.sd->binary_label = true;
     binary* data = (binary*)calloc(1,sizeof(binary));
     data->base = all.l;
-    learner l = {data, drive, learn, finish, all.l.save_load};
+    learner l = {data, drive, learn, finish, all.l.sl};
     all.l = l;
   }
 }

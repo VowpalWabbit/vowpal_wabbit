@@ -31,6 +31,7 @@ namespace CB
     learner base;
     
     cb_class* known_cost;
+    vw* all;
   };
 
   bool know_all_cost_example(CB::label* ld)
@@ -288,7 +289,7 @@ namespace CB
     float old_max = all.sd->max_label;
     //all.sd->max_label = c.max_cost;
     update_example_indicies(all.audit, ec, desired_increment);
-    all.scorer.learn(&all, all.scorer.data, ec);
+    all.scorer.learn(all.scorer.data, ec);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
     update_example_indicies(all.audit, ec, -desired_increment);
@@ -473,13 +474,14 @@ namespace CB
     }
   }
 
-  void learn(vw* all, void* d, example* ec) {
+  void learn(void* d, example* ec) {
     cb* c = (cb*)d;
+    vw* all = c->all;
     CB::label* ld = (CB::label*)ec->ld;
 
     if (command_example(all, ec))
       {
-	c->base.learn(all, c->base.data, ec);
+	c->base.learn(c->base.data, ec);
 	return;
       }
 
@@ -490,7 +492,7 @@ namespace CB
       cb_test_to_cs_test_label(*all,ec,c->cb_cs_ld);
 
        ec->ld = &c->cb_cs_ld;
-       c->base.learn(all,c->base.data,ec);
+       c->base.learn(c->base.data,ec);
        ec->ld = ld;
        return;
     }
@@ -520,7 +522,7 @@ namespace CB
     if (c->cb_type != CB_TYPE_DM)
       {
 	ec->ld = &c->cb_cs_ld;
-	c->base.learn(all,c->base.data,ec);
+	c->base.learn(c->base.data,ec);
 	ec->ld = ld;
       }
   }
@@ -608,10 +610,10 @@ namespace CB
     print_update(all, c, CB::is_test_label((CB::label*)ec->ld), ec);
   }
 
-  void finish(vw* a, void* d)
+  void finish(void* d)
   {
     cb* c=(cb*)d;
-    c->base.finish(a,c->base.data);
+    c->base.finish(c->base.data);
     c->cb_cs_ld.costs.delete_v();
     free(c);
   }
@@ -624,7 +626,7 @@ namespace CB
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
       {
-        learn(all, d, ec);
+        learn(d, ec);
 	if (!command_example(&all, ec))
 	  output_example(*all, *c, ec);
 	VW::finish_example(*all, ec);
@@ -637,6 +639,7 @@ namespace CB
   void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     cb* c = (cb*)calloc(1, sizeof(cb));
+    c->all = &all;
     c->first_print_call = true;
     c->min_cost = 0.;
     c->max_cost = 1.;
@@ -718,7 +721,7 @@ namespace CB
 
     all.sd->k = nb_actions;
 
-    learner l = {c, drive, learn, finish, all.l.save_load};
+    learner l = {c, drive, learn, finish, all.l.sl};
     c->base = all.l;
     all.l = l;
   }
