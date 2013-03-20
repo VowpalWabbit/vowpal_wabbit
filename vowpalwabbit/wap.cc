@@ -270,7 +270,7 @@ namespace WAP {
       }
   }
   
-  void setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
     wap* w=(wap*)calloc(1,sizeof(wap));
     w->all = &all;
@@ -297,6 +297,6 @@ namespace WAP {
 
     learner l = {w, drive, learn, finish, all.l.sl};
     w->base = all.l;
-    all.l = l;
+    return l;
   }
 }

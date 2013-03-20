@@ -15,7 +15,6 @@ license as described in the file LICENSE.
 #include "parse_regressor.h"
 #include "parser.h"
 #include "sparse_dense.h"
-#include "learner.h"
 
 namespace GD{
 void print_result(int f, float res, v_array<char> tag);

@@ -282,7 +282,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     free(n);
   }
 
-  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     nn* n = (nn*)calloc(1,sizeof(nn));
     n->all = &all;
@@ -365,9 +365,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << (all.training ? "training" : "testing") 
                 << std::endl;
 
-    learner t = {n,drive_nn,learn,finish,all.l.sl};
     n->base = all.l;
-    all.l = t;
 
     all.base_learner_nb_w *= (n->inpass) ? n->k + 1 : n->k;
     n->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
@@ -429,5 +427,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->xsubi = vm["random_seed"].as<size_t>();
 
     n->save_xsubi = n->xsubi;
+
+    learner l = {n,drive_nn,learn,finish,all.l.sl};
+    return l;
   }
 }

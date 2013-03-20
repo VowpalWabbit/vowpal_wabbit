@@ -296,10 +296,10 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
-  void setup(vw& all)
+  learner setup(vw& all)
   {
     sl_t sl = {&all, save_load};
-    learner t = {&all,drive,learn,finish,sl};
-    all.l = t;
+    learner l = {&all,drive,learn,finish,sl};
+    return l;
   }
 }

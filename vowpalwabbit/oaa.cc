@@ -239,7 +239,7 @@ namespace OAA {
     free(o);
   }
 
-  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     oaa* data = (oaa*)calloc(1, sizeof(oaa));
     //first parse for number of actions
@@ -264,6 +264,6 @@ namespace OAA {
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
     learner l = {data, drive, learn, finish, all.l.sl};
-    all.l = l;
+    return l;
   }
 }

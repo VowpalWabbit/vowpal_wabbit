@@ -109,7 +109,7 @@ void send_features(io_buf *b, example* ec)
   void learn(void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
   void finish(void* d) { cout << "sender can't be used under reduction" << endl; }
 
-  void setup(vw& all, po::variables_map& vm, vector<string> pairs)
+  learner setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender* s = (sender*)calloc(1,sizeof(sender));
   s->sd = -1;
@@ -120,8 +120,8 @@ void send_features(io_buf *b, example* ec)
     }
 
   sl_t sl = {NULL, save_load};
-  learner ret = {s,drive_send,learn,finish,sl};
-  all.l = ret;
+  learner l = {s,drive_send,learn,finish,sl};
+  return l;
 }
 
 }

@@ -540,7 +540,7 @@ namespace Searn
     free(s);
   }
 
-  void setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     searn* s = (searn*)calloc(1,sizeof(searn));
 
@@ -814,7 +814,7 @@ namespace Searn
     learner l = {s, drive, learn, finish, all.l.sl};
     s->base = all.l;
     s->all = & all;
-    all.l = l;
+    return l;
   }
 
   uint32_t searn_predict(vw&all, searn& s, state s0, size_t step, bool allow_oracle, bool allow_current, v_array< pair<uint32_t,float> >* partial_predictions)  // TODO: partial_predictions
@@ -1955,7 +1955,7 @@ namespace ImperativeSearn {
   bool float_equal(float a, float b) { return fabs(a-b) < 1e-6; }
   bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
 
-  void setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     searn* srn = (searn*)calloc(1,sizeof(searn));
     srn->all = &all;
@@ -2059,7 +2059,7 @@ namespace ImperativeSearn {
     
     learner l = {srn, searn_drive, searn_learn, searn_finish, all.l.sl};
     srn->base = all.l;
-    all.l = l;
+    return l;
   }
 }
 /*

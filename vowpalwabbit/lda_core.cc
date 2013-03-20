@@ -725,7 +725,7 @@ size_t next_pow2(size_t x) {
     free(d);
   }
 
-void setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
   lda* ld = (lda*)calloc(1,sizeof(lda));
   ld->all = &all;
@@ -763,6 +763,6 @@ void setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 
   sl_t sl = {ld, save_load};
   learner l = {ld, drive, learn, finish, sl};
-  all.l = l;
+  return l;
 }
 }

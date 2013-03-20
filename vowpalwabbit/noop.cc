@@ -27,11 +27,11 @@ namespace NOOP {
     }
   }
   
-  void setup(vw& all)
+  learner setup(vw& all)
   {
     sl_t sl = {NULL,save_load};
-    learner t = {NULL,drive,learn,finish,sl};
-    all.l = t;
     all.is_noop = true;
+    learner l = {NULL,drive,learn,finish,sl};
+    return l;
   }
 }

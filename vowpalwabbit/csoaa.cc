@@ -359,7 +359,7 @@ namespace CSOAA {
       }
  }
 
-  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     csoaa* c=(csoaa*)calloc(1,sizeof(csoaa));
     c->all = &all;
@@ -387,7 +387,7 @@ namespace CSOAA {
 
     learner l = {c, drive, learn, finish, all.l.sl};
     c->base = all.l;
-    all.l = l;
+    return l;
   }
 
   bool example_is_test(example* ec)
@@ -1046,7 +1046,7 @@ namespace LabelDict {
       drive_ldf_multiline(*all,*l);
   }
   
-  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
 
@@ -1106,7 +1106,7 @@ namespace LabelDict {
     
     learner l = {ld, drive, learn, finish, all.l.sl};
     ld->base = all.l;
-    all.l = l;
+    return l;
   }
 
   void global_print_newline(vw& all)

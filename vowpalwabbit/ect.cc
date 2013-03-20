@@ -421,7 +421,7 @@ namespace ECT
       }
   }
 
-  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ect* data = (ect*)calloc(1, sizeof(ect));
     po::options_description desc("ECT options");
@@ -480,6 +480,6 @@ namespace ECT
     
     learner l = {data, drive, learn, finish, all.l.sl};
     data->base = all.l;
-    all.l = l;
+    return l;
   }
 }

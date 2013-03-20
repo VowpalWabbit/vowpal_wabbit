@@ -28,7 +28,7 @@ namespace CSOAA {
     v_array<wclass> costs;
   };
   
-  void setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 
   void output_example(vw& all, example* ec);
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
@@ -51,7 +51,7 @@ namespace CSOAA {
 namespace CSOAA_AND_WAP_LDF {
   typedef CSOAA::label label;
 
-  void setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   void global_print_newline(vw& all);
   void output_example(vw& all, example* ec, bool&hit_loss);
 

@@ -41,7 +41,7 @@ namespace BINARY {
       }
   }
 
-  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     if (!vm_file.count("binary")) 
       {
@@ -54,6 +54,6 @@ namespace BINARY {
     binary* data = (binary*)calloc(1,sizeof(binary));
     data->base = all.l;
     learner l = {data, drive, learn, finish, all.l.sl};
-    all.l = l;
+    return l;
   }
 }

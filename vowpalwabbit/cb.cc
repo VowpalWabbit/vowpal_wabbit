@@ -636,7 +636,7 @@ namespace CB
     }
   }
 
-  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     cb* c = (cb*)calloc(1, sizeof(cb));
     c->all = &all;
@@ -723,6 +723,6 @@ namespace CB
 
     learner l = {c, drive, learn, finish, all.l.sl};
     c->base = all.l;
-    all.l = l;
+    return l;
   }
 }
