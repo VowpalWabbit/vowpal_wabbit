@@ -283,7 +283,7 @@ vw parse_args(int argc, char *argv[])
 	}
     }
   
-  if (vm.count("daemon") || vm.count("pid_file") || vm.count("port")) {
+  if (vm.count("daemon") || vm.count("pid_file") || (vm.count("port") && !all.active) ) {
     all.daemon = true;
 
     // allow each child to process up to 1e5 connections
