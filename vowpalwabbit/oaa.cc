@@ -159,7 +159,7 @@ namespace OAA {
     vw* all = d->all;
     if (command_example(all,ec))
       {
-	d->base.learn(d->base.data, ec);
+	d->base.learn(ec);
 	return;
       }
 
@@ -185,7 +185,7 @@ namespace OAA {
         ec->ld = &simple_temp;
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
-        d->base.learn(d->base.data,ec);
+        d->base.learn(ec);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -235,7 +235,7 @@ namespace OAA {
   void finish(void* data)
   {    
     oaa* o=(oaa*)data;
-    o->base.finish(o->base.data);
+    o->base.finish();
     free(o);
   }
 

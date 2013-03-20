@@ -202,7 +202,7 @@ void noop_mm(shared_data* sd, float label)
 
 void vw::learn(example* ec)
 {
-  this->l.learn(this->l.data,ec);
+  this->l.learn(ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)

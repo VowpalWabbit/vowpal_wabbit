@@ -185,7 +185,7 @@ namespace WAP {
 
               mirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
 
-              w.base.learn(w.base.data,ec);
+              w.base.learn(ec);
               unmirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
             }
         }
@@ -212,7 +212,7 @@ namespace WAP {
           update_example_indicies(all.audit, ec, w.increment*(myi-1));
         ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
-        w.base.learn(w.base.data, ec);
+        w.base.learn(ec);
         if (myi != 1)
           update_example_indicies(all.audit, ec, -w.increment*(myi-1));
         if (ec->partial_prediction > score)
@@ -233,7 +233,7 @@ namespace WAP {
     
     if (command_example(all, ec))
       {
-	w->base.learn(w->base.data, ec);
+	w->base.learn(ec);
 	return;
       }
 
@@ -248,7 +248,7 @@ namespace WAP {
   void finish(void* d)
   {
     wap* w=(wap*)d;
-    w->base.finish(w->base.data);
+    w->base.finish();
     free(w);
   }
   

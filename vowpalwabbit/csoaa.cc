@@ -286,7 +286,7 @@ namespace CSOAA {
 
     if (command_example(all, ec))
       {
-	c->base.learn(c->base.data, ec);
+	c->base.learn(ec);
 	return;
       }
 
@@ -319,7 +319,7 @@ namespace CSOAA {
           current_increment = desired_increment;
         }
 
-	c->base.learn(c->base.data, ec);
+	c->base.learn(ec);
         cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
@@ -336,7 +336,7 @@ namespace CSOAA {
   void finish(void* d)
   {
     csoaa* c=(csoaa*)d;
-    c->base.finish(c->base.data);
+    c->base.finish();
     free(c);
   }
 
@@ -637,7 +637,7 @@ namespace LabelDict {
       LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
       
       ec->ld = &simple_label;
-      l.base.learn(l.base.data, ec); // make a prediction
+      l.base.learn(ec); // make a prediction
       costs[j].partial_prediction = ec->partial_prediction;
 
       if (ec->partial_prediction < *min_score) {
@@ -725,7 +725,7 @@ namespace LabelDict {
               simple_label.weight = value_diff;
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
-              l.base.learn(l.base.data, ec1);
+              l.base.learn(ec1);
               unsubtract_example(all, ec1);
               
               LabelDict::del_example_namespace_from_memory(l, ec2, costs2[j2].weight_index);
@@ -783,7 +783,7 @@ namespace LabelDict {
           ec->ld = &simple_label;
           ec->partial_prediction = 0.;
           LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
-          l.base.learn(l.base.data, ec);
+          l.base.learn(ec);
           LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
           ec->example_t = example_t;
         }
@@ -919,7 +919,7 @@ namespace LabelDict {
   void learn_singleline(vw& all, ldf& l, example*ec) {
     if (command_example(&all, ec))
       {
-	l.base.learn(l.base.data, ec);
+	l.base.learn(ec);
 	return;
       }
     
@@ -968,7 +968,7 @@ namespace LabelDict {
 	if (ec->end_pass)
 	  l.first_pass = false;
 
-	l.base.learn(l.base.data, ec);
+	l.base.learn(ec);
 	return;
       }
   }
@@ -984,7 +984,7 @@ namespace LabelDict {
   {
     ldf* l=(ldf*)d;
     vw* all = l->all;
-    l->base.finish(l->base.data);
+    l->base.finish();
     clear_seq(*all, *l);
     l->ec_seq.delete_v();
     LabelDict::free_label_features(*l);

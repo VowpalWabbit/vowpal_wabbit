@@ -239,7 +239,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
   io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
   
   save_load_header(all, io_temp, false, as_text);
-  all.l.sl.save_load(all.l.sl.sldata, io_temp, false, as_text);
+  all.l.save_load(io_temp, false, as_text);
 
   io_temp.flush(); // close_file() should do this for me ...
   io_temp.close_file();

@@ -213,7 +213,7 @@ namespace ECT
             update_example_indicies(all.audit, ec,offset);
             ec->partial_prediction = 0;
 	  
-            e.base.learn(e.base.data, ec);
+            e.base.learn(ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
 	    
@@ -230,7 +230,7 @@ namespace ECT
 	
 	ec->partial_prediction = 0;
 	update_example_indicies(all.audit, ec,offset);
-	e.base.learn(e.base.data, ec);
+	e.base.learn(ec);
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -277,10 +277,10 @@ namespace ECT
 	update_example_indicies(all.audit, ec,offset);
 	
 	ec->partial_prediction = 0;
-	e.base.learn(e.base.data, ec);
+	e.base.learn(ec);
 	simple_temp.weight = 0.;
 	ec->partial_prediction = 0;
-	e.base.learn(e.base.data, ec);//inefficient, we should extract final prediction exactly.
+	e.base.learn(ec);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -339,7 +339,7 @@ namespace ECT
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
-		e.base.learn(e.base.data, ec);
+		e.base.learn(ec);
 		
                 update_example_indicies(all.audit, ec,-offset);
 		
@@ -363,7 +363,7 @@ namespace ECT
     
     if (command_example(all, ec))
       {
-	e->base.learn(e->base.data, ec);
+	e->base.learn(ec);
 	return;
       }
 
@@ -383,7 +383,7 @@ namespace ECT
   void finish(void* d)
   {
     ect* e = (ect*)d;
-    e->base.finish(e->base.data);
+    e->base.finish();
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
