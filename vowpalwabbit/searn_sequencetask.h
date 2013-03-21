@@ -29,10 +29,9 @@ namespace SequenceTask {
 }
 
 namespace SequenceTask_Easy {
-  using namespace ImperativeSearn;
-  void initialize(searn&, uint32_t&);
-  void finish(searn&);
-  void structured_predict_v1(searn&, example**,size_t,stringstream*,stringstream*);
+  void initialize(vw&, uint32_t&);
+  void finish(vw&);
+  void structured_predict_v1(vw&, ImperativeSearn::searn&, example**,size_t,stringstream*,stringstream*);
 }
 
 

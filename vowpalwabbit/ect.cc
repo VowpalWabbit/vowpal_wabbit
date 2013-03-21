@@ -54,6 +54,7 @@ namespace ECT
     v_array<bool> tournaments_won;
 
     learner base;
+    vw* all;
   };
 
   bool exists(v_array<size_t> db)
@@ -189,7 +190,7 @@ namespace ECT
     }
   }
 
-  size_t ect_predict(vw& all, ect& e, example* ec)
+  float ect_predict(vw& all, ect& e, example* ec)
   {
     if (e.k == (size_t)1)
       return 1;
@@ -212,7 +213,7 @@ namespace ECT
             update_example_indicies(all.audit, ec,offset);
             ec->partial_prediction = 0;
 	  
-            e.base.learn(&all,e.base.data, ec);
+            e.base.learn(e.base.data, ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
 	    
@@ -229,7 +230,7 @@ namespace ECT
 	
 	ec->partial_prediction = 0;
 	update_example_indicies(all.audit, ec,offset);
-	e.base.learn(&all,e.base.data, ec);
+	e.base.learn(e.base.data, ec);
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -238,7 +239,7 @@ namespace ECT
 	else
 	  id = e.directions[id].left;
       }
-    return id+1;
+    return (float)(id+1);
   }
 
   bool member(size_t t, v_array<size_t> ar)
@@ -259,7 +260,7 @@ namespace ECT
 
     e.tournaments_won.erase();
 
-    uint32_t id = e.directions[mc->label-1].winner;
+    uint32_t id = e.directions[(uint32_t)(mc->label)-1].winner;
     bool left = e.directions[id].left == mc->label - 1;
     do
       {
@@ -276,10 +277,10 @@ namespace ECT
 	update_example_indicies(all.audit, ec,offset);
 	
 	ec->partial_prediction = 0;
-	e.base.learn(&all,e.base.data, ec);
+	e.base.learn(e.base.data, ec);
 	simple_temp.weight = 0.;
 	ec->partial_prediction = 0;
-	e.base.learn(&all,e.base.data, ec);//inefficient, we should extract final prediction exactly.
+	e.base.learn(e.base.data, ec);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -338,7 +339,7 @@ namespace ECT
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
-		e.base.learn(&all,e.base.data, ec);
+		e.base.learn(e.base.data, ec);
 		
                 update_example_indicies(all.audit, ec,-offset);
 		
@@ -355,28 +356,34 @@ namespace ECT
       }
   }
 
-  void learn(void*a, void* d, example* ec)
+  void learn(void* d, example* ec)
   {
-    vw* all = (vw*)a;
     ect* e=(ect*)d;
+    vw* all = e->all;
+    
+    if (command_example(all, ec))
+      {
+	e->base.learn(e->base.data, ec);
+	return;
+      }
 
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
-      cout << "label is not in {1,"<< e->k << "} This won't work right." << endl;
-    size_t new_label = ect_predict(*all, *e, ec);
+      cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
+    float new_label = ect_predict(*all, *e, ec);
     ec->ld = mc;
     
     if (mc->label != (uint32_t)-1 && all->training)
       ect_train(*all, *e, ec);
     ec->ld = mc;
     
-    *(OAA::prediction_t*)&(ec->final_prediction) = new_label;
+    ec->final_prediction = new_label;
   }
 
-  void finish(void* all, void* d)
+  void finish(void* d)
   {
     ect* e = (ect*)d;
-    e->base.finish(all, e->base.data);
+    e->base.finish(e->base.data);
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
@@ -394,15 +401,14 @@ namespace ECT
     e->tournaments_won.delete_v();
   }
   
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(all, d, ec);
+            learn(d, ec);
             OAA::output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
@@ -415,7 +421,7 @@ namespace ECT
       }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ect* data = (ect*)calloc(1, sizeof(ect));
     po::options_description desc("ECT options");
@@ -470,9 +476,10 @@ namespace ECT
 
     *(all.p->lp) = OAA::mc_label_parser;
     create_circuit(all, *data, data->k, data->errors+1);
+    data->all = &all;
     
-    learner l = {data, drive, learn, finish, all.l.save_load};
+    learner l = {data, drive, learn, finish, all.l.sl};
     data->base = all.l;
-    all.l = l;
+    return l;
   }
 }

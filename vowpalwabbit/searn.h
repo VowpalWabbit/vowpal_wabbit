@@ -194,7 +194,7 @@ namespace Searn
     std::string (*to_string)(state, bool, std::vector<action>);
   };
 
-  void parse_flags(vw&all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner setup(vw&all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 namespace ImperativeSearn {
@@ -204,16 +204,15 @@ namespace ImperativeSearn {
     void  *data_ptr;
     size_t data_size;  // sizeof(data_ptr)
     size_t pred_step;  // srn->t when snapshot is made
-    bool   req_for_recomb;
   };
   
   struct searn_task;
 
   struct searn {
     // functions that you will call
-    uint32_t (*predict)(searn&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
-    void     (*declare_loss)(searn&,size_t,float);   // <0 means it was a test example!
-    void     (*snapshot)(searn&,size_t,size_t,void*,size_t,bool);
+    uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
+    void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
+    void     (*snapshot)(vw&,size_t,size_t,void*,size_t);
 
     // structure that you must set
     searn_task* task;
@@ -224,9 +223,8 @@ namespace ImperativeSearn {
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
     uint32_t learn_a;     //   and this is the a we're varying it to
     v_array<snapshot_item> snapshot_data;
-    v_hashmap<size_t,uint32_t> *recombination_table;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
-    v_array< v_array<CSOAA::wclass> > train_labels;  // which labels are valid at any given time
+    v_array< CSOAA::label > train_labels;  // which labels are valid at any given time
 
     stringstream* pred_string;
     stringstream* truth_string;
@@ -250,7 +248,6 @@ namespace ImperativeSearn {
     size_t num_features;
     uint32_t total_number_of_policies;
     bool do_snapshot;
-    bool do_recombination;
 
     size_t read_example_this_loop;
     size_t read_example_last_id;
@@ -264,17 +261,16 @@ namespace ImperativeSearn {
     v_array<example*> ec_seq;
 
     learner base;
-
-    vw*all;
+    vw* all;
   };
 
   struct searn_task {
-    void (*initialize)(searn&,uint32_t&);
-    void (*finish)(searn&);
-    void (*structured_predict)(searn&, example**,size_t,stringstream*,stringstream*);
+    void (*initialize)(vw&,uint32_t&);
+    void (*finish)(vw&);
+    void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
   };
 
-  void parse_flags(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  learner setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);

@@ -24,6 +24,11 @@ license as described in the file LICENSE.
 #include "rand48.h"
 
 namespace LDA {
+  struct lda {
+    v_array<float> Elogtheta;
+    vw* all;
+  };
+  
 #ifdef _WIN32
 inline float fmax(float f1, float f2) { return (f1 < f2 ? f2 : f1); }
 inline float fmin(float f1, float f2) { return (f1 > f2 ? f2 : f1); }
@@ -497,9 +502,10 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
-  void save_load(void* in, void*, io_buf& model_file, bool read, bool text)
+  void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)in;
+  lda* l = (lda*)d;
+  vw* all = l->all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->stride;
   
@@ -559,10 +565,9 @@ size_t next_pow2(size_t x) {
 }
 
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
 {
-  vw* all = (vw*)in;
-  v_array<float>* Elogtheta = (v_array<float>*)d;
+  v_array<float>* Elogtheta = &((lda*)d)->Elogtheta;
   regressor reg = all->reg;
   example* ec = NULL;
 
@@ -711,18 +716,19 @@ size_t next_pow2(size_t x) {
     }
 }
 
-  void learn(void*, void*, example*)
+  void learn(void*, example*)
   {
     cout << "LDA can't be used as a reduction" << endl;
   }
 
-  void finish(void*, void*d) {
+  void finish(void*d) {
     free(d);
   }
 
-void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
-  v_array<float> *Elogtheta = (v_array<float>*)calloc(1,sizeof(v_array<float>));
+  lda* ld = (lda*)calloc(1,sizeof(lda));
+  ld->all = &all;
 
   po::options_description desc("LDA options");
   desc.add_options()
@@ -755,7 +761,8 @@ void parse_flags(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
   }
 
-  learner l = {Elogtheta, drive, learn, finish, save_load};
-  all.l = l;
+  sl_t sl = {ld, save_load};
+  learner l = {ld, drive, learn, finish, sl};
+  return l;
 }
 }

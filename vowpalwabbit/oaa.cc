@@ -22,11 +22,12 @@ namespace OAA {
     uint32_t increment;
     uint32_t total_increment;
     learner base;
+    vw* all;
   };
 
   char* bufread_label(mc_label* ld, char* c)
   {
-    ld->label = *(uint32_t *)c;
+    ld->label = *(float *)c;
     c += sizeof(ld->label);
     ld->weight = *(float *)c;
     c += sizeof(ld->weight);
@@ -58,7 +59,7 @@ namespace OAA {
 
   char* bufcache_label(mc_label* ld, char* c)
   {
-    *(size_t *)c = ld->label;
+    *(float *)c = ld->label;
     c += sizeof(ld->label);
     *(float *)c = ld->weight;
     c += sizeof(ld->weight);
@@ -92,11 +93,11 @@ namespace OAA {
     case 0:
       break;
     case 1:
-      ld->label = int_of_substring(words[0]);
+      ld->label = (float)int_of_substring(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = int_of_substring(words[0]);
+      ld->label = (float)int_of_substring(words[0]);
       ld->weight = float_of_substring(words[1]);
       break;
     default:
@@ -114,15 +115,15 @@ namespace OAA {
         if (ld->label == INT_MAX)
           strcpy(label_buf," unknown");
         else
-          sprintf(label_buf,"%8lu",(long unsigned int)ld->label);
+          sprintf(label_buf,"%8ld",(long int)ld->label);
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu\n",
+        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8ld %8lu\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)*(prediction_t*)&ec->final_prediction,
+                (long int)ec->final_prediction,
                 (long unsigned int)ec->num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -133,31 +134,38 @@ namespace OAA {
 
   void output_example(vw& all, example* ec)
   {
+    if (command_example(&all,ec))
+      return;
+
     mc_label* ld = (mc_label*)ec->ld;
-    all.sd->weighted_examples += ld->weight;
-    all.sd->total_features += ec->num_features;
     size_t loss = 1;
-    if (ld->label == *(prediction_t*)&(ec->final_prediction))
+    if (ld->label == ec->final_prediction)
       loss = 0;
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
+    accumulate_loss(all, ec, ld->weight, loss);
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)(*(prediction_t*)&(ec->final_prediction)), 0, ec->tag);
+      all.print(*sink, ec->final_prediction, 0, ec->tag);
   
     all.sd->example_number++;
 
     print_update(all, ec);
   }
 
-  void learn_with_output(vw*all,oaa* d, example* ec, bool shouldOutput)
+  void learn_with_output(oaa* d, example* ec, bool shouldOutput)
   {
+    vw* all = d->all;
+    if (command_example(all,ec))
+      {
+	d->base.learn(d->base.data, ec);
+	return;
+      }
+
     mc_label* mc_label_data = (mc_label*)ec->ld;
-    size_t prediction = 1;
+    float prediction = 1;
     float score = INT_MIN;
   
     if (mc_label_data->label == 0 || (mc_label_data->label > d->k && mc_label_data->label != (uint32_t)-1))
-      cout << "label is not in {1,"<< d->k << "} This won't work right." << endl;
+      cout << "label " << mc_label_data->label << " is not in {1,"<< d->k << "} This won't work right." << endl;
   
     string outputString;
     stringstream outputStringStream(outputString);
@@ -174,11 +182,11 @@ namespace OAA {
         ec->ld = &simple_temp;
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
-        d->base.learn((void*)all,d->base.data,ec);
+        d->base.learn(d->base.data,ec);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
-            prediction = i;
+            prediction = (float)i;
           }
 
         if (shouldOutput) {
@@ -187,9 +195,9 @@ namespace OAA {
         }
 
         ec->partial_prediction = 0.;
-      }
+      }	
     ec->ld = mc_label_data;
-    *(prediction_t*)&(ec->final_prediction) = prediction;
+    ec->final_prediction = prediction;
     update_example_indicies(all->audit, ec, -d->total_increment);
 
     if (shouldOutput) {
@@ -198,20 +206,20 @@ namespace OAA {
     }
   }
 
-  void learn(void*a, void* d, example* ec) {
-    learn_with_output((vw*)a, (oaa*)d, ec, false);
+  void learn(void* d, example* ec) {
+    learn_with_output((oaa*)d, ec, false);
   }
 
-  void drive(void *in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn_with_output(all, (oaa*)d, ec, all->raw_prediction > 0);
-            output_example(*all, ec);
+            learn_with_output((oaa*)d, ec, all->raw_prediction > 0);
+	    if (!command_example(all, ec))
+	      output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
@@ -221,14 +229,14 @@ namespace OAA {
       }
   }
 
-  void finish(void* all, void* data)
+  void finish(void* data)
   {    
     oaa* o=(oaa*)data;
-    o->base.finish(all,o->base.data);
+    o->base.finish(o->base.data);
     free(o);
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     oaa* data = (oaa*)calloc(1, sizeof(oaa));
     //first parse for number of actions
@@ -246,13 +254,13 @@ namespace OAA {
       all.options_from_file.append(ss.str());
     }
 
+    data->all = &all;
     *(all.p->lp) = mc_label_parser;
+    all.base_learner_nb_w *= data->k;
     data->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
-    learner l = {data, drive, learn, finish, all.l.save_load};
-    all.l = l;
-
-    all.base_learner_nb_w *= data->k;
+    learner l = {data, drive, learn, finish, all.l.sl};
+    return l;
   }
 }

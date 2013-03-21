@@ -29,14 +29,20 @@ size_t really_read(int sock, void* in, size_t count)
   int r = 0;
   while (done < count)
     {
-      if ((r = read(sock,buf,(unsigned int)(count-done))) == 0)
+      if ((r = 
+#ifdef _WIN32
+		  _read(sock,buf,(unsigned int)(count-done))
+#else
+		  read(sock,buf,(unsigned int)(count-done))
+#endif
+		  ) == 0)
 	return 0;
       else
 	if (r < 0)
 	  {
 	    cerr << "argh! bad read! on message from " << sock << endl;
 	    perror(NULL);
-	    exit(0);
+	    throw exception();
 	  }
 	else
 	  {
@@ -59,11 +65,17 @@ void get_prediction(int sock, float& res, float& weight)
 
 void send_prediction(int sock, global_prediction p)
 {
-  if (write(sock, &p, sizeof(p)) < (int)sizeof(p))
+  if (
+#ifdef _WIN32
+	  _write(sock, &p, sizeof(p)) 
+#else
+	  write(sock, &p, sizeof(p)) 
+#endif 
+	  < (int)sizeof(p))
     {
       cerr << "argh! bad global write! " << sock << endl;
       perror(NULL);
-      exit(0);
+      throw exception();
     }
 }
 
@@ -95,7 +107,11 @@ void print_result(int f, float res, float weight, v_array<char> tag)
       print_tag(ss, tag);
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#ifdef _WIN32
+	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else
+	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif
       if (t != len)
         {
           cerr << "write error" << endl;
@@ -113,7 +129,11 @@ void print_raw_text(int f, string s, v_array<char> tag)
   print_tag (ss, tag);
   ss << '\n';
   ssize_t len = ss.str().size();
+#ifdef _WIN32
+  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else  
   ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif
   if (t != len)
     {
       cerr << "write error" << endl;
@@ -136,7 +156,11 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
 	}
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#ifdef _WIN32
+	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else
+	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif
       if (t != len)
 	cerr << "write error" << endl;
     }
@@ -156,7 +180,11 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
       print_tag(ss, tag);
       ss << '\n';
       ssize_t len = ss.str().size();
-      ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#ifdef _WIN32
+	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else	  
+	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif 
       if (t != len)
 	cerr << "write error" << endl;
     }
@@ -172,10 +200,33 @@ void set_mm(shared_data* sd, float label)
 void noop_mm(shared_data* sd, float label)
 {}
 
-void vw::learn(void* a, example* ec)
+void vw::learn(example* ec)
 {
-  vw* all = (vw*)a;
-  all->l.learn(a,all->l.data,ec);
+  this->l.learn(this->l.data,ec);
+}
+
+void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
+{
+  for (size_t i = 0; i < grams.size(); i++)
+    {
+      string ngram = grams[i];
+      if ( isdigit(ngram[0]) )
+	{
+	  int n = atoi(ngram.c_str());
+	  if (!quiet)
+	    cerr << "Generating " << n << "-" << descriptor << " for all namespaces." << endl;
+	  for (size_t j = 0; j < 256; j++)
+	    dest[j] = n;
+	}
+      else if ( ngram.size() == 1)
+	cout << "You must specify the namespace index before the n" << endl;
+      else {
+	int n = atoi(ngram.c_str()+1);
+	dest[(uint32_t)ngram[0]] = n;
+	if (!quiet)
+	  cerr << "Generating " << n << "-" << descriptor << " for " << ngram[0] << " namespaces." << endl;
+      }
+    }
 }
 
 vw::vw()
@@ -192,6 +243,7 @@ vw::vw()
   reg_mode = 0;
 
   current_pass = 0;
+  current_command = 0;
 
   bfgs = false;
   hessian_on = false;
@@ -208,7 +260,7 @@ vw::vw()
   m = 15; 
   save_resume = false;
 
-  l = GD::get_learner();
+  l = GD::setup(*this);
   scorer = l;
 
   set_minmax = set_mm;
@@ -252,8 +304,11 @@ vw::vw()
   total = 1;
   node = 0;
 
-  ngram = 0;
-  skips = 0;
+  for (size_t i = 0; i < 256; i++)
+    {
+      ngram[i] = 0;
+      skips[i] = 0;
+    }
 
   //by default use invariant normalized adaptive updates
   adaptive = true;

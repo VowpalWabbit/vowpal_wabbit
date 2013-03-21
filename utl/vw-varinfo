@@ -133,6 +133,7 @@ sub get_args {
             if ($vw_opts_and_args[-1] =~ '-d|--data') {
                 pop(@vw_opts_and_args);
                 $skip_ts = 1;
+            # These options have file-args following them
             } elsif ($vw_opts_and_args[-1] !~
                         /^(?:
                             -p
@@ -151,7 +152,7 @@ sub get_args {
                 $skip_ts = 1;
             }
             if ($skip_ts) {
-                warn "ignoring trainset: $arg in vw-args\n";
+                warn "ignoring trainset: $arg in vw-args: train-set must be last arg\n";
                 next;
             }
         }
@@ -185,12 +186,20 @@ sub get_args {
         }
         $MultiClass = 1;
     }
-    $ModelFile = "$TrainFile.model";
-    $RModelFile = "$TrainFile.rmodel";
+
+    # Since we need to pass '-f model', ensure it doesn't clash
+    # with the user explicitly passing these
+    if ($VWARGS =~ /(?:(?:^|\s)(?:-f|--final_regressor)\s+(\S+))/) {
+        $ModelFile = $1;
+    } else {
+        $ModelFile = "$TrainFile.model";
+        push(@TmpFiles, $ModelFile);
+    }
+
     $ExampleFile = "$TrainFile.examples";
     $AuditFile = "$TrainFile.audit";
 
-    @TmpFiles = ($ModelFile, $RModelFile, $ExampleFile, $AuditFile);
+    push(@TmpFiles, $ExampleFile, $AuditFile);
 }
 
 sub cleanup {
@@ -355,16 +364,20 @@ sub read_features($) {
 # do_train
 #   run the training stage to compute per feature weights
 #
-sub do_train($$;$) {
-    my ($trainset, $model, $rmodel) = @_;
-    my $cmd = "$VW --quiet $VWARGS -f $model";
+sub do_train($$) {
+    my ($trainset, $model) = @_;
+    my $cmd = "$VW --quiet $VWARGS";
+    unless ($cmd =~ /(?:\s(?:-d|--data)\s)/) {
+        $cmd .= " $trainset";
+    }
+    unless ($cmd =~ /(?:\s(?:-f|--final_regressor))/) {
+        $cmd .= " -f $model";
+    }
+
     if ($opt_v) {
         $cmd =~ s/ --quiet / /;
     }
-    if (defined $rmodel) {
-        $cmd .= " --readable_model $rmodel";
-    }
-    $cmd .= " $trainset";
+
     v("training: %s\n", $cmd);
     system($cmd);
     die "$0: vw training failed (see details above)\n"
@@ -652,7 +665,7 @@ sub summarize_features {
 # -- main
 get_args();
 read_features($TrainFile);
-do_train($TrainFile, $ModelFile, $RModelFile);
+do_train($TrainFile, $ModelFile);
 @Features = audit_features();
 summarize_features();
 cleanup();

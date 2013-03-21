@@ -86,20 +86,20 @@ void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
   float* local_weights = new float[length];
 
   for(uint32_t i = 0;i < length;i++) 
-    local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]-1);
+    local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]);
   
   all_reduce(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
 
   for(uint32_t i = 0;i < length;i++) 
     if(local_weights[i] > 0) {
-      float ratio = sqrt(weights[stride*i+1]*weights[stride*i+1]-1)/local_weights[i];
+      float ratio = sqrt(weights[stride*i+1]*weights[stride*i+1])/local_weights[i];
       weights[stride*i] *= ratio;
       weights[stride*i+1] *= ratio;
     }
     else 
       weights[stride*i] = 0; 
 
-  all_reduce(weights, 2*length, master_location, all.unique_id, all.total, all.node, all.socks);
+  all_reduce(weights, stride*length, master_location, all.unique_id, all.total, all.node, all.socks);
 
   delete[] local_weights;
 }

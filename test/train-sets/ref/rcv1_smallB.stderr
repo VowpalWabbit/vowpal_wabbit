@@ -1,0 +1,38 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/rcv1_smallB.dat.cache
+Reading datafile = train-sets/rcv1_smallB.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.871371   0.871371            3         3.0  -1.0000  -0.1371      134
+0.850478   0.829584            6         6.0  -1.0000  -0.1884       81
+0.777035   0.688903           11        11.0  -1.0000  -0.4198       86
+0.846323   0.915611           22        22.0  -1.0000  -0.0648       19
+0.824680   0.803036           44        44.0   1.0000  -0.4097       45
+0.783363   0.741086           87        87.0   1.0000  -0.0522       46
+0.753597   0.723831          174       174.0  -1.0000  -0.0781       46
+0.633453   0.513309          348       348.0   1.0000   0.5132       14
+0.548095   0.462736          696       696.0  -1.0000  -0.4694       58
+0.448553   0.349011         1392      1392.0   1.0000  -0.4026       45
+0.379790   0.311026         2784      2784.0  -1.0000  -1.0000      178
+0.320539   0.261288         5568      5568.0  -1.0000  -0.8806      139
+** dev loss on pass 0 is 0.268707 (average 0.268707 across all passes, best inf on pass 0) **
+0.254274   0.187997        12135     11135.0   1.0000   0.4934       17
+** dev loss on pass 1 is 0.164891 (average 0.216799 across all passes, best 0.268707 on pass 0) **
+0.158991   0.063699        24269     22269.0   1.0000   1.0000       47
+** dev loss on pass 2 is 0.145987 (average 0.193195 across all passes, best 0.164891 on pass 1) **
+** dev loss on pass 3 is 0.140903 (average 0.180122 across all passes, best 0.145987 on pass 2) **
+0.089160   0.019326        48537     44537.0  -1.0000  -0.9427       25
+** dev loss on pass 4 is 0.139494 (average 0.171996 across all passes, best 0.140903 on pass 3) **
+
+finished run
+number of examples = 50000
+weighted example sum = 4.5e+04
+weighted label sum = -3180
+average loss = 0.08835
+best constant = -0.07067
+total feature number = 4286485

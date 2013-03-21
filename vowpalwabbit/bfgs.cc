@@ -62,8 +62,10 @@ namespace BFGS
 
  //nonrentrant
   struct bfgs {
+    vw* all;
     double wolfe1_bound;
     
+    size_t final_pass;
     struct timeb t_start, t_end;
     double net_comm_time;
     
@@ -564,7 +566,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
       if (b.regularizers == NULL)
 	{
 	  cerr << all.program_name << ": Failed to allocate weight array: try decreasing -b <bits>" << endl;
-	  exit (1);
+	  throw exception();
 	}
       for(uint32_t i = 0; i < length; i++) 
 	b.regularizers[2*i] = weights[stride*i+W_COND] + regularization;
@@ -601,7 +603,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
   return ret;
 }
   
-void update_weight(vw& all, string& reg_name, float step_size, size_t current_pass)
+void update_weight(vw& all, float step_size, size_t current_pass)
   {
     uint32_t length = 1 << all.num_bits;
     size_t stride = all.stride;
@@ -609,7 +611,6 @@ void update_weight(vw& all, string& reg_name, float step_size, size_t current_pa
     
     for(uint32_t i = 0; i < length; i++, w+=stride)
       w[W_XT] += step_size * w[W_DIR];
-    save_predictor(all, reg_name, current_pass);
   }
 
 int process_pass(vw& all, bfgs& b) {
@@ -652,7 +653,7 @@ int process_pass(vw& all, bfgs& b) {
 	if (!all.quiet)
 	  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 	b.predictions.erase();
-	update_weight(all, all.final_regressor_name, b.step_size, b.current_pass);		     		           }
+	update_weight(all, b.step_size, b.current_pass);		     		           }
     }
     else
   /********************************************************************/
@@ -696,7 +697,7 @@ int process_pass(vw& all, bfgs& b) {
 				"","",ratio,
 				new_step);
 			b.predictions.erase();
-			update_weight(all, all.final_regressor_name, (float)(-b.step_size+new_step), b.current_pass);		     		      			
+			update_weight(all, (float)(-b.step_size+new_step), b.current_pass);		     		      			
 			b.step_size = (float)new_step;
 			zero_derivative(all);
 			b.loss_sum = 0.;
@@ -738,7 +739,7 @@ int process_pass(vw& all, bfgs& b) {
 			if (!all.quiet)
 			  fprintf(stderr, "%-10s\t%-10.5f\t%-10.5f\n", "", d_mag, b.step_size);
 			b.predictions.erase();
-			update_weight(all, all.final_regressor_name, b.step_size, b.current_pass);		     		      
+			update_weight(all, b.step_size, b.current_pass);		     		      
 		      }
 		    }
 		}
@@ -773,7 +774,7 @@ int process_pass(vw& all, bfgs& b) {
 		  float d_mag = direction_magnitude(all);
 
 		  b.predictions.erase();
-		  update_weight(all, all.final_regressor_name , b.step_size, b.current_pass);
+		  update_weight(all, b.step_size, b.current_pass);
 		  ftime(&b.t_end_global);
 		  b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
 		  if (!all.quiet)
@@ -783,6 +784,18 @@ int process_pass(vw& all, bfgs& b) {
     b.current_pass++;
     b.first_pass = false;
     b.preconditioner_pass = false;
+    
+    if (b.output_regularizer)//need to accumulate and place the regularizer.
+      {
+	if(all.span_server != "")
+	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
+	preconditioner_to_regularizer(all, b, all.l2_lambda);
+      }
+    ftime(&b.t_end_global);
+    b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
+
+    if (all.save_per_pass)
+      save_predictor(all, all.final_regressor_name, b.current_pass);
     return status;
 }
 
@@ -821,48 +834,43 @@ void process_example(vw& all, bfgs& b, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void learn(void* a, void* d, example* ec)
+void learn(void* d, example* ec)
 {
-  vw* all = (vw*)a;
   bfgs* b = (bfgs*)d;
+  vw* all = b->all;
   assert(ec->in_use);
-  if (ec->pass != b->current_pass) {
-    int status = process_pass(*all, *b);
-    if (status != LEARN_OK)
-      reset_state(*all, *b, true);
-    else if (b->output_regularizer && b->current_pass==all->numpasses-1) {
-      zero_preconditioner(*all);
-      b->preconditioner_pass = true;
-    }
-  }
-  if (test_example(ec))
-    ec->final_prediction = bfgs_predict(*all,ec);//w[0]
-  else
-    process_example(*all, *b, ec);
+
+  if (ec->end_pass && b->current_pass <= b->final_pass) 
+      {
+	int status = process_pass(*all, *b);
+	if (status != LEARN_OK && b->final_pass > b->current_pass) {
+	  b->final_pass = b->current_pass;
+	}
+	if (b->output_regularizer && b->current_pass== b->final_pass) {
+	  zero_preconditioner(*all);
+	  b->preconditioner_pass = true;
+	}
+      }
+
+  if (b->current_pass <= b->final_pass)
+    if (!command_example(all,ec))
+      {
+	if (test_example(ec))
+	  ec->final_prediction = bfgs_predict(*all,ec);//w[0]
+	else
+	  process_example(*all, *b, ec);
+      }
 }
 
-void finish(void* a, void* d)
+void finish(void* d)
 {
-  vw* all = (vw*)a;
   bfgs* b = (bfgs*)d;
-  if (b->current_pass != 0 && !b->output_regularizer)
-    process_pass(*all, *b);
-  if (!all->quiet)
-    fprintf(stderr, "\n");
-
-  if (b->output_regularizer)//need to accumulate and place the regularizer.
-    {
-      if(all->span_server != "")
-	accumulate(*all, all->span_server, all->reg, W_COND); //Accumulate preconditioner
-      preconditioner_to_regularizer(*all, *b, all->l2_lambda);
-    }
-  ftime(&b->t_end_global);
-  b->net_time = (int) (1000.0 * (b->t_end_global.time - b->t_start_global.time) + (b->t_end_global.millitm - b->t_start_global.millitm)); 
 
   b->predictions.delete_v();
   free(b->mem);
   free(b->rho);
   free(b->alpha);
+  free(b);
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
@@ -913,11 +921,11 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 }
 
 
-void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
+void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)in;
   bfgs* b = (bfgs*)d;
-  
+  vw* all = b->all;
+
   uint32_t length = 1 << all->num_bits;
 
   if (read)
@@ -929,7 +937,7 @@ void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
 	  if (b->regularizers == NULL)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
-	      exit (1);
+	      throw exception();
 	    }
 	}
       int m = all->m;
@@ -977,14 +985,12 @@ void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive(void* in, void* d)
+void drive(vw* all, void* d)
 {
-  vw* all = (vw*)in;
   bfgs* b = (bfgs*)d;
 
   example* ec = NULL;
 
-  size_t final_pass=all->numpasses-1;
   b->first_hessian_on = true;
   b->backstep_on = true;
 
@@ -992,44 +998,29 @@ void drive(void* in, void* d)
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  assert(ec->in_use);	  
-
-	  if (ec->pass<=final_pass) {
-	    if (ec->pass != b->current_pass) {
-	      int status = process_pass(*all, *b);
-	      if (status != LEARN_OK && final_pass>b->current_pass) {
-		final_pass = b->current_pass;
-	      }
-	      if (b->output_regularizer && b->current_pass==final_pass) {
-		zero_preconditioner(*all);
-		b->preconditioner_pass = true;
-	      }
-	    }
-	    process_example(*all, *b, ec);
-	  }
-	  
+	  learn(b, ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
-	{
-          //	  finish(all);
-	  return;
-	}
+	return;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
 }
 
-void parse_args(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
 {
   bfgs* b = (bfgs*)calloc(1,sizeof(bfgs));
+  b->all = &all;
   b->wolfe1_bound = 0.01;
   b->first_hessian_on=true;
   b->first_pass = true;
   b->gradient_pass = true;
   b->preconditioner_pass = true;
+  b->final_pass=all.numpasses;  
   
-  learner t = {b,drive,learn,finish,save_load};
+  sl_t sl = {b, save_load};
+  learner t = {b,drive,learn,finish,sl};
   all.l = t;
 
   all.bfgs = true;
@@ -1051,7 +1042,7 @@ void parse_args(vw& all, std::vector<std::string>&opts, po::variables_map& vm, p
   if (all.numpasses < 2)
     {
       cout << "you must make at least 2 passes to use BFGS" << endl;
-      exit(1);
+      throw exception();
     }
 }
 }

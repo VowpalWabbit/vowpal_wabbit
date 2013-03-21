@@ -15,7 +15,7 @@
 #else
 #include <netdb.h>
 #endif
-#include "io.h"
+#include "io_buf.h"
 #include "parse_args.h"
 #include "cache.h"
 #include "simple_label.h"
@@ -50,11 +50,10 @@ void send_features(io_buf *b, example* ec)
   b->flush();
 }
 
-  void save_load(void* in, void* d, io_buf& model_file, bool read, bool text) {}
+  void save_load(void* d, io_buf& model_file, bool read, bool text) {}
 
-  void drive_send(void* in, void* d)
+  void drive_send(vw* all, void* d)
 {
-  vw* all = (vw*)in;
   sender* s = (sender*)d;
   example* ec = NULL;
   v_array<char> null_tag;
@@ -107,10 +106,10 @@ void send_features(io_buf *b, example* ec)
     }
   return;
 }
-  void learn(void*in, void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
-  void finish(void*in, void* d) { cout << "sender can't be used under reduction" << endl; }
+  void learn(void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
+  void finish(void* d) { cout << "sender can't be used under reduction" << endl; }
 
-  void parse_send_args(vw& all, po::variables_map& vm, vector<string> pairs)
+  learner setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender* s = (sender*)calloc(1,sizeof(sender));
   s->sd = -1;
@@ -120,8 +119,9 @@ void send_features(io_buf *b, example* ec)
       open_sockets(*s, hosts[0]);
     }
 
-  learner ret = {s,drive_send,learn,finish,save_load};
-  all.l = ret;
+  sl_t sl = {NULL, save_load};
+  learner l = {s,drive_send,learn,finish,sl};
+  return l;
 }
 
 }

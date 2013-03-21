@@ -20,6 +20,7 @@ namespace CSOAA {
   struct csoaa{
     uint32_t csoaa_increment;
     learner base;
+    vw* all;
   };
 
   void name_value(substring &s, v_array<substring>& name, float &v)
@@ -38,7 +39,7 @@ namespace CSOAA {
 	  cerr << "error NaN value for: ";
 	  cerr.write(name[0].begin, name[0].end - name[0].begin);
 	  cerr << " terminating." << endl;
-	  exit(1);
+	  throw exception();
 	}
       break;
     default:
@@ -201,7 +202,7 @@ namespace CSOAA {
         }
       } else {
         //cerr << "ldf test examples must have possible labels listed" << endl;
-        //exit(-1);
+        //throw exception();
       }
     }
   }
@@ -222,7 +223,7 @@ namespace CSOAA {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)*(OAA::prediction_t*)&ec->final_prediction,
+                (long unsigned int)ec->final_prediction,
                 (long unsigned int)ec->num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -234,12 +235,10 @@ namespace CSOAA {
   void output_example(vw& all, example* ec)
   {
     label* ld = (label*)ec->ld;
-    all.sd->weighted_examples += 1.;
-    all.sd->total_features += ec->num_features;
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
+        size_t pred = (size_t)ec->final_prediction;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
@@ -255,11 +254,10 @@ namespace CSOAA {
         loss = chosen_loss - min;
       }
 
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
+    accumulate_loss(all, ec, 1., loss);
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print((int)*sink, (float) (*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
+      all.print((int)*sink, ec->final_prediction, 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
@@ -278,20 +276,26 @@ namespace CSOAA {
     print_update(all, is_test_label((label*)ec->ld), ec);
   }
 
-  void learn(void* a, void* d, example* ec) {
-    vw* all = (vw*)a;
+  void learn(void* d, example* ec) {
     csoaa* c = (csoaa*)d;
+    vw* all = c->all;
     label* ld = (label*)ec->ld;
+
+    if (command_example(all, ec))
+      {
+	c->base.learn(c->base.data, ec);
+	return;
+      }
+
     size_t prediction = 1;
     float score = FLT_MAX;
     uint32_t current_increment = 0;
-
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
         uint32_t i = cl->weight_index;
 	label_data simple_temp;
 	simple_temp.initial = 0.;
-
+	
 	if (cl->x == FLT_MAX || !all->training)
 	  {
 	    simple_temp.label = FLT_MAX;
@@ -312,7 +316,7 @@ namespace CSOAA {
           current_increment = desired_increment;
         }
 
-	c->base.learn(all, c->base.data, ec);
+	c->base.learn(c->base.data, ec);
         cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
@@ -321,27 +325,26 @@ namespace CSOAA {
 	ec->partial_prediction = 0.;
       }
     ec->ld = ld;
-    *(OAA::prediction_t*)&(ec->final_prediction) = (size_t)prediction;
+    ec->final_prediction = (float)prediction;
     if (current_increment != 0)
       update_example_indicies(all->audit, ec, -current_increment);
   }
 
-  void finish(void* a, void* d)
+  void finish(void* d)
   {
     csoaa* c=(csoaa*)d;
-    c->base.finish(a,c->base.data);
+    c->base.finish(c->base.data);
     free(c);
   }
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {
         if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
           {
-            learn(all, d, ec);
+            learn(d, ec);
             output_example(*all, ec);
             if (ec->in_use)
               VW::finish_example(*all, ec);
@@ -353,9 +356,10 @@ namespace CSOAA {
       }
  }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     csoaa* c=(csoaa*)calloc(1,sizeof(csoaa));
+    c->all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
     if( vm_file.count("csoaa") ) { //if loaded options from regressor
@@ -378,9 +382,9 @@ namespace CSOAA {
     c->csoaa_increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
     all.sd->k = nb_actions;
 
-    learner l = {c, drive, learn, finish, all.l.save_load};
+    learner l = {c, drive, learn, finish, all.l.sl};
     c->base = all.l;
-    all.l = l;
+    return l;
   }
 
   bool example_is_test(example* ec)
@@ -404,8 +408,10 @@ namespace CSOAA_AND_WAP_LDF {
     bool need_to_clear;
     bool is_singleline;
     bool is_wap;
+    bool first_pass;
     float csoaa_example_t;
     learner base;
+    vw* all;
   };
 
 namespace LabelDict { 
@@ -441,7 +447,7 @@ namespace LabelDict {
       if (is_lab != ec_is_label_definition(l.ec_seq[i])) {
         if (!((i == l.ec_seq.size()-1) && (OAA::example_is_newline(l.ec_seq[i])))) {
           cerr << "error: mixed label definition and examples in ldf data!" << endl;
-          exit(-1);
+          throw exception();
         }
       }
     }
@@ -628,7 +634,7 @@ namespace LabelDict {
       LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
       
       ec->ld = &simple_label;
-      l.base.learn(&all, l.base.data, ec); // make a prediction
+      l.base.learn(l.base.data, ec); // make a prediction
       costs[j].partial_prediction = ec->partial_prediction;
 
       if (ec->partial_prediction < *min_score) {
@@ -648,6 +654,7 @@ namespace LabelDict {
   {
     size_t K = l.ec_seq.size();
     bool   isTest = CSOAA::example_is_test(l.ec_seq[start_K]);
+    bool   isDev = is_development_example(all, l.ec_seq[start_K]);
     size_t prediction = 0;
     float  min_score = FLT_MAX;
 
@@ -662,7 +669,7 @@ namespace LabelDict {
       }
       if (LabelDict::ec_is_example_header(l.ec_seq[k])) {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
-        exit(-1);
+        throw exception();
       }
 
       make_single_prediction(all, l, ec, &prediction, &min_score);
@@ -670,7 +677,7 @@ namespace LabelDict {
 
     // do actual learning
     vector<CSOAA::wclass*> all_costs;
-    if (all.training && !isTest) {
+    if (all.training && !isTest && !isDev) {
       for (size_t k=start_K; k<K; k++) {
         v_array<CSOAA::wclass> this_costs = ((label*)l.ec_seq.begin[k]->ld)->costs;
         for (size_t j=0; j<this_costs.size(); j++)
@@ -692,7 +699,7 @@ namespace LabelDict {
 
       for (size_t j1=0; j1<costs1.size(); j1++) {
         if (costs1[j1].weight_index == (uint32_t)-1) continue;
-        if (all.training && !isTest) {
+        if (all.training && !isTest && !isDev) {
           LabelDict::add_example_namespace_from_memory(l, ec1, costs1[j1].weight_index);
 
           for (size_t k2=k1+1; k2<K; k2++) {
@@ -716,7 +723,7 @@ namespace LabelDict {
               simple_label.weight = value_diff;
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
-              l.base.learn(&all, l.base.data, ec1);
+              l.base.learn(l.base.data, ec1);
               unsubtract_example(all, ec1);
               
               LabelDict::del_example_namespace_from_memory(l, ec2, costs2[j2].weight_index);
@@ -727,7 +734,7 @@ namespace LabelDict {
 
         if (prediction == costs1[j1].weight_index) prediction_is_me = true;
       }
-      *(OAA::prediction_t*)&(ec1->final_prediction) = prediction_is_me ? prediction : 0;
+      ec1->final_prediction = prediction_is_me ? (float)prediction : 0;
       ec1->ld = ld1;
       ec1->example_t = example_t1;
     }
@@ -748,18 +755,18 @@ namespace LabelDict {
       }
       if (LabelDict::ec_is_example_header(l.ec_seq[k])) {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
-        exit(-1);
+        throw exception();
       }
       make_single_prediction(all, l, ec, &prediction, &min_score);
     }
+
+    bool isDev = is_development_example(all, l.ec_seq[start_K]);
 
     label_data simple_label;
     simple_label.initial = 0.;
     simple_label.weight = 1.;
 
     // do actual learning
-    //if (all.training && !isTest)
-    //l.csoaa_example_t += 1.;
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq.begin[k];
       label   *ld = (label*)ec->ld;
@@ -769,14 +776,14 @@ namespace LabelDict {
       // learn
       bool prediction_is_me = false;
       for (size_t j=0; j<costs.size(); j++) {
-        if (all.training && !isTest) {
+        if (all.training && !isTest && !isDev) {
           float old_example_t = ec->example_t;
           l.csoaa_example_t += 1.;
           ec->example_t = l.csoaa_example_t;
           simple_label.label = costs[j].x;
           ec->partial_prediction = 0.;
           LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
-          l.base.learn(&all, l.base.data, ec);
+          l.base.learn(l.base.data, ec);
           LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
           ec->example_t = old_example_t;
         }
@@ -785,7 +792,7 @@ namespace LabelDict {
         ec->partial_prediction = costs[j].partial_prediction;
         if (prediction == costs[j].weight_index) prediction_is_me = true;
       }
-      *(OAA::prediction_t*)&(ec->final_prediction) = prediction_is_me ? prediction : 0;
+      ec->final_prediction = prediction_is_me ? (float)prediction : 0;
 
       if (isTest && (costs.size() == 1)) {
         ec->final_prediction = costs[0].partial_prediction;
@@ -818,7 +825,6 @@ namespace LabelDict {
       }
       return;
     }
-
     /////////////////////// check for headers
     size_t K = l.ec_seq.size();
     size_t start_K = 0;
@@ -828,10 +834,9 @@ namespace LabelDict {
         LabelDict::add_example_namespaces_from_example(l.ec_seq[k], l.ec_seq[0]);
     }
 
-
     /////////////////////// learn
     if (l.is_wap) do_actual_learning_wap(all, l, start_K);
-    else        do_actual_learning_oaa(all, l, start_K);
+    else          do_actual_learning_oaa(all, l, start_K);
     
     /////////////////////// remove header
     if (start_K > 0)
@@ -849,10 +854,8 @@ namespace LabelDict {
     if (LabelDict::ec_is_example_header(ec)) return;
     if (LabelDict::ec_is_label_definition(ec)) return;
 
-    all.sd->total_features += ec->num_features;
-
     float loss = 0.;
-    size_t final_pred = *(OAA::prediction_t*)&(ec->final_prediction);
+    size_t final_pred = (size_t)ec->final_prediction;
 
     if (!CSOAA::example_is_test(ec)) {
       for (size_t j=0; j<costs.size(); j++) {
@@ -863,13 +866,12 @@ namespace LabelDict {
         }
       }
 
-      all.sd->sum_loss += loss;
-      all.sd->sum_loss_since_last_dump += loss;
+      accumulate_loss(all, ec, 0., loss);
       assert(loss >= 0);
     }
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, (float)(*(OAA::prediction_t*)&(ec->final_prediction)), 0, ec->tag);
+      all.print(*sink, ec->final_prediction, 0, ec->tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
@@ -889,7 +891,8 @@ namespace LabelDict {
   void output_example_seq(vw& all, ldf& l)
   {
     if ((l.ec_seq.size() > 0) && !LabelDict::ec_seq_is_label_definition(l, l.ec_seq)) {
-      all.sd->weighted_examples += 1;
+      accumulate_loss(all, l.ec_seq.begin[0], 1., 0.);
+      all.sd->total_features -= l.ec_seq.begin[0]->num_features;
       all.sd->example_number++;
 
       bool hit_loss = false;
@@ -912,6 +915,12 @@ namespace LabelDict {
 
 
   void learn_singleline(vw& all, ldf& l, example*ec) {
+    if (command_example(&all, ec))
+      {
+	l.base.learn(l.base.data, ec);
+	return;
+      }
+    
     if ((!all.training) || CSOAA::example_is_test(ec)) {
       size_t prediction = 0;
       float  min_score = FLT_MAX;
@@ -925,22 +934,21 @@ namespace LabelDict {
   }
 
   void learn_multiline(vw& all, ldf& l, example *ec) {
-    if (l.ec_seq.size() >= all.p->ring_size - 2) { // give some wiggle room
-      if (l.ec_seq[0]->pass == 0)
+    if (command_example(&all, ec))
+      {
+	if (ec->end_pass)
+	  l.first_pass = false;
+	l.base.learn(l.base.data, ec);
+        //	return;
+      }
+
+    if (OAA::example_is_newline(ec) || l.ec_seq.size() >= all.p->ring_size - 2 || command_example(&all,ec)) {
+      if (l.ec_seq.size() >= all.p->ring_size - 2 && l.first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
-      do_actual_learning(all, l);
-      l.need_to_clear = true;
-    }
 
-    if (l.need_to_clear) {
-      output_example_seq(all, l);
-      clear_seq(all, l);
-      l.need_to_clear = false;
-    }
-
-    if (OAA::example_is_newline(ec)) {
       do_actual_learning(all, l);
-      if (!LabelDict::ec_seq_is_label_definition(l, l.ec_seq))
+
+      if (!LabelDict::ec_seq_is_label_definition(l, l.ec_seq) && l.ec_seq.size() > 0)
         global_print_newline(all);
       if (ec->in_use)
         VW::finish_example(all, ec);
@@ -954,20 +962,26 @@ namespace LabelDict {
     } else {
       l.ec_seq.push_back(ec);
     }
+    
+    if (l.need_to_clear) {
+      output_example_seq(all, l);
+      clear_seq(all, l);
+      l.need_to_clear = false;
+    }
   }
 
-  void learn(void*a, void* d, example*ec) {
-    vw* all = (vw*)a;
+  void learn(void* d, example*ec) {
     ldf* l = (ldf*)d;
+    vw* all = l->all;
     if (l->is_singleline) learn_singleline(*all,*l, ec);
     else learn_multiline(*all,*l, ec);
   }
 
-  void finish(void* a, void* d)
+  void finish(void* d)
   {
     ldf* l=(ldf*)d;
-    l->base.finish(a,l->base.data);
-    vw* all = (vw*)a;    
+    vw* all = l->all;
+    l->base.finish(l->base.data);
     clear_seq(*all, *l);
     l->ec_seq.delete_v();
     LabelDict::free_label_features(*l);
@@ -980,7 +994,7 @@ namespace LabelDict {
 
         if (LabelDict::ec_is_example_header(ec)) {
           cerr << "error: example headers not allowed in ldf singleline mode" << endl;
-          exit(-1);
+          throw exception();
         }
         learn_singleline(all, l, ec);
         if (! LabelDict::ec_is_label_definition(ec)) {
@@ -1005,7 +1019,8 @@ namespace LabelDict {
       if ((ec = get_example(all.p)) != NULL) { // semiblocking operation
         learn_multiline(all, l, ec);
         if (l.need_to_clear) {
-          output_example_seq(all, l);
+	  if (l.ec_seq.size() > 0)
+	    output_example_seq(all, l);
           clear_seq(all, l);
           l.need_to_clear = false;
         }
@@ -1019,9 +1034,8 @@ namespace LabelDict {
     }
   }
 
-  void drive(void*in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all =(vw*)in;
     ldf* l = (ldf*)d;
     if (l->is_singleline)
       drive_ldf_singleline(*all, *l);
@@ -1029,13 +1043,15 @@ namespace LabelDict {
       drive_ldf_multiline(*all,*l);
   }
   
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
 
+    ld->all = &all;
     ld->need_to_clear = true;
     ld->is_singleline = true;
-    
+    ld->first_pass = true;
+ 
     string ldf_arg;
     if(vm_file.count("csoaa_ldf")) {
       ldf_arg = vm_file["csoaa_ldf"].as<string>();
@@ -1076,7 +1092,7 @@ namespace LabelDict {
       ld->is_singleline = false;
     else {
       cerr << "ldf requires either [s]ingleline or [m]ultiline argument" << endl;
-      exit(-1);
+      throw exception();
     }
 
     if (all.add_constant) {
@@ -1085,9 +1101,9 @@ namespace LabelDict {
     ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
     ld->label_features.get(1, 94717244);
     
-    learner l = {ld, drive, learn, finish, all.l.save_load};
+    learner l = {ld, drive, learn, finish, all.l.sl};
     ld->base = all.l;
-    all.l = l;
+    return l;
   }
 
   void global_print_newline(vw& all)
@@ -1096,7 +1112,12 @@ namespace LabelDict {
     temp[0] = '\n';
     for (size_t i=0; i<all.final_prediction_sink.size(); i++) {
       int f = all.final_prediction_sink[i];
-      ssize_t t = write(f, temp, 1);
+      ssize_t t;
+#ifdef _WIN32
+      t = _write(f, temp, 1);
+#else
+      t = write(f, temp, 1);
+#endif
       if (t != 1)
         std::cerr << "write error" << std::endl;
     }

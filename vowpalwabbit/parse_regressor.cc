@@ -13,10 +13,11 @@ using namespace std;
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <algorithm>
 #include "parse_regressor.h"
 #include "loss_functions.h"
 #include "global_data.h"
-#include "io.h"
+#include "io_buf.h"
 #include "rand48.h"
 
 /* Define the last version where files are backward compatible. */
@@ -31,7 +32,7 @@ void initialize_regressor(vw& all)
   if (all.reg.weight_vector == NULL)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
-      exit (1);
+      throw exception();
     }
   if (all.random_weights)
     {
@@ -41,12 +42,6 @@ void initialize_regressor(vw& all)
   if (all.initial_weight != 0.)
     for (size_t j = 0; j < all.stride*length; j+=all.stride)
       all.reg.weight_vector[j] = all.initial_weight;
-}
-
-void free_regressor(regressor &r)
-{
-  if (r.weight_vector != NULL)
-    free(r.weight_vector);
 }
 
 const size_t buf_size = 512;
@@ -71,7 +66,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (v_tmp < LAST_COMPATIBLE_VERSION)
 	{
 	  cout << "Model has possibly incompatible version! " << v_tmp.to_string() << endl;
-	  exit(1);
+	  throw exception();
 	}
       
       char model = 'm';
@@ -97,7 +92,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
       if (all.default_bits != true && all.num_bits != local_num_bits)
 	{
 	  cout << "Wrong number of bits for source!" << endl;
-	  exit (1);
+	  throw exception();
 	}
       all.default_bits = false;
       all.num_bits = local_num_bits;
@@ -121,7 +116,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 	  if (read)
 	    {
 	      string temp(pair, 2);
-	      all.pairs.push_back(temp);
+	      if (count(all.pairs.begin(), all.pairs.end(), temp) == 0)
+		all.pairs.push_back(temp);
 	    }
 	}
       bin_text_read_write_fixed(model_file,buff,0,
@@ -135,10 +131,12 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 			    buff,text_len, text);
       for (size_t i = 0; i < triple_len; i++)
 	{
-	  text_len = sprintf(buff, "%s ", all.triples[i].c_str());
 	  char triple[3];
 	  if (!read)
-	    memcpy(triple, all.triples[i].c_str(), 3);
+	    {
+	      text_len = sprintf(buff, "%s ", all.triples[i].c_str());
+	      memcpy(triple, all.triples[i].c_str(), 3);
+	    }
 	  bin_text_read_write_fixed(model_file,triple,3, 
 				    "", read,
 				    buff,text_len,text);
@@ -162,15 +160,60 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				buff, text_len,text);
       
-      text_len = sprintf(buff, "ngram:%d\n", (int)all.ngram); 
-      bin_text_read_write_fixed(model_file,(char*)&all.ngram, sizeof(all.ngram), 
+      uint32_t ngram_len = (uint32_t)all.ngram_strings.size();
+      text_len = sprintf(buff, "%d ngram: ", (int)ngram_len);
+      bin_text_read_write_fixed(model_file,(char *)&ngram_len, sizeof(ngram_len), 
 				"", read, 
-				buff, text_len, text);
+				buff,text_len, text);
+      for (size_t i = 0; i < ngram_len; i++)
+	{
+	  char ngram[3];
+	  if (!read) {
+	    text_len = sprintf(buff, "%s ", all.ngram_strings[i].c_str());
+	    memcpy(ngram, all.ngram_strings[i].c_str(), min(3, all.ngram_strings[i].size()));
+	  }
+	  bin_text_read_write_fixed(model_file,ngram,3, 
+				    "", read,
+				    buff,text_len,text);
+	  if (read)
+	    {
+	      string temp(ngram,3);
+	      all.ngram_strings.push_back(temp);
+	    }
+	}
+      if(read)
+	compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
       
-      text_len = sprintf(buff, "skips:%d\n", (int)all.skips);
-      bin_text_read_write_fixed(model_file,(char*)&all.skips, sizeof(all.skips), 
+      bin_text_read_write_fixed(model_file,buff,0,
 				"", read, 
-				buff, text_len, text);
+				"\n",1, text);
+      
+      uint32_t skip_len = (uint32_t)all.skip_strings.size();
+      text_len = sprintf(buff, "%d skip: ", (int)skip_len);
+      bin_text_read_write_fixed(model_file,(char *)&skip_len, sizeof(skip_len), 
+				"", read, 
+				buff,text_len, text);
+      for (size_t i = 0; i < skip_len; i++)
+	{
+	  char skip[3];
+	  if (!read) {
+	    text_len = sprintf(buff, "%s ", all.skip_strings[i].c_str());
+	    memcpy(skip, all.skip_strings[i].c_str(), min(3, all.skip_strings[i].size()));
+	  }
+	  bin_text_read_write_fixed(model_file,skip,3, 
+				    "", read,
+				    buff,text_len,text);
+	  if (read)
+	    {
+	      string temp(skip,3);
+	      all.skip_strings.push_back(temp);
+	    }
+	}
+      if(read)
+	compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
+      bin_text_read_write_fixed(model_file,buff,0,
+				"", read, 
+				"\n",1, text);
       
       text_len = sprintf(buff, "options:%s\n", all.options_from_file.c_str());
       uint32_t len = (uint32_t)all.options_from_file.length()+1;
@@ -196,7 +239,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
   io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
   
   save_load_header(all, io_temp, false, as_text);
-  all.l.save_load(&all, all.l.data, io_temp, false, as_text);
+  all.l.sl.save_load(all.l.sl.sldata, io_temp, false, as_text);
 
   io_temp.flush(); // close_file() should do this for me ...
   io_temp.close_file();
@@ -206,8 +249,10 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
 {
-  char* filename = new char[reg_name.length()+4];
-  if (all.save_per_pass)
+  char* filename = new char[reg_name.length()+10];
+  if (current_pass == (size_t)-1) // this is "best" predictor
+    sprintf(filename,"%s.best",reg_name.c_str());
+  else if (all.save_per_pass)
     sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
   else
     sprintf(filename,"%s",reg_name.c_str());
@@ -225,7 +270,6 @@ void finalize_regressor(vw& all, string reg_name)
     dump_regressor(all, all.per_feature_regularizer_text, true);
   else
     dump_regressor(all, all.text_regressor_name, true);
-  free_regressor(all.reg);
 }
 
 void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)

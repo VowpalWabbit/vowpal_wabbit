@@ -1,3 +1,4 @@
+#set internal version number in configure.ac before tagging.
 git branch $1
 git checkout $1
 ./autogen.sh

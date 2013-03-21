@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 #ifndef OAA_H
 #define OAA_H
 
-#include "io.h"
+#include "io_buf.h"
 #include "parse_primitives.h"
 #include "global_data.h"
 #include "example.h"
@@ -17,13 +17,11 @@ namespace OAA
 {
 
   struct mc_label {
-    uint32_t label;
+    float label;
     float weight;
   };
   
-  typedef size_t prediction_t;
-  
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);

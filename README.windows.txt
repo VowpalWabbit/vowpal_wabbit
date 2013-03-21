@@ -58,7 +58,7 @@ You need Visual Studio 2010
     (a) Start a new CMD window
     (b) Run "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat" to set build variables
     (c) Go to the %ROOT%\zlib-1.2.7\zlib-1.2.7\contrib\vstudio\vc10 directory (for me, c:\src\vw\zlib-1.2.7zlib-1.2.7\contrib\vstudio\vc10)
-    (d) Patch up the zlibstat.vcxproj to correctly use DLL versions of the runtime for 32bit platforms (ugh):
+    (d) Patch up the zlibstat.vcxproj to correctly use DLL versions of the runtime for 32bit platforms (ugh).  This requires editing lines 167, 194, 222:
 
 ***************
 *** 164,170 ****
@@ -127,7 +127,7 @@ ns)</PreprocessorDefinitions>
 (6) Get a copy of VW in %ROOT%. I ran "cd \src\vw" and "git clone http
 
     (a) Change to root (for me, "cd \src\vw")
-    (b) "git clone https://github.com/chrisquirk/vowpal_wabbit.git"
+    (b) "git clone https://github.com/JohnLangford/vowpal_wabbit.git"
 
 (7) Open %ROOT%\vowpal_wabbit\vowpalwabbit\vw.sln in Visual Studio 2010 and hit Build.
 

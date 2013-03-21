@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 #ifndef SL_H
 #define SL_H
 
-#include "io.h"
+#include "io_buf.h"
 #include "parse_primitives.h"
 #include "global_data.h"
 #include "example.h"
@@ -33,5 +33,8 @@ const label_parser simple_label = {default_simple_label, parse_simple_label,
 				   sizeof(label_data)};
 
 float query_decision(vw& all, example* ec, float k);
+bool is_development_example(vw&all, example* ec);
+void accumulate_loss(vw& all, example* ec, float weight, float loss);
+bool report_dev_error(vw& all); // return TRUE iff this is the best loss so far
 
 #endif

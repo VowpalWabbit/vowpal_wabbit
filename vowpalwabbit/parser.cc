@@ -54,6 +54,7 @@ namespace po = boost::program_options;
 #include "unique_sort.h"
 #include "constant.h"
 #include "example.h"
+#include "simple_label.h"
 #include "vw.h"
 
 using namespace std;
@@ -165,7 +166,7 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   buf->read_file(filepointer, (char*)&v_length, sizeof(v_length));
   if(v_length>29){
     cerr << "cache version too long, cache file is probably invalid" << endl;
-    exit(1);
+    throw exception();
   }
   t.erase();
   if (t.size() < v_length)
@@ -184,12 +185,12 @@ uint32_t cache_numbits(io_buf* buf, int filepointer)
   if (buf->read_file(filepointer, &temp, 1) < 1) 
     {
       cout << "failed to read" << endl;
-      exit(0);
+      throw exception();
     }
   if (temp != 'c')
     {
       cout << "data file is not a cache file" << endl;
-      exit (0);
+      throw exception();
     }
 
   t.delete_v();
@@ -228,7 +229,11 @@ void reset_source(vw& all, size_t numbits)
 	{
 	  int fd = input->files.pop();
 	  if (!member(all.final_prediction_sink, (size_t) fd))
+#ifdef _WIN32
+	    _close(fd);
+#else
 	    close(fd);
+#endif
 	}
       input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
       all.p->reader = read_cached_features;
@@ -244,7 +249,11 @@ void reset_source(vw& all, size_t numbits)
 	  mutex_unlock(&all.p->output_lock);
 	  
 	  // close socket, erase final prediction sink and socket
+#ifdef _WIN32
+	  _close(all.p->input->files[0]);
+#else
 	  close(all.p->input->files[0]);
+#endif
 	  all.final_prediction_sink.erase();
 	  all.p->input->files.erase();
 	  
@@ -254,7 +263,7 @@ void reset_source(vw& all, size_t numbits)
 	  if (f < 0)
 	    {
 	      cerr << "bad client socket!" << endl;
-	      exit (1);
+	      throw exception();
 	    }
 	  
 	  // note: breaking cluster parallel online learning by dropping support for id
@@ -276,7 +285,7 @@ void reset_source(vw& all, size_t numbits)
 	    input->reset_file(input->files[i]);
 	    if (cache_numbits(input, input->files[i]) < numbits) {
 	      cerr << "argh, a bug in caching of some sort!  Exiting\n" ;
-	      exit(1);
+	      throw exception();
 	    }
 	  }
       }
@@ -397,7 +406,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
 	cerr << "can't open socket!" << endl;
-	exit(1);
+	throw exception();
       }
 
       int on = 1;
@@ -416,7 +425,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
 	{
 	  cerr << "failure to bind!" << endl;
-	  exit(1);
+	  throw exception();
 	}
       int source_count = 1;
       
@@ -427,7 +436,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if (daemon(1,1))
 	{
 	  cerr << "failure to background!" << endl;
-	  exit(1);
+	  throw exception();
 	}
       // write pid file
       if (vm.count("pid_file"))
@@ -437,7 +446,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	  if (!pid_file.is_open())
 	    {
 	      cerr << "error writing pid file" << endl;
-	      exit(1);
+	      throw exception();
 	    }
 	  pid_file << getpid() << endl;
 	  pid_file.close();
@@ -446,7 +455,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if (all.daemon)
 	{
 #ifdef _WIN32
-		exit(1);
+		throw exception();
 #else
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights = 
@@ -525,7 +534,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       if (f < 0)
 	{
 	  cerr << "bad client socket!" << endl;
-	  exit (1);
+	  throw exception();
 	}
       
       all.p->label_sock = f;
@@ -579,8 +588,6 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	  if (f == -1 && temp.size() != 0)
 	    {
 			cerr << "can't open '" << temp << "', sailing on!" << endl;
-//	      cerr << "can't open " << temp << ", bailing!" << endl;
-//	      exit(0);
 	    }
 	  all.p->reader = read_features;
 	  all.p->hasher = getHasher(hash_function);
@@ -591,7 +598,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
   if (passes > 1 && !all.p->resettable)
     {
       cerr << all.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
-      exit(1);
+      throw exception();
     }
   all.p->input->count = all.p->input->files.size();
   if (!quiet)
@@ -662,15 +669,15 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
  * Hash is evaluated using the principle h(a, b) = h(a)*X + h(b), where X is a random no.
  * 32 random nos. are maintained in an array and are used in the hashing.
  */
-void generateGrams(vw& all, size_t ngram, size_t skip_gram, example * &ex) {
+void generateGrams(vw& all, example* &ex) {
   for(unsigned char* index = ex->indices.begin; index < ex->indices.end; index++)
     {
       size_t length = ex->atomics[*index].size();
-      for (size_t n = 1; n < ngram; n++)
+      for (size_t n = 1; n < all.ngram[*index]; n++)
 	{
 	  all.p->gram_mask.erase();
 	  all.p->gram_mask.push_back((size_t)0);
-	  addgrams(all, n, skip_gram, ex->atomics[*index], 
+	  addgrams(all, n, all.skips[*index], ex->atomics[*index], 
 		   ex->audit_features[*index], 
 		   length, all.p->gram_mask, 0);
 	}
@@ -694,7 +701,7 @@ example* get_unused_example(vw& all)
     }
 }
 
-bool parse_atomic_example(vw& all, example *ae, bool do_read = true)
+bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 {
   if (do_read && all.p->reader(&all, ae) <= 0)
     return false;
@@ -708,15 +715,17 @@ bool parse_atomic_example(vw& all, example *ae, bool do_read = true)
       cache_features(*(all.p->output), ae);
     }
 
-  if(all.ngram > 1)
-    generateGrams(all, all.ngram, all.skips, ae);
-    
   return true;
+}
+
+void end_pass_example(vw& all, example* ae)
+{
+  all.p->lp->default_label(ae->ld);
+  ae->end_pass = true;
 }
 
 void setup_example(vw& all, example* ae)
 {
-  ae->pass = all.passes_complete;
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
@@ -737,11 +746,14 @@ void setup_example(vw& all, example* ae)
 	if (all.ignore[*i])
 	  {//delete namespace
 	    ae->atomics[*i].erase();
-	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(size_t));
+	    memmove(i,i+1,(ae->indices.end - (i+1))*sizeof(*i));
 	    ae->indices.end--;
 	    i--;
 	  }
     }
+
+  if(all.ngram_strings.size() > 0)
+    generateGrams(all, ae);    
 
   if (all.add_constant) {
     //add constant feature
@@ -836,6 +848,13 @@ namespace VW{
     ec->num_features++;
   }
 
+  void add_label(example* ec, float label, float weight, float base)
+  {
+    label_data* l = (label_data*)ec->ld;
+    l->label = label;
+    l->weight = weight;
+    l->initial = base;
+  }
 
   example* import_example(vw& all, vector<feature_space> vf)
   {
@@ -885,15 +904,10 @@ namespace VW{
     words.erase();
     words.delete_v();
   }
-  
-  void finish_example(vw& all, example* ec)
+
+  void empty_example(vw& all, example* ec)
   {
-    mutex_lock(&all.p->output_lock);
-    all.p->local_example_number++;
-    condition_variable_signal(&all.p->output_done);
-    mutex_unlock(&all.p->output_lock);
-    
-    if (all.audit)
+	if (all.audit)
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	{
 	  for (audit_data* temp 
@@ -919,6 +933,17 @@ namespace VW{
     ec->indices.erase();
     ec->tag.erase();
     ec->sorted = false;
+    ec->end_pass = false;
+  }
+
+  void finish_example(vw& all, example* ec)
+  {
+    mutex_lock(&all.p->output_lock);
+    all.p->local_example_number++;
+    condition_variable_signal(&all.p->output_done);
+    mutex_unlock(&all.p->output_lock);
+    
+    empty_example(all, ec);
     
     mutex_lock(&all.p->examples_lock);
     assert(ec->in_use);
@@ -939,39 +964,35 @@ void *main_parse_loop(void *in)
 	vw* all = (vw*) in;
 	size_t example_number = 0;  // for variable-size batch learning algorithms
 	while(!all->p->done)
-      {
-	   example* ae = get_unused_example(*all);
-       if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  {	
+	  {
+	    example* ae = get_unused_example(*all);
+	   if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  
 	     setup_example(*all, ae);
-	     example_number++;
-	     mutex_lock(&all->p->examples_lock);
-		 all->p->parsed_examples++;
-		 condition_variable_signal_all(&all->p->example_available);
-	     mutex_unlock(&all->p->examples_lock);
-       }
-      else
-	{
-	  reset_source(*all, all->num_bits);
-	  all->do_reset_source = false;
-	  all->passes_complete++;
-	  if (all->passes_complete == all->numpasses && example_number == all->pass_length)
-	    {
-	      all->passes_complete = 0;
-	      all->pass_length = all->pass_length*2+1;
-	    }
-	  example_number = 0;
-	  if (all->passes_complete >= all->numpasses)
-	    {
-	      mutex_lock(&all->p->examples_lock);
-	      all->p->done = true;
-	      mutex_unlock(&all->p->examples_lock);
-	    }
-	  mutex_lock(&all->p->examples_lock);
-	  ae->in_use = false;
-	  condition_variable_signal_all(&all->p->example_available);
-	  mutex_unlock(&all->p->examples_lock);
-	}
-    }  
+	   else
+	     {
+	       reset_source(*all, all->num_bits);
+	       all->do_reset_source = false;
+	       all->passes_complete++;
+	       end_pass_example(*all, ae);
+	       if (all->passes_complete == all->numpasses && example_number == all->pass_length)
+		 {
+		   all->passes_complete = 0;
+		   all->pass_length = all->pass_length*2+1;
+		 }
+	       example_number = 0;
+	       if (all->passes_complete >= all->numpasses)
+		 {
+		   mutex_lock(&all->p->examples_lock);
+		   all->p->done = true;
+		   mutex_unlock(&all->p->examples_lock);
+		 }
+	     }
+	   example_number++;
+	   mutex_lock(&all->p->examples_lock);
+	   all->p->parsed_examples++;
+	   condition_variable_signal_all(&all->p->example_available);
+	   mutex_unlock(&all->p->examples_lock);
+	  }  
 	return NULL;
 }
 
@@ -1048,7 +1069,7 @@ void free_parser(vw& all)
   all.p->words.delete_v();
   all.p->name.delete_v();
 
-  if(all.ngram > 1)
+  if(all.ngram_strings.size() > 0)
     all.p->gram_mask.delete_v();
   
   for (size_t i = 0; i < all.p->ring_size; i++) 

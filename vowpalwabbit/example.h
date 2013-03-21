@@ -40,7 +40,6 @@ struct example // core example datatype.
   v_array<audit_data> audit_features[256];
   
   size_t num_features;//precomputed, cause it's fast&easy.
-  size_t pass;
   float partial_prediction;//shared data for prediction.
   v_array<float> topic_predictions;
   float loss;
@@ -52,6 +51,7 @@ struct example // core example datatype.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float revert_weight;
 
+  bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?
   bool in_use; //in use or not (for the parser)
   bool done; //set to false by setup_example()
@@ -63,5 +63,6 @@ namespace VW {
   void copy_example_data(example*&, example*, size_t, void(*copy_example)(void*&,void*));
 }
 void update_example_indicies(bool audit, example* ec, uint32_t amount);
+bool command_example(void*a, example* ec); 
 
 #endif

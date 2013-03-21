@@ -71,7 +71,7 @@ float mf_inline_predict(vw& all, example* &ec)
 
   if (all.triples.begin() != all.triples.end()) {
     cerr << "cannot use triples in matrix factorization" << endl;
-    exit(-1);
+    throw exception();
   }
     
   // ec->topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ... 
@@ -124,7 +124,7 @@ void mf_inline_train(vw& all, example* &ec, float update)
 	}
   if (all.triples.begin() != all.triples.end()) {
     cerr << "cannot use triples in matrix factorization" << endl;
-    exit(-1);
+    throw exception();
   }
 
 }  
@@ -171,7 +171,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
       }
   if (all.triples.begin() != all.triples.end()) {
     cerr << "cannot use triples in matrix factorization" << endl;
-    exit(-1);
+    throw exception();
   }
 }
 
@@ -207,9 +207,9 @@ float mf_predict(vw& all, example* ex)
   return ex->final_prediction;
 }
 
-  void save_load(void* in, void* d, io_buf& model_file, bool read, bool text)
+  void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)in;
+  vw* all = (vw*)d;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->stride;
 
@@ -261,15 +261,13 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
-  void learn(void* in, void* d, example* ec)
+  void learn(void* d, example* ec)
   {
-    vw* all = (vw*)in;
-    size_t* current_pass = (size_t*) d;
-    if (ec->pass != *current_pass) {
+    vw* all = (vw*)d;
+    if (ec->end_pass) 
       all->eta *= all->eta_decay_rate;
-      *current_pass = ec->pass;
-    }
-    if (!GD::command_example(*all, ec))
+
+    if (!command_example(all, ec))
       {
 	mf_predict(*all,ec);
 	if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
@@ -277,23 +275,18 @@ float mf_predict(vw& all, example* ex)
       }    
   }
 
-  void finish(void* a, void* d)
-  {
-    size_t* current_pass = (size_t*)d;
-    free(current_pass);
-  }
+  void finish(void* d)
+  { }
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
 {
-  vw* all = (vw*)in;
-  
   example* ec = NULL;
   
   while ( true )
     {
       if ((ec = get_example(all->p)) != NULL)//blocking operation.
 	{
-	  learn(in,d,ec);
+	  learn(d,ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
@@ -303,10 +296,10 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
-  void parse_flags(vw& all)
+  learner setup(vw& all)
   {
-    size_t* current_pass = (size_t*)calloc(1, sizeof(size_t));
-    learner t = {current_pass,drive,learn,finish,save_load};
-    all.l = t;
+    sl_t sl = {&all, save_load};
+    learner l = {&all,drive,learn,finish,sl};
+    return l;
   }
 }

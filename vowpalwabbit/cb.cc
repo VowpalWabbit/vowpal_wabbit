@@ -25,7 +25,13 @@ namespace CB
     float last_correct_cost;
     bool first_print_call;
 
+    float min_cost;
+    float max_cost;
+
     learner base;
+    
+    cb_class* known_cost;
+    vw* all;
   };
 
   bool know_all_cost_example(CB::label* ld)
@@ -148,7 +154,7 @@ namespace CB
         {
           cerr << "malformed cost specification!" << endl;
 	  cerr << "terminating." << endl;
-          exit(1);
+          throw exception();
         }
 
         f.weight_index = (uint32_t)hashstring(p->parse_name[0], 0);
@@ -156,7 +162,7 @@ namespace CB
         {
           cerr << "invalid action: " << f.weight_index << endl;
           cerr << "terminating." << endl;
-          exit(1);
+          throw exception();
         }
 
         f.x = FLT_MAX;
@@ -168,7 +174,7 @@ namespace CB
 	  cerr << "error NaN cost for action: ";
 	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
 	  cerr << " terminating." << endl;
-	  exit(1);
+	  throw exception();
         }
       
         f.prob_action = .0;
@@ -180,7 +186,7 @@ namespace CB
 	  cerr << "error NaN probability for action: ";
 	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
 	  cerr << " terminating." << endl;
-	  exit(1);
+	  throw exception();
         }
         
         if( f.prob_action > 1.0 )
@@ -220,8 +226,6 @@ namespace CB
   {//this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
     CB::label* ld = (CB::label*)ec->ld;
    
-    cb_class* cl_obs = get_observed_cost(ld);
-    
     //generate cost-sensitive example
     cs_ld.costs.erase();
     if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
@@ -234,16 +238,15 @@ namespace CB
         wc.weight_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
-        if( cl_obs != NULL && i == cl_obs->weight_index )
+        if( c.known_cost != NULL && i == c.known_cost->weight_index )
         {
-          wc.x = cl_obs->x / cl_obs->prob_action; //use importance weighted cost for observed action, 0 otherwise 
-
+          wc.x = c.known_cost->x / c.known_cost->prob_action; //use importance weighted cost for observed action, 0 otherwise 
           //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
           //update the loss of this regressor 
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (cl_obs->x)*(cl_obs->x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x)*(c.known_cost->x) - c.avg_loss_regressors );
           c.last_pred_reg = 0;
-          c.last_correct_cost = cl_obs->x;
+          c.last_correct_cost = c.known_cost->x;
         }
 
         cs_ld.costs.push_back(wc );
@@ -259,16 +262,16 @@ namespace CB
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
-        if( cl_obs != NULL && cl->weight_index == cl_obs->weight_index )
+        if( c.known_cost != NULL && cl->weight_index == c.known_cost->weight_index )
         {
-          wc.x = cl_obs->x / cl_obs->prob_action; //use importance weighted cost for observed action, 0 otherwise 
+          wc.x = c.known_cost->x / c.known_cost->prob_action; //use importance weighted cost for observed action, 0 otherwise 
 
           //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
           //update the loss of this regressor 
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (cl_obs->x)*(cl_obs->x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x)*(c.known_cost->x) - c.avg_loss_regressors );
           c.last_pred_reg = 0;
-          c.last_correct_cost = cl_obs->x;
+          c.last_correct_cost = c.known_cost->x;
         }
 
         cs_ld.costs.push_back( wc );
@@ -277,114 +280,46 @@ namespace CB
 
   }
 
+  void call_scorer(vw& all, cb& c, example* ec, uint32_t index)
+  {
+    uint32_t desired_increment = c.increment * (2*index-1);
+   
+    float old_min = all.sd->min_label;
+    //all.sd->min_label = c.min_cost;
+    float old_max = all.sd->max_label;
+    //all.sd->max_label = c.max_cost;
+    update_example_indicies(all.audit, ec, desired_increment);
+    all.scorer.learn(all.scorer.data, ec);
+    all.sd->min_label = old_min;
+    all.sd->max_label = old_max;
+    update_example_indicies(all.audit, ec, -desired_increment);
+  }
+  
   float get_cost_pred(vw& all, cb& c, example* ec, uint32_t index)
   {
     CB::label* ld = (CB::label*)ec->ld;
 
     label_data simple_temp;
     simple_temp.initial = 0.;
-    simple_temp.label = FLT_MAX;
-    simple_temp.weight = 0.;
-
-    ec->ld = &simple_temp;
-    ec->partial_prediction = 0.;
-
-    uint32_t desired_increment = c.increment * (2*index-1);
+    if (c.known_cost != NULL && index == c.known_cost->weight_index)
+      {
+	simple_temp.label = c.known_cost->x;
+	simple_temp.weight = 1.;
+      }
+    else 
+      {
+	simple_temp.label = FLT_MAX;
+	simple_temp.weight = 0.;
+      }
     
-    update_example_indicies(all.audit, ec, desired_increment);
-    all.scorer.learn(&all, all.scorer.data, ec);
-    update_example_indicies(all.audit, ec, -desired_increment);
+    ec->ld = &simple_temp;
 
+    call_scorer(all, c, ec, index);
     ec->ld = ld;
 
-    float cost = ec->partial_prediction;
-    ec->partial_prediction = 0.;
+    float cost = ec->final_prediction;
 
     return cost;
-  }
-
-  //this function below was a test to see if we save time by carefully organizing the feature offset/regression calls, but seems to be same time as gen_cs_example_dm
-  void gen_cs_example_dm2(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
-  {
-    //this implements the direct estimation method, where costs are directly specified by the learned regressor.
-    CB::label* ld = (CB::label*)ec->ld;
-
-    cb_class* cl_obs = get_observed_cost(ld);
-
-    uint32_t desired_increment = 0;
-    uint32_t current_increment = 0;
- 
-    label_data simple_temp;
-    simple_temp.initial = 0.;
-    simple_temp.label = FLT_MAX;
-    simple_temp.weight = 0.;
-
-    ec->ld = &simple_temp;
-
-    //generate cost sensitive example
-    cs_ld.costs.erase();  
-    if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
-      //in this case generate cost-sensitive example with all actions  
-      for( uint32_t i = 1; i <= all.sd->k; i++)
-      {
-        CSOAA::wclass wc;
-        wc.wap_value = 0.;
-
-        ec->partial_prediction = 0.;
-        desired_increment = c.increment * (2*i-1);
-        update_example_indicies(all.audit, ec, desired_increment-current_increment);
-        current_increment = desired_increment;
-	all.scorer.learn(&all, all.scorer.data, ec);
-      
-        //get cost prediction for this action
-        wc.x = ec->partial_prediction;
-        wc.weight_index = i;
-        wc.partial_prediction = 0.;
-        wc.wap_value = 0.;
-
-        if( cl_obs != NULL && cl_obs->weight_index == i ) {
-          c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - c.avg_loss_regressors );
-          c.last_pred_reg = wc.x;
-          c.last_correct_cost = cl_obs->x;
-        }
-
-        cs_ld.costs.push_back( wc );
-      }
-    }
-    else { //this is an example where we can only perform a subset of the actions
-      //in this case generate cost-sensitive example with only allowed actions
-      for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
-      {
-        CSOAA::wclass wc;
-        wc.wap_value = 0.;
-
-        ec->partial_prediction = 0.;
-        desired_increment = c.increment * (2*cl->weight_index-1);
-        update_example_indicies(all.audit, ec, desired_increment-current_increment);
-        current_increment = desired_increment;
-	all.scorer.learn(&all, all.scorer.data, ec);
-      
-        //get cost prediction for this action
-        wc.x = ec->partial_prediction;
-        wc.weight_index = cl->weight_index;
-        wc.partial_prediction = 0.;
-        wc.wap_value = 0.;
-
-        if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
-          c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - c.avg_loss_regressors );
-          c.last_pred_reg = wc.x;
-          c.last_correct_cost = cl_obs->x;
-        }
-
-        cs_ld.costs.push_back( wc );
-      }
-    }
-
-    ec->ld = ld;
-    ec->partial_prediction = 0.;
-    update_example_indicies(all.audit, ec, -current_increment);
   }
 
   void gen_cs_example_dm(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
@@ -392,8 +327,8 @@ namespace CB
     //this implements the direct estimation method, where costs are directly specified by the learned regressor.
     CB::label* ld = (CB::label*)ec->ld;
 
-    cb_class* cl_obs = get_observed_cost(ld);
-
+    float min = FLT_MAX;
+    size_t argmin = 1;
     //generate cost sensitive example
     cs_ld.costs.erase();  
     if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
@@ -405,15 +340,21 @@ namespace CB
       
         //get cost prediction for this action
         wc.x = get_cost_pred(all, c,ec,i);
+	if (wc.x < min)
+	  {
+	    min = wc.x;
+	    argmin = i;
+	  }
+
         wc.weight_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
-        if( cl_obs != NULL && cl_obs->weight_index == i ) {
+        if( c.known_cost != NULL && c.known_cost->weight_index == i ) {
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x - wc.x)*(c.known_cost->x - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
-          c.last_correct_cost = cl_obs->x;
+          c.last_correct_cost = c.known_cost->x;
         }
 
         cs_ld.costs.push_back( wc );
@@ -428,27 +369,33 @@ namespace CB
       
         //get cost prediction for this action
         wc.x = get_cost_pred(all, c,ec,cl->weight_index);
+	if (wc.x < min || (wc.x == min && cl->weight_index < argmin))
+	  {
+	    min = wc.x;
+	    argmin = cl->weight_index;
+	  }
+
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
-        if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
+        if( c.known_cost != NULL && c.known_cost->weight_index == cl->weight_index ) {
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x - wc.x)*(c.known_cost->x - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
-          c.last_correct_cost = cl_obs->x;
+          c.last_correct_cost = c.known_cost->x;
         }
 
         cs_ld.costs.push_back( wc );
       }
     }
+    
+    ec->final_prediction = argmin;
   }
 
   void gen_cs_example_dr(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
   {//this implements the doubly robust method
     CB::label* ld = (CB::label*)ec->ld;
-    
-    cb_class* cl_obs = get_observed_cost(ld);
     
     //generate cost sensitive example
     cs_ld.costs.erase();
@@ -466,12 +413,12 @@ namespace CB
         wc.wap_value = 0.;
 
         //add correction if we observed cost for this action and regressor is wrong
-        if( cl_obs != NULL && cl_obs->weight_index == i ) {
+        if( c.known_cost != NULL && c.known_cost->weight_index == i ) {
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x - wc.x)*(c.known_cost->x - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
-          c.last_correct_cost = cl_obs->x;
-          wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
+          c.last_correct_cost = c.known_cost->x;
+          wc.x += (c.known_cost->x - wc.x) / c.known_cost->prob_action;
         }
 
         cs_ld.costs.push_back( wc );
@@ -491,12 +438,12 @@ namespace CB
         wc.wap_value = 0.;
 
         //add correction if we observed cost for this action and regressor is wrong
-        if( cl_obs != NULL && cl_obs->weight_index == cl->weight_index ) {
+        if( c.known_cost != NULL && c.known_cost->weight_index == cl->weight_index ) {
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (cl_obs->x - wc.x)*(cl_obs->x - wc.x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x - wc.x)*(c.known_cost->x - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
-          c.last_correct_cost = cl_obs->x;
-          wc.x += (cl_obs->x - wc.x) / cl_obs->prob_action;
+          c.last_correct_cost = c.known_cost->x;
+          wc.x += (c.known_cost->x - wc.x) / c.known_cost->prob_action;
         }
 
         cs_ld.costs.push_back( wc );
@@ -527,11 +474,16 @@ namespace CB
     }
   }
 
-  void learn(void* a, void* d, example* ec) {
-    vw* all = (vw*)a;
+  void learn(void* d, example* ec) {
     cb* c = (cb*)d;
+    vw* all = c->all;
     CB::label* ld = (CB::label*)ec->ld;
-    float prediction = 1;
+
+    if (command_example(all, ec))
+      {
+	c->base.learn(c->base.data, ec);
+	return;
+      }
 
     //check if this is a test example where we just want a prediction
     if( CB::is_test_label(ld) )
@@ -540,12 +492,15 @@ namespace CB
       cb_test_to_cs_test_label(*all,ec,c->cb_cs_ld);
 
        ec->ld = &c->cb_cs_ld;
-       c->base.learn(all,c->base.data,ec);
+       c->base.learn(c->base.data,ec);
        ec->ld = ld;
        return;
     }
 
     //now this is a training example
+    c->known_cost = get_observed_cost(ld);
+    c->min_cost = min (c->min_cost, c->known_cost->x);
+    c->max_cost = max (c->max_cost, c->known_cost->x);
     
     //generate a cost-sensitive example to update classifiers
     switch(c->cb_type)
@@ -561,45 +516,15 @@ namespace CB
         break;
       default:
         std::cerr << "Unknown cb_type specified for contextual bandit learning: " << c->cb_type << ". Exiting." << endl;
-        exit(1);
+        throw exception();
     }
 
-    //update classifiers with cost-sensitive exemple
-    ec->ld = &c->cb_cs_ld;
-    ec->partial_prediction = 0.;
-    c->base.learn(all,c->base.data,ec);
-    ec->ld = ld;
-
-    //store current class prediction
-    prediction = ec->final_prediction;
-
-    //update our regressors if we are training regressors
-    if( c->cb_type == CB_TYPE_DM || c->cb_type == CB_TYPE_DR )
-    {
-      cb_class* cl_obs = get_observed_cost(ld);
-
-      if( cl_obs != NULL )
+    if (c->cb_type != CB_TYPE_DM)
       {
-        uint32_t i = cl_obs->weight_index;
-	
-        label_data simple_temp;
-	simple_temp.initial = 0.;
-	simple_temp.label = cl_obs->x;
-	simple_temp.weight = 1.;
-
-	ec->ld = &simple_temp;
-
-        uint32_t desired_increment = c->increment * (2*i-1);
-        update_example_indicies(all->audit, ec, desired_increment);
-        ec->partial_prediction = 0.;
-        all->scorer.learn(all, all->scorer.data, ec);
-        update_example_indicies(all->audit, ec, -desired_increment);
-
-        ec->ld = ld;
+	ec->ld = &c->cb_cs_ld;
+	c->base.learn(c->base.data,ec);
+	ec->ld = ld;
       }
-    }
-
-    ec->final_prediction = prediction;
   }
 
   void print_update(vw& all, cb& c, bool is_test, example *ec)
@@ -624,7 +549,7 @@ namespace CB
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)*(OAA::prediction_t*)&ec->final_prediction,
+                (long unsigned int)ec->final_prediction,
                 (long unsigned int)ec->num_features,
                 c.avg_loss_regressors,
                 c.last_pred_reg,
@@ -639,49 +564,42 @@ namespace CB
   void output_example(vw& all, cb& c, example* ec)
   {
     CB::label* ld = (CB::label*)ec->ld;
-    all.sd->weighted_examples += 1.;
-    all.sd->total_features += ec->num_features;
+
     float loss = 0.;
     if (!CB::is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = *(OAA::prediction_t*)&ec->final_prediction;
+        size_t pred = (size_t)ec->final_prediction;
 
         float chosen_loss = FLT_MAX;
-        float min = FLT_MAX;
         if( know_all_cost_example(ld) ) {
           for (cb_class *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
             if (cl->weight_index == pred)
               chosen_loss = cl->x;
-            if (cl->x < min)
-            {
-              min = cl->x;
-            }
           }
         }
         else {
           //we do not know exact cost of each action, so evaluate on generated cost-sensitive example currently stored in cb_cs_ld
           for (CSOAA::wclass *cl = c.cb_cs_ld.costs.begin; cl != c.cb_cs_ld.costs.end; cl ++) {
             if (cl->weight_index == pred)
-              chosen_loss = cl->x;
-            if (cl->x < min)
-            {
-              min = cl->x;
-            }
+	      {
+		chosen_loss = cl->x;
+		if (c.known_cost->weight_index == pred && c.cb_type == CB_TYPE_DM) 
+		  chosen_loss += (c.known_cost->x - chosen_loss) / c.known_cost->prob_action;
+	      }
           }
         }
         if (chosen_loss == FLT_MAX)
           cerr << "warning: cb predicted an invalid class" << endl;
 
-        loss = chosen_loss - min;
+        loss = chosen_loss;
       }
 
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
+    accumulate_loss(all, ec, 1., loss);
   
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
         int f = all.final_prediction_sink[i];
-        all.print(f, (float) (*(OAA::prediction_t*)&ec->final_prediction), 0, ec->tag);
+        all.print(f, ec->final_prediction, 0, ec->tag);
       }
   
     all.sd->example_number++;
@@ -689,39 +607,39 @@ namespace CB
     print_update(all, c, CB::is_test_label((CB::label*)ec->ld), ec);
   }
 
-  void finish(void* a, void* d)
+  void finish(void* d)
   {
     cb* c=(cb*)d;
-    c->base.finish(a,c->base.data);
+    c->base.finish(c->base.data);
     c->cb_cs_ld.costs.delete_v();
     free(c);
   }
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw*all = (vw*)in;
     cb* c = (cb*)d;
     example* ec = NULL;
     while ( true )
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
       {
-        learn(all, d, ec);
-        output_example(*all, *c, ec);
+        learn(d, ec);
+	if (!command_example(&all, ec))
+	  output_example(*all, *c, ec);
 	VW::finish_example(*all, ec);
       }
       else if (parser_done(all->p))
-      {
-        //finish(all); this is already called by main function
-        return;
-      }
+	return;
     }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     cb* c = (cb*)calloc(1, sizeof(cb));
+    c->all = &all;
     c->first_print_call = true;
+    c->min_cost = 0.;
+    c->max_cost = 1.;
     po::options_description desc("CB options");
     desc.add_options()
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
@@ -800,8 +718,8 @@ namespace CB
 
     all.sd->k = nb_actions;
 
-    learner l = {c, drive, learn, finish, all.l.save_load};
+    learner l = {c, drive, learn, finish, all.l.sl};
     c->base = all.l;
-    all.l = l;
+    return l;
   }
 }

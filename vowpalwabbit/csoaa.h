@@ -6,7 +6,7 @@ license as described in the file LICENSE.
 #ifndef CSOAA_H
 #define CSOAA_H
 
-#include "io.h"
+#include "io_buf.h"
 #include "parse_primitives.h"
 #include "global_data.h"
 #include "example.h"
@@ -28,7 +28,7 @@ namespace CSOAA {
     v_array<wclass> costs;
   };
   
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 
   void output_example(vw& all, example* ec);
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
@@ -51,7 +51,7 @@ namespace CSOAA {
 namespace CSOAA_AND_WAP_LDF {
   typedef CSOAA::label label;
 
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   void global_print_newline(vw& all);
   void output_example(vw& all, example* ec, bool&hit_loss);
 

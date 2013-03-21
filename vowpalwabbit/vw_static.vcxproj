@@ -206,7 +206,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS"  /D "_CRT_NONSTDC_NO_DEPRECATE" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed Condition="'$(Configuration)'=='Release'">Speed</FavorSizeOrSpeed>
       <OmitFramePointers Condition="'$(Configuration)'=='Release'">true</OmitFramePointers>
@@ -237,6 +237,7 @@
     <ClInclude Include="accumulate.h" />
     <ClInclude Include="allreduce.h" />
     <ClInclude Include="bfgs.h" />
+    <ClInclude Include="binary.h" />
     <ClInclude Include="cache.h" />
     <ClInclude Include="comp_io.h" />
     <ClInclude Include="constant.h" />
@@ -247,7 +248,7 @@
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
-    <ClInclude Include="io.h" />
+    <ClInclude Include="io_buf.h" />
     <ClInclude Include="lda_core.h" />
     <ClInclude Include="loss_functions.h" />
     <ClInclude Include="network.h" />
@@ -276,6 +277,7 @@
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="allreduce.cc" />
     <ClCompile Include="beam.cc" />
+    <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb.cc" />
@@ -286,7 +288,7 @@
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
-    <ClCompile Include="io.cc" />
+    <ClCompile Include="io_buf.cc" />
     <ClCompile Include="lda_core.cc" />
     <ClCompile Include="loss_functions.cc" />
     <ClCompile Include="network.cc" />

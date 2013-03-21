@@ -25,55 +25,58 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "cache.h"
 #include "simple_label.h"
-#include "allreduce.h"
 #include "accumulate.h"
 #include "learner.h"
+#include "simple_label.h"
 
 using namespace std;
 
 namespace GD
 {
-
-void predict(vw& all, example* ex);
-void sync_weights(vw& all);
-
-template <void (*T)(vw&, float, uint32_t, float, float)>
-void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
-{
-  if (fabs(update) == 0.)
-    return;
+  struct gd{
+    size_t current_pass;
+    vw* all;
+  };
+  void predict(vw& all, example* ex);
+  void sync_weights(vw& all);
   
-  float total_weight = 0.f;
-  if(all.active)
-    total_weight = (float)all.sd->weighted_unlabeled_examples;
-  else
-    total_weight = ec->example_t;
-
-  uint32_t offset = ec->ft_offset;
-  float avg_norm = all.normalized_sum_norm_x / total_weight;
-  if (sqrt_norm) avg_norm = sqrt(avg_norm);
-
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-      T(all, f->x, f->weight_index + offset, avg_norm, update);
-
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0))
-      for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++) {
-        uint32_t halfhash = quadratic_constant * (f0->weight_index + offset);
-        for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
-          T(all, f1->x, f1->weight_index + halfhash + offset, avg_norm, f0->x * update);
-      }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
-    if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
-      for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
-        for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++) {
-          uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
-          for (feature* f2 = ec->atomics[(int)(*i)[2]].begin; f2 != ec->atomics[(int)(*i)[2]].end; f2++)
-            T(all, f2->x, f2->weight_index + halfhash + offset, avg_norm, f0->x * f1->x * update);
-        }
-}
+  template <void (*T)(vw&, float, uint32_t, float, float)>
+  void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
+  {
+    if (fabs(update) == 0.)
+      return;
+    
+    float total_weight = 0.f;
+    if(all.active)
+      total_weight = (float)all.sd->weighted_unlabeled_examples;
+    else
+      total_weight = ec->example_t;
+    
+    uint32_t offset = ec->ft_offset;
+    float avg_norm = all.normalized_sum_norm_x / total_weight;
+    if (sqrt_norm) avg_norm = sqrt(avg_norm);
+    
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
+	T(all, f->x, f->weight_index + offset, avg_norm, update);
+    
+    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+      if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0))
+	for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++) {
+	  uint32_t halfhash = quadratic_constant * (f0->weight_index + offset);
+	  for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
+	    T(all, f1->x, f1->weight_index + halfhash + offset, avg_norm, f0->x * update);
+	}
+    
+    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
+      if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
+	for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
+	  for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++) {
+	    uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
+	    for (feature* f2 = ec->atomics[(int)(*i)[2]].begin; f2 != ec->atomics[(int)(*i)[2]].end; f2++)
+	      T(all, f2->x, f2->weight_index + halfhash + offset, avg_norm, f0->x * f1->x * update);
+	  }
+  }
 
 float InvSqrt(float x){
   float xhalf = 0.5f * x;
@@ -97,13 +100,14 @@ inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float 
   w[0] += update * x * t;
 }
 
+template<bool adaptive, bool normalized>
 inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
 {
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
-  if(all.normalized_updates) inv_norm /= (w[all.normalized_idx] * avg_norm);
-  if(all.adaptive) {
+  if(normalized) inv_norm /= (w[all.normalized_idx] * avg_norm);
+  if(adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
     eta = _mm_rsqrt_ss(eta);
@@ -118,13 +122,14 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   w[0] += update * x * t;
 }
 
-void learn(void* a, void* d, example* ec)
+void learn(void* d, example* ec)
 {
-  vw* all = (vw*)a;
+  gd* g = (gd*)d;
+  vw* all = g->all;
   assert(ec->in_use);
-  if (ec->pass != all->current_pass)
+  if (ec->end_pass)
     {
-      
+      sync_weights(*all);
       if(all->span_server != "") {
 	if(all->adaptive)
 	  accumulate_weighted_avg(*all, all->span_server, all->reg);
@@ -133,46 +138,53 @@ void learn(void* a, void* d, example* ec)
       }
       
       if (all->save_per_pass)
-	{
-	  sync_weights(*all);
-	  save_predictor(*all, all->final_regressor_name, all->current_pass);
-	}
+	save_predictor(*all, all->final_regressor_name, all->current_pass);
+
+      if (report_dev_error(*all) && all->save_best_predictor)
+        save_predictor(*all, all->final_regressor_name, (size_t)-1);
+
       all->eta *= all->eta_decay_rate;
       
-      all->current_pass = ec->pass;
+      all->current_pass++;
     }
   
-  if (!command_example(*all, ec))
+  if (!command_example(all, ec))
     {
       predict(*all,ec);
-      if (ec->eta_round != 0.)
+      if ((ec->eta_round != 0.) && (!is_development_example(*all, ec)))
 	{
-          if(all->power_t == 0.5)
-            //inline_train(*all, ec, ec->eta_round);
-            generic_train<specialized_update>(*all,ec,ec->eta_round,true);
+          if(all->power_t == 0.5) {
+            if (all->adaptive) {
+              if (all->normalized_updates) 
+                generic_train<specialized_update<true, true> >
+                  (*all,ec,ec->eta_round,true);
+              else
+                generic_train<specialized_update<true, false> >
+                  (*all,ec,ec->eta_round,true);
+            }
+            else {
+              if (all->normalized_updates) 
+                generic_train<specialized_update<false, true> >
+                  (*all,ec,ec->eta_round,true);
+              else
+                generic_train<specialized_update<false, false> >
+                  (*all,ec,ec->eta_round,true);
+            }
+          }
           else
             //general_train(*all, ec, ec->eta_round, all->power_t);
             generic_train<general_update>(*all,ec,ec->eta_round,false);
 
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
-	  
 	}
     }
 }
 
-  void finish(void* a, void* d)
+  void finish(void* d)
 {
-  vw* all = (vw*)a;
-  sync_weights(*all);
-  if(all->span_server != "") {
-    if(all->adaptive)
-      accumulate_weighted_avg(*all, all->span_server, all->reg);
-    else
-      accumulate_avg(*all, all->span_server, all->reg, 0);
-  }
-  size_t* current_pass = (size_t*)d;
-  free(current_pass);
+  gd* g = (gd*)d;
+  free(g);
 }
 
 void sync_weights(vw& all) {
@@ -184,26 +196,6 @@ void sync_weights(vw& all) {
     all.reg.weight_vector[stride*i] = trunc_weight(all.reg.weight_vector[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
   all.sd->contraction = 1.;
-}
-
-bool command_example(vw& all, example* ec) {
-  if (ec->indices.size() > 1)
-    return false;
-
-  if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
-    {//save state
-      string final_regressor_name = all.final_regressor_name;
-
-      if ((ec->tag).size() >= 6 && (ec->tag)[4] == '_')
-	final_regressor_name = string(ec->tag.begin+5, (ec->tag).size()-5);
-
-      if (!all.quiet)
-	cerr << "saving regressor to " << final_regressor_name << endl;
-      save_predictor(all, final_regressor_name, 0);
-
-      return true;
-    }
-  return false;
 }
 
 float finalize_prediction(vw& all, float ret) 
@@ -233,73 +225,65 @@ bool operator<(const string_value& first, const string_value& second)
 
 #include <algorithm>
 
-void print_audit_quad(vw& all, weight* weights, audit_data& page_feature, v_array<audit_data> &offer_features, vector<string_value>& features)
+void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, size_t offset = 0)
 {
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-
-  for (audit_data* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      ostringstream tempstream;
-      tempstream << page_feature.space << '^' << page_feature.feature << '^' 
-		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask)
-		 << ':' << ele->x*page_feature.x
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-      string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
-      features.push_back(sv);
-    }
+  ostringstream tempstream;
+  size_t index = (f->weight_index + offset) & all.weight_mask;
+  weight* weights = all.reg.weight_vector;
+  size_t stride = all.stride;
+  
+  tempstream << prepend;
+  if (a != NULL)
+    tempstream << a->space << '^' << a->feature << ':';
+  else 	if ( index == ((constant*stride)&all.weight_mask))
+    tempstream << "Constant:";
+  
+  tempstream << (index/stride & all.parse_mask) << ':' << f->x;
+  tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
+  if(all.adaptive)
+    tempstream << '@' << weights[index+1];
+  string_value sv = {weights[index]*f->x, tempstream.str()};
+  results.push_back(sv);
 }
 
-void print_quad(vw& all, weight* weights, feature& page_feature, v_array<feature> &offer_features, vector<string_value>& features)
+void audit_features(vw& all, v_array<feature>& fs, v_array<audit_data>& as, vector<string_value>& results, string prepend, size_t offset = 0)
 {
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      ostringstream tempstream;
-      tempstream << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask) 
-		 << ':' << (ele->x*page_feature.x)
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-      string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
-      features.push_back(sv);
-    }
+  for (size_t j = 0; j< fs.size(); j++)
+    if (as.begin != as.end)
+      audit_feature(all, & fs[j], & as[j], results, prepend, offset);
+    else
+      audit_feature(all, & fs[j], NULL, results, prepend, offset);
 }
 
-void print_audit_cubic(vw& all, weight* weights, audit_data& f0, audit_data& f1, v_array<audit_data> &cross_features, vector<string_value>& features)
+void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, uint32_t offset = 0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  size_t halfhash = quadratic_constant * (left_feature.weight_index + offset);
 
-  for (audit_data* ele = cross_features.begin; ele != cross_features.end; ele++)
-    {
-      ostringstream tempstream;
-      tempstream << f0.space << '^' << f0.feature << '^' 
-                 << f1.space << '^' << f1.feature << '^' 
-		 << ele->space << '^' << ele->feature << ':' << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask)
-		 << ':' << ele->x*f0.x*f1.x
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * all.sd->contraction;
-      string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
-      features.push_back(sv);
-    }
+  ostringstream tempstream;
+  if (audit_right.size() != 0 && left_audit)
+    tempstream << left_audit->space << '^' << left_audit->feature << '^';
+  string prepend = tempstream.str();
+
+  audit_features(all, right_features, audit_right, results, prepend, halfhash + offset);
 }
 
- void print_cubic(vw& all, weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, vector<string_value>& features)
+void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit_data* f1_audit, 
+		  v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, uint32_t offset = 0)
 {
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
+  size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
 
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++)
-    {
-      ostringstream tempstream;
-      tempstream << (((halfhash + ele->weight_index)/all.stride) & all.parse_mask) 
-		 << ':' << (ele->x*f0.x*f1.x)
-		 << ':' << trunc_weight(weights[(halfhash + ele->weight_index) & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-      string_value sv = {weights[ele->weight_index & all.weight_mask]*ele->x, tempstream.str()};
-      features.push_back(sv);
-    }
+  ostringstream tempstream;
+  if (audit_right.size() > 0 && f0_audit && f1_audit)
+    tempstream << f0_audit->space << '^' << f0_audit->feature << '^' 
+	       << f1_audit->space << '^' << f1_audit->feature << '^';
+  string prepend = tempstream.str();
+  audit_features(all, right_features, audit_right, results, prepend, halfhash + offset);  
 }
 
 void print_features(vw& all, example* &ec)
 {
   weight* weights = all.reg.weight_vector;
-  size_t stride = all.stride;
-
+  
   if (all.lda > 0)
     {
       size_t count = 0;
@@ -317,50 +301,42 @@ void print_features(vw& all, example* &ec)
   else
     {
       vector<string_value> features;
-
+      string empty;
+      
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-	if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-	  for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
-	    {
-	      ostringstream tempstream;
-	      tempstream << f->space << '^' << f->feature << ':' << (f->weight_index/stride & all.parse_mask) << ':' << f->x;
-	      tempstream  << ':' << trunc_weight(weights[f->weight_index & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-	      if(all.adaptive)
-		tempstream << '@' << weights[(f->weight_index+1) & all.weight_mask];
-	      string_value sv = {weights[f->weight_index & all.weight_mask]*f->x, tempstream.str()};
-	      features.push_back(sv);
-	    }
-	else
-	  for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-	    {
-	      ostringstream tempstream;
-	      if ( f->weight_index == ((constant*stride)&all.weight_mask))
-		tempstream << "Constant:";
-	      tempstream << (f->weight_index/stride & all.parse_mask) << ':' << f->x;
-	      tempstream << ':' << trunc_weight(weights[f->weight_index & all.weight_mask], (float)all.sd->gravity) * (float)all.sd->contraction;
-	      if(all.adaptive)
-		tempstream << '@' << weights[(f->weight_index+1) & all.weight_mask];
-	      string_value sv = {weights[f->weight_index & all.weight_mask]*f->x, tempstream.str()};
-	      features.push_back(sv);
-	    }
+	audit_features(all, ec->atomics[*i], ec->audit_features[*i], features, empty, ec->ft_offset);
       for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end)
-	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-	    print_audit_quad(all, weights, *f, ec->audit_features[(int)(*i)[1]], features);
-	else
-	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-	    print_quad(all, weights, *f, ec->atomics[(int)(*i)[1]], features);      
+	{
+	  int fst = (*i)[0];
+	  int snd = (*i)[1];
+	  for (size_t j = 0; j < ec->atomics[fst].size(); j++)
+	    {
+	      audit_data* a = NULL;
+	      if (ec->audit_features[fst].size() > 0)
+		a = & ec->audit_features[fst][j];
+	      audit_quad(all, ec->atomics[fst][j], a, ec->atomics[snd], ec->audit_features[snd], features);
+	    }
+	}
 
       for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
-	if (ec->audit_features[(int)(*i)[0]].begin != ec->audit_features[(int)(*i)[0]].end) {
-	  for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f != ec->audit_features[(int)(*i)[0]].end; f++)
-            for (audit_data* f2 = ec->audit_features[(int)(*i)[1]].begin; f2 != ec->audit_features[(int)(*i)[1]].end; f2++)
-              print_audit_cubic(all, weights, *f, *f2, ec->audit_features[(int)(*i)[2]], features);
-        } else {
-	  for (feature* f = ec->atomics[(int)(*i)[0]].begin; f != ec->atomics[(int)(*i)[0]].end; f++)
-            for (feature* f2 = ec->atomics[(int)(*i)[1]].begin; f2 != ec->atomics[(int)(*i)[1]].end; f2++)
-              print_cubic(all, weights, *f, *f2, ec->atomics[(int)(*i)[2]], features);
-        }
+	{
+	  int fst = (*i)[0];
+	  int snd = (*i)[1];
+	  int trd = (*i)[2];
+	  for (size_t j = 0; j < ec->atomics[fst].size(); j++)
+	    {
+	      audit_data* a1 = NULL;
+	      if (ec->audit_features[fst].size() > 0)
+		a1 = & ec->audit_features[fst][j];
+	      for (size_t k = 0; k < ec->atomics[snd].size(); k++)
+		{
+		  audit_data* a2 = NULL;
+		  if (ec->audit_features[snd].size() > 0)
+		    a2 = & ec->audit_features[snd][k];
+		  audit_triple(all, ec->atomics[fst][j], a1, ec->atomics[snd][k], a2, ec->atomics[trd], ec->audit_features[trd], features);
+		}
+	    }
+	}
 
       sort(features.begin(),features.end());
 
@@ -406,18 +382,19 @@ void norm_add_cubic(vw& all, feature& f0, feature& f1, v_array<feature> &cross_f
   norm_x += norm_x_new * f0.x * f0.x * f1.x * f1.x;
 }
 
+template<bool adaptive, bool normalized>
 inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
   weight* w = &all.reg.weight_vector[fi & all.weight_mask];
   float x2 = x * x;
   float t = 1.f;
   float inv_norm = 1.f;
   float inv_norm2 = 1.f;
-  if(all.normalized_updates) {
+  if(normalized) {
     inv_norm /= w[all.normalized_idx];
     inv_norm2 = inv_norm*inv_norm;
     norm_x += x2 * inv_norm2;
   }
-  if(all.adaptive){
+  if(adaptive){
     w[1] += g * x2;
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
@@ -525,7 +502,9 @@ void local_predict(vw& all, example* ec)
     t = ec->example_t;
 
   ec->eta_round = 0;
-  if (ld->label != FLT_MAX)
+  if (is_development_example(all, ec) && (ld->label != FLT_MAX))
+    accumulate_loss(all, ec, ld->weight, all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight);
+  else if (ld->label != FLT_MAX)
     {
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       if (all.training && ec->loss > 0.)
@@ -533,8 +512,14 @@ void local_predict(vw& all, example* ec)
 	  float eta_t;
 	  float norm;
           if(all.adaptive || all.normalized_updates) {
-            if(all.power_t == 0.5)
-              norm = compute_norm<simple_norm_compute>(all,ec);
+            if(all.power_t == 0.5) {
+                if (all.adaptive && all.normalized_updates)
+                  norm = compute_norm<simple_norm_compute<true, true> >(all,ec);
+                else if (all.adaptive)
+                  norm = compute_norm<simple_norm_compute<true, false> >(all,ec);
+                else 
+                  norm = compute_norm<simple_norm_compute<false, true> >(all,ec);
+            }
             else
               norm = compute_norm<powert_norm_compute>(all,ec);
           }
@@ -572,7 +557,7 @@ void predict(vw& all, example* ex)
 {
   label_data* ld = (label_data*)ex->ld;
   float prediction;
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
+  if (all.training && (!is_development_example(all,ex)) && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
         prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
@@ -593,7 +578,7 @@ void predict(vw& all, example* ex)
       prediction = inline_predict<vec_add>(all, ex);
   }
 
-  ex->partial_prediction += prediction;
+  ex->partial_prediction = prediction;
 
   local_predict(all, ex);
   ex->done = true;
@@ -606,6 +591,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   int c = 0;
   uint32_t i = 0;
   size_t brw = 1;
+
   do 
     {
       brw = 1;
@@ -747,9 +733,10 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
+void save_load(void* data, io_buf& model_file, bool read, bool text)
 {
-  vw* all=(vw*)in;
+  gd* g = (gd*)data;
+  vw* all = g->all;
   if(read)
     {
       initialize_regressor(*all);
@@ -782,16 +769,15 @@ void save_load(void* in, void* data, io_buf& model_file, bool read, bool text)
     }
 }
 
-void driver(void* in, void* data)
+void driver(vw* all, void* data)
 {
-  vw* all = (vw*)in;
   example* ec = NULL;
   
   while ( true )
     {
       if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
 	{
-	  learn(all, data, ec);
+	  learn(data, ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
@@ -801,10 +787,12 @@ void driver(void* in, void* data)
     }
 }
 
-  learner get_learner()
-  {
-    size_t* current_pass = (size_t*)calloc(1, sizeof(size_t));
-    learner ret = {current_pass,driver,learn,finish,save_load};
-    return ret;
-  }
+learner setup(vw& all)
+{
+  gd* g = (gd*)calloc(1, sizeof(gd));
+  g->all = &all;
+  sl_t sl = {g,save_load};
+  learner ret = {g,driver,learn,finish,sl};
+  return ret;
+}
 }

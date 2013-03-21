@@ -74,6 +74,7 @@ namespace VW {
   example* new_unused_example(vw& all);
   void add_constant_feature(vw& all, example*ec);
 
+  void add_label(example* ec, float label, float weight = 1, float base = 0);
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
 }

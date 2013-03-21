@@ -24,6 +24,7 @@ using std::cout;
 using std::cerr;
 using std::string;
 
+using namespace std;
 
 int open_socket(const char* host, unsigned short port)
 {
@@ -33,13 +34,13 @@ int open_socket(const char* host, unsigned short port)
   if (he == NULL)
     {
       cerr << "can't resolve hostname: " << host << endl;
-      exit(1);
+      throw exception();
     }
   int sd = socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
       cerr << "can't get socket " << endl;
-      exit(1);
+      throw exception();
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -49,7 +50,7 @@ int open_socket(const char* host, unsigned short port)
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
     {
       cerr << "can't connect to: " << host << ':' << port << endl;
-      exit(1);
+      throw exception();
     }
   return sd;
 }
@@ -90,7 +91,7 @@ int main(int argc, char* argv[]){
     ret=send(s,&id,sizeof(id),0);
     if(ret<0){
         cerr << "Could not perform handshake!" << endl;
-        exit(1);
+        throw exception();
     }
     
     while(getline(cin,line)){
@@ -101,12 +102,12 @@ int main(int argc, char* argv[]){
         ret=send(s,sp,len-(sp-cstr),0);
         if(ret<0){
             cerr << "Could not send unlabeled data!" << endl;
-            exit(1);
+            throw exception();
         }
         ret=recvall(s, buf, 256);
         if(ret<0){
             cerr << "Could not receive queries!" << endl;
-            exit(1);
+            throw exception();
         }
         buf[ret]='\0';
         toks=&buf[0];
@@ -126,12 +127,12 @@ int main(int argc, char* argv[]){
         ret = send(s,cstr,len,0);
         if(ret<0){
             cerr << "Could not send labeled data!" << endl;
-            exit(1);
+            throw exception();
         }
         ret=recvall(s, buf, 256);
         if(ret<0){
             cerr << "Could not receive predictions!" << endl;
-            exit(1);
+            throw exception();
         }
     }
     close(s);
