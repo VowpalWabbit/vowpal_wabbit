@@ -182,6 +182,7 @@ namespace OAA {
         ec->ld = &simple_temp;
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
+        ec->done = false;
         d->base.learn(d->base.data,ec);
         if (ec->partial_prediction > score)
           {

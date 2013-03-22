@@ -316,6 +316,7 @@ namespace CSOAA {
           current_increment = desired_increment;
         }
 
+        ec->done = false;
 	c->base.learn(c->base.data, ec);
         cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
@@ -409,6 +410,7 @@ namespace CSOAA_AND_WAP_LDF {
     bool is_singleline;
     bool is_wap;
     bool first_pass;
+    bool treat_as_classifier;
     float csoaa_example_t;
     learner base;
     vw* all;
@@ -474,6 +476,13 @@ namespace LabelDict {
     }
   }
 
+  /*
+    time ./vw --hash all --noconstant -b 26 -c --normalized -q st -l 10 --initial_t 1 --csoaa_ldf m -d science100.gz
+    
+    original: 31.1s
+
+  */
+
   void add_example_namespace(example*ec, char ns, v_array<feature> features) {
     bool has_ns = false;
     for (size_t i=0; i<ec->indices.size(); i++) {
@@ -497,7 +506,37 @@ namespace LabelDict {
     ec->num_features += features.size();
     ec->total_sum_feat_sq += ec->sum_feat_sq[(size_t)ns];
   }
+  /*
+  void add_example_namespace(example*ec, char ns, v_array<feature> features) {
+    bool has_ns = false;
+    for (size_t i=0; i<ec->indices.size(); i++) {
+      if (ec->indices[i] == (size_t)ns) {
+        has_ns = true;
+        break;
+      }
+    }
+    if (has_ns) {
+      add_example_namespace_slow(ec, ns, features);
+      return;
+    }
 
+    ec->indices.push_back((
+
+      ec->total_sum_feat_sq -= ec->sum_feat_sq[(size_t)ns];
+    } else {
+      ec->indices.push_back((size_t)ns);
+      ec->sum_feat_sq[(size_t)ns] = 0;
+    }
+
+    for (feature*f=features.begin; f!=features.end; f++) {
+      ec->sum_feat_sq[(size_t)ns] += f->x * f->x;
+      ec->atomics[(size_t)ns].push_back(*f);
+    }
+
+    ec->num_features += features.size();
+    ec->total_sum_feat_sq += ec->sum_feat_sq[(size_t)ns];
+  }
+  */
 
 
   void add_example_namespaces_from_example(example*target, example*source) {
@@ -620,7 +659,7 @@ namespace LabelDict {
     ec->indices.decr();
   }
 
-  void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, float*min_score) {
+  void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, float*min_score, float*min_cost, float*max_cost) {
     label   *ld = (label*)ec->ld;
     v_array<CSOAA::wclass> costs = ld->costs;
     label_data simple_label;
@@ -642,6 +681,9 @@ namespace LabelDict {
         *prediction = costs[j].weight_index;
       }
 
+      if (costs[j].x < *min_cost) *min_cost = costs[j].x;
+      if (costs[j].x > *max_cost) *max_cost = costs[j].x;
+
       LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
     }
 
@@ -657,6 +699,8 @@ namespace LabelDict {
     bool   isDev = is_development_example(all, l.ec_seq[start_K]);
     size_t prediction = 0;
     float  min_score = FLT_MAX;
+    float  min_cost  = FLT_MAX;
+    float  max_cost  = FLT_MIN;
 
     v_hashmap<size_t,float> hit_labels(8, 0., NULL);
 
@@ -672,7 +716,7 @@ namespace LabelDict {
         throw exception();
       }
 
-      make_single_prediction(all, l, ec, &prediction, &min_score);
+      make_single_prediction(all, l, ec, &prediction, &min_score, &min_cost, &max_cost);
     }
 
     // do actual learning
@@ -723,6 +767,7 @@ namespace LabelDict {
               simple_label.weight = value_diff;
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
+              ec1->done = false;
               l.base.learn(l.base.data, ec1);
               unsubtract_example(all, ec1);
               
@@ -746,6 +791,8 @@ namespace LabelDict {
     size_t prediction = 0;
     bool   isTest = CSOAA::example_is_test(l.ec_seq[start_K]);
     float  min_score = FLT_MAX;
+    float  min_cost  = FLT_MAX;
+    float  max_cost  = FLT_MIN;
 
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq.begin[k];
@@ -757,7 +804,7 @@ namespace LabelDict {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
         throw exception();
       }
-      make_single_prediction(all, l, ec, &prediction, &min_score);
+      make_single_prediction(all, l, ec, &prediction, &min_score, &min_cost, &max_cost);
     }
 
     bool isDev = is_development_example(all, l.ec_seq[start_K]);
@@ -780,10 +827,25 @@ namespace LabelDict {
           float old_example_t = ec->example_t;
           l.csoaa_example_t += 1.;
           ec->example_t = l.csoaa_example_t;
-          simple_label.label = costs[j].x;
-          ec->partial_prediction = 0.;
+
+          if (!l.treat_as_classifier) { // treat like regression
+            simple_label.label = costs[j].x;
+          } else { // treat like classification
+            if (costs[j].x <= min_cost) {
+              simple_label.label = -1.;
+              simple_label.weight = max_cost - min_cost;
+            } else {
+              simple_label.label = 1.;
+              simple_label.weight = costs[j].x - min_cost;
+            }
+          }
+
+
+          ec->partial_prediction = costs[j].partial_prediction;
+          //ec->partial_prediction = 0.; ec->done = false;
           LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
           l.base.learn(l.base.data, ec);
+          //cerr<<"cached="<<costs[j].partial_prediction<<" pp="<<ec->partial_prediction<<endl;
           LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
           ec->example_t = old_example_t;
         }
@@ -801,6 +863,7 @@ namespace LabelDict {
       // restore label
       ec->ld = ld;
     }
+    //cerr<<endl;
   }
 
 
@@ -920,11 +983,13 @@ namespace LabelDict {
 	l.base.learn(l.base.data, ec);
 	return;
       }
-    
-    if ((!all.training) || CSOAA::example_is_test(ec)) {
+
+    if (((!all.training) || CSOAA::example_is_test(ec)) && (!LabelDict::ec_is_label_definition(ec))) {
       size_t prediction = 0;
       float  min_score = FLT_MAX;
-      make_single_prediction(all, l, ec, &prediction, &min_score);
+      float  min_cost  = FLT_MAX;
+      float  max_cost  = FLT_MIN;
+      make_single_prediction(all, l, ec, &prediction, &min_score, &min_cost, &max_cost);
     } else {
       l.ec_seq.erase();
       l.ec_seq.push_back(ec);
@@ -1047,10 +1112,13 @@ namespace LabelDict {
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
 
+    all.force_full_predictions = true;
+
     ld->all = &all;
     ld->need_to_clear = true;
     ld->is_singleline = true;
     ld->first_pass = true;
+    ld->treat_as_classifier = false;
  
     string ldf_arg;
     if(vm_file.count("csoaa_ldf")) {
@@ -1088,9 +1156,15 @@ namespace LabelDict {
 
     if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0)
       ld->is_singleline = true;
-    else if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
+    else if (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0) {
+      ld->is_singleline = true;
+      ld->treat_as_classifier = true;
+    } else if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
       ld->is_singleline = false;
-    else {
+    else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
+      ld->is_singleline = false;
+      ld->treat_as_classifier = true;
+    } else {
       cerr << "ldf requires either [s]ingleline or [m]ultiline argument" << endl;
       throw exception();
     }

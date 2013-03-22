@@ -557,7 +557,9 @@ void predict(vw& all, example* ex)
 {
   label_data* ld = (label_data*)ex->ld;
   float prediction;
-  if (all.training && (!is_development_example(all,ex)) && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
+
+  if (!ex->done) {
+    if ((all.training && (!is_development_example(all,ex)) && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) || all.force_full_predictions) {
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
         prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
@@ -577,9 +579,8 @@ void predict(vw& all, example* ex)
     else
       prediction = inline_predict<vec_add>(all, ex);
   }
-
   ex->partial_prediction = prediction;
-
+  }
   local_predict(all, ex);
   ex->done = true;
 }

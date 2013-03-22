@@ -213,6 +213,7 @@ namespace ECT
             update_example_indicies(all.audit, ec,offset);
             ec->partial_prediction = 0;
 	  
+            ec->done = false;
             e.base.learn(e.base.data, ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
@@ -230,6 +231,7 @@ namespace ECT
 	
 	ec->partial_prediction = 0;
 	update_example_indicies(all.audit, ec,offset);
+        ec->done = false;
 	e.base.learn(e.base.data, ec);
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
@@ -277,9 +279,11 @@ namespace ECT
 	update_example_indicies(all.audit, ec,offset);
 	
 	ec->partial_prediction = 0;
+        ec->done = false;
 	e.base.learn(e.base.data, ec);
 	simple_temp.weight = 0.;
 	ec->partial_prediction = 0;
+        ec->done = false;
 	e.base.learn(e.base.data, ec);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
@@ -339,6 +343,7 @@ namespace ECT
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
+                ec->done = false;
 		e.base.learn(e.base.data, ec);
 		
                 update_example_indicies(all.audit, ec,-offset);

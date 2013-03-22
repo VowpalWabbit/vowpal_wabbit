@@ -206,6 +206,7 @@ struct vw {
   bool do_reset_source;
   string devdata_tag;
   bool compute_dev_scores;
+  bool force_full_predictions;
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
