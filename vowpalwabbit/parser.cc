@@ -401,7 +401,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
   if(vm.count("hash")) 
     hash_function = vm["hash"].as<string>();
   
-  if (all.daemon)
+  if (all.daemon || all.active)
     {
       all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
@@ -433,7 +433,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       listen(all.p->bound_sock, source_count);
 
       // background process
-      if (daemon(1,1))
+      if (!all.active && daemon(1,1))
 	{
 	  cerr << "failure to background!" << endl;
 	  throw exception();
@@ -452,7 +452,7 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 	  pid_file.close();
 	}
 
-      if (all.daemon)
+      if (all.daemon && !all.active)
 	{
 #ifdef _WIN32
 		throw exception();

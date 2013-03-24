@@ -88,12 +88,13 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag)
     }
 }
 
-void print_tag(std::stringstream& ss, v_array<char> tag)
+int print_tag(std::stringstream& ss, v_array<char> tag)
 {
   if (tag.begin != tag.end){
     ss << ' ';
     ss.write(tag.begin, sizeof(char)*tag.size());
-  }  
+  } 
+  return tag.begin != tag.end;
 }
 
 void print_result(int f, float res, float weight, v_array<char> tag)
@@ -148,7 +149,8 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
       char temp[30];
       sprintf(temp, "%f", res);
       ss << temp;
-      print_tag(ss, tag);
+      if(!print_tag(ss, tag))
+          ss << ' ';
       if(weight >= 0)
 	{
 	  sprintf(temp, " %f", weight);

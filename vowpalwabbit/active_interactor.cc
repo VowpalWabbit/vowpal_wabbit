@@ -69,7 +69,8 @@ int recvall(int s, char* buf, int n){
 
 int main(int argc, char* argv[]){
     char buf[256]; 
-    char* toks,*itok;
+    char* toks,*itok,*ttag;
+    string tag;
     const char* host="localhost";
     unsigned short port=~0;
     ssize_t pos;
@@ -99,7 +100,7 @@ int main(int argc, char* argv[]){
         int len=line.size();
         const char* cstr = line.c_str();
         const char* sp = strchr(cstr,' ');
-        ret=send(s,sp,len-(sp-cstr),0);
+        ret=send(s,sp+1,len-(sp+1-cstr),0);
         if(ret<0){
             cerr << "Could not send unlabeled data!" << endl;
             throw exception();
@@ -112,14 +113,15 @@ int main(int argc, char* argv[]){
         buf[ret]='\0';
         toks=&buf[0];
         strsep(&toks," ");
-        strsep(&toks," ");
+        ttag=strsep(&toks," ");
+        tag=ttag?string(ttag):string("'empty");
         itok=strsep(&toks,"\n");
         if(itok==NULL || itok[0]=='\0'){
             continue;
         }
 
         queries+=1;
-        string imp=string(itok)+" |";
+        string imp=string(itok)+" "+tag+" |";
         pos = line.find_first_of ("|");
         line.replace(pos,1,imp); 
         cstr = line.c_str();
