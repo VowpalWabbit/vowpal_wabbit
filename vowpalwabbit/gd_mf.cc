@@ -265,7 +265,13 @@ float mf_predict(vw& all, example* ex)
   {
     vw* all = (vw*)d;
     if (ec->end_pass) 
+    {
       all->eta *= all->eta_decay_rate;
+      if (all->save_per_pass)
+        save_predictor(*all, all->final_regressor_name, all->current_pass);
+
+      all->current_pass++;
+    }
 
     if (!command_example(all, ec))
       {
