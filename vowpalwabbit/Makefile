@@ -47,4 +47,4 @@ install: $(BINARIES)
 	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
 
 clean:
-	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES)
+	rm -f  *.o *.d $(BINARIES) *~ $(MANPAGES) libvw.a
