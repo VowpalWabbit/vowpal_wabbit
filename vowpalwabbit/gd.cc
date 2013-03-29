@@ -136,9 +136,9 @@ void learn(void* d, example* ec)
 	  accumulate_avg(*all, all->span_server, all->reg, 0);	      
       }
       
+      all->eta *= all->eta_decay_rate;
       if (all->save_per_pass)
 	save_predictor(*all, all->final_regressor_name, all->current_pass);
-      all->eta *= all->eta_decay_rate;
       
       all->current_pass++;
     }
