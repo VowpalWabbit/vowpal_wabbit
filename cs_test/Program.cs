@@ -65,12 +65,7 @@ namespace cs_test
 
             IntPtr importedExample = VowpalWabbitInterface.ImportExample(vw, featureSpacePtr, featureSpace.Length);
 
-            VowpalWabbitInterface.Label_Data labelData = VowpalWabbitInterface.DefaultLabelData();
-            labelData.label = 1;
-            labelData.weight = 1;
-            // Put it in the example
-            VowpalWabbitInterface.StartOfExample startOfExample = (VowpalWabbitInterface.StartOfExample)Marshal.PtrToStructure(importedExample, typeof(VowpalWabbitInterface.StartOfExample));
-            Marshal.StructureToPtr(labelData, startOfExample.labeldata, false);
+            VowpalWabbitInterface.AddLabel(importedExample, 1);
 
             score = VowpalWabbitInterface.Learn(vw, importedExample);
 
