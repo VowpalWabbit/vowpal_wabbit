@@ -45,7 +45,7 @@ extern "C"
 			adjust_used_index(*pointer);
 			pointer->do_reset_source = true;
 			start_parser(*pointer,false);
-			pointer->l.driver((void*)pointer, pointer->l.data);
+			pointer->l.driver(pointer, pointer->l.data);
 			end_parser(*pointer); 
 			}
 		else
@@ -124,7 +124,7 @@ extern "C"
 	{
 		vw * pointer = static_cast<vw*>(handle);
 		example * ex = static_cast<example*>(e);
-		pointer->learn(pointer, ex);
+		pointer->learn(ex);
 		return ex->final_prediction;
 	}
 }

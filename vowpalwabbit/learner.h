@@ -16,12 +16,12 @@ struct sl_t {
 struct learner {
   void* data;
   void (*driver)(vw* all, void* data);
-  void (*learner)(void* data, example*);
+  void (*learn_f)(void* data, example*);
   void (*finisher)(void* data);
 
   sl_t sl;
 
-  inline void learn(example* ec) { learner(data,ec); }
+  inline void learn(example* ec) { learn_f(data,ec); }
   inline void finish() { finisher(data); }
   inline void drive(vw* all) { driver(all, data); }
   inline void save_load(io_buf& io, bool read, bool text) { sl.save_loader(sl.sldata, io, read, text); }

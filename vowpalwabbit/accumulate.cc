@@ -99,7 +99,7 @@ void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
     else 
       weights[stride*i] = 0; 
 
-  all_reduce(weights, stride*length, master_location, all.unique_id, all.total, all.node, all.socks);
+  all_reduce(weights, (int)stride*length, master_location, all.unique_id, all.total, all.node, all.socks);
 
   delete[] local_weights;
 }

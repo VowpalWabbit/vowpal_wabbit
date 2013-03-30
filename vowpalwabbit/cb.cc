@@ -390,7 +390,7 @@ namespace CB
       }
     }
     
-    ec->final_prediction = argmin;
+    ec->final_prediction = (float)argmin;
   }
 
   void gen_cs_example_dr(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
