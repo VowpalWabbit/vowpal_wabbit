@@ -290,7 +290,7 @@ float mf_predict(vw& all, example* ex)
   
   while ( true )
     {
-      if ((ec = get_example(all->p)) != NULL)//blocking operation.
+      if ((ec = VW::get_example(all->p)) != NULL)//blocking operation.
 	{
 	  learn(d,ec);
 	  return_simple_example(*all, ec);

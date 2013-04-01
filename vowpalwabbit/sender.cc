@@ -80,7 +80,7 @@ void send_features(io_buf *b, example* ec)
 	  
 	  return_simple_example(*all, ec);
 	}
-      else if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+      else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
         {
           label_data* ld = (label_data*)ec->ld;
           all->set_minmax(all->sd, ld->label);

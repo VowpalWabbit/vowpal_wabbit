@@ -1341,7 +1341,7 @@ namespace Searn
     example* ec = NULL;
     s->read_example_this_loop = 0;
     while (true) {
-      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
         process_next_example(*all, *s, ec);
       } else if (parser_done(all->p)) {
         if (!s->is_singleline)
@@ -1856,7 +1856,7 @@ namespace ImperativeSearn {
     example* ec = NULL;
     srn->read_example_this_loop = 0;
     while (true) {
-      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
         searn_learn(d, ec);
       } else if (parser_done(all->p)) {
         do_actual_learning(*all, *srn);

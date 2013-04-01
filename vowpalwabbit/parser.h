@@ -31,11 +31,11 @@ void adjust_used_index(vw& all);
 
 //parser control
 
-void start_parser(vw& all, bool do_init = true);
-void end_parser(vw& all);
-example* get_example(parser* pf);
 namespace VW {
-  void finish_example(vw& all, example* ec);
+	void start_parser(vw& all, bool do_init = true);
+	void end_parser(vw& all);
+	example* get_example(parser* pf);
+	void finish_example(vw& all, example* ec);
 }
 void make_example_available();
 bool parser_done(parser* p);

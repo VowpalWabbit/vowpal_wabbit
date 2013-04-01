@@ -44,9 +44,9 @@ extern "C"
 			{
 			adjust_used_index(*pointer);
 			pointer->do_reset_source = true;
-			start_parser(*pointer,false);
+			VW::start_parser(*pointer,false);
 			pointer->l.driver(pointer, pointer->l.data);
-			end_parser(*pointer); 
+			VW::end_parser(*pointer); 
 			}
 		else
 			release_parser_datastructures(*pointer);

@@ -42,11 +42,11 @@ int main(int argc, char *argv[])
       cerr.precision(5);
     }
 
-  start_parser(all);
+  VW::start_parser(all);
 
   all.l.drive(&all);
 
-  end_parser(all);
+  VW::end_parser(all);
   
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 

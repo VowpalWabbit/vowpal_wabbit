@@ -257,7 +257,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output(*all, *n, ec, all->raw_prediction > 0);
             int save_raw_prediction = all->raw_prediction;
