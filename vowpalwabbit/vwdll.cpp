@@ -127,4 +127,16 @@ extern "C"
 		pointer->learn(ex);
 		return ex->final_prediction;
 	}
+
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, uint32_t index)
+	{
+		vw* pointer = static_cast<vw*>(handle);
+		return VW::get_weight(*pointer, index);
+	}
+
+	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle)
+	{
+		vw* pointer = static_cast<vw*>(handle);
+		return VW::num_weights(*pointer);
+	}
 }

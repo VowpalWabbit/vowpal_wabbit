@@ -82,7 +82,7 @@ namespace VW {
   { return all.reg.weight_vector[(index * all.stride) & all.weight_mask];}
 
   inline uint32_t num_weights(vw& all) 
-  { return all.length();}
+  { return (uint32_t)all.length();}
 }
 
 

@@ -50,6 +50,11 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport("libvw.dll", EntryPoint = "VW_AddLabel", CallingConvention = CallingConvention.StdCall)]
         public static extern void AddLabel(IntPtr example, float label=float.MaxValue, float weight=1, float initial=0);
-    }
 
+        [DllImport("libvw.dll", EntryPoint = "VW_Get_Weight", CallingConvention = CallingConvention.StdCall)]
+        public static extern void Get_Weight(IntPtr vw, UInt32 index);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_Num_Weights", CallingConvention = CallingConvention.StdCall)]
+        public static extern UInt32 Num_Weights(IntPtr vw);
+    }
 }
