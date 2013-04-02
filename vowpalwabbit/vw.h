@@ -77,6 +77,13 @@ namespace VW {
   void add_label(example* ec, float label, float weight = 1, float base = 0);
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
+
+  inline float get_weight(vw& all, uint32_t index) 
+  { return all.reg.weight_vector[(index * all.stride) & all.weight_mask];}
+
+  inline uint32_t num_weights(vw& all) 
+  { return (uint32_t)all.length();}
 }
+
 
 #endif

@@ -45,6 +45,9 @@ extern "C"
 
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Learn(VW_HANDLE handle, VW_EXAMPLE e);
 	VW_DLL_MEMBER void  VW_CALLING_CONV VW_AddLabel(VW_EXAMPLE e, float label, float weight, float base);
+
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, uint32_t index);
+	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle);
 }
 
 #endif /* VWDLL_H  */
