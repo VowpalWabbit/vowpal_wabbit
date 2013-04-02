@@ -610,7 +610,7 @@ size_t next_pow2(size_t x) {
       for (size_t d = 0; d < batch_size; d++)
 	{
           doc_lengths.push_back(0);
-	  if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+	  if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	    {
 	      examples.push_back(ec);
               for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {

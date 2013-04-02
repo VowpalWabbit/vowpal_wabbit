@@ -996,6 +996,7 @@ void *main_parse_loop(void *in)
 	return NULL;
 }
 
+namespace VW{
 example* get_example(parser* p)
 {
   mutex_lock(&p->examples_lock);
@@ -1020,6 +1021,7 @@ example* get_example(parser* p)
       return NULL;
     }
   }
+}
 }
 
 void initialize_examples(vw& all)
@@ -1052,6 +1054,7 @@ void initialize_parser_datastructures(vw& all)
   initialize_condition_variable(&all.p->output_done);
 }
 
+namespace VW {
 void start_parser(vw& all, bool init_structures)
 {
   if (init_structures)
@@ -1062,7 +1065,7 @@ void start_parser(vw& all, bool init_structures)
   all.parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
   #endif
 }
-
+}
 void free_parser(vw& all)
 {
   all.p->channels.delete_v();
@@ -1094,6 +1097,7 @@ void release_parser_datastructures(vw& all)
   delete_mutex(&all.p->output_lock);
 }
 
+namespace VW {
 void end_parser(vw& all)
 {
   #ifndef _WIN32
@@ -1103,4 +1107,5 @@ void end_parser(vw& all)
   ::CloseHandle(all.parse_thread);
   #endif
   release_parser_datastructures(all);
+}
 }
