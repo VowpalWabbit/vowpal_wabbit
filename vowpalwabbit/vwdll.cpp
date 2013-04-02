@@ -30,11 +30,10 @@ extern "C"
 	
 	VW_DLL_MEMBER VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char * pstrArgs)
 	{
-		std::auto_ptr<vw> inst(new vw);
 		string s(pstrArgs);
-		*(inst.get()) = VW::initialize(s);
-		initialize_parser_datastructures(*(inst.get()));
-		return static_cast<VW_HANDLE>(inst.release());
+		vw* all = VW::initialize(s);
+		initialize_parser_datastructures(*all);
+		return static_cast<VW_HANDLE>(all);
 	}
 	
 	VW_DLL_MEMBER void      VW_CALLING_CONV VW_Finish(VW_HANDLE handle)
@@ -50,6 +49,7 @@ extern "C"
 			}
 		else
 			release_parser_datastructures(*pointer);
+
 		VW::finish(*pointer);
 		delete pointer;
 	}
@@ -78,6 +78,25 @@ extern "C"
 		return static_cast<VW_EXAMPLE>(VW::read_example(*pointer, const_cast<char*>(line)));
 	}
 	
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_StartParser(VW_HANDLE handle, bool do_init)
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		VW::start_parser(*pointer, do_init);
+	}
+
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_EndParser(VW_HANDLE handle)
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		VW::end_parser(*pointer);
+	}
+
+	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_GetExample(VW_HANDLE handle)
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		parser * parser_pointer = static_cast<parser *>(pointer->p);
+		return static_cast<VW_EXAMPLE>(VW::get_example(parser_pointer));
+	}
+
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e)
 	{
 		vw * pointer = static_cast<vw*>(handle);

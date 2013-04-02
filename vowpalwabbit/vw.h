@@ -18,7 +18,7 @@ namespace VW {
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
-  vw initialize(string s);
+  vw* initialize(string s);
 
   void cmd_string_replace_value( string& cmd, string flag_to_replace, string new_value );
 
@@ -77,6 +77,7 @@ namespace VW {
   void add_label(example* ec, float label, float weight = 1, float base = 0);
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
+
 }
 
 #endif

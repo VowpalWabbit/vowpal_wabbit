@@ -13,14 +13,14 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            RunFeaturesTest();
+            //RunFeaturesTest();
+            RunParserTest();
         }
 
         private static void RunFeaturesTest()
         {
             // this usually requires that the library script to update train.w or its moral equivalent needs to have been run 
             IntPtr vw = VowpalWabbitInterface.Initialize("-q st --noconstant --quiet");
-
             IntPtr example = VowpalWabbitInterface.ReadExample(vw, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
             float score = VowpalWabbitInterface.Learn(vw, example);
             VowpalWabbitInterface.FinishExample(vw, example);
@@ -78,6 +78,26 @@ namespace cs_test
             pinnedsFeatures.Free();
             pinnedtFeatures.Free();
             pinnedFeatureSpace.Free();
+        }
+
+        private static void RunParserTest()
+        {
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
+
+            VowpalWabbitInterface.StartParser(vw, false);
+
+            int count = 0;
+            IntPtr example = IntPtr.Zero;
+            while (IntPtr.Zero != (example = VowpalWabbitInterface.GetExample(vw)))
+            {
+                count++;
+                float score = VowpalWabbitInterface.Learn(vw, example);
+                VowpalWabbitInterface.FinishExample(vw, example);
+            }
+
+            VowpalWabbitInterface.EndParser(vw);
+
+            VowpalWabbitInterface.Finish(vw);
         }
 
     }

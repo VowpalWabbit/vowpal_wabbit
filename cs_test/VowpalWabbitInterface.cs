@@ -35,7 +35,16 @@ namespace Microsoft.Research.MachineLearning
         
         [DllImport("libvw.dll", EntryPoint = "VW_ReadExample", CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr ReadExample(IntPtr vw, [MarshalAs(UnmanagedType.LPWStr)]string exampleString);
-        
+
+        [DllImport("libvw.dll", EntryPoint = "VW_StartParser", CallingConvention = CallingConvention.StdCall)]
+        public static extern void StartParser(IntPtr vw, bool do_init);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_EndParser", CallingConvention = CallingConvention.StdCall)]
+        public static extern void EndParser(IntPtr vw);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_GetExample", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr GetExample(IntPtr parser);
+
         [DllImport("libvw.dll", EntryPoint = "VW_FinishExample", CallingConvention = CallingConvention.StdCall)]
         public static extern void FinishExample(IntPtr vw, IntPtr example);
         
