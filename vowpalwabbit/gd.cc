@@ -437,7 +437,7 @@ float compute_norm(vw& all, example* &ec)
   
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     norm_add<T>(all, ec->atomics[*i].begin, ec->atomics[*i].end, g, norm, norm_x, offset);
-  
+
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end(); i++)
     if (ec->atomics[(int)(*i)[0]].size() > 0)
       for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)

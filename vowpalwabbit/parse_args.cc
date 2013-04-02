@@ -29,6 +29,7 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "parse_args.h"
 #include "binary.h"
+#include "autolink.h"
 
 using namespace std;
 //
@@ -58,6 +59,7 @@ vw* parse_args(int argc, char *argv[])
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&(all->active_c0)), "active learning mellowness parameter c_0. Default 8")
     ("binary", "report loss as binary classification on -1,1")
+    ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("sgd", "use regular stochastic gradient descent update.")
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
@@ -573,6 +575,9 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("nn") || vm_file.count("nn") ) 
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
+
+  if(vm.count("autolink") || vm_file.count("autolinnk") ) 
+    all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
   
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
