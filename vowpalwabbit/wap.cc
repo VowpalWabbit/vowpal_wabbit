@@ -257,7 +257,7 @@ namespace WAP {
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
 	    learn(d, ec);
             CSOAA::output_example(*all, ec);

@@ -996,7 +996,7 @@ void drive(vw* all, void* d)
 
   while ( true )
     {
-      if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	{
 	  learn(b, ec);
 	  return_simple_example(*all, ec);

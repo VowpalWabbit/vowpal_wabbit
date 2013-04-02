@@ -18,7 +18,7 @@ namespace VW {
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
-  vw initialize(string s);
+  vw* initialize(string s);
 
   void cmd_string_replace_value( string& cmd, string flag_to_replace, string new_value );
 

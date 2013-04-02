@@ -125,6 +125,7 @@ void learn(void* d, example* ec)
 {
   gd* g = (gd*)d;
   vw* all = g->all;
+
   assert(ec->in_use);
   if (ec->end_pass)
     {
@@ -768,7 +769,7 @@ void driver(vw* all, void* data)
   
   while ( true )
     {
-      if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	{
 	  learn(data, ec);
 	  return_simple_example(*all, ec);
@@ -784,8 +785,10 @@ learner setup(vw& all)
 {
   gd* g = (gd*)calloc(1, sizeof(gd));
   g->all = &all;
+
   sl_t sl = {g,save_load};
   learner ret = {g,driver,learn,finish,sl};
+
   return ret;
 }
 }

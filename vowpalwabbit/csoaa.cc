@@ -345,7 +345,7 @@ namespace CSOAA {
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn(d, ec);
             output_example(*all, ec);
@@ -993,7 +993,7 @@ namespace LabelDict {
   void drive_ldf_singleline(vw& all, ldf& l) {
     example* ec = NULL;
     while (true) {
-      if ((ec = get_example(all.p)) != NULL) { //semiblocking operation.
+      if ((ec = VW::get_example(all.p)) != NULL) { //semiblocking operation.
 
         if (LabelDict::ec_is_example_header(ec)) {
           cerr << "error: example headers not allowed in ldf singleline mode" << endl;
@@ -1019,7 +1019,7 @@ namespace LabelDict {
     l.read_example_this_loop = 0;
     l.need_to_clear = false;
     while (true) {
-      if ((ec = get_example(all.p)) != NULL) { // semiblocking operation
+      if ((ec = VW::get_example(all.p)) != NULL) { // semiblocking operation
         learn_multiline(all, l, ec);
         if (l.need_to_clear) {
 	  if (l.ec_seq.size() > 0)
