@@ -111,7 +111,7 @@ typedef float weight;
 struct regressor {
   weight* weight_vector;
 };
-           
+
 struct vw {
   shared_data* sd;
 

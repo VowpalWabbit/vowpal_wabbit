@@ -98,7 +98,7 @@ vw* parse_args(int argc, char *argv[])
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("initial_pass_length", po::value<size_t>(&all->pass_length), "initial number of examples per pass")
+    ("initial_pass_length", po::value<size_t>(&(all->pass_length)), "initial number of examples per pass")
     ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
     ("lda", po::value<size_t>(&(all->lda)), "Run lda with <int> topics")
     ("span_server", po::value<string>(&(all->span_server)), "Location of server for setting up spanning tree")
@@ -483,7 +483,7 @@ vw* parse_args(int argc, char *argv[])
   if (all->rank != 0) 
     all->l = GDMF::setup(*all);
 
-  all->loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+  all->loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   if (pow((double)all->eta_decay_rate, (double)all->numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all->eta_decay_rate, (double)all->numpasses)
@@ -664,8 +664,6 @@ vw* parse_args(int argc, char *argv[])
     all->searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
     all->l = ImperativeSearn::setup(*all, to_pass_further, vm, vm_file);
   }
-
-
 
   if (got_cb && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
