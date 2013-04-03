@@ -37,6 +37,7 @@ extern "C"
 
 	VW_DLL_MEMBER void       VW_CALLING_CONV VW_StartParser(VW_HANDLE handle, bool do_init = true);
 	VW_DLL_MEMBER void       VW_CALLING_CONV VW_EndParser(VW_HANDLE handle);
+
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_GetExample(VW_HANDLE handle);
 	VW_DLL_MEMBER void       VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e);
 

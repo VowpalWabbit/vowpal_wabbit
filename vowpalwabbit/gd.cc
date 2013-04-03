@@ -39,7 +39,7 @@ namespace GD
   void predict(vw& all, example* ex);
   void sync_weights(vw& all);
   
-  template <void (*T)(vw& all, float x, uint32_t index, float avg_norm, float update)>
+  template <void (*T)(vw&, float, uint32_t, float, float)>
   void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
   {
     if (fabs(update) == 0.)
