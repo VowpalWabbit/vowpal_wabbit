@@ -260,7 +260,7 @@ namespace OAA {
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
     all.base_learner_nb_w *= data->k;
-    data->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    data->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.reg.stride;
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
     learner l = {data, drive, learn, finish, all.l.sl};

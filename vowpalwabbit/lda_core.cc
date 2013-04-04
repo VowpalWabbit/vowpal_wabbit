@@ -507,7 +507,7 @@ size_t next_pow2(size_t x) {
   lda* l = (lda*)d;
   vw* all = l->all;
   uint32_t length = 1 << all->num_bits;
-  uint32_t stride = all->stride;
+  uint32_t stride = all->reg.stride;
   
   if (read)
     {
@@ -583,7 +583,7 @@ size_t next_pow2(size_t x) {
 
   for (size_t k = 0; k < all->lda; k++)
     total_lambda.push_back(0.f);
-  size_t stride = all->stride;
+  size_t stride = all->reg.stride;
   weight* weights = reg.weight_vector;
 
   for (size_t i =0; i <= all->reg.weight_mask;i+=stride)
@@ -704,7 +704,7 @@ size_t next_pow2(size_t x) {
       if (parser_done(all->p))
 	{
 	  for (size_t i = 0; i < all->length(); i++) {
-	    weight* weights_for_w = & (weights[i*all->stride]);
+	    weight* weights_for_w = & (weights[i*all->reg.stride]);
             float decay = fmin(1.0, exp(decay_levels.last() - decay_levels.end[(int)(-1-example_t+weights_for_w[all->lda])]));
 	    for (size_t k = 0; k < all->lda; k++) {
 	      weights_for_w[k] *= decay;
@@ -746,7 +746,7 @@ learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 
   all.p->sort_features = true;
   float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
-  all.stride = ((size_t)1) << (int) temp;
+  all.reg.stride = ((size_t)1) << (int) temp;
   all.random_weights = true;
   all.add_constant = false;
 

@@ -187,7 +187,7 @@ void sync_weights(vw& all) {
   if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   for(uint32_t i = 0; i < length && all.reg_mode; i++)
     all.reg.weight_vector[stride*i] = trunc_weight(all.reg.weight_vector[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
@@ -226,7 +226,7 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   ostringstream tempstream;
   size_t index = (f->weight_index + offset) & all.reg.weight_mask;
   weight* weights = all.reg.weight_vector;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   
   tempstream << prepend;
   if (a != NULL)
@@ -288,7 +288,7 @@ void print_features(vw& all, example* &ec)
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
 	  {
-	    cout << '\t' << f->space << '^' << f->feature << ':' << (f->weight_index/all.stride & all.parse_mask) << ':' << f->x;
+	    cout << '\t' << f->space << '^' << f->feature << ':' << (f->weight_index/all.reg.stride & all.parse_mask) << ':' << f->x;
 	    for (size_t k = 0; k < all.lda; k++)
 	      cout << ':' << weights[(f->weight_index+k) & all.reg.weight_mask];
 	  }
@@ -581,7 +581,7 @@ void predict(vw& all, example* ex)
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {
   uint32_t length = 1 << all.num_bits;
-  uint32_t stride = all.stride;
+  uint32_t stride = all.reg.stride;
   int c = 0;
   uint32_t i = 0;
   size_t brw = 1;
@@ -674,7 +674,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 			    buff, text_len, text);
 
   uint32_t length = 1 << all.num_bits;
-  uint32_t stride = all.stride;
+  uint32_t stride = all.reg.stride;
   int c = 0;
   uint32_t i = 0;
   size_t brw = 1;
@@ -737,7 +737,7 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
       if(all->adaptive && all->initial_t > 0)
 	{
 	  uint32_t length = 1 << all->num_bits;
-	  uint32_t stride = all->stride;
+	  uint32_t stride = all->reg.stride;
 	  for (size_t j = 1; j < stride*length; j+=stride)
 	    {
 	      all->reg.weight_vector[j] = all->initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1

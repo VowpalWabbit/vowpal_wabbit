@@ -293,7 +293,7 @@ namespace WAP {
 
     all.sd->k = (uint32_t)nb_actions;
     all.base_learner_nb_w *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.stride);
+    w->increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.reg.stride);
 
     learner l = {w, drive, learn, finish, all.l.sl};
     w->base = all.l;

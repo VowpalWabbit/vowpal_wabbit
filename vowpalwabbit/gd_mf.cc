@@ -211,13 +211,13 @@ float mf_predict(vw& all, example* ex)
 {
   vw* all = (vw*)d;
   uint32_t length = 1 << all->num_bits;
-  uint32_t stride = all->stride;
+  uint32_t stride = all->reg.stride;
 
   if(read)
     {
       initialize_regressor(*all);
       if(all->random_weights)
-	for (size_t j = 0; j < all->stride*length; j++)
+	for (size_t j = 0; j < all->reg.stride*length; j++)
 	  all->reg.weight_vector[j] = (float) (0.1 * frand48()); 
     }
 

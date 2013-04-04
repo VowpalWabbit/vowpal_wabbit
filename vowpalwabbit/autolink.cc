@@ -72,7 +72,7 @@ namespace ALINK {
     autolink* data = (autolink*)calloc(1,sizeof(autolink));
     data->base = all.l;
     data->d = (uint32_t)vm["autolink"].as<size_t>();
-    data->stride = all.stride;
+    data->stride = all.reg.stride;
     
     if (!vm_file.count("autolink")) 
       {
