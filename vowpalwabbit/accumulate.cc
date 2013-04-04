@@ -19,7 +19,7 @@ using namespace std;
 
 void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
   uint32_t length = 1 << all.num_bits; //This is size of gradient
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vector;
   for(uint32_t i = 0;i < length;i++) 
@@ -43,7 +43,7 @@ float accumulate_scalar(vw& all, string master_location, float local_sum) {
 
 void accumulate_avg(vw& all, string master_location, regressor& reg, size_t o) {
   uint32_t length = 1 << all.num_bits; //This is size of gradient
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vector;
   float numnodes = 1.;
@@ -81,7 +81,7 @@ void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
     return;
   }
   uint32_t length = 1 << all.num_bits; //This is size of gradient
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = reg.weight_vector;
   float* local_weights = new float[length];
 

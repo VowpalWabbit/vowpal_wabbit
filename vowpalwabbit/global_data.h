@@ -110,6 +110,8 @@ typedef float weight;
 
 struct regressor {
   weight* weight_vector;
+  size_t weight_mask; // (stride*(1 << num_bits) -1)
+  uint32_t stride;
 };
 
 struct vw {
@@ -161,7 +163,6 @@ struct vw {
 
   uint32_t base_learner_nb_w; //this stores the current number of "weight vector" required by the based learner, which is used to compute offsets when composing reductions
 
-  uint32_t stride;
   int stdout_fileno;
 
   std::string per_feature_regularizer_input;
@@ -181,7 +182,6 @@ struct vw {
   size_t numpasses;
   size_t passes_complete;
   size_t parse_mask; // 1 << num_bits -1
-  size_t weight_mask; // (stride*(1 << num_bits) -1)
   std::vector<std::string> pairs; // pairs of features to cross.
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;

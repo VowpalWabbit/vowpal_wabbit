@@ -217,7 +217,7 @@ vw* parse_args(int argc, char *argv[])
       throw exception();
     }
 
-  all->stride = 4; //use stride of 4 for default invariant normalized adaptive updates
+  all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
   if( all->rank > 0 || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
   {
@@ -225,12 +225,12 @@ vw* parse_args(int argc, char *argv[])
     all->invariant_updates = all->training && vm.count("invariant");
     all->normalized_updates = all->training && (vm.count("normalized") && all->rank == 0);
 
-    all->stride = 1;
+    all->reg.stride = 1;
 
-    if( all->adaptive ) all->stride *= 2;
+    if( all->adaptive ) all->reg.stride *= 2;
     else all->normalized_idx = 1; //store per feature norm at 1 index offset from weight value instead of 2
 
-    if( all->normalized_updates ) all->stride *= 2;
+    if( all->normalized_updates ) all->reg.stride *= 2;
 
     if(!vm.count("learning_rate") && !vm.count("l") && !(all->adaptive && all->normalized_updates))
       all->eta = 10; //default learning rate to 10 for non default update rule
@@ -407,7 +407,7 @@ vw* parse_args(int argc, char *argv[])
   if (all->rank > 0) {
     // store linear + 2*rank weights per index, round up to power of two
     float temp = ceilf(logf((float)(all->rank*2+1)) / logf (2.f));
-    all->stride = 1 << (int) temp;
+    all->reg.stride = 1 << (int) temp;
     all->random_weights = true;
 
     if ( vm.count("adaptive") )

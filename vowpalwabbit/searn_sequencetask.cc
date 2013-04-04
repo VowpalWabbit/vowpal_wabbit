@@ -125,7 +125,7 @@ namespace SequenceTask {
     for (size_t i=0; i < hinfo.length; i++)
       constant_pow_length *= quadratic_constant;
 
-    increment = ((uint32_t)all.length() * all.stride + 132489)/seq_max_action;
+    increment = ((uint32_t)all.length() * all.reg.stride + 132489)/seq_max_action;
 
     return true;
   }

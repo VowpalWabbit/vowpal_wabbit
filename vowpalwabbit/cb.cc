@@ -715,7 +715,7 @@ namespace CB
       all.options_from_file.append(" --cb_type dr");
     }
 
-    c->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    c->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.reg.stride;
 
     *(all.p->lp) = CB::cb_label_parser; 
 

@@ -82,7 +82,7 @@ namespace VW {
 	void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 	
   inline float get_weight(vw& all, uint32_t index) 
-  { return all.reg.weight_vector[(index * all.stride) & all.weight_mask];}
+  { return all.reg.weight_vector[(index * all.reg.stride) & all.reg.weight_mask];}
 
   inline uint32_t num_weights(vw& all) 
   { return (uint32_t)all.length();}
