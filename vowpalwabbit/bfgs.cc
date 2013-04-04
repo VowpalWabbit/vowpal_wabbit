@@ -140,48 +140,6 @@ void reset_state(vw& all, bfgs& b, bool zero)
     }
 }
 
-void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float update = g * page_feature.x;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[W_GT] += update * ele->x;
-    }
-}
-
-void cubic_grad_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g)
-{
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  float update = g * f0.x * f1.x;
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
-    weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    w[W_GT] += update * ele->x;
-  }
-}
-
-void quad_precond_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float update = g * page_feature.x * page_feature.x;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[W_COND] += update * ele->x * ele->x;
-    }
-}
-
-void cubic_precond_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g)
-{
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  float update = g * f0.x * f0.x * f1.x * f1.x;
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
-    weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    w[W_COND] += update * ele->x * ele->x;
-  }
-}
-
 // w[0] = weight
 // w[1] = accumulated first derivative
 // w[2] = step direction
