@@ -39,7 +39,12 @@ namespace GD
   void predict(vw& all, example* ex);
   void sync_weights(vw& all);
   
-  template <void (*T)(vw&, float, uint32_t, float, float)>
+  struct train_data {
+    float avg_norm;
+    float update;
+  };
+
+  template <void (*T)(vw&, void*, float, uint32_t)>
   void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
   {
     if (fabs(update) == 0.)
@@ -51,30 +56,12 @@ namespace GD
     else
       total_weight = ec->example_t;
     
-    uint32_t offset = ec->ft_offset;
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_norm) avg_norm = sqrt(avg_norm);
     
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-      for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-	T(all, f->x, f->weight_index + offset, avg_norm, update);
+    train_data d = {avg_norm, update};
     
-    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-      if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0))
-	for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++) {
-	  uint32_t halfhash = quadratic_constant * (f0->weight_index + offset);
-	  for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++)
-	    T(all, f1->x, f1->weight_index + halfhash + offset, avg_norm, f0->x * update);
-	}
-    
-    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) 
-      if ((ec->atomics[(int)(*i)[0]].size() > 0) && (ec->atomics[(int)(*i)[1]].size() > 0) && (ec->atomics[(int)(*i)[2]].size() > 0))
-	for (feature* f0 = ec->atomics[(int)(*i)[0]].begin; f0 != ec->atomics[(int)(*i)[0]].end; f0++)
-	  for (feature* f1 = ec->atomics[(int)(*i)[1]].begin; f1 != ec->atomics[(int)(*i)[1]].end; f1++) {
-	    uint32_t halfhash = cubic_constant2 * (cubic_constant * (f0->weight_index + offset) + f1->weight_index + offset);
-	    for (feature* f2 = ec->atomics[(int)(*i)[2]].begin; f2 != ec->atomics[(int)(*i)[2]].end; f2++)
-	      T(all, f2->x, f2->weight_index + halfhash + offset, avg_norm, f0->x * f1->x * update);
-	  }
+    foreach_feature<T>(all, ec, &d);
   }
 
 float InvSqrt(float x){
@@ -86,26 +73,30 @@ float InvSqrt(float x){
   return x;
 }
 
-inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
+  inline void general_update(vw& all, void* dat, float x, uint32_t fi)
 {
+  train_data* s = (train_data*)dat;
+
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float t = 1.f;
   if(all.adaptive) t = powf(w[1],-all.power_t);
   if(all.normalized_updates) {
-    float norm = w[all.normalized_idx] * avg_norm;
+    float norm = w[all.normalized_idx] * s->avg_norm;
     float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
     t *= powf(norm*norm,-power_t_norm);
   }
-  w[0] += update * x * t;
+  w[0] += s->update * x * t;
 }
 
 template<bool adaptive, bool normalized>
-inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
+inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
 {
+  train_data* s = (train_data*)dat;
+
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
-  if(normalized) inv_norm /= (w[all.normalized_idx] * avg_norm);
+  if(normalized) inv_norm /= (w[all.normalized_idx] * s->avg_norm);
   if(adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
@@ -118,7 +109,7 @@ inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, fl
   } else {
     t *= inv_norm*inv_norm; //if only using normalized updates but not adaptive, need to divide by feature norm squared
   }
-  w[0] += update * x * t;
+  w[0] += s->update * x * t;
 }
 
 void learn(void* d, example* ec)

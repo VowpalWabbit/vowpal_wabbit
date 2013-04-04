@@ -198,6 +198,11 @@ bool test_example(example* ec)
     return GD::finalize_prediction(all, ec->partial_prediction);
   }
 
+inline void add_grad(vw& all, void* d, float f, uint32_t u)
+{
+  all.reg.weight_vector[u] += (*(float*)d) * f;
+}
+
 float predict_and_gradient(vw& all, example* &ec)
 {
   float fp = bfgs_predict(all, ec);
@@ -207,36 +212,16 @@ float predict_and_gradient(vw& all, example* &ec)
 
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
   
-  size_t mask = all.reg.weight_mask;
-  weight* weights = all.reg.weight_vector;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-	  w[W_GT] += loss_grad * f->x;
-	}
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, loss_grad);
-	} 
-    }
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        cubic_grad_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, loss_grad);
-    }
-  }
+  ec->ft_offset += W_GT;
+  GD::foreach_feature<add_grad>(all, ec, &loss_grad);
+  ec->ft_offset -= W_GT;
+  
   return fp;
+}
+
+inline void add_precond(vw& all, void* d, float f, uint32_t u)
+{
+  all.reg.weight_vector[u] += (*(float*)d) * f * f;
 }
 
 void update_preconditioner(vw& all, example* &ec)
@@ -244,62 +229,18 @@ void update_preconditioner(vw& all, example* &ec)
   label_data* ld = (label_data*)ec->ld;
   float curvature = all.loss->second_derivative(all.sd, ec->final_prediction,ld->label) * ld->weight;
   
-  size_t mask = all.reg.weight_mask;
-  weight* weights = all.reg.weight_vector;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-        {
-          weight* w = &weights[f->weight_index & mask];
-          w[W_COND] += f->x * f->x * curvature;
-        }
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-        {
-          v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-          for (; temp.begin != temp.end; temp.begin++)
-            quad_precond_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, curvature);
-        }
-    }
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        cubic_precond_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, curvature);
-    }
-  }
+  ec->ft_offset += W_COND;
+  GD::foreach_feature<add_precond>(all, ec, &curvature);  
+  ec->ft_offset -= W_COND;
 }  
 
 
 float dot_with_direction(vw& all, example* &ec)
 {
-  float ret = 0;
+  ec->ft_offset+= W_DIR;  
+  float ret = GD::inline_predict<vec_add>(all, ec);
+  ec->ft_offset-= W_DIR;
 
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    ret += sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end, W_DIR);
-
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
-    if (ec->atomics[(int)(*i)[0]].size() > 0) {
-      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-      for (; temp.begin != temp.end; temp.begin++)
-        ret += one_pf_quad_predict<vec_add>(all, *temp.begin, ec->atomics[(int)(*i)[1]], W_DIR);
-    }
-  }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        ret += one_pf_cubic_predict<vec_add>(all, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], W_DIR);
-    }
-  }
   return ret;
 }
 
