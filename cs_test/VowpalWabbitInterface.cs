@@ -32,7 +32,13 @@ namespace Microsoft.Research.MachineLearning
         [DllImport("libvw.dll", EntryPoint = "VW_ImportExample", CallingConvention = CallingConvention.StdCall)]
         // features points to a FEATURE_SPACE[]
         public static extern IntPtr ImportExample(IntPtr vw, IntPtr features, int length);
-        
+
+        [DllImport("libvw.dll", EntryPoint = "VW_ExportExample", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr ExportExample(IntPtr example, ref int length);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_ReleaseFeatureSpace", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr ReleaseFeatureSpace(IntPtr fs, int length);
+       
         [DllImport("libvw.dll", EntryPoint = "VW_ReadExample", CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr ReadExample(IntPtr vw, [MarshalAs(UnmanagedType.LPWStr)]string exampleString);
 
