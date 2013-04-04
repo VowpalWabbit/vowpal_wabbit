@@ -20,11 +20,7 @@ namespace GD{
 void print_result(int f, float res, v_array<char> tag);
 void print_audit_features(regressor &reg, example* ec, size_t offset);
 float finalize_prediction(vw&, float ret);
-float single_quad_weight(weight* weights, feature& page_feature, feature* offer_feature, size_t mask);
-void quadratic(v_array<feature> &f, const v_array<feature> &first_part, 
-               const v_array<feature> &second_part, size_t thread_mask);
 void print_audit_features(vw&, example* ec);
-void train(weight* weights, const v_array<feature> &features, float update);
 void train_one_example(regressor& r, example* ex);
 void train_offset_example(regressor& r, example* ex, size_t offset);
 void compute_update(example* ec);

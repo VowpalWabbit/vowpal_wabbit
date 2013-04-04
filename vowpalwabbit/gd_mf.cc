@@ -36,7 +36,6 @@ float mf_inline_predict(vw& all, example* &ec)
   // linear terms
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     GD::foreach_feature<vec_add>(all, &linear_prediction, ec->atomics[*i].begin, ec->atomics[*i].end);
-    //linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
 
   // store constant + linear prediction
   // note: constant is now automatically added
