@@ -110,6 +110,7 @@ typedef float weight;
 
 struct regressor {
   weight* weight_vector;
+  size_t weight_mask; // (stride*(1 << num_bits) -1)
 };
 
 struct vw {
@@ -181,7 +182,6 @@ struct vw {
   size_t numpasses;
   size_t passes_complete;
   size_t parse_mask; // 1 << num_bits -1
-  size_t weight_mask; // (stride*(1 << num_bits) -1)
   std::vector<std::string> pairs; // pairs of features to cross.
   std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;

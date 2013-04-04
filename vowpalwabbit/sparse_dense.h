@@ -41,15 +41,15 @@ float one_pf_cubic_predict(vw& all, feature& f0, feature& f1, v_array<feature> c
 }
 
 inline float vec_add(vw& all, float fx, uint32_t fi) {
-  return all.reg.weight_vector[fi & all.weight_mask] * fx;
+  return all.reg.weight_vector[fi & all.reg.weight_mask] * fx;
 }
 
 inline float vec_add_trunc(vw& all, float fx, uint32_t fi) {
-  return trunc_weight(all.reg.weight_vector[fi & all.weight_mask], (float)all.sd->gravity) * fx;
+  return trunc_weight(all.reg.weight_vector[fi & all.reg.weight_mask], (float)all.sd->gravity) * fx;
 }
 
 inline float vec_add_rescale(vw& all, float fx, uint32_t fi) {
-  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x_abs = fabs(fx);
   if( x_abs > w[all.normalized_idx] ) {// new scale discovered
     if( w[all.normalized_idx] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
@@ -62,7 +62,7 @@ inline float vec_add_rescale(vw& all, float fx, uint32_t fi) {
 }
 
 inline float vec_add_trunc_rescale(vw& all, float fx, uint32_t fi) {
-  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x_abs = fabs(fx);
   if( x_abs > w[all.normalized_idx] ) {
     if( w[all.normalized_idx] > 0. ) {
@@ -75,7 +75,7 @@ inline float vec_add_trunc_rescale(vw& all, float fx, uint32_t fi) {
 }
 
 inline float vec_add_rescale_general(vw& all, float fx, uint32_t fi) {
-  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
   if( x_abs > w[all.normalized_idx] ) {
@@ -89,7 +89,7 @@ inline float vec_add_rescale_general(vw& all, float fx, uint32_t fi) {
 }
 
 inline float vec_add_trunc_rescale_general(vw& all, float fx, uint32_t fi) {
-  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
   if( x_abs > w[all.normalized_idx] ) {

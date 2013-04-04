@@ -27,7 +27,7 @@ using namespace std;
 void initialize_regressor(vw& all)
 {
   size_t length = ((size_t)1) << all.num_bits;
-  all.weight_mask = (all.stride * length) - 1;
+  all.reg.weight_mask = (all.stride * length) - 1;
   all.reg.weight_vector = (weight *)calloc(all.stride*length, sizeof(weight));
   if (all.reg.weight_vector == NULL)
     {

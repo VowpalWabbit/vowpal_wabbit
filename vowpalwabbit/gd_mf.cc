@@ -82,7 +82,7 @@ float mf_inline_predict(vw& all, example* &ec)
 void mf_inline_train(vw& all, example* &ec, float update)
 {
       weight* weights = all.reg.weight_vector;
-      size_t mask = all.weight_mask;
+      size_t mask = all.reg.weight_mask;
       label_data* ld = (label_data*)ec->ld;
 
       // use final prediction to get update size
@@ -132,7 +132,7 @@ void mf_inline_train(vw& all, example* &ec, float update)
 void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 {
   weight* weights = all.reg.weight_vector;
-  size_t mask = all.weight_mask;
+  size_t mask = all.reg.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
       for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)

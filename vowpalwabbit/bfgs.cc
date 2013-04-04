@@ -207,7 +207,7 @@ float predict_and_gradient(vw& all, example* &ec)
 
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
   
-  size_t mask = all.weight_mask;
+  size_t mask = all.reg.weight_mask;
   weight* weights = all.reg.weight_vector;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     {
@@ -244,7 +244,7 @@ void update_preconditioner(vw& all, example* &ec)
   label_data* ld = (label_data*)ec->ld;
   float curvature = all.loss->second_derivative(all.sd, ec->final_prediction,ld->label) * ld->weight;
   
-  size_t mask = all.weight_mask;
+  size_t mask = all.reg.weight_mask;
   weight* weights = all.reg.weight_vector;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
     {

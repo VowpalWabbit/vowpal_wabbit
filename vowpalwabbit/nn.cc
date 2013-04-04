@@ -194,7 +194,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               n.output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            float nu = all.reg.weight_vector[n.output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
+            float nu = all.reg.weight_vector[n.output_layer.atomics[nn_output_namespace][i].weight_index & all.reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ld->label = GD::finalize_prediction (all, hidden_units[i-1] - gradhw);
@@ -378,13 +378,13 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n->output_layer.indices.push_back(nn_output_namespace);
     feature output = {1., nn_constant*all.stride};
     n->output_layer.atomics[nn_output_namespace].push_back(output);
-    initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][0].weight_index & all.weight_mask] == 0);
+    initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][0].weight_index & all.reg.weight_mask] == 0);
 
     for (unsigned int i = 0; i < n->k; ++i)
       {
         output.weight_index += all.stride;
         n->output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i+1].weight_index & all.weight_mask] == 0);
+        initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i+1].weight_index & all.reg.weight_mask] == 0);
       }
 
     n->output_layer.num_features = n->k + 1;
@@ -399,7 +399,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       float sqrtk = sqrt ((float)n->k);
       for (unsigned int i = 0; i <= n->k; ++i)
         {
-          weight* w = &all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
+          weight* w = &all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i].weight_index & all.reg.weight_mask];
 
           w[0] = (float) (frand48 () - 0.5) / sqrtk;
 
@@ -414,7 +414,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
       for (unsigned int i = 0; i < n->k; ++i)
         {
-          all.reg.weight_vector[weight_index & all.weight_mask] = (float) (frand48 () - 0.5);
+          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
           weight_index += n->increment;
         }
     }

@@ -88,7 +88,7 @@ float InvSqrt(float x){
 
 inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
 {
-  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float t = 1.f;
   if(all.adaptive) t = powf(w[1],-all.power_t);
   if(all.normalized_updates) {
@@ -102,7 +102,7 @@ inline void general_update(vw& all, float x, uint32_t fi, float avg_norm, float 
 template<bool adaptive, bool normalized>
 inline void specialized_update(vw& all, float x, uint32_t fi, float avg_norm, float update)
 {
-  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
   if(normalized) inv_norm /= (w[all.normalized_idx] * avg_norm);
@@ -224,14 +224,14 @@ bool operator<(const string_value& first, const string_value& second)
 void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, size_t offset = 0)
 {
   ostringstream tempstream;
-  size_t index = (f->weight_index + offset) & all.weight_mask;
+  size_t index = (f->weight_index + offset) & all.reg.weight_mask;
   weight* weights = all.reg.weight_vector;
   size_t stride = all.stride;
   
   tempstream << prepend;
   if (a != NULL)
     tempstream << a->space << '^' << a->feature << ':';
-  else 	if ( index == ((constant*stride)&all.weight_mask))
+  else 	if ( index == ((constant*stride)&all.reg.weight_mask))
     tempstream << "Constant:";
   
   tempstream << (index/stride & all.parse_mask) << ':' << f->x;
@@ -290,7 +290,7 @@ void print_features(vw& all, example* &ec)
 	  {
 	    cout << '\t' << f->space << '^' << f->feature << ':' << (f->weight_index/all.stride & all.parse_mask) << ':' << f->x;
 	    for (size_t k = 0; k < all.lda; k++)
-	      cout << ':' << weights[(f->weight_index+k) & all.weight_mask];
+	      cout << ':' << weights[(f->weight_index+k) & all.reg.weight_mask];
 	  }
       cout << " total of " << count << " features." << endl;
     }
@@ -380,7 +380,7 @@ void norm_add_cubic(vw& all, feature& f0, feature& f1, v_array<feature> &cross_f
 
 template<bool adaptive, bool normalized>
 inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
-  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x2 = x * x;
   float t = 1.f;
   float inv_norm = 1.f;
@@ -409,7 +409,7 @@ inline void simple_norm_compute(vw& all, float x, uint32_t fi, float g, float& n
 inline void powert_norm_compute(vw& all, float x, uint32_t fi, float g, float& norm, float& norm_x) {
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
 
-  weight* w = &all.reg.weight_vector[fi & all.weight_mask];
+  weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x2 = x * x;
   float t = 1.f;
   if(all.adaptive){
