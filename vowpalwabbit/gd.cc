@@ -39,6 +39,7 @@ namespace GD
   void predict(vw& all, example* ex);
   void sync_weights(vw& all);
   
+
   struct train_data {
     float avg_norm;
     float update;

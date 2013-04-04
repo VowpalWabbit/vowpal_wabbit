@@ -32,11 +32,15 @@ extern "C"
 
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE * features, size_t len);
 
+	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_EXAMPLE * e, size_t& len);
+	VW_DLL_MEMBER void             VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE * features, size_t len);
+
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char16_t * line);
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExampleA(VW_HANDLE handle, const char * line);
 
 	VW_DLL_MEMBER void       VW_CALLING_CONV VW_StartParser(VW_HANDLE handle, bool do_init = true);
 	VW_DLL_MEMBER void       VW_CALLING_CONV VW_EndParser(VW_HANDLE handle);
+
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_GetExample(VW_HANDLE handle);
 	VW_DLL_MEMBER void       VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e);
 
