@@ -61,16 +61,24 @@ extern "C"
 		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, f, len));
 	}
 	
+	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_EXAMPLE * example, size_t& len)
+	{
+		return static_cast<VW_FEATURE_SPACE>(VW::export_example(example, len));
+	}
 
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE * features, size_t len)
+	{
+		VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
+		VW::releaseFeatureSpace(f, len);
+	}
+	
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExample(VW_HANDLE handle, const char16_t * line)
 	{
 		std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
 		std::string sa(convert.to_bytes(line));
 		return VW_ReadExampleA(handle, sa.c_str());
 	}
-
-
-
+	
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ReadExampleA(VW_HANDLE handle, const char * line)
 	{
 		vw * pointer = static_cast<vw*>(handle);

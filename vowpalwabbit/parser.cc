@@ -892,7 +892,42 @@ namespace VW{
       }
  	parse_atomic_example(all,ret,false); // all.p->parsed_examples++;
     setup_example(all, ret);
+
     return ret;
+  }
+
+	primitive_feature_space* export_example(void* e, size_t& len)
+	{
+		example* ec = (example*)e;
+		len = ec->indices.size();
+		primitive_feature_space* fs_ptr = new primitive_feature_space[len]; 
+
+		int fs_count = 0;
+		for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
+			{
+				fs_ptr[fs_count].name = *i;
+				fs_ptr[fs_count].len = ec->atomics[*i].size();
+				fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
+
+				int f_count = 0;
+				feature *f = ec->atomics[*i].begin;
+				for (; f != ec->atomics[*i].end; f++)
+					{
+						fs_ptr[fs_count].fs[f_count] = *f;
+						f_count++;
+					}
+				fs_count++;
+			}
+		return fs_ptr;
+  }
+
+	void releaseFeatureSpace(primitive_feature_space* features, size_t len)
+  {
+    for (size_t i = 0; i < len;i++)
+      {
+				delete features[i].fs;
+      }
+			delete (features);
   }
 
   void parse_example_label(vw& all, example&ec, string label) {
