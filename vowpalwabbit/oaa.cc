@@ -203,10 +203,8 @@ namespace OAA {
     ec->final_prediction = prediction;
     update_example_indicies(all->audit, ec, -d->total_increment);
 
-    if (shouldOutput) {
-      outputStringStream << endl;
+    if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
-    }
   }
 
   void learn(void* d, example* ec) {
