@@ -5,6 +5,8 @@
 
 #include "vwdll.h"
 #include "parser.h"
+#include "parse_args.h"
+#include "vw.h"
 
 // This interface now provides "wide" functions for compatibility with .NET interop
 // The default functions assume a wide (16 bit char pointer) that is converted to a utf8-string and passed to

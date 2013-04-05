@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
+#include "vw.h"
 
 const size_t wap_ldf_namespace  = 126;
 const size_t history_namespace  = 127;
@@ -36,8 +37,25 @@ namespace VW {
 	void start_parser(vw& all, bool do_init = true);
 	void end_parser(vw& all);
 	example* get_example(parser* pf);
-	void finish_example(vw& all, example* ec);
+	
+  // The simplest of two ways to create an example.  
+  example* read_example(vw& all, char* example_line);
+
+	//after you create and fill feature_spaces, get an example with everything filled in.
+  example* import_example(vw& all, primitive_feature_space* features, size_t len);
+  example* import_example(vw& all, vector< feature_space > ec_info);
+  void parse_example_label(vw&all, example&ec, string label);
+  example* new_unused_example(vw& all);
+  void add_constant_feature(vw& all, example*ec);
+
+  void add_label(example* ec, float label, float weight = 1, float base = 0);
+  //notify VW that you are done with the example.
+  void finish_example(vw& all, example* ec);
+
+	primitive_feature_space* export_example(void* e, size_t& len);
+	void releaseFeatureSpace(primitive_feature_space* features, size_t len);
 }
+
 void make_example_available();
 bool parser_done(parser* p);
 
