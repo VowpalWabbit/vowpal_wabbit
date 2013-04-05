@@ -27,8 +27,8 @@ using namespace std;
 void initialize_regressor(vw& all)
 {
   size_t length = ((size_t)1) << all.num_bits;
-  all.weight_mask = (all.stride * length) - 1;
-  all.reg.weight_vector = (weight *)calloc(all.stride*length, sizeof(weight));
+  all.reg.weight_mask = (all.reg.stride * length) - 1;
+  all.reg.weight_vector = (weight *)calloc(all.reg.stride*length, sizeof(weight));
   if (all.reg.weight_vector == NULL)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
@@ -37,10 +37,10 @@ void initialize_regressor(vw& all)
   if (all.random_weights)
     {
       for (size_t j = 0; j < length; j++)
-	all.reg.weight_vector[j*all.stride] = (float)(frand48() - 0.5);
+	all.reg.weight_vector[j*all.reg.stride] = (float)(frand48() - 0.5);
     }
   if (all.initial_weight != 0.)
-    for (size_t j = 0; j < all.stride*length; j+=all.stride)
+    for (size_t j = 0; j < all.reg.stride*length; j+=all.reg.stride)
       all.reg.weight_vector[j] = all.initial_weight;
 }
 

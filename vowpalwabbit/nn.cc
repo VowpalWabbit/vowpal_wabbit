@@ -194,7 +194,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               n.output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            float nu = all.reg.weight_vector[n.output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
+            float nu = all.reg.weight_vector[n.output_layer.atomics[nn_output_namespace][i].weight_index & all.reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ld->label = GD::finalize_prediction (all, hidden_units[i-1] - gradhw);
@@ -257,7 +257,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output(*all, *n, ec, all->raw_prediction > 0);
             int save_raw_prediction = all->raw_prediction;
@@ -368,7 +368,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n->base = all.l;
 
     all.base_learner_nb_w *= (n->inpass) ? n->k + 1 : n->k;
-    n->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    n->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.reg.stride;
 
     bool initialize = true;
 
@@ -376,15 +376,15 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     memset (&n->output_layer, 0, sizeof (n->output_layer));
     n->output_layer.indices.push_back(nn_output_namespace);
-    feature output = {1., nn_constant*all.stride};
+    feature output = {1., nn_constant*all.reg.stride};
     n->output_layer.atomics[nn_output_namespace].push_back(output);
-    initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][0].weight_index & all.weight_mask] == 0);
+    initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][0].weight_index & all.reg.weight_mask] == 0);
 
     for (unsigned int i = 0; i < n->k; ++i)
       {
-        output.weight_index += all.stride;
+        output.weight_index += all.reg.stride;
         n->output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i+1].weight_index & all.weight_mask] == 0);
+        initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i+1].weight_index & all.reg.weight_mask] == 0);
       }
 
     n->output_layer.num_features = n->k + 1;
@@ -399,7 +399,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       float sqrtk = sqrt ((float)n->k);
       for (unsigned int i = 0; i <= n->k; ++i)
         {
-          weight* w = &all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
+          weight* w = &all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i].weight_index & all.reg.weight_mask];
 
           w[0] = (float) (frand48 () - 0.5) / sqrtk;
 
@@ -410,11 +410,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
       // hidden biases
 
-      unsigned int weight_index = constant * all.stride;
+      unsigned int weight_index = constant * all.reg.stride;
 
       for (unsigned int i = 0; i < n->k; ++i)
         {
-          all.reg.weight_vector[weight_index & all.weight_mask] = (float) (frand48 () - 0.5);
+          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
           weight_index += n->increment;
         }
     }

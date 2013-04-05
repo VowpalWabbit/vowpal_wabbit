@@ -459,10 +459,10 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 #else
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights = 
-	    (float*)mmap(0,all.stride * all.length() * sizeof(float), 
+	    (float*)mmap(0,all.reg.stride * all.length() * sizeof(float), 
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 
-	  size_t float_count = all.stride * all.length();
+	  size_t float_count = all.reg.stride * all.length();
 	  weight* dest = shared_weights;
 	  memcpy(dest, all.reg.weight_vector, float_count*sizeof(float));
 	  free(all.reg.weight_vector);
@@ -763,9 +763,9 @@ void setup_example(vw& all, example* ae)
     ae->total_sum_feat_sq++;
   }
   
-  if(all.stride != 1) //make room for per-feature information.
+  if(all.reg.stride != 1) //make room for per-feature information.
     {
-      uint32_t stride = all.stride;
+      uint32_t stride = all.reg.stride;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
 	  j->weight_index = j->weight_index*stride;
@@ -892,7 +892,42 @@ namespace VW{
       }
  	parse_atomic_example(all,ret,false); // all.p->parsed_examples++;
     setup_example(all, ret);
+
     return ret;
+  }
+
+	primitive_feature_space* export_example(void* e, size_t& len)
+	{
+		example* ec = (example*)e;
+		len = ec->indices.size();
+		primitive_feature_space* fs_ptr = new primitive_feature_space[len]; 
+
+		int fs_count = 0;
+		for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
+			{
+				fs_ptr[fs_count].name = *i;
+				fs_ptr[fs_count].len = ec->atomics[*i].size();
+				fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
+
+				int f_count = 0;
+				feature *f = ec->atomics[*i].begin;
+				for (; f != ec->atomics[*i].end; f++)
+					{
+						fs_ptr[fs_count].fs[f_count] = *f;
+						f_count++;
+					}
+				fs_count++;
+			}
+		return fs_ptr;
+  }
+
+	void releaseFeatureSpace(primitive_feature_space* features, size_t len)
+  {
+    for (size_t i = 0; i < len;i++)
+      {
+				delete features[i].fs;
+      }
+			delete (features);
   }
 
   void parse_example_label(vw& all, example&ec, string label) {
@@ -996,6 +1031,7 @@ void *main_parse_loop(void *in)
 	return NULL;
 }
 
+namespace VW{
 example* get_example(parser* p)
 {
   mutex_lock(&p->examples_lock);
@@ -1020,6 +1056,7 @@ example* get_example(parser* p)
       return NULL;
     }
   }
+}
 }
 
 void initialize_examples(vw& all)
@@ -1052,6 +1089,7 @@ void initialize_parser_datastructures(vw& all)
   initialize_condition_variable(&all.p->output_done);
 }
 
+namespace VW {
 void start_parser(vw& all, bool init_structures)
 {
   if (init_structures)
@@ -1062,7 +1100,7 @@ void start_parser(vw& all, bool init_structures)
   all.parse_thread = ::CreateThread(NULL, 0, static_cast<LPTHREAD_START_ROUTINE>(main_parse_loop), &all, NULL, NULL);
   #endif
 }
-
+}
 void free_parser(vw& all)
 {
   all.p->channels.delete_v();
@@ -1094,6 +1132,7 @@ void release_parser_datastructures(vw& all)
   delete_mutex(&all.p->output_lock);
 }
 
+namespace VW {
 void end_parser(vw& all)
 {
   #ifndef _WIN32
@@ -1103,4 +1142,5 @@ void end_parser(vw& all)
   ::CloseHandle(all.parse_thread);
   #endif
   release_parser_datastructures(all);
+}
 }

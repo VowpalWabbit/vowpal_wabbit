@@ -624,7 +624,7 @@ namespace CB
     example* ec = NULL;
     while ( true )
     {
-      if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
       {
         learn(d, ec);
 	if (!command_example(&all, ec))
@@ -715,7 +715,7 @@ namespace CB
       all.options_from_file.append(" --cb_type dr");
     }
 
-    c->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    c->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.reg.stride;
 
     *(all.p->lp) = CB::cb_label_parser; 
 

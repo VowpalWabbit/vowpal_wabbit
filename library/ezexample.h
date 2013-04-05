@@ -118,7 +118,7 @@ class ezexample {
     if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    feature f = { v, fint * vw_ref->stride };
+    feature f = { v, fint * vw_ref->reg.stride };
     ec->atomics[to_ns].push_back(f);
     ec->sum_feat_sq[to_ns] += v * v;
     ec->total_sum_feat_sq += v * v;

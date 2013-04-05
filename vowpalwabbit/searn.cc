@@ -356,7 +356,7 @@ namespace Searn
       {
         feature* end = ec->atomics[*i].end;
         for (feature* f = ec->atomics[*i].begin; f!= end; f++) {
-          cerr << "\t" << f->weight_index << ":" << f->x << ":" << all.reg.weight_vector[f->weight_index & all.weight_mask];
+          cerr << "\t" << f->weight_index << ":" << f->x << ":" << all.reg.weight_vector[f->weight_index & all.reg.weight_mask];
         }
       }
     cerr << endl;
@@ -808,7 +808,7 @@ namespace Searn
     VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies", ss2.str());
 
     all.base_learner_nb_w *= s->total_number_of_policies;
-    s->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
+    s->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.reg.stride;
     //cerr << "searn increment = " << s->increment << endl;
     
     learner l = {s, drive, learn, finish, all.l.sl};
@@ -1341,7 +1341,7 @@ namespace Searn
     example* ec = NULL;
     s->read_example_this_loop = 0;
     while (true) {
-      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
         process_next_example(*all, *s, ec);
       } else if (parser_done(all->p)) {
         if (!s->is_singleline)
@@ -1856,7 +1856,7 @@ namespace ImperativeSearn {
     example* ec = NULL;
     srn->read_example_this_loop = 0;
     while (true) {
-      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
         searn_learn(d, ec);
       } else if (parser_done(all->p)) {
         do_actual_learning(*all, *srn);
@@ -2041,7 +2041,7 @@ namespace ImperativeSearn {
     ss2 << srn->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies",   ss2.str());
 
     all.base_learner_nb_w *= srn->total_number_of_policies;
-    srn->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
+    srn->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.reg.stride;
 
     if (task_string.compare("sequence") == 0) {
       searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));

@@ -203,10 +203,8 @@ namespace OAA {
     ec->final_prediction = prediction;
     update_example_indicies(all->audit, ec, -d->total_increment);
 
-    if (shouldOutput) {
-      outputStringStream << endl;
+    if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
-    }
   }
 
   void learn(void* d, example* ec) {
@@ -218,7 +216,7 @@ namespace OAA {
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output((oaa*)d, ec, all->raw_prediction > 0);
 	    if (!command_example(all, ec))
@@ -260,7 +258,7 @@ namespace OAA {
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
     all.base_learner_nb_w *= data->k;
-    data->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    data->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.reg.stride;
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
     learner l = {data, drive, learn, finish, all.l.sl};

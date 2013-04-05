@@ -257,7 +257,7 @@ namespace WAP {
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
 	    learn(d, ec);
             CSOAA::output_example(*all, ec);
@@ -293,7 +293,7 @@ namespace WAP {
 
     all.sd->k = (uint32_t)nb_actions;
     all.base_learner_nb_w *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.stride);
+    w->increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.reg.stride);
 
     learner l = {w, drive, learn, finish, all.l.sl};
     w->base = all.l;

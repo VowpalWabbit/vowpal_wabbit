@@ -186,7 +186,7 @@ namespace ECT
     
     if (e.last_pair > 0) {
       all.base_learner_nb_w *= (e.last_pair + (eliminations-1));
-      e.increment = (uint32_t) all.length() / all.base_learner_nb_w * all.stride;
+      e.increment = (uint32_t) all.length() / all.base_learner_nb_w * all.reg.stride;
     }
   }
 
@@ -339,7 +339,7 @@ namespace ECT
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
-		e.base.learn(ec);
+				e.base.learn(ec);
 		
                 update_example_indicies(all.audit, ec,-offset);
 		
@@ -406,7 +406,7 @@ namespace ECT
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn(d, ec);
             OAA::output_example(*all, ec);

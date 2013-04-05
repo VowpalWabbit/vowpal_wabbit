@@ -457,7 +457,7 @@ v_array<float> old_gamma;
 	  feature *f = ec->atomics[*i].begin;
 	  for (; f != ec->atomics[*i].end; f++)
 	    {
-	      float* u_for_w = &weights[(f->weight_index&all.weight_mask)+all.lda+1];
+	      float* u_for_w = &weights[(f->weight_index&all.reg.weight_mask)+all.lda+1];
 	      float c_w = find_cw(all, u_for_w,v);
 	      xc_w = c_w * f->x;
               score += -f->x*log(c_w);
@@ -507,7 +507,7 @@ size_t next_pow2(size_t x) {
   lda* l = (lda*)d;
   vw* all = l->all;
   uint32_t length = 1 << all->num_bits;
-  uint32_t stride = all->stride;
+  uint32_t stride = all->reg.stride;
   
   if (read)
     {
@@ -583,10 +583,10 @@ size_t next_pow2(size_t x) {
 
   for (size_t k = 0; k < all->lda; k++)
     total_lambda.push_back(0.f);
-  size_t stride = all->stride;
+  size_t stride = all->reg.stride;
   weight* weights = reg.weight_vector;
 
-  for (size_t i =0; i <= all->weight_mask;i+=stride)
+  for (size_t i =0; i <= all->reg.weight_mask;i+=stride)
     for (size_t k = 0; k < all->lda; k++)
       total_lambda[k] += weights[i+k];
 
@@ -610,7 +610,7 @@ size_t next_pow2(size_t x) {
       for (size_t d = 0; d < batch_size; d++)
 	{
           doc_lengths.push_back(0);
-	  if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+	  if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	    {
 	      examples.push_back(ec);
               for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {
@@ -647,7 +647,7 @@ size_t next_pow2(size_t x) {
 	  if (last_weight_index == s->f.weight_index)
 	    continue;
 	  last_weight_index = s->f.weight_index;
-	  float* weights_for_w = &(weights[s->f.weight_index & all->weight_mask]);
+	  float* weights_for_w = &(weights[s->f.weight_index & all->reg.weight_mask]);
           float decay = fmin(1.0, exp(decay_levels.end[-2] - decay_levels.end[(int)(-1-example_t+weights_for_w[all->lda])]));
 	  float* u_for_w = weights_for_w + all->lda+1;
 
@@ -679,7 +679,7 @@ size_t next_pow2(size_t x) {
 	  while(next <= &sorted_features.back() && next->f.weight_index == s->f.weight_index)
 	    next++;
 
-	  float* word_weights = &(weights[s->f.weight_index & all->weight_mask]);
+	  float* word_weights = &(weights[s->f.weight_index & all->reg.weight_mask]);
 	  for (size_t k = 0; k < all->lda; k++) {
 	    float new_value = minuseta*word_weights[k];
 	    word_weights[k] = new_value;
@@ -687,7 +687,7 @@ size_t next_pow2(size_t x) {
 
 	  for (; s != next; s++) {
 	    float* v_s = &v[s->document*all->lda];
-	    float* u_for_w = &weights[(s->f.weight_index & all->weight_mask) + all->lda + 1];
+	    float* u_for_w = &weights[(s->f.weight_index & all->reg.weight_mask) + all->lda + 1];
 	    float c_w = eta*find_cw(*all, u_for_w, v_s)*s->f.x;
 	    for (size_t k = 0; k < all->lda; k++) {
 	      float new_value = u_for_w[k]*v_s[k]*c_w;
@@ -704,7 +704,7 @@ size_t next_pow2(size_t x) {
       if (parser_done(all->p))
 	{
 	  for (size_t i = 0; i < all->length(); i++) {
-	    weight* weights_for_w = & (weights[i*all->stride]);
+	    weight* weights_for_w = & (weights[i*all->reg.stride]);
             float decay = fmin(1.0, exp(decay_levels.last() - decay_levels.end[(int)(-1-example_t+weights_for_w[all->lda])]));
 	    for (size_t k = 0; k < all->lda; k++) {
 	      weights_for_w[k] *= decay;
@@ -746,7 +746,7 @@ learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 
   all.p->sort_features = true;
   float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
-  all.stride = ((size_t)1) << (int) temp;
+  all.reg.stride = ((size_t)1) << (int) temp;
   all.random_weights = true;
   all.add_constant = false;
 
