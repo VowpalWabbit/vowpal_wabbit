@@ -78,15 +78,14 @@ namespace VW {
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
 
-	primitive_feature_space* export_example(void* e, size_t& len);
-	void releaseFeatureSpace(primitive_feature_space* features, size_t len);
-	
+  primitive_feature_space* export_example(vw& all, example* e, size_t& len);
+  void releaseFeatureSpace(primitive_feature_space* features, size_t len);
+  
   inline float get_weight(vw& all, uint32_t index) 
   { return all.reg.weight_vector[(index * all.reg.stride) & all.reg.weight_mask];}
 
   inline uint32_t num_weights(vw& all) 
   { return (uint32_t)all.length();}
 }
-
 
 #endif
