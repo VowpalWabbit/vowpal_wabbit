@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "example.h"
+#include "vw.h"
 
 const size_t wap_ldf_namespace  = 126;
 const size_t history_namespace  = 127;

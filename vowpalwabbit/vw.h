@@ -11,10 +11,8 @@ license as described in the file LICENSE.
 #include "hash.h"
 
 namespace VW {
-  /*
-    You must call initialize to get access to the library.  The argument is a vew commandline.  
 
-    Caveats: 
+/*    Caveats: 
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
@@ -32,14 +30,13 @@ namespace VW {
   void start_parser(vw& all, bool do_init = true);
 	void end_parser(vw& all);
 	
-
-  //The next commands deal with creating examples.  Caution: VW does not all allow creation of many examples at once by default.  You can adjust the exact number by tweaking ring_size.
-
   typedef pair< unsigned char, vector<feature> > feature_space; //just a helper definition.
   struct primitive_feature_space { //just a helper definition.
     unsigned char name; 
     feature* fs; 
     size_t len; }; 
+
+  //The next commands deal with creating examples.  Caution: VW does not all allow creation of many examples at once by default.  You can adjust the exact number by tweaking ring_size.
 
   /* The simplest of two ways to create an example.  An example_line is the literal line in a VW-format datafile.
    */
