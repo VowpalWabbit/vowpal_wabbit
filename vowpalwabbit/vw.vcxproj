@@ -178,10 +178,7 @@
     <IntDir>$(SolutionDir)x86\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="vw.cc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="vw.h" />
+    <ClCompile Include="main.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

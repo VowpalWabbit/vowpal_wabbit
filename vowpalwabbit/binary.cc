@@ -1,4 +1,5 @@
 #include "oaa.h"
+#include "vw.h"
 
 namespace BINARY {
   struct binary {

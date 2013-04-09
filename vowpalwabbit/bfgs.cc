@@ -24,6 +24,7 @@ Implementation by Miro Dudik.
 #include "simple_label.h"
 #include "accumulate.h"
 #include <exception>
+#include "vw.h"
 
 using namespace std;
 

@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "cache.h"
 #include "v_hashmap.h"
+#include "vw.h"
 
 using namespace std;
 
