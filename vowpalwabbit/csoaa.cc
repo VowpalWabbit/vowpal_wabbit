@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "oaa.h"
 #include "v_hashmap.h"
 #include "parse_example.h"
+#include "vw.h"
 
 using namespace std;
 

@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "gd.h"
 #include "simple_label.h"
+#include "vw.h"
 
 namespace NOOP {
   void learn(void* d, example*ec) {}

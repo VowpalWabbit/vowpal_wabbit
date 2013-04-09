@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "v_hashmap.h"
 #include "rand48.h"
+#include "vw.h"
 
 using namespace std;
 

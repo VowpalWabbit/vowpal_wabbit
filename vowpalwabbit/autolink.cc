@@ -1,6 +1,7 @@
 #include "simple_label.h"
 #include <float.h>
 #include "parser.h"
+#include "vw.h"
 
 namespace ALINK {
   const int autoconstant = 524267083;
