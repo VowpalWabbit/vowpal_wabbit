@@ -20,6 +20,7 @@
 #include "cache.h"
 #include "simple_label.h"
 #include "network.h"
+#include "vw.h"
 
 using namespace std;
 

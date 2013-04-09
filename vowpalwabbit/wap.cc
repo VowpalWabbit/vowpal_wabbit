@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "csoaa.h"
 #include "oaa.h"
+#include "vw.h"
 
 using namespace std;
 

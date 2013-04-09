@@ -81,7 +81,7 @@ namespace cs_test
 
         private static void RunParserTest()
         {
-            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out2");
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
 
             VowpalWabbitInterface.StartParser(vw, false);
 
