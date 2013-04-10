@@ -693,30 +693,30 @@ namespace CB
 
       if (type_string.compare("dr") == 0) { 
         c->cb_type = CB_TYPE_DR;
-        all.base_learner_nb_w *= nb_actions * 2;
+        all.weights_per_problem *= nb_actions * 2;
       }
       else if (type_string.compare("dm") == 0) {
         c->cb_type = CB_TYPE_DM;
-        all.base_learner_nb_w *= nb_actions * 2;
+        all.weights_per_problem *= nb_actions * 2;
       }
       else if (type_string.compare("ips") == 0) {
         c->cb_type = CB_TYPE_IPS;
-        all.base_learner_nb_w *= nb_actions;
+        all.weights_per_problem *= nb_actions;
       }
       else {
         std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
         c->cb_type = CB_TYPE_DR;
-        all.base_learner_nb_w *= nb_actions * 2;
+        all.weights_per_problem *= nb_actions * 2;
       }
     }
     else {
       //by default use doubly robust
       c->cb_type = CB_TYPE_DR;
-      all.base_learner_nb_w *= nb_actions * 2;
+      all.weights_per_problem *= nb_actions * 2;
       all.options_from_file.append(" --cb_type dr");
     }
 
-    c->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.reg.stride;
+    c->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
 
     *(all.p->lp) = CB::cb_label_parser; 
 
