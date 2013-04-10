@@ -5,6 +5,7 @@
 #include "simple_label.h"
 #include "cache.h"
 #include "rand48.h"
+#include "vw.h"
 
 using namespace std;
 

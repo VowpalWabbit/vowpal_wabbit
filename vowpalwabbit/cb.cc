@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "oaa.h"
 #include "parse_example.h"
 #include "parse_primitives.h"
+#include "vw.h"
 
 namespace CB
 {
@@ -31,6 +32,7 @@ namespace CB
     learner base;
     
     cb_class* known_cost;
+    vw* all;
   };
 
   bool know_all_cost_example(CB::label* ld)
@@ -288,7 +290,7 @@ namespace CB
     float old_max = all.sd->max_label;
     //all.sd->max_label = c.max_cost;
     update_example_indicies(all.audit, ec, desired_increment);
-    all.scorer.learn(&all, all.scorer.data, ec);
+    all.scorer.learn(ec);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
     update_example_indicies(all.audit, ec, -desired_increment);
@@ -389,7 +391,7 @@ namespace CB
       }
     }
     
-    ec->final_prediction = argmin;
+    ec->final_prediction = (float)argmin;
   }
 
   void gen_cs_example_dr(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
@@ -473,14 +475,14 @@ namespace CB
     }
   }
 
-  void learn(void* a, void* d, example* ec) {
-    vw* all = (vw*)a;
+  void learn(void* d, example* ec) {
     cb* c = (cb*)d;
+    vw* all = c->all;
     CB::label* ld = (CB::label*)ec->ld;
 
     if (command_example(all, ec))
       {
-	c->base.learn(a, c->base.data, ec);
+	c->base.learn(ec);
 	return;
       }
 
@@ -491,7 +493,7 @@ namespace CB
       cb_test_to_cs_test_label(*all,ec,c->cb_cs_ld);
 
        ec->ld = &c->cb_cs_ld;
-       c->base.learn(all,c->base.data,ec);
+       c->base.learn(ec);
        ec->ld = ld;
        return;
     }
@@ -521,7 +523,7 @@ namespace CB
     if (c->cb_type != CB_TYPE_DM)
       {
 	ec->ld = &c->cb_cs_ld;
-	c->base.learn(all,c->base.data,ec);
+	c->base.learn(ec);
 	ec->ld = ld;
       }
   }
@@ -609,24 +611,23 @@ namespace CB
     print_update(all, c, CB::is_test_label((CB::label*)ec->ld), ec);
   }
 
-  void finish(void* a, void* d)
+  void finish(void* d)
   {
     cb* c=(cb*)d;
-    c->base.finish(a,c->base.data);
+    c->base.finish();
     c->cb_cs_ld.costs.delete_v();
     free(c);
   }
 
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw*all = (vw*)in;
     cb* c = (cb*)d;
     example* ec = NULL;
     while ( true )
     {
-      if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
       {
-        learn(all, d, ec);
+        learn(d, ec);
 	if (!command_example(&all, ec))
 	  output_example(*all, *c, ec);
 	VW::finish_example(*all, ec);
@@ -636,9 +637,10 @@ namespace CB
     }
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     cb* c = (cb*)calloc(1, sizeof(cb));
+    c->all = &all;
     c->first_print_call = true;
     c->min_cost = 0.;
     c->max_cost = 1.;
@@ -714,14 +716,14 @@ namespace CB
       all.options_from_file.append(" --cb_type dr");
     }
 
-    c->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.stride;
+    c->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
 
     *(all.p->lp) = CB::cb_label_parser; 
 
     all.sd->k = nb_actions;
 
-    learner l = {c, drive, learn, finish, all.l.save_load};
+    learner l = {c, drive, learn, finish, all.l.sl};
     c->base = all.l;
-    all.l = l;
+    return l;
   }
 }

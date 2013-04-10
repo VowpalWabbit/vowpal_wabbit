@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
 #include "ezexample.h"
 
@@ -8,11 +9,11 @@ int main(int argc, char *argv[])
 {
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
   //  vw vw = VW::initialize("--hash all -q st --noconstant -i train.w -t --quiet --csoaa_ldf s");
-  vw vw = VW::initialize("-t -i train.w -q st --hash all --noconstant --csoaa_ldf s --quiet");
+  vw* vw = VW::initialize("-t -i train.w -q st --hash all --noconstant --csoaa_ldf s --quiet");
 
   {
     // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
-    ezexample ex(&vw, false);  // don't need multiline
+    ezexample ex(vw, false);  // don't need multiline
     ex(vw_namespace('s'))
       ("p^the_man")
       ("w^the")
@@ -43,5 +44,5 @@ int main(int argc, char *argv[])
   }
 
   // AND FINISH UP
-  VW::finish(vw);
+  VW::finish(*vw);
 }

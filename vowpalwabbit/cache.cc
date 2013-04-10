@@ -113,7 +113,6 @@ int read_cached_features(void* in, example* ec)
 	    ae->sorted = false;
 	  f.weight_index = last + s_diff;
 	  last = f.weight_index;
-	  f.weight_index = (f.weight_index * all->weights_per_problem);
 	  ours->push_back(f);
 	}
       all->p->input->set(c);
@@ -147,7 +146,7 @@ void output_byte(io_buf& cache, unsigned char s)
   cache.set(c);
 }
 
-void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint32_t weights_per_problem, uint32_t mask)
+void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint32_t mask)
 {
   char* c;
   size_t storage = (end-begin) * int_size;
@@ -165,7 +164,7 @@ void output_features(io_buf& cache, unsigned char index, feature* begin, feature
   
   for (feature* i = begin; i != end; i++)
     {
-      uint32_t cache_index = (i->weight_index/weights_per_problem) & mask;
+      uint32_t cache_index = (i->weight_index) & mask;
       int32_t s_diff = (cache_index - last);
       size_t diff = ZigZagEncode(s_diff) << 2;
       last = cache_index;
@@ -194,10 +193,10 @@ void cache_tag(io_buf& cache, v_array<char> tag)
   cache.set(c);
 }
 
-void cache_features(io_buf& cache, example* ae, uint32_t weights_per_problem, uint32_t mask)
+void cache_features(io_buf& cache, example* ae, uint32_t mask)
 {
   cache_tag(cache,ae->tag);
   output_byte(cache, (unsigned char) ae->indices.size());
   for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
-    output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end, weights_per_problem, mask);
+    output_features(cache, *b, ae->atomics[*b].begin,ae->atomics[*b].end, mask);
 }

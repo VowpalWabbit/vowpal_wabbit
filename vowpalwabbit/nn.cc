@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "v_hashmap.h"
 #include "rand48.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -33,6 +34,7 @@ namespace NN {
     bool inpass;
 
     learner base;
+    vw* all;
   };
 
 #define cast_uint32_t static_cast<uint32_t>
@@ -69,7 +71,7 @@ namespace NN {
     }
 
     if (command_example(&all, ec)) {
-      n.base.learn(&all,n.base.data, ec);
+      n.base.learn(ec);
       return;
     }
 
@@ -100,7 +102,7 @@ namespace NN {
           update_example_indicies(all.audit, ec, n.increment);
 
         ec->partial_prediction = 0.;
-        n.base.learn(&all,n.base.data,ec);
+        n.base.learn(ec);
         hidden_units[i] = GD::finalize_prediction (all, ec->partial_prediction);
 
         dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
@@ -148,7 +150,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->sum_feat_sq[nn_output_namespace] = n.output_layer.sum_feat_sq[nn_output_namespace];
       ec->total_sum_feat_sq += n.output_layer.sum_feat_sq[nn_output_namespace];
       ec->partial_prediction = 0.;
-      n.base.learn(&all, n.base.data, ec);
+      n.base.learn(ec);
       n.output_layer.partial_prediction = ec->partial_prediction;
       n.output_layer.loss = ec->loss;
       ec->total_sum_feat_sq -= n.output_layer.sum_feat_sq[nn_output_namespace];
@@ -164,7 +166,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.eta_global = ec->eta_global;
       n.output_layer.global_weight = ec->global_weight;
       n.output_layer.example_t = ec->example_t;
-      n.base.learn(&all,n.base.data,&n.output_layer);
+      n.base.learn(&n.output_layer);
       n.output_layer.ld = 0;
     }
 
@@ -193,13 +195,13 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               n.output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            float nu = all.reg.weight_vector[n.output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
+            float nu = all.reg.weight_vector[n.output_layer.atomics[nn_output_namespace][i].weight_index & all.reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ld->label = GD::finalize_prediction (all, hidden_units[i-1] - gradhw);
             if (ld->label != hidden_units[i-1]) {
               ec->partial_prediction = 0.;
-              n.base.learn(&all,n.base.data,ec);
+              n.base.learn(ec);
             }
           }
           if (i != 1) {
@@ -244,20 +246,19 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec->loss = save_ec_loss;
   }
 
-  void learn(void*a, void* d,example* ec) {
-    vw* all = (vw*)a;
+  void learn(void* d,example* ec) {
     nn* n = (nn*)d;
+    vw* all = n->all;
     learn_with_output(*all, *n, ec, false);
   }
 
-  void drive_nn(void *in, void* d)
+  void drive_nn(vw *all, void* d)
   {
-    vw* all = (vw*)in;
     nn* n = (nn*)d;
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output(*all, *n, ec, all->raw_prediction > 0);
             int save_raw_prediction = all->raw_prediction;
@@ -272,19 +273,20 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
   }
 
-  void finish(void* a, void* d)
+  void finish(void* d)
   {
     nn* n =(nn*)d;
-    n->base.finish(a,n->base.data);
+    n->base.finish();
     delete n->squared_loss;
     free (n->output_layer.indices.begin);
     free (n->output_layer.atomics[nn_output_namespace].begin);
     free(n);
   }
 
-  void parse_flags(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     nn* n = (nn*)calloc(1,sizeof(nn));
+    n->all = &all;
 
     po::options_description desc("NN options");
     desc.add_options()
@@ -364,12 +366,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << (all.training ? "training" : "testing") 
                 << std::endl;
 
-    learner t = {n,drive_nn,learn,finish,all.l.save_load};
     n->base = all.l;
-    all.l = t;
 
     all.weights_per_problem *= (n->inpass) ? n->k + 1 : n->k;
-    n->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.stride;
+    n->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
 
     bool initialize = true;
 
@@ -377,15 +377,15 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     memset (&n->output_layer, 0, sizeof (n->output_layer));
     n->output_layer.indices.push_back(nn_output_namespace);
-    feature output = {1., nn_constant*all.stride};
+    feature output = {1., nn_constant*all.reg.stride};
     n->output_layer.atomics[nn_output_namespace].push_back(output);
-    initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][0].weight_index & all.weight_mask] == 0);
+    initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][0].weight_index & all.reg.weight_mask] == 0);
 
     for (unsigned int i = 0; i < n->k; ++i)
       {
-        output.weight_index += all.stride;
+        output.weight_index += all.reg.stride;
         n->output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i+1].weight_index & all.weight_mask] == 0);
+        initialize &= (all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i+1].weight_index & all.reg.weight_mask] == 0);
       }
 
     n->output_layer.num_features = n->k + 1;
@@ -400,7 +400,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       float sqrtk = sqrt ((float)n->k);
       for (unsigned int i = 0; i <= n->k; ++i)
         {
-          weight* w = &all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i].weight_index & all.weight_mask];
+          weight* w = &all.reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i].weight_index & all.reg.weight_mask];
 
           w[0] = (float) (frand48 () - 0.5) / sqrtk;
 
@@ -411,11 +411,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
       // hidden biases
 
-      unsigned int weight_index = constant * all.stride;
+      unsigned int weight_index = constant * all.reg.stride;
 
       for (unsigned int i = 0; i < n->k; ++i)
         {
-          all.reg.weight_vector[weight_index & all.weight_mask] = (float) (frand48 () - 0.5);
+          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
           weight_index += n->increment;
         }
     }
@@ -428,5 +428,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->xsubi = vm["random_seed"].as<size_t>();
 
     n->save_xsubi = n->xsubi;
+
+    learner l = {n,drive_nn,learn,finish,all.l.sl};
+    return l;
   }
 }

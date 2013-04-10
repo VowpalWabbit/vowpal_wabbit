@@ -20,6 +20,7 @@
 #include "cache.h"
 #include "simple_label.h"
 #include "network.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -37,7 +38,7 @@ namespace SENDER {
   s.buf->files.push_back(s.sd);
 }
 
-  void send_features(io_buf *b, example* ec, uint32_t weights_per_problem, uint32_t mask)
+  void send_features(io_buf *b, example* ec, uint32_t mask)
 {
   // note: subtracting 1 b/c not sending constant
   output_byte(*b,(unsigned char) (ec->indices.size()-1));
@@ -45,16 +46,15 @@ namespace SENDER {
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {
     if (*i == constant_namespace)
       continue;
-    output_features(*b, *i, ec->atomics[*i].begin, ec->atomics[*i].end, weights_per_problem, mask);
+    output_features(*b, *i, ec->atomics[*i].begin, ec->atomics[*i].end, mask);
   }
   b->flush();
 }
 
-  void save_load(void* in, void* d, io_buf& model_file, bool read, bool text) {}
+  void save_load(void* d, io_buf& model_file, bool read, bool text) {}
 
-  void drive_send(void* in, void* d)
+  void drive_send(vw* all, void* d)
 {
-  vw* all = (vw*)in;
   sender* s = (sender*)d;
   example* ec = NULL;
   v_array<char> null_tag;
@@ -81,13 +81,13 @@ namespace SENDER {
 	  
 	  return_simple_example(*all, ec);
 	}
-      else if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+      else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
         {
           label_data* ld = (label_data*)ec->ld;
           all->set_minmax(all->sd, ld->label);
 	  simple_label.cache_label(ld, *s->buf);//send label information.
 	  cache_tag(*s->buf, ec->tag);
-	  send_features(s->buf,ec, all->weights_per_problem, all->parse_mask);
+	  send_features(s->buf,ec, all->parse_mask);
 	  delay_ring[sent_index++ % all->p->ring_size] = ec;
         }
       else if (parser_done(all->p))
@@ -107,10 +107,10 @@ namespace SENDER {
     }
   return;
 }
-  void learn(void*in, void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
-  void finish(void*in, void* d) { cout << "sender can't be used under reduction" << endl; }
+  void learn(void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
+  void finish(void* d) { cout << "sender can't be used under reduction" << endl; }
 
-  void parse_send_args(vw& all, po::variables_map& vm, vector<string> pairs)
+  learner setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender* s = (sender*)calloc(1,sizeof(sender));
   s->sd = -1;
@@ -120,8 +120,9 @@ namespace SENDER {
       open_sockets(*s, hosts[0]);
     }
 
-  learner ret = {s,drive_send,learn,finish,save_load};
-  all.l = ret;
+  sl_t sl = {NULL, save_load};
+  learner l = {s,drive_send,learn,finish,sl};
+  return l;
 }
 
 }

@@ -117,12 +117,12 @@ public:
       // maybeFeature --> 'String' FeatureValue
       substring feature_name=read_name();
       v = cur_channel_v * featureValue();
-      if(v == 0) return; //dont add 0 valued features to list of features
       size_t word_hash;
       if (feature_name.end != feature_name.begin)
 	word_hash = (p->hasher(feature_name,(uint32_t)channel_hash));
       else
 	word_hash = channel_hash + anon++;
+      if(v == 0) return; //dont add 0 valued features to list of features
       feature f = {v,(uint32_t)word_hash * weights_per_problem};
       ae->sum_feat_sq[index] += v*v;
       ae->atomics[index].push_back(f);

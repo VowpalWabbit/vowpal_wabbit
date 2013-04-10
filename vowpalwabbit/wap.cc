@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "csoaa.h"
 #include "oaa.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -20,6 +21,7 @@ namespace WAP {
   struct wap{
     uint32_t increment;
     learner base;
+    vw* all;
   };
   
   void mirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
@@ -184,7 +186,7 @@ namespace WAP {
 
               mirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
 
-              w.base.learn(&all,w.base.data,ec);
+              w.base.learn(ec);
               unmirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
             }
         }
@@ -211,7 +213,7 @@ namespace WAP {
           update_example_indicies(all.audit, ec, w.increment*(myi-1));
         ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
-        w.base.learn(&all,w.base.data, ec);
+        w.base.learn(ec);
         if (myi != 1)
           update_example_indicies(all.audit, ec, -w.increment*(myi-1));
         if (ec->partial_prediction > score)
@@ -224,15 +226,15 @@ namespace WAP {
     return prediction;
   }
 
-  void learn(void* a, void* d, example* ec)
+  void learn(void* d, example* ec)
   {
-    vw* all = (vw*)a;
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
     wap* w = (wap*)d;
+    vw* all = w->all;
     
     if (command_example(all, ec))
       {
-	w->base.learn(a, w->base.data, ec);
+	w->base.learn(ec);
 	return;
       }
 
@@ -244,22 +246,21 @@ namespace WAP {
     ec->final_prediction = (float)prediction;
   }
   
-  void finish(void* a, void* d)
+  void finish(void* d)
   {
     wap* w=(wap*)d;
-    w->base.finish(a,w->base.data);
+    w->base.finish();
     free(w);
   }
   
-  void drive(void* in, void* d)
+  void drive(vw* all, void* d)
   {
-    vw* all = (vw*)in;
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
-	    learn(all, d, ec);
+	    learn(d, ec);
             CSOAA::output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
@@ -270,9 +271,10 @@ namespace WAP {
       }
   }
   
-  void parse_flags(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
+  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
     wap* w=(wap*)calloc(1,sizeof(wap));
+    w->all = &all;
     uint32_t nb_actions = 0;
     if( vm_file.count("wap") ) { //if loaded options from regressor
       nb_actions = (uint32_t)vm_file["wap"].as<size_t>();
@@ -292,10 +294,10 @@ namespace WAP {
 
     all.sd->k = (uint32_t)nb_actions;
     all.weights_per_problem *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.stride);
+    w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner l = {w, drive, learn, finish, all.l.save_load};
+    learner l = {w, drive, learn, finish, all.l.sl};
     w->base = all.l;
-    all.l = l;
+    return l;
   }
 }
