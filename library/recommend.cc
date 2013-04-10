@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
         // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
         if(verbose>0)
                 fprintf(stderr, "initializing vw...\n");
-        vw model = VW::initialize(vwparams);
+        vw* model = VW::initialize(vwparams);
 
         char * estr = NULL;
 
@@ -168,13 +168,13 @@ int main(int argc, char *argv[])
 
                         if (!bf_hit(bf,estr))
                         {
-                                example *ex = VW::read_example(model, estr);
-                                model.learn(ex);
+                                example *ex = VW::read_example(*model, estr);
+                                model->learn(ex);
 
                                 const string str(estr);
                                 scored_examples.push_back(make_pair(ex->final_prediction, str));
 
-                                VW::finish_example(model, ex);
+                                VW::finish_example(*model, ex);
                         }
                         else
                         {
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
                 scored_examples.clear();
         }
 
-        VW::finish(model);
+        VW::finish(*model);
         fclose(fI);
         fclose(fU);
         exit(EXIT_SUCCESS);
