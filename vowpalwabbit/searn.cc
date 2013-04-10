@@ -806,8 +806,8 @@ namespace Searn
     //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
     VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies", ss2.str());
 
-    all.base_learner_nb_w *= s->total_number_of_policies;
-    s->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
+    all.weights_per_problem *= s->total_number_of_policies;
+    s->increment = ((uint32_t)all.length() / all.weights_per_problem) * all.stride;
     //cerr << "searn increment = " << s->increment << endl;
     
     learner l = {s, drive, learn, finish, all.l.save_load};
@@ -2040,8 +2040,8 @@ namespace ImperativeSearn {
     ss1 << srn->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss1.str()); 
     ss2 << srn->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies",   ss2.str());
 
-    all.base_learner_nb_w *= srn->total_number_of_policies;
-    srn->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
+    all.weights_per_problem *= srn->total_number_of_policies;
+    srn->increment = ((uint32_t)all.length() / all.weights_per_problem) * all.stride;
 
     if (task_string.compare("sequence") == 0) {
       searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));

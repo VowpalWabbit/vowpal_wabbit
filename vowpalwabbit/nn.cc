@@ -368,8 +368,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n->base = all.l;
     all.l = t;
 
-    all.base_learner_nb_w *= (n->inpass) ? n->k + 1 : n->k;
-    n->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    all.weights_per_problem *= (n->inpass) ? n->k + 1 : n->k;
+    n->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.stride;
 
     bool initialize = true;
 

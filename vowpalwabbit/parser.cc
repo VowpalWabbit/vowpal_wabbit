@@ -627,7 +627,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.size(); n++)
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
-	  feature f = {1.,(uint32_t)(new_index & all.parse_mask)};
+	  feature f = {1.,(uint32_t)(new_index)};
 	  atomics.push_back(f);
 	  if (all.audit && audits.size() >= initial_length)
 	    {
@@ -639,7 +639,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 		}
 	      string feature_space = string(audits[i].space);
 	      
-	      audit_data a_feature = {NULL,NULL,new_index & all.parse_mask, 1., true};
+	      audit_data a_feature = {NULL,NULL,new_index, 1., true};
 	      a_feature.space = (char*)malloc(feature_space.length()+1);
 	      strcpy(a_feature.space, feature_space.c_str());
 	      a_feature.feature = (char*)malloc(feature_name.length()+1);
@@ -712,7 +712,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
   if (all.p->write_cache) 
     {
       all.p->lp->cache_label(ae->ld,*(all.p->output));
-      cache_features(*(all.p->output), ae);
+      cache_features(*(all.p->output), ae, all.weights_per_problem, all.parse_mask);
     }
 
   return true;
@@ -758,7 +758,7 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) (constant & all.parse_mask)};
+    feature temp = {1,(uint32_t) (constant * all.weights_per_problem)};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
@@ -842,7 +842,7 @@ namespace VW{
   void add_constant_feature(vw& vw, example*ec) {
     uint32_t cns = constant_namespace;
     ec->indices.push_back(cns);
-    feature temp = {1,(uint32_t) (constant & vw.parse_mask)};
+    feature temp = {1,(uint32_t) (constant * vw.weights_per_problem)};
     ec->atomics[cns].push_back(temp);
     ec->total_sum_feat_sq++;
     ec->num_features++;

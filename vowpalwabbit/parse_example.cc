@@ -65,7 +65,6 @@ public:
   char* endLine;
   float cur_channel_v;
   bool  new_index;
-  size_t mask;
   size_t anon; 
   bool audit;
   size_t channel_hash;
@@ -74,6 +73,7 @@ public:
   float v;
   parser* p;
   example* ae;
+  uint32_t weights_per_problem;
   
   ~TC_parser(){ }
   
@@ -120,10 +120,10 @@ public:
       if(v == 0) return; //dont add 0 valued features to list of features
       size_t word_hash;
       if (feature_name.end != feature_name.begin)
-	word_hash = (p->hasher(feature_name,(uint32_t)channel_hash)) & mask;
+	word_hash = (p->hasher(feature_name,(uint32_t)channel_hash));
       else
 	word_hash = channel_hash + anon++;
-      feature f = {v,(uint32_t)word_hash};
+      feature f = {v,(uint32_t)word_hash * weights_per_problem};
       ae->sum_feat_sq[index] += v*v;
       ae->atomics[index].push_back(f);
       if(audit){
@@ -242,7 +242,7 @@ public:
     this->endLine = endLine;
     this->p = all.p;
     this->ae = ae;
-    mask  = all.parse_mask;
+    this->weights_per_problem = all.weights_per_problem;
     audit = all.audit;
     listNameSpace();
   }

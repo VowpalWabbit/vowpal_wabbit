@@ -291,8 +291,8 @@ namespace WAP {
     *(all.p->lp) = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
-    all.base_learner_nb_w *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.stride);
+    all.weights_per_problem *= nb_actions;
+    w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.stride);
 
     learner l = {w, drive, learn, finish, all.l.save_load};
     w->base = all.l;
