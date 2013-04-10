@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "oaa.h"
 #include "csoaa.h"
 #include "searn_sequencetask.h"
+#include "vw.h"
 
 namespace SequenceTask {
   SearnUtil::history_info hinfo;

@@ -27,6 +27,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "accumulate.h"
 #include "learner.h"
+#include "vw.h"
 
 using namespace std;
 

@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "oaa.h"
 #include "parse_example.h"
 #include "parse_primitives.h"
+#include "vw.h"
 
 namespace CB
 {

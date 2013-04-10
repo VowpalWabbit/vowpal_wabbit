@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "simple_label.h"
 #include "parse_args.h"
+#include "vw.h"
 
 using namespace std;
 

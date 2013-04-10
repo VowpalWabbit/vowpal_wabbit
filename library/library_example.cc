@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
 
 using namespace std;

@@ -19,6 +19,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "simple_label.h"
 #include "rand48.h"
+#include "vw.h"
 
 using namespace std;
 
