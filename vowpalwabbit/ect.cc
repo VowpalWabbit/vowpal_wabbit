@@ -186,8 +186,8 @@ namespace ECT
       e.tree_height = final_depth(eliminations);
     
     if (e.last_pair > 0) {
-      all.base_learner_nb_w *= (e.last_pair + (eliminations-1));
-      e.increment = (uint32_t) all.length() / all.base_learner_nb_w * all.reg.stride;
+      all.weights_per_problem *= (e.last_pair + (eliminations-1));
+      e.increment = (uint32_t) all.length() / all.weights_per_problem * all.reg.stride;
     }
   }
 
