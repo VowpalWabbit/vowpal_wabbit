@@ -381,9 +381,9 @@ namespace CSOAA {
     }
 
     *(all.p->lp) = cs_label_parser;
+    c->csoaa_increment = all.weights_per_problem * all.reg.stride;
     all.weights_per_problem *= nb_actions;
     c->base=all.l;
-    c->csoaa_increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
     all.sd->k = nb_actions;
 
     learner l = {c, drive, learn, finish, all.l.sl};
