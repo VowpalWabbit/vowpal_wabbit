@@ -811,5 +811,6 @@ namespace VW {
 #endif
     all.final_prediction_sink.delete_v();
     delete all.loss;
+    delete &all;
   }
 }
