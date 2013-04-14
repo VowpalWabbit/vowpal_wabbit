@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
+#include <queue>
 #include <utility>
 #include <algorithm>
 #include <iostream>
@@ -78,7 +79,15 @@ int bf_hit(char *bf, char *line) {
 typedef pair<float, string> scored_example;
 vector<scored_example> scored_examples;
 
-bool compare_scored_examples (scored_example i,scored_example j) { return (i.first>j.first); };
+struct compare_scored_examples
+{
+    bool operator()(scored_example const& a, scored_example const& b) const
+    {
+        return a.first > b.first;
+    }
+};
+
+priority_queue<scored_example, vector<scored_example>, compare_scored_examples > pr_queue;
 
 int main(int argc, char *argv[])
 {
@@ -172,7 +181,16 @@ int main(int argc, char *argv[])
                                 model->learn(ex);
 
                                 const string str(estr);
-                                scored_examples.push_back(make_pair(ex->final_prediction, str));
+
+                                if(pr_queue.size() < topn)
+                                {        
+                                        pr_queue.push(make_pair(ex->final_prediction, str));
+                                }
+                                else if(pr_queue.top().first < ex->final_prediction)
+                                {
+                                        pr_queue.pop();
+                                        pr_queue.push(make_pair(ex->final_prediction, str));
+                                }
 
                                 VW::finish_example(*model, ex);
                         }
@@ -184,13 +202,11 @@ int main(int argc, char *argv[])
 
                 }
 
-
-                sort(scored_examples.begin(), scored_examples.end(), compare_scored_examples);
-                for(unsigned int i = 0;i<topn;i++)
+                while(!pr_queue.empty())
                 {
-                        cout << scored_examples.at(i).first << "\t" << scored_examples.at(i).second;
+                        cout << pr_queue.top().first << "\t" << pr_queue.top().second;
+                        pr_queue.pop();
                 }
-                scored_examples.clear();
         }
 
         VW::finish(*model);
