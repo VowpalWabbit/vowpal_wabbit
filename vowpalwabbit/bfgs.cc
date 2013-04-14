@@ -24,6 +24,7 @@ Implementation by Miro Dudik.
 #include "simple_label.h"
 #include "accumulate.h"
 #include <exception>
+#include "vw.h"
 
 using namespace std;
 
@@ -158,7 +159,7 @@ bool test_example(example* ec)
 
 inline void add_grad(vw& all, void* d, float f, uint32_t u)
 {
-  all.reg.weight_vector[u] += (*(float*)d) * f;
+  all.reg.weight_vector[u & all.reg.weight_mask] += (*(float*)d) * f;
 }
 
 float predict_and_gradient(vw& all, example* &ec)
@@ -179,7 +180,7 @@ float predict_and_gradient(vw& all, example* &ec)
 
 inline void add_precond(vw& all, void* d, float f, uint32_t u)
 {
-  all.reg.weight_vector[u] += (*(float*)d) * f * f;
+  all.reg.weight_vector[u & all.reg.weight_mask] += (*(float*)d) * f * f;
 }
 
 void update_preconditioner(vw& all, example* &ec)

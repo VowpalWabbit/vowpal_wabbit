@@ -627,7 +627,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	  size_t new_index = atomics[i].weight_index;
 	  for (size_t n = 1; n < gram_mask.size(); n++)
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
-	  feature f = {1.,(uint32_t)(new_index & all.parse_mask)};
+	  feature f = {1.,(uint32_t)(new_index)};
 	  atomics.push_back(f);
 	  if (all.audit && audits.size() >= initial_length)
 	    {
@@ -639,7 +639,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 		}
 	      string feature_space = string(audits[i].space);
 	      
-	      audit_data a_feature = {NULL,NULL,new_index & all.parse_mask, 1., true};
+	      audit_data a_feature = {NULL,NULL,new_index, 1., true};
 	      a_feature.space = (char*)malloc(feature_space.length()+1);
 	      strcpy(a_feature.space, feature_space.c_str());
 	      a_feature.feature = (char*)malloc(feature_name.length()+1);
@@ -712,7 +712,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
   if (all.p->write_cache) 
     {
       all.p->lp->cache_label(ae->ld,*(all.p->output));
-      cache_features(*(all.p->output), ae);
+      cache_features(*(all.p->output), ae, all.parse_mask);
     }
 
   return true;
@@ -758,14 +758,14 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) (constant & all.parse_mask)};
+    feature temp = {1,(uint32_t) (constant)};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
   
-  if(all.reg.stride != 1) //make room for per-feature information.
+  if(all.reg.stride != 1 || all.weights_per_problem != 1) //make room for per-feature information.
     {
-      uint32_t stride = all.reg.stride;
+      uint32_t stride = all.reg.stride * all.weights_per_problem;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
 	  j->weight_index = j->weight_index*stride;
@@ -842,7 +842,7 @@ namespace VW{
   void add_constant_feature(vw& vw, example*ec) {
     uint32_t cns = constant_namespace;
     ec->indices.push_back(cns);
-    feature temp = {1,(uint32_t) (constant & vw.parse_mask)};
+    feature temp = {1,(uint32_t) constant};
     ec->atomics[cns].push_back(temp);
     ec->total_sum_feat_sq++;
     ec->num_features++;
@@ -890,44 +890,42 @@ namespace VW{
 	    ret->atomics[index].push_back(features[i].fs[j]);
 	  }
       }
- 	parse_atomic_example(all,ret,false); // all.p->parsed_examples++;
+    parse_atomic_example(all,ret,false); // all.p->parsed_examples++;
     setup_example(all, ret);
-
+    
     return ret;
   }
 
-	primitive_feature_space* export_example(void* e, size_t& len)
-	{
-		example* ec = (example*)e;
-		len = ec->indices.size();
-		primitive_feature_space* fs_ptr = new primitive_feature_space[len]; 
-
-		int fs_count = 0;
-		for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-			{
-				fs_ptr[fs_count].name = *i;
-				fs_ptr[fs_count].len = ec->atomics[*i].size();
-				fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
-
-				int f_count = 0;
-				feature *f = ec->atomics[*i].begin;
-				for (; f != ec->atomics[*i].end; f++)
-					{
-						fs_ptr[fs_count].fs[f_count] = *f;
-						f_count++;
-					}
-				fs_count++;
-			}
-		return fs_ptr;
+  primitive_feature_space* export_example(vw& all, example* ec, size_t& len)
+  {
+    len = ec->indices.size();
+    primitive_feature_space* fs_ptr = new primitive_feature_space[len]; 
+    
+    int fs_count = 0;
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
+      {
+	fs_ptr[fs_count].name = *i;
+	fs_ptr[fs_count].len = ec->atomics[*i].size();
+	fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
+	
+	int f_count = 0;
+	for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
+	  {
+	    feature t = *f;
+	    t.weight_index /= all.reg.stride;
+	    fs_ptr[fs_count].fs[f_count] = t;
+	    f_count++;
+	  }
+	fs_count++;
+      }
+    return fs_ptr;
   }
-
-	void releaseFeatureSpace(primitive_feature_space* features, size_t len)
+  
+  void releaseFeatureSpace(primitive_feature_space* features, size_t len)
   {
     for (size_t i = 0; i < len;i++)
-      {
-				delete features[i].fs;
-      }
-			delete (features);
+      delete features[i].fs;
+    delete (features);
   }
 
   void parse_example_label(vw& all, example&ec, string label) {

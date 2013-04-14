@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
         // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
         if(verbose>0)
                 fprintf(stderr, "initializing vw...\n");
-        vw *model = VW::initialize(vwparams);
+        vw* model = VW::initialize(vwparams);
 
         char * estr = NULL;
 

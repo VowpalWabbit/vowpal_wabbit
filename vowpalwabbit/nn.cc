@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "v_hashmap.h"
 #include "rand48.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -367,8 +368,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n->base = all.l;
 
-    all.base_learner_nb_w *= (n->inpass) ? n->k + 1 : n->k;
-    n->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.reg.stride;
+    all.weights_per_problem *= (n->inpass) ? n->k + 1 : n->k;
+    n->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
 
     bool initialize = true;
 

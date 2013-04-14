@@ -34,7 +34,7 @@ namespace Microsoft.Research.MachineLearning
         public static extern IntPtr ImportExample(IntPtr vw, IntPtr features, int length);
 
         [DllImport("libvw.dll", EntryPoint = "VW_ExportExample", CallingConvention = CallingConvention.StdCall)]
-        public static extern IntPtr ExportExample(IntPtr example, ref int length);
+        public static extern IntPtr ExportExample(IntPtr vw, IntPtr example, ref int length);
 
         [DllImport("libvw.dll", EntryPoint = "VW_ReleaseFeatureSpace", CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr ReleaseFeatureSpace(IntPtr fs, int length);

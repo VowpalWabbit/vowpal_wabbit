@@ -81,7 +81,7 @@ namespace cs_test
 
         private static void RunParserTest()
         {
-            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out2");
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
 
             VowpalWabbitInterface.StartParser(vw, false);
 
@@ -91,7 +91,7 @@ namespace cs_test
             {
                 count++;
                 int featureSpaceLen = 0;
-                IntPtr featureSpacePtr = VowpalWabbitInterface.ExportExample(example, ref featureSpaceLen);
+                IntPtr featureSpacePtr = VowpalWabbitInterface.ExportExample(vw, example, ref featureSpaceLen);
 
                 VowpalWabbitInterface.FEATURE_SPACE[] featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[featureSpaceLen];
                 int featureSpace_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE_SPACE));

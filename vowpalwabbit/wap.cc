@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "csoaa.h"
 #include "oaa.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -292,8 +293,8 @@ namespace WAP {
     *(all.p->lp) = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
-    all.base_learner_nb_w *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.reg.stride);
+    all.weights_per_problem *= nb_actions;
+    w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
     learner l = {w, drive, learn, finish, all.l.sl};
     w->base = all.l;

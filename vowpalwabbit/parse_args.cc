@@ -703,6 +703,12 @@ vw* parse_args(int argc, char *argv[])
 
   parse_source_args(*all, vm, all->quiet,all->numpasses);
 
+  // force stride * weights_per_problem to be divisible by 2 to avoid 32-bit overflow
+  uint32_t i = 0;
+  while (((all->reg.stride * all->weights_per_problem) >> i) > 1)
+    i++;
+  all->weights_per_problem = (1 << i) / all->reg.stride;
+
   return all;
 }
 
@@ -805,5 +811,6 @@ namespace VW {
 #endif
     all.final_prediction_sink.delete_v();
     delete all.loss;
+    delete &all;
   }
 }

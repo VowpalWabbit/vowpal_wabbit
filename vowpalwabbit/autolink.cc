@@ -1,6 +1,7 @@
 #include "simple_label.h"
 #include <float.h>
 #include "parser.h"
+#include "vw.h"
 
 namespace ALINK {
   const int autoconstant = 524267083;
@@ -30,7 +31,7 @@ namespace ALINK {
     for (size_t i = 0; i < b->d; i++)
       if (base_pred != 0.)
 	{
-	  feature f = { base_pred, autoconstant + i * b->stride };
+	  feature f = { base_pred, (uint32_t) (autoconstant + i * b->stride) };
 	  ec->atomics[autolink_namespace].push_back(f);
 	  sum_sq += base_pred*base_pred;
 	  base_pred *= ec->final_prediction;

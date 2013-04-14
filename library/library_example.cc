@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
 
 using namespace std;
@@ -40,11 +41,21 @@ int main(int argc, char *argv[])
 
   VW::finish(*model);
 
-
   vw* model2 = VW::initialize("--hash all -q st --noconstant -i train2.vw");
-  vec2 = VW::read_example(*model2, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+  vec2 = VW::read_example(*model2, (char*)" |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model2->learn(vec2);
   cerr << "p4 = " << vec2->final_prediction << endl;
+
+  size_t len=0;
+  VW::primitive_feature_space* pfs = VW::export_example(*model2, vec2, len);
+  for (size_t i = 0; i < len; i++)
+    {
+      cout << "namespace = " << pfs[i].name;
+      for (size_t j = 0; j < pfs[i].len; j++)
+	cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index);
+      cout << endl;
+    }   
+
   VW::finish_example(*model2, vec2);
   VW::finish(*model2);
 }

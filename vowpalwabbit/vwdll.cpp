@@ -5,6 +5,8 @@
 
 #include "vwdll.h"
 #include "parser.h"
+#include "parse_args.h"
+#include "vw.h"
 
 // This interface now provides "wide" functions for compatibility with .NET interop
 // The default functions assume a wide (16 bit char pointer) that is converted to a utf8-string and passed to
@@ -54,19 +56,21 @@ extern "C"
 		delete pointer;
 	}
 
-	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE * features, size_t len)
+	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE* features, size_t len)
 	{
 		vw * pointer = static_cast<vw*>(handle);
 		VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
 		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, f, len));
 	}
 	
-	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_EXAMPLE * example, size_t& len)
+	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t& len)
 	{
-		return static_cast<VW_FEATURE_SPACE>(VW::export_example(example, len));
+		vw* pointer = static_cast<vw*>(handle);
+		example* ex = static_cast<example*>(e);
+		return static_cast<VW_FEATURE_SPACE>(VW::export_example(*pointer, ex, len));
 	}
 
-	VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE * features, size_t len)
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE* features, size_t len)
 	{
 		VW::primitive_feature_space * f = reinterpret_cast<VW::primitive_feature_space*>( features );
 		VW::releaseFeatureSpace(f, len);
