@@ -503,7 +503,8 @@ void local_predict(vw& all, example* ec)
 
   ec->eta_round = 0;
   if (is_development_example(all, ec) && (ld->label != FLT_MAX))
-    accumulate_loss(all, ec, ld->weight, all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight);
+    accumulate_loss(all, ec, ld->weight, (ec->final_prediction * ld->label <= 0) ? ld->weight : 0.);
+    //accumulate_loss(all, ec, ld->weight, all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight);
   else if (ld->label != FLT_MAX)
     {
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
