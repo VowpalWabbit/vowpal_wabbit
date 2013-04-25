@@ -1,4 +1,5 @@
 #include "oaa.h"
+#include "vw.h"
 
 namespace BINARY {
   struct binary {
@@ -8,7 +9,7 @@ namespace BINARY {
   void learn(void* d, example* ec)
   {
     binary* b = (binary*)d;
-    b->base.learn(b->base.data, ec);
+    b->base.learn(ec);
     
     float prediction = -1;
     if ( ec->final_prediction > 0)
@@ -19,7 +20,7 @@ namespace BINARY {
   void finish(void* d)
   {
     binary* b = (binary*)d;
-    b->base.finish(b->base.data);
+    b->base.finish();
     free(b);
   }
 
@@ -28,7 +29,7 @@ namespace BINARY {
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn(d, ec);
 	    OAA::output_example(*all, ec);

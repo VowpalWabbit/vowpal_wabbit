@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "simple_label.h"
 #include "parse_args.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -185,8 +186,8 @@ namespace ECT
       e.tree_height = final_depth(eliminations);
     
     if (e.last_pair > 0) {
-      all.base_learner_nb_w *= (e.last_pair + (eliminations-1));
-      e.increment = (uint32_t) all.length() / all.base_learner_nb_w * all.stride;
+      all.weights_per_problem *= (e.last_pair + (eliminations-1));
+      e.increment = (uint32_t) all.length() / all.weights_per_problem * all.reg.stride;
     }
   }
 
@@ -214,7 +215,7 @@ namespace ECT
             ec->partial_prediction = 0;
 	  
             ec->done = false;
-            e.base.learn(e.base.data, ec);
+            e.base.learn(ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
 	    
@@ -232,7 +233,7 @@ namespace ECT
 	ec->partial_prediction = 0;
 	update_example_indicies(all.audit, ec,offset);
         ec->done = false;
-	e.base.learn(e.base.data, ec);
+	e.base.learn(ec);
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -280,11 +281,11 @@ namespace ECT
 	
 	ec->partial_prediction = 0;
         ec->done = false;
-	e.base.learn(e.base.data, ec);
+	e.base.learn(ec);
 	simple_temp.weight = 0.;
 	ec->partial_prediction = 0;
         ec->done = false;
-	e.base.learn(e.base.data, ec);//inefficient, we should extract final prediction exactly.
+	e.base.learn(ec);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -344,7 +345,7 @@ namespace ECT
                 ec->partial_prediction = 0;
 	      
                 ec->done = false;
-		e.base.learn(e.base.data, ec);
+                e.base.learn(ec);
 		
                 update_example_indicies(all.audit, ec,-offset);
 		
@@ -368,7 +369,7 @@ namespace ECT
     
     if (command_example(all, ec))
       {
-	e->base.learn(e->base.data, ec);
+	e->base.learn(ec);
 	return;
       }
 
@@ -388,7 +389,7 @@ namespace ECT
   void finish(void* d)
   {
     ect* e = (ect*)d;
-    e->base.finish(e->base.data);
+    e->base.finish();
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
@@ -411,7 +412,7 @@ namespace ECT
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn(d, ec);
             OAA::output_example(*all, ec);

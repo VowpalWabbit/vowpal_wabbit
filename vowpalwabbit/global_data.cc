@@ -88,12 +88,13 @@ void binary_print_result(int f, float res, float weight, v_array<char> tag)
     }
 }
 
-void print_tag(std::stringstream& ss, v_array<char> tag)
+int print_tag(std::stringstream& ss, v_array<char> tag)
 {
   if (tag.begin != tag.end){
     ss << ' ';
     ss.write(tag.begin, sizeof(char)*tag.size());
-  }  
+  } 
+  return tag.begin != tag.end;
 }
 
 void print_result(int f, float res, float weight, v_array<char> tag)
@@ -148,7 +149,8 @@ void active_print_result(int f, float res, float weight, v_array<char> tag)
       char temp[30];
       sprintf(temp, "%f", res);
       ss << temp;
-      print_tag(ss, tag);
+      if(!print_tag(ss, tag))
+          ss << ' ';
       if(weight >= 0)
 	{
 	  sprintf(temp, " %f", weight);
@@ -202,7 +204,7 @@ void noop_mm(shared_data* sd, float label)
 
 void vw::learn(example* ec)
 {
-  this->l.learn(this->l.data,ec);
+  this->l.learn(ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
@@ -247,7 +249,7 @@ vw::vw()
 
   bfgs = false;
   hessian_on = false;
-  stride = 1;
+  reg.stride = 1;
   num_bits = 18;
   default_bits = true;
   daemon = false;
@@ -265,7 +267,7 @@ vw::vw()
 
   set_minmax = set_mm;
 
-  base_learner_nb_w = 1;
+  weights_per_problem = 1;
 
   power_t = 0.5;
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)

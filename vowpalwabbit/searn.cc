@@ -357,7 +357,7 @@ namespace Searn
       {
         feature* end = ec->atomics[*i].end;
         for (feature* f = ec->atomics[*i].begin; f!= end; f++) {
-          cerr << "\t" << f->weight_index << ":" << f->x << ":" << all.reg.weight_vector[f->weight_index & all.weight_mask];
+          cerr << "\t" << f->weight_index << ":" << f->x << ":" << all.reg.weight_vector[f->weight_index & all.reg.weight_mask];
         }
       }
     cerr << endl;
@@ -533,7 +533,7 @@ namespace Searn
   {
     searn* s = (searn*)d;
     vw* all = s->all;
-    s->base.finish(s->base.data);
+    s->base.finish();
     // free everything
     if (s->task.finalize != NULL)
       s->task.finalize();
@@ -808,10 +808,10 @@ namespace Searn
     //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
     VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies", ss2.str());
 
-    all.base_learner_nb_w *= s->total_number_of_policies;
-    s->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
+    all.weights_per_problem *= s->total_number_of_policies;
+    s->increment = ((uint32_t)all.length() / all.weights_per_problem) * all.reg.stride;
     //cerr << "searn increment = " << s->increment << endl;
-    
+
     learner l = {s, drive, learn, finish, all.l.sl};
     s->base = all.l;
     s->all = & all;
@@ -867,7 +867,7 @@ namespace Searn
       }
       //cerr << "searn>";
       //simple_print_example_features(all,ec);
-      s.base.learn(s.base.data,ec); 
+      s.base.learn(ec); 
       s.total_predictions_made++;  
       s.searn_num_features += ec->num_features;
       uint32_t final_prediction = (uint32_t)ec->final_prediction;
@@ -888,10 +888,10 @@ namespace Searn
         s.task.cs_ldf_example(all, s0, action, ec, true);
         //cerr << "created example: " << ec << ", label: " << ec->ld << endl;
         SearnUtil::add_policy_offset(all, ec, s.increment, policy);
-        s.base.learn(s.base.data,ec);  s.total_predictions_made++;  s.searn_num_features += ec->num_features;
+        s.base.learn(ec);  s.total_predictions_made++;  s.searn_num_features += ec->num_features;
         //cerr << "base_learned on example: " << ec << endl;
         s.empty_example->in_use = true;
-        s.base.learn(s.base.data,s.empty_example);
+        s.base.learn(s.empty_example);
         //cerr << "base_learned on empty example: " << s.empty_example << endl;
         SearnUtil::remove_policy_offset(all, ec, s.increment, policy);
 
@@ -1130,7 +1130,7 @@ namespace Searn
  
       SearnUtil::add_policy_offset(all, ec, s.increment, s.current_policy);
 	  
-	  s.base.learn(s.base.data,ec);
+	  s.base.learn(ec);
       SearnUtil::remove_policy_offset(all, ec, s.increment, s.current_policy);
       ec->ld = old_label;
       s.task.cs_example(all, s0, ec, false);
@@ -1161,12 +1161,12 @@ namespace Searn
         s.global_example_set[k-1]->ld = (void*)(&s.new_labels[k-1]);
         SearnUtil::add_policy_offset(all, s.global_example_set[k-1], s.increment, s.current_policy);
         if (PRINT_DEBUG_INFO) { cerr << "add_policy_offset, s.max_action=" << s.max_action << ", total_number_of_policies=" << s.total_number_of_policies << ", current_policy=" << s.current_policy << endl;}
-        s.base.learn(s.base.data,s.global_example_set[k-1]);
+        s.base.learn(s.global_example_set[k-1]);
       }
 
       //      cerr << "============================ (empty = " << s.empty_example << ")" << endl;
       s.empty_example->in_use = true;
-      s.base.learn(s.base.data,s.empty_example);
+      s.base.learn(s.empty_example);
 
       for (uint32_t k=1; k<=s.max_action; k++) {
         if (!s.rollout[k-1].alive) break;
@@ -1342,7 +1342,7 @@ namespace Searn
     example* ec = NULL;
     s->read_example_this_loop = 0;
     while (true) {
-      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
         process_next_example(*all, *s, ec);
       } else if (parser_done(all->p)) {
         if (!s->is_singleline)
@@ -1422,7 +1422,7 @@ namespace ImperativeSearn {
     ec->ld = (void*)&valid_labels;
     SearnUtil::add_policy_offset(all, ec, srn.increment, pol);
 
-    srn.base.learn(srn.base.data, ec);
+    srn.base.learn(ec);
     srn.total_predictions_made++;
     srn.num_features += ec->num_features;
     uint32_t final_prediction = (uint32_t)ec->final_prediction;
@@ -1632,7 +1632,7 @@ namespace ImperativeSearn {
       void* old_label = ec[0]->ld;
       ec[0]->ld = (void*)&labels;
       SearnUtil::add_policy_offset(all, ec[0], srn.increment, srn.current_policy);
-      srn.base.learn(srn.base.data, ec[0]);
+      srn.base.learn(ec[0]);
       SearnUtil::remove_policy_offset(all, ec[0], srn.increment, srn.current_policy);
       ec[0]->ld = old_label;
       srn.total_examples_generated++;
@@ -1857,7 +1857,7 @@ namespace ImperativeSearn {
     example* ec = NULL;
     srn->read_example_this_loop = 0;
     while (true) {
-      if ((ec = get_example(all->p)) != NULL) { // semiblocking operation
+      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
         searn_learn(d, ec);
       } else if (parser_done(all->p)) {
         do_actual_learning(*all, *srn);
@@ -1923,7 +1923,7 @@ namespace ImperativeSearn {
     if (srn->task->finish != NULL)
       srn->task->finish(*all);
     if (srn->task->finish != NULL)
-      srn->base.finish(srn->base.data);
+      srn->base.finish();
   }
 
   void ensure_param(float &v, float lo, float hi, float def, const char* string) {
@@ -2041,8 +2041,8 @@ namespace ImperativeSearn {
     ss1 << srn->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss1.str()); 
     ss2 << srn->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies",   ss2.str());
 
-    all.base_learner_nb_w *= srn->total_number_of_policies;
-    srn->increment = ((uint32_t)all.length() / all.base_learner_nb_w) * all.stride;
+    all.weights_per_problem *= srn->total_number_of_policies;
+    srn->increment = ((uint32_t)all.length() / all.weights_per_problem) * all.reg.stride;
 
     if (task_string.compare("sequence") == 0) {
       searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));

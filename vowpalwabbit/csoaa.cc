@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "oaa.h"
 #include "v_hashmap.h"
 #include "parse_example.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -283,7 +284,7 @@ namespace CSOAA {
 
     if (command_example(all, ec))
       {
-	c->base.learn(c->base.data, ec);
+	c->base.learn(ec);
 	return;
       }
 
@@ -317,7 +318,8 @@ namespace CSOAA {
         }
 
         ec->done = false;
-	c->base.learn(c->base.data, ec);
+	c->base.learn(ec);
+
         cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
@@ -334,7 +336,7 @@ namespace CSOAA {
   void finish(void* d)
   {
     csoaa* c=(csoaa*)d;
-    c->base.finish(c->base.data);
+    c->base.finish();
     free(c);
   }
 
@@ -343,7 +345,7 @@ namespace CSOAA {
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn(d, ec);
             output_example(*all, ec);
@@ -378,9 +380,9 @@ namespace CSOAA {
     }
 
     *(all.p->lp) = cs_label_parser;
-    all.base_learner_nb_w *= nb_actions;
+    all.weights_per_problem *= nb_actions;
     c->base=all.l;
-    c->csoaa_increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    c->csoaa_increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
     all.sd->k = nb_actions;
 
     learner l = {c, drive, learn, finish, all.l.sl};
@@ -604,7 +606,7 @@ namespace LabelDict {
     for (unsigned char* i = ecsub->indices.begin; i != ecsub->indices.end; i++) {
       size_t feature_index = 0;
       for (feature *f = ecsub->atomics[*i].begin; f != ecsub->atomics[*i].end; f++) {
-        feature temp = { -f->x, (uint32_t) (f->weight_index & all.parse_mask) };
+        feature temp = { -f->x, (uint32_t) (f->weight_index) };
         ec->atomics[wap_ldf_namespace].push_back(temp);
         norm_sq += f->x * f->x;
         num_f ++;
@@ -612,7 +614,7 @@ namespace LabelDict {
         if (all.audit) {
           if (! (ecsub->audit_features[*i].size() >= feature_index)) {
             audit_data b_feature = ecsub->audit_features[*i][feature_index];
-            audit_data a_feature = { NULL, NULL, (uint32_t) (f->weight_index & all.parse_mask), -f->x, false };
+            audit_data a_feature = { NULL, NULL, (uint32_t) (f->weight_index), -f->x, false };
             a_feature.space = b_feature.space;
             a_feature.feature = b_feature.feature;
             ec->audit_features[wap_ldf_namespace].push_back(a_feature);
@@ -673,7 +675,7 @@ namespace LabelDict {
       LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
       
       ec->ld = &simple_label;
-      l.base.learn(l.base.data, ec); // make a prediction
+      l.base.learn(ec); // make a prediction
       costs[j].partial_prediction = ec->partial_prediction;
 
       if (ec->partial_prediction < *min_score) {
@@ -768,7 +770,7 @@ namespace LabelDict {
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
               ec1->done = false;
-              l.base.learn(l.base.data, ec1);
+              l.base.learn(ec1);
               unsubtract_example(all, ec1);
               
               LabelDict::del_example_namespace_from_memory(l, ec2, costs2[j2].weight_index);
@@ -844,8 +846,8 @@ namespace LabelDict {
           ec->partial_prediction = costs[j].partial_prediction;
           //ec->partial_prediction = 0.; ec->done = false;
           LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
-          l.base.learn(l.base.data, ec);
           //cerr<<"cached="<<costs[j].partial_prediction<<" pp="<<ec->partial_prediction<<endl;
+          l.base.learn(ec);
           LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
           ec->example_t = old_example_t;
         }
@@ -980,7 +982,7 @@ namespace LabelDict {
   void learn_singleline(vw& all, ldf& l, example*ec) {
     if (command_example(&all, ec))
       {
-	l.base.learn(l.base.data, ec);
+	l.base.learn(ec);
 	return;
       }
 
@@ -1003,7 +1005,7 @@ namespace LabelDict {
       {
 	if (ec->end_pass)
 	  l.first_pass = false;
-	l.base.learn(l.base.data, ec);
+	l.base.learn(ec);
         //	return;
       }
 
@@ -1033,6 +1035,14 @@ namespace LabelDict {
       clear_seq(all, l);
       l.need_to_clear = false;
     }
+    if (command_example(&all, ec))
+      {
+	if (ec->end_pass)
+	  l.first_pass = false;
+
+	l.base.learn(ec);
+	return;
+      }
   }
 
   void learn(void* d, example*ec) {
@@ -1046,7 +1056,7 @@ namespace LabelDict {
   {
     ldf* l=(ldf*)d;
     vw* all = l->all;
-    l->base.finish(l->base.data);
+    l->base.finish();
     clear_seq(*all, *l);
     l->ec_seq.delete_v();
     LabelDict::free_label_features(*l);
@@ -1055,7 +1065,7 @@ namespace LabelDict {
   void drive_ldf_singleline(vw& all, ldf& l) {
     example* ec = NULL;
     while (true) {
-      if ((ec = get_example(all.p)) != NULL) { //semiblocking operation.
+      if ((ec = VW::get_example(all.p)) != NULL) { //semiblocking operation.
 
         if (LabelDict::ec_is_example_header(ec)) {
           cerr << "error: example headers not allowed in ldf singleline mode" << endl;
@@ -1081,7 +1091,7 @@ namespace LabelDict {
     l.read_example_this_loop = 0;
     l.need_to_clear = false;
     while (true) {
-      if ((ec = get_example(all.p)) != NULL) { // semiblocking operation
+      if ((ec = VW::get_example(all.p)) != NULL) { // semiblocking operation
         learn_multiline(all, l, ec);
         if (l.need_to_clear) {
 	  if (l.ec_seq.size() > 0)

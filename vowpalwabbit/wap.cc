@@ -13,6 +13,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "csoaa.h"
 #include "oaa.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -185,7 +186,7 @@ namespace WAP {
 
               mirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
 
-              w.base.learn(w.base.data,ec);
+              w.base.learn(ec);
               unmirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
             }
         }
@@ -212,7 +213,7 @@ namespace WAP {
           update_example_indicies(all.audit, ec, w.increment*(myi-1));
         ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
-        w.base.learn(w.base.data, ec);
+        w.base.learn(ec);
         if (myi != 1)
           update_example_indicies(all.audit, ec, -w.increment*(myi-1));
         if (ec->partial_prediction > score)
@@ -233,7 +234,7 @@ namespace WAP {
     
     if (command_example(all, ec))
       {
-	w->base.learn(w->base.data, ec);
+	w->base.learn(ec);
 	return;
       }
 
@@ -248,7 +249,7 @@ namespace WAP {
   void finish(void* d)
   {
     wap* w=(wap*)d;
-    w->base.finish(w->base.data);
+    w->base.finish();
     free(w);
   }
   
@@ -257,7 +258,7 @@ namespace WAP {
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
 	    learn(d, ec);
             CSOAA::output_example(*all, ec);
@@ -292,8 +293,8 @@ namespace WAP {
     *(all.p->lp) = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
-    all.base_learner_nb_w *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.base_learner_nb_w) * all.stride);
+    all.weights_per_problem *= nb_actions;
+    w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
     learner l = {w, drive, learn, finish, all.l.sl};
     w->base = all.l;

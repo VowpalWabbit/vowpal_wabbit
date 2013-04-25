@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "../vowpalwabbit/parser.h"
 #include "../vowpalwabbit/vw.h"
 #include "ezexample.h"
 
@@ -61,11 +62,11 @@ void run(vw*vw) {
 int main(int argc, char *argv[])
 {
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS WILL STORE A MODEL TO train.ezw
-  vw vw = VW::initialize("--hash all -q st --noconstant -f train.w --quiet --csoaa_ldf m");
+  vw* vw = VW::initialize("--hash all -q st --noconstant -f train.w --quiet --csoaa_ldf m");
 
-  run(&vw);
+  run(vw);
 
   // AND FINISH UP
   cerr << "ezexample_train finish"<<endl;
-  VW::finish(vw);
+  VW::finish(*vw);
 }

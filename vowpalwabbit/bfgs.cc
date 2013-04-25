@@ -24,6 +24,7 @@ Implementation by Miro Dudik.
 #include "simple_label.h"
 #include "accumulate.h"
 #include <exception>
+#include "vw.h"
 
 using namespace std;
 
@@ -109,7 +110,7 @@ const char* curv_message = "Zero or negative curvature detected.\n"
 void zero_derivative(vw& all)
 {//set derivative to 0.
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
     weights[stride*i+W_GT] = 0;
@@ -118,7 +119,7 @@ void zero_derivative(vw& all)
 void zero_preconditioner(vw& all)
 {//set derivative to 0.
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
     weights[stride*i+W_COND] = 0;
@@ -140,48 +141,6 @@ void reset_state(vw& all, bfgs& b, bool zero)
     }
 }
 
-void quad_grad_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float update = g * page_feature.x;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[W_GT] += update * ele->x;
-    }
-}
-
-void cubic_grad_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g)
-{
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  float update = g * f0.x * f1.x;
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
-    weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    w[W_GT] += update * ele->x;
-  }
-}
-
-void quad_precond_update(weight* weights, feature& page_feature, v_array<feature> &offer_features, size_t mask, float g)
-{
-  size_t halfhash = quadratic_constant * page_feature.weight_index;
-  float update = g * page_feature.x * page_feature.x;
-  for (feature* ele = offer_features.begin; ele != offer_features.end; ele++)
-    {
-      weight* w=&weights[(halfhash + ele->weight_index) & mask];
-      w[W_COND] += update * ele->x * ele->x;
-    }
-}
-
-void cubic_precond_update(weight* weights, feature& f0, feature& f1, v_array<feature> &cross_features, size_t mask, float g)
-{
-  size_t halfhash = cubic_constant2 * (cubic_constant * f0.weight_index + f1.weight_index);
-  float update = g * f0.x * f0.x * f1.x * f1.x;
-  for (feature* ele = cross_features.begin; ele != cross_features.end; ele++) {
-    weight* w=&weights[(halfhash + ele->weight_index) & mask];
-    w[W_COND] += update * ele->x * ele->x;
-  }
-}
-
 // w[0] = weight
 // w[1] = accumulated first derivative
 // w[2] = step direction
@@ -198,6 +157,11 @@ bool test_example(example* ec)
     return GD::finalize_prediction(all, ec->partial_prediction);
   }
 
+inline void add_grad(vw& all, void* d, float f, uint32_t u)
+{
+  all.reg.weight_vector[u & all.reg.weight_mask] += (*(float*)d) * f;
+}
+
 float predict_and_gradient(vw& all, example* &ec)
 {
   float fp = bfgs_predict(all, ec);
@@ -207,36 +171,16 @@ float predict_and_gradient(vw& all, example* &ec)
 
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
   
-  size_t mask = all.weight_mask;
-  weight* weights = all.reg.weight_vector;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-	{
-	  weight* w = &weights[f->weight_index & mask];
-	  w[W_GT] += loss_grad * f->x;
-	}
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-	{
-	  v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	  for (; temp.begin != temp.end; temp.begin++)
-	    quad_grad_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, loss_grad);
-	} 
-    }
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        cubic_grad_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, loss_grad);
-    }
-  }
+  ec->ft_offset += W_GT;
+  GD::foreach_feature<add_grad>(all, ec, &loss_grad);
+  ec->ft_offset -= W_GT;
+  
   return fp;
+}
+
+inline void add_precond(vw& all, void* d, float f, uint32_t u)
+{
+  all.reg.weight_vector[u & all.reg.weight_mask] += (*(float*)d) * f * f;
 }
 
 void update_preconditioner(vw& all, example* &ec)
@@ -244,62 +188,18 @@ void update_preconditioner(vw& all, example* &ec)
   label_data* ld = (label_data*)ec->ld;
   float curvature = all.loss->second_derivative(all.sd, ec->final_prediction,ld->label) * ld->weight;
   
-  size_t mask = all.weight_mask;
-  weight* weights = all.reg.weight_vector;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    {
-      feature *f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++)
-        {
-          weight* w = &weights[f->weight_index & mask];
-          w[W_COND] += f->x * f->x * curvature;
-        }
-    }
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++)
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0)
-        {
-          v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-          for (; temp.begin != temp.end; temp.begin++)
-            quad_precond_update(weights, *temp.begin, ec->atomics[(int)(*i)[1]], mask, curvature);
-        }
-    }
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        cubic_precond_update(weights, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], mask, curvature);
-    }
-  }
+  ec->ft_offset += W_COND;
+  GD::foreach_feature<add_precond>(all, ec, &curvature);  
+  ec->ft_offset -= W_COND;
 }  
 
 
 float dot_with_direction(vw& all, example* &ec)
 {
-  float ret = 0;
+  ec->ft_offset+= W_DIR;  
+  float ret = GD::inline_predict<vec_add>(all, ec);
+  ec->ft_offset-= W_DIR;
 
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    ret += sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end, W_DIR);
-
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
-    if (ec->atomics[(int)(*i)[0]].size() > 0) {
-      v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-      for (; temp.begin != temp.end; temp.begin++)
-        ret += one_pf_quad_predict<vec_add>(all, *temp.begin, ec->atomics[(int)(*i)[1]], W_DIR);
-    }
-  }
-
-  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-    if ((ec->atomics[(int)(*i)[0]].size() == 0) || (ec->atomics[(int)(*i)[1]].size() == 0) || (ec->atomics[(int)(*i)[2]].size() == 0)) { continue; }
-    v_array<feature> temp1 = ec->atomics[(int)(*i)[0]];
-    for (; temp1.begin != temp1.end; temp1.begin++) {
-      v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
-      for (; temp2.begin != temp2.end; temp2.begin++)
-        ret += one_pf_cubic_predict<vec_add>(all, *temp1.begin, *temp2.begin, ec->atomics[(int)(*i)[2]], W_DIR);
-    }
-  }
   return ret;
 }
 
@@ -311,7 +211,7 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
     return ret;
 
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     for(uint32_t i = 0; i < length; i++)
@@ -327,7 +227,7 @@ float direction_magnitude(vw& all)
 {//compute direction magnitude
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
     ret += weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
@@ -338,7 +238,7 @@ float direction_magnitude(vw& all)
 void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int&origin)
 {
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* w = all.reg.weight_vector;
 
   double g1_Hg1 = 0.;
@@ -364,7 +264,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int &origin) 
 {  
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* w = all.reg.weight_vector;
   
   float* mem0 = mem;
@@ -485,7 +385,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
 double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous_loss_sum, double step_size, double importance_weight_sum, int &origin, double& wolfe1) { 
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* w = all.reg.weight_vector;
   
   double g0_d = 0.;
@@ -514,7 +414,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 {//compute the derivative difference
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     {
@@ -537,7 +437,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 {
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
 
   if (b.regularizers == NULL)
@@ -557,7 +457,7 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 {
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     {
@@ -581,7 +481,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 void zero_state(vw& all)
 {
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++) 
     {
@@ -595,7 +495,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
   {  
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.stride;
+  size_t stride = all.reg.stride;
   weight* w = all.reg.weight_vector;
   
   for(uint32_t i = 0; i < length; i++, w+=stride, mem+=b.mem_stride)
@@ -606,7 +506,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
 void update_weight(vw& all, float step_size, size_t current_pass)
   {
     uint32_t length = 1 << all.num_bits;
-    size_t stride = all.stride;
+    size_t stride = all.reg.stride;
     weight* w = all.reg.weight_vector;
     
     for(uint32_t i = 0; i < length; i++, w+=stride)
@@ -877,7 +777,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 {
   char buff[512];
   int c = 0;
-  uint32_t stride = all.stride;
+  uint32_t stride = all.reg.stride;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
@@ -949,7 +849,7 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
       
       if (!all->quiet) 
 	{
-	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b->mem_stride)+sizeof(weight)*all->stride) >> 20);
+	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b->mem_stride)+sizeof(weight)*all->reg.stride) >> 20);
 	}
       
       b->net_time = 0.0;
@@ -996,7 +896,7 @@ void drive(vw* all, void* d)
 
   while ( true )
     {
-      if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	{
 	  learn(b, ec);
 	  return_simple_example(*all, ec);
@@ -1024,7 +924,7 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
   all.l = t;
 
   all.bfgs = true;
-  all.stride = 4;
+  all.reg.stride = 4;
   
   if (vm.count("hessian_on") || all.m==0) {
     all.hessian_on = true;

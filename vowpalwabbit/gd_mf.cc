@@ -19,6 +19,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "simple_label.h"
 #include "rand48.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -35,8 +36,7 @@ float mf_inline_predict(vw& all, example* &ec)
   float linear_prediction = 0;
   // linear terms
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    linear_prediction += sd_add<vec_add>(all, ec->atomics[*i].begin, ec->atomics[*i].end);
-    //linear_prediction += sd_add(weights,mask,ec->atomics[*i].begin, ec->atomics[*i].end);
+    GD::foreach_feature<vec_add>(all, &linear_prediction, ec->atomics[*i].begin, ec->atomics[*i].end);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -54,11 +54,13 @@ float mf_inline_predict(vw& all, example* &ec)
 	      // x_l * l^k
 	      // l^k is from index+1 to index+all.rank
 	      //float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
-              float x_dot_l = sd_add<vec_add>(all, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+              float x_dot_l = 0;
+	      GD::foreach_feature<vec_add>(all, &x_dot_l, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
 	      // x_r * r^k
 	      // r^k is from index+all.rank+1 to index+2*all.rank
 	      //float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
-              float x_dot_r = sd_add<vec_add>(all, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+              float x_dot_r = 0;
+	      GD::foreach_feature<vec_add>(all, &x_dot_r, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
 
 	      prediction += x_dot_l * x_dot_r;
 
@@ -82,7 +84,7 @@ float mf_inline_predict(vw& all, example* &ec)
 void mf_inline_train(vw& all, example* &ec, float update)
 {
       weight* weights = all.reg.weight_vector;
-      size_t mask = all.weight_mask;
+      size_t mask = all.reg.weight_mask;
       label_data* ld = (label_data*)ec->ld;
 
       // use final prediction to get update size
@@ -132,7 +134,7 @@ void mf_inline_train(vw& all, example* &ec, float update)
 void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 {
   weight* weights = all.reg.weight_vector;
-  size_t mask = all.weight_mask;
+  size_t mask = all.reg.weight_mask;
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
     if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
       for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
@@ -211,13 +213,13 @@ float mf_predict(vw& all, example* ex)
 {
   vw* all = (vw*)d;
   uint32_t length = 1 << all->num_bits;
-  uint32_t stride = all->stride;
+  uint32_t stride = all->reg.stride;
 
   if(read)
     {
       initialize_regressor(*all);
       if(all->random_weights)
-	for (size_t j = 0; j < all->stride*length; j++)
+	for (size_t j = 0; j < all->reg.stride*length; j++)
 	  all->reg.weight_vector[j] = (float) (0.1 * frand48()); 
     }
 
@@ -265,7 +267,13 @@ float mf_predict(vw& all, example* ex)
   {
     vw* all = (vw*)d;
     if (ec->end_pass) 
+    {
       all->eta *= all->eta_decay_rate;
+      if (all->save_per_pass)
+        save_predictor(*all, all->final_regressor_name, all->current_pass);
+
+      all->current_pass++;
+    }
 
     if (!command_example(all, ec))
       {
@@ -284,7 +292,7 @@ float mf_predict(vw& all, example* ex)
   
   while ( true )
     {
-      if ((ec = get_example(all->p)) != NULL)//blocking operation.
+      if ((ec = VW::get_example(all->p)) != NULL)//blocking operation.
 	{
 	  learn(d,ec);
 	  return_simple_example(*all, ec);

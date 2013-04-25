@@ -20,6 +20,7 @@
 #include "cache.h"
 #include "simple_label.h"
 #include "network.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -37,7 +38,7 @@ namespace SENDER {
   s.buf->files.push_back(s.sd);
 }
 
-void send_features(io_buf *b, example* ec)
+  void send_features(io_buf *b, example* ec, uint32_t mask)
 {
   // note: subtracting 1 b/c not sending constant
   output_byte(*b,(unsigned char) (ec->indices.size()-1));
@@ -45,7 +46,7 @@ void send_features(io_buf *b, example* ec)
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {
     if (*i == constant_namespace)
       continue;
-    output_features(*b, *i, ec->atomics[*i].begin, ec->atomics[*i].end);
+    output_features(*b, *i, ec->atomics[*i].begin, ec->atomics[*i].end, mask);
   }
   b->flush();
 }
@@ -80,13 +81,13 @@ void send_features(io_buf *b, example* ec)
 	  
 	  return_simple_example(*all, ec);
 	}
-      else if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+      else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
         {
           label_data* ld = (label_data*)ec->ld;
           all->set_minmax(all->sd, ld->label);
 	  simple_label.cache_label(ld, *s->buf);//send label information.
 	  cache_tag(*s->buf, ec->tag);
-	  send_features(s->buf,ec);
+	  send_features(s->buf,ec, all->parse_mask);
 	  delay_ring[sent_index++ % all->p->ring_size] = ec;
         }
       else if (parser_done(all->p))

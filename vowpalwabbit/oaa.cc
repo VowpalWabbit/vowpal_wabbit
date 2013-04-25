@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "cache.h"
 #include "v_hashmap.h"
+#include "vw.h"
 
 using namespace std;
 
@@ -156,7 +157,7 @@ namespace OAA {
     vw* all = d->all;
     if (command_example(all,ec))
       {
-	d->base.learn(d->base.data, ec);
+	d->base.learn(ec);
 	return;
       }
 
@@ -183,7 +184,7 @@ namespace OAA {
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
         ec->done = false;
-        d->base.learn(d->base.data,ec);
+        d->base.learn(ec);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -201,10 +202,8 @@ namespace OAA {
     ec->final_prediction = prediction;
     update_example_indicies(all->audit, ec, -d->total_increment);
 
-    if (shouldOutput) {
-      outputStringStream << endl;
+    if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
-    }
   }
 
   void learn(void* d, example* ec) {
@@ -216,7 +215,7 @@ namespace OAA {
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = get_example(all->p)) != NULL)//semiblocking operation.
+        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output((oaa*)d, ec, all->raw_prediction > 0);
 	    if (!command_example(all, ec))
@@ -233,7 +232,7 @@ namespace OAA {
   void finish(void* data)
   {    
     oaa* o=(oaa*)data;
-    o->base.finish(o->base.data);
+    o->base.finish();
     free(o);
   }
 
@@ -257,8 +256,8 @@ namespace OAA {
 
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
-    all.base_learner_nb_w *= data->k;
-    data->increment = ((uint32_t)all.length()/all.base_learner_nb_w) * all.stride;
+    all.weights_per_problem *= data->k;
+    data->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
     learner l = {data, drive, learn, finish, all.l.sl};
