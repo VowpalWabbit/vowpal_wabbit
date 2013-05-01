@@ -129,6 +129,7 @@ vw* parse_args(int argc, char *argv[])
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
     ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
+	("examples", po::value<size_t>(&(all->max_examples)), "number of examples to parse")
     ("save_per_pass", "Save the model after every pass over data")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")

@@ -244,6 +244,8 @@ struct vw {
   std::string final_regressor_name;
   regressor reg;
 
+  size_t max_examples; // for TLC
+
   vw();
 };
 
@@ -256,3 +258,4 @@ void get_prediction(int sock, float& res, float& weight);
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
 
 #endif
+ 

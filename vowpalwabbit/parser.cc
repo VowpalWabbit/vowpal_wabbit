@@ -999,7 +999,8 @@ void *main_parse_loop(void *in)
 	while(!all->p->done)
 	  {
 	    example* ae = get_unused_example(*all);
-	   if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  
+	   if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae) 
+		   && all->max_examples > example_number)  
 	     setup_example(*all, ae);
 	   else
 	     {
@@ -1008,17 +1009,17 @@ void *main_parse_loop(void *in)
 	       all->passes_complete++;
 	       end_pass_example(*all, ae);
 	       if (all->passes_complete == all->numpasses && example_number == all->pass_length)
-		 {
-		   all->passes_complete = 0;
-		   all->pass_length = all->pass_length*2+1;
-		 }
+			 {
+			   all->passes_complete = 0;
+			   all->pass_length = all->pass_length*2+1;
+			 }
+	       if (all->passes_complete >= all->numpasses && all->max_examples >= example_number)
+			 {
+			   mutex_lock(&all->p->examples_lock);
+			   all->p->done = true;
+			   mutex_unlock(&all->p->examples_lock);
+			 }
 	       example_number = 0;
-	       if (all->passes_complete >= all->numpasses)
-		 {
-		   mutex_lock(&all->p->examples_lock);
-		   all->p->done = true;
-		   mutex_unlock(&all->p->examples_lock);
-		 }
 	     }
 	   example_number++;
 	   mutex_lock(&all->p->examples_lock);

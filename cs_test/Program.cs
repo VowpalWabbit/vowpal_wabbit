@@ -14,7 +14,8 @@ namespace cs_test
         static void Main(string[] args)
         {
             //RunFeaturesTest();
-            RunParserTest();
+            //RunParserTest();
+            RunParserTest2();
         }
 
         private static void RunFeaturesTest()
@@ -89,13 +90,14 @@ namespace cs_test
             IntPtr example = IntPtr.Zero;
             while (IntPtr.Zero != (example = VowpalWabbitInterface.GetExample(vw)))
             {
+                example = VowpalWabbitInterface.GetExample(vw);
                 count++;
                 int featureSpaceLen = 0;
                 IntPtr featureSpacePtr = VowpalWabbitInterface.ExportExample(vw, example, ref featureSpaceLen);
 
                 VowpalWabbitInterface.FEATURE_SPACE[] featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[featureSpaceLen];
                 int featureSpace_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE_SPACE));
- 
+
                 for (int i = 0; i < featureSpaceLen; i++)
                 {
                     IntPtr curfeatureSpacePos = new IntPtr(featureSpacePtr.ToInt32() + i * featureSpace_size);
@@ -114,6 +116,58 @@ namespace cs_test
 
                 float score = VowpalWabbitInterface.Learn(vw, example);
                 VowpalWabbitInterface.FinishExample(vw, example);
+            }
+
+            VowpalWabbitInterface.EndParser(vw);
+
+            VowpalWabbitInterface.Finish(vw);
+        }
+
+
+        private static void RunParserTest2()
+        {
+            long maxEx = 10; //long.MaxValue
+
+            //            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -b 18 --hash strings -f out --ring_size 74748 --examples 10");
+
+            VowpalWabbitInterface.StartParser(vw, false);
+
+            int count = 0;
+            IntPtr example = IntPtr.Zero;
+            while (count < maxEx)
+            {
+                example = VowpalWabbitInterface.GetExample(vw);
+                if (IntPtr.Zero == example)
+                    break;
+
+                count++;
+
+
+                //int featureSpaceLen = 0;
+                //IntPtr featureSpacePtr = VowpalWabbitInterface.ExportExample(vw, example, ref featureSpaceLen);
+
+                //VowpalWabbitInterface.FEATURE_SPACE[] featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[featureSpaceLen];
+                //int featureSpace_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE_SPACE));
+
+                //for (int i = 0; i < featureSpaceLen; i++)
+                //{
+                //    IntPtr curfeatureSpacePos = new IntPtr(featureSpacePtr.ToInt32() + i * featureSpace_size);
+                //    featureSpace[i] = (VowpalWabbitInterface.FEATURE_SPACE)Marshal.PtrToStructure(curfeatureSpacePos, typeof(VowpalWabbitInterface.FEATURE_SPACE));
+
+                //    VowpalWabbitInterface.FEATURE[] feature = new VowpalWabbitInterface.FEATURE[featureSpace[i].len];
+                //    int feature_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE));
+                //    for (int j = 0; j < featureSpace[i].len; j++)
+                //    {
+                //        IntPtr curfeaturePos = new IntPtr((featureSpace[i].features.ToInt32() + j * feature_size));
+                //        feature[j] = (VowpalWabbitInterface.FEATURE)Marshal.PtrToStructure(curfeaturePos, typeof(VowpalWabbitInterface.FEATURE));
+                //    }
+                //}
+                //VowpalWabbitInterface.ReleaseFeatureSpace(featureSpacePtr, featureSpaceLen);
+
+
+                //float score = VowpalWabbitInterface.Learn(vw, example);
+                //VowpalWabbitInterface.FinishExample(vw, example);
             }
 
             VowpalWabbitInterface.EndParser(vw);
