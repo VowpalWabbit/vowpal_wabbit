@@ -461,7 +461,7 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
   float max_precond = (max_hessian==0.f) ? 0.f : max_precond_ratio / max_hessian;
   weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++) {
-		if (!boost::math::isfinite(weights[stride*i+W_COND]) || weights[stride*i+W_COND]>max_precond)
+    if (isinf(weights[stride*i+W_COND]) || weights[stride*i+W_COND]>max_precond)
 			weights[stride*i+W_COND] = max_precond;
   }
 }
