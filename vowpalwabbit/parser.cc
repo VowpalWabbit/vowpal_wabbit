@@ -999,8 +999,8 @@ void *main_parse_loop(void *in)
 	while(!all->p->done)
 	  {
 	    example* ae = get_unused_example(*all);
-	   if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae) 
-		   && all->max_examples > example_number)  
+	   if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
+		   && parse_atomic_example(*all, ae) )  
 	     setup_example(*all, ae);
 	   else
 	     {
