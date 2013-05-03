@@ -267,7 +267,7 @@ vw::vw()
 
   set_minmax = set_mm;
 
-  base_learner_nb_w = 1;
+  weights_per_problem = 1;
 
   power_t = 0.5;
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)

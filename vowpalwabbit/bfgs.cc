@@ -60,8 +60,8 @@ class curv_exception: public exception {} curv_ex;
 namespace BFGS 
 
 {
+  const float max_precond_ratio = 100.f;
 
- //nonrentrant
   struct bfgs {
     vw* all;
     double wolfe1_bound;
@@ -159,7 +159,7 @@ bool test_example(example* ec)
 
 inline void add_grad(vw& all, void* d, float f, uint32_t u)
 {
-  all.reg.weight_vector[u] += (*(float*)d) * f;
+  all.reg.weight_vector[u & all.reg.weight_mask] += (*(float*)d) * f;
 }
 
 float predict_and_gradient(vw& all, example* &ec)
@@ -180,7 +180,7 @@ float predict_and_gradient(vw& all, example* &ec)
 
 inline void add_precond(vw& all, void* d, float f, uint32_t u)
 {
-  all.reg.weight_vector[u] += (*(float*)d) * f * f;
+  all.reg.weight_vector[u & all.reg.weight_mask] += (*(float*)d) * f * f;
 }
 
 void update_preconditioner(vw& all, example* &ec)
@@ -439,19 +439,31 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
+  float max_hessian = 0.f;
 
   if (b.regularizers == NULL)
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+W_COND] += regularization;
+	  if (weights[stride*i+W_COND] > max_hessian)
+		  max_hessian = weights[stride*i+W_COND];
       if (weights[stride*i+W_COND] > 0)
 	weights[stride*i+W_COND] = 1.f / weights[stride*i+W_COND];
     }
   else
     for(uint32_t i = 0; i < length; i++) {
       weights[stride*i+W_COND] += b.regularizers[2*i];
+	  if (weights[stride*i+W_COND] > max_hessian)
+		  max_hessian = weights[stride*i+W_COND];
       if (weights[stride*i+W_COND] > 0)
 	weights[stride*i+W_COND] = 1.f / weights[stride*i+W_COND];
     }
+
+  float max_precond = (max_hessian==0.f) ? 0.f : max_precond_ratio / max_hessian;
+  weights = all.reg.weight_vector;
+  for(uint32_t i = 0; i < length; i++) {
+    if (isinf(weights[stride*i+W_COND]) || weights[stride*i+W_COND]>max_precond)
+			weights[stride*i+W_COND] = max_precond;
+  }
 }
 
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)

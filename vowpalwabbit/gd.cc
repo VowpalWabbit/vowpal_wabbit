@@ -224,10 +224,10 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   tempstream << prepend;
   if (a != NULL)
     tempstream << a->space << '^' << a->feature << ':';
-  else 	if ( index == ((constant*stride)&all.reg.weight_mask))
+  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask))
     tempstream << "Constant:";
   
-  tempstream << (index/stride & all.parse_mask) << ':' << f->x;
+  tempstream << (index/(stride * all.weights_per_problem) & all.parse_mask) << ':' << f->x;
   tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   if(all.adaptive)
     tempstream << '@' << weights[index+1];
