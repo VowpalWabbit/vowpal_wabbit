@@ -1,0 +1,57 @@
+#!/usr/bin/perl -w
+#
+# Replace vw linear regressor prediction by the logistic link
+# Prediction/label is assumed to be the first item on each line
+# Rest of line (if present) remains intact
+#
+use Getopt::Std;
+use vars qw($opt_0 $opt_1);
+
+#
+# traditional logistic function: [0..1] range
+#
+sub logistic_01($) {
+    1.0 / (1.0 + exp(-$_[0]));
+}
+
+#
+# logistic function mapped to [-1 .. 1] range
+#
+sub logistic_11($) {
+    2.0 / (1.0 + exp(-$_[0])) - 1.0;
+}
+
+my $LinkFunc = \&logistic_11;
+
+sub usage {
+    die "Usage: $0 [Options] [files...]
+    Maps label x (1st number on line) to logistic(x)
+    Options:
+        -0      Use logistic(x) -> [0  .. 1] range
+        -1      Use logistic(x) -> [-1 .. 1] range (default)
+";
+}
+
+sub init {
+    $0 =~ s{.*/}{};
+    usage() if (@ARGV == 0 && -t STDIN);
+
+    getopts('01');
+
+    if ($opt_0) {
+        $LinkFunc = \&logistic_01;
+    }
+}
+
+
+#
+# -- main
+#
+init();
+
+while (<>) {
+    s/^(\S+)/$LinkFunc->($1)/e;
+    print;
+}
+
+
