@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
   
   if (!all->quiet)
     {
-      cerr.precision(4);
+      cerr.precision(6);
       cerr << endl << "finished run";
       cerr << endl << "number of examples = " << all->sd->example_number;
       cerr << endl << "weighted example sum = " << all->sd->weighted_examples;
