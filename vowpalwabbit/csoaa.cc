@@ -166,14 +166,14 @@ namespace CSOAA {
       else {
         if (substring_eq(p->parse_name[0], "shared")) {
           if (p->parse_name.size() == 1) {
-            f.x = (uint32_t)-1;
+            f.x = -1;
             f.weight_index = 0;
           } else
             cerr << "shared feature vectors should not have costs" << endl;
         } else if (substring_eq(p->parse_name[0], "label")) {
           if (p->parse_name.size() == 2) {
             f.weight_index = (size_t)f.x;
-            f.x = (uint32_t)-1;
+            f.x = -1;
           } else
             cerr << "label feature vectors must have label ids" << endl;
         } else {
@@ -184,8 +184,8 @@ namespace CSOAA {
               f.x = FLT_MAX;
 
             if ((f.weight_index >= 1) && (f.weight_index <= sd->k) && (f.x >= 0)) {}  // normal example
-            else if ((f.weight_index >= 1) && (f.weight_index <= sd->k) && (f.x <= (uint32_t)-1)) {}   // label definition
-            else if ((f.weight_index == 0) && (f.x <= (uint32_t)-1)) {} // shared header
+            else if ((f.weight_index >= 1) && (f.weight_index <= sd->k) && (f.x <= -1)) {}   // label definition
+            else if ((f.weight_index == 0) && (f.x <= -1)) {} // shared header
             else
               cerr << "invalid cost specification: index=" << f.weight_index << " x=" << f.x << " and K=" << sd->k << endl;
           } else 
