@@ -27,6 +27,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "accumulate.h"
 #include "learner.h"
+#include "simple_label.h"
 #include "vw.h"
 
 using namespace std;
@@ -133,6 +134,11 @@ void learn(void* d, example* ec)
       all->eta *= all->eta_decay_rate;
       if (all->save_per_pass)
 	save_predictor(*all, all->final_regressor_name, all->current_pass);
+
+      if (report_dev_error(*all) && all->save_best_predictor)
+        save_predictor(*all, all->final_regressor_name, (size_t)-1);
+
+      all->eta *= all->eta_decay_rate;
       
       all->current_pass++;
     }
@@ -140,7 +146,7 @@ void learn(void* d, example* ec)
   if (!command_example(all, ec))
     {
       predict(*all,ec);
-      if (ec->eta_round != 0.)
+      if ((ec->eta_round != 0.) && (!is_development_example(*all, ec)))
 	{
           if(all->power_t == 0.5) {
             if (all->adaptive) {
@@ -456,7 +462,10 @@ void local_predict(vw& all, example* ec)
     t = ec->example_t;
 
   ec->eta_round = 0;
-  if (ld->label != FLT_MAX)
+  if (is_development_example(all, ec) && (ld->label != FLT_MAX))
+    accumulate_loss(all, ec, ld->weight, (ec->final_prediction * ld->label <= 0) ? ld->weight : 0.);
+    //accumulate_loss(all, ec, ld->weight, all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight);
+  else if (ld->label != FLT_MAX)
     {
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       if (all.training && ec->loss > 0.)
@@ -509,7 +518,9 @@ void predict(vw& all, example* ex)
 {
   label_data* ld = (label_data*)ex->ld;
   float prediction;
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
+
+  //if (!ex->done) {
+    if ((all.training && (!is_development_example(all,ex)) && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) || all.force_full_predictions) {
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
         prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
@@ -529,9 +540,8 @@ void predict(vw& all, example* ex)
     else
       prediction = inline_predict<vec_add>(all, ex);
   }
-
   ex->partial_prediction = prediction;
-
+  //}
   local_predict(all, ex);
   ex->done = true;
 }

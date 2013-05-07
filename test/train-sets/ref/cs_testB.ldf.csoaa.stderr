@@ -1,0 +1,32 @@
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/cs_testB.ldf.cache
+Reading datafile = train-sets/cs_testB.ldf
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.666667   0.666667            3         3.0    known        1        3
+** dev loss on pass 0 is 0 (average 0 across all passes, best inf on pass 0) **
+0.500000   0.333333            8         6.0    known        1        3
+** dev loss on pass 1 is 0 (average 0 across all passes, best 0 on pass 0)
+** dev loss on pass 2 is 0 (average 0 across all passes, best 0 on pass 0)
+0.363636   0.200000           17        11.0    known        0        3
+** dev loss on pass 3 is 0 (average 0 across all passes, best 0 on pass 0)
+** dev loss on pass 4 is 0 (average 0 across all passes, best 0 on pass 0)
+** dev loss on pass 5 is 0 (average 0 across all passes, best 0 on pass 0)
+** dev loss on pass 6 is 0 (average 0 across all passes, best 0 on pass 0)
+0.363636   0.363636           36        22.0    known        0        3
+** dev loss on pass 7 is 0 (average 0 across all passes, best 0 on pass 0)
+** dev loss on pass 8 is 0 (average 0 across all passes, best 0 on pass 0)
+** dev loss on pass 9 is 0 (average 0 across all passes, best 0 on pass 0)
+
+finished run
+number of examples = 50
+weighted example sum = 30
+weighted label sum = 0
+average loss = 0.3667
+best constant = -0.03448
+total feature number = 360

@@ -139,13 +139,10 @@ namespace OAA {
       return;
 
     mc_label* ld = (mc_label*)ec->ld;
-    all.sd->weighted_examples += ld->weight;
-    all.sd->total_features += ec->num_features;
     size_t loss = 1;
     if (ld->label == ec->final_prediction)
       loss = 0;
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
+    accumulate_loss(all, ec, ld->weight, loss);
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, ec->final_prediction, 0, ec->tag);
@@ -186,6 +183,7 @@ namespace OAA {
         ec->ld = &simple_temp;
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
+        ec->done = false;
         d->base.learn(ec);
         if (ec->partial_prediction > score)
           {

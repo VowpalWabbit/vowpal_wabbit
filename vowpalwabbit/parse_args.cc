@@ -131,6 +131,8 @@ vw* parse_args(int argc, char *argv[])
     ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
     ("save_per_pass", "Save the model after every pass over data")
     ("save_resume", "save extra state so learning can be resumed later with new data")
+    ("devdata_tag", po::value<string>(), "use examples tagged like this as dev data")
+    ("devdata_save_best_predictor", "save the best predictor according to dev loss")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
     ("searnimp", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
@@ -190,6 +192,12 @@ vw* parse_args(int argc, char *argv[])
     all->quiet = false;
 
   msrand48(random_seed);
+
+  if (vm.count("devdata_tag")) {
+    all->compute_dev_scores = true;
+    all->devdata_tag = vm["devdata_tag"].as<string>();
+  } else 
+    all->compute_dev_scores = false;
 
   if (vm.count("active_simulation"))
       all->active_simulation = true;
@@ -456,6 +464,12 @@ vw* parse_args(int argc, char *argv[])
   
   if (vm.count("save_per_pass"))
     all->save_per_pass = true;
+
+  if (vm.count("devdata_save_best_predictor"))
+    all->save_best_predictor = true;
+  else
+    all->save_best_predictor = false;
+  all->sd->dev_best_loss = 1./0.;
 
   if (vm.count("save_resume"))
     all->save_resume = true;

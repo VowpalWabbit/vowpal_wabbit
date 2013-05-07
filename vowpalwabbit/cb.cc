@@ -566,8 +566,6 @@ namespace CB
   {
     CB::label* ld = (CB::label*)ec->ld;
 
-    all.sd->weighted_examples += 1.;
-    all.sd->total_features += ec->num_features;
     float loss = 0.;
     if (!CB::is_test_label(ld))
       {//need to compute exact loss
@@ -597,8 +595,7 @@ namespace CB
         loss = chosen_loss;
       }
 
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
+    accumulate_loss(all, ec, 1., loss);
   
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {

@@ -145,6 +145,7 @@ struct vw {
   size_t num_children;
 
   bool save_per_pass;
+  bool save_best_predictor;
   float active_c0;
   float initial_weight;
 
@@ -203,6 +204,9 @@ struct vw {
   bool add_constant;
   bool nonormalize;
   bool do_reset_source;
+  string devdata_tag;
+  bool compute_dev_scores;
+  bool force_full_predictions;
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)

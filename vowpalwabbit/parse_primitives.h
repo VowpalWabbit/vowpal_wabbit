@@ -49,6 +49,14 @@ struct shared_data {
 
   bool binary_label;
   uint32_t k;
+
+  // for dev data
+  double dev_weighted_examples;
+  double dev_weighted_examples_since_last_dump;
+  double dev_sum_loss;
+  double dev_sum_loss_since_last_dump;
+  double dev_best_loss;
+  size_t dev_best_pass;
 };
 
 struct parser;

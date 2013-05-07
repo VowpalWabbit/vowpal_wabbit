@@ -159,15 +159,69 @@ void print_update(vw& all, example *ec)
     }
 }
 
+bool is_development_example(vw&all, example* ec) {
+  if (!all.compute_dev_scores) return false;
+  if (ec == NULL) return false;
+  if (ec->tag.begin == NULL) return false;
+  size_t len = all.devdata_tag.length();
+  if (len == 0) return false;
+  if (len != ec->tag.size()) return false;
+  for (size_t i=0; i<len; i++)
+    if (all.devdata_tag[i] != ec->tag[i]) return false;
+  return true;
+}
+
+bool report_dev_error(vw& all) // return TRUE iff this is the best loss so far
+{
+  if (!all.compute_dev_scores) return false;
+
+  float thisLoss = (all.sd->dev_weighted_examples_since_last_dump > 0) ? (all.sd->dev_sum_loss_since_last_dump / all.sd->dev_weighted_examples_since_last_dump) : 1.;
+  float cumLoss  = (all.sd->dev_weighted_examples                 > 0) ? (all.sd->dev_sum_loss                 / all.sd->dev_weighted_examples                ) : 1.;
+
+  fprintf(stderr, "** dev loss on pass %d is %g (average %g across all passes, best %g on pass %d)",
+          all.current_pass,
+          thisLoss,
+          cumLoss,
+          all.sd->dev_best_loss,
+          all.sd->dev_best_pass);
+            
+  all.sd->dev_weighted_examples_since_last_dump = 0;
+  all.sd->dev_sum_loss_since_last_dump = 0;
+
+  if (thisLoss < all.sd->dev_best_loss) {
+    all.sd->dev_best_loss = thisLoss;
+    all.sd->dev_best_pass = all.current_pass;
+    fprintf(stderr, " **\n");
+    return true;
+  }
+  fprintf(stderr, "\n");
+  return false;
+}
+
+
+void accumulate_loss(vw& all, example* ec, float weight, float loss) {
+  if (ec != NULL)
+    all.sd->total_features += ec->num_features;
+
+  if (is_development_example(all, ec)) {
+    all.sd->dev_weighted_examples += weight;
+    all.sd->dev_weighted_examples_since_last_dump += weight;
+    all.sd->dev_sum_loss += loss;
+    all.sd->dev_sum_loss_since_last_dump += loss;
+  } else {
+    all.sd->weighted_examples += weight;
+    all.sd->sum_loss += loss;
+    all.sd->sum_loss_since_last_dump += loss;
+  }
+}  
+
 void output_and_account_example(vw& all, example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
-  all.sd->weighted_examples += ld->weight;
+
+  accumulate_loss(all, ec, ld->weight, ec->loss);
   all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-  all.sd->total_features += ec->num_features;
-  all.sd->sum_loss += ec->loss;
-  all.sd->sum_loss_since_last_dump += ec->loss;
-  
+
   all.print(all.raw_prediction, ec->partial_prediction, -1, ec->tag);
 
   float ai=-1; 

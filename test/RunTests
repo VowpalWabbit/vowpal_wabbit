@@ -692,3 +692,13 @@ __DATA__
 {VW} -i movielens.reg -t -d test-sets/ml100k_small_test
     test-sets/ref/ml100k_small.stdout
     test-sets/ref/ml100k_small.stderr
+
+# Test 24: using normalized adaptive updates and a low --power_t, with dev data
+{VW} -k -d train-sets/rcv1_smallB.dat --devdata_tag dev --passes 5 -c
+    train-sets/ref/rcv1_smallB.stdout
+    train-sets/ref/rcv1_smallB.stderr
+
+# Test 25: label-dependent features with csoaa_ldf, with dev data
+{VW} -k -c -d train-sets/cs_testB.ldf --passes 10 --invariant --csoaa_ldf multiline --devdata_tag dev
+    train-sets/ref/cs_testB.ldf.csoaa.stdout
+    train-sets/ref/cs_testB.ldf.csoaa.stderr

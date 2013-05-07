@@ -22,6 +22,7 @@ license as described in the file LICENSE.
 #include "v_hashmap.h"
 #include "vw.h"
 #include "rand48.h"
+#include "simple_label.h"
 
 // task-specific includes
 #include "searn_sequencetask.h"
@@ -1212,8 +1213,8 @@ namespace Searn
     if (!is_test) {
       s0copy = s.task.copy(s0);
       all.sd->example_number++;
-      all.sd->total_features    += s.searn_num_features;
-      all.sd->weighted_examples += 1.;
+      all.sd->total_features    += s.searn_num_features - s.ec_seq.begin[0]->num_features;  // undo the default add
+      accumulate_loss(all, s.ec_seq[0], 1., 0.);
     }
     bool will_print = is_test || should_print_update(all) || will_global_print_label(all, s);
 
@@ -1228,15 +1229,15 @@ namespace Searn
 
     if (!is_test) {
       float loss = s.task.loss(s0);
-      all.sd->sum_loss += loss;
-      all.sd->sum_loss_since_last_dump += loss;
+      all.sd->total_features -=  s.ec_seq.begin[0]->num_features;  // undo the default add
+      accumulate_loss(all, s.ec_seq[0], 0., loss);
     }
 
     print_update(all, s, s0, action_sequence);
     
     s.task.finish(s0);
 
-    if (is_test || !all.training)
+    if (is_test || !all.training || is_development_example(all, s.ec_seq.begin[0]))
 	{
 	  if (!s.is_singleline)
 		clear_seq(all, s);
@@ -1661,6 +1662,8 @@ namespace ImperativeSearn {
     if (srn.t == 0)
       return;  // there was no data!
 
+    // TODO: handle test-only cases!!!
+
     // do a pass over the data allowing oracle and snapshotting
     //cerr << "======================================== INIT TRAIN ========================================" << endl;
     srn.state = INIT_TRAIN;
@@ -1783,11 +1786,9 @@ namespace ImperativeSearn {
 
     train_single_example(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
     if (srn.test_loss >= 0.f) {
-      all.sd->sum_loss += srn.test_loss;
-      all.sd->sum_loss_since_last_dump += srn.test_loss;
+      accumulate_loss(all, srn.ec_seq[0], 1., srn.test_loss);
+      all.sd->total_features += srn.num_features - srn.ec_seq.begin[0]->num_features;  // undo the default add
       all.sd->example_number++;
-      all.sd->total_features += srn.num_features;
-      all.sd->weighted_examples += 1.f;
     }
 
     print_update(all, srn);
