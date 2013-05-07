@@ -16,6 +16,18 @@
 
 using namespace std;
 
+int pairs = 0;
+int users = 0;
+int items = 0;
+int recs = 0;
+int skipped = 0;
+int banned = 0;
+int show = 1;
+void progress()
+{
+        fprintf(stderr, "%12d %8d %8d %8d %8d\n", pairs, users, items, recs, skipped);
+}
+
 void usage(char *prog) {
         fprintf(stderr, "usage: %s [-b <2|4|8|...|32>] [-v] <blacklist> <users> <items> <topN> <vwparams>\n", prog);
         exit(EXIT_FAILURE);
@@ -65,7 +77,7 @@ void bf_info(char *bf, FILE *f) {
         for(i=0; i<num_bits(b); i++) 
                 if (BIT_TEST(bf,i)) on++;
 
-        fprintf(f, "%.2f%% saturation (%lu bits)\n", on*100.0/num_bits(b), num_bits(b));
+        fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on*100.0/num_bits(b), num_bits(b));
 }
 int bf_hit(char *bf, char *line) {
         unsigned i, hashv[NUM_HASHES];
@@ -152,10 +164,15 @@ int main(int argc, char *argv[])
         while ((read = getline(&buf,&len,fB)) != -1)
         {
                 bf_add(bf,buf);
+                banned++;
         }                
 
         /* print saturation etc */
-        if (verbose) bf_info(bf,stderr); 
+        if (verbose)
+        {
+                bf_info(bf,stderr); 
+                fprintf(stderr, "%d banned pairs\n", banned);
+        }
 
         // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
         if(verbose>0)
@@ -165,13 +182,27 @@ int main(int argc, char *argv[])
         char * estr = NULL;
 
         if(verbose>0)
+        {
                 fprintf(stderr, "predicting...\n");
+                fprintf(stderr, "%12s %8s %8s %8s %8s\n", "pair", "user", "item", "rec", "skipped");
+        }
         while ((read = getline(&u, &len, fU)) != -1) 
         {
+                users++;
                 u[strlen(u)-1] = 0; // chop
                 rewind(fI);
+                items=0;
                 while ((read = getline(&i, &len, fI)) != -1) 
                 {
+                        items++;
+                        pairs++;
+
+                        if((verbose > 0) & (pairs % show == 0))
+                        {
+                                progress();
+                                show *= 2;
+                        }
+
                         free(estr);
                         estr = strdup((string(u)+string(i)).c_str());
 
@@ -196,8 +227,9 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
+                                skipped++;
                                 if(verbose>=2)
-                                        fprintf(stderr,"skipping:\t%s\n", buf);
+                                        fprintf(stderr,"skipping:|%s|\n", estr);
                         }
 
                 }
@@ -206,7 +238,12 @@ int main(int argc, char *argv[])
                 {
                         cout << pr_queue.top().first << "\t" << pr_queue.top().second;
                         pr_queue.pop();
+                        recs++;
                 }
+        }
+        if(verbose>0)
+        {
+                progress();
         }
 
         VW::finish(*model);
