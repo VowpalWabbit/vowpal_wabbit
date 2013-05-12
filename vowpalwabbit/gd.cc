@@ -475,9 +475,9 @@ void local_predict(vw& all, example* ec)
             else
               norm = compute_norm<powert_norm_compute>(all,ec);
           }
-          else {
+          else 
             norm = ec->total_sum_feat_sq;  
-          }
+
           eta_t = all.eta * norm * ld->weight;
           if(!all.adaptive) eta_t *= powf(t,-all.power_t);
 

@@ -174,7 +174,8 @@ inline float parseFloat(char * p, char **end)
     return (float)strtod(start,end);
 }
 
-inline bool nanpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fffffff) > 0x7f800000; } 
+inline bool nanpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fC00000) == 0x7fC00000; } 
+inline bool infpattern( float value ) { return ((*(uint32_t*)&value) & 0x7fC00000) == 0x7f800000; } 
 
 inline float float_of_substring(substring s)
 {
