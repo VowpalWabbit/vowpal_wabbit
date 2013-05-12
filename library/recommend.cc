@@ -100,7 +100,6 @@ priority_queue<scored_example, vector<scored_example>, compare_scored_examples >
 
 int main(int argc, char *argv[])
 {
-        try {
         po::variables_map vm;
         po::options_description desc("Allowed options");
         desc.add_options()
@@ -114,8 +113,15 @@ int main(int argc, char *argv[])
                 ("vwparams", po::value<string>(&vwparams), "vw parameters for model instantiation (-i model ...)")
                 ;
 
-        po::store(po::parse_command_line(argc, argv, desc), vm);
-        po::notify(vm);    
+        try {
+                po::store(po::parse_command_line(argc, argv, desc), vm);
+                po::notify(vm);    
+        }
+        catch(exception & e)
+        {
+                cout << endl << argv[0] << ": " << e.what() << endl << endl << desc << endl;
+                exit(2);
+        }
 
         if (vm.count("help")) {
                 cout << desc << "\n";
@@ -252,12 +258,6 @@ int main(int argc, char *argv[])
         fclose(fI);
         fclose(fU);
         exit(EXIT_SUCCESS);
-        }
-        catch(exception & e)
-        {
-                cout << e.what();
-                return 0;
-        }
 
 }
 
