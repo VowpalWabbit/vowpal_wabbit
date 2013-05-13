@@ -10,24 +10,33 @@
 #include <errno.h>
 #include <unistd.h>
 #include <assert.h>
-
+#include <boost/program_options.hpp>
 
 #include "../vowpalwabbit/vw.h"
 
 using namespace std;
+namespace po = boost::program_options;
 
-void usage(char *prog) {
-        fprintf(stderr, "usage: %s [-b <2|4|8|...|32>] [-v] <blacklist> <users> <items> <topN> <vwparams>\n", prog);
-        exit(EXIT_FAILURE);
-}
+int pairs = 0;
+int users = 0;
+int items = 0;
+int recs = 0;
+int skipped = 0;
+int banned = 0;
+int show = 1;
 
 int b=16;
-int topn=10;
+int topk=10;
 int verbose=0;
-char * blacklistfilename = NULL;
-char * itemfilename = NULL;
-char * userfilename = NULL;
-char * vwparams = NULL;
+string blacklistfilename;
+string itemfilename;
+string userfilename;
+string vwparams;
+
+void progress()
+{
+        fprintf(stderr, "%12d %8d %8d %8d %12d %s %s\n", pairs, users, items, recs, skipped, userfilename.c_str(), itemfilename.c_str());
+}
 
 unsigned hash_ber(char *in, size_t len) {
         unsigned hashv = 0;
@@ -65,7 +74,7 @@ void bf_info(char *bf, FILE *f) {
         for(i=0; i<num_bits(b); i++) 
                 if (BIT_TEST(bf,i)) on++;
 
-        fprintf(f, "%.2f%% saturation (%lu bits)\n", on*100.0/num_bits(b), num_bits(b));
+        fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on*100.0/num_bits(b), num_bits(b));
 }
 int bf_hit(char *bf, char *line) {
         unsigned i, hashv[NUM_HASHES];
@@ -91,50 +100,61 @@ priority_queue<scored_example, vector<scored_example>, compare_scored_examples >
 
 int main(int argc, char *argv[])
 {
-        int opt;
+        po::variables_map vm;
+        po::options_description desc("Allowed options");
+        desc.add_options()
+                ("help,h", "produce help message")
+                ("topk", po::value<int>(&topk), "number of items to recommend per user")
+                ("verbose,v", po::value<int>(&verbose), "increase verbosity (can be repeated)")
+                ("bf_bits,b", po::value<int>(&b), "number of items to recommend")
+                ("blacklist,B", po::value<string>(&blacklistfilename), "user item pairs (in vw format) that we should not recommend (have been seen before)")
+                ("users,U", po::value<string>(&userfilename), "users portion in vw format to make recs for")
+                ("items,I", po::value<string>(&itemfilename), "items (in vw format) to recommend from")
+                ("vwparams", po::value<string>(&vwparams), "vw parameters for model instantiation (-i model ...)")
+                ;
 
-        while ( (opt = getopt(argc, argv, "b:v+N:")) != -1) {
-                switch (opt) {
-                        case 'N':
-                                topn = atoi(optarg);
-                                break;
-                        case 'b':
-                                b = atoi(optarg);
-                                break;
-                        case 'v':
-                                verbose++;
-                                break;
-                        default:
-                                usage(argv[0]);
-                                break;
-                }
+        try {
+                po::store(po::parse_command_line(argc, argv, desc), vm);
+                po::notify(vm);    
+        }
+        catch(exception & e)
+        {
+                cout << endl << argv[0] << ": " << e.what() << endl << endl << desc << endl;
+                exit(2);
         }
 
-        if (optind < argc) blacklistfilename=argv[optind++];
-        if (optind < argc) userfilename=argv[optind++];
-        if (optind < argc) itemfilename=argv[optind++];
-        if (optind < argc) vwparams=argv[optind++];
+        if (vm.count("help")) {
+                cout << desc << "\n";
+                return 1;
+        }
 
-        if (!blacklistfilename || !userfilename || !itemfilename || !vwparams) usage(argv[0]);
+        if (blacklistfilename.empty() || userfilename.empty() || itemfilename.empty() || vwparams.empty())
+        {
+                cout << desc << "\n";
+                exit(2);
+        }
 
         FILE * fB;
         FILE * fU;
         FILE * fI;
 
-        if((fB = fopen(blacklistfilename, "r")) == NULL)
+        if((fB = fopen(blacklistfilename.c_str(), "r")) == NULL)
         {
-                fprintf(stderr,"can't open %s: %s\n", blacklistfilename, strerror(errno));
-                usage(argv[0]);
+                fprintf(stderr,"can't open %s: %s\n", blacklistfilename.c_str(), strerror(errno));
+                cerr << desc << endl;
+                exit(2);
         }
-        if((fU = fopen(userfilename, "r")) == NULL )
+        if((fU = fopen(userfilename.c_str(), "r")) == NULL )
         {
-                fprintf(stderr,"can't open %s: %s\n", userfilename, strerror(errno));
-                usage(argv[0]);
+                fprintf(stderr,"can't open %s: %s\n", userfilename.c_str(), strerror(errno));
+                cerr << desc << endl;
+                exit(2);
         }
-        if((fI = fopen(itemfilename, "r")) == NULL )
+        if((fI = fopen(itemfilename.c_str(), "r")) == NULL )
         {
-                fprintf(stderr,"can't open %s: %s\n", itemfilename, strerror(errno));
-                usage(argv[0]);
+                fprintf(stderr,"can't open %s: %s\n", itemfilename.c_str(), strerror(errno));
+                cerr << desc << endl;
+                exit(2);
         }
 
         char * buf = NULL;
@@ -152,10 +172,15 @@ int main(int argc, char *argv[])
         while ((read = getline(&buf,&len,fB)) != -1)
         {
                 bf_add(bf,buf);
+                banned++;
         }                
 
         /* print saturation etc */
-        if (verbose) bf_info(bf,stderr); 
+        if (verbose)
+        {
+                bf_info(bf,stderr); 
+                fprintf(stderr, "%d banned pairs\n", banned);
+        }
 
         // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
         if(verbose>0)
@@ -165,13 +190,27 @@ int main(int argc, char *argv[])
         char * estr = NULL;
 
         if(verbose>0)
+        {
                 fprintf(stderr, "predicting...\n");
+                fprintf(stderr, "%12s %8s %8s %8s %12s %s %s\n", "pair", "user", "item", "rec", "skipped", "userfile", "itemfile");
+        }
         while ((read = getline(&u, &len, fU)) != -1) 
         {
+                users++;
                 u[strlen(u)-1] = 0; // chop
                 rewind(fI);
+                items=0;
                 while ((read = getline(&i, &len, fI)) != -1) 
                 {
+                        items++;
+                        pairs++;
+
+                        if((verbose > 0) & (pairs % show == 0))
+                        {
+                                progress();
+                                show *= 2;
+                        }
+
                         free(estr);
                         estr = strdup((string(u)+string(i)).c_str());
 
@@ -182,7 +221,7 @@ int main(int argc, char *argv[])
 
                                 const string str(estr);
 
-                                if(pr_queue.size() < topn)
+                                if(pr_queue.size() < topk)
                                 {        
                                         pr_queue.push(make_pair(ex->final_prediction, str));
                                 }
@@ -196,8 +235,9 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
+                                skipped++;
                                 if(verbose>=2)
-                                        fprintf(stderr,"skipping:\t%s\n", buf);
+                                        fprintf(stderr,"skipping:#%s#\n", estr);
                         }
 
                 }
@@ -206,13 +246,19 @@ int main(int argc, char *argv[])
                 {
                         cout << pr_queue.top().first << "\t" << pr_queue.top().second;
                         pr_queue.pop();
+                        recs++;
                 }
+        }
+        if(verbose>0)
+        {
+                progress();
         }
 
         VW::finish(*model);
         fclose(fI);
         fclose(fU);
         exit(EXIT_SUCCESS);
+
 }
 
 
