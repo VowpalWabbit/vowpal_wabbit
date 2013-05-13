@@ -35,12 +35,15 @@ namespace GD
 {
   struct gd{
     size_t current_pass;
+    bool active;
+    bool active_simulation;
+    float normalized_sum_norm_x;
+
     vw* all;
   };
-  void predict(vw& all, example* ex);
+  void predict(vw& all, gd& g, example* ex);
   void sync_weights(vw& all);
   
-
   struct train_data {
     float avg_norm;
     float update;
@@ -139,7 +142,7 @@ void learn(void* d, example* ec)
   
   if (!command_example(all, ec))
     {
-      predict(*all,ec);
+      predict(*all,*g,ec);
       if (ec->eta_round != 0.)
 	{
           if(all->power_t == 0.5) {
@@ -429,7 +432,7 @@ float compute_norm(vw& all, example* &ec)
   return nd.norm;
 }
 
-void local_predict(vw& all, example* ec)
+  void local_predict(vw& all, gd& g, example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
 
@@ -437,7 +440,7 @@ void local_predict(vw& all, example* ec)
 
   ec->final_prediction = finalize_prediction(all, ec->partial_prediction * (float)all.sd->contraction);
 
-  if(all.active_simulation){
+  if(g.active_simulation){
     float k = ec->example_t - ld->weight;
     ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(k,all.power_t));
     float importance = query_decision(all, ec, k);
@@ -505,7 +508,7 @@ void local_predict(vw& all, example* ec)
     print_audit_features(all, ec);
 }
 
-void predict(vw& all, example* ex)
+  void predict(vw& all, gd& g, example* ex)
 {
   label_data* ld = (label_data*)ex->ld;
   float prediction;
@@ -532,7 +535,7 @@ void predict(vw& all, example* ex)
 
   ex->partial_prediction = prediction;
 
-  local_predict(all, ex);
+  local_predict(all, g, ex);
   ex->done = true;
 }
 
@@ -743,9 +746,12 @@ learner setup(vw& all)
 {
   gd* g = (gd*)calloc(1, sizeof(gd));
   g->all = &all;
+  g->active = all.active;
+  g->active_simulation = all.active_simulation;
+  g->normalized_sum_norm_x = all.normalized_sum_norm_x;
 
   sl_t sl = {g,save_load};
-  learner ret = {g,driver,learn,finish,sl};
+  learner ret(g,driver,learn,finish,sl);
 
   return ret;
 }

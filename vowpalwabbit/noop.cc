@@ -32,7 +32,7 @@ namespace NOOP {
   {
     sl_t sl = {NULL,save_load};
     all.is_noop = true;
-    learner l = {NULL,drive,learn,finish,sl};
+    learner l(NULL,drive,learn,finish,sl);
     return l;
   }
 }

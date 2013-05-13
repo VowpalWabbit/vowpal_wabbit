@@ -811,7 +811,7 @@ namespace Searn
     s->increment = ((uint32_t)all.length() / all.weights_per_problem) * all.reg.stride;
     //cerr << "searn increment = " << s->increment << endl;
 
-    learner l = {s, drive, learn, finish, all.l.sl};
+    learner l(s, drive, learn, finish, all.l.sl);
     s->base = all.l;
     s->all = & all;
     return l;
@@ -2057,7 +2057,7 @@ namespace ImperativeSearn {
 
     srn->task->initialize(all, srn->A);
     
-    learner l = {srn, searn_drive, searn_learn, searn_finish, all.l.sl};
+    learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
     srn->base = all.l;
     return l;
   }
