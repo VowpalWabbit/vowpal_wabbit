@@ -121,7 +121,7 @@ namespace SENDER {
     }
 
   sl_t sl = {NULL, save_load};
-  learner l = {s,drive_send,learn,finish,sl};
+  learner l(s,drive_send,learn,finish,sl);
   return l;
 }
 

@@ -307,7 +307,7 @@ float mf_predict(vw& all, example* ex)
   learner setup(vw& all)
   {
     sl_t sl = {&all, save_load};
-    learner l = {&all,drive,learn,finish,sl};
+    learner l(&all,drive,learn,finish,sl);
     return l;
   }
 }

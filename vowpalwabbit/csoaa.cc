@@ -386,7 +386,7 @@ namespace CSOAA {
     c->base=all.l;
     all.sd->k = nb_actions;
 
-    learner l = {c, drive, learn, finish, all.l.sl};
+    learner l(c, drive, learn, finish, all.l.sl);
     c->base = all.l;
     return l;
   }
@@ -1105,7 +1105,7 @@ namespace LabelDict {
     ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
     ld->label_features.get(1, 94717244);
     
-    learner l = {ld, drive, learn, finish, all.l.sl};
+    learner l(ld, drive, learn, finish, all.l.sl);
     ld->base = all.l;
     return l;
   }

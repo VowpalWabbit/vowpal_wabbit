@@ -479,7 +479,7 @@ namespace ECT
     create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner l = {data, drive, learn, finish, all.l.sl};
+    learner l(data, drive, learn, finish, all.l.sl);
     data->base = all.l;
     return l;
   }

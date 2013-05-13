@@ -722,7 +722,7 @@ namespace CB
 
     all.sd->k = nb_actions;
 
-    learner l = {c, drive, learn, finish, all.l.sl};
+    learner l(c, drive, learn, finish, all.l.sl);
     c->base = all.l;
     return l;
   }

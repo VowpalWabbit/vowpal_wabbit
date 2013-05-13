@@ -932,7 +932,7 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
   b->final_pass=all.numpasses;  
   
   sl_t sl = {b, save_load};
-  learner t = {b,drive,learn,finish,sl};
+  learner t(b,drive,learn,finish,sl);
   all.l = t;
 
   all.bfgs = true;

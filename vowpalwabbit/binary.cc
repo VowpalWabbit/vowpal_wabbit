@@ -54,7 +54,7 @@ namespace BINARY {
     all.sd->binary_label = true;
     binary* data = (binary*)calloc(1,sizeof(binary));
     data->base = all.l;
-    learner l = {data, drive, learn, finish, all.l.sl};
+    learner l(data, drive, learn, finish, all.l.sl);
     return l;
   }
 }

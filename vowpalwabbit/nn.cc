@@ -101,9 +101,8 @@ namespace NN {
         if (i != 0)
           update_example_indicies(all.audit, ec, n.increment);
 
-        ec->partial_prediction = 0.;
         n.base.learn(ec);
-        hidden_units[i] = GD::finalize_prediction (all, ec->partial_prediction);
+        hidden_units[i] = ec->final_prediction;
 
         dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
 
@@ -149,7 +148,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->atomics[nn_output_namespace] = n.output_layer.atomics[nn_output_namespace];
       ec->sum_feat_sq[nn_output_namespace] = n.output_layer.sum_feat_sq[nn_output_namespace];
       ec->total_sum_feat_sq += n.output_layer.sum_feat_sq[nn_output_namespace];
-      ec->partial_prediction = 0.;
       n.base.learn(ec);
       n.output_layer.partial_prediction = ec->partial_prediction;
       n.output_layer.loss = ec->loss;
@@ -170,7 +168,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.ld = 0;
     }
 
-    n.output_layer.final_prediction = GD::finalize_prediction (all, n.output_layer.partial_prediction);
+    n.output_layer.final_prediction = GD::finalize_prediction (all, n.output_layer.final_prediction);
 
     if (shouldOutput) {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
@@ -199,10 +197,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ld->label = GD::finalize_prediction (all, hidden_units[i-1] - gradhw);
-            if (ld->label != hidden_units[i-1]) {
-              ec->partial_prediction = 0.;
+            if (ld->label != hidden_units[i-1]) 
               n.base.learn(ec);
-            }
           }
           if (i != 1) {
             update_example_indicies(all.audit, ec, -n.increment);
@@ -429,7 +425,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n->save_xsubi = n->xsubi;
 
-    learner l = {n,drive_nn,learn,finish,all.l.sl};
+    learner l(n,drive_nn,learn,finish,all.l.sl);
     return l;
   }
 }

@@ -296,7 +296,7 @@ namespace WAP {
     all.weights_per_problem *= nb_actions;
     w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner l = {w, drive, learn, finish, all.l.sl};
+    learner l(w, drive, learn, finish, all.l.sl);
     w->base = all.l;
     return l;
   }

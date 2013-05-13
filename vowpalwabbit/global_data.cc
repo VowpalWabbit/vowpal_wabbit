@@ -316,6 +316,8 @@ vw::vw()
   adaptive = true;
   normalized_updates = true;
   invariant_updates = true;
+  
+  l = GD::setup(*this);
 
   normalized_sum_norm_x = 0.;
   normalized_idx = 2;
@@ -324,7 +326,6 @@ vw::vw()
   audit = false;
   active = false;
   active_c0 = 8.;
-  active_simulation = false;
   reg.weight_vector = NULL;
   pass_length = (size_t)-1;
   passes_complete = 0;

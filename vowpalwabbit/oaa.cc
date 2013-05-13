@@ -262,7 +262,7 @@ namespace OAA {
     all.weights_per_problem *= data->k;
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
-    learner l = {data, drive, learn, finish, all.l.sl};
+    learner l(data, drive, learn, finish, all.l.sl);
     return l;
   }
 }
