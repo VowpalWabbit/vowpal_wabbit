@@ -334,4 +334,6 @@ vw::vw()
 
   stdin_off = false;
   do_reset_source = false;
+
+  max_examples = (size_t)-1;
 }
