@@ -32,6 +32,7 @@ namespace NN {
     uint64_t xsubi;
     uint64_t save_xsubi;
     bool inpass;
+    bool finished_setup;
 
     learner base;
     vw* all;
@@ -96,10 +97,11 @@ namespace NN {
     save_max_label = all.sd->max_label;
     all.sd->max_label = hidden_max_activation;
     ld->label = FLT_MAX;
+    uint32_t save_offset = ec->ft_offset;
+    ec->ft_offset = 0;
     for (unsigned int i = 0; i < n.k; ++i)
       {
-        if (i != 0)
-          update_example_indicies(all.audit, ec, n.increment);
+        update_example_indicies(all.audit, ec, n.increment);
 
         n.base.learn(ec);
         hidden_units[i] = ec->final_prediction;
@@ -111,6 +113,7 @@ namespace NN {
           outputStringStream << i << ':' << ec->partial_prediction << ',' << fasttanh (hidden_units[i]);
         }
       }
+    ec->ft_offset = save_offset;
     ld->label = save_label;
     all.loss = save_loss;
     all.set_minmax = save_set_minmax;
@@ -142,7 +145,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       // nn_output_namespace but at least it will not leak memory
       // in that case
 
-      update_example_indicies (all.audit, ec, n.increment);
       ec->indices.push_back (nn_output_namespace);
       v_array<feature> save_nn_output_namespace = ec->atomics[nn_output_namespace];
       ec->atomics[nn_output_namespace] = n.output_layer.atomics[nn_output_namespace];
@@ -155,9 +157,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->sum_feat_sq[nn_output_namespace] = 0;
       ec->atomics[nn_output_namespace] = save_nn_output_namespace;
       ec->indices.pop ();
-      update_example_indicies (all.audit, ec, -n.increment);
     }
     else {
+      n.output_layer.ft_offset = ec->ft_offset;
       n.output_layer.ld = ec->ld;
       n.output_layer.partial_prediction = 0;
       n.output_layer.eta_round = ec->eta_round;
@@ -166,9 +168,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.example_t = ec->example_t;
       n.base.learn(&n.output_layer);
       n.output_layer.ld = 0;
+      n.output_layer.ft_offset = 0;
     }
 
-    n.output_layer.final_prediction = GD::finalize_prediction (all, n.output_layer.final_prediction);
+    n.output_layer.final_prediction = GD::finalize_prediction (all, n.output_layer.partial_prediction);
 
     if (shouldOutput) {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
@@ -177,8 +180,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (all.training && ld->label != FLT_MAX) {
       float gradient = all.loss->first_derivative(all.sd, 
-                                                   n.output_layer.final_prediction,
-                                                   ld->label);
+                                                  n.output_layer.final_prediction,
+                                                  ld->label);
 
       if (fabs (gradient) > 0) {
         all.loss = n.squared_loss;
@@ -187,34 +190,31 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         all.sd->min_label = hidden_min_activation;
         save_max_label = all.sd->max_label;
         all.sd->max_label = hidden_max_activation;
+        uint32_t save_offset = ec->ft_offset;
+        ec->ft_offset = 0;
 
-        for (size_t i = n.k; i > 0; --i) {
-          if (! dropped_out[i-1]) {
+        for (unsigned int i = 0; i < n.k; ++i) {
+          update_example_indicies (all.audit, ec, n.increment);
+          if (! dropped_out[i]) {
             float sigmah = 
-              n.output_layer.atomics[nn_output_namespace][i].x / dropscale;
+              n.output_layer.atomics[nn_output_namespace][i+1].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            float nu = all.reg.weight_vector[n.output_layer.atomics[nn_output_namespace][i].weight_index & all.reg.weight_mask];
+            float nu = all.reg.weight_vector[n.output_layer.atomics[nn_output_namespace][i+1].weight_index & all.reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ld->label = GD::finalize_prediction (all, hidden_units[i-1] - gradhw);
-            if (ld->label != hidden_units[i-1]) 
+            ld->label = GD::finalize_prediction (all, hidden_units[i] - gradhw);
+            if (ld->label != hidden_units[i]) 
               n.base.learn(ec);
-          }
-          if (i != 1) {
-            update_example_indicies(all.audit, ec, -n.increment);
           }
         }
 
+        ec->ft_offset = save_offset;
         all.loss = save_loss;
         all.set_minmax = save_set_minmax;
         all.sd->min_label = save_min_label;
         all.sd->max_label = save_max_label;
       }
-      else 
-        update_example_indicies(all.audit, ec, -(n.k-1)*n.increment);
     }
-    else 
-      update_example_indicies(all.audit, ec, -(n.k-1)*n.increment);
 
     ld->label = save_label;
 
@@ -226,8 +226,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (n.dropout && ! converse)
       {
-        update_example_indicies (all.audit, ec, (n.k-1)*n.increment);
-
         for (unsigned int i = 0; i < n.k; ++i)
           {
             dropped_out[i] = ! dropped_out[i];
@@ -242,9 +240,14 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec->loss = save_ec_loss;
   }
 
+  void finish_setup (nn* n, vw& all);
+
   void learn(void* d,example* ec) {
     nn* n = (nn*)d;
     vw* all = n->all;
+    if (! n->finished_setup)
+      finish_setup (n, *all);
+
     learn_with_output(*all, *n, ec, false);
   }
 
@@ -364,9 +367,25 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n->base = all.l;
 
-    all.weights_per_problem *= (n->inpass) ? n->k + 1 : n->k;
-    n->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
+    n->increment = all.reg.stride * all.weights_per_problem;
+    all.weights_per_problem *= n->k + 1;
 
+    n->finished_setup = false;
+    n->squared_loss = getLossFunction (0, "squared", 0);
+
+    n->xsubi = 0;
+
+    if (vm.count("random_seed"))
+      n->xsubi = vm["random_seed"].as<size_t>();
+
+    n->save_xsubi = n->xsubi;
+
+    learner l(n,drive_nn,learn,finish,all.l.sl);
+    return l;
+  }
+
+  void finish_setup (nn* n, vw& all)
+  {
     bool initialize = true;
 
     // TODO: output_layer audit
@@ -407,25 +426,15 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
       // hidden biases
 
-      unsigned int weight_index = constant * all.reg.stride;
+      unsigned int weight_index = constant * all.reg.stride * all.weights_per_problem;
 
       for (unsigned int i = 0; i < n->k; ++i)
         {
-          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
           weight_index += n->increment;
+          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
         }
     }
 
-    n->squared_loss = getLossFunction (0, "squared", 0);
-
-    n->xsubi = 0;
-
-    if (vm.count("random_seed"))
-      n->xsubi = vm["random_seed"].as<size_t>();
-
-    n->save_xsubi = n->xsubi;
-
-    learner l(n,drive_nn,learn,finish,all.l.sl);
-    return l;
+    n->finished_setup = true;
   }
 }
