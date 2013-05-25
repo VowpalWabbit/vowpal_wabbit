@@ -64,6 +64,7 @@ vw* parse_args(int argc, char *argv[])
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
+    ("meansq", "use per feature mean square normalized updates")
     ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
     ("audit,a", "print weights of features")
     ("bit_precision,b", po::value<size_t>(),
@@ -220,24 +221,25 @@ vw* parse_args(int argc, char *argv[])
 
   all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
-  if( all->rank > 0 || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  if( all->rank > 0 || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") || vm.count("meansq") ) && !vm.count("exact_adaptive_norm")) )
   {
     all->adaptive = all->training && (vm.count("adaptive") && all->rank == 0);
     all->invariant_updates = all->training && vm.count("invariant");
     all->normalized_updates = all->training && (vm.count("normalized") && all->rank == 0);
+    all->meansqnorm = ! all->normalized_updates && all->training && (vm.count("meansq") && all->rank == 0);
 
     all->reg.stride = 1;
 
     if( all->adaptive ) all->reg.stride *= 2;
     else all->normalized_idx = 1; //store per feature norm at 1 index offset from weight value instead of 2
 
-    if( all->normalized_updates ) all->reg.stride *= 2;
+    if( all->normalized_updates || all->meansqnorm ) all->reg.stride *= 2;
 
-    if(!vm.count("learning_rate") && !vm.count("l") && !(all->adaptive && all->normalized_updates))
+    if(!vm.count("learning_rate") && !vm.count("l") && !(all->adaptive && ( all->normalized_updates || all->meansqnorm )))
       all->eta = 10; //default learning rate to 10 for non default update rule
 
     //if not using normalized or adaptive, default initial_t to 1 instead of 0
-    if(!all->adaptive && !all->normalized_updates && !vm.count("initial_t")) {
+    if(!all->adaptive && !(all->normalized_updates || all->meansqnorm) && !vm.count("initial_t")) {
       all->sd->t = 1.f;
       all->sd->weighted_unlabeled_examples = 1.f;
       all->initial_t = 1.f;
@@ -449,7 +451,7 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("lda")) 
     all->l = LDA::setup(*all, to_pass_further, vm);
 
-  if (!vm.count("lda") && !all->adaptive && !all->normalized_updates) 
+  if (!vm.count("lda") && !all->adaptive && !(all->normalized_updates || all->meansqnorm)) 
     all->eta *= powf((float)(all->sd->t), all->power_t);
   
   if (vm.count("readable_model"))
