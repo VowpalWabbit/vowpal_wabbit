@@ -65,7 +65,7 @@ namespace GD
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_norm) avg_norm = sqrt(avg_norm);
     
-    train_data d = {avg_norm, update, total_weight};
+    train_data d = {avg_norm, update, all.sd->weighted_examples + all.p->lp->get_weight(ec->ld)};
     
     foreach_feature<T>(all, ec, &d);
   }
@@ -424,17 +424,17 @@ float compute_norm(vw& all, example* &ec)
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   if (g==0) return 1.;
 
-  float total_weight = 0;
-  if(all.active)
-    total_weight = (float)all.sd->weighted_unlabeled_examples;
-  else
-    total_weight = ec->example_t;
-
-  norm_data nd = {g, 0., 0., total_weight};
+  norm_data nd = {g, 0., 0., all.sd->weighted_examples + all.p->lp->get_weight(ec->ld)};
 
   foreach_feature<T>(all, ec, &nd);
   
   if(all.normalized_updates) {
+    float total_weight = 0;
+    if(all.active)
+      total_weight = (float)all.sd->weighted_unlabeled_examples;
+    else
+      total_weight = ec->example_t;
+
     all.normalized_sum_norm_x += ld->weight * nd.norm_x;
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
     
@@ -604,8 +604,15 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 					 buff, text_len, text);
 	      
 	      
-	      text_len = sprintf(buff, ":%f\n", *v);
-	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
+              float value = *v;
+
+              if (all.meansqnorm)
+                {
+                  value /= sqrt (v[all.normalized_idx] / all.sd->weighted_examples);
+                }
+
+	      text_len = sprintf(buff, ":%f\n", value);
+	      brw+= bin_text_write_fixed(model_file,(char *)&value, sizeof (value),
 					 buff, text_len, text);
 	    }
 	}

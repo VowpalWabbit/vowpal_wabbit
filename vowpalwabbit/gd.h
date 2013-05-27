@@ -75,11 +75,11 @@ void output_and_account_example(example* ec);
  template <void (*T)(vw&,void*, float,uint32_t)>
    float inline_predict(vw& all, example* ec)
    {
-     float predict_data[2];
+     float predict_data[3];
      predict_data[0] = all.p->lp->get_initial(ec->ld);
-     predict_data[1] = 
-       (all.active) ? (float) all.sd->weighted_unlabeled_examples : ec->example_t;
-                                  
+     predict_data[1] = all.p->lp->get_weight(ec->ld);
+     predict_data[2] = all.sd->weighted_examples + predict_data[1];
+
      foreach_feature<T>(all, ec, predict_data);
      return predict_data[0];
    }
