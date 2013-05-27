@@ -198,6 +198,7 @@ struct vw {
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
   bool normalized_updates; //Should every feature be normalized
+  bool meansqnorm;         //Should every feature be normalized, mean square
   bool invariant_updates; //Should we use importance aware/safe updates
   bool random_weights;
   bool add_constant;

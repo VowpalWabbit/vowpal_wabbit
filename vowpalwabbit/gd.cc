@@ -47,6 +47,7 @@ namespace GD
   struct train_data {
     float avg_norm;
     float update;
+    float total_weight;
   };
 
   template <void (*T)(vw&, void*, float, uint32_t)>
@@ -64,7 +65,7 @@ namespace GD
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_norm) avg_norm = sqrt(avg_norm);
     
-    train_data d = {avg_norm, update};
+    train_data d = {avg_norm, update, all.sd->weighted_examples + all.p->lp->get_weight(ec->ld)};
     
     foreach_feature<T>(all, ec, &d);
   }
@@ -84,6 +85,7 @@ float InvSqrt(float x){
 
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float t = 1.f;
+  if(all.meansqnorm) x /= sqrt (w[all.normalized_idx] / s->total_weight);
   if(all.adaptive) t = powf(w[1],-all.power_t);
   if(all.normalized_updates) {
     float norm = w[all.normalized_idx] * s->avg_norm;
@@ -93,7 +95,7 @@ float InvSqrt(float x){
   w[0] += s->update * x * t;
 }
 
-template<bool adaptive, bool normalized>
+template<bool adaptive, bool normalized, bool meansq>
 inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
 {
   train_data* s = (train_data*)dat;
@@ -101,6 +103,7 @@ inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float t = 1.f;
   float inv_norm = 1.f;
+  if(meansq) x /= sqrt (w[all.normalized_idx] / s->total_weight);
   if(normalized) inv_norm /= (w[all.normalized_idx] * s->avg_norm);
   if(adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
@@ -148,18 +151,24 @@ void learn(void* d, example* ec)
           if(all->power_t == 0.5) {
             if (all->adaptive) {
               if (all->normalized_updates) 
-                generic_train<specialized_update<true, true> >
+                generic_train<specialized_update<true, true, false> >
+                  (*all,ec,ec->eta_round,true);
+              else if (all->meansqnorm)
+                generic_train<specialized_update<true, false, true> >
                   (*all,ec,ec->eta_round,true);
               else
-                generic_train<specialized_update<true, false> >
+                generic_train<specialized_update<true, false, false> >
                   (*all,ec,ec->eta_round,true);
             }
             else {
               if (all->normalized_updates) 
-                generic_train<specialized_update<false, true> >
+                generic_train<specialized_update<false, true, false> >
+                  (*all,ec,ec->eta_round,true);
+              else if (all->meansqnorm)
+                generic_train<specialized_update<false, false, true> >
                   (*all,ec,ec->eta_round,true);
               else
-                generic_train<specialized_update<false, false> >
+                generic_train<specialized_update<false, false, false> >
                   (*all,ec,ec->eta_round,true);
             }
           }
@@ -349,9 +358,10 @@ void print_audit_features(vw& all, example* ec)
     float g;
     float norm;
     float norm_x;
+    float total_weight;
   };
 
-template<bool adaptive, bool normalized>
+template<bool adaptive, bool normalized, bool meansq>
 inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
   norm_data* nd=(norm_data*)v;
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
@@ -363,6 +373,10 @@ inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
     inv_norm /= w[all.normalized_idx];
     inv_norm2 = inv_norm*inv_norm;
     nd->norm_x += x2 * inv_norm2;
+  }
+  if(meansq) {
+    x2 *= nd->total_weight / w[all.normalized_idx];
+    nd->norm_x += x2;
   }
   if(adaptive){
     w[1] += nd->g * x2;
@@ -387,6 +401,10 @@ inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x2 = x * x;
   float t = 1.f;
+  if(all.meansqnorm) {
+    x2 *= nd->total_weight / w[all.normalized_idx];
+    nd->norm_x += x2;
+  }
   if(all.adaptive){
     w[1] += nd->g * x2;
     t = powf(w[1], -all.power_t);
@@ -406,7 +424,7 @@ float compute_norm(vw& all, example* &ec)
   float g = all.loss->getSquareGrad(ec->final_prediction, ld->label) * ld->weight;
   if (g==0) return 1.;
 
-  norm_data nd = {g, 0., 0.};
+  norm_data nd = {g, 0., 0., all.sd->weighted_examples + all.p->lp->get_weight(ec->ld)};
 
   foreach_feature<T>(all, ec, &nd);
   
@@ -416,7 +434,7 @@ float compute_norm(vw& all, example* &ec)
       total_weight = (float)all.sd->weighted_unlabeled_examples;
     else
       total_weight = ec->example_t;
-    
+
     all.normalized_sum_norm_x += ld->weight * nd.norm_x;
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
     
@@ -466,14 +484,18 @@ float compute_norm(vw& all, example* &ec)
 	{
 	  float eta_t;
 	  float norm;
-          if(all.adaptive || all.normalized_updates) {
+          if(all.adaptive || all.normalized_updates || all.meansqnorm) {
             if(all.power_t == 0.5) {
                 if (all.adaptive && all.normalized_updates)
-                  norm = compute_norm<simple_norm_compute<true, true> >(all,ec);
+                  norm = compute_norm<simple_norm_compute<true, true, false> >(all,ec);
+                else if (all.adaptive && all.meansqnorm)
+                  norm = compute_norm<simple_norm_compute<true, false, true> >(all,ec);
                 else if (all.adaptive)
-                  norm = compute_norm<simple_norm_compute<true, false> >(all,ec);
-                else 
-                  norm = compute_norm<simple_norm_compute<false, true> >(all,ec);
+                  norm = compute_norm<simple_norm_compute<true, false, false> >(all,ec);
+                else if (all.normalized_updates)
+                  norm = compute_norm<simple_norm_compute<false, true, false> >(all,ec);
+                else
+                  norm = compute_norm<simple_norm_compute<false, false, true> >(all,ec);
             }
             else
               norm = compute_norm<powert_norm_compute>(all,ec);
@@ -512,18 +534,26 @@ float compute_norm(vw& all, example* &ec)
 {
   label_data* ld = (label_data*)ex->ld;
   float prediction;
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
-    if( all.power_t == 0.5 ) {
-      if (all.reg_mode % 2)
-        prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
-      else
-        prediction = inline_predict<vec_add_rescale>(all, ex);
+  if (all.training && (all.normalized_updates || all.meansqnorm) && ld->label != FLT_MAX && ld->weight > 0) {
+    if( all.normalized_updates ) {
+      if( all.power_t == 0.5 ) {
+        if (all.reg_mode % 2)
+          prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
+        else
+          prediction = inline_predict<vec_add_rescale>(all, ex);
+      }
+      else {
+        if (all.reg_mode % 2)
+          prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
+        else
+          prediction = inline_predict<vec_add_rescale_general>(all, ex);
+      }
     }
     else {
       if (all.reg_mode % 2)
-        prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
+        prediction = inline_predict<vec_add_trunc_meansq>(all, ex);
       else
-        prediction = inline_predict<vec_add_rescale_general>(all, ex);
+        prediction = inline_predict<vec_add_meansq>(all, ex);
     }
   }
   else {
@@ -574,8 +604,15 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 					 buff, text_len, text);
 	      
 	      
-	      text_len = sprintf(buff, ":%f\n", *v);
-	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
+              float value = *v;
+
+              if (all.meansqnorm)
+                {
+                  value /= sqrt (v[all.normalized_idx] / all.sd->weighted_examples);
+                }
+
+	      text_len = sprintf(buff, ":%f\n", value);
+	      brw+= bin_text_write_fixed(model_file,(char *)&value, sizeof (value),
 					 buff, text_len, text);
 	    }
 	}
