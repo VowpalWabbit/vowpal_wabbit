@@ -64,8 +64,13 @@ namespace NN {
     return -1.0f + 2.0f / (1.0f + fastexp (-2.0f * p));
   }
 
+  void finish_setup (nn* n, vw& all);
+
   void learn_with_output(vw& all, nn& n, example* ec, bool shouldOutput)
   {
+    if (! n.finished_setup)
+      finish_setup (&n, all);
+
     if (ec->end_pass) {
       if (all.bfgs)
         n.xsubi = n.save_xsubi;
@@ -240,14 +245,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec->loss = save_ec_loss;
   }
 
-  void finish_setup (nn* n, vw& all);
-
   void learn(void* d,example* ec) {
     nn* n = (nn*)d;
     vw* all = n->all;
-    if (! n->finished_setup)
-      finish_setup (n, *all);
-
     learn_with_output(*all, *n, ec, false);
   }
 
