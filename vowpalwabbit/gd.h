@@ -52,7 +52,7 @@ void output_and_account_example(example* ec);
 	   {
 	     uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
 	     foreach_feature<T>(all, dat, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, 
-				halfhash + offset, temp.begin->x);
+				halfhash, temp.begin->x);
 	   }
        }
      }
@@ -66,7 +66,7 @@ void output_and_account_example(example* ec);
 	   
 	   uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
 	   float mult = temp1.begin->x * temp2.begin->x;
-	   return foreach_feature<T>(all, dat, ec->atomics[(int)(*i)[2]].begin, ec->atomics[(int)(*i)[2]].end, halfhash + offset, mult);
+	   return foreach_feature<T>(all, dat, ec->atomics[(int)(*i)[2]].begin, ec->atomics[(int)(*i)[2]].end, halfhash, mult);
 	 }
        }
      }
