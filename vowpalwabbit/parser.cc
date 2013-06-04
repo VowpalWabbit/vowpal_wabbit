@@ -765,7 +765,7 @@ void setup_example(vw& all, example* ae)
   
   if(all.reg.stride != 1 || all.weights_per_problem != 1) //make room for per-feature information.
     {
-      uint32_t stride = all.reg.stride * all.weights_per_problem;
+      uint32_t stride = all.reg.stride;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
 	  j->weight_index = j->weight_index*stride;
