@@ -17,5 +17,5 @@ number of examples = 8
 weighted example sum = 8
 weighted label sum = 0
 average loss = 0
-best constant = -0.1429
+best constant = -0.142857
 total feature number = 32
