@@ -481,9 +481,6 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("noop")) 
     all->l = NOOP::setup(*all);
   
-  if (all->rank != 0) 
-    all->l = MF::setup(*all);
-
   all->loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   if (pow((double)all->eta_decay_rate, (double)all->numpasses) < 0.0001 )
@@ -576,6 +573,9 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("nn") || vm_file.count("nn") ) 
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
+
+  if (all->rank != 0) 
+    all->l = MF::setup(*all, vm);
 
   if(vm.count("autolink") || vm_file.count("autolinnk") ) 
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
