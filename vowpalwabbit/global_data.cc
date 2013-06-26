@@ -262,6 +262,8 @@ vw::vw()
   m = 15; 
   save_resume = false;
 
+  active_simulation = false;
+
   l = GD::setup(*this);
   scorer = l;
 
@@ -317,8 +319,6 @@ vw::vw()
   normalized_updates = true;
   invariant_updates = true;
   
-  l = GD::setup(*this);
-
   normalized_sum_norm_x = 0.;
   normalized_idx = 2;
 
