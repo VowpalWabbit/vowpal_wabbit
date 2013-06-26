@@ -11,7 +11,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h vowpalwabbit/oaa.h		\
        vowpalwabbit/parser.h vowpalwabbit/csoaa.h vowpalwabbit/beam.h	\
        vowpalwabbit/searn.h vowpalwabbit/ect.h vowpalwabbit/cb.h	\
        vowpalwabbit/searn_sequencetask.h vowpalwabbit/example.h		\
-       vowpalwabbit/sender.h vowpalwabbit/gd.h vowpalwabbit/gd_mf.h	\
+       vowpalwabbit/sender.h vowpalwabbit/gd.h vowpalwabbit/mf.h	\
        vowpalwabbit/simple_label.h vowpalwabbit/global_data.h		\
        vowpalwabbit/sparse_dense.h vowpalwabbit/hash.h			\
        vowpalwabbit/unique_sort.h vowpalwabbit/io_buf.h			\
