@@ -44,6 +44,21 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
+bool not_valid_ns(char c)
+{
+    if (c=='|'||c==':')
+        return true;
+    return false;
+}
+
+void str_push(vector<string> &v, char c1, char c2)
+{
+    string tmp;
+    tmp = c1;
+    tmp += c2;
+    v.push_back(tmp);
+}
+
 vw* parse_args(int argc, char *argv[])
 {
   po::options_description desc("VW options");
@@ -308,23 +323,64 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("sort_features"))
     all->p->sort_features = true;
 
+  
+
   if (vm.count("quadratic"))
     {
       all->pairs = vm["quadratic"].as< vector<string> >();
-      if (!all->quiet)
-	{
-	  cerr << "creating quadratic features for pairs: ";
-	  for (vector<string>::iterator i = all->pairs.begin(); i != all->pairs.end();i++) {
-	    cerr << *i << " ";
-	    if (i->length() > 2)
-	      cerr << endl << "warning, ignoring characters after the 2nd.\n";
-	    if (i->length() < 2) {
-	      cerr << endl << "error, quadratic features must involve two sets.\n";
-	      throw exception();
-	    }
-	  }
-	  cerr << endl;
-	}
+      vector<string> newquads;
+      //string tmp;       
+      char ascii_start = '!';
+      char ascii_end = '~';
+      int valid_ns_size = ascii_end - ascii_start - 1; //will skip two characters
+
+      if(!all->quiet)
+        cerr<<"creating quadratic features for pairs: ";   
+    
+      for (vector<string>::iterator i = all->pairs.begin(); i != all->pairs.end();i++){
+        if(!all->quiet){
+          cerr << *i << " ";
+          if (i->length() > 2)
+            cerr << endl << "warning, ignoring characters after the 2nd.\n";
+          if (i->length() < 2) {
+            cerr << endl << "error, quadratic features must involve two sets.\n";
+            throw exception();
+          }
+        }
+        //-q x:
+        if((*i)[0]!=':'&&(*i)[1]==':'){
+          newquads.reserve(newquads.size() + valid_ns_size);
+          for (char j=ascii_start; j<=ascii_end; j++){
+            if(not_valid_ns(j)){continue;}
+            str_push(newquads, (*i)[0], j);
+          }
+        }
+        //-q :x
+        else if((*i)[0]==':'&&(*i)[1]!=':'){
+          newquads.reserve(newquads.size() + valid_ns_size);
+          for (char j=ascii_start; j<=ascii_end; j++){
+            if(not_valid_ns(j)){continue;}
+            str_push(newquads, j, (*i)[1]);
+          }
+        }
+        //-q ::
+        else if((*i)[0]==':'&&(*i)[1]==':'){
+          newquads.reserve(newquads.size() + valid_ns_size*valid_ns_size);
+          for (char j=ascii_start; j<=ascii_end; j++){
+            if(not_valid_ns(j)){continue;}
+            for (char k=ascii_start; k<=ascii_end; k++){
+              if(not_valid_ns(k)){continue;}
+              str_push(newquads, j, k);
+            }
+          }
+        }
+        else{
+          str_push(newquads, (*i)[0], (*i)[1]);
+        }    
+      }
+      newquads.swap(all->pairs);
+      if(!all->quiet)
+        cerr<<endl;
     }
 
   if (vm.count("cubic"))
