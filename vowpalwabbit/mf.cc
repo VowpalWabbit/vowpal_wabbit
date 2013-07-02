@@ -69,8 +69,6 @@ void inline_predict(mf* data, vw* all, example* &ec) {
 
   // store namespace indices
   copy_array(data->indices, ec->indices);
-  // store namespace indices
-  //copy_array(data->indices, ec->indices);
 
   // add interaction terms to prediction
   for (vector<string>::iterator i = data->pairs.begin(); i != data->pairs.end(); i++) {
@@ -126,8 +124,6 @@ void learn(void* d, example* ec) {
 
   // predict with current weights
   inline_predict(data, all, ec);
-
-  float err = fabs(((label_data*) ec->ld)->label - ec->final_prediction);
 
   // force base learner to use precomputed prediction
   ec->precomputed_prediction = true;
@@ -187,12 +183,6 @@ void learn(void* d, example* ec) {
   copy_array(ec->indices, data->indices);
 
   ec->precomputed_prediction = false;
-
-  // predict with current weights
-  //inline_predict(data, all, ec);
-  float new_err = fabs(((label_data*) ec->ld)->label - ec->final_prediction);
-  //if (new_err > err)
-  //  cout << "error increased after training from " << err << " to " << new_err << endl;
 }
 
 void finish(void* data) {
