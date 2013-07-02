@@ -52,15 +52,13 @@ struct mf {
 };
 
 void inline_predict(mf* data, vw* all, example* &ec) {
-  // store namespace indices
-  copy_array(data->indices, ec->indices);
 
   float prediction = 0;
   data->sub_predictions.erase();
 
-  // set label to FLT_MAX to indicate test example (predict only)
-  float label = ((label_data*) ec->ld)->label;
-  ((label_data*) ec->ld)->label = FLT_MAX;
+  // set weight to 0 to indicate test example (predict only)
+  float weight = ((label_data*) ec->ld)->weight;
+  ((label_data*) ec->ld)->weight = 0;
 
   // predict from linear terms
   data->base.learn(ec);
@@ -68,6 +66,11 @@ void inline_predict(mf* data, vw* all, example* &ec) {
   // store linear prediction
   data->sub_predictions.push_back(ec->partial_prediction);
   prediction += ec->partial_prediction;
+
+  // store namespace indices
+  copy_array(data->indices, ec->indices);
+  // store namespace indices
+  //copy_array(data->indices, ec->indices);
 
   // add interaction terms to prediction
   for (vector<string>::iterator i = data->pairs.begin(); i != data->pairs.end(); i++) {
@@ -100,10 +103,10 @@ void inline_predict(mf* data, vw* all, example* &ec) {
       }
     }
   }
-
   // restore namespace indices and label
   copy_array(ec->indices, data->indices);
-  ((label_data*) ec->ld)->label = label;
+
+  ((label_data*) ec->ld)->weight = weight;
 
   // finalize prediction
   ec->partial_prediction = prediction;
@@ -121,17 +124,19 @@ void learn(void* d, example* ec) {
     return;
   }
 
-  // store namespace indices
-  copy_array(data->indices, ec->indices);
-
   // predict with current weights
   inline_predict(data, all, ec);
+
+  float err = fabs(((label_data*) ec->ld)->label - ec->final_prediction);
 
   // force base learner to use precomputed prediction
   ec->precomputed_prediction = true;
 
   // update linear weights
   data->base.learn(ec);
+
+  // store namespace indices
+  copy_array(data->indices, ec->indices);
 
   // update interaction terms
   // looping over all pairs of non-empty namespaces
@@ -178,10 +183,16 @@ void learn(void* d, example* ec) {
       }
     }
   }
-
   // restore namespace indices and unset precomputed prediction
   copy_array(ec->indices, data->indices);
+
   ec->precomputed_prediction = false;
+
+  // predict with current weights
+  //inline_predict(data, all, ec);
+  float new_err = fabs(((label_data*) ec->ld)->label - ec->final_prediction);
+  //if (new_err > err)
+  //  cout << "error increased after training from " << err << " to " << new_err << endl;
 }
 
 void finish(void* data) {
@@ -234,7 +245,6 @@ learner setup(vw& all, po::variables_map& vm) {
       for (size_t j = 0; j < (all.reg.weight_mask + 1) / all.reg.stride; j++)
 	all.reg.weight_vector[j*all.reg.stride] = (float) (0.1 * frand48());
     }
-
   learner ret(data, drive,learn, finish, all.l.sl);
   return ret;
 }

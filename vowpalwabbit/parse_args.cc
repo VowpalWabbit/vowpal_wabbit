@@ -219,6 +219,7 @@ vw* parse_args(int argc, char *argv[])
     }
 
   all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
+  /*
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
   if( all->rank > 0 || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
   {
@@ -243,7 +244,7 @@ vw* parse_args(int argc, char *argv[])
       all->initial_t = 1.f;
     }
   }
-
+  */
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) 
     BFGS::setup(*all, to_pass_further, vm, vm_file);
 
@@ -404,12 +405,14 @@ vw* parse_args(int argc, char *argv[])
 	}
     }
 
+  /*
   // matrix factorization enabled
   if (all->rank > 0) {
     // store linear + 2*rank weights per index, round up to power of two
     float temp = ceilf(logf((float)(all->rank*2+1)) / logf (2.f));
     all->reg.stride = 1 << (int) temp;
     all->random_weights = true;
+
 
     if ( vm.count("adaptive") )
       {
@@ -439,6 +442,7 @@ vw* parse_args(int argc, char *argv[])
       all->initial_t = 1.f;
     }
   }
+  */
 
   if (vm.count("noconstant"))
     all->add_constant = false;

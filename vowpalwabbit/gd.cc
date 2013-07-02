@@ -513,7 +513,7 @@ float compute_norm(vw& all, example* &ec)
 
     label_data* ld = (label_data*)ex->ld;
     float prediction;
-    if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
+    if (all.training && all.normalized_updates && ld->label != FLT_MAX) {
       if( all.power_t == 0.5 ) {
 	if (all.reg_mode % 2)
 	  prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
