@@ -224,14 +224,34 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   weight* weights = all.reg.weight_vector;
   size_t stride = all.reg.stride;
   
-  tempstream << prepend;
-  if (a != NULL)
+  if(all.truely_print) tempstream << prepend;
+  
+  typedef std::map<size_t, std::string> IntStrMap;
+  string tmp = all.ns_pre;
+
+  if (a != NULL){
+    tmp += a->space;
+    tmp += '^';
+    tmp += a->feature; 
+  }
+  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) ){
+    tmp = "Constant";
+  }
+
+  if (a != NULL && all.truely_print){
     tempstream << a->space << '^' << a->feature << ':';
-  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask))
+  }
+  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask)&&all.truely_print){
     tempstream << "Constant:";
-  tempstream << (index/stride & all.parse_mask) << ':' << f->x;
-  tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
-  if(all.adaptive)
+  }
+  if(all.truely_print){
+    tempstream << (index/stride & all.parse_mask) << ':' << f->x;
+    tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
+  }
+
+  if(all.truely_read) all.Index_names.insert(IntStrMap::value_type((index/stride & all.parse_mask), tmp));
+
+  if(all.adaptive && all.truely_print)
     tempstream << '@' << weights[index+1];
   string_value sv = {weights[index]*f->x, tempstream.str()};
   results.push_back(sv);
@@ -251,9 +271,12 @@ void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<
   size_t halfhash = quadratic_constant * (left_feature.weight_index + offset);
 
   ostringstream tempstream;
-  if (audit_right.size() != 0 && left_audit)
+  if (audit_right.size() != 0 && left_audit && all.truely_print)
     tempstream << left_audit->space << '^' << left_audit->feature << '^';
   string prepend = tempstream.str();
+
+  all.ns_pre = left_audit->space; 
+  all.ns_pre = all.ns_pre + '^' + left_audit->feature + '^';
 
   audit_features(all, right_features, audit_right, results, prepend, halfhash + offset);
 }
@@ -264,10 +287,12 @@ void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit
   size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
 
   ostringstream tempstream;
-  if (audit_right.size() > 0 && f0_audit && f1_audit)
+  if (audit_right.size() > 0 && f0_audit && f1_audit && all.truely_print)
     tempstream << f0_audit->space << '^' << f0_audit->feature << '^' 
 	       << f1_audit->space << '^' << f1_audit->feature << '^';
   string prepend = tempstream.str();
+  all.ns_pre = f0_audit->space;
+  all.ns_pre = all.ns_pre + '^' + f0_audit->feature + '^' + f1_audit->space + '^' + f1_audit->feature + '^';
   audit_features(all, right_features, audit_right, results, prepend, halfhash + offset);  
 }
 
@@ -294,8 +319,10 @@ void print_features(vw& all, example* &ec)
       vector<string_value> features;
       string empty;
       
-      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++){ 
 	audit_features(all, ec->atomics[*i], ec->audit_features[*i], features, empty, ec->ft_offset);
+        all.ns_pre = "";
+      }
       for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
 	{
 	  int fst = (*i)[0];
@@ -330,16 +357,18 @@ void print_features(vw& all, example* &ec)
 	}
 
       sort(features.begin(),features.end());
-
-      for (vector<string_value>::iterator sv = features.begin(); sv!= features.end(); sv++)
-	cout << '\t' << (*sv).s;
-      cout << endl;
+      if(all.truely_print){ 
+        for (vector<string_value>::iterator sv = features.begin(); sv!= features.end(); sv++)
+	  cout << '\t' << (*sv).s;
+        cout << endl;
+      }
     }
 }
 
 void print_audit_features(vw& all, example* ec)
 {
-  print_result(all.stdout_fileno,ec->final_prediction,-1,ec->tag);
+  if(all.truely_print)
+    print_result(all.stdout_fileno,ec->final_prediction,-1,ec->tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -568,12 +597,22 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 	    {
 	      c++;
 	      char buff[512];
-	      int text_len = sprintf(buff, "%d", i);
-	      brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
+	      int text_len;
+	      if(!all.truely_read){
+	        text_len = sprintf(buff, "%d", i);
+	        brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
 					 buff, text_len, text);
 	      
 	      
-	      text_len = sprintf(buff, ":%f\n", *v);
+
+              } 
+              else{
+                text_len = sprintf(buff, "%s", (char*)all.Index_names[i].c_str());
+                brw = bin_text_write_fixed(model_file, (char*)all.Index_names[i].c_str(), sizeof(*all.Index_names[i].c_str()),
+					 buff, text_len, text);
+              }	        
+
+              text_len = sprintf(buff, ":%f\n", *v);
 	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
 					 buff, text_len, text);
 	    }
