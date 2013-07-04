@@ -44,19 +44,11 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
-bool not_valid_ns(char c)
+bool valid_ns(char c)
 {
     if (c=='|'||c==':')
-        return true;
-    return false;
-}
-
-void str_push(vector<string> &v, char c1, char c2)
-{
-    string tmp;
-    tmp = c1;
-    tmp += c2;
-    v.push_back(tmp);
+        return false;
+    return true;
 }
 
 vw* parse_args(int argc, char *argv[])
@@ -135,6 +127,7 @@ vw* parse_args(int argc, char *argv[])
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
+    ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features")
     ("quiet", "Don't output diagnostics")
@@ -328,11 +321,11 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("quadratic"))
     {
       all->pairs = vm["quadratic"].as< vector<string> >();
-      vector<string> newquads;
+      vector<string> newpairs;
       //string tmp;       
-      char ascii_start = '!';
-      char ascii_end = '~';
-      int valid_ns_size = ascii_end - ascii_start - 1; //will skip two characters
+      char printable_start = '!';
+      char printable_end = '~';
+      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
 
       if(!all->quiet)
         cerr<<"creating quadratic features for pairs: ";   
@@ -349,36 +342,37 @@ vw* parse_args(int argc, char *argv[])
         }
         //-q x:
         if((*i)[0]!=':'&&(*i)[1]==':'){
-          newquads.reserve(newquads.size() + valid_ns_size);
-          for (char j=ascii_start; j<=ascii_end; j++){
-            if(not_valid_ns(j)){continue;}
-            str_push(newquads, (*i)[0], j);
+          newpairs.reserve(newpairs.size() + valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j))
+              newpairs.push_back(string(&(*i)[0])+j);
           }
         }
         //-q :x
         else if((*i)[0]==':'&&(*i)[1]!=':'){
-          newquads.reserve(newquads.size() + valid_ns_size);
-          for (char j=ascii_start; j<=ascii_end; j++){
-            if(not_valid_ns(j)){continue;}
-            str_push(newquads, j, (*i)[1]);
+          newpairs.reserve(newpairs.size() + valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j))
+              newpairs.push_back(string(&j)+(*i)[1]);
           }
         }
         //-q ::
         else if((*i)[0]==':'&&(*i)[1]==':'){
-          newquads.reserve(newquads.size() + valid_ns_size*valid_ns_size);
-          for (char j=ascii_start; j<=ascii_end; j++){
-            if(not_valid_ns(j)){continue;}
-            for (char k=ascii_start; k<=ascii_end; k++){
-              if(not_valid_ns(k)){continue;}
-              str_push(newquads, j, k);
+          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j)){
+              for (char k=printable_start; k<=printable_end; k++){
+                if(valid_ns(k))
+                  newpairs.push_back(string(&j)+k);
+              }
             }
           }
         }
         else{
-          str_push(newquads, (*i)[0], (*i)[1]);
+          newpairs.push_back(string(&(*i)[0])+(*i)[1]);
         }    
       }
-      newquads.swap(all->pairs);
+      newpairs.swap(all->pairs);
       if(!all->quiet)
         cerr<<endl;
     }
