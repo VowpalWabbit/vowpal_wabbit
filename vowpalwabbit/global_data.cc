@@ -337,6 +337,6 @@ vw::vw()
 
   max_examples = (size_t)-1;
 
-  truely_print = false; 
-  truely_read = false;
+  debug_print = false; 
+  readable_name = false;
 }

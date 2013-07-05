@@ -90,7 +90,7 @@ vw* parse_args(int argc, char *argv[])
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
-    ("truely_readable_model", po::value< string >(), "Output human-readable final regressor with feature names")
+    ("truly_readable_model", po::value< string >(), "Output human-readable final regressor with feature names")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("hessian_on", "use second derivative in line search")
     ("version","Version information")
@@ -456,13 +456,13 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("readable_model"))
     all->text_regressor_name = vm["readable_model"].as<string>();
 
-  if (vm.count("truely_readable_model")){
-    all->text_regressor_name = vm["truely_readable_model"].as<string>();
+  if (vm.count("truly_readable_model")){
+    all->text_regressor_name = vm["truly_readable_model"].as<string>();
     if (vm.count("audit"))
-      all->truely_print = true;
+      all->debug_print = true;
 
     all->audit = true;  
-    all->truely_read = true;  
+    all->readable_name = true;  
   }
   
   if (vm.count("save_per_pass"))
@@ -554,7 +554,7 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("audit")){
     all->audit = true;
-    all->truely_print = true;
+    all->debug_print = true;
   }
 
   if (vm.count("sendto"))

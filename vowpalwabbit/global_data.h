@@ -247,8 +247,8 @@ struct vw {
 
   size_t max_examples; // for TLC
 
-  bool truely_print;
-  bool truely_read;
+  bool debug_print;
+  bool readable_name;
   std::map<size_t, std::string> Index_names;
   std::string ns_pre;
 
