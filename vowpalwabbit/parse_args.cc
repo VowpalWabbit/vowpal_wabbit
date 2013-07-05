@@ -44,6 +44,13 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
+bool valid_ns(char c)
+{
+    if (c=='|'||c==':')
+        return false;
+    return true;
+}
+
 vw* parse_args(int argc, char *argv[])
 {
   po::options_description desc("VW options");
@@ -120,6 +127,7 @@ vw* parse_args(int argc, char *argv[])
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
+    ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features")
     ("quiet", "Don't output diagnostics")
@@ -308,23 +316,65 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("sort_features"))
     all->p->sort_features = true;
 
+  
+
   if (vm.count("quadratic"))
     {
       all->pairs = vm["quadratic"].as< vector<string> >();
-      if (!all->quiet)
-	{
-	  cerr << "creating quadratic features for pairs: ";
-	  for (vector<string>::iterator i = all->pairs.begin(); i != all->pairs.end();i++) {
-	    cerr << *i << " ";
-	    if (i->length() > 2)
-	      cerr << endl << "warning, ignoring characters after the 2nd.\n";
-	    if (i->length() < 2) {
-	      cerr << endl << "error, quadratic features must involve two sets.\n";
-	      throw exception();
-	    }
-	  }
-	  cerr << endl;
-	}
+      vector<string> newpairs;
+      //string tmp;       
+      char printable_start = '!';
+      char printable_end = '~';
+      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
+
+      if(!all->quiet)
+        cerr<<"creating quadratic features for pairs: ";   
+    
+      for (vector<string>::iterator i = all->pairs.begin(); i != all->pairs.end();i++){
+        if(!all->quiet){
+          cerr << *i << " ";
+          if (i->length() > 2)
+            cerr << endl << "warning, ignoring characters after the 2nd.\n";
+          if (i->length() < 2) {
+            cerr << endl << "error, quadratic features must involve two sets.\n";
+            throw exception();
+          }
+        }
+        //-q x:
+        if((*i)[0]!=':'&&(*i)[1]==':'){
+          newpairs.reserve(newpairs.size() + valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j))
+              newpairs.push_back(string(&(*i)[0])+j);
+          }
+        }
+        //-q :x
+        else if((*i)[0]==':'&&(*i)[1]!=':'){
+          newpairs.reserve(newpairs.size() + valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j))
+              newpairs.push_back(string(&j)+(*i)[1]);
+          }
+        }
+        //-q ::
+        else if((*i)[0]==':'&&(*i)[1]==':'){
+          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j)){
+              for (char k=printable_start; k<=printable_end; k++){
+                if(valid_ns(k))
+                  newpairs.push_back(string(&j)+k);
+              }
+            }
+          }
+        }
+        else{
+          newpairs.push_back(string(&(*i)[0])+(*i)[1]);
+        }    
+      }
+      newpairs.swap(all->pairs);
+      if(!all->quiet)
+        cerr<<endl;
     }
 
   if (vm.count("cubic"))
