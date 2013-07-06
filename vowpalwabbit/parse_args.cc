@@ -457,12 +457,11 @@ vw* parse_args(int argc, char *argv[])
     all->text_regressor_name = vm["readable_model"].as<string>();
 
   if (vm.count("truly_readable_model")){
-    all->text_regressor_name = vm["truly_readable_model"].as<string>();
+    all->text_regressor_name_truly = vm["truly_readable_model"].as<string>();
     if (vm.count("audit"))
       all->debug_print = true;
 
-    all->audit = true;  
-    all->readable_name = true;  
+    all->audit = true;    
   }
   
   if (vm.count("save_per_pass"))

@@ -249,7 +249,7 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
 
-  if(all.readable_name){ 
+  if(all.text_regressor_name_truly!=""){ 
     if(!all.Index_names.count(index/stride & all.parse_mask)){
       all.Index_names.insert(IntStrMap::value_type((index/stride & all.parse_mask), tmp));
     }
@@ -602,7 +602,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 	      c++;
 	      char buff[512];
 	      int text_len;
-	      if(!all.readable_name){
+	      if(!all.print_truly){
 	        text_len = sprintf(buff, "%d", i);
 	        brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
 					 buff, text_len, text);
