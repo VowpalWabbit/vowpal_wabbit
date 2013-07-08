@@ -345,7 +345,7 @@ vw* parse_args(int argc, char *argv[])
           newpairs.reserve(newpairs.size() + valid_ns_size);
           for (char j=printable_start; j<=printable_end; j++){
             if(valid_ns(j))
-              newpairs.push_back(string(&(*i)[0])+j);
+              newpairs.push_back(string(1,(*i)[0])+j);
           }
         }
         //-q :x
@@ -369,7 +369,7 @@ vw* parse_args(int argc, char *argv[])
           }
         }
         else{
-          newpairs.push_back(string(&(*i)[0])+(*i)[1]);
+          newpairs.push_back(string(*i));
         }    
       }
       newpairs.swap(all->pairs);
