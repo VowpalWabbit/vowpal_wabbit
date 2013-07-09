@@ -9,7 +9,7 @@ more details on the normalized learning rule see [the paper](http://arxiv.org/ab
 
 - `make all.results`: eventually produces a nice table outlining performance of normalized adaptive gradient (NAG) vs. unnormalized adaptive gradient (AG) for a variety of data sets.
 	- **WARNING**: Please be aware that these demos can be network I/O, disk space, and/or CPU intensive.
-	- The complete set of demos can take hours to compute the first time, although the results are cached for subsequent generation. 
+	- The complete set of demos can take hours to compute the first time, although the results are cached for subsequent reproduction. 
 	- You will see lower progressive loss (regret) for NAG than AG.
 	- You will also see that the optimal learning rate eta<sup>*</sup> varies less across datasets for NAG than AG.
 
