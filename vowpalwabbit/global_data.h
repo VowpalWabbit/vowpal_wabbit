@@ -246,6 +246,9 @@ struct vw {
 
   size_t max_examples; // for TLC
 
+  std::vector<bool> mask; //bit representation from STL
+  bool mask_on;
+
   vw();
 };
 

@@ -105,6 +105,7 @@ vw* parse_args(int argc, char *argv[])
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
+    ("mask", po::value< string >(), "Generate a mask from an existing regressor, may be different from the one from -i")
     ("initial_pass_length", po::value<size_t>(&(all->pass_length)), "initial number of examples per pass")
     ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
     ("lda", po::value<size_t>(&(all->lda)), "Run lda with <int> topics")
@@ -173,6 +174,60 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(parsed, vm);
   po::notify(vm);
+  
+  if (vm.count("mask")) {
+ 
+    string mask_filename = vm["mask"].as<string>();
+    vw* vw_temp = new vw();
+    vw_temp->mask = (vector<bool> (1<<all->num_bits, false));
+
+    io_buf io_temp_mask;       
+    io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
+    save_load_header(*vw_temp, io_temp_mask, true, false);
+
+    char buff[512];
+    bool resume = false;
+    uint32_t text_len = sprintf(buff, ":%d\n", false);
+    bin_text_read_write_fixed(io_temp_mask,(char *)&resume, sizeof (resume),
+				"", true,
+				buff, text_len, false);
+
+    uint32_t length = 1 << all->num_bits;
+    int c = 0;
+    uint32_t i = 0;
+    size_t brw = 1;
+
+  do 
+    {
+      brw = 1;
+      float v = 0;
+      c++;
+      brw = bin_read_fixed(io_temp_mask, (char*)&i, sizeof(i),"");
+      if (brw > 0){
+        assert (i< length);		
+        vw_temp->mask[i] = true;
+        brw += bin_read_fixed(io_temp_mask, (char*)&v, sizeof(v), "");
+      }
+
+    }
+  while (brw >0); 
+    
+  io_temp_mask.close_file();
+
+  all->mask_on = true;
+  all->mask = vw_temp->mask;
+
+  vw_temp->searnstr = NULL;
+  finalize_regressor(*vw_temp, vw_temp->final_regressor_name);
+  vw_temp->l.finish();
+  free(vw_temp->p->lp);
+  vw_temp->p->parse_name.erase();
+  vw_temp->p->parse_name.delete_v();
+  free(vw_temp->p);
+  free(vw_temp->sd);
+  delete vw_temp->loss;
+  delete vw_temp;
+  }
 
   all->data_filename = "";
 

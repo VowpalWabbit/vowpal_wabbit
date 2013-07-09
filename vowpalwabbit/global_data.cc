@@ -336,4 +336,6 @@ vw::vw()
   do_reset_source = false;
 
   max_examples = (size_t)-1;
+
+  mask_on = false;
 }
