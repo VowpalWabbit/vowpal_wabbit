@@ -9,12 +9,51 @@ all:
 all.results.pre: covertype.best covertype.nonormbest
 	@printf "%20.20s\t%9s\t%9s\t%9s\t%9s\n" "Dataset" "NAG eta^*" "NAG loss" "AG eta^*" "AG loss"
 
-all.results: all.results.pre $(foreach what,census covertype CTslice MSD shuttle,$(what).resultsprint)
+all.results: all.results.pre $(foreach what,bank census covertype CTslice MSD shuttle,$(what).resultsprint)
 
 SHUFFLE='BEGIN { srand 69; };					\
          $$i = int rand 100000;					\
 	 print $$b[$$i] if $$b[$$i];				\
 	 $$b[$$i] = $$_; } { print grep { defined $$_ } @b;'
+
+#---------------------------------------------------------------------
+#                           bank marketing                            
+# 
+# normalization really helps.  The columns have units of euros, seconds,
+# days, and years; in addition there are categorical variables.
+#---------------------------------------------------------------------
+
+bank.zip:
+	@echo "downloading bank ..." 1>&2
+	wget -q -O - 							     \
+	   http://archive.ics.uci.edu/ml/machine-learning-databases/00222/$@ \
+	> $@
+
+bank.preprocess.data.gz: bank.zip
+	@echo "preprocessing bank ..." 1>&2
+	@zcat $< 2>/dev/null |						\
+	  perl -MScalar::Util -F';' -lane '$$l = pop @F; $$p = ($$l =~ /no/) ? -1 : 1; print "$$p $$p|f ", join " ", map { $$isn = Scalar::Util::looks_like_number ($$F[$$_]); $$F[$$_] =~ s/^\s+//; $$F[$$_] =~ s/\s+$$//; $$F[$$_] =~ s/\W/_/g unless $$isn; $$isn ? "@{[$$_+1]}:$$F[$$_]" : "@{[$$_+1]}_$$F[$$_]" } grep { $$F[$$_] =~ /\w/ && ( ! Scalar::Util::looks_like_number ($$F[$$_]) || $$F[$$_] > 0 ) } (0 .. $$#F)' |								\
+	perl -e 'BEGIN { srand 69; }; print map { $$_->[1] } sort { $$a->[0] <=> $$b->[0] } map { [ rand (), $$_ ] } <>;' | gzip                        \
+	> $@
+
+bank.%.nonormlearn: bank.preprocess.data.gz
+	 @${VW} --loss_function logistic -b 22 -q ff -l $* $<		\
+	   --adaptive --invariant					\
+	   -p >(perl -lane '						\
+		  1; ++$$n; $$l+=1.0 if $$F[0] * $$F[1] < 0; } 		\
+		  1; { printf "average loss = %f\t%u\t%u\n", $$l/$$n, $$l, $$n;')
+
+bank.%.learn: bank.preprocess.data.gz
+	 @${VW} --loss_function logistic -b 22 -q ff -l $* $<		\
+	   -p >(perl -lane '						\
+		  1; ++$$n; $$l+=1.0 if $$F[0] * $$F[1] < 0; } 		\
+		  1; { printf "average loss = %f\t%u\t%u\n", $$l/$$n, $$l, $$n;')
+
+bankbestmin=1e-2
+bankbestmax=10
+banknonormbestmin=1e-8
+banknonormbestmax=1e-3
+banktimeestimate=1  
 
 #---------------------------------------------------------------------
 #                              covertype                              
@@ -99,13 +138,14 @@ MSDtimeestimate=15
 #---------------------------------------------------------------------
 
 census-income.data.gz:
-	@echo "downloading census-income ..." 1>&2
+	@echo "downloading census ..." 1>&2
 	@wget -q -O - 							\
 	    http://archive.ics.uci.edu/ml/machine-learning-databases/census-income-mld/$@									\
 	  > $@
 
 census-income.preprocess.data.gz: census-income.data.gz
-	zcat $< |							\
+	@echo "preprocessing census ..." 1>&2
+	@zcat $< |							\
 	  perl -MScalar::Util -F',' -lane '$$l = pop @F; $$p = $$l =~ /-/ ? -1 : 1; print "$$p $$p|f ", join " ", map { $$isn = Scalar::Util::looks_like_number ($$F[$$_]); $$F[$$_] =~ s/^\s+//; $$F[$$_] =~ s/\s+$$//; $$F[$$_] =~ s/\W/_/g unless $$isn; $$isn ? "@{[$$_+1]}:$$F[$$_]" : "@{[$$_+1]}_$$F[$$_]" } grep { $$F[$$_] =~ /\w/ && ( ! Scalar::Util::looks_like_number ($$F[$$_]) || $$F[$$_] > 0 ) } (0 .. $$#F)' |								\
 	perl -e 'BEGIN { srand 69; }; print map { $$_->[1] } sort { $$a->[0] <=> $$b->[0] } map { [ rand (), $$_ ] } <>;' | gzip                        \
 	> $@
@@ -156,7 +196,7 @@ shuttlebestmin=1e-2
 shuttlebestmax=10
 shuttlenonormbestmin=1e-8
 shuttlenonormbestmax=1e-3
-shuttletimeestimate=0
+shuttletimeestimate=1
 
 #---------------------------------------------------------------------
 #                              CT slices                              
