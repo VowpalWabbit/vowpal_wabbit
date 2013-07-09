@@ -260,12 +260,12 @@ CTslicetimeestimate=15
 #---------------------------------------------------------------------
 
 %.best: %.data
-	@echo "($*) searching for best in-hindsight learning rate for normalized rule" 1>&2
+	@echo "($*) searching for best in-hindsight learning rate for NAG" 1>&2
 	@printf "WARNING: this step takes about %s minutes\n" $($*timeestimate)
 	@./hypersearch $($*bestmin) $($*bestmax) '$(MAKE)' '$*.%.learn' > $@
 
 %.nonormbest: %.data
-	@echo "($*) searching for best in-hindsight learning rate for adaptive gradient" 1>&2
+	@echo "($*) searching for best in-hindsight learning rate for AG" 1>&2
 	@printf "WARNING: this step takes about %s minutes\n" $($*timeestimate)
 	@./hypersearch $($*nonormbestmin) $($*nonormbestmax) '$(MAKE)' '$*.%.nonormlearn' > $@
 
