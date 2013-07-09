@@ -9,12 +9,15 @@ more details on the normalized learning rule see [the paper](http://arxiv.org/ab
 
 - `make all.results`: eventually produces a nice table outlining performance of normalized adaptive gradient (NAG) vs. unnormalized adaptive gradient (AG) for a variety of data sets.
 	- **WARNING**: Please be aware that these demos can be network I/O, disk space, and/or CPU intensive.
+	- The complete set of demos can take hours to compute the first time, although the results are cached for subsequent generation. 
+	- You will see lower progressive loss (regret) for NAG than AG.
+	- You will also see that the optimal learning rate eta<sup>*</sup> varies less across datasets for NAG than AG.
 
 #### Details ####
 
 This is organized into individual demos which process a single dataset.  The different individual demos are associated with unique make targets.
 
-An individual demo will download a data set and learn a predictor under two conditions: using the normalized learning rule (the vw default), and using adaptive gradient without normalization (`--adaptive --invariant`).  For both conditions it will do a hyper-parameter sweep to find the optimal in-hindsight learning rate.  Note the context here is online learning, so there is no train/test split; rather what is optimized is progressive loss over the input data.
+An individual demo will download a data set and learn a predictor under two conditions: using the normalized learning rule aka NAG (this the vw default), and using adaptive gradient without normalization aka AG (invoked via vw arguments `--adaptive --invariant`).  For both conditions it will do a hyper-parameter sweep to find the optimal in-hindsight learning rate eta<sup>*</sup>.  Note the context here is online learning, so there is no train/test split; rather what is optimized is progressive loss over the input data.
 
 #### About the datasets ####
 
@@ -22,9 +25,11 @@ Note when data is pre-normalized or otherwise does not exhibit varying scales, t
 
 #### Just doing one dataset ####
 
-There are individual makefile targets that will just download and compare one dataset.
+There are individual makefile targets that will just download and compare one dataset.  You can compute a subset using a combination of make targets, e.g., `make only.{covertype,shuttle}`.
 
 Invocation | Dataset | Time | Disk | Network 
 --- | --- | --- | --- | ---
 `make only.covertype` | [covertype](http://archive.ics.uci.edu/ml/datasets/Covertype) | 12 minutes | 24Mb | 11Mb
-
+`make only.MSD` | [MSD](http://archive.ics.uci.edu/ml/datasets/YearPredictionMSD) | 30 minutes | 500Mb | 256Mb
+`make only.shuttle` | [Shuttle](http://archive.ics.uci.edu/ml/datasets/Statlog+(Shuttle)) | 1 minute | 600Kb | 300Kb 
+`make only.ctslice` | [CT Slice](http://archive.ics.uci.edu/ml/datasets/Relative+location+of+CT+slices+on+axial+axis) | ??? | 40Mb | 18Mb

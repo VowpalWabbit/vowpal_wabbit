@@ -81,14 +81,19 @@ sub evaluate ($)
 
   die "subprocess invocation failed: $!" if $status;
 
+  my $loss;
+
   foreach my $line (@$rv)
     {
       next unless $line =~ m%average loss = ([0-9\.]+)%;
-      warn " $1\n";
-      return $1;
+      $loss = $1;
     }
 
-  die "failed to parse average loss from vw output: ", join "", @$rv;
+  die "failed to parse average loss from vw output: ", join "", @$rv
+    unless defined ($loss);
+
+  warn " $loss\n";
+  return $loss;
 }
 
 sub argmin3 ($$$$$$)
@@ -109,7 +114,7 @@ my $lb = shift @ARGV;
 my $ub = shift @ARGV;
 my $flb = evaluate ($lb);
 my $fub = evaluate ($ub);
-my $tol = 1e-3;
+my $tol = 1e-2;
 my $phi = (1.0 + sqrt (5.0)) / 2.0;
 my $resphi = 2.0 - $phi;
 my $mid = $lb + $resphi * ($ub - $lb);
