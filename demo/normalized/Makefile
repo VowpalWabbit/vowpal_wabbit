@@ -6,10 +6,12 @@ VW=../../vowpalwabbit/vw
 all:
 	@cat README.md
 
-all.results.pre: covertype.best covertype.nonormbest
+datasets := bank census covertype CTslice MSD shuttle
+
+all.results.pre: $(foreach what,$(datasets),$(what).best $(what).nonormbest)
 	@printf "%20.20s\t%9s\t%9s\t%9s\t%9s\n" "Dataset" "NAG eta^*" "NAG loss" "AG eta^*" "AG loss"
 
-all.results: all.results.pre $(foreach what,bank census covertype CTslice MSD shuttle,$(what).resultsprint)
+all.results: all.results.pre $(foreach what,$(datasets),$(what).resultsprint)
 
 SHUFFLE='BEGIN { srand 69; };					\
          $$i = int rand 100000;					\
@@ -25,9 +27,9 @@ SHUFFLE='BEGIN { srand 69; };					\
 
 bank.zip:
 	@echo "downloading bank ..." 1>&2
-	wget -q -O - 							     \
-	   http://archive.ics.uci.edu/ml/machine-learning-databases/00222/$@ \
-	> $@
+	@wget -q -O - 							     \
+	     http://archive.ics.uci.edu/ml/machine-learning-databases/00222/$@ \
+	  > $@
 
 bank.preprocess.data.gz: bank.zip
 	@echo "preprocessing bank ..." 1>&2
@@ -35,6 +37,8 @@ bank.preprocess.data.gz: bank.zip
 	  perl -MScalar::Util -F';' -lane '$$l = pop @F; $$p = ($$l =~ /no/) ? -1 : 1; print "$$p $$p|f ", join " ", map { $$isn = Scalar::Util::looks_like_number ($$F[$$_]); $$F[$$_] =~ s/^\s+//; $$F[$$_] =~ s/\s+$$//; $$F[$$_] =~ s/\W/_/g unless $$isn; $$isn ? "@{[$$_+1]}:$$F[$$_]" : "@{[$$_+1]}_$$F[$$_]" } grep { $$F[$$_] =~ /\w/ && ( ! Scalar::Util::looks_like_number ($$F[$$_]) || $$F[$$_] > 0 ) } (0 .. $$#F)' |								\
 	perl -e 'BEGIN { srand 69; }; print map { $$_->[1] } sort { $$a->[0] <=> $$b->[0] } map { [ rand (), $$_ ] } <>;' | gzip                        \
 	> $@
+
+bank.data: bank.preprocess.data.gz
 
 bank.%.nonormlearn: bank.preprocess.data.gz
 	 @${VW} --loss_function logistic -b 22 -q ff -l $* $<		\
@@ -72,6 +76,8 @@ covtype.preprocess.data.gz: covtype.data.gz
 	perl -e 'BEGIN { srand 69; }; print map { $$_->[1] } sort { $$a->[0] <=> $$b->[0] } map { [ rand (), $$_ ] } <>;' | gzip                        \
 	> $@
 
+covertype.data: covtype.preprocess.data.gz
+
 covertype.%.nonormlearn: covtype.preprocess.data.gz
 	${VW} --adaptive --invariant -b 22 --hash all -q ff --oaa 7 -l $* -d $<
 
@@ -81,7 +87,7 @@ covertype.%.learn: covtype.preprocess.data.gz
 covertypebestmin=1e-2
 covertypebestmax=10
 covertypenonormbestmin=1e-8
-covertypenonormbestmax=1e-3
+covertypenonormbestmax=1e-5
 covertypetimeestimate=5  
 
 #---------------------------------------------------------------------
@@ -102,6 +108,8 @@ year.preprocess.data.gz: YearPredictionMSD.bz2
 	  <(bzcat $<) |							\
         perl -ne $(SHUFFLE)						\
 	| gzip > $@
+
+MSD.data: year.preprocess.data.gz
 
 MSD.%.learn: year.preprocess.data.gz
 	@zcat $< |							\
@@ -150,6 +158,8 @@ census-income.preprocess.data.gz: census-income.data.gz
 	perl -e 'BEGIN { srand 69; }; print map { $$_->[1] } sort { $$a->[0] <=> $$b->[0] } map { [ rand (), $$_ ] } <>;' | gzip                        \
 	> $@
 
+census.data: census-income.preprocess.data.gz
+
 census.%.nonormlearn: census-income.preprocess.data.gz
 	 @${VW} --hash all --loss_function logistic -q ff -l $* 	\
 	   --adaptive --invariant $< 					\
@@ -186,6 +196,8 @@ shuttle.preprocess.data.gz: shuttle.trn.Z
 	perl -e 'BEGIN { srand 69; }; print map { $$_->[1] } sort { $$a->[0] <=> $$b->[0] } map { [ rand (), $$_ ] } <>;' | gzip                        \
 	 > $@
 
+shuttle.data: shuttle.preprocess.data.gz
+
 shuttle.%.nonormlearn: shuttle.preprocess.data.gz
 	${VW} --adaptive --invariant -b 22 --hash all -q ff --oaa 7 -l $* -d $<
 
@@ -211,8 +223,11 @@ slice_localization_data.zip:
 	  > $@
 
 slice_localization.preprocess.data.gz: slice_localization_data.zip
-	zcat $< | perl -F',' -lane 'BEGIN { scalar <>; }; shift @F; $$l = pop @F; $$l =~ s/\r//; $$l -= 47; print "$$l $$l|f ", join " ", map { ($$F[$$_] eq "-0.25") ? "$${_}_outside" : "$$_:$$F[$$_]" } grep { $$F[$$_] } (0 .. $$#F)' | perl -e 'BEGIN { srand 69; }; print map { $$_->[1] } sort { $$a->[0] <=> $$b->[0] } map { [ rand (), $$_ ] } <>;' | gzip        	\
+	@echo "preprocessing CTslice ..." 1>&2
+	@zcat $< | perl -F',' -lane 'BEGIN { scalar <>; }; shift @F; $$l = pop @F; $$l =~ s/\r//; $$l -= 47; print "$$l $$l|f ", join " ", map { ($$F[$$_] eq "-0.25") ? "$${_}_outside" : "$$_:$$F[$$_]" } grep { $$F[$$_] } (0 .. $$#F)' | perl -e 'BEGIN { srand 69; }; print map { $$_->[1] } sort { $$a->[0] <=> $$b->[0] } map { [ rand (), $$_ ] } <>;' | gzip        	\
 	> $@
+
+CTslice.data: slice_localization.preprocess.data.gz
 
 CTslice.%.nonormlearn: slice_localization.preprocess.data.gz
 	 @${VW} --adaptive --invariant -b 22 --hash all -q ff -l $* $<  \
@@ -244,18 +259,12 @@ CTslicetimeestimate=15
 #                           common routines                           
 #---------------------------------------------------------------------
 
-%.bestwarning:
-	@echo "($*) searching for best in-hindsight learning rate for normalized rule" 1>&2
-
-%.nonormbestwarning:
-	@echo "($*) searching for best in-hindsight learning rate for adaptive gradient rule" 1>&2
-
-%.best: 
+%.best: %.data
 	@echo "($*) searching for best in-hindsight learning rate for normalized rule" 1>&2
 	@printf "WARNING: this step takes about %s minutes\n" $($*timeestimate)
 	@./hypersearch $($*bestmin) $($*bestmax) '$(MAKE)' '$*.%.learn' > $@
 
-%.nonormbest: 
+%.nonormbest: %.data
 	@echo "($*) searching for best in-hindsight learning rate for adaptive gradient" 1>&2
 	@printf "WARNING: this step takes about %s minutes\n" $($*timeestimate)
 	@./hypersearch $($*nonormbestmin) $($*nonormbestmax) '$(MAKE)' '$*.%.nonormlearn' > $@
