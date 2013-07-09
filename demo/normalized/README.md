@@ -34,5 +34,5 @@ Invocation | Dataset | Time | Disk | Network
 `make only.covertype` | [covertype](http://archive.ics.uci.edu/ml/datasets/Covertype) | 12 minutes | 24Mb | 11Mb
 `make only.CTslice` | [CT Slice](http://archive.ics.uci.edu/ml/datasets/Relative+location+of+CT+slices+on+axial+axis) | 30 minutes | 40Mb | 18Mb
 `make only.MSD` | [MSD](http://archive.ics.uci.edu/ml/datasets/YearPredictionMSD) | 30 minutes | 500Mb | 256Mb
-`make only.shuttle` | [Shuttle](http://archive.ics.uci.edu/ml/datasets/Statlog+(Shuttle)) | 1 minute | 600Kb | 300Kb 
+`make only.shuttle` | [Shuttle](http://archive.ics.uci.edu/ml/datasets/Statlog+%28Shuttle%29) | 1 minute | 600Kb | 300Kb 
 
