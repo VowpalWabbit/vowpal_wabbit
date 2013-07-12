@@ -105,7 +105,7 @@ vw* parse_args(int argc, char *argv[])
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("mask", po::value< string >(), "Generate a mask from an existing regressor, may be different from the one from -i")
+    ("feature_mask", po::value< string >(), "Use an existing regressor to determine which features may be updated in training")
     ("initial_pass_length", po::value<size_t>(&(all->pass_length)), "initial number of examples per pass")
     ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
     ("lda", po::value<size_t>(&(all->lda)), "Run lda with <int> topics")
@@ -175,9 +175,9 @@ vw* parse_args(int argc, char *argv[])
   po::store(parsed, vm);
   po::notify(vm);
   
-  if (vm.count("mask")) {
+  if (vm.count("feature_mask")) {
  
-    string mask_filename = vm["mask"].as<string>();
+    string mask_filename = vm["feature_mask"].as<string>();
     vw* vw_temp = new vw();
     vw_temp->mask = (vector<bool> (1<<all->num_bits, false));
 
