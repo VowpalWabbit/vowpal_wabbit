@@ -89,7 +89,7 @@ vw* parse_args(int argc, char *argv[])
      "Set Decay factor for learning_rate between passes")
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
-    ("readable_model", po::value< string >(), "Output human-readable final regressor")
+    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
     ("truly_readable_model", po::value< string >(), "Output human-readable final regressor with feature names")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("hessian_on", "use second derivative in line search")
@@ -457,7 +457,7 @@ vw* parse_args(int argc, char *argv[])
     all->text_regressor_name = vm["readable_model"].as<string>();
 
   if (vm.count("truly_readable_model")){
-    all->text_regressor_name_truly = vm["truly_readable_model"].as<string>();
+    all->truly_readable_regressor_name = vm["truly_readable_model"].as<string>();
     if (vm.count("audit"))
       all->debug_print = true;
 

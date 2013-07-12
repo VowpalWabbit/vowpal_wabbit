@@ -226,7 +226,7 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   
   if(all.debug_print) tempstream << prepend;
   
-  typedef std::map<size_t, std::string> IntStrMap;
+  typedef std::map< std::string, size_t> str_int_map;
   string tmp = all.ns_pre;
 
   if (a != NULL){
@@ -249,9 +249,9 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
 
-  if(all.text_regressor_name_truly!=""){ 
-    if(!all.Index_names.count(index/stride & all.parse_mask)){
-      all.Index_names.insert(IntStrMap::value_type((index/stride & all.parse_mask), tmp));
+  if(all.truly_readable_regressor_name != ""){ 
+    if(!all.name_index_map.count(tmp)){
+      all.name_index_map.insert(str_int_map::value_type(tmp, (index/stride & all.parse_mask)));
     }
   }
 
@@ -324,6 +324,7 @@ void print_features(vw& all, example* &ec)
       string empty;
       
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++){ 
+        all.ns_pre = "";
 	audit_features(all, ec->atomics[*i], ec->audit_features[*i], features, empty, ec->ft_offset);
         all.ns_pre = "";
       }
@@ -579,6 +580,26 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   uint32_t i = 0;
   size_t brw = 1;
 
+  if(all.print_truly){ //write truly readable model            
+    weight* v;
+    char buff[512];
+    int text_len; 
+    typedef std::map< std::string, size_t> str_int_map;  
+        
+    for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it){              
+      v = &(all.reg.weight_vector[stride*(it->second)]);
+      if(*v != 0.){
+        text_len = sprintf(buff, "%s", (char*)it->first.c_str());
+        brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()),
+					 buff, text_len, true);
+        text_len = sprintf(buff, ":%f\n", *v);
+        brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
+					 buff, text_len, true);
+      }	
+    }
+    return;
+  } 
+
   do 
     {
       brw = 1;
@@ -594,7 +615,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 	      brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
 	    }
 	}
-      else // write binary or text
+      else// write binary or text
 	{
 	  v = &(all.reg.weight_vector[stride*i]);
 	  if (*v != 0.)
@@ -602,25 +623,17 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 	      c++;
 	      char buff[512];
 	      int text_len;
-	      if(!all.print_truly){
-	        text_len = sprintf(buff, "%d", i);
-	        brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
+
+	      text_len = sprintf(buff, "%d", i);
+	      brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i),
 					 buff, text_len, text);
 	      
-	      
-
-              } 
-              else{
-                text_len = sprintf(buff, "%s", (char*)all.Index_names[i].c_str());
-                brw = bin_text_write_fixed(model_file, (char*)all.Index_names[i].c_str(), sizeof(*all.Index_names[i].c_str()),
-					 buff, text_len, text);
-              }	        
-
               text_len = sprintf(buff, ":%f\n", *v);
 	      brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v),
 					 buff, text_len, text);
 	    }
 	}
+ 
       if (!read)
 	i++;
     }

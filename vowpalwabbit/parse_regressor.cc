@@ -269,7 +269,7 @@ void finalize_regressor(vw& all, string reg_name)
   else{
     dump_regressor(all, all.text_regressor_name, true);
     all.print_truly = true;
-    dump_regressor(all, all.text_regressor_name_truly, true);
+    dump_regressor(all, all.truly_readable_regressor_name, true);
     all.print_truly = false;
   }
 }
