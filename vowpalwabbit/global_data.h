@@ -246,6 +246,9 @@ struct vw {
 
   size_t max_examples; // for TLC
 
+  std::vector<bool> mask; //which features may be modified
+  bool mask_on; // was a mask that fixes some features specified?
+
   vw();
 };
 
