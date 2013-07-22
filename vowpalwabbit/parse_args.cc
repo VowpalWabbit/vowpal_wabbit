@@ -174,60 +174,11 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(parsed, vm);
   po::notify(vm);
+
+  all->l = GD::setup(*all, vm);
+  all->scorer = all->l;
   
-  if (vm.count("feature_mask")) {
- 
-    string mask_filename = vm["feature_mask"].as<string>();
-    vw* vw_temp = new vw();
-    vw_temp->mask = (vector<bool> (1<<all->num_bits, false));
 
-    io_buf io_temp_mask;       
-    io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
-    save_load_header(*vw_temp, io_temp_mask, true, false);
-
-    char buff[512];
-    bool resume = false;
-    uint32_t text_len = sprintf(buff, ":%d\n", false);
-    bin_text_read_write_fixed(io_temp_mask,(char *)&resume, sizeof (resume),
-				"", true,
-				buff, text_len, false);
-
-    uint32_t length = 1 << all->num_bits;
-    int c = 0;
-    uint32_t i = 0;
-    size_t brw = 1;
-
-  do 
-    {
-      brw = 1;
-      float v = 0;
-      c++;
-      brw = bin_read_fixed(io_temp_mask, (char*)&i, sizeof(i),"");
-      if (brw > 0){
-        assert (i< length);		
-        vw_temp->mask[i] = true;
-        brw += bin_read_fixed(io_temp_mask, (char*)&v, sizeof(v), "");
-      }
-
-    }
-  while (brw >0); 
-    
-  io_temp_mask.close_file();
-
-  all->mask_on = true;
-  all->mask = vw_temp->mask;
-
-  vw_temp->searnstr = NULL;
-  finalize_regressor(*vw_temp, vw_temp->final_regressor_name);
-  vw_temp->l.finish();
-  free(vw_temp->p->lp);
-  vw_temp->p->parse_name.erase();
-  vw_temp->p->parse_name.delete_v();
-  free(vw_temp->p);
-  free(vw_temp->sd);
-  delete vw_temp->loss;
-  delete vw_temp;
-  }
 
   all->data_filename = "";
 
@@ -304,6 +255,15 @@ vw* parse_args(int argc, char *argv[])
       all->sd->t = 1.f;
       all->sd->weighted_unlabeled_examples = 1.f;
       all->initial_t = 1.f;
+    }
+    if (vm.count("feature_mask")){
+      if(all->reg.stride == 1){
+        all->reg.stride *= 2;//if --sgd, stride->2 and use the second position as mask
+        all->mask_idx = 1;
+      }
+      else if(all->reg.stride == 2){
+        all->reg.stride *= 2;//if either normalized or adaptive, stride->4, mask_idx is still 3      
+      }
     }
   }
 
@@ -656,6 +616,8 @@ vw* parse_args(int argc, char *argv[])
   // load rest of regressor
   all->l.save_load(io_temp, true, false);
   io_temp.close_file();
+  //load the mask model, might be different from -i
+  parse_mask_regressor_args(*all, vm);
 
   if (all->l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;

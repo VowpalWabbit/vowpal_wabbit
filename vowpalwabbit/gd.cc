@@ -38,6 +38,7 @@ namespace GD
     bool active;
     bool active_simulation;
     float normalized_sum_norm_x;
+    bool mask_off;
 
     vw* all;
   };
@@ -78,9 +79,10 @@ float InvSqrt(float x){
   return x;
 }
 
-  inline void general_update(vw& all, void* dat, float x, uint32_t fi)
+template<bool mask_off>
+inline void general_update(vw& all, void* dat, float x, uint32_t fi)
 {
-  if(!all.mask_on || all.mask[(fi & all.reg.weight_mask)/all.reg.stride]){
+  if(mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.mask_idx]==1.){
     train_data* s = (train_data*)dat;
 
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
@@ -95,10 +97,10 @@ float InvSqrt(float x){
   }
 }
 
-template<bool adaptive, bool normalized>
+template<bool adaptive, bool normalized, bool mask_off>
 inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
 {
-  if(!all.mask_on || all.mask[(fi & all.reg.weight_mask)/all.reg.stride]){
+  if(mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.mask_idx]==1.){
     train_data* s = (train_data*)dat;
 
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
@@ -145,38 +147,59 @@ void learn(void* d, example* ec)
     }
   
   if (!command_example(all, ec))
-    {
+    { 
       predict(*all,*g,ec);
       if (ec->eta_round != 0.)
-	{
-          if(all->power_t == 0.5) {
+	{ 
+          if(all->power_t == 0.5) { 
             if (all->adaptive) {
-              if (all->normalized_updates) 
-                generic_train<specialized_update<true, true> >
-                  (*all,ec,ec->eta_round,true);
-              else
-                generic_train<specialized_update<true, false> >
-                  (*all,ec,ec->eta_round,true);
+              if (all->normalized_updates){ 
+                if (g->mask_off) 
+                  generic_train<specialized_update<true, true, true> >
+                    (*all,ec,ec->eta_round,true);
+                else
+                  generic_train<specialized_update<true, true, false> >
+                    (*all,ec,ec->eta_round,true);
+              }
+              else {
+                if (g->mask_off) 
+                  generic_train<specialized_update<true, false, true> >
+                    (*all,ec,ec->eta_round,true);
+                else
+                  generic_train<specialized_update<true, false, false> >
+                    (*all,ec,ec->eta_round,true);
+              }
+            }              
+            else { //for adaptive 
+              if (all->normalized_updates){ 
+                if (g->mask_off) 
+                  generic_train<specialized_update<false, true, true> >
+                    (*all,ec,ec->eta_round,true);
+                else
+                  generic_train<specialized_update<false, true, false> >
+                    (*all,ec,ec->eta_round,true);
+              }
+              else {
+                if (g->mask_off) 
+                  generic_train<specialized_update<false, false, true> >
+                    (*all,ec,ec->eta_round,true);
+                else
+                  generic_train<specialized_update<false, false, false> >
+                    (*all,ec,ec->eta_round,true);
+              }  
             }
-            else {
-              if (all->normalized_updates) 
-                generic_train<specialized_update<false, true> >
-                  (*all,ec,ec->eta_round,true);
-              else
-                generic_train<specialized_update<false, false> >
-                  (*all,ec,ec->eta_round,true);
-            }
-          }
-          else
-            //general_train(*all, ec, ec->eta_round, all->power_t);
-            generic_train<general_update>(*all,ec,ec->eta_round,false);
-
+          }//end of power_t
+          else{
+            if (g->mask_off)
+              generic_train<general_update<true> >(*all,ec,ec->eta_round,false);
+            else
+              generic_train<general_update<false> >(*all,ec,ec->eta_round,false);
+          }  
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
 	}
     }
 }
-
   void finish(void* d)
 {
   gd* g = (gd*)d;
@@ -354,9 +377,9 @@ void print_audit_features(vw& all, example* ec)
     float norm_x;
   };
 
-template<bool adaptive, bool normalized>
+template<bool adaptive, bool normalized, bool mask_off>
 inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
-  if(!all.mask_on || all.mask[(fi & all.reg.weight_mask)/all.reg.stride]){
+  if(mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.mask_idx]==1.){
     norm_data* nd=(norm_data*)v;
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
     float x2 = x * x;
@@ -385,8 +408,9 @@ inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
   }
 }
 
-  inline void powert_norm_compute(vw& all, void* v, float x, uint32_t fi) {
-  if(!all.mask_on || all.mask[(fi & all.reg.weight_mask)/all.reg.stride]){
+template<bool mask_off>
+inline void powert_norm_compute(vw& all, void* v, float x, uint32_t fi) {
+  if(mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.mask_idx]==1.){
     norm_data* nd=(norm_data*)v;
     float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
 
@@ -475,15 +499,31 @@ float compute_norm(vw& all, example* &ec)
 	  float norm;
           if(all.adaptive || all.normalized_updates) {
             if(all.power_t == 0.5) {
-                if (all.adaptive && all.normalized_updates)
-                  norm = compute_norm<simple_norm_compute<true, true> >(all,ec);
-                else if (all.adaptive)
-                  norm = compute_norm<simple_norm_compute<true, false> >(all,ec);
-                else 
-                  norm = compute_norm<simple_norm_compute<false, true> >(all,ec);
+                if (all.adaptive && all.normalized_updates){
+                  if (g.mask_off)
+                    norm = compute_norm<simple_norm_compute<true, true, true> >(all,ec);
+                  else
+                    norm = compute_norm<simple_norm_compute<true, true, false> >(all,ec);
+                }
+                else if (all.adaptive){
+                  if (g.mask_off)
+                    norm = compute_norm<simple_norm_compute<true, false, true> >(all,ec);
+                  else
+                    norm = compute_norm<simple_norm_compute<true, false, false> >(all,ec);
+                } 
+                else{ 
+                   if (g.mask_off)
+                    norm = compute_norm<simple_norm_compute<false, true, true> >(all,ec);
+                  else
+                    norm = compute_norm<simple_norm_compute<false, true, false> >(all,ec);
+                }
             }
-            else
-              norm = compute_norm<powert_norm_compute>(all,ec);
+            else{
+              if(g.mask_off)  
+                norm = compute_norm<powert_norm_compute<true> >(all,ec);
+              else
+                norm = compute_norm<powert_norm_compute<false> >(all,ec);
+            }
           }
           else 
             norm = ec->total_sum_feat_sq;  
@@ -749,13 +789,18 @@ void driver(vw* all, void* data)
     }
 }
 
-learner setup(vw& all)
+learner setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc(1, sizeof(gd));
   g->all = &all;
   g->active = all.active;
   g->active_simulation = all.active_simulation;
   g->normalized_sum_norm_x = all.normalized_sum_norm_x;
+
+  if(vm.count("feature_mask"))
+    g->mask_off = false;
+  else
+    g->mask_off = true;
 
   sl_t sl = {g,save_load};
   learner ret(g,driver,learn,finish,sl);
