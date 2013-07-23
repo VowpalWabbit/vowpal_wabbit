@@ -38,7 +38,7 @@ namespace GD
     bool active;
     bool active_simulation;
     float normalized_sum_norm_x;
-    bool mask_off;
+    bool feature_mask_off;
 
     vw* all;
   };
@@ -79,10 +79,10 @@ float InvSqrt(float x){
   return x;
 }
 
-template<bool mask_off>
+template<bool feature_mask_off>
 inline void general_update(vw& all, void* dat, float x, uint32_t fi)
 {
-  if(mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.mask_idx]==1.){
+  if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     train_data* s = (train_data*)dat;
 
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
@@ -97,10 +97,10 @@ inline void general_update(vw& all, void* dat, float x, uint32_t fi)
   }
 }
 
-template<bool adaptive, bool normalized, bool mask_off>
+template<bool adaptive, bool normalized, bool feature_mask_off>
 inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
 {
-  if(mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.mask_idx]==1.){
+  if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     train_data* s = (train_data*)dat;
 
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
@@ -154,7 +154,7 @@ void learn(void* d, example* ec)
           if(all->power_t == 0.5) { 
             if (all->adaptive) {
               if (all->normalized_updates){ 
-                if (g->mask_off) 
+                if (g->feature_mask_off) 
                   generic_train<specialized_update<true, true, true> >
                     (*all,ec,ec->eta_round,true);
                 else
@@ -162,7 +162,7 @@ void learn(void* d, example* ec)
                     (*all,ec,ec->eta_round,true);
               }
               else {
-                if (g->mask_off) 
+                if (g->feature_mask_off) 
                   generic_train<specialized_update<true, false, true> >
                     (*all,ec,ec->eta_round,true);
                 else
@@ -172,7 +172,7 @@ void learn(void* d, example* ec)
             }              
             else { //for adaptive 
               if (all->normalized_updates){ 
-                if (g->mask_off) 
+                if (g->feature_mask_off) 
                   generic_train<specialized_update<false, true, true> >
                     (*all,ec,ec->eta_round,true);
                 else
@@ -180,7 +180,7 @@ void learn(void* d, example* ec)
                     (*all,ec,ec->eta_round,true);
               }
               else {
-                if (g->mask_off) 
+                if (g->feature_mask_off) 
                   generic_train<specialized_update<false, false, true> >
                     (*all,ec,ec->eta_round,true);
                 else
@@ -190,7 +190,7 @@ void learn(void* d, example* ec)
             }
           }//end of power_t
           else{
-            if (g->mask_off)
+            if (g->feature_mask_off)
               generic_train<general_update<true> >(*all,ec,ec->eta_round,false);
             else
               generic_train<general_update<false> >(*all,ec,ec->eta_round,false);
@@ -377,9 +377,9 @@ void print_audit_features(vw& all, example* ec)
     float norm_x;
   };
 
-template<bool adaptive, bool normalized, bool mask_off>
+template<bool adaptive, bool normalized, bool feature_mask_off>
 inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
-  if(mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.mask_idx]==1.){
+  if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     norm_data* nd=(norm_data*)v;
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
     float x2 = x * x;
@@ -408,9 +408,9 @@ inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
   }
 }
 
-template<bool mask_off>
+template<bool feature_mask_off>
 inline void powert_norm_compute(vw& all, void* v, float x, uint32_t fi) {
-  if(mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.mask_idx]==1.){
+  if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     norm_data* nd=(norm_data*)v;
     float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
 
@@ -500,26 +500,26 @@ float compute_norm(vw& all, example* &ec)
           if(all.adaptive || all.normalized_updates) {
             if(all.power_t == 0.5) {
                 if (all.adaptive && all.normalized_updates){
-                  if (g.mask_off)
+                  if (g.feature_mask_off)
                     norm = compute_norm<simple_norm_compute<true, true, true> >(all,ec);
                   else
                     norm = compute_norm<simple_norm_compute<true, true, false> >(all,ec);
                 }
                 else if (all.adaptive){
-                  if (g.mask_off)
+                  if (g.feature_mask_off)
                     norm = compute_norm<simple_norm_compute<true, false, true> >(all,ec);
                   else
                     norm = compute_norm<simple_norm_compute<true, false, false> >(all,ec);
                 } 
                 else{ 
-                   if (g.mask_off)
+                   if (g.feature_mask_off)
                     norm = compute_norm<simple_norm_compute<false, true, true> >(all,ec);
                   else
                     norm = compute_norm<simple_norm_compute<false, true, false> >(all,ec);
                 }
             }
             else{
-              if(g.mask_off)  
+              if(g.feature_mask_off)  
                 norm = compute_norm<powert_norm_compute<true> >(all,ec);
               else
                 norm = compute_norm<powert_norm_compute<false> >(all,ec);
@@ -797,10 +797,10 @@ learner setup(vw& all, po::variables_map& vm)
   g->active_simulation = all.active_simulation;
   g->normalized_sum_norm_x = all.normalized_sum_norm_x;
 
-  if(vm.count("feature_mask"))
-    g->mask_off = false;
+  if(vm.count("feature_mask_on"))
+    g->feature_mask_off = false;
   else
-    g->mask_off = true;
+    g->feature_mask_off = true;
 
   sl_t sl = {g,save_load};
   learner ret(g,driver,learn,finish,sl);

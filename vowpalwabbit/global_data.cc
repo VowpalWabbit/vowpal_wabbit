@@ -316,7 +316,7 @@ vw::vw()
 
   normalized_sum_norm_x = 0.;
   normalized_idx = 2;
-  mask_idx = 3;//by default use the 4th position as mask
+  feature_mask_idx = 3;//by default use the 4th position as mask
 
   add_constant = true;
   audit = false;
