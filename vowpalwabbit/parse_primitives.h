@@ -47,6 +47,14 @@ struct shared_data {
   float min_label;//minimum label encountered
   float max_label;//maximum label encountered
 
+  //for holdout
+  double weighted_holdout_examples;
+  double weighted_holdout_examples_since_last_dump;
+  double holdout_sum_loss_since_last_dump;
+  double holdout_sum_loss;
+  double holdout_best_loss;
+  size_t holdout_best_pass;
+
   bool binary_label;
   uint32_t k;
 };

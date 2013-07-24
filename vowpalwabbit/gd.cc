@@ -28,6 +28,7 @@ license as described in the file LICENSE.
 #include "accumulate.h"
 #include "learner.h"
 #include "vw.h"
+#include "rand48.h"
 
 using namespace std;
 
@@ -38,6 +39,9 @@ namespace GD
     bool active;
     bool active_simulation;
     float normalized_sum_norm_x;
+    bool holdout_set_off;
+    float percentage; //percentage of test only data
+    size_t rand_seed;
 
     vw* all;
   };
@@ -60,6 +64,9 @@ namespace GD
       total_weight = (float)all.sd->weighted_unlabeled_examples;
     else
       total_weight = ec->example_t;
+
+    if(!all.holdout_set_off)
+      total_weight -= all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_norm) avg_norm = sqrt(avg_norm);
@@ -102,6 +109,7 @@ inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
   float t = 1.f;
   float inv_norm = 1.f;
   if(normalized) inv_norm /= (w[all.normalized_idx] * s->avg_norm);
+  //cout<<"inv_norm:"<<inv_norm<<endl;//!diff
   if(adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
@@ -125,6 +133,7 @@ void learn(void* d, example* ec)
   assert(ec->in_use);
   if (ec->end_pass)
     {
+      //cout<<endl<<endl;
       sync_weights(*all);
       if(all->span_server != "") {
 	if(all->adaptive)
@@ -136,13 +145,33 @@ void learn(void* d, example* ec)
       all->eta *= all->eta_decay_rate;
       if (all->save_per_pass)
 	save_predictor(*all, all->final_regressor_name, all->current_pass);
+
+      if (!all->holdout_set_off){ 
+        report_holdout_set(*all);
+        msrand48(g->rand_seed);     
+      }
       
       all->current_pass++;
+
     }
   
   if (!command_example(all, ec))
     {
+      if (!all->holdout_set_off){//if holdout set is used
+        //if very first example -> msrand48(0);
+        if(all->sd->example_number == 0)//in case frand is used before gd
+          msrand48(g->rand_seed); 
+        //if(frand48() <= g->percentage){
+        if(frand48() >= 1-g->percentage){
+          ec->test_only = true;
+        }
+      }
+
       predict(*all,*g,ec);
+      
+      //cout<<"rn2:"<<g->num_gen<<endl;
+      if (all->holdout_set_off || !ec->test_only)
+      {
       if (ec->eta_round != 0.)
 	{
           if(all->power_t == 0.5) {
@@ -170,6 +199,7 @@ void learn(void* d, example* ec)
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
 	}
+      }
     }
 }
 
@@ -352,7 +382,14 @@ void print_audit_features(vw& all, example* ec)
 
 template<bool adaptive, bool normalized>
 inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
+  //all go in here
+
   norm_data* nd=(norm_data*)v;
+
+  //  cout<<"g:"<<nd->g<<endl;
+  //cout<<"norm:"<<nd->norm<<endl;
+  //cout<<"norm_x:"<<nd->norm_x<<endl;
+
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x2 = x * x;
   float t = 1.f;
@@ -415,10 +452,19 @@ float compute_norm(vw& all, example* &ec)
       total_weight = (float)all.sd->weighted_unlabeled_examples;
     else
       total_weight = ec->example_t;
+
+    if(!all.holdout_set_off)
+      total_weight -= all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
+
+    //cout<<"total_weight:"<<total_weight<<endl;
+    //cout<<"ec->example_t"<<ec->example_t<<endl;
+    //cout<<"long one:"<<(float)all.sd->weighted_unlabeled_examples<<endl;
+    //cout<<"test_only:"<<ec->test_only;
     
-    all.normalized_sum_norm_x += ld->weight * nd.norm_x;
+    all.normalized_sum_norm_x += ld->weight * nd.norm_x;//same!
+    
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
-    
+    //cout<<"nsn:"<<avg_sq_norm<<endl;//diff! ->total_weight is the problem! 
     if(all.power_t == 0.5) {
       if(all.adaptive) nd.norm /= sqrt(avg_sq_norm);
       else nd.norm /= avg_sq_norm;
@@ -438,7 +484,7 @@ float compute_norm(vw& all, example* &ec)
   all.set_minmax(all.sd, ld->label);
 
   ec->final_prediction = finalize_prediction(all, ec->partial_prediction * (float)all.sd->contraction);
-
+  
   if(g.active_simulation){
     float k = ec->example_t - ld->weight;
     ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(k,all.power_t));
@@ -458,11 +504,19 @@ float compute_norm(vw& all, example* &ec)
     t = ec->example_t;
 
   ec->eta_round = 0;
-  if (ld->label != FLT_MAX)
+  if (!all.holdout_set_off && ec->test_only)//if this is a test example
+  {
+    ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
+    //cout<<"test_ec->loss: "<<ec->loss<<endl;
+    all.sd->holdout_sum_loss += ec->loss;
+    all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+  }
+  else if (ld->label != FLT_MAX)
     {
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
+      //cout<<"ec->loss: "<<ec->loss<<endl;
       if (all.training && ec->loss > 0.)
-	{
+        {
 	  float eta_t;
 	  float norm;
           if(all.adaptive || all.normalized_updates) {
@@ -479,8 +533,9 @@ float compute_norm(vw& all, example* &ec)
           }
           else 
             norm = ec->total_sum_feat_sq;  
-
+          //cout<<"norm1: "<<norm<<endl;//different!->fine
           eta_t = all.eta * norm * ld->weight;
+          //cout<<"eta_t: "<<eta_t<<endl;//fine
           if(!all.adaptive) eta_t *= powf(t,-all.power_t);
 
           float update = 0.f;
@@ -498,12 +553,12 @@ float compute_norm(vw& all, example* &ec)
 	      all.sd->contraction /= (1. + all.l2_lambda * eta_bar * norm);
 	    all.sd->gravity += eta_bar * sqrt(norm) * all.l1_lambda;
 	  }
-	}
-    }
+        }
+    }//if (ld->label != FLT_MAX)
   else if(all.active)
     ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(t,all.power_t));
 
-  if (all.audit)
+  if (all.audit && !ec->test_only)
     print_audit_features(all, ec);
 }
 
@@ -511,7 +566,8 @@ float compute_norm(vw& all, example* &ec)
 {
   label_data* ld = (label_data*)ex->ld;
   float prediction;
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
+
+  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0 && (all.holdout_set_off || !ex->test_only)) {
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
         prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
@@ -533,6 +589,7 @@ float compute_norm(vw& all, example* &ec)
   }
 
   ex->partial_prediction = prediction;
+  //cout<<"prediction:"<<prediction<<endl;
 
   local_predict(all, g, ex);
   ex->done = true;
@@ -741,13 +798,56 @@ void driver(vw* all, void* data)
     }
 }
 
-learner setup(vw& all)
+bool report_holdout_set(vw& all) // return TRUE iff this is the best loss so far
+{
+
+  float thisLoss = (all.sd->weighted_holdout_examples_since_last_dump > 0) ? (all.sd->holdout_sum_loss_since_last_dump / all.sd->weighted_holdout_examples_since_last_dump) : 1.;
+  float cumLoss  = (all.sd->weighted_holdout_examples > 0) ? (all.sd->holdout_sum_loss/ all.sd->weighted_holdout_examples) : 1.;
+
+  if (thisLoss < all.sd->holdout_best_loss) {
+    all.sd->holdout_best_loss = thisLoss;
+    all.sd->holdout_best_pass = all.current_pass;
+  }
+
+  fprintf(stderr, "** holdout loss on pass %d is %g (overall average %g, best %g on pass %d)",
+          all.current_pass,
+          thisLoss,
+          cumLoss,
+          all.sd->holdout_best_loss,
+          all.sd->holdout_best_pass);
+            
+  all.sd->weighted_holdout_examples_since_last_dump = 0;
+  all.sd->holdout_sum_loss_since_last_dump = 0;
+
+  if (thisLoss == all.sd->holdout_best_loss) {
+    fprintf(stderr, " **\n");
+    return true;
+  }
+  fprintf(stderr, "\n");
+  return false;
+} 
+
+learner setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc(1, sizeof(gd));
   g->all = &all;
   g->active = all.active;
   g->active_simulation = all.active_simulation;
   g->normalized_sum_norm_x = all.normalized_sum_norm_x;
+  //g->holdout_set_off = false;//when true, do not use holdout set
+  g->percentage = 0;//by default none is used for test only
+  g->rand_seed = 0;
+  if(vm.count("holdout")){
+    g->percentage = vm["holdout"].as<float>();
+    if(g->percentage > 1. || g->percentage < 0.){
+      cerr << "percentage of test only examples should be between 0 and 1" << endl;
+      throw exception();      
+    }    
+  }
+  if(vm.count("random_seed")){
+    g->rand_seed = vm["random_seed"].as<size_t>();
+  }
+  all.sd->holdout_best_loss = 1./0.; 
 
   sl_t sl = {g,save_load};
   learner ret(g,driver,learn,finish,sl);

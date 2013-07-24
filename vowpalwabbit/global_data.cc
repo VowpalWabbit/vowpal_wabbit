@@ -262,9 +262,6 @@ vw::vw()
   m = 15; 
   save_resume = false;
 
-  l = GD::setup(*this);
-  scorer = l;
-
   set_minmax = set_mm;
 
   weights_per_problem = 1;
@@ -332,6 +329,7 @@ vw::vw()
 
   stdin_off = false;
   do_reset_source = false;
+  holdout_set_off = true;
 
   max_examples = (size_t)-1;
 }

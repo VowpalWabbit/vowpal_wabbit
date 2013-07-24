@@ -98,6 +98,7 @@ vw* parse_args(int argc, char *argv[])
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
+    ("holdout", po::value< float > (), "use a holdout set")    
     ("hessian_on", "use second derivative in line search")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
@@ -173,6 +174,9 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(parsed, vm);
   po::notify(vm);
+
+  all->l = GD::setup(*all, vm);
+  all->scorer = all->l;
 
   all->data_filename = "";
 
@@ -304,6 +308,9 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("compressed"))
       set_compressed(all->p);
+
+  if (vm.count("holdout"))
+      all->holdout_set_off = false;
 
   if (vm.count("data")) {
     all->data_filename = vm["data"].as<string>();
