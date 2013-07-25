@@ -52,8 +52,6 @@ struct shared_data {
   double weighted_holdout_examples_since_last_dump;
   double holdout_sum_loss_since_last_dump;
   double holdout_sum_loss;
-  double holdout_best_loss;
-  size_t holdout_best_pass;
 
   bool binary_label;
   uint32_t k;

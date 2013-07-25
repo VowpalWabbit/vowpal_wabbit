@@ -14,7 +14,6 @@ example *alloc_example(size_t label_size)
   if (ec == NULL) return NULL;
   ec->ld = calloc(1, label_size);
   ec->in_use = true;
-  ec->test_only = false;
   ec->ft_offset = 0;
   //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
   return ec;
