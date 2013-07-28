@@ -146,7 +146,7 @@ void print_update(vw& all, example *ec)
       
       if(!all.holdout_set_off && all.current_pass >= 1){
 
-        fprintf(stderr, "%-6.5fh   %-6.5fh   %10ld %11.1f %s %8.4f %8lu\n",
+        fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8luh\n",
 	      all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples,
 	      all.sd->holdout_sum_loss_since_last_dump / all.sd->weighted_holdout_examples_since_last_dump,
 	      (long int)all.sd->example_number,
