@@ -105,6 +105,7 @@ vw* parse_args(int argc, char *argv[])
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
+    ("feature_mask_on", po::value< string >(), "Use an existing regressor to determine which features may be updated in training")
     ("initial_pass_length", po::value<size_t>(&(all->pass_length)), "initial number of examples per pass")
     ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
     ("lda", po::value<size_t>(&(all->lda)), "Run lda with <int> topics")
@@ -173,6 +174,11 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(parsed, vm);
   po::notify(vm);
+
+  all->l = GD::setup(*all, vm);
+  all->scorer = all->l;
+  
+
 
   all->data_filename = "";
 
@@ -249,6 +255,15 @@ vw* parse_args(int argc, char *argv[])
       all->sd->t = 1.f;
       all->sd->weighted_unlabeled_examples = 1.f;
       all->initial_t = 1.f;
+    }
+    if (vm.count("feature_mask_on")){
+      if(all->reg.stride == 1){
+        all->reg.stride *= 2;//if --sgd, stride->2 and use the second position as mask
+        all->feature_mask_idx = 1;
+      }
+      else if(all->reg.stride == 2){
+        all->reg.stride *= 2;//if either normalized or adaptive, stride->4, mask_idx is still 3      
+      }
     }
   }
 
@@ -601,6 +616,8 @@ vw* parse_args(int argc, char *argv[])
   // load rest of regressor
   all->l.save_load(io_temp, true, false);
   io_temp.close_file();
+  //load the mask model, might be different from -i
+  parse_mask_regressor_args(*all, vm);
 
   if (all->l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;

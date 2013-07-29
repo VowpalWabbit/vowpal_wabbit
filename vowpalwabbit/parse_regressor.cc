@@ -290,3 +290,36 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
   save_load_header(all, io_temp, true, false);
 }
 
+void parse_mask_regressor_args(vw& all, po::variables_map& vm){
+
+  if (vm.count("feature_mask_on")) {
+    size_t length = ((size_t)1) << all.num_bits;  
+    string mask_filename = vm["feature_mask_on"].as<string>();
+    if (vm.count("initial_regressor")){ 
+      vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
+      if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
+           
+        for (size_t j = 0; j < length; j++){	 
+          if(all.reg.weight_vector[j*all.reg.stride] != 0.)
+            all.reg.weight_vector[j*all.reg.stride + all.feature_mask_idx] = 1.;
+        } 
+        return;
+      }
+    }
+    //all other cases, including from different file, or -i does not exist, need to read in the mask file
+    weight* temp = all.reg.weight_vector;
+    io_buf io_temp_mask;
+    io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
+    save_load_header(all, io_temp_mask, true, false);
+    all.l.save_load(io_temp_mask, true, false);
+    io_temp_mask.close_file();
+    for (size_t j = 0; j < length; j++){	 
+      if(all.reg.weight_vector[j*all.reg.stride] != 0.)
+        temp[j*all.reg.stride + all.feature_mask_idx] = 1.;
+    }
+    free(all.reg.weight_vector);
+    all.reg.weight_vector = temp;
+  }
+}
+
+
