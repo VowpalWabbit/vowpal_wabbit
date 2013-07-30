@@ -313,9 +313,10 @@ vw::vw()
   adaptive = true;
   normalized_updates = true;
   invariant_updates = true;
-  
+
   normalized_sum_norm_x = 0.;
   normalized_idx = 2;
+  feature_mask_idx = 3;//by default use the 4th position as mask
 
   add_constant = true;
   audit = false;
@@ -330,6 +331,9 @@ vw::vw()
   stdin_off = false;
   do_reset_source = false;
   holdout_set_off = true;
+  holdout_period = 10;
 
   max_examples = (size_t)-1;
+
+
 }

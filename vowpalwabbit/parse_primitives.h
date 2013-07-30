@@ -90,6 +90,7 @@ struct parser {
   size_t ring_size;
   uint64_t parsed_examples; // The index of the parsed example.
   uint64_t local_example_number; 
+  uint32_t in_pass_counter;
   example* examples;
   uint64_t used_index;
   MUTEX examples_lock;
