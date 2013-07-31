@@ -39,6 +39,7 @@ namespace GD
     bool active_simulation;
     float normalized_sum_norm_x;
     bool feature_mask_off;
+    bool save_best;
 
     vw* all;
   };
@@ -148,6 +149,10 @@ void learn(void* d, example* ec)
       
       all->current_pass++;
 
+      if(g->save_best)
+        if(summarize_holdout_set(*all)){
+          save_predictor(*all, all->best_model_name, (size_t)-1);
+        }  
     }
   
   if (!command_example(all, ec))
@@ -508,6 +513,7 @@ float compute_norm(vw& all, example* &ec)
     ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
     all.sd->holdout_sum_loss += ec->loss;
     all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+    all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
   }
   else if (ld->label != FLT_MAX)
     {
@@ -822,6 +828,18 @@ learner setup(vw& all, po::variables_map& vm)
   else
     g->feature_mask_off = true;
 
+  if(vm.count("save_best_model")){
+    all.sd->holdout_best_loss = 1./0.;
+    g->save_best = true;
+
+    all.best_model_name = vm["save_best_model"].as<string>();
+
+    if(vm.count("holdout_off"))
+      cerr << endl << "warning, should have holdout set on when saving best model.\n";
+  }
+  else
+    g->save_best = false;
+    
   sl_t sl = {g,save_load};
   learner ret(g,driver,learn,finish,sl);
 

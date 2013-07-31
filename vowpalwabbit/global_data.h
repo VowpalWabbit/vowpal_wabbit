@@ -205,6 +205,7 @@ struct vw {
   bool do_reset_source;
   bool holdout_set_off;
   uint32_t holdout_period;
+  std::string best_model_name;
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)

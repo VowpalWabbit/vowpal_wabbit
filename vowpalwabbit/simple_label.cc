@@ -182,15 +182,16 @@ void output_and_account_example(vw& all, example* ec)
   {
     all.sd->weighted_holdout_examples += ec->global_weight;//test weight seen
     all.sd->weighted_holdout_examples_since_last_dump += ec->global_weight;
+    all.sd->weighted_holdout_examples_since_last_pass += ec->global_weight;
   }
   else
   {
-  all.sd->weighted_examples += ld->weight;
-  all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-  all.sd->total_features += ec->num_features;
-  all.sd->sum_loss += ec->loss;
-  all.sd->sum_loss_since_last_dump += ec->loss;
-  all.sd->example_number++;
+    all.sd->weighted_examples += ld->weight;
+    all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
+    all.sd->total_features += ec->num_features;
+    all.sd->sum_loss += ec->loss;
+    all.sd->sum_loss_since_last_dump += ec->loss;
+    all.sd->example_number++;
   }
   all.print(all.raw_prediction, ec->partial_prediction, -1, ec->tag);
 
@@ -221,4 +222,21 @@ void return_simple_example(vw& all, example* ec)
     output_and_account_example(all, ec);
   VW::finish_example(all,ec);
 }
+
+bool summarize_holdout_set(vw& all)
+{
+  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : 1.;
+
+  all.sd->weighted_holdout_examples_since_last_pass = 0;
+  all.sd->holdout_sum_loss_since_last_pass = 0;
+
+  if (thisLoss < all.sd->holdout_best_loss) {
+    all.sd->holdout_best_loss = thisLoss;
+    all.sd->holdout_best_pass = all.current_pass;
+    return true;
+  }
+  
+  return false;          
+
+} 
 

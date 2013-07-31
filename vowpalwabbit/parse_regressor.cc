@@ -250,7 +250,9 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 void save_predictor(vw& all, string reg_name, size_t current_pass)
 {
   char* filename = new char[reg_name.length()+4];
-  if (all.save_per_pass)
+  if (current_pass == (size_t)-1) // this is "best" predictor
+    sprintf(filename,"%s",reg_name.c_str());
+  else if (all.save_per_pass)
     sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
   else
     sprintf(filename,"%s",reg_name.c_str());
