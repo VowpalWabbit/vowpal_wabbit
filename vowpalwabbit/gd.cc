@@ -61,6 +61,9 @@ namespace GD
       total_weight = (float)all.sd->weighted_unlabeled_examples;
     else
       total_weight = ec->example_t;
+
+    if(!all.holdout_set_off)
+      total_weight -= all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_norm) avg_norm = sqrt(avg_norm);
@@ -141,14 +144,18 @@ void learn(void* d, example* ec)
       
       all->eta *= all->eta_decay_rate;
       if (all->save_per_pass)
-	save_predictor(*all, all->final_regressor_name, all->current_pass);
+	save_predictor(*all, all->final_regressor_name, all->current_pass);   
       
       all->current_pass++;
+
     }
   
   if (!command_example(all, ec))
-    { 
+    {
       predict(*all,*g,ec);
+
+      if (all->holdout_set_off || !ec->test_only)
+      {
       if (ec->eta_round != 0.)
 	{ 
           if(all->power_t == 0.5) { 
@@ -198,6 +205,7 @@ void learn(void* d, example* ec)
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
 	}
+      }
     }
 }
   void finish(void* d)
@@ -379,6 +387,7 @@ void print_audit_features(vw& all, example* ec)
 
 template<bool adaptive, bool normalized, bool feature_mask_off>
 inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
+
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     norm_data* nd=(norm_data*)v;
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
@@ -393,6 +402,7 @@ inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
     }
     if(adaptive){
       w[1] += nd->g * x2;
+
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
     eta = _mm_rsqrt_ss(eta);
@@ -447,10 +457,13 @@ float compute_norm(vw& all, example* &ec)
       total_weight = (float)all.sd->weighted_unlabeled_examples;
     else
       total_weight = ec->example_t;
+
+    if(!all.holdout_set_off)
+      total_weight -= all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     all.normalized_sum_norm_x += ld->weight * nd.norm_x;
-    float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
     
+    float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
     if(all.power_t == 0.5) {
       if(all.adaptive) nd.norm /= sqrt(avg_sq_norm);
       else nd.norm /= avg_sq_norm;
@@ -470,7 +483,7 @@ float compute_norm(vw& all, example* &ec)
   all.set_minmax(all.sd, ld->label);
 
   ec->final_prediction = finalize_prediction(all, ec->partial_prediction * (float)all.sd->contraction);
-
+  
   if(g.active_simulation){
     float k = ec->example_t - ld->weight;
     ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(k,all.power_t));
@@ -490,11 +503,17 @@ float compute_norm(vw& all, example* &ec)
     t = ec->example_t;
 
   ec->eta_round = 0;
-  if (ld->label != FLT_MAX)
+  if (!all.holdout_set_off && ec->test_only)//if this is a test example
+  {
+    ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
+    all.sd->holdout_sum_loss += ec->loss;
+    all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+  }
+  else if (ld->label != FLT_MAX)
     {
       ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       if (all.training && ec->loss > 0.)
-	{
+        {
 	  float eta_t;
 	  float norm;
           if(all.adaptive || all.normalized_updates) {
@@ -546,12 +565,12 @@ float compute_norm(vw& all, example* &ec)
 	      all.sd->contraction /= (1. + all.l2_lambda * eta_bar * norm);
 	    all.sd->gravity += eta_bar * sqrt(norm) * all.l1_lambda;
 	  }
-	}
+        }
     }
   else if(all.active)
     ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(t,all.power_t));
 
-  if (all.audit)
+  if (all.audit && !ec->test_only)
     print_audit_features(all, ec);
 }
 
@@ -559,7 +578,8 @@ float compute_norm(vw& all, example* &ec)
 {
   label_data* ld = (label_data*)ex->ld;
   float prediction;
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
+
+  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0 && (all.holdout_set_off || !ex->test_only)) {
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
         prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
@@ -797,7 +817,7 @@ learner setup(vw& all, po::variables_map& vm)
   g->active_simulation = all.active_simulation;
   g->normalized_sum_norm_x = all.normalized_sum_norm_x;
 
-  if(vm.count("feature_mask_on"))
+  if(vm.count("feature_mask"))
     g->feature_mask_off = false;
   else
     g->feature_mask_off = true;

@@ -97,8 +97,10 @@ vw* parse_args(int argc, char *argv[])
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor")
-    ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
+    ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")   
     ("hessian_on", "use second derivative in line search")
+    ("holdout_off", "no holdout data in multiple passes")
+    ("holdout_period", po::value<uint32_t>(&(all->holdout_period)), "holdout period for test only, default 10")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
@@ -177,8 +179,6 @@ vw* parse_args(int argc, char *argv[])
 
   all->l = GD::setup(*all, vm);
   all->scorer = all->l;
-  
-
 
   all->data_filename = "";
 
@@ -256,7 +256,7 @@ vw* parse_args(int argc, char *argv[])
       all->sd->weighted_unlabeled_examples = 1.f;
       all->initial_t = 1.f;
     }
-    if (vm.count("feature_mask_on")){
+    if (vm.count("feature_mask")){
       if(all->reg.stride == 1){
         all->reg.stride *= 2;//if --sgd, stride->2 and use the second position as mask
         all->feature_mask_idx = 1;
@@ -319,7 +319,13 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("compressed"))
       set_compressed(all->p);
+  
+  if(all->numpasses > 1)
+      all->holdout_set_off = false;
 
+  if(vm.count("holdout_off"))
+      all->holdout_set_off = true;
+    
   if (vm.count("data")) {
     all->data_filename = vm["data"].as<string>();
     if (ends_with(all->data_filename, ".gz"))
