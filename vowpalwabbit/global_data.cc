@@ -330,6 +330,8 @@ vw::vw()
 
   stdin_off = false;
   do_reset_source = false;
+  holdout_set_off = true;
+  holdout_period = 10;
 
   max_examples = (size_t)-1;
 
