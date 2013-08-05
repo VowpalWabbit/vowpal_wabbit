@@ -572,7 +572,7 @@ run_tests();
 #
 __DATA__
 # Test 1:
-{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1
+{VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off
     train-sets/ref/0001.stdout
     train-sets/ref/0001.stderr
 
@@ -628,12 +628,12 @@ __DATA__
     train-sets/ref/cs_test.ldf.wap.predict
 
 # Test 11: one-against-all
-{VW} -k --oaa 10 -c --passes 10 train-sets/multiclass
+{VW} -k --oaa 10 -c --passes 10 train-sets/multiclass --holdout_off
     train-sets/ref/oaa.stdout
     train-sets/ref/oaa.stderr
 
 # Test 12: Error Correcting Tournament
-{VW} -k --ect 10 --error 3 -c --passes 10 --invariant train-sets/multiclass
+{VW} -k --ect 10 --error 3 -c --passes 10 --invariant train-sets/multiclass --holdout_off
     train-sets/ref/multiclass.stdout
     train-sets/ref/multiclass.stderr
 
@@ -653,7 +653,7 @@ __DATA__
     train-sets/ref/zero.stderr
 
 # Test 16: LBFGS early termination
-{VW} -k -c -d train-sets/rcv1_small.dat --loss_function=logistic -b 20 --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0
+{VW} -k -c -d train-sets/rcv1_small.dat --loss_function=logistic -b 20 --bfgs --mem 7 --passes 20 --termination 0.001 --l2 1.0 --holdout_off
     train-sets/ref/rcv1_small.stdout
     train-sets/ref/rcv1_small.stderr
 
@@ -684,7 +684,7 @@ __DATA__
     train-sets/ref/xxor.stderr
 
 # Test 22: matrix factorization -- training
-{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 0.001 --learning_rate 0.025 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f movielens.reg --cache_file movielens.cache --loss_function classic
+{VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 0.001 --learning_rate 0.025 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f movielens.reg --cache_file movielens.cache --loss_function classic --holdout_off
     train-sets/ref/ml100k_small.stdout
     train-sets/ref/ml100k_small.stderr
 
