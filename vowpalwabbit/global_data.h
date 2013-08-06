@@ -217,7 +217,7 @@ struct vw {
   float lda_D;
 
   std::string text_regressor_name;
-  std::string truly_readable_regressor_name;
+  std::string inv_hash_regressor_name;
   
   std::string span_server;
 
@@ -251,10 +251,9 @@ struct vw {
 
   size_t max_examples; // for TLC
 
-  bool debug_print;
-  bool print_truly;
+  bool hash_inv;
+  bool print_invert;
   std::map< std::string, size_t> name_index_map;
-  std::string ns_pre;
 
   vw();
 };

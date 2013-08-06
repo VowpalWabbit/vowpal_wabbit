@@ -636,7 +636,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
 	  feature f = {1.,(uint32_t)(new_index)};
 	  atomics.push_back(f);
-	  if (all.audit && audits.size() >= initial_length)
+	  if ((all.audit || all.hash_inv) && audits.size() >= initial_length)
 	    {
 	      string feature_name(audits[i].feature);
 	      for (size_t n = 1; n < gram_mask.size(); n++)
@@ -748,7 +748,7 @@ void setup_example(vw& all, example* ae)
 
   if (all.ignore_some)
     {
-      if (all.audit)
+      if (all.audit || all.hash_inv)
 	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	  if (all.ignore[*i])
 	    ae->audit_features[*i].erase();
@@ -780,7 +780,7 @@ void setup_example(vw& all, example* ae)
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
 	  j->weight_index = j->weight_index*stride;
-      if (all.audit)
+      if (all.audit || all.hash_inv)
 	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
 	    j->weight_index = j->weight_index*stride;
@@ -951,7 +951,7 @@ namespace VW{
 
   void empty_example(vw& all, example* ec)
   {
-	if (all.audit)
+	if (all.audit || all.hash_inv)
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	{
 	  for (audit_data* temp 

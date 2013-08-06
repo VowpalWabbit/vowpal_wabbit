@@ -133,7 +133,7 @@ void learn(void* d, example* ec)
 
   assert(ec->in_use);
   if (ec->end_pass)
-    {
+    { 
       sync_weights(*all);
       if(all->span_server != "") {
 	if(all->adaptive)
@@ -151,7 +151,7 @@ void learn(void* d, example* ec)
     }
   
   if (!command_example(all, ec))
-    {
+    { 
       predict(*all,*g,ec);
 
       if (all->holdout_set_off || !ec->test_only)
@@ -252,87 +252,95 @@ bool operator<(const string_value& first, const string_value& second)
 
 #include <algorithm>
 
-void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, size_t offset = 0)
-{
+void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, string& ns_pre, size_t offset = 0)
+{ 
   ostringstream tempstream;
   size_t index = (f->weight_index + offset) & all.reg.weight_mask;
   weight* weights = all.reg.weight_vector;
   size_t stride = all.reg.stride;
   
-  if(all.debug_print) tempstream << prepend;
+  if(all.audit) tempstream << prepend;
   
   typedef std::map< std::string, size_t> str_int_map;
-  string tmp = all.ns_pre;
-
+  string tmp = "";
+  
   if (a != NULL){
     tmp += a->space;
     tmp += '^';
     tmp += a->feature; 
   }
-  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) ){
-    tmp = "Constant";
+ 
+  if (a != NULL && all.audit){
+    tempstream << tmp << ':';
   }
-
-  if (a != NULL && all.debug_print){
-    tempstream << a->space << '^' << a->feature << ':';
-  }
-  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask)&&all.debug_print){
+  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) && all.audit){
     tempstream << "Constant:";
   }
-  if(all.debug_print){
+  if(all.audit){
     tempstream << (index/stride & all.parse_mask) << ':' << f->x;
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
-
-  if(all.truly_readable_regressor_name != ""){ 
+  if(all.current_pass == 0 && all.inv_hash_regressor_name != ""){ //for invert_hash
+    if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) )
+      tmp = "Constant";
+    else
+      tmp = ns_pre + tmp;
+    //
     if(!all.name_index_map.count(tmp)){
       all.name_index_map.insert(str_int_map::value_type(tmp, (index/stride & all.parse_mask)));
     }
   }
 
-  if(all.adaptive && all.debug_print)
+  if(all.adaptive && all.audit)
     tempstream << '@' << weights[index+1];
   string_value sv = {weights[index]*f->x, tempstream.str()};
   results.push_back(sv);
 }
 
-void audit_features(vw& all, v_array<feature>& fs, v_array<audit_data>& as, vector<string_value>& results, string prepend, size_t offset = 0)
+void audit_features(vw& all, v_array<feature>& fs, v_array<audit_data>& as, vector<string_value>& results, string prepend, string& ns_pre, size_t offset = 0)
 {
   for (size_t j = 0; j< fs.size(); j++)
     if (as.begin != as.end)
-      audit_feature(all, & fs[j], & as[j], results, prepend, offset);
+      audit_feature(all, & fs[j], & as[j], results, prepend, ns_pre, offset);
     else
-      audit_feature(all, & fs[j], NULL, results, prepend, offset);
+      audit_feature(all, & fs[j], NULL, results, prepend, ns_pre, offset);
 }
 
-void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, uint32_t offset = 0)
+void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, string& ns_pre, uint32_t offset = 0)
 {
   size_t halfhash = quadratic_constant * (left_feature.weight_index + offset);
 
   ostringstream tempstream;
-  if (audit_right.size() != 0 && left_audit && all.debug_print)
+  if (audit_right.size() != 0 && left_audit && all.audit)
     tempstream << left_audit->space << '^' << left_audit->feature << '^';
   string prepend = tempstream.str();
 
-  all.ns_pre = left_audit->space; 
-  all.ns_pre = all.ns_pre + '^' + left_audit->feature + '^';
-
-  audit_features(all, right_features, audit_right, results, prepend, halfhash + offset);
+  if(all.current_pass == 0 && audit_right.size() != 0 && left_audit)//for invert_hash
+  {
+    ns_pre = left_audit->space; 
+    ns_pre = ns_pre + '^' + left_audit->feature + '^';
+  }
+ 
+  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset);
 }
 
 void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit_data* f1_audit, 
-		  v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, uint32_t offset = 0)
+		  v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, string& ns_pre, uint32_t offset = 0)
 {
   size_t halfhash = cubic_constant2 * (cubic_constant * (f0.weight_index + offset) + f1.weight_index + offset);
 
   ostringstream tempstream;
-  if (audit_right.size() > 0 && f0_audit && f1_audit && all.debug_print)
+  if (audit_right.size() > 0 && f0_audit && f1_audit && all.audit)
     tempstream << f0_audit->space << '^' << f0_audit->feature << '^' 
 	       << f1_audit->space << '^' << f1_audit->feature << '^';
   string prepend = tempstream.str();
-  all.ns_pre = f0_audit->space;
-  all.ns_pre = all.ns_pre + '^' + f0_audit->feature + '^' + f1_audit->space + '^' + f1_audit->feature + '^';
-  audit_features(all, right_features, audit_right, results, prepend, halfhash + offset);  
+
+  if(all.current_pass == 0 && audit_right.size() != 0 && f0_audit && f1_audit)//for invert_hash
+  {
+    ns_pre = f0_audit->space;
+    ns_pre = ns_pre + '^' + f0_audit->feature + '^' + f1_audit->space + '^' + f1_audit->feature + '^';
+  }
+  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset);  
 }
 
 void print_features(vw& all, example* &ec)
@@ -357,11 +365,12 @@ void print_features(vw& all, example* &ec)
     {
       vector<string_value> features;
       string empty;
+      string ns_pre;
       
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++){ 
-        all.ns_pre = "";
-	audit_features(all, ec->atomics[*i], ec->audit_features[*i], features, empty, ec->ft_offset);
-        all.ns_pre = "";
+        ns_pre = "";
+	audit_features(all, ec->atomics[*i], ec->audit_features[*i], features, empty, ns_pre, ec->ft_offset);
+        ns_pre = "";
       }
       for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
 	{
@@ -372,7 +381,7 @@ void print_features(vw& all, example* &ec)
 	      audit_data* a = NULL;
 	      if (ec->audit_features[fst].size() > 0)
 		a = & ec->audit_features[fst][j];
-	      audit_quad(all, ec->atomics[fst][j], a, ec->atomics[snd], ec->audit_features[snd], features);
+	      audit_quad(all, ec->atomics[fst][j], a, ec->atomics[snd], ec->audit_features[snd], features, ns_pre);
 	    }
 	}
 
@@ -391,13 +400,13 @@ void print_features(vw& all, example* &ec)
 		  audit_data* a2 = NULL;
 		  if (ec->audit_features[snd].size() > 0)
 		    a2 = & ec->audit_features[snd][k];
-		  audit_triple(all, ec->atomics[fst][j], a1, ec->atomics[snd][k], a2, ec->atomics[trd], ec->audit_features[trd], features);
+		  audit_triple(all, ec->atomics[fst][j], a1, ec->atomics[snd][k], a2, ec->atomics[trd], ec->audit_features[trd], features, ns_pre);
 		}
 	    }
 	}
 
       sort(features.begin(),features.end());
-      if(all.debug_print){ 
+      if(all.audit){ 
         for (vector<string_value>::iterator sv = features.begin(); sv!= features.end(); sv++)
 	  cout << '\t' << (*sv).s;
         cout << endl;
@@ -407,7 +416,7 @@ void print_features(vw& all, example* &ec)
 
 void print_audit_features(vw& all, example* ec)
 {
-  if(all.debug_print)
+  if(all.audit)
     print_result(all.stdout_fileno,ec->final_prediction,-1,ec->tag);
   fflush(stdout);
   print_features(all, ec);
@@ -604,7 +613,7 @@ float compute_norm(vw& all, example* &ec)
   else if(all.active)
     ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(t,all.power_t));
 
-  if (all.audit && !ec->test_only)
+  if ((all.audit && !ec->test_only) || all.hash_inv)
     print_audit_features(all, ec);
 }
 
@@ -648,7 +657,7 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   uint32_t i = 0;
   size_t brw = 1;
 
-  if(all.print_truly){ //write truly readable model            
+  if(all.print_invert){ //write readable model with feature names           
     weight* v;
     char buff[512];
     int text_len; 

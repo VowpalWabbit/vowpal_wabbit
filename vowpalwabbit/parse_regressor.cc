@@ -268,9 +268,9 @@ void finalize_regressor(vw& all, string reg_name)
     dump_regressor(all, all.per_feature_regularizer_text, true);
   else{
     dump_regressor(all, all.text_regressor_name, true);
-    all.print_truly = true;
-    dump_regressor(all, all.truly_readable_regressor_name, true);
-    all.print_truly = false;
+    all.print_invert = true;
+    dump_regressor(all, all.inv_hash_regressor_name, true);
+    all.print_invert = false;
   }
 }
 
