@@ -96,8 +96,9 @@ vw* parse_args(int argc, char *argv[])
      "Set Decay factor for learning_rate between passes")
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
-    ("readable_model", po::value< string >(), "Output human-readable final regressor")
-    ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")   
+    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
+    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names")
+    ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("hessian_on", "use second derivative in line search")
     ("holdout_off", "no holdout data in multiple passes")
     ("holdout_period", po::value<uint32_t>(&(all->holdout_period)), "holdout period for test only, default 10")
@@ -525,6 +526,12 @@ vw* parse_args(int argc, char *argv[])
   
   if (vm.count("readable_model"))
     all->text_regressor_name = vm["readable_model"].as<string>();
+
+  if (vm.count("invert_hash")){
+    all->inv_hash_regressor_name = vm["invert_hash"].as<string>();
+
+    all->hash_inv = true;   
+  }
   
   if (vm.count("save_per_pass"))
     all->save_per_pass = true;
@@ -613,8 +620,9 @@ vw* parse_args(int argc, char *argv[])
 	}
   }
 
-  if (vm.count("audit"))
+  if (vm.count("audit")){
     all->audit = true;
+  }
 
   if (vm.count("sendto"))
     all->l = SENDER::setup(*all, vm, all->pairs);

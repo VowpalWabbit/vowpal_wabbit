@@ -335,5 +335,7 @@ vw::vw()
 
   max_examples = (size_t)-1;
 
+  hash_inv = false;
+  print_invert = false;
 
 }
