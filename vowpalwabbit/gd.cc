@@ -261,7 +261,6 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   
   if(all.audit) tempstream << prepend;
   
-  typedef std::map< std::string, size_t> str_int_map;
   string tmp = "";
   
   if (a != NULL){
@@ -285,9 +284,9 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
       tmp = "Constant";
     else
       tmp = ns_pre + tmp;
-    //
+    
     if(!all.name_index_map.count(tmp)){
-      all.name_index_map.insert(str_int_map::value_type(tmp, (index/stride & all.parse_mask)));
+      all.name_index_map.insert(std::map< std::string, size_t>::value_type(tmp, (index/stride & all.parse_mask)));
     }
   }
 
