@@ -266,8 +266,12 @@ void finalize_regressor(vw& all, string reg_name)
     dump_regressor(all, reg_name, false);
   if (all.per_feature_regularizer_text.length() > 0)
     dump_regressor(all, all.per_feature_regularizer_text, true);
-  else
+  else{
     dump_regressor(all, all.text_regressor_name, true);
+    all.print_invert = true;
+    dump_regressor(all, all.inv_hash_regressor_name, true);
+    all.print_invert = false;
+  }
 }
 
 void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)

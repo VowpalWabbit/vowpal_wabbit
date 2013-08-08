@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #ifndef GLOBAL_DATA_H
 #define GLOBAL_DATA_H
 #include <vector>
+#include <map>
 #include <stdint.h>
 #include <cstdio>
 #include "v_array.h"
@@ -216,6 +217,7 @@ struct vw {
   float lda_D;
 
   std::string text_regressor_name;
+  std::string inv_hash_regressor_name;
   
   std::string span_server;
 
@@ -248,6 +250,10 @@ struct vw {
   regressor reg;
 
   size_t max_examples; // for TLC
+
+  bool hash_inv;
+  bool print_invert;
+  std::map< std::string, size_t> name_index_map;
 
   vw();
 };
