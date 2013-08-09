@@ -321,6 +321,7 @@ vw::vw()
   add_constant = true;
   audit = false;
   active = false;
+  active_simulation = false;
   active_c0 = 8.;
   reg.weight_vector = NULL;
   pass_length = (size_t)-1;
@@ -336,5 +337,7 @@ vw::vw()
 
   max_examples = (size_t)-1;
 
+  hash_inv = false;
+  print_invert = false;
 
 }
