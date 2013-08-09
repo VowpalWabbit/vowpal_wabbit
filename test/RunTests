@@ -679,7 +679,7 @@ __DATA__
     pred-sets/ref/0022.predict
 
 # Test 21: cubic features -- on a parity test case
-{VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100
+{VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100 --holdout_off
     train-sets/ref/xxor.stdout
     train-sets/ref/xxor.stderr
 
