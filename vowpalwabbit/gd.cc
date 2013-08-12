@@ -39,8 +39,6 @@ namespace GD
     bool active_simulation;
     float normalized_sum_norm_x;
     bool feature_mask_off;
-    bool save_best;
-    bool early_stop;
     size_t no_win_counter;
     size_t early_stop_thres;
 
@@ -152,12 +150,11 @@ void learn(void* d, example* ec)
       
       all->current_pass++;
 
-      if(g->save_best)
+      if(!all->holdout_set_off && all->final_regressor_name != "")
       {
         if(summarize_holdout_set(*all, g->no_win_counter))
-          save_predictor(*all, all->best_model_name, (size_t)-1);
-        if(g->early_stop)
-          if(g->early_stop_thres == g->no_win_counter)
+          finalize_regressor(*all, all->final_regressor_name); 
+        if(g->early_stop_thres == g->no_win_counter)
             all-> early_terminate = true;
       }   
     }
@@ -871,12 +868,17 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
 void driver(vw* all, void* data)
 {
   example* ec = NULL;
-
+  
   while ( true )
-    { 
-     if(all-> early_terminate){
-       all->p->done = true;
-       return; }
+    {
+     if(all-> early_terminate)
+        {
+          all->p->done = true;
+          all->final_regressor_name = "";//skip finalize_regressor
+          all->text_regressor_name = "";
+          all->inv_hash_regressor_name = "";
+          return;
+        }
      else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	{
 	  learn(data, ec);
@@ -897,32 +899,19 @@ learner setup(vw& all, po::variables_map& vm)
   g->active_simulation = all.active_simulation;
   g->normalized_sum_norm_x = all.normalized_sum_norm_x;
   g->no_win_counter = 0;
-  g->early_stop = false;
-  g->early_stop_thres = 0;
+  g->early_stop_thres = 3;
 
   if(vm.count("feature_mask"))
     g->feature_mask_off = false;
   else
     g->feature_mask_off = true;
 
-  if(vm.count("save_best_model"))
+  if(!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = 1./0.;
-    g->save_best = true;
-
-    all.best_model_name = vm["save_best_model"].as<string>();
-
-    if(vm.count("holdout_off"))
-      cerr << endl << "warning, should have holdout set on when saving best model.\n";
-
-    if(vm.count("save_no_win"))
-    {
-      g->early_stop = true;
-      g->early_stop_thres = vm["save_no_win"].as< size_t>();
-    }     
+    if(vm.count("early_terminate"))      
+      g->early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
-  else
-    g->save_best = false;
     
   sl_t sl = {g,save_load};
   learner ret(g,driver,learn,finish,sl);
