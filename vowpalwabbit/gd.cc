@@ -554,7 +554,7 @@ float compute_norm(vw& all, example* &ec)
     t = ec->example_t;
 
   ec->eta_round = 0;
-  if (!all.holdout_set_off && ec->test_only)//if this is a test example
+  if (ec->test_only)//if this is a holdout example
   {
     ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
     all.sd->holdout_sum_loss += ec->loss;
