@@ -582,12 +582,11 @@ int process_pass(vw& all, bfgs& b) {
 		  }
 		  if (all.l2_lambda > 0.)
 		    b.loss_sum += add_regularization(all, b, all.l2_lambda);
-		  if (!all.quiet)
-                  {
+		  if (!all.quiet){
                     if(!all.holdout_set_off && b.current_pass >= 1)
                       fprintf(stderr, "%2lu h%-10.5f\t", (long unsigned int)b.current_pass+1, all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
                     else
-		      fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass+1, b.loss_sum / b.importance_weight_sum);
+                      fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass+1, b.loss_sum / b.importance_weight_sum);
                   }
 		  double wolfe1;
 		  double new_step = wolfe_eval(all, b, b.mem, b.loss_sum, b.previous_loss_sum, b.step_size, b.importance_weight_sum, b.origin, wolfe1);
