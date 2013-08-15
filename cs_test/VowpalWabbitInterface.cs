@@ -9,7 +9,7 @@ namespace Microsoft.Research.MachineLearning
     public sealed class VowpalWabbitInterface
     {
         [StructLayout(LayoutKind.Sequential)]
-        internal struct FEATURE_SPACE
+        public struct FEATURE_SPACE
         {
             public byte name;
             public IntPtr features;     // points to a FEATURE[]
@@ -21,6 +21,14 @@ namespace Microsoft.Research.MachineLearning
         {
             public float x;
             public uint weight_index;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LABEL
+        {
+            public float label;
+            public float weight;
+            public float initial;
         }
 
         [DllImport("libvw.dll", EntryPoint = "VW_Initialize", CallingConvention = CallingConvention.StdCall)]
@@ -50,6 +58,9 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport("libvw.dll", EntryPoint = "VW_GetExample", CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr GetExample(IntPtr parser);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_GetLabel", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr GetLabel(IntPtr vw, IntPtr example);
 
         [DllImport("libvw.dll", EntryPoint = "VW_FinishExample", CallingConvention = CallingConvention.StdCall)]
         public static extern void FinishExample(IntPtr vw, IntPtr example);

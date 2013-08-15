@@ -108,6 +108,13 @@ extern "C"
 		return static_cast<VW_EXAMPLE>(VW::get_example(parser_pointer));
 	}
 
+	VW_DLL_MEMBER VW_LABEL VW_CALLING_CONV VW_GetLabel(VW_HANDLE handle, VW_EXAMPLE e)
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		label_data* ld = VW::get_label(static_cast<example*>(e));
+		return static_cast<VW_LABEL>(ld);
+	}
+
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e)
 	{
 		vw * pointer = static_cast<vw*>(handle);

@@ -47,13 +47,13 @@ void output_and_account_example(example* ec);
      
      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
        if (ec->atomics[(int)(*i)[0]].size() > 0) {
-	 v_array<feature> temp = ec->atomics[(int)(*i)[0]];
-	 for (; temp.begin != temp.end; temp.begin++)
-	   {
-	     uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
-	     foreach_feature<T>(all, dat, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, 
-				halfhash, temp.begin->x);
-	   }
+		v_array<feature> temp = ec->atomics[(int)(*i)[0]];
+		 for (; temp.begin != temp.end; temp.begin++)
+		   {
+			 uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
+			 foreach_feature<T>(all, dat, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, 
+					halfhash, temp.begin->x);
+		   }
        }
      }
      
@@ -79,6 +79,28 @@ void output_and_account_example(example* ec);
      foreach_feature<T>(all, ec, &prediction);
      return prediction;
    }
+
+ template <void (*T)(vw&, void*, float, uint32_t)>
+   void foreach_feature(vw& all, void* fs_ptr, feature* begin, feature* end)
+   {
+     for (feature* f = begin; f!= end; f++)
+	 {
+	 }
+       T(all, f, dat);
+   }
+ 
+ template <void (*T)(vw&, void*, float, uint32_t)>
+   void foreach_feature(vw& all, example* ec, void* dat)
+   {
+     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+	 {
+		len = ec->indices.size();
+		primitive_feature_space* fs_ptr = new primitive_feature_space[len]; 
+		foreach_feature<T>(all, fs_ptr, ec->atomics[*i].begin, ec->atomics[*i].end);
+	 }
+     
+   }
+
 }
 
 #endif

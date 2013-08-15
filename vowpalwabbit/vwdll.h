@@ -21,6 +21,7 @@ extern "C"
 
 	typedef void * VW_HANDLE;
 	typedef void * VW_EXAMPLE;
+	typedef void * VW_LABEL;
 	typedef void * VW_FEATURE_SPACE;
  
 	const VW_HANDLE INVALID_VW_HANDLE = NULL;
@@ -43,6 +44,7 @@ extern "C"
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_EndParser(VW_HANDLE handle);
 
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_GetExample(VW_HANDLE handle);
+	VW_DLL_MEMBER VW_LABEL VW_CALLING_CONV VW_GetLabelExample(VW_HANDLE handle, VW_EXAMPLE e);
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e);
 
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpace(VW_HANDLE handle, const char16_t * s);
