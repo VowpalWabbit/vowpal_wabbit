@@ -47,6 +47,12 @@ struct shared_data {
   float min_label;//minimum label encountered
   float max_label;//maximum label encountered
 
+  //for holdout
+  double weighted_holdout_examples;
+  double weighted_holdout_examples_since_last_dump;
+  double holdout_sum_loss_since_last_dump;
+  double holdout_sum_loss;
+
   bool binary_label;
   uint32_t k;
 };
@@ -84,6 +90,7 @@ struct parser {
   size_t ring_size;
   uint64_t parsed_examples; // The index of the parsed example.
   uint64_t local_example_number; 
+  uint32_t in_pass_counter;
   example* examples;
   uint64_t used_index;
   MUTEX examples_lock;

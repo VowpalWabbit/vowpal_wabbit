@@ -262,9 +262,6 @@ vw::vw()
   m = 15; 
   save_resume = false;
 
-  l = GD::setup(*this);
-  scorer = l;
-
   set_minmax = set_mm;
 
   weights_per_problem = 1;
@@ -316,15 +313,15 @@ vw::vw()
   adaptive = true;
   normalized_updates = true;
   invariant_updates = true;
-  
-  l = GD::setup(*this);
 
   normalized_sum_norm_x = 0.;
   normalized_idx = 2;
+  feature_mask_idx = 3;//by default use the 4th position as mask
 
   add_constant = true;
   audit = false;
   active = false;
+  active_simulation = false;
   active_c0 = 8.;
   reg.weight_vector = NULL;
   pass_length = (size_t)-1;
@@ -334,6 +331,12 @@ vw::vw()
 
   stdin_off = false;
   do_reset_source = false;
+  holdout_set_off = true;
+  holdout_period = 10;
 
   max_examples = (size_t)-1;
+
+  hash_inv = false;
+  print_invert = false;
+
 }

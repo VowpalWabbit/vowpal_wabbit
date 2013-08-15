@@ -26,8 +26,8 @@ void train_offset_example(regressor& r, example* ex, size_t offset);
 void compute_update(example* ec);
 void offset_train(regressor &reg, example* &ec, float update, size_t offset);
 void train_one_example_single_thread(regressor& r, example* ex);
- learner setup(vw& all);
- void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
+learner setup(vw& all, po::variables_map& vm);
+void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void output_and_account_example(example* ec);
 
  template <void (*T)(vw&, void*, float, uint32_t)>

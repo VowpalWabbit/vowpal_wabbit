@@ -243,7 +243,7 @@ public:
     this->p = all.p;
     this->ae = ae;
     this->weights_per_problem = all.weights_per_problem;
-    audit = all.audit;
+    audit = all.audit || all.hash_inv;
     listNameSpace();
   }
 
