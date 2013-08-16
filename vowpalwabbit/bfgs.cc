@@ -932,6 +932,8 @@ void drive(vw* all, void* d)
           all->p->done = true;
           all->final_regressor_name = "";//skip finalize_regressor
           all->text_regressor_name = "";
+          all->per_feature_regularizer_output = "";
+          all->per_feature_regularizer_text = "";
           return;
         }
       else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
