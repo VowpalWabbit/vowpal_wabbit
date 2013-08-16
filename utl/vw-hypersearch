@@ -183,10 +183,10 @@ sub goldenSectionSearch($$$$) {
 
     # assert(loss($x) != loss($mid));
     if (loss($x) == loss($mid)) {
-        my $msg =
-            sprintf "%s: goldenSectionSearch assertion failed %g != %g\n",
-                        $0, loss($x), loss($mid);
-        die $msg;
+        printf STDERR "%s: goldenSectionSearch: flatlined at " .
+                        "loss(%g .. %g)=%g\n",
+                            $0, $x, $mid, loss($x);
+        return (($x + $mid) / 2.0);
     }
 
     if (loss($x) < loss($mid)) {
