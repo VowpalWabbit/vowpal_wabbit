@@ -46,14 +46,13 @@ extern "C"
 			adjust_used_index(*pointer);
 			pointer->do_reset_source = true;
 			VW::start_parser(*pointer,false);
-			pointer->l.driver(pointer, pointer->l.data);
+			pointer->l.drive(pointer);
 			VW::end_parser(*pointer); 
 			}
 		else
 			release_parser_datastructures(*pointer);
 
 		VW::finish(*pointer);
-		delete pointer;
 	}
 
 	VW_DLL_MEMBER VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(VW_HANDLE handle, VW_FEATURE_SPACE* features, size_t len)
@@ -63,11 +62,11 @@ extern "C"
 		return static_cast<VW_EXAMPLE>(VW::import_example(*pointer, f, len));
 	}
 	
-	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t& len)
+	VW_DLL_MEMBER VW_FEATURE_SPACE VW_CALLING_CONV VW_ExportExample(VW_HANDLE handle, VW_EXAMPLE e, size_t * plen)
 	{
 		vw* pointer = static_cast<vw*>(handle);
 		example* ex = static_cast<example*>(e);
-		return static_cast<VW_FEATURE_SPACE>(VW::export_example(*pointer, ex, len));
+		return static_cast<VW_FEATURE_SPACE>(VW::export_example(*pointer, ex, *plen));
 	}
 
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_ReleaseFeatureSpace(VW_FEATURE_SPACE* features, size_t len)
@@ -115,14 +114,14 @@ extern "C"
 		VW::finish_example(*pointer, static_cast<example*>(e));
 	}
 
-	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_HashSpace(VW_HANDLE handle, const char16_t * s)
+	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpace(VW_HANDLE handle, const char16_t * s)
 	{
 		std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
 		std::string sa(convert.to_bytes(s));
 		return VW_HashSpaceA(handle,sa.c_str());
 	}
 
-	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_HashSpaceA(VW_HANDLE handle, const char * s)
+	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashSpaceA(VW_HANDLE handle, const char * s)
 	{
 		vw * pointer = static_cast<vw*>(handle);
 		string str(s);
@@ -130,7 +129,7 @@ extern "C"
 	}
 
 
-	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t * s, unsigned long u)
+	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeature(VW_HANDLE handle, const char16_t * s, unsigned long u)
 	{
 		std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
 		std::string sa(convert.to_bytes(s));
@@ -138,7 +137,7 @@ extern "C"
 	}
 
 
-	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char * s, unsigned long u)
+	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_HashFeatureA(VW_HANDLE handle, const char * s, unsigned long u)
 	{
 		vw * pointer = static_cast<vw*>(handle);
 		string str(s);
@@ -159,13 +158,13 @@ extern "C"
 		return ex->final_prediction;
 	}
 
-	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, uint32_t index)
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, size_t index)
 	{
 		vw* pointer = static_cast<vw*>(handle);
-		return VW::get_weight(*pointer, index);
+		return VW::get_weight(*pointer, (uint32_t) index);
 	}
 
-	VW_DLL_MEMBER uint32_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle)
+	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle)
 	{
 		vw* pointer = static_cast<vw*>(handle);
 		return VW::num_weights(*pointer);

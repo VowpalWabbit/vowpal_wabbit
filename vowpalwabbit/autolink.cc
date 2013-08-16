@@ -82,7 +82,7 @@ namespace ALINK {
 	all.options_from_file.append(ss.str());
       }
 
-    learner l = {data, drive, learn, finish, all.l.sl};
+    learner l(data, drive, learn, finish, all.l.sl);
     return l;
   }
 }

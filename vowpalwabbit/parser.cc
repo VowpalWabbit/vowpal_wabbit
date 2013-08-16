@@ -139,12 +139,19 @@ void handle_sigterm (int)
   got_sigterm = true;
 }
 
+bool is_test_only(uint32_t counter, uint32_t period, bool holdout_off)
+{
+  if(holdout_off) return false;
+  return (counter % period == 0);
+}
+
 parser* new_parser()
 {
   parser* ret = (parser*) calloc(1,sizeof(parser));
   ret->input = new io_buf;
   ret->output = new io_buf;
   ret->local_example_number = 0;
+  ret->in_pass_counter = 0;
   ret->ring_size = 1 << 8;
   ret->done = false;
   ret->used_index = 0;
@@ -629,7 +636,7 @@ void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics
 	    new_index = new_index*quadratic_constant + atomics[i+gram_mask[n]].weight_index;
 	  feature f = {1.,(uint32_t)(new_index)};
 	  atomics.push_back(f);
-	  if (all.audit && audits.size() >= initial_length)
+	  if ((all.audit || all.hash_inv) && audits.size() >= initial_length)
 	    {
 	      string feature_name(audits[i].feature);
 	      for (size_t n = 1; n < gram_mask.size(); n++)
@@ -722,6 +729,7 @@ void end_pass_example(vw& all, example* ae)
 {
   all.p->lp->default_label(ae->ld);
   ae->end_pass = true;
+  all.p->in_pass_counter = 0;
 }
 
 void setup_example(vw& all, example* ae)
@@ -730,14 +738,17 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->done = false;
+  
   ae->example_counter = (size_t)(all.p->parsed_examples + 1);
+  all.p->in_pass_counter++;
+  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_set_off);
   ae->global_weight = all.p->lp->get_weight(ae->ld);
   all.sd->t += ae->global_weight;
   ae->example_t = (float)all.sd->t;
 
   if (all.ignore_some)
     {
-      if (all.audit)
+      if (all.audit || all.hash_inv)
 	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	  if (all.ignore[*i])
 	    ae->audit_features[*i].erase();
@@ -765,11 +776,11 @@ void setup_example(vw& all, example* ae)
   
   if(all.reg.stride != 1 || all.weights_per_problem != 1) //make room for per-feature information.
     {
-      uint32_t stride = all.reg.stride * all.weights_per_problem;
+      uint32_t stride = all.reg.stride;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
 	  j->weight_index = j->weight_index*stride;
-      if (all.audit)
+      if (all.audit || all.hash_inv)
 	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
 	    j->weight_index = j->weight_index*stride;
@@ -940,7 +951,7 @@ namespace VW{
 
   void empty_example(vw& all, example* ec)
   {
-	if (all.audit)
+	if (all.audit || all.hash_inv)
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
 	{
 	  for (audit_data* temp 
@@ -999,7 +1010,8 @@ void *main_parse_loop(void *in)
 	while(!all->p->done)
 	  {
 	    example* ae = get_unused_example(*all);
-	   if (!all->do_reset_source && example_number != all->pass_length && parse_atomic_example(*all, ae))  
+	   if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
+		   && parse_atomic_example(*all, ae) )  
 	     setup_example(*all, ae);
 	   else
 	     {
@@ -1008,17 +1020,17 @@ void *main_parse_loop(void *in)
 	       all->passes_complete++;
 	       end_pass_example(*all, ae);
 	       if (all->passes_complete == all->numpasses && example_number == all->pass_length)
-		 {
-		   all->passes_complete = 0;
-		   all->pass_length = all->pass_length*2+1;
-		 }
+			 {
+			   all->passes_complete = 0;
+			   all->pass_length = all->pass_length*2+1;
+			 }
+	       if (all->passes_complete >= all->numpasses && all->max_examples >= example_number)
+			 {
+			   mutex_lock(&all->p->examples_lock);
+			   all->p->done = true;
+			   mutex_unlock(&all->p->examples_lock);
+			 }
 	       example_number = 0;
-	       if (all->passes_complete >= all->numpasses)
-		 {
-		   mutex_lock(&all->p->examples_lock);
-		   all->p->done = true;
-		   mutex_unlock(&all->p->examples_lock);
-		 }
 	     }
 	   example_number++;
 	   mutex_lock(&all->p->examples_lock);

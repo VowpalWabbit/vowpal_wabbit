@@ -27,7 +27,7 @@ using namespace std;
 namespace SENDER {
   struct sender {
     io_buf* buf;
-    
+    learner base;
     int sd;
   };
 
@@ -81,8 +81,9 @@ namespace SENDER {
 	  
 	  return_simple_example(*all, ec);
 	}
-      else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
+      else if ((ec = VW::get_example(all->p)) != NULL && !command_example(all,ec))//semiblocking operation.
         {
+
           label_data* ld = (label_data*)ec->ld;
           all->set_minmax(all->sd, ld->label);
 	  simple_label.cache_label(ld, *s->buf);//send label information.
@@ -107,8 +108,14 @@ namespace SENDER {
     }
   return;
 }
-  void learn(void* d, example*ec) { cout << "sender can't be used under reduction" << endl; }
-  void finish(void* d) { cout << "sender can't be used under reduction" << endl; }
+  void learn(void* d, example*ec) { cout << "sender learn can not be used under reduction" << endl; }
+  void finish(void* d) 
+  { 
+    sender* s = (sender*)d;
+    delete s->buf;
+    s->base.finish();
+    free(s);
+  }
 
   learner setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
@@ -120,8 +127,9 @@ namespace SENDER {
       open_sockets(*s, hosts[0]);
     }
 
+  s->base = all.l;
   sl_t sl = {NULL, save_load};
-  learner l = {s,drive_send,learn,finish,sl};
+  learner l(s,drive_send,learn,finish,sl);
   return l;
 }
 

@@ -32,7 +32,10 @@ You need Visual Studio 2010
       (k) Run "b2 --prefix=c:\boost\x86 --build-dir=x86 --toolset=msvc install --with-program_options" (I add " -j 16" to the end to run up to 16 procs at once.)
       (l) Run "b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc address-model=64 install --with-program_options"
 
-
+f you have multiple Visual Studios installed (vs2012 and vs2010) explicitly specify the toolset version
+	  toolset=msvc-10.0
+	 
+	  
     ==> Get pre-built binaries from boostpro -- BUT ONLY 32 BIT BINS ARE AVAILABLE
 
           http://boostpro.com/download/boost_1_50_setup.exe

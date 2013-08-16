@@ -258,11 +258,11 @@ namespace OAA {
 
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
+    data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->k;
-    data->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
-    learner l = {data, drive, learn, finish, all.l.sl};
+    learner l(data, drive, learn, finish, all.l.sl);
     return l;
   }
 }

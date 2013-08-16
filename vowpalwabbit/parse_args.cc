@@ -44,6 +44,13 @@ bool ends_with(string const &fullString, string const &ending)
     }
 }
 
+bool valid_ns(char c)
+{
+    if (c=='|'||c==':')
+        return false;
+    return true;
+}
+
 vw* parse_args(int argc, char *argv[])
 {
   po::options_description desc("VW options");
@@ -89,15 +96,19 @@ vw* parse_args(int argc, char *argv[])
      "Set Decay factor for learning_rate between passes")
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
     ("final_regressor,f", po::value< string >(), "Final regressor")
-    ("readable_model", po::value< string >(), "Output human-readable final regressor")
+    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
+    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names")
     ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
     ("hessian_on", "use second derivative in line search")
+    ("holdout_off", "no holdout data in multiple passes")
+    ("holdout_period", po::value<uint32_t>(&(all->holdout_period)), "holdout period for test only, default 10")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
+    ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated")
     ("initial_pass_length", po::value<size_t>(&(all->pass_length)), "initial number of examples per pass")
     ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
     ("lda", po::value<size_t>(&(all->lda)), "Run lda with <int> topics")
@@ -120,6 +131,7 @@ vw* parse_args(int argc, char *argv[])
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("quadratic,q", po::value< vector<string> > (),
      "Create and use quadratic features")
+    ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features")
     ("quiet", "Don't output diagnostics")
@@ -129,6 +141,7 @@ vw* parse_args(int argc, char *argv[])
     ("raw_predictions,r", po::value< string >(),
      "File to output unnormalized predictions to")
     ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
+	("examples", po::value<size_t>(&(all->max_examples)), "number of examples to parse")
     ("save_per_pass", "Save the model after every pass over data")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
@@ -164,6 +177,9 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(parsed, vm);
   po::notify(vm);
+
+  all->l = GD::setup(*all, vm);
+  all->scorer = all->l;
 
   all->data_filename = "";
 
@@ -241,6 +257,15 @@ vw* parse_args(int argc, char *argv[])
       all->sd->weighted_unlabeled_examples = 1.f;
       all->initial_t = 1.f;
     }
+    if (vm.count("feature_mask")){
+      if(all->reg.stride == 1){
+        all->reg.stride *= 2;//if --sgd, stride->2 and use the second position as mask
+        all->feature_mask_idx = 1;
+      }
+      else if(all->reg.stride == 2){
+        all->reg.stride *= 2;//if either normalized or adaptive, stride->4, mask_idx is still 3      
+      }
+    }
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) 
@@ -295,7 +320,13 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("compressed"))
       set_compressed(all->p);
+  
+  if(all->numpasses > 1)
+      all->holdout_set_off = false;
 
+  if(vm.count("holdout_off"))
+      all->holdout_set_off = true;
+    
   if (vm.count("data")) {
     all->data_filename = vm["data"].as<string>();
     if (ends_with(all->data_filename, ".gz"))
@@ -307,23 +338,65 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("sort_features"))
     all->p->sort_features = true;
 
+  
+
   if (vm.count("quadratic"))
     {
       all->pairs = vm["quadratic"].as< vector<string> >();
-      if (!all->quiet)
-	{
-	  cerr << "creating quadratic features for pairs: ";
-	  for (vector<string>::iterator i = all->pairs.begin(); i != all->pairs.end();i++) {
-	    cerr << *i << " ";
-	    if (i->length() > 2)
-	      cerr << endl << "warning, ignoring characters after the 2nd.\n";
-	    if (i->length() < 2) {
-	      cerr << endl << "error, quadratic features must involve two sets.\n";
-	      throw exception();
-	    }
-	  }
-	  cerr << endl;
-	}
+      vector<string> newpairs;
+      //string tmp;       
+      char printable_start = '!';
+      char printable_end = '~';
+      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
+
+      if(!all->quiet)
+        cerr<<"creating quadratic features for pairs: ";   
+    
+      for (vector<string>::iterator i = all->pairs.begin(); i != all->pairs.end();i++){
+        if(!all->quiet){
+          cerr << *i << " ";
+          if (i->length() > 2)
+            cerr << endl << "warning, ignoring characters after the 2nd.\n";
+          if (i->length() < 2) {
+            cerr << endl << "error, quadratic features must involve two sets.\n";
+            throw exception();
+          }
+        }
+        //-q x:
+        if((*i)[0]!=':'&&(*i)[1]==':'){
+          newpairs.reserve(newpairs.size() + valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j))
+              newpairs.push_back(string(1,(*i)[0])+j);
+          }
+        }
+        //-q :x
+        else if((*i)[0]==':'&&(*i)[1]!=':'){
+          newpairs.reserve(newpairs.size() + valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j))
+              newpairs.push_back(string(&j)+(*i)[1]);
+          }
+        }
+        //-q ::
+        else if((*i)[0]==':'&&(*i)[1]==':'){
+          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j)){
+              for (char k=printable_start; k<=printable_end; k++){
+                if(valid_ns(k))
+                  newpairs.push_back(string(&j)+k);
+              }
+            }
+          }
+        }
+        else{
+          newpairs.push_back(string(*i));
+        }    
+      }
+      newpairs.swap(all->pairs);
+      if(!all->quiet)
+        cerr<<endl;
     }
 
   if (vm.count("cubic"))
@@ -453,6 +526,12 @@ vw* parse_args(int argc, char *argv[])
   
   if (vm.count("readable_model"))
     all->text_regressor_name = vm["readable_model"].as<string>();
+
+  if (vm.count("invert_hash")){
+    all->inv_hash_regressor_name = vm["invert_hash"].as<string>();
+
+    all->hash_inv = true;   
+  }
   
   if (vm.count("save_per_pass"))
     all->save_per_pass = true;
@@ -541,8 +620,9 @@ vw* parse_args(int argc, char *argv[])
 	}
   }
 
-  if (vm.count("audit"))
+  if (vm.count("audit")){
     all->audit = true;
+  }
 
   if (vm.count("sendto"))
     all->l = SENDER::setup(*all, vm, all->pairs);
@@ -550,6 +630,8 @@ vw* parse_args(int argc, char *argv[])
   // load rest of regressor
   all->l.save_load(io_temp, true, false);
   io_temp.close_file();
+  //load the mask model, might be different from -i
+  parse_mask_regressor_args(*all, vm);
 
   if (all->l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;
@@ -705,7 +787,7 @@ vw* parse_args(int argc, char *argv[])
 
   // force stride * weights_per_problem to be divisible by 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  while (((all->reg.stride * all->weights_per_problem) >> i) > 1)
+  while (all->reg.stride * all->weights_per_problem  > (uint32_t)(1 << i))
     i++;
   all->weights_per_problem = (1 << i) / all->reg.stride;
 

@@ -99,7 +99,8 @@ namespace VW {
 }
 }
 
-void update_example_indicies(bool audit, example* ec, uint32_t amount) { ec->ft_offset += amount; }
+void update_example_indicies(bool audit, example* ec, uint32_t amount) { 
+  ec->ft_offset += amount; }
 
 #include "global_data.h"
 void save_predictor(vw& all, string reg_name, size_t current_pass);

@@ -763,7 +763,7 @@ learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   }
 
   sl_t sl = {ld, save_load};
-  learner l = {ld, drive, learn, finish, sl};
+  learner l(ld, drive, learn, finish, sl);
   return l;
 }
 }

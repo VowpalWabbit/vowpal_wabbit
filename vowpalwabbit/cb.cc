@@ -691,6 +691,8 @@ namespace CB
         all.options_from_file.append(type_string);
       }
 
+      c->increment = all.weights_per_problem * all.reg.stride;
+
       if (type_string.compare("dr") == 0) { 
         c->cb_type = CB_TYPE_DR;
         all.weights_per_problem *= nb_actions * 2;
@@ -716,13 +718,11 @@ namespace CB
       all.options_from_file.append(" --cb_type dr");
     }
 
-    c->increment = ((uint32_t)all.length()/all.weights_per_problem) * all.reg.stride;
-
     *(all.p->lp) = CB::cb_label_parser; 
 
     all.sd->k = nb_actions;
 
-    learner l = {c, drive, learn, finish, all.l.sl};
+    learner l(c, drive, learn, finish, all.l.sl);
     c->base = all.l;
     return l;
   }
