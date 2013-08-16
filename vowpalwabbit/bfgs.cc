@@ -767,7 +767,7 @@ void learn(void* d, example* ec)
 	  zero_preconditioner(*all);
 	  b->preconditioner_pass = true;
 	}
-        if(!all->holdout_set_off && all->final_regressor_name != "")
+        if(!all->holdout_set_off)
         {
           if(summarize_holdout_set(*all, b->no_win_counter))
             finalize_regressor(*all, all->final_regressor_name); 

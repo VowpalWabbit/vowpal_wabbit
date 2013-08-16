@@ -150,12 +150,12 @@ void learn(void* d, example* ec)
       
       all->current_pass++;
 
-      if(!all->holdout_set_off && all->final_regressor_name != "")
+      if(!all->holdout_set_off)
       {
         if(summarize_holdout_set(*all, g->no_win_counter))
           finalize_regressor(*all, all->final_regressor_name); 
         if(g->early_stop_thres == g->no_win_counter)
-            all-> early_terminate = true;
+          all-> early_terminate = true;
       }   
     }
   
