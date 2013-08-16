@@ -1,0 +1,262 @@
+#! /usr/bin/env perl
+# vim: ts=4 sw=4 expandtab nosmarttab
+#
+# vw generic optimal parameter golden-section search
+#   http://en.wikipedia.org/wiki/Golden_section_search
+#
+# Call without parameters for a full usage message
+#
+# Paul Mineiro ('vowpalwabbit/demo') wrote the original script
+#
+# Ariel Faigon (2013)
+#   - Generalize, refactor
+#   - Add usage message
+#   - Add tolerance as optional parameter
+#   - Add documentation
+#   - Golden-section search bug-fix
+#
+use warnings;
+use strict;
+use Scalar::Util qw(looks_like_number);
+
+#
+# ExecCmd(cmd, timeout)
+#  cmd     - a command or reference to an array of command + arguments
+#  timeout - number of seconds to wait (0 = forever)
+#
+# returns:
+#  cmd exit status (-1 if timed out)
+#  cmd results (STDERR and STDOUT merged into an array ref)
+#
+sub ExecCmd {
+    my $cmd = shift || return(0, []);
+    my $timeout = shift || 0;
+
+    # opening a pipe creates a forked process     
+    my $pid = open(my $pipe, '-|');
+    return (-1, "Can't fork: $!") unless defined $pid;
+
+    if ($pid) {     # parent
+
+        my @result = ();
+
+        if ($timeout) {
+            my $failed = 1;
+            eval {
+                # set a signal to die if the timeout is reached
+                local $SIG{ALRM} = sub { die "alarm\n" };
+                alarm $timeout;
+                @result = <$pipe>;
+                alarm 0;
+                $failed = 0;
+            };
+            return (-1, ['command timeout', @result]) if $failed;
+        } else {
+            while (<$pipe>) {
+                push @result, $_;
+                print STDERR ".";
+            }
+        }
+        close($pipe);
+
+        # return exit status, command output
+        return ($? >> 8), \@result;
+    }
+
+    # child...
+    # skip warnings in this block
+    no warnings;
+
+    # redirect STDERR to STDOUT
+    open(STDERR, '>&STDOUT');
+
+    # exec transfers control of the process to the command
+    ref($cmd) eq 'ARRAY' ? exec(@$cmd) : exec($cmd);
+
+    # this code will not execute unless exec fails!
+    printf STDERR "$0: can't exec '@$cmd': $!";
+    exit 1;
+}
+
+#
+# loss(param)
+#   Input:
+#       @ARGV - A vw command where the parameter we want to optimize
+#               for appears as a '%' placeholder
+#       param - Value for parameter for which we check the loss
+#
+#   Returns the vw average loss for the vw command @ARGV with '%'
+#       set to param value
+#
+my $BestLoss = 1e100;
+my %Loss;   # x -> f(x) cache
+
+sub loss($) {
+    my ($rate) = @_;
+
+    return  $Loss{$rate} if (exists $Loss{$rate});
+
+    printf STDERR "trying %.5g ", $rate;
+
+    my @command = @ARGV;
+    foreach my $c (@command) {
+        $c =~ s/%/$rate/g;
+    }
+
+    my ($status, $rv) = ExecCmd \@command;
+
+    die "subprocess invocation failed: $!" if $status;
+
+    my $loss;
+
+    my $best_msg = '';
+
+    foreach my $line (@$rv) {
+        next unless $line =~ /^average loss = ([0-9.]+)/;
+        $loss = $1;
+        if ($loss < $BestLoss) {
+            $BestLoss = $loss;
+            $best_msg = ' (best)';
+        }
+    }
+
+    die "$0: failed to parse average loss from vw output: ", join '', @$rv
+        unless defined ($loss);
+
+    printf STDERR " %.6g%s\n", $loss, $best_msg;
+    $Loss{$rate} = $loss;
+    $loss;
+}
+
+#
+# argmin3($$$$$$$)
+#   Given 3 value pairs: (arg, loss)  as a six-tuple
+#   returns the pair for which the loss is the smallest
+#
+sub argmin3 ($$$$$$) {
+    my ($a, $fa, $b, $fb, $c, $fc) = @_;
+
+    if ($fa < $fb) {
+        return $fa < $fc ? ($a, $fa) : ($c, $fc);
+    }
+    # else:
+    return $fb < $fc ? ($b, $fb) : ($c, $fc);
+}
+
+sub usage(@) {
+    print STDERR @_, "\n" if @_;
+
+    die "Usage: $0 <lower_bound> <upper_bound> [tolerance] vw-command...
+
+    lower_bound     lower bound of the parameter search range
+    upper_bound     upper bound of the parameter search range
+    tolerance       termination condition for optimal parameter search
+                    expressed as an improvement fraction of the range
+
+    vw-command ...  a vw command to repeat in a loop until optimum
+                    is found, where '%' is used as a placeholder
+                    for the optimized parameter
+"
+}
+
+my $Phi = (1.0 + sqrt (5.0)) / 2.0;
+my $ResPhi = 2.0 - $Phi;
+
+sub goldenSectionSearch($$$$);
+
+sub goldenSectionSearch($$$$) {
+    my ($low, $mid, $high, $tau) = @_;
+
+    my $x;
+
+    my $upper_range = $high - $mid;
+    my $lower_range = $mid - $low;
+    if ($upper_range > $lower_range) {
+        $x = $mid + $ResPhi * $upper_range;
+    } else {
+        $x = $mid - $ResPhi * $lower_range;
+    }
+
+    if (abs($high - $low) < $tau * (abs($mid) + abs($x))) {
+        return (($high + $low) / 2.0);
+    }
+
+    # assert(loss($x) != loss($mid));
+    if (loss($x) == loss($mid)) {
+        my $msg =
+            sprintf "%s: goldenSectionSearch assertion failed %g != %g\n",
+                        $0, loss($x), loss($mid);
+        die $msg;
+    }
+
+    if (loss($x) < loss($mid)) {
+        if ($upper_range > $lower_range) {
+            return goldenSectionSearch($mid, $x, $high, $tau)
+        } else {
+            return goldenSectionSearch($low, $x, $mid, $tau);
+        }
+    }
+
+    # else:
+    if ($upper_range > $lower_range) {
+        return goldenSectionSearch($low, $mid, $x, $tau);
+    }
+    # else
+    return goldenSectionSearch($x, $mid, $high, $tau);
+}
+
+#
+# best_hyperparam(lower_bound, upper_bound, tolerance)
+#
+#   performs golden-ratio section search between lower_bound
+#   and upper_bound for the best parameter (lowest loss)
+#
+#   Termination condition is difference is less than tolerance
+#   of the [lower .. upper] range.
+#
+sub best_hyperparam($$$) {
+    my ($lb, $ub, $tol) = @_;
+    my $mid = $lb + $ResPhi * ($ub - $lb);
+
+    my $best = goldenSectionSearch($lb, $mid, $ub, $tol);
+    my $fbest = loss($best);
+ 
+    ($best, $fbest);
+}
+
+sub process_args {
+    $0 =~ s{.*/}{};
+
+    usage("Too few arguments...")
+        unless (@ARGV > 2);
+
+    usage("1st argument: $ARGV[0]: expecting a number")
+        unless (looks_like_number($ARGV[0]));
+
+    usage("2nd argument: $ARGV[1]: expecting a number")
+        unless (looks_like_number($ARGV[1]));
+
+    my $lower_bound = shift @ARGV;
+    my $upper_bound = shift @ARGV;
+
+    my $tolerance = 0.01;
+    if (looks_like_number($ARGV[0])) {
+        $tolerance = shift @ARGV;
+        usage("3rd argument (tolerance): $tolerance: not in the (0, 1) range")
+            unless (0 < $tolerance and $tolerance < 1.0);
+    }
+    usage("command: $ARGV[0]: must start with an executable")
+        unless (-x $ARGV[0] || $ARGV[0] =~ /(?:vw|make)/);
+
+    usage("command '@ARGV': must include a '%' wildcard to optimize on")
+        unless ("@ARGV" =~ /%/);
+
+    return ($lower_bound, $upper_bound, $tolerance);
+}
+
+# -- main
+my ($lower_bound, $upper_bound, $tolerance) = process_args();
+my ($best, $fbest) = best_hyperparam($lower_bound, $upper_bound, $tolerance);
+
+printf "%g\t%g\n", $best, $fbest;
+
