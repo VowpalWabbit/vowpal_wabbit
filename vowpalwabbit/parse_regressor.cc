@@ -266,8 +266,12 @@ void finalize_regressor(vw& all, string reg_name)
     dump_regressor(all, reg_name, false);
   if (all.per_feature_regularizer_text.length() > 0)
     dump_regressor(all, all.per_feature_regularizer_text, true);
-  else
+  else{
     dump_regressor(all, all.text_regressor_name, true);
+    all.print_invert = true;
+    dump_regressor(all, all.inv_hash_regressor_name, true);
+    all.print_invert = false;
+  }
 }
 
 void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
@@ -292,9 +296,9 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
 
 void parse_mask_regressor_args(vw& all, po::variables_map& vm){
 
-  if (vm.count("feature_mask_on")) {
+  if (vm.count("feature_mask")) {
     size_t length = ((size_t)1) << all.num_bits;  
-    string mask_filename = vm["feature_mask_on"].as<string>();
+    string mask_filename = vm["feature_mask"].as<string>();
     if (vm.count("initial_regressor")){ 
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
       if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
