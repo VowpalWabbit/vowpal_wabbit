@@ -50,9 +50,9 @@ f you have multiple Visual Studios installed (vs2012 and vs2010) explicitly spec
 
 (3) Download zlib from here:
 
-  http://zlib.net/zlib127.zip
+  http://zlib.net/zlib128.zip
 
-(4) Unzip to %ROOT% -- on my machine, this lands in c:\src\vw\zlib-1.2.7.
+(4) Unzip to %ROOT% -- on my machine, this lands in c:\src\vw\zlib-1.2.8.
 
   (This must have the correct relative path for builds to work)
 
@@ -60,7 +60,7 @@ f you have multiple Visual Studios installed (vs2012 and vs2010) explicitly spec
 
     (a) Start a new CMD window
     (b) Run "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat" to set build variables
-    (c) Go to the %ROOT%\zlib-1.2.7\zlib-1.2.7\contrib\vstudio\vc10 directory (for me, c:\src\vw\zlib-1.2.7zlib-1.2.7\contrib\vstudio\vc10)
+    (c) Go to the %ROOT%\zlib-1.2.8\zlib-1.2.8\contrib\vstudio\vc10 directory (for me, c:\src\vw\zlib-1.2.8\zlib-1.2.8\contrib\vstudio\vc10)
     (d) Patch up the zlibstat.vcxproj to correctly use DLL versions of the runtime for 32bit platforms (ugh).  This requires editing lines 167, 194, 222:
 
 ***************
