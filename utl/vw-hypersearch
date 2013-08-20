@@ -59,8 +59,22 @@ sub ExecCmd {
         }
         close($pipe);
 
+        my $exitcode = $? >> 8;
+        my $signal = $? & 127;
+        my $core = ($? & 128) ? ' (core dumped)' : '';
+
+        if ($signal) {
+            warn "\n\t@$cmd died from signal $signal$core\n";
+            die "Try to run:\n\t@$cmd\nmanually to figure out why.\n";
+        } elsif ($exitcode) {
+            warn "\n\t@$cmd failed: (exitcode=$exitcode)\n";
+            warn "Output from @$cmd is:\n@result\n";
+            warn "You may try to run:\n\t@$cmd\nmanually to figure out why.\n"
+                unless (@result);
+            exit 1;
+        }
         # return exit status, command output
-        return ($? >> 8), \@result;
+        return \@result;
     }
 
     # child...
@@ -103,16 +117,14 @@ sub loss($) {
         $c =~ s/%/$rate/g;
     }
 
-    my ($status, $rv) = ExecCmd \@command;
-
-    die "subprocess invocation failed: $!" if $status;
+    my $rv = ExecCmd \@command;
 
     my $loss;
 
     my $best_msg = '';
 
     foreach my $line (@$rv) {
-        next unless $line =~ /^average loss = ([0-9.]+)/;
+        next unless $line =~ /^average loss\s*=\s*([0-9.]+)/;
         $loss = $1;
         if ($loss < $BestLoss) {
             $BestLoss = $loss;
@@ -120,8 +132,10 @@ sub loss($) {
         }
     }
 
-    die "$0: failed to parse average loss from vw output: ", join '', @$rv
-        unless defined ($loss);
+    die "\n$0: failed to parse average loss from vw output: ",
+        join('', @$rv),
+        "\n\nTry to run:\n\t@command\nmanually to figure out why.\n"
+            unless defined ($loss);
 
     printf STDERR " %.6g%s\n", $loss, $best_msg;
     $Loss{$rate} = $loss;
@@ -223,6 +237,15 @@ sub best_hyperparam($$$) {
     ($best, $fbest);
 }
 
+sub fullpath($) {
+    my $exe = shift;
+    foreach my $dir (split(':', $ENV{PATH})) {
+        my $fp = "$dir/$exe";
+        return $fp if (-x $fp);
+    }
+    '';
+}
+
 sub process_args {
     $0 =~ s{.*/}{};
 
@@ -245,7 +268,7 @@ sub process_args {
             unless (0 < $tolerance and $tolerance < 1.0);
     }
     usage("command: $ARGV[0]: must start with an executable")
-        unless (-x $ARGV[0] || $ARGV[0] =~ /(?:vw|make)/);
+        unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
 
     usage("command '@ARGV': must include a '%' wildcard to optimize on")
         unless ("@ARGV" =~ /%/);
