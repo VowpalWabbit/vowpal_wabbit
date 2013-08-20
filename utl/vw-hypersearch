@@ -14,6 +14,8 @@
 #   - Add tolerance as optional parameter
 #   - Add documentation
 #   - Golden-section search bug-fix
+#   - Better error messages in case underlying command fails
+#     for any reason
 #
 use warnings;
 use strict;
@@ -25,8 +27,13 @@ use Scalar::Util qw(looks_like_number);
 #  timeout - number of seconds to wait (0 = forever)
 #
 # returns:
-#  cmd exit status (-1 if timed out)
-#  cmd results (STDERR and STDOUT merged into an array ref)
+#   In case of success:
+#       cmd results (STDERR and STDOUT merged into an array ref)
+#
+#   In case of any failure:
+#       (timeout, death from signal, non-zero exit status,
+#        failure of fork or exec, ...)
+#       print a user-helpful error message and abort
 #
 sub ExecCmd {
     my $cmd = shift || return(0, []);
@@ -34,7 +41,7 @@ sub ExecCmd {
 
     # opening a pipe creates a forked process     
     my $pid = open(my $pipe, '-|');
-    return (-1, "Can't fork: $!") unless defined $pid;
+    die "Can't fork: $!\n" unless defined $pid;
 
     if ($pid) {     # parent
 
@@ -50,7 +57,8 @@ sub ExecCmd {
                 alarm 0;
                 $failed = 0;
             };
-            return (-1, ['command timeout', @result]) if $failed;
+            die "command timeout. Result so far:\n@result\n" if $failed;
+
         } else {
             while (<$pipe>) {
                 push @result, $_;
@@ -77,8 +85,7 @@ sub ExecCmd {
         return \@result;
     }
 
-    # child...
-    # skip warnings in this block
+    # Child...
     no warnings;
 
     # redirect STDERR to STDOUT
@@ -88,8 +95,7 @@ sub ExecCmd {
     ref($cmd) eq 'ARRAY' ? exec(@$cmd) : exec($cmd);
 
     # this code will not execute unless exec fails!
-    printf STDERR "$0: can't exec '@$cmd': $!";
-    exit 1;
+    die "$0: can't exec '@$cmd': $!";
 }
 
 #
@@ -102,31 +108,32 @@ sub ExecCmd {
 #   Returns the vw average loss for the vw command @ARGV with '%'
 #       set to param value
 #
-my $BestLoss = 1e100;
 my %Loss;   # x -> f(x) cache
+my $BestParam;
+my $BestLoss = 1e100;
 
 sub loss($) {
-    my ($rate) = @_;
+    my ($param) = @_;
 
-    return  $Loss{$rate} if (exists $Loss{$rate});
+    return  $Loss{$param} if (exists $Loss{$param});
 
-    printf STDERR "trying %.5g ", $rate;
+    printf STDERR "trying %.5g ", $param;
 
     my @command = @ARGV;
     foreach my $c (@command) {
-        $c =~ s/%/$rate/g;
+        $c =~ s/%/$param/g;
     }
 
     my $rv = ExecCmd \@command;
 
     my $loss;
-
     my $best_msg = '';
 
     foreach my $line (@$rv) {
         next unless $line =~ /^average loss\s*=\s*([0-9.]+)/;
         $loss = $1;
-        if ($loss < $BestLoss) {
+        if ($loss <= $BestLoss) {
+            $BestParam = $param;
             $BestLoss = $loss;
             $best_msg = ' (best)';
         }
@@ -138,7 +145,7 @@ sub loss($) {
             unless defined ($loss);
 
     printf STDERR " %.6g%s\n", $loss, $best_msg;
-    $Loss{$rate} = $loss;
+    $Loss{$param} = $loss;      # cache it
     $loss;
 }
 
@@ -233,7 +240,12 @@ sub best_hyperparam($$$) {
 
     my $best = goldenSectionSearch($lb, $mid, $ub, $tol);
     my $fbest = loss($best);
- 
+
+    # Still happens that what we finally return is not the best...
+    if ($BestLoss < $fbest) {
+        $best = $BestParam;
+        $fbest = $BestLoss;
+    }
     ($best, $fbest);
 }
 
