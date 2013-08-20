@@ -16,8 +16,9 @@ namespace cs_test
         static void Main(string[] args)
         {
             //RunFeaturesTest();
-            RunParserTest();
+            //RunParserTest();
             //RunSpeedTest();
+            RunFlatExampleTestEx();
             //RunVWParce_and_VWLearn();
         }
 
@@ -181,7 +182,97 @@ namespace cs_test
             Debug.WriteLine("RunSpeedTest Elapsed Time: {0} ms", s.ElapsedMilliseconds);
             Console.WriteLine("RunSpeedTest Elapsed Time: {0} ms", s.ElapsedMilliseconds);
         }
-    
+
+        //private static void RunFlatExampleTest()
+        //{
+        //    IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
+
+        //    VowpalWabbitInterface.StartParser(vw, false);
+
+        //    int count = 0;
+        //    IntPtr example = IntPtr.Zero;
+        //    while (IntPtr.Zero != (example = VowpalWabbitInterface.GetExample(vw)))
+        //    {
+        //        count++;
+        //        // make example flat
+        //        IntPtr flatec = VowpalWabbitInterface.Flatten_Example(vw, example);
+        //        VowpalWabbitInterface.FinishExample(vw, example);
+        //    }
+
+        //    VowpalWabbitInterface.EndParser(vw);
+        //    VowpalWabbitInterface.Finish(vw);
+        //}
+
+        private static void RunFlatExampleTestEx()
+        {
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
+
+            VowpalWabbitInterface.StartParser(vw, false);
+
+            int count = 0;
+            IntPtr example = IntPtr.Zero;
+            while (IntPtr.Zero != (example = VowpalWabbitInterface.GetExample(vw)))
+            {
+                count++;
+                IntPtr flatec = IntPtr.Zero;
+                // make example flat
+                flatec = VowpalWabbitInterface.Flatten_ExampleEx(vw, example);
+                if (IntPtr.Zero == flatec)
+                {
+                    continue;
+                }
+                VowpalWabbitInterface.FLAT_RAW_EXAMPLE flat = new VowpalWabbitInterface.FLAT_RAW_EXAMPLE();
+                flat = (VowpalWabbitInterface.FLAT_RAW_EXAMPLE)Marshal.PtrToStructure(flatec, typeof(VowpalWabbitInterface.FLAT_RAW_EXAMPLE));
+
+                // Get IntPtr data
+                VowpalWabbitInterface.FLAT_EXAMPLE_EX flatEx = new VowpalWabbitInterface.FLAT_EXAMPLE_EX();
+
+                flatEx.final_prediction = flat.final_prediction;
+                flatEx.example_counter = flat.example_counter;
+                flatEx.ft_offset = flat.ft_offset;
+                flatEx.num_features = flat.num_features;
+                flatEx.partial_prediction = flat.partial_prediction;
+                flatEx.eta_round = flat.eta_round;
+                flatEx.eta_global = flat.eta_global;
+                flatEx.global_weight = flat.global_weight;
+                flatEx.example_t = flat.example_t;
+                flatEx.total_sum_feat_sq = flat.total_sum_feat_sq;
+                flatEx.revert_weight = flat.revert_weight;
+                flatEx.end_pass = flat.end_pass;
+                flatEx.sorted = flat.sorted;
+                flatEx.in_use = flat.in_use;
+                flatEx.done = flat.done;
+
+                flatEx.ld = (VowpalWabbitInterface.LABEL)Marshal.PtrToStructure(flat.ld, typeof(VowpalWabbitInterface.LABEL));
+                if (flat.tag_len > 0)
+                {
+                    flatEx.tag = new byte[flat.tag_len];
+                    Marshal.Copy(flat.tag, flatEx.tag, 0, flat.tag_len);
+                }
+
+                if (flat.topic_predictions_len > 0)
+                {
+                    flatEx.topic_predictions = new float[flat.topic_predictions_len];
+                    Marshal.Copy(flat.topic_predictions, flatEx.topic_predictions, 0, flat.topic_predictions_len);
+                }
+
+                if (flat.num_features > 0)
+                {
+                    flatEx.feature_map = new VowpalWabbitInterface.FEATURE[flat.num_features];
+                    int feature_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE));
+                    for (int i = 0; i < (int)flat.num_features; i++)
+                    {
+                        IntPtr curfeaturePos = new IntPtr(flat.feature_map.ToInt32() + i * feature_size);
+                        flatEx.feature_map[i] = (VowpalWabbitInterface.FEATURE)Marshal.PtrToStructure(curfeaturePos, typeof(VowpalWabbitInterface.FEATURE));
+                    }
+                }
+                VowpalWabbitInterface.FreeFlattenExampleEx(flatec);
+                VowpalWabbitInterface.FinishExample(vw, example);
+            }
+
+            VowpalWabbitInterface.EndParser(vw);
+            VowpalWabbitInterface.Finish(vw);
+        }
 
         public class VWInstanceEx
         {

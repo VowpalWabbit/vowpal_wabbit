@@ -58,6 +58,78 @@ struct example // core example datatype.
   bool done; //set to false by setup_example()
 };
 
+struct flat_example {  
+ void* ld;  
+ simple_prediction final_prediction;  
+ v_array<char> tag;//An identifier for the example.  
+ size_t example_counter;  
+ v_array<feature> feature_map; //map to store sparse feature vectors  
+ uint32_t ft_offset;  
+   
+ size_t num_features;//precomputed, cause it's fast&easy.  
+ float partial_prediction;//shared data for prediction.  
+ v_array<float> topic_predictions;  
+ float loss;  
+ float eta_round;  
+ float eta_global;  
+ float global_weight;  
+ float example_t;//sum of importance weights so far.  
+ float sum_feat_sq[256];//helper for total_sum_feat_sq.  
+ float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.  
+ float revert_weight;  
+  
+ bool end_pass;//special example indicating end of pass.  
+ bool sorted;//Are the features sorted or not?  
+ bool in_use; //in use or not (for the parser)  
+ bool done; //set to false by setup_example()  
+ };  
+ struct vw;  
+ 
+flat_example flatten_example(vw& all, example* ec);  
+
+namespace VW {
+struct flat_example_ex 
+{
+	void* ld;  
+	simple_prediction final_prediction;  
+
+	int tag_len;
+	char* tag;//An identifier for the example.  
+
+	size_t example_counter;  
+
+	int feature_map_len;
+	feature* feature_map; //map to store sparse feature vectors  
+
+	uint32_t ft_offset;  
+   
+	size_t num_features;//precomputed, cause it's fast&easy.  
+	float partial_prediction;//shared data for prediction.  
+
+	int topic_predictions_len;
+	float* topic_predictions;
+
+	float loss;  
+	float eta_round;  
+	float eta_global;  
+	float global_weight;  
+	float example_t;//sum of importance weights so far.  
+
+	int sum_feat_sq_len;
+	float* sum_feat_sq;//helper for total_sum_feat_sq
+
+	float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.  
+	float revert_weight;  
+  
+	bool end_pass;//special example indicating end of pass.  
+	bool sorted;//Are the features sorted or not?  
+	bool in_use; //in use or not (for the parser)  
+	bool done; //set to false by setup_example()  
+};
+flat_example_ex* flatten_example_ex(vw& all, example *ec);
+void free_flatten_example_ex(flat_example_ex* fec);
+}
+
 example *alloc_example(size_t);
 void dealloc_example(void(*delete_label)(void*), example&);
 

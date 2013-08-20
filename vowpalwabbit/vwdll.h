@@ -23,6 +23,7 @@ extern "C"
 	typedef void * VW_EXAMPLE;
 	typedef void * VW_LABEL;
 	typedef void * VW_FEATURE_SPACE;
+	typedef void * VW_FLAT_EXAMPLE_EX;
  
 	const VW_HANDLE INVALID_VW_HANDLE = NULL;
 	const VW_HANDLE INVALID_VW_EXAMPLE = NULL;
@@ -58,6 +59,9 @@ extern "C"
 
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, size_t index);
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle);
+
+	VW_DLL_MEMBER VW_FLAT_EXAMPLE_EX VW_CALLING_CONV VW_FlattenExampleEX(VW_HANDLE handle, VW_EXAMPLE e);
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeFlattenExampleEx(VW_FLAT_EXAMPLE_EX fec);
 
 #ifdef __cplusplus	
 }

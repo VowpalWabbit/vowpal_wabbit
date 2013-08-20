@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "parse_regressor.h"
 #include "parser.h"
 #include "sparse_dense.h"
+#include "v_array.h"
 
 namespace GD{
 void print_result(int f, float res, v_array<char> tag);
@@ -27,6 +28,7 @@ void compute_update(example* ec);
 void offset_train(regressor &reg, example* &ec, float update, size_t offset);
 void train_one_example_single_thread(regressor& r, example* ex);
 learner setup(vw& all, po::variables_map& vm);
+//learner setup(vw& all);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void output_and_account_example(example* ec);
 
@@ -64,9 +66,9 @@ void output_and_account_example(example* ec);
 	 v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
 	 for (; temp2.begin != temp2.end; temp2.begin++) {
 	   
-	   uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
-	   float mult = temp1.begin->x * temp2.begin->x;
-	   return foreach_feature<T>(all, dat, ec->atomics[(int)(*i)[2]].begin, ec->atomics[(int)(*i)[2]].end, halfhash, mult);
+     uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
+	 float mult = temp1.begin->x * temp2.begin->x;
+     foreach_feature<T>(all, dat, ec->atomics[(int)(*i)[2]].begin, ec->atomics[(int)(*i)[2]].end, halfhash, mult);
 	 }
        }
      }
@@ -79,28 +81,6 @@ void output_and_account_example(example* ec);
      foreach_feature<T>(all, ec, &prediction);
      return prediction;
    }
-
- template <void (*T)(vw&, void*, float, uint32_t)>
-   void foreach_feature(vw& all, void* fs_ptr, feature* begin, feature* end)
-   {
-     for (feature* f = begin; f!= end; f++)
-	 {
-	 }
-       T(all, f, dat);
-   }
- 
- template <void (*T)(vw&, void*, float, uint32_t)>
-   void foreach_feature(vw& all, example* ec, void* dat)
-   {
-     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-	 {
-		len = ec->indices.size();
-		primitive_feature_space* fs_ptr = new primitive_feature_space[len]; 
-		foreach_feature<T>(all, fs_ptr, ec->atomics[*i].begin, ec->atomics[*i].end);
-	 }
-     
-   }
-
 }
 
 #endif
