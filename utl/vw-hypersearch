@@ -19,7 +19,11 @@
 #
 use warnings;
 use strict;
+use Getopt::Std;
 use Scalar::Util qw(looks_like_number);
+use vars qw($opt_b $opt_g);
+
+my $MaxDouble = 1.79769e+308;
 
 #
 # ExecCmd(cmd, timeout)
@@ -110,7 +114,7 @@ sub ExecCmd {
 #
 my %Loss;   # x -> f(x) cache
 my $BestParam;
-my $BestLoss = 1e100;
+my $BestLoss = $MaxDouble;
 
 sub loss($) {
     my ($param) = @_;
@@ -167,7 +171,11 @@ sub argmin3 ($$$$$$) {
 sub usage(@) {
     print STDERR @_, "\n" if @_;
 
-    die "Usage: $0 <lower_bound> <upper_bound> [tolerance] vw-command...
+    die "Usage: $0 [options] <lower_bound> <upper_bound> [tolerance] vw-command...
+
+    Options:
+        -b          Use Brent's search method for the optimum
+        -g          Use golden-section search method for the optimum
 
     lower_bound     lower bound of the parameter search range
     upper_bound     upper bound of the parameter search range
@@ -178,6 +186,103 @@ sub usage(@) {
                     is found, where '%' is used as a placeholder
                     for the optimized parameter
 "
+}
+
+
+my $MaxIter = 50;
+
+#
+# BrentsSearch($low, $high, $tau)
+#   As transcribed from wikipedia.
+#   Doesn't give a better result than GoldenSection (yet)
+#   Need to figure out why.
+#
+sub BrentsSearch($$$) {
+    my ($low, $high, $tau) = @_;
+    my ($a, $b, $c, $d) = ($low, $high, 0.0, $MaxDouble);
+
+    my $fa = loss($a);
+    my $fb = loss($b);
+
+    my ($fc, $s, $fs) = (0.0, 0.0, 0.0);
+
+    if ($fa * $fb >= 0) {
+        if ($fa < $fb) {
+            return $a;
+        } else {
+            return $b;
+        }
+    }
+
+    # if |f(a)| < |f(b)| then swap (a,b)
+    if (abs($fa) < abs($fb)) {
+        my $tmp = $a; $a = $b; $b = $tmp;
+        $tmp = $fa; $fa = $fb; $fb = $tmp;
+    }
+
+    $c = $a;
+    $fc = $fa;
+    my $mflag = 1;
+    my $i = 0;
+
+    while (($fb != 0) and (abs($a-$b) > $tau)) {
+        if (($fa != $fc) && ($fb != $fc)) {
+            # Inverse quadratic interpolation
+            $s =    $a * $fb * $fc / ($fa - $fb) / ($fa - $fc)
+                                +
+                    $b * $fa * $fc / ($fb - $fa) / ($fb - $fc)
+                                +
+                    $c * $fa * $fb / ($fc - $fa) / ($fc - $fb);
+        } else {
+            # Secant Rule
+            $s =    $b - $fb * ($b - $a) / ($fb - $fa);
+        }
+
+        my $tmp2 = (3.0 * $a + $b) / 4.0;
+        if (
+               ( ! ((($s > $tmp2) && ($s < $b)) ||
+                    (($s < $tmp2) && ($s > $b)))
+               )
+                        or
+               ($mflag && (abs($s - $b) >= (abs($b - $c) / 2.0)))
+                        or
+               (! $mflag && (abs($s - $b) >= (abs($c - $d) / 2.0)))
+            )
+        {
+            $s = ($a + $b) / 2.0;
+            $mflag = 1;
+        } else {
+            if (($mflag && (abs($b - $c) < $tau)) ||
+                (! $mflag && (abs($c - $d) < $tau))) {
+
+                $s = ($a + $b) / 2.0;
+                $mflag = 1;
+            } else {
+                $mflag = 0;
+            }
+        }
+        $fs = loss($s);
+        $d = $c;
+        $c = $b;
+        $fc = $fb;
+
+        if ($fa * $fs < 0.0) {
+            $b = $s; $fb = $fs;
+        } else {
+            $a = $s; $fa = $fs;
+        }
+
+        # if |f(a)| < |f(b)| then swap (a,b)
+        if (abs($fa) < abs($fb)) {
+            my $tmp = $a; $a = $b; $b = $tmp;
+            $tmp = $fa; $fa = $fb; $fb = $tmp;
+        }
+        $i++;
+        if ($i > $MaxIter) {
+            die "Brent's method error too many iterations: $i: f(b): $fb\n";
+        }
+    }
+    $b;
 }
 
 my $Phi = (1.0 + sqrt (5.0)) / 2.0;
@@ -236,10 +341,17 @@ sub goldenSectionSearch($$$$) {
 #
 sub best_hyperparam($$$) {
     my ($lb, $ub, $tol) = @_;
-    my $mid = $lb + $ResPhi * ($ub - $lb);
 
-    my $best = goldenSectionSearch($lb, $mid, $ub, $tol);
-    my $fbest = loss($best);
+    my ($best, $fbest);
+
+    if ($opt_b) {
+        $best = BrentsSearch($lb, $ub, $tol);
+        $fbest = loss($best);
+    } else {
+        my $mid = $lb + $ResPhi * ($ub - $lb);
+        $best = goldenSectionSearch($lb, $mid, $ub, $tol);
+        $fbest = loss($best);
+    }
 
     # Still happens that what we finally return is not the best...
     if ($BestLoss < $fbest) {
@@ -261,6 +373,9 @@ sub fullpath($) {
 sub process_args {
     $0 =~ s{.*/}{};
 
+    getopts('b');
+    warn "$0: using Brent's method search\n" if ($opt_b);
+
     usage("Too few arguments...")
         unless (@ARGV > 2);
 
@@ -273,7 +388,7 @@ sub process_args {
     my $lower_bound = shift @ARGV;
     my $upper_bound = shift @ARGV;
 
-    my $tolerance = 0.01;
+    my $tolerance = 0.001;
     if (looks_like_number($ARGV[0])) {
         $tolerance = shift @ARGV;
         usage("3rd argument (tolerance): $tolerance: not in the (0, 1) range")
