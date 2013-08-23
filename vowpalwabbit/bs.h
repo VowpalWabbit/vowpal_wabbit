@@ -12,40 +12,19 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "parse_args.h"
 #include "v_hashmap.h"
+#include "simple_label.h"
 
 namespace BS
 {
-
-  struct mc_label {
-    float label;
-    float weight;
-  };
-  
   learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub);
-  size_t read_cached_label(shared_data*, void* v, io_buf& cache);
-  void cache_label(void* v, io_buf& cache);
-  void default_label(void* v);
-  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words);
-  void delete_label(void* v);
-  float weight(void* v);
-  float initial(void* v);
-  const label_parser mc_label_parser = {default_label, parse_label, 
-					cache_label, read_cached_label, 
-					delete_label, weight, initial, 
-                                        NULL,
-					sizeof(mc_label)};
+  const label_parser simple_label = {default_simple_label, parse_simple_label, 
+				   cache_simple_label, read_cached_simple_label, 
+				   delete_simple_label, get_weight, get_initial, 
+                                   NULL,
+				   sizeof(label_data)};
   
   void output_example(vw& all, example* ec, float lb, float ub);
-
-  inline int example_is_newline(example* ec)
-  {
-    // if only index is constant namespace or no index
-    return ((ec->indices.size() == 0) || 
-            ((ec->indices.size() == 1) &&
-             (ec->indices.last() == constant_namespace)));
-  }
-
 }
 
 #endif

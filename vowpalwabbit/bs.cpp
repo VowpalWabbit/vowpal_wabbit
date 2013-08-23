@@ -70,87 +70,6 @@ namespace BS {
     }    
   }
 
-  char* bufread_label(mc_label* ld, char* c)
-  {
-    ld->label = *(float *)c;
-    c += sizeof(ld->label);
-    ld->weight = *(float *)c;
-    c += sizeof(ld->weight);
-    return c;
-  }
-
-  size_t read_cached_label(shared_data*, void* v, io_buf& cache)
-  {
-    mc_label* ld = (mc_label*) v;
-    char *c;
-    size_t total = sizeof(ld->label)+sizeof(ld->weight);
-    if (buf_read(cache, c, total) < total) 
-      return 0;
-    c = bufread_label(ld,c);
-
-    return total;
-  }
-
-  float weight(void* v)
-  {
-    mc_label* ld = (mc_label*) v;
-    return (ld->weight > 0) ? ld->weight : 0.f;
-  }
-
-  float initial(void* v)
-  {
-    return 0.;
-  }
-
-  char* bufcache_label(mc_label* ld, char* c)
-  {
-    *(float *)c = ld->label;
-    c += sizeof(ld->label);
-    *(float *)c = ld->weight;
-    c += sizeof(ld->weight);
-    return c;
-  }
-
-  void cache_label(void* v, io_buf& cache)
-  {
-    char *c;
-    mc_label* ld = (mc_label*) v;
-    buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight));
-    c = bufcache_label(ld,c);
-  }
-
-  void default_label(void* v)
-  {
-    mc_label* ld = (mc_label*) v;
-    ld->label = -1;
-    ld->weight = 1.;
-  }
-
-  void delete_label(void* v)
-  {
-  }
-
-  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
-  {
-    mc_label* ld = (mc_label*)v;
-
-    switch(words.size()) {
-    case 0:
-      break;
-    case 1:
-      ld->label = (float)int_of_substring(words[0]);
-      ld->weight = 1.0;
-      break;
-    case 2:
-      ld->label = (float)int_of_substring(words[0]);
-      ld->weight = float_of_substring(words[1]);
-      break;
-    default:
-      cerr << "malformed example!\n";
-      cerr << "words.size() = " << words.size() << endl;
-    }
-  }
-
   void print_update(vw& all, example *ec)
   {
     if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
@@ -182,7 +101,7 @@ namespace BS {
     if (command_example(&all,ec))
       return;
 
-    mc_label* ld = (mc_label*)ec->ld;
+    label_data* ld = (label_data*)ec->ld;
     all.sd->weighted_examples += ld->weight;
     all.sd->total_features += ec->num_features;
 
@@ -249,12 +168,7 @@ namespace BS {
 
     size_t lb_index = d->k * d->alpha-1 < 0 ? 0 :  d->k * d->alpha-1;
     size_t up_index = d->k * (1 - d->alpha)-1 > pred_vec.size()-1 ? pred_vec.size()-1 : d->k * (1 - d->alpha)-1;
-    /*
-    if(!all->training){
-      cout<<"mean: "<<pre_mean<<endl;
-      cout<< (1- d->alpha)<<" percentile: ("<<pred_vec[lb_index]<<", "<<pred_vec[up_index]<<")"<<endl;
-    }
-    */
+
     if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
 
@@ -342,7 +256,7 @@ namespace BS {
     }
 
     data->all = &all;
-    *(all.p->lp) = mc_label_parser;
+    *(all.p->lp) = simple_label;
     data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->k;
     data->total_increment = data->increment*(data->k-1);
