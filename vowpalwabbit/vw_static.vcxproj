@@ -256,6 +256,7 @@
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
     <ClInclude Include="oaa.h" />
+    <ClInclude Include="bs.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_example.h" />
@@ -297,6 +298,7 @@
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
     <ClCompile Include="oaa.cc" />
+    <ClCompile Include="bs.cc" />
     <ClCompile Include="parser.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />
