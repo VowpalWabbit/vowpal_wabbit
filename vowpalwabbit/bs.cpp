@@ -155,20 +155,20 @@ namespace BS {
   {
     if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        mc_label* ld = (mc_label*) ec->ld;
+        label_data* ld = (label_data*) ec->ld;
         char label_buf[32];
-        if (ld->label == INT_MAX)
+        if (ld->label == FLT_MAX)
           strcpy(label_buf," unknown");
         else
-          sprintf(label_buf,"%8ld",(long int)ld->label);
+          sprintf(label_buf,"%8.4f",ld->label);
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8ld %8lu\n",
+        fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long int)ec->final_prediction,
+                ec->final_prediction,
                 (long unsigned int)ec->num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -206,7 +206,7 @@ namespace BS {
 	return;
       }
 
-    mc_label* mc_label_data = (mc_label*)ec->ld;
+    double weight_temp = ((label_data*)ec->ld)->weight;
   
     string outputString;
     stringstream outputStringStream(outputString);
@@ -236,7 +236,8 @@ namespace BS {
           outputStringStream << i << ':' << ec->partial_prediction;
         }
       }	
-    ec->ld = mc_label_data;
+
+    ((label_data*)ec->ld)->weight = weight_temp;
 
     update_example_indicies(all->audit, ec, -d->total_increment);
  
@@ -244,6 +245,7 @@ namespace BS {
     
     pre_mean = accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
     ec->final_prediction = pre_mean;
+    ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ((label_data*)ec->ld)->label) * ((label_data*)ec->ld)->weight;
 
     size_t lb_index = d->k * d->alpha-1 < 0 ? 0 :  d->k * d->alpha-1;
     size_t up_index = d->k * (1 - d->alpha)-1 > pred_vec.size()-1 ? pred_vec.size()-1 : d->k * (1 - d->alpha)-1;
