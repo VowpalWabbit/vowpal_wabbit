@@ -22,7 +22,7 @@ namespace BS
   };
   
   learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
-  
+  void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub);
   size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
   void default_label(void* v);
@@ -36,7 +36,7 @@ namespace BS
                                         NULL,
 					sizeof(mc_label)};
   
-  void output_example(vw& all, example* ec);
+  void output_example(vw& all, example* ec, float lb, float ub);
 
   inline int example_is_newline(example* ec)
   {

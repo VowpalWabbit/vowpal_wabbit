@@ -34,6 +34,42 @@ namespace BS {
     vw* all;
   };
 
+  int print_tag(std::stringstream& ss, v_array<char> tag)
+  {
+    if (tag.begin != tag.end){
+      ss << ' ';
+      ss.write(tag.begin, sizeof(char)*tag.size());
+    } 
+    return tag.begin != tag.end;
+  }
+
+  void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
+  {
+    if (f >= 0)
+    {
+      char temp[30];
+      sprintf(temp, "%f", res);
+      std::stringstream ss;
+      ss << temp;
+      print_tag(ss, tag);
+      ss << ' ';
+      sprintf(temp, "%f", lb);
+      ss << temp;
+      ss << ' ';
+      sprintf(temp, "%f", ub);
+      ss << temp;
+      ss << '\n';
+      ssize_t len = ss.str().size();
+#ifdef _WIN32
+	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
+#else
+	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
+#endif
+      if (t != len)
+        cerr << "write error" << endl;
+    }    
+  }
+
   char* bufread_label(mc_label* ld, char* c)
   {
     ld->label = *(float *)c;
@@ -141,7 +177,7 @@ namespace BS {
       }
   }
 
-  void output_example(vw& all, example* ec)
+  void output_example(vw& all, example* ec, float lb, float ub)
   {
     if (command_example(&all,ec))
       return;
@@ -149,14 +185,12 @@ namespace BS {
     mc_label* ld = (mc_label*)ec->ld;
     all.sd->weighted_examples += ld->weight;
     all.sd->total_features += ec->num_features;
-    size_t loss = 1;
-    if (ld->label == ec->final_prediction)
-      loss = 0;
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
+
+    all.sd->sum_loss += ec->loss;
+    all.sd->sum_loss_since_last_dump += ec->loss;
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, ec->final_prediction, 0, ec->tag);
+      BS::print_result(*sink, ec->final_prediction, 0, ec->tag, lb, ub);
   
     all.sd->example_number++;
 
@@ -201,8 +235,6 @@ namespace BS {
           if (i > 1) outputStringStream << ' ';
           outputStringStream << i << ':' << ec->partial_prediction;
         }
-
-        ec->partial_prediction = 0.;
       }	
     ec->ld = mc_label_data;
 
@@ -213,15 +245,19 @@ namespace BS {
     pre_mean = accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
     ec->final_prediction = pre_mean;
 
+    size_t lb_index = d->k * d->alpha-1 < 0 ? 0 :  d->k * d->alpha-1;
+    size_t up_index = d->k * (1 - d->alpha)-1 > pred_vec.size()-1 ? pred_vec.size()-1 : d->k * (1 - d->alpha)-1;
+    /*
     if(!all->training){
       cout<<"mean: "<<pre_mean<<endl;
-      size_t lb_index = d->k * d->alpha-1 < 0 ? 0 :  d->k * d->alpha-1;
-      size_t up_index = d->k * (1 - d->alpha)-1 > pred_vec.size()-1 ? pred_vec.size()-1 : d->k * (1 - d->alpha)-1;
       cout<< (1- d->alpha)<<" percentile: ("<<pred_vec[lb_index]<<", "<<pred_vec[up_index]<<")"<<endl;
     }
-
+    */
     if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
+
+    if (!command_example(all, ec))
+      output_example(*all, ec, pred_vec[lb_index], pred_vec[up_index]);
   }
 
   void learn(void* d, example* ec) {
@@ -236,8 +272,6 @@ namespace BS {
         if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output((bs*)d, ec, all->raw_prediction > 0);
-	    if (!command_example(all, ec))
-	      output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
