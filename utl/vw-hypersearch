@@ -16,14 +16,28 @@
 #   - Golden-section search bug-fix
 #   - Better error messages in case underlying command fails
 #     for any reason
+#   - Add '-t test-set' to optimize on test error rather than
+#     train-set error
 #
 use warnings;
 use strict;
 use Getopt::Std;
 use Scalar::Util qw(looks_like_number);
-use vars qw($opt_b $opt_g);
+use File::Temp;
+use vars qw($opt_v $opt_b $opt_t);
 
 my $MaxDouble = 1.79769e+308;
+my $ModelFile;
+my $ScratchModel = 0;
+
+sub v(@) {
+    return unless ($opt_v);
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
 
 #
 # ExecCmd(cmd, timeout)
@@ -43,7 +57,13 @@ sub ExecCmd {
     my $cmd = shift || return(0, []);
     my $timeout = shift || 0;
 
-    # opening a pipe creates a forked process     
+    if (ref($cmd) eq 'ARRAY') {
+        # Always convert the command to one simple string
+        # Otherwise meta-chars in @$cmd don't trigger 'sh -c'
+        $cmd = "@$cmd";
+    }
+
+    # opening a pipe creates a forked process
     my $pid = open(my $pipe, '-|');
     die "Can't fork: $!\n" unless defined $pid;
 
@@ -76,12 +96,12 @@ sub ExecCmd {
         my $core = ($? & 128) ? ' (core dumped)' : '';
 
         if ($signal) {
-            warn "\n\t@$cmd died from signal $signal$core\n";
-            die "Try to run:\n\t@$cmd\nmanually to figure out why.\n";
+            warn "\n\t$cmd died from signal $signal$core\n";
+            die "Try to run:\n\t$cmd\nmanually to figure out why.\n";
         } elsif ($exitcode) {
-            warn "\n\t@$cmd failed: (exitcode=$exitcode)\n";
-            warn "Output from @$cmd is:\n@result\n";
-            warn "You may try to run:\n\t@$cmd\nmanually to figure out why.\n"
+            warn "\n\t$cmd failed: (exitcode=$exitcode)\n";
+            warn "Output from $cmd is:\n@result\n";
+            warn "You may try to run:\n\t$cmd\nmanually to figure out why.\n"
                 unless (@result);
             exit 1;
         }
@@ -95,11 +115,11 @@ sub ExecCmd {
     # redirect STDERR to STDOUT
     open(STDERR, '>&STDOUT');
 
-    # exec transfers control of the process to the command
-    ref($cmd) eq 'ARRAY' ? exec(@$cmd) : exec($cmd);
+    # Run the command in child process - if successful, it should never return
+    exec($cmd);
 
     # this code will not execute unless exec fails!
-    die "$0: can't exec '@$cmd': $!";
+    die "$0: can't exec '$cmd': $!";
 }
 
 #
@@ -133,20 +153,28 @@ sub loss($) {
     my $loss;
     my $best_msg = '';
 
-    foreach my $line (@$rv) {
+    # Read from the end, so if we run a test after train,
+    # we get the last (test) loss, rather than the train loss.
+    foreach my $line (reverse @$rv) {
         next unless $line =~ /^average loss\s*=\s*([0-9.]+)/;
+
+        # Found a loss
         $loss = $1;
         if ($loss <= $BestLoss) {
             $BestParam = $param;
             $BestLoss = $loss;
             $best_msg = ' (best)';
         }
+        # should bail out of loop on 1st 'average loss' line found
+        last;
     }
 
     die "\n$0: failed to parse average loss from vw output: ",
         join('', @$rv),
         "\n\nTry to run:\n\t@command\nmanually to figure out why.\n"
             unless defined ($loss);
+
+    unlink($ModelFile) if ($opt_t && $ScratchModel && -e $ModelFile);
 
     printf STDERR " %.6g%s\n", $loss, $best_msg;
     $Loss{$param} = $loss;      # cache it
@@ -174,8 +202,7 @@ sub usage(@) {
     die "Usage: $0 [options] <lower_bound> <upper_bound> [tolerance] vw-command...
 
     Options:
-        -b          Use Brent's search method for the optimum
-        -g          Use golden-section search method for the optimum
+        -t <TS>     Use <TS> as test-set file + evaluate goodness on it
 
     lower_bound     lower bound of the parameter search range
     upper_bound     upper bound of the parameter search range
@@ -185,6 +212,10 @@ sub usage(@) {
     vw-command ...  a vw command to repeat in a loop until optimum
                     is found, where '%' is used as a placeholder
                     for the optimized parameter
+
+    NOTE:
+            -t ... for doing a line-search on a test-set is an
+            argument to '$0', not to 'vw'.  
 "
 }
 
@@ -373,8 +404,14 @@ sub fullpath($) {
 sub process_args {
     $0 =~ s{.*/}{};
 
-    getopts('b');
+    getopts('vbt:');
+    # Brent is not ready for prime-time yet so don't advertise it.
     warn "$0: using Brent's method search\n" if ($opt_b);
+    if ($opt_t) {       # evaluate on test-set
+        usage("-t $opt_t: $!") unless (-e $opt_t && -r $opt_t);
+    }
+
+    # v("after getopts: \@ARGV=(@ARGV)\n");
 
     usage("Too few arguments...")
         unless (@ARGV > 2);
@@ -400,6 +437,26 @@ sub process_args {
     usage("command '@ARGV': must include a '%' wildcard to optimize on")
         unless ("@ARGV" =~ /%/);
 
+    if ($opt_t) {
+        # Evaluate on test:
+        #   1) Make sure we store the model after training
+        #   2) Call vw again, loading model and evaluating on test-set
+        my $vw_command_line = "@ARGV";
+        if ($vw_command_line =~ /-f\s+(\S+)/) {
+            $ModelFile = $1;
+        } else {
+            # my $tmpdir = mkdtemp('vw-hypersearch-XXXXXX');
+            # Model file doesn't exist in user provided command line
+            # so we need to add its generation
+            $ModelFile = mktemp("vw-hypersearch.model-XXXXXX");
+            $ScratchModel = 1;
+            v("\$ModelFile: %s\n", $ModelFile);
+            push(@ARGV, '-f', $ModelFile);
+        }
+        # Add the test command after the train command
+        push(@ARGV, '&&', $ARGV[0], '-t', '-i', $ModelFile, $opt_t);
+        v("New -t command line: %s\n", "@ARGV");
+    }
     return ($lower_bound, $upper_bound, $tolerance);
 }
 
