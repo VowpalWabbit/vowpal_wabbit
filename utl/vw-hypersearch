@@ -215,7 +215,8 @@ sub usage(@) {
 
     NOTE:
             -t ... for doing a line-search on a test-set is an
-            argument to '$0', not to 'vw'.  
+            argument to '$0', not to 'vw'.  vw-command must
+            represent the training-phase only.
 "
 }
 
