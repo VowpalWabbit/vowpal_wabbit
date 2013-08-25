@@ -272,18 +272,20 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   if (a != NULL && all.audit){
     tempstream << tmp << ':';
   }
-  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) && all.audit){
+  else 	if ( index == (((constant * stride + offset)&all.reg.weight_mask)) && all.audit){
     tempstream << "Constant:";
-  }
+  }  
   if(all.audit){
     tempstream << (index/stride & all.parse_mask) << ':' << f->x;
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
   if(all.current_pass == 0 && all.inv_hash_regressor_name != ""){ //for invert_hash
-    if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) )
+    if ( index == ((constant * stride + offset )& all.reg.weight_mask))
       tmp = "Constant";
-    else
-      tmp = ns_pre + tmp;
+
+    ostringstream convert;
+    convert << (index/stride & all.parse_mask);
+    tmp = ns_pre + tmp + ":"+ convert.str();
     
     if(!all.name_index_map.count(tmp)){
       all.name_index_map.insert(std::map< std::string, size_t>::value_type(tmp, (index/stride & all.parse_mask)));
