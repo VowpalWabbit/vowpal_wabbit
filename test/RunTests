@@ -648,7 +648,7 @@ __DATA__
     train-sets/ref/searn_wsj2.dat.stderr
 
 # Test 15: LBFGS on zero derivative input
-{VW} -k -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0
+{VW} -k -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 --holdout_off
     train-sets/ref/zero.stdout
     train-sets/ref/zero.stderr
 
