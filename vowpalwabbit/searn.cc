@@ -1353,7 +1353,7 @@ namespace Searn
     if( all->training ) {
       std::stringstream ss1;
       std::stringstream ss2;
-      ss1 << (s->current_policy+1);
+      ss1 << s->current_policy;
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_trained_nb_policies
       VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss1.str()); 
       ss2 << s->total_number_of_policies;
