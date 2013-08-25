@@ -143,6 +143,7 @@ vw* parse_args(int argc, char *argv[])
     ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
 	("examples", po::value<size_t>(&(all->max_examples)), "number of examples to parse")
     ("save_per_pass", "Save the model after every pass over data")
+    ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
@@ -177,6 +178,12 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(parsed, vm);
   po::notify(vm);
+ 
+  if(all->numpasses > 1)
+      all->holdout_set_off = false;
+
+  if(vm.count("holdout_off"))
+      all->holdout_set_off = true;
 
   all->l = GD::setup(*all, vm);
   all->scorer = all->l;
@@ -320,12 +327,6 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("compressed"))
       set_compressed(all->p);
-  
-  if(all->numpasses > 1)
-      all->holdout_set_off = false;
-
-  if(vm.count("holdout_off"))
-      all->holdout_set_off = true;
     
   if (vm.count("data")) {
     all->data_filename = vm["data"].as<string>();
