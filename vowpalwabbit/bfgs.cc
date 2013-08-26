@@ -963,7 +963,7 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
 
   if(!all.holdout_set_off)
   {
-    all.sd->holdout_best_loss = 1./0.;
+    all.sd->holdout_best_loss = FLT_MAX;
     if(vm.count("early_terminate"))      
       b->early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
