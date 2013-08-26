@@ -333,6 +333,7 @@ vw::vw()
   do_reset_source = false;
   holdout_set_off = true;
   holdout_period = 10;
+  early_terminate = false;
 
   max_examples = (size_t)-1;
 

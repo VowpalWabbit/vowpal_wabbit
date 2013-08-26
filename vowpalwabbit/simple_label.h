@@ -33,5 +33,6 @@ const label_parser simple_label = {default_simple_label, parse_simple_label,
 				   sizeof(label_data)};
 
 float query_decision(vw& all, example* ec, float k);
+bool summarize_holdout_set(vw& all, size_t& no_win_counter);
 
 #endif

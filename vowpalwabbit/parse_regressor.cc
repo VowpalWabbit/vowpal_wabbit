@@ -311,7 +311,6 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
       }
     }
     //all other cases, including from different file, or -i does not exist, need to read in the mask file
-    weight* temp = all.reg.weight_vector;
     io_buf io_temp_mask;
     io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
     save_load_header(all, io_temp_mask, true, false);
@@ -319,10 +318,8 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
     io_temp_mask.close_file();
     for (size_t j = 0; j < length; j++){	 
       if(all.reg.weight_vector[j*all.reg.stride] != 0.)
-        temp[j*all.reg.stride + all.feature_mask_idx] = 1.;
+        all.reg.weight_vector[j*all.reg.stride + all.feature_mask_idx] = 1.;
     }
-    free(all.reg.weight_vector);
-    all.reg.weight_vector = temp;
   }
 }
 

@@ -39,6 +39,8 @@ namespace GD
     bool active_simulation;
     float normalized_sum_norm_x;
     bool feature_mask_off;
+    size_t no_win_counter;
+    size_t early_stop_thres;
 
     vw* all;
   };
@@ -148,6 +150,13 @@ void learn(void* d, example* ec)
       
       all->current_pass++;
 
+      if(!all->holdout_set_off)
+      {
+        if(summarize_holdout_set(*all, g->no_win_counter))
+          finalize_regressor(*all, all->final_regressor_name); 
+        if(g->early_stop_thres == g->no_win_counter)
+          all-> early_terminate = true;
+      }   
     }
   
   if (!command_example(all, ec))
@@ -272,18 +281,20 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   if (a != NULL && all.audit){
     tempstream << tmp << ':';
   }
-  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) && all.audit){
+  else 	if ( index == (((constant * stride + offset)&all.reg.weight_mask)) && all.audit){
     tempstream << "Constant:";
-  }
+  }  
   if(all.audit){
     tempstream << (index/stride & all.parse_mask) << ':' << f->x;
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
   if(all.current_pass == 0 && all.inv_hash_regressor_name != ""){ //for invert_hash
-    if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) )
+    if ( index == ((constant * stride + offset )& all.reg.weight_mask))
       tmp = "Constant";
-    else
-      tmp = ns_pre + tmp;
+
+    ostringstream convert;
+    convert << (index/stride & all.parse_mask);
+    tmp = ns_pre + tmp + ":"+ convert.str();
     
     if(!all.name_index_map.count(tmp)){
       all.name_index_map.insert(std::map< std::string, size_t>::value_type(tmp, (index/stride & all.parse_mask)));
@@ -545,11 +556,12 @@ float compute_norm(vw& all, example* &ec)
     t = ec->example_t;
 
   ec->eta_round = 0;
-  if (!all.holdout_set_off && ec->test_only)//if this is a test example
+  if (ec->test_only)//if this is a holdout example
   {
     ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
     all.sd->holdout_sum_loss += ec->loss;
     all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+    all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
   }
   else if (ld->label != FLT_MAX)
     {
@@ -740,6 +752,26 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 			    "", read, 
 			    buff, text_len, text);
 
+  text_len = sprintf(buff, "sum_loss_since_last_dump %f\n", all.sd->sum_loss_since_last_dump);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "dump_interval %f\n", all.sd->dump_interval);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "min_label %f\n", all.sd->min_label);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->min_label, sizeof(all.sd->min_label), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "max_label %f\n", all.sd->max_label);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->max_label, sizeof(all.sd->max_label), 
+			    "", read, 
+			    buff, text_len, text);
+
   text_len = sprintf(buff, "weighted_examples %f\n", all.sd->weighted_examples);
   bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples), 
 			    "", read, 
@@ -861,7 +893,15 @@ void driver(vw* all, void* data)
   
   while ( true )
     {
-      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
+     if(all-> early_terminate)
+        {
+          all->p->done = true;
+          all->final_regressor_name = "";//skip finalize_regressor
+          all->text_regressor_name = "";
+          all->inv_hash_regressor_name = "";
+          return;
+        }
+     else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	{
 	  learn(data, ec);
 	  return_simple_example(*all, ec);
@@ -880,12 +920,21 @@ learner setup(vw& all, po::variables_map& vm)
   g->active = all.active;
   g->active_simulation = all.active_simulation;
   g->normalized_sum_norm_x = all.normalized_sum_norm_x;
+  g->no_win_counter = 0;
+  g->early_stop_thres = 3;
 
   if(vm.count("feature_mask"))
     g->feature_mask_off = false;
   else
     g->feature_mask_off = true;
 
+  if(!all.holdout_set_off)
+  {
+    all.sd->holdout_best_loss = FLT_MAX;
+    if(vm.count("early_terminate"))      
+      g->early_stop_thres = vm["early_terminate"].as< size_t>();     
+  }
+    
   sl_t sl = {g,save_load};
   learner ret(g,driver,learn,finish,sl);
 
