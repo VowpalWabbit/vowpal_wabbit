@@ -930,7 +930,7 @@ learner setup(vw& all, po::variables_map& vm)
 
   if(!all.holdout_set_off)
   {
-    all.sd->holdout_best_loss = 1./0.;
+    all.sd->holdout_best_loss = FLT_MAX;
     if(vm.count("early_terminate"))      
       g->early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
