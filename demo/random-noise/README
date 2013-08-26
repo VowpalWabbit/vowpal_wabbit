@@ -57,7 +57,7 @@ called "noise."
         The predicted results should equal the actual test set labels.
 
 The demo has 3 parts:
-
+---------------------
     1) Ideal conditions.  No noise added.
 
     2) Global noise in the range [-1, 1] added to the continuous label
@@ -70,9 +70,18 @@ We demonstrate that despite the noise, the (almost) perfect model
 is being learned in each of the 3 parts of the demo.
 
 The whole demo is scripted.
+---------------------------
 All you need to do is to hit Enter to go to the next step
 In cases the pager (less) is called, you need to hit 'q' to exit
 the pager.
+
+
+Read the presentation:
+----------------------
+A presentation (set of slides) including this demo in both pdf
+and ppt formats can be found here:
+
+    http://finance.yendor.com/ML/VW/
 
 --
 ariel faigon - aug 2013
