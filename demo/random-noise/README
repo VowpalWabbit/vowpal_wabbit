@@ -4,16 +4,20 @@ Demo of vowpal wabbit's ability to separate signal from noise.
 Prerequisites:
 --------------
 
-    You must have the following in your environment to run the demo:
-    All the below components must be present and located somewhere
-    in your PATH.
+    You must have the following in your environment to run the demo.
+
+    All the components below must be present and located somewhere
+    in your $PATH.
 
     1) A reasonable Unix-like env, with standard utilities including:
             GNU less
             GNU diff
             bash
+            perl
+            GNU make (only required if you prefer to type 'make')
 
-    2) The following executable should be in your vw distribution:
+    2) The following executables (from your vw distribution):
+
             vw
             vw-varinfo
 
@@ -71,10 +75,13 @@ is being learned in each of the 3 parts of the demo.
 
 The whole demo is scripted.
 ---------------------------
-All you need to do is to hit Enter to go to the next step
-In cases the pager (less) is called, you need to hit 'q' to exit
-the pager.
 
+All you need to do is:
+
+    1) call './vw-demo' (or type 'make') from the shell
+    2) Hit Enter (repeatedly) to go to the next step
+       In cases the pager (less) is called, you need
+       to hit 'q' to exit the pager.
 
 Read the presentation:
 ----------------------
