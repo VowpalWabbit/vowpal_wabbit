@@ -752,6 +752,26 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 			    "", read, 
 			    buff, text_len, text);
 
+  text_len = sprintf(buff, "sum_loss_since_last_dump %f\n", all.sd->sum_loss_since_last_dump);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "dump_interval %f\n", all.sd->dump_interval);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "min_label %f\n", all.sd->min_label);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->min_label, sizeof(all.sd->min_label), 
+			    "", read, 
+			    buff, text_len, text);
+
+  text_len = sprintf(buff, "max_label %f\n", all.sd->max_label);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->max_label, sizeof(all.sd->max_label), 
+			    "", read, 
+			    buff, text_len, text);
+
   text_len = sprintf(buff, "weighted_examples %f\n", all.sd->weighted_examples);
   bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples), 
 			    "", read, 
