@@ -177,24 +177,29 @@ demo_session() {
         regularize)   rand='-R -.5,.5'; msg=' (w/ per-var noise)' ;;
         clean)        rand='-r 0,0'; msg='' ;; # no noise added
     esac
-    demo_cmd "Generate a training data-set$msg & inspect it" \
+    demo_cmd "Generate a training data-set$msg & inspect it
+       (-n N                is number of data-points (examples)
+        -pN                 is data precision
+        -r min,max          is global added noise
+        -R min,max          is per-variable added noise):" \
             "random-poly -n 50000 -p6 $rand $Poly > r.train"
 
     case $mode in 'clean')
         # Only do this the 1st time, othewise it is getting tedious
-        demo_cmd -hs 'inspect the training-set' "$Pager r.train" ;;
+        demo_cmd -s "inspect the training-set (use 'q' to exit $Pager):" \
+             "$Pager r.train" ;;
     esac
 
-    demo_cmd "Inspect train-set Ys (labels) density" \
+    demo_cmd "Visualize train-set Ys (labels) density [~5 secs to generate chart]:" \
         "y_density r.train 'Train-set random expression distribution: $Poly'"
 
     case $mode in
         # --- in the case where we added noise,
         # --- add a step of showing how big is the noise
         *noise)
-            echo '	+-----------------------------------------+'
-            echo '	|    visualize the added random noise     |'
-            echo '	+-----------------------------------------+'
+            echo '+-----------------------------------------------------+'
+            echo '|           visualize the added random noise          |'
+            echo '+-----------------------------------------------------+'
             # -- Prepare the reference Ys (without the noise)
             case $mode in
                 globalnoise)
@@ -210,7 +215,7 @@ demo_session() {
             demo_cmd -p "Generate plot of clean vs NOISY Ys (labels)" \
                 'x-vs-y.r Ys/r.train.nonoise  Ys/r.train  X-vs-Y.png'
 
-            demo_cmd -p "View plot of CLEAN vs NOISE-filled values " \
+            demo_cmd -p "View plot of CLEAN (X) vs NOISE-filled (Y) values " \
                 "$ImgViewer X-vs-Y.png 2>/dev/null"
             ;;
     esac
@@ -239,14 +244,20 @@ demo_session() {
             ;;
     esac
     demo_cmd "$msg1"  "vw -k $vw_args r.train -f r.model"
-    echo '+-----------------------------------------------------------+'
+    echo '+------------------------------------------------------------------+'
     echo '# Notice how fast training took to complete (about 0.1 sec).'
-    echo '# vw is faster processing input than all other programs in'
-    echo '# this demo.  Since learning is faster than IO and runs in'
-    echo '# a separate thread, vw training is limited by the IO rate'
-    echo '+-----------------------------------------------------------+'
+    echo '# vw is faster processing data than all other programs in this demo.'
+    echo '#'
+    echo '# Since learning is faster than IO, and runs in a separate thread,'
+    echo '# vw training speed is limited only by the time to read the data.'
+    echo '+------------------------------------------------------------------+'
 
     demo_cmd "$msg2"  "vw-varinfo -k $vw_args r.train"
+
+    echo '+------------------------------------------------------------------+'
+    echo '# Notice how accurate the model is: model weights are exactly,'
+    echo "# or very close to our target linear expression: $Poly"
+    echo '+------------------------------------------------------------------+'
 
     # --- test-set generation
     demo_cmd "Generate a test data-set (note different random seed: -s)" \
@@ -255,7 +266,7 @@ demo_session() {
     demo_cmd "Show that train and test data-sets are different" \
         'diff <(head -9 r.train) <(head -9 r.test)'
 
-    demo_cmd "Inspect test-set density of Ys (labels)" \
+    demo_cmd "Visualize test-set Ys (labels) density [~5 sec to generate chart]:" \
         "y_density r.test 'Test-set random expression distribution: $Poly'"
 
     demo_cmd -p "Clear the Ys (labels) from the test-set" \
@@ -263,8 +274,8 @@ demo_session() {
 
     case $mode in 'clean')
         # Only do this the 1st time, othewise it is getting tedious
-        demo_cmd -hs "inspect test-set to see Ys (labels) are gone
-(you'll need to exit $Pager with 'q')"  "$Pager r.test"
+        demo_cmd -s "inspect test-set to see Ys (labels) are gone (hit 'q' to exit $Pager):" \
+            "$Pager r.test"
     esac
 
     # --- prediction of test-set Ys using trained-model
@@ -285,13 +296,13 @@ demo_session() {
 
     # textual eyeball inspection
     demo_cmd "Compare predictions with actual values side-by-side
-Note how close they are, since the model weights are near-perfect:" \
+        Note how close they are, since the model weights are near-perfect:" \
         "diff -y -W 24 Ys/r.predict Ys/r.test | $Pager"
 
-    demo_cmd -p "Plot predictions vs actual (test) values " \
+    demo_cmd -p "Plot predictions vs actual (test) values [~5 secs to generate chart]:" \
             'x-vs-y.r Ys/r.predict Ys/r.test X-vs-Y.png'
 
-    demo_cmd "Look at plot of predicted vs actual (test) values " \
+    demo_cmd "Look at plot of predicted vs actual (test) values:" \
         "$ImgViewer X-vs-Y.png 2>/dev/null"
 
 }
