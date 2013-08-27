@@ -185,7 +185,7 @@ demo_session() {
         demo_cmd -hs 'inspect the training-set' "$Pager r.train" ;;
     esac
 
-    demo_cmd "Inspect train-set Ys density" \
+    demo_cmd "Inspect train-set Ys (labels) density" \
         "y_density r.train 'Train-set random expression distribution: $Poly'"
 
     case $mode in
@@ -207,7 +207,7 @@ demo_session() {
                     ;;
             esac
  
-            demo_cmd -p "Generate plot of clean vs NOISY Ys" \
+            demo_cmd -p "Generate plot of clean vs NOISY Ys (labels)" \
                 'x-vs-y.r Ys/r.train.nonoise  Ys/r.train  X-vs-Y.png'
 
             demo_cmd -p "View plot of CLEAN vs NOISE-filled values " \
@@ -255,23 +255,23 @@ demo_session() {
     demo_cmd "Show that train and test data-sets are different" \
         'diff <(head -9 r.train) <(head -9 r.test)'
 
-    demo_cmd "Inspect test-set density of Ys" \
+    demo_cmd "Inspect test-set density of Ys (labels)" \
         "y_density r.test 'Test-set random expression distribution: $Poly'"
 
-    demo_cmd -p "Clear the Ys from the test-set" \
+    demo_cmd -p "Clear the Ys (labels) from the test-set" \
         'perl -i -pe "s/\S+/0/" r.test'
 
     case $mode in 'clean')
         # Only do this the 1st time, othewise it is getting tedious
-        demo_cmd -hs "inspect test-set to see Ys are gone
+        demo_cmd -hs "inspect test-set to see Ys (labels) are gone
 (you'll need to exit $Pager with 'q')"  "$Pager r.test"
     esac
 
     # --- prediction of test-set Ys using trained-model
-    demo_cmd "Predict: VW uses the model to predict the test-set Ys" \
+    demo_cmd "Predict: VW uses the model to predict the test-set Ys (labels)" \
         'vw -t -i r.model r.test -p r.predict'
     echo '+-----------------------------------------------------------+'
-    echo '# Since Ys (labels) have been zeroed (0) - the reported error'
+    echo '# Since Ys (labels) have been zeroed - the reported error'
     echo '# is large even though predictions are, in fact, accurate.'
     echo '# We are also running vw with "-t" (test-only) so no weights'
     echo '# are being updated in-memory during the prediction run.'
@@ -285,7 +285,7 @@ demo_session() {
 
     # textual eyeball inspection
     demo_cmd "Compare predictions with actual values side-by-side
-Note how close the are, since the model weights are near-perfect:" \
+Note how close they are, since the model weights are near-perfect:" \
         "diff -y -W 24 Ys/r.predict Ys/r.test | $Pager"
 
     demo_cmd -p "Plot predictions vs actual (test) values " \
