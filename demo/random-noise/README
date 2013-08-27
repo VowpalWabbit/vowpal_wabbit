@@ -10,6 +10,7 @@ Prerequisites:
     in your $PATH.
 
     1) A reasonable Unix-like env, with standard utilities including:
+
             GNU less
             GNU diff
             bash
