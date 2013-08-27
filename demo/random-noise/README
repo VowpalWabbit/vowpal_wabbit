@@ -4,10 +4,8 @@ Demo of vowpal wabbit's ability to separate signal from noise.
 Prerequisites:
 --------------
 
-    You must have the following in your environment to run the demo.
-
     All the components below must be present and located somewhere
-    in your $PATH.
+    in your $PATH in order to run the demo.
 
     1) A reasonable Unix-like env, with standard utilities including:
 
@@ -15,18 +13,19 @@ Prerequisites:
             GNU diff
             bash
             perl
-            GNU make (only required if you prefer to type 'make')
+            GNU make (not needed if you run 'vw-demo' directly)
 
     2) The following executables (from your vw distribution):
 
             vw
             vw-varinfo
 
-    3) The following are used to do the density and correlation plots
-       that the demo uses.
+    3) The following are used to estimate 'goodness' of model
+       and create density & correlation charts:
 
             R
-            ggplot2
+            ggplot2 (R library. Can be installed from within R
+                     see http://ggplot2.org/)
 
 
 Main idea of this demo:
