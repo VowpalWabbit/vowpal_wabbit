@@ -2,7 +2,6 @@
 # vim: ts=4 sw=4 expandtab
 #
 # Generate a random data-set matching a linear expression
-# TODO: support CSV/TSV format
 # TODO: support real polynomial expressions with x^n
 #
 use Getopt::Std;
@@ -52,8 +51,8 @@ sub usage(@) {
         -w              Add weight to examples
         -r<min,max>     Add uniform random noise in range [<min>, <max>]
         -R<min,max>     Add per-feature uniform random noise in range [<min>, <max>]
-        -c              output in CSV format
-        -t              output in TSV format
+        -c              output in CSV format (label is 1st column)
+        -t              output in TSV format (label is 1st column)
 
         Default format is VW (vowpal-wabbit)
 
@@ -182,7 +181,9 @@ sub gen_dataset(@) {
                 # Don't add constant to the input features
                 # Add it only to the label
                 $feature_str .=
-                    sprintf("%s%s:%.*f", $Sep, $varname, $opt_p, $r);
+                    ($opt_c || $opt_t)
+                        ? sprintf("%s%.*f", $Sep, $opt_p, $r)
+                        : sprintf("%s%s:%.*f", $Sep, $varname, $opt_p, $r);
             }
 
             $result += $term_value;
@@ -192,7 +193,9 @@ sub gen_dataset(@) {
             # v("random_noise: %g\n", $random_noise);
             $result += $random_noise;
         }
-        if ($opt_w) {   # -- add weight
+        if ($opt_c || $opt_t) {
+            printf "%.*f%s\n", $opt_p, $result, $feature_str;
+        } elsif ($opt_w) {   # -- add weight
             printf "%.*f %s %s|f%s\n", $opt_p, $result, 1, $i, $feature_str;
         } else {
             printf "%.*f '%s|f%s\n", $opt_p, $result, $i, $feature_str;
