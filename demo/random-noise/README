@@ -31,7 +31,7 @@ Prerequisites:
 Main idea of this demo:
 -----------------------
 
-As long as noise is random, it cannot bias a predictor.  If it was
+As long as noise is random, it cannot bias a model.  If it was
 biased, and could affect the model we're building - it would't be
 called "noise."
 
@@ -70,6 +70,10 @@ The demo has 3 parts:
     3) Per input-feature noise of +/-50% of each variable range
        is added to the train set. This affects the label in a
        3-modal dispersed way (as shown in a chart produced by the demo)
+
+The noise is generated using the standard perl 'rand' function,
+roughly simulating a uniform distribution, using a simple
+pseudo-random number generator.
 
 We demonstrate that despite the noise, the (almost) perfect model
 is being learned in each of the 3 parts of the demo.
