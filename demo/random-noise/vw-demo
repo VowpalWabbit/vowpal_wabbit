@@ -13,7 +13,6 @@
 #
 export PATH=$PATH:.
 Pager='less'
-# ImgViewCandidates="display irfanview xee preview"
 ImgViewCandidates="gwenview display irfanview xee preview"
 ImgViewer=
 Poly='a + 2b - 5c + 7'
