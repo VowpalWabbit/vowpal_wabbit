@@ -67,11 +67,18 @@ The demo has 3 parts:
     2) Global noise in the range [-1, 1] added to the continuous label
        y in the train-set.
 
-    3) Per input feature noise of +/-50% of each variable range
-       is added to the train set.
+    3) Per input-feature noise of +/-50% of each variable range
+       is added to the train set. This affects the label in a
+       3-modal dispersed way (as shown in a chart produced by the demo)
 
 We demonstrate that despite the noise, the (almost) perfect model
 is being learned in each of the 3 parts of the demo.
+
+In fact, the small imprecisions in the model are due to us
+deliberately limiting the precision of the data sets to 6-digits
+after the decimal point (for brevity and readability purposes).
+You may change this by passing '-p N' where N is different than 6
+to the 'random-poly' script.
 
 The whole demo is scripted.
 ---------------------------
