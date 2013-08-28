@@ -44,46 +44,16 @@ float collision_cleanup(v_array<feature>& feature_map) {
   return sum_sq;  
 }  
 
-flat_example flatten_example(vw& all, example *ec) {  
-  flat_example* fec = (flat_example*) calloc(1,sizeof(flat_example));  
-  fec->ld = calloc(1,sizeof(label_data));  
-  fec->final_prediction = ec->final_prediction;  
-  fec->tag = ec->tag;  
-  fec->example_counter = ec->example_counter;  
-  
-  fec->num_features = ec->num_features;  
-  fec->ft_offset = ec->ft_offset;  
-  fec->partial_prediction = ec->partial_prediction;  
-  fec->topic_predictions = ec->topic_predictions;  
-  fec->loss = ec->loss;  
-  fec->eta_round = ec->eta_round;  
-  fec->eta_global = ec->eta_global;  
-  fec->global_weight = ec->global_weight;  
-  fec->example_t = ec->example_t;  
-  fec->total_sum_feat_sq = ec->total_sum_feat_sq;  
-  fec->revert_weight = ec->revert_weight;  
-  fec->end_pass = ec->end_pass;  
-  fec->sorted = 1;  
-  fec->in_use = ec->in_use;  
-  fec->done = ec->done;  
-    
-  GD::foreach_feature<vec_store>(all, ec, &fec->feature_map);  
-  qsort(fec->feature_map.begin, fec->feature_map.size(), sizeof(feature), compare_feature);  
-  fec->total_sum_feat_sq = collision_cleanup(fec->feature_map);  
-    
-  return *fec;  
-}  
-
 namespace VW {
 
-flat_example_ex* flatten_example_ex(vw& all, example *ec) 
+flat_example* flatten_example(vw& all, example *ec) 
 {  
     if (command_example(&all, ec))
 	{
 		return 0;
 	}
 
-	flat_example_ex* fec = (flat_example_ex*) calloc(1,sizeof(flat_example_ex));  
+	flat_example* fec = (flat_example*) calloc(1,sizeof(flat_example));  
 	fec->ld = calloc(1,sizeof(label_data));  
 	fec->final_prediction = ec->final_prediction;  
 
@@ -135,7 +105,7 @@ flat_example_ex* flatten_example_ex(vw& all, example *ec)
 	return fec;  
 }
 
-void free_flatten_example_ex(flat_example_ex* fec) 
+void free_flatten_example(flat_example* fec) 
 {  
 	if (!fec)
 		return;

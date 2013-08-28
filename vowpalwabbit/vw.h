@@ -98,6 +98,9 @@ namespace VW {
   inline uint32_t num_weights(vw& all) 
   { return (uint32_t)all.length();}
 
+  inline uint32_t get_stride(vw& all) 
+  { return (uint32_t)all.reg.stride;}
+
 }
 
 #endif

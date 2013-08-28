@@ -76,7 +76,7 @@ namespace Microsoft.Research.MachineLearning
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct FLAT_EXAMPLE_EX
+        public struct FLAT_EXAMPLE
         {
             public LABEL ld;
             public float final_prediction;
@@ -163,11 +163,14 @@ namespace Microsoft.Research.MachineLearning
         [DllImport("libvw.dll", EntryPoint = "VW_Num_Weights", CallingConvention = CallingConvention.StdCall)]
         public static extern UInt32 Num_Weights(IntPtr vw);
 
-        [DllImport("libvw.dll", EntryPoint = "VW_FlattenExampleEx", CallingConvention = CallingConvention.StdCall)]
-        public static extern IntPtr Flatten_ExampleEx(IntPtr vw, IntPtr example);
+        [DllImport("libvw.dll", EntryPoint = "VW_Get_Stride", CallingConvention = CallingConvention.StdCall)]
+        public static extern UInt32 Get_Stride(IntPtr vw);
 
-        [DllImport("libvw.dll", EntryPoint = "VW_FreeFlattenExampleEx", CallingConvention = CallingConvention.StdCall)]
-        public static extern IntPtr FreeFlattenExampleEx(IntPtr fec);
+        [DllImport("libvw.dll", EntryPoint = "VW_FlattenExample", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr Flatten_Example(IntPtr vw, IntPtr example);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_FreeFlattenExample", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr FreeFlattenExample(IntPtr fec);
     
     }
 }

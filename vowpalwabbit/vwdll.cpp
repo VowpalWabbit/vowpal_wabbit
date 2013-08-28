@@ -177,16 +177,22 @@ extern "C"
 		return VW::num_weights(*pointer);
 	}
 
-	VW_DLL_MEMBER VW_FLAT_EXAMPLE_EX VW_CALLING_CONV VW_FlattenExampleEx(VW_HANDLE handle, VW_EXAMPLE e)
+	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Get_Stride(VW_HANDLE handle)
+	{
+		vw* pointer = static_cast<vw*>(handle);
+		return VW::get_stride(*pointer);
+	}
+
+	VW_DLL_MEMBER VW_FLAT_EXAMPLE VW_CALLING_CONV VW_FlattenExample(VW_HANDLE handle, VW_EXAMPLE e)
 	{
 		vw* pointer = static_cast<vw*>(handle);
 		example* ex = static_cast<example*>(e);
-		return static_cast<VW_FLAT_EXAMPLE_EX>(VW::flatten_example_ex(*pointer, ex));
+		return static_cast<VW_FLAT_EXAMPLE>(VW::flatten_example(*pointer, ex));
 	}
 
-	VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeFlattenExampleEx(VW_FLAT_EXAMPLE_EX fec)
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeFlattenExample(VW_FLAT_EXAMPLE fec)
 	{
-		VW::flat_example_ex *p = reinterpret_cast<VW::flat_example_ex*>(fec);
-		VW::free_flatten_example_ex(p);
+		VW::flat_example *p = reinterpret_cast<VW::flat_example*>(fec);
+		VW::free_flatten_example(p);
 	}
 }
