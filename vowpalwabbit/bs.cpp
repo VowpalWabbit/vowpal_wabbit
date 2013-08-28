@@ -7,9 +7,6 @@ license as described in the file LICENSE.
 #include <math.h>
 #include <stdio.h>
 #include <sstream>
-#include <boost/random/poisson_distribution.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
 #include <numeric>
 #include <vector>
 #include <algorithm>
@@ -33,6 +30,25 @@ namespace BS {
     learner base;
     vw* all;
   };
+
+  size_t poisson_gen(double lamda)
+  {
+    double L = exp((-1)*lamda);
+    size_t k = 0;
+    double p = 1.;
+    double u = 0.;
+  
+    do
+    {
+      k++;
+      u = frand48();
+      p *= u;
+    }
+    while (p > L);
+
+    return (k-1);
+  }
+
 
   int print_tag(std::stringstream& ss, v_array<char> tag)
   {
@@ -131,12 +147,7 @@ namespace BS {
     stringstream outputStringStream(outputString);
 
     float pre_mean = 0.0;
-    float tmp = frand48()*1000;
 
-    boost::mt19937 gen;
-    gen.seed(tmp);
-    boost::poisson_distribution<int> pd(((label_data*)ec->ld)->weight);
-    boost::variate_generator <boost::mt19937, boost::poisson_distribution<int> > rvt(gen, pd);
     vector<double> pred_vec;
 
     for (size_t i = 1; i <= d->k; i++)
@@ -144,11 +155,11 @@ namespace BS {
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
           
-        ((label_data*)ec->ld)->weight = rvt();
+        ((label_data*)ec->ld)->weight = poisson_gen(weight_temp);
 
         d->base.learn(ec);
 
-        pred_vec.push_back(ec->partial_prediction);
+        pred_vec.push_back(ec->final_prediction);
 
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';
