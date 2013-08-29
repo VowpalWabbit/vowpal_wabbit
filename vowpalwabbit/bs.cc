@@ -176,6 +176,7 @@ namespace BS {
     sort(pred_vec.begin(), pred_vec.end());
     
     pre_mean = accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+    ec->partial_prediction = pre_mean;
     ec->final_prediction = pre_mean;
     ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ((label_data*)ec->ld)->label) * ((label_data*)ec->ld)->weight;
 
