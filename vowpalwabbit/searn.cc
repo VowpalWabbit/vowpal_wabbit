@@ -520,13 +520,7 @@ namespace Searn
     }
   }
 
-
-
-  void learn(void*d, example *ec)
-  {
-    //vw*all = (vw*)in;
-    // TODO
-  }
+  void learn(void*d, example *ec);
 
   void finish(void* d)
   {
@@ -809,8 +803,11 @@ namespace Searn
 
     all.weights_per_problem *= s->total_number_of_policies;
     s->increment = ((uint32_t)all.length() / all.weights_per_problem) * all.reg.stride;
-    //cerr << "searn increment = " << s->increment << endl;
+    //cerr << "searn increment = " << s->increment <<  " " << all.reg.stride << endl;
 
+    // Initialize things here instead of in drive.
+    initialize_memory(*s);
+    
     learner l(s, drive, learn, finish, all.l.sl);
     s->base = all.l;
     s->all = & all;
@@ -1223,8 +1220,13 @@ namespace Searn
     // if we are using adaptive beta, update it to take into account the latest updates
     if( s.adaptive_beta ) s.beta = 1.f - powf(1.f - s.alpha,(float)s.total_examples_generated);
     
-    run_prediction(all, s, s0, false, true, will_print, &action_sequence);
+    run_prediction(all, s, s0, false, true, true, &action_sequence);
     global_print_label(all, s, s.ec_seq[0], s0, action_sequence);
+
+    // Copy predictions back into examples.
+    assert(action_sequence.size() == s.ec_seq.size());
+    for (size_t i=0; i<action_sequence.size(); i++)
+      s.ec_seq[i]->final_prediction = action_sequence[i];
 
     if (!is_test) {
       float loss = s.task.loss(s0);
@@ -1273,55 +1275,58 @@ namespace Searn
 		clear_seq(all, s);
   }
 
-  void process_next_example(vw&all, searn& s, example *ec)
-  {
+  void learn(void*d, example *ec)
+  {     
+    searn* s = (searn*)d;
+    vw* all = s->all;
+    
     bool is_real_example = true;
 
-    if (s.is_singleline) {
-      if (s.ec_seq.size() == 0)
-        s.ec_seq.push_back(ec);
+    if (s->is_singleline) {
+      if (s->ec_seq.size() == 0)
+        s->ec_seq.push_back(ec);
       else
-        s.ec_seq[0] = ec;
+        s->ec_seq[0] = ec;
 
-      do_actual_learning(all, s);
+      do_actual_learning(*all, *s);
     } else {  
       // is multiline
-      if (ec->end_pass || OAA::example_is_newline(ec) || s.ec_seq.size() >= all.p->ring_size - 2) { // give some wiggle room
-	if (s.ec_seq.size() >= all.p->ring_size - 2)
-        std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
-        do_actual_learning(all, s);
+      if (ec->end_pass || OAA::example_is_newline(ec) || s->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
+         if (s->ec_seq.size() >= all->p->ring_size - 2)
+            std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
+         do_actual_learning(*all, *s);
 	
-	if (ec->end_pass)
-	  {
-	    is_real_example = false;
-	    s.read_example_last_pass++;
-	    s.passes_since_new_policy++;
-	    if (s.passes_since_new_policy >= s.passes_per_policy) {
-	      s.passes_since_new_policy = 0;
-	      if(all.training)
-		s.current_policy++;
-	      if (s.current_policy > s.total_number_of_policies) {
-		std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
-		s.current_policy = s.total_number_of_policies;
-	      }
-	      //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
-	      std::stringstream ss;
-	      ss << s.current_policy;
-	      VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss.str());
-	    }
-	  }
+         if (ec->end_pass)
+         {
+            is_real_example = false;
+            s->read_example_last_pass++;
+            s->passes_since_new_policy++;
+            if (s->passes_since_new_policy >= s->passes_per_policy) {
+               s->passes_since_new_policy = 0;
+               if(all->training)
+                  s->current_policy++;
+               if (s->current_policy > s->total_number_of_policies) {
+                  std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
+                  s->current_policy = s->total_number_of_policies;
+               }
+               //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
+               std::stringstream ss;
+               ss << s->current_policy;
+               VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss.str());
+            }
+         }
 	
-	VW::finish_example(all, ec);
+        VW::finish_example(*all, ec);
         is_real_example = false;
       }
       else
-	s.ec_seq.push_back(ec);
+	s->ec_seq.push_back(ec);
     }
     
     // for both single and multiline
     if (is_real_example) {
-      s.read_example_this_loop++;
-      s.read_example_last_id = ec->example_counter;
+      s->read_example_this_loop++;
+      s->read_example_last_id = ec->example_counter;
     }
   }
 
@@ -1336,13 +1341,11 @@ namespace Searn
     fprintf(stderr, header_fmt, "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
     cerr.precision(5);
 
-    initialize_memory(*s);
-
     example* ec = NULL;
     s->read_example_this_loop = 0;
     while (true) {
       if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
-        process_next_example(*all, *s, ec);
+        learn(s, ec);
       } else if (parser_done(all->p)) {
         if (!s->is_singleline)
           do_actual_learning(*all, *s);
@@ -1361,8 +1364,6 @@ namespace Searn
       VW::cmd_string_replace_value(all->options_from_file,"--searn_total_nb_policies", ss2.str());
     }
   }
-
-
 }
 
 
