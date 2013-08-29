@@ -663,6 +663,9 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("autolink") || vm_file.count("autolinnk") ) 
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
+
+  if(vm.count("bs") || vm_file.count("bs") ) 
+    all->l = BS::setup(*all, to_pass_further, vm, vm_file);
   
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
@@ -671,13 +674,6 @@ vw* parse_args(int argc, char *argv[])
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
 
     all->l = OAA::setup(*all, to_pass_further, vm, vm_file);
-    got_mc = true;
-  }
-
-  if(vm.count("bs") || vm_file.count("bs") ) {
-    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
-
-    all->l = BS::setup(*all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
   

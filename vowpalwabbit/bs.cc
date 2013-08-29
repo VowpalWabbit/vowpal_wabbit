@@ -23,10 +23,12 @@ using namespace std;
 namespace BS {
 
   struct bs{
-    uint32_t k;
+    uint32_t B; //number of bootstrap rounds
     uint32_t increment;
     uint32_t total_increment;
     float alpha;
+    float lb;
+    float ub;
     learner base;
     vw* all;
   };
@@ -150,7 +152,7 @@ namespace BS {
 
     vector<double> pred_vec;
 
-    for (size_t i = 1; i <= d->k; i++)
+    for (size_t i = 1; i <= d->B; i++)
       {
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
@@ -177,14 +179,17 @@ namespace BS {
     ec->final_prediction = pre_mean;
     ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ((label_data*)ec->ld)->label) * ((label_data*)ec->ld)->weight;
 
-    size_t lb_index = d->k * d->alpha-1 < 0 ? 0 :  d->k * d->alpha-1;
-    size_t up_index = d->k * (1 - d->alpha)-1 > pred_vec.size()-1 ? pred_vec.size()-1 : d->k * (1 - d->alpha)-1;
+    size_t lb_index = d->B * d->alpha-1 < 0 ? 0 :  d->B * d->alpha-1;
+    size_t ub_index = d->B * (1 - d->alpha)-1 > pred_vec.size()-1 ? pred_vec.size()-1 : d->B * (1 - d->alpha)-1;
+
+    d->lb = pred_vec[lb_index];
+    d->ub = pred_vec[ub_index];
+
+    //cout<<" "<<ec->final_prediction<<" "<<d->lb<<" "<<d->ub<<endl;
 
     if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
 
-    if (!command_example(all, ec))
-      output_example(*all, ec, pred_vec[lb_index], pred_vec[up_index]);
   }
 
   void learn(void* d, example* ec) {
@@ -199,6 +204,8 @@ namespace BS {
         if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output((bs*)d, ec, all->raw_prediction > 0);
+            if (!command_example(all, ec))
+              BS::output_example(*all, ec, ((bs*)d)->lb , ((bs*)d)->ub);
 	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
@@ -219,6 +226,8 @@ namespace BS {
   {
     bs* data = (bs*)calloc(1, sizeof(bs));
     data->alpha = 0.;
+    data->ub = FLT_MAX;
+    data->lb = -FLT_MAX;
 
     po::options_description desc("BS options");
     desc.add_options()
@@ -253,24 +262,23 @@ namespace BS {
     }
 
     if( vm_file.count("bs") ) {
-      data->k = (uint32_t)vm_file["bs"].as<size_t>();
-      if( vm.count("bs") && (uint32_t)vm["bs"].as<size_t>() != data->k )
-        std::cerr << "warning: you specified a different number of actions through --bs than the one loaded from predictor. Pursuing with loaded value of: " << data->k << endl;
+      data->B = (uint32_t)vm_file["bs"].as<size_t>();
+      if( vm.count("bs") && (uint32_t)vm["bs"].as<size_t>() != data->B )
+        std::cerr << "warning: you specified a different number of actions through --bs than the one loaded from predictor. Pursuing with loaded value of: " << data->B << endl;
     }
     else {
-      data->k = (uint32_t)vm["bs"].as<size_t>();
+      data->B = (uint32_t)vm["bs"].as<size_t>();
 
       //append bs with nb_actions to options_from_file so it is saved to regressor later
       std::stringstream ss;
-      ss << " --bs " << data->k;
+      ss << " --bs " << data->B;
       all.options_from_file.append(ss.str());
     }
 
     data->all = &all;
-    *(all.p->lp) = simple_label;
     data->increment = all.reg.stride * all.weights_per_problem;
-    all.weights_per_problem *= data->k;
-    data->total_increment = data->increment*(data->k-1);
+    all.weights_per_problem *= data->B;
+    data->total_increment = data->increment*(data->B-1);
     data->base = all.l;
     learner l(data, drive, learn, finish, all.l.sl);
     return l;
