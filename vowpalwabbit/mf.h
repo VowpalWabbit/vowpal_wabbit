@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef GD_MF_H
-#define GD_MF_H
+#ifndef MF_H
+#define MF_H
 
 #include <math.h>
 #include "example.h"
@@ -12,7 +12,7 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "gd.h"
 
-namespace GDMF{
-  learner setup(vw& all);
+namespace MF{
+  learner setup(vw& all, po::variables_map& vm);
 }
 #endif

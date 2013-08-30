@@ -503,7 +503,7 @@ float compute_norm(vw& all, example* &ec)
   norm_data nd = {g, 0., 0.};
 
   foreach_feature<T>(all, ec, &nd);
-  
+
   if(all.normalized_updates) {
     float total_weight = 0;
     if(all.active)
@@ -630,35 +630,40 @@ float compute_norm(vw& all, example* &ec)
 
   void predict(vw& all, gd& g, example* ex)
 {
-  label_data* ld = (label_data*)ex->ld;
-  float prediction;
 
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0 && (all.holdout_set_off || !ex->test_only)) {
-    if( all.power_t == 0.5 ) {
-      if (all.reg_mode % 2)
-        prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
-      else
-        prediction = inline_predict<vec_add_rescale>(all, ex);
+  if (!ex->precomputed_prediction) {
+
+    label_data* ld = (label_data*)ex->ld;
+    float prediction;
+
+    if (all.training && all.normalized_updates && ld->label != FLT_MAX && (all.holdout_set_off || !ex->test_only)) {
+      if( all.power_t == 0.5 ) {
+	if (all.reg_mode % 2)
+	  prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
+	else
+	  prediction = inline_predict<vec_add_rescale>(all, ex);
+      }
+      else {
+	if (all.reg_mode % 2)
+	  prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
+	else
+	  prediction = inline_predict<vec_add_rescale_general>(all, ex);
+      }
     }
     else {
       if (all.reg_mode % 2)
-        prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
+	prediction = inline_predict<vec_add_trunc>(all, ex);
       else
-        prediction = inline_predict<vec_add_rescale_general>(all, ex);
+	prediction = inline_predict<vec_add>(all, ex);
     }
-  }
-  else {
-    if (all.reg_mode % 2)
-      prediction = inline_predict<vec_add_trunc>(all, ex);
-    else
-      prediction = inline_predict<vec_add>(all, ex);
-  }
 
-  ex->partial_prediction = prediction;
+    ex->partial_prediction = prediction;
+  }
 
   local_predict(all, g, ex);
   ex->done = true;
 }
+
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {

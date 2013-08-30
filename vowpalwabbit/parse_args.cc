@@ -24,7 +24,7 @@ license as described in the file LICENSE.
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
-#include "gd_mf.h"
+#include "mf.h"
 #include "vw.h"
 #include "rand48.h"
 #include "parse_args.h"
@@ -242,11 +242,11 @@ vw* parse_args(int argc, char *argv[])
 
   all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
-  if( all->rank > 0 || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  if( !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
   {
-    all->adaptive = all->training && (vm.count("adaptive") && all->rank == 0);
+    all->adaptive = all->training && vm.count("adaptive");
     all->invariant_updates = all->training && vm.count("invariant");
-    all->normalized_updates = all->training && (vm.count("normalized") && all->rank == 0);
+    all->normalized_updates = all->training && vm.count("normalized");
 
     all->reg.stride = 1;
 
@@ -255,7 +255,7 @@ vw* parse_args(int argc, char *argv[])
 
     if( all->normalized_updates ) all->reg.stride *= 2;
 
-    if(!vm.count("learning_rate") && !vm.count("l") && !(all->adaptive && all->normalized_updates))
+    if(!vm.count("learning_rate") && !(all->adaptive && all->normalized_updates))
       all->eta = 10; //default learning rate to 10 for non default update rule
 
     //if not using normalized or adaptive, default initial_t to 1 instead of 0
@@ -274,7 +274,6 @@ vw* parse_args(int argc, char *argv[])
       }
     }
   }
-
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) 
     BFGS::setup(*all, to_pass_further, vm, vm_file);
 
@@ -477,12 +476,14 @@ vw* parse_args(int argc, char *argv[])
 	}
     }
 
+  /*
   // matrix factorization enabled
   if (all->rank > 0) {
     // store linear + 2*rank weights per index, round up to power of two
     float temp = ceilf(logf((float)(all->rank*2+1)) / logf (2.f));
     all->reg.stride = 1 << (int) temp;
     all->random_weights = true;
+
 
     if ( vm.count("adaptive") )
       {
@@ -512,6 +513,7 @@ vw* parse_args(int argc, char *argv[])
       all->initial_t = 1.f;
     }
   }
+  */
 
   if (vm.count("noconstant"))
     all->add_constant = false;
@@ -560,9 +562,6 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("noop")) 
     all->l = NOOP::setup(*all);
   
-  if (all->rank != 0) 
-    all->l = GDMF::setup(*all);
-
   all->loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   if (pow((double)all->eta_decay_rate, (double)all->numpasses) < 0.0001 )
@@ -658,6 +657,9 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("nn") || vm_file.count("nn") ) 
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
+
+  if (all->rank != 0) 
+    all->l = MF::setup(*all, vm);
 
   if(vm.count("autolink") || vm_file.count("autolinnk") ) 
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);

@@ -769,12 +769,12 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) (constant)};
+    feature temp = {1,(uint32_t) (constant * all.weights_per_problem)};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
   
-  if(all.reg.stride != 1 || all.weights_per_problem != 1) //make room for per-feature information.
+  if(all.reg.stride != 1) //make room for per-feature information.
     {
       uint32_t stride = all.reg.stride;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
