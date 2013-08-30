@@ -125,7 +125,7 @@ inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
       t *= inv_norm*inv_norm; //if only using normalized updates but not adaptive, need to divide by feature norm squared
     }
     w[0] += s->update * x * t;
-  }  
+  }
 }
 
 void learn(void* d, example* ec)
