@@ -556,16 +556,11 @@ float compute_norm(vw& all, example* &ec)
     t = ec->example_t;
 
   ec->eta_round = 0;
-  if (ec->test_only)//if this is a holdout example
-  {
-    ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
-    all.sd->holdout_sum_loss += ec->loss;
-    all.sd->holdout_sum_loss_since_last_dump += ec->loss;
-    all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
-  }
-  else if (ld->label != FLT_MAX)
+
+  ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
+
+  if (ld->label != FLT_MAX && !ec->test_only)
     {
-      ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       if (all.training && ec->loss > 0.)
         {
 	  float eta_t;

@@ -784,7 +784,6 @@ void learn(void* d, example* ec)
             label_data* ld = (label_data*)ec->ld;
             ec->final_prediction = bfgs_predict(*all,ec); 
             ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
-            all->sd->holdout_sum_loss_since_last_pass += ec->loss;
           }
         else if (test_example(ec))
 	  ec->final_prediction = bfgs_predict(*all,ec);//w[0]
