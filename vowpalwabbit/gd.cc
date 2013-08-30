@@ -125,7 +125,7 @@ inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
       t *= inv_norm*inv_norm; //if only using normalized updates but not adaptive, need to divide by feature norm squared
     }
     w[0] += s->update * x * t;
-  }
+  }  
 }
 
 void learn(void* d, example* ec)
@@ -553,7 +553,7 @@ float compute_norm(vw& all, example* &ec)
   if(all.active)
     t = (float)all.sd->weighted_unlabeled_examples;
   else
-    t = ec->example_t;
+    t = ec->example_t - all.sd->weighted_holdout_examples;
 
   ec->eta_round = 0;
 
@@ -628,7 +628,7 @@ float compute_norm(vw& all, example* &ec)
   label_data* ld = (label_data*)ex->ld;
   float prediction;
 
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0 && (all.holdout_set_off || !ex->test_only)) {
+  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
         prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
