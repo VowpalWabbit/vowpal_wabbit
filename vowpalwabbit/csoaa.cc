@@ -218,7 +218,22 @@ namespace CSOAA {
         else
           sprintf(label_buf," known");
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu\n",
+        if(!all.holdout_set_off && all.current_pass >= 1)
+        {
+          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu h\n",
+                all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples,
+                all.sd->holdout_sum_loss_since_last_dump / all.sd->weighted_holdout_examples_since_last_dump,
+                (long int)all.sd->example_number,
+                all.sd->weighted_examples,
+                label_buf,
+                (long unsigned int)ec->final_prediction,
+                (long unsigned int)ec->num_features);
+
+          all.sd->weighted_holdout_examples_since_last_dump = 0;
+          all.sd->holdout_sum_loss_since_last_dump = 0.0;
+        }
+        else
+          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
@@ -236,8 +251,7 @@ namespace CSOAA {
   void output_example(vw& all, example* ec)
   {
     label* ld = (label*)ec->ld;
-    all.sd->weighted_examples += 1.;
-    all.sd->total_features += ec->num_features;
+
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
@@ -257,9 +271,24 @@ namespace CSOAA {
         loss = chosen_loss - min;
       }
 
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
-  
+    if(ec->test_only)
+      {
+        all.sd->weighted_holdout_examples += ec->global_weight;//test weight seen
+        all.sd->weighted_holdout_examples_since_last_dump += ec->global_weight;
+        all.sd->weighted_holdout_examples_since_last_pass += ec->global_weight;
+        all.sd->holdout_sum_loss += loss;
+        all.sd->holdout_sum_loss_since_last_dump += loss;
+        all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
+     }
+    else
+      {
+        all.sd->weighted_examples += 1.;
+        all.sd->total_features += ec->num_features;
+        all.sd->sum_loss += loss;
+        all.sd->sum_loss_since_last_dump += loss;    
+        all.sd->example_number++;
+      }
+
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print((int)*sink, ec->final_prediction, 0, ec->tag);
 
@@ -274,8 +303,6 @@ namespace CSOAA {
       //outputStringStream << endl;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
     }
-
-    all.sd->example_number++;
 
     print_update(all, is_test_label((label*)ec->ld), ec);
   }
@@ -346,10 +373,19 @@ namespace CSOAA {
     example* ec = NULL;
     while ( true )
       {
+       if(all-> early_terminate)
+          {
+            all->p->done = true;
+            all->final_regressor_name = "";//skip finalize_regressor
+            all->text_regressor_name = "";
+            all->inv_hash_regressor_name = "";
+            return;
+          }
         if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn(d, ec);
-            output_example(*all, ec);
+	    if (!command_example(all, ec))
+              output_example(*all, ec);
             if (ec->in_use)
               VW::finish_example(*all, ec);
           }

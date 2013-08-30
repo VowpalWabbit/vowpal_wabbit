@@ -544,7 +544,25 @@ namespace CB
         else
           sprintf(label_buf," known");
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu   %-10.6f %-10.6f %-10.6f\n",
+        if(!all.holdout_set_off && all.current_pass >= 1)
+        {
+          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu   %-10.6f %-10.6f %-10.6f h\n",
+	      all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples,
+	      all.sd->holdout_sum_loss_since_last_dump / all.sd->weighted_holdout_examples_since_last_dump,
+	      (long int)all.sd->example_number,
+	      all.sd->weighted_examples,
+	      label_buf,
+              (long unsigned int)ec->final_prediction,
+              (long unsigned int)ec->num_features,
+              c.avg_loss_regressors,
+              c.last_pred_reg,
+              c.last_correct_cost);
+
+          all.sd->weighted_holdout_examples_since_last_dump = 0;
+          all.sd->holdout_sum_loss_since_last_dump = 0.0;
+        }
+        else
+          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8lu %8lu   %-10.6f %-10.6f %-10.6f\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
@@ -566,8 +584,6 @@ namespace CB
   {
     CB::label* ld = (CB::label*)ec->ld;
 
-    all.sd->weighted_examples += 1.;
-    all.sd->total_features += ec->num_features;
     float loss = 0.;
     if (!CB::is_test_label(ld))
       {//need to compute exact loss
@@ -597,16 +613,31 @@ namespace CB
         loss = chosen_loss;
       }
 
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
-  
+    if(ec->test_only)
+    {
+      all.sd->weighted_holdout_examples += ec->global_weight;//test weight seen
+      all.sd->weighted_holdout_examples_since_last_dump += ec->global_weight;
+      all.sd->weighted_holdout_examples_since_last_pass += ec->global_weight;
+      all.sd->holdout_sum_loss += loss;
+      all.sd->holdout_sum_loss_since_last_dump += loss;
+      all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
+    }
+    else
+    {
+      all.sd->sum_loss += loss;
+      all.sd->sum_loss_since_last_dump += loss;
+      all.sd->weighted_examples += 1.;
+      all.sd->total_features += ec->num_features;
+      all.sd->example_number++;
+    }
+
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
         int f = all.final_prediction_sink[i];
         all.print(f, ec->final_prediction, 0, ec->tag);
       }
   
-    all.sd->example_number++;
+
 
     print_update(all, c, CB::is_test_label((CB::label*)ec->ld), ec);
   }
@@ -625,6 +656,14 @@ namespace CB
     example* ec = NULL;
     while ( true )
     {
+      if(all-> early_terminate)
+        {
+          all->p->done = true;
+          all->final_regressor_name = "";//skip finalize_regressor
+          all->text_regressor_name = "";
+          all->inv_hash_regressor_name = "";
+          return;
+        } 
       if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
       {
         learn(d, ec);
