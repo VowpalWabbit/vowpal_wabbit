@@ -258,10 +258,19 @@ namespace WAP {
     example* ec = NULL;
     while ( true )
       {
+        if(all-> early_terminate)
+          {
+            all->p->done = true;
+            all->final_regressor_name = "";//skip finalize_regressor
+            all->text_regressor_name = "";
+            all->inv_hash_regressor_name = "";
+            return;
+          } 
         if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
 	    learn(d, ec);
-            CSOAA::output_example(*all, ec);
+            if (!command_example(all, ec))
+              CSOAA::output_example(*all, ec);
 	    VW::finish_example(*all, ec);
           }
         else if (parser_done(all->p))
