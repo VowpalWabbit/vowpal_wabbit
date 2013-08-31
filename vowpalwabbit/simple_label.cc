@@ -183,6 +183,10 @@ void output_and_account_example(vw& all, example* ec)
     all.sd->weighted_holdout_examples += ec->global_weight;//test weight seen
     all.sd->weighted_holdout_examples_since_last_dump += ec->global_weight;
     all.sd->weighted_holdout_examples_since_last_pass += ec->global_weight;
+    all.sd->holdout_sum_loss += ec->loss;
+    all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+    all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
+
   }
   else
   {
