@@ -453,9 +453,9 @@ namespace Searn
     all.sd->dump_interval *= 2;
   }
 
-  void clear_seq(vw&all, searn& s)
+  void clear_seq(vw&all, searn& s, bool finish_examples)
   {
-    if (s.ec_seq.size() > 0) 
+    if (finish_examples && s.ec_seq.size() > 0) 
       for (example** ecc=s.ec_seq.begin; ecc!=s.ec_seq.end; ecc++) {
 	VW::finish_example(all, *ecc);
       }
@@ -1188,7 +1188,7 @@ namespace Searn
     }
   }
 
-  void do_actual_learning(vw&all, searn& s)
+  void do_actual_learning(vw&all, searn& s, bool finish_examples)
   {
     // there are two cases:
     //   * is_singleline --> look only at ec_seq[0]
@@ -1212,7 +1212,7 @@ namespace Searn
       all.sd->total_features    += s.searn_num_features;
       all.sd->weighted_examples += 1.;
     }
-    bool will_print = is_test || should_print_update(all) || will_global_print_label(all, s);
+    //bool will_print = is_test || should_print_update(all) || will_global_print_label(all, s);
 
     s.searn_num_features = 0;
     std::vector<action> action_sequence;
@@ -1241,7 +1241,7 @@ namespace Searn
     if (is_test || !all.training)
 	{
 	  if (!s.is_singleline)
-		clear_seq(all, s);
+		clear_seq(all, s, finish_examples);
       return;
 	}
 
@@ -1272,10 +1272,10 @@ namespace Searn
       s.past_states->clear();
     }
 	if (!s.is_singleline)
-		clear_seq(all, s);
+		clear_seq(all, s, finish_examples);
   }
 
-  void learn(void*d, example *ec)
+  void learn_internal(void*d, example *ec, bool finish_examples)
   {     
     searn* s = (searn*)d;
     vw* all = s->all;
@@ -1288,13 +1288,13 @@ namespace Searn
       else
         s->ec_seq[0] = ec;
 
-      do_actual_learning(*all, *s);
+      do_actual_learning(*all, *s, finish_examples);
     } else {  
       // is multiline
       if (ec->end_pass || OAA::example_is_newline(ec) || s->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
          if (s->ec_seq.size() >= all->p->ring_size - 2)
             std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
-         do_actual_learning(*all, *s);
+         do_actual_learning(*all, *s, finish_examples);
 	
          if (ec->end_pass)
          {
@@ -1316,7 +1316,8 @@ namespace Searn
             }
          }
 	
-        VW::finish_example(*all, ec);
+        if(finish_examples) 
+           VW::finish_example(*all, ec);
         is_real_example = false;
       }
       else
@@ -1329,6 +1330,11 @@ namespace Searn
       s->read_example_last_id = ec->example_counter;
     }
   }
+  
+  void learn(void*d, example *ec) {
+     learn_internal(d,ec,false);
+  }
+ 
 
   void drive(vw* all, void*d)
   {
@@ -1345,10 +1351,10 @@ namespace Searn
     s->read_example_this_loop = 0;
     while (true) {
       if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
-        learn(s, ec);
+        learn_internal(s, ec, true);
       } else if (parser_done(all->p)) {
         if (!s->is_singleline)
-          do_actual_learning(*all, *s);
+          do_actual_learning(*all, *s, true);
         break;
       }
     }
