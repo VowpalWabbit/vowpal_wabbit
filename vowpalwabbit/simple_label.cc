@@ -145,17 +145,24 @@ void print_update(vw& all, example *ec)
 	sprintf(label_buf,"%8.4f",ld->label);
       
       if(!all.holdout_set_off && all.current_pass >= 1){
+        if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
+          fprintf(stderr, " unknown   ");
+        else
+	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
 
-        fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu h\n",
-	      all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples,
-	      all.sd->holdout_sum_loss_since_last_dump / all.sd->weighted_holdout_examples_since_last_dump,
+        if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
+          fprintf(stderr, " unknown   ");
+        else
+	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
+        
+        fprintf(stderr, "%10ld %11.1f %s %8.4f %8lu h\n",
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
 	      ec->final_prediction,
 	      (long unsigned int)ec->num_features);
 
-        all.sd->weighted_holdout_examples_since_last_dump = 0;
+        all.sd->weighted_holdout_examples_since_last_dump = 0.;
         all.sd->holdout_sum_loss_since_last_dump = 0.0;
       }
       else
