@@ -70,34 +70,12 @@ struct flat_example
 	char* tag;//An identifier for the example.  
 
 	size_t example_counter;  
+	uint32_t ft_offset;  
+	float global_weight;
 
+	size_t num_features;//precomputed, cause it's fast&easy.  
 	int feature_map_len;
 	feature* feature_map; //map to store sparse feature vectors  
-
-	uint32_t ft_offset;  
-   
-	size_t num_features;//precomputed, cause it's fast&easy.  
-	float partial_prediction;//shared data for prediction.  
-
-	int topic_predictions_len;
-	float* topic_predictions;
-
-	float loss;  
-	float eta_round;  
-	float eta_global;  
-	float global_weight;  
-	float example_t;//sum of importance weights so far.  
-
-	int sum_feat_sq_len;
-	float* sum_feat_sq;//helper for total_sum_feat_sq
-
-	float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.  
-	float revert_weight;  
-  
-	bool end_pass;//special example indicating end of pass.  
-	bool sorted;//Are the features sorted or not?  
-	bool in_use; //in use or not (for the parser)  
-	bool done; //set to false by setup_example()  
 };
 flat_example* flatten_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);

@@ -17,8 +17,8 @@ namespace cs_test
         {
             //RunFeaturesTest();
             //RunParserTest();
-            RunSpeedTest();
-            //RunFlatExampleTestEx();
+            //RunSpeedTest();
+            RunFlatExampleTestEx();
             //RunVWParce_and_VWLearn();
         }
 
@@ -213,19 +213,10 @@ namespace cs_test
                 flatEx.final_prediction = flat.final_prediction;
                 flatEx.example_counter = flat.example_counter;
                 flatEx.ft_offset = flat.ft_offset;
-                flatEx.num_features = flat.num_features;
-                flatEx.partial_prediction = flat.partial_prediction;
-                flatEx.eta_round = flat.eta_round;
-                flatEx.eta_global = flat.eta_global;
                 flatEx.global_weight = flat.global_weight;
-                flatEx.example_t = flat.example_t;
-                flatEx.total_sum_feat_sq = flat.total_sum_feat_sq;
-                flatEx.revert_weight = flat.revert_weight;
-                flatEx.end_pass = flat.end_pass;
-                flatEx.sorted = flat.sorted;
-                flatEx.in_use = flat.in_use;
-                flatEx.done = flat.done;
+                flatEx.num_features = flat.num_features;
 
+                flatEx.ld = new VowpalWabbitInterface.LABEL();
                 flatEx.ld = (VowpalWabbitInterface.LABEL)Marshal.PtrToStructure(flat.ld, typeof(VowpalWabbitInterface.LABEL));
                 if (flat.tag_len > 0)
                 {
@@ -233,14 +224,7 @@ namespace cs_test
                     Marshal.Copy(flat.tag, flatEx.tag, 0, flat.tag_len);
                 }
 
-                if (flat.topic_predictions_len > 0)
-                {
-                    flatEx.topic_predictions = new float[flat.topic_predictions_len];
-                    Marshal.Copy(flat.topic_predictions, flatEx.topic_predictions, 0, flat.topic_predictions_len);
-                }
-
                 IList<int> indices = new List<int>();
-                //IList<double> x = new List<double>();
                 if (flat.num_features > 0)
                 {
                     flatEx.feature_map = new VowpalWabbitInterface.FEATURE[flat.num_features];
@@ -251,21 +235,11 @@ namespace cs_test
                         flatEx.feature_map[i] = (VowpalWabbitInterface.FEATURE)Marshal.PtrToStructure(curfeaturePos, typeof(VowpalWabbitInterface.FEATURE));
 
                         int val = ((int)(flatEx.feature_map[i].weight_index / stride)) & (int)mask;
-
-                        if (indices.Contains(val))
-                        {
-                            int pos = indices.IndexOf(val);
-                        }
-                        if (count == 23 && val == 170763)
-                        {
-                            int p = indices.IndexOf(170763);
-                        }
                         indices.Add(val);
 
                         flatEx.feature_map[i].weight_index = (uint)val;
                     }
                 }
-
 
                 VowpalWabbitInterface.FreeFlattenExample(flatec);
                 VowpalWabbitInterface.FinishExample(vw, example);

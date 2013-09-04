@@ -42,37 +42,14 @@ namespace Microsoft.Research.MachineLearning
             public IntPtr tag;//An identifier for the example. 
 
             public UInt64 example_counter;
+            public UInt32 ft_offset;
+            public float global_weight;
+
+            public UInt64 num_features;//precomputed, cause it's fast&easy.  
 
             //FEATURE[] feature_map; //map to store sparse feature vectors  
             public int feature_map_len;
             public IntPtr feature_map; //map to store sparse feature vectors  
-
-            public UInt32 ft_offset;
-
-            public UInt64 num_features;//precomputed, cause it's fast&easy.  
-            public float partial_prediction;//shared data for prediction.  
-
-            //float[] topic_predictions;
-            public int topic_predictions_len;
-            public IntPtr topic_predictions;
-
-            public float loss;
-            public float eta_round;
-            public float eta_global;
-            public float global_weight;
-            public float example_t;//sum of importance weights so far.  
-
-            //float[] sum_feat_sq;//helper for total_sum_feat_sq.  
-            public int sum_feat_sq_len;
-            public IntPtr sum_feat_sq;//helper for total_sum_feat_sq.
-
-            public float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.  
-            public float revert_weight;
-
-            public bool end_pass;//special example indicating end of pass.  
-            public bool sorted;//Are the features sorted or not?  
-            public bool in_use; //in use or not (for the parser)  
-            public bool done; //set to false by setup_example()  
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -84,31 +61,11 @@ namespace Microsoft.Research.MachineLearning
             public byte[] tag;//An identifier for the example. 
 
             public UInt64 example_counter;
-
-            public FEATURE[] feature_map; //map to store sparse feature vectors  
-
             public UInt32 ft_offset;
+            public float global_weight;
 
             public UInt64 num_features;//precomputed, cause it's fast&easy.  
-            public float partial_prediction;//shared data for prediction.  
-
-            public float[] topic_predictions;
-
-            public float loss;
-            public float eta_round;
-            public float eta_global;
-            public float global_weight;
-            public float example_t;//sum of importance weights so far.  
-
-            public float[] sum_feat_sq;//helper for total_sum_feat_sq.  
-
-            public float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.  
-            public float revert_weight;
-
-            public bool end_pass;//special example indicating end of pass.  
-            public bool sorted;//Are the features sorted or not?  
-            public bool in_use; //in use or not (for the parser)  
-            public bool done; //set to false by setup_example()  
+            public FEATURE[] feature_map; //map to store sparse feature vectors  
         }
 
         [DllImport("libvw.dll", EntryPoint = "VW_Initialize", CallingConvention = CallingConvention.StdCall)]

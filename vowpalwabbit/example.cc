@@ -12,11 +12,8 @@ license as described in the file LICENSE.
 #include "global_data.h"  
   
 void vec_store(vw& all, void* p, float fx, uint32_t fi) {  
- feature *f = (feature*)calloc(1,sizeof(feature));  
- f->x = fx;  
- f->weight_index = fi;  
- (*(v_array<feature>*) p).push_back(*f);  
- free(f);  
+  feature f = {fx, fi};
+  (*(v_array<feature>*) p).push_back(f);  
 }  
   
 int compare_feature(const void* p1, const void* p2) {  
@@ -54,72 +51,37 @@ flat_example* flatten_example(vw& all, example *ec)
 	}
 
 	flat_example* fec = (flat_example*) calloc(1,sizeof(flat_example));  
-	fec->ld = calloc(1,sizeof(label_data));  
+	fec->ld = ec->ld;
 	fec->final_prediction = ec->final_prediction;  
 
 	fec->tag_len = ec->tag.size();
 	if (fec->tag_len >0)
 	{
-		fec->tag = (char*)calloc(ec->tag.size(), sizeof(char*));
-		memcpy(fec->tag, ec->tag.begin, ec->tag.size());
+		fec->tag = ec->tag.begin;
 	}
 
 	fec->example_counter = ec->example_counter;  
-	fec->num_features = ec->num_features;  
 	fec->ft_offset = ec->ft_offset;  
-	fec->partial_prediction = ec->partial_prediction; 
-
-	fec->topic_predictions_len = ec->topic_predictions.size();
-	if (fec->topic_predictions_len > 0)
-	{
-		fec->topic_predictions = (float*)calloc(ec->topic_predictions.size(), sizeof(float));
-		memcpy(fec->topic_predictions, ec->topic_predictions.begin, ec->topic_predictions.size()*sizeof(float));
-	}
-
-	fec->loss = ec->loss;  
-	fec->eta_round = ec->eta_round;  
-	fec->eta_global = ec->eta_global;  
 	fec->global_weight = ec->global_weight;  
-	fec->example_t = ec->example_t;  
-	fec->total_sum_feat_sq = ec->total_sum_feat_sq;  
-	fec->revert_weight = ec->revert_weight;  
-	fec->end_pass = ec->end_pass;  
-	fec->sorted = 1;  
-	fec->in_use = ec->in_use;  
-	fec->done = ec->done;  
+	fec->num_features = ec->num_features;  
     
 	v_array<feature> feature_map; //map to store sparse feature vectors  
 	GD::foreach_feature<vec_store>(all, ec, &feature_map); 
 	qsort(feature_map.begin, feature_map.size(), sizeof(feature), compare_feature);  
-	fec->total_sum_feat_sq = collision_cleanup(feature_map);  
-	fec->sum_feat_sq_len = 0;
     
 	fec->feature_map_len = feature_map.size();
 	if (fec->feature_map_len > 0)
 	{
-		fec->feature_map = (feature*)calloc(feature_map.size(), sizeof(feature));
-		memcpy(fec->feature_map, feature_map.begin, feature_map.size()*sizeof(feature));
+		fec->feature_map = feature_map.begin;
 	}
-	feature_map.delete_v();
 
 	return fec;  
 }
 
 void free_flatten_example(flat_example* fec) 
 {  
-	if (!fec)
-		return;
-
-	if (fec->ld)
-		free(fec->ld);
-	if (fec->tag)
-		free(fec->tag);
-	if (fec->topic_predictions)
-		free(fec->topic_predictions);
-	if (fec->feature_map)
-		free(fec->feature_map);
-
-	free(fec);
+	if (fec)
+		free(fec);
 }
 
 }
