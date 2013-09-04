@@ -9,6 +9,7 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "example.h"
 #include "hash.h"
+#include "simple_label.h"
 
 namespace VW {
 
@@ -50,6 +51,7 @@ namespace VW {
   void parse_example_label(vw&all, example&ec, string label);
   example* new_unused_example(vw& all);
   example* get_example(parser* pf);
+  label_data* get_label(example*ec);
 
 	void add_constant_feature(vw& all, example*ec);
 	void add_label(example* ec, float label, float weight = 1, float base = 0);
@@ -95,6 +97,9 @@ namespace VW {
 
   inline uint32_t num_weights(vw& all) 
   { return (uint32_t)all.length();}
+
+  inline uint32_t get_stride(vw& all) 
+  { return (uint32_t)all.reg.stride;}
 
 }
 

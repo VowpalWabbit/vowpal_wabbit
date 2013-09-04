@@ -915,19 +915,19 @@ namespace VW{
     int fs_count = 0;
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
       {
-	fs_ptr[fs_count].name = *i;
-	fs_ptr[fs_count].len = ec->atomics[*i].size();
-	fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
+		fs_ptr[fs_count].name = *i;
+		fs_ptr[fs_count].len = ec->atomics[*i].size();
+		fs_ptr[fs_count].fs = new feature[fs_ptr[fs_count].len];
 	
-	int f_count = 0;
-	for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
-	  {
-	    feature t = *f;
-	    t.weight_index /= all.reg.stride;
-	    fs_ptr[fs_count].fs[f_count] = t;
-	    f_count++;
-	  }
-	fs_count++;
+		int f_count = 0;
+		for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
+		  {
+			feature t = *f;
+			t.weight_index /= all.reg.stride;
+			fs_ptr[fs_count].fs[f_count] = t;
+			f_count++;
+		  }
+		fs_count++;
       }
     return fs_ptr;
   }
@@ -1066,6 +1066,11 @@ example* get_example(parser* p)
       return NULL;
     }
   }
+}
+
+label_data* get_label(example* ec)
+{
+	return (label_data*)(ec->ld);
 }
 }
 
