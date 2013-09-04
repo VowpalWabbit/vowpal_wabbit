@@ -149,7 +149,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 	  size_t index = (f->weight_index + offset) & all.reg.weight_mask;
 	  
 	  cout << "\tConstant:";
-	  cout << (index/stride & all.parse_mask) << ':' << f->x;
+	  cout << (index/all.reg.stride & all.parse_mask) << ':' << f->x;
 	  cout  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
