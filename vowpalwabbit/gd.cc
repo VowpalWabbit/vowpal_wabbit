@@ -553,19 +553,14 @@ float compute_norm(vw& all, example* &ec)
   if(all.active)
     t = (float)all.sd->weighted_unlabeled_examples;
   else
-    t = ec->example_t;
+    t = ec->example_t - all.sd->weighted_holdout_examples;
 
   ec->eta_round = 0;
-  if (ec->test_only)//if this is a holdout example
-  {
-    ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
-    all.sd->holdout_sum_loss += ec->loss;
-    all.sd->holdout_sum_loss_since_last_dump += ec->loss;
-    all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
-  }
-  else if (ld->label != FLT_MAX)
+
+  ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
+
+  if (ld->label != FLT_MAX && !ec->test_only)
     {
-      ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       if (all.training && ec->loss > 0.)
         {
 	  float eta_t;
@@ -633,7 +628,7 @@ float compute_norm(vw& all, example* &ec)
   label_data* ld = (label_data*)ex->ld;
   float prediction;
 
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0 && (all.holdout_set_off || !ex->test_only)) {
+  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
         prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
