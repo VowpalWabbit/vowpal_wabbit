@@ -31,6 +31,12 @@ license as described in the file LICENSE.
 #include "binary.h"
 #include "autolink.h"
 
+//Anna
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#include "txm.h"
+#include "txm_o.h"
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 using namespace std;
 //
 // Does string end with a certain substring?
@@ -56,9 +62,10 @@ vw* parse_args(int argc, char *argv[])
   po::options_description desc("VW options");
   
   vw* all = new vw();
-
+	//cerr << "foo bar " << endl;
+	//fflush(stderr);
   size_t random_seed = 0;
-  all->program_name = argv[0];
+  all->program_name = argv[0];  
   // Declare the supported options.
   desc.add_options()
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
@@ -143,7 +150,6 @@ vw* parse_args(int argc, char *argv[])
     ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
 	("examples", po::value<size_t>(&(all->max_examples)), "number of examples to parse")
     ("save_per_pass", "Save the model after every pass over data")
-    ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
@@ -158,8 +164,14 @@ vw* parse_args(int argc, char *argv[])
 
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
     ("ngram", po::value< vector<string> >(), "Generate N grams")
-    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
-
+    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.")
+	
+	//Anna
+	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	("txm", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
+	("txm_o", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
+	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	
   //po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
   //p.add("data", -1);
@@ -178,12 +190,6 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(parsed, vm);
   po::notify(vm);
- 
-  if(all->numpasses > 1)
-      all->holdout_set_off = false;
-
-  if(vm.count("holdout_off"))
-      all->holdout_set_off = true;
 
   all->l = GD::setup(*all, vm);
   all->scorer = all->l;
@@ -327,6 +333,12 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("compressed"))
       set_compressed(all->p);
+  
+  if(all->numpasses > 1)
+      all->holdout_set_off = false;
+
+  if(vm.count("holdout_off"))
+      all->holdout_set_off = true;
     
   if (vm.count("data")) {
     all->data_filename = vm["data"].as<string>();
@@ -551,7 +563,8 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("loss_function"))
     loss_function = vm["loss_function"].as<string>();
   else
-    loss_function = "squaredloss";
+	loss_function = "squaredloss";  
+  
   float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
@@ -563,6 +576,12 @@ vw* parse_args(int argc, char *argv[])
   if (all->rank != 0) 
     all->l = GDMF::setup(*all);
 
+  if(vm.count("txm") || vm_file.count("txm")) //Anna
+	loss_function = "absloss"; 
+
+  if(vm.count("txm_o") || vm_file.count("txm_o")) //Anna
+	loss_function = "absloss"; 
+	
   all->loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   if (pow((double)all->eta_decay_rate, (double)all->numpasses) < 0.0001 )
@@ -571,6 +590,7 @@ vw* parse_args(int argc, char *argv[])
 
   if (!all->quiet)
     {
+		cerr << "boo" << endl;
       cerr << "Num weight bits = " << all->num_bits << endl;
       cerr << "learning rate = " << all->eta << endl;
       cerr << "initial_t = " << all->sd->t << endl;
@@ -747,7 +767,36 @@ vw* parse_args(int argc, char *argv[])
     all->searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
     all->l = ImperativeSearn::setup(*all, to_pass_further, vm, vm_file);
   }
-
+  
+  //Anna
+  //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
+  if(vm.count("txm") || vm_file.count("txm") ) 
+  {
+	if (got_mc) 
+	{ 
+		cerr << "error: cannot specify multiple MC learners" << endl; 
+		throw exception(); 
+	}	
+	cout<<"Parse_args.cc: in txm\n";
+	
+	all->l = TXM::setup(*all, to_pass_further, vm, vm_file);
+	got_mc = true;
+  }
+  
+  if(vm.count("txm_o") || vm_file.count("txm_o") ) 
+  {
+	if (got_mc) 
+	{ 
+		cerr << "error: cannot specify multiple MC learners" << endl; 
+		throw exception(); 
+	}	
+	cout<<"Parse_args.cc: in txm_o\n";
+	
+	all->l = TXM_O::setup(*all, to_pass_further, vm, vm_file);
+	got_mc = true;
+  }
+  //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
+  
   if (got_cb && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
     throw exception();

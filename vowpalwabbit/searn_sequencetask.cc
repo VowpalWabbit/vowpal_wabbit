@@ -146,8 +146,7 @@ namespace SequenceTask {
   {
     seq_state* s = (seq_state*)s0;
 
-    // If this position is wrong, set the loss to the weight.
-    s->cum_loss += (oracle(s0) == a) ? 0.0f : ((OAA::mc_label*)s->ec_start[s->pos]->ld)->weight;
+    s->cum_loss += (oracle(s0) == a) ? 0.0f : 1.0f;
 
     if (hinfo.length > 0) {
       size_t old_val = s->predictions[0];

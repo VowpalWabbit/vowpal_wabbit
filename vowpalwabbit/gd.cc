@@ -39,8 +39,6 @@ namespace GD
     bool active_simulation;
     float normalized_sum_norm_x;
     bool feature_mask_off;
-    size_t no_win_counter;
-    size_t early_stop_thres;
 
     vw* all;
   };
@@ -128,94 +126,99 @@ inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
   }
 }
 
+void predict_f(void* d, example* ec)//ANNA
+{
+	gd* g = (gd*)d;
+	vw* all = g->all;
+	
+	predict(*all,*g,ec);
+}
+
 void learn(void* d, example* ec)
 {
-  gd* g = (gd*)d;
-  vw* all = g->all;
+	gd* g = (gd*)d;
+	vw* all = g->all;
 
-  assert(ec->in_use);
-  if (ec->end_pass)
-    { 
-      sync_weights(*all);
-      if(all->span_server != "") {
-	if(all->adaptive)
-	  accumulate_weighted_avg(*all, all->span_server, all->reg);
-	else 
-	  accumulate_avg(*all, all->span_server, all->reg, 0);	      
-      }
-      
-      all->eta *= all->eta_decay_rate;
-      if (all->save_per_pass)
-	save_predictor(*all, all->final_regressor_name, all->current_pass);   
-      
-      all->current_pass++;
-
-      if(!all->holdout_set_off)
-      {
-        if(summarize_holdout_set(*all, g->no_win_counter))
-          finalize_regressor(*all, all->final_regressor_name); 
-        if(g->early_stop_thres == g->no_win_counter)
-          all-> early_terminate = true;
-      }   
-    }
-  
-  if (!command_example(all, ec))
-    { 
-      predict(*all,*g,ec);
-
-      if (all->holdout_set_off || !ec->test_only)
-      {
-      if (ec->eta_round != 0.)
+	assert(ec->in_use);
+	
+	if (ec->end_pass)
 	{ 
-          if(all->power_t == 0.5) { 
-            if (all->adaptive) {
-              if (all->normalized_updates){ 
-                if (g->feature_mask_off) 
-                  generic_train<specialized_update<true, true, true> >
-                    (*all,ec,ec->eta_round,true);
-                else
-                  generic_train<specialized_update<true, true, false> >
-                    (*all,ec,ec->eta_round,true);
-              }
-              else {
-                if (g->feature_mask_off) 
-                  generic_train<specialized_update<true, false, true> >
-                    (*all,ec,ec->eta_round,true);
-                else
-                  generic_train<specialized_update<true, false, false> >
-                    (*all,ec,ec->eta_round,true);
-              }
-            }              
-            else { //for adaptive 
-              if (all->normalized_updates){ 
-                if (g->feature_mask_off) 
-                  generic_train<specialized_update<false, true, true> >
-                    (*all,ec,ec->eta_round,true);
-                else
-                  generic_train<specialized_update<false, true, false> >
-                    (*all,ec,ec->eta_round,true);
-              }
-              else {
-                if (g->feature_mask_off) 
-                  generic_train<specialized_update<false, false, true> >
-                    (*all,ec,ec->eta_round,true);
-                else
-                  generic_train<specialized_update<false, false, false> >
-                    (*all,ec,ec->eta_round,true);
-              }  
-            }
-          }//end of power_t
-          else{
-            if (g->feature_mask_off)
-              generic_train<general_update<true> >(*all,ec,ec->eta_round,false);
-            else
-              generic_train<general_update<false> >(*all,ec,ec->eta_round,false);
-          }  
-	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-	    sync_weights(*all);
+		sync_weights(*all);
+		
+		if(all->span_server != "") 
+		{
+			if(all->adaptive)
+				accumulate_weighted_avg(*all, all->span_server, all->reg);
+			else 
+				accumulate_avg(*all, all->span_server, all->reg, 0);	      
+		}
+
+		all->eta *= all->eta_decay_rate;
+	
+		if (all->save_per_pass)
+			save_predictor(*all, all->final_regressor_name, all->current_pass);   
+
+		all->current_pass++;
 	}
-      }
-    }
+
+	if (!command_example(all, ec))
+	{ 
+		predict(*all,*g,ec);
+
+		if (all->holdout_set_off || !ec->test_only)
+		{
+			if (ec->eta_round != 0.)
+			{ 
+				if(all->power_t == 0.5) 
+				{ 
+					if (all->adaptive) 
+					{
+						if (all->normalized_updates)
+						{ 
+							if (g->feature_mask_off) 
+								generic_train<specialized_update<true, true, true> >(*all,ec,ec->eta_round,true);
+							else
+								generic_train<specialized_update<true, true, false> >(*all,ec,ec->eta_round,true);
+						}
+						else 
+						{
+							if (g->feature_mask_off) 
+								generic_train<specialized_update<true, false, true> >(*all,ec,ec->eta_round,true);
+							else
+								generic_train<specialized_update<true, false, false> >(*all,ec,ec->eta_round,true);
+						}
+					}              
+					else 
+					{ //for adaptive 
+						if (all->normalized_updates)
+						{ 
+							if (g->feature_mask_off) 
+								generic_train<specialized_update<false, true, true> >(*all,ec,ec->eta_round,true);
+							else
+								generic_train<specialized_update<false, true, false> >(*all,ec,ec->eta_round,true);
+						}
+						else
+						{
+							if (g->feature_mask_off) 
+								generic_train<specialized_update<false, false, true> >(*all,ec,ec->eta_round,true);
+							else
+								generic_train<specialized_update<false, false, false> >(*all,ec,ec->eta_round,true);
+						}  
+					}
+				}//end of power_t
+				else
+				{
+					if (g->feature_mask_off)
+						generic_train<general_update<true> >(*all,ec,ec->eta_round,false);
+					else
+						generic_train<general_update<false> >(*all,ec,ec->eta_round,false);
+				}  
+				
+				if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+					sync_weights(*all);
+			}
+		}
+	}
 }
   void finish(void* d)
 {
@@ -281,20 +284,18 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   if (a != NULL && all.audit){
     tempstream << tmp << ':';
   }
-  else 	if ( index == (((constant * stride + offset)&all.reg.weight_mask)) && all.audit){
+  else 	if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) && all.audit){
     tempstream << "Constant:";
-  }  
+  }
   if(all.audit){
     tempstream << (index/stride & all.parse_mask) << ':' << f->x;
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
   if(all.current_pass == 0 && all.inv_hash_regressor_name != ""){ //for invert_hash
-    if ( index == ((constant * stride + offset )& all.reg.weight_mask))
+    if ( index == ((constant * stride * all.weights_per_problem)&all.reg.weight_mask) )
       tmp = "Constant";
-
-    ostringstream convert;
-    convert << (index/stride & all.parse_mask);
-    tmp = ns_pre + tmp + ":"+ convert.str();
+    else
+      tmp = ns_pre + tmp;
     
     if(!all.name_index_map.count(tmp)){
       all.name_index_map.insert(std::map< std::string, size_t>::value_type(tmp, (index/stride & all.parse_mask)));
@@ -553,14 +554,18 @@ float compute_norm(vw& all, example* &ec)
   if(all.active)
     t = (float)all.sd->weighted_unlabeled_examples;
   else
-    t = ec->example_t - all.sd->weighted_holdout_examples;
+    t = ec->example_t;
 
   ec->eta_round = 0;
-
-  ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
-
-  if (ld->label != FLT_MAX && !ec->test_only)
+  if (!all.holdout_set_off && ec->test_only)//if this is a test example
+  {
+    ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
+    all.sd->holdout_sum_loss += ec->loss;
+    all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+  }
+  else if (ld->label != FLT_MAX)
     {
+      ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
       if (all.training && ec->loss > 0.)
         {
 	  float eta_t;
@@ -623,36 +628,40 @@ float compute_norm(vw& all, example* &ec)
     print_audit_features(all, ec);
 }
 
-  void predict(vw& all, gd& g, example* ex)
+void predict(vw& all, gd& g, example* ex)
 {
-  label_data* ld = (label_data*)ex->ld;
-  float prediction;
+	label_data* ld = (label_data*)ex->ld;
+	float prediction;
 
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
-    if( all.power_t == 0.5 ) {
-      if (all.reg_mode % 2)
-        prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
-      else
-        prediction = inline_predict<vec_add_rescale>(all, ex);
-    }
-    else {
-      if (all.reg_mode % 2)
-        prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
-      else
-        prediction = inline_predict<vec_add_rescale_general>(all, ex);
-    }
-  }
-  else {
-    if (all.reg_mode % 2)
-      prediction = inline_predict<vec_add_trunc>(all, ex);
-    else
-      prediction = inline_predict<vec_add>(all, ex);
-  }
+	if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0 && (all.holdout_set_off || !ex->test_only)) 
+	{
+		if( all.power_t == 0.5 ) 
+		{
+			if (all.reg_mode % 2)
+				prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
+			else
+				prediction = inline_predict<vec_add_rescale>(all, ex);
+		}
+		else 
+		{
+			if (all.reg_mode % 2)
+				prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
+			else
+				prediction = inline_predict<vec_add_rescale_general>(all, ex);
+		}
+	}
+	else 
+	{
+		if (all.reg_mode % 2)
+			prediction = inline_predict<vec_add_trunc>(all, ex);
+		else
+			prediction = inline_predict<vec_add>(all, ex);
+	}
 
-  ex->partial_prediction = prediction;
+	ex->partial_prediction = prediction;
 
-  local_predict(all, g, ex);
-  ex->done = true;
+	local_predict(all, g, ex);
+	ex->done = true;
 }
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
@@ -744,26 +753,6 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 
   text_len = sprintf(buff, "sum_loss %f\n", all.sd->sum_loss);
   bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss, sizeof(all.sd->sum_loss), 
-			    "", read, 
-			    buff, text_len, text);
-
-  text_len = sprintf(buff, "sum_loss_since_last_dump %f\n", all.sd->sum_loss_since_last_dump);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump), 
-			    "", read, 
-			    buff, text_len, text);
-
-  text_len = sprintf(buff, "dump_interval %f\n", all.sd->dump_interval);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval), 
-			    "", read, 
-			    buff, text_len, text);
-
-  text_len = sprintf(buff, "min_label %f\n", all.sd->min_label);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->min_label, sizeof(all.sd->min_label), 
-			    "", read, 
-			    buff, text_len, text);
-
-  text_len = sprintf(buff, "max_label %f\n", all.sd->max_label);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->max_label, sizeof(all.sd->max_label), 
 			    "", read, 
 			    buff, text_len, text);
 
@@ -888,15 +877,7 @@ void driver(vw* all, void* data)
   
   while ( true )
     {
-     if(all-> early_terminate)
-        {
-          all->p->done = true;
-          all->final_regressor_name = "";//skip finalize_regressor
-          all->text_regressor_name = "";
-          all->inv_hash_regressor_name = "";
-          return;
-        }
-     else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
+      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	{
 	  learn(data, ec);
 	  return_simple_example(*all, ec);
@@ -915,21 +896,12 @@ learner setup(vw& all, po::variables_map& vm)
   g->active = all.active;
   g->active_simulation = all.active_simulation;
   g->normalized_sum_norm_x = all.normalized_sum_norm_x;
-  g->no_win_counter = 0;
-  g->early_stop_thres = 3;
 
   if(vm.count("feature_mask"))
     g->feature_mask_off = false;
   else
     g->feature_mask_off = true;
 
-  if(!all.holdout_set_off)
-  {
-    all.sd->holdout_best_loss = FLT_MAX;
-    if(vm.count("early_terminate"))      
-      g->early_stop_thres = vm["early_terminate"].as< size_t>();     
-  }
-    
   sl_t sl = {g,save_load};
   learner ret(g,driver,learn,finish,sl);
 

@@ -64,12 +64,158 @@ template<class T> class v_array{
       free(begin);
     begin = end = end_array = NULL;
   }
+  
   void push_back(const T &new_ele)
   {
     if(end == end_array)
       resize(2 * (end_array-begin) + 3);
     *(end++) = new_ele;
-  }
+  }	
+  
+	void push_back_sorted(const T &new_ele)//ANNA
+	{
+		size_t i = 0;
+		size_t size = end - begin;
+		T tmp1, tmp2;
+		
+		if(end == end_array)
+			resize(2 * (end_array-begin) + 3);
+			
+		while(i < size && begin[i] < new_ele)
+			i++;
+		
+		tmp1 = begin[i];
+		begin[i] = new_ele;
+		i++;
+		size++;
+		
+		while(i < size)
+		{
+			tmp2 = begin[i];
+			begin[i] = tmp1;
+			tmp1 = tmp2;
+			i++;
+		}
+		
+		end++;
+	}	
+	
+	T remove_sorted(size_t index)//ANNA
+	{
+		T tmp;
+		size_t size = end - begin - 1;	
+		
+		tmp = begin[index];
+		
+		while(index < size)
+		{
+			begin[index] = begin[index + 1];
+			index++;
+		}
+		
+		end--;
+		return tmp;
+	}
+	
+	bool contain_sorted(const T &ele)//ANNA
+	{
+		size_t size = end - begin;
+		size_t a = 0;
+		size_t b = size - 1;
+		size_t i = (a + b) / 2;
+		
+		if(size < 1)
+			return false;
+		
+		while(a <= b)
+		{
+			if(begin[i] == ele)
+				return true;
+			else if(begin[i] < ele)	
+				a = i + 1;
+			else
+			{
+				if(i == 0)
+					return false;
+					
+				b = i - 1;
+			}
+			
+			i = (a + b) / 2;		
+		}
+		
+		return false;
+	}
+	
+	bool contain_sorted(const T &ele, size_t *index)//ANNA
+	{
+		size_t size = end - begin;
+		size_t a = 0;
+		size_t b = size - 1;
+		size_t i = (a + b) / 2;
+		
+		if(size < 1)
+			return false;
+		
+		while(a <= b)
+		{
+			if(begin[i] == ele)
+			{	
+				*index = i;
+				return true;
+			}
+			else if(begin[i] < ele)	
+				a = i + 1;
+			else
+			{
+				if(i == 0)
+					return false;
+					
+				b = i - 1;
+			}
+			
+			i = (a + b) / 2;		
+		}
+		
+		return false;
+	}
+  
+	bool contain(const T &ele)//ANNA
+	{
+		size_t i = 0;
+		size_t size = end - begin;		
+		
+		if(size < 1)
+			return false;
+		
+		for(i = 0; i < size; i++)
+		{
+			if(begin[i] == ele)
+				return true;
+		}
+		
+		return false;
+	}
+  
+	bool contain(const T &ele, size_t *index)//ANNA
+	{
+		size_t i = 0;
+		size_t size = end - begin;
+		
+		if(size < 1)
+			return false;
+		
+		for(i = 0; i < size; i++)
+		{
+			if(begin[i] == ele)
+			{
+				*index = i;
+				return true;
+			}
+		}
+		
+		return false;
+	}
 };
 
 

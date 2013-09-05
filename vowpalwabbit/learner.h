@@ -19,6 +19,7 @@ private:
   void (*driver)(vw* all, void* data);
   void (*learn_f)(void* data, example*);
   void (*finisher)(void* data);
+  
 
 public:
   sl_t sl;
@@ -35,7 +36,8 @@ public:
     learn_f = l;
     finisher = f;
     sl = s;
-  }
+  } 
+  
   learner() {}
 };
 #endif

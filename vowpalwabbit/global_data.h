@@ -205,7 +205,6 @@ struct vw {
   bool nonormalize;
   bool do_reset_source;
   bool holdout_set_off;
-  bool early_terminate;
   uint32_t holdout_period;
 
   float normalized_sum_norm_x;

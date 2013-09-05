@@ -17,6 +17,8 @@ license as described in the file LICENSE.
 #include "sparse_dense.h"
 
 namespace GD{
+
+
 void print_result(int f, float res, v_array<char> tag);
 void print_audit_features(regressor &reg, example* ec, size_t offset);
 float finalize_prediction(vw&, float ret);
