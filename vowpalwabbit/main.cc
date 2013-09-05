@@ -77,8 +77,12 @@ int main(int argc, char *argv[])
     {
       cerr.precision(6);
       cerr << endl << "finished run";
-      cerr << endl << "number of examples per pass = " << all->sd->example_number / all->current_pass;
-      cerr << endl << "passes used = " << all->current_pass;
+      if(all->current_pass == 0)
+        cerr << endl << "number of examples = " << all->sd->example_number;
+      else{
+        cerr << endl << "number of examples per pass = " << all->sd->example_number / all->current_pass;
+        cerr << endl << "passes used = " << all->current_pass;
+      }
       cerr << endl << "weighted example sum = " << all->sd->weighted_examples;
       cerr << endl << "weighted label sum = " << all->sd->weighted_labels;
       cerr << endl << "average loss = " << all->sd->sum_loss / all->sd->weighted_examples;

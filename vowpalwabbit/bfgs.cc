@@ -935,7 +935,6 @@ void drive(vw* all, void* d)
      if(all-> early_terminate)
         {
           all->p->done = true;
-          all->current_pass = b->current_pass;
           return;
         }
       else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
@@ -944,10 +943,7 @@ void drive(vw* all, void* d)
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
-       {
-	  all->current_pass = b->current_pass;
           return;
-        }
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
