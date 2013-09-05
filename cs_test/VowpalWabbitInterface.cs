@@ -9,7 +9,7 @@ namespace Microsoft.Research.MachineLearning
     public sealed class VowpalWabbitInterface
     {
         [StructLayout(LayoutKind.Sequential)]
-        internal struct FEATURE_SPACE
+        public struct FEATURE_SPACE
         {
             public byte name;
             public IntPtr features;     // points to a FEATURE[]
@@ -21,6 +21,51 @@ namespace Microsoft.Research.MachineLearning
         {
             public float x;
             public uint weight_index;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LABEL
+        {
+            public float label;
+            public float weight;
+            public float initial;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct FLAT_RAW_EXAMPLE
+        {
+            public IntPtr ld;
+            public float final_prediction;  
+
+            //byte[] tag;//An identifier for the example.
+            public int tag_len;
+            public IntPtr tag;//An identifier for the example. 
+
+            public UInt64 example_counter;
+            public UInt32 ft_offset;
+            public float global_weight;
+
+            public UInt64 num_features;//precomputed, cause it's fast&easy.  
+
+            //FEATURE[] feature_map; //map to store sparse feature vectors  
+            public int feature_map_len;
+            public IntPtr feature_map; //map to store sparse feature vectors  
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct FLAT_EXAMPLE
+        {
+            public LABEL ld;
+            public float final_prediction;
+
+            public byte[] tag;//An identifier for the example. 
+
+            public UInt64 example_counter;
+            public UInt32 ft_offset;
+            public float global_weight;
+
+            public UInt64 num_features;//precomputed, cause it's fast&easy.  
+            public FEATURE[] feature_map; //map to store sparse feature vectors  
         }
 
         [DllImport("libvw.dll", EntryPoint = "VW_Initialize", CallingConvention = CallingConvention.StdCall)]
@@ -51,6 +96,9 @@ namespace Microsoft.Research.MachineLearning
         [DllImport("libvw.dll", EntryPoint = "VW_GetExample", CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr GetExample(IntPtr parser);
 
+        [DllImport("libvw.dll", EntryPoint = "VW_GetLabel", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr GetLabel(IntPtr vw, IntPtr example);
+
         [DllImport("libvw.dll", EntryPoint = "VW_FinishExample", CallingConvention = CallingConvention.StdCall)]
         public static extern void FinishExample(IntPtr vw, IntPtr example);
         
@@ -71,5 +119,15 @@ namespace Microsoft.Research.MachineLearning
 
         [DllImport("libvw.dll", EntryPoint = "VW_Num_Weights", CallingConvention = CallingConvention.StdCall)]
         public static extern UInt32 Num_Weights(IntPtr vw);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_Get_Stride", CallingConvention = CallingConvention.StdCall)]
+        public static extern UInt32 Get_Stride(IntPtr vw);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_FlattenExample", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr Flatten_Example(IntPtr vw, IntPtr example);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_FreeFlattenExample", CallingConvention = CallingConvention.StdCall)]
+        public static extern IntPtr FreeFlattenExample(IntPtr fec);
+    
     }
 }

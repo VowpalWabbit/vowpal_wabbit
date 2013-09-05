@@ -7,6 +7,84 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "v_array.h"
 #include "example.h"
+#include "simple_label.h"  
+#include "gd.h"  
+#include "global_data.h"  
+  
+void vec_store(vw& all, void* p, float fx, uint32_t fi) {  
+  feature f = {fx, fi};
+  (*(v_array<feature>*) p).push_back(f);  
+}  
+  
+int compare_feature(const void* p1, const void* p2) {  
+  feature* f1 = (feature*) p1;  
+  feature* f2 = (feature*) p2;  
+  return (f1->weight_index - f2->weight_index);  
+}  
+  
+float collision_cleanup(v_array<feature>& feature_map) {  
+    
+ int pos = 0;  
+ float sum_sq = 0.;  
+  
+ for(uint32_t i = 1;i < feature_map.size();i++) {  
+    if(feature_map[i].weight_index == feature_map[pos].weight_index)   
+      feature_map[pos].x += feature_map[i].x;  
+    else {  
+      sum_sq += feature_map[pos].x*feature_map[pos].x;  
+      feature_map[++pos] = feature_map[i];            
+    }  
+  }  
+  sum_sq += feature_map[pos].x*feature_map[pos].x;  
+  feature_map.end = &(feature_map[pos]);    
+  feature_map.end++;  
+  return sum_sq;  
+}  
+
+namespace VW {
+
+flat_example* flatten_example(vw& all, example *ec) 
+{  
+    if (command_example(&all, ec))
+	{
+		return 0;
+	}
+
+	flat_example* fec = (flat_example*) calloc(1,sizeof(flat_example));  
+	fec->ld = ec->ld;
+	fec->final_prediction = ec->final_prediction;  
+
+	fec->tag_len = ec->tag.size();
+	if (fec->tag_len >0)
+	{
+		fec->tag = ec->tag.begin;
+	}
+
+	fec->example_counter = ec->example_counter;  
+	fec->ft_offset = ec->ft_offset;  
+	fec->global_weight = ec->global_weight;  
+	fec->num_features = ec->num_features;  
+    
+	v_array<feature> feature_map; //map to store sparse feature vectors  
+	GD::foreach_feature<vec_store>(all, ec, &feature_map); 
+	qsort(feature_map.begin, feature_map.size(), sizeof(feature), compare_feature);  
+    
+	fec->feature_map_len = feature_map.size();
+	if (fec->feature_map_len > 0)
+	{
+		fec->feature_map = feature_map.begin;
+	}
+
+	return fec;  
+}
+
+void free_flatten_example(flat_example* fec) 
+{  
+	if (fec)
+		free(fec);
+}
+
+}
 
 example *alloc_example(size_t label_size)
 {

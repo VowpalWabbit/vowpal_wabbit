@@ -58,6 +58,29 @@ struct example // core example datatype.
   bool done; //set to false by setup_example()
 };
 
+ struct vw;  
+ 
+namespace VW {
+struct flat_example 
+{
+	void* ld;  
+	simple_prediction final_prediction;  
+
+	int tag_len;
+	char* tag;//An identifier for the example.  
+
+	size_t example_counter;  
+	uint32_t ft_offset;  
+	float global_weight;
+
+	size_t num_features;//precomputed, cause it's fast&easy.  
+	int feature_map_len;
+	feature* feature_map; //map to store sparse feature vectors  
+};
+flat_example* flatten_example(vw& all, example *ec);
+void free_flatten_example(flat_example* fec);
+}
+
 example *alloc_example(size_t);
 void dealloc_example(void(*delete_label)(void*), example&);
 
