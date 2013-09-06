@@ -225,7 +225,7 @@ sub next_test() {
         die "$0: test $TestNo: command is undefined\n";
     }
     unless (defined $out_ref) {
-        die "$0: test $TestNo: stdout ref: undefined\n";
+        warn "$0: test $TestNo: stdout ref: undefined (assuming empty)\n";
     }
     unless (defined $err_ref) {
         die "$0: test $TestNo: stderr ref: undefined\n";
@@ -325,6 +325,7 @@ sub touch(@) {
 sub diff($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
+    $reffile = '' unless (defined $reffile);
 
     # Special case, empty file w/o reference is not considered a failure.
     # This is a most common case with stdout.
@@ -697,6 +698,6 @@ __DATA__
 # Output should make sense, in particular, shouldn't have 'total queries = 0'
 # (regression introduced May 13, 2013)
 {VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
-    train-sets/ref/active-simulation.t24.stdout
     train-sets/ref/active-simulation.t24.stderr
+#    train-sets/ref/active-simulation.t24.stdout
 
