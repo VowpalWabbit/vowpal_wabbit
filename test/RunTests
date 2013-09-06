@@ -692,3 +692,11 @@ __DATA__
 {VW} -i movielens.reg -t -d test-sets/ml100k_small_test
     test-sets/ref/ml100k_small.stdout
     test-sets/ref/ml100k_small.stderr
+
+# Test 24: active-learning -- training
+# Output should make sense, in particular, shouldn't have 'total queries = 0'
+# (regression introduced May 13, 2013)
+{VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
+    train-sets/ref/active-simulation.t24.stdout
+    train-sets/ref/active-simulation.t24.stderr
+
