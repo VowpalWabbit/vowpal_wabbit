@@ -699,5 +699,4 @@ __DATA__
 # (regression introduced May 13, 2013)
 {VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
     train-sets/ref/active-simulation.t24.stderr
-#    train-sets/ref/active-simulation.t24.stdout
 
