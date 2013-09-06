@@ -1,0 +1,32 @@
+Num weight bits = 18
+learning rate = 10
+initial_t = 10
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+1.000000   1.000000            1       490.2   1.0000   0.0000       50
+1.005870   1.244963            2       502.2  -1.0000   0.1158      103
+1.007812   1.170191            3       508.2  -1.0000   0.0818       56
+1.005833   0.000000            4       509.2  unknown  -0.0461      134
+1.003861   0.000000            5       510.2  unknown  -0.0659      130
+1.003885   1.016081            6       511.2   1.0000  -0.0080       30
+1.003828   0.974701            7       512.2  -1.0000  -0.0127       81
+1.001872   0.000000            8       513.2  unknown  -0.0531      145
+0.876856   0.540072          141       703.7  -1.0000  -0.1940       82
+1.537614   2.211105          540      1394.2  -1.0000   0.1056       34
+1.812987   2.088670         1375      2786.7  -1.0000  -0.2197       18
+2.035646   2.258803         2789      5567.3  unknown  -0.6172       90
+2.585722   3.128890         5912     11205.3   1.0000   0.7074       33
+
+finished run
+number of examples = 10000
+weighted example sum = 18464.4
+weighted label sum = -1232.65
+average loss = 2.406
+best constant = -0.131394
+total feature number = 779394
+total queries = 1003
+
