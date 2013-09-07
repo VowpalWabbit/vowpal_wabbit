@@ -663,9 +663,6 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("autolink") || vm_file.count("autolinnk") ) 
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
-
-  if(vm.count("bs") || vm_file.count("bs") ) 
-    all->l = BS::setup(*all, to_pass_further, vm, vm_file);
   
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
@@ -757,6 +754,9 @@ vw* parse_args(int argc, char *argv[])
     cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
     throw exception();
   }
+
+  if(vm.count("bs") || vm_file.count("bs") ) 
+    all->l = BS::setup(*all, to_pass_further, vm, vm_file);
 
   if (to_pass_further.size() > 0) {
     bool is_actually_okay = false;

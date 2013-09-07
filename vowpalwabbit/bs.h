@@ -6,6 +6,9 @@ license as described in the file LICENSE.
 #ifndef BS_H
 #define BS_H
 
+#define BS_TYPE_MEAN 0
+#define BS_TYPE_VOTE 1
+
 #include "io_buf.h"
 #include "parse_primitives.h"
 #include "global_data.h"
