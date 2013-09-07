@@ -13,8 +13,10 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 #include "v_hashmap.h"
 
-#define TXM_PRED_LIM	1
-#define TXM_PRED_ALFA   1
+#define TXM_PRED_LIM	1.f
+#define TXM_PRED_ALFA   1.f
+#define TXM_LEAF_TH		0.95
+#define TXM_LEVEL_LIM	5
 
 //#define TXM_DEBUG
 //#define TXM_DEBUG_PASS_STOP

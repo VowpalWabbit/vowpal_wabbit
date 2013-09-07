@@ -2,7 +2,7 @@
 
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
-license as described in the file LICENSE.
+license as described in the file LICENSE.node
  */
 #include <float.h>
 #include <math.h>
@@ -28,6 +28,7 @@ namespace TXM
 		uint32_t 	nk;
 		uint32_t	label;
 		uint32_t	label_cnt;
+		uint32_t	label_cnt2;
 		
 		void operator=(txm_node_pred_type v)
 		{
@@ -35,6 +36,7 @@ namespace TXM
 			nk = v.nk;
 			label = v.label;
 			label_cnt = v.label_cnt;
+			label_cnt2 = v.label_cnt2;
 		}
 		
 		bool operator==(txm_node_pred_type v){
@@ -56,7 +58,8 @@ namespace TXM
 			label = l;
 			Ehk = 0.f;
 			nk = 0;
-			label_cnt = 1;
+			label_cnt = 0;
+			label_cnt2 = 0;
 		}
 		
 		txm_node_pred_type()
@@ -65,6 +68,7 @@ namespace TXM
 			Ehk = 0.f;
 			nk = 0;
 			label_cnt = 0;
+			label_cnt2 = 0;
 		}
 	};
 	
@@ -75,10 +79,16 @@ namespace TXM
 		size_t id_right;
 		size_t id_parent;
 		size_t level;
+		uint32_t wrong;
+		uint32_t correct;
+		bool leaf;
+		bool removed;
+		size_t max_cnt2;
+		size_t max_cnt2_label;
+		size_t total_cnt2;
 		
-		v_array<uint32_t> label_list_assigned;		//list of labels assigned to the node
-		v_array<txm_node_pred_type> node_pred;		
-		
+		v_array<txm_node_pred_type> node_pred;	
+
 		float Eh;
 		uint32_t n;		
 	} txm_node_type;
@@ -97,12 +107,14 @@ namespace TXM
 		size_t ex_num;					//index of current example
 		size_t ex_total;
 		
-		size_t current_pass;			//index of current pass through the data
+		size_t current_pass;			//index of current pass through the data	
+		size_t level_limit;
 		
 		bool only_leafs;
 		bool tree_finished;
 		
-		float training_error;
+		uint32_t total_wrg;
+		uint32_t total_cor;
 	};	
 
 	txm_node_type init_node(size_t id, size_t id_parent, size_t level)
@@ -116,6 +128,13 @@ namespace TXM
 		node.Eh = 0;
 		node.n = 0;
 		node.level = level;
+		node.leaf = false;
+		node.removed = false;
+		node.max_cnt2 = 0;
+		node.max_cnt2_label = 0;
+		node.total_cnt2 = 0;
+		node.wrong = 0;
+		node.correct = 0;
 		
 		return node;
 	}
@@ -143,21 +162,71 @@ namespace TXM
 				level++;
 			}
 			
-			cout << "(";
+			if(d->nodes[j].removed)
+				continue;
 			
-			for(i = 0; i < d->nodes[j].label_list_assigned.size(); i++)
+			cout << j << ":";
+			
+			if(d->nodes[j].leaf)
+				cout << "[";
+			else
+				cout << "(";
+			
+			for(i = 0; i < d->nodes[j].node_pred.size(); i++)
 			{
-				cout << d->nodes[j].label_list_assigned[i];
+				cout << d->nodes[j].node_pred[i].label;
 				
-				if(i < d->nodes[j].label_list_assigned.size() - 1)
+				if(i < d->nodes[j].node_pred.size() - 1)
 					cout << ",";
 			}
 			
-			cout << ") ";			
+			if(d->nodes[j].leaf)
+				cout << "] ";
+			else
+				cout << ") ";			
 		}
 		
 		cout << endl;	
 		cout << endl;		
+	}
+	
+	void display_node_stats(txm* b)
+	{
+		uint32_t i, j;
+		
+		cout << endl;
+				
+		for(i = 0; i < b->nodes.size(); i++)
+		{
+			//if(b->nodes[i].level == b->current_pass)
+			{					
+				if(b->nodes[i].removed)
+					continue;
+				
+				cout << "Node:Level: " << i << ":" << b->nodes[i].level << endl;
+				cout << "labels: ";
+				
+				for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+				{
+					printf("[%3d:%6d] ", b->nodes[i].node_pred[j].label, b->nodes[i].node_pred[j].label_cnt);//cout << b->nodes[i].node_pred[j].label << ":" << b->nodes[i].node_pred[j].label_cnt << "\t";
+				}						
+				cout << endl;
+				
+				cout << "labels: ";
+				
+				for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+				{
+					printf("[%3d:%6d] ", b->nodes[i].node_pred[j].label, b->nodes[i].node_pred[j].label_cnt2);//cout << b->nodes[i].node_pred[j].label << ":" << b->nodes[i].node_pred[j].label_cnt2 << "\t";
+				}
+				cout << endl;
+				
+				printf("max(label:cnt:total): %3d:%6d:%7d",  b->nodes[i].max_cnt2_label, b->nodes[i].max_cnt2, b->nodes[i].total_cnt2);
+				//cout << "max:\t" << b->nodes[i].max_cnt2_label << ":" << b->nodes[i].max_cnt2 << "\ttotal:\t" << b->nodes[i].total_cnt2;
+				
+				cout << endl;
+				cout << endl;
+			}
+		}
 	}
 
 	void predict(txm* d, example* ec)
@@ -166,13 +235,16 @@ namespace TXM
 		vw* all = d->all;
 		static int wrong = 0;
 		static int correct = 0;	
+		size_t new_cn;
+		static uint32_t err_cnt = 0;
+		//float Eh_norm;
 		
 		#ifdef TXM_DEBUG_PRED
 		int level = 0;
 		#endif
 		
 		if(command_example(all,ec))
-		{
+		{	
 			return;
 		}
 		
@@ -182,7 +254,7 @@ namespace TXM
 		cout << "\nExample: " << d->ex_num << endl;
 		#endif
 		
-		while(d->nodes[d->cn].label_list_assigned.size() > 1)
+		while(!d->nodes[d->cn].leaf && d->nodes[d->cn].level < d->level_limit)
 		{
 			ec->test_only = true;
 			d->base.learn(ec);
@@ -194,19 +266,33 @@ namespace TXM
 			
 			update_example_indicies(all->audit, ec, -d->increment * d->cn);
 			
+			//Eh_norm = d->nodes[d->cn].Eh;
+			//Eh_norm /= d->nodes[d->cn].n;
+			
 			if(ec->final_prediction < 0)
 			{
-				d->cn = d->nodes[d->cn].id_left;
+				new_cn = d->nodes[d->cn].id_left;
 			}
 			else
 			{
-				d->cn = d->nodes[d->cn].id_right;
+				new_cn = d->nodes[d->cn].id_right;
 			}
 			
-			update_example_indicies(all->audit, ec, d->increment * d->cn);
+			if(d->nodes[d->cn].node_pred.contain_sorted(mc->label))
+			{
+				if(d->nodes[new_cn].node_pred.contain_sorted(mc->label))
+					d->nodes[d->cn].correct++;
+				else
+					d->nodes[d->cn].wrong++;
+			}			
 			
-			if(d->cn == 0)
-				break;
+			if(new_cn != 0)
+				d->cn = new_cn;
+			
+			update_example_indicies(all->audit, ec, d->increment * d->cn);	
+
+			if(new_cn == 0)
+				break;		
 		}
 		
 		#ifdef TXM_DEBUG_PRED
@@ -216,103 +302,39 @@ namespace TXM
 		update_example_indicies(all->audit, ec, -d->increment * d->cn);
 		
 		#ifdef TXM_DEBUG_PRED
-		cout << "Nb of labels in leaf: " << d->nodes[d->cn].label_list_assigned.size() << endl;
+		cout << "Nb of labels in leaf: " << d->nodes[d->cn].node_pred.size() << endl;
 		#endif
 		
-		if(d->nodes[d->cn].label_list_assigned.size() == 1 && d->cn > 0)
-			ec->final_prediction = d->nodes[d->cn].label_list_assigned[0];		//necessary for the external evaluator to compute the average loss
-		else
+		ec->final_prediction = d->nodes[d->cn].max_cnt2_label;		//necessary for the external evaluator to compute the average loss
+		
+		/*if(d->cn == 0)
+		{
 			ec->final_prediction = -1;
+			cout << "Prediction error: " << err_cnt++ << endl;
+ 		}*/
+		
+		#ifdef TXM_DEBUG_PRED
+		cout << "labels O:P:\t" << mc->label << ":" << ec->final_prediction << endl;
+		#endif
 		
 		if(mc->label != ec->final_prediction)
+		{
 			wrong++;
+		}
 		else
 			correct++;
 			
-		d->training_error = (float)wrong;
+		d->total_wrg = wrong;
+		d->total_cor = correct;
 		
 		d->ex_num++;
-	}
-	
-	void predict_expected(txm* d, example* ec)
-	{
-		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
-		vw* all = d->all;
-		static int wrong = 0;
-		static int correct = 0;	
-		size_t index = 0;
-		float left_or_right;
-		uint32_t oryginal_label;
-		
-		oryginal_label = mc->label; 
-		
-		#ifdef TXM_DEBUG_PRED
-		int level = 0;
-		#endif
-		
-		if(command_example(all,ec))
-		{
-			return;
-		}
-		
-		d->cn = 0;
-		
-		#ifdef TXM_DEBUG_PRED
-		cout << "\nExample: " << d->ex_num << endl;
-		#endif
-		
-		while(d->nodes[d->cn].label_list_assigned.size() > 1)
-		{
-			#ifdef TXM_DEBUG_PRED
-			cout << "level: " << level++ << endl;
-			cout << "node: " << d->cn << endl;
-			#endif
-			
-			d->nodes[d->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index);
-			left_or_right = d->nodes[d->cn].node_pred[index].Ehk / d->nodes[d->cn].node_pred[index].nk - d->nodes[d->cn].Eh / d->nodes[d->cn].n;
-			
-			if(left_or_right < 0)
-			{
-				d->cn = d->nodes[d->cn].id_left;
-			}
-			else
-			{
-				d->cn = d->nodes[d->cn].id_right;
-			}
-			
-			if(d->cn == 0)
-				break;
-		}
-		
-		#ifdef TXM_DEBUG_PRED
-		cout << "Prediction finished...\n";
-		#endif
-		
-		update_example_indicies(all->audit, ec, -d->increment * d->cn);
-		
-		#ifdef TXM_DEBUG_PRED
-		cout << "Nb of labels in leaf: " << d->nodes[d->cn].label_list_assigned.size() << endl;
-		#endif
-		
-		if(d->nodes[d->cn].label_list_assigned.size() == 1 && d->cn > 0)
-			ec->final_prediction = d->nodes[d->cn].label_list_assigned[0];		//necessary for the external evaluator to compute the average loss
-		else
-			ec->final_prediction = -1;
-		
-		if(mc->label != ec->final_prediction)
-			wrong++;
-		else
-			correct++;
-			
-		d->training_error = (float)wrong;
-		
-		d->ex_num++;
-	}
+	}	
 	
 	uint32_t predict_node(txm* d, example* ec, size_t level_limit)
 	{
 		vw* all = d->all;
 		size_t level = 0;
+		//float Eh_norm;
 		
 		if(command_example(all,ec))
 		{
@@ -321,7 +343,7 @@ namespace TXM
 		
 		d->cn = 0;
 		
-		while(d->nodes[d->cn].label_list_assigned.size() > 1 && level < level_limit)
+		while(!d->nodes[d->cn].leaf && level < level_limit)
 		{
 			ec->test_only = true;
 			d->base.learn(ec);
@@ -332,6 +354,9 @@ namespace TXM
 			#endif
 			
 			update_example_indicies(all->audit, ec, -d->increment * d->cn);
+			
+			//Eh_norm = d->nodes[d->cn].Eh;
+			//Eh_norm /= d->nodes[d->cn].n;
 			
 			if(ec->final_prediction < 0)
 			{
@@ -347,57 +372,14 @@ namespace TXM
 			level++;
 			
 			if(d->cn == 0)
+			{
+				//cout << "Node prediction error!!\n";
 				break;
+			}
 		}		
 		
 		update_example_indicies(all->audit, ec, -d->increment * d->cn);
-		
-		return d->cn;
-	}
-	
-	uint32_t predict_node_expected(txm* d, example* ec, size_t level_limit)
-	{
-		vw* all = d->all;
-		size_t level = 0;
-		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
-		size_t index = 0;
-		float left_or_right;
-		uint32_t oryginal_label;
-		
-		oryginal_label = mc->label; 
-		
-		if(command_example(all,ec))
-		{
-			return 0;
-		}
-		
-		d->cn = 0;
-		
-		while(d->nodes[d->cn].label_list_assigned.size() > 1 && level < level_limit)
-		{
-			#ifdef TXM_DEBUG_PRED
-			cout << "level: " << level << endl;
-			cout << "node: " << d->cn << endl;
-			#endif
 			
-			d->nodes[d->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index);
-			left_or_right = d->nodes[d->cn].node_pred[index].Ehk / d->nodes[d->cn].node_pred[index].nk - d->nodes[d->cn].Eh / d->nodes[d->cn].n;
-			
-			if(left_or_right < 0)
-			{
-				d->cn = d->nodes[d->cn].id_left;
-			}
-			else
-			{
-				d->cn = d->nodes[d->cn].id_right;
-			}
-			
-			level++;
-			
-			if(d->cn == 0)
-				break;
-		}		
-		
 		return d->cn;
 	}
 	
@@ -412,8 +394,10 @@ namespace TXM
 		size_t index = 0;		
 		size_t id_left;
 		size_t id_right;
+		size_t id_parent;
 		size_t id_left_right;
-		size_t id_other;
+		float ftmp;
+		int i;
 		
 		#ifdef TXM_DEBUG
 		unsigned char* i;
@@ -445,8 +429,21 @@ namespace TXM
 					b->only_leafs = true;
 				}
 				
-				display_tree(b);
+				display_tree(b);	
+
+				/*cout << "Root Weights: \n";
+
+				for(size_t i = 0; i < 1000000; i++)
+				{
+					if(all->reg.weight_vector[i] != 0)
+						cout << i << "\t" << all->reg.weight_vector[i] << endl;
+				}
+
+				cout << endl << endl;
+				cin.ignore();	*/
+				
 				b->current_pass++;
+				//display_node_stats(b);
 				#ifdef TXM_DEBUG_PASS_STOP
 				cin.ignore();
 				#endif
@@ -459,53 +456,75 @@ namespace TXM
 			b->cn = 0;						//root
 			
 			//add label to label list
-			if(!b->nodes[b->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label)))	//if the label is not in the root
+			if(!b->nodes[b->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index))	//if the label is not in the root
 			{
 				b->nodes[b->cn].node_pred.push_back_sorted(txm_node_pred_type(oryginal_label));	//add the label to the list of labels in the root
-				b->nodes[b->cn].label_list_assigned.push_back_sorted(oryginal_label);		
-			}	
+				b->nodes[b->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index);
+				b->nodes[b->cn].node_pred[index].label_cnt++;
+				b->nodes[b->cn].node_pred[index].label_cnt2++;
+			}
+			else
+			{
+				b->nodes[b->cn].node_pred[index].label_cnt++;				
+				b->nodes[b->cn].node_pred[index].label_cnt2++;
+			}
 		}
 		else								//not the first pass through the data
 		{
-			//b->cn = b->ex_node[b->ex_num];							//check the node on the current level of the tree (equal to current pass through the data) where the currently seen example is
-			//alternative version
-			//b->cn = predict_node(b, ec, b->current_pass);
-			b->cn = predict_node_expected(b, ec, b->current_pass);	
-				
-			if(b->nodes[b->cn].label_list_assigned.size() == 1)					//leaf level of the tree - stopping criterion
+			b->cn = predict_node(b, ec, b->current_pass);
+			
+			if(b->nodes[b->cn].leaf || b->cn == 0)
 			{
-				#ifdef TXM_DEBUG
-				cout << "Current node: " << b->cn << endl;
-				cout << "Example number: " << b->ex_num << endl;					
-				cout << "Leaf - nothing to do...\n";
-				
-				cout << "all labels: \t";
-				for(j = 0; j < b->nodes[b->cn].node_pred.size(); j++) cout << b->nodes[b->cn].node_pred[j].label << ":" << b->nodes[b->cn].node_pred[j].label_cnt << "\t";
-				cout << endl;
-				
-				cout << "assigned labels:  \t";
-				for(j = 0; j < b->nodes[b->cn].label_list_assigned.size(); j++) cout << b->nodes[b->cn].label_list_assigned[j] <<"\t";
-				cout << endl;
-				#endif
-				
-				b->ex_num++;
-				
-				#ifdef TXM_DEBUG
-				cout << "\nCurrent Pass: " << b->current_pass << endl;
-				cout << "\n";
-				#endif
-				return;
-			}
-			else if(b->nodes[b->cn].label_list_assigned.size() < 1)
-			{
-				#ifdef TXM_DEBUG
-				cout << "Current node: " << b->cn << endl;
-				cout << "Example number: " << b->ex_num << endl;					
-				cout << "Empty node :( \n";
-				#endif
 				b->ex_num++;
 				return;
+			}			
+			
+			if(b->nodes[b->cn].id_parent > 0)
+			{
+				id_parent = b->nodes[b->cn].id_parent;
+				
+				ftmp = b->nodes[id_parent].max_cnt2;
+				ftmp /= b->nodes[id_parent].total_cnt2;
+				
+				if(ftmp > TXM_LEAF_TH)
+				{
+					b->nodes[b->cn].leaf = true;	
+					b->nodes[id_parent].leaf = true;
+					
+					id_left = b->nodes[id_parent].id_left;
+					id_right = b->nodes[id_parent].id_right;
+					
+					if(id_left)
+						b->nodes[id_left].removed = true;
+					
+					if(id_right)
+						b->nodes[id_right].removed = true;
+						
+					cout << "\n\nLEAF!!:\t" << id_parent << ":" << b->nodes[id_parent].max_cnt2_label << endl << endl;
+				}				
 			}
+			
+			if(b->nodes[b->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index))
+			{
+				b->nodes[b->cn].node_pred[index].label_cnt2++;
+				
+				if(b->nodes[b->cn].node_pred[index].label_cnt2 > b->nodes[b->cn].max_cnt2)
+				{
+					b->nodes[b->cn].max_cnt2 = b->nodes[b->cn].node_pred[index].label_cnt2;
+					b->nodes[b->cn].max_cnt2_label = b->nodes[b->cn].node_pred[index].label;
+				}
+			}
+			else
+			{
+				b->nodes[b->cn].node_pred.push_back_sorted(txm_node_pred_type(oryginal_label));
+				b->nodes[b->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index);
+				b->nodes[b->cn].node_pred[index].label_cnt2++;
+			}
+			
+			b->nodes[b->cn].total_cnt2++;
+			
+			if(b->nodes[b->cn].level >= b->level_limit)
+				return;
 			
 			b->only_leafs = false;
 			
@@ -519,9 +538,10 @@ namespace TXM
 			
 		//do the initial prediction to decide if going left or right
 		all->sd->min_label = -TXM_PRED_LIM;
-		all->sd->max_label = TXM_PRED_LIM;		
+		all->sd->max_label = TXM_PRED_LIM;	
+		mc->label = 0;
 		ec->test_only = true;
-		b->base.learn(ec);	
+		b->base.learn(ec);		
 		
 		#ifdef TXM_DEBUG
 		cout << "raw prediction: " << ec->final_prediction << endl;
@@ -547,61 +567,43 @@ namespace TXM
 		#endif		
 		
 		id_left = b->nodes[b->cn].id_left;
-		id_right = b->nodes[b->cn].id_right;
+		id_right = b->nodes[b->cn].id_right;		
 		
 		if(left_or_right < 0)
 		{
 			mc->label = -1.f;
 			id_left_right = id_left;
-			id_other = id_right;
 			
-			if(b->nodes[b->cn].id_left == 0)									//if the left child does not exist
+			if(b->nodes[b->cn].id_left == 0)												//if the left child does not exist
 			{
-				id_left_right = b->nodes.size();										//node identifier = number-of_existing_nodes + 1
-				b->nodes.push_back(init_node(id_left_right, b->cn, b->nodes[b->cn].level + 1));					//add new node to the tree
-				b->nodes[b->cn].id_left = id_left_right;								//new node is the left child of the current node
-			}	
+				id_left_right = id_left = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
+				b->nodes.push_back(init_node(id_left, b->cn, b->nodes[b->cn].level + 1));	//add new node to the tree
+				b->nodes[b->cn].id_left = id_left;											//new node is the left child of the current node				
+			}			
 		}
 		else
 		{
 			mc->label = 1.f;
 			id_left_right = id_right;
-			id_other = id_left;
 			
-			if(b->nodes[b->cn].id_right == 0)									//if the right child does not exist
+			if(b->nodes[b->cn].id_right == 0)												//if the right child does not exist
 			{
-				id_left_right = b->nodes.size();										//node identifier = number-of_existing_nodes + 1
-				b->nodes.push_back(init_node(id_left_right, b->cn, b->nodes[b->cn].level + 1));					//add new node to the tree
-				b->nodes[b->cn].id_right = id_left_right;								//new node is the right child of the current node
+				id_left_right = id_right = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
+				b->nodes.push_back(init_node(id_right, b->cn, b->nodes[b->cn].level + 1));	//add new node to the tree
+				b->nodes[b->cn].id_right = id_right;										//new node is the right child of the current node	
 			}
 		}	
 			
 		if(!b->nodes[id_left_right].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index))  //if the label does not exist in the left/right child of the current node
 		{
-			b->nodes[id_left_right].node_pred.push_back_sorted(txm_node_pred_type(oryginal_label));		//add the label to the left/right child of the current node			
+			b->nodes[id_left_right].node_pred.push_back_sorted(txm_node_pred_type(oryginal_label));		//add the label to the left/right child of the current node		
+			b->nodes[id_left_right].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index);
+			b->nodes[id_left_right].node_pred[index].label_cnt++;
 		}	
 		else
 		{
 			b->nodes[id_left_right].node_pred[index].label_cnt++;
 		}
-		
-		if(b->nodes[b->cn].label_list_assigned.contain_sorted(oryginal_label))
-		{
-			if(!b->nodes[id_left_right].label_list_assigned.contain_sorted(oryginal_label)) 
-			{
-				b->nodes[id_left_right].label_list_assigned.push_back_sorted(oryginal_label);			
-				
-				if(id_other > 0 && b->nodes[id_other].label_list_assigned.contain_sorted(oryginal_label, &index))			//removing the label from right/left child 
-				{
-					b->nodes[id_other].label_list_assigned.remove_sorted(index); 	
-				}
-			}
-		}
-		
-		if(b->cn == 0)														//if root
-			b->ex_node.push_back(id_left_right);									
-		else
-			b->ex_node[b->ex_num] = id_left_right;		
 		
 		//learn!!
 		ec->partial_prediction = 0;
@@ -610,21 +612,14 @@ namespace TXM
 		all->sd->max_label = TXM_PRED_LIM;
 		ec->test_only = false;
 		b->base.learn(ec);	
-		mc->label = oryginal_label;
-		
+		mc->label = oryginal_label;		
+			
 		#ifdef TXM_DEBUG		
 		cout << "left:  \t";
 		if(id_left > 0) for(j = 0; j < b->nodes[id_left].node_pred.size(); j++) cout << b->nodes[id_left].node_pred[j].label << ":" << b->nodes[id_left].node_pred[j].label_cnt <<"\t";
 		
 		cout << "right: \t";
 		if(id_right > 0) for(j = 0; j < b->nodes[id_right].node_pred.size(); j++) cout << b->nodes[id_right].node_pred[j].label << ":" << b->nodes[id_right].node_pred[j].label_cnt << "\t";
-		cout << endl;
-		
-		cout << "left:  \t";
-		if(id_left > 0) for(j = 0; j < b->nodes[id_left].label_list_assigned.size(); j++) cout << b->nodes[id_left].label_list_assigned[j] <<"\t";
-		
-		cout << "right: \t";
-		if(id_right > 0) for(j = 0; j < b->nodes[id_right].label_list_assigned.size(); j++) cout << b->nodes[id_right].label_list_assigned[j] << "\t";
 		cout << endl;
 		
 		cout << "label: " << mc->label << endl;
@@ -650,7 +645,6 @@ namespace TXM
 
 		#ifdef TXM_DEBUG
 		cout << "Current Pass: " << b->current_pass << endl;
-		cout << b->nodes[0].label_list_assigned.size() << "\t" << b->nodes[0].node_pred.size() << endl;
 		cout << endl;
 		#endif		
 		
@@ -661,6 +655,8 @@ namespace TXM
 	
 	void drive(vw* all, void* d)
 	{	
+		uint32_t i, j, corsum = 0, wrgsum = 0;
+		float tmp;
 		txm* b = (txm*)d;	
 		example* ec = NULL;	
 		
@@ -681,6 +677,7 @@ namespace TXM
 			}
 		}		
 		
+		display_node_stats(b);
 		//Evaluation
 		b->ex_num = 0;
 		ec = NULL;	
@@ -688,8 +685,7 @@ namespace TXM
 		{
 			if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 			{				
-				//predict((txm*)b, ec);
-				predict_expected((txm*)b, ec);
+				predict((txm*)b, ec);
 				
 				if (!command_example(all, ec))
 					OAA::output_example(*all, ec);
@@ -698,12 +694,28 @@ namespace TXM
 			}
 			else if (parser_done(all->p))
 			{				
-				b->training_error /= (float)b->ex_total;
-				b->training_error *= 100.f;
 				cout<<"The number of training data points: "<< b->ex_total << endl;
 				cout<<"The number of labels: "<< b->k << endl;
 				cout<<"log2(the number of labels): "<< (float)log2(b->k) << endl;
 				cout<<"Tree depth: "<< b->current_pass << endl;
+				cout << endl;
+
+				/*for(i = 0; i < b->nodes.size(); i++)
+				{
+					if(b->nodes[i].removed)
+							continue;				
+					
+					if(b->nodes[i].node_pred.size() > 1)
+					{
+						tmp = b->nodes[i].wrong;
+						tmp /= b->nodes[i].wrong + b->nodes[i].correct;
+						cout << "Node:\t" << i << "\terr:\t" <<  tmp << "\tcor:\t" <<  b->nodes[i].correct << "\twrg:\t" << b->nodes[i].wrong << "\tEh:\t"<< b->nodes[i].Eh / b->nodes[i].n << endl; 
+						corsum += b->nodes[i].correct;
+						wrgsum += b->nodes[i].wrong;
+					}
+				}
+				
+				cout << "Total:\t\t\t\t\tcor:\t" << b->total_cor << "\twrg:\t" << b->total_wrg << endl;*/
 
 				return;
 			}
@@ -739,14 +751,16 @@ namespace TXM
 
 		data->all = &all;
 		*(all.p->lp) = OAA::mc_label_parser;
+		
 		data->increment = all.reg.stride * all.weights_per_problem;
-		all.weights_per_problem *= data->k;
+		all.weights_per_problem *= 2^(TXM_LEVEL_LIM + 1);
 		data->base = all.l;
 		learner l(data, drive, learn, finish, all.l.sl);
 		
 		txm* b = (txm*)data;
 		
 		b->current_pass = 0;
+		b->level_limit = TXM_LEVEL_LIM;
 		
 		init_tree(b);
 		
