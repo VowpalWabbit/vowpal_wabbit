@@ -753,7 +753,7 @@ namespace TXM
 		*(all.p->lp) = OAA::mc_label_parser;
 		
 		data->increment = all.reg.stride * all.weights_per_problem;
-		all.weights_per_problem *= 2^(TXM_LEVEL_LIM + 1);
+		all.weights_per_problem *= 1 << (TXM_LEVEL_LIM + 1);
 		data->base = all.l;
 		learner l(data, drive, learn, finish, all.l.sl);
 		
