@@ -20,15 +20,15 @@ using namespace std;
 
 namespace TXM 
 {
-	class txm_node_pred_type
+	class txm_node_pred_type								//w kazdym nodzie mam jedna tablice elementow tego typu, kazdej wejscie w tej tablicy odpowiada laelowi ktory wpadl do tego noda podczas trenowania lub predykcji (odpalanie funkcji predict_node)
 	{
 		public:
 		
 		float 		Ehk;
 		uint32_t 	nk;
-		uint32_t	label;
-		uint32_t	label_cnt;
-		uint32_t	label_cnt2;
+		uint32_t	label;									//dla kazdego labela mam Ehk, nk, tu jest suma labeli ktore trafily do noda czy w czasie trenowania czy w czasie predykcji
+		uint32_t	label_cnt;								//ilosc przykladow o tym labelu w tym nodzie przypisanych przez expected
+		uint32_t	label_cnt2;								//ilosc przykladow o tym labelu w tym nodzie przypisanych przez predictor
 		
 		void operator=(txm_node_pred_type v)
 		{
@@ -53,7 +53,7 @@ namespace TXM
 			return false;
 		}
 		
-		txm_node_pred_type(uint32_t l)
+		txm_node_pred_type(uint32_t l)						//konstruktor z ustawianiem labela
 		{
 			label = l;
 			Ehk = 0.f;
@@ -62,7 +62,7 @@ namespace TXM
 			label_cnt2 = 0;
 		}
 		
-		txm_node_pred_type()
+		txm_node_pred_type()								//konstruktor bez ustawiania labela
 		{
 			label = 0;
 			Ehk = 0.f;
@@ -72,20 +72,20 @@ namespace TXM
 		}
 	};
 	
-	typedef struct
+	typedef struct                                         //struktura opisujaca wezel w drzewie
 	{
-		size_t id;
+		size_t id;                                         //root = 0
 		size_t id_left;
 		size_t id_right;
-		size_t id_parent;
-		size_t level;
-		uint32_t wrong;
-		uint32_t correct;
-		bool leaf;
-		bool removed;
-		size_t max_cnt2;
-		size_t max_cnt2_label;
-		size_t total_cnt2;
+		size_t id_parent;                                  //root = 0
+		size_t level;                                      //root = 0
+		uint32_t wrong;                                    //pozostalosc po starym kodzie - wymaga poprawienia
+		uint32_t correct;                                  //pozostalosc po starym kodzie - wymaga poprawienia
+		bool leaf;                                         //flaga - mamy lisc - ustawiane na podstawie prediction statistics
+		bool removed;                                      //node zostal usuniety, detekuje ze cos jest leafem jak juz mam stworzone jego dzieci i po prostu nie rozwijam tych dzieci dalej a ich samych nie biore pod uwage
+		size_t max_cnt2;                                   //maxymalna wartosc countera 2 w nodzie
+		size_t max_cnt2_label;                             //label z maxymalnym counterem w nodzie
+		size_t total_cnt2;                                 //laczna ilosc punktow nodzie prxzypisanych przez predyktor do noda
 		
 		v_array<txm_node_pred_type> node_pred;	
 
@@ -100,24 +100,24 @@ namespace TXM
 		learner base;
 		vw* all;
 		
-		v_array<size_t> ex_node;		//the node where example was sent
-		v_array<txm_node_type> nodes;	//the nodes
+		v_array<size_t> ex_node;		//pozostalosc po starym kodzie - nie korzystam teraz
+		v_array<txm_node_type> nodes;	//the nodes - czyli nasze drzewo
 		
 		size_t cn;						//current node
 		size_t ex_num;					//index of current example
 		size_t ex_total;
 		
 		size_t current_pass;			//index of current pass through the data	
-		size_t level_limit;
+		size_t level_limit;             //maxymlane glebokosc drzewa (liscie maja byc na tym levelu, czyli 1 odpowiada rootowi i dwom lisciom)
 		
-		bool only_leafs;
-		bool tree_finished;
+		bool only_leafs;                //only leafs jest wystaione na true gdy mam same liscie (czyste liscie lub drzewo maxymalnej glebokosci i wtedy wszystkie nody na tej glebokosci sa liscmi)
+		bool tree_finished;             //zakonczenie drzewa
 		
-		uint32_t total_wrg;
-		uint32_t total_cor;
+		uint32_t total_wrg;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
+		uint32_t total_cor;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
 	};	
 
-	txm_node_type init_node(size_t id, size_t id_parent, size_t level)
+	txm_node_type init_node(size_t id, size_t id_parent, size_t level)        //inicjalizowanie nowego noda drzewa, odpalane przy tworzeniu nowego noda
 	{
 		txm_node_type node;
 		
@@ -139,7 +139,7 @@ namespace TXM
 		return node;
 	}
 	
-	void init_tree(txm* d)
+	void init_tree(txm* d)                               //inicjalizacja drzewa
 	{
 		d->cn = 0;
 		d->ex_num = 0;
@@ -148,21 +148,21 @@ namespace TXM
 		d->only_leafs = false;
 	}
 	
-	void display_tree(txm* d)
+	void display_tree(txm* d)                           //wyswietlanie drzewa
 	{
 		size_t i;
 		size_t j;
 		size_t level = 0;
 		
-		for(j = 0; j < d->nodes.size(); j++)
+		for(j = 0; j < d->nodes.size(); j++)			//for every tree node
 		{
-			if(d->nodes[j].level > level)
+			if(d->nodes[j].level > level)				//nowa linia gdy jest nowy label
 			{
 				cout << endl;
 				level++;
 			}
 			
-			if(d->nodes[j].removed)
+			if(d->nodes[j].removed)						//nie wyswietlamy nodow ktore zostaly oznaczone jako removed
 				continue;
 			
 			cout << j << ":";
@@ -172,11 +172,11 @@ namespace TXM
 			else
 				cout << "(";
 			
-			for(i = 0; i < d->nodes[j].node_pred.size(); i++)
+			for(i = 0; i < d->nodes[j].node_pred.size(); i++)	//wypisuje wszystkie labele w nodzie ktore trafily na podstawie predyktora
 			{
 				cout << d->nodes[j].node_pred[i].label;
 				
-				if(i < d->nodes[j].node_pred.size() - 1)
+				if(i < d->nodes[j].node_pred.size() - 1)        //po ostatnim labelu w nodzie jest nawiasik a nie przecineczek, wiec stawiamy przecineczek po kazdym z wyjatkiem ostatniego labela w nodzie
 					cout << ",";
 			}
 			
@@ -190,7 +190,7 @@ namespace TXM
 		cout << endl;		
 	}
 	
-	void display_node_stats(txm* b)
+	void display_node_stats(txm* b)							//wyswietlam statystyke dla poszczegonym nodow
 	{
 		uint32_t i, j;
 		
@@ -220,7 +220,7 @@ namespace TXM
 				}
 				cout << endl;
 				
-				printf("max(label:cnt:total): %3d:%6d:%7d",  b->nodes[i].max_cnt2_label, b->nodes[i].max_cnt2, b->nodes[i].total_cnt2);
+				printf("max(label:cnt:total): %3d:%6d:%7d",  (int) b->nodes[i].max_cnt2_label, (int) b->nodes[i].max_cnt2, (int) b->nodes[i].total_cnt2);
 				//cout << "max:\t" << b->nodes[i].max_cnt2_label << ":" << b->nodes[i].max_cnt2 << "\ttotal:\t" << b->nodes[i].total_cnt2;
 				
 				cout << endl;
@@ -236,7 +236,6 @@ namespace TXM
 		static int wrong = 0;
 		static int correct = 0;	
 		size_t new_cn;
-		static uint32_t err_cnt = 0;
 		//float Eh_norm;
 		
 		#ifdef TXM_DEBUG_PRED
@@ -245,6 +244,7 @@ namespace TXM
 		
 		if(command_example(all,ec))
 		{	
+			d->base.learn(ec);
 			return;
 		}
 		
@@ -256,15 +256,17 @@ namespace TXM
 		
 		while(!d->nodes[d->cn].leaf && d->nodes[d->cn].level < d->level_limit)
 		{
+			update_example_indicies(all->audit, ec, d->increment * d->cn);	
+		
 			ec->test_only = true;
 			d->base.learn(ec);
+			
+			update_example_indicies(all->audit, ec, -d->increment * d->cn);
 			
 			#ifdef TXM_DEBUG_PRED
 			cout << "level: " << level++ << endl;
 			cout << "node: " << d->cn << endl;
 			#endif
-			
-			update_example_indicies(all->audit, ec, -d->increment * d->cn);
 			
 			//Eh_norm = d->nodes[d->cn].Eh;
 			//Eh_norm /= d->nodes[d->cn].n;
@@ -286,12 +288,10 @@ namespace TXM
 					d->nodes[d->cn].wrong++;
 			}			
 			
-			if(new_cn != 0)
+			if(new_cn != 0)			
 				d->cn = new_cn;
-			
-			update_example_indicies(all->audit, ec, d->increment * d->cn);	
 
-			if(new_cn == 0)
+			if(new_cn == 0)		//blad - dziecko ma id 0, nigdy w to nie wchodze
 				break;		
 		}
 		
@@ -299,13 +299,11 @@ namespace TXM
 		cout << "Prediction finished...\n";
 		#endif
 		
-		update_example_indicies(all->audit, ec, -d->increment * d->cn);
-		
 		#ifdef TXM_DEBUG_PRED
 		cout << "Nb of labels in leaf: " << d->nodes[d->cn].node_pred.size() << endl;
 		#endif
 		
-		ec->final_prediction = d->nodes[d->cn].max_cnt2_label;		//necessary for the external evaluator to compute the average loss
+		ec->final_prediction = d->nodes[d->cn].max_cnt2_label;		//PRZYPISYWANIE PREDYKCJI DO PRZYKLADU (necessary for external evaluation)
 		
 		/*if(d->cn == 0)
 		{
@@ -327,10 +325,10 @@ namespace TXM
 		d->total_wrg = wrong;
 		d->total_cor = correct;
 		
-		d->ex_num++;
+		d->ex_num++;					//pozostalosc po starym kodzie
 	}	
 	
-	uint32_t predict_node(txm* d, example* ec, size_t level_limit)
+	uint32_t predict_node(txm* d, example* ec, size_t level_limit)		//to samo co predict tylko nie to samo do konca, minimalny argument z jakim to jest odpalane to jest 1 (czyli masz root i dwa liscie)
 	{
 		vw* all = d->all;
 		size_t level = 0;
@@ -338,6 +336,7 @@ namespace TXM
 		
 		if(command_example(all,ec))
 		{
+			d->base.learn(ec);
 			return 0;
 		}
 		
@@ -345,15 +344,17 @@ namespace TXM
 		
 		while(!d->nodes[d->cn].leaf && level < level_limit)
 		{
+			update_example_indicies(all->audit, ec, d->increment * d->cn);
+		
 			ec->test_only = true;
 			d->base.learn(ec);
+			
+			update_example_indicies(all->audit, ec, -d->increment * d->cn);
 			
 			#ifdef TXM_DEBUG_PRED
 			cout << "level: " << level << endl;
 			cout << "node: " << d->cn << endl;
 			#endif
-			
-			update_example_indicies(all->audit, ec, -d->increment * d->cn);
 			
 			//Eh_norm = d->nodes[d->cn].Eh;
 			//Eh_norm /= d->nodes[d->cn].n;
@@ -367,18 +368,14 @@ namespace TXM
 				d->cn = d->nodes[d->cn].id_right;
 			}
 			
-			update_example_indicies(all->audit, ec, d->increment * d->cn);
-			
 			level++;
 			
-			if(d->cn == 0)
+			if(d->cn == 0)								//zabezpieczenie, nigdy nie jest wywolywane
 			{
 				//cout << "Node prediction error!!\n";
 				break;
 			}
 		}		
-		
-		update_example_indicies(all->audit, ec, -d->increment * d->cn);
 			
 		return d->cn;
 	}
@@ -397,7 +394,6 @@ namespace TXM
 		size_t id_parent;
 		size_t id_left_right;
 		float ftmp;
-		int i;
 		
 		#ifdef TXM_DEBUG
 		unsigned char* i;
@@ -408,7 +404,7 @@ namespace TXM
 		
 		oryginal_label = mc->label;
 		
-		if(command_example(all,ec))
+		if(command_example(all,ec))		//po kazdym przejsciu przez zbior danych on wchodzi w command example
 		{		
 			b->base.learn(ec);
 			
@@ -451,7 +447,7 @@ namespace TXM
 			return;
 		}		
 		
-		if(b->current_pass == 0)			//first pass through the data
+		if(b->current_pass == 0)			//first pass through the data, po przejsciu przez ten pass mam root i dwa liscie
 		{
 			b->cn = 0;						//root
 			
@@ -469,18 +465,18 @@ namespace TXM
 				b->nodes[b->cn].node_pred[index].label_cnt2++;
 			}
 		}
-		else								//not the first pass through the data
+		else								//not the first pass through the data, jezeli b->current_pass == 1 to tworze drugi level drzewa, czyli trenuje regresory pierwszego levela
 		{
-			b->cn = predict_node(b, ec, b->current_pass);
+			b->cn = predict_node(b, ec, b->current_pass);		//current node, ktory ja zamierzam trenowac
 			
-			if(b->nodes[b->cn].leaf || b->cn == 0)
+			if(b->nodes[b->cn].leaf || b->cn == 0)   //leaf lub blad, wychodze z learn i dalej bede analizowac kolejny przyklad kolejny przyklad
 			{
 				b->ex_num++;
 				return;
 			}			
 			
-			if(b->nodes[b->cn].id_parent > 0)
-			{
+			if(b->nodes[b->cn].id_parent > 0)		//jedno kryterium stopu, warunek mowi ze nie chce z roota robic liscia, parent jest juz wytrenowany a b->cn dopiero jest w trakcie trenowania, trzeba sprawdzic czy czasem parent juz nie jest lisciem
+			{										//minimalne drzewo jakie bede miec to root i dwa liscie
 				id_parent = b->nodes[b->cn].id_parent;
 				
 				ftmp = b->nodes[id_parent].max_cnt2;
@@ -488,7 +484,7 @@ namespace TXM
 				
 				if(ftmp > TXM_LEAF_TH)
 				{
-					b->nodes[b->cn].leaf = true;	
+					b->nodes[b->cn].leaf = true;	//nie ma znaczenia, mozna to wyrzucic, pozostalosc po starym kodzie
 					b->nodes[id_parent].leaf = true;
 					
 					id_left = b->nodes[id_parent].id_left;
@@ -501,14 +497,16 @@ namespace TXM
 						b->nodes[id_right].removed = true;
 						
 					cout << "\n\nLEAF!!:\t" << id_parent << ":" << b->nodes[id_parent].max_cnt2_label << endl << endl;
+					
+					return;
 				}				
 			}
 			
-			if(b->nodes[b->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index))
+			if(b->nodes[b->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index))		//jezeli label jest w tablicy node_pred'ow 
 			{
 				b->nodes[b->cn].node_pred[index].label_cnt2++;
 				
-				if(b->nodes[b->cn].node_pred[index].label_cnt2 > b->nodes[b->cn].max_cnt2)
+				if(b->nodes[b->cn].node_pred[index].label_cnt2 > b->nodes[b->cn].max_cnt2)					
 				{
 					b->nodes[b->cn].max_cnt2 = b->nodes[b->cn].node_pred[index].label_cnt2;
 					b->nodes[b->cn].max_cnt2_label = b->nodes[b->cn].node_pred[index].label;
@@ -519,16 +517,20 @@ namespace TXM
 				b->nodes[b->cn].node_pred.push_back_sorted(txm_node_pred_type(oryginal_label));
 				b->nodes[b->cn].node_pred.contain_sorted(txm_node_pred_type(oryginal_label), &index);
 				b->nodes[b->cn].node_pred[index].label_cnt2++;
+				
+				if(b->nodes[b->cn].node_pred[index].label_cnt2 > b->nodes[b->cn].max_cnt2)
+				{
+					b->nodes[b->cn].max_cnt2 = b->nodes[b->cn].node_pred[index].label_cnt2;
+					b->nodes[b->cn].max_cnt2_label = b->nodes[b->cn].node_pred[index].label;
+				}
 			}
 			
 			b->nodes[b->cn].total_cnt2++;
 			
-			if(b->nodes[b->cn].level >= b->level_limit)
-				return;
+			if(b->nodes[b->cn].level >= b->level_limit)	//to jest tylko zwiazane z tymi nodami ktore doszly do poziomu level limit
+				return;							//nie ustawiam flagi b->nodes[b->cn].leaf na true, bo chce zeby on przeszedl przez liczenie statystyki dla wszystkich punktow ktore tu moga wpasc
 			
-			b->only_leafs = false;
-			
-			update_example_indicies(all->audit, ec, b->increment * b->cn);
+			b->only_leafs = false;				//jezeli mam ostatni level drzewa to tu nigdy nie dojde i po ostatnim przykladzie z tego passa po danych wejde w tree_finished
 		}
 		
 		#ifdef TXM_DEBUG
@@ -539,7 +541,8 @@ namespace TXM
 		//do the initial prediction to decide if going left or right
 		all->sd->min_label = -TXM_PRED_LIM;
 		all->sd->max_label = TXM_PRED_LIM;	
-		mc->label = 0;
+		mc->label = 0;	//jezeli jest cos innego tu to on moze zmieniac clipping zakresy
+		update_example_indicies(all->audit, ec, b->increment * b->cn);
 		ec->test_only = true;
 		b->base.learn(ec);		
 		
@@ -655,8 +658,6 @@ namespace TXM
 	
 	void drive(vw* all, void* d)
 	{	
-		uint32_t i, j, corsum = 0, wrgsum = 0;
-		float tmp;
 		txm* b = (txm*)d;	
 		example* ec = NULL;	
 		
@@ -753,7 +754,7 @@ namespace TXM
 		*(all.p->lp) = OAA::mc_label_parser;
 		
 		data->increment = all.reg.stride * all.weights_per_problem;
-		all.weights_per_problem *= 1 << (TXM_LEVEL_LIM + 1);
+		all.weights_per_problem *= 4*data->k;
 		data->base = all.l;
 		learner l(data, drive, learn, finish, all.l.sl);
 		
