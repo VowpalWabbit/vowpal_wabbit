@@ -180,7 +180,7 @@ namespace OAA {
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, ec->final_prediction, 0, ec->tag);
 
-    print_update(all, ec);
+    OAA::print_update(all, ec);
   }
 
   void learn_with_output(oaa* d, example* ec, bool shouldOutput)

@@ -12,7 +12,6 @@ license as described in the file LICENSE.
 #include <algorithm>
 
 #include "bs.h"
-#include "simple_label.h"
 #include "cache.h"
 #include "v_hashmap.h"
 #include "vw.h"
@@ -27,7 +26,6 @@ namespace BS {
     size_t bs_type;
     uint32_t increment;
     uint32_t total_increment;
-    float alpha;
     float lb;
     float ub;
     vector<double> pred_vec;
@@ -88,16 +86,6 @@ namespace BS {
        
       if(counter==0)
         current_label = -1;
-      
-      if (counter > pred_vec.size()/2)
-        {
-          ec->final_prediction = current_label;
-          if (ec->final_prediction == ((label_data*)ec->ld)->label)
-            ec->loss = 0.;
-          else
-            ec->loss = 1.;
-          return;  
-        }
     }
     if(counter == 0)//no majority exists
     {
@@ -111,15 +99,6 @@ namespace BS {
       ec->loss = 0.;
     else
       ec->loss = 1.;
-  }
-
-  int print_tag(std::stringstream& ss, v_array<char> tag)
-  {
-    if (tag.begin != tag.end){
-      ss << ' ';
-      ss.write(tag.begin, sizeof(char)*tag.size());
-    } 
-    return tag.begin != tag.end;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
@@ -147,47 +126,6 @@ namespace BS {
       if (t != len)
         cerr << "write error" << endl;
     }    
-  }
-
-  void print_update(vw& all, example *ec)
-  {
-    if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
-      {
-        label_data* ld = (label_data*) ec->ld;
-        char label_buf[32];
-        if (ld->label == FLT_MAX)
-          strcpy(label_buf," unknown");
-        else
-          sprintf(label_buf,"%8.4f",ld->label);
-
-        if(!all.holdout_set_off && all.current_pass >= 1)
-        {
-          fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu h\n",
-	      all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples,
-	      all.sd->holdout_sum_loss_since_last_dump / all.sd->weighted_holdout_examples_since_last_dump,
-	      (long int)all.sd->example_number,
-	      all.sd->weighted_examples,
-	      label_buf,
-	      ec->final_prediction,
-	      (long unsigned int)ec->num_features);
-
-          all.sd->weighted_holdout_examples_since_last_dump = 0;
-          all.sd->holdout_sum_loss_since_last_dump = 0.0;
-        }
-        else
-          fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
-                all.sd->sum_loss/all.sd->weighted_examples,
-                all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
-                (long int)all.sd->example_number,
-                all.sd->weighted_examples,
-                label_buf,
-                ec->final_prediction,
-                (long unsigned int)ec->num_features);
-     
-        all.sd->sum_loss_since_last_dump = 0.0;
-        all.sd->old_weighted_examples = all.sd->weighted_examples;
-        all.sd->dump_interval *= 2;
-      }
   }
 
   void output_example(vw& all, example* ec, bs* d)
@@ -218,26 +156,20 @@ namespace BS {
 
     if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
     {
-      sort(d->pred_vec.begin(), d->pred_vec.end());    
-      size_t lb_index = d->B * d->alpha-1 < 0 ? 0 :  d->B * d->alpha-1;
-      size_t ub_index = d->B * (1 - d->alpha)-1 > d->pred_vec.size()-1 ? d->pred_vec.size()-1 : d->B * (1 - d->alpha)-1;
-
-      if(lb_index > ub_index)
+      d->lb = FLT_MAX;
+      d->ub = -FLT_MAX;
+      for (unsigned i = 0; i < d->pred_vec.size(); i++)
       {
-        size_t temp = lb_index;
-        lb_index = ub_index;
-        ub_index = temp;
+        if(d->pred_vec[i] > d->ub)
+          d->ub = d->pred_vec[i];
+        if(d->pred_vec[i] < d->lb)
+          d->lb = d->pred_vec[i];
       }
-
-      d->lb = d->pred_vec[lb_index];
-      d->ub = d->pred_vec[ub_index];
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       BS::print_result(*sink, ec->final_prediction, 0, ec->tag, d->lb, d->ub);
   
-
-
     print_update(all, ec);
   }
 
@@ -328,14 +260,11 @@ namespace BS {
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     bs* data = (bs*)calloc(1, sizeof(bs));
-    data->alpha = 0.;
     data->ub = FLT_MAX;
     data->lb = -FLT_MAX;
 
-
     po::options_description desc("BS options");
     desc.add_options()
-      ("bs_percentile", po::value<float>(), "percentile for confidence interval")
       ("bs_type", po::value<string>(), "prediction type {mean,vote}");
 
     po::parsed_options parsed = po::command_line_parser(opts).
@@ -350,21 +279,6 @@ namespace BS {
       options(desc).allow_unregistered().run();
     po::store(parsed_file, vm_file);
     po::notify(vm_file);
-
-
-    if (vm.count("bs_percentile") || vm_file.count("bs_percentile"))
-    {
-      if(vm_file.count("bs_percentile"))
-        data->alpha = 1 - vm_file["bs_percentile"].as<float>();
-      else {
-        data->alpha = 1 - vm["bs_percentile"].as<float>();
-        std::stringstream ss;
-        ss << " --bs_percentile " << vm["bs_percentile"].as<float>();
-        all.options_from_file.append(ss.str());
-      }
-      if(data->alpha > 1 || data->alpha < 0)
-        std::cerr << "warning: bs_percentile should be between 0 and 1 !"<< endl;
-    }
 
     if( vm_file.count("bs") ) {
       data->B = (uint32_t)vm_file["bs"].as<size_t>();
