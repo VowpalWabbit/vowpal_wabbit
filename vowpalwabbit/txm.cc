@@ -79,8 +79,6 @@ namespace TXM
 		size_t id_right;
 		size_t id_parent;                                  //root = 0
 		size_t level;                                      //root = 0
-		uint32_t wrong;                                    //pozostalosc po starym kodzie - wymaga poprawienia
-		uint32_t correct;                                  //pozostalosc po starym kodzie - wymaga poprawienia
 		bool leaf;                                         //flaga - mamy lisc - ustawiane na podstawie prediction statistics
 		bool removed;                                      //node zostal usuniety, detekuje ze cos jest leafem jak juz mam stworzone jego dzieci i po prostu nie rozwijam tych dzieci dalej a ich samych nie biore pod uwage
 		size_t max_cnt2;                                   //maxymalna wartosc countera 2 w nodzie
@@ -115,6 +113,8 @@ namespace TXM
 		
 		uint32_t total_wrg;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
 		uint32_t total_cor;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
+		
+		char tree_file_name[256];
 	};	
 
 	txm_node_type init_node(size_t id, size_t id_parent, size_t level)        //inicjalizowanie nowego noda drzewa, odpalane przy tworzeniu nowego noda
@@ -133,8 +133,6 @@ namespace TXM
 		node.max_cnt2 = 0;
 		node.max_cnt2_label = 0;
 		node.total_cnt2 = 0;
-		node.wrong = 0;
-		node.correct = 0;
 		
 		return node;
 	}
@@ -148,7 +146,7 @@ namespace TXM
 		d->only_leafs = false;
 	}
 	
-	void display_tree(txm* d)                           //wyswietlanie drzewa
+	/*void display_tree(txm* d)                           //wyswietlanie drzewa
 	{
 		size_t i;
 		size_t j;
@@ -188,9 +186,9 @@ namespace TXM
 		
 		cout << endl;	
 		cout << endl;		
-	}
+	}*/
 	
-	void display_node_stats(txm* b)							//wyswietlam statystyke dla poszczegonym nodow
+	/*void display_node_stats(txm* b)							//wyswietlam statystyke dla poszczegonym nodow
 	{
 		uint32_t i, j;
 		
@@ -227,14 +225,63 @@ namespace TXM
 				cout << endl;
 			}
 		}
+	}*/
+
+	/*void save_tree(txm* b)
+	{
+		FILE *fp;
+		size_t i;
+		
+		fp = fopen(b->tree_file_name, "wt");
+		
+		if(fp == NULL)
+		{
+			cout << "Cannot open file: " << b->tree_file_name << endl;
+			return;
+		}
+		
+		fprintf(fp, "%d\n", b->nodes.size());
+		
+		for(i = 0; i < b->nodes.size(); i++)
+		{
+			fprintf(fp, "%d, %d, %d, %d, %d, \n", b->nodes[i].id, b->nodes[i].id_left, b->nodes[i].id_right, b->nodes[i].max_cnt2_label, b->nodes[i].leaf);
+		}	
+
+		fclose(fp);
 	}
+	
+	void load_tree(txm* b)
+	{
+		FILE *fp;
+		size_t i;
+		size_t tree_size;
+		
+		fp = fopen(b->tree_file_name, "rt");
+		
+		if(fp == NULL)
+		{
+			cout << "Cannot open file: " << b->tree_file_name << endl;
+			return;
+		}
+		
+		fscanf(fp, "%ld\n", &tree_size);
+		printf("%ld\n", tree_size);
+		
+		for(i = 0; i < tree_size; i++)
+		{
+			b->nodes.push_back(init_node(i, 0, 0));
+			fscanf(fp,"%ld, %ld, %ld, %d, %d, \n", &b->nodes[i].id, &b->nodes[i].id_left, &b->nodes[i].id_right, &b->nodes[i].max_cnt2_label, &b->nodes[i].leaf);	
+			//printf("%ld, %ld, %ld, %d, %d, \n", b->nodes[i].id, b->nodes[i].id_left, b->nodes[i].id_right, b->nodes[i].max_cnt2_label, b->nodes[i].leaf);		
+			//cin.ignore();
+		}	
+
+		fclose(fp);
+	}*/
 
 	void predict(txm* d, example* ec)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		vw* all = d->all;
-		static int wrong = 0;
-		static int correct = 0;	
 		size_t new_cn;
 		//float Eh_norm;
 		
@@ -254,7 +301,7 @@ namespace TXM
 		cout << "\nExample: " << d->ex_num << endl;
 		#endif
 		
-		while(!d->nodes[d->cn].leaf && d->nodes[d->cn].level < d->level_limit)
+		while(!d->nodes[d->cn].leaf)// && d->nodes[d->cn].level < d->level_limit)
 		{
 			update_example_indicies(all->audit, ec, d->increment * d->cn);	
 		
@@ -279,15 +326,7 @@ namespace TXM
 			{
 				new_cn = d->nodes[d->cn].id_right;
 			}
-			
-			if(d->nodes[d->cn].node_pred.contain_sorted(mc->label))
-			{
-				if(d->nodes[new_cn].node_pred.contain_sorted(mc->label))
-					d->nodes[d->cn].correct++;
-				else
-					d->nodes[d->cn].wrong++;
-			}			
-			
+		
 			if(new_cn != 0)			
 				d->cn = new_cn;
 
@@ -314,16 +353,6 @@ namespace TXM
 		#ifdef TXM_DEBUG_PRED
 		cout << "labels O:P:\t" << mc->label << ":" << ec->final_prediction << endl;
 		#endif
-		
-		if(mc->label != ec->final_prediction)
-		{
-			wrong++;
-		}
-		else
-			correct++;
-			
-		d->total_wrg = wrong;
-		d->total_cor = correct;
 		
 		d->ex_num++;					//pozostalosc po starym kodzie
 	}	
@@ -394,13 +423,19 @@ namespace TXM
 		size_t id_parent;
 		size_t id_left_right;
 		float ftmp;
+		size_t j;
 		
 		#ifdef TXM_DEBUG
 		unsigned char* i;
-		size_t j;
 		#endif
 		
 		vw* all = b->all;	
+		
+		if(!all->training)
+		{
+			predict(b, ec);
+			return;
+		}
 		
 		oryginal_label = mc->label;
 		
@@ -418,6 +453,14 @@ namespace TXM
 				{
 					b->tree_finished = true;	
 				
+					for(j = 0; j < b->nodes.size(); j++)
+					{
+						if(b->nodes[j].level == b->level_limit)
+							b->nodes[j].leaf = true;
+					}
+					
+					//save_tree(b);
+					
 					return;
 				}
 				else
@@ -425,18 +468,7 @@ namespace TXM
 					b->only_leafs = true;
 				}
 				
-				display_tree(b);	
-
-				/*cout << "Root Weights: \n";
-
-				for(size_t i = 0; i < 1000000; i++)
-				{
-					if(all->reg.weight_vector[i] != 0)
-						cout << i << "\t" << all->reg.weight_vector[i] << endl;
-				}
-
-				cout << endl << endl;
-				cin.ignore();	*/
+				//display_tree(b);	
 				
 				b->current_pass++;
 				//display_node_stats(b);
@@ -496,7 +528,7 @@ namespace TXM
 					if(id_right)
 						b->nodes[id_right].removed = true;
 						
-					cout << "\n\nLEAF!!:\t" << id_parent << ":" << b->nodes[id_parent].max_cnt2_label << endl << endl;
+					//cout << "\n\nLEAF!!:\t" << id_parent << ":" << b->nodes[id_parent].max_cnt2_label << endl << endl;
 					
 					return;
 				}				
@@ -667,9 +699,12 @@ namespace TXM
 			{
 				learn((txm*)d, ec);
 				
-				//if (!command_example(all, ec))
-				//	OAA::output_example(*all, ec);
-
+				if(!all->training)
+				{
+					if (!command_example(all, ec))
+						OAA::output_example(*all, ec);
+				}
+				
 				VW::finish_example(*all, ec);				
 			}
 			else if (parser_done(all->p))
@@ -678,7 +713,7 @@ namespace TXM
 			}
 		}		
 		
-		display_node_stats(b);
+		//display_node_stats(b);
 		//Evaluation
 		b->ex_num = 0;
 		ec = NULL;	
@@ -701,23 +736,6 @@ namespace TXM
 				cout<<"Tree depth: "<< b->current_pass << endl;
 				cout << endl;
 
-				/*for(i = 0; i < b->nodes.size(); i++)
-				{
-					if(b->nodes[i].removed)
-							continue;				
-					
-					if(b->nodes[i].node_pred.size() > 1)
-					{
-						tmp = b->nodes[i].wrong;
-						tmp /= b->nodes[i].wrong + b->nodes[i].correct;
-						cout << "Node:\t" << i << "\terr:\t" <<  tmp << "\tcor:\t" <<  b->nodes[i].correct << "\twrg:\t" << b->nodes[i].wrong << "\tEh:\t"<< b->nodes[i].Eh / b->nodes[i].n << endl; 
-						corsum += b->nodes[i].correct;
-						wrgsum += b->nodes[i].wrong;
-					}
-				}
-				
-				cout << "Total:\t\t\t\t\tcor:\t" << b->total_cor << "\twrg:\t" << b->total_wrg << endl;*/
-
 				return;
 			}
 		}
@@ -728,6 +746,177 @@ namespace TXM
 		txm* o=(txm*)data;
 		o->base.finish();
 		free(o);
+	}	
+	
+	void txm_save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
+	{
+		uint32_t length = 1 << all.num_bits;
+		uint32_t stride = all.reg.stride;
+		int c = 0;
+		uint32_t i = 0;
+		size_t brw = 1;
+		char ch = 123;
+
+		if(all.print_invert){ //write readable model with feature names           
+			weight* v;
+			char buff[512];
+			int text_len; 
+			typedef std::map< std::string, size_t> str_int_map;  
+
+			for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it){              
+				v = &(all.reg.weight_vector[stride*(it->second)]);
+				if(*v != 0.){
+					text_len = sprintf(buff, "%s", (char*)it->first.c_str());
+					brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()), buff, text_len, true);
+					text_len = sprintf(buff, ":%f\n", *v);
+					brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v), buff, text_len, true);
+				}	
+			}			
+			
+			return;
+		} 
+
+		do 
+		{
+			brw = 1;
+			weight* v;
+			if (read)
+			{
+				c++;
+				brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
+				if (brw > 0)
+				{
+					if(i == 0x7FFFFFFF)
+					{
+						//cout << "TEST!!\n";
+						//cin.ignore();
+						return;
+					}
+	
+					assert (i< length);		
+					v = &(all.reg.weight_vector[stride*i]);
+					brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
+				}
+			}
+			else// write binary or text
+			{
+				v = &(all.reg.weight_vector[stride*i]);
+				if (*v != 0.)
+				{
+					c++;
+					char buff[512];
+					int text_len;
+
+					text_len = sprintf(buff, " %d", i);
+					brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i), buff, text_len, text);
+
+					text_len = sprintf(buff, ":%f\n", *v);
+					brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v), buff, text_len, text);
+				}
+			}
+
+			if (!read)
+				i++;
+		}while ((!read && i < length) || (read && brw > 0));  
+		
+		if(!read)		
+		{
+			char buff[512];
+			int text_len;
+			
+			i = 0x7FFFFFFF;
+			text_len = sprintf(buff, " %d", i);
+			brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i), buff, text_len, text);
+		}
+	}
+
+	void save_load_tree(vw& all, io_buf& model_file, bool read, bool text)
+	{ 
+		txm* b = (txm*)all.l.sl.sldata;
+		char buff[512];
+		uint32_t i = 0;
+		uint32_t j = 0;
+		size_t brw = 1; 
+		uint32_t v;
+		int text_len;
+		
+		if(read)
+		{
+			brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+			
+			for(j = 0; j < i; j++)
+			{				
+				b->nodes.push_back(init_node(j, 0, 0));
+				
+				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+				b->nodes[j].id = v;
+				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+				b->nodes[j].id_left = v;
+				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+				b->nodes[j].id_right = v;
+				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+				b->nodes[j].max_cnt2_label = v;
+				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+				b->nodes[j].leaf = v;
+				
+				//printf("%ld, %ld, %ld, %d, %d, \n", b->nodes[j].id, b->nodes[j].id_left, b->nodes[j].id_right, b->nodes[j].max_cnt2_label, b->nodes[j].leaf);
+			}
+		}
+		else
+		{
+			text_len = sprintf(buff, ":%d\n", b->nodes.size());
+			v = b->nodes.size();
+			brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
+
+			for(i = 0; i < b->nodes.size(); i++)
+			{
+				text_len = sprintf(buff, ":%d", b->nodes[i].id);
+				v = b->nodes[i].id;
+				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
+				
+				text_len = sprintf(buff, ":%d", b->nodes[i].id_left);
+				v = b->nodes[i].id_left;
+				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
+				
+				text_len = sprintf(buff, ":%d", b->nodes[i].id_right);
+				v = b->nodes[i].id_right;
+				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
+				
+				text_len = sprintf(buff, ":%d", b->nodes[i].max_cnt2_label);
+				v = b->nodes[i].max_cnt2_label;
+				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
+				
+				text_len = sprintf(buff, ":%d\n", b->nodes[i].leaf);
+				v = b->nodes[i].leaf;
+				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);			
+			}	
+		}		
+	}
+	
+	void txm_save_load(void* data, io_buf& model_file, bool read, bool text)
+	{
+		txm* g = (txm*)data;			//BARDZO WAZNE JEST ZOSTAWIENIE TEGO g, W PRZECIWNYM WYPADKU ON SIE ODWOLUJE DO TEGO CZEGO NIE MA
+		vw* all = g->all;
+		
+		if(read)
+		{
+			initialize_regressor(*all);
+			if(all->adaptive && all->initial_t > 0)
+			{
+				uint32_t length = 1 << all->num_bits;
+				uint32_t stride = all->reg.stride;
+				for (size_t j = 1; j < stride*length; j+=stride)
+				{
+					all->reg.weight_vector[j] = all->initial_t;   
+				}
+			}
+		}
+
+		if (model_file.files.size() > 0)
+		{
+			txm_save_load_regressor(*all, model_file, read, text);
+			save_load_tree(*all, model_file, read, text);
+		}
 	}
 
 	learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -754,17 +943,27 @@ namespace TXM
 		*(all.p->lp) = OAA::mc_label_parser;
 		
 		data->increment = all.reg.stride * all.weights_per_problem;
-		all.weights_per_problem *= 4*data->k;
+		all.weights_per_problem *= TXM_MULTIPLICATIVE_FACTOR*data->k;
 		data->base = all.l;
-		learner l(data, drive, learn, finish, all.l.sl);
+		//TUTAJ ZAMIAST all.l.sl BEDE MIALA WLASNA STRUKTURE DO ZAPAMIETANIA, powinnam odkomentowac te dwie linijki i zakomentowac linijke z learner
+	    sl_t sl = {data, txm_save_load};					//TU JEST MOJA WLASNA STRUKTURA DO ZAPAMIETANIA
+	    learner l(data, drive, learn, finish, sl);		//CZYLI TUTAJ ZAMIAST all.l.sl uzywamy po prostu sl
+		//learner l(data, drive, learn, finish, all.l.sl);
 		
 		txm* b = (txm*)data;
 		
 		b->current_pass = 0;
 		b->level_limit = TXM_LEVEL_LIM;
 		
-		init_tree(b);
+		if(all.training)
+			init_tree(b);		
+		else	
+		{			
+			b->tree_finished = false;	
+		}
 		
 		return l;
-	}
+	}	
 }
+
+

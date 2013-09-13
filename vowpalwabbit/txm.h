@@ -16,7 +16,8 @@ license as described in the file LICENSE.
 #define TXM_PRED_LIM	1.f
 #define TXM_PRED_ALFA   1.f
 #define TXM_LEAF_TH		0.95
-#define TXM_LEVEL_LIM	5
+#define TXM_LEVEL_LIM	9
+#define TXM_MULTIPLICATIVE_FACTOR	16
 
 //#define TXM_DEBUG
 //#define TXM_DEBUG_PASS_STOP
@@ -25,46 +26,9 @@ license as described in the file LICENSE.
 
 namespace TXM
 {
-
-  /**
-   *struct mc_label {
-   *  float label;
-   *  float weight;
-   *};
-   */
-
-  
   learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
-  
-//  size_t read_cached_label(shared_data*, void* v, io_buf& cache);
-//  void cache_label(void* v, io_buf& cache);
-//  void default_label(void* v);
-//  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words);
-//  void delete_label(void* v);
-//  float weight(void* v);
-//  float initial(void* v);
-//  const label_parser mc_label_parser = {default_label, parse_label, 
-//					cache_label, read_cached_label, 
-//					delete_label, weight, initial, 
-//                                        NULL,
-//					sizeof(mc_label)};
-//  
-//  void output_example(vw& all, example* ec);
-//
-//  inline int example_is_newline(example* ec)
-//  {
-//    // if only index is constant namespace or no index
-//    return ((ec->indices.size() == 0) || 
-//            ((ec->indices.size() == 1) &&
-//             (ec->indices.last() == constant_namespace)));
-//  }
-//
-//  inline int example_is_test(example* ec)
-//  {
-//    return (((TXM::mc_label*)ec->ld)->label == (uint32_t)-1);
-//  }
-
-
+  void txm_save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
+  void txm_save_load(void* data, io_buf& model_file, bool read, bool text);
 }
 
 #endif

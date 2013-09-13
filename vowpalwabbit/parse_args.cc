@@ -590,7 +590,6 @@ vw* parse_args(int argc, char *argv[])
 
   if (!all->quiet)
     {
-		cerr << "boo" << endl;
       cerr << "Num weight bits = " << all->num_bits << endl;
       cerr << "learning rate = " << all->eta << endl;
       cerr << "initial_t = " << all->sd->t << endl;
@@ -648,8 +647,42 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("sendto"))
     all->l = SENDER::setup(*all, vm, all->pairs);
 
+  bool got_mc = false;
+  bool got_cs = false;
+  bool got_cb = false;
+	
+	//Anna
+	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
+	if(vm.count("txm") || vm_file.count("txm") ) 
+	{
+		if (got_mc) 
+		{ 
+			cerr << "error: cannot specify multiple MC learners" << endl; 
+			throw exception(); 
+		}	
+		cout<<"Parse_args.cc: in txm\n";
+
+		all->l = TXM::setup(*all, to_pass_further, vm, vm_file);
+		got_mc = true;
+	}
+
+	if(vm.count("txm_o") || vm_file.count("txm_o") ) 
+	{
+		if (got_mc) 
+		{ 
+			cerr << "error: cannot specify multiple MC learners" << endl; 
+			throw exception(); 
+		}	
+		cout<<"Parse_args.cc: in txm_o\n";
+
+		all->l = TXM_O::setup(*all, to_pass_further, vm, vm_file);
+		got_mc = true;
+	}
+	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
+ 
+
   // load rest of regressor
-  all->l.save_load(io_temp, true, false);
+  all->l.save_load(io_temp, true, false); 
   io_temp.close_file();
   //load the mask model, might be different from -i
   parse_mask_regressor_args(*all, vm);
@@ -671,10 +704,6 @@ vw* parse_args(int argc, char *argv[])
       if (all->reg_mode > 1)
 	cerr << "using l2 regularization = " << all->l2_lambda << endl;
     }
-
-  bool got_mc = false;
-  bool got_cs = false;
-  bool got_cb = false;
 
   if(vm.count("nn") || vm_file.count("nn") ) 
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
@@ -768,35 +797,7 @@ vw* parse_args(int argc, char *argv[])
     all->l = ImperativeSearn::setup(*all, to_pass_further, vm, vm_file);
   }
   
-  //Anna
-  //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
-  if(vm.count("txm") || vm_file.count("txm") ) 
-  {
-	if (got_mc) 
-	{ 
-		cerr << "error: cannot specify multiple MC learners" << endl; 
-		throw exception(); 
-	}	
-	cout<<"Parse_args.cc: in txm\n";
-	
-	all->l = TXM::setup(*all, to_pass_further, vm, vm_file);
-	got_mc = true;
-  }
-  
-  if(vm.count("txm_o") || vm_file.count("txm_o") ) 
-  {
-	if (got_mc) 
-	{ 
-		cerr << "error: cannot specify multiple MC learners" << endl; 
-		throw exception(); 
-	}	
-	cout<<"Parse_args.cc: in txm_o\n";
-	
-	all->l = TXM_O::setup(*all, to_pass_further, vm, vm_file);
-	got_mc = true;
-  }
-  //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
-  
+   
   if (got_cb && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
     throw exception();
