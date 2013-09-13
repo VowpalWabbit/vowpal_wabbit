@@ -187,9 +187,6 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("holdout_off"))
       all->holdout_set_off = true;
 
-  all->l = GD::setup(*all, vm);
-  all->scorer = all->l;
-
   all->data_filename = "";
 
   all->searn = false;
@@ -241,6 +238,9 @@ vw* parse_args(int argc, char *argv[])
       cout << "you must specificy unique_id, total, and node if you specify any" << endl;
       throw exception();
     }
+
+  all->l = GD::setup(*all, vm);
+  all->scorer = all->l;
 
   all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
