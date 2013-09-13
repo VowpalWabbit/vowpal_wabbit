@@ -266,6 +266,7 @@ void noop_mm(shared_data*, float label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
+int print_tag(std::stringstream& ss, v_array<char> tag);
 
 #endif
  
