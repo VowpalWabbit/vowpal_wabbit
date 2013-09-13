@@ -9,7 +9,6 @@ license as described in the file LICENSE.
 #include <sstream>
 #include <numeric>
 #include <vector>
-#include <algorithm>
 
 #include "bs.h"
 #include "cache.h"
