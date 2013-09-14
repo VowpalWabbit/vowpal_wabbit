@@ -410,9 +410,6 @@ namespace ECT
        if(all-> early_terminate)
           {
             all->p->done = true;
-            all->final_regressor_name = "";//skip finalize_regressor
-            all->text_regressor_name = "";
-            all->inv_hash_regressor_name = "";
             return;
           }
         else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
