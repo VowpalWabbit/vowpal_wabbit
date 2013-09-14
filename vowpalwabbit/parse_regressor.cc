@@ -260,17 +260,19 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
 
 void finalize_regressor(vw& all, string reg_name)
 {
-  if (all.per_feature_regularizer_output.length() > 0)
-    dump_regressor(all, all.per_feature_regularizer_output, false);
-  else
-    dump_regressor(all, reg_name, false);
-  if (all.per_feature_regularizer_text.length() > 0)
-    dump_regressor(all, all.per_feature_regularizer_text, true);
-  else{
-    dump_regressor(all, all.text_regressor_name, true);
-    all.print_invert = true;
-    dump_regressor(all, all.inv_hash_regressor_name, true);
-    all.print_invert = false;
+  if (!all.early_terminate){
+    if (all.per_feature_regularizer_output.length() > 0)
+      dump_regressor(all, all.per_feature_regularizer_output, false);
+    else
+      dump_regressor(all, reg_name, false);
+    if (all.per_feature_regularizer_text.length() > 0)
+      dump_regressor(all, all.per_feature_regularizer_text, true);
+    else{
+      dump_regressor(all, all.text_regressor_name, true);
+      all.print_invert = true;
+      dump_regressor(all, all.inv_hash_regressor_name, true);
+      all.print_invert = false;
+    }
   }
 }
 

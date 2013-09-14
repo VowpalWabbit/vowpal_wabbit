@@ -583,8 +583,14 @@ int process_pass(vw& all, bfgs& b) {
 		  if (all.l2_lambda > 0.)
 		    b.loss_sum += add_regularization(all, b, all.l2_lambda);
 		  if (!all.quiet){
-                    if(!all.holdout_set_off && b.current_pass >= 1)
-                      fprintf(stderr, "%2lu h%-10.5f\t", (long unsigned int)b.current_pass+1, all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
+                    if(!all.holdout_set_off && b.current_pass >= 1){
+                      if(all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.){
+                        fprintf(stderr, "%2lu ", (long unsigned int)b.current_pass+1);
+                        fprintf(stderr, "h unknown    ");
+                      }                      
+                      else
+                        fprintf(stderr, "%2lu h%-10.5f\t", (long unsigned int)b.current_pass+1, all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
+                    }
                     else
                       fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass+1, b.loss_sum / b.importance_weight_sum);
                   }
@@ -929,10 +935,6 @@ void drive(vw* all, void* d)
      if(all-> early_terminate)
         {
           all->p->done = true;
-          all->final_regressor_name = "";//skip finalize_regressor
-          all->text_regressor_name = "";
-          all->per_feature_regularizer_output = "";
-          all->per_feature_regularizer_text = "";
           return;
         }
       else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
@@ -941,7 +943,7 @@ void drive(vw* all, void* d)
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
-	return;
+          return;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }

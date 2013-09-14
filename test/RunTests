@@ -668,7 +668,7 @@ __DATA__
     train-sets/ref/searn_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
-{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 12 --quiet
+{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 12 --quiet --holdout_off
     train-sets/ref/3parity.stdout
     train-sets/ref/3parity.stderr
 
