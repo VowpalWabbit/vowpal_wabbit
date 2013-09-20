@@ -16,9 +16,11 @@ license as described in the file LICENSE.
 #define TXM_PRED_LIM	1.f
 #define TXM_PRED_ALFA   1.f
 #define TXM_LEAF_TH		0.95
-#define TXM_LEVEL_LIM	9
-#define TXM_MULTIPLICATIVE_FACTOR	16
+#define TXM_LEVEL_LIM	5
+#define TXM_MULTIPLICATIVE_FACTOR	10
 
+#define TXM_DEBUG_FILE1
+#define TXM_DEBUG_FILE2
 //#define TXM_DEBUG
 //#define TXM_DEBUG_PASS_STOP
 //#define TXM_DEBUG_EX_STOP

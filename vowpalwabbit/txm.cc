@@ -114,7 +114,13 @@ namespace TXM
 		uint32_t total_wrg;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
 		uint32_t total_cor;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
 		
-		char tree_file_name[256];
+		#ifdef TXM_DEBUG_FILE1
+		FILE *debug1_fp;
+		#endif
+		
+		#ifdef TXM_DEBUG_FILE2
+		FILE *debug2_fp;
+		#endif
 	};	
 
 	txm_node_type init_node(size_t id, size_t id_parent, size_t level)        //inicjalizowanie nowego noda drzewa, odpalane przy tworzeniu nowego noda
@@ -144,6 +150,10 @@ namespace TXM
 		d->nodes.push_back(init_node(0, 0, 0));
 		d->tree_finished = false;
 		d->only_leafs = false;
+		
+		#ifdef TXM_DEBUG_FILE1
+		d->debug1_fp = fopen("atxmdebug1.csv", "wt");
+		#endif		
 	}
 	
 	/*void display_tree(txm* d)                           //wyswietlanie drzewa
@@ -187,6 +197,109 @@ namespace TXM
 		cout << endl;	
 		cout << endl;		
 	}*/
+	
+	void save_node_stats(txm* b)							//wyswietlam statystyke dla poszczegonym nodow
+	{
+		uint32_t i, j;
+				
+		for(i = 0; i < b->nodes.size(); i++)
+		{
+			if(b->nodes[i].removed)
+				continue;
+			
+			fprintf(b->debug1_fp, "Node: %4d, Level: %2d, Leaf: %1d, Eh: %7.4f,\n", i, b->nodes[i].level, b->nodes[i].leaf, b->nodes[i].Eh / b->nodes[i].n);
+			
+			fprintf(b->debug1_fp, "Label:, ");
+			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+			{
+				fprintf(b->debug1_fp, "%6d,", b->nodes[i].node_pred[j].label);
+			}						
+			fprintf(b->debug1_fp, "\n");
+			
+			fprintf(b->debug1_fp, "Ehk:, ");
+			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+			{
+				fprintf(b->debug1_fp, "%7.4f,", b->nodes[i].node_pred[j].Ehk / b->nodes[i].node_pred[j].nk);
+			}						
+			fprintf(b->debug1_fp, "\n");
+			
+			fprintf(b->debug1_fp, "cnt1:, ");
+			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+			{
+				fprintf(b->debug1_fp, "%6d,", b->nodes[i].node_pred[j].label_cnt);
+			}						
+			fprintf(b->debug1_fp, "\n");
+			
+			fprintf(b->debug1_fp, "cnt2:, ");
+			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+			{				
+				fprintf(b->debug1_fp, "%6d,", b->nodes[i].node_pred[j].label_cnt2);
+			}
+			fprintf(b->debug1_fp, "\n");
+			
+			fprintf(b->debug1_fp, "max(label:cnt:total):, %3d,%6d,%7d,\n",  (int) b->nodes[i].max_cnt2_label, (int) b->nodes[i].max_cnt2, (int) b->nodes[i].total_cnt2);
+			fprintf(b->debug1_fp, "left: %4d, right: %4d, parent: %4d,\n",  (int) b->nodes[i].id_left, (int) b->nodes[i].id_right, (int) b->nodes[i].id_parent);
+			fprintf(b->debug1_fp, "\n");
+		}
+	}
+	
+	void save_node_stats_pred(txm* b)							//wyswietlam statystyke dla poszczegonym nodow
+	{
+		uint32_t i, j;
+		size_t index;
+		float ftmp;
+		
+		for(i = 0; i < b->nodes.size(); i++)
+		{
+			if(b->nodes[i].removed)
+				continue;
+			
+			fprintf(b->debug2_fp, "Node: %4d, Level: %2d, Leaf: %1d,\n", i, b->nodes[i].level, b->nodes[i].leaf);
+			
+			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+			{
+				fprintf(b->debug2_fp, "%6d,", b->nodes[i].node_pred[j].label);
+			}						
+			fprintf(b->debug2_fp, "\n");
+			
+			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+			{				
+				fprintf(b->debug2_fp, "%6d,", b->nodes[i].node_pred[j].label_cnt2);
+			}
+			fprintf(b->debug2_fp, "\n");
+			
+			if(b->nodes[i].node_pred.contain_sorted(txm_node_pred_type(b->nodes[i].max_cnt2_label), &index))
+			{
+				b->nodes[i].max_cnt2 = b->nodes[i].node_pred[index].label_cnt2;
+				
+				ftmp = b->nodes[i].max_cnt2;
+				ftmp /= b->nodes[i].total_cnt2;
+				ftmp = 1 - ftmp;
+			}
+			else
+			{
+				b->nodes[i].max_cnt2 = 0;
+				ftmp = 1;
+			}
+			
+			fprintf(b->debug2_fp, "max(label:cnt:total:error):, %3d,%6d,%7d,%7.5f,\n",  (int) b->nodes[i].max_cnt2_label, (int) b->nodes[i].max_cnt2, (int) b->nodes[i].total_cnt2, ftmp);
+			fprintf(b->debug2_fp, "left: %4d, right: %4d, parent: %4d\n",  (int) b->nodes[i].id_left, (int) b->nodes[i].id_right, (int) b->nodes[i].id_parent);
+			fprintf(b->debug2_fp, "\n");
+		}
+	}
+	
+	void clear_cnt2(txm* b)
+	{
+		uint32_t i, j;
+	
+		for(i = 0; i < b->nodes.size(); i++)
+		{
+			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+			{
+				b->nodes[i].node_pred[j].label_cnt2 = 0;
+			}
+		}
+	}
 	
 	/*void display_node_stats(txm* b)							//wyswietlam statystyke dla poszczegonym nodow
 	{
@@ -283,6 +396,7 @@ namespace TXM
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		vw* all = d->all;
 		size_t new_cn;
+		size_t index;
 		//float Eh_norm;
 		
 		#ifdef TXM_DEBUG_PRED
@@ -299,6 +413,20 @@ namespace TXM
 		
 		#ifdef TXM_DEBUG_PRED
 		cout << "\nExample: " << d->ex_num << endl;
+		#endif
+		
+		#ifdef TXM_DEBUG_FILE2
+		if(!d->nodes[d->cn].node_pred.contain_sorted(txm_node_pred_type(mc->label), &index))	//if the label is not in the root
+		{
+			d->nodes[d->cn].node_pred.push_back_sorted(txm_node_pred_type(mc->label));	//add the label to the list of labels in the root
+			d->nodes[d->cn].node_pred.contain_sorted(txm_node_pred_type(mc->label), &index);
+			d->nodes[d->cn].node_pred[index].label_cnt2++;
+		}
+		else
+		{			
+			d->nodes[d->cn].node_pred[index].label_cnt2++;
+		}
+		d->nodes[d->cn].total_cnt2++;
 		#endif
 		
 		while(!d->nodes[d->cn].leaf)// && d->nodes[d->cn].level < d->level_limit)
@@ -331,7 +459,21 @@ namespace TXM
 				d->cn = new_cn;
 
 			if(new_cn == 0)		//blad - dziecko ma id 0, nigdy w to nie wchodze
-				break;		
+				break;	
+
+			#ifdef TXM_DEBUG_FILE2
+			if(!d->nodes[d->cn].node_pred.contain_sorted(txm_node_pred_type(mc->label), &index))	//if the label is not in the root
+			{
+				d->nodes[d->cn].node_pred.push_back_sorted(txm_node_pred_type(mc->label));	//add the label to the list of labels in the root
+				d->nodes[d->cn].node_pred.contain_sorted(txm_node_pred_type(mc->label), &index);
+				d->nodes[d->cn].node_pred[index].label_cnt2++;
+			}
+			else
+			{			
+				d->nodes[d->cn].node_pred[index].label_cnt2++;
+			}
+			d->nodes[d->cn].total_cnt2++;
+			#endif
 		}
 		
 		#ifdef TXM_DEBUG_PRED
@@ -437,7 +579,7 @@ namespace TXM
 			return;
 		}
 		
-		oryginal_label = mc->label;
+		oryginal_label = mc->label;	
 		
 		if(command_example(all,ec))		//po kazdym przejsciu przez zbior danych on wchodzi w command example
 		{		
@@ -475,9 +617,16 @@ namespace TXM
 				#ifdef TXM_DEBUG_PASS_STOP
 				cin.ignore();
 				#endif
+				
+				printf("current pass: %d\n", b->current_pass);
 			}	
 			return;
-		}		
+		}	
+
+		/*if(b->current_pass == 8 && b->ex_num)
+		{
+			printf("ex: %6d / %6d\n", b->ex_num, b->ex_total);
+		}	*/
 		
 		if(b->current_pass == 0)			//first pass through the data, po przejsciu przez ten pass mam root i dwa liscie
 		{
@@ -513,6 +662,9 @@ namespace TXM
 				
 				ftmp = b->nodes[id_parent].max_cnt2;
 				ftmp /= b->nodes[id_parent].total_cnt2;
+				//ftmp = b->nodes[id_parent].Eh;
+				//ftmp /= b->nodes[id_parent].n;
+				//ftmp = abs(ftmp);			
 				
 				if(ftmp > TXM_LEAF_TH)
 				{
@@ -529,7 +681,7 @@ namespace TXM
 						b->nodes[id_right].removed = true;
 						
 					//cout << "\n\nLEAF!!:\t" << id_parent << ":" << b->nodes[id_parent].max_cnt2_label << endl << endl;
-					
+					b->ex_num++;
 					return;
 				}				
 			}
@@ -560,7 +712,10 @@ namespace TXM
 			b->nodes[b->cn].total_cnt2++;
 			
 			if(b->nodes[b->cn].level >= b->level_limit)	//to jest tylko zwiazane z tymi nodami ktore doszly do poziomu level limit
+			{
+				b->ex_num++;
 				return;							//nie ustawiam flagi b->nodes[b->cn].leaf na true, bo chce zeby on przeszedl przez liczenie statystyki dla wszystkich punktow ktore tu moga wpasc
+			}
 			
 			b->only_leafs = false;				//jezeli mam ostatni level drzewa to tu nigdy nie dojde i po ostatnim przykladzie z tego passa po danych wejde w tree_finished
 		}
@@ -709,9 +864,20 @@ namespace TXM
 			}
 			else if (parser_done(all->p))
 			{				
+				#ifdef TXM_DEBUG_FILE2
+				save_node_stats_pred(b);
+				fclose(b->debug2_fp);
+				#endif
+				
 				return;
 			}
-		}		
+		}
+		
+		
+		#ifdef TXM_DEBUG_FILE1
+		save_node_stats(b);
+		fclose(b->debug1_fp);
+		#endif		
 		
 		//display_node_stats(b);
 		//Evaluation
@@ -735,7 +901,7 @@ namespace TXM
 				cout<<"log2(the number of labels): "<< (float)log2(b->k) << endl;
 				cout<<"Tree depth: "<< b->current_pass << endl;
 				cout << endl;
-
+				
 				return;
 			}
 		}
@@ -960,6 +1126,10 @@ namespace TXM
 		else	
 		{			
 			b->tree_finished = false;	
+			
+			#ifdef TXM_DEBUG_FILE2
+			b->debug2_fp = fopen("atxmdebug2.csv", "wt");
+			#endif
 		}
 		
 		return l;
