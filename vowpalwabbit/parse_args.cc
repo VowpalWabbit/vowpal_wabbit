@@ -16,6 +16,7 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "nn.h"
 #include "oaa.h"
+#include "bs.h"
 #include "ect.h"
 #include "csoaa.h"
 #include "wap.h"
@@ -66,6 +67,7 @@ vw* parse_args(int argc, char *argv[])
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&(all->active_c0)), "active learning mellowness parameter c_0. Default 8")
     ("binary", "report loss as binary classification on -1,1")
+    ("bs", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("sgd", "use regular stochastic gradient descent update.")
     ("adaptive", "use adaptive, individual learning rates.")
@@ -752,6 +754,9 @@ vw* parse_args(int argc, char *argv[])
     cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
     throw exception();
   }
+
+  if(vm.count("bs") || vm_file.count("bs") ) 
+    all->l = BS::setup(*all, to_pass_further, vm, vm_file);
 
   if (to_pass_further.size() > 0) {
     bool is_actually_okay = false;

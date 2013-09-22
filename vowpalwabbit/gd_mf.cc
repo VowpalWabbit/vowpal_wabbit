@@ -28,7 +28,7 @@ void mf_local_predict(example* ec, regressor& reg);
 
 float mf_inline_predict(vw& all, example* &ec)
 {
-  float prediction = 0.0;
+  float prediction = all.p->lp->get_initial(ec->ld);
 
   // clear stored predictions
   ec->topic_predictions.erase();

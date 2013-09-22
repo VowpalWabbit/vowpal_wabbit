@@ -120,9 +120,17 @@ namespace OAA {
 
         if(!all.holdout_set_off && all.current_pass >= 1)
         {
-          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8ld %8lu h\n",
-	      all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples,
-	      all.sd->holdout_sum_loss_since_last_dump / all.sd->weighted_holdout_examples_since_last_dump,
+          if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
+            fprintf(stderr, " unknown   ");
+          else
+	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
+
+          if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
+            fprintf(stderr, " unknown   ");
+          else
+	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
+
+            fprintf(stderr, "%8ld %8.1f   %s %8ld %8lu h\n",
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
@@ -180,7 +188,7 @@ namespace OAA {
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, ec->final_prediction, 0, ec->tag);
 
-    print_update(all, ec);
+    OAA::print_update(all, ec);
   }
 
   void learn_with_output(oaa* d, example* ec, bool shouldOutput)
@@ -248,9 +256,6 @@ namespace OAA {
        if(all-> early_terminate)
           {
             all->p->done = true;
-            all->final_regressor_name = "";//skip finalize_regressor
-            all->text_regressor_name = "";
-            all->inv_hash_regressor_name = "";
             return;
           }
         if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
