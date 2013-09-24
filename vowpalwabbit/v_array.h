@@ -72,46 +72,39 @@ template<class T> class v_array{
     *(end++) = new_ele;
   }	
   
-	void push_back_sorted(const T &new_ele)//ANNA
+	size_t push_back_sorted(const T &new_ele)//ANNA
 	{
 		size_t i = 0;
+		size_t index;
 		size_t size = end - begin;
+		size_t to_move;
 		T tmp1, tmp2;
 		
 		if(end == end_array)
 			resize(2 * (end_array-begin) + 3);
 			
-		while(i < size && begin[i] < new_ele)
-			i++;
+		contain_sorted(new_ele, &index);
 		
-		tmp1 = begin[i];
-		begin[i] = new_ele;
-		i++;
-		size++;
+		to_move = size - index;
 		
-		while(i < size)
-		{
-			tmp2 = begin[i];
-			begin[i] = tmp1;
-			tmp1 = tmp2;
-			i++;
-		}
+		if(to_move > 0)
+			memmove(begin + index + 1, begin + index, to_move * sizeof(T));
+		
+		begin[index] = new_ele;
 		
 		end++;
+		
+		return index;
 	}	
 	
 	T remove_sorted(size_t index)//ANNA
 	{
 		T tmp;
-		size_t size = end - begin - 1;	
+		size_t size = end - begin;	
+		size_t to_move = size - index - 1;
 		
-		tmp = begin[index];
-		
-		while(index < size)
-		{
-			begin[index] = begin[index + 1];
-			index++;
-		}
+		if(to_move > 0)
+			memmove(begin + index, begin + index + 1, to_move * sizeof(T));
 		
 		end--;
 		return tmp;
@@ -155,7 +148,10 @@ template<class T> class v_array{
 		size_t i = (a + b) / 2;
 		
 		if(size < 1)
+		{
+			*index = 0;
 			return false;
+		}
 		
 		while(a <= b)
 		{
@@ -169,13 +165,21 @@ template<class T> class v_array{
 			else
 			{
 				if(i == 0)
-					return false;
+					break;
 					
 				b = i - 1;
 			}
 			
 			i = (a + b) / 2;		
 		}
+		
+		if(begin[i] > ele && i > 0)
+			i -= 1;
+		
+		if(begin[i] > ele)
+			*index = i;
+		else if(i < size)
+			*index = i + 1;
 		
 		return false;
 	}
