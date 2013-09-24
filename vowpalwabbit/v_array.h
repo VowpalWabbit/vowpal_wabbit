@@ -183,6 +183,15 @@ template<class T> class v_array{
 		
 		return false;
 	}
+	
+	T* contain_sorted_wrp(const T &ele)//ANNA
+	{
+		size_t index;
+		
+		contain_sorted(ele, &index);
+		
+		return &begin[index];
+	}
   
 	bool contain(const T &ele)//ANNA
 	{
