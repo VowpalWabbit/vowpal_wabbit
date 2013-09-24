@@ -78,10 +78,6 @@ inline void vec_add_trunc_rescale_general(vw& all, void* p, float fx, uint32_t f
   *(float*)p += trunc_weight(w[0], (float)all.sd->gravity) * fx;
 }
 
-inline void vec_add_adagrad_general(vw& all, void* p, float fx, uint32_t fi) {
-  *(float*)p += all.reg.weight_vector[(fi*2) & all.reg.weight_mask] * fx;
-}
-
 void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update, float regularization);
 
 #endif

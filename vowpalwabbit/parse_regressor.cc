@@ -249,10 +249,8 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
 
 void save_predictor(vw& all, string reg_name, size_t current_pass)
 {
-  char* filename = new char[reg_name.length()+10];
-  if (current_pass == (size_t)-1) // this is "best" predictor
-    sprintf(filename,"%s.best",reg_name.c_str());
-  else if (all.save_per_pass)
+  char* filename = new char[reg_name.length()+4];
+  if (all.save_per_pass)
     sprintf(filename,"%s.%lu",reg_name.c_str(),(long unsigned)current_pass);
   else
     sprintf(filename,"%s",reg_name.c_str());
@@ -262,14 +260,20 @@ void save_predictor(vw& all, string reg_name, size_t current_pass)
 
 void finalize_regressor(vw& all, string reg_name)
 {
-  if (all.per_feature_regularizer_output.length() > 0)
-    dump_regressor(all, all.per_feature_regularizer_output, false);
-  else
-    dump_regressor(all, reg_name, false);
-  if (all.per_feature_regularizer_text.length() > 0)
-    dump_regressor(all, all.per_feature_regularizer_text, true);
-  else
-    dump_regressor(all, all.text_regressor_name, true);
+  if (!all.early_terminate){
+    if (all.per_feature_regularizer_output.length() > 0)
+      dump_regressor(all, all.per_feature_regularizer_output, false);
+    else
+      dump_regressor(all, reg_name, false);
+    if (all.per_feature_regularizer_text.length() > 0)
+      dump_regressor(all, all.per_feature_regularizer_text, true);
+    else{
+      dump_regressor(all, all.text_regressor_name, true);
+      all.print_invert = true;
+      dump_regressor(all, all.inv_hash_regressor_name, true);
+      all.print_invert = false;
+    }
+  }
 }
 
 void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
@@ -291,4 +295,34 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
 
   save_load_header(all, io_temp, true, false);
 }
+
+void parse_mask_regressor_args(vw& all, po::variables_map& vm){
+
+  if (vm.count("feature_mask")) {
+    size_t length = ((size_t)1) << all.num_bits;  
+    string mask_filename = vm["feature_mask"].as<string>();
+    if (vm.count("initial_regressor")){ 
+      vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
+      if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
+           
+        for (size_t j = 0; j < length; j++){	 
+          if(all.reg.weight_vector[j*all.reg.stride] != 0.)
+            all.reg.weight_vector[j*all.reg.stride + all.feature_mask_idx] = 1.;
+        } 
+        return;
+      }
+    }
+    //all other cases, including from different file, or -i does not exist, need to read in the mask file
+    io_buf io_temp_mask;
+    io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
+    save_load_header(all, io_temp_mask, true, false);
+    all.l.save_load(io_temp_mask, true, false);
+    io_temp_mask.close_file();
+    for (size_t j = 0; j < length; j++){	 
+      if(all.reg.weight_vector[j*all.reg.stride] != 0.)
+        all.reg.weight_vector[j*all.reg.stride + all.feature_mask_idx] = 1.;
+    }
+  }
+}
+
 

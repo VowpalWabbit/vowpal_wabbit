@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "v_hashmap.h"
 #include "rand48.h"
-#include "simple_label.h"
 #include "vw.h"
 
 using namespace std;
@@ -117,9 +116,6 @@ namespace NN {
       {
         update_example_indicies(all.audit, ec, n.increment);
 
-        ec->partial_prediction = 0.;
-        ec->done = false;
-
         n.base.learn(ec);
         hidden_units[i] = ec->final_prediction;
 
@@ -168,8 +164,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->atomics[nn_output_namespace] = n.output_layer.atomics[nn_output_namespace];
       ec->sum_feat_sq[nn_output_namespace] = n.output_layer.sum_feat_sq[nn_output_namespace];
       ec->total_sum_feat_sq += n.output_layer.sum_feat_sq[nn_output_namespace];
-      ec->partial_prediction = 0.;
-      ec->done = false;
       n.base.learn(ec);
       n.output_layer.partial_prediction = ec->partial_prediction;
       n.output_layer.loss = ec->loss;
@@ -186,7 +180,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.eta_global = ec->eta_global;
       n.output_layer.global_weight = ec->global_weight;
       n.output_layer.example_t = ec->example_t;
-      n.output_layer.done = false;
       n.base.learn(&n.output_layer);
       n.output_layer.ld = 0;
     }
@@ -198,7 +191,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
     }
 
-    if (all.training && (!is_development_example(all,ec)) && ld->label != FLT_MAX) {
+    if (all.training && ld->label != FLT_MAX) {
       float gradient = all.loss->first_derivative(all.sd, 
                                                   n.output_layer.final_prediction,
                                                   ld->label);
@@ -221,11 +214,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ld->label = GD::finalize_prediction (all, hidden_units[i] - gradhw);
-            if (ld->label != hidden_units[i])  {
-              ec->partial_prediction = 0.;
-              ec->done = false;
+            if (ld->label != hidden_units[i]) 
               n.base.learn(ec);
-            }
           }
         }
         update_example_indicies (all.audit, ec, -n.k*n.increment);

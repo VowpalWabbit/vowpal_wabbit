@@ -214,7 +214,6 @@ namespace ECT
             update_example_indicies(all.audit, ec,offset);
             ec->partial_prediction = 0;
 	  
-            ec->done = false;
             e.base.learn(ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
@@ -232,7 +231,6 @@ namespace ECT
 	
 	ec->partial_prediction = 0;
 	update_example_indicies(all.audit, ec,offset);
-        ec->done = false;
 	e.base.learn(ec);
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
@@ -280,11 +278,9 @@ namespace ECT
 	update_example_indicies(all.audit, ec,offset);
 	
 	ec->partial_prediction = 0;
-        ec->done = false;
 	e.base.learn(ec);
 	simple_temp.weight = 0.;
 	ec->partial_prediction = 0;
-        ec->done = false;
 	e.base.learn(ec);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
@@ -344,8 +340,7 @@ namespace ECT
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
-                ec->done = false;
-                e.base.learn(ec);
+				e.base.learn(ec);
 		
                 update_example_indicies(all.audit, ec,-offset);
 		
@@ -412,7 +407,12 @@ namespace ECT
     example* ec = NULL;
     while ( true )
       {
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
+       if(all-> early_terminate)
+          {
+            all->p->done = true;
+            return;
+          }
+        else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn(d, ec);
             OAA::output_example(*all, ec);

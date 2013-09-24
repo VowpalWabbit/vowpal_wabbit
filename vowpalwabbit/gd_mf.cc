@@ -28,7 +28,7 @@ void mf_local_predict(example* ec, regressor& reg);
 
 float mf_inline_predict(vw& all, example* &ec)
 {
-  float prediction = 0.0;
+  float prediction = all.p->lp->get_initial(ec->ld);
 
   // clear stored predictions
   ec->topic_predictions.erase();
@@ -146,8 +146,11 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
     else
       for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
 	{
-	  cout << '\t' << f->weight_index << ':' << f->x;
-	  cout << ':' << weights[(f->weight_index + offset) & mask];
+	  size_t index = (f->weight_index + offset) & all.reg.weight_mask;
+	  
+	  cout << "\tConstant:";
+	  cout << (index/all.reg.stride & all.parse_mask) << ':' << f->x;
+	  cout  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
@@ -161,13 +164,12 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 		  cout << '\t' << f->space << k << '^' << f->feature << ':' << ((f->weight_index+k)&mask) 
 		       <<"(" << ((f->weight_index + offset +k) & mask)  << ")" << ':' << f->x;
 		  cout << ':' << weights[(f->weight_index + offset + k) & mask];
-
-		  cout << ':' << f2->space << k << '^' << f2->feature << ':' << ((f2->weight_index+k)&mask) 
-		       <<"(" << ((f2->weight_index + offset +k) & mask)  << ")" << ':' << f2->x;
-		  cout << ':' << weights[(f2->weight_index + offset + k) & mask];
-
-		  cout << ':' <<  weights[(f->weight_index + offset + k) & mask] * weights[(f2->weight_index + offset + k) & mask];
-
+		  
+		  cout << ':' << f2->space << k << '^' << f2->feature << ':' << ((f2->weight_index+k+all.rank)&mask) 
+		       <<"(" << ((f2->weight_index + offset +k+all.rank) & mask)  << ")" << ':' << f2->x;
+		  cout << ':' << weights[(f2->weight_index + offset + k+all.rank) & mask];
+		  
+		  cout << ':' <<  weights[(f->weight_index + offset + k) & mask] * weights[(f2->weight_index + offset + k + all.rank) & mask];
 		}
 	  }
       }
@@ -175,6 +177,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
     cerr << "cannot use triples in matrix factorization" << endl;
     throw exception();
   }
+  cout << endl;
 }
 
 void mf_print_audit_features(vw& all, example* ec, size_t offset)

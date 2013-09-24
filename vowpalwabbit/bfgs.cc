@@ -76,6 +76,8 @@ namespace BFGS
     v_array<float> predictions;
     size_t example_number;
     size_t current_pass;
+    size_t no_win_counter;
+    size_t early_stop_thres;
     
     // default transition behavior
     bool first_hessian_on;
@@ -580,9 +582,18 @@ int process_pass(vw& all, bfgs& b) {
 		  }
 		  if (all.l2_lambda > 0.)
 		    b.loss_sum += add_regularization(all, b, all.l2_lambda);
-		  if (!all.quiet)
-		    fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass+1, b.loss_sum / b.importance_weight_sum);
-
+		  if (!all.quiet){
+                    if(!all.holdout_set_off && b.current_pass >= 1){
+                      if(all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.){
+                        fprintf(stderr, "%2lu ", (long unsigned int)b.current_pass+1);
+                        fprintf(stderr, "h unknown    ");
+                      }                      
+                      else
+                        fprintf(stderr, "%2lu h%-10.5f\t", (long unsigned int)b.current_pass+1, all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
+                    }
+                    else
+                      fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass+1, b.loss_sum / b.importance_weight_sum);
+                  }
 		  double wolfe1;
 		  double new_step = wolfe_eval(all, b, b.mem, b.loss_sum, b.previous_loss_sum, b.step_size, b.importance_weight_sum, b.origin, wolfe1);
 
@@ -762,12 +773,25 @@ void learn(void* d, example* ec)
 	  zero_preconditioner(*all);
 	  b->preconditioner_pass = true;
 	}
+        if(!all->holdout_set_off)
+        {
+          if(summarize_holdout_set(*all, b->no_win_counter))
+            finalize_regressor(*all, all->final_regressor_name); 
+          if(b->early_stop_thres == b->no_win_counter)
+            all-> early_terminate = true;
+        }         
       }
 
   if (b->current_pass <= b->final_pass)
     if (!command_example(all,ec))
       {
-	if (test_example(ec))
+	if(ec->test_only)
+          { 
+            label_data* ld = (label_data*)ec->ld;
+            ec->final_prediction = bfgs_predict(*all,ec); 
+            ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
+          }
+        else if (test_example(ec))
 	  ec->final_prediction = bfgs_predict(*all,ec);//w[0]
 	else
 	  process_example(*all, *b, ec);
@@ -908,13 +932,18 @@ void drive(vw* all, void* d)
 
   while ( true )
     {
-      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
+     if(all-> early_terminate)
+        {
+          all->p->done = true;
+          return;
+        }
+      else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	{
 	  learn(b, ec);
 	  return_simple_example(*all, ec);
 	}
       else if (parser_done(all->p))
-	return;
+          return;
       else 
 	;//busywait when we have predicted on all examples but not yet trained on all.
     }
@@ -930,6 +959,15 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
   b->gradient_pass = true;
   b->preconditioner_pass = true;
   b->final_pass=all.numpasses;  
+  b->no_win_counter = 0;
+  b->early_stop_thres = 3;
+
+  if(!all.holdout_set_off)
+  {
+    all.sd->holdout_best_loss = FLT_MAX;
+    if(vm.count("early_terminate"))      
+      b->early_stop_thres = vm["early_terminate"].as< size_t>();     
+  }
   
   sl_t sl = {b, save_load};
   learner t(b,drive,learn,finish,sl);

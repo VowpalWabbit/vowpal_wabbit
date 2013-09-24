@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #ifndef GLOBAL_DATA_H
 #define GLOBAL_DATA_H
 #include <vector>
+#include <map>
 #include <stdint.h>
 #include <cstdio>
 #include "v_array.h"
@@ -145,7 +146,6 @@ struct vw {
   size_t num_children;
 
   bool save_per_pass;
-  bool save_best_predictor;
   float active_c0;
   float initial_weight;
 
@@ -204,12 +204,13 @@ struct vw {
   bool add_constant;
   bool nonormalize;
   bool do_reset_source;
-  string devdata_tag;
-  bool compute_dev_scores;
-  bool force_full_predictions;
+  bool holdout_set_off;
+  bool early_terminate;
+  uint32_t holdout_period;
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
+  size_t feature_mask_idx; //offset idx where mask is stored
 
   size_t lda;
   float lda_alpha;
@@ -217,6 +218,7 @@ struct vw {
   float lda_D;
 
   std::string text_regressor_name;
+  std::string inv_hash_regressor_name;
   
   std::string span_server;
 
@@ -250,6 +252,10 @@ struct vw {
 
   size_t max_examples; // for TLC
 
+  bool hash_inv;
+  bool print_invert;
+  std::map< std::string, size_t> name_index_map;
+
   vw();
 };
 
@@ -260,6 +266,7 @@ void noop_mm(shared_data*, float label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
+int print_tag(std::stringstream& ss, v_array<char> tag);
 
 #endif
  

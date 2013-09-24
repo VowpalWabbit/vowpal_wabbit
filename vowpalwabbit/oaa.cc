@@ -118,7 +118,30 @@ namespace OAA {
         else
           sprintf(label_buf,"%8ld",(long int)ld->label);
 
-        fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8ld %8lu\n",
+        if(!all.holdout_set_off && all.current_pass >= 1)
+        {
+          if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
+            fprintf(stderr, " unknown   ");
+          else
+	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
+
+          if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
+            fprintf(stderr, " unknown   ");
+          else
+	    fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
+
+            fprintf(stderr, "%8ld %8.1f   %s %8ld %8lu h\n",
+	      (long int)all.sd->example_number,
+	      all.sd->weighted_examples,
+	      label_buf,
+	      (long int)ec->final_prediction,
+	      (long unsigned int)ec->num_features);
+
+          all.sd->weighted_holdout_examples_since_last_dump = 0;
+          all.sd->holdout_sum_loss_since_last_dump = 0.0;
+        }
+        else
+          fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8ld %8lu\n",
                 all.sd->sum_loss/all.sd->weighted_examples,
                 all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
                 (long int)all.sd->example_number,
@@ -139,17 +162,33 @@ namespace OAA {
       return;
 
     mc_label* ld = (mc_label*)ec->ld;
+
     size_t loss = 1;
     if (ld->label == ec->final_prediction)
       loss = 0;
-    accumulate_loss(all, ec, ld->weight, loss);
-  
+
+    if(ec->test_only)
+    {
+      all.sd->weighted_holdout_examples += ec->global_weight;//test weight seen
+      all.sd->weighted_holdout_examples_since_last_dump += ec->global_weight;
+      all.sd->weighted_holdout_examples_since_last_pass += ec->global_weight;
+      all.sd->holdout_sum_loss += loss;
+      all.sd->holdout_sum_loss_since_last_dump += loss;
+      all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
+    }
+    else
+    {
+      all.sd->weighted_examples += ld->weight;
+      all.sd->total_features += ec->num_features;
+      all.sd->sum_loss += loss;
+      all.sd->sum_loss_since_last_dump += loss;
+      all.sd->example_number++;
+    }
+ 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
       all.print(*sink, ec->final_prediction, 0, ec->tag);
-  
-    all.sd->example_number++;
 
-    print_update(all, ec);
+    OAA::print_update(all, ec);
   }
 
   void learn_with_output(oaa* d, example* ec, bool shouldOutput)
@@ -183,7 +222,6 @@ namespace OAA {
         ec->ld = &simple_temp;
         if (i != 1)
           update_example_indicies(all->audit, ec, d->increment);
-        ec->done = false;
         d->base.learn(ec);
         if (ec->partial_prediction > score)
           {
@@ -215,6 +253,11 @@ namespace OAA {
     example* ec = NULL;
     while ( true )
       {
+       if(all-> early_terminate)
+          {
+            all->p->done = true;
+            return;
+          }
         if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output((oaa*)d, ec, all->raw_prediction > 0);

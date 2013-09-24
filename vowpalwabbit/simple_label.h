@@ -33,8 +33,7 @@ const label_parser simple_label = {default_simple_label, parse_simple_label,
 				   sizeof(label_data)};
 
 float query_decision(vw& all, example* ec, float k);
-bool is_development_example(vw&all, example* ec);
-void accumulate_loss(vw& all, example* ec, float weight, float loss);
-bool report_dev_error(vw& all); // return TRUE iff this is the best loss so far
+bool summarize_holdout_set(vw& all, size_t& no_win_counter);
+void print_update(vw& all, example *ec);
 
 #endif

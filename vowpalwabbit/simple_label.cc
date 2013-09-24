@@ -143,8 +143,30 @@ void print_update(vw& all, example *ec)
 	strcpy(label_buf," unknown");
       else
 	sprintf(label_buf,"%8.4f",ld->label);
+      
+      if(!all.holdout_set_off && all.current_pass >= 1){
+        if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
+          fprintf(stderr, " unknown   ");
+        else
+	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
 
-      fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
+        if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
+          fprintf(stderr, " unknown   ");
+        else
+	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
+        
+        fprintf(stderr, "%10ld %11.1f %s %8.4f %8lu h\n",
+	      (long int)all.sd->example_number,
+	      all.sd->weighted_examples,
+	      label_buf,
+	      ec->final_prediction,
+	      (long unsigned int)ec->num_features);
+
+        all.sd->weighted_holdout_examples_since_last_dump = 0.;
+        all.sd->holdout_sum_loss_since_last_dump = 0.0;
+      }
+      else
+        fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
 	      all.sd->sum_loss/all.sd->weighted_examples,
 	      all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
 	      (long int)all.sd->example_number,
@@ -159,69 +181,29 @@ void print_update(vw& all, example *ec)
     }
 }
 
-bool is_development_example(vw&all, example* ec) {
-  if (!all.compute_dev_scores) return false;
-  if (ec == NULL) return false;
-  if (ec->tag.begin == NULL) return false;
-  size_t len = all.devdata_tag.length();
-  if (len == 0) return false;
-  if (len != ec->tag.size()) return false;
-  for (size_t i=0; i<len; i++)
-    if (all.devdata_tag[i] != ec->tag[i]) return false;
-  return true;
-}
-
-bool report_dev_error(vw& all) // return TRUE iff this is the best loss so far
-{
-  if (!all.compute_dev_scores) return false;
-
-  float thisLoss = (all.sd->dev_weighted_examples_since_last_dump > 0) ? (all.sd->dev_sum_loss_since_last_dump / all.sd->dev_weighted_examples_since_last_dump) : 1.;
-  float cumLoss  = (all.sd->dev_weighted_examples                 > 0) ? (all.sd->dev_sum_loss                 / all.sd->dev_weighted_examples                ) : 1.;
-
-  fprintf(stderr, "** dev loss on pass %d is %g (average %g across all passes, best %g on pass %d)",
-          all.current_pass,
-          thisLoss,
-          cumLoss,
-          all.sd->dev_best_loss,
-          all.sd->dev_best_pass);
-            
-  all.sd->dev_weighted_examples_since_last_dump = 0;
-  all.sd->dev_sum_loss_since_last_dump = 0;
-
-  if (thisLoss < all.sd->dev_best_loss) {
-    all.sd->dev_best_loss = thisLoss;
-    all.sd->dev_best_pass = all.current_pass;
-    fprintf(stderr, " **\n");
-    return true;
-  }
-  fprintf(stderr, "\n");
-  return false;
-}
-
-
-void accumulate_loss(vw& all, example* ec, float weight, float loss) {
-  if (ec != NULL)
-    all.sd->total_features += ec->num_features;
-
-  if (is_development_example(all, ec)) {
-    all.sd->dev_weighted_examples += weight;
-    all.sd->dev_weighted_examples_since_last_dump += weight;
-    all.sd->dev_sum_loss += loss;
-    all.sd->dev_sum_loss_since_last_dump += loss;
-  } else {
-    all.sd->weighted_examples += weight;
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
-  }
-}  
-
 void output_and_account_example(vw& all, example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
 
-  accumulate_loss(all, ec, ld->weight, ec->loss);
-  all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
+  if(ec->test_only)
+  {
+    all.sd->weighted_holdout_examples += ec->global_weight;//test weight seen
+    all.sd->weighted_holdout_examples_since_last_dump += ec->global_weight;
+    all.sd->weighted_holdout_examples_since_last_pass += ec->global_weight;
+    all.sd->holdout_sum_loss += ec->loss;
+    all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+    all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
 
+  }
+  else
+  {
+    all.sd->weighted_examples += ld->weight;
+    all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
+    all.sd->total_features += ec->num_features;
+    all.sd->sum_loss += ec->loss;
+    all.sd->sum_loss_since_last_dump += ec->loss;
+    all.sd->example_number++;
+  }
   all.print(all.raw_prediction, ec->partial_prediction, -1, ec->tag);
 
   float ai=-1; 
@@ -240,7 +222,7 @@ void output_and_account_example(vw& all, example* ec)
 	all.print(f, ec->final_prediction, 0, ec->tag);
     }
 
-  all.sd->example_number++;
+  
 
   print_update(all, ec);
 }
@@ -252,3 +234,20 @@ void return_simple_example(vw& all, example* ec)
   VW::finish_example(all,ec);
 }
 
+bool summarize_holdout_set(vw& all, size_t& no_win_counter)
+{
+  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX;
+
+  all.sd->weighted_holdout_examples_since_last_pass = 0;
+  all.sd->holdout_sum_loss_since_last_pass = 0;
+
+  if (thisLoss < all.sd->holdout_best_loss) {
+    all.sd->holdout_best_loss = thisLoss;
+    all.sd->holdout_best_pass = all.current_pass;
+    no_win_counter = 0;
+    return true;
+  }
+
+  no_win_counter++;
+  return false;          
+} 
