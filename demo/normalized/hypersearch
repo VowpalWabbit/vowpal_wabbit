@@ -1,0 +1,159 @@
+#! /usr/bin/env perl
+
+use warnings;
+use strict;
+
+# two parameters:
+#  cmd     - a command or reference to an array of command + arguments
+#  timeout - number of seconds to wait (0 = forever)
+
+# returns:
+#  cmd exit status (-1 if timed out)
+#  cmd results (STDERR and STDOUT merged into an array ref)
+
+sub ExecCmd {
+  my $cmd = shift || return(0, []);
+  my $timeout = shift || 0;
+
+  # opening a pipe creates a forked process     
+  my $pid = open(my $pipe, '-|');
+  return(-1, "Can't fork: $!") unless defined $pid;
+
+  if ($pid) {
+    # this code is running in the parent process
+
+    my @result = ();
+
+    if ($timeout) {
+      my $failed = 1;
+      eval {
+        # set a signal to die if the timeout is reached
+        local $SIG{ALRM} = sub { die "alarm\n" };
+        alarm $timeout;
+        @result = <$pipe>;
+        alarm 0;
+        $failed = 0;
+      };
+      return(-1, ['command timeout', @result]) if $failed;
+    }
+    else {
+      while (<$pipe>)
+        {
+          push @result, $_;
+          print STDERR ".";
+        }
+    }
+    close($pipe);
+
+    # return exit status, command output
+    return ($? >> 8), \@result;
+  }
+
+  # this code is running in the forked child process
+
+  { # skip warnings in this block
+    no warnings;
+
+    # redirect STDERR to STDOUT
+    open(STDERR, '>&STDOUT');
+
+    # exec transfers control of the process
+    # to the command
+    ref($cmd) eq 'ARRAY' ? exec(@$cmd) : exec($cmd);
+  }
+
+  # this code will not execute unless exec fails!
+  print "Can't exec @$cmd: $!";
+  exit 1;
+}
+
+sub evaluate ($)
+{
+  my ($rate) = @_;
+
+  my $nicerate = sprintf ("%.5g", $rate);
+  print STDERR "trying $nicerate ";
+
+  my @command = @ARGV;
+  foreach my $c (@command) { $c =~ s/\%/$rate/g; };
+
+  my ($status, $rv) = ExecCmd \@command;
+
+  die "subprocess invocation failed: $!" if $status;
+
+  my $loss;
+
+  foreach my $line (@$rv)
+    {
+      next unless $line =~ m%average loss = ([0-9\.]+)%;
+      $loss = $1;
+    }
+
+  die "failed to parse average loss from vw output: ", join "", @$rv
+    unless defined ($loss);
+
+  warn " $loss\n";
+  return $loss;
+}
+
+sub argmin3 ($$$$$$)
+  {
+    my ($a, $fa, $b, $fb, $c, $fc) = @_;
+
+    if ($fa < $fb)
+      {
+	return $fa < $fc ? ($a, $fa) : ($c, $fc);
+      }
+    else
+      {
+	return $fb < $fc ? ($b, $fb) : ($c, $fc);
+      }
+  }
+
+my $lb = shift @ARGV;
+my $ub = shift @ARGV;
+my $flb = evaluate ($lb);
+my $fub = evaluate ($ub);
+my $tol = 1e-2;
+my $phi = (1.0 + sqrt (5.0)) / 2.0;
+my $resphi = 2.0 - $phi;
+my $mid = $lb + $resphi * ($ub - $lb);
+my $fmid = evaluate ($mid);
+
+while (abs ($ub - $lb) > $tol * abs ($ub + $lb))
+  {
+    my $x = ($ub - $mid > $mid - $lb) ? $mid + $resphi * ($ub - $mid)
+                                      : $mid - $resphi * ($mid - $lb);
+
+    my $fx = evaluate ($x);
+
+    if ($fx < $fmid)
+      {
+        if ($ub - $mid > $mid - $lb)
+          {
+            $lb = $mid; $mid = $x; 
+            $flb = $fmid; $fmid = $fx;
+          }
+        else
+          {
+            $ub = $mid; $mid = $x;
+            $fub = $fmid; $fmid = $fx;
+          }
+      }
+    else
+      {
+        if ($ub - $mid > $mid - $lb)
+          {
+            $ub = $x;
+            $fub = $fx;
+          }
+        else
+          {
+            $lb = $x;
+            $flb = $fx;
+          }
+      }
+  }
+
+my ($best, $fbest) = argmin3 ($lb, $flb, $mid, $fmid, $ub, $fub);
+print "$best\t$fbest\n";

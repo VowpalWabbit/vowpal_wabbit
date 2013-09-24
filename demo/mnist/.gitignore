@@ -1,0 +1,8 @@
+*.gz
+*.model
+*.predictions
+*.swp
+extractfeatures
+extractpixels
+pixelngrams
+*cache*

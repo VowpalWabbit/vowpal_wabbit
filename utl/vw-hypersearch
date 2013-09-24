@@ -1,0 +1,469 @@
+#! /usr/bin/env perl
+# vim: ts=4 sw=4 expandtab nosmarttab
+#
+# vw generic optimal parameter golden-section search
+#   http://en.wikipedia.org/wiki/Golden_section_search
+#
+# Call without parameters for a full usage message
+#
+# Paul Mineiro ('vowpalwabbit/demo') wrote the original script
+#
+# Ariel Faigon (2013)
+#   - Generalize, refactor
+#   - Add usage message
+#   - Add tolerance as optional parameter
+#   - Add documentation
+#   - Golden-section search bug-fix
+#   - Better error messages in case underlying command fails
+#     for any reason
+#   - Add '-t test-set' to optimize on test error rather than
+#     train-set error
+#
+use warnings;
+use strict;
+use Getopt::Std;
+use Scalar::Util qw(looks_like_number);
+use File::Temp;
+use vars qw($opt_v $opt_b $opt_t);
+
+my $MaxDouble = 1.79769e+308;
+my $ModelFile;
+my $ScratchModel = 0;
+
+sub v(@) {
+    return unless ($opt_v);
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+#
+# ExecCmd(cmd, timeout)
+#  cmd     - a command or reference to an array of command + arguments
+#  timeout - number of seconds to wait (0 = forever)
+#
+# returns:
+#   In case of success:
+#       cmd results (STDERR and STDOUT merged into an array ref)
+#
+#   In case of any failure:
+#       (timeout, death from signal, non-zero exit status,
+#        failure of fork or exec, ...)
+#       print a user-helpful error message and abort
+#
+sub ExecCmd {
+    my $cmd = shift || return(0, []);
+    my $timeout = shift || 0;
+
+    if (ref($cmd) eq 'ARRAY') {
+        # Always convert the command to one simple string
+        # Otherwise meta-chars in @$cmd don't trigger 'sh -c'
+        $cmd = "@$cmd";
+    }
+
+    # opening a pipe creates a forked process
+    my $pid = open(my $pipe, '-|');
+    die "Can't fork: $!\n" unless defined $pid;
+
+    if ($pid) {     # parent
+
+        my @result = ();
+
+        if ($timeout) {
+            my $failed = 1;
+            eval {
+                # set a signal to die if the timeout is reached
+                local $SIG{ALRM} = sub { die "alarm\n" };
+                alarm $timeout;
+                @result = <$pipe>;
+                alarm 0;
+                $failed = 0;
+            };
+            die "command timeout. Result so far:\n@result\n" if $failed;
+
+        } else {
+            while (<$pipe>) {
+                push @result, $_;
+                print STDERR ".";
+            }
+        }
+        close($pipe);
+
+        my $exitcode = $? >> 8;
+        my $signal = $? & 127;
+        my $core = ($? & 128) ? ' (core dumped)' : '';
+
+        if ($signal) {
+            warn "\n\t$cmd died from signal $signal$core\n";
+            die "Try to run:\n\t$cmd\nmanually to figure out why.\n";
+        } elsif ($exitcode) {
+            warn "\n\t$cmd failed: (exitcode=$exitcode)\n";
+            warn "Output from $cmd is:\n@result\n";
+            warn "You may try to run:\n\t$cmd\nmanually to figure out why.\n"
+                unless (@result);
+            exit 1;
+        }
+        # return exit status, command output
+        return \@result;
+    }
+
+    # Child...
+    no warnings;
+
+    # redirect STDERR to STDOUT
+    open(STDERR, '>&STDOUT');
+
+    # Run the command in child process - if successful, it should never return
+    exec($cmd);
+
+    # this code will not execute unless exec fails!
+    die "$0: can't exec '$cmd': $!";
+}
+
+#
+# loss(param)
+#   Input:
+#       @ARGV - A vw command where the parameter we want to optimize
+#               for appears as a '%' placeholder
+#       param - Value for parameter for which we check the loss
+#
+#   Returns the vw average loss for the vw command @ARGV with '%'
+#       set to param value
+#
+my %Loss;   # x -> f(x) cache
+my $BestParam;
+my $BestLoss = $MaxDouble;
+
+sub loss($) {
+    my ($param) = @_;
+
+    return  $Loss{$param} if (exists $Loss{$param});
+
+    printf STDERR "trying %.5g ", $param;
+
+    my @command = @ARGV;
+    foreach my $c (@command) {
+        $c =~ s/%/$param/g;
+    }
+
+    my $rv = ExecCmd \@command;
+
+    my $loss;
+    my $best_msg = '';
+
+    # Read from the end, so if we run a test after train,
+    # we get the last (test) loss, rather than the train loss.
+    foreach my $line (reverse @$rv) {
+        next unless $line =~ /^average loss\s*=\s*([0-9.]+)/;
+
+        # Found a loss
+        $loss = $1;
+        if ($loss <= $BestLoss) {
+            $BestParam = $param;
+            $BestLoss = $loss;
+            $best_msg = ' (best)';
+        }
+        # should bail out of loop on 1st 'average loss' line found
+        last;
+    }
+
+    die "\n$0: failed to parse average loss from vw output: ",
+        join('', @$rv),
+        "\n\nTry to run:\n\t@command\nmanually to figure out why.\n"
+            unless defined ($loss);
+
+    unlink($ModelFile) if ($opt_t && $ScratchModel && -e $ModelFile);
+
+    printf STDERR " %.6g%s\n", $loss, $best_msg;
+    $Loss{$param} = $loss;      # cache it
+    $loss;
+}
+
+#
+# argmin3($$$$$$$)
+#   Given 3 value pairs: (arg, loss)  as a six-tuple
+#   returns the pair for which the loss is the smallest
+#
+sub argmin3 ($$$$$$) {
+    my ($a, $fa, $b, $fb, $c, $fc) = @_;
+
+    if ($fa < $fb) {
+        return $fa < $fc ? ($a, $fa) : ($c, $fc);
+    }
+    # else:
+    return $fb < $fc ? ($b, $fb) : ($c, $fc);
+}
+
+sub usage(@) {
+    print STDERR @_, "\n" if @_;
+
+    die "Usage: $0 [options] <lower_bound> <upper_bound> [tolerance] vw-command...
+
+    Options:
+        -t <TS>     Use <TS> as test-set file + evaluate goodness on it
+
+    lower_bound     lower bound of the parameter search range
+    upper_bound     upper bound of the parameter search range
+    tolerance       termination condition for optimal parameter search
+                    expressed as an improvement fraction of the range
+
+    vw-command ...  a vw command to repeat in a loop until optimum
+                    is found, where '%' is used as a placeholder
+                    for the optimized parameter
+
+    NOTE:
+            -t ... for doing a line-search on a test-set is an
+            argument to '$0', not to 'vw'.  vw-command must
+            represent the training-phase only.
+"
+}
+
+
+my $MaxIter = 50;
+
+#
+# BrentsSearch($low, $high, $tau)
+#   As transcribed from wikipedia.
+#   Doesn't give a better result than GoldenSection (yet)
+#   Need to figure out why.
+#
+sub BrentsSearch($$$) {
+    my ($low, $high, $tau) = @_;
+    my ($a, $b, $c, $d) = ($low, $high, 0.0, $MaxDouble);
+
+    my $fa = loss($a);
+    my $fb = loss($b);
+
+    my ($fc, $s, $fs) = (0.0, 0.0, 0.0);
+
+    if ($fa * $fb >= 0) {
+        if ($fa < $fb) {
+            return $a;
+        } else {
+            return $b;
+        }
+    }
+
+    # if |f(a)| < |f(b)| then swap (a,b)
+    if (abs($fa) < abs($fb)) {
+        my $tmp = $a; $a = $b; $b = $tmp;
+        $tmp = $fa; $fa = $fb; $fb = $tmp;
+    }
+
+    $c = $a;
+    $fc = $fa;
+    my $mflag = 1;
+    my $i = 0;
+
+    while (($fb != 0) and (abs($a-$b) > $tau)) {
+        if (($fa != $fc) && ($fb != $fc)) {
+            # Inverse quadratic interpolation
+            $s =    $a * $fb * $fc / ($fa - $fb) / ($fa - $fc)
+                                +
+                    $b * $fa * $fc / ($fb - $fa) / ($fb - $fc)
+                                +
+                    $c * $fa * $fb / ($fc - $fa) / ($fc - $fb);
+        } else {
+            # Secant Rule
+            $s =    $b - $fb * ($b - $a) / ($fb - $fa);
+        }
+
+        my $tmp2 = (3.0 * $a + $b) / 4.0;
+        if (
+               ( ! ((($s > $tmp2) && ($s < $b)) ||
+                    (($s < $tmp2) && ($s > $b)))
+               )
+                        or
+               ($mflag && (abs($s - $b) >= (abs($b - $c) / 2.0)))
+                        or
+               (! $mflag && (abs($s - $b) >= (abs($c - $d) / 2.0)))
+            )
+        {
+            $s = ($a + $b) / 2.0;
+            $mflag = 1;
+        } else {
+            if (($mflag && (abs($b - $c) < $tau)) ||
+                (! $mflag && (abs($c - $d) < $tau))) {
+
+                $s = ($a + $b) / 2.0;
+                $mflag = 1;
+            } else {
+                $mflag = 0;
+            }
+        }
+        $fs = loss($s);
+        $d = $c;
+        $c = $b;
+        $fc = $fb;
+
+        if ($fa * $fs < 0.0) {
+            $b = $s; $fb = $fs;
+        } else {
+            $a = $s; $fa = $fs;
+        }
+
+        # if |f(a)| < |f(b)| then swap (a,b)
+        if (abs($fa) < abs($fb)) {
+            my $tmp = $a; $a = $b; $b = $tmp;
+            $tmp = $fa; $fa = $fb; $fb = $tmp;
+        }
+        $i++;
+        if ($i > $MaxIter) {
+            die "Brent's method error too many iterations: $i: f(b): $fb\n";
+        }
+    }
+    $b;
+}
+
+my $Phi = (1.0 + sqrt (5.0)) / 2.0;
+my $ResPhi = 2.0 - $Phi;
+
+sub goldenSectionSearch($$$$);
+
+sub goldenSectionSearch($$$$) {
+    my ($low, $mid, $high, $tau) = @_;
+
+    my $x;
+
+    my $upper_range = $high - $mid;
+    my $lower_range = $mid - $low;
+    if ($upper_range > $lower_range) {
+        $x = $mid + $ResPhi * $upper_range;
+    } else {
+        $x = $mid - $ResPhi * $lower_range;
+    }
+
+    if (abs($high - $low) < $tau * (abs($mid) + abs($x))) {
+        return (($high + $low) / 2.0);
+    }
+
+    # assert(loss($x) != loss($mid));
+    if (loss($x) == loss($mid)) {
+        printf STDERR "%s: loss(%g) == loss(%g): %g\n",
+                            $0, $x, $mid, loss($x);
+        return (($x + $mid) / 2.0);
+    }
+
+    if (loss($x) < loss($mid)) {
+        if ($upper_range > $lower_range) {
+            return goldenSectionSearch($mid, $x, $high, $tau)
+        } else {
+            return goldenSectionSearch($low, $x, $mid, $tau);
+        }
+    }
+
+    # else:
+    if ($upper_range > $lower_range) {
+        return goldenSectionSearch($low, $mid, $x, $tau);
+    }
+    # else
+    return goldenSectionSearch($x, $mid, $high, $tau);
+}
+
+#
+# best_hyperparam(lower_bound, upper_bound, tolerance)
+#
+#   performs golden-ratio section search between lower_bound
+#   and upper_bound for the best parameter (lowest loss)
+#
+#   Termination condition is difference is less than tolerance
+#   of the [lower .. upper] range.
+#
+sub best_hyperparam($$$) {
+    my ($lb, $ub, $tol) = @_;
+
+    my ($best, $fbest);
+
+    if ($opt_b) {
+        $best = BrentsSearch($lb, $ub, $tol);
+        $fbest = loss($best);
+    } else {
+        my $mid = $lb + $ResPhi * ($ub - $lb);
+        $best = goldenSectionSearch($lb, $mid, $ub, $tol);
+        $fbest = loss($best);
+    }
+
+    # Still happens that what we finally return is not the best...
+    if ($BestLoss < $fbest) {
+        $best = $BestParam;
+        $fbest = $BestLoss;
+    }
+    ($best, $fbest);
+}
+
+sub fullpath($) {
+    my $exe = shift;
+    foreach my $dir (split(':', $ENV{PATH})) {
+        my $fp = "$dir/$exe";
+        return $fp if (-x $fp);
+    }
+    '';
+}
+
+sub process_args {
+    $0 =~ s{.*/}{};
+
+    getopts('vbt:');
+    # Brent is not ready for prime-time yet so don't advertise it.
+    warn "$0: using Brent's method search\n" if ($opt_b);
+    if ($opt_t) {       # evaluate on test-set
+        usage("-t $opt_t: $!") unless (-e $opt_t && -r $opt_t);
+    }
+
+    # v("after getopts: \@ARGV=(@ARGV)\n");
+
+    usage("Too few arguments...")
+        unless (@ARGV > 2);
+
+    usage("1st argument: $ARGV[0]: expecting a number")
+        unless (looks_like_number($ARGV[0]));
+
+    usage("2nd argument: $ARGV[1]: expecting a number")
+        unless (looks_like_number($ARGV[1]));
+
+    my $lower_bound = shift @ARGV;
+    my $upper_bound = shift @ARGV;
+
+    my $tolerance = 0.001;
+    if (looks_like_number($ARGV[0])) {
+        $tolerance = shift @ARGV;
+        usage("3rd argument (tolerance): $tolerance: not in the (0, 1) range")
+            unless (0 < $tolerance and $tolerance < 1.0);
+    }
+    usage("command: $ARGV[0]: must start with an executable")
+        unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
+
+    usage("command '@ARGV': must include a '%' wildcard to optimize on")
+        unless ("@ARGV" =~ /%/);
+
+    if ($opt_t) {
+        # Evaluate on test:
+        #   1) Make sure we store the model after training
+        #   2) Call vw again, loading model and evaluating on test-set
+        my $vw_command_line = "@ARGV";
+        if ($vw_command_line =~ /-f\s+(\S+)/) {
+            $ModelFile = $1;
+        } else {
+            # my $tmpdir = mkdtemp('vw-hypersearch-XXXXXX');
+            # Model file doesn't exist in user provided command line
+            # so we need to add its generation
+            $ModelFile = mktemp("vw-hypersearch.model-XXXXXX");
+            $ScratchModel = 1;
+            v("\$ModelFile: %s\n", $ModelFile);
+            push(@ARGV, '-f', $ModelFile);
+        }
+        # Add the test command after the train command
+        push(@ARGV, '&&', $ARGV[0], '-t', '-i', $ModelFile, $opt_t);
+        v("New -t command line: %s\n", "@ARGV");
+    }
+    return ($lower_bound, $upper_bound, $tolerance);
+}
+
+# -- main
+my ($lower_bound, $upper_bound, $tolerance) = process_args();
+my ($best, $fbest) = best_hyperparam($lower_bound, $upper_bound, $tolerance);
+
+printf "%g\t%g\n", $best, $fbest;
+

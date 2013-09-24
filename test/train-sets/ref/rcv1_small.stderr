@@ -1,0 +1,32 @@
+enabling BFGS based optimization **without** curvature calculation
+Num weight bits = 20
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+m = 7
+Allocated 72M for weights and mem
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 
+using l2 regularization = 1
+creating cache_file = train-sets/rcv1_small.dat.cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
+ 1 0.69315   	0.00186   	0.34333   	          	          	          	0.29016   	135.67795 	1.18327   
+ 3 0.46631   	0.00773   	0.16072   	 0.558359  	0.205344  	          	          	176.93877 	1.00000   
+ 4 0.36719   	0.00415   	0.06788   	 0.435725  	-0.010674 	          	          	28.54624  	1.00000   
+ 5 0.33604   	0.00047   	0.01318   	 0.715574  	0.454858  	          	          	32.82015  	1.00000   
+ 6 0.32041   	0.00001   	0.00476   	 0.679156  	0.380024  	          	          	22.63070  	1.00000   
+ 7 0.31063   	0.00005   	0.00350   	 0.755260  	0.517819  	          	          	55.27250  	1.00000   
+ 8 0.29882   	0.00002   	0.00095   	 0.666044  	0.330579  	          	          	27.55031  	1.00000   
+ 9 0.29526   	0.00000   	0.00011   	 0.562531  	0.101449  	          	          	2.45273   	1.00000   
+10 0.29486   	0.00000   	0.00003   	 0.559816  	0.115043  	          	          	0.80446   	1.00000   
+11 0.29475   	0.00000   	0.00001   	 0.504319  	0.006255  	          	          	0.09031   	1.00000   
+12 0.29473   	0.00000   	0.00000   	 0.565762  	0.132422  	          	          	0.03132   	1.00000   
+
+finished run
+number of examples = 200000
+weighted example sum = 2e+05
+weighted label sum = -1.272e+04
+average loss = 0.2951
+best constant = -0.0636
+total feature number = 15587880
