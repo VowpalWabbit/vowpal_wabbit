@@ -148,7 +148,11 @@ void learn(void* d, example* ec)
   
   if (!command_example(all, ec))
     {
+<<<<<<< HEAD
       predict(*all,*g,ec);
+=======
+      predict(*all,ec);
+>>>>>>> 4d8dd37bf564a2a24805f9406d89c3761a4c61fe
       if ((ec->eta_round != 0.) && (!is_development_example(*all, ec)))
 	{
           if(all->power_t == 0.5) {
@@ -521,7 +525,12 @@ void local_predict(vw& all, gd& g, example* ec)
   label_data* ld = (label_data*)ex->ld;
   float prediction;
 
+<<<<<<< HEAD
   if ((all.training && (!is_development_example(all,ex)) && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) || all.force_full_predictions) {
+=======
+  //if (!ex->done) {
+    if ((all.training && (!is_development_example(all,ex)) && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) || all.force_full_predictions) {
+>>>>>>> 4d8dd37bf564a2a24805f9406d89c3761a4c61fe
     if( all.power_t == 0.5 ) {
       if (all.reg_mode % 2)
         prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
@@ -542,7 +551,12 @@ void local_predict(vw& all, gd& g, example* ec)
       prediction = inline_predict<vec_add>(all, ex);
   }
   ex->partial_prediction = prediction;
+<<<<<<< HEAD
   local_predict(all, g, ex);
+=======
+  //}
+  local_predict(all, ex);
+>>>>>>> 4d8dd37bf564a2a24805f9406d89c3761a4c61fe
   ex->done = true;
 }
 

@@ -987,7 +987,10 @@ namespace LabelDict {
 	return;
       }
 
+<<<<<<< HEAD
     // ( test || is_test ) && not is_label_def
+=======
+>>>>>>> 4d8dd37bf564a2a24805f9406d89c3761a4c61fe
     if (((!all.training) || CSOAA::example_is_test(ec)) && (!LabelDict::ec_is_label_definition(ec))) {
       size_t prediction = 0;
       float  min_score = FLT_MAX;
