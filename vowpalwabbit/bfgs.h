@@ -1,20 +1,14 @@
 /*
-Copyright (c) 2010 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef BFGS_H
 #define BFGS_H
 #include "gd.h"
 
 namespace BFGS {
-
-  void drive_bfgs();
-  void initializer();
-  void finish();
-  void learn(example* ec);
-
+  void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 #endif

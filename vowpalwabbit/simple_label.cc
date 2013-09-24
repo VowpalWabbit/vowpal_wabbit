@@ -4,14 +4,16 @@
 
 #include "simple_label.h"
 #include "cache.h"
+#include "rand48.h"
+#include "vw.h"
 
 using namespace std;
 
-char* bufread_simple_label(label_data* ld, char* c)
+char* bufread_simple_label(shared_data* sd, label_data* ld, char* c)
 {
   ld->label = *(float *)c;
   c += sizeof(ld->label);
-  if (global.binary_label && fabs(ld->label) != 1.f && ld->label != FLT_MAX)
+  if (sd->binary_label && fabs(ld->label) != 1.f && ld->label != FLT_MAX)
     cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
   ld->weight = *(float *)c;
   c += sizeof(ld->weight);
@@ -20,14 +22,14 @@ char* bufread_simple_label(label_data* ld, char* c)
   return c;
 }
 
-size_t read_cached_simple_label(void* v, io_buf& cache)
+size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache)
 {
   label_data* ld = (label_data*) v;
   char *c;
   size_t total = sizeof(ld->label)+sizeof(ld->weight)+sizeof(ld->initial);
   if (buf_read(cache, c, total) < total) 
     return 0;
-  c = bufread_simple_label(ld,c);
+  c = bufread_simple_label(sd, ld,c);
 
   return total;
 }
@@ -75,11 +77,11 @@ void delete_simple_label(void* v)
 {
 }
 
-void parse_simple_label(void* v, v_array<substring>& words)
+void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
 {
   label_data* ld = (label_data*)v;
 
-  switch(words.index()) {
+  switch(words.size()) {
   case 0:
     break;
   case 1:
@@ -96,16 +98,16 @@ void parse_simple_label(void* v, v_array<substring>& words)
     break;
   default:
     cerr << "malformed example!\n";
-    cerr << "words.index() = " << words.index() << endl;
+    cerr << "words.size() = " << words.size() << endl;
   }
-  if (words.index() > 0 && global.binary_label && fabs(ld->label) != 1.f)
+  if (words.size() > 0 && sd->binary_label && fabs(ld->label) != 1.f)
     cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
 }
 
 float get_active_coin_bias(float k, float l, float g, float c0)
 {
   float b,sb,rs,sl;
-  b=c0*(log(k+1.)+0.0001)/(k+0.0001);
+  b=(float)(c0*(log(k+1.)+0.0001)/(k+0.0001));
   sb=sqrt(b);
   if (l > 1.0) { l = 1.0; } else if (l < 0.0) { l = 0.0; } //loss should be in [0,1]
   sl=sqrt(l)+sqrt(l+g);
@@ -115,25 +117,25 @@ float get_active_coin_bias(float k, float l, float g, float c0)
   return b*rs*rs;
 }
 
-float query_decision(example* ec, float k)
+float query_decision(vw& all, example* ec, float k)
 {
   float bias, avg_loss, weighted_queries;
   if (k<=1.)
     bias=1.;
   else{
-    weighted_queries = global.initial_t + global.sd->weighted_examples - global.sd->weighted_unlabeled_examples;
-    avg_loss = global.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001));
-    bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, global.active_c0);
+    weighted_queries = (float)(all.initial_t + all.sd->weighted_examples - all.sd->weighted_unlabeled_examples);
+    avg_loss = (float)(all.sd->sum_loss/k + sqrt((1.+0.5*log(k))/(weighted_queries+0.0001)));
+    bias = get_active_coin_bias(k, avg_loss, ec->revert_weight/k, all.active_c0);
   }
-  if(drand48()<bias)
-    return 1./bias;
+  if(frand48()<bias)
+    return 1.f/bias;
   else
     return -1.;
 }
 
-void print_update(example *ec)
+void print_update(vw& all, example *ec)
 {
-  if (global.sd->weighted_examples > global.sd->dump_interval && !global.quiet && !global.bfgs)
+  if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
@@ -142,60 +144,111 @@ void print_update(example *ec)
       else
 	sprintf(label_buf,"%8.4f",ld->label);
 
-      fprintf(stderr, "%-10.6f %-10.6f %8ld %8.1f   %s %8.4f %8lu\n",
-	      global.sd->sum_loss/global.sd->weighted_examples,
-	      global.sd->sum_loss_since_last_dump / (global.sd->weighted_examples - global.sd->old_weighted_examples),
-	      (long int)global.sd->example_number,
-	      global.sd->weighted_examples,
+      fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu\n",
+	      all.sd->sum_loss/all.sd->weighted_examples,
+	      all.sd->sum_loss_since_last_dump / (all.sd->weighted_examples - all.sd->old_weighted_examples),
+	      (long int)all.sd->example_number,
+	      all.sd->weighted_examples,
 	      label_buf,
 	      ec->final_prediction,
 	      (long unsigned int)ec->num_features);
      
-      global.sd->sum_loss_since_last_dump = 0.0;
-      global.sd->old_weighted_examples = global.sd->weighted_examples;
-      global.sd->dump_interval *= 2;
+      all.sd->sum_loss_since_last_dump = 0.0;
+      all.sd->old_weighted_examples = all.sd->weighted_examples;
+      all.sd->dump_interval *= 2;
     }
 }
 
-void output_and_account_example(example* ec)
+bool is_development_example(vw&all, example* ec) {
+  if (!all.compute_dev_scores) return false;
+  if (ec == NULL) return false;
+  if (ec->tag.begin == NULL) return false;
+  size_t len = all.devdata_tag.length();
+  if (len == 0) return false;
+  if (len != ec->tag.size()) return false;
+  for (size_t i=0; i<len; i++)
+    if (all.devdata_tag[i] != ec->tag[i]) return false;
+  return true;
+}
+
+bool report_dev_error(vw& all) // return TRUE iff this is the best loss so far
+{
+  if (!all.compute_dev_scores) return false;
+
+  float thisLoss = (all.sd->dev_weighted_examples_since_last_dump > 0) ? (all.sd->dev_sum_loss_since_last_dump / all.sd->dev_weighted_examples_since_last_dump) : 1.;
+  float cumLoss  = (all.sd->dev_weighted_examples                 > 0) ? (all.sd->dev_sum_loss                 / all.sd->dev_weighted_examples                ) : 1.;
+
+  fprintf(stderr, "** dev loss on pass %d is %g (average %g across all passes, best %g on pass %d)",
+          all.current_pass,
+          thisLoss,
+          cumLoss,
+          all.sd->dev_best_loss,
+          all.sd->dev_best_pass);
+            
+  all.sd->dev_weighted_examples_since_last_dump = 0;
+  all.sd->dev_sum_loss_since_last_dump = 0;
+
+  if (thisLoss < all.sd->dev_best_loss) {
+    all.sd->dev_best_loss = thisLoss;
+    all.sd->dev_best_pass = all.current_pass;
+    fprintf(stderr, " **\n");
+    return true;
+  }
+  fprintf(stderr, "\n");
+  return false;
+}
+
+
+void accumulate_loss(vw& all, example* ec, float weight, float loss) {
+  if (ec != NULL)
+    all.sd->total_features += ec->num_features;
+
+  if (is_development_example(all, ec)) {
+    all.sd->dev_weighted_examples += weight;
+    all.sd->dev_weighted_examples_since_last_dump += weight;
+    all.sd->dev_sum_loss += loss;
+    all.sd->dev_sum_loss_since_last_dump += loss;
+  } else {
+    all.sd->weighted_examples += weight;
+    all.sd->sum_loss += loss;
+    all.sd->sum_loss_since_last_dump += loss;
+  }
+}  
+
+void output_and_account_example(vw& all, example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
-  global.sd->weighted_examples += ld->weight;
-  global.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-  global.sd->total_features += ec->num_features;
-  global.sd->sum_loss += ec->loss;
-  global.sd->sum_loss_since_last_dump += ec->loss;
-  
-  global.print(global.raw_prediction, ec->partial_prediction, -1, ec->tag);
+
+  accumulate_loss(all, ec, ld->weight, ec->loss);
+  all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
+
+  all.print(all.raw_prediction, ec->partial_prediction, -1, ec->tag);
 
   float ai=-1; 
-  if(global.active && ld->label == FLT_MAX)
-    ai=query_decision(ec, global.sd->weighted_unlabeled_examples);
-  global.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
+  if(all.active && ld->label == FLT_MAX)
+    ai=query_decision(all, ec, (float)all.sd->weighted_unlabeled_examples);
+  all.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
   
-  for (size_t i = 0; i<global.final_prediction_sink.index(); i++)
+  for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
     {
-      int f = global.final_prediction_sink[i];
-      if(global.active)
-	global.print(f, ec->final_prediction, ai, ec->tag);
-      else if (global.lda > 0)
-	print_lda_result(f,ec->topic_predictions.begin,0.,ec->tag);
+      int f = (int)all.final_prediction_sink[i];
+      if(all.active)
+	active_print_result(f, ec->final_prediction, ai, ec->tag);
+      else if (all.lda > 0)
+	print_lda_result(all, f,ec->topic_predictions.begin,0.,ec->tag);
       else
-	global.print(f, ec->final_prediction, 0, ec->tag);
+	all.print(f, ec->final_prediction, 0, ec->tag);
     }
 
-  global.sd->example_number++;
+  all.sd->example_number++;
 
-  print_update(ec);
+  print_update(all, ec);
 }
 
-void return_simple_example(example* ec)
+void return_simple_example(vw& all, example* ec)
 {
-  output_and_account_example(ec);
-  free_example(ec);
+  if (!command_example(&all, ec))
+    output_and_account_example(all, ec);
+  VW::finish_example(all,ec);
 }
 
-example* get_simple_example()
-{
-  return get_example();
-}

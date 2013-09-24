@@ -1,11 +1,16 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
  */
 
+#ifndef WIN32
 #include <strings.h>
+#endif
 #include "parse_primitives.h"
+#include <iostream>
+
+using namespace std;
 
 void tokenize(char delim, substring s, v_array<substring>& ret)
 {
@@ -15,8 +20,8 @@ void tokenize(char delim, substring s, v_array<substring>& ret)
     if (*s.begin == delim) {
       if (s.begin != last)
 	{
-	  substring temp = {last,s.begin};
-	  push(ret, temp);
+	  substring temp = {last, s.begin};
+	  ret.push_back(temp);
 	}
       last = s.begin+1;
     }
@@ -24,7 +29,7 @@ void tokenize(char delim, substring s, v_array<substring>& ret)
   if (s.begin != last)
     {
       substring final = {last, s.begin};
-      push(ret, final);
+      ret.push_back(final);
     }
 }
 

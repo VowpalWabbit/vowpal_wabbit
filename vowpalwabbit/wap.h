@@ -1,29 +1,16 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
+ */
 #ifndef WAP_H
 #define WAP_H
 
-#include "io.h"
-#include "parse_primitives.h"
 #include "global_data.h"
-#include "example.h"
-#include "oaa.h"
-#include "csoaa.h"
+#include "parse_args.h"
 
 namespace WAP {
-  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
-  void learn(example* ec);
-  void finish();
-
-}
-
-namespace WAP_LDF {
-  typedef OAA::mc_label label;
-  
-  void parse_flags(size_t s, void (*base_l)(example*), void (*base_f)());
-  void global_print_newline();
-  void learn(example* ec);
-  void finish();
-
-  const label_parser cs_label_parser = CSOAA_LDF::cs_label_parser;
+  learner setup(vw&, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 #endif

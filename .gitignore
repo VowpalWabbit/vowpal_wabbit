@@ -42,3 +42,4 @@ autom4te.cache/
 vowpalwabbit/active_interactor
 vowpalwabbit/vw
 cluster/spanning_tree
+*.d

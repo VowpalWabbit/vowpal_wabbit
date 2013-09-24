@@ -1,63 +1,151 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef GLOBAL_DATA_H
 #define GLOBAL_DATA_H
 #include <vector>
 #include <stdint.h>
+#include <cstdio>
 #include "v_array.h"
-#include "parse_regressor.h"
 #include "parse_primitives.h"
+#include "loss_functions.h"
 #include "comp_io.h"
-#include "simple_label.h"
 #include "example.h"
+#include "config.h"
+#include "learner.h"
+#include "allreduce.h"
 
-extern std::string version;
-
-struct int_pair {
-  int fd;
-  int id;
+struct version_struct {
+  int major;
+  int minor;
+  int rev;
+  version_struct(int maj, int min, int rv)
+  {
+    major = maj;
+    minor = min;
+    rev = rv;
+  }
+  version_struct(const char* v_str)
+  {
+    from_string(v_str);
+  }
+  void operator=(version_struct v){
+    major = v.major;
+    minor = v.minor;
+    rev = v.rev;
+  }
+  void operator=(const char* v_str){
+    from_string(v_str);
+  }
+  bool operator==(version_struct v){
+    return (major == v.major && minor == v.minor && rev == v.rev);
+  }
+  bool operator==(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this == v_tmp);
+  }
+  bool operator!=(version_struct v){
+    return !(*this == v);
+  }
+  bool operator!=(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this != v_tmp);
+  }
+  bool operator>=(version_struct v){
+    if(major < v.major) return false;
+    if(major > v.major) return true;
+    if(minor < v.minor) return false;
+    if(minor > v.minor) return true;
+    if(rev >= v.rev ) return true;
+    return false;
+  }
+  bool operator>=(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this >= v_tmp);
+  }
+  bool operator>(version_struct v){
+    if(major < v.major) return false;
+    if(major > v.major) return true;
+    if(minor < v.minor) return false;
+    if(minor > v.minor) return true;
+    if(rev > v.rev ) return true;
+    return false;
+  }
+  bool operator>(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this > v_tmp);
+  }
+  bool operator<=(version_struct v){
+    return !(*this < v);
+  }
+  bool operator<=(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this <= v_tmp);
+  }
+  bool operator<(version_struct v){
+    return !(*this >= v);
+  }
+  bool operator<(const char* v_str){
+    version_struct v_tmp(v_str);
+    return (*this < v_tmp);
+  }
+  std::string to_string() const
+  {
+    char v_str[128];
+    std::sprintf(v_str,"%d.%d.%d",major,minor,rev);
+    std::string s = v_str;
+    return s;
+  }
+  void from_string(const char* str)
+  {
+    std::sscanf(str,"%d.%d.%d",&major,&minor,&rev);
+  }
 };
 
-struct shared_data {
-  size_t queries;
+const version_struct version(PACKAGE_VERSION);
 
-  uint64_t example_number;
-  uint64_t total_features;
+typedef float weight;
 
-  double t;
-  double weighted_examples;
-  double weighted_unlabeled_examples;
-  double old_weighted_examples;
-  double weighted_labels;
-  double sum_loss;
-  double sum_loss_since_last_dump;
-  float dump_interval;// when should I update for the user.
-  double gravity;
-  double contraction;
-  double min_label;//minimum label encountered
-  double max_label;//maximum label encountered
+struct regressor {
+  weight* weight_vector;
+  size_t weight_mask; // (stride*(1 << num_bits) -1)
+  uint32_t stride;
 };
 
-struct global_data {
+struct vw {
   shared_data* sd;
 
-  label_parser* lp;
+  parser* p;
+#ifndef _WIN32
+  pthread_t parse_thread;
+#else
+  HANDLE parse_thread;
+#endif
 
-  void (*driver)();
+  node_socks socks;
 
-  uint32_t k;
+  learner l;//the top level leaner
+  learner scorer;//a scoring function
 
-  size_t num_bits; // log_2 of the number of features.
+  void learn(example*);
+
+  void (*set_minmax)(shared_data* sd, float label);
+
+  size_t current_pass;
+  size_t current_command;
+
+  uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
+
+  string data_filename; // was vm["data"]
 
   bool daemon; 
   size_t num_children;
 
   bool save_per_pass;
+  bool save_best_predictor;
   float active_c0;
   float initial_weight;
 
@@ -65,10 +153,18 @@ struct global_data {
   bool hessian_on;
   int m;
 
-  bool sequence;
+  bool save_resume;
 
-  size_t stride;
+  std::string options_from_file;
+  char** options_from_file_argv;
+  int options_from_file_argc;
 
+  bool searn;
+  void* /*ImperativeSearn::searn_struct*/ searnstr;
+
+  uint32_t weights_per_problem; //this stores the current number of "weight vector" required by the based learner, which is used to compute offsets when composing reductions
+
+  int stdout_fileno;
 
   std::string per_feature_regularizer_input;
   std::string per_feature_regularizer_output;
@@ -80,10 +176,6 @@ struct global_data {
   int reg_mode;
 
   size_t minibatch;
-  size_t ring_size;
-
-  uint64_t parsed_examples; // The index of the parsed example.
-  uint64_t local_example_number; 
 
   float rel_threshold; // termination threshold
 
@@ -91,23 +183,33 @@ struct global_data {
   size_t numpasses;
   size_t passes_complete;
   size_t parse_mask; // 1 << num_bits -1
-  size_t weight_mask; // (stride*(1 << num_bits) -1)
   std::vector<std::string> pairs; // pairs of features to cross.
+  std::vector<std::string> triples; // triples of features to cross.
   bool ignore_some;
   bool ignore[256];//a set of namespaces to ignore
-  size_t ngram;//ngrams to generate.
-  size_t skips;//skips in ngrams.
+
+  std::vector<std::string> ngram_strings; // pairs of features to cross.
+  std::vector<std::string> skip_strings; // triples of features to cross.
+  uint32_t ngram[256];//ngrams to generate.
+  uint32_t skips[256];//skips in ngrams.
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
-  bool exact_adaptive_norm;//Should I use the exact norm when computing the update?
+  bool normalized_updates; //Should every feature be normalized
+  bool invariant_updates; //Should we use importance aware/safe updates
   bool random_weights;
   bool add_constant;
   bool nonormalize;
-  bool binary_label;
+  bool do_reset_source;
+  string devdata_tag;
+  bool compute_dev_scores;
+  bool force_full_predictions;
+
+  float normalized_sum_norm_x;
+  size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   size_t lda;
   float lda_alpha;
@@ -118,41 +220,46 @@ struct global_data {
   
   std::string span_server;
 
-  size_t length () { return 1 << num_bits; };
+  size_t length () { return ((size_t)1) << num_bits; };
 
-  size_t rank;
+  uint32_t rank;
 
   //Prediction output
-  v_array<size_t> final_prediction_sink; // set to send global predictions to.
+  v_array<int> final_prediction_sink; // set to send global predictions to.
   int raw_prediction; // file descriptors for text output.
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
   size_t total; //total number of nodes
   size_t node; //node id number
+  bool is_noop; // are we a noop learner?
 
   void (*print)(int,float,float,v_array<char>);
+  void (*print_text)(int, string, v_array<char>);
   loss_function* loss;
 
   char* program_name;
 
+  bool stdin_off;
+
   //runtime accounting variables. 
-  double initial_t;
+  float initial_t;
   float eta;//learning rate control.
   float eta_decay_rate;
 
   std::string final_regressor_name;
   regressor reg;
+
+  size_t max_examples; // for TLC
+
+  vw();
 };
 
-extern pthread_mutex_t io;
-extern global_data global;
-extern void (*set_minmax)(double label);
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
-void noop_mm(double label);
-void print_lda_result(int f, float* res, float weight, v_array<char> tag);
+void active_print_result(int f, float res, float weight, v_array<char> tag);
+void noop_mm(shared_data*, float label);
+void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
-
-extern pthread_mutex_t output_lock;
-extern pthread_cond_t output_done;
+void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
 
 #endif
+ 

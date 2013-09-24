@@ -1,9 +1,8 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef CACHE_H
 #define CACHE_H
 
@@ -15,10 +14,10 @@ const size_t char_size = 2;
 char* run_len_decode(char *p, size_t& i);
 char* run_len_encode(char *p, size_t i);
 
-int read_cached_features(parser* p, void* ec);
+int read_cached_features(void*a, example* ec);
 void cache_tag(io_buf& cache, v_array<char> tag);
-void cache_features(io_buf& cache, example* ae);
+void cache_features(io_buf& cache, example* ae, uint32_t mask);
 void output_byte(io_buf& cache, unsigned char s);
-void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end);
+void output_features(io_buf& cache, unsigned char index, feature* begin, feature* end, uint32_t mask);
 
 #endif

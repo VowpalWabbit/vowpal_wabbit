@@ -1,29 +1,25 @@
 /*
-Copyright (c) 2009 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD
+license as described in the file LICENSE.
  */
-
 #ifndef PR_H
 #define PR_H
+
+#include <string>
 #include "loss_functions.h"
 #include "boost/program_options.hpp"
+#include "global_data.h"
 
 namespace po = boost::program_options;
 
-typedef float weight;
+using namespace std;
 
-struct regressor {
-  weight* weight_vectors;
-  weight* regularizers;
-};
+void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp);
 
-void parse_regressor_args(po::variables_map& vm, regressor& r, std::string& final_regressor_name, bool quiet);
+void finalize_regressor(vw& all, std::string reg_name);
+void initialize_regressor(vw& all);
 
-void initialize_regressor(regressor &r);
-
-void finalize_regressor(std::string reg_name, regressor &r);
-void dump_regressor(std::string reg_name, regressor &r, bool as_text=0, bool reg_vector=0);
-void save_predictor(std::string reg_name, size_t current_pass);
+void save_predictor(vw& all, std::string reg_name, size_t current_pass);
 
 #endif

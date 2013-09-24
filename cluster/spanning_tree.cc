@@ -6,12 +6,43 @@ embodied in the content of this file are licensed under the BSD
 This creates a binary tree topology over a set of n nodes that connect.
 
  */
+#ifdef _WIN32
+
+#include <WinSock2.h>
+#include <Windows.h>
+#include <WS2tcpip.h>
+#include <io.h>
+
+#define SHUT_RDWR SD_BOTH
+
+typedef unsigned int uint32_t;
+typedef unsigned short uint16_t;
+typedef int socklen_t;
+typedef SOCKET socket_t;
+
+int daemon(int a, int b)
+{
+	return 0;
+}
+int getpid()
+{
+	return (int) ::GetCurrentProcessId();
+}
+
+#else
+
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <errno.h>
 #include <netdb.h>
 #include <strings.h>
+
+typedef int socket_t;
+
+#endif
+
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -24,7 +55,7 @@ using namespace std;
 
 struct client {
   uint32_t client_ip;
-  int socket;
+  socket_t socket;
 };
 
 struct partial {
@@ -39,7 +70,7 @@ static int socket_sort(const void* s1, const void* s2) {
   return socket1->client_ip - socket2->client_ip;
 }
 
-int build_tree(int*  parent, uint16_t* kid_count, int source_count, int offset) {
+int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offset) {
 
   if(source_count == 1) {
     kid_count[offset] = 0;
@@ -54,7 +85,7 @@ int build_tree(int*  parent, uint16_t* kid_count, int source_count, int offset) 
   int oroot = root+offset;
   parent[left_child] = oroot;
   
-  int right_count = source_count - left_count - 1;
+  size_t right_count = source_count - left_count - 1;
   if (right_count > 0)
     {
       int right_offset = oroot+1;
@@ -69,11 +100,11 @@ int build_tree(int*  parent, uint16_t* kid_count, int source_count, int offset) 
   return oroot;
 }
 
-void fail_write(int fd, const void* buf, size_t count)
+void fail_send(const socket_t fd, const void* buf, const int count)
 {
-  if (write(fd,buf,count)==-1)
+  if (send(fd,(char*)buf,count,0)==-1)
     {
-      cerr << "write failed!" << endl;
+      cerr << "send failed!" << endl;
       exit(1);
     }
 }
@@ -85,9 +116,21 @@ int main(int argc, char* argv[]) {
       exit(0);
     }
 
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
+#ifdef _WIN32
+  WSAData wsaData;
+  WSAStartup(MAKEWORD(2,2), &wsaData);
+  int lastError = WSAGetLastError();
+#endif
+
+  socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
-    cerr << "can't open socket!" << endl;
+#ifdef _WIN32
+	lastError = WSAGetLastError();
+
+    cerr << "can't open socket! (" << lastError << ")" << endl;
+#else
+    cerr << "can't open socket! " << errno << endl;
+#endif
     exit(1);
   }
 
@@ -126,14 +169,22 @@ int main(int argc, char* argv[]) {
       pid_file.close();
     }
   
-  map<int, partial> partial_nodesets;
-  
+  map<size_t, partial> partial_nodesets;
   while(true) {
     listen(sock, 1024);
     
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    int f = accept(sock,(sockaddr*)&client_address,&size);
+    socket_t f = accept(sock,(sockaddr*)&client_address,&size);
+
+    {
+        char hostname[NI_MAXHOST];
+        char servInfo[NI_MAXSERV];
+        getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0);
+
+        cerr << "inbound connection from " << hostname << endl;
+    }
+
     if (f < 0)
       {
 	cerr << "bad client socket!" << endl;
@@ -141,19 +192,19 @@ int main(int argc, char* argv[]) {
       }
 
     size_t nonce = 0;
-    if (read(f, &nonce, sizeof(nonce)) != sizeof(nonce))
+    if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
       {
 	cerr << "nonce read failed, exiting" << endl;
 	exit(1);
       }
     size_t total = 0;
-    if (read(f, &total, sizeof(total)) != sizeof(total))
+    if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total))
       {
 	cerr << "total node count read failed, exiting" << endl;
 	exit(1);
       }
     size_t id = 0;
-    if (read(f, &id, sizeof(id)) != sizeof(id))
+    if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id))
       {
 	cerr << "node id read failed, exiting" << endl;
 	exit(1);
@@ -181,7 +232,7 @@ int main(int argc, char* argv[]) {
 
     if (ok && partial_nodeset.nodes[id].client_ip != (uint32_t)-1)
       ok = false;
-    fail_write(f,&ok, sizeof(ok));
+    fail_send(f,&ok, sizeof(ok));
 
     if (ok)
       {
@@ -205,14 +256,14 @@ int main(int argc, char* argv[]) {
 	
 	for (size_t i = 0; i < total; i++)
 	  {
-	    fail_write(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
+	    fail_send(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
 	  }	
 
 	uint16_t* client_ports=(uint16_t*)calloc(total,sizeof(uint16_t));
 
 	for(size_t i = 0;i < total;i++) {
 	  int done = 0;
-	  if(read(partial_nodeset.nodes[i].socket, &(client_ports[i]), sizeof(client_ports[i])) < (int) sizeof(client_ports[i])) 
+	  if(recv(partial_nodeset.nodes[i].socket, (char*)&(client_ports[i]), sizeof(client_ports[i]), 0) < (int) sizeof(client_ports[i])) 
 	    cerr<<" Port read failed for node "<<i<<" read "<<done<<endl;
 	}// all clients have bound to their ports.
 	
@@ -220,19 +271,23 @@ int main(int argc, char* argv[]) {
 	  {
 	    if (parent[i] >= 0)
 	      {
-		fail_write(partial_nodeset.nodes[i].socket, &partial_nodeset.nodes[parent[i]].client_ip, sizeof(partial_nodeset.nodes[parent[i]].client_ip));
-		fail_write(partial_nodeset.nodes[i].socket, &client_ports[parent[i]], sizeof(client_ports[parent[i]]));
-	      }
+		fail_send(partial_nodeset.nodes[i].socket, &partial_nodeset.nodes[parent[i]].client_ip, sizeof(partial_nodeset.nodes[parent[i]].client_ip));
+		fail_send(partial_nodeset.nodes[i].socket, &client_ports[parent[i]], sizeof(client_ports[parent[i]]));
+		}
 	    else
 	      {
 		int bogus = -1;
 		uint32_t bogus2 = -1;
-		fail_write(partial_nodeset.nodes[i].socket, &bogus2, sizeof(bogus2));
-		fail_write(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));
+		fail_send(partial_nodeset.nodes[i].socket, &bogus2, sizeof(bogus2));
+		fail_send(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));
 	      }
-	    close(partial_nodeset.nodes[i].socket);
+	    shutdown(partial_nodeset.nodes[i].socket, SHUT_RDWR);
 	  }
 	free (partial_nodeset.nodes);
       }
   }
+ 
+#ifdef _WIN32
+  WSACleanup();
+#endif
 }

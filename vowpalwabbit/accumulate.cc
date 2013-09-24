@@ -1,12 +1,12 @@
 /*
-Copyright (c) 2011 Yahoo! Inc.  All rights reserved.  The copyrights
-embodied in the content of this file are licensed under the BSD
-(revised) open source license
-
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
+/*
 This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
-
- */
+*/
 
 #include <iostream>
 #include <sys/timeb.h>
@@ -17,59 +17,47 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
    
 using namespace std;
 
-struct timeb t_start, t_end;
-double net_comm_time = 0.;
-
-void accumulate(string master_location, regressor& reg, size_t o) {
-  ftime(&t_start);
-  uint32_t length = 1 << global.num_bits; //This is size of gradient
-  size_t stride = global.stride;
+void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
+  uint32_t length = 1 << all.num_bits; //This is size of gradient
+  size_t stride = all.reg.stride;
   float* local_grad = new float[length];
-  weight* weights = reg.weight_vectors;
+  weight* weights = reg.weight_vector;
   for(uint32_t i = 0;i < length;i++) 
     {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce(local_grad, length, master_location, global.unique_id, global.total, global.node);
+  all_reduce(local_grad, length, master_location, all.unique_id, all.total, all.node, all.socks);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i];
     }
   delete[] local_grad;
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
 }
 
-float accumulate_scalar(string master_location, float local_sum) {
-  ftime(&t_start);
+float accumulate_scalar(vw& all, string master_location, float local_sum) {
   float temp = local_sum;
-  all_reduce(&temp, 1, master_location, global.unique_id, global.total, global.node);
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
+  all_reduce(&temp, 1, master_location, all.unique_id, all.total, all.node, all.socks);
   return temp;
 }
 
-void accumulate_avg(string master_location, regressor& reg, size_t o) {
-  uint32_t length = 1 << global.num_bits; //This is size of gradient
-  size_t stride = global.stride;
+void accumulate_avg(vw& all, string master_location, regressor& reg, size_t o) {
+  uint32_t length = 1 << all.num_bits; //This is size of gradient
+  size_t stride = all.reg.stride;
   float* local_grad = new float[length];
-  weight* weights = reg.weight_vectors;
-  ftime(&t_start);
+  weight* weights = reg.weight_vector;
   float numnodes = 1.;
-  all_reduce(&numnodes, 1, master_location, global.unique_id, global.total, global.node);
+  all_reduce(&numnodes, 1, master_location, all.unique_id, all.total, all.node, all.socks);
   for(uint32_t i = 0;i < length;i++) 
     {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce(local_grad, length, master_location, global.unique_id, global.total, global.node);
+  all_reduce(local_grad, length, master_location, all.unique_id, all.total, all.node, all.socks);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i]/numnodes;
     }
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   delete[] local_grad;
 }
 
@@ -87,38 +75,32 @@ float min_elem(float* arr, int length) {
   return min;
 }
 
-void accumulate_weighted_avg(string master_location, regressor& reg) {
-  if(!global.adaptive) {
+void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
+  if(!all.adaptive) {
     cerr<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
-  uint32_t length = 1 << global.num_bits; //This is size of gradient
-  size_t stride = global.stride;
-  weight* weights = reg.weight_vectors;
+  uint32_t length = 1 << all.num_bits; //This is size of gradient
+  size_t stride = all.reg.stride;
+  weight* weights = reg.weight_vector;
   float* local_weights = new float[length];
 
-  ftime(&t_start);
   for(uint32_t i = 0;i < length;i++) 
-    local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]-1);
+    local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]);
   
-  all_reduce(local_weights, length, master_location, global.unique_id, global.total, global.node);
+  all_reduce(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
 
   for(uint32_t i = 0;i < length;i++) 
     if(local_weights[i] > 0) {
-      float ratio = sqrt(weights[stride*i+1]*weights[stride*i+1]-1)/local_weights[i];
+      float ratio = sqrt(weights[stride*i+1]*weights[stride*i+1])/local_weights[i];
       weights[stride*i] *= ratio;
       weights[stride*i+1] *= ratio;
     }
     else 
       weights[stride*i] = 0; 
 
-  all_reduce(weights, 2*length, master_location, global.unique_id, global.total, global.node);
+  all_reduce(weights, (int)stride*length, master_location, all.unique_id, all.total, all.node, all.socks);
 
-  ftime(&t_end);
-  net_comm_time += (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   delete[] local_weights;
 }
 
-double get_comm_time() {
-  return net_comm_time;
-}

@@ -1,5 +1,5 @@
 The implementation of Non-linear (Preconditioned) Conjugate Gradient,
-LBFGS, online learning, and adaptive online elarning works on clusters
+LBFGS, online learning, and adaptive online learning works on clusters
 (both Hadoop and otherwise) now.
 
 To build the code, run make.
@@ -92,6 +92,6 @@ a call to pass_down.
 
 #########################################################################
 
-cg.cc, gd.cc, lbfgs.cc: learning algorithms which use all_reduce
+cg.cc, gd.cc, bfgs.cc: learning algorithms which use all_reduce
 whenever communication is needed. Uses routines accumulate and
 accumulate_scalar to reduce vectors and scalars resp.

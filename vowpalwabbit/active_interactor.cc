@@ -1,11 +1,22 @@
+/*
+Copyright (c) by respective owners including Yahoo!, Microsoft, and
+individual contributors. All rights reserved.  Released under a BSD (revised)
+license as described in the file LICENSE.
+ */
 #include <iostream>
 #include <string>
 #include <cstring>
 #include <cstdlib>
+#ifdef _WIN32
+#include <WinSock2.h>
+#else
+#include <sys/types.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
+#endif
 
 using std::cin;
 using std::endl;
@@ -13,6 +24,7 @@ using std::cout;
 using std::cerr;
 using std::string;
 
+using namespace std;
 
 int open_socket(const char* host, unsigned short port)
 {
@@ -22,13 +34,13 @@ int open_socket(const char* host, unsigned short port)
   if (he == NULL)
     {
       cerr << "can't resolve hostname: " << host << endl;
-      exit(1);
+      throw exception();
     }
   int sd = socket(PF_INET, SOCK_STREAM, 0);
   if (sd == -1)
     {
       cerr << "can't get socket " << endl;
-      exit(1);
+      throw exception();
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -38,7 +50,7 @@ int open_socket(const char* host, unsigned short port)
   if (connect(sd,(sockaddr*)&far_end, sizeof(far_end)) == -1)
     {
       cerr << "can't connect to: " << host << ':' << port << endl;
-      exit(1);
+      throw exception();
     }
   return sd;
 }
@@ -57,7 +69,8 @@ int recvall(int s, char* buf, int n){
 
 int main(int argc, char* argv[]){
     char buf[256]; 
-    char* toks,*itok;
+    char* toks,*itok,*ttag;
+    string tag;
     const char* host="localhost";
     unsigned short port=~0;
     ssize_t pos;
@@ -79,7 +92,7 @@ int main(int argc, char* argv[]){
     ret=send(s,&id,sizeof(id),0);
     if(ret<0){
         cerr << "Could not perform handshake!" << endl;
-        exit(1);
+        throw exception();
     }
     
     while(getline(cin,line)){
@@ -87,27 +100,28 @@ int main(int argc, char* argv[]){
         int len=line.size();
         const char* cstr = line.c_str();
         const char* sp = strchr(cstr,' ');
-        ret=send(s,sp,len-(sp-cstr),0);
+        ret=send(s,sp+1,len-(sp+1-cstr),0);
         if(ret<0){
             cerr << "Could not send unlabeled data!" << endl;
-            exit(1);
+            throw exception();
         }
         ret=recvall(s, buf, 256);
         if(ret<0){
             cerr << "Could not receive queries!" << endl;
-            exit(1);
+            throw exception();
         }
         buf[ret]='\0';
         toks=&buf[0];
         strsep(&toks," ");
-        strsep(&toks," ");
+        ttag=strsep(&toks," ");
+        tag=ttag?string(ttag):string("'empty");
         itok=strsep(&toks,"\n");
         if(itok==NULL || itok[0]=='\0'){
             continue;
         }
 
         queries+=1;
-        string imp=string(itok)+" |";
+        string imp=string(itok)+" "+tag+" |";
         pos = line.find_first_of ("|");
         line.replace(pos,1,imp); 
         cstr = line.c_str();
@@ -115,12 +129,12 @@ int main(int argc, char* argv[]){
         ret = send(s,cstr,len,0);
         if(ret<0){
             cerr << "Could not send labeled data!" << endl;
-            exit(1);
+            throw exception();
         }
         ret=recvall(s, buf, 256);
         if(ret<0){
             cerr << "Could not receive predictions!" << endl;
-            exit(1);
+            throw exception();
         }
     }
     close(s);
