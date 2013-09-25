@@ -386,7 +386,7 @@ namespace TXM
 			label_data simple_temp;	
 			simple_temp.initial = 0.0;
 			simple_temp.weight = mc->weight;
-			simple_temp.label = 0;
+			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp.label;
 			d->base.learn(ec);
 			
@@ -478,7 +478,7 @@ namespace TXM
 			label_data simple_temp;
 			simple_temp.initial = 0.0;
 			simple_temp.weight = mc->weight;
-			simple_temp.label = 0;
+			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp.label;
 			d->base.learn(ec);			
 			
@@ -691,7 +691,7 @@ namespace TXM
 		//mc->label = 0;	//jezeli jest cos innego tu to on moze zmieniac clipping zakresy
 		update_example_indicies(all->audit, ec, b->increment * b->cn);
 		ec->test_only = true;
-		simple_temp.label = 0;
+		simple_temp.label = FLT_MAX;
 		ec->ld = &simple_temp;
 		b->base.learn(ec);	
 		//mc->label = oryginal_label;	
