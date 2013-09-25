@@ -1159,7 +1159,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       ld->is_singleline = true;
       ld->treat_as_classifier = true;
     } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
-      ld->is_singleline = true;
+      ld->is_singleline = false;
       ld->treat_as_classifier = true;
     }
     else {
