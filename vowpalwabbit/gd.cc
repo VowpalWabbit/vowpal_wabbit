@@ -160,7 +160,7 @@ void learn(void* d, example* ec)
     }
   
   if (!command_example(all, ec))
-    { 
+    {
       predict(*all,*g,ec);
 
       if (all->holdout_set_off || !ec->test_only)

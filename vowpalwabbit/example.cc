@@ -183,12 +183,16 @@ void update_example_indicies(bool audit, example* ec, uint32_t amount) {
 #include "global_data.h"
 void save_predictor(vw& all, string reg_name, size_t current_pass);
 
+
 bool command_example(void* a, example* ec) 
 {
   vw* all=(vw*)a;
   if(ec->end_pass) // the end-of-pass example
     return true;
 
+  if (example_is_newline(ec))
+    return true;
+  
   if (ec->indices.size() > 1) // one nonconstant feature.
     return false;
 

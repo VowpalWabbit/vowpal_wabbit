@@ -491,7 +491,7 @@ namespace LabelDict {
     bool is_lab = ec_is_label_definition(l.ec_seq[0]);
     for (size_t i=1; i<l.ec_seq.size(); i++) {
       if (is_lab != ec_is_label_definition(l.ec_seq[i])) {
-        if (!((i == l.ec_seq.size()-1) && (OAA::example_is_newline(l.ec_seq[i])))) {
+        if (!((i == l.ec_seq.size()-1) && (example_is_newline(l.ec_seq[i])))) {
           cerr << "error: mixed label definition and examples in ldf data!" << endl;
           throw exception();
         }
@@ -911,7 +911,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     label* ld = (label*)ec->ld;
     v_array<CSOAA::wclass> costs = ld->costs;
 
-    if (OAA::example_is_newline(ec)) return;
+    if (example_is_newline(ec)) return;
     if (LabelDict::ec_is_example_header(ec)) return;
     if (LabelDict::ec_is_label_definition(ec)) return;
 
@@ -997,7 +997,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
   }
 
   void learn_multiline(vw& all, ldf& l, example *ec) {
-    if (OAA::example_is_newline(ec) || l.ec_seq.size() >= all.p->ring_size - 2 || command_example(&all,ec)) {
+    if (example_is_newline(ec) || l.ec_seq.size() >= all.p->ring_size - 2 || command_example(&all,ec)) {
       if (l.ec_seq.size() >= all.p->ring_size - 2 && l.first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
 	
@@ -1005,6 +1005,13 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
 
       if (!LabelDict::ec_seq_is_label_definition(l, l.ec_seq) && l.ec_seq.size() > 0)
         global_print_newline(all);
+
+      if (command_example(&all, ec)) {
+	if (ec->end_pass)
+	  l.first_pass = false;
+	l.base.learn(ec);
+      }
+      
       if (ec->in_use)
         VW::finish_example(all, ec);
       l.need_to_clear = true;
@@ -1012,6 +1019,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       if (l.ec_seq.size() > 0)
         cerr << "warning: label definition encountered in data block -- ignoring data!" << endl;
       learn_singleline(all, l, ec);
+
       if (ec->in_use)
         VW::finish_example(all, ec);
     } else {
@@ -1023,15 +1031,6 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       clear_seq(all, l);
       l.need_to_clear = false;
     }
-
-    if (command_example(&all, ec))
-      {
-	if (ec->end_pass)
-	  l.first_pass = false;
-
-	l.base.learn(ec);
-	return;
-      }
   }
 
   void learn(void* d, example*ec) {
@@ -1166,6 +1165,8 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       cerr << "ldf requires either [s]ingleline or [m]ultiline argument, possibly with [c]lassifier at the end" << endl;
       throw exception();
     }
+    if (! ld->is_singleline)
+      all.holdout_set_off = true;  // TODO: fix holdout so we don't have to do this!
 
     if (all.add_constant) {
       all.add_constant = false;

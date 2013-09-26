@@ -38,14 +38,6 @@ namespace OAA
   
   void output_example(vw& all, example* ec);
 
-  inline int example_is_newline(example* ec)
-  {
-    // if only index is constant namespace or no index
-    return ((ec->indices.size() == 0) || 
-            ((ec->indices.size() == 1) &&
-             (ec->indices.last() == constant_namespace)));
-  }
-
   inline int example_is_test(example* ec)
   {
     return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
