@@ -147,9 +147,9 @@ namespace BS {
     else
     {
       all.sd->weighted_examples += ld->weight;
-      all.sd->total_features += ec->num_features;
       all.sd->sum_loss += ec->loss;
       all.sd->sum_loss_since_last_dump += ec->loss;
+      all.sd->total_features += ec->num_features;
       all.sd->example_number++;
     }
 
