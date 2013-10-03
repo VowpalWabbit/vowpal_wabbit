@@ -138,17 +138,18 @@ void learn(void* d, example* ec)
     { 
       sync_weights(*all);
       if(all->span_server != "") {
-	if(all->adaptive)
-	  accumulate_weighted_avg(*all, all->span_server, all->reg);
-	else 
-	  accumulate_avg(*all, all->span_server, all->reg, 0);	      
+	// if(all->adaptive)
+	//   accumulate_weighted_avg(*all, all->span_server, all->reg);
+	// else 
+        accumulate_avg(*all, all->span_server, all->reg, 0);	      
       }
       
       all->eta *= all->eta_decay_rate;
       if (all->save_per_pass)
 	save_predictor(*all, all->final_regressor_name, all->current_pass);   
-      
+
       all->current_pass++;
+      //cerr << "newpass " << all->current_pass << endl;
 
       if(!all->holdout_set_off)
       {
@@ -166,7 +167,8 @@ void learn(void* d, example* ec)
       if (all->holdout_set_off || !ec->test_only)
       {
       if (ec->eta_round != 0.)
-	{ 
+	{
+          //cerr << "eta=" << ec->eta_round << endl;
           if(all->power_t == 0.5) { 
             if (all->adaptive) {
               if (all->normalized_updates){ 
@@ -598,7 +600,7 @@ float compute_norm(vw& all, example* &ec)
 
           eta_t = all.eta * norm * ld->weight;
           if(!all.adaptive) eta_t *= powf(t,-all.power_t);
-
+          
           float update = 0.f;
           if( all.invariant_updates )
             update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm);
@@ -606,6 +608,9 @@ float compute_norm(vw& all, example* &ec)
             update = all.loss->getUnsafeUpdate(ec->final_prediction, ld->label, eta_t, norm);
 
 	  ec->eta_round = (float) (update / all.sd->contraction);
+
+          ///cerr << "eta_t=" << eta_t << " final_prediction=" << ec->final_prediction << " label=" << ld->label << " norm=" << norm << " update="<<update<< " contraction=" << all.sd->contraction << " eta_round=" << ec->eta_round << endl;
+
 
 	  if (all.reg_mode && fabs(ec->eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ec->final_prediction, ld->label);
