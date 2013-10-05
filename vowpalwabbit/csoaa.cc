@@ -155,32 +155,32 @@ namespace CSOAA {
   {
     label* ld = (label*)v;
 
-    //cerr << "csoaa::parse_label words.size()=" << words.size() << endl;
+    v_array<substring> parse_name; // TODO: make the parser thread safe so we don't have to do this here!
     ld->costs.erase();
     for (unsigned int i = 0; i < words.size(); i++) {
       wclass f = {0.,0,0.,0.};
-      name_value(words[i], p->parse_name, f.x);
+      name_value(words[i], /* p-> */ parse_name, f.x);
       
-      if (p->parse_name.size() == 0)
+      if (/* p-> */ parse_name.size() == 0)
         cerr << "invalid cost: specification -- no names!" << endl;
       else {
-        if (substring_eq(p->parse_name[0], "shared")) {
-          if (p->parse_name.size() == 1) {
+        if (substring_eq(/* p-> */ parse_name[0], "shared")) {
+          if (/* p-> */ parse_name.size() == 1) {
             f.x = -1;
             f.weight_index = 0;
           } else
             cerr << "shared feature vectors should not have costs" << endl;
-        } else if (substring_eq(p->parse_name[0], "label")) {
-          if (p->parse_name.size() == 2) {
+        } else if (substring_eq(/* p-> */ parse_name[0], "label")) {
+          if (/* p-> */ parse_name.size() == 2) {
             f.weight_index = (size_t)f.x;
             f.x = -1;
           } else
             cerr << "label feature vectors must have label ids" << endl;
         } else {
           f.weight_index = 0;
-          if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3) {
-            f.weight_index = (uint32_t)hashstring(p->parse_name[0], 0);
-            if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
+          if (/* p-> */ parse_name.size() == 1 || /* p-> */ parse_name.size() == 2 || /* p-> */ parse_name.size() == 3) {
+            f.weight_index = (uint32_t)hashstring(/* p-> */ parse_name[0], 0);
+            if (/* p-> */ parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
               f.x = FLT_MAX;
 
             if ((f.weight_index >= 1) && (f.weight_index <= sd->k) && (f.x >= 0)) {}  // normal example
@@ -1121,7 +1121,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       
       if(vm.count("csoaa_ldf") && ldf_arg.compare(vm["csoaa_ldf"].as<string>()) != 0) {
         ldf_arg = vm["csoaa_ldf"].as<string>();
-        std::cerr << "warning: you specified a different ldf argument through --csoaa_ldf than the one loaded from regressor. Pursuing with loaded value of: " << ldf_arg << endl;
+        std::cerr << "warning: you specified a different ldf argument through --csoaa_ldf than the one loaded from regressor. Proceeding with value of: " << ldf_arg << endl;
       }
     }
     else if( vm.count("csoaa_ldf") ){
@@ -1135,7 +1135,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       
       if(vm.count("wap_ldf") && ldf_arg.compare(vm["wap_ldf"].as<string>()) != 0) {
         ldf_arg = vm["csoaa_ldf"].as<string>();
-        std::cerr << "warning: you specified a different value for --wap_ldf than the one loaded from regressor. Pursuing with loaded value of: " << ldf_arg << endl;
+        std::cerr << "warning: you specified a different value for --wap_ldf than the one loaded from regressor. Proceeding with value of: " << ldf_arg << endl;
       }
     }
     else {
