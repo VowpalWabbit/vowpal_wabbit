@@ -605,8 +605,11 @@ vw* parse_args(int argc, char *argv[])
   }
 
   if (vm.count("raw_predictions")) {
-    if (!all->quiet)
+    if (!all->quiet) {
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
+      if (vm.count("binary") || vm_file.count("binary"))
+        cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
+    }
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
       all->raw_prediction = 1;//stdout
     else
