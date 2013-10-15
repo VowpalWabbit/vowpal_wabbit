@@ -177,7 +177,7 @@ p {
                   }
                   else {
                     var ambPrefixEls = vwExPrefix.trim().split(" ");
-                    addExampleFeedback(i, "Found &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExPrefix) + "</span>&rdquo; ambiguous prefix with " + ambPrefixEls.length + " elements, depends on other examples!");
+                    addExampleFeedback(i, "Found &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExPrefix) + "</span>&rdquo; ambiguous prefix with " + ambPrefixEls.length + " elements.");
                     vwExLabel = ambPrefixEls[0];
                     if (ambPrefixEls.length > 1) {
                       vwExImp = ambPrefixEls[1];
@@ -307,9 +307,10 @@ p {
     <h3>Vowpal Wabbit Data Format Validation</h3>
     <p><small>by <a href="http://blog.someben.com/">Ben Gimpert</a></small>  </p>
     
-    <p style="width: 80%; margin-top: 1em;">Not sure if your training data is in the right format for Vowpal Wabbit? Not seeing the results you expect from Vowpal Wabbit, in general? Paste a few lines of your training data into this text box, and then hit the &ldquo;Validate&rdquo; button:</p>
+    <p style="width: 80%; margin-top: 1em;">Not sure if your training data is in the right format for Vowpal Wabbit? Not seeing the results you expect from Vowpal Wabbit, in general? Paste a few lines of your training data into this text box, and then hit the &ldquo;Validate&rdquo; button below. Note that the only unambiguous prefixes for training examples have exactly one or four elements.</p>
     
-    <textarea id="vwData" style="width: 80%; height: 8em; font-family: monospace; margin-top: 1.5em; margin-bottom: 1.5em;">1 1.0 |MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes
+    <textarea id="vwData" style="width: 80%; height: 12em; font-family: monospace; margin-top: 1.5em; margin-bottom: 1.5em;">1 1.0 |MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes
+1 1.0 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes
 1 2 'tag| a:2 b:3
 1 2 'tag | a:2 b:3
 1 2 tag | a:2 b:3
