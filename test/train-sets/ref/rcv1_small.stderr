@@ -25,8 +25,8 @@ num sources = 1
 
 finished run
 number of examples = 200000
-weighted example sum = 2e+05
-weighted label sum = -1.272e+04
-average loss = 0.2951
+weighted example sum = 200000
+weighted label sum = -12720
+average loss = 0.199705
 best constant = -0.0636
 total feature number = 15587880

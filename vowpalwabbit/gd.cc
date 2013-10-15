@@ -559,7 +559,8 @@ float compute_norm(vw& all, example* &ec)
 
   ec->eta_round = 0;
 
-  ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
+  if (ld->label != FLT_MAX)
+    ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
 
   if (ld->label != FLT_MAX && !ec->test_only)
     {

@@ -7,7 +7,6 @@ license as described in the file LICENSE.
 This is the vowpal wabbit fast online learning code.  For Windows, look at README.windows.txt
 
 You can download the latest version from here:
-
 https://github.com/JohnLangford/vowpal_wabbit/wiki/Download
 
 Alternatively, the very latest version is available here:

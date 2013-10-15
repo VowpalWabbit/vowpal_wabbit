@@ -738,6 +738,7 @@ void setup_example(vw& all, example* ae)
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
   ae->done = false;
+  ae->loss = 0.;
   
   ae->example_counter = (size_t)(all.p->parsed_examples + 1);
   all.p->in_pass_counter++;

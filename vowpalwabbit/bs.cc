@@ -147,9 +147,9 @@ namespace BS {
     else
     {
       all.sd->weighted_examples += ld->weight;
-      all.sd->total_features += ec->num_features;
       all.sd->sum_loss += ec->loss;
       all.sd->sum_loss_since_last_dump += ec->loss;
+      all.sd->total_features += ec->num_features;
       all.sd->example_number++;
     }
 
@@ -282,12 +282,12 @@ namespace BS {
     if( vm_file.count("bs") ) {
       data->B = (uint32_t)vm_file["bs"].as<size_t>();
       if( vm.count("bs") && (uint32_t)vm["bs"].as<size_t>() != data->B )
-        std::cerr << "warning: you specified a different number of actions through --bs than the one loaded from predictor. Pursuing with loaded value of: " << data->B << endl;
+        std::cerr << "warning: you specified a different number of samples through --bs than the one loaded from predictor. Pursuing with loaded value of: " << data->B << endl;
     }
     else {
       data->B = (uint32_t)vm["bs"].as<size_t>();
 
-      //append bs with nb_actions to options_from_file so it is saved to regressor later
+      //append bs with number of samples to options_from_file so it is saved to regressor later
       std::stringstream ss;
       ss << " --bs " << data->B;
       all.options_from_file.append(ss.str());

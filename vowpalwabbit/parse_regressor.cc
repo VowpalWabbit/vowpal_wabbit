@@ -167,7 +167,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				buff,text_len, text);
       for (size_t i = 0; i < ngram_len; i++)
 	{
-	  char ngram[3];
+	  char ngram[3] = {0,0,0};
 	  if (!read) {
 	    text_len = sprintf(buff, "%s ", all.ngram_strings[i].c_str());
 	    memcpy(ngram, all.ngram_strings[i].c_str(), min(3, all.ngram_strings[i].size()));
@@ -195,7 +195,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				buff,text_len, text);
       for (size_t i = 0; i < skip_len; i++)
 	{
-	  char skip[3];
+	  char skip[3] = {0,0,0};
 	  if (!read) {
 	    text_len = sprintf(buff, "%s ", all.skip_strings[i].c_str());
 	    memcpy(skip, all.skip_strings[i].c_str(), min(3, all.skip_strings[i].size()));

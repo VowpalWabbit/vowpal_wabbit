@@ -706,8 +706,6 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     size_t prediction = 0;
     float  min_score = FLT_MAX;
 
-    v_hashmap<size_t,float> hit_labels(8, 0., NULL);
-
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq.begin[k];
 

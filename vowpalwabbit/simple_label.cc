@@ -193,15 +193,15 @@ void output_and_account_example(vw& all, example* ec)
     all.sd->holdout_sum_loss += ec->loss;
     all.sd->holdout_sum_loss_since_last_dump += ec->loss;
     all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
-
   }
   else
   {
+    if (ld->label != FLT_MAX)
+      all.sd->weighted_labels += ld->label * ld->weight;
     all.sd->weighted_examples += ld->weight;
-    all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-    all.sd->total_features += ec->num_features;
     all.sd->sum_loss += ec->loss;
     all.sd->sum_loss_since_last_dump += ec->loss;
+    all.sd->total_features += ec->num_features;
     all.sd->example_number++;
   }
   all.print(all.raw_prediction, ec->partial_prediction, -1, ec->tag);

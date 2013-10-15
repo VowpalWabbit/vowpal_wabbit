@@ -68,6 +68,7 @@ vw* parse_args(int argc, char *argv[])
     ("active_mellowness", po::value<float>(&(all->active_c0)), "active learning mellowness parameter c_0. Default 8")
     ("binary", "report loss as binary classification on -1,1")
     ("bs", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
+    ("bs_type", po::value<string>(), "bootstrap mode - currently 'mean' or 'vote'")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("sgd", "use regular stochastic gradient descent update.")
     ("adaptive", "use adaptive, individual learning rates.")
@@ -75,8 +76,7 @@ vw* parse_args(int argc, char *argv[])
     ("normalized", "use per feature normalized updates")
     ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
     ("audit,a", "print weights of features")
-    ("bit_precision,b", po::value<size_t>(),
-     "number of bits in the feature table")
+    ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
     ("bfgs", "use bfgs optimization")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
@@ -606,8 +606,11 @@ vw* parse_args(int argc, char *argv[])
   }
 
   if (vm.count("raw_predictions")) {
-    if (!all->quiet)
+    if (!all->quiet) {
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
+      if (vm.count("binary") || vm_file.count("binary"))
+        cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
+    }
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
       all->raw_prediction = 1;//stdout
     else
