@@ -203,7 +203,8 @@ class ezexample {
     if (is_multiline) {
       vw_ref->learn(empty_example);
       for (example**ecc=example_copies.begin; ecc!=example_copies.end; ecc++)
-        VW::finish_example(*vw_par_ref, *ecc);
+        if ((*ecc)->in_use)
+          VW::finish_example(*vw_par_ref, *ecc);
       example_copies.erase();
     }
   }

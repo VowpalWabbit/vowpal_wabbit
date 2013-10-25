@@ -31,7 +31,7 @@ void run(vw*vw) {
   ex.train();
 
   // push it through VW for training
-  //ex.finish();
+  ex.finish();
 
   /// BEGIN SECOND MULTILINE EXAMPLE
   ex(vw_namespace('s'))

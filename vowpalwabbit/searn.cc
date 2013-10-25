@@ -485,7 +485,7 @@ namespace Searn
 
     s.empty_example = alloc_example(sizeof(OAA::mc_label));
     OAA::default_label(s.empty_example->ld);
-    //    cerr << "create: empty_example->ld = " << empty_example->ld << endl;
+
     s.empty_example->in_use = true;
   }
   

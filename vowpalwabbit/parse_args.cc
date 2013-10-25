@@ -800,8 +800,6 @@ vw* parse_args(int argc, char *argv[])
     i++;
   all->weights_per_problem = (1 << i) / all->reg.stride;
 
-  //cerr << "adaptive=" << all->adaptive << " normalized_updates=" << all->normalized_updates  << " power_t=" << all->power_t << endl;
-
   return all;
 }
 

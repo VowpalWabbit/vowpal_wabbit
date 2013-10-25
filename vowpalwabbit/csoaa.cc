@@ -133,7 +133,6 @@ namespace CSOAA {
   void delete_label(void* v)
   {
     label* ld = (label*)v;
-    //cerr << "ld=[size=" << ld->costs.size() << " begin=" << ld->costs.begin <<  "|" << ld->costs[0].weight_index << ":" << ld->costs[0].x << "...]";
     ld->costs.delete_v();
   }
 

@@ -149,7 +149,6 @@ void learn(void* d, example* ec)
 	save_predictor(*all, all->final_regressor_name, all->current_pass);   
 
       all->current_pass++;
-      //cerr << "newpass " << all->current_pass << endl;
 
       if(!all->holdout_set_off)
       {
@@ -168,7 +167,6 @@ void learn(void* d, example* ec)
       {
       if (ec->eta_round != 0.)
 	{
-          //cerr << "eta=" << ec->eta_round << endl;
           if(all->power_t == 0.5) { 
             if (all->adaptive) {
               if (all->normalized_updates){ 
@@ -609,9 +607,6 @@ float compute_norm(vw& all, example* &ec)
             update = all.loss->getUnsafeUpdate(ec->final_prediction, ld->label, eta_t, norm);
 
 	  ec->eta_round = (float) (update / all.sd->contraction);
-
-          ///cerr << "eta_t=" << eta_t << " final_prediction=" << ec->final_prediction << " label=" << ld->label << " norm=" << norm << " update="<<update<< " contraction=" << all.sd->contraction << " eta_round=" << ec->eta_round << endl;
-
 
 	  if (all.reg_mode && fabs(ec->eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ec->final_prediction, ld->label);
