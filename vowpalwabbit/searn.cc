@@ -1291,7 +1291,7 @@ namespace Searn
       do_actual_learning(*all, *s, finish_examples);
     } else {  
       // is multiline
-      if (ec->end_pass || OAA::example_is_newline(ec) || s->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
+      if (ec->end_pass || example_is_newline(ec) || s->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
          if (s->ec_seq.size() >= all->p->ring_size - 2)
             std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
          do_actual_learning(*all, *s, finish_examples);
@@ -1814,7 +1814,7 @@ namespace ImperativeSearn {
     vw* all = srn->all;
 
     bool is_real_example = true;
-    if (ec->end_pass || OAA::example_is_newline(ec) || srn->ec_seq.size() >= all->p->ring_size - 2) { 
+    if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all->p->ring_size - 2) { 
       if (srn->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
 	std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
     }
