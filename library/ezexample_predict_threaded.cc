@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
   runcount = atoi(argv[2]);
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
   string vw_init_string_all    = "-t --csoaa_ldf s --quiet -q st --noconstant --hash all -i train.w";
-  string vw_init_string_parser = "-t --csoaa_ldf s --quiet -q st --noconstant --noop";   // this needs to have enough arguments to get the parser right
+  string vw_init_string_parser = "-t --csoaa_ldf s --quiet -q st --noconstant --hash all --noop";   // this needs to have enough arguments to get the parser right
   vw*vw = VW::initialize(vw_init_string_all);
   vector<double> results;
 
