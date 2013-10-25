@@ -29,7 +29,6 @@ namespace WAP {
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
         size_t original_length = ec->atomics[*i].size();
-        //cerr << "original_length = " << original_length << endl;
         for (uint32_t j = 0; j < original_length; j++)
           {
             feature* f = &ec->atomics[*i][j];
@@ -38,7 +37,6 @@ namespace WAP {
             ec->atomics[*i].push_back(temp);
           }
         ec->sum_feat_sq[*i] *= 2;
-        //cerr << "final_length = " << ec->atomics[*i].size() << endl;
       }
     if (all.audit)
       {
@@ -62,12 +60,10 @@ namespace WAP {
                   f->weight_index += offset1;
                   ec->audit_features[*i].push_back(temp);
                 }
-              //cerr << "final_length = " << ec->audit_features[*i].size() << endl;
             }
       }
     ec->num_features *= 2;
     ec->total_sum_feat_sq *= 2;
-    //cerr << "total_sum_feat_sq = " << ec->total_sum_feat_sq << endl;
   }
 
   void unmirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
