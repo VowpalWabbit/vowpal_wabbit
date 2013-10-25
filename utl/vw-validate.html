@@ -68,10 +68,10 @@ p {
   }
 
   function summarizeString(s) {
-    if (s.length < 80) {
+    if (s.length < 120) {
       return s;
     }
-    return s.substring(0, 6) + "..." + s.substring(s.length - 6);
+    return s.substring(0, 16) + "&hellip; " + s.substring(s.length - 16);
   }
   
   function isInteger(s) {
@@ -103,106 +103,195 @@ p {
         addExampleFeedback(i, "Empty example, probably a dangling newline!");
         continue;
       }
-      
       addExampleFeedback(i, "Example &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExample) + "</span>&rdquo;.");
 
-      var labelVersusFeatMatch = /^([^|]*\S+)( )?\|(.*)/.exec(vwExample);
-      if (labelVersusFeatMatch != null) {
-        var vwExLabel = labelVersusFeatMatch[1].split(" ");
-        var vwExLabelBarSpace = (labelVersusFeatMatch[2] == " ");
-        var vwExNamespaces = labelVersusFeatMatch[3].split("|");
-        
-        if (vwExLabel.length > 4) {
-          addExampleFeedback(i, "Too many elements in the label section!");
+      var vwExPipeIdx = vwExample.indexOf("|");
+      if (vwExPipeIdx == null) {
+        addExampleFeedback(i, "Missing pipe ("|") separator in example.");
+        continue;
+      }
+      var vwExPrefix = vwExample.substr(0, vwExPipeIdx);
+      var vwExNamespaces = vwExample.substr(vwExPipeIdx + 1);
+
+      var vwExLabel = null;
+      var vwExImp = null;
+      var vwExBase = null;
+      var vwExTag = null;
+      
+      var isLegacyExTag = false;
+
+      var vwExPrefixMatch = /^([^' ]+) ([^' ]+) ([^' ]+) '([^' ]+) $/.exec(vwExPrefix);
+      if (vwExPrefixMatch != null) {
+        addExampleFeedback(i, "Found &ldquo;&lt;label&gt; &lt;importance&gt; [base] ['tag] |&hellip;&rdquo; prefix format.");
+        vwExLabel = vwExPrefixMatch[1];
+        vwExImp = vwExPrefixMatch[2];
+        vwExBase = vwExPrefixMatch[3];
+        vwExTag = vwExPrefixMatch[4];
+      }
+      else {
+        var vwExPrefixMatch = /^([^' ]+) ([^' ]+) ([^' ]+) ([^' ]+)$/.exec(vwExPrefix);
+        if (vwExPrefixMatch != null) {
+          addExampleFeedback(i, "Found &ldquo;&lt;label&gt; &lt;importance&gt; [base] [tag]|&hellip;&rdquo; prefix format.");
+          vwExLabel = vwExPrefixMatch[1];
+          vwExImp = vwExPrefixMatch[2];
+          vwExBase = vwExPrefixMatch[3];
+          vwExTag = vwExPrefixMatch[4];
+          isLegacyExTag = true;
         }
         else {
-          addExampleFeedback(i, "Example label / response / class is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel[0]) + "</span>&rdquo;.");
-          
-          if ((vwExLabel.length >= 2) && isFloat(vwExLabel[1])) {
-            addExampleFeedback(i, "Importance weight is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel[1]) + "</span>&rdquo;.");
-          }
-          if ((vwExLabel.length >= 3) && isFloat(vwExLabel[2])) {
-            addExampleFeedback(i, "Initial prediction is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel[2]) + "</span>&rdquo;.");
-          }
-          
-          if (! isFloat(vwExLabel[vwExLabel.length - 1])) {
-            var vwExTag = vwExLabel[vwExLabel.length - 1];
-            if (vwExTag.match(/^'/)) {
-              vwExTag = vwExTag.substring(1);
-              addExampleFeedback(i, "Tag is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExTag) + "</span>&rdquo;.");
-            }
-            else {
-              if (vwExLabelBarSpace) {
-                addExampleFeedback(i, "Badly formatted example, with an extra space before the pipe, and tag in the legacy format should be preceded by a single quote!");
-              }
-              else {
-                addExampleFeedback(i, "Tag is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExTag) + "</span>&rdquo; in the legacy format, should be preceded by a single quote!");
-              }
-            }
-          }
-        }
-        
-        var isDefaultUsed = false;
-        for (var j=0; j < vwExNamespaces.length; j++) {
-          var vwExNamespace = vwExNamespaces[j];
-          
-          var namespaceMatch = /^(\S*) (.*)/.exec(vwExNamespace);
-          if (namespaceMatch != null) {
-            var vwExNamespace = namespaceMatch[1];
-            var vwExNamespaceFeatures = namespaceMatch[2].split(" ");
-            if (vwExNamespace != "") {
-              var vwExNamespaceName = null;
-              var vwExNamespaceScale = null;
-              if (vwExNamespace.match(/:/)) {
-                vwExNamespaceName = vwExNamespace.split(":")[0];
-                vwExNamespaceScale = vwExNamespace.split(":")[1];
-              }
-              else {
-                vwExNamespaceName = vwExNamespace;
-              }
-              addExampleNamespaceFeedback(i, j, "Namespace found with name &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExNamespaceName) + "</span>&rdquo;.");
-              if (vwExNamespaceScale != null) {
-                addExampleNamespaceFeedback(i, j, "Scale of namespace is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExNamespaceScale[1]) + "</span>&rdquo;.");
-              }
-            }
-            else {
-              if (isDefaultUsed) {
-                addExampleNamespaceFeedback(i, j, "Default namespace used more than once!");
-              }
-              else {
-                addExampleNamespaceFeedback(i, j, "Using default namespace.");
-                isDefaultUsed = true;
-              }
-            }
-            
-            addExampleNamespaceFeedback(i, j, "Found " + vwExNamespaceFeatures.length + " feature(s).");
-            for (var k=0; k < vwExNamespaceFeatures.length; k++) {
-              var vwFeature = vwExNamespaceFeatures[k].split(":");
-              addExampleNamespaceFeatureFeedback(i, j, k, "Label &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwFeature[0]) + "</span>&rdquo;.");
-              if (isInteger(vwFeature[0])) {
-                addExampleNamespaceFeatureFeedback(i, j, k, "Label is an integer, and will be used instead of the feature label hashing.");
-              }
-
-              switch (vwFeature.length) {
-              case 1:
-                addExampleNamespaceFeatureFeedback(i, j, k, "Using default value of 1 for feature.");
-                break;
-              case 2:
-                addExampleNamespaceFeatureFeedback(i, j, k, "Value &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwFeature[1]) + "</span>&rdquo;.");
-                break;
-              default:
-                addExampleNamespaceFeatureFeedback(i, j, k, "Badly formatted feature, too many colon : sections!");
-              }
-            }
-            
+          var vwExPrefixMatch = /^([^' ]+) ([^' ]+) '([^' ]+) $/.exec(vwExPrefix);
+          if (vwExPrefixMatch != null) {
+            addExampleFeedback(i, "Found &ldquo;&lt;label&gt; [importance] ['tag] |&hellip;&rdquo; prefix format.");
+            vwExLabel = vwExPrefixMatch[1];
+            vwExImp = vwExPrefixMatch[2];
+            vwExTag = vwExPrefixMatch[3];
           }
           else {
-            addExampleNamespaceFeedback(i, j, "Badly formed namespace.");
+            var vwExPrefixMatch = /^([^' ]+) ([^' ]+) ([^' ]+)$/.exec(vwExPrefix);
+            if (vwExPrefixMatch != null) {
+              addExampleFeedback(i, "Found &ldquo;&lt;label&gt; [importance] [tag]|&hellip;&rdquo; prefix format.");
+              vwExLabel = vwExPrefixMatch[1];
+              vwExImp = vwExPrefixMatch[2];
+              vwExTag = vwExPrefixMatch[3];
+              isLegacyExTag = true;
+            }
+            else {
+              var vwExPrefixMatch = /^([^' ]+) '([^' ]+) $/.exec(vwExPrefix);
+              if (vwExPrefixMatch != null) {
+                addExampleFeedback(i, "Found &ldquo;[label] ['tag] |&hellip;&rdquo; prefix format.");
+                vwExLabel = vwExPrefixMatch[1];
+                vwExTag = vwExPrefixMatch[2];
+              }
+              else {
+                var vwExPrefixMatch = /^([^' ]+) ([^' ]+)$/.exec(vwExPrefix);
+                if (vwExPrefixMatch != null) {
+                  addExampleFeedback(i, "Found &ldquo;[label] [tag]|&hellip;&rdquo; prefix format.");
+                  vwExLabel = vwExPrefixMatch[1];
+                  vwExTag = vwExPrefixMatch[2];
+                }
+                else {
+                  var vwExPrefixMatch = /^([^' ]+) $/.exec(vwExPrefix);
+                  if (vwExPrefixMatch != null) {
+                    addExampleFeedback(i, "Found &ldquo;[label] |&hellip;&rdquo; prefix format.");
+                    vwExLabel = vwExPrefixMatch[1];
+                  }
+                  else {
+                    var ambPrefixEls = vwExPrefix.trim().split(" ");
+                    addExampleFeedback(i, "Found &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExPrefix) + "</span>&rdquo; ambiguous prefix with " + ambPrefixEls.length + " elements.");
+                    vwExLabel = ambPrefixEls[0];
+                    if (ambPrefixEls.length > 1) {
+                      vwExImp = ambPrefixEls[1];
+                    }
+                    if (ambPrefixEls.length > 2) {
+                      vwExTag = ambPrefixEls[2];
+                      if (vwExTag.match(/^'/)) {
+                        vwExTag = vwExTag.substr(1);
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
+
+      addExampleFeedback(i, "Example label / response / class is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExLabel) + "</span>&rdquo;.");
+
+      if (vwExImp == null) {
+        addExampleFeedback(i, "Example has default &ldquo;<span class=\"vwFeedbackMsgExample\">1.0</span>&rdquo; importance weight.");
+      }
       else {
-        addExampleFeedback(i, "Badly formed example.");
+        if (isFloat(vwExImp)) {
+          addExampleFeedback(i, "Importance weight is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExImp) + "</span>&rdquo;.");
+        }
+        else {
+          addExampleFeedback(i, "Importance weight &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExImp) + "</span>&rdquo; must be a float!");
+        }
+      }
+
+      if (vwExBase == null) {
+        addExampleFeedback(i, "Example has default &ldquo;<span class=\"vwFeedbackMsgExample\">0</span>&rdquo; base.");
+      }
+      else {
+        if (isFloat(vwExBase)) {
+          addExampleFeedback(i, "Base is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExBase) + "</span>&rdquo;.");
+        }
+        else {
+          addExampleFeedback(i, "Base &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExBase) + "</span>&rdquo; must be a float!");
+        }
+      }
+
+      if (vwExTag != null) {
+        if (isLegacyExTag) {
+          addExampleFeedback(i, "Tag is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExTag) + "</span>&rdquo; in the legacy format, should be preceded by a single quote!");
+        }
+        else {
+          addExampleFeedback(i, "Tag is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExTag) + "</span>&rdquo;.");
+        }
+      }
+
+      var vwExNamespaceEls = vwExNamespaces.split(" |");
+      var isDefaultUsed = false;
+      for (var j=0; j < vwExNamespaceEls.length; j++) {
+        var vwExNamespace = vwExNamespaceEls[j];
+        
+        var namespaceMatch = /^(\S*) (.*)/.exec(vwExNamespace);
+        if (namespaceMatch != null) {
+          var vwExNamespace = namespaceMatch[1];
+          var vwExNamespaceFeatures = namespaceMatch[2].split(" ");
+          if (vwExNamespace != "") {
+            var vwExNamespaceName = null;
+            var vwExNamespaceScale = null;
+            if (vwExNamespace.match(/:/)) {
+              vwExNamespaceName = vwExNamespace.split(":")[0];
+              vwExNamespaceScale = vwExNamespace.split(":")[1];
+            }
+            else {
+              vwExNamespaceName = vwExNamespace;
+            }
+            addExampleNamespaceFeedback(i, j, "Namespace found with name &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExNamespaceName) + "</span>&rdquo;.");
+            if (vwExNamespaceScale == null) {
+              addExampleNamespaceFeedback(i, j, "Using default scale of &ldquo;<span class=\"vwFeedbackMsgExample\">1.0</span>&rdquo; for namespace.");
+            }
+            else {
+              addExampleNamespaceFeedback(i, j, "Scale of namespace is &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwExNamespaceScale) + "</span>&rdquo;.");
+            }
+          }
+          else {
+            if (isDefaultUsed) {
+              addExampleNamespaceFeedback(i, j, "Default namespace used more than once!");
+            }
+            else {
+              addExampleNamespaceFeedback(i, j, "Using default namespace.");
+              isDefaultUsed = true;
+            }
+          }
+          
+          addExampleNamespaceFeedback(i, j, "Found " + vwExNamespaceFeatures.length + " feature(s).");
+          for (var k=0; k < vwExNamespaceFeatures.length; k++) {
+            var vwFeature = vwExNamespaceFeatures[k].split(":");
+            addExampleNamespaceFeatureFeedback(i, j, k, "Label &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwFeature[0]) + "</span>&rdquo;.");
+            if (isInteger(vwFeature[0])) {
+              addExampleNamespaceFeatureFeedback(i, j, k, "Label is an integer, and will be used instead of the feature label hashing.");
+            }
+
+            switch (vwFeature.length) {
+            case 1:
+              addExampleNamespaceFeatureFeedback(i, j, k, "Using default value of &ldquo;<span class=\"vwFeedbackMsgExample\">1</span>&rdquo; for feature.");
+              break;
+            case 2:
+              addExampleNamespaceFeatureFeedback(i, j, k, "Value &ldquo;<span class=\"vwFeedbackMsgExample\">" + summarizeString(vwFeature[1]) + "</span>&rdquo;.");
+              break;
+            default:
+              addExampleNamespaceFeatureFeedback(i, j, k, "Badly formatted feature, too many colon : sections!");
+            }
+          }
+          
+        }
+        else {
+          addExampleNamespaceFeedback(i, j, "Badly formed namespace.");
+        }
       }
       
       addFeedback("&nbsp;");
@@ -218,9 +307,10 @@ p {
     <h3>Vowpal Wabbit Data Format Validation</h3>
     <p><small>by <a href="http://blog.someben.com/">Ben Gimpert</a></small>  </p>
     
-    <p style="width: 80%; margin-top: 1em;">Not sure if your training data is in the right format for Vowpal Wabbit? Not seeing the results you expect from Vowpal Wabbit, in general? Paste a few lines of your training data into this text box, and then hit the &ldquo;Validate&rdquo; button:</p>
+    <p style="width: 80%; margin-top: 1em;">Not sure if your training data is in the right format for Vowpal Wabbit? Not seeing the results you expect from Vowpal Wabbit, in general? Paste a few lines of your training data into this text box, and then hit the &ldquo;Validate&rdquo; button below. Note that the only unambiguous prefixes for training examples have exactly one or four elements.</p>
     
-    <textarea id="vwData" style="width: 80%; height: 8em; font-family: monospace; margin-top: 1.5em; margin-bottom: 1.5em;">1 1.0 |MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes
+    <textarea id="vwData" style="width: 80%; height: 12em; font-family: monospace; margin-top: 1.5em; margin-bottom: 1.5em;">1 1.0 |MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes
+1 1.0 zebra|MetricFeatures:3.28 height:1.5 length:2.0 |Says black with white stripes |OtherFeatures NumberOfLegs:4.0 HasStripes
 1 2 'tag| a:2 b:3
 1 2 'tag | a:2 b:3
 1 2 tag | a:2 b:3

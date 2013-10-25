@@ -700,3 +700,28 @@ __DATA__
 {VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
     train-sets/ref/active-simulation.t24.stderr
 
+# Test 25: bagging -- training regressor
+#{VW} -d train-sets/0002.dat -f models/bs.model --bs 4 -p train-sets/ref/bs.predict > train-sets/ref/bs.stdout 2> train-sets/ref/bs.stderr
+{VW} -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p train-sets/ref/bs.reg.predict 
+    train-sets/ref/bs.reg.stdout
+    train-sets/ref/bs.reg.stderr
+    train-sets/ref/bs.reg.predict
+
+# Test 26: bagging -- predicting with bagged regressor
+{VW} -d train-sets/0002.dat -i models/bs.prreg.model -p train-sets/ref/bs.prreg.predict -t
+    train-sets/ref/bs.prreg.stdout
+    train-sets/ref/bs.prreg.stderr
+    train-sets/ref/bs.prreg.predict
+
+# Test 27: bagging -- binary classifiers
+{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p train-sets/ref/bs.vote.predict 
+    train-sets/ref/bs.vote.stdout
+    train-sets/ref/bs.vote.stderr
+    train-sets/ref/bs.vote.predict
+
+# Test 28: bagging -- predict with bagged classifier
+{VW} -d train-sets/0001.dat -i models/bs.prvote.model -p train-sets/ref/bs.prvote.predict -t
+    train-sets/ref/bs.prvote.stdout
+    train-sets/ref/bs.prvote.stderr
+    train-sets/ref/bs.prvote.predict
+
