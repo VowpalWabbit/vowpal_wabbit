@@ -25,3 +25,6 @@ library_example: library_example.cc ../vowpalwabbit/libvw.a
 
 recommend: recommend.cc ../vowpalwabbit/libvw.a ezexample.h
 	g++ -g -o $@ $< -L ../vowpalwabbit -l vw -l allreduce -l $(BOOST_PROGRAM_OPTIONS) -l z -l pthread
+
+clean:
+	rm -f *.o ezexample_predict ezexample_train library_example recommend ezexample_predict_threaded

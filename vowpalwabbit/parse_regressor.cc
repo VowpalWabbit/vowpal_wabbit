@@ -293,7 +293,7 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
   if (regs.size() > 0) {
     io_temp.open_file(regs[0].c_str(), all.stdin_off, io_buf::READ);
     if (!all.quiet) {
-      cerr << "initial_regressor = " << regs[0] << endl;
+      //cerr << "initial_regressor = " << regs[0] << endl;
       if (regs.size() > 1) {
         cerr << "warning: ignoring remaining " << (regs.size() - 1) << " initial regressors" << endl;
       }
