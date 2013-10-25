@@ -9,6 +9,12 @@ license as described in the file LICENSE.
 #include <stdint.h>
 #include "v_array.h"
 
+const size_t wap_ldf_namespace  = 126;
+const size_t history_namespace  = 127;
+const size_t constant_namespace = 128;
+const size_t nn_output_namespace  = 129;
+const size_t autolink_namespace  = 130;
+
 struct feature {
   float x;
   uint32_t weight_index;
@@ -86,5 +92,13 @@ void dealloc_example(void(*delete_label)(void*), example&);
 
 void update_example_indicies(bool audit, example* ec, uint32_t amount);
 bool command_example(void*a, example* ec); 
+
+inline int example_is_newline(example* ec)
+{
+  // if only index is constant namespace or no index
+  return ((ec->indices.size() == 0) || 
+          ((ec->indices.size() == 1) &&
+           (ec->indices.last() == constant_namespace)));
+}
 
 #endif
