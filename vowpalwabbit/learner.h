@@ -38,4 +38,10 @@ public:
   }
   learner() {}
 };
+
+namespace LEARNER
+{
+  void driver(vw* all, void* data);
+}
+
 #endif

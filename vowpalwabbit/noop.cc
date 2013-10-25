@@ -17,22 +17,11 @@ namespace NOOP {
 
   void save_load(void* d, io_buf& model_file, bool read, bool text) {}
   
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    
-    while ( !parser_done(all->p)){
-      ec = VW::get_example(all->p);
-      if (ec != NULL)
-	return_simple_example(*all, ec);
-    }
-  }
-  
   learner setup(vw& all)
   {
     sl_t sl = {NULL,save_load};
     all.is_noop = true;
-    learner l(NULL,drive,learn,finish,sl);
+    learner l(NULL,LEARNER::driver,learn,finish,sl);
     return l;
   }
 }
