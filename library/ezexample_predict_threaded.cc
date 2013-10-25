@@ -11,18 +11,26 @@ int runcount = 100;
 class Worker
 {
 public:
-  Worker(vw & instance, vector<double> & ref)
+  Worker(vw & instance, string & vw_init_string, vector<double> & ref)
     : m_vw(instance)
     , m_referenceValues(ref)
+    , vw_init_string(vw_init_string)
   { }
 
   void operator()()
   {
+    m_vw_parser = VW::initialize(vw_init_string);
+    if (m_vw_parser == NULL) {
+      cerr << "cannot initialize vw parser" << endl;
+      exit(-1);
+    }
+
     int errorCount = 0;
     for (int i = 0; i < runcount; ++i)
     {
       vector<double>::iterator it = m_referenceValues.begin();
-      ezexample ex(&m_vw, false);
+      ezexample ex(&m_vw, false, m_vw_parser);
+      
       ex(vw_namespace('s'))
         ("p^the_man")
         ("w^the")
@@ -58,11 +66,15 @@ public:
       //cout << "."; cout.flush();
     }
     cerr << "error count = " << errorCount << endl;
+    VW::finish(*m_vw_parser);
+    m_vw_parser = NULL;
   }
 
 private:
   vw & m_vw;
+  vw * m_vw_parser;
   vector<double> & m_referenceValues;
+  string & vw_init_string;
 };
 
 int main(int argc, char *argv[])
@@ -75,8 +87,9 @@ int main(int argc, char *argv[])
   int threadcount = atoi(argv[1]);
   runcount = atoi(argv[2]);
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
-  vw*vw = VW::initialize("--hash all -q st --noconstant -i train.w -t --csoaa_ldf s --quiet");
-  //vw vw0 = VW::initialize("--hash all -q st --noconstant -i train.w -t --quiet"); vw*vw = &vw0;
+  string vw_init_string_all    = "-t --csoaa_ldf s --quiet --hash all -q st --noconstant -i train.w";
+  string vw_init_string_parser = "-t --csoaa_ldf s --quiet --noop";   // this needs to have enough arguments to get the parser right
+  vw*vw = VW::initialize(vw_init_string_all);
   vector<double> results;
 
   // HAL'S SPIFFY INTERFACE USING C++ CRAZINESS
@@ -115,7 +128,7 @@ int main(int argc, char *argv[])
 
   if (threadcount == 0)
   {
-    Worker w(*vw, results);
+    Worker w(*vw, vw_init_string_parser, results);
     w();
   }
   else
@@ -124,7 +137,7 @@ int main(int argc, char *argv[])
     for (int t = 0; t < threadcount; ++t)
     {
       cerr << "starting thread " << t << endl;
-      boost::thread * pt = tg.create_thread(Worker(*vw, results));
+      boost::thread * pt = tg.create_thread(Worker(*vw, vw_init_string_parser, results));
     }
     tg.join_all();
     cerr << "finished!" << endl;
