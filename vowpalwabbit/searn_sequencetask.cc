@@ -306,7 +306,7 @@ namespace SequenceTask {
     example* cur = s->ec_start[s->pos];
     if (create) {
       ec = alloc_example(sizeof(OAA::mc_label));
-      VW::copy_example_data(ec, cur, sizeof(OAA::mc_label), NULL);
+      VW::copy_example_data(all.audit, ec, cur, sizeof(OAA::mc_label), NULL);
       OAA::default_label(ec->ld);
       SearnUtil::add_history_to_example(all, &hinfo, ec, s->predictions);
       update_example_indicies(all.audit, ec, increment * a);
@@ -327,7 +327,7 @@ namespace SequenceTask_Easy {
   SearnUtil::history_info hinfo;
   v_array<size_t> yhat;
 
-  void initialize(vw& vw, uint32_t& num_actions) {
+  void initialize(vw& vw, size_t& num_actions) {
     hinfo.length          = 1;
     hinfo.bigrams         = false;
     hinfo.features        = 0;
@@ -365,19 +365,21 @@ namespace SequenceTask_Easy {
       srn.snapshot(vw, i, 1, &i, sizeof(i));
       srn.snapshot(vw, i, 2, yhat.begin+i, sizeof(size_t)*history_length);
       srn.snapshot(vw, i, 3, &total_loss, sizeof(total_loss));
-      //cerr << "i=" << i << " --------------------------------------" << endl;
+      //cerr << "i=" << i << " total_loss=" << total_loss << " --------------------------------------" << endl;
 
       get_oracle_labels(ec[i], &ystar);
 
+      size_t prediction;
       SearnUtil::add_history_to_example(vw, &hinfo, ec[i], yhat.begin+i);
-      yhat[i+history_length] = srn.predict(vw, &ec[i], 0, NULL, &ystar);
+      prediction = srn.predict(vw, &ec[i], 0, NULL, &ystar);
       SearnUtil::remove_history_from_example(vw, &hinfo, ec[i]);
+      yhat[i+history_length] = prediction;
 
       //cerr << "i=" << i << "\tpred=" << yhat.last() << endl;
 
       if (!CSOAA::example_is_test(ec[i])) {
         is_train = true;
-        if (yhat[i+history_length] != ystar.last())
+        if (yhat[i+history_length] != ystar.last())   // TODO: fix this
           total_loss += 1.0;
       }
     }

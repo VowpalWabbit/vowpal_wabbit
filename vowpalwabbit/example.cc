@@ -127,13 +127,27 @@ void dealloc_example(void(*delete_label)(void*), example&ec)
   ec.indices.delete_v();
 }
 
-feature copy_feature(feature src) {
+feature copy_feature(feature &src) {
   feature f = { src.x, src.weight_index };
   return f;
 }
 
+audit_data copy_audit_data(audit_data &src) {
+  audit_data dst;
+  dst.space = (char*)calloc(strlen(dst.space)+1, sizeof(char));
+  strcpy(dst.space, src.space);
+  dst.feature = (char*)calloc(strlen(dst.feature)+1, sizeof(char));
+  strcpy(dst.feature, src.feature);
+  dst.weight_index = src.weight_index;
+  dst.x = src.x;
+  dst.alloced = src.alloced;
+  return dst;
+}
+  
+
+      
 namespace VW {
-  void copy_example_data(example* &dst, example* src, size_t label_size, void(*copy_label)(void*&,void*))
+  void copy_example_data(bool audit, example* &dst, example* src, size_t label_size, void(*copy_label)(void*&,void*))
 {
   if (!src->ld) {
     if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
@@ -159,6 +173,10 @@ namespace VW {
     copy_array(dst->atomics[i], src->atomics[i], copy_feature);
   dst->ft_offset = src->ft_offset;
 
+  if (audit)
+    for (size_t i=0; i<256; i++)
+      copy_array(dst->audit_features[i], src->audit_features[i], copy_audit_data);
+  
   dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
   copy_array(dst->topic_predictions, src->topic_predictions);
@@ -171,13 +189,15 @@ namespace VW {
     dst->sum_feat_sq[i] = src->sum_feat_sq[i];
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->revert_weight = src->revert_weight;
+  dst->test_only = src->test_only;
+  dst->end_pass = src->end_pass;
   dst->sorted = src->sorted;
   dst->in_use = src->in_use;
   dst->done = src->done;
 }
 }
 
-void update_example_indicies(bool audit, example* ec, uint32_t amount) { 
+void update_example_indicies(bool audit, example* ec, int32_t amount) { 
   ec->ft_offset += amount; }
 
 #include "global_data.h"

@@ -218,7 +218,7 @@ namespace ImperativeSearn {
     searn_task* task;
 
     // data that you should not look at.  ever.
-    uint32_t A;           // total number of actions, [1..A]; 0 means ldf
+    size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
     uint32_t learn_a;     //   and this is the a we're varying it to
@@ -265,7 +265,7 @@ namespace ImperativeSearn {
   };
 
   struct searn_task {
-    void (*initialize)(vw&,uint32_t&);
+    void (*initialize)(vw&,size_t&);
     void (*finish)(vw&);
     void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
   };
