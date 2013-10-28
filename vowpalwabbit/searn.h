@@ -212,16 +212,18 @@ namespace ImperativeSearn {
     // functions that you will call
     uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
     void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
-    void     (*snapshot)(vw&,size_t,size_t,void*,size_t);
+    void     (*snapshot)(vw&,size_t,size_t,void*,size_t,bool);
 
     // structure that you must set
     searn_task* task;
 
     // data that you should not look at.  ever.
-    uint32_t A;           // total number of actions, [1..A]; 0 means ldf
+    size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
     uint32_t learn_a;     //   and this is the a we're varying it to
+    size_t snapshot_is_equivalent_to_t;   // if we've finished snapshotting and are equiv up to this time step, then we can fast forward from there
+    bool snapshot_could_match;
     v_array<snapshot_item> snapshot_data;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
     v_array< CSOAA::label > train_labels;  // which labels are valid at any given time
@@ -248,6 +250,7 @@ namespace ImperativeSearn {
     size_t num_features;
     uint32_t total_number_of_policies;
     bool do_snapshot;
+    bool do_fastforward;
 
     size_t read_example_this_loop;
     size_t read_example_last_id;
@@ -256,6 +259,8 @@ namespace ImperativeSearn {
     size_t total_examples_generated;
     size_t total_predictions_made;
 
+    bool hit_new_pass;
+    
     size_t passes_per_policy;
 
     v_array<example*> ec_seq;
@@ -265,7 +270,7 @@ namespace ImperativeSearn {
   };
 
   struct searn_task {
-    void (*initialize)(vw&,uint32_t&);
+    void (*initialize)(vw&,size_t&);
     void (*finish)(vw&);
     void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
   };

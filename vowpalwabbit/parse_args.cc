@@ -792,12 +792,12 @@ vw* parse_args(int argc, char *argv[])
 
   parse_source_args(*all, vm, all->quiet,all->numpasses);
 
-  // force stride * weights_per_problem to be divisible by 2 to avoid 32-bit overflow
+  // force stride * weights_per_problem to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   while (all->reg.stride * all->weights_per_problem  > (uint32_t)(1 << i))
     i++;
   all->weights_per_problem = (1 << i) / all->reg.stride;
-
+  
   return all;
 }
 
