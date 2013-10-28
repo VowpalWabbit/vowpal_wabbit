@@ -839,7 +839,9 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
           // TODO: check the example->done and ec->partial_prediction = costs[j].partial_prediciton here
 
           ec->ld = &simple_label;
-          ec->partial_prediction = 0.;
+          //ec->partial_prediction = costs[j].partial_prediction;
+          //cerr << "[" << ec->partial_prediction << "," << ec->done << "]";
+          //ec->done = false;
           LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
           l.base.learn(ec);
           LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
