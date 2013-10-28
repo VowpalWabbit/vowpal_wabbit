@@ -71,7 +71,7 @@ namespace SearnUtil
   void remove_policy_offset(vw&all, example *ec, uint32_t increment, uint32_t policy)
   {
     if (policy > 0)
-      update_example_indicies(all.audit, ec, -((int32_t)(policy * increment)));
+      update_example_indicies(all.audit, ec, -(policy * increment));
   }
 
   int random_policy(uint64_t seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)

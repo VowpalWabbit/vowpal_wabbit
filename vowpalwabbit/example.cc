@@ -127,11 +127,6 @@ void dealloc_example(void(*delete_label)(void*), example&ec)
   ec.indices.delete_v();
 }
 
-feature copy_feature(feature &src) {
-  feature f = { src.x, src.weight_index };
-  return f;
-}
-
 audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
   dst.space = (char*)calloc(strlen(dst.space)+1, sizeof(char));
@@ -170,7 +165,7 @@ namespace VW {
 
   copy_array(dst->indices, src->indices);
   for (size_t i=0; i<256; i++)
-    copy_array(dst->atomics[i], src->atomics[i], copy_feature);
+    copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;
 
   if (audit)
@@ -197,7 +192,7 @@ namespace VW {
 }
 }
 
-void update_example_indicies(bool audit, example* ec, int32_t amount) { 
+void update_example_indicies(bool audit, example* ec, uint32_t amount) { 
   ec->ft_offset += amount; }
 
 #include "global_data.h"
