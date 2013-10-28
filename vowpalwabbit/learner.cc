@@ -4,7 +4,18 @@
 
 namespace LEARNER
 {
-  void driver(vw* all, void* data)
+  void generic_sl(void*, io_buf&, bool, bool)
+  { cout << "calling generic_save_load";}
+  void generic_learner(void* data, example*)
+  { cout << "calling generic learner\n";}
+  void generic_end_pass(void* data)
+  { cout << "calling generic end_pass\n";}
+  void generic_end_examples(void* data)
+  { cout << "calling generic end_examples\n";}
+  void generic_finish(void* data)
+  { cout << "calling generic finish\n";}
+
+  void generic_driver(vw* all, void* data)
   {
     example* ec = NULL;
     

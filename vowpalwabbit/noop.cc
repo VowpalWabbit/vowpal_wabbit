@@ -21,7 +21,7 @@ namespace NOOP {
   {
     sl_t sl = {NULL,save_load};
     all.is_noop = true;
-    learner l(NULL,LEARNER::driver,learn,finish,sl);
+    learner l(NULL,LEARNER::generic_driver,learn,finish,sl);
     return l;
   }
 }

@@ -292,7 +292,7 @@ float mf_predict(vw& all, example* ex)
   learner setup(vw& all)
   {
     sl_t sl = {&all, save_load};
-    learner l(&all,LEARNER::driver,learn,finish,sl);
+    learner l(&all,LEARNER::generic_driver,learn,finish,sl);
     return l;
   }
 }

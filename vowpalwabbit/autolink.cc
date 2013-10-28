@@ -65,7 +65,7 @@ namespace ALINK {
 	all.options_from_file.append(ss.str());
       }
 
-    learner l(data, LEARNER::driver, learn, finish, all.l.sl);
+    learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
     return l;
   }
 }
