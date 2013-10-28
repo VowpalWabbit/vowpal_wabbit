@@ -191,6 +191,12 @@ namespace OAA {
     OAA::print_update(all, ec);
   }
 
+  void finish_example(vw& all, example* ec)
+  {
+    output_example(all, ec);
+    VW::finish_example(all, ec);
+  }
+
   void learn_with_output(oaa* d, example* ec, bool shouldOutput)
   {
     vw* all = d->all;
@@ -261,9 +267,7 @@ namespace OAA {
         if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
           {
             learn_with_output((oaa*)d, ec, all->raw_prediction > 0);
-	    if (!command_example(all, ec))
-	      output_example(*all, ec);
-	    VW::finish_example(*all, ec);
+	    finish_example(*all, ec);
           }
         else if (parser_done(all->p))
 	  return;

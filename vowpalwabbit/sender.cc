@@ -56,9 +56,27 @@ namespace SENDER {
 
   void save_load(void* d, io_buf& model_file, bool read, bool text) {}
 
-  void learn(void* d, example*ec) 
+void receive_result(sender& s)
+{
+  float res, weight;
+  get_prediction(s.sd,res,weight);
+  
+  example* ec=s.delay_ring[s.received_index++ % s.all->p->ring_size];
+  label_data* ld = (label_data*)ec->ld;
+  
+  ec->final_prediction = res;
+  
+  ec->loss = s.all->loss->getLoss(s.all->sd, ec->final_prediction, ld->label) * ld->weight;
+  
+  return_simple_example(*(s.all), ec);  
+}
+
+  void learn(void* d, example* ec) 
   { 
     sender* s = (sender*)d;
+    if (s->received_index + s->all->p->ring_size - 1 == s->sent_index)
+      receive_result(*s);
+
     label_data* ld = (label_data*)ec->ld;
     s->all->set_minmax(s->all->sd, ld->label);
     simple_label.cache_label(ld, *s->buf);//send label information.
@@ -67,43 +85,16 @@ namespace SENDER {
     s->delay_ring[s->sent_index++ % s->all->p->ring_size] = ec;
   }
 
-  void drive_send(vw* all, void* d)
+void finish_example(vw& all, example*ec)
+{}
+
+void end_examples(void* d)
 {
   sender* s = (sender*)d;
-  example* ec = NULL;
-
-  bool parser_finished = false;
-  while ( true )
-    {//this is a poor man's select operation.
-      if (s->received_index + all->p->ring_size == s->sent_index || (parser_finished & (s->received_index != s->sent_index)))
-	{
-	  float res, weight;
-	  get_prediction(s->sd,res,weight);
-	  
-	  ec=s->delay_ring[s->received_index++ % all->p->ring_size];
-	  label_data* ld = (label_data*)ec->ld;
-	  
-	  ec->final_prediction = res;
-	  
-	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
-	  
-	  return_simple_example(*all, ec);
-	}
-      else if ((ec = VW::get_example(all->p)) != NULL && !command_example(all,ec))//semiblocking operation.
-	learn(d, ec);
-      else if (parser_done(all->p))
-        { //close our outputs to signal finishing.
-	  parser_finished = true;
-	  if (s->received_index == s->sent_index)
-	    {
-	      shutdown(s->buf->files[0],SHUT_WR);
-	      return;
-	    }
-	}
-      else 
-	;
-    }
-  return;
+  //close our outputs to signal finishing.
+  while (s->received_index != s->sent_index)
+    receive_result(*s);
+  shutdown(s->buf->files[0],SHUT_WR);
 }
 
   void finish(void* d) 
@@ -131,7 +122,10 @@ namespace SENDER {
 
 
   sl_t sl = {NULL, save_load};
-  learner l(s,drive_send,learn,finish,sl);
+  learner l(s,LEARNER::generic_driver,learn,finish,sl);
+
+  l.set_finish_example(finish_example); 
+  l.set_end_examples(end_examples);
   return l;
 }
 

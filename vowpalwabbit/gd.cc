@@ -907,7 +907,6 @@ learner setup(vw& all, po::variables_map& vm)
     
   sl_t sl = {g,save_load};
   learner ret(g,LEARNER::generic_driver,learn,finish,sl);
-
   return ret;
 }
 }

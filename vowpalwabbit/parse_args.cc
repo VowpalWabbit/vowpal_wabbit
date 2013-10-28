@@ -341,8 +341,6 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("sort_features"))
     all->p->sort_features = true;
 
-  
-
   if (vm.count("quadratic"))
     {
       all->pairs = vm["quadratic"].as< vector<string> >();

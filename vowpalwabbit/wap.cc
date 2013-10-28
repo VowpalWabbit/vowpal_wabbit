@@ -249,30 +249,6 @@ namespace WAP {
     free(w);
   }
   
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    while ( true )
-      {
-        if(all-> early_terminate)
-          {
-            all->p->done = true;
-            return;
-          } 
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-	    learn(d, ec);
-            if (!command_example(all, ec))
-              CSOAA::output_example(*all, ec);
-	    VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-	  return;
-        else 
-          ;
-      }
-  }
-  
   learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
     wap* w=(wap*)calloc(1,sizeof(wap));
@@ -298,8 +274,10 @@ namespace WAP {
     all.weights_per_problem *= nb_actions;
     w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner l(w, drive, learn, finish, all.l.sl);
+    learner l(w, LEARNER::generic_driver, learn, finish, all.l.sl);
     w->base = all.l;
+    l.set_finish_example(CSOAA::finish_example);
+
     return l;
   }
 }

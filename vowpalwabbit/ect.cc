@@ -402,31 +402,6 @@ namespace ECT
     e->tournaments_won.delete_v();
   }
   
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    while ( true )
-      {
-       if(all-> early_terminate)
-          {
-            all->p->done = true;
-            return;
-          }
-        else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-            learn(d, ec);
-            OAA::output_example(*all, ec);
-	    VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-          {
-            return;
-          }
-        else 
-          ;
-      }
-  }
-
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ect* data = (ect*)calloc(1, sizeof(ect));
@@ -484,8 +459,10 @@ namespace ECT
     create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner l(data, drive, learn, finish, all.l.sl);
+    learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
     data->base = all.l;
+    l.set_finish_example(OAA::finish_example);
+
     return l;
   }
 }

@@ -222,8 +222,6 @@ void output_and_account_example(vw& all, example* ec)
 	all.print(f, ec->final_prediction, 0, ec->tag);
     }
 
-  
-
   print_update(all, ec);
 }
 
