@@ -184,7 +184,7 @@ class ezexample {
       // we need to make a copy
       example* copy = get_new_example();
       assert(ec->in_use);
-      VW::copy_example_data(copy, ec, vw_par_ref->p->lp->label_size, vw_par_ref->p->lp->copy_label);
+      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp->label_size, vw_par_ref->p->lp->copy_label);
       assert(copy->in_use);
       vw_ref->learn(copy);
       example_copies.push_back(copy);
