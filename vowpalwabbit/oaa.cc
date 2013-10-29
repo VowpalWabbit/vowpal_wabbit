@@ -191,7 +191,7 @@ namespace OAA {
     OAA::print_update(all, ec);
   }
 
-  void finish_example(vw& all, example* ec)
+  void finish_example(vw& all, void*, example* ec)
   {
     output_example(all, ec);
     VW::finish_example(all, ec);

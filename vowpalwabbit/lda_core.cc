@@ -644,7 +644,7 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
 	  l.all->sd->sum_loss -= score;
 	  l.all->sd->sum_loss_since_last_dump -= score;
 	}
-	return_simple_example(*l.all, l.examples[d]);
+	return_simple_example(*l.all, NULL, l.examples[d]);
       }
     
     for (index_feature* s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
@@ -717,7 +717,7 @@ void end_examples(void* d)
     free(d);
   }
 
-void finish_example(vw& all, example*ec)
+  void finish_example(vw& all, void*, example*ec)
 {}
 
 learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)

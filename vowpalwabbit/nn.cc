@@ -69,9 +69,7 @@ namespace NN {
                           uint32_t          offset)
     {
       for (feature* x = f.begin; x != f.end; ++x)
-        {
-          x->weight_index += offset;
-        }
+	x->weight_index += offset;
     }
 
   void finish_setup (nn* n, vw& all);
@@ -255,11 +253,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec->loss = save_ec_loss;
   }
 
-  void finish_example(vw& all, example* ec)
+  void finish_example(vw& all, void*, example* ec)
   {
     int save_raw_prediction = all.raw_prediction;
     all.raw_prediction = -1;
-    return_simple_example(all, ec);
+    return_simple_example(all, NULL, ec);
     all.raw_prediction = save_raw_prediction;
   }
 

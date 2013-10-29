@@ -225,7 +225,7 @@ void output_and_account_example(vw& all, example* ec)
   print_update(all, ec);
 }
 
-void return_simple_example(vw& all, example* ec)
+void return_simple_example(vw& all, void*, example* ec)
 {
   if (!command_example(&all, ec))
     output_and_account_example(all, ec);

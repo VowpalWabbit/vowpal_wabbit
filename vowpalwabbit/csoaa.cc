@@ -368,7 +368,7 @@ namespace CSOAA {
       update_example_indicies(all->audit, ec, -current_increment);
   }
 
-  void finish_example(vw& all, example* ec)
+  void finish_example(vw& all, void*, example* ec)
   {
     if (!command_example(&all, ec))
       output_example(all, ec);

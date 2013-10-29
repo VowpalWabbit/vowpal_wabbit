@@ -13,7 +13,7 @@ struct sl_t {
   void (*save_loader)(void* sldata, io_buf&, bool read, bool text);
 };
 
-void return_simple_example(vw& all, example* ec);
+void return_simple_example(vw& all, void*, example* ec);
 
 #include<iostream>
 using namespace std;
@@ -40,7 +40,7 @@ private:
   void* data;
   void (*driver)(vw* all, void* data);
   void (*learn_f)(void* data, example*);
-  void (*finish_example_f)(vw&, example*);
+  void (*finish_example_f)(vw&, void* data, example*);
   void (*finisher)(void* data);
   void (*end_pass)(void* data);
   void (*end_examples_f)(void* data);
@@ -50,11 +50,11 @@ public:
 
   inline void learn(example* ec) { learn_f(data,ec); }
   inline void finish() { finisher(data); }
-  inline void finish_example(vw& all, example* ec) { finish_example_f(all,ec);}
+  inline void finish_example(vw& all, example* ec) { finish_example_f(all, data, ec);}
   inline void drive(vw* all) { driver(all, data); }
   inline void save_load(io_buf& io, bool read, bool text) { sl.save_loader(sl.sldata, io, read, text); }
 
-  void set_finish_example(void (*ef)(vw& all, example*))
+  void set_finish_example(void (*ef)(vw& all, void*, example*))
   {finish_example_f = ef;}
 
   void set_end_examples(void (*ee)(void*)) 
