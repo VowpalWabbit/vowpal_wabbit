@@ -328,9 +328,9 @@ namespace SequenceTask_Easy {
   v_array<size_t> yhat;
 
   void initialize(vw& vw, size_t& num_actions) {
-    hinfo.length          = 1;
-    hinfo.bigrams         = false;
     hinfo.features        = 0;
+    hinfo.length          = hinfo.features+1;
+    hinfo.bigrams         = hinfo.length > 1;
     hinfo.bigram_features = false;
   }
 

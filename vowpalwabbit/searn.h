@@ -244,14 +244,18 @@ namespace ImperativeSearn {
 
     float  beta;                  // interpolation rate
     bool   allow_current_policy;  // should the current policy be used for training? true for dagger
-    bool   rollout_all_actions;   // false for contextual bandits
+    bool   rollout_oracle; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
+    bool   adaptive_beta; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
+    float  alpha; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
     uint32_t current_policy;      // what policy are we training right now?
+    float gamma;                  // for dagger
     uint32_t increment;
     size_t num_features;
     uint32_t total_number_of_policies;
     bool do_snapshot;
     bool do_fastforward;
 
+    
     size_t read_example_this_loop;
     size_t read_example_last_id;
     size_t passes_since_new_policy;
