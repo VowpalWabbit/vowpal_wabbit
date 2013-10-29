@@ -1330,7 +1330,6 @@ namespace Searn
   void learn(void*d, example *ec) {
      learn_internal(d,ec,false);
   }
- 
 
   void drive(vw* all, void*d)
   {
