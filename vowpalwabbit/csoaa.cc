@@ -1070,19 +1070,6 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     l->ec_seq.delete_v();
   }
 
-  void drive_ldf_multiline(vw* all, void* data) {
-    example* ec = NULL;
-    while (true) {
-      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
-       learn_multiline(data, ec);
-       finish_multiline_example(*all, data, ec);
-      } else if (parser_done(all->p)) {
-	end_examples(data);
-        return;
-      }
-    }
-  }
-
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
