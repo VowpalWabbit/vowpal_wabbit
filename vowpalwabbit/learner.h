@@ -29,6 +29,7 @@ namespace LEARNER
   inline void generic_end_pass(void* data)
   { cout << "calling generic end_pass\n";}
   inline void generic_end_examples(void* data) {}
+  inline void generic_init_driver(void* data) {}
   inline void generic_finish(void* data)
   { cout << "calling generic finish\n";}
 
@@ -44,22 +45,36 @@ private:
   void (*finisher)(void* data);
   void (*end_pass)(void* data);
   void (*end_examples_f)(void* data);
+  void (*init_driver_f)(void* data);
 
 public:
   sl_t sl;
 
+  //called once for each example.  Must work under reduction.
   inline void learn(example* ec) { learn_f(data,ec); }
-  inline void finish() { finisher(data); }
-  inline void finish_example(vw& all, example* ec) { finish_example_f(all, data, ec);}
-  inline void drive(vw* all) { driver(all, data); }
+
+  //called anytime saving or loading needs to happen.  Must work under reduction.
   inline void save_load(io_buf& io, bool read, bool text) { sl.save_loader(sl.sldata, io, read, text); }
 
+  //called to clean up state.  Must work under reduction.
+  inline void finish() { finisher(data); }
+
+  //called after learn example for each example.  Not called under reduction.
+  inline void finish_example(vw& all, example* ec) { finish_example_f(all, data, ec);}
   void set_finish_example(void (*ef)(vw& all, void*, example*))
   {finish_example_f = ef;}
 
+  //called after parsing of examples is complete.  Not called under Reduction.
+  void end_examples() {end_examples_f(data);} 
   void set_end_examples(void (*ee)(void*)) 
   {end_examples_f = ee;}
-  void end_examples() {end_examples_f(data);}
+
+  void init_driver() { init_driver_f(data); }
+  void set_init_driver(void (*id)(void*)) { init_driver_f = id; }
+
+  //disappearing shortly.
+  inline void drive(vw* all) { driver(all, data); }
+
 
   void set_default()
   {
@@ -69,6 +84,7 @@ public:
     finish_example_f = return_simple_example;
     end_pass = LEARNER::generic_end_pass;
     end_examples_f = LEARNER::generic_end_examples;
+    init_driver_f = LEARNER::generic_init_driver;
     finisher = LEARNER::generic_finish;
     sl = LEARNER::generic_save_load;
   }

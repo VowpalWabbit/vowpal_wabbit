@@ -8,6 +8,7 @@ namespace LEARNER
   {
     example* ec = NULL;
 
+    all->l.init_driver();
     while ( true )
       {
 	if(all->early_terminate)
