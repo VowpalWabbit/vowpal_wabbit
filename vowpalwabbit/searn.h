@@ -228,8 +228,10 @@ namespace ImperativeSearn {
     v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
     v_array< CSOAA::label > train_labels;  // which labels are valid at any given time
 
-    stringstream* pred_string;
-    stringstream* truth_string;
+    bool should_produce_string;
+    stringstream *pred_string;
+    stringstream *truth_string;
+    bool printed_output_header;
 
     size_t t;              // the current time step
     size_t T;              // the length of the (training) trajectory
@@ -255,8 +257,6 @@ namespace ImperativeSearn {
     bool do_snapshot;
     bool do_fastforward;
 
-    
-    size_t read_example_this_loop;
     size_t read_example_last_id;
     size_t passes_since_new_policy;
     size_t read_example_last_pass;
