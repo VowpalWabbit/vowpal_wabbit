@@ -75,7 +75,6 @@ public:
   //disappearing shortly.
   inline void drive(vw* all) { driver(all, data); }
 
-
   void set_default()
   {
     data = NULL;
