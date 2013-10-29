@@ -325,6 +325,7 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
         return;
       }
     }
+
     //all other cases, including from different file, or -i does not exist, need to read in the mask file
     io_buf io_temp_mask;
     io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
@@ -334,6 +335,20 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
     for (size_t j = 0; j < length; j++){	 
       if(all.reg.weight_vector[j*all.reg.stride] != 0.)
         all.reg.weight_vector[j*all.reg.stride + all.feature_mask_idx] = 1.;
+    }
+
+    // Deal with the over-written header from initial regressor
+    if (vm.count("initial_regressor")) {
+      vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
+
+      // Load original header again.
+      io_buf io_temp;
+      io_temp.open_file(init_filename[0].c_str(), false, io_buf::READ);
+      save_load_header(all, io_temp, true, false);
+      io_temp.close_file();
+    } else {
+      // If no initial regressor, just clear out the options loaded from the header.
+      all.options_from_file.assign("");
     }
   }
 }
