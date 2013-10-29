@@ -658,27 +658,12 @@ namespace CB
     free(c);
   }
 
-  void drive(vw* all, void* d)
+  void finish_example(vw& all, void* data, example* ec)
   {
-    cb* c = (cb*)d;
-    example* ec = NULL;
-    while ( true )
-    {
-      if(all-> early_terminate)
-        {
-          all->p->done = true;
-          return;
-        } 
-      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-      {
-        learn(d, ec);
-	if (!command_example(&all, ec))
-	  output_example(*all, *c, ec);
-	VW::finish_example(*all, ec);
-      }
-      else if (parser_done(all->p))
-	return;
-    }
+    cb* c = (cb*)data;
+    if (!command_example(&all, ec))
+      output_example(all, *c, ec);
+    VW::finish_example(all, ec);
   }
 
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -766,8 +751,10 @@ namespace CB
 
     all.sd->k = nb_actions;
 
-    learner l(c, drive, learn, finish, all.l.sl);
+    learner l(c, LEARNER::generic_driver, learn, finish, all.l.sl);
     c->base = all.l;
+    l.set_finish_example(finish_example); 
+
     return l;
   }
 }

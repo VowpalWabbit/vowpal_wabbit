@@ -127,7 +127,7 @@ namespace BS {
     }    
   }
 
-  void output_example(vw& all, example* ec, bs* d)
+  void output_example(vw& all, bs* d, example* ec)
   {
     if (command_example(&all,ec))
       return;
@@ -172,9 +172,12 @@ namespace BS {
     print_update(all, ec);
   }
 
-  void learn_with_output(bs* d, example* ec, bool shouldOutput)
+  void learn(void* data, example* ec)
   {
+    bs* d = (bs*)data;
     vw* all = d->all;
+    bool shouldOutput = all->raw_prediction > 0;
+
     if (command_example(all,ec))
       {
 	d->base.learn(ec);
@@ -226,27 +229,11 @@ namespace BS {
 
   }
 
-  void learn(void* d, example* ec) {
-    learn_with_output((bs*)d, ec, false);
-  }
-
-  void drive(vw* all, void* d)
+  void finish_example(vw& all, void* d, example* ec)
   {
-    example* ec = NULL;
-    while ( true )
-      {
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-            learn_with_output((bs*)d, ec, all->raw_prediction > 0);
-            if (!command_example(all, ec))
-              BS::output_example(*all, ec, (bs*)d);
-	    VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-	  return;
-        else 
-          ;
-      }
+    if (!command_example(&all, ec))
+      BS::output_example(all, (bs*)d, ec);
+    VW::finish_example(all, ec);
   }
 
   void finish(void* data)
@@ -332,7 +319,9 @@ namespace BS {
     all.weights_per_problem *= data->B;
     data->total_increment = data->increment*(data->B-1);
     data->base = all.l;
-    learner l(data, drive, learn, finish, all.l.sl);
+    learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
+
+    l.set_finish_example(finish_example); 
     return l;
   }
 }

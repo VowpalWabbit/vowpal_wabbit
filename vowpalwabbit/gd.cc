@@ -883,29 +883,6 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
     }
 }
 
-void driver(vw* all, void* data)
-{
-  example* ec = NULL;
-  
-  while ( true )
-    {
-     if(all-> early_terminate)
-        {
-          all->p->done = true;
-          return;
-        }
-     else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-	{
-	  learn(data, ec);
-	  return_simple_example(*all, ec);
-	}
-      else if (parser_done(all->p))
-	return;
-      else 
-	;//busywait when we have predicted on all examples but not yet trained on all.
-    }
-}
-
 learner setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc(1, sizeof(gd));
@@ -929,8 +906,7 @@ learner setup(vw& all, po::variables_map& vm)
   }
     
   sl_t sl = {g,save_load};
-  learner ret(g,driver,learn,finish,sl);
-
+  learner ret(g,LEARNER::generic_driver,learn,finish,sl);
   return ret;
 }
 }

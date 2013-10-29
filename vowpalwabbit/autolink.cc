@@ -51,23 +51,6 @@ namespace ALINK {
     free(b);
   }
 
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    while ( true )
-      {
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-            learn(d, ec);
-	    return_simple_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-	  return;
-        else 
-          ;
-      }
-  }
-
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     autolink* data = (autolink*)calloc(1,sizeof(autolink));
@@ -82,7 +65,7 @@ namespace ALINK {
 	all.options_from_file.append(ss.str());
       }
 
-    learner l(data, drive, learn, finish, all.l.sl);
+    learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
     return l;
   }
 }

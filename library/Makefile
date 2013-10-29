@@ -9,7 +9,7 @@ ifeq ($(UNAME), Darwin)
 BOOST_PROGRAM_OPTIONS = boost_program_options-mt
 endif
 
-all: ezexample_predict ezexample_train library_example recommend ezexample_predict_threaded
+all: ezexample_predict ezexample_train library_example recommend 
 
 ezexample_predict: ezexample_predict.cc ../vowpalwabbit/libvw.a ezexample.h
 	g++ -g -o $@ $< -L ../vowpalwabbit -l vw -l allreduce -l $(BOOST_PROGRAM_OPTIONS) -l z -l pthread

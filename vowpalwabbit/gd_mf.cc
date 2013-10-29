@@ -289,28 +289,10 @@ float mf_predict(vw& all, example* ex)
   void finish(void* d)
   { }
 
-  void drive(vw* all, void* d)
-{
-  example* ec = NULL;
-  
-  while ( true )
-    {
-      if ((ec = VW::get_example(all->p)) != NULL)//blocking operation.
-	{
-	  learn(d,ec);
-	  return_simple_example(*all, ec);
-	}
-      else if (parser_done(all->p))
-	return;
-      else 
-	;//busywait when we have predicted on all examples but not yet trained on all.
-    }
-}
-
   learner setup(vw& all)
   {
     sl_t sl = {&all, save_load};
-    learner l(&all,drive,learn,finish,sl);
+    learner l(&all,LEARNER::generic_driver,learn,finish,sl);
     return l;
   }
 }

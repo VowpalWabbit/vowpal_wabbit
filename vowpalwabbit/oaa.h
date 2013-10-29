@@ -36,7 +36,7 @@ namespace OAA
                                         NULL,
 					sizeof(mc_label)};
   
-  void output_example(vw& all, example* ec);
+  void finish_example(vw& all, void*, example* ec);
 
   inline int example_is_test(example* ec)
   {

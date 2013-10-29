@@ -368,37 +368,19 @@ namespace CSOAA {
       update_example_indicies(all->audit, ec, -current_increment);
   }
 
+  void finish_example(vw& all, void*, example* ec)
+  {
+    if (!command_example(&all, ec))
+      output_example(all, ec);
+    VW::finish_example(all, ec);
+  }
+
   void finish(void* d)
   {
     csoaa* c=(csoaa*)d;
     c->base.finish();
     free(c);
   }
-
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    while ( true )
-      {
-       if(all-> early_terminate)
-          {
-            all->p->done = true;
-            return;
-          }
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-            learn(d, ec);
-	    if (!command_example(all, ec))
-              output_example(*all, ec);
-            if (ec->in_use)
-              VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-	  return;
-        else 
-          ;
-      }
- }
 
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
@@ -426,8 +408,9 @@ namespace CSOAA {
     c->base=all.l;
     all.sd->k = nb_actions;
 
-    learner l(c, drive, learn, finish, all.l.sl);
+    learner l(c, LEARNER::generic_driver, learn, finish, all.l.sl);
     c->base = all.l;
+    l.set_finish_example(finish_example);
     return l;
   }
 
