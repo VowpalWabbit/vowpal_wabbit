@@ -959,67 +959,73 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
   }
 
 
-  void learn_singleline(vw& all, ldf& l, example*ec) {
-    if (command_example(&all, ec))
+  void learn_singleline(void* d, example*ec) 
+  {
+    ldf* l=(ldf*)d;
+    vw* all = l->all;
+    
+    if (command_example(all, ec))
       {
-	l.base.learn(ec);
+	l->base.learn(ec);
 	return;
       }
     
-    if ((!all.training) || CSOAA::example_is_test(ec)) {
+    if (LabelDict::ec_is_example_header(ec)) {
+      cerr << "error: example headers not allowed in ldf singleline mode" << endl;
+      throw exception();
+    }
+    
+    if ((!all->training) || CSOAA::example_is_test(ec)) {
       size_t prediction = 0;
       float  min_score = FLT_MAX;
-      make_single_prediction(all, l, ec, &prediction, &min_score, NULL, NULL);
+      make_single_prediction(*all, *l, ec, &prediction, &min_score, NULL, NULL);
     } else {
-      l.ec_seq.erase();
-      l.ec_seq.push_back(ec);
-      do_actual_learning(all,l);
-      l.ec_seq.erase();
+      l->ec_seq.erase();
+      l->ec_seq.push_back(ec);
+      do_actual_learning(*all, *l);
+      l->ec_seq.erase();
     }
   }
 
-  void learn_multiline(vw& all, ldf& l, example *ec) {
-    if (example_is_newline(ec) || l.ec_seq.size() >= all.p->ring_size - 2 || command_example(&all,ec)) {
-      if (l.ec_seq.size() >= all.p->ring_size - 2 && l.first_pass)
+  void learn_multiline(void* data, example *ec) 
+  {
+    ldf* l=(ldf*)data;
+    vw* all = l->all;
+
+    if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2 || command_example(&all,ec)) {
+      if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
 	
-      do_actual_learning(all, l);
+      do_actual_learning(*all, *l);
 
-      if (!LabelDict::ec_seq_is_label_definition(l, l.ec_seq) && l.ec_seq.size() > 0)
-        global_print_newline(all);
+      if (!LabelDict::ec_seq_is_label_definition(*l, l->ec_seq) && l->ec_seq.size() > 0)
+        global_print_newline(*all);
 
       if (command_example(&all, ec)) {
 	if (ec->end_pass)
-	  l.first_pass = false;
-	l.base.learn(ec);
+	  l->first_pass = false;
+	l->base.learn(ec);
       }
       
       if (ec->in_use)
-        VW::finish_example(all, ec);
-      l.need_to_clear = true;
+        VW::finish_example(*all, ec);
+      l->need_to_clear = true;
     } else if (LabelDict::ec_is_label_definition(ec)) {
-      if (l.ec_seq.size() > 0)
+      if (l->ec_seq.size() > 0)
         cerr << "warning: label definition encountered in data block -- ignoring data!" << endl;
-      learn_singleline(all, l, ec);
+      learn_singleline(&l, ec);
 
       if (ec->in_use)
-        VW::finish_example(all, ec);
+        VW::finish_example(*all, ec);
     } else {
-      l.ec_seq.push_back(ec);
+      l->ec_seq.push_back(ec);
     }
     
-    if (l.need_to_clear) {
-      output_example_seq(all, l);
-      clear_seq(all, l);
-      l.need_to_clear = false;
+    if (l->need_to_clear) {
+      output_example_seq(*all, *l);
+      clear_seq(*all, *l);
+      l->need_to_clear = false;
     }
-  }
-
-  void learn(void* d, example*ec) {
-    ldf* l = (ldf*)d;
-    vw* all = l->all;
-    if (l->is_singleline) learn_singleline(*all,*l, ec);
-    else learn_multiline(*all,*l, ec);
   }
 
   void finish(void* d)
@@ -1032,62 +1038,51 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     LabelDict::free_label_features(*l);
   }
 
-  void drive_ldf_singleline(vw& all, ldf& l) {
-    example* ec = NULL;
-    while (true) {
-      if ((ec = VW::get_example(all.p)) != NULL) { //semiblocking operation.
-
-        if (LabelDict::ec_is_example_header(ec)) {
-          cerr << "error: example headers not allowed in ldf singleline mode" << endl;
-          throw exception();
-        }
-        learn_singleline(all, l, ec);
-        if (! LabelDict::ec_is_label_definition(ec)) {
-          all.sd->weighted_examples += 1;
-          all.sd->example_number++;
-        }
-        bool hit_loss = false;
-        output_example(all, ec, hit_loss);
-        if (ec->in_use)
-          VW::finish_example(all, ec);
-      } else if (parser_done(all.p)) {
-        return;
-      }
-    }
-  }
-
-  void drive_ldf_multiline(vw& all, ldf& l) {
-    example* ec = NULL;
-    l.read_example_this_loop = 0;
-    l.need_to_clear = false;
-    while (true) {
-      if ((ec = VW::get_example(all.p)) != NULL) { // semiblocking operation
-        learn_multiline(all, l, ec);
-        if (l.need_to_clear) {
-	  if (l.ec_seq.size() > 0)
-	    output_example_seq(all, l);
-          clear_seq(all, l);
-          l.need_to_clear = false;
-        }
-      } else if (parser_done(all.p)) {
-        do_actual_learning(all, l);
-        output_example_seq(all, l);
-        clear_seq(all, l);
-	l.ec_seq.delete_v();
-        return;
-      }
-    }
-  }
-
-  void drive(vw* all, void* d)
+  void finish_example(vw& all, void*, example* ec)
   {
-    ldf* l = (ldf*)d;
-    if (l->is_singleline)
-      drive_ldf_singleline(*all, *l);
-    else
-      drive_ldf_multiline(*all,*l);
+    if (! LabelDict::ec_is_label_definition(ec)) {
+      all.sd->weighted_examples += 1;
+      all.sd->example_number++;
+    }
+    bool hit_loss = false;
+    output_example(all, ec, hit_loss);
+    VW::finish_example(all, ec);
   }
-  
+
+  void finish_multiline_example(vw& all, void* data, example* ec)
+  {
+    ldf* l=(ldf*)data;
+    if (l->need_to_clear) {
+      if (l->ec_seq.size() > 0)
+	output_example_seq(all, *l);
+          clear_seq(all, *l);
+          l->need_to_clear = false;
+    }
+  }
+
+  void end_examples(void* data)
+  {
+    ldf* l=(ldf*)data;
+    vw* all = l->all;
+    do_actual_learning(*all, *l);
+    output_example_seq(*all, *l);
+    clear_seq(*all, *l);
+    l->ec_seq.delete_v();
+  }
+
+  void drive_ldf_multiline(vw* all, void* data) {
+    example* ec = NULL;
+    while (true) {
+      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
+       learn_multiline(data, ec);
+       finish_multiline_example(*all, data, ec);
+      } else if (parser_done(all->p)) {
+	end_examples(data);
+        return;
+      }
+    }
+  }
+
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
@@ -1155,10 +1150,25 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     }
     ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
     ld->label_features.get(1, 94717244);
-    
-    learner l(ld, drive, learn, finish, all.l.sl);
-    ld->base = all.l;
-    return l;
+
+    if (ld->is_singleline)
+      {
+	learner l(ld, LEARNER::generic_driver, learn_singleline, finish, all.l.sl);
+	ld->base = all.l;
+	l.set_finish_example(finish_example); 
+
+	return l;
+      }
+    else
+      {
+	ld->read_example_this_loop = 0;
+	ld->need_to_clear = false;
+	learner l(ld, LEARNER::generic_driver, learn_multiline, finish, all.l.sl);
+	ld->base = all.l;
+	l.set_finish_example(finish_multiline_example); 
+	l.set_end_examples(end_examples); 
+	return l;
+      }
   }
 
   void global_print_newline(vw& all)
