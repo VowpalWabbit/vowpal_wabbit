@@ -333,7 +333,6 @@ namespace Searn
     v_array<state> unfreed_states;
     
     // tracking of example
-    size_t read_example_this_loop;
     size_t read_example_last_id;
     size_t passes_since_new_policy;
     size_t read_example_last_pass;
@@ -1324,7 +1323,6 @@ namespace Searn
     
     // for both single and multiline
     if (is_real_example) {
-      s->read_example_this_loop++;
       s->read_example_last_id = ec->example_counter;
     }
   }
@@ -1346,7 +1344,6 @@ namespace Searn
     cerr.precision(5);
 
     example* ec = NULL;
-    s->read_example_this_loop = 0;
     while (true) {
       if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
         learn_internal(s, ec, true);
@@ -1721,10 +1718,12 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
     srn.snapshot_is_equivalent_to_t = (size_t)-1;
     srn.snapshot_could_match = false;
-    srn.task->structured_predict(all, srn, ec, len, srn.pred_string, srn.truth_string);
+    srn.task->structured_predict(all, srn, ec, len,
+                                 srn.should_produce_string ? srn.pred_string : NULL,
+                                 srn.should_produce_string ? srn.truth_string : NULL);
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
-      all.print_text((int)*sink, srn.pred_string  ? srn.pred_string->str()  : "", ec[0]->tag);
+      all.print_text((int)*sink, srn.pred_string->str(), ec[0]->tag);
 
     if (srn.t == 0)
       return;  // there was no data!
@@ -1817,15 +1816,23 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
   float safediv(float a,float b) { if (b == 0.f) return 0.f; else return (a/b); }
  
-  void print_update(vw& all, searn& srn)
+  void print_update(vw& all, searn* srn)
   {
-    if (!Searn::should_print_update(all, srn.hit_new_pass))
+    if (!srn->printed_output_header) {
+      const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
+      fprintf(stderr, header_fmt, "average", "since", "sequence", "example",   "current label", "current predicted",  "current",  "cur", "cur", "predic.", "examples");
+      fprintf(stderr, header_fmt, "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
+      cerr.precision(5);
+      srn->printed_output_header = true;
+    }
+
+    if (!Searn::should_print_update(all, srn->hit_new_pass))
       return;
 
     char true_label[21];
     char pred_label[21];
-    Searn::to_short_string(srn.truth_string ? srn.truth_string->str() : "", 20, true_label);
-    Searn::to_short_string(srn.pred_string  ? srn.pred_string->str()  : "", 20, pred_label);
+    Searn::to_short_string(srn->truth_string->str(), 20, true_label);
+    Searn::to_short_string(srn->pred_string->str() , 20, pred_label);
 
     fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
             safediv((float)all.sd->sum_loss, (float)all.sd->weighted_examples),
@@ -1834,11 +1841,11 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
             all.sd->weighted_examples,
             true_label,
             pred_label,
-            (long unsigned int)srn.num_features,
-            (int)srn.read_example_last_pass,
-            (int)srn.current_policy,
-            (long unsigned int)srn.total_predictions_made,
-            (long unsigned int)srn.total_examples_generated);
+            (long unsigned int)srn->num_features,
+            (int)srn->read_example_last_pass,
+            (int)srn->current_policy,
+            (long unsigned int)srn->total_predictions_made,
+            (long unsigned int)srn->total_examples_generated);
 
     all.sd->sum_loss_since_last_dump = 0.0;
     all.sd->old_weighted_examples = all.sd->weighted_examples;
@@ -1850,10 +1857,12 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
   {
     if (srn.ec_seq.size() == 0)
       return;  // nothing to do :)
- 
+
+    srn.should_produce_string = false;
     if (true || Searn::should_print_update(all, srn.hit_new_pass)) {  // TODO: don't do this all the time!!!
-      srn.truth_string = new stringstream();
-      srn.pred_string  = new stringstream();
+      srn.should_produce_string = true;
+      srn.truth_string->str("");  // erase contents
+      srn.pred_string->str("");
     }
 
     train_single_example(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
@@ -1863,17 +1872,6 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       all.sd->example_number++;
       all.sd->total_features += srn.num_features;
       all.sd->weighted_examples += 1.f;
-    }
-
-    print_update(all, srn);
-
-    if (srn.truth_string != NULL) {
-      delete srn.truth_string;
-      srn.truth_string = NULL;
-    }
-    if (srn.pred_string != NULL) {
-      delete srn.pred_string;
-      srn.pred_string = NULL;
     }
   }
 
@@ -1909,35 +1907,56 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
         }
       }
       
-      VW::finish_example(*all, ec);
+      //VW::finish_example(*all, ec);
       is_real_example = false;
     } else {
       srn->ec_seq.push_back(ec);
     }
     
     if (is_real_example) {
-      srn->read_example_this_loop++;
       srn->read_example_last_id = ec->example_counter;
     }
   }
-  
+
+  void finish_example(vw& all, void* d, example* ec) {
+    searn *srn = (searn*)d;
+    if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) { 
+      print_update(all, srn);
+      VW::finish_example(all, ec);
+    }
+  }
+
+  void end_examples(void* d) {
+    searn* srn = (searn*)d;
+    vw* all    = srn->all;
+
+    do_actual_learning(*all, *srn);
+
+    if( all->training ) {
+      std::stringstream ss1;
+      std::stringstream ss2;
+      ss1 << ((srn->passes_since_new_policy == 0) ? srn->current_policy : (srn->current_policy+1));
+      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_trained_nb_policies
+      VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss1.str()); 
+      ss2 << srn->total_number_of_policies;
+      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
+      VW::cmd_string_replace_value(all->options_from_file,"--searn_total_nb_policies", ss2.str());
+      clog << "current_policy+1? = traind_nb_policies = " << ss1.str() << endl;
+    }
+  }
+
   void searn_drive(vw* all, void *d) {
     searn *srn = (searn*)d;
 
-    const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
-    
-    fprintf(stderr, header_fmt, "average", "since", "sequence", "example",   "current label", "current predicted",  "current",  "cur", "cur", "predic.", "examples");
-    fprintf(stderr, header_fmt, "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
-    cerr.precision(5);
-
     example* ec = NULL;
-    srn->read_example_this_loop = 0;
     while (true) {
       if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
         searn_learn(d, ec);
+        finish_example(*all, srn, ec);
       } else if (parser_done(all->p)) {
-        do_actual_learning(*all, *srn);
-        break;
+        //do_actual_learning(*all, *srn);
+        end_examples(srn);
+        return;
       }
     }
 
@@ -1973,7 +1992,6 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
     srn.passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
-    srn.read_example_this_loop = 0;
     srn.read_example_last_id = 0;
     srn.passes_since_new_policy = 0;
     srn.read_example_last_pass = 0;
@@ -1982,6 +2000,12 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     srn.hit_new_pass = false;
     
     srn.total_number_of_policies = 1;
+
+    srn.truth_string = new stringstream();
+    srn.pred_string  = new stringstream();
+    srn.should_produce_string = false;
+
+    srn.printed_output_header = false;
   }
 
   void searn_finish(void* d)
@@ -1991,6 +2015,9 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     cerr << "total predictions made = " << srn->total_predictions_made << endl;
     //cerr << "searn_finish" << endl;
 
+    delete srn->truth_string;
+    delete srn->pred_string;
+    
     srn->ec_seq.delete_v();
 
     clear_snapshot(*all, *srn);
@@ -2160,7 +2187,11 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
     srn->task->initialize(all, srn->A);
         
-    learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
+    //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
+    learner l(srn, LEARNER::generic_driver, searn_learn, searn_finish, all.l.sl);
+    l.set_finish_example(finish_example);
+    l.set_end_examples(end_examples);
+    
     srn->base = all.l;
     all.searnstr = srn;
     all.holdout_set_off = true;  // TODO: fix holdout so we don't have to do this!
