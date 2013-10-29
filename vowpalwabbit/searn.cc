@@ -1962,7 +1962,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
     srn.beta = 0.5;
     srn.allow_current_policy = false;
-    srn.rollout_oracle = true;
+    srn.rollout_oracle = false;
     srn.adaptive_beta = false;
     srn.alpha = 0.01;
     srn.num_features = 0;
