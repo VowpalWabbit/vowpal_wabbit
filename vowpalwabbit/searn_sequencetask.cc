@@ -52,55 +52,20 @@ namespace SequenceTask {
     po::store(parsed_file, vm_file);
     po::notify(vm_file);
 
-    if(vm_file.count("searn")) { //we loaded a predictor file which contains the options we should use for the sequence task
-      //load all params from file
-      if(vm_file.count("searn_sequencetask_history"))         dat->hinfo.length   = vm_file["searn_sequencetask_history"].as<size_t>();
-      if(vm_file.count("searn_sequencetask_features"))        dat->hinfo.features = vm_file["searn_sequencetask_features"].as<size_t>(); 
-      if(vm_file.count("searn_sequencetask_bigrams"))         dat->hinfo.bigrams = true;
-      if(vm_file.count("searn_sequencetask_bigram_features")) dat->hinfo.bigram_features = true;
+    check_option<size_t>(dat->hinfo.length, vw, vm, vm_file, "searn_sequencetask_history", false, size_equal,
+                         "warning: you specified a different value for --searn_sequencetask_history than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option<size_t>(dat->hinfo.features, vw, vm, vm_file, "searn_sequencetask_features", false, size_equal,
+                         "warning: you specified a different value for --searn_sequencetask_features than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option        (dat->hinfo.bigrams, vw, vm, vm_file, "searn_sequencetask_bigrams", false,
+                         "warning: you specified --searn_sequencetask_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
+    check_option        (dat->hinfo.bigram_features, vw, vm, vm_file, "searn_sequencetask_bigram_features", false,
+                         "warning: you specified --searn_sequencetask_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
 
-      //check if there is a mismatch between what was specified in command line and alert user
-      if( vm.count("searn_sequencetask_history") && dat->hinfo.length != vm["searn_sequencetask_history"].as<size_t>() )
-        std::cerr << "warning: you specified a different value for --searn_sequencetask_history than the one loaded from regressor. Pursuing with loaded value: " << dat->hinfo.length << endl;
 
-      if( vm.count("searn_sequencetask_features") && dat->hinfo.features != vm["searn_sequencetask_features"].as<size_t>() )
-        std::cerr << "warning: you specified a different value for --searn_sequencetask_features than the one loaded from regressor. Pursuing with loaded value: " << dat->hinfo.features << endl;
-
-      if( vm.count("searn_sequencetask_bigrams") && !dat->hinfo.bigrams )
-        std::cerr << "warning: you specified --searn_sequencetask_bigrams but loaded regressor not using bigrams. Pursuing without bigrams." << endl;
-
-      if( vm.count("searn_sequencetask_bigram_features") && !dat->hinfo.bigram_features )
-        std::cerr << "warning: you specified --searn_sequencetask_bigram_features but loaded regressor not using bigram_features. Pursuing without bigram_features." << endl;
-    } else {
-      if (vm.count("searn_sequencetask_bigrams")) {
-        dat->hinfo.bigrams = true;
-        vw.options_from_file.append(" --searn_sequencetask_bigrams");
-      }
-
-      if (vm.count("searn_sequencetask_history")) { 
-        dat->hinfo.length = vm["searn_sequencetask_history"].as<size_t>();
-
-        std::stringstream ss;
-        ss << " --searn_sequencetask_history " << dat->hinfo.length;
-        vw.options_from_file.append(ss.str());
-      }
-
-      if (vm.count("searn_sequencetask_bigram_features")) {
-        dat->hinfo.bigram_features = true;
-        vw.options_from_file.append(" --searn_sequencetask_bigram_features");
-      }
-
-      if (vm.count("searn_sequencetask_features")) {
-        dat->hinfo.features = vm["searn_sequencetask_features"].as<size_t>();
-
-        std::stringstream ss;
-        ss << " --searn_sequencetask_features " << dat->hinfo.features;
-        vw.options_from_file.append(ss.str());
-      }
-    }
+    cerr << "dat->hinfo.length = " << dat->hinfo.length << endl;
   }
 
-void finish(vw& vw, searn& srn) {
+  void finish(vw& vw, searn& srn) {
     sequencetask_data* dat = (sequencetask_data*)srn.task_data;
     dat->yhat.delete_v();
     delete dat;

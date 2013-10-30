@@ -1158,6 +1158,11 @@ void print_update(vw& all, searn* srn)
     }
   }
 
+  bool string_equal(string a, string b) { return a.compare(b) == 0; }
+  bool float_equal(float a, float b) { return fabs(a-b) < 1e-6; }
+  bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
+  bool size_equal(size_t a, size_t b) { return a==b; }
+
   template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
     if (vm_file.count(opt_name)) { // loaded from regressor file
       ret = vm_file[opt_name].as<T>();
@@ -1169,7 +1174,7 @@ void print_update(vw& all, searn* srn)
     } else if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
       stringstream ss;
-      ss << " " << opt_name << " " << ret;
+      ss << " --" << opt_name << " " << ret;
       all.options_from_file.append(ss.str());
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
@@ -1177,10 +1182,23 @@ void print_update(vw& all, searn* srn)
     }
   }  
 
-  bool string_equal(string a, string b) { return a.compare(b) == 0; }
-  bool float_equal(float a, float b) { return fabs(a-b) < 1e-6; }
-  bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
-  bool size_equal(size_t a, size_t b) { return a==b; }
+  void check_option(bool& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
+    if (vm_file.count(opt_name)) { // loaded from regressor file
+      ret = true;
+      if (!vm.count(opt_name)) {
+        if (default_to_cmdline)
+          ret = false;
+        std::cerr << mismatch_error_string << ret << endl;
+      }
+    } else if (vm.count(opt_name)) {
+      ret = true;
+      stringstream ss;
+      ss << " " << opt_name;
+      all.options_from_file.append(ss.str());
+    } else {
+      ret = false;
+    }
+  }  
 
   learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {

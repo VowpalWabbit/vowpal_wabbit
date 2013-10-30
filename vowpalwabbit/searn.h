@@ -124,6 +124,14 @@ namespace Searn {
     example*empty_example;
   };
 
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string);
+  void check_option(bool& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
+  bool string_equal(string a, string b);
+  bool float_equal(float a, float b);
+  bool uint32_equal(uint32_t a, uint32_t b);
+  bool size_equal(size_t a, size_t b);
+
+
   struct searn_task {
     void (*initialize)(vw&,searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
     void (*finish)(vw&,searn&);
