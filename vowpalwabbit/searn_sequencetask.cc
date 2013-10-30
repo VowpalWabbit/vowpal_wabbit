@@ -24,6 +24,21 @@ namespace SequenceTask {
     v_array<size_t> yhat;
   };
 
+  void setup_searn_options(po::options_description& desc, vw&vw, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+    po::parsed_options parsed = po::command_line_parser(opts).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+
+    po::parsed_options parsed_file = po::command_line_parser(vw.options_from_file_argc, vw.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
+  }
+
   void initialize(vw& vw, searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     sequencetask_data* dat = new sequencetask_data();
     dat->hinfo.features        = 0;
@@ -39,19 +54,8 @@ namespace SequenceTask {
       ("searn_sequencetask_bigrams",                       "use bigrams from history")
       ("searn_sequencetask_bigram_features",               "use bigrams from history paired with observed features");
 
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
-
-    po::parsed_options parsed_file = po::command_line_parser(vw.options_from_file_argc, vw.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
-
+    setup_searn_options(desc, vw, opts, vm, vm_file);
+    
     check_option<size_t>(dat->hinfo.length, vw, vm, vm_file, "searn_sequencetask_history", false, size_equal,
                          "warning: you specified a different value for --searn_sequencetask_history than the one loaded from regressor. proceeding with loaded value: ", "");
     check_option<size_t>(dat->hinfo.features, vw, vm, vm_file, "searn_sequencetask_features", false, size_equal,
