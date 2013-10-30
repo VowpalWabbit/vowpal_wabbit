@@ -60,7 +60,7 @@ namespace BS {
 
   void bs_predict_mean(vw& all, example* ec, vector<double> &pred_vec)
   {
-    ec->final_prediction = accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+    ec->final_prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
     ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ((label_data*)ec->ld)->label) * ((label_data*)ec->ld)->weight;    
   }
 
@@ -77,7 +77,7 @@ namespace BS {
         if (counter == 0)
         {
           counter = 1;
-          current_label = pred_vec[i];
+          current_label = (float)pred_vec[i];
         }
         else
           counter--;
@@ -156,9 +156,9 @@ namespace BS {
       for (unsigned i = 0; i < d->pred_vec.size(); i++)
       {
         if(d->pred_vec[i] > d->ub)
-          d->ub = d->pred_vec[i];
+          d->ub = (float)d->pred_vec[i];
         if(d->pred_vec[i] < d->lb)
-          d->lb = d->pred_vec[i];
+          d->lb = (float)d->pred_vec[i];
       }
     }
 
@@ -174,7 +174,7 @@ namespace BS {
     vw* all = d->all;
     bool shouldOutput = all->raw_prediction > 0;
 
-    double weight_temp = ((label_data*)ec->ld)->weight;
+    float weight_temp = ((label_data*)ec->ld)->weight;
   
     string outputString;
     stringstream outputStringStream(outputString);

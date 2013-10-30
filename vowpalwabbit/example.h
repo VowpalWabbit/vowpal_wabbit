@@ -72,7 +72,7 @@ struct flat_example
 	void* ld;  
 	simple_prediction final_prediction;  
 
-	int tag_len;
+	size_t tag_len;
 	char* tag;//An identifier for the example.  
 
 	size_t example_counter;  
@@ -80,7 +80,7 @@ struct flat_example
 	float global_weight;
 
 	size_t num_features;//precomputed, cause it's fast&easy.  
-	int feature_map_len;
+	size_t feature_map_len;
 	feature* feature_map; //map to store sparse feature vectors  
 };
 flat_example* flatten_example(vw& all, example *ec);

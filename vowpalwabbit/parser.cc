@@ -719,7 +719,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
   if (all.p->write_cache) 
     {
       all.p->lp->cache_label(ae->ld,*(all.p->output));
-      cache_features(*(all.p->output), ae, all.parse_mask);
+      cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
     }
 
   return true;

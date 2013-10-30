@@ -165,10 +165,16 @@ extern "C"
 		return ex->final_prediction;
 	}
 
-	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, size_t index)
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, size_t index, size_t offset)
 	{
 		vw* pointer = static_cast<vw*>(handle);
-		return VW::get_weight(*pointer, (uint32_t) index);
+		return VW::get_weight(*pointer, (uint32_t) index, (uint32_t) offset);
+	}
+
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_Set_Weight(VW_HANDLE handle, size_t index, size_t offset, float value)
+	{
+		vw* pointer = static_cast<vw*>(handle);
+		return VW::set_weight(*pointer, (uint32_t) index, (uint32_t)offset, value);
 	}
 
 	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_Num_Weights(VW_HANDLE handle)

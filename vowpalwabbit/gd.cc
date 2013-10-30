@@ -65,7 +65,7 @@ namespace GD
       total_weight = ec->example_t;
 
     if(!all.holdout_set_off)
-      total_weight -= all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
+      total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_norm) avg_norm = sqrt(avg_norm);
@@ -174,44 +174,44 @@ void learn(void* d, example* ec)
               if (all->normalized_updates){ 
                 if (g->feature_mask_off) 
                   generic_train<specialized_update<true, true, true> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
                 else
                   generic_train<specialized_update<true, true, false> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
               }
               else {
                 if (g->feature_mask_off) 
                   generic_train<specialized_update<true, false, true> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
                 else
                   generic_train<specialized_update<true, false, false> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
               }
             }              
             else { //for adaptive 
               if (all->normalized_updates){ 
                 if (g->feature_mask_off) 
                   generic_train<specialized_update<false, true, true> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
                 else
                   generic_train<specialized_update<false, true, false> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
               }
               else {
                 if (g->feature_mask_off) 
                   generic_train<specialized_update<false, false, true> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
                 else
                   generic_train<specialized_update<false, false, false> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
               }  
             }
           }//end of power_t
           else{
             if (g->feature_mask_off)
-              generic_train<general_update<true> >(*all,ec,ec->eta_round,false);
+              generic_train<general_update<true> >(*all,ec,(float)ec->eta_round,false);
             else
-              generic_train<general_update<false> >(*all,ec,ec->eta_round,false);
+              generic_train<general_update<false> >(*all,ec,(float)ec->eta_round,false);
           }  
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
@@ -514,7 +514,7 @@ float compute_norm(vw& all, example* &ec)
       total_weight = ec->example_t;
 
     if(!all.holdout_set_off)
-      total_weight -= all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
+      total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     all.normalized_sum_norm_x += ld->weight * nd.norm_x;
     
@@ -555,7 +555,7 @@ float compute_norm(vw& all, example* &ec)
   if(all.active)
     t = (float)all.sd->weighted_unlabeled_examples;
   else
-    t = ec->example_t - all.sd->weighted_holdout_examples;
+    t = (float)(ec->example_t - all.sd->weighted_holdout_examples);
 
   ec->eta_round = 0;
 

@@ -684,13 +684,13 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
   void learn(void* d, example* ec) 
   {
     lda* l = (lda*)d;
-    uint32_t num_ex = l->examples.size();
+    size_t num_ex = l->examples.size();
     l->examples.push_back(ec);
     l->doc_lengths.push_back(0);
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {
       feature* f = ec->atomics[*i].begin;
       for (; f != ec->atomics[*i].end; f++) {
-	index_feature temp = {num_ex, *f};
+	index_feature temp = {(uint32_t)num_ex, *f};
 	l->sorted_features.push_back(temp);
 	l->doc_lengths[num_ex] += (int)f->x;
       }

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -293,6 +293,7 @@
     <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="lda_core.cc" />
+    <ClCompile Include="learner.cc" />
     <ClCompile Include="loss_functions.cc" />
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />

@@ -122,7 +122,7 @@ namespace SearnUtil
   {
     float history_value = 1.;
     uint64_t v0, v1, v, max_string_length = 0;
-    uint32_t total_length = max(hinfo->features, hinfo->length);
+    uint32_t total_length = (uint32_t)max(hinfo->features, hinfo->length);
     uint32_t wpp = all.weights_per_problem * all.reg.stride;
     if (total_length == 0) return;
     if (h == NULL) {
@@ -1224,7 +1224,7 @@ namespace Searn
     // Copy predictions back into examples.
     assert(action_sequence.size() == s.ec_seq.size());
     for (size_t i=0; i<action_sequence.size(); i++)
-      s.ec_seq[i]->final_prediction = action_sequence[i];
+      s.ec_seq[i]->final_prediction = (float)action_sequence[i];
 
     if (!is_test) {
       float loss = s.task.loss(s0);
@@ -1377,7 +1377,7 @@ namespace ImperativeSearn {
 
   int choose_policy(searn& srn, bool allow_current, bool allow_optimal)
   {
-    uint32_t seed = /* srn.read_example_last_id * 2147483 + */ srn.t * 2147483647;
+    uint32_t seed = (uint32_t)/* srn.read_example_last_id * 2147483 + */ srn.t * 2147483647;
     return SearnUtil::random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, true); // srn.rollout_all_actions);
   }
 
@@ -1983,7 +1983,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     srn.allow_current_policy = false;
     srn.rollout_oracle = false;
     srn.adaptive_beta = false;
-    srn.alpha = 0.01;
+    srn.alpha = 0.01f;
     srn.num_features = 0;
     srn.current_policy = 0;
     srn.state = 0;
@@ -2141,7 +2141,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       srn->total_number_of_policies = (uint32_t)vm["searn_total_nb_policies"].as<size_t>();
 
     ensure_param(srn->beta , 0.0, 1.0, 0.5, "warning: searn_beta must be in (0,1); resetting to 0.5");
-    ensure_param(srn->alpha, 0.0, 1.0, 0.001, "warning: searn_as_dagger must be in (0,1); resetting to 0.001");
+    ensure_param(srn->alpha, 0.0f, 1.0f, 0.001f, "warning: searn_as_dagger must be in (0,1); resetting to 0.001");
 
     //compute total number of policies we will have at end of training
     // we add current_policy for cases where we start from an initial set of policies loaded through -i option

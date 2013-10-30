@@ -92,8 +92,11 @@ namespace VW {
     return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
   }
 
-  inline float get_weight(vw& all, uint32_t index) 
-  { return all.reg.weight_vector[(index * all.reg.stride) & all.reg.weight_mask];}
+  inline float get_weight(vw& all, uint32_t index, uint32_t offset) 
+  { return all.reg.weight_vector[(index * all.reg.stride) & all.reg.weight_mask + offset];}
+
+  inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value) 
+  { all.reg.weight_vector[(index * all.reg.stride) & all.reg.weight_mask + offset] = value;}
 
   inline uint32_t num_weights(vw& all) 
   { return (uint32_t)all.length();}

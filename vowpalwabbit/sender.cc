@@ -81,7 +81,7 @@ void receive_result(sender& s)
     s->all->set_minmax(s->all->sd, ld->label);
     simple_label.cache_label(ld, *s->buf);//send label information.
     cache_tag(*s->buf, ec->tag);
-    send_features(s->buf,ec, s->all->parse_mask);
+    send_features(s->buf,ec, (uint32_t)s->all->parse_mask);
     s->delay_ring[s->sent_index++ % s->all->p->ring_size] = ec;
   }
 

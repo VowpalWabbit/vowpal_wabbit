@@ -233,7 +233,7 @@ void return_simple_example(vw& all, void*, example* ec)
 
 bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 {
-  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX;
+  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX;
 
   all.sd->weighted_holdout_examples_since_last_pass = 0;
   all.sd->holdout_sum_loss_since_last_pass = 0;

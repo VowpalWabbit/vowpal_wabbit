@@ -46,7 +46,7 @@ void accumulate_avg(vw& all, string master_location, regressor& reg, size_t o) {
   size_t stride = all.reg.stride;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vector;
-  float numnodes = all.total;
+  float numnodes = (float)all.total;
 
   for(uint32_t i = 0;i < length;i++) 
     local_grad[i] = weights[stride*i+o];
