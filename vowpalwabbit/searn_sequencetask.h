@@ -29,8 +29,8 @@ namespace SequenceTask {
 }
 
 namespace SequenceTask_Easy {
-  void initialize(vw&, size_t&);
-  void finish(vw&);
+  void initialize(vw&, ImperativeSearn::searn&, size_t&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  void finish(vw&, ImperativeSearn::searn&);
   void structured_predict_v1(vw&, ImperativeSearn::searn&, example**,size_t,stringstream*,stringstream*);
 }
 

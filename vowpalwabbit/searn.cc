@@ -291,8 +291,8 @@ namespace Searn
     // debug stuff
   const bool PRINT_DEBUG_INFO =0;
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
-  const bool PRINT_UPDATE_EVERY_PASS =1;
-  const bool PRINT_CLOCK_TIME =1;
+  const bool PRINT_UPDATE_EVERY_PASS =0;
+  const bool PRINT_CLOCK_TIME =0;
     
   struct searn {
     // task stuff
@@ -2129,6 +2129,9 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
     srn.passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
+    srn.task = NULL;
+    srn.task_data = NULL;
+    
     srn.read_example_last_id = 0;
     srn.passes_since_new_policy = 0;
     srn.read_example_last_pass = 0;
@@ -2184,7 +2187,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     srn->learn_losses.erase(); srn->learn_losses.delete_v();
 
     if (srn->task->finish != NULL)
-      srn->task->finish(*all);
+      srn->task->finish(*all, *srn);
     if (srn->task->finish != NULL)
       srn->base.finish();
   }
@@ -2349,7 +2352,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
     // default to CSOAA labels unless the task wants to override this!
     *(all.p->lp) = CSOAA::cs_label_parser; 
-    srn->task->initialize(all, srn->A);
+    srn->task->initialize(all, *srn, srn->A, opts, vm, vm_file);
 
     //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
     learner l(srn, LEARNER::generic_driver, searn_learn, searn_finish, all.l.sl);

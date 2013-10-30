@@ -215,8 +215,9 @@ namespace ImperativeSearn {
     void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot)(vw&,size_t,size_t,void*,size_t,bool);
 
-    // structure that you must set
+    // structure that you must set, and any associated data you want to store
     searn_task* task;
+    void* task_data;
 
     // data that you should not look at.  ever.
     size_t A;             // total number of actions, [1..A]; 0 means ldf
@@ -281,8 +282,8 @@ namespace ImperativeSearn {
   };
 
   struct searn_task {
-    void (*initialize)(vw&,size_t&);
-    void (*finish)(vw&);
+    void (*initialize)(vw&,searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
+    void (*finish)(vw&,searn&);
     void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
   };
 
