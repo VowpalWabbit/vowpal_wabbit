@@ -130,6 +130,7 @@ namespace Searn {
   bool float_equal(float a, float b);
   bool uint32_equal(uint32_t a, uint32_t b);
   bool size_equal(size_t a, size_t b);
+  void setup_searn_options(po::options_description& desc, vw&vw, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file);
 
 
   struct searn_task {
