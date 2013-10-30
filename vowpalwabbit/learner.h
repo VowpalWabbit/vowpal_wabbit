@@ -26,8 +26,7 @@ namespace LEARNER
   { cout << "calling generic_save_load";}
   inline void generic_learner(void* data, example*)
   { cout << "calling generic learner\n";}
-  inline void generic_end_pass(void* data)
-  { cout << "calling generic end_pass\n";}
+  inline void generic_end_pass(void* data) {}
   inline void generic_end_examples(void* data) {}
   inline void generic_init_driver(void* data) {}
   inline void generic_finish(void* data)
@@ -39,11 +38,12 @@ namespace LEARNER
 struct learner {
 private:
   void* data;
+  learner* base;
   void (*driver)(vw* all, void* data);
   void (*learn_f)(void* data, example*);
   void (*finish_example_f)(vw&, void* data, example*);
   void (*finisher)(void* data);
-  void (*end_pass)(void* data);
+  void (*end_pass_f)(void* data);
   void (*end_examples_f)(void* data);
   void (*init_driver_f)(void* data);
 
@@ -64,6 +64,13 @@ public:
   void set_finish_example(void (*ef)(vw& all, void*, example*))
   {finish_example_f = ef;}
 
+  void end_pass(){
+    end_pass_f(data); 
+    if (base) 
+      base->end_pass(); 
+  }
+  void set_end_pass(void (*ep)(void*)) {end_pass_f = ep;}
+
   //called after parsing of examples is complete.  Not called under Reduction.
   void end_examples() {end_examples_f(data);} 
   void set_end_examples(void (*ee)(void*)) 
@@ -72,16 +79,19 @@ public:
   void init_driver() { init_driver_f(data); }
   void set_init_driver(void (*id)(void*)) { init_driver_f = id; }
 
+  void set_base(learner* b) { base=b; }
+
   //disappearing shortly.
   inline void drive(vw* all) { driver(all, data); }
 
   void set_default()
   {
     data = NULL;
+    base = NULL;
     driver = LEARNER::generic_driver;
     learn_f = LEARNER::generic_learner;
     finish_example_f = return_simple_example;
-    end_pass = LEARNER::generic_end_pass;
+    end_pass_f = LEARNER::generic_end_pass;
     end_examples_f = LEARNER::generic_end_examples;
     init_driver_f = LEARNER::generic_init_driver;
     finisher = LEARNER::generic_finish;

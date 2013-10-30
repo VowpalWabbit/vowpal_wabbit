@@ -74,24 +74,21 @@ namespace NN {
 
   void finish_setup (nn* n, vw& all);
 
+  void end_pass(void* d)
+  {
+    nn* n = (nn*)d;
+    
+    if (n->all->bfgs)
+      n->xsubi = n->save_xsubi;
+  }
+
   void learn(void* d, example* ec)
   {
     nn* n = (nn*)d;
-
     bool shouldOutput = n->all->raw_prediction > 0;
 
     if (! n->finished_setup)
       finish_setup (n, *(n->all));
-
-    if (ec->end_pass) {
-      if (n->all->bfgs)
-        n->xsubi = n->save_xsubi;
-    }
-
-    if (command_example(n->all, ec)) {
-      n->base.learn(ec);
-      return;
-    }
 
     label_data* ld = (label_data*)ec->ld;
     float save_label = ld->label;
@@ -372,6 +369,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     learner l(n,LEARNER::generic_driver,learn,finish,all.l.sl);
 
     l.set_finish_example(finish_example);
+    l.set_end_pass(end_pass);
+    l.set_base(&(n->base));
+
     return l;
   }
 

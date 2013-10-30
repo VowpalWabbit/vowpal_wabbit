@@ -362,12 +362,6 @@ namespace ECT
     ect* e=(ect*)d;
     vw* all = e->all;
     
-    if (command_example(all, ec))
-      {
-	e->base.learn(ec);
-	return;
-      }
-
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
       cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
@@ -462,6 +456,7 @@ namespace ECT
     learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
     data->base = all.l;
     l.set_finish_example(OAA::finish_example);
+    l.set_base(&(data->base));
 
     return l;
   }

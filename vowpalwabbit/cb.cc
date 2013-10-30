@@ -479,12 +479,6 @@ namespace CB
     vw* all = c->all;
     CB::label* ld = (CB::label*)ec->ld;
 
-    if (command_example(all, ec))
-      {
-	c->base.learn(ec);
-	return;
-      }
-
     //check if this is a test example where we just want a prediction
     if( CB::is_test_label(ld) )
     {
@@ -659,8 +653,7 @@ namespace CB
   void finish_example(vw& all, void* data, example* ec)
   {
     cb* c = (cb*)data;
-    if (!command_example(&all, ec))
-      output_example(all, *c, ec);
+    output_example(all, *c, ec);
     VW::finish_example(all, ec);
   }
 
@@ -752,6 +745,7 @@ namespace CB
     c->base = all.l;
     l.set_finish_example(finish_example); 
     l.set_init_driver(init_driver);
+    l.set_base(&(c->base));
 
     return l;
   }

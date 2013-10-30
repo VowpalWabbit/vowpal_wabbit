@@ -319,12 +319,6 @@ namespace CSOAA {
     vw* all = c->all;
     label* ld = (label*)ec->ld;
 
-    if (command_example(all, ec))
-      {
-	c->base.learn(ec);
-	return;
-      }
-
     size_t prediction = 1;
     float score = FLT_MAX;
     uint32_t current_increment = 0;
@@ -370,8 +364,7 @@ namespace CSOAA {
 
   void finish_example(vw& all, void*, example* ec)
   {
-    if (!command_example(&all, ec))
-      output_example(all, ec);
+    output_example(all, ec);
     VW::finish_example(all, ec);
   }
 
@@ -411,6 +404,7 @@ namespace CSOAA {
     learner l(c, LEARNER::generic_driver, learn, finish, all.l.sl);
     c->base = all.l;
     l.set_finish_example(finish_example);
+    l.set_base(&(c->base));
     return l;
   }
 
@@ -964,12 +958,6 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     ldf* l=(ldf*)d;
     vw* all = l->all;
     
-    if (command_example(all, ec))
-      {
-	l->base.learn(ec);
-	return;
-      }
-    
     if (LabelDict::ec_is_example_header(ec)) {
       cerr << "error: example headers not allowed in ldf singleline mode" << endl;
       throw exception();
@@ -987,12 +975,18 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     }
   }
 
+  void end_pass(void* data)
+  {
+    ldf* l=(ldf*)data;
+    l->first_pass = false;
+  }
+
   void learn_multiline(void* data, example *ec) 
   {
     ldf* l=(ldf*)data;
     vw* all = l->all;
 
-    if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2 || command_example(&all,ec)) {
+    if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
       if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
 	
@@ -1001,12 +995,6 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       if (!LabelDict::ec_seq_is_label_definition(*l, l->ec_seq) && l->ec_seq.size() > 0)
         global_print_newline(*all);
 
-      if (command_example(&all, ec)) {
-	if (ec->end_pass)
-	  l->first_pass = false;
-	l->base.learn(ec);
-      }
-      
       if (ec->in_use)
         VW::finish_example(*all, ec);
       l->need_to_clear = true;
@@ -1143,6 +1131,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
 	learner l(ld, LEARNER::generic_driver, learn_singleline, finish, all.l.sl);
 	ld->base = all.l;
 	l.set_finish_example(finish_example); 
+	l.set_base(&(ld->base));
 
 	return l;
       }
@@ -1154,6 +1143,8 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
 	ld->base = all.l;
 	l.set_finish_example(finish_multiline_example); 
 	l.set_end_examples(end_examples); 
+	l.set_end_pass(end_pass);
+	l.set_base(&(ld->base));
 	return l;
       }
   }

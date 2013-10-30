@@ -129,30 +129,26 @@ namespace BS {
 
   void output_example(vw& all, bs* d, example* ec)
   {
-    if (command_example(&all,ec))
-      return;
-
     label_data* ld = (label_data*)ec->ld;
-
-
-   if(ec->test_only)
-    {
-      all.sd->weighted_holdout_examples += ld->weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
-      all.sd->holdout_sum_loss += ec->loss;
-      all.sd->holdout_sum_loss_since_last_dump += ec->loss;
-      all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
-    }
+    
+    if(ec->test_only)
+      {
+	all.sd->weighted_holdout_examples += ld->weight;//test weight seen
+	all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
+	all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
+	all.sd->holdout_sum_loss += ec->loss;
+	all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+	all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
+      }
     else
-    {
-      all.sd->weighted_examples += ld->weight;
-      all.sd->sum_loss += ec->loss;
-      all.sd->sum_loss_since_last_dump += ec->loss;
-      all.sd->total_features += ec->num_features;
-      all.sd->example_number++;
-    }
-
+      {
+	all.sd->weighted_examples += ld->weight;
+	all.sd->sum_loss += ec->loss;
+	all.sd->sum_loss_since_last_dump += ec->loss;
+	all.sd->total_features += ec->num_features;
+	all.sd->example_number++;
+      }
+    
     if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
     {
       d->lb = FLT_MAX;
@@ -177,12 +173,6 @@ namespace BS {
     bs* d = (bs*)data;
     vw* all = d->all;
     bool shouldOutput = all->raw_prediction > 0;
-
-    if (command_example(all,ec))
-      {
-	d->base.learn(ec);
-	return;
-      }
 
     double weight_temp = ((label_data*)ec->ld)->weight;
   
@@ -231,8 +221,7 @@ namespace BS {
 
   void finish_example(vw& all, void* d, example* ec)
   {
-    if (!command_example(&all, ec))
-      BS::output_example(all, (bs*)d, ec);
+    BS::output_example(all, (bs*)d, ec);
     VW::finish_example(all, ec);
   }
 
@@ -320,6 +309,7 @@ namespace BS {
     data->total_increment = data->increment*(data->B-1);
     data->base = all.l;
     learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
+    l.set_base(&(data->base));
 
     l.set_finish_example(finish_example); 
     return l;

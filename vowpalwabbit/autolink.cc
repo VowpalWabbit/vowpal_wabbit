@@ -66,6 +66,8 @@ namespace ALINK {
       }
 
     learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
+    l.set_base(&(data->base));
+
     return l;
   }
 }
