@@ -757,13 +757,12 @@ void process_example(vw& all, bfgs& b, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void learn(void* d, example* ec)
+void end_pass(void*d)
 {
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
-  assert(ec->in_use);
-
-  if (ec->end_pass && b->current_pass <= b->final_pass) 
+  
+  if (b->current_pass <= b->final_pass) 
       {
 	int status = process_pass(*all, *b);
 	if (status != LEARN_OK && b->final_pass > b->current_pass) {
@@ -773,29 +772,35 @@ void learn(void* d, example* ec)
 	  zero_preconditioner(*all);
 	  b->preconditioner_pass = true;
 	}
-        if(!all->holdout_set_off)
-        {
-          if(summarize_holdout_set(*all, b->no_win_counter))
-            finalize_regressor(*all, all->final_regressor_name); 
-          if(b->early_stop_thres == b->no_win_counter)
-            all-> early_terminate = true;
-        }         
+	if(!all->holdout_set_off)
+	  {
+	    if(summarize_holdout_set(*all, b->no_win_counter))
+	      finalize_regressor(*all, all->final_regressor_name); 
+	    if(b->early_stop_thres == b->no_win_counter)
+	      all-> early_terminate = true;
+	  }         
       }
+}
+
+void learn(void* d, example* ec)
+{
+  bfgs* b = (bfgs*)d;
+  vw* all = b->all;
+  assert(ec->in_use);
 
   if (b->current_pass <= b->final_pass)
-    if (!command_example(all,ec))
-      {
-	if(ec->test_only)
-          { 
-            label_data* ld = (label_data*)ec->ld;
-            ec->final_prediction = bfgs_predict(*all,ec); 
-            ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
-          }
-        else if (test_example(ec))
-	  ec->final_prediction = bfgs_predict(*all,ec);//w[0]
-	else
-	  process_example(*all, *b, ec);
-      }
+    {
+      if(ec->test_only)
+	{ 
+	  label_data* ld = (label_data*)ec->ld;
+	  ec->final_prediction = bfgs_predict(*all,ec); 
+	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
+	}
+      else if (test_example(ec))
+	ec->final_prediction = bfgs_predict(*all,ec);//w[0]
+      else
+	process_example(*all, *b, ec);
+    }
 }
 
 void finish(void* d)
@@ -921,6 +926,12 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     }
 }
 
+  void init_driver(void* data)
+  {
+    bfgs* b = (bfgs*)data;
+    b->backstep_on = true;
+  }
+
 void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
 {
   bfgs* b = (bfgs*)calloc(1,sizeof(bfgs));
@@ -930,7 +941,7 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
   b->first_pass = true;
   b->gradient_pass = true;
   b->preconditioner_pass = true;
-  b->backstep_on = true;
+  b->backstep_on = false;
   b->final_pass=all.numpasses;  
   b->no_win_counter = 0;
   b->early_stop_thres = 3;
@@ -944,6 +955,9 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
   
   sl_t sl = {b, save_load};
   learner t(b,LEARNER::generic_driver,learn,finish,sl);
+  t.set_init_driver(init_driver);
+  t.set_end_pass(end_pass);
+
   all.l = t;
 
   all.bfgs = true;

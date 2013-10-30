@@ -555,7 +555,6 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
 
-  all->is_noop = false;
   if (vm.count("noop")) 
     all->l = NOOP::setup(*all);
   

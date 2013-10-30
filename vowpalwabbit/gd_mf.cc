@@ -266,24 +266,24 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
+void end_pass(void* d)
+{
+   vw* all = (vw*)d;
+
+   all->eta *= all->eta_decay_rate;
+   if (all->save_per_pass)
+     save_predictor(*all, all->final_regressor_name, all->current_pass);
+   
+   all->current_pass++;
+}
+
   void learn(void* d, example* ec)
   {
     vw* all = (vw*)d;
-    if (ec->end_pass) 
-    {
-      all->eta *= all->eta_decay_rate;
-      if (all->save_per_pass)
-        save_predictor(*all, all->final_regressor_name, all->current_pass);
-
-      all->current_pass++;
-    }
-
-    if (!command_example(all, ec))
-      {
-	mf_predict(*all,ec);
-	if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
-	  mf_inline_train(*all, ec, ec->eta_round);
-      }    
+ 
+    mf_predict(*all,ec);
+    if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
+      mf_inline_train(*all, ec, ec->eta_round);
   }
 
   void finish(void* d)
@@ -293,6 +293,7 @@ float mf_predict(vw& all, example* ex)
   {
     sl_t sl = {&all, save_load};
     learner l(&all,LEARNER::generic_driver,learn,finish,sl);
+    l.set_end_pass(end_pass);
     return l;
   }
 }

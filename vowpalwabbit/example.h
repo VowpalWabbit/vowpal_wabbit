@@ -91,7 +91,6 @@ example *alloc_example(size_t);
 void dealloc_example(void(*delete_label)(void*), example&);
 
 void update_example_indicies(bool audit, example* ec, uint32_t amount);
-bool command_example(void*a, example* ec); 
 
 inline int example_is_newline(example* ec)
 {

@@ -228,12 +228,6 @@ namespace WAP {
     wap* w = (wap*)d;
     vw* all = w->all;
     
-    if (command_example(all, ec))
-      {
-	w->base.learn(ec);
-	return;
-      }
-
     size_t prediction = test(*all, *w, ec);
     ec->ld = cost_label;
     
@@ -276,6 +270,7 @@ namespace WAP {
 
     learner l(w, LEARNER::generic_driver, learn, finish, all.l.sl);
     w->base = all.l;
+    l.set_base(&(w->base));
     l.set_finish_example(CSOAA::finish_example);
 
     return l;

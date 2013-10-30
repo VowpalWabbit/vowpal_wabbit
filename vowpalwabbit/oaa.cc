@@ -158,9 +158,6 @@ namespace OAA {
 
   void output_example(vw& all, example* ec)
   {
-    if (command_example(&all,ec))
-      return;
-
     mc_label* ld = (mc_label*)ec->ld;
 
     size_t loss = 1;
@@ -204,12 +201,6 @@ namespace OAA {
     vw* all = o->all;
 
     bool shouldOutput = all->raw_prediction > 0;
-
-    if (command_example(all,ec))
-      {
-	o->base.learn(ec);
-	return;
-      }
 
     mc_label* mc_label_data = (mc_label*)ec->ld;
     float prediction = 1;
@@ -288,7 +279,8 @@ namespace OAA {
     data->base = all.l;
     learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
     l.set_finish_example(finish_example);
-   
+    l.set_base(&(data->base));
+
     return l;
   }
 }

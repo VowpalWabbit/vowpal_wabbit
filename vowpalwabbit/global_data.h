@@ -135,7 +135,6 @@ struct vw {
   void (*set_minmax)(shared_data* sd, float label);
 
   size_t current_pass;
-  size_t current_command;
 
   uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
@@ -232,7 +231,6 @@ struct vw {
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
   size_t total; //total number of nodes
   size_t node; //node id number
-  bool is_noop; // are we a noop learner?
 
   void (*print)(int,float,float,v_array<char>);
   void (*print_text)(int, string, v_array<char>);

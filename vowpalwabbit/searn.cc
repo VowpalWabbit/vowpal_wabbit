@@ -1302,8 +1302,9 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     learner l(srn, LEARNER::generic_driver, searn_learn, searn_finish, all.l.sl);
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
-    
     srn->base = all.l;
+    l.set_base(&(srn->base));
+
     all.searnstr = srn;
     all.holdout_set_off = true;  // TODO: fix holdout so we don't have to do this!
 

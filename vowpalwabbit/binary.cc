@@ -39,6 +39,7 @@ namespace BINARY {
     learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
 
     l.set_finish_example(OAA::finish_example);
+    l.set_base(&(data->base));
     return l;
   }
 }
