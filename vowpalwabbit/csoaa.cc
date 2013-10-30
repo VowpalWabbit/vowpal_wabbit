@@ -1109,8 +1109,8 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       cerr << "ldf requires either [s]ingleline or [m]ultiline argument, possibly with [c]lassifier at the end" << endl;
       throw exception();
     }
-    if (! ld->is_singleline)
-      all.holdout_set_off = true;  // TODO: fix holdout so we don't have to do this!
+
+    all.p->emptylines_separate_examples = !ld->is_singleline;
 
     if (all.add_constant) {
       all.add_constant = false;
