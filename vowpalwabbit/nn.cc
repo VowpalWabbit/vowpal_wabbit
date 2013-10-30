@@ -261,11 +261,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
   void finish(void* d)
   {
     nn* n =(nn*)d;
-    n->base.finish();
     delete n->squared_loss;
     free (n->output_layer.indices.begin);
     free (n->output_layer.atomics[nn_output_namespace].begin);
-    free(n);
   }
 
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -366,8 +364,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n->save_xsubi = n->xsubi;
 
-    learner l(n,LEARNER::generic_driver,learn,finish,all.l.sl);
-
+    learner l(n,LEARNER::generic_driver,learn,all.l.sl);
+    l.set_finish(finish);
     l.set_finish_example(finish_example);
     l.set_end_pass(end_pass);
     l.set_base(&(n->base));

@@ -713,10 +713,6 @@ void end_examples(void* d)
   }
 }
 
-  void finish(void*d) {
-    free(d);
-  }
-
   void finish_example(vw& all, void*, example*ec)
 {}
 
@@ -762,7 +758,7 @@ learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   ld->decay_levels.push_back(0.f);
   
   sl_t sl = {ld, save_load};
-  learner l(ld, LEARNER::generic_driver, learn, finish, sl);
+  learner l(ld, LEARNER::generic_driver, learn, sl);
 
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);  

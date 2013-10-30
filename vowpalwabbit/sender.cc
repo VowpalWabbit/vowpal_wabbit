@@ -104,7 +104,6 @@ void end_examples(void* d)
     s->buf->space.delete_v();
     free(s->delay_ring);
     delete s->buf;
-    free(s);
   }
 
   learner setup(vw& all, po::variables_map& vm, vector<string> pairs)
@@ -122,8 +121,8 @@ void end_examples(void* d)
 
 
   sl_t sl = {NULL, save_load};
-  learner l(s,LEARNER::generic_driver,learn,finish,sl);
-
+  learner l(s,LEARNER::generic_driver,learn,sl);
+  l.set_finish(finish);
   l.set_finish_example(finish_example); 
   l.set_end_examples(end_examples);
   return l;

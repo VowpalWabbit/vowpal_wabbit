@@ -378,7 +378,6 @@ namespace ECT
   void finish(void* d)
   {
     ect* e = (ect*)d;
-    e->base.finish();
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
@@ -453,9 +452,10 @@ namespace ECT
     create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
+    learner l(data, LEARNER::generic_driver, learn, all.l.sl);
     data->base = all.l;
     l.set_finish_example(OAA::finish_example);
+    l.set_finish(finish);
     l.set_base(&(data->base));
 
     return l;

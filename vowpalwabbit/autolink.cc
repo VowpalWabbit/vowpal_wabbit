@@ -44,13 +44,6 @@ namespace ALINK {
     ec->total_sum_feat_sq -= sum_sq;
   }
   
-  void finish(void* d)
-  {
-    autolink* b = (autolink*)d;
-    b->base.finish();
-    free(b);
-  }
-
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     autolink* data = (autolink*)calloc(1,sizeof(autolink));
@@ -65,7 +58,7 @@ namespace ALINK {
 	all.options_from_file.append(ss.str());
       }
 
-    learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
+    learner l(data, LEARNER::generic_driver, learn, all.l.sl);
     l.set_base(&(data->base));
 
     return l;

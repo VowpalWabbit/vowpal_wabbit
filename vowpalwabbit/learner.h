@@ -29,8 +29,7 @@ namespace LEARNER
   inline void generic_end_pass(void* data) {}
   inline void generic_end_examples(void* data) {}
   inline void generic_init_driver(void* data) {}
-  inline void generic_finish(void* data)
-  { cout << "calling generic finish\n";}
+  inline void generic_finish(void* data) {}
 
   const sl_t generic_save_load = {NULL, generic_sl};
 }
@@ -57,18 +56,15 @@ public:
   inline void save_load(io_buf& io, bool read, bool text) { sl.save_loader(sl.sldata, io, read, text); }
 
   //called to clean up state.  Must work under reduction.
-  inline void finish() { finisher(data); }
+  void set_finish(void (*f)(void*)) {finisher = f;}
+  inline void finish() { if (data) {finisher(data); free(data);} if (base) base->finish(); }
 
   //called after learn example for each example.  Not called under reduction.
   inline void finish_example(vw& all, example* ec) { finish_example_f(all, data, ec);}
   void set_finish_example(void (*ef)(vw& all, void*, example*))
   {finish_example_f = ef;}
 
-  void end_pass(){
-    end_pass_f(data); 
-    if (base) 
-      base->end_pass(); 
-  }
+  void end_pass(){ end_pass_f(data); if (base) base->end_pass(); }//autorecursive
   void set_end_pass(void (*ep)(void*)) {end_pass_f = ep;}
 
   //called after parsing of examples is complete.  Not called under Reduction.
@@ -109,13 +105,12 @@ public:
     learn_f = l;
   }
 
-  learner(void *dat, void (*d)(vw* all, void* data), void (*l)(void* data, example*),   void (*f)(void* data), sl_t s)
+  learner(void *dat, void (*d)(vw* all, void* data), void (*l)(void* data, example*), sl_t s)
   {
     set_default();
     data = dat;
     driver = d;
     learn_f = l;
-    finisher = f;
     sl = s;
   }
 };

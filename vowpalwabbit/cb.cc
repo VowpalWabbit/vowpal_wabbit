@@ -645,9 +645,7 @@ namespace CB
   void finish(void* d)
   {
     cb* c=(cb*)d;
-    c->base.finish();
     c->cb_cs_ld.costs.delete_v();
-    free(c);
   }
 
   void finish_example(vw& all, void* data, example* ec)
@@ -741,11 +739,12 @@ namespace CB
 
     all.sd->k = nb_actions;
 
-    learner l(c, LEARNER::generic_driver, learn, finish, all.l.sl);
+    learner l(c, LEARNER::generic_driver, learn, all.l.sl);
     c->base = all.l;
     l.set_finish_example(finish_example); 
     l.set_init_driver(init_driver);
     l.set_base(&(c->base));
+    l.set_finish(finish);
 
     return l;
   }

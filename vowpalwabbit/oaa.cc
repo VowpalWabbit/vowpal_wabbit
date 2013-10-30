@@ -246,13 +246,6 @@ namespace OAA {
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
   }
 
-  void finish(void* data)
-  {    
-    oaa* o=(oaa*)data;
-    o->base.finish();
-    free(o);
-  }
-
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     oaa* data = (oaa*)calloc(1, sizeof(oaa));
@@ -277,7 +270,7 @@ namespace OAA {
     all.weights_per_problem *= data->k;
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
-    learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
+    learner l(data, LEARNER::generic_driver, learn, all.l.sl);
     l.set_finish_example(finish_example);
     l.set_base(&(data->base));
 

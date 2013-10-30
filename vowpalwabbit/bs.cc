@@ -225,13 +225,6 @@ namespace BS {
     VW::finish_example(all, ec);
   }
 
-  void finish(void* data)
-  {    
-    bs* o=(bs*)data;
-    o->base.finish();
-    free(o);
-  }
-
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     bs* data = (bs*)calloc(1, sizeof(bs));
@@ -308,7 +301,7 @@ namespace BS {
     all.weights_per_problem *= data->B;
     data->total_increment = data->increment*(data->B-1);
     data->base = all.l;
-    learner l(data, LEARNER::generic_driver, learn, finish, all.l.sl);
+    learner l(data, LEARNER::generic_driver, learn, all.l.sl);
     l.set_base(&(data->base));
 
     l.set_finish_example(finish_example); 

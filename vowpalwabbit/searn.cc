@@ -528,12 +528,9 @@ namespace Searn
   {
     searn* s = (searn*)d;
     vw* all = s->all;
-    s->base.finish();
-    // free everything
     if (s->task.finalize != NULL)
       s->task.finalize();
     free_memory(*all,*s);
-    free(s);
   }
 
   learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -804,9 +801,10 @@ namespace Searn
     // Initialize things here instead of in drive.
     initialize_memory(*s);
     
-    learner l(s, drive, learn, finish, all.l.sl);
+    learner l(s, drive, learn, all.l.sl);
     s->base = all.l;
     s->all = & all;
+    l.set_finish(finish);
     l.set_base(&(s->base));
     all.holdout_set_off = true;  // TODO: fix holdout so we don't have to do this!
     return l;
@@ -2033,8 +2031,6 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
     if (srn->task->finish != NULL)
       srn->task->finish(*all);
-    if (srn->task->finish != NULL)
-      srn->base.finish();
   }
 
   void ensure_param(float &v, float lo, float hi, float def, const char* string) {
@@ -2187,12 +2183,12 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
 
     srn->task->initialize(all, srn->A);
         
-    //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
-    learner l(srn, LEARNER::generic_driver, searn_learn, searn_finish, all.l.sl);
+    learner l(srn, LEARNER::generic_driver, searn_learn, all.l.sl);
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
     srn->base = all.l;
     l.set_base(&(srn->base));
+    l.set_finish(searn_finish);
 
     all.searnstr = srn;
     all.holdout_set_off = true;  // TODO: fix holdout so we don't have to do this!

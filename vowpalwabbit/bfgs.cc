@@ -811,7 +811,6 @@ void finish(void* d)
   free(b->mem);
   free(b->rho);
   free(b->alpha);
-  free(b);
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
@@ -954,9 +953,10 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
   }
   
   sl_t sl = {b, save_load};
-  learner t(b,LEARNER::generic_driver,learn,finish,sl);
+  learner t(b,LEARNER::generic_driver,learn,sl);
   t.set_init_driver(init_driver);
   t.set_end_pass(end_pass);
+  t.set_finish(finish);
 
   all.l = t;
 

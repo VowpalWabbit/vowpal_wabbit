@@ -219,12 +219,6 @@ void learn(void* d, example* ec)
     }
 }
 
-  void finish(void* d)
-{
-  gd* g = (gd*)d;
-  free(g);
-}
-
 void sync_weights(vw& all) {
   if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
@@ -908,7 +902,7 @@ learner setup(vw& all, po::variables_map& vm)
   }
     
   sl_t sl = {g,save_load};
-  learner ret(g,LEARNER::generic_driver,learn,finish,sl);
+  learner ret(g,LEARNER::generic_driver,learn,sl);
   ret.set_end_pass(end_pass);
   return ret;
 }
