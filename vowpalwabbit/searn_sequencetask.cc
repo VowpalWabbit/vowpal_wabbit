@@ -346,7 +346,6 @@ namespace SequenceTask_Easy {
     float min_cost = lab->costs[0].x;
     for (size_t l=1; l<lab->costs.size(); l++)
       if (lab->costs[l].x < min_cost) min_cost = lab->costs[l].x;
-    
     for (size_t l=0; l<lab->costs.size(); l++)
       if (lab->costs[l].x <= min_cost)
         out->push_back( lab->costs[l].weight_index );

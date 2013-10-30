@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "v_hashmap.h"
 #include "csoaa.h"
+#include <time.h>
 
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
 
@@ -226,7 +227,7 @@ namespace ImperativeSearn {
     bool snapshot_could_match;
     v_array<snapshot_item> snapshot_data;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
-    v_array< CSOAA::label > train_labels;  // which labels are valid at any given time
+    v_array< void* > train_labels;  // which labels are valid at any given time
 
     bool should_produce_string;
     stringstream *pred_string;
@@ -248,6 +249,7 @@ namespace ImperativeSearn {
     bool   allow_current_policy;  // should the current policy be used for training? true for dagger
     bool   rollout_oracle; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
     bool   adaptive_beta; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
+    bool   rollout_all_actions;   // by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
     float  alpha; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
     uint32_t current_policy;      // what policy are we training right now?
     float gamma;                  // for dagger
@@ -256,6 +258,7 @@ namespace ImperativeSearn {
     uint32_t total_number_of_policies;
     bool do_snapshot;
     bool do_fastforward;
+    float subsample_timesteps;
 
     size_t read_example_last_id;
     size_t passes_since_new_policy;
@@ -271,6 +274,10 @@ namespace ImperativeSearn {
 
     learner base;
     vw* all;
+    void* valid_labels;
+    clock_t start_clock_time;
+    
+    example*empty_example;
   };
 
   struct searn_task {
