@@ -148,8 +148,7 @@ vw* parse_args(int argc, char *argv[])
     ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
-    ("searnimp", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
+    ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
@@ -724,10 +723,6 @@ vw* parse_args(int argc, char *argv[])
   }
 
   if (vm.count("searn") || vm_file.count("searn") ) { 
-    if (vm.count("searnimp") || vm_file.count("searnimp")) {
-      cerr << "fail: cannot have both --searn and --searnimp" << endl;
-      throw exception();
-    }
     if (!got_cs && !got_cb) {
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
@@ -735,19 +730,8 @@ vw* parse_args(int argc, char *argv[])
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
+    all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
     all->l = Searn::setup(*all, to_pass_further, vm, vm_file);
-  }
-
-  if (vm.count("searnimp") || vm_file.count("searnimp") ) { 
-    if (!got_cs && !got_cb) {
-      if( vm_file.count("searnimp") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searnimp"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searnimp"]));
-      
-      all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
-      got_cs = true;
-    }
-    all->searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
-    all->l = ImperativeSearn::setup(*all, to_pass_further, vm, vm_file);
   }
 
   if (got_cb && got_mc) {
