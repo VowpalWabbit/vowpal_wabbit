@@ -13,7 +13,6 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "constant.h"
 #include "oaa.h"
-#include "csoaa.h"
 #include "searn_sequencetask.h"
 #include "vw.h"
 
@@ -413,15 +412,10 @@ void finish(vw& vw, searn& srn) {
 
   void get_oracle_labels(example*ec, v_array<uint32_t>*out) {
     out->erase();
-    if (CSOAA::example_is_test(ec))
+    if (OAA::example_is_test(ec))
       return;
-    CSOAA::label *lab = (CSOAA::label*)ec->ld;
-    float min_cost = lab->costs[0].x;
-    for (size_t l=1; l<lab->costs.size(); l++)
-      if (lab->costs[l].x < min_cost) min_cost = lab->costs[l].x;
-    for (size_t l=0; l<lab->costs.size(); l++)
-      if (lab->costs[l].x <= min_cost)
-        out->push_back( lab->costs[l].weight_index );
+    OAA::mc_label *lab = (OAA::mc_label*)ec->ld;
+    out->push_back( (uint32_t)lab->label );
   }
 
   void structured_predict_v1(vw& vw, searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
@@ -447,7 +441,7 @@ void finish(vw& vw, searn& srn) {
       SearnUtil::remove_history_from_example(vw, &dat->hinfo, ec[i]);
       dat->yhat[i+history_length] = prediction;
 
-      if (!CSOAA::example_is_test(ec[i])) {
+      if (!OAA::example_is_test(ec[i])) {
         is_train = true;
         if (dat->yhat[i+history_length] != ystar.last())   // TODO: fix this
           total_loss += 1.0;

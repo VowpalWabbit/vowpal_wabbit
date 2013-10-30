@@ -292,7 +292,6 @@ namespace Searn
   const bool PRINT_DEBUG_INFO =0;
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
   const bool PRINT_UPDATE_EVERY_PASS =0;
-  const bool PRINT_CLOCK_TIME =0;
     
   struct searn {
     // task stuff
@@ -1373,7 +1372,8 @@ namespace ImperativeSearn {
   const char INIT_TEST  = 0;
   const char INIT_TRAIN = 1;
   const char LEARN      = 2;
-  const bool PRINT_CLOCK_TIME =1;
+
+  const bool PRINT_CLOCK_TIME =0;
 
   inline bool isLDF(searn& srn) { return (srn.A == 0); }
 
@@ -1892,7 +1892,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
         generate_training_example(all, srn, srn.learn_example_copy, srn.learn_example_len, aset, srn.learn_losses);
 
         for (size_t n=0; n<srn.learn_example_len; n++) {
-          dealloc_example(CSOAA::delete_label, *srn.learn_example_copy[n]);
+          dealloc_example(OAA::delete_label, *srn.learn_example_copy[n]);
           free(srn.learn_example_copy[n]);
         }
         free(srn.learn_example_copy);
@@ -2350,8 +2350,8 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       throw exception();
     }
 
-    // default to CSOAA labels unless the task wants to override this!
-    *(all.p->lp) = CSOAA::cs_label_parser; 
+    // default to OAA labels unless the task wants to override this!
+    *(all.p->lp) = OAA::mc_label_parser; 
     srn->task->initialize(all, *srn, srn->A, opts, vm, vm_file);
 
     //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
