@@ -57,7 +57,7 @@ public:
 
   //called to clean up state.  Must work under reduction.
   void set_finish(void (*f)(void*)) {finisher = f;}
-  inline void finish() { if (data) {finisher(data); free(data);} if (base) base->finish(); }
+  inline void finish() { if (data) {finisher(data); free(data); } if (base) base->finish(); }
 
   //called after learn example for each example.  Not called under reduction.
   inline void finish_example(vw& all, example* ec) { finish_example_f(all, data, ec);}
