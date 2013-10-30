@@ -239,6 +239,7 @@ vw::vw()
   sd->max_label = 1.;
   
   p = new_parser();
+  p->emptylines_separate_examples = false;
   p->lp = (label_parser*)malloc(sizeof(label_parser));
   *(p->lp) = simple_label;
 
@@ -331,6 +332,8 @@ vw::vw()
   do_reset_source = false;
   holdout_set_off = true;
   holdout_period = 10;
+  holdout_after = 0;
+  check_holdout_every_n_passes = 1;
   early_terminate = false;
 
   max_examples = (size_t)-1;

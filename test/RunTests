@@ -617,13 +617,13 @@ __DATA__
     pred-sets/ref/0002c.predict
 
 # Test 9: label-dependent features with csoaa_ldf
-{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off
     train-sets/ref/cs_test.ldf.csoaa.stdout
     train-sets/ref/cs_test.ldf.csoaa.stderr
     train-sets/ref/cs_test.ldf.csoaa.predict
 
 # Test 10: label-dependent features with wap_ldf
-{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off
     train-sets/ref/cs_test.ldf.wap.stdout
     train-sets/ref/cs_test.ldf.wap.stderr
     train-sets/ref/cs_test.ldf.wap.predict
@@ -639,12 +639,12 @@ __DATA__
     train-sets/ref/multiclass.stderr
 
 # Test 13: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --searn_passes_per_policy 4 --searn_task sequence --searn 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --searn_passes_per_policy 4 --searn_task sequence --searn 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet --holdout_off
     train-sets/ref/searn_wsj.stdout
     train-sets/ref/searn_wsj.stderr
 
 # Test 14: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 5 --wap 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet
+{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 5 --wap 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet --holdout_off
     train-sets/ref/searn_wsj2.dat.stdout
     train-sets/ref/searn_wsj2.dat.stderr
 
@@ -664,7 +664,7 @@ __DATA__
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence --quiet
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence --quiet --holdout_off
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
 

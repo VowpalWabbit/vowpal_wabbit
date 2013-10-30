@@ -881,7 +881,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     out[max_len] = 0;
   }
 
-  void print_update(vw& all, searn* srn)
+void print_update(vw& all, searn* srn)
   {
     if (!srn->printed_output_header) {
       const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
@@ -899,36 +899,42 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     to_short_string(srn->truth_string->str(), 20, true_label);
     to_short_string(srn->pred_string->str() , 20, pred_label);
 
+    float avg_loss = 0.;
+    float avg_loss_since = 0.;
+    if (!all.holdout_set_off && all.current_pass >= 1) {
+      avg_loss       = safediv(all.sd->holdout_sum_loss,                 all.sd->weighted_holdout_examples);
+      avg_loss_since = safediv(all.sd->holdout_sum_loss_since_last_dump, all.sd->weighted_holdout_examples_since_last_dump);
+
+      all.sd->weighted_holdout_examples_since_last_dump = 0;
+      all.sd->holdout_sum_loss_since_last_dump = 0.0;
+    } else {
+      avg_loss       = safediv((float)all.sd->sum_loss, (float)all.sd->weighted_examples);
+      avg_loss_since = safediv((float)all.sd->sum_loss_since_last_dump, (float) (all.sd->weighted_examples - all.sd->old_weighted_examples));
+    }
+
+    fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu",
+            avg_loss,
+            avg_loss_since,
+            (long int)all.sd->example_number,
+            all.sd->weighted_examples,
+            true_label,
+            pred_label,
+            (long unsigned int)srn->num_features,
+            (int)srn->read_example_last_pass,
+            (int)srn->current_policy,
+            (long unsigned int)srn->total_predictions_made,
+            (long unsigned int)srn->total_examples_generated);
+
     if (PRINT_CLOCK_TIME) {
       size_t num_sec = (size_t)(((float)(clock() - srn->start_clock_time)) / CLOCKS_PER_SEC);
-      fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu %15lusec\n",
-              safediv((float)all.sd->sum_loss, (float)all.sd->weighted_examples),
-              safediv((float)all.sd->sum_loss_since_last_dump, (float) (all.sd->weighted_examples - all.sd->old_weighted_examples)),
-              (long int)all.sd->example_number,
-              all.sd->weighted_examples,
-              true_label,
-              pred_label,
-              (long unsigned int)srn->num_features,
-              (int)srn->read_example_last_pass,
-              (int)srn->current_policy,
-              (long unsigned int)srn->total_predictions_made,
-              (long unsigned int)srn->total_examples_generated,
-              num_sec);
-    } else {
-      fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %8lu %5d %5d %15lu %15lu\n",
-              safediv((float)all.sd->sum_loss, (float)all.sd->weighted_examples),
-              safediv((float)all.sd->sum_loss_since_last_dump, (float) (all.sd->weighted_examples - all.sd->old_weighted_examples)),
-              (long int)all.sd->example_number,
-              all.sd->weighted_examples,
-              true_label,
-              pred_label,
-              (long unsigned int)srn->num_features,
-              (int)srn->read_example_last_pass,
-              (int)srn->current_policy,
-              (long unsigned int)srn->total_predictions_made,
-              (long unsigned int)srn->total_examples_generated);
+      fprintf(stderr, " %15lusec", num_sec);
     }
+
+    if (!all.holdout_set_off && all.current_pass >= 1)
+      fprintf(stderr, " h");
     
+    fprintf(stderr, "\n");
+
     all.sd->sum_loss_since_last_dump = 0.0;
     all.sd->old_weighted_examples = all.sd->weighted_examples;
     all.sd->dump_interval *= 2;
@@ -948,12 +954,20 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     }
 
     train_single_example(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
-    if (srn.test_loss >= 0.f) {
+
+    if (srn.ec_seq[0]->test_only) {
+      all.sd->weighted_holdout_examples += 1.f;//test weight seen
+      all.sd->weighted_holdout_examples_since_last_dump += 1.f;
+      all.sd->weighted_holdout_examples_since_last_pass += 1.f;
+      all.sd->holdout_sum_loss += srn.test_loss;
+      all.sd->holdout_sum_loss_since_last_dump += srn.test_loss;
+      all.sd->holdout_sum_loss_since_last_pass += srn.test_loss;//since last pass
+    } else {
+      all.sd->weighted_examples += 1.f;
+      all.sd->total_features += srn.num_features;
       all.sd->sum_loss += srn.test_loss;
       all.sd->sum_loss_since_last_dump += srn.test_loss;
       all.sd->example_number++;
-      all.sd->total_features += srn.num_features;
-      all.sd->weighted_examples += 1.f;
     }
   }
 
@@ -962,7 +976,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     vw* all = srn->all;
 
     bool is_real_example = true;
-    if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all->p->ring_size - 2) { 
+    if (example_is_newline(ec) || srn->ec_seq.size() >= all->p->ring_size - 2) { 
       if (srn->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
 	std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
       }
@@ -970,24 +984,6 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       do_actual_learning(*all, *srn);
       clear_seq(*all, *srn);
       srn->hit_new_pass = false;
-      if (ec->end_pass) {
-        srn->hit_new_pass = true;
-        srn->read_example_last_pass++;
-        srn->passes_since_new_policy++;
-        if (srn->passes_since_new_policy >= srn->passes_per_policy) {
-          srn->passes_since_new_policy = 0;
-          if(all->training)
-            srn->current_policy++;
-          if (srn->current_policy > srn->total_number_of_policies) {
-            std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
-            srn->current_policy = srn->total_number_of_policies;
-          }
-          //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
-          std::stringstream ss;
-          ss << srn->current_policy;
-          VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss.str());
-        }
-      }
       
       //VW::finish_example(*all, ec);
       is_real_example = false;
@@ -1000,8 +996,30 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     }
   }
 
+  void end_pass(void* d) {
+    searn *srn = (searn*)d;
+    vw* all = srn->all;
+    srn->hit_new_pass = true;
+    srn->read_example_last_pass++;
+    srn->passes_since_new_policy++;
+    if (srn->passes_since_new_policy >= srn->passes_per_policy) {
+      srn->passes_since_new_policy = 0;
+      if(all->training)
+        srn->current_policy++;
+      if (srn->current_policy > srn->total_number_of_policies) {
+        std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
+        srn->current_policy = srn->total_number_of_policies;
+      }
+      //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
+      std::stringstream ss;
+      ss << srn->current_policy;
+      VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss.str());
+    }
+  }
+
   void finish_example(vw& all, void* d, example* ec) {
     searn *srn = (searn*)d;
+
     if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) { 
       print_update(all, srn);
       VW::finish_example(all, ec);
@@ -1284,6 +1302,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       mytask->initialize = SequenceTask::initialize;
       mytask->finish = SequenceTask::finish;
       mytask->structured_predict = SequenceTask::structured_predict_v1;
+      all.p->emptylines_separate_examples = true;
 
       srn->task = mytask;
     } else {
@@ -1302,9 +1321,11 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     srn->base = all.l;
     l.set_base(&(srn->base));
     l.set_finish(searn_finish);
+    l.set_end_pass(end_pass);
+    if (!srn->allow_current_policy) // if we're not dagger
+      all.check_holdout_every_n_passes = srn->passes_per_policy;
 
     all.searnstr = srn;
-    all.holdout_set_off = true;  // TODO: fix holdout so we don't have to do this!
 
     srn->start_clock_time = clock();
     
