@@ -301,7 +301,7 @@ namespace BS {
     all.weights_per_problem *= data->B;
     data->total_increment = data->increment*(data->B-1);
     data->base = all.l;
-    learner l(data, LEARNER::generic_driver, learn, all.l.sl);
+    learner l(data, learn, all.l.sl);
     l.set_base(&(data->base));
 
     l.set_finish_example(finish_example); 

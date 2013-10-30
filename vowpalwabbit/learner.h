@@ -38,7 +38,6 @@ struct learner {
 private:
   void* data;
   learner* base;
-  void (*driver)(vw* all, void* data);
   void (*learn_f)(void* data, example*);
   void (*finish_example_f)(vw&, void* data, example*);
   void (*finisher)(void* data);
@@ -77,14 +76,10 @@ public:
 
   void set_base(learner* b) { base=b; }
 
-  //disappearing shortly.
-  inline void drive(vw* all) { driver(all, data); }
-
   void set_default()
   {
     data = NULL;
     base = NULL;
-    driver = LEARNER::generic_driver;
     learn_f = LEARNER::generic_learner;
     finish_example_f = return_simple_example;
     end_pass_f = LEARNER::generic_end_pass;
@@ -97,6 +92,8 @@ public:
   learner() {
     set_default();
   }
+  
+  void driver(vw* all) {LEARNER::generic_driver(all,data);}
 
   learner(void *dat, void (*l)(void* data, example*))
   {
@@ -105,11 +102,10 @@ public:
     learn_f = l;
   }
 
-  learner(void *dat, void (*d)(vw* all, void* data), void (*l)(void* data, example*), sl_t s)
+  learner(void *dat, void (*l)(void* data, example*), sl_t s)
   {
     set_default();
     data = dat;
-    driver = d;
     learn_f = l;
     sl = s;
   }

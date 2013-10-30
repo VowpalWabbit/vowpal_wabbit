@@ -953,7 +953,7 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
   }
   
   sl_t sl = {b, save_load};
-  learner t(b,LEARNER::generic_driver,learn,sl);
+  learner t(b,learn,sl);
   t.set_init_driver(init_driver);
   t.set_end_pass(end_pass);
   t.set_finish(finish);

@@ -29,7 +29,7 @@ namespace BINARY {
     all.sd->binary_label = true;
     binary* data = (binary*)calloc(1,sizeof(binary));
     data->base = all.l;
-    learner l(data, LEARNER::generic_driver, learn, all.l.sl);
+    learner l(data, learn, all.l.sl);
 
     l.set_finish_example(OAA::finish_example);
     l.set_base(&(data->base));

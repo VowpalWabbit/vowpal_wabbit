@@ -394,7 +394,7 @@ namespace CSOAA {
     c->base=all.l;
     all.sd->k = nb_actions;
 
-    learner l(c, LEARNER::generic_driver, learn, all.l.sl);
+    learner l(c, learn, all.l.sl);
     c->base = all.l;
     l.set_finish_example(finish_example);
     l.set_base(&(c->base));
@@ -1120,7 +1120,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
 
     if (ld->is_singleline)
       {
-	learner l(ld, LEARNER::generic_driver, learn_singleline, all.l.sl);
+	learner l(ld, learn_singleline, all.l.sl);
 	ld->base = all.l;
 	l.set_finish_example(finish_example); 
 	l.set_base(&(ld->base));
@@ -1131,7 +1131,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       {
 	ld->read_example_this_loop = 0;
 	ld->need_to_clear = false;
-	learner l(ld, LEARNER::generic_driver, learn_multiline, all.l.sl);
+	learner l(ld, learn_multiline, all.l.sl);
 	ld->base = all.l;
 	l.set_finish_example(finish_multiline_example); 
 	l.set_finish(finish);

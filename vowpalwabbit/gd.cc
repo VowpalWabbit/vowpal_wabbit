@@ -902,7 +902,7 @@ learner setup(vw& all, po::variables_map& vm)
   }
     
   sl_t sl = {g,save_load};
-  learner ret(g,LEARNER::generic_driver,learn,sl);
+  learner ret(g,learn,sl);
   ret.set_end_pass(end_pass);
   return ret;
 }

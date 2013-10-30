@@ -1296,7 +1296,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     srn->task->initialize(all, *srn, srn->A, opts, vm, vm_file);
 
     //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
-    learner l(srn, LEARNER::generic_driver, searn_learn, all.l.sl);
+    learner l(srn, searn_learn, all.l.sl);
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
     srn->base = all.l;

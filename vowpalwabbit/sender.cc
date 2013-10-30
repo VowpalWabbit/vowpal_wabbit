@@ -121,7 +121,7 @@ void end_examples(void* d)
 
 
   sl_t sl = {NULL, save_load};
-  learner l(s,LEARNER::generic_driver,learn,sl);
+  learner l(s,learn,sl);
   l.set_finish(finish);
   l.set_finish_example(finish_example); 
   l.set_end_examples(end_examples);

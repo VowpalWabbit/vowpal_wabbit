@@ -452,7 +452,7 @@ namespace ECT
     create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner l(data, LEARNER::generic_driver, learn, all.l.sl);
+    learner l(data, learn, all.l.sl);
     data->base = all.l;
     l.set_finish_example(OAA::finish_example);
     l.set_finish(finish);

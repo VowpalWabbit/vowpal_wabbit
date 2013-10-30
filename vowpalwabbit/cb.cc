@@ -739,7 +739,7 @@ namespace CB
 
     all.sd->k = nb_actions;
 
-    learner l(c, LEARNER::generic_driver, learn, all.l.sl);
+    learner l(c, learn, all.l.sl);
     c->base = all.l;
     l.set_finish_example(finish_example); 
     l.set_init_driver(init_driver);
