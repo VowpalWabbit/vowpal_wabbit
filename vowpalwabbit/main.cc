@@ -28,6 +28,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   vw *all = parse_args(argc, argv);
+  cerr << "parsed_args" << endl;
   struct timeb t_start, t_end;
   ftime(&t_start);
   
@@ -43,11 +44,11 @@ int main(int argc, char *argv[])
     }
 
   VW::start_parser(*all);
-
+  cerr << "starting driver" << endl;
   all->l.driver(all);
 
   VW::end_parser(*all);
-  
+
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   if(!all->quiet && all->span_server != "")

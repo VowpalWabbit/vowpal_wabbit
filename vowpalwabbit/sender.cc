@@ -54,8 +54,6 @@ namespace SENDER {
   b->flush();
 }
 
-  void save_load(void* d, io_buf& model_file, bool read, bool text) {}
-
 void receive_result(sender& s)
 {
   float res, weight;
@@ -120,8 +118,7 @@ void end_examples(void* d)
   s->delay_ring = (example**) calloc(all.p->ring_size, sizeof(example*));
 
 
-  sl_t sl = {NULL, save_load};
-  learner l(s,learn,sl);
+  learner l(s,learn);
   l.set_finish(finish);
   l.set_finish_example(finish_example); 
   l.set_end_examples(end_examples);

@@ -294,8 +294,7 @@ void end_pass(void* d)
   {
     gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
     data->all = &all;
-    sl_t sl = {data, save_load};
-    learner l(data,learn,sl);
+    learner l(data,learn,save_load);
     l.set_end_pass(end_pass);
     return l;
   }

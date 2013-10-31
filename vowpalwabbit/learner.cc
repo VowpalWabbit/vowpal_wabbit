@@ -6,7 +6,7 @@ void save_predictor(vw& all, string reg_name, size_t current_pass);
 
 namespace LEARNER
 {
-  void generic_driver(vw* all, void* data)
+  void generic_driver(vw* all)
   {
     example* ec = NULL;
 

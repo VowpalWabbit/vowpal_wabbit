@@ -1026,33 +1026,6 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     }
   }
 
-  void searn_drive(vw* all, void *d) {
-    searn *srn = (searn*)d;
-
-    example* ec = NULL;
-    while (true) {
-      if ((ec = VW::get_example(all->p)) != NULL) { // semiblocking operation
-        searn_learn(d, ec);
-        finish_example(*all, srn, ec);
-      } else if (parser_done(all->p)) {
-        //do_actual_learning(*all, *srn);
-        end_examples(srn);
-        return;
-      }
-    }
-
-    if( all->training ) {
-      std::stringstream ss1;
-      std::stringstream ss2;
-      ss1 << ((srn->passes_since_new_policy == 0) ? srn->current_policy : (srn->current_policy+1));
-      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_trained_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss1.str()); 
-      ss2 << srn->total_number_of_policies;
-      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--searn_total_nb_policies", ss2.str());
-    }
-  }
-
   void searn_initialize(vw& all, searn& srn)
   {
     srn.predict = searn_predict;
@@ -1296,7 +1269,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     srn->task->initialize(all, *srn, srn->A, opts, vm, vm_file);
 
     //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
-    learner l(srn, searn_learn, all.l.sl);
+    learner l(srn, searn_learn);
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
     srn->base = all.l;

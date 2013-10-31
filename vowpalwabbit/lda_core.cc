@@ -757,8 +757,7 @@ learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
   
-  sl_t sl = {ld, save_load};
-  learner l(ld, learn, sl);
+  learner l(ld, learn, save_load);
 
   l.set_finish_example(finish_example);
   l.set_end_examples(end_examples);  

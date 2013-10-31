@@ -58,7 +58,7 @@ namespace ALINK {
 	all.options_from_file.append(ss.str());
       }
 
-    learner l(data, learn, all.l.sl);
+    learner l(data, learn);
     l.set_base(&(data->base));
 
     return l;
