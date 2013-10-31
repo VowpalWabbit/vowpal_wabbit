@@ -19,6 +19,47 @@ license as described in the file LICENSE.
 namespace SequenceTask {
   using namespace Searn;
 
+  void initialize(vw& vw, searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+    srn.task_data = NULL;
+    srn.auto_history = true;
+  }
+
+  void finish(vw& vw, searn& srn) { }
+
+  void get_oracle_labels(example*ec, v_array<uint32_t>*out) {
+    out->erase();
+    if (! OAA::example_is_test(ec))
+      out->push_back( ((OAA::mc_label*)ec->ld)->label );
+  }
+
+  void structured_predict_v1(vw& vw, searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) { // TODO: get rid of vw
+    float total_loss  = 0;
+
+    v_array<uint32_t> ystar;
+    for (size_t i=0; i<len; i++) {
+      srn.snapshot(vw, i, 1, &i, sizeof(i), true);
+      srn.snapshot(vw, i, 2, &total_loss, sizeof(total_loss), false);
+
+      get_oracle_labels(ec[i], &ystar);
+
+      size_t prediction = srn.predict(vw, &ec[i], 0, NULL, &ystar);
+
+      if (ystar.size() > 0)
+        total_loss += (float)(prediction != ystar[0]);
+
+      if (output_ss) (*output_ss) << prediction << ' ';
+      if (truth_ss ) (*truth_ss ) << ((ystar.size() == 0) ? '?' : ystar[0]) << ' ';
+    }
+    srn.declare_loss(vw, len, total_loss);
+
+    ystar.erase();  ystar.delete_v();
+  }
+}
+
+/* OLD VERSION THAT EXPLICITLY DOES HISTORY
+namespace SequenceTask {
+  using namespace Searn;
+
   struct sequencetask_data {
     SearnUtil::history_info hinfo;
     v_array<size_t> yhat;
@@ -77,7 +118,7 @@ namespace SequenceTask {
     v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
       srn.snapshot(vw, i, 1, &i, sizeof(i), true);
-      srn.snapshot(vw, i, 2, dat->yhat.begin+i, sizeof(size_t)*history_length, true);
+      srn.snapshot(vw, i, 2, dat->yhat.begin+i, sizeof(uint32_t)*history_length, true);
       srn.snapshot(vw, i, 3, &total_loss, sizeof(total_loss), false);
 
       get_oracle_labels(ec[i], &ystar);
@@ -96,11 +137,4 @@ namespace SequenceTask {
     srn.declare_loss(vw, len, total_loss);
   }
 }
-
-
-
-
-
-
-
-
+*/

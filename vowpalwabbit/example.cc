@@ -86,6 +86,7 @@ example *alloc_example(size_t label_size)
   example* ec = (example*)calloc(1, sizeof(example));
   if (ec == NULL) return NULL;
   ec->ld = calloc(1, label_size);
+  if (ec->ld == NULL) { free(ec); return NULL; }
   ec->in_use = true;
   ec->ft_offset = 0;
   //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
@@ -147,6 +148,7 @@ namespace VW {
     } else if (copy_label) {
       copy_label(dst->ld, src->ld);
     } else {
+      dst->ld = (void*)malloc(label_size);
       memcpy(dst->ld, src->ld, label_size);
     }
   }
