@@ -1287,6 +1287,30 @@ void print_update(vw& all, searn* srn)
   }
 
 
+  void handle_history_options(vw& vw, history_info &hinfo, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+    po::options_description desc("Searn[sequence] options");
+    desc.add_options()
+      ("searn_history",  po::value<size_t>(), "length of history to use")
+      ("searn_features", po::value<size_t>(), "length of history to pair with observed features")
+      ("searn_bigrams",                       "use bigrams from history")
+      ("searn_bigram_features",               "use bigrams from history paired with observed features");
+
+    setup_searn_options(desc, vw, opts, vm, vm_file);
+    
+    check_option<size_t>(hinfo.length, vw, vm, vm_file, "searn_history", false, size_equal,
+                         "warning: you specified a different value for --searn_history than the one loaded from regressor. proceeding with loaded value: ", "");
+    
+    check_option<size_t>(hinfo.features, vw, vm, vm_file, "searn_features", false, size_equal,
+                         "warning: you specified a different value for --searn_features than the one loaded from regressor. proceeding with loaded value: ", "");
+    
+    check_option        (hinfo.bigrams, vw, vm, vm_file, "searn_bigrams", false,
+                         "warning: you specified --searn_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
+    
+    check_option        (hinfo.bigram_features, vw, vm, vm_file, "searn_bigram_features", false,
+                         "warning: you specified --searn_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
+  }
+
+
   learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     searn* srn = (searn*)calloc(1,sizeof(searn));
@@ -1422,9 +1446,14 @@ void print_update(vw& all, searn* srn)
     // set up auto-history if they want it
     if (srn->auto_history) {
       default_info(&srn->hinfo);
-      // TODO: handle command line!
+
+      handle_history_options(all, srn->hinfo, opts, vm, vm_file);
+      
       if (srn->hinfo.length < srn->hinfo.features)
         srn->hinfo.length = srn->hinfo.features;
+      
+      if (srn->hinfo.length == 0)
+        srn->auto_history = false;
     } else {
       srn->hinfo.length = 0;
       srn->hinfo.features = 0;
