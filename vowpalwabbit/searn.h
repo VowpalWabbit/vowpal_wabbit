@@ -37,8 +37,10 @@ namespace SearnUtil
   void add_policy_offset(vw&, example*, uint32_t, uint32_t);
   void remove_policy_offset(vw&, example*, uint32_t, uint32_t);
  
-  void add_history_to_example(vw&, history_info*, example*, history);
-  void remove_history_from_example(vw&, history_info *, example*);
+  void add_history_to_example(vw&, history_info&, example*, history);
+  void remove_history_from_example(vw&, history_info&, example*);
+
+  size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>*ystar, history_info &hinfo, size_t*history);
 }      
 
 namespace Searn {

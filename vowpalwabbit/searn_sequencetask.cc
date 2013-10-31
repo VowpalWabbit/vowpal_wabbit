@@ -26,11 +26,9 @@ namespace SequenceTask {
 
   void initialize(vw& vw, searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     sequencetask_data* dat = new sequencetask_data();
-    dat->hinfo.features        = 0;
-    dat->hinfo.length          = dat->hinfo.features+1;
-    dat->hinfo.bigrams         = dat->hinfo.length > 1;
-    dat->hinfo.bigram_features = false;
     srn.task_data = dat;
+
+    SearnUtil::default_info(&dat->hinfo);
 
     po::options_description desc("Searn[sequence] options");
     desc.add_options()
@@ -53,8 +51,6 @@ namespace SequenceTask {
     check_option        (dat->hinfo.bigram_features, vw, vm, vm_file, "searn_sequencetask_bigram_features", false,
                          "warning: you specified --searn_sequencetask_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
 
-
-    cerr << "dat->hinfo.length = " << dat->hinfo.length << endl;
   }
 
   void finish(vw& vw, searn& srn) {
@@ -67,7 +63,7 @@ namespace SequenceTask {
   void get_oracle_labels(example*ec, v_array<uint32_t>*out) {
     out->erase();
     if (! OAA::example_is_test(ec))
-      out->push_back( (uint32_t)((OAA::mc_label*)ec->ld)->label );
+      out->push_back( ((OAA::mc_label*)ec->ld)->label );
   }
 
   void structured_predict_v1(vw& vw, searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
@@ -86,9 +82,7 @@ namespace SequenceTask {
 
       get_oracle_labels(ec[i], &ystar);
 
-      SearnUtil::add_history_to_example(vw, &dat->hinfo, ec[i], dat->yhat.begin+i);
-      size_t prediction = srn.predict(vw, &ec[i], 0, NULL, &ystar);
-      SearnUtil::remove_history_from_example(vw, &dat->hinfo, ec[i]);
+      size_t prediction = SearnUtil::predict_with_history(vw, ec[i], &ystar, dat->hinfo, dat->yhat.begin+i);
       dat->yhat[i+history_length] = prediction;
 
       if (ystar.size() > 0)
@@ -102,4 +96,11 @@ namespace SequenceTask {
     srn.declare_loss(vw, len, total_loss);
   }
 }
+
+
+
+
+
+
+
 

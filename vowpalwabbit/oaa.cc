@@ -28,7 +28,7 @@ namespace OAA {
 
   char* bufread_label(mc_label* ld, char* c)
   {
-    ld->label = *(float *)c;
+    ld->label = *(uint32_t *)c;
     c += sizeof(ld->label);
     ld->weight = *(float *)c;
     c += sizeof(ld->weight);
@@ -60,7 +60,7 @@ namespace OAA {
 
   char* bufcache_label(mc_label* ld, char* c)
   {
-    *(float *)c = ld->label;
+    *(uint32_t *)c = ld->label;
     c += sizeof(ld->label);
     *(float *)c = ld->weight;
     c += sizeof(ld->weight);
@@ -78,7 +78,7 @@ namespace OAA {
   void default_label(void* v)
   {
     mc_label* ld = (mc_label*) v;
-    ld->label = -1;
+    ld->label = (uint32_t)-1;
     ld->weight = 1.;
   }
 
@@ -94,11 +94,11 @@ namespace OAA {
     case 0:
       break;
     case 1:
-      ld->label = (float)int_of_substring(words[0]);
+      ld->label = int_of_substring(words[0]);
       ld->weight = 1.0;
       break;
     case 2:
-      ld->label = (float)int_of_substring(words[0]);
+      ld->label = int_of_substring(words[0]);
       ld->weight = float_of_substring(words[1]);
       break;
     default:
@@ -161,7 +161,7 @@ namespace OAA {
     mc_label* ld = (mc_label*)ec->ld;
 
     size_t loss = 1;
-    if (ld->label == ec->final_prediction)
+    if (ld->label == (uint32_t)ec->final_prediction)
       loss = 0;
 
     if(ec->test_only)
