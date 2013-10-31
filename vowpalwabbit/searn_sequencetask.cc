@@ -26,11 +26,9 @@ namespace SequenceTask {
 
   void initialize(vw& vw, searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     sequencetask_data* dat = new sequencetask_data();
-    dat->hinfo.features        = 0;
-    dat->hinfo.length          = dat->hinfo.features+1;
-    dat->hinfo.bigrams         = dat->hinfo.length > 1;
-    dat->hinfo.bigram_features = false;
     srn.task_data = dat;
+
+    SearnUtil::default_info(&dat->hinfo);
 
     po::options_description desc("Searn[sequence] options");
     desc.add_options()
@@ -39,86 +37,39 @@ namespace SequenceTask {
       ("searn_sequencetask_bigrams",                       "use bigrams from history")
       ("searn_sequencetask_bigram_features",               "use bigrams from history paired with observed features");
 
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    setup_searn_options(desc, vw, opts, vm, vm_file);
+    
+    check_option<size_t>(dat->hinfo.length, vw, vm, vm_file, "searn_sequencetask_history", false, size_equal,
+                         "warning: you specified a different value for --searn_sequencetask_history than the one loaded from regressor. proceeding with loaded value: ", "");
+    
+    check_option<size_t>(dat->hinfo.features, vw, vm, vm_file, "searn_sequencetask_features", false, size_equal,
+                         "warning: you specified a different value for --searn_sequencetask_features than the one loaded from regressor. proceeding with loaded value: ", "");
+    
+    check_option        (dat->hinfo.bigrams, vw, vm, vm_file, "searn_sequencetask_bigrams", false,
+                         "warning: you specified --searn_sequencetask_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
+    
+    check_option        (dat->hinfo.bigram_features, vw, vm, vm_file, "searn_sequencetask_bigram_features", false,
+                         "warning: you specified --searn_sequencetask_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
 
-    po::parsed_options parsed_file = po::command_line_parser(vw.options_from_file_argc, vw.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
-
-    if(vm_file.count("searn")) { //we loaded a predictor file which contains the options we should use for the sequence task
-      //load all params from file
-      if(vm_file.count("searn_sequencetask_history"))         dat->hinfo.length   = vm_file["searn_sequencetask_history"].as<size_t>();
-      if(vm_file.count("searn_sequencetask_features"))        dat->hinfo.features = vm_file["searn_sequencetask_features"].as<size_t>(); 
-      if(vm_file.count("searn_sequencetask_bigrams"))         dat->hinfo.bigrams = true;
-      if(vm_file.count("searn_sequencetask_bigram_features")) dat->hinfo.bigram_features = true;
-
-      //check if there is a mismatch between what was specified in command line and alert user
-      if( vm.count("searn_sequencetask_history") && dat->hinfo.length != vm["searn_sequencetask_history"].as<size_t>() )
-        std::cerr << "warning: you specified a different value for --searn_sequencetask_history than the one loaded from regressor. Pursuing with loaded value: " << dat->hinfo.length << endl;
-
-      if( vm.count("searn_sequencetask_features") && dat->hinfo.features != vm["searn_sequencetask_features"].as<size_t>() )
-        std::cerr << "warning: you specified a different value for --searn_sequencetask_features than the one loaded from regressor. Pursuing with loaded value: " << dat->hinfo.features << endl;
-
-      if( vm.count("searn_sequencetask_bigrams") && !dat->hinfo.bigrams )
-        std::cerr << "warning: you specified --searn_sequencetask_bigrams but loaded regressor not using bigrams. Pursuing without bigrams." << endl;
-
-      if( vm.count("searn_sequencetask_bigram_features") && !dat->hinfo.bigram_features )
-        std::cerr << "warning: you specified --searn_sequencetask_bigram_features but loaded regressor not using bigram_features. Pursuing without bigram_features." << endl;
-    } else {
-      if (vm.count("searn_sequencetask_bigrams")) {
-        dat->hinfo.bigrams = true;
-        vw.options_from_file.append(" --searn_sequencetask_bigrams");
-      }
-
-      if (vm.count("searn_sequencetask_history")) { 
-        dat->hinfo.length = vm["searn_sequencetask_history"].as<size_t>();
-
-        std::stringstream ss;
-        ss << " --searn_sequencetask_history " << dat->hinfo.length;
-        vw.options_from_file.append(ss.str());
-      }
-
-      if (vm.count("searn_sequencetask_bigram_features")) {
-        dat->hinfo.bigram_features = true;
-        vw.options_from_file.append(" --searn_sequencetask_bigram_features");
-      }
-
-      if (vm.count("searn_sequencetask_features")) {
-        dat->hinfo.features = vm["searn_sequencetask_features"].as<size_t>();
-
-        std::stringstream ss;
-        ss << " --searn_sequencetask_features " << dat->hinfo.features;
-        vw.options_from_file.append(ss.str());
-      }
-    }
   }
 
-void finish(vw& vw, searn& srn) {
+  void finish(vw& vw, searn& srn) {
     sequencetask_data* dat = (sequencetask_data*)srn.task_data;
+    dat->yhat.erase();
     dat->yhat.delete_v();
     delete dat;
   }
 
   void get_oracle_labels(example*ec, v_array<uint32_t>*out) {
     out->erase();
-    if (OAA::example_is_test(ec))
-      return;
-    OAA::mc_label *lab = (OAA::mc_label*)ec->ld;
-    out->push_back( (uint32_t)lab->label );
+    if (! OAA::example_is_test(ec))
+      out->push_back( ((OAA::mc_label*)ec->ld)->label );
   }
 
   void structured_predict_v1(vw& vw, searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
     sequencetask_data* dat = (sequencetask_data*)srn.task_data;
     float total_loss  = 0;
     size_t history_length = max(dat->hinfo.features, dat->hinfo.length);
-    bool is_train = false;
 
     dat->yhat.erase();
     dat->yhat.resize(history_length + len, true); // pad the beginning with zeros for <s>
@@ -131,36 +82,25 @@ void finish(vw& vw, searn& srn) {
 
       get_oracle_labels(ec[i], &ystar);
 
-      size_t prediction;
-      SearnUtil::add_history_to_example(vw, &dat->hinfo, ec[i], dat->yhat.begin+i);
-      prediction = srn.predict(vw, &ec[i], 0, NULL, &ystar);
-      SearnUtil::remove_history_from_example(vw, &dat->hinfo, ec[i]);
+      size_t prediction = SearnUtil::predict_with_history(vw, ec[i], &ystar, dat->hinfo, dat->yhat.begin+i);
       dat->yhat[i+history_length] = prediction;
 
-      if (!OAA::example_is_test(ec[i])) {
-        is_train = true;
-        if (dat->yhat[i+history_length] != ystar.last())   // TODO: fix this
-          total_loss += 1.0;
-      }
+      if (ystar.size() > 0)
+        total_loss += (float)(prediction != ystar[0]);
+
+      if (output_ss) (*output_ss) << prediction << ' ';
+      if (truth_ss ) (*truth_ss ) << ((ystar.size() == 0) ? '?' : ystar[0]) << ' ';
     }
       
-    if (output_ss != NULL) {
-      for (size_t i=0; i<len; i++) {
-        if (i > 0) (*output_ss) << ' ';
-        (*output_ss) << dat->yhat[i+history_length];
-      }
-    }
-    if (truth_ss != NULL) {
-      for (size_t i=0; i<len; i++) {
-        get_oracle_labels(ec[i], &ystar);
-        if (i > 0) (*truth_ss) << ' ';
-        if (ystar.size() > 0) (*truth_ss) << ystar[0];
-        else (*truth_ss) << '?';
-      }
-    }
-    
     ystar.erase();  ystar.delete_v();
-    srn.declare_loss(vw, len, is_train ? total_loss : -1.f);
+    srn.declare_loss(vw, len, total_loss);
   }
 }
+
+
+
+
+
+
+
 

@@ -37,8 +37,10 @@ namespace SearnUtil
   void add_policy_offset(vw&, example*, uint32_t, uint32_t);
   void remove_policy_offset(vw&, example*, uint32_t, uint32_t);
  
-  void add_history_to_example(vw&, history_info*, example*, history);
-  void remove_history_from_example(vw&, history_info *, example*);
+  void add_history_to_example(vw&, history_info&, example*, history);
+  void remove_history_from_example(vw&, history_info&, example*);
+
+  size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>*ystar, history_info &hinfo, size_t*history);
 }      
 
 namespace Searn {
@@ -123,6 +125,15 @@ namespace Searn {
     
     example*empty_example;
   };
+
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string);
+  void check_option(bool& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
+  bool string_equal(string a, string b);
+  bool float_equal(float a, float b);
+  bool uint32_equal(uint32_t a, uint32_t b);
+  bool size_equal(size_t a, size_t b);
+  void setup_searn_options(po::options_description& desc, vw&vw, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file);
+
 
   struct searn_task {
     void (*initialize)(vw&,searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);

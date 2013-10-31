@@ -261,7 +261,7 @@ namespace ECT
 
     e.tournaments_won.erase();
 
-    uint32_t id = e.directions[(uint32_t)(mc->label)-1].winner;
+    uint32_t id = e.directions[mc->label - 1].winner;
     bool left = e.directions[id].left == mc->label - 1;
     do
       {

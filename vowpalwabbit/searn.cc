@@ -118,11 +118,12 @@ namespace SearnUtil
     return pid;
   }
 
-  void add_history_to_example(vw&all, history_info *hinfo, example* ec, history h)
+  float history_value = 1.;
+
+  void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h)
   {
-    float history_value = 1.;
     uint64_t v0, v1, v, max_string_length = 0;
-    uint32_t total_length = (uint32_t)max(hinfo->features, hinfo->length);
+    uint32_t total_length = (uint32_t)max(hinfo.features, hinfo.length);
     uint32_t wpp = all.weights_per_problem * all.reg.stride;
     if (total_length == 0) return;
     if (h == NULL) {
@@ -136,7 +137,7 @@ namespace SearnUtil
     }
 
     for (uint32_t t=1; t<=total_length; t++) {
-      v0 = (h[hinfo->length-t] * quadratic_constant + t) * history_constant;
+      v0 = (h[hinfo.length-t] * quadratic_constant + t) * history_constant;
       // add the basic history features
       feature temp = {history_value, (uint32_t) ( (v0*wpp) & all.reg.weight_mask )};
       ec->atomics[history_namespace].push_back(temp);
@@ -147,14 +148,14 @@ namespace SearnUtil
         strcpy(a_feature.space, audit_feature_space.c_str());
 
         a_feature.feature = (char*)calloc_or_die(5 + 2*max_string_length, sizeof(char));
-        sprintf(a_feature.feature, "ug@%d=%d", (int)t, (int)h[hinfo->length-t]);
+        sprintf(a_feature.feature, "ug@%d=%d", (int)t, (int)h[hinfo.length-t]);
 
         ec->audit_features[history_namespace].push_back(a_feature);
       }
 
       // add the bigram features
-      if ((t > 1) && hinfo->bigrams) {
-        v1 = (v0 * cubic_constant + h[hinfo->length-t+1]) * history_constant;
+      if ((t > 1) && hinfo.bigrams) {
+        v1 = (v0 * cubic_constant + h[hinfo.length-t+1]) * history_constant;
 
         feature temp = {history_value, (uint32_t) ( (v1*wpp) & all.reg.weight_mask )};
         ec->atomics[history_namespace].push_back(temp);
@@ -165,7 +166,7 @@ namespace SearnUtil
           strcpy(a_feature.space, audit_feature_space.c_str());
 
           a_feature.feature = (char*)calloc_or_die(6 + 3*max_string_length, sizeof(char));
-          sprintf(a_feature.feature, "bg@%d=%d-%d", (int)t-1, (int)h[hinfo->length-t], (int)h[hinfo->length-t+1]);
+          sprintf(a_feature.feature, "bg@%d=%d-%d", (int)t-1, (int)h[hinfo.length-t], (int)h[hinfo.length-t+1]);
 
           ec->audit_features[history_namespace].push_back(a_feature);
         }
@@ -175,7 +176,7 @@ namespace SearnUtil
 
     string fstring;
 
-    if (hinfo->features > 0) {
+    if (hinfo.features > 0) {
       for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {
         int feature_index = 0;
         for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++) {
@@ -192,8 +193,8 @@ namespace SearnUtil
 
           v = f->weight_index + history_constant;
 
-          for (uint32_t t=1; t<=hinfo->features; t++) {
-            v0 = (h[hinfo->length-t] * quadratic_constant + t) * history_constant;
+          for (uint32_t t=1; t<=hinfo.features; t++) {
+            v0 = (h[hinfo.length-t] * quadratic_constant + t) * history_constant;
           
             // add the history/feature pair
             feature temp = {history_value, (uint32_t) ( ((v0 + v)*wpp) & all.reg.weight_mask )};
@@ -205,15 +206,15 @@ namespace SearnUtil
               strcpy(a_feature.space, audit_feature_space.c_str());
 
               a_feature.feature = (char*)calloc_or_die(8 + 2*max_string_length + fstring.length(), sizeof(char));
-              sprintf(a_feature.feature, "ug+f@%d=%d=%s", (int)t, (int)h[hinfo->length-t], fstring.c_str());
+              sprintf(a_feature.feature, "ug+f@%d=%d=%s", (int)t, (int)h[hinfo.length-t], fstring.c_str());
 
               ec->audit_features[history_namespace].push_back(a_feature);
             }
 
 
             // add the bigram
-            if ((t > 0) && hinfo->bigram_features) {
-              v1 = (v0 * cubic_constant + h[hinfo->length-t+1]) * history_constant;
+            if ((t > 0) && hinfo.bigram_features) {
+              v1 = (v0 * cubic_constant + h[hinfo.length-t+1]) * history_constant;
 
               feature temp = {history_value, (uint32_t) ( ((v + v1)*wpp) & all.reg.weight_mask )};
               ec->atomics[history_namespace].push_back(temp);
@@ -224,7 +225,7 @@ namespace SearnUtil
                 strcpy(a_feature.space, audit_feature_space.c_str());
 
                 a_feature.feature = (char*)calloc_or_die(9 + 3*max_string_length + fstring.length(), sizeof(char));
-                sprintf(a_feature.feature, "bg+f@%d=%d-%d=%s", (int)t-1, (int)h[hinfo->length-t], (int)h[hinfo->length-t+1], fstring.c_str());
+                sprintf(a_feature.feature, "bg+f@%d=%d-%d=%s", (int)t-1, (int)h[hinfo.length-t], (int)h[hinfo.length-t+1], fstring.c_str());
 
                 ec->audit_features[history_namespace].push_back(a_feature);
               }
@@ -241,9 +242,9 @@ namespace SearnUtil
     ec->num_features += ec->atomics[history_namespace].size();
   }
 
-  void remove_history_from_example(vw&all, history_info *hinfo, example* ec)
+  void remove_history_from_example(vw&all, history_info &hinfo, example* ec)
   {
-    size_t total_length = max(hinfo->features, hinfo->length);
+    size_t total_length = max(hinfo.features, hinfo.length);
     if (total_length == 0) return;
 
     if (ec->indices.size() == 0) {
@@ -257,7 +258,7 @@ namespace SearnUtil
     }
 
     ec->num_features -= ec->atomics[history_namespace].size();
-    ec->total_sum_feat_sq -= ec->sum_feat_sq[history_namespace];
+    ec->total_sum_feat_sq -= ec->sum_feat_sq[history_namespace] * history_value;
     ec->sum_feat_sq[history_namespace] = 0;
     ec->atomics[history_namespace].erase();
     if (all.audit) {
@@ -274,6 +275,13 @@ namespace SearnUtil
       ec->audit_features[history_namespace].erase();
     }
     ec->indices.decr();
+  }
+
+  size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>* ystar, history_info& hinfo, size_t*history) {
+    add_history_to_example(vw, hinfo, ec, history);
+    size_t prediction = ((Searn::searn*)vw.searnstr)->predict(vw, &ec, 0, NULL, ystar);
+    remove_history_from_example(vw, hinfo, ec);
+    return prediction;
   }
 
 }
@@ -659,6 +667,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
   }
 
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
+
   v_array<size_t> get_training_timesteps(vw& all, searn& srn)
   {
     v_array<size_t> timesteps;
@@ -777,7 +786,8 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     //clog << "======================================== LEARN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
     srn.state = LEARN;
     v_array<size_t> tset = get_training_timesteps(all, srn);
-    for (size_t t=0; t<tset.size(); t++) {
+    for (size_t tid=0; tid<tset.size(); tid++) {
+      size_t t = tset[tid];
       void *aset = srn.train_labels[t];
       srn.learn_t = t;
       srn.learn_losses.erase();
@@ -1158,6 +1168,11 @@ void print_update(vw& all, searn* srn)
     }
   }
 
+  bool string_equal(string a, string b) { return a.compare(b) == 0; }
+  bool float_equal(float a, float b) { return fabs(a-b) < 1e-6; }
+  bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
+  bool size_equal(size_t a, size_t b) { return a==b; }
+
   template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
     if (vm_file.count(opt_name)) { // loaded from regressor file
       ret = vm_file[opt_name].as<T>();
@@ -1169,7 +1184,7 @@ void print_update(vw& all, searn* srn)
     } else if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
       stringstream ss;
-      ss << " " << opt_name << " " << ret;
+      ss << " --" << opt_name << " " << ret;
       all.options_from_file.append(ss.str());
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
@@ -1177,10 +1192,39 @@ void print_update(vw& all, searn* srn)
     }
   }  
 
-  bool string_equal(string a, string b) { return a.compare(b) == 0; }
-  bool float_equal(float a, float b) { return fabs(a-b) < 1e-6; }
-  bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
-  bool size_equal(size_t a, size_t b) { return a==b; }
+  void check_option(bool& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
+    if (vm_file.count(opt_name)) { // loaded from regressor file
+      ret = true;
+      if (!vm.count(opt_name)) {
+        if (default_to_cmdline)
+          ret = false;
+        std::cerr << mismatch_error_string << ret << endl;
+      }
+    } else if (vm.count(opt_name)) {
+      ret = true;
+      stringstream ss;
+      ss << " " << opt_name;
+      all.options_from_file.append(ss.str());
+    } else {
+      ret = false;
+    }
+  }  
+
+  void setup_searn_options(po::options_description& desc, vw&vw, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+    po::parsed_options parsed = po::command_line_parser(opts).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+
+    po::parsed_options parsed_file = po::command_line_parser(vw.options_from_file_argc, vw.options_from_file_argv).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    po::store(parsed_file, vm_file);
+    po::notify(vm_file);
+  }
+
 
   learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
