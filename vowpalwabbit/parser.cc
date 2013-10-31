@@ -139,10 +139,13 @@ void handle_sigterm (int)
   got_sigterm = true;
 }
 
-bool is_test_only(uint32_t counter, uint32_t period, bool holdout_off)
+bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdout_off)
 {
   if(holdout_off) return false;
-  return (counter % period == 0);
+  if (after == 0) // hold out by period
+    return (counter % period == 0);
+  else // hold out by position
+    return (counter+1 >= after);
 }
 
 parser* new_parser()
@@ -741,8 +744,10 @@ void setup_example(vw& all, example* ae)
   ae->loss = 0.;
   
   ae->example_counter = (size_t)(all.p->parsed_examples + 1);
-  all.p->in_pass_counter++;
-  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_set_off);
+  if ((!all.p->emptylines_separate_examples) || example_is_newline(ae))
+    all.p->in_pass_counter++;
+
+  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off);
   ae->global_weight = all.p->lp->get_weight(ae->ld);
   all.sd->t += ae->global_weight;
   ae->example_t = (float)all.sd->t;

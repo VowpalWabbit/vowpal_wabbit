@@ -17,7 +17,7 @@ namespace OAA
 {
 
   struct mc_label {
-    float label;
+    uint32_t label;
     float weight;
   };
   
