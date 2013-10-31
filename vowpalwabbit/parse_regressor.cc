@@ -332,19 +332,24 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
     save_load_header(all, io_temp_mask, true, false);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
-    for (size_t j = 0; j < length; j++){	 
-      if(all.reg.weight_vector[j*all.reg.stride] != 0.)
+    for (size_t j = 0; j < length; j++){
+      if(all.reg.weight_vector[j*all.reg.stride] != 0.) {
         all.reg.weight_vector[j*all.reg.stride + all.feature_mask_idx] = 1.;
+
+        // need to clear the weights back out
+        all.reg.weight_vector[j*all.reg.stride] = 0.;
+      }
     }
 
-    // Deal with the over-written header from initial regressor
+    // Deal with the over-written header and weights from initial regressor
     if (vm.count("initial_regressor")) {
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
 
-      // Load original header again.
+      // Load original header and weights again.
       io_buf io_temp;
       io_temp.open_file(init_filename[0].c_str(), false, io_buf::READ);
       save_load_header(all, io_temp, true, false);
+      all.l->save_load(io_temp, true, false);
       io_temp.close_file();
     } else {
       // If no initial regressor, just clear out the options loaded from the header.
