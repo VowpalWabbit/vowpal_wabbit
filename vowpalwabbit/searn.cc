@@ -667,6 +667,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
   }
 
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
+
   v_array<size_t> get_training_timesteps(vw& all, searn& srn)
   {
     v_array<size_t> timesteps;
@@ -785,7 +786,8 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     //clog << "======================================== LEARN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
     srn.state = LEARN;
     v_array<size_t> tset = get_training_timesteps(all, srn);
-    for (size_t t=0; t<tset.size(); t++) {
+    for (size_t tid=0; tid<tset.size(); tid++) {
+      size_t t = tset[tid];
       void *aset = srn.train_labels[t];
       srn.learn_t = t;
       srn.learn_losses.erase();
