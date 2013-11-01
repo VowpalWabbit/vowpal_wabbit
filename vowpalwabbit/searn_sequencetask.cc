@@ -20,8 +20,9 @@ namespace SequenceTask {
   using namespace Searn;
 
   void initialize(vw& vw, searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.task_data = NULL;
-    srn.auto_history = true;
+    srn.task_data            = NULL;  // we don't have any of our own data
+    srn.auto_history         = true;  // automatically add history features to our examples, please
+    srn.examples_dont_change = true;  // we don't do any internal example munging
   }
 
   void finish(vw& vw, searn& srn) { }
@@ -37,12 +38,12 @@ namespace SequenceTask {
 
     v_array<uint32_t> ystar;
     for (size_t i=0; i<len; i++) {
-      srn.snapshot(vw, i, 1, &i, sizeof(i), true);
-      srn.snapshot(vw, i, 2, &total_loss, sizeof(total_loss), false);
+      srn.snapshot(i, 1, &i, sizeof(i), true);
+      srn.snapshot(i, 2, &total_loss, sizeof(total_loss), false);
 
       get_oracle_labels(ec[i], &ystar);
 
-      size_t prediction = srn.predict(vw, &ec[i], 0, NULL, &ystar);
+      size_t prediction = srn.predict(&ec[i], 0, NULL, &ystar);
 
       if (ystar.size() > 0)
         total_loss += (float)(prediction != ystar[0]);
@@ -50,7 +51,7 @@ namespace SequenceTask {
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << ((ystar.size() == 0) ? '?' : ystar[0]) << ' ';
     }
-    srn.declare_loss(vw, len, total_loss);
+    srn.declare_loss(len, total_loss);
 
     ystar.erase();  ystar.delete_v();
   }

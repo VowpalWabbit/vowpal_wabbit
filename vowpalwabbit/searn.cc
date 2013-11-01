@@ -515,10 +515,15 @@ namespace Searn {
         if (srn->learn_example_copy == NULL) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
           srn->learn_example_len = num_to_copy;
+          // TODO: move the calloc outside
           srn->learn_example_copy = (example**)SearnUtil::calloc_or_die(num_to_copy, sizeof(example*));
           for (size_t n=0; n<num_to_copy; n++) {
-            srn->learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
-            VW::copy_example_data(all.audit, srn->learn_example_copy[n], ecs[n], sizeof(OAA::mc_label), NULL);
+            if (srn->examples_dont_change)
+              srn->learn_example_copy[n] = ecs[n];
+            else {
+              srn->learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
+              VW::copy_example_data(all.audit, srn->learn_example_copy[n], ecs[n], sizeof(OAA::mc_label), NULL);
+            }
           }
           //cerr << "copying example to " << srn->learn_example_copy << endl;
         }
@@ -955,10 +960,11 @@ bool snapshot_binary_search_lt(v_array<snapshot_item> a, size_t desired_t, size_
         if (srn.learn_example_copy != NULL) {
           generate_training_example(all, srn, srn.learn_example_copy, srn.learn_example_len, aset, srn.learn_losses);
 
-          for (size_t n=0; n<srn.learn_example_len; n++) {
-            dealloc_example(OAA::delete_label, *srn.learn_example_copy[n]);
-            free(srn.learn_example_copy[n]);
-          }
+          if (!srn.examples_dont_change)
+            for (size_t n=0; n<srn.learn_example_len; n++) {
+              dealloc_example(OAA::delete_label, *srn.learn_example_copy[n]);
+              free(srn.learn_example_copy[n]);
+            }
           free(srn.learn_example_copy);
           srn.learn_example_copy = NULL;
           srn.learn_example_len  = 0;
@@ -1206,10 +1212,12 @@ void print_update(vw& all, searn* srn)
 
   void searn_initialize(vw& all, searn& srn)
   {
-    srn.predict = searn_predict;
-    srn.declare_loss = searn_declare_loss;
-    srn.snapshot = searn_snapshot;
+    srn.predict_f = searn_predict;
+    srn.declare_loss_f = searn_declare_loss;
+    srn.snapshot_f = searn_snapshot;
 
+    srn.examples_dont_change = false;
+    
     srn.beta = 0.5;
     srn.allow_current_policy = false;
     srn.rollout_oracle = false;

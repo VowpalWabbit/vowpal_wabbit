@@ -58,16 +58,26 @@ namespace Searn {
 
   struct searn {
     // functions that you will call
-    uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
-    void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
-    void     (*snapshot)(vw&,size_t,size_t,void*,size_t,bool);
+    inline uint32_t predict(example** ecs, size_t ec_len, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar)
+    { return this->predict_f(*this->all, ecs, ec_len, yallowed, ystar); }
+
+    inline void     declare_loss(size_t predictions_since_last, float incr_loss)
+    { return this->declare_loss_f(*this->all, predictions_since_last, incr_loss); }
+
+    inline void     snapshot(size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
+    { return this->snapshot_f(*this->all, index, tag, data_ptr, sizeof_data, used_for_prediction); }
 
     // structure that you must set, and any associated data you want to store
     searn_task* task;
     void* task_data;
     bool auto_history;  // do you want us to automatically add history features?
-    
+    bool examples_dont_change;  // set to true if you don't do any internal example munging
+
     // data that you should not look at.  ever.
+    uint32_t (*predict_f)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
+    void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
+    void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
+
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
