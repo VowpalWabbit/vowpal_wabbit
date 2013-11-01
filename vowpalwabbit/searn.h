@@ -58,16 +58,30 @@ namespace Searn {
 
   struct searn {
     // functions that you will call
-    uint32_t (*predict)(vw&,learner& base, example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
-    void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
-    void     (*snapshot)(vw&,size_t,size_t,void*,size_t,bool);
+
+    inline uint32_t predict(example** ecs, size_t ec_len, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for LDF
+    { return this->predict_f(*this->all, *this->base_learner, ecs, ec_len, yallowed, ystar); }
+
+    inline uint32_t predict(example* ec, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for not LDF
+    { return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, ystar); }
+
+    inline void     declare_loss(size_t predictions_since_last, float incr_loss)
+    { return this->declare_loss_f(*this->all, predictions_since_last, incr_loss); }
+
+    inline void     snapshot(size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
+    { return this->snapshot_f(*this->all, index, tag, data_ptr, sizeof_data, used_for_prediction); }
 
     // structure that you must set, and any associated data you want to store
     searn_task* task;
     void* task_data;
     bool auto_history;  // do you want us to automatically add history features?
-    
+    bool examples_dont_change;  // set to true if you don't do any internal example munging
+
     // data that you should not look at.  ever.
+    uint32_t (*predict_f)(vw&,learner&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
+    void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
+    void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
+    
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
@@ -80,7 +94,9 @@ namespace Searn {
     v_array< void* > train_labels;  // which labels are valid at any given time
     v_array<uint32_t> rollout_action; // for auto_history, we need a space other than train_action for rollouts
     history_info hinfo;   // default history info for auto-history
-
+    string *neighbor_features_string;
+    v_array<int32_t> neighbor_features; // ugly encoding of neighbor feature requirements
+    
     bool should_produce_string;
     stringstream *pred_string;
     stringstream *truth_string;
@@ -124,7 +140,7 @@ namespace Searn {
 
     v_array<example*> ec_seq;
 
-    learner* base;
+    learner* base_learner;
     vw* all;
     void* valid_labels;
     clock_t start_clock_time;
@@ -142,9 +158,9 @@ namespace Searn {
 
 
   struct searn_task {
-    void (*initialize)(vw&,searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
-    void (*finish)(vw&,searn&);
-    void (*structured_predict)(vw&, searn&, learner&, example**,size_t,stringstream*,stringstream*);
+    void (*initialize)(searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
+    void (*finish)(searn&);
+    void (*structured_predict)(searn&, example**,size_t,stringstream*,stringstream*);
   };
 
   learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
