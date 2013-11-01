@@ -54,8 +54,6 @@ namespace SENDER {
   b->flush();
 }
 
-  void save_load(void* d, io_buf& model_file, bool read, bool text) {}
-
 void receive_result(sender& s)
 {
   float res, weight;
@@ -71,7 +69,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, ec);  
 }
 
-  void learn(void* d, example* ec) 
+  void learn(void* d, learner& base, example* ec) 
   { 
     sender* s = (sender*)d;
     if (s->received_index + s->all->p->ring_size - 1 == s->sent_index)
@@ -106,7 +104,7 @@ void end_examples(void* d)
     delete s->buf;
   }
 
-  learner setup(vw& all, po::variables_map& vm, vector<string> pairs)
+  learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender* s = (sender*)calloc(1,sizeof(sender));
   s->sd = -1;
@@ -119,12 +117,10 @@ void end_examples(void* d)
   s->all = &all;
   s->delay_ring = (example**) calloc(all.p->ring_size, sizeof(example*));
 
-
-  sl_t sl = {NULL, save_load};
-  learner l(s,learn,sl);
-  l.set_finish(finish);
-  l.set_finish_example(finish_example); 
-  l.set_end_examples(end_examples);
+  learner* l = new learner(s,learn);
+  l->set_finish(finish);
+  l->set_finish_example(finish_example); 
+  l->set_end_examples(end_examples);
   return l;
 }
 

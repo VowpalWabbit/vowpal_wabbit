@@ -44,10 +44,10 @@ int main(int argc, char *argv[])
 
   VW::start_parser(*all);
 
-  all->l.driver(all);
+  all->l->driver(all);
 
   VW::end_parser(*all);
-  
+
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   if(!all->quiet && all->span_server != "")

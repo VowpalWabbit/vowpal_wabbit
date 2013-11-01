@@ -54,7 +54,6 @@ namespace ECT
     
     v_array<bool> tournaments_won;
 
-    learner base;
     vw* all;
   };
 
@@ -191,7 +190,7 @@ namespace ECT
     }
   }
 
-  float ect_predict(vw& all, ect& e, example* ec)
+  float ect_predict(vw& all, ect& e, learner& base, example* ec)
   {
     if (e.k == (size_t)1)
       return 1;
@@ -212,9 +211,8 @@ namespace ECT
 	    offset = problem_number*e.increment;
 	  
             update_example_indicies(all.audit, ec,offset);
-            ec->partial_prediction = 0;
 	  
-            e.base.learn(ec);
+            base.learn(ec);
 	  
             update_example_indicies(all.audit, ec,-offset);
 	    
@@ -231,7 +229,7 @@ namespace ECT
 	
 	ec->partial_prediction = 0;
 	update_example_indicies(all.audit, ec,offset);
-	e.base.learn(ec);
+	base.learn(ec);
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -251,7 +249,7 @@ namespace ECT
     return false;
   }
 
-  void ect_train(vw& all, ect& e, example* ec)
+  void ect_train(vw& all, ect& e, learner& base, example* ec)
   {
     if (e.k == 1)//nothing to do
       return;
@@ -278,10 +276,10 @@ namespace ECT
 	update_example_indicies(all.audit, ec,offset);
 	
 	ec->partial_prediction = 0;
-	e.base.learn(ec);
+	base.learn(ec);
 	simple_temp.weight = 0.;
 	ec->partial_prediction = 0;
-	e.base.learn(ec);//inefficient, we should extract final prediction exactly.
+	base.learn(ec);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
 	update_example_indicies(all.audit, ec,-offset);
 
@@ -340,7 +338,7 @@ namespace ECT
                 update_example_indicies(all.audit, ec,offset);
                 ec->partial_prediction = 0;
 	      
-				e.base.learn(ec);
+		base.learn(ec);
 		
                 update_example_indicies(all.audit, ec,-offset);
 		
@@ -357,7 +355,7 @@ namespace ECT
       }
   }
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     ect* e=(ect*)d;
     vw* all = e->all;
@@ -365,11 +363,11 @@ namespace ECT
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
       cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
-    float new_label = ect_predict(*all, *e, ec);
+    float new_label = ect_predict(*all, *e, base, ec);
     ec->ld = mc;
     
     if (mc->label != (uint32_t)-1 && all->training)
-      ect_train(*all, *e, ec);
+      ect_train(*all, *e, base, ec);
     ec->ld = mc;
     
     ec->final_prediction = new_label;
@@ -395,7 +393,7 @@ namespace ECT
     e->tournaments_won.delete_v();
   }
   
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ect* data = (ect*)calloc(1, sizeof(ect));
     po::options_description desc("ECT options");
@@ -452,11 +450,9 @@ namespace ECT
     create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner l(data, learn, all.l.sl);
-    data->base = all.l;
-    l.set_finish_example(OAA::finish_example);
-    l.set_finish(finish);
-    l.set_base(&(data->base));
+    learner* l = new learner(data, learn, all.l);
+    l->set_finish_example(OAA::finish_example);
+    l->set_finish(finish);
 
     return l;
   }

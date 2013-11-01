@@ -58,8 +58,9 @@ namespace Searn {
 
   struct searn {
     // functions that you will call
+
     inline uint32_t predict(example** ecs, size_t ec_len, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar)
-    { return this->predict_f(*this->all, ecs, ec_len, yallowed, ystar); }
+    { return this->predict_f(*this->all, *this->base_learner, ecs, ec_len, yallowed, ystar); }
 
     inline void     declare_loss(size_t predictions_since_last, float incr_loss)
     { return this->declare_loss_f(*this->all, predictions_since_last, incr_loss); }
@@ -74,10 +75,10 @@ namespace Searn {
     bool examples_dont_change;  // set to true if you don't do any internal example munging
 
     // data that you should not look at.  ever.
-    uint32_t (*predict_f)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
+    uint32_t (*predict_f)(vw&,learner&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
     void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
-
+    
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
@@ -136,7 +137,7 @@ namespace Searn {
 
     v_array<example*> ec_seq;
 
-    learner base;
+    learner* base_learner;
     vw* all;
     void* valid_labels;
     clock_t start_clock_time;
@@ -154,12 +155,12 @@ namespace Searn {
 
 
   struct searn_task {
-    void (*initialize)(vw&,searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
-    void (*finish)(vw&,searn&);
-    void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
+    void (*initialize)(searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
+    void (*finish)(searn&);
+    void (*structured_predict)(searn&, example**,size_t,stringstream*,stringstream*);
   };
 
-  learner setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);

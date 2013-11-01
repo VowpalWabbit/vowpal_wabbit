@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #define LDA_CORE_H
 
 namespace LDA{
-  learner setup(vw&, std::vector<std::string>&, po::variables_map&);
+  learner* setup(vw&, std::vector<std::string>&, po::variables_map&);
 }
 
 #endif

@@ -681,7 +681,7 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(void* d, example* ec) 
+  void learn(void* d, learner& base, example* ec) 
   {
     lda* l = (lda*)d;
     size_t num_ex = l->examples.size();
@@ -716,7 +716,7 @@ void end_examples(void* d)
   void finish_example(vw& all, void*, example*ec)
 {}
 
-learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
   lda* ld = (lda*)calloc(1,sizeof(lda));
   ld->all = &all;
@@ -757,11 +757,10 @@ learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
   
-  sl_t sl = {ld, save_load};
-  learner l(ld, learn, sl);
-
-  l.set_finish_example(finish_example);
-  l.set_end_examples(end_examples);  
+  learner* l = new learner(ld, learn);
+  l->set_save_load(save_load);
+  l->set_finish_example(finish_example);
+  l->set_end_examples(end_examples);  
   
   return l;
 }

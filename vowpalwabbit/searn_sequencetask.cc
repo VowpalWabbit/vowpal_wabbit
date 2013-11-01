@@ -19,13 +19,13 @@ license as described in the file LICENSE.
 namespace SequenceTask {
   using namespace Searn;
 
-  void initialize(vw& vw, searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     srn.task_data            = NULL;  // we don't have any of our own data
     srn.auto_history         = true;  // automatically add history features to our examples, please
     srn.examples_dont_change = true;  // we don't do any internal example munging
   }
 
-  void finish(vw& vw, searn& srn) { }
+  void finish(searn& srn) { }
 
   void get_oracle_labels(example*ec, v_array<uint32_t>*out) {
     out->erase();
@@ -33,7 +33,7 @@ namespace SequenceTask {
       out->push_back( ((OAA::mc_label*)ec->ld)->label );
   }
 
-  void structured_predict_v1(vw& vw, searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) { // TODO: get rid of vw
+  void structured_predict_v1(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) { // TODO: get rid of vw
     float total_loss  = 0;
 
     v_array<uint32_t> ystar;

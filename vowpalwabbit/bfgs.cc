@@ -782,7 +782,7 @@ void end_pass(void*d)
       }
 }
 
-void learn(void* d, example* ec)
+void learn(void* d, learner& base, example* ec)
 {
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
@@ -931,7 +931,7 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     b->backstep_on = true;
   }
 
-void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
 {
   bfgs* b = (bfgs*)calloc(1,sizeof(bfgs));
   b->all = &all;
@@ -952,17 +952,6 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
       b->early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
   
-  sl_t sl = {b, save_load};
-  learner t(b,learn,sl);
-  t.set_init_driver(init_driver);
-  t.set_end_pass(end_pass);
-  t.set_finish(finish);
-
-  all.l = t;
-
-  all.bfgs = true;
-  all.reg.stride = 4;
-  
   if (vm.count("hessian_on") || all.m==0) {
     all.hessian_on = true;
   }
@@ -981,5 +970,16 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
       cout << "you must make at least 2 passes to use BFGS" << endl;
       throw exception();
     }
+
+  all.bfgs = true;
+  all.reg.stride = 4;
+
+  learner* l = new learner(b,learn);
+  l->set_save_load(save_load);
+  l->set_init_driver(init_driver);
+  l->set_end_pass(end_pass);
+  l->set_finish(finish);
+
+  return l;
 }
 }

@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 
 namespace WAP {
-  learner setup(vw&, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner* setup(vw&, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 #endif

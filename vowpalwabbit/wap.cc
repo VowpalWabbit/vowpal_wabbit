@@ -20,7 +20,6 @@ using namespace std;
 namespace WAP {
   struct wap{
     uint32_t increment;
-    learner base;
     vw* all;
   };
   
@@ -126,7 +125,7 @@ namespace WAP {
   }
   v_array<float_wclass> vs;
 
-  void train(vw& all, wap& w, example* ec)
+  void train(vw& all, wap& w, learner& base, example* ec)
   {
     CSOAA::label* ld = (CSOAA::label*)ec->ld;
 
@@ -182,7 +181,7 @@ namespace WAP {
 
               mirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
 
-              w.base.learn(ec);
+              base.learn(ec);
               unmirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
             }
         }
@@ -191,7 +190,7 @@ namespace WAP {
     ec->ld = ld;
   }
 
-  size_t test(vw& all, wap& w, example* ec)
+  size_t test(vw& all, wap& w, learner& base, example* ec)
   {
     size_t prediction = 1;
     float score = -FLT_MAX;
@@ -209,7 +208,7 @@ namespace WAP {
           update_example_indicies(all.audit, ec, w.increment*(myi-1));
         ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
-        w.base.learn(ec);
+        base.learn(ec);
         if (myi != 1)
           update_example_indicies(all.audit, ec, -w.increment*(myi-1));
         if (ec->partial_prediction > score)
@@ -222,21 +221,21 @@ namespace WAP {
     return prediction;
   }
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
     wap* w = (wap*)d;
     vw* all = w->all;
     
-    size_t prediction = test(*all, *w, ec);
+    size_t prediction = test(*all, *w, base, ec);
     ec->ld = cost_label;
     
     if (cost_label->costs.size() > 0)
-      train(*all, *w, ec);
+      train(*all, *w, base, ec);
     ec->final_prediction = (float)prediction;
   }
   
-  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
     wap* w=(wap*)calloc(1,sizeof(wap));
     w->all = &all;
@@ -261,10 +260,8 @@ namespace WAP {
     all.weights_per_problem *= nb_actions;
     w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner l(w, learn, all.l.sl);
-    w->base = all.l;
-    l.set_base(&(w->base));
-    l.set_finish_example(CSOAA::finish_example);
+    learner* l = new learner(w, learn, all.l);
+    l->set_finish_example(CSOAA::finish_example);
 
     return l;
   }

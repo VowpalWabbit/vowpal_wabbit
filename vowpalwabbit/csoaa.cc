@@ -20,7 +20,6 @@ using namespace std;
 namespace CSOAA {
   struct csoaa{
     uint32_t csoaa_increment;
-    learner base;
     vw* all;
   };
 
@@ -314,7 +313,7 @@ namespace CSOAA {
     print_update(all, is_test_label((label*)ec->ld), ec);
   }
 
-  void learn(void* d, example* ec) {
+  void learn(void* d, learner& base, example* ec) {
     csoaa* c = (csoaa*)d;
     vw* all = c->all;
     label* ld = (label*)ec->ld;
@@ -348,7 +347,7 @@ namespace CSOAA {
           current_increment = desired_increment;
         }
 
-	c->base.learn(ec);
+	base.learn(ec);
         cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
@@ -368,7 +367,7 @@ namespace CSOAA {
     VW::finish_example(all, ec);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     csoaa* c=(csoaa*)calloc(1,sizeof(csoaa));
     c->all = &all;
@@ -391,13 +390,10 @@ namespace CSOAA {
     *(all.p->lp) = cs_label_parser;
     c->csoaa_increment = all.weights_per_problem * all.reg.stride;
     all.weights_per_problem *= nb_actions;
-    c->base=all.l;
     all.sd->k = nb_actions;
 
-    learner l(c, learn, all.l.sl);
-    c->base = all.l;
-    l.set_finish_example(finish_example);
-    l.set_base(&(c->base));
+    learner* l = new learner(c, learn, all.l);
+    l->set_finish_example(finish_example);
     return l;
   }
 
@@ -425,8 +421,9 @@ namespace CSOAA_AND_WAP_LDF {
     bool first_pass;
     bool treat_as_classifier;
     float csoaa_example_t;
-    learner base;
     vw* all;
+
+    learner* base;
   };
 
 namespace LabelDict { 
@@ -635,7 +632,7 @@ namespace LabelDict {
     ec->indices.decr();
   }
 
-void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, float*min_score, float*min_cost, float*max_cost) {
+  void make_single_prediction(vw& all, ldf& l, learner& base, example*ec, size_t*prediction, float*min_score, float*min_cost, float*max_cost) {
     label   *ld = (label*)ec->ld;
     v_array<CSOAA::wclass> costs = ld->costs;
     label_data simple_label;
@@ -649,7 +646,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
       LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
       
       ec->ld = &simple_label;
-      l.base.learn(ec); // make a prediction
+      base.learn(ec); // make a prediction
       costs[j].partial_prediction = ec->partial_prediction;
 
       if (ec->partial_prediction < *min_score) {
@@ -668,7 +665,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
 
 
 
-  void do_actual_learning_wap(vw& all, ldf& l, size_t start_K)
+  void do_actual_learning_wap(vw& all, ldf& l, learner& base, size_t start_K)
   {
     size_t K = l.ec_seq.size();
     bool   isTest = CSOAA::example_is_test(l.ec_seq[start_K]);
@@ -687,7 +684,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
         throw exception();
       }
 
-      make_single_prediction(all, l, ec, &prediction, &min_score, NULL, NULL);
+      make_single_prediction(all, l, base, ec, &prediction, &min_score, NULL, NULL);
     }
 
     // do actual learning
@@ -738,7 +735,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
               simple_label.weight = value_diff;
               ec1->partial_prediction = 0.;
               subtract_example(all, ec1, ec2);
-              l.base.learn(ec1);
+              base.learn(ec1);
               unsubtract_example(all, ec1);
               
               LabelDict::del_example_namespace_from_memory(l, ec2, costs2[j2].weight_index);
@@ -755,7 +752,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     }
   }
 
-  void do_actual_learning_oaa(vw& all, ldf& l, size_t start_K)
+  void do_actual_learning_oaa(vw& all, ldf& l, learner& base, size_t start_K)
   {
     size_t K = l.ec_seq.size();
     size_t prediction = 0;
@@ -774,7 +771,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
         throw exception();
       }
-      make_single_prediction(all, l, ec, &prediction, &min_score, &min_cost, &max_cost);
+      make_single_prediction(all, l, base, ec, &prediction, &min_score, &min_cost, &max_cost);
     }
 
     // do actual learning
@@ -813,7 +810,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
           //cerr << "[" << ec->partial_prediction << "," << ec->done << "]";
           //ec->done = false;
           LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
-          l.base.learn(ec);
+          base.learn(ec);
           LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
           ec->example_t = example_t;
         }
@@ -834,7 +831,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
   }
 
 
-  void do_actual_learning(vw& all, ldf& l)
+  void do_actual_learning(vw& all, ldf& l, learner& base)
   {
     if (l.ec_seq.size() <= 0) return;  // nothing to do
 
@@ -865,8 +862,8 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     }
 
     /////////////////////// learn
-    if (l.is_wap) do_actual_learning_wap(all, l, start_K);
-    else          do_actual_learning_oaa(all, l, start_K);
+    if (l.is_wap) do_actual_learning_wap(all, l, base, start_K);
+    else          do_actual_learning_oaa(all, l, base, start_K);
     
     /////////////////////// remove header
     if (start_K > 0)
@@ -945,8 +942,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     l.ec_seq.erase();
   }
 
-
-  void learn_singleline(void* d, example*ec) 
+  void learn_singleline(void* d, learner& base, example*ec) 
   {
     ldf* l=(ldf*)d;
     vw* all = l->all;
@@ -959,11 +955,11 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     if ((!all->training) || CSOAA::example_is_test(ec)) {
       size_t prediction = 0;
       float  min_score = FLT_MAX;
-      make_single_prediction(*all, *l, ec, &prediction, &min_score, NULL, NULL);
+      make_single_prediction(*all, *l, base, ec, &prediction, &min_score, NULL, NULL);
     } else {
       l->ec_seq.erase();
       l->ec_seq.push_back(ec);
-      do_actual_learning(*all, *l);
+      do_actual_learning(*all, *l, base);
       l->ec_seq.erase();
     }
   }
@@ -974,16 +970,17 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     l->first_pass = false;
   }
 
-  void learn_multiline(void* data, example *ec) 
+  void learn_multiline(void* data, learner& base, example *ec) 
   {
     ldf* l=(ldf*)data;
     vw* all = l->all;
+    l->base = &base;
 
     if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
       if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
 	
-      do_actual_learning(*all, *l);
+      do_actual_learning(*all, *l, base);
 
       if (!LabelDict::ec_seq_is_label_definition(*l, l->ec_seq) && l->ec_seq.size() > 0)
         global_print_newline(*all);
@@ -994,7 +991,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     } else if (LabelDict::ec_is_label_definition(ec)) {
       if (l->ec_seq.size() > 0)
         cerr << "warning: label definition encountered in data block -- ignoring data!" << endl;
-      learn_singleline(&l, ec);
+      learn_singleline(&l, base, ec);
 
       if (ec->in_use)
         VW::finish_example(*all, ec);
@@ -1044,13 +1041,13 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
   {
     ldf* l=(ldf*)data;
     vw* all = l->all;
-    do_actual_learning(*all, *l);
+    do_actual_learning(*all, *l, *(l->base));
     output_example_seq(*all, *l);
     clear_seq(*all, *l);
     l->ec_seq.delete_v();
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
 
@@ -1120,24 +1117,20 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
 
     if (ld->is_singleline)
       {
-	learner l(ld, learn_singleline, all.l.sl);
-	ld->base = all.l;
-	l.set_finish_example(finish_example); 
-	l.set_base(&(ld->base));
-	l.set_finish(finish);
+	learner* l = new learner(ld, learn_singleline, all.l);
+	l->set_finish_example(finish_example); 
+	l->set_finish(finish);
 	return l;
       }
     else
       {
 	ld->read_example_this_loop = 0;
 	ld->need_to_clear = false;
-	learner l(ld, learn_multiline, all.l.sl);
-	ld->base = all.l;
-	l.set_finish_example(finish_multiline_example); 
-	l.set_finish(finish);
-	l.set_end_examples(end_examples); 
-	l.set_end_pass(end_pass);
-	l.set_base(&(ld->base));
+	learner* l = new learner(ld, learn_multiline, all.l);
+	l->set_finish_example(finish_multiline_example); 
+	l->set_finish(finish);
+	l->set_end_examples(end_examples); 
+	l->set_end_pass(end_pass);
 	return l;
       }
   }

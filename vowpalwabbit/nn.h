@@ -11,7 +11,7 @@ license as described in the file LICENSE.
 
 namespace NN
 {
-  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 #endif
