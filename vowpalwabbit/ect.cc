@@ -210,11 +210,11 @@ namespace ECT
             uint32_t problem_number = e.last_pair + (finals_winner | (((uint32_t)1) << i)) - 1; //This is unique.
 	    offset = problem_number*e.increment;
 	  
-            update_example_indicies(all.audit, ec,offset);
+            update_example_indicies(ec,offset);
 	  
             base.learn(ec);
 	  
-            update_example_indicies(all.audit, ec,-offset);
+            update_example_indicies(ec,-offset);
 	    
 	    float pred = ec->final_prediction;
 	    if (pred > 0.)
@@ -228,10 +228,10 @@ namespace ECT
 	uint32_t offset = (id-e.k)*e.increment;
 	
 	ec->partial_prediction = 0;
-	update_example_indicies(all.audit, ec,offset);
+	update_example_indicies(ec,offset);
 	base.learn(ec);
 	float pred = ec->final_prediction;
-	update_example_indicies(all.audit, ec,-offset);
+	update_example_indicies(ec,-offset);
 
 	if (pred > 0.)
 	  id = e.directions[id].right;
@@ -273,7 +273,7 @@ namespace ECT
 	
 	uint32_t offset = (id-e.k)*e.increment;
 	
-	update_example_indicies(all.audit, ec,offset);
+	update_example_indicies(ec,offset);
 	
 	ec->partial_prediction = 0;
 	base.learn(ec);
@@ -281,7 +281,7 @@ namespace ECT
 	ec->partial_prediction = 0;
 	base.learn(ec);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
-	update_example_indicies(all.audit, ec,-offset);
+	update_example_indicies(ec,-offset);
 
 	bool won = pred*simple_temp.label > 0;
 
@@ -335,12 +335,12 @@ namespace ECT
 		
                 uint32_t offset = problem_number*e.increment;
 	      
-                update_example_indicies(all.audit, ec,offset);
+                update_example_indicies(ec,offset);
                 ec->partial_prediction = 0;
 	      
 		base.learn(ec);
 		
-                update_example_indicies(all.audit, ec,-offset);
+                update_example_indicies(ec,-offset);
 		
 		float pred = ec->final_prediction;
 		if (pred > 0.)

@@ -222,7 +222,7 @@ namespace OAA {
         simple_temp.weight = mc_label_data->weight;
         ec->ld = &simple_temp;
         if (i != 1)
-          update_example_indicies(all->audit, ec, o->increment);
+          update_example_indicies(ec, o->increment);
         base.learn(ec);
         if (ec->partial_prediction > score)
           {
@@ -239,7 +239,7 @@ namespace OAA {
       }	
     ec->ld = mc_label_data;
     ec->final_prediction = prediction;
-    update_example_indicies(all->audit, ec, -o->total_increment);
+    update_example_indicies(ec, -o->total_increment);
 
     if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
@@ -265,6 +265,7 @@ namespace OAA {
 
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
+
     data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->k;
     data->total_increment = data->increment*(data->k-1);

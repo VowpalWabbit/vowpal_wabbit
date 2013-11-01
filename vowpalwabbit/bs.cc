@@ -182,7 +182,7 @@ namespace BS {
     for (size_t i = 1; i <= d->B; i++)
       {
         if (i != 1)
-          update_example_indicies(all->audit, ec, d->increment);
+          update_example_indicies(ec, d->increment);
           
         ((label_data*)ec->ld)->weight = weight_temp * weight_gen();
 
@@ -198,7 +198,7 @@ namespace BS {
 
     ((label_data*)ec->ld)->weight = weight_temp;
 
-    update_example_indicies(all->audit, ec, -d->total_increment);
+    update_example_indicies(ec, -d->total_increment);
 
     switch(d->bs_type)
     {

@@ -343,7 +343,7 @@ namespace CSOAA {
         uint32_t desired_increment = c->csoaa_increment * (i-1);
 
         if (desired_increment != current_increment) {
-	  update_example_indicies(all->audit, ec, desired_increment - current_increment);
+	  update_example_indicies(ec, desired_increment - current_increment);
           current_increment = desired_increment;
         }
 
@@ -358,7 +358,7 @@ namespace CSOAA {
     ec->ld = ld;
     ec->final_prediction = (float)prediction;
     if (current_increment != 0)
-      update_example_indicies(all->audit, ec, -current_increment);
+      update_example_indicies(ec, -current_increment);
   }
 
   void finish_example(vw& all, void*, example* ec)

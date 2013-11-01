@@ -112,7 +112,7 @@ namespace NN {
     ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n->k; ++i)
       {
-        update_example_indicies(n->all->audit, ec, n->increment);
+        update_example_indicies(ec, n->increment);
 
         base.learn(ec);
         hidden_units[i] = ec->final_prediction;
@@ -124,7 +124,7 @@ namespace NN {
           outputStringStream << i << ':' << ec->partial_prediction << ',' << fasttanh (hidden_units[i]);
         }
       }
-    update_example_indicies(n->all->audit, ec, -n->k * n->increment);
+    update_example_indicies(ec, -n->k * n->increment);
     ld->label = save_label;
     n->all->loss = save_loss;
     n->all->set_minmax = save_set_minmax;
@@ -203,7 +203,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n->all->sd->max_label = hidden_max_activation;
 
         for (unsigned int i = 0; i < n->k; ++i) {
-          update_example_indicies (n->all->audit, ec, n->increment);
+          update_example_indicies (ec, n->increment);
           if (! dropped_out[i]) {
             float sigmah = 
               n->output_layer.atomics[nn_output_namespace][i].x / dropscale;
@@ -216,7 +216,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
               base.learn(ec);
           }
         }
-        update_example_indicies (n->all->audit, ec, -n->k*n->increment);
+        update_example_indicies (ec, -n->k*n->increment);
 
         n->all->loss = save_loss;
         n->all->set_minmax = save_set_minmax;
