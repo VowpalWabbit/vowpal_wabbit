@@ -1515,11 +1515,11 @@ void print_update(vw& all, searn* srn)
     }
     
     //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
+    srn->base = all.l;
     learner l(srn, searn_learn);
+    l.set_base(&(srn->base));
     l.set_finish_example(finish_example);
     l.set_end_examples(end_examples);
-    srn->base = all.l;
-    l.set_base(&(srn->base));
     l.set_finish(searn_finish);
     l.set_end_pass(end_pass);
     if (!srn->allow_current_policy) // if we're not dagger

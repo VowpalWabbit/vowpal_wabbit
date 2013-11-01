@@ -633,6 +633,7 @@ vw* parse_args(int argc, char *argv[])
   // load rest of regressor
   all->l.save_load(io_temp, true, false);
   io_temp.close_file();
+
   //load the mask model, might be different from -i
   parse_mask_regressor_args(*all, vm);
 

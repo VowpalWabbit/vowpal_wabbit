@@ -30,9 +30,9 @@ namespace BINARY {
     binary* data = (binary*)calloc(1,sizeof(binary));
     data->base = all.l;
     learner l(data, learn);
+    l.set_base(&(data->base));
 
     l.set_finish_example(OAA::finish_example);
-    l.set_base(&(data->base));
     return l;
   }
 }

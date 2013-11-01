@@ -28,7 +28,6 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   vw *all = parse_args(argc, argv);
-  cerr << "parsed_args" << endl;
   struct timeb t_start, t_end;
   ftime(&t_start);
   
@@ -44,7 +43,7 @@ int main(int argc, char *argv[])
     }
 
   VW::start_parser(*all);
-  cerr << "starting driver" << endl;
+
   all->l.driver(all);
 
   VW::end_parser(*all);

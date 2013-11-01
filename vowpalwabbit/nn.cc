@@ -363,12 +363,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->xsubi = vm["random_seed"].as<size_t>();
 
     n->save_xsubi = n->xsubi;
-    cerr << "in nn setup" << endl;
     learner l(n,learn);
+    l.set_base(&(n->base));
     l.set_finish(finish);
     l.set_finish_example(finish_example);
     l.set_end_pass(end_pass);
-    l.set_base(&(n->base));
 
     return l;
   }

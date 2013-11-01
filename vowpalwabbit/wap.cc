@@ -261,8 +261,8 @@ namespace WAP {
     all.weights_per_problem *= nb_actions;
     w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner l(w, learn);
     w->base = all.l;
+    learner l(w, learn);
     l.set_base(&(w->base));
     l.set_finish_example(CSOAA::finish_example);
 

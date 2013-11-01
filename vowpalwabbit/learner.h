@@ -72,8 +72,8 @@ public:
   //called once for each example.  Must work under reduction.
   inline void learn(example* ec) { learn_fd.learn_f(learn_fd.data, ec); }
 
-  //called anytime saving or loading needs to happen.  Must work under reduction.
-  inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); }
+  //called anytime saving or loading needs to happen. Autorecursive.
+  inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (base) base->save_load(io, read, text); }
 
   //called to clean up state.  Autorecursive.
   void set_finish(void (*f)(void*)) { finisher_fd = tuple(default_data,f); }

@@ -394,10 +394,10 @@ namespace CSOAA {
     c->base=all.l;
     all.sd->k = nb_actions;
 
-    learner l(c, learn);
     c->base = all.l;
-    l.set_finish_example(finish_example);
+    learner l(c, learn);
     l.set_base(&(c->base));
+    l.set_finish_example(finish_example);
     return l;
   }
 
@@ -1118,12 +1118,12 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
     ld->label_features.get(1, 94717244);
 
+    ld->base = all.l;
     if (ld->is_singleline)
       {
 	learner l(ld, learn_singleline);
-	ld->base = all.l;
-	l.set_finish_example(finish_example); 
 	l.set_base(&(ld->base));
+	l.set_finish_example(finish_example); 
 	l.set_finish(finish);
 	return l;
       }
@@ -1132,12 +1132,11 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
 	ld->read_example_this_loop = 0;
 	ld->need_to_clear = false;
 	learner l(ld, learn_multiline);
-	ld->base = all.l;
+	l.set_base(&(ld->base));
 	l.set_finish_example(finish_multiline_example); 
 	l.set_finish(finish);
 	l.set_end_examples(end_examples); 
 	l.set_end_pass(end_pass);
-	l.set_base(&(ld->base));
 	return l;
       }
   }

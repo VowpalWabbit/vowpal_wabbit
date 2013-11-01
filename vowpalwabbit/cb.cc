@@ -738,12 +738,12 @@ namespace CB
     *(all.p->lp) = CB::cb_label_parser; 
 
     all.sd->k = nb_actions;
+    c->base = all.l;
 
     learner l(c, learn);
-    c->base = all.l;
+    l.set_base(&(c->base));
     l.set_finish_example(finish_example); 
     l.set_init_driver(init_driver);
-    l.set_base(&(c->base));
     l.set_finish(finish);
 
     return l;

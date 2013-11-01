@@ -271,8 +271,8 @@ namespace OAA {
     data->total_increment = data->increment*(data->k-1);
     data->base = all.l;
     learner l(data, learn);
-    l.set_finish_example(finish_example);
     l.set_base(&(data->base));
+    l.set_finish_example(finish_example);
 
     return l;
   }

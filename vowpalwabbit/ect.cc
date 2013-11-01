@@ -452,11 +452,12 @@ namespace ECT
     create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner l(data, learn);
     data->base = all.l;
+
+    learner l(data, learn);
+    l.set_base(&(data->base));
     l.set_finish_example(OAA::finish_example);
     l.set_finish(finish);
-    l.set_base(&(data->base));
 
     return l;
   }
