@@ -123,20 +123,19 @@ namespace SearnUtil
   void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h)
   {
     uint64_t v0, v1, v, max_string_length = 0;
-    uint32_t total_length = (uint32_t)max(hinfo.features, hinfo.length);
     uint32_t wpp = all.weights_per_problem * all.reg.stride;
-    if (total_length == 0) return;
+    if (hinfo.length == 0) return;
     if (h == NULL) {
       cerr << "error: got empty history in add_history_to_example" << endl;
       throw exception();
     }
 
     if (all.audit) {
-      max_string_length = max((int)(ceil( log10((float)total_length+1) )),
+      max_string_length = max((int)(ceil( log10((float)hinfo.length+1) )),
                               (int)(ceil( log10((float)10000000000+1) ))) + 1;   // max action id
     }
 
-    for (uint32_t t=1; t<=total_length; t++) {
+    for (uint32_t t=1; t<=hinfo.length; t++) {
       v0 = (h[hinfo.length-t] * quadratic_constant + t) * history_constant;
       // add the basic history features
       feature temp = {history_value, (uint32_t) ( (v0*wpp) & all.reg.weight_mask )};
@@ -244,8 +243,7 @@ namespace SearnUtil
 
   void remove_history_from_example(vw&all, history_info &hinfo, example* ec)
   {
-    size_t total_length = max(hinfo.features, hinfo.length);
-    if (total_length == 0) return;
+    if (hinfo.length == 0) return;
 
     if (ec->indices.size() == 0) {
       cerr << "internal error (bug): trying to remove history, but there are no namespaces!" << endl;
@@ -277,12 +275,12 @@ namespace SearnUtil
     ec->indices.decr();
   }
 
-  size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>* ystar, history_info& hinfo, size_t*history) {
-    add_history_to_example(vw, hinfo, ec, history);
-    size_t prediction = ((Searn::searn*)vw.searnstr)->predict(vw, &ec, 0, NULL, ystar);
-    remove_history_from_example(vw, hinfo, ec);
-    return prediction;
-  }
+  // size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>* ystar, history_info& hinfo, size_t*history) {
+  //   add_history_to_example(vw, hinfo, ec, history);
+  //   size_t prediction = ((Searn::searn*)vw.searnstr)->predict(vw, &ec, 0, NULL, ystar);
+  //   remove_history_from_example(vw, hinfo, ec);
+  //   return prediction;
+  // }
 
 }
 
@@ -417,10 +415,15 @@ namespace Searn {
       } else
         return choose_random<uint32_t>(*ystar);
     } else {        // learned policy
-      if (isLDF(srn))
+      if (!isLDF(srn)) {  // single example
+        if (srn.auto_history) add_history_to_example(all, srn.hinfo, *ecs, srn.rollout_action.begin+srn.t);
+        size_t action = single_prediction_notLDF(all, srn, *ecs, valid_labels, pol);
+        if (srn.auto_history) remove_history_from_example(all, srn.hinfo, *ecs);
+        return action;
+      } else {
+        // TODO: auto-history for LDF
         return single_prediction_LDF(all, ecs, num_ec, pol);
-      else
-        return single_prediction_notLDF(all, srn, *ecs, valid_labels, pol);
+      }
     }
   }
 
@@ -485,8 +488,8 @@ namespace Searn {
       uint32_t a = single_action(all, *srn, ecs, num_ec, srn->valid_labels, pol, ystar);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       //clog << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
+      if (srn->auto_history) srn->rollout_action.push_back(a);
       srn->t++;
-      //valid_labels.costs.erase(); valid_labels.costs.delete_v();
       return a;
     }
     if (srn->state == INIT_TRAIN) {
@@ -499,6 +502,7 @@ namespace Searn {
       //if (! ((srn->current_policy == 0) || (a == a_opt))) { cerr << "FAIL!!!"<<endl;}
       srn->train_action.push_back(a);
       srn->train_labels.push_back(copy_labels(*srn, srn->valid_labels));
+      if (srn->auto_history) srn->rollout_action.push_back(a);
       srn->t++;
       return a;
     }
@@ -506,15 +510,15 @@ namespace Searn {
       if (srn->t < srn->learn_t) {
         assert(srn->t < srn->train_action.size());
         srn->t++;
-        return srn->train_action[srn->t-1];
+        return srn->train_action[srn->t - 1];
       } else if (srn->t == srn->learn_t) {
         if (srn->learn_example_copy == NULL) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
           srn->learn_example_len = num_to_copy;
           srn->learn_example_copy = (example**)SearnUtil::calloc_or_die(num_to_copy, sizeof(example*));
           for (size_t n=0; n<num_to_copy; n++) {
-            srn->learn_example_copy[n] = alloc_example(sizeof(CSOAA::label));
-            VW::copy_example_data(all.audit, srn->learn_example_copy[n], ecs[n], sizeof(CSOAA::label), all.p->lp->copy_label);
+            srn->learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
+            VW::copy_example_data(all.audit, srn->learn_example_copy[n], ecs[n], sizeof(OAA::mc_label), NULL);
           }
           //cerr << "copying example to " << srn->learn_example_copy << endl;
         }
@@ -544,7 +548,7 @@ namespace Searn {
           srn->snapshot_is_equivalent_to_t++;
           srn->t = srn->snapshot_is_equivalent_to_t;
           //clog << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action[srn->t-1] << endl;
-          return srn->train_action[srn->t-1];
+          return srn->train_action[srn->t - 1];
         }
       }
       assert(false);
@@ -592,6 +596,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
   {
     searn* srn=(searn*)all.searnstr;
     if (! srn->do_snapshot) return;
+    assert(tag > 0);
 
     //clog << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(size_t*)data_ptr << ", t=" << srn->t << ", u4p=" << used_for_prediction << " }" << endl;
     
@@ -603,6 +608,15 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
            ((srn->snapshot_data.last().index == index) && (srn->snapshot_data.last().tag > tag)))) 
         cerr << "warning: trying to snapshot in a non-monotonic order! ignoring this snapshot" << endl;
       else {
+        // if we're doing auto-history and this is the first snapshot of a given index, we need to also snapshot the relevant piece of history
+        if (srn->auto_history && (srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().index < index)) {
+          size_t history_size = srn->hinfo.length * sizeof(uint32_t);
+          void* history_data = malloc(history_size);
+          memcpy(history_data, srn->rollout_action.begin + srn->t, history_size);
+          snapshot_item item = { index, 0, history_data, srn->t };
+          srn->snapshot_data.push_back(item);
+        }
+
         void* new_data = malloc(sizeof_data);
         memcpy(new_data, data_ptr, sizeof_data);
         snapshot_item item = { index, tag, new_data, sizeof_data, srn->t };
@@ -649,12 +663,20 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       //clog << "a" << index << "/" << tag << " ";
       snapshot_item item = srn->snapshot_data[i];
       bool matches = memcmp(item.data_ptr, data_ptr, sizeof_data) == 0;
-      if (matches)
+      if (matches) {
         // TODO: make sure it's the right number of snapshots!!!
         srn->snapshot_is_equivalent_to_t = item.pred_step;
-      else {
+
+        if (srn->auto_history && (i>0) && (srn->snapshot_data[i-1].index == index) && (srn->snapshot_data[i-1].tag == 0)) {
+          item = srn->snapshot_data[i-1];
+          if (srn->rollout_action.size() >= srn->t + srn->hinfo.length) {
+            matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, sizeof_data) == 0;
+            if (!matches)
+              srn->snapshot_could_match = false;
+          }
+        }
+      } else {
         srn->snapshot_could_match = false;
-        //clog << "b";
       }
     }
   }
@@ -744,8 +766,13 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     srn.learn_loss = 0.f;
     srn.learn_example_copy = NULL;
     srn.learn_example_len  = 0;
-    srn.train_action.erase();
     srn.num_features = 0;
+    srn.train_action.erase();
+    if (srn.auto_history) {
+      srn.rollout_action.erase();
+      for (size_t t=0; t<srn.hinfo.length; t++)
+        srn.rollout_action.push_back(0);
+    }
 
     if (srn.adaptive_beta)
       srn.beta = 1.f - powf(1.f - srn.alpha, (float)srn.total_examples_generated);
@@ -767,6 +794,12 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     // do a pass over the data allowing oracle and snapshotting
     //clog << "======================================== INIT TRAIN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
     srn.state = INIT_TRAIN;
+    srn.train_action.erase();
+    if (srn.auto_history) {
+      srn.rollout_action.erase();
+      for (size_t t=0; t<srn.hinfo.length; t++)
+        srn.rollout_action.push_back(0);
+    }
     srn.t = 0;
     srn.loss_last_step = 0;
     clear_snapshot(all, srn);
@@ -792,6 +825,14 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       srn.learn_t = t;
       srn.learn_losses.erase();
 
+      if (srn.auto_history) {
+        // startup the rollout at the train actions
+        srn.rollout_action.erase();
+        srn.rollout_action.resize(srn.hinfo.length + t);
+        if (t > 0)
+          memcpy(srn.rollout_action.begin + srn.hinfo.length, srn.train_action.begin, t * sizeof(uint32_t));
+      }
+      
       for (size_t i=0; i<labelset_size(srn, aset); i++) {
         size_t this_index = labelset_weight_index(srn, aset, i);
         if (this_index == srn.train_action[srn.learn_t])
@@ -831,6 +872,8 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     clear_snapshot(all, srn);
     srn.train_action.erase();
     srn.train_action.delete_v();
+    srn.rollout_action.erase();
+    srn.rollout_action.delete_v();
     for (size_t i=0; i<srn.train_labels.size(); i++) {
       if (srn.rollout_all_actions) {
         ((CSOAA::label*)srn.train_labels[i])->costs.erase();
@@ -844,7 +887,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     }
     srn.train_labels.erase();
     srn.train_labels.delete_v();
-
+    
     //clog << "======================================== DONE (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
 
   }
@@ -1120,6 +1163,8 @@ void print_update(vw& all, searn* srn)
 
     srn.printed_output_header = false;
 
+    srn.auto_history = false;
+    
     srn.empty_example = alloc_example(sizeof(OAA::mc_label));
     OAA::default_label(srn.empty_example->ld);
     srn.empty_example->in_use = true;
@@ -1134,7 +1179,20 @@ void print_update(vw& all, searn* srn)
     delete srn->truth_string;
     delete srn->pred_string;
 
-    dealloc_example(NULL, *(srn->empty_example));
+    if (srn->rollout_all_actions) { // dst should be a CSOAA::label*
+      ((CSOAA::label*)srn->valid_labels)->costs.erase();
+      ((CSOAA::label*)srn->valid_labels)->costs.delete_v();
+    } else {
+      ((CB::label*)srn->valid_labels)->costs.erase();
+      ((CB::label*)srn->valid_labels)->costs.delete_v();
+    }
+    
+    if (srn->rollout_all_actions) // labels are CSOAA
+      delete (CSOAA::label*)srn->valid_labels;
+    else // labels are CB
+      delete (CB::label*)srn->valid_labels;
+
+    dealloc_example(OAA::delete_label, *(srn->empty_example));
     free(srn->empty_example);
     
     srn->ec_seq.delete_v();
@@ -1155,10 +1213,13 @@ void print_update(vw& all, searn* srn)
     }
     srn->train_labels.erase(); srn->train_labels.delete_v();
     srn->train_action.erase(); srn->train_action.delete_v();
+    srn->rollout_action.erase(); srn->rollout_action.delete_v();
     srn->learn_losses.erase(); srn->learn_losses.delete_v();
 
-    if (srn->task->finish != NULL)
+    if (srn->task->finish != NULL) {
       srn->task->finish(*all, *srn);
+      free(srn->task);
+    }
   }
 
   void ensure_param(float &v, float lo, float hi, float def, const char* string) {
@@ -1223,6 +1284,30 @@ void print_update(vw& all, searn* srn)
       options(desc).allow_unregistered().run();
     po::store(parsed_file, vm_file);
     po::notify(vm_file);
+  }
+
+
+  void handle_history_options(vw& vw, history_info &hinfo, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+    po::options_description desc("Searn[sequence] options");
+    desc.add_options()
+      ("searn_history",  po::value<size_t>(), "length of history to use")
+      ("searn_features", po::value<size_t>(), "length of history to pair with observed features")
+      ("searn_bigrams",                       "use bigrams from history")
+      ("searn_bigram_features",               "use bigrams from history paired with observed features");
+
+    setup_searn_options(desc, vw, opts, vm, vm_file);
+    
+    check_option<size_t>(hinfo.length, vw, vm, vm_file, "searn_history", false, size_equal,
+                         "warning: you specified a different value for --searn_history than the one loaded from regressor. proceeding with loaded value: ", "");
+    
+    check_option<size_t>(hinfo.features, vw, vm, vm_file, "searn_features", false, size_equal,
+                         "warning: you specified a different value for --searn_features than the one loaded from regressor. proceeding with loaded value: ", "");
+    
+    check_option        (hinfo.bigrams, vw, vm, vm_file, "searn_bigrams", false,
+                         "warning: you specified --searn_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
+    
+    check_option        (hinfo.bigram_features, vw, vm, vm_file, "searn_bigram_features", false,
+                         "warning: you specified --searn_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
   }
 
 
@@ -1358,6 +1443,24 @@ void print_update(vw& all, searn* srn)
     *(all.p->lp) = OAA::mc_label_parser; 
     srn->task->initialize(all, *srn, srn->A, opts, vm, vm_file);
 
+    // set up auto-history if they want it
+    if (srn->auto_history) {
+      default_info(&srn->hinfo);
+
+      handle_history_options(all, srn->hinfo, opts, vm, vm_file);
+      
+      if (srn->hinfo.length < srn->hinfo.features)
+        srn->hinfo.length = srn->hinfo.features;
+      
+      if (srn->hinfo.length == 0)
+        srn->auto_history = false;
+    } else {
+      srn->hinfo.length = 0;
+      srn->hinfo.features = 0;
+      srn->hinfo.bigrams = false;
+      srn->hinfo.bigram_features = false;
+    }
+    
     //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
     learner l(srn, searn_learn, all.l.sl);
     l.set_finish_example(finish_example);

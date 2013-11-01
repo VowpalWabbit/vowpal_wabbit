@@ -16,12 +16,12 @@ license as described in the file LICENSE.
 
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
 
-typedef size_t* history;
+typedef uint32_t* history;
 
 namespace SearnUtil
 {
   struct history_info {
-    size_t length;          // was history_length
+    size_t length;          // was history_length, must be >= features
     bool   bigrams;         // was sequence_bigrams
     size_t features;        // was sequence_features
     bool   bigram_features; // was sequence_bigram_features
@@ -44,6 +44,8 @@ namespace SearnUtil
 }      
 
 namespace Searn {
+  using namespace SearnUtil;
+
   struct snapshot_item {
     size_t index;
     size_t tag;
@@ -63,7 +65,8 @@ namespace Searn {
     // structure that you must set, and any associated data you want to store
     searn_task* task;
     void* task_data;
-
+    bool auto_history;  // do you want us to automatically add history features?
+    
     // data that you should not look at.  ever.
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
@@ -72,8 +75,10 @@ namespace Searn {
     size_t snapshot_is_equivalent_to_t;   // if we've finished snapshotting and are equiv up to this time step, then we can fast forward from there
     bool snapshot_could_match;
     v_array<snapshot_item> snapshot_data;
-    v_array<uint32_t> train_action;  // which actions did we actually take in the train pass?
+    v_array<uint32_t> train_action;  // which actions did we actually take in the train (or test) pass?
     v_array< void* > train_labels;  // which labels are valid at any given time
+    v_array<uint32_t> rollout_action; // for auto_history, we need a space other than train_action for rollouts
+    history_info hinfo;   // default history info for auto-history
 
     bool should_produce_string;
     stringstream *pred_string;
