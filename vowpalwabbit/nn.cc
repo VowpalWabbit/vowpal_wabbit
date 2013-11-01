@@ -34,7 +34,6 @@ namespace NN {
     bool inpass;
     bool finished_setup;
 
-    learner base;
     vw* all;
   };
 
@@ -82,7 +81,7 @@ namespace NN {
       n->xsubi = n->save_xsubi;
   }
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     nn* n = (nn*)d;
     bool shouldOutput = n->all->raw_prediction > 0;
@@ -115,7 +114,7 @@ namespace NN {
       {
         update_example_indicies(n->all->audit, ec, n->increment);
 
-        n->base.learn(ec);
+        base.learn(ec);
         hidden_units[i] = ec->final_prediction;
 
         dropped_out[i] = (n->dropout && merand48 (n->xsubi) < 0.5);
@@ -163,7 +162,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->atomics[nn_output_namespace] = n->output_layer.atomics[nn_output_namespace];
       ec->sum_feat_sq[nn_output_namespace] = n->output_layer.sum_feat_sq[nn_output_namespace];
       ec->total_sum_feat_sq += n->output_layer.sum_feat_sq[nn_output_namespace];
-      n->base.learn(ec);
+      base.learn(ec);
       n->output_layer.partial_prediction = ec->partial_prediction;
       n->output_layer.loss = ec->loss;
       ec->total_sum_feat_sq -= n->output_layer.sum_feat_sq[nn_output_namespace];
@@ -179,7 +178,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->output_layer.eta_global = ec->eta_global;
       n->output_layer.global_weight = ec->global_weight;
       n->output_layer.example_t = ec->example_t;
-      n->base.learn(&n->output_layer);
+      base.learn(&n->output_layer);
       n->output_layer.ld = 0;
     }
 
@@ -214,7 +213,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
             ld->label = GD::finalize_prediction (*(n->all), hidden_units[i] - gradhw);
             if (ld->label != hidden_units[i]) 
-              n->base.learn(ec);
+              base.learn(ec);
           }
         }
         update_example_indicies (n->all->audit, ec, -n->k*n->increment);
@@ -348,8 +347,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       std::cerr << "using input passthrough for neural network "
                 << (all.training ? "training" : "testing") 
                 << std::endl;
-
-    n->base = *all.l;
 
     n->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= n->k + 1;

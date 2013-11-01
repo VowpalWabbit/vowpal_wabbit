@@ -782,7 +782,7 @@ void end_pass(void*d)
       }
 }
 
-void learn(void* d, example* ec)
+void learn(void* d, learner& base, example* ec)
 {
   bfgs* b = (bfgs*)d;
   vw* all = b->all;

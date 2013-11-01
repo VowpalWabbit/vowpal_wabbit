@@ -9,10 +9,9 @@ namespace ALINK {
   struct autolink {
     uint32_t d;
     uint32_t stride;
-    learner base;
   };
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     autolink* b = (autolink*)d;
 
@@ -20,7 +19,7 @@ namespace ALINK {
     float weight = ((label_data*)ec->ld)->weight;
     ((label_data*)ec->ld)->label = FLT_MAX;
     ((label_data*)ec->ld)->weight = 0;
-    b->base.learn(ec);
+    base.learn(ec);
     ((label_data*)ec->ld)->label = label;
     ((label_data*)ec->ld)->weight = weight;
     float base_pred = ec->final_prediction;
@@ -37,7 +36,7 @@ namespace ALINK {
 	  base_pred *= ec->final_prediction;
 	}
     ec->total_sum_feat_sq += sum_sq;
-    b->base.learn(ec);
+    base.learn(ec);
    
     ec->atomics[autolink_namespace].erase();
     ec->indices.pop();
@@ -47,7 +46,6 @@ namespace ALINK {
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     autolink* data = (autolink*)calloc(1,sizeof(autolink));
-    data->base = *all.l;
     data->d = (uint32_t)vm["autolink"].as<size_t>();
     data->stride = all.reg.stride;
     

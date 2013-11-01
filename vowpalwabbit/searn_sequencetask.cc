@@ -32,7 +32,7 @@ namespace SequenceTask {
       out->push_back( ((OAA::mc_label*)ec->ld)->label );
   }
 
-  void structured_predict_v1(vw& vw, searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) { // TODO: get rid of vw
+  void structured_predict_v1(vw& vw, searn& srn, learner& base, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) { // TODO: get rid of vw
     float total_loss  = 0;
 
     v_array<uint32_t> ystar;
@@ -42,7 +42,7 @@ namespace SequenceTask {
 
       get_oracle_labels(ec[i], &ystar);
 
-      size_t prediction = srn.predict(vw, &ec[i], 0, NULL, &ystar);
+      size_t prediction = srn.predict(vw, base, &ec[i], 0, NULL, &ystar);
 
       if (ystar.size() > 0)
         total_loss += (float)(prediction != ystar[0]);

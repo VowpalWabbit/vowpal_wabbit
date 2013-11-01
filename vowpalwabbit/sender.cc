@@ -69,7 +69,7 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, ec);  
 }
 
-  void learn(void* d, example* ec) 
+  void learn(void* d, learner& base, example* ec) 
   { 
     sender* s = (sender*)d;
     if (s->received_index + s->all->p->ring_size - 1 == s->sent_index)

@@ -13,7 +13,7 @@ license as described in the file LICENSE.
 namespace SequenceTask {
   void initialize(vw&, Searn::searn&, size_t&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void finish(vw&, Searn::searn&);
-  void structured_predict_v1(vw&, Searn::searn&, example**,size_t,stringstream*,stringstream*);
+  void structured_predict_v1(vw&, Searn::searn&, learner& base, example**,size_t,stringstream*,stringstream*);
 }
 
 

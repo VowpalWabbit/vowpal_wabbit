@@ -28,8 +28,6 @@ namespace CB
     float min_cost;
     float max_cost;
 
-    learner base;
-    
     cb_class* known_cost;
     vw* all;
   };
@@ -474,7 +472,7 @@ namespace CB
     }
   }
 
-  void learn(void* d, example* ec) {
+  void learn(void* d, learner& base, example* ec) {
     cb* c = (cb*)d;
     vw* all = c->all;
     CB::label* ld = (CB::label*)ec->ld;
@@ -486,7 +484,7 @@ namespace CB
       cb_test_to_cs_test_label(*all,ec,c->cb_cs_ld);
 
        ec->ld = &c->cb_cs_ld;
-       c->base.learn(ec);
+       base.learn(ec);
        ec->ld = ld;
        return;
     }
@@ -516,7 +514,7 @@ namespace CB
     if (c->cb_type != CB_TYPE_DM)
       {
 	ec->ld = &c->cb_cs_ld;
-	c->base.learn(ec);
+	base.learn(ec);
 	ec->ld = ld;
       }
   }
@@ -738,7 +736,6 @@ namespace CB
     *(all.p->lp) = CB::cb_label_parser; 
 
     all.sd->k = nb_actions;
-    c->base = *all.l;
 
     learner* l = new learner(c, learn, all.l);
     l->set_finish_example(finish_example); 

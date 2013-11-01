@@ -58,7 +58,7 @@ namespace Searn {
 
   struct searn {
     // functions that you will call
-    uint32_t (*predict)(vw&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
+    uint32_t (*predict)(vw&,learner& base, example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
     void     (*declare_loss)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot)(vw&,size_t,size_t,void*,size_t,bool);
 
@@ -124,7 +124,7 @@ namespace Searn {
 
     v_array<example*> ec_seq;
 
-    learner base;
+    learner* base;
     vw* all;
     void* valid_labels;
     clock_t start_clock_time;
@@ -144,7 +144,7 @@ namespace Searn {
   struct searn_task {
     void (*initialize)(vw&,searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
     void (*finish)(vw&,searn&);
-    void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
+    void (*structured_predict)(vw&, searn&, learner&, example**,size_t,stringstream*,stringstream*);
   };
 
   learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);

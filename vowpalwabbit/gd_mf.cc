@@ -281,7 +281,7 @@ void end_pass(void* d)
    all->current_pass++;
 }
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     vw* all = ((gdmf*)d)->all;
  

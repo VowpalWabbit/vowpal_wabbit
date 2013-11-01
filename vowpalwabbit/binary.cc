@@ -2,14 +2,9 @@
 #include "vw.h"
 
 namespace BINARY {
-  struct binary {
-    learner base;
-  };
-
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
-    binary* b = (binary*)d;
-    b->base.learn(ec);
+    base.learn(ec);
     
     float prediction = -1;
     if ( ec->final_prediction > 0)
@@ -27,9 +22,8 @@ namespace BINARY {
       }
 
     all.sd->binary_label = true;
-    binary* data = (binary*)calloc(1,sizeof(binary));
-    data->base = *all.l;
-    learner* l = new learner(data, learn, all.l);
+
+    learner* l = new learner(NULL, learn, all.l);
 
     l->set_finish_example(OAA::finish_example);
     return l;

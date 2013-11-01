@@ -28,7 +28,7 @@ inline func_data tuple(void* data, learner* base, void (*func)(void* data))
 struct learn_data {
   void* data;
   learner* base;
-  void (*learn_f)(void* data, example*);
+  void (*learn_f)(void* data, learner& base, example*);
 };
 
 struct save_load_data{
@@ -53,7 +53,7 @@ namespace LEARNER
   void generic_driver(vw* all);
 
   inline void generic_sl(void*, io_buf&, bool, bool) {}
-  inline void generic_learner(void* data, example*)
+  inline void generic_learner(void* data, learner& base, example*)
   { cout << "calling generic learner\n";}
   inline void generic_func(void* data) {}
 
@@ -74,7 +74,7 @@ private:
   
 public:
   //called once for each example.  Must work under reduction.
-  inline void learn(example* ec) { learn_fd.learn_f(learn_fd.data, ec); }
+  inline void learn(example* ec) { learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec); }
 
   //called anytime saving or loading needs to happen. Autorecursive.
   inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
@@ -125,7 +125,7 @@ public:
     save_load_fd = LEARNER::generic_save_load_fd;
   }
 
-  inline learner(void *dat, void (*l)(void* data, example*))
+  inline learner(void *dat, void (*l)(void*, learner&, example*))
   { // the constructor for all learning algorithms.
     *this = learner();
 
@@ -133,7 +133,7 @@ public:
     learn_fd.learn_f = l;
   }
 
-  inline learner(void *dat, void (*l)(void* data, example*), learner* base) 
+  inline learner(void *dat, void (*l)(void*, learner&, example*), learner* base) 
   { //the reduction constructor.
     *this = *base;
     

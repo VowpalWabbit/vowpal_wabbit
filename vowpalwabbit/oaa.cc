@@ -22,7 +22,6 @@ namespace OAA {
     uint32_t k;
     uint32_t increment;
     uint32_t total_increment;
-    learner base;
     vw* all;
   };
 
@@ -194,7 +193,7 @@ namespace OAA {
     VW::finish_example(all, ec);
   }
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     oaa* o=(oaa*)d;
 
@@ -224,7 +223,7 @@ namespace OAA {
         ec->ld = &simple_temp;
         if (i != 1)
           update_example_indicies(all->audit, ec, o->increment);
-        o->base.learn(ec);
+        base.learn(ec);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -269,7 +268,6 @@ namespace OAA {
     data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->k;
     data->total_increment = data->increment*(data->k-1);
-    data->base = *all.l;
     learner* l = new learner(data, learn, all.l);
     l->set_finish_example(finish_example);
 

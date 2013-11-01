@@ -28,7 +28,6 @@ namespace BS {
     float lb;
     float ub;
     vector<double> pred_vec;
-    learner base;
     vw* all;
   };
 
@@ -168,7 +167,7 @@ namespace BS {
     print_update(all, ec);
   }
 
-  void learn(void* data, example* ec)
+  void learn(void* data, learner& base, example* ec)
   {
     bs* d = (bs*)data;
     vw* all = d->all;
@@ -187,7 +186,7 @@ namespace BS {
           
         ((label_data*)ec->ld)->weight = weight_temp * weight_gen();
 
-        d->base.learn(ec);
+        base.learn(ec);
 
         d->pred_vec.push_back(ec->final_prediction);
 
@@ -300,7 +299,6 @@ namespace BS {
     data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->B;
     data->total_increment = data->increment*(data->B-1);
-    data->base = *all.l;
 
     learner* l = new learner(data, learn, all.l);
     l->set_finish_example(finish_example);

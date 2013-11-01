@@ -158,7 +158,7 @@ inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
       }   
   }
 
-void learn(void* d, example* ec)
+void learn(void* d, learner& base, example* ec)
 {
   gd* g = (gd*)d;
   vw* all = g->all;

@@ -681,7 +681,7 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(void* d, example* ec) 
+  void learn(void* d, learner& base, example* ec) 
   {
     lda* l = (lda*)d;
     size_t num_ex = l->examples.size();
