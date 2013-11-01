@@ -43,7 +43,7 @@ namespace SequenceTask {
 
       get_oracle_labels(ec[i], &ystar);
 
-      size_t prediction = srn.predict(&ec[i], 0, NULL, &ystar);
+      size_t prediction = srn.predict(ec[i], NULL, &ystar);
 
       if (ystar.size() > 0)
         total_loss += (float)(prediction != ystar[0]);

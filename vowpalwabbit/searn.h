@@ -59,8 +59,11 @@ namespace Searn {
   struct searn {
     // functions that you will call
 
-    inline uint32_t predict(example** ecs, size_t ec_len, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar)
+    inline uint32_t predict(example** ecs, size_t ec_len, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for LDF
     { return this->predict_f(*this->all, *this->base_learner, ecs, ec_len, yallowed, ystar); }
+
+    inline uint32_t predict(example* ec, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for not LDF
+    { return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, ystar); }
 
     inline void     declare_loss(size_t predictions_since_last, float incr_loss)
     { return this->declare_loss_f(*this->all, predictions_since_last, incr_loss); }
