@@ -74,6 +74,7 @@ namespace Searn {
     uint32_t learn_a;     //   and this is the a we're varying it to
     size_t snapshot_is_equivalent_to_t;   // if we've finished snapshotting and are equiv up to this time step, then we can fast forward from there
     bool snapshot_could_match;
+    size_t snapshot_last_found_pos;
     v_array<snapshot_item> snapshot_data;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train (or test) pass?
     v_array< void* > train_labels;  // which labels are valid at any given time
