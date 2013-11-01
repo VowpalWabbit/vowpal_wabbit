@@ -58,7 +58,7 @@ namespace VW {
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
 
-	void copy_example_data(example*&, example*, size_t, void(*copy_example)(void*&,void*));
+  void copy_example_data(bool audit, example*&, example*, size_t, void(*copy_example)(void*&,void*));
 
 	// after export_example, must call releaseFeatureSpace to free native memory
   primitive_feature_space* export_example(vw& all, example* e, size_t& len);
@@ -92,8 +92,11 @@ namespace VW {
     return (uint32_t)(all.p->hasher(ss,u) & all.parse_mask);
   }
 
-  inline float get_weight(vw& all, uint32_t index) 
-  { return all.reg.weight_vector[(index * all.reg.stride) & all.reg.weight_mask];}
+  inline float get_weight(vw& all, uint32_t index, uint32_t offset) 
+  { return all.reg.weight_vector[((index * all.reg.stride) & all.reg.weight_mask) + offset];}
+
+  inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value) 
+  { all.reg.weight_vector[((index * all.reg.stride) & all.reg.weight_mask) + offset] = value;}
 
   inline uint32_t num_weights(vw& all) 
   { return (uint32_t)all.length();}

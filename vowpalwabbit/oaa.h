@@ -17,7 +17,7 @@ namespace OAA
 {
 
   struct mc_label {
-    float label;
+    uint32_t label;
     float weight;
   };
   
@@ -36,15 +36,7 @@ namespace OAA
                                         NULL,
 					sizeof(mc_label)};
   
-  void output_example(vw& all, example* ec);
-
-  inline int example_is_newline(example* ec)
-  {
-    // if only index is constant namespace or no index
-    return ((ec->indices.size() == 0) || 
-            ((ec->indices.size() == 1) &&
-             (ec->indices.last() == constant_namespace)));
-  }
+  void finish_example(vw& all, void*, example* ec);
 
   inline int example_is_test(example* ec)
   {

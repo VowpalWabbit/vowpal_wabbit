@@ -1,0 +1,125 @@
+#!/usr/bin/python
+# 2013 Eric Whyne 
+# http://www.datamungeblog.com
+import re
+import sys, getopt
+
+infilename = ''
+outfilename = ''
+pregex = 'Y(es)?|T(rue)?|\+?1'
+nregex = 'No?|F(alse)?|0|-1'
+category_index = 0
+delimeter = ','
+
+def printhelp():
+    print "\n" + sys.argv[0] + """ converts csv data into vw binary classifier training data.
+    
+Options: 
+    -h                 Print this help.
+    -i <filename>      input file, if not defined will use stdin
+    -o <filename>      output file, if not defined will use stdout
+    -p <regex>		   regex identifying positive side of binary classification
+                        if not defined will use 'Y(es)?|T(rue)?|+?1'
+    -n <regex>         regex identifying negative side of binary classification
+                        if not defined will use 'No?|F(alse)?|0|-1'
+    -c <integer>       csv column which binary classification resides
+                        if not defined will use 0
+    -d <delimeter>     specifies boundaries used to separate csv columns
+                         if not defined will use ',' 
+                        
+Examples:
+    cat data.csv | ./vw-csv2bin -c 14 -p '>' -n '<' > training.vw
+    ./vw-csv2bin -i data.csv -o training.vw -d '\\t' -c 14 -p '>' -n '<'
+"""
+
+try:
+   opts, args = getopt.getopt(sys.argv[1:],"hi:o:p:n:c:d:")
+except getopt.GetoptError:
+   printhelp()
+   sys.exit(2)
+for opt, arg in opts:
+  if opt == '-h':
+    printhelp()
+    sys.exit()
+  elif opt == '-i':
+    infilename = arg  
+  elif opt == '-o':
+    outfilename = arg
+  elif opt == '-p':
+    pregex = arg
+  elif opt == '-n':
+    nregex = arg
+  elif opt == '-c':
+    category_index = int(arg)
+  elif opt == '-d':
+    delimeter = arg
+
+if infilename:
+    infile = open (infilename,'r')
+else:
+    infile = sys.stdin
+if outfilename:
+    outfile = open (outfilename,'w')
+
+for line in infile:
+  line = re.sub('\||:|\s', '', line) # Remove vertical bar, colon, space, and newline; unsupported by vw file format
+  data = line.split(delimeter)
+  category = data.pop(category_index)
+  if re.search(nregex, category): # regex for negative category
+    category = "-1"
+  elif re.search(pregex, category): # regex for positive category
+    category = '1'
+  else:
+    sys.exit("Regex did not match a record, exiting.\nPostive Regex: " + pregex + "\nNegative Regex: "+ nregex + "\nRecord:\n" + line)
+  outline = category + " | "
+  colnum = 0
+  for col in data:
+    colstr = str(colnum)
+    #col = re.sub(r'\s','',col) # remove all whitespace
+    if re.search('^[0-9.]*$', col): # If the feature is a number, then give it a label
+      outline = outline + "f" + colstr + ":" + col + " "
+    else: # If the feature is a string, then let vw handle it directly
+      outline = outline + col + ' '
+    colnum = colnum + 1
+  outline = outline + "\n"
+  if outfilename:
+    outfile.write(outline)
+  else:
+    sys.stdout.write(outline)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+     

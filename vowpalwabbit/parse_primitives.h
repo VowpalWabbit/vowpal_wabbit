@@ -98,12 +98,13 @@ struct parser {
   uint32_t in_pass_counter;
   example* examples;
   uint64_t used_index;
+  bool emptylines_separate_examples; // true if you want to have holdout computed on a per-block basis rather than a per-line basis
   MUTEX examples_lock;
   CV example_available;
   CV example_unused;
   MUTEX output_lock;
   CV output_done;
-
+  
   bool done;
   v_array<size_t> gram_mask;
 

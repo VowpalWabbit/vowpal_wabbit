@@ -261,7 +261,7 @@ namespace ECT
 
     e.tournaments_won.erase();
 
-    uint32_t id = e.directions[(uint32_t)(mc->label)-1].winner;
+    uint32_t id = e.directions[mc->label - 1].winner;
     bool left = e.directions[id].left == mc->label - 1;
     do
       {
@@ -362,12 +362,6 @@ namespace ECT
     ect* e=(ect*)d;
     vw* all = e->all;
     
-    if (command_example(all, ec))
-      {
-	e->base.learn(ec);
-	return;
-      }
-
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
       cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
@@ -384,7 +378,6 @@ namespace ECT
   void finish(void* d)
   {
     ect* e = (ect*)d;
-    e->base.finish();
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
@@ -402,31 +395,6 @@ namespace ECT
     e->tournaments_won.delete_v();
   }
   
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    while ( true )
-      {
-       if(all-> early_terminate)
-          {
-            all->p->done = true;
-            return;
-          }
-        else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-            learn(d, ec);
-            OAA::output_example(*all, ec);
-	    VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-          {
-            return;
-          }
-        else 
-          ;
-      }
-  }
-
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ect* data = (ect*)calloc(1, sizeof(ect));
@@ -484,8 +452,12 @@ namespace ECT
     create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner l(data, drive, learn, finish, all.l.sl);
+    learner l(data, learn, all.l.sl);
     data->base = all.l;
+    l.set_finish_example(OAA::finish_example);
+    l.set_finish(finish);
+    l.set_base(&(data->base));
+
     return l;
   }
 }

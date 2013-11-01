@@ -222,21 +222,18 @@ void output_and_account_example(vw& all, example* ec)
 	all.print(f, ec->final_prediction, 0, ec->tag);
     }
 
-  
-
   print_update(all, ec);
 }
 
-void return_simple_example(vw& all, example* ec)
+void return_simple_example(vw& all, void*, example* ec)
 {
-  if (!command_example(&all, ec))
-    output_and_account_example(all, ec);
+  output_and_account_example(all, ec);
   VW::finish_example(all,ec);
 }
 
 bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 {
-  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX;
+  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX;
 
   all.sd->weighted_holdout_examples_since_last_pass = 0;
   all.sd->holdout_sum_loss_since_last_pass = 0;

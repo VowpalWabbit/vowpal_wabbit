@@ -24,6 +24,10 @@ license as described in the file LICENSE.
 using namespace std;
 
 namespace GDMF {
+  struct gdmf {
+    vw* all;
+  };
+
 void mf_local_predict(example* ec, regressor& reg);
 
 float mf_inline_predict(vw& all, example* &ec)
@@ -214,7 +218,7 @@ float mf_predict(vw& all, example* ex)
 
   void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)d;
+  vw* all = ((gdmf*)d)->all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
 
@@ -266,51 +270,33 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
+void end_pass(void* d)
+{
+  vw* all = ((gdmf*)d)->all;
+
+   all->eta *= all->eta_decay_rate;
+   if (all->save_per_pass)
+     save_predictor(*all, all->final_regressor_name, all->current_pass);
+   
+   all->current_pass++;
+}
+
   void learn(void* d, example* ec)
   {
-    vw* all = (vw*)d;
-    if (ec->end_pass) 
-    {
-      all->eta *= all->eta_decay_rate;
-      if (all->save_per_pass)
-        save_predictor(*all, all->final_regressor_name, all->current_pass);
-
-      all->current_pass++;
-    }
-
-    if (!command_example(all, ec))
-      {
-	mf_predict(*all,ec);
-	if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
-	  mf_inline_train(*all, ec, ec->eta_round);
-      }    
+    vw* all = ((gdmf*)d)->all;
+ 
+    mf_predict(*all,ec);
+    if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
+      mf_inline_train(*all, ec, ec->eta_round);
   }
-
-  void finish(void* d)
-  { }
-
-  void drive(vw* all, void* d)
-{
-  example* ec = NULL;
-  
-  while ( true )
-    {
-      if ((ec = VW::get_example(all->p)) != NULL)//blocking operation.
-	{
-	  learn(d,ec);
-	  return_simple_example(*all, ec);
-	}
-      else if (parser_done(all->p))
-	return;
-      else 
-	;//busywait when we have predicted on all examples but not yet trained on all.
-    }
-}
 
   learner setup(vw& all)
   {
-    sl_t sl = {&all, save_load};
-    learner l(&all,drive,learn,finish,sl);
+    gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
+    data->all = &all;
+    sl_t sl = {data, save_load};
+    learner l(data,learn,sl);
+    l.set_end_pass(end_pass);
     return l;
   }
 }

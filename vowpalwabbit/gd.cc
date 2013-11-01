@@ -65,7 +65,7 @@ namespace GD
       total_weight = ec->example_t;
 
     if(!all.holdout_set_off)
-      total_weight -= all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
+      total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_norm) avg_norm = sqrt(avg_norm);
@@ -128,99 +128,97 @@ inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
   }
 }
 
+  void end_pass(void* d)
+  {
+    gd* g = (gd*)d;
+    vw* all = g->all;
+    
+    sync_weights(*all);
+    if(all->span_server != "") {
+      if(all->adaptive)
+	accumulate_weighted_avg(*all, all->span_server, all->reg);
+      else 
+        accumulate_avg(*all, all->span_server, all->reg, 0);	      
+    }
+    
+    all->eta *= all->eta_decay_rate;
+    if (all->save_per_pass)
+      save_predictor(*all, all->final_regressor_name, all->current_pass);   
+    
+    all->current_pass++;
+    
+    if(!all->holdout_set_off)
+      {
+        if(summarize_holdout_set(*all, g->no_win_counter))
+          finalize_regressor(*all, all->final_regressor_name);
+        if((g->early_stop_thres == g->no_win_counter) &&
+           ((all->check_holdout_every_n_passes <= 1) ||
+            ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
+          all-> early_terminate = true;
+      }   
+  }
+
 void learn(void* d, example* ec)
 {
   gd* g = (gd*)d;
   vw* all = g->all;
 
   assert(ec->in_use);
-  if (ec->end_pass)
-    { 
-      sync_weights(*all);
-      if(all->span_server != "") {
-	if(all->adaptive)
-	  accumulate_weighted_avg(*all, all->span_server, all->reg);
-	else 
-	  accumulate_avg(*all, all->span_server, all->reg, 0);	      
-      }
-      
-      all->eta *= all->eta_decay_rate;
-      if (all->save_per_pass)
-	save_predictor(*all, all->final_regressor_name, all->current_pass);   
-      
-      all->current_pass++;
 
-      if(!all->holdout_set_off)
-      {
-        if(summarize_holdout_set(*all, g->no_win_counter))
-          finalize_regressor(*all, all->final_regressor_name); 
-        if(g->early_stop_thres == g->no_win_counter)
-          all-> early_terminate = true;
-      }   
-    }
+  predict(*all,*g,ec);
   
-  if (!command_example(all, ec))
-    { 
-      predict(*all,*g,ec);
-
-      if (all->holdout_set_off || !ec->test_only)
-      {
+  if (all->holdout_set_off || !ec->test_only)
+    {
       if (ec->eta_round != 0.)
-	{ 
+	{
           if(all->power_t == 0.5) { 
             if (all->adaptive) {
               if (all->normalized_updates){ 
                 if (g->feature_mask_off) 
                   generic_train<specialized_update<true, true, true> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
                 else
                   generic_train<specialized_update<true, true, false> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
               }
               else {
                 if (g->feature_mask_off) 
                   generic_train<specialized_update<true, false, true> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
                 else
                   generic_train<specialized_update<true, false, false> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
               }
             }              
             else { //for adaptive 
               if (all->normalized_updates){ 
                 if (g->feature_mask_off) 
                   generic_train<specialized_update<false, true, true> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
                 else
                   generic_train<specialized_update<false, true, false> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
               }
               else {
                 if (g->feature_mask_off) 
                   generic_train<specialized_update<false, false, true> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
                 else
                   generic_train<specialized_update<false, false, false> >
-                    (*all,ec,ec->eta_round,true);
+                    (*all,ec,(float)ec->eta_round,true);
               }  
             }
           }//end of power_t
           else{
             if (g->feature_mask_off)
-              generic_train<general_update<true> >(*all,ec,ec->eta_round,false);
+              generic_train<general_update<true> >(*all,ec,(float)ec->eta_round,false);
             else
-              generic_train<general_update<false> >(*all,ec,ec->eta_round,false);
+              generic_train<general_update<false> >(*all,ec,(float)ec->eta_round,false);
           }  
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
 	}
-      }
     }
-}
-  void finish(void* d)
-{
-  gd* g = (gd*)d;
-  free(g);
 }
 
 void sync_weights(vw& all) {
@@ -512,7 +510,7 @@ float compute_norm(vw& all, example* &ec)
       total_weight = ec->example_t;
 
     if(!all.holdout_set_off)
-      total_weight -= all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
+      total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     all.normalized_sum_norm_x += ld->weight * nd.norm_x;
     
@@ -553,7 +551,7 @@ float compute_norm(vw& all, example* &ec)
   if(all.active)
     t = (float)all.sd->weighted_unlabeled_examples;
   else
-    t = ec->example_t - all.sd->weighted_holdout_examples;
+    t = (float)(ec->example_t - all.sd->weighted_holdout_examples);
 
   ec->eta_round = 0;
 
@@ -599,7 +597,7 @@ float compute_norm(vw& all, example* &ec)
 
           eta_t = all.eta * norm * ld->weight;
           if(!all.adaptive) eta_t *= powf(t,-all.power_t);
-
+          
           float update = 0.f;
           if( all.invariant_updates )
             update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm);
@@ -883,29 +881,6 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
     }
 }
 
-void driver(vw* all, void* data)
-{
-  example* ec = NULL;
-  
-  while ( true )
-    {
-     if(all-> early_terminate)
-        {
-          all->p->done = true;
-          return;
-        }
-     else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-	{
-	  learn(data, ec);
-	  return_simple_example(*all, ec);
-	}
-      else if (parser_done(all->p))
-	return;
-      else 
-	;//busywait when we have predicted on all examples but not yet trained on all.
-    }
-}
-
 learner setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc(1, sizeof(gd));
@@ -929,8 +904,8 @@ learner setup(vw& all, po::variables_map& vm)
   }
     
   sl_t sl = {g,save_load};
-  learner ret(g,driver,learn,finish,sl);
-
+  learner ret(g,learn,sl);
+  ret.set_end_pass(end_pass);
   return ret;
 }
 }

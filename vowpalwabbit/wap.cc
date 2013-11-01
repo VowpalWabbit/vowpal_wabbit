@@ -29,7 +29,6 @@ namespace WAP {
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
         size_t original_length = ec->atomics[*i].size();
-        //cerr << "original_length = " << original_length << endl;
         for (uint32_t j = 0; j < original_length; j++)
           {
             feature* f = &ec->atomics[*i][j];
@@ -38,7 +37,6 @@ namespace WAP {
             ec->atomics[*i].push_back(temp);
           }
         ec->sum_feat_sq[*i] *= 2;
-        //cerr << "final_length = " << ec->atomics[*i].size() << endl;
       }
     if (all.audit)
       {
@@ -62,12 +60,10 @@ namespace WAP {
                   f->weight_index += offset1;
                   ec->audit_features[*i].push_back(temp);
                 }
-              //cerr << "final_length = " << ec->audit_features[*i].size() << endl;
             }
       }
     ec->num_features *= 2;
     ec->total_sum_feat_sq *= 2;
-    //cerr << "total_sum_feat_sq = " << ec->total_sum_feat_sq << endl;
   }
 
   void unmirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
@@ -232,49 +228,12 @@ namespace WAP {
     wap* w = (wap*)d;
     vw* all = w->all;
     
-    if (command_example(all, ec))
-      {
-	w->base.learn(ec);
-	return;
-      }
-
     size_t prediction = test(*all, *w, ec);
     ec->ld = cost_label;
     
     if (cost_label->costs.size() > 0)
       train(*all, *w, ec);
     ec->final_prediction = (float)prediction;
-  }
-  
-  void finish(void* d)
-  {
-    wap* w=(wap*)d;
-    w->base.finish();
-    free(w);
-  }
-  
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    while ( true )
-      {
-        if(all-> early_terminate)
-          {
-            all->p->done = true;
-            return;
-          } 
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-	    learn(d, ec);
-            if (!command_example(all, ec))
-              CSOAA::output_example(*all, ec);
-	    VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-	  return;
-        else 
-          ;
-      }
   }
   
   learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
@@ -302,8 +261,11 @@ namespace WAP {
     all.weights_per_problem *= nb_actions;
     w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner l(w, drive, learn, finish, all.l.sl);
+    learner l(w, learn, all.l.sl);
     w->base = all.l;
+    l.set_base(&(w->base));
+    l.set_finish_example(CSOAA::finish_example);
+
     return l;
   }
 }

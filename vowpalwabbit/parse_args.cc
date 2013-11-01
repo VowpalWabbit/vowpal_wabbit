@@ -104,6 +104,7 @@ vw* parse_args(int argc, char *argv[])
     ("hessian_on", "use second derivative in line search")
     ("holdout_off", "no holdout data in multiple passes")
     ("holdout_period", po::value<uint32_t>(&(all->holdout_period)), "holdout period for test only, default 10")
+    ("holdout_after", po::value<uint32_t>(&(all->holdout_after)), "holdout after n training examples, default off (disables holdout_period)")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
@@ -148,8 +149,7 @@ vw* parse_args(int argc, char *argv[])
     ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
-    ("searnimp", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
+    ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
@@ -340,8 +340,6 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("sort_features"))
     all->p->sort_features = true;
-
-  
 
   if (vm.count("quadratic"))
     {
@@ -558,7 +556,6 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
 
-  all->is_noop = false;
   if (vm.count("noop")) 
     all->l = NOOP::setup(*all);
   
@@ -726,11 +723,8 @@ vw* parse_args(int argc, char *argv[])
     got_cb = true;
   }
 
+  all->searnstr = NULL;
   if (vm.count("searn") || vm_file.count("searn") ) { 
-    if (vm.count("searnimp") || vm_file.count("searnimp")) {
-      cerr << "fail: cannot have both --searn and --searnimp" << endl;
-      throw exception();
-    }
     if (!got_cs && !got_cb) {
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
@@ -738,19 +732,8 @@ vw* parse_args(int argc, char *argv[])
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
+    all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
     all->l = Searn::setup(*all, to_pass_further, vm, vm_file);
-  }
-
-  if (vm.count("searnimp") || vm_file.count("searnimp") ) { 
-    if (!got_cs && !got_cb) {
-      if( vm_file.count("searnimp") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searnimp"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searnimp"]));
-      
-      all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
-      got_cs = true;
-    }
-    all->searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
-    all->l = ImperativeSearn::setup(*all, to_pass_further, vm, vm_file);
   }
 
   if (got_cb && got_mc) {
@@ -794,12 +777,12 @@ vw* parse_args(int argc, char *argv[])
 
   parse_source_args(*all, vm, all->quiet,all->numpasses);
 
-  // force stride * weights_per_problem to be divisible by 2 to avoid 32-bit overflow
+  // force stride * weights_per_problem to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   while (all->reg.stride * all->weights_per_problem  > (uint32_t)(1 << i))
     i++;
   all->weights_per_problem = (1 << i) / all->reg.stride;
-
+  
   return all;
 }
 
@@ -882,7 +865,6 @@ namespace VW {
     all.l.finish();
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
-    if (all.searnstr != NULL) free(all.searnstr);
     free_parser(all);
     finalize_source(all.p);
     free(all.p->lp);

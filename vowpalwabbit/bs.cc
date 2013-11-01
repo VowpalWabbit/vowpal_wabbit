@@ -60,7 +60,7 @@ namespace BS {
 
   void bs_predict_mean(vw& all, example* ec, vector<double> &pred_vec)
   {
-    ec->final_prediction = accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+    ec->final_prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
     ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ((label_data*)ec->ld)->label) * ((label_data*)ec->ld)->weight;    
   }
 
@@ -77,7 +77,7 @@ namespace BS {
         if (counter == 0)
         {
           counter = 1;
-          current_label = pred_vec[i];
+          current_label = (float)pred_vec[i];
         }
         else
           counter--;
@@ -127,32 +127,28 @@ namespace BS {
     }    
   }
 
-  void output_example(vw& all, example* ec, bs* d)
+  void output_example(vw& all, bs* d, example* ec)
   {
-    if (command_example(&all,ec))
-      return;
-
     label_data* ld = (label_data*)ec->ld;
-
-
-   if(ec->test_only)
-    {
-      all.sd->weighted_holdout_examples += ld->weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
-      all.sd->holdout_sum_loss += ec->loss;
-      all.sd->holdout_sum_loss_since_last_dump += ec->loss;
-      all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
-    }
+    
+    if(ec->test_only)
+      {
+	all.sd->weighted_holdout_examples += ld->weight;//test weight seen
+	all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
+	all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
+	all.sd->holdout_sum_loss += ec->loss;
+	all.sd->holdout_sum_loss_since_last_dump += ec->loss;
+	all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
+      }
     else
-    {
-      all.sd->weighted_examples += ld->weight;
-      all.sd->sum_loss += ec->loss;
-      all.sd->sum_loss_since_last_dump += ec->loss;
-      all.sd->total_features += ec->num_features;
-      all.sd->example_number++;
-    }
-
+      {
+	all.sd->weighted_examples += ld->weight;
+	all.sd->sum_loss += ec->loss;
+	all.sd->sum_loss_since_last_dump += ec->loss;
+	all.sd->total_features += ec->num_features;
+	all.sd->example_number++;
+      }
+    
     if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
     {
       d->lb = FLT_MAX;
@@ -160,9 +156,9 @@ namespace BS {
       for (unsigned i = 0; i < d->pred_vec.size(); i++)
       {
         if(d->pred_vec[i] > d->ub)
-          d->ub = d->pred_vec[i];
+          d->ub = (float)d->pred_vec[i];
         if(d->pred_vec[i] < d->lb)
-          d->lb = d->pred_vec[i];
+          d->lb = (float)d->pred_vec[i];
       }
     }
 
@@ -172,16 +168,13 @@ namespace BS {
     print_update(all, ec);
   }
 
-  void learn_with_output(bs* d, example* ec, bool shouldOutput)
+  void learn(void* data, example* ec)
   {
+    bs* d = (bs*)data;
     vw* all = d->all;
-    if (command_example(all,ec))
-      {
-	d->base.learn(ec);
-	return;
-      }
+    bool shouldOutput = all->raw_prediction > 0;
 
-    double weight_temp = ((label_data*)ec->ld)->weight;
+    float weight_temp = ((label_data*)ec->ld)->weight;
   
     string outputString;
     stringstream outputStringStream(outputString);
@@ -226,34 +219,10 @@ namespace BS {
 
   }
 
-  void learn(void* d, example* ec) {
-    learn_with_output((bs*)d, ec, false);
-  }
-
-  void drive(vw* all, void* d)
+  void finish_example(vw& all, void* d, example* ec)
   {
-    example* ec = NULL;
-    while ( true )
-      {
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-            learn_with_output((bs*)d, ec, all->raw_prediction > 0);
-            if (!command_example(all, ec))
-              BS::output_example(*all, ec, (bs*)d);
-	    VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-	  return;
-        else 
-          ;
-      }
-  }
-
-  void finish(void* data)
-  {    
-    bs* o=(bs*)data;
-    o->base.finish();
-    free(o);
+    BS::output_example(all, (bs*)d, ec);
+    VW::finish_example(all, ec);
   }
 
   learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -332,7 +301,10 @@ namespace BS {
     all.weights_per_problem *= data->B;
     data->total_increment = data->increment*(data->B-1);
     data->base = all.l;
-    learner l(data, drive, learn, finish, all.l.sl);
+    learner l(data, learn, all.l.sl);
+    l.set_base(&(data->base));
+
+    l.set_finish_example(finish_example); 
     return l;
   }
 }

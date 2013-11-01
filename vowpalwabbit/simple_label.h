@@ -17,7 +17,7 @@ struct label_data {
   float initial;
 };
 
-void return_simple_example(vw& all, example* ec);
+void return_simple_example(vw& all, void*, example* ec);
 
 size_t read_cached_simple_label(shared_data* sd, void* v, io_buf& cache);
 void cache_simple_label(void* v, io_buf& cache);
