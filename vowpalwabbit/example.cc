@@ -186,6 +186,3 @@ namespace VW {
 }
 }
 
-void update_example_indicies(bool audit, example* ec, uint32_t amount) { 
-  ec->ft_offset += amount; }
-

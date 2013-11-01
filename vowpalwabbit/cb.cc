@@ -286,11 +286,11 @@ namespace CB
     //all.sd->min_label = c.min_cost;
     float old_max = all.sd->max_label;
     //all.sd->max_label = c.max_cost;
-    update_example_indicies(all.audit, ec, desired_increment);
+    update_example_indicies(ec, desired_increment);
     all.scorer->learn(ec);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
-    update_example_indicies(all.audit, ec, -desired_increment);
+    update_example_indicies(ec, -desired_increment);
   }
   
   float get_cost_pred(vw& all, cb& c, example* ec, uint32_t index)

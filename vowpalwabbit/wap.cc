@@ -205,12 +205,12 @@ namespace WAP {
         simple_temp.label = FLT_MAX;
         uint32_t myi = (uint32_t)cost_label->costs[i].weight_index;
         if (myi!= 1)
-          update_example_indicies(all.audit, ec, w.increment*(myi-1));
+          update_example_indicies(ec, w.increment*(myi-1));
         ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
         base.learn(ec);
         if (myi != 1)
-          update_example_indicies(all.audit, ec, -w.increment*(myi-1));
+          update_example_indicies(ec, -w.increment*(myi-1));
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
