@@ -123,20 +123,19 @@ namespace SearnUtil
   void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h)
   {
     uint64_t v0, v1, v, max_string_length = 0;
-    uint32_t total_length = (uint32_t)max(hinfo.features, hinfo.length);
     uint32_t wpp = all.weights_per_problem * all.reg.stride;
-    if (total_length == 0) return;
+    if (hinfo.length == 0) return;
     if (h == NULL) {
       cerr << "error: got empty history in add_history_to_example" << endl;
       throw exception();
     }
 
     if (all.audit) {
-      max_string_length = max((int)(ceil( log10((float)total_length+1) )),
+      max_string_length = max((int)(ceil( log10((float)hinfo.length+1) )),
                               (int)(ceil( log10((float)10000000000+1) ))) + 1;   // max action id
     }
 
-    for (uint32_t t=1; t<=total_length; t++) {
+    for (uint32_t t=1; t<=hinfo.length; t++) {
       v0 = (h[hinfo.length-t] * quadratic_constant + t) * history_constant;
       // add the basic history features
       feature temp = {history_value, (uint32_t) ( (v0*wpp) & all.reg.weight_mask )};
@@ -244,8 +243,7 @@ namespace SearnUtil
 
   void remove_history_from_example(vw&all, history_info &hinfo, example* ec)
   {
-    size_t total_length = max(hinfo.features, hinfo.length);
-    if (total_length == 0) return;
+    if (hinfo.length == 0) return;
 
     if (ec->indices.size() == 0) {
       cerr << "internal error (bug): trying to remove history, but there are no namespaces!" << endl;
@@ -277,12 +275,12 @@ namespace SearnUtil
     ec->indices.decr();
   }
 
-  size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>* ystar, history_info& hinfo, size_t*history) {
-    add_history_to_example(vw, hinfo, ec, history);
-    size_t prediction = ((Searn::searn*)vw.searnstr)->predict(vw, &ec, 0, NULL, ystar);
-    remove_history_from_example(vw, hinfo, ec);
-    return prediction;
-  }
+  // size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>* ystar, history_info& hinfo, size_t*history) {
+  //   add_history_to_example(vw, hinfo, ec, history);
+  //   size_t prediction = ((Searn::searn*)vw.searnstr)->predict(vw, &ec, 0, NULL, ystar);
+  //   remove_history_from_example(vw, hinfo, ec);
+  //   return prediction;
+  // }
 
 }
 
@@ -417,10 +415,15 @@ namespace Searn {
       } else
         return choose_random<uint32_t>(*ystar);
     } else {        // learned policy
-      if (isLDF(srn))
+      if (!isLDF(srn)) {  // single example
+        if (srn.auto_history) add_history_to_example(all, srn.hinfo, *ecs, srn.rollout_action.begin+srn.t);
+        size_t action = single_prediction_notLDF(all, srn, *ecs, valid_labels, pol);
+        if (srn.auto_history) remove_history_from_example(all, srn.hinfo, *ecs);
+        return action;
+      } else {
+        // TODO: auto-history for LDF
         return single_prediction_LDF(all, ecs, num_ec, pol);
-      else
-        return single_prediction_notLDF(all, srn, *ecs, valid_labels, pol);
+      }
     }
   }
 
@@ -485,8 +488,8 @@ namespace Searn {
       uint32_t a = single_action(all, *srn, ecs, num_ec, srn->valid_labels, pol, ystar);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       //clog << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
+      if (srn->auto_history) srn->rollout_action.push_back(a);
       srn->t++;
-      //valid_labels.costs.erase(); valid_labels.costs.delete_v();
       return a;
     }
     if (srn->state == INIT_TRAIN) {
@@ -499,6 +502,7 @@ namespace Searn {
       //if (! ((srn->current_policy == 0) || (a == a_opt))) { cerr << "FAIL!!!"<<endl;}
       srn->train_action.push_back(a);
       srn->train_labels.push_back(copy_labels(*srn, srn->valid_labels));
+      if (srn->auto_history) srn->rollout_action.push_back(a);
       srn->t++;
       return a;
     }
@@ -506,15 +510,15 @@ namespace Searn {
       if (srn->t < srn->learn_t) {
         assert(srn->t < srn->train_action.size());
         srn->t++;
-        return srn->train_action[srn->t-1];
+        return srn->train_action[srn->t - 1];
       } else if (srn->t == srn->learn_t) {
         if (srn->learn_example_copy == NULL) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
           srn->learn_example_len = num_to_copy;
           srn->learn_example_copy = (example**)SearnUtil::calloc_or_die(num_to_copy, sizeof(example*));
           for (size_t n=0; n<num_to_copy; n++) {
-            srn->learn_example_copy[n] = alloc_example(sizeof(CSOAA::label));
-            VW::copy_example_data(all.audit, srn->learn_example_copy[n], ecs[n], sizeof(CSOAA::label), all.p->lp->copy_label);
+            srn->learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
+            VW::copy_example_data(all.audit, srn->learn_example_copy[n], ecs[n], sizeof(OAA::mc_label), NULL);
           }
           //cerr << "copying example to " << srn->learn_example_copy << endl;
         }
@@ -544,7 +548,7 @@ namespace Searn {
           srn->snapshot_is_equivalent_to_t++;
           srn->t = srn->snapshot_is_equivalent_to_t;
           //clog << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action[srn->t-1] << endl;
-          return srn->train_action[srn->t-1];
+          return srn->train_action[srn->t - 1];
         }
       }
       assert(false);
@@ -569,29 +573,77 @@ namespace Searn {
       srn->learn_loss += incr_loss;
   }
 
-  bool snapshot_linear_search_lt(v_array<snapshot_item> a, size_t desired_t, size_t tag, size_t &pos) {
-    if (a.size() == 0) return false;
-    for (pos=a.size()-1; ; pos--) {
-      if ((a[pos].pred_step <= desired_t) && (tag == a[pos].tag))
+bool snapshot_binary_search_lt(v_array<snapshot_item> a, size_t desired_t, size_t tag, size_t &pos, size_t last_found_pos) {
+    size_t hi  = a.size();
+    if (hi == 0) return false;
+    if (last_found_pos + 1 < hi) {
+      pos = last_found_pos+1;
+      if ((a[pos].pred_step == desired_t) && (a[pos].tag == tag)) return true;
+      if (pos == hi - 1) { // this is the last item
+        if ((a[pos].pred_step < desired_t) && (a[pos].tag == tag)) return true;
+        else return false;
+      }
+      // not the last item
+      if ((a[pos+1].pred_step >  desired_t) ||
+          ((a[pos+1].pred_step == desired_t) && (a[pos+1].tag > tag)))
         return true;
+    }
+    pos = hi >> 1;
+    while (true) {
+      if (hi <= 5) break;
+      if ((a[pos].pred_step == desired_t) && (a[pos].tag == tag)) return true;
+      if ((a[pos].pred_step >  desired_t) ||
+          ((a[pos].pred_step == desired_t) && (a[pos].tag >  tag)))
+        hi = pos;
+      else break;
+      
+      pos = hi >> 1;
+    }
+
+    for (pos=hi-1; ; pos--) {
+      if ((a[pos].pred_step <= desired_t) && (tag == a[pos].tag)) return true;
       if (pos == 0) return false;
     }
     return false;
   }
 
-  bool snapshot_linear_search_eq(v_array<snapshot_item> a, size_t desired_index, size_t tag, size_t &pos) {
-    if (a.size() == 0) return false;
-    for (pos=0; pos<a.size(); pos++) {
+
+  bool snapshot_binary_search_eq(v_array<snapshot_item> a, size_t desired_index, size_t tag, size_t &pos, size_t last_found_pos) {
+    size_t lo  = 0;  // the answer is always >= lo
+    size_t hi  = a.size();  // the answer is always < hi
+    if (hi == 0) return false;
+
+    if (last_found_pos + 1 < hi) {
+      pos = last_found_pos+1;
+      if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
+    } else      
+      pos = (lo + hi) >> 1;
+    while (true) {
+      if (lo == hi) return false;
+      if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
+      if (hi - lo <= 5) break;
+      if ((a[pos].index <  desired_index) ||
+          ((a[pos].index == desired_index) && (a[pos].tag <  tag)))
+        lo = pos;
+      else
+        hi = pos;
+      pos = (lo + hi) >> 1;
+    }
+
+    for (pos=lo; pos<hi; pos++) {
       if (a[pos].index > desired_index) return false;
       if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
     }
     return false;
   }
 
-void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
+  
+
+  void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
   {
     searn* srn=(searn*)all.searnstr;
     if (! srn->do_snapshot) return;
+    assert(tag > 0);
 
     //clog << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(size_t*)data_ptr << ", t=" << srn->t << ", u4p=" << used_for_prediction << " }" << endl;
     
@@ -603,6 +655,15 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
            ((srn->snapshot_data.last().index == index) && (srn->snapshot_data.last().tag > tag)))) 
         cerr << "warning: trying to snapshot in a non-monotonic order! ignoring this snapshot" << endl;
       else {
+        // if we're doing auto-history and this is the first snapshot of a given index, we need to also snapshot the relevant piece of history
+        if (srn->auto_history && (srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().index < index)) {
+          size_t history_size = srn->hinfo.length * sizeof(uint32_t);
+          void* history_data = malloc(history_size);
+          memcpy(history_data, srn->rollout_action.begin + srn->t, history_size);
+          snapshot_item item = { index, 0, history_data, srn->t };
+          srn->snapshot_data.push_back(item);
+        }
+
         void* new_data = malloc(sizeof_data);
         memcpy(new_data, data_ptr, sizeof_data);
         snapshot_item item = { index, tag, new_data, sizeof_data, srn->t };
@@ -618,9 +679,15 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       // otherwise, we're restoring snapshots -- we want to find the index of largest value that has .t<=learn_t
       size_t i;
       bool found;
-      found = snapshot_linear_search_lt(srn->snapshot_data, srn->learn_t, tag, i);
+      found = snapshot_binary_search_lt(srn->snapshot_data, srn->learn_t, tag, i, srn->snapshot_last_found_pos);
+      // size_t i2;
+      // bool found2;
+      // found2 = snapshot_linear_search_lt(srn->snapshot_data, srn->learn_t, tag, i2);
+      // assert(found == found2);
+      // assert(i == i2);
       if (!found) return;  // can't do anything
 
+      srn->snapshot_last_found_pos = i;
       snapshot_item item = srn->snapshot_data[i];
 
       /*
@@ -644,17 +711,32 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       if (! used_for_prediction) return; // we don't care if it matches or not
       size_t i;
       bool found;
-      found = snapshot_linear_search_eq(srn->snapshot_data, index, tag, i);
+      found = snapshot_binary_search_eq(srn->snapshot_data, index, tag, i, srn->snapshot_last_found_pos);
+
+      // bool found2; size_t i2;
+      // found2 = snapshot_linear_search_eq(srn->snapshot_data, index, tag, i2);
+      // assert(found == found2);
+      // assert(i == i2);
+      
       if (!found) return; // can't do anything
+      srn->snapshot_last_found_pos = i;
       //clog << "a" << index << "/" << tag << " ";
       snapshot_item item = srn->snapshot_data[i];
       bool matches = memcmp(item.data_ptr, data_ptr, sizeof_data) == 0;
-      if (matches)
+      if (matches) {
         // TODO: make sure it's the right number of snapshots!!!
         srn->snapshot_is_equivalent_to_t = item.pred_step;
-      else {
+
+        if (srn->auto_history && (i>0) && (srn->snapshot_data[i-1].index == index) && (srn->snapshot_data[i-1].tag == 0)) {
+          item = srn->snapshot_data[i-1];
+          if (srn->rollout_action.size() >= srn->t + srn->hinfo.length) {
+            matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, sizeof_data) == 0;
+            if (!matches)
+              srn->snapshot_could_match = false;
+          }
+        }
+      } else {
         srn->snapshot_could_match = false;
-        //clog << "b";
       }
     }
   }
@@ -709,6 +791,27 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
       return ((CB::label*)l)->costs[i].weight_index;
   }
 
+  bool should_print_update(vw& all, bool hit_new_pass=false)
+  {
+    //uncomment to print out final loss after all examples processed
+    //commented for now so that outputs matches make test
+    //if( parser_done(all.p)) return true;
+
+    if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
+    if (PRINT_UPDATE_EVERY_PASS && hit_new_pass) return true;
+    return (all.sd->weighted_examples > all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  }
+
+  bool might_print_update(vw& all)
+  {
+    // basically do should_print_update but check me and the next
+    // example because of off-by-ones
+
+    if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
+    if (PRINT_UPDATE_EVERY_PASS) return true;
+    return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  }
+
   void generate_training_example(vw& all, searn& srn, example** ec, size_t len, void*labels, v_array<float> losses)
   {
     assert(labelset_size(srn, labels) == losses.size());
@@ -734,7 +837,9 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
   void train_single_example(vw& all, searn& srn, example**ec, size_t len)
   {
     // do an initial test pass to compute output (and loss)
+    // TODO: don't do this if we don't need it!
     //clog << "======================================== INIT TEST (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
+
     srn.state = INIT_TEST;
     srn.t = 0;
     srn.T = 0;
@@ -744,93 +849,131 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     srn.learn_loss = 0.f;
     srn.learn_example_copy = NULL;
     srn.learn_example_len  = 0;
-    srn.train_action.erase();
     srn.num_features = 0;
-
-    if (srn.adaptive_beta)
-      srn.beta = 1.f - powf(1.f - srn.alpha, (float)srn.total_examples_generated);
-
-    srn.snapshot_is_equivalent_to_t = (size_t)-1;
-    srn.snapshot_could_match = false;
-    srn.should_produce_string = true;
-    assert(srn.truth_string != NULL);
-    srn.task->structured_predict(all, srn, ec, len,
-                                 srn.should_produce_string ? srn.pred_string  : NULL,
-                                 srn.should_produce_string ? srn.truth_string : NULL);
-
-    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
-      all.print_text((int)*sink, srn.pred_string->str(), ec[0]->tag);
-
-    if (srn.t == 0)
-      return;  // there was no data!
-
-    // do a pass over the data allowing oracle and snapshotting
-    //clog << "======================================== INIT TRAIN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
-    srn.state = INIT_TRAIN;
-    srn.t = 0;
-    srn.loss_last_step = 0;
-    clear_snapshot(all, srn);
+    srn.train_action.erase();
+    if (srn.auto_history) {
+      srn.rollout_action.erase();
+      for (size_t t=0; t<srn.hinfo.length; t++)
+        srn.rollout_action.push_back(0);
+    }
 
     srn.snapshot_is_equivalent_to_t = (size_t)-1;
     srn.snapshot_could_match = false;
-    srn.task->structured_predict(all, srn, ec, len, NULL, NULL);
+    srn.snapshot_last_found_pos = (size_t)-1;
 
-    if (srn.t == 0) {
+    if ((all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
+        might_print_update(all) ||                  // if we have to print and update to stderr
+        (!all.training) ||                          // if we're just testing
+        (all.current_pass == 0) ||                  // we need error rates for progressive cost
+        (all.holdout_set_off) ||                    // no holdout
+        (ec[0]->test_only)                          // it's a holdout example
+        ) {
+
+      srn.should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0);
+      if (srn.should_produce_string) {  // TODO: don't do this all the time!!!
+        srn.truth_string->str("");  // erase contents
+        srn.pred_string->str("");
+      }
+      
+      assert(srn.truth_string != NULL);
+      srn.task->structured_predict(all, srn, ec, len,
+                                   srn.should_produce_string ? srn.pred_string  : NULL,
+                                   srn.should_produce_string ? srn.truth_string : NULL);
+
+      for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
+        all.print_text((int)*sink, srn.pred_string->str(), ec[0]->tag);
+    }
+    
+    if ((srn.t > 0) && all.training) {
+      if (srn.adaptive_beta)
+        srn.beta = 1.f - powf(1.f - srn.alpha, (float)srn.total_examples_generated);
+
+      // do a pass over the data allowing oracle and snapshotting
+      //clog << "======================================== INIT TRAIN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
+      srn.state = INIT_TRAIN;
+      srn.train_action.erase();
+      if (srn.auto_history) {
+        srn.rollout_action.erase();
+        for (size_t t=0; t<srn.hinfo.length; t++)
+          srn.rollout_action.push_back(0);
+      }
+      srn.t = 0;
+      srn.loss_last_step = 0;
       clear_snapshot(all, srn);
-      return;  // there was no data
-    }
 
-    srn.T = srn.t;
+      srn.snapshot_is_equivalent_to_t = (size_t)-1;
+      srn.snapshot_last_found_pos = (size_t)-1;
+      srn.snapshot_could_match = false;
+      srn.task->structured_predict(all, srn, ec, len, NULL, NULL);
 
-    // generate training examples on which to learn
-    //clog << "======================================== LEARN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
-    srn.state = LEARN;
-    v_array<size_t> tset = get_training_timesteps(all, srn);
-    for (size_t tid=0; tid<tset.size(); tid++) {
-      size_t t = tset[tid];
-      void *aset = srn.train_labels[t];
-      srn.learn_t = t;
-      srn.learn_losses.erase();
-
-      for (size_t i=0; i<labelset_size(srn, aset); i++) {
-        size_t this_index = labelset_weight_index(srn, aset, i);
-        if (this_index == srn.train_action[srn.learn_t])
-          srn.learn_losses.push_back( srn.train_loss );
-        else {
-          srn.t = 0;
-          srn.learn_a = this_index;
-          srn.loss_last_step = 0;
-          srn.learn_loss = 0.f;
-
-          //clog << "learn_t = " << srn.learn_t << " || learn_a = " << srn.learn_a << endl;
-          srn.snapshot_is_equivalent_to_t = (size_t)-1;
-          srn.snapshot_could_match = true;
-          srn.task->structured_predict(all, srn, ec, len, NULL, NULL);
-
-          srn.learn_losses.push_back( srn.learn_loss );
-          //clog << "total loss: " << srn.learn_loss << endl;
-        }
+      if (srn.t == 0) {
+        clear_snapshot(all, srn);
+        return;  // there was no data
       }
 
-      if (srn.learn_example_copy != NULL) {
-        generate_training_example(all, srn, srn.learn_example_copy, srn.learn_example_len, aset, srn.learn_losses);
+      srn.T = srn.t;
 
-        for (size_t n=0; n<srn.learn_example_len; n++) {
-          dealloc_example(OAA::delete_label, *srn.learn_example_copy[n]);
-          free(srn.learn_example_copy[n]);
+      // generate training examples on which to learn
+      //clog << "======================================== LEARN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
+      srn.state = LEARN;
+      v_array<size_t> tset = get_training_timesteps(all, srn);
+      for (size_t tid=0; tid<tset.size(); tid++) {
+        size_t t = tset[tid];
+        void *aset = srn.train_labels[t];
+        srn.learn_t = t;
+        srn.learn_losses.erase();
+
+        if (srn.auto_history) {
+          // startup the rollout at the train actions
+          srn.rollout_action.erase();
+          srn.rollout_action.resize(srn.hinfo.length + t);
+          if (t > 0)
+            memcpy(srn.rollout_action.begin + srn.hinfo.length, srn.train_action.begin, t * sizeof(uint32_t));
         }
-        free(srn.learn_example_copy);
-        srn.learn_example_copy = NULL;
-        srn.learn_example_len  = 0;
-      } else {
-        cerr << "warning: searn did not generate an example for a given time-step" << endl;
-      }
-    }
-    tset.erase(); tset.delete_v();
+        srn.snapshot_last_found_pos = (size_t)-1;
+      
+        for (size_t i=0; i<labelset_size(srn, aset); i++) {
+          size_t this_index = labelset_weight_index(srn, aset, i);
+          if (this_index == srn.train_action[srn.learn_t])
+            srn.learn_losses.push_back( srn.train_loss );
+          else {
+            srn.t = 0;
+            srn.learn_a = this_index;
+            srn.loss_last_step = 0;
+            srn.learn_loss = 0.f;
 
+            //clog << "learn_t = " << srn.learn_t << " || learn_a = " << srn.learn_a << endl;
+            srn.snapshot_is_equivalent_to_t = (size_t)-1;
+            srn.snapshot_could_match = true;
+            srn.task->structured_predict(all, srn, ec, len, NULL, NULL);
+
+            srn.learn_losses.push_back( srn.learn_loss );
+            //clog << "total loss: " << srn.learn_loss << endl;
+          }
+        }
+
+        if (srn.learn_example_copy != NULL) {
+          generate_training_example(all, srn, srn.learn_example_copy, srn.learn_example_len, aset, srn.learn_losses);
+
+          for (size_t n=0; n<srn.learn_example_len; n++) {
+            dealloc_example(OAA::delete_label, *srn.learn_example_copy[n]);
+            free(srn.learn_example_copy[n]);
+          }
+          free(srn.learn_example_copy);
+          srn.learn_example_copy = NULL;
+          srn.learn_example_len  = 0;
+        } else {
+          cerr << "warning: searn did not generate an example for a given time-step" << endl;
+        }
+      }
+      tset.erase(); tset.delete_v();
+    }
+    
     clear_snapshot(all, srn);
     srn.train_action.erase();
     srn.train_action.delete_v();
+    srn.rollout_action.erase();
+    srn.rollout_action.delete_v();
     for (size_t i=0; i<srn.train_labels.size(); i++) {
       if (srn.rollout_all_actions) {
         ((CSOAA::label*)srn.train_labels[i])->costs.erase();
@@ -844,7 +987,7 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
     }
     srn.train_labels.erase();
     srn.train_labels.delete_v();
-
+    
     //clog << "======================================== DONE (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
 
   }
@@ -860,19 +1003,6 @@ void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t si
   }
 
   float safediv(float a,float b) { if (b == 0.f) return 0.f; else return (a/b); }
-
-  bool should_print_update(vw& all, bool hit_new_pass=false)
-  {
-    //uncomment to print out final loss after all examples processed
-    //commented for now so that outputs matches make test
-    //if( parser_done(all.p)) return true;
-
-    if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
-    if (PRINT_UPDATE_EVERY_PASS && hit_new_pass) return true;
-    if (!(all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs))
-      return false;
-    return true;
-  }
 
   void to_short_string(string in, size_t max_len, char*out) {
     for (size_t i=0; i<max_len; i++) {
@@ -955,13 +1085,6 @@ void print_update(vw& all, searn* srn)
   {
     if (srn.ec_seq.size() == 0)
       return;  // nothing to do :)
-
-    srn.should_produce_string = false;
-    if (true || should_print_update(all, srn.hit_new_pass)) {  // TODO: don't do this all the time!!!
-      srn.should_produce_string = true;
-      srn.truth_string->str("");  // erase contents
-      srn.pred_string->str("");
-    }
 
     train_single_example(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
 
@@ -1093,6 +1216,8 @@ void print_update(vw& all, searn* srn)
 
     srn.printed_output_header = false;
 
+    srn.auto_history = false;
+    
     srn.empty_example = alloc_example(sizeof(OAA::mc_label));
     OAA::default_label(srn.empty_example->ld);
     srn.empty_example->in_use = true;
@@ -1107,7 +1232,20 @@ void print_update(vw& all, searn* srn)
     delete srn->truth_string;
     delete srn->pred_string;
 
-    dealloc_example(NULL, *(srn->empty_example));
+    if (srn->rollout_all_actions) { // dst should be a CSOAA::label*
+      ((CSOAA::label*)srn->valid_labels)->costs.erase();
+      ((CSOAA::label*)srn->valid_labels)->costs.delete_v();
+    } else {
+      ((CB::label*)srn->valid_labels)->costs.erase();
+      ((CB::label*)srn->valid_labels)->costs.delete_v();
+    }
+    
+    if (srn->rollout_all_actions) // labels are CSOAA
+      delete (CSOAA::label*)srn->valid_labels;
+    else // labels are CB
+      delete (CB::label*)srn->valid_labels;
+
+    dealloc_example(OAA::delete_label, *(srn->empty_example));
     free(srn->empty_example);
     
     srn->ec_seq.delete_v();
@@ -1128,10 +1266,13 @@ void print_update(vw& all, searn* srn)
     }
     srn->train_labels.erase(); srn->train_labels.delete_v();
     srn->train_action.erase(); srn->train_action.delete_v();
+    srn->rollout_action.erase(); srn->rollout_action.delete_v();
     srn->learn_losses.erase(); srn->learn_losses.delete_v();
 
-    if (srn->task->finish != NULL)
+    if (srn->task->finish != NULL) {
       srn->task->finish(*all, *srn);
+      free(srn->task);
+    }
   }
 
   void ensure_param(float &v, float lo, float hi, float def, const char* string) {
@@ -1196,6 +1337,30 @@ void print_update(vw& all, searn* srn)
       options(desc).allow_unregistered().run();
     po::store(parsed_file, vm_file);
     po::notify(vm_file);
+  }
+
+
+  void handle_history_options(vw& vw, history_info &hinfo, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+    po::options_description desc("Searn[sequence] options");
+    desc.add_options()
+      ("searn_history",  po::value<size_t>(), "length of history to use")
+      ("searn_features", po::value<size_t>(), "length of history to pair with observed features")
+      ("searn_bigrams",                       "use bigrams from history")
+      ("searn_bigram_features",               "use bigrams from history paired with observed features");
+
+    setup_searn_options(desc, vw, opts, vm, vm_file);
+    
+    check_option<size_t>(hinfo.length, vw, vm, vm_file, "searn_history", false, size_equal,
+                         "warning: you specified a different value for --searn_history than the one loaded from regressor. proceeding with loaded value: ", "");
+    
+    check_option<size_t>(hinfo.features, vw, vm, vm_file, "searn_features", false, size_equal,
+                         "warning: you specified a different value for --searn_features than the one loaded from regressor. proceeding with loaded value: ", "");
+    
+    check_option        (hinfo.bigrams, vw, vm, vm_file, "searn_bigrams", false,
+                         "warning: you specified --searn_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
+    
+    check_option        (hinfo.bigram_features, vw, vm, vm_file, "searn_bigram_features", false,
+                         "warning: you specified --searn_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
   }
 
 
@@ -1331,6 +1496,24 @@ void print_update(vw& all, searn* srn)
     *(all.p->lp) = OAA::mc_label_parser; 
     srn->task->initialize(all, *srn, srn->A, opts, vm, vm_file);
 
+    // set up auto-history if they want it
+    if (srn->auto_history) {
+      default_info(&srn->hinfo);
+
+      handle_history_options(all, srn->hinfo, opts, vm, vm_file);
+      
+      if (srn->hinfo.length < srn->hinfo.features)
+        srn->hinfo.length = srn->hinfo.features;
+      
+      if (srn->hinfo.length == 0)
+        srn->auto_history = false;
+    } else {
+      srn->hinfo.length = 0;
+      srn->hinfo.features = 0;
+      srn->hinfo.bigrams = false;
+      srn->hinfo.bigram_features = false;
+    }
+    
     //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
     learner l(srn, searn_learn);
     l.set_finish_example(finish_example);

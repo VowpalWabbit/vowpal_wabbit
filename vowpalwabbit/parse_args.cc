@@ -723,6 +723,7 @@ vw* parse_args(int argc, char *argv[])
     got_cb = true;
   }
 
+  all->searnstr = NULL;
   if (vm.count("searn") || vm_file.count("searn") ) { 
     if (!got_cs && !got_cb) {
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
