@@ -90,7 +90,9 @@ namespace Searn {
     v_array< void* > train_labels;  // which labels are valid at any given time
     v_array<uint32_t> rollout_action; // for auto_history, we need a space other than train_action for rollouts
     history_info hinfo;   // default history info for auto-history
-
+    string *neighbor_features_string;
+    v_array<int32_t> neighbor_features; // ugly encoding of neighbor feature requirements
+    
     bool should_produce_string;
     stringstream *pred_string;
     stringstream *truth_string;

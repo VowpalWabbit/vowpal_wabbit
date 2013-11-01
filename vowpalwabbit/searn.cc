@@ -118,7 +118,7 @@ namespace SearnUtil
     return pid;
   }
 
-  float history_value = 1.;
+  const float history_value = 1.;
 
   void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h)
   {
@@ -1086,12 +1086,43 @@ void print_update(vw& all, searn* srn)
     all.sd->dump_interval *= 2;
   }
 
+  void add_neighbor_features(searn& srn) {
+    // if (srn.neighbor_features.size() == 0) return;
+
+    // for (int32_t n=0; i<srn.ec_seq.size(); n++) {
+    //   example*me = srn.ec_seq[n];
+    //   for (int32_t*n_enc=srn.neighbor_features.begin; n_enc!=srn.neighbor_features.end; ++n_enc) {
+    //     int32_t offset = (*enc) >> 16;
+    //     char old_ns = ((*enc) >> 8) & 0xFF;
+    //     char new_ns = (*enc) & 0xFF;
+
+    //     // TODO: auditing :P
+    //     if ((n + offset >= 0) && (n + offset < srn.ec_seq.size())) { // we're okay on position
+    //       example*you = srn.ec_seq[n+offset];
+
+    //       for (unsigned char* i = you->indices.begin; i != you->indices.end; ++i) {
+    //         push_many(me->atomics[ns], you
+          
+    //         for (feature* f = you->atomics[*i].begin; f != you->atomics[*i].end; ++f) {
+    //           feature 
+    //         }
+    //       }
+          
+          
+    //     } else {
+    //       // TODO: add dummy features for <s> or </s>
+    //     }
+    //   }
+    // }
+  }
 
   void do_actual_learning(vw&all, searn& srn)
   {
     if (srn.ec_seq.size() == 0)
       return;  // nothing to do :)
 
+    add_neighbor_features(srn);
+    
     train_single_example(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
 
     if (srn.ec_seq[0]->test_only) {
@@ -1230,6 +1261,8 @@ void print_update(vw& all, searn* srn)
     srn.do_fastforward = true;
     srn.rollout_all_actions = true;
 
+    srn.neighbor_features_string = new string();
+    
     srn.passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
     srn.task = NULL;
@@ -1266,7 +1299,8 @@ void print_update(vw& all, searn* srn)
 
     delete srn->truth_string;
     delete srn->pred_string;
-
+    delete srn->neighbor_features_string;
+    
     if (srn->rollout_all_actions) { // dst should be a CSOAA::label*
       ((CSOAA::label*)srn->valid_labels)->costs.erase();
       ((CSOAA::label*)srn->valid_labels)->costs.delete_v();
@@ -1398,6 +1432,39 @@ void print_update(vw& all, searn* srn)
                          "warning: you specified --searn_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
   }
 
+  void parse_neighbor_features(searn&srn) {
+    srn.neighbor_features.erase();
+    size_t len = srn.neighbor_features_string->length();
+    if (len == 0) return;
+
+    char * cstr = new char [len+1];
+    strcpy(cstr, srn.neighbor_features_string->c_str());
+
+    char * p = strtok(cstr, ",");
+    v_array<substring> cmd;
+    while (p != 0) {
+      cmd.erase();
+      substring me = { p, p+strlen(p) };
+      tokenize(':', me, cmd);
+
+      if ((cmd.size() == 3) && (cmd[1].end > cmd[1].begin) && (cmd[2].end > cmd[2].begin)) {
+        int32_t posn = int_of_substring(cmd[0]);
+        char ns0  = cmd[1].begin[0];
+        char ns1  = cmd[2].begin[0];
+        int32_t enc = (posn << 16) | ((ns0 & 0xFF) << 8) | (ns1 & 0xFF);
+        // int32_t posn2 = enc >> 8;
+        // char ns2 = enc & 0xFF;
+        // cerr << "posn=" << posn << " ns=" << ns << " enc=" << enc << " posn2=" << posn2 << " ns2=" << ns2 << endl;
+        srn.neighbor_features.push_back(enc);
+      } else {
+        cerr << "warning: ignoring malformed neighbor specification: '" << p << "'" << endl;
+      }
+      
+      p = strtok(NULL, ",");
+    }
+    
+    delete cstr;
+  }
 
   learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
@@ -1417,8 +1484,8 @@ void print_update(vw& all, searn* srn)
       ("searn_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
       ("searn_no_snapshot", "turn off snapshotting capabilities")
       ("searn_no_fastforward", "turn off fastforwarding (note: fastforwarding requires snapshotting)")
-      ("searn_subsample_timesteps", po::value<float>(), "instead of training at all timesteps, use a subset v. if v<=0, train everywhere. if v in (0,1), train on a random v% (>=1 always selected). if v>=1, train on precisely v steps per example");
-    
+      ("searn_subsample_timesteps", po::value<float>(), "instead of training at all timesteps, use a subset v. if v<=0, train everywhere. if v in (0,1), train on a random v% (>=1 always selected). if v>=1, train on precisely v steps per example")
+      ("searn_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a:p,+2:b:r' meaning copy previous line namespace a to namespace p and next next line to namespace b to namespace r, where ',' separates them");
     po::options_description add_desc_file("Searn options only available in regressor file");
     add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
 
@@ -1447,7 +1514,11 @@ void print_update(vw& all, searn* srn)
                          "error: you must specify a task using --searn_task");
     check_option<size_t>(srn->A, all, vm, vm_file, "searn", false, size_equal,
                          "warning: you specified a different number of actions through --searn than the one loaded from predictor. using loaded value of: ", "");
+    check_option<string>(*srn->neighbor_features_string, all, vm, vm_file, "searn_neighbor_features", false, string_equal,
+                         "warning: you specified a different feature structure with --searn_neighbor_features than the one loaded from predictor. using loaded value of: ", "");
 
+    parse_neighbor_features(*srn);
+    
     if (vm.count("searn_subsample_timesteps"))     srn->subsample_timesteps  = vm["searn_subsample_timesteps"].as<float>();
     if (vm.count("searn_passes_per_policy"))       srn->passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
     if (vm.count("searn_allow_current_policy"))    srn->allow_current_policy = true;
