@@ -10,7 +10,7 @@ namespace LEARNER
   {
     example* ec = NULL;
 
-    all->l.init_driver();
+    all->l->init_driver();
     while ( true )
       {
 	if(all->early_terminate)
@@ -22,12 +22,12 @@ namespace LEARNER
 	  {
 	    if (ec->indices.size() > 1) // one nonconstant feature.
 	      {
-		all->l.learn(ec);
-		all->l.finish_example(*all, ec);
+		all->l->learn(ec);
+		all->l->finish_example(*all, ec);
 	      }
 	    else if (ec->end_pass)
 	      {
-		all->l.end_pass();
+		all->l->end_pass();
 		VW::finish_example(*all,ec);
 	      }
 	    else if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
@@ -45,13 +45,13 @@ namespace LEARNER
 	      }
 	    else 
 	      {
-		all->l.learn(ec);
-		all->l.finish_example(*all, ec);
+		all->l->learn(ec);
+		all->l->finish_example(*all, ec);
 	      }
 	  }
 	else if (parser_done(all->p))
 	  {
-	    all->l.end_examples();
+	    all->l->end_examples();
 	    return;
 	  }
       }

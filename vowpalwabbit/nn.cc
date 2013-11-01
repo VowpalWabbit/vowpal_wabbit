@@ -266,7 +266,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     free (n->output_layer.atomics[nn_output_namespace].begin);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     nn* n = (nn*)calloc(1,sizeof(nn));
     n->all = &all;
@@ -349,7 +349,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << (all.training ? "training" : "testing") 
                 << std::endl;
 
-    n->base = all.l;
+    n->base = *all.l;
 
     n->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= n->k + 1;
@@ -363,11 +363,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->xsubi = vm["random_seed"].as<size_t>();
 
     n->save_xsubi = n->xsubi;
-    learner l(n,learn);
-    l.set_base(&(n->base));
-    l.set_finish(finish);
-    l.set_finish_example(finish_example);
-    l.set_end_pass(end_pass);
+    learner* l = new learner(n, learn, all.l);
+    l->set_finish(finish);
+    l->set_finish_example(finish_example);
+    l->set_end_pass(end_pass);
 
     return l;
   }

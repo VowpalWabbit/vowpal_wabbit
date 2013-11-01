@@ -246,7 +246,7 @@ namespace OAA {
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     oaa* data = (oaa*)calloc(1, sizeof(oaa));
     //first parse for number of actions
@@ -269,10 +269,9 @@ namespace OAA {
     data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->k;
     data->total_increment = data->increment*(data->k-1);
-    data->base = all.l;
-    learner l(data, learn);
-    l.set_base(&(data->base));
-    l.set_finish_example(finish_example);
+    data->base = *all.l;
+    learner* l = new learner(data, learn, all.l);
+    l->set_finish_example(finish_example);
 
     return l;
   }

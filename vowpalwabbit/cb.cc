@@ -289,7 +289,7 @@ namespace CB
     float old_max = all.sd->max_label;
     //all.sd->max_label = c.max_cost;
     update_example_indicies(all.audit, ec, desired_increment);
-    all.scorer.learn(ec);
+    all.scorer->learn(ec);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
     update_example_indicies(all.audit, ec, -desired_increment);
@@ -655,7 +655,7 @@ namespace CB
     VW::finish_example(all, ec);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     cb* c = (cb*)calloc(1, sizeof(cb));
     c->all = &all;
@@ -738,13 +738,12 @@ namespace CB
     *(all.p->lp) = CB::cb_label_parser; 
 
     all.sd->k = nb_actions;
-    c->base = all.l;
+    c->base = *all.l;
 
-    learner l(c, learn);
-    l.set_base(&(c->base));
-    l.set_finish_example(finish_example); 
-    l.set_init_driver(init_driver);
-    l.set_finish(finish);
+    learner* l = new learner(c, learn, all.l);
+    l->set_finish_example(finish_example); 
+    l->set_init_driver(init_driver);
+    l->set_finish(finish);
 
     return l;
   }

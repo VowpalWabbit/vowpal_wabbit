@@ -10,9 +10,8 @@ license as described in the file LICENSE.
 namespace NOOP {
   void learn(void* d, example*ec) {}
 
-  learner setup(vw& all)
+  learner* setup(vw& all)
   {
-    learner l(NULL,learn);
-    return l;
+    return new learner(NULL,learn);
   }
 }

@@ -17,7 +17,7 @@ namespace BINARY {
     ec->final_prediction = prediction;
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     if (!vm_file.count("binary")) 
       {
@@ -28,11 +28,10 @@ namespace BINARY {
 
     all.sd->binary_label = true;
     binary* data = (binary*)calloc(1,sizeof(binary));
-    data->base = all.l;
-    learner l(data, learn);
-    l.set_base(&(data->base));
+    data->base = *all.l;
+    learner* l = new learner(data, learn, all.l);
 
-    l.set_finish_example(OAA::finish_example);
+    l->set_finish_example(OAA::finish_example);
     return l;
   }
 }

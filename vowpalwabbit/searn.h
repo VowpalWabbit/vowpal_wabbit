@@ -147,7 +147,7 @@ namespace Searn {
     void (*structured_predict)(vw&, searn&, example**,size_t,stringstream*,stringstream*);
   };
 
-  learner setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);

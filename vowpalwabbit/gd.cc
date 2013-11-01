@@ -881,7 +881,7 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
     }
 }
 
-learner setup(vw& all, po::variables_map& vm)
+learner* setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc(1, sizeof(gd));
   g->all = &all;
@@ -903,8 +903,9 @@ learner setup(vw& all, po::variables_map& vm)
       g->early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
     
-  learner ret(g,learn,save_load);
-  ret.set_end_pass(end_pass);
+  learner* ret = new learner(g,learn);
+  ret->set_save_load(save_load);
+  ret->set_end_pass(end_pass);
   return ret;
 }
 }

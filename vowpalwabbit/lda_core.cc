@@ -716,7 +716,7 @@ void end_examples(void* d)
   void finish_example(vw& all, void*, example*ec)
 {}
 
-learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
   lda* ld = (lda*)calloc(1,sizeof(lda));
   ld->all = &all;
@@ -757,10 +757,10 @@ learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
   
-  learner l(ld, learn, save_load);
-
-  l.set_finish_example(finish_example);
-  l.set_end_examples(end_examples);  
+  learner* l = new learner(ld, learn);
+  l->set_save_load(save_load);
+  l->set_finish_example(finish_example);
+  l->set_end_examples(end_examples);  
   
   return l;
 }

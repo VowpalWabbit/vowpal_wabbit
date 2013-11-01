@@ -368,7 +368,7 @@ namespace CSOAA {
     VW::finish_example(all, ec);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     csoaa* c=(csoaa*)calloc(1,sizeof(csoaa));
     c->all = &all;
@@ -391,13 +391,11 @@ namespace CSOAA {
     *(all.p->lp) = cs_label_parser;
     c->csoaa_increment = all.weights_per_problem * all.reg.stride;
     all.weights_per_problem *= nb_actions;
-    c->base=all.l;
+    c->base= *all.l;
     all.sd->k = nb_actions;
 
-    c->base = all.l;
-    learner l(c, learn);
-    l.set_base(&(c->base));
-    l.set_finish_example(finish_example);
+    learner* l = new learner(c, learn, all.l);
+    l->set_finish_example(finish_example);
     return l;
   }
 
@@ -1050,7 +1048,7 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     l->ec_seq.delete_v();
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ldf* ld = (ldf*)calloc(1, sizeof(ldf));
 
@@ -1118,25 +1116,23 @@ void make_single_prediction(vw& all, ldf& l, example*ec, size_t*prediction, floa
     ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
     ld->label_features.get(1, 94717244);
 
-    ld->base = all.l;
+    ld->base = *all.l;
     if (ld->is_singleline)
       {
-	learner l(ld, learn_singleline);
-	l.set_base(&(ld->base));
-	l.set_finish_example(finish_example); 
-	l.set_finish(finish);
+	learner* l = new learner(ld, learn_singleline, all.l);
+	l->set_finish_example(finish_example); 
+	l->set_finish(finish);
 	return l;
       }
     else
       {
 	ld->read_example_this_loop = 0;
 	ld->need_to_clear = false;
-	learner l(ld, learn_multiline);
-	l.set_base(&(ld->base));
-	l.set_finish_example(finish_multiline_example); 
-	l.set_finish(finish);
-	l.set_end_examples(end_examples); 
-	l.set_end_pass(end_pass);
+	learner* l = new learner(ld, learn_multiline, all.l);
+	l->set_finish_example(finish_multiline_example); 
+	l->set_finish(finish);
+	l->set_end_examples(end_examples); 
+	l->set_end_pass(end_pass);
 	return l;
       }
   }

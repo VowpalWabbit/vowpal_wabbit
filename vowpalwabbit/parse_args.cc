@@ -278,7 +278,7 @@ vw* parse_args(int argc, char *argv[])
   }
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) 
-    BFGS::setup(*all, to_pass_further, vm, vm_file);
+    all->l = BFGS::setup(*all, to_pass_further, vm, vm_file);
 
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
@@ -631,7 +631,7 @@ vw* parse_args(int argc, char *argv[])
     all->l = SENDER::setup(*all, vm, all->pairs);
 
   // load rest of regressor
-  all->l.save_load(io_temp, true, false);
+  all->l->save_load(io_temp, true, false);
   io_temp.close_file();
 
   //load the mask model, might be different from -i
@@ -863,7 +863,7 @@ namespace VW {
   void finish(vw& all)
   {
     finalize_regressor(all, all.final_regressor_name);
-    all.l.finish();
+    all.l->finish();
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
     free_parser(all);

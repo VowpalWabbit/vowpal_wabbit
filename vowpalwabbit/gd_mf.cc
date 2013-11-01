@@ -290,12 +290,13 @@ void end_pass(void* d)
       mf_inline_train(*all, ec, ec->eta_round);
   }
 
-  learner setup(vw& all)
+  learner* setup(vw& all)
   {
     gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
     data->all = &all;
-    learner l(data,learn,save_load);
-    l.set_end_pass(end_pass);
+    learner* l = new learner(data,learn);
+    l->set_save_load(save_load);
+    l->set_end_pass(end_pass);
     return l;
   }
 }

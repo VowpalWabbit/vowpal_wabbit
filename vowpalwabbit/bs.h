@@ -19,7 +19,7 @@ license as described in the file LICENSE.
 
 namespace BS
 {
-  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub);
   
   void output_example(vw& all, example* ec, float lb, float ub);

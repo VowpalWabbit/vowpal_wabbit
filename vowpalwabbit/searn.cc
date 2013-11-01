@@ -1364,7 +1364,7 @@ void print_update(vw& all, searn* srn)
   }
 
 
-  learner setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     searn* srn = (searn*)calloc(1,sizeof(searn));
     srn->all = &all;
@@ -1514,20 +1514,19 @@ void print_update(vw& all, searn* srn)
       srn->hinfo.bigram_features = false;
     }
     
-    //learner l(srn, searn_drive, searn_learn, searn_finish, all.l.sl);
-    srn->base = all.l;
-    learner l(srn, searn_learn);
-    l.set_base(&(srn->base));
-    l.set_finish_example(finish_example);
-    l.set_end_examples(end_examples);
-    l.set_finish(searn_finish);
-    l.set_end_pass(end_pass);
     if (!srn->allow_current_policy) // if we're not dagger
       all.check_holdout_every_n_passes = srn->passes_per_policy;
 
     all.searnstr = srn;
 
     srn->start_clock_time = clock();
+
+    srn->base = *all.l;
+    learner* l = new learner(srn, searn_learn, all.l);
+    l->set_finish_example(finish_example);
+    l->set_end_examples(end_examples);
+    l->set_finish(searn_finish);
+    l->set_end_pass(end_pass);
     
     return l;
   }

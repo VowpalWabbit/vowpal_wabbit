@@ -395,7 +395,7 @@ namespace ECT
     e->tournaments_won.delete_v();
   }
   
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ect* data = (ect*)calloc(1, sizeof(ect));
     po::options_description desc("ECT options");
@@ -452,12 +452,11 @@ namespace ECT
     create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    data->base = all.l;
+    data->base = *all.l;
 
-    learner l(data, learn);
-    l.set_base(&(data->base));
-    l.set_finish_example(OAA::finish_example);
-    l.set_finish(finish);
+    learner* l = new learner(data, learn, all.l);
+    l->set_finish_example(OAA::finish_example);
+    l->set_finish(finish);
 
     return l;
   }

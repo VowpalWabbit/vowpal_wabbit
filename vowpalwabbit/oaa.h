@@ -21,7 +21,7 @@ namespace OAA
     float weight;
   };
   
-  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
@@ -42,8 +42,6 @@ namespace OAA
   {
     return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
   }
-
-
 }
 
 #endif

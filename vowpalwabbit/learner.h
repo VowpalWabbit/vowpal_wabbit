@@ -8,31 +8,38 @@ license as described in the file LICENSE.
 // This is the interface for a learning algorithm
 struct vw;
 
+struct learner;
+
 struct func_data {
   void* data;
+  learner* base;
   void (*func)(void* data);
 };
 
-inline func_data tuple(void* data, void (*func)(void* data))
+inline func_data tuple(void* data, learner* base, void (*func)(void* data))
 {
   func_data foo;
   foo.data = data;
+  foo.base = base;
   foo.func = func;
   return foo;
 }
 
 struct learn_data {
   void* data;
+  learner* base;
   void (*learn_f)(void* data, example*);
 };
 
 struct save_load_data{
   void* data;
+  learner* base;
   void (*save_load_f)(void*, io_buf&, bool read, bool text);
 };
 
 struct finish_example_data{
   void* data;
+  learner* base;
   void (*finish_example_f)(vw&, void* data, example*);
 };
 
@@ -50,16 +57,13 @@ namespace LEARNER
   { cout << "calling generic learner\n";}
   inline void generic_func(void* data) {}
 
-  const save_load_data generic_save_load_fd = {NULL, generic_sl};
-  const learn_data generic_learn_fd = {NULL, generic_learner};
-  const func_data generic_func_fd = {NULL, generic_func};
+  const save_load_data generic_save_load_fd = {NULL, NULL, generic_sl};
+  const learn_data generic_learn_fd = {NULL, NULL, generic_learner};
+  const func_data generic_func_fd = {NULL, NULL, generic_func};
 }
 
 struct learner {
 private:
-  void* default_data;
-  learner* base;
-
   func_data init_fd;
   learn_data learn_fd;
   finish_example_data finish_example_fd;
@@ -73,37 +77,44 @@ public:
   inline void learn(example* ec) { learn_fd.learn_f(learn_fd.data, ec); }
 
   //called anytime saving or loading needs to happen. Autorecursive.
-  inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (base) base->save_load(io, read, text); }
+  inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
+  inline void set_save_load(void (*sl)(void*, io_buf& io, bool read, bool text))
+  { save_load_fd.save_load_f = sl; 
+    save_load_fd.data = learn_fd.data; 
+    save_load_fd.base = learn_fd.base;}
 
   //called to clean up state.  Autorecursive.
-  void set_finish(void (*f)(void*)) { finisher_fd = tuple(default_data,f); }
-  inline void finish() { if (finisher_fd.data) {finisher_fd.func(finisher_fd.data); free(finisher_fd.data); } if (base) base->finish(); }
+  void set_finish(void (*f)(void*)) { finisher_fd = tuple(learn_fd.data,learn_fd.base,f); }
+  inline void finish() 
+  { if (finisher_fd.data) 
+      {finisher_fd.func(finisher_fd.data); free(finisher_fd.data); } 
+    if (finisher_fd.base) finisher_fd.base->finish(); }
 
-  //called after learn example for each example.  Not called under reduction.
-  inline void finish_example(vw& all, example* ec) { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
-  void set_finish_example(void (*ef)(vw& all, void*, example*))
-  {finish_example_fd.data = default_data;
-    finish_example_fd.finish_example_f = ef;}
-
-  void end_pass(){ end_pass_fd.func(end_pass_fd.data); if (base) base->end_pass(); }//autorecursive
-  void set_end_pass(void (*ep)(void*)) {end_pass_fd = tuple(default_data, ep);}
+  void end_pass(){ 
+    end_pass_fd.func(end_pass_fd.data);
+    if (end_pass_fd.base) end_pass_fd.base->end_pass(); }//autorecursive
+  void set_end_pass(void (*ep)(void*)) {end_pass_fd = tuple(learn_fd.data, learn_fd.base, ep);}
 
   //called after parsing of examples is complete.  Autorecursive.
-  void end_examples() { end_examples_fd.func(end_examples_fd.data); if (base) base->end_examples(); } 
-  void set_end_examples(void (*ee)(void*)) {end_examples_fd = tuple(default_data,ee);}
+  void end_examples() 
+  { end_examples_fd.func(end_examples_fd.data); 
+    if (end_examples_fd.base) end_examples_fd.base->end_examples(); } 
+  void set_end_examples(void (*ee)(void*)) {end_examples_fd = tuple(learn_fd.data,learn_fd.base,ee);}
 
   //Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data);}
-  void set_init_driver(void (*id)(void*)) { init_fd = tuple(default_data,id); }
+  void set_init_driver(void (*id)(void*)) { init_fd = tuple(learn_fd.data,learn_fd.base, id); }
 
-  void set_base(learner* b) { base=b; }
+  //called after learn example for each example.  Explicitly not recursive.
+  inline void finish_example(vw& all, example* ec) { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
+  void set_finish_example(void (*ef)(vw& all, void*, example*))
+  {finish_example_fd.data = learn_fd.data;
+    finish_example_fd.finish_example_f = ef;}
 
   void driver(vw* all) {LEARNER::generic_driver(all);}
 
   inline learner()
   {
-    default_data = NULL;
-    base = NULL;
     learn_fd = LEARNER::generic_learn_fd;
     finish_example_fd.data = NULL;
     finish_example_fd.finish_example_f = return_simple_example;
@@ -115,20 +126,20 @@ public:
   }
 
   inline learner(void *dat, void (*l)(void* data, example*))
-  {
+  { // the constructor for all learning algorithms.
     *this = learner();
 
-    default_data = dat;
     learn_fd.data = dat;
     learn_fd.learn_f = l;
   }
 
-  inline learner(void *dat, void (*l)(void* data, example*),   void (*save_load_f)(void*, io_buf&, bool read, bool text))
-  {
-    *this = learner(dat, l);
-
-    save_load_fd.data = dat;
-    save_load_fd.save_load_f = save_load_f;
+  inline learner(void *dat, void (*l)(void* data, example*), learner* base) 
+  { //the reduction constructor.
+    *this = *base;
+    
+    learn_fd.learn_f = l;
+    learn_fd.data = dat;
+    learn_fd.base = base;
   }
 };
 

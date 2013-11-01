@@ -225,7 +225,7 @@ namespace BS {
     VW::finish_example(all, ec);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     bs* data = (bs*)calloc(1, sizeof(bs));
     data->ub = FLT_MAX;
@@ -300,11 +300,11 @@ namespace BS {
     data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->B;
     data->total_increment = data->increment*(data->B-1);
-    data->base = all.l;
-    learner l(data, learn);
-    l.set_base(&(data->base));
+    data->base = *all.l;
 
-    l.set_finish_example(finish_example); 
+    learner* l = new learner(data, learn, all.l);
+    l->set_finish_example(finish_example);
+
     return l;
   }
 }

@@ -236,7 +236,7 @@ namespace WAP {
     ec->final_prediction = (float)prediction;
   }
   
-  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
     wap* w=(wap*)calloc(1,sizeof(wap));
     w->all = &all;
@@ -261,10 +261,9 @@ namespace WAP {
     all.weights_per_problem *= nb_actions;
     w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    w->base = all.l;
-    learner l(w, learn);
-    l.set_base(&(w->base));
-    l.set_finish_example(CSOAA::finish_example);
+    w->base = *all.l;
+    learner* l = new learner(w, learn, all.l);
+    l->set_finish_example(CSOAA::finish_example);
 
     return l;
   }
