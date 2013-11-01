@@ -416,7 +416,6 @@ namespace CSOAA_AND_WAP_LDF {
 
     size_t read_example_this_loop;
     bool need_to_clear;
-    bool is_singleline;
     bool is_wap;
     bool first_pass;
     bool treat_as_classifier;
@@ -942,40 +941,23 @@ namespace LabelDict {
     l.ec_seq.erase();
   }
 
-  void learn_singleline(void* d, learner& base, example*ec) 
-  {
-    ldf* l=(ldf*)d;
-    vw* all = l->all;
-    
-    if (LabelDict::ec_is_example_header(ec)) {
-      cerr << "error: example headers not allowed in ldf singleline mode" << endl;
-      throw exception();
-    }
-    
-    if ((!all->training) || CSOAA::example_is_test(ec)) {
-      size_t prediction = 0;
-      float  min_score = FLT_MAX;
-      make_single_prediction(*all, *l, base, ec, &prediction, &min_score, NULL, NULL);
-    } else {
-      l->ec_seq.erase();
-      l->ec_seq.push_back(ec);
-      do_actual_learning(*all, *l, base);
-      l->ec_seq.erase();
-    }
-  }
-
   void end_pass(void* data)
   {
     ldf* l=(ldf*)data;
     l->first_pass = false;
   }
 
-  void learn_multiline(void* data, learner& base, example *ec) 
+  void learn(void* data, learner& base, example *ec) 
   {
     ldf* l=(ldf*)data;
     vw* all = l->all;
     l->base = &base;
 
+    if ((!all->training) || CSOAA::example_is_test(ec)) {
+      size_t prediction = 0;
+      float  min_score = FLT_MAX;
+      make_single_prediction(*all, *l, base, ec, &prediction, &min_score, NULL, NULL);
+    }
     if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
       if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
@@ -991,7 +973,13 @@ namespace LabelDict {
     } else if (LabelDict::ec_is_label_definition(ec)) {
       if (l->ec_seq.size() > 0)
         cerr << "warning: label definition encountered in data block -- ignoring data!" << endl;
-      learn_singleline(&l, base, ec);
+    
+      if (!((!all->training) || CSOAA::example_is_test(ec))) {
+        l->ec_seq.erase();
+        l->ec_seq.push_back(ec);
+        do_actual_learning(*all, *l, base);
+        l->ec_seq.erase();
+      }
 
       if (ec->in_use)
         VW::finish_example(*all, ec);
@@ -1053,7 +1041,6 @@ namespace LabelDict {
 
     ld->all = &all;
     ld->need_to_clear = true;
-    ld->is_singleline = true;
     ld->first_pass = true;
  
     string ldf_arg;
@@ -1091,23 +1078,17 @@ namespace LabelDict {
     all.sd->k = (uint32_t)-1;
 
     ld->treat_as_classifier = false;
-    if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0)
-      ld->is_singleline = true;
-    else if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0)
-      ld->is_singleline = false;
-    else if (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0) {
-      ld->is_singleline = true;
-      ld->treat_as_classifier = true;
+    if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0) {
+      ld->treat_as_classifier = false;
     } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
-      ld->is_singleline = false;
       ld->treat_as_classifier = true;
     }
     else {
-      cerr << "ldf requires either [s]ingleline or [m]ultiline argument, possibly with [c]lassifier at the end" << endl;
+      cerr << "ldf requires either m/multiline or mc/multiline-classifier at the end" << endl;
       throw exception();
     }
 
-    all.p->emptylines_separate_examples = !ld->is_singleline;
+    all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld->is_singleline;
 
     if (all.add_constant) {
       all.add_constant = false;
@@ -1115,24 +1096,14 @@ namespace LabelDict {
     ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
     ld->label_features.get(1, 94717244);
 
-    if (ld->is_singleline)
-      {
-	learner* l = new learner(ld, learn_singleline, all.l);
-	l->set_finish_example(finish_example); 
-	l->set_finish(finish);
-	return l;
-      }
-    else
-      {
-	ld->read_example_this_loop = 0;
-	ld->need_to_clear = false;
-	learner* l = new learner(ld, learn_multiline, all.l);
-	l->set_finish_example(finish_multiline_example); 
-	l->set_finish(finish);
-	l->set_end_examples(end_examples); 
-	l->set_end_pass(end_pass);
-	return l;
-      }
+    ld->read_example_this_loop = 0;
+    ld->need_to_clear = false;
+    learner* l = new learner(ld, learn, all.l);
+    l->set_finish_example(finish_multiline_example); 
+    l->set_finish(finish);
+    l->set_end_examples(end_examples); 
+    l->set_end_pass(end_pass);
+    return l;
   }
 
   void global_print_newline(vw& all)
