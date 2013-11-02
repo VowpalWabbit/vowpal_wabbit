@@ -34,7 +34,6 @@ namespace NN {
     bool inpass;
     bool finished_setup;
 
-    learner base;
     vw* all;
   };
 
@@ -82,7 +81,7 @@ namespace NN {
       n->xsubi = n->save_xsubi;
   }
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     nn* n = (nn*)d;
     bool shouldOutput = n->all->raw_prediction > 0;
@@ -113,9 +112,9 @@ namespace NN {
     ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n->k; ++i)
       {
-        update_example_indicies(n->all->audit, ec, n->increment);
+        update_example_indicies(ec, n->increment);
 
-        n->base.learn(ec);
+        base.learn(ec);
         hidden_units[i] = ec->final_prediction;
 
         dropped_out[i] = (n->dropout && merand48 (n->xsubi) < 0.5);
@@ -125,7 +124,7 @@ namespace NN {
           outputStringStream << i << ':' << ec->partial_prediction << ',' << fasttanh (hidden_units[i]);
         }
       }
-    update_example_indicies(n->all->audit, ec, -n->k * n->increment);
+    update_example_indicies(ec, -n->k * n->increment);
     ld->label = save_label;
     n->all->loss = save_loss;
     n->all->set_minmax = save_set_minmax;
@@ -163,7 +162,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->atomics[nn_output_namespace] = n->output_layer.atomics[nn_output_namespace];
       ec->sum_feat_sq[nn_output_namespace] = n->output_layer.sum_feat_sq[nn_output_namespace];
       ec->total_sum_feat_sq += n->output_layer.sum_feat_sq[nn_output_namespace];
-      n->base.learn(ec);
+      base.learn(ec);
       n->output_layer.partial_prediction = ec->partial_prediction;
       n->output_layer.loss = ec->loss;
       ec->total_sum_feat_sq -= n->output_layer.sum_feat_sq[nn_output_namespace];
@@ -179,7 +178,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->output_layer.eta_global = ec->eta_global;
       n->output_layer.global_weight = ec->global_weight;
       n->output_layer.example_t = ec->example_t;
-      n->base.learn(&n->output_layer);
+      base.learn(&n->output_layer);
       n->output_layer.ld = 0;
     }
 
@@ -204,7 +203,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n->all->sd->max_label = hidden_max_activation;
 
         for (unsigned int i = 0; i < n->k; ++i) {
-          update_example_indicies (n->all->audit, ec, n->increment);
+          update_example_indicies (ec, n->increment);
           if (! dropped_out[i]) {
             float sigmah = 
               n->output_layer.atomics[nn_output_namespace][i].x / dropscale;
@@ -214,10 +213,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
             ld->label = GD::finalize_prediction (*(n->all), hidden_units[i] - gradhw);
             if (ld->label != hidden_units[i]) 
-              n->base.learn(ec);
+              base.learn(ec);
           }
         }
-        update_example_indicies (n->all->audit, ec, -n->k*n->increment);
+        update_example_indicies (ec, -n->k*n->increment);
 
         n->all->loss = save_loss;
         n->all->set_minmax = save_set_minmax;
@@ -266,7 +265,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     free (n->output_layer.atomics[nn_output_namespace].begin);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     nn* n = (nn*)calloc(1,sizeof(nn));
     n->all = &all;
@@ -349,8 +348,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << (all.training ? "training" : "testing") 
                 << std::endl;
 
-    n->base = all.l;
-
     n->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= n->k + 1;
 
@@ -363,12 +360,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->xsubi = vm["random_seed"].as<size_t>();
 
     n->save_xsubi = n->xsubi;
-
-    learner l(n,learn,all.l.sl);
-    l.set_finish(finish);
-    l.set_finish_example(finish_example);
-    l.set_end_pass(end_pass);
-    l.set_base(&(n->base));
+    learner* l = new learner(n, learn, all.l);
+    l->set_finish(finish);
+    l->set_finish_example(finish_example);
+    l->set_end_pass(end_pass);
 
     return l;
   }

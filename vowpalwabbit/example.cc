@@ -175,8 +175,7 @@ namespace VW {
   dst->eta_global = src->eta_global;
   dst->global_weight = src->global_weight;
   dst->example_t = src->example_t;
-  for (size_t i=0; i<256; i++)
-    dst->sum_feat_sq[i] = src->sum_feat_sq[i];
+  memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
   dst->revert_weight = src->revert_weight;
   dst->test_only = src->test_only;
@@ -186,7 +185,4 @@ namespace VW {
   dst->done = src->done;
 }
 }
-
-void update_example_indicies(bool audit, example* ec, uint32_t amount) { 
-  ec->ft_offset += amount; }
 

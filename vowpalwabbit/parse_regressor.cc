@@ -239,7 +239,7 @@ void dump_regressor(vw& all, string reg_name, bool as_text)
   io_temp.open_file(start_name.c_str(), all.stdin_off, io_buf::WRITE);
   
   save_load_header(all, io_temp, false, as_text);
-  all.l.save_load(io_temp, false, as_text);
+  all.l->save_load(io_temp, false, as_text);
 
   io_temp.flush(); // close_file() should do this for me ...
   io_temp.close_file();
@@ -323,7 +323,7 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
     io_buf io_temp_mask;
     io_temp_mask.open_file(mask_filename.c_str(), false, io_buf::READ);
     save_load_header(all, io_temp_mask, true, false);
-    all.l.save_load(io_temp_mask, true, false);
+    all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
     for (size_t j = 0; j < length; j++){	 
       if(all.reg.weight_vector[j*all.reg.stride] != 0.)

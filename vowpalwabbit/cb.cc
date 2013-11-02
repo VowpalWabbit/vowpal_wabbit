@@ -28,8 +28,6 @@ namespace CB
     float min_cost;
     float max_cost;
 
-    learner base;
-    
     cb_class* known_cost;
     vw* all;
   };
@@ -288,11 +286,11 @@ namespace CB
     //all.sd->min_label = c.min_cost;
     float old_max = all.sd->max_label;
     //all.sd->max_label = c.max_cost;
-    update_example_indicies(all.audit, ec, desired_increment);
-    all.scorer.learn(ec);
+    update_example_indicies(ec, desired_increment);
+    all.scorer->learn(ec);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
-    update_example_indicies(all.audit, ec, -desired_increment);
+    update_example_indicies(ec, -desired_increment);
   }
   
   float get_cost_pred(vw& all, cb& c, example* ec, uint32_t index)
@@ -474,7 +472,7 @@ namespace CB
     }
   }
 
-  void learn(void* d, example* ec) {
+  void learn(void* d, learner& base, example* ec) {
     cb* c = (cb*)d;
     vw* all = c->all;
     CB::label* ld = (CB::label*)ec->ld;
@@ -486,7 +484,7 @@ namespace CB
       cb_test_to_cs_test_label(*all,ec,c->cb_cs_ld);
 
        ec->ld = &c->cb_cs_ld;
-       c->base.learn(ec);
+       base.learn(ec);
        ec->ld = ld;
        return;
     }
@@ -516,7 +514,7 @@ namespace CB
     if (c->cb_type != CB_TYPE_DM)
       {
 	ec->ld = &c->cb_cs_ld;
-	c->base.learn(ec);
+	base.learn(ec);
 	ec->ld = ld;
       }
   }
@@ -655,7 +653,7 @@ namespace CB
     VW::finish_example(all, ec);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     cb* c = (cb*)calloc(1, sizeof(cb));
     c->all = &all;
@@ -739,12 +737,10 @@ namespace CB
 
     all.sd->k = nb_actions;
 
-    learner l(c, learn, all.l.sl);
-    c->base = all.l;
-    l.set_finish_example(finish_example); 
-    l.set_init_driver(init_driver);
-    l.set_base(&(c->base));
-    l.set_finish(finish);
+    learner* l = new learner(c, learn, all.l);
+    l->set_finish_example(finish_example); 
+    l->set_init_driver(init_driver);
+    l->set_finish(finish);
 
     return l;
   }

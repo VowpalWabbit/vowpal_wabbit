@@ -127,8 +127,8 @@ struct vw {
 
   node_socks socks;
 
-  learner l;//the top level leaner
-  learner scorer;//a scoring function
+  learner* l;//the top level leaner
+  learner* scorer;//a scoring function
 
   void learn(example*);
 

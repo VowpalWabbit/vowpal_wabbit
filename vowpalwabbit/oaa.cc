@@ -22,7 +22,6 @@ namespace OAA {
     uint32_t k;
     uint32_t increment;
     uint32_t total_increment;
-    learner base;
     vw* all;
   };
 
@@ -194,7 +193,7 @@ namespace OAA {
     VW::finish_example(all, ec);
   }
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     oaa* o=(oaa*)d;
 
@@ -223,8 +222,8 @@ namespace OAA {
         simple_temp.weight = mc_label_data->weight;
         ec->ld = &simple_temp;
         if (i != 1)
-          update_example_indicies(all->audit, ec, o->increment);
-        o->base.learn(ec);
+          update_example_indicies(ec, o->increment);
+        base.learn(ec);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -240,13 +239,13 @@ namespace OAA {
       }	
     ec->ld = mc_label_data;
     ec->final_prediction = prediction;
-    update_example_indicies(all->audit, ec, -o->total_increment);
+    update_example_indicies(ec, -o->total_increment);
 
     if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     oaa* data = (oaa*)calloc(1, sizeof(oaa));
     //first parse for number of actions
@@ -266,13 +265,12 @@ namespace OAA {
 
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
+
     data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->k;
     data->total_increment = data->increment*(data->k-1);
-    data->base = all.l;
-    learner l(data, learn, all.l.sl);
-    l.set_finish_example(finish_example);
-    l.set_base(&(data->base));
+    learner* l = new learner(data, learn, all.l);
+    l->set_finish_example(finish_example);
 
     return l;
   }

@@ -28,7 +28,6 @@ namespace BS {
     float lb;
     float ub;
     vector<double> pred_vec;
-    learner base;
     vw* all;
   };
 
@@ -168,7 +167,7 @@ namespace BS {
     print_update(all, ec);
   }
 
-  void learn(void* data, example* ec)
+  void learn(void* data, learner& base, example* ec)
   {
     bs* d = (bs*)data;
     vw* all = d->all;
@@ -183,11 +182,11 @@ namespace BS {
     for (size_t i = 1; i <= d->B; i++)
       {
         if (i != 1)
-          update_example_indicies(all->audit, ec, d->increment);
+          update_example_indicies(ec, d->increment);
           
         ((label_data*)ec->ld)->weight = weight_temp * weight_gen();
 
-        d->base.learn(ec);
+        base.learn(ec);
 
         d->pred_vec.push_back(ec->final_prediction);
 
@@ -199,7 +198,7 @@ namespace BS {
 
     ((label_data*)ec->ld)->weight = weight_temp;
 
-    update_example_indicies(all->audit, ec, -d->total_increment);
+    update_example_indicies(ec, -d->total_increment);
 
     switch(d->bs_type)
     {
@@ -225,7 +224,7 @@ namespace BS {
     VW::finish_example(all, ec);
   }
 
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     bs* data = (bs*)calloc(1, sizeof(bs));
     data->ub = FLT_MAX;
@@ -300,11 +299,10 @@ namespace BS {
     data->increment = all.reg.stride * all.weights_per_problem;
     all.weights_per_problem *= data->B;
     data->total_increment = data->increment*(data->B-1);
-    data->base = all.l;
-    learner l(data, learn, all.l.sl);
-    l.set_base(&(data->base));
 
-    l.set_finish_example(finish_example); 
+    learner* l = new learner(data, learn, all.l);
+    l->set_finish_example(finish_example);
+
     return l;
   }
 }
