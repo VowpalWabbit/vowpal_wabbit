@@ -203,6 +203,12 @@ sub next_test() {
             }
             next;
         }
+        if ($line =~ /{RECOMMEND}/) {
+            # The command line
+            $cmd = trim_spaces($line);
+            $cmd =~ s/{RECOMMEND}/$RECOMMEND/;
+            next;
+        }
         if ($line =~ /{LDA}/) {
             # The command line
             $cmd = trim_spaces($line);
@@ -229,6 +235,7 @@ sub next_test() {
         printf STDERR "Unrecognized test spec line:\n\t%s\n", $line;
         print STDERR "Test lines must match one of the following patterns:\n";
         print STDERR "\tCommand to run:    {VW}\n";
+        print STDERR "\tCommand to run:    {RECOMMEND}\n";
         print STDERR "\tstdout reference:  *.stdout\n";
         print STDERR "\tstderr reference:  *.stderr\n";
         print STDERR "\tpredict reference: *.predict\n";
@@ -754,13 +761,13 @@ __DATA__
     train-sets/ref/remask.predict
 
 # Test 31: train model for recommendations
-{VW} -d train-sets/recommend-purchases.vw -b 10 --passes 10 -q ui --holdout_off -f models/recommend.model
+{VW} -d train-sets/recommend-purchases.vw -b 10 --passes 10 -q ui --holdout_off -f models/recommend.model --cache_file recommend.cache
     train-sets/ref/recommendtrain.stdout
     train-sets/ref/recommendtrain.stderr
     train-sets/ref/recommendtrain.predict
 
 # Test 32: make recommendations
-{RECOMMEND} --topk 2 --vwparams "-i models/recommend.model" --blacklist train-sets/recommend-purchases.vw --bits 10 --users train-sets/recommend-users.vw --items train-sets/recommend-items.vw > recommendtest.predict
+{RECOMMEND} --topk 2 --vwparams "-i models/recommend.model" --blacklist train-sets/recommend-blacklist.vw --bf_bits 10 --users train-sets/recommend-users.vw --items train-sets/recommend-items.vw
     train-sets/ref/recommendtest.stdout
     train-sets/ref/recommendtest.stderr
     train-sets/ref/recommendtest.predict
