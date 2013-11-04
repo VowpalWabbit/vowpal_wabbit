@@ -12,13 +12,13 @@ license as described in the file LICENSE.
 
 using namespace std;
 
-void tokenize(char delim, substring s, v_array<substring>& ret)
+void tokenize(char delim, substring s, v_array<substring>& ret, bool allow_empty)
 {
   ret.erase();
   char *last = s.begin;
   for (; s.begin != s.end; s.begin++) {
     if (*s.begin == delim) {
-      if (s.begin != last)
+      if (allow_empty || (s.begin != last))
 	{
 	  substring temp = {last, s.begin};
 	  ret.push_back(temp);
@@ -26,7 +26,7 @@ void tokenize(char delim, substring s, v_array<substring>& ret)
       last = s.begin+1;
     }
   }
-  if (s.begin != last)
+  if (allow_empty || (s.begin != last))
     {
       substring final = {last, s.begin};
       ret.push_back(final);

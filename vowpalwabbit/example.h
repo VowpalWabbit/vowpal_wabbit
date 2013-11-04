@@ -14,6 +14,7 @@ const size_t history_namespace  = 127;
 const size_t constant_namespace = 128;
 const size_t nn_output_namespace  = 129;
 const size_t autolink_namespace  = 130;
+const size_t neighbor_namespace  = 131;
 
 struct feature {
   float x;

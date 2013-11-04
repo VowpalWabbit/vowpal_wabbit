@@ -121,7 +121,7 @@ struct parser {
 };
 
 //chop up the string into a v_array of substring.
-void tokenize(char delim, substring s, v_array<substring> &ret);
+void tokenize(char delim, substring s, v_array<substring> &ret, bool allow_empty=false);
 
 inline char* safe_index(char *start, char v, char *max)
 {

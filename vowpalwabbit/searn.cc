@@ -1068,34 +1068,84 @@ void print_update(vw& all, searn* srn)
   }
 
   void add_neighbor_features(searn& srn) {
-    // if (srn.neighbor_features.size() == 0) return;
+    size_t neighbor_constant = 8349204823;
+    if (srn.neighbor_features.size() == 0) return;
+    uint32_t wpp = srn.all->weights_per_problem * srn.all->reg.stride;
 
-    // for (int32_t n=0; i<srn.ec_seq.size(); n++) {
-    //   example*me = srn.ec_seq[n];
-    //   for (int32_t*n_enc=srn.neighbor_features.begin; n_enc!=srn.neighbor_features.end; ++n_enc) {
-    //     int32_t offset = (*enc) >> 16;
-    //     char old_ns = ((*enc) >> 8) & 0xFF;
-    //     char new_ns = (*enc) & 0xFF;
+    for (int32_t n=0; n<(int32_t)srn.ec_seq.size(); n++) {
+      example*me = srn.ec_seq[n];
+      //cerr << "o=" << me->num_features << endl;
+      for (int32_t*enc=srn.neighbor_features.begin; enc!=srn.neighbor_features.end; ++enc) {
+        int32_t offset = (*enc) >> 24;
+        size_t  old_ns = (*enc) & 0xFF;
+        size_t  enc_offset = wpp * ((2 * (size_t)(*enc)) + ((*enc < 0) ? 1 : 0));
 
-    //     // TODO: auditing :P
-    //     if ((n + offset >= 0) && (n + offset < srn.ec_seq.size())) { // we're okay on position
-    //       example*you = srn.ec_seq[n+offset];
+        // TODO: auditing :P
+        if ((n + offset >= 0) && (n + offset < (int32_t)srn.ec_seq.size())) { // we're okay on position
+          example*you = srn.ec_seq[n+offset];
+          size_t  you_size = you->atomics[old_ns].size();
 
-    //       for (unsigned char* i = you->indices.begin; i != you->indices.end; ++i) {
-    //         push_many(me->atomics[ns], you
-          
-    //         for (feature* f = you->atomics[*i].begin; f != you->atomics[*i].end; ++f) {
-    //           feature 
-    //         }
-    //       }
-          
-          
-    //     } else {
-    //       // TODO: add dummy features for <s> or </s>
-    //     }
-    //   }
-    // }
+          if (you_size > 0) {
+            if (me->atomics[neighbor_namespace].size() == 0) {
+              me->indices.push_back(neighbor_namespace);
+            }
+
+            me->atomics[neighbor_namespace].resize(me->atomics[neighbor_namespace].size() + you_size + 1);
+            for (feature*f = you->atomics[old_ns].begin; f != you->atomics[old_ns].end; ++f) {
+              feature f2 = { (*f).x, (uint32_t)( ((*f).weight_index * neighbor_constant + enc_offset) & srn.all->reg.weight_mask ) };
+              me->atomics[neighbor_namespace].push_back(f2);
+            }
+            //push_many(me->atomics[neighbor_namespace], you->atomics[old_ns].begin, you_size);
+            //cerr << "copying " << you_size << " features" << endl;
+            me->sum_feat_sq[neighbor_namespace] += you->sum_feat_sq[old_ns];
+            me->total_sum_feat_sq += you->sum_feat_sq[old_ns];
+            me->num_features += you_size;
+          }
+        } else {
+          // TODO: add dummy features for <s> or </s>
+        }
+      }
+    }
   }
+
+  void del_neighbor_features(searn& srn) {
+    if (srn.neighbor_features.size() == 0) return;
+
+    for (int32_t n=0; n<(int32_t)srn.ec_seq.size(); n++) {
+      example*me = srn.ec_seq[n];
+      //cerr << "n=" << me->num_features;
+      for (int32_t*enc=srn.neighbor_features.begin; enc!=srn.neighbor_features.end; ++enc) {
+        int32_t offset = (*enc) >> 24;
+        size_t  old_ns = (*enc) & 0xFF;
+
+        if ((n + offset >= 0) && (n + offset < (int32_t)srn.ec_seq.size())) { // we're okay on position
+          example*you = srn.ec_seq[n+offset];
+          size_t  you_size = you->atomics[old_ns].size();
+
+          if (you_size > 0) {
+            if (me->atomics[neighbor_namespace].size() == you_size) {
+              char last_idx = me->indices.pop();
+              assert(last_idx == (char)neighbor_namespace);
+              //cerr << "erasing new ns '" << (char)neighbor_namespace << "' of size " << me->atomics[neighbor_namespace].size() << endl;
+              me->atomics[neighbor_namespace].erase();
+            } else {
+              me->atomics[neighbor_namespace].end -= you_size;
+              //cerr << "erasing " << you_size << " features" << endl;
+            }
+            
+            me->sum_feat_sq[neighbor_namespace] -= you->sum_feat_sq[old_ns];
+            me->total_sum_feat_sq -= you->sum_feat_sq[old_ns];
+            me->num_features -= you_size;
+          }
+        } else {
+          // TODO: add dummy features for <s> or </s>
+        }
+      }
+      //cerr << " " << me->num_features << endl;
+    }
+  }
+
+
 
   void do_actual_learning(vw&all, searn& srn)
   {
@@ -1103,8 +1153,8 @@ void print_update(vw& all, searn* srn)
       return;  // nothing to do :)
 
     add_neighbor_features(srn);
-    
     train_single_example(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
+    del_neighbor_features(srn);
 
     if (srn.ec_seq[0]->test_only) {
       all.sd->weighted_holdout_examples += 1.f;//test weight seen
@@ -1254,6 +1304,8 @@ void print_update(vw& all, searn* srn)
     delete srn->truth_string;
     delete srn->pred_string;
     delete srn->neighbor_features_string;
+    srn->neighbor_features.erase();
+    srn->neighbor_features.delete_v();
     
     if (srn->rollout_all_actions) { // dst should be a CSOAA::label*
       ((CSOAA::label*)srn->valid_labels)->costs.erase();
@@ -1399,20 +1451,20 @@ void print_update(vw& all, searn* srn)
     while (p != 0) {
       cmd.erase();
       substring me = { p, p+strlen(p) };
-      tokenize(':', me, cmd);
+      tokenize(':', me, cmd, true);
 
-      if ((cmd.size() == 3) && (cmd[1].end > cmd[1].begin) && (cmd[2].end > cmd[2].begin)) {
-        int32_t posn = int_of_substring(cmd[0]);
-        char ns0  = cmd[1].begin[0];
-        char ns1  = cmd[2].begin[0];
-        int32_t enc = (posn << 16) | ((ns0 & 0xFF) << 8) | (ns1 & 0xFF);
-        // int32_t posn2 = enc >> 8;
-        // char ns2 = enc & 0xFF;
-        // cerr << "posn=" << posn << " ns=" << ns << " enc=" << enc << " posn2=" << posn2 << " ns2=" << ns2 << endl;
-        srn.neighbor_features.push_back(enc);
+      int32_t posn; char ns;
+      if (cmd.size() == 1) {
+        posn = int_of_substring(cmd[0]);
+        ns   = ' ';
+      } else if (cmd.size() == 2) {
+        posn = int_of_substring(cmd[0]);
+        ns   = (cmd[1].end > cmd[1].begin) ? cmd[1].begin[0] : ' ';
       } else {
         cerr << "warning: ignoring malformed neighbor specification: '" << p << "'" << endl;
       }
+      int32_t enc = (posn << 24) | (ns & 0xFF);
+      srn.neighbor_features.push_back(enc);
       
       p = strtok(NULL, ",");
     }
@@ -1439,7 +1491,7 @@ void print_update(vw& all, searn* srn)
       ("searn_no_snapshot", "turn off snapshotting capabilities")
       ("searn_no_fastforward", "turn off fastforwarding (note: fastforwarding requires snapshotting)")
       ("searn_subsample_timesteps", po::value<float>(), "instead of training at all timesteps, use a subset v. if v<=0, train everywhere. if v in (0,1), train on a random v% (>=1 always selected). if v>=1, train on precisely v steps per example")
-      ("searn_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a:p,+2:b:r' meaning copy previous line namespace a to namespace p and next next line to namespace b to namespace r, where ',' separates them");
+      ("searn_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them");
     po::options_description add_desc_file("Searn options only available in regressor file");
     add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
 
