@@ -19,7 +19,6 @@ using namespace std;
 
 namespace CSOAA {
   struct csoaa{
-    uint32_t csoaa_increment;
     vw* all;
   };
 
@@ -320,7 +319,6 @@ namespace CSOAA {
 
     size_t prediction = 1;
     float score = FLT_MAX;
-    uint32_t current_increment = 0;
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
         uint32_t i = cl->weight_index;
@@ -340,14 +338,7 @@ namespace CSOAA {
 
 	ec->ld = &simple_temp;
 
-        uint32_t desired_increment = c->csoaa_increment * (i-1);
-
-        if (desired_increment != current_increment) {
-	  update_example_indicies(ec, desired_increment - current_increment);
-          current_increment = desired_increment;
-        }
-
-	base.learn(ec);
+	base.learn(ec, i);
         cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
@@ -357,8 +348,6 @@ namespace CSOAA {
       }
     ec->ld = ld;
     ec->final_prediction = (float)prediction;
-    if (current_increment != 0)
-      update_example_indicies(ec, -current_increment);
   }
 
   void finish_example(vw& all, void*, example* ec)
@@ -388,11 +377,9 @@ namespace CSOAA {
     }
 
     *(all.p->lp) = cs_label_parser;
-    c->csoaa_increment = all.weights_per_problem * all.reg.stride;
-    all.weights_per_problem *= nb_actions;
     all.sd->k = nb_actions;
 
-    learner* l = new learner(c, learn, all.l);
+    learner* l = new learner(c, learn, all.l, nb_actions);
     l->set_finish_example(finish_example);
     return l;
   }

@@ -73,8 +73,18 @@ private:
   func_data finisher_fd;
   
 public:
+  size_t weights; //this stores the number of "weight vectors" required by the base learner.
+  size_t increment;
+
   //called once for each example.  Must work under reduction.
-  inline void learn(example* ec) { learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec); }
+  inline void learn(example* ec, size_t i=0) 
+  { 
+    if (i != 0)
+      ec->ft_offset += increment*i;
+    learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
+    if (i != 0)
+      ec->ft_offset += - (increment*i);
+  }
 
   //called anytime saving or loading needs to happen. Autorecursive.
   inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
@@ -115,6 +125,9 @@ public:
 
   inline learner()
   {
+    weights = 1;
+    increment = 1;
+
     learn_fd = LEARNER::generic_learn_fd;
     finish_example_fd.data = NULL;
     finish_example_fd.finish_example_f = return_simple_example;
@@ -133,13 +146,16 @@ public:
     learn_fd.learn_f = l;
   }
 
-  inline learner(void *dat, void (*l)(void*, learner&, example*), learner* base) 
+  inline learner(void *dat, void (*l)(void*, learner&, example*), learner* base, size_t ws = 1) 
   { //the reduction constructor.
     *this = *base;
     
     learn_fd.learn_f = l;
     learn_fd.data = dat;
     learn_fd.base = base;
+
+    increment = base->increment * base->weights;
+    weights = ws;
   }
 };
 

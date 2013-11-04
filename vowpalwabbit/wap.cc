@@ -19,7 +19,6 @@ using namespace std;
 
 namespace WAP {
   struct wap{
-    uint32_t increment;
     vw* all;
   };
   
@@ -257,10 +256,8 @@ namespace WAP {
     *(all.p->lp) = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
-    all.weights_per_problem *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner* l = new learner(w, learn, all.l);
+    learner* l = new learner(w, learn, all.l, nb_actions);
     l->set_finish_example(CSOAA::finish_example);
 
     return l;

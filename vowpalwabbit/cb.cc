@@ -17,7 +17,6 @@ license as described in the file LICENSE.
 namespace CB
 {
   struct cb {
-    uint32_t increment;
     size_t cb_type;
     CSOAA::label cb_cs_ld; 
     float avg_loss_regressors;
@@ -280,18 +279,14 @@ namespace CB
 
   void call_scorer(vw& all, cb& c, example* ec, uint32_t index)
   {
-    uint32_t desired_increment = c.increment * (2*index-1);
-   
     float old_min = all.sd->min_label;
     //all.sd->min_label = c.min_cost;
     float old_max = all.sd->max_label;
     //all.sd->max_label = c.max_cost;
-    update_example_indicies(ec, desired_increment);
-    all.scorer->learn(ec);
+    all.scorer->learn(ec, 2*(index)-1);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
-    update_example_indicies(ec, -desired_increment);
-  }
+   }
   
   float get_cost_pred(vw& all, cb& c, example* ec, uint32_t index)
   {

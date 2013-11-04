@@ -90,9 +90,6 @@ void free_flatten_example(flat_example* fec);
 example *alloc_example(size_t);
 void dealloc_example(void(*delete_label)(void*), example&);
 
-inline void update_example_indicies(example* ec, uint32_t amount) 
-{ ec->ft_offset += amount; }
-
 inline int example_is_newline(example* ec)
 {
   // if only index is constant namespace or no index

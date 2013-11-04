@@ -780,9 +780,9 @@ vw* parse_args(int argc, char *argv[])
 
   // force stride * weights_per_problem to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  while (all->reg.stride * all->weights_per_problem  > (uint32_t)(1 << i))
+  while (all->l->increment * all->l->weights  > (uint32_t)(1 << i))
     i++;
-  all->weights_per_problem = (1 << i) / all->reg.stride;
+  all->wpp = (1 << i) / all->reg.stride;
   
   return all;
 }
