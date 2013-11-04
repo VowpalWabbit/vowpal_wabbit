@@ -979,6 +979,7 @@ learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po
   l->set_init_driver(init_driver);
   l->set_end_pass(end_pass);
   l->set_finish(finish);
+  l->increment = all.reg.stride;
 
   return l;
 }

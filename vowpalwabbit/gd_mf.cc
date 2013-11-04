@@ -297,6 +297,8 @@ void end_pass(void* d)
     learner* l = new learner(data,learn);
     l->set_save_load(save_load);
     l->set_end_pass(end_pass);
+    l->increment = all.reg.stride;
+
     return l;
   }
 }

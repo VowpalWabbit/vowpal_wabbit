@@ -1070,7 +1070,7 @@ void print_update(vw& all, searn* srn)
   void add_neighbor_features(searn& srn) {
     size_t neighbor_constant = 8349204823;
     if (srn.neighbor_features.size() == 0) return;
-    uint32_t wpp = srn.all->weights_per_problem * srn.all->reg.stride;
+    uint32_t wpp = srn.all->wpp * srn.all->reg.stride;
 
     for (int32_t n=0; n<(int32_t)srn.ec_seq.size(); n++) {
       example*me = srn.ec_seq[n];
@@ -1453,7 +1453,7 @@ void print_update(vw& all, searn* srn)
       substring me = { p, p+strlen(p) };
       tokenize(':', me, cmd, true);
 
-      int32_t posn; char ns;
+      int32_t posn=0; char ns=0;
       if (cmd.size() == 1) {
         posn = int_of_substring(cmd[0]);
         ns   = ' ';

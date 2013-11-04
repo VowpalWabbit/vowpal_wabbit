@@ -761,6 +761,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
   l->set_end_examples(end_examples);  
+  l->increment = all.reg.stride;
   
   return l;
 }

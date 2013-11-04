@@ -27,6 +27,7 @@ namespace NN {
     uint32_t k;
     loss_function* squared_loss;
     example output_layer;
+    size_t increment;
     bool dropout;
     uint64_t xsubi;
     uint64_t save_xsubi;
@@ -70,7 +71,63 @@ namespace NN {
 	x->weight_index += offset;
     }
 
-  void finish_setup (nn* n, vw& all);
+  void finish_setup (nn& n, vw& all)
+  {
+    bool initialize = true;
+
+    // TODO: output_layer audit
+
+    memset (&n.output_layer, 0, sizeof (n.output_layer));
+    n.output_layer.indices.push_back(nn_output_namespace);
+    feature output = {1., nn_constant*all.reg.stride};
+
+    for (unsigned int i = 0; i < n.k; ++i)
+      {
+        n.output_layer.atomics[nn_output_namespace].push_back(output);
+        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
+        ++n.output_layer.num_features;
+        output.weight_index += n.increment;
+      }
+
+    if (! n.inpass) 
+      {
+        n.output_layer.atomics[nn_output_namespace].push_back(output);
+        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
+        ++n.output_layer.num_features;
+      }
+
+    n.output_layer.in_use = true;
+
+    if (initialize) {
+      // output weights
+
+      float sqrtk = sqrt ((float)n.k);
+      for (feature* x = n.output_layer.atomics[nn_output_namespace].begin; 
+           x != n.output_layer.atomics[nn_output_namespace].end; 
+           ++x)
+        {
+          weight* w = &all.reg.weight_vector[x->weight_index & all.reg.weight_mask];
+
+          w[0] = (float) (frand48 () - 0.5) / sqrtk;
+
+          // prevent divide by zero error
+          if (n.dropout && all.normalized_updates)
+            w[all.normalized_idx] = 1e-4f;
+        }
+
+      // hidden biases
+
+      unsigned int weight_index = constant * all.reg.stride;
+
+      for (unsigned int i = 0; i < n.k; ++i)
+        {
+          weight_index += n.increment;
+          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
+        }
+    }
+
+    n.finished_setup = true;
+  }
 
   void end_pass(void* d)
   {
@@ -86,7 +143,7 @@ namespace NN {
     bool shouldOutput = n->all->raw_prediction > 0;
 
     if (! n->finished_setup)
-      finish_setup (n, *(n->all));
+      finish_setup (*n, *(n->all));
 
     label_data* ld = (label_data*)ec->ld;
     float save_label = ld->label;
@@ -355,65 +412,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     l->set_finish(finish);
     l->set_finish_example(finish_example);
     l->set_end_pass(end_pass);
+    n->increment = l->increment;//Indexing of output layer is odd.
 
     return l;
-  }
-
-  void finish_setup (nn* n, vw& all)
-  {
-    bool initialize = true;
-
-    // TODO: output_layer audit
-
-    memset (&n->output_layer, 0, sizeof (n->output_layer));
-    n->output_layer.indices.push_back(nn_output_namespace);
-    feature output = {1., nn_constant*all.reg.stride};
-
-    for (unsigned int i = 0; i < n->k; ++i)
-      {
-        n->output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
-        ++n->output_layer.num_features;
-        output.weight_index += n->increment;
-      }
-
-    if (! n->inpass) 
-      {
-        n->output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
-        ++n->output_layer.num_features;
-      }
-
-    n->output_layer.in_use = true;
-
-    if (initialize) {
-      // output weights
-
-      float sqrtk = sqrt ((float)n->k);
-      for (feature* x = n->output_layer.atomics[nn_output_namespace].begin; 
-           x != n->output_layer.atomics[nn_output_namespace].end; 
-           ++x)
-        {
-          weight* w = &all.reg.weight_vector[x->weight_index & all.reg.weight_mask];
-
-          w[0] = (float) (frand48 () - 0.5) / sqrtk;
-
-          // prevent divide by zero error
-          if (n->dropout && all.normalized_updates)
-            w[all.normalized_idx] = 1e-4f;
-        }
-
-      // hidden biases
-
-      unsigned int weight_index = constant * all.reg.stride;
-
-      for (unsigned int i = 0; i < n->k; ++i)
-        {
-          weight_index += n->increment;
-          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
-        }
-    }
-
-    n->finished_setup = true;
   }
 }

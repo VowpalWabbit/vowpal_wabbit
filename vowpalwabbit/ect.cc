@@ -253,17 +253,10 @@ namespace ECT
 	simple_temp.weight = mc->weight;
 	ec->ld = &simple_temp;
 	
-	uint32_t offset = (id-e.k)*e.increment;
-	
-	update_example_indicies(ec,offset);
-	
-	ec->partial_prediction = 0;
-	base.learn(ec);
+	base.learn(ec, id-e.k);
 	simple_temp.weight = 0.;
-	ec->partial_prediction = 0;
-	base.learn(ec);//inefficient, we should extract final prediction exactly.
+	base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
-	update_example_indicies(ec,-offset);
 
 	bool won = pred*simple_temp.label > 0;
 
@@ -315,14 +308,7 @@ namespace ECT
 	      
                 uint32_t problem_number = e.last_pair + j*(1 << (i+1)) + (1 << i) -1;
 		
-                uint32_t offset = problem_number*e.increment;
-	      
-                update_example_indicies(ec,offset);
-                ec->partial_prediction = 0;
-	      
-		base.learn(ec);
-		
-                update_example_indicies(ec,-offset);
+		base.learn(ec, problem_number);
 		
 		float pred = ec->final_prediction;
 		if (pred > 0.)

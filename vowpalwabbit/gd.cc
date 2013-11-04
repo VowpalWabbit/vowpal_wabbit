@@ -906,6 +906,7 @@ learner* setup(vw& all, po::variables_map& vm)
   learner* ret = new learner(g,learn);
   ret->set_save_load(save_load);
   ret->set_end_pass(end_pass);
+  ret->increment = all.reg.stride;
   return ret;
 }
 }

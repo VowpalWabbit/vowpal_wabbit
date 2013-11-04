@@ -239,9 +239,6 @@ vw* parse_args(int argc, char *argv[])
       throw exception();
     }
 
-  all->l = GD::setup(*all, vm);
-  all->scorer = all->l;
-
   all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
   //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
   if( all->rank > 0 || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
@@ -276,6 +273,9 @@ vw* parse_args(int argc, char *argv[])
       }
     }
   }
+
+  all->l = GD::setup(*all, vm);
+  all->scorer = all->l;
 
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) 
     all->l = BFGS::setup(*all, to_pass_further, vm, vm_file);
@@ -780,10 +780,11 @@ vw* parse_args(int argc, char *argv[])
 
   // force stride * weights_per_problem to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  while (all->l->increment * all->l->weights  > (uint32_t)(1 << i))
+  size_t params_per_problem = all->l->increment * all->l->weights;
+  while (params_per_problem > (uint32_t)(1 << i))
     i++;
   all->wpp = (1 << i) / all->reg.stride;
-  
+
   return all;
 }
 
