@@ -294,10 +294,8 @@ void end_pass(void* d)
   {
     gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
     data->all = &all;
-    learner* l = new learner(data,learn);
-    l->set_save_load(save_load);
+    learner* l = new learner(data,learn, save_load, all.reg.stride);
     l->set_end_pass(end_pass);
-    l->increment = all.reg.stride;
 
     return l;
   }
