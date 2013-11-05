@@ -29,6 +29,7 @@ namespace TXM
 		uint32_t	label;									//dla kazdego labela mam Ehk, nk, tu jest suma labeli ktore trafily do noda czy w czasie trenowania czy w czasie predykcji
 		uint32_t	label_cnt;								//ilosc przykladow o tym labelu w tym nodzie przypisanych przez expected
 		uint32_t	label_cnt2;								//ilosc przykladow o tym labelu w tym nodzie przypisanych przez predictor
+		bool 		assigned;
 		
 		void operator=(txm_node_pred_type v)
 		{
@@ -37,6 +38,7 @@ namespace TXM
 			label = v.label;
 			label_cnt = v.label_cnt;
 			label_cnt2 = v.label_cnt2;
+			assigned = v.assigned;
 		}
 		
 		bool operator==(txm_node_pred_type v){
@@ -60,6 +62,7 @@ namespace TXM
 			nk = 0;
 			label_cnt = 0;
 			label_cnt2 = 0;
+			assigned = false;
 		}
 		
 		txm_node_pred_type()								//konstruktor bez ustawiania labela
@@ -69,6 +72,7 @@ namespace TXM
 			nk = 0;
 			label_cnt = 0;
 			label_cnt2 = 0;
+			assigned = false;
 		}
 	};
 	
@@ -120,6 +124,11 @@ namespace TXM
 		
 		#ifdef TXM_DEBUG_FILE2
 		FILE *debug2_fp;
+		#endif
+		
+		#ifdef TXM_ARBITRARY_ROOT
+		FILE *arbitrary_fp;
+		v_array<uint32_t> arbitrary;
 		#endif
 	};	
 
@@ -201,6 +210,9 @@ namespace TXM
 	void save_node_stats(txm* b)							//wyswietlam statystyke dla poszczegonym nodow
 	{
 		uint32_t i, j;
+		uint32_t total = 0;
+		uint32_t err = 0;
+		float ftmp;
 				
 		for(i = 0; i < b->nodes.size(); i++)
 		{
@@ -234,6 +246,24 @@ namespace TXM
 			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
 			{				
 				fprintf(b->debug1_fp, "%6d,", b->nodes[i].node_pred[j].label_cnt2);
+				
+				#ifdef TXM_ARBITRARY_ROOT
+				if(i > 0)
+				{
+					total += b->nodes[i].node_pred[j].label_cnt2;
+					
+					if(b->nodes[i].id == b->nodes[0].id_left)
+					{
+						if(b->arbitrary.contain_sorted(b->nodes[i].node_pred[j].label))
+							err += b->nodes[i].node_pred[j].label_cnt2;
+					}
+					else
+					{
+						if(!b->arbitrary.contain_sorted(b->nodes[i].node_pred[j].label))
+							err += b->nodes[i].node_pred[j].label_cnt2;
+					}
+				}
+				#endif
 			}
 			fprintf(b->debug1_fp, "\n");
 			
@@ -241,6 +271,10 @@ namespace TXM
 			fprintf(b->debug1_fp, "left: %4d, right: %4d, parent: %4d,\n",  (int) b->nodes[i].id_left, (int) b->nodes[i].id_right, (int) b->nodes[i].id_parent);
 			fprintf(b->debug1_fp, "\n");
 		}
+		
+		ftmp = err;
+		ftmp /= total;
+		printf("\nerror: %.4f\n", ftmp);
 	}
 	
 	void save_node_stats_pred(txm* b)							//wyswietlam statystyke dla poszczegonym nodow
@@ -248,6 +282,8 @@ namespace TXM
 		uint32_t i, j;
 		size_t index;
 		float ftmp;
+		uint32_t total = 0;
+		uint32_t err = 0;
 		
 		for(i = 0; i < b->nodes.size(); i++)
 		{
@@ -265,6 +301,24 @@ namespace TXM
 			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
 			{				
 				fprintf(b->debug2_fp, "%6d,", b->nodes[i].node_pred[j].label_cnt2);
+				
+				#ifdef TXM_ARBITRARY_ROOT
+				if(i > 0)
+				{
+					total += b->nodes[i].node_pred[j].label_cnt2;
+					
+					if(b->nodes[i].id == b->nodes[0].id_left)
+					{
+						if(b->arbitrary.contain_sorted(b->nodes[i].node_pred[j].label))
+							err += b->nodes[i].node_pred[j].label_cnt2;
+					}
+					else
+					{
+						if(!b->arbitrary.contain_sorted(b->nodes[i].node_pred[j].label))
+							err += b->nodes[i].node_pred[j].label_cnt2;
+					}
+				}
+				#endif
 			}
 			fprintf(b->debug2_fp, "\n");
 			
@@ -286,6 +340,10 @@ namespace TXM
 			fprintf(b->debug2_fp, "left: %4d, right: %4d, parent: %4d\n",  (int) b->nodes[i].id_left, (int) b->nodes[i].id_right, (int) b->nodes[i].id_parent);
 			fprintf(b->debug2_fp, "\n");
 		}
+		
+		ftmp = err;
+		ftmp /= total;
+		printf("\nerror: %.4f\n", ftmp);
 	}
 	
 	void clear_cnt2(txm* b)
@@ -720,8 +778,18 @@ namespace TXM
 		#endif		
 		
 		id_left = b->nodes[b->cn].id_left;
-		id_right = b->nodes[b->cn].id_right;		
-		
+		id_right = b->nodes[b->cn].id_right;	
+
+		#ifdef TXM_ARBITRARY_ROOT
+		if(b->cn == 0)
+		{
+			if(b->arbitrary.contain_sorted(oryginal_label))
+				left_or_right = 1;
+			else
+				left_or_right = -1;
+		}
+		#endif		
+				
 		if(left_or_right < 0)
 		{
 			//mc->label = -1.f;
@@ -755,6 +823,7 @@ namespace TXM
 		}
 		
 		b->nodes[id_left_right].node_pred[index].label_cnt++;
+		b->nodes[id_left_right].node_pred[index].assigned = true;
 		
 		//learn!!
 		ec->partial_prediction = 0;
@@ -986,7 +1055,6 @@ namespace TXM
 				b->nodes[j].max_cnt2_label = v;
 				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 				b->nodes[j].leaf = v;
-				
 				//printf("%ld, %ld, %ld, %d, %d, \n", b->nodes[j].id, b->nodes[j].id_left, b->nodes[j].id_right, b->nodes[j].max_cnt2_label, b->nodes[j].leaf);
 			}
 		}
@@ -1016,7 +1084,7 @@ namespace TXM
 				
 				text_len = sprintf(buff, ":%d\n", b->nodes[i].leaf);
 				v = b->nodes[i].leaf;
-				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);			
+				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);		
 			}	
 		}		
 	}
@@ -1093,6 +1161,23 @@ namespace TXM
 			b->debug2_fp = fopen("atxmdebug2.csv", "wt");
 			#endif
 		}
+		
+		#ifdef TXM_ARBITRARY_ROOT
+		int i;
+		uint32_t tmp, cnt;
+		b->arbitrary_fp = fopen("atxmarbiter.txt", "rt");
+		
+		fscanf(b->arbitrary_fp, "%d\n", &cnt);
+		printf("\ncnt: %d\n", cnt);
+		
+		for(i = 0; i < cnt; i++)
+		{
+			fscanf(b->arbitrary_fp, "%d\n", &tmp);
+			printf("%d, ", tmp);
+			b->arbitrary.push_back_sorted(tmp);
+		}
+		printf("\n\n");		
+		#endif
 		
 		return l;
 	}	
