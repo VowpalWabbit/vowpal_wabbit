@@ -149,7 +149,7 @@ public:
             else
               affix_name.begin = affix_name.end - len;
           }
-          word_hash = p->hasher(affix_name,(uint32_t)channel_hash) * affix_constant + (affix & 0xF) * quadratic_constant;
+          word_hash = p->hasher(affix_name,(uint32_t)channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
           feature f2 = { v, (uint32_t) word_hash * weights_per_problem };
           ae->sum_feat_sq[affix_namespace] += v*v;
           ae->atomics[affix_namespace].push_back(f2);
