@@ -23,8 +23,6 @@ namespace BS {
   struct bs{
     uint32_t B; //number of bootstrap rounds
     size_t bs_type;
-    uint32_t increment;
-    uint32_t total_increment;
     float lb;
     float ub;
     vector<double> pred_vec;
@@ -181,12 +179,9 @@ namespace BS {
 
     for (size_t i = 1; i <= d->B; i++)
       {
-        if (i != 1)
-          update_example_indicies(ec, d->increment);
-          
         ((label_data*)ec->ld)->weight = weight_temp * weight_gen();
 
-        base.learn(ec);
+        base.learn(ec, i-1);
 
         d->pred_vec.push_back(ec->final_prediction);
 
@@ -197,8 +192,6 @@ namespace BS {
       }	
 
     ((label_data*)ec->ld)->weight = weight_temp;
-
-    update_example_indicies(ec, -d->total_increment);
 
     switch(d->bs_type)
     {
@@ -296,11 +289,8 @@ namespace BS {
 
     data->pred_vec.reserve(data->B);
     data->all = &all;
-    data->increment = all.reg.stride * all.weights_per_problem;
-    all.weights_per_problem *= data->B;
-    data->total_increment = data->increment*(data->B-1);
 
-    learner* l = new learner(data, learn, all.l);
+    learner* l = new learner(data, learn, all.l, data->B);
     l->set_finish_example(finish_example);
 
     return l;

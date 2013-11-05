@@ -17,7 +17,6 @@ license as described in the file LICENSE.
 namespace CB
 {
   struct cb {
-    uint32_t increment;
     size_t cb_type;
     CSOAA::label cb_cs_ld; 
     float avg_loss_regressors;
@@ -280,18 +279,14 @@ namespace CB
 
   void call_scorer(vw& all, cb& c, example* ec, uint32_t index)
   {
-    uint32_t desired_increment = c.increment * (2*index-1);
-   
     float old_min = all.sd->min_label;
     //all.sd->min_label = c.min_cost;
     float old_max = all.sd->max_label;
     //all.sd->max_label = c.max_cost;
-    update_example_indicies(ec, desired_increment);
-    all.scorer->learn(ec);
+    all.scorer->learn(ec, 2*(index)-1);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
-    update_example_indicies(ec, -desired_increment);
-  }
+   }
   
   float get_cost_pred(vw& all, cb& c, example* ec, uint32_t index)
   {
@@ -337,7 +332,7 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred(all, c,ec,i);
+        wc.x = get_cost_pred(all, c, ec, i-1);
 	if (wc.x < min)
 	  {
 	    min = wc.x;
@@ -366,7 +361,7 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred(all, c,ec,cl->weight_index);
+        wc.x = get_cost_pred(all, c, ec, cl->weight_index - 1);
 	if (wc.x < min || (wc.x == min && cl->weight_index < argmin))
 	  {
 	    min = wc.x;
@@ -405,7 +400,7 @@ namespace CB
         wc.wap_value = 0.;
 
         //get cost prediction for this label
-        wc.x = get_cost_pred(all, c,ec,i);
+        wc.x = get_cost_pred(all, c,ec, all.sd->k + i - 1);
         wc.weight_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
@@ -430,7 +425,7 @@ namespace CB
         wc.wap_value = 0.;
 
         //get cost prediction for this label
-        wc.x = get_cost_pred(all,c,ec,cl->weight_index);
+        wc.x = get_cost_pred(all, c, ec, all.sd->k + cl->weight_index - 1);
         wc.weight_index = cl->weight_index;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
@@ -689,7 +684,9 @@ namespace CB
       ss << " --cb " << nb_actions;
       all.options_from_file.append(ss.str());
     }
+    all.sd->k = nb_actions;
 
+    size_t problem_multiplier = 2;//default for DR
     if (vm.count("cb_type") || vm_file.count("cb_type"))
     {
       std::string type_string;
@@ -706,41 +703,38 @@ namespace CB
         all.options_from_file.append(type_string);
       }
 
-      c->increment = all.weights_per_problem * all.reg.stride;
-
-      if (type_string.compare("dr") == 0) { 
+      if (type_string.compare("dr") == 0) 
         c->cb_type = CB_TYPE_DR;
-        all.weights_per_problem *= nb_actions * 2;
-      }
-      else if (type_string.compare("dm") == 0) {
-        c->cb_type = CB_TYPE_DM;
-        all.weights_per_problem *= nb_actions * 2;
-      }
-      else if (type_string.compare("ips") == 0) {
-        c->cb_type = CB_TYPE_IPS;
-        all.weights_per_problem *= nb_actions;
-      }
+      else if (type_string.compare("dm") == 0)
+	{
+	  c->cb_type = CB_TYPE_DM;
+	  problem_multiplier = 1;
+	}
+      else if (type_string.compare("ips") == 0)
+	{
+	  c->cb_type = CB_TYPE_IPS;
+	  problem_multiplier = 1;
+	}
       else {
         std::cerr << "warning: cb_type must be in {'ips','dm','dr'}; resetting to dr." << std::endl;
         c->cb_type = CB_TYPE_DR;
-        all.weights_per_problem *= nb_actions * 2;
       }
     }
     else {
       //by default use doubly robust
       c->cb_type = CB_TYPE_DR;
-      all.weights_per_problem *= nb_actions * 2;
       all.options_from_file.append(" --cb_type dr");
     }
 
     *(all.p->lp) = CB::cb_label_parser; 
 
-    all.sd->k = nb_actions;
-
-    learner* l = new learner(c, learn, all.l);
+    learner* l = new learner(c, learn, all.l, problem_multiplier);
     l->set_finish_example(finish_example); 
     l->set_init_driver(init_driver);
     l->set_finish(finish);
+    // preserve the increment of the base learner since we are
+    // _adding_ to the number of problems rather than multiplying.
+    l->increment = all.l->increment; 
 
     return l;
   }

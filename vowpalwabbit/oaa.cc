@@ -20,12 +20,10 @@ namespace OAA {
 
   struct oaa{
     uint32_t k;
-    uint32_t increment;
-    uint32_t total_increment;
     vw* all;
   };
 
-  char* bufread_label(mc_label* ld, char* c)
+    char* bufread_label(mc_label* ld, char* c)
   {
     ld->label = *(uint32_t *)c;
     c += sizeof(ld->label);
@@ -221,9 +219,7 @@ namespace OAA {
           simple_temp.label = -1;
         simple_temp.weight = mc_label_data->weight;
         ec->ld = &simple_temp;
-        if (i != 1)
-          update_example_indicies(ec, o->increment);
-        base.learn(ec);
+        base.learn(ec, i-1);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -239,7 +235,6 @@ namespace OAA {
       }	
     ec->ld = mc_label_data;
     ec->final_prediction = prediction;
-    update_example_indicies(ec, -o->total_increment);
 
     if (shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
@@ -266,10 +261,7 @@ namespace OAA {
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
 
-    data->increment = all.reg.stride * all.weights_per_problem;
-    all.weights_per_problem *= data->k;
-    data->total_increment = data->increment*(data->k-1);
-    learner* l = new learner(data, learn, all.l);
+    learner* l = new learner(data, learn, all.l, data->k);
     l->set_finish_example(finish_example);
 
     return l;

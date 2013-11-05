@@ -19,7 +19,7 @@ using namespace std;
 
 namespace WAP {
   struct wap{
-    uint32_t increment;
+    size_t increment; //wap does funky things with the increment, so we keep explicit access
     vw* all;
   };
   
@@ -204,13 +204,8 @@ namespace WAP {
         simple_temp.weight = 0.;
         simple_temp.label = FLT_MAX;
         uint32_t myi = (uint32_t)cost_label->costs[i].weight_index;
-        if (myi!= 1)
-          update_example_indicies(ec, w.increment*(myi-1));
-        ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
-        base.learn(ec);
-        if (myi != 1)
-          update_example_indicies(ec, -w.increment*(myi-1));
+        base.learn(ec, myi-1);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -257,11 +252,10 @@ namespace WAP {
     *(all.p->lp) = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
-    all.weights_per_problem *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner* l = new learner(w, learn, all.l);
+    learner* l = new learner(w, learn, all.l, nb_actions);
     l->set_finish_example(CSOAA::finish_example);
+    w->increment = l->increment;
 
     return l;
   }

@@ -780,7 +780,7 @@ void setup_example(vw& all, example* ae)
     ae->total_sum_feat_sq++;
   }
   
-  if(all.reg.stride != 1 || all.weights_per_problem != 1) //make room for per-feature information.
+  if(all.reg.stride != 1) //make room for per-feature information.
     {
       uint32_t stride = all.reg.stride;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
