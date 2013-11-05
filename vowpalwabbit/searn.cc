@@ -1472,7 +1472,8 @@ void print_update(vw& all, searn* srn)
       substring me = { p, p+strlen(p) };
       tokenize(':', me, cmd, true);
 
-      int32_t posn; char ns;
+      int32_t posn = 0;
+      char ns = ' ';
       if (cmd.size() == 1) {
         posn = int_of_substring(cmd[0]);
         ns   = ' ';
@@ -1661,3 +1662,5 @@ void print_update(vw& all, searn* srn)
     return l;
   }
 }
+
+// ./vw -k -c -d train.f2.gz --passes 1 --searn_passes_per_policy 10 --searn_task sequence --searn 9 --searn_as_dagger 1e-6 --holdout_off -f foo --searn_neighbor_features -2,-1,1,2

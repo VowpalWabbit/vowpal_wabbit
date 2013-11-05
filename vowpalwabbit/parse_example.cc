@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "unique_sort.h"
 #include "global_data.h"
+#include "constant.h"
 
 using namespace std;
 
@@ -74,6 +75,7 @@ public:
   parser* p;
   example* ae;
   uint32_t weights_per_problem;
+  uint32_t* affix_features;
   
   ~TC_parser(){ }
   
@@ -132,6 +134,39 @@ public:
 	feature_v.push_back('\0');
 	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
 	ae->audit_features[index].push_back(ad);
+      }
+      if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin)) {
+        if (ae->atomics[affix_namespace].size() == 0)
+          ae->indices.push_back(affix_namespace);
+        uint32_t affix = affix_features[index];
+        while (affix > 0) {
+          bool is_prefix = affix & 0x1;
+          uint32_t len   = (affix >> 1) & 0x7;
+          substring affix_name = { feature_name.begin, feature_name.end };
+          if (affix_name.end > affix_name.begin + len) {
+            if (is_prefix)
+              affix_name.end = affix_name.begin + len;
+            else
+              affix_name.begin = affix_name.end - len;
+          }
+          word_hash = p->hasher(affix_name,(uint32_t)channel_hash) * affix_constant + (affix & 0xF) * quadratic_constant;
+          feature f2 = { v, (uint32_t) word_hash * weights_per_problem };
+          ae->sum_feat_sq[affix_namespace] += v*v;
+          ae->atomics[affix_namespace].push_back(f2);
+          if (audit) { // TODO
+            v_array<char> affix_v;
+            if (index != ' ') affix_v.push_back(index);
+            affix_v.push_back(is_prefix ? '+' : '-');
+            affix_v.push_back('0' + len);
+            affix_v.push_back('=');
+            push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
+            affix_v.push_back('\0');
+            audit_data ad = {copy((char*)"affix"),affix_v.begin,word_hash,v,true};
+            ae->audit_features[affix_namespace].push_back(ad);
+          }
+          
+          affix >>= 4;
+        }
       }
     }
   }
@@ -243,6 +278,7 @@ public:
     this->p = all.p;
     this->ae = ae;
     this->weights_per_problem = all.weights_per_problem;
+    this->affix_features = all.affix_features;
     audit = all.audit || all.hash_inv;
     listNameSpace();
   }
