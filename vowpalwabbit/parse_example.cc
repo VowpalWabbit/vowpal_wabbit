@@ -190,8 +190,7 @@ public:
       cout << "malformed example !\n'|' , space or EOL expected after : \"" << std::string(beginLine, reading_head - beginLine).c_str() << "\"" << endl;
     }
   }
-  
-  
+    
   inline void nameSpace(){
     cur_channel_v = 1.0;
     base = NULL;
@@ -242,7 +241,7 @@ public:
     this->endLine = endLine;
     this->p = all.p;
     this->ae = ae;
-    this->weights_per_problem = all.weights_per_problem;
+    this->weights_per_problem = all.wpp;
     audit = all.audit || all.hash_inv;
     listNameSpace();
   }

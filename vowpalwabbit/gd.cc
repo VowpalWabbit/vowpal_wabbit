@@ -903,8 +903,7 @@ learner* setup(vw& all, po::variables_map& vm)
       g->early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
     
-  learner* ret = new learner(g,learn);
-  ret->set_save_load(save_load);
+  learner* ret = new learner(g,learn, save_load, all.reg.stride);
   ret->set_end_pass(end_pass);
   return ret;
 }

@@ -121,7 +121,7 @@ namespace Searn {
     float  alpha; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
     uint32_t current_policy;      // what policy are we training right now?
     float gamma;                  // for dagger
-    uint32_t increment;
+
     size_t num_features;
     uint32_t total_number_of_policies;
     bool do_snapshot;

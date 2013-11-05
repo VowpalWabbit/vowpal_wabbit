@@ -25,9 +25,9 @@ namespace NN {
   
   struct nn {
     uint32_t k;
-    uint32_t increment;
     loss_function* squared_loss;
     example output_layer;
+    size_t increment;
     bool dropout;
     uint64_t xsubi;
     uint64_t save_xsubi;
@@ -71,7 +71,63 @@ namespace NN {
 	x->weight_index += offset;
     }
 
-  void finish_setup (nn* n, vw& all);
+  void finish_setup (nn& n, vw& all)
+  {
+    bool initialize = true;
+
+    // TODO: output_layer audit
+
+    memset (&n.output_layer, 0, sizeof (n.output_layer));
+    n.output_layer.indices.push_back(nn_output_namespace);
+    feature output = {1., nn_constant*all.reg.stride};
+
+    for (unsigned int i = 0; i < n.k; ++i)
+      {
+        n.output_layer.atomics[nn_output_namespace].push_back(output);
+        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
+        ++n.output_layer.num_features;
+        output.weight_index += n.increment;
+      }
+
+    if (! n.inpass) 
+      {
+        n.output_layer.atomics[nn_output_namespace].push_back(output);
+        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
+        ++n.output_layer.num_features;
+      }
+
+    n.output_layer.in_use = true;
+
+    if (initialize) {
+      // output weights
+
+      float sqrtk = sqrt ((float)n.k);
+      for (feature* x = n.output_layer.atomics[nn_output_namespace].begin; 
+           x != n.output_layer.atomics[nn_output_namespace].end; 
+           ++x)
+        {
+          weight* w = &all.reg.weight_vector[x->weight_index & all.reg.weight_mask];
+
+          w[0] = (float) (frand48 () - 0.5) / sqrtk;
+
+          // prevent divide by zero error
+          if (n.dropout && all.normalized_updates)
+            w[all.normalized_idx] = 1e-4f;
+        }
+
+      // hidden biases
+
+      unsigned int weight_index = constant * all.reg.stride;
+
+      for (unsigned int i = 0; i < n.k; ++i)
+        {
+          weight_index += n.increment;
+          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
+        }
+    }
+
+    n.finished_setup = true;
+  }
 
   void end_pass(void* d)
   {
@@ -87,7 +143,7 @@ namespace NN {
     bool shouldOutput = n->all->raw_prediction > 0;
 
     if (! n->finished_setup)
-      finish_setup (n, *(n->all));
+      finish_setup (*n, *(n->all));
 
     label_data* ld = (label_data*)ec->ld;
     float save_label = ld->label;
@@ -112,9 +168,7 @@ namespace NN {
     ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n->k; ++i)
       {
-        update_example_indicies(ec, n->increment);
-
-        base.learn(ec);
+        base.learn(ec, i);
         hidden_units[i] = ec->final_prediction;
 
         dropped_out[i] = (n->dropout && merand48 (n->xsubi) < 0.5);
@@ -124,7 +178,6 @@ namespace NN {
           outputStringStream << i << ':' << ec->partial_prediction << ',' << fasttanh (hidden_units[i]);
         }
       }
-    update_example_indicies(ec, -n->k * n->increment);
     ld->label = save_label;
     n->all->loss = save_loss;
     n->all->set_minmax = save_set_minmax;
@@ -162,7 +215,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->atomics[nn_output_namespace] = n->output_layer.atomics[nn_output_namespace];
       ec->sum_feat_sq[nn_output_namespace] = n->output_layer.sum_feat_sq[nn_output_namespace];
       ec->total_sum_feat_sq += n->output_layer.sum_feat_sq[nn_output_namespace];
-      base.learn(ec);
+      base.learn(ec, n->k);
       n->output_layer.partial_prediction = ec->partial_prediction;
       n->output_layer.loss = ec->loss;
       ec->total_sum_feat_sq -= n->output_layer.sum_feat_sq[nn_output_namespace];
@@ -178,7 +231,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->output_layer.eta_global = ec->eta_global;
       n->output_layer.global_weight = ec->global_weight;
       n->output_layer.example_t = ec->example_t;
-      base.learn(&n->output_layer);
+      base.learn(&n->output_layer, n->k);
       n->output_layer.ld = 0;
     }
 
@@ -203,7 +256,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n->all->sd->max_label = hidden_max_activation;
 
         for (unsigned int i = 0; i < n->k; ++i) {
-          update_example_indicies (ec, n->increment);
           if (! dropped_out[i]) {
             float sigmah = 
               n->output_layer.atomics[nn_output_namespace][i].x / dropscale;
@@ -213,10 +265,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
             ld->label = GD::finalize_prediction (*(n->all), hidden_units[i] - gradhw);
             if (ld->label != hidden_units[i]) 
-              base.learn(ec);
+              base.learn(ec, i);
           }
         }
-        update_example_indicies (ec, -n->k*n->increment);
 
         n->all->loss = save_loss;
         n->all->set_minmax = save_set_minmax;
@@ -348,9 +399,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                 << (all.training ? "training" : "testing") 
                 << std::endl;
 
-    n->increment = all.reg.stride * all.weights_per_problem;
-    all.weights_per_problem *= n->k + 1;
-
     n->finished_setup = false;
     n->squared_loss = getLossFunction (0, "squared", 0);
 
@@ -360,69 +408,12 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->xsubi = vm["random_seed"].as<size_t>();
 
     n->save_xsubi = n->xsubi;
-    learner* l = new learner(n, learn, all.l);
+    learner* l = new learner(n, learn, all.l, n->k+1);
     l->set_finish(finish);
     l->set_finish_example(finish_example);
     l->set_end_pass(end_pass);
+    n->increment = l->increment;//Indexing of output layer is odd.
 
     return l;
-  }
-
-  void finish_setup (nn* n, vw& all)
-  {
-    bool initialize = true;
-
-    // TODO: output_layer audit
-
-    memset (&n->output_layer, 0, sizeof (n->output_layer));
-    n->output_layer.indices.push_back(nn_output_namespace);
-    feature output = {1., nn_constant*all.reg.stride};
-
-    for (unsigned int i = 0; i < n->k; ++i)
-      {
-        n->output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
-        ++n->output_layer.num_features;
-        output.weight_index += n->increment;
-      }
-
-    if (! n->inpass) 
-      {
-        n->output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
-        ++n->output_layer.num_features;
-      }
-
-    n->output_layer.in_use = true;
-
-    if (initialize) {
-      // output weights
-
-      float sqrtk = sqrt ((float)n->k);
-      for (feature* x = n->output_layer.atomics[nn_output_namespace].begin; 
-           x != n->output_layer.atomics[nn_output_namespace].end; 
-           ++x)
-        {
-          weight* w = &all.reg.weight_vector[x->weight_index & all.reg.weight_mask];
-
-          w[0] = (float) (frand48 () - 0.5) / sqrtk;
-
-          // prevent divide by zero error
-          if (n->dropout && all.normalized_updates)
-            w[all.normalized_idx] = 1e-4f;
-        }
-
-      // hidden biases
-
-      unsigned int weight_index = constant * all.reg.stride;
-
-      for (unsigned int i = 0; i < n->k; ++i)
-        {
-          weight_index += n->increment;
-          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
-        }
-    }
-
-    n->finished_setup = true;
   }
 }

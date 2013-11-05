@@ -104,6 +104,8 @@ void end_examples(void* d)
     delete s->buf;
   }
 
+  void save_load(void*, io_buf& io, bool read, bool text){}
+
   learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender* s = (sender*)calloc(1,sizeof(sender));
@@ -117,7 +119,7 @@ void end_examples(void* d)
   s->all = &all;
   s->delay_ring = (example**) calloc(all.p->ring_size, sizeof(example*));
 
-  learner* l = new learner(s,learn);
+  learner* l = new learner(s,learn, save_load, 1);
   l->set_finish(finish);
   l->set_finish_example(finish_example); 
   l->set_end_examples(end_examples);

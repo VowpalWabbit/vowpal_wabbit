@@ -50,8 +50,6 @@ namespace ECT
     
     uint32_t last_pair;
     
-    uint32_t increment;
-    
     v_array<bool> tournaments_won;
 
     vw* all;
@@ -96,10 +94,10 @@ namespace ECT
     cout << endl;
   }
 
-  void create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations)
+  size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations)
   {
     if (max_label == 1)
-      return;
+      return 0;
 
     v_array<v_array<uint32_t > > tournaments;
 
@@ -183,11 +181,8 @@ namespace ECT
     
     if ( max_label > 1)
       e.tree_height = final_depth(eliminations);
-    
-    if (e.last_pair > 0) {
-      all.weights_per_problem *= (e.last_pair + (eliminations-1));
-      e.increment = (uint32_t) all.length() / all.weights_per_problem * all.reg.stride;
-    }
+
+    return e.last_pair + (eliminations-1);
   }
 
   float ect_predict(vw& all, ect& e, learner& base, example* ec)
@@ -205,17 +200,10 @@ namespace ECT
       {
         if ((finals_winner | (((size_t)1) << i)) <= e.errors)
           {// a real choice exists
-            uint32_t offset = 0;
-	  
             uint32_t problem_number = e.last_pair + (finals_winner | (((uint32_t)1) << i)) - 1; //This is unique.
-	    offset = problem_number*e.increment;
 	  
-            update_example_indicies(ec,offset);
+            base.learn(ec, problem_number);
 	  
-            base.learn(ec);
-	  
-            update_example_indicies(ec,-offset);
-	    
 	    float pred = ec->final_prediction;
 	    if (pred > 0.)
               finals_winner = finals_winner | (((size_t)1) << i);
@@ -225,15 +213,9 @@ namespace ECT
     uint32_t id = e.final_nodes[finals_winner];
     while (id >= e.k)
       {
-	uint32_t offset = (id-e.k)*e.increment;
-	
-	ec->partial_prediction = 0;
-	update_example_indicies(ec,offset);
-	base.learn(ec);
-	float pred = ec->final_prediction;
-	update_example_indicies(ec,-offset);
+	base.learn(ec, id - e.k);
 
-	if (pred > 0.)
+	if (ec->final_prediction > 0.)
 	  id = e.directions[id].right;
 	else
 	  id = e.directions[id].left;
@@ -271,17 +253,10 @@ namespace ECT
 	simple_temp.weight = mc->weight;
 	ec->ld = &simple_temp;
 	
-	uint32_t offset = (id-e.k)*e.increment;
-	
-	update_example_indicies(ec,offset);
-	
-	ec->partial_prediction = 0;
-	base.learn(ec);
+	base.learn(ec, id-e.k);
 	simple_temp.weight = 0.;
-	ec->partial_prediction = 0;
-	base.learn(ec);//inefficient, we should extract final prediction exactly.
+	base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
-	update_example_indicies(ec,-offset);
 
 	bool won = pred*simple_temp.label > 0;
 
@@ -333,14 +308,7 @@ namespace ECT
 	      
                 uint32_t problem_number = e.last_pair + j*(1 << (i+1)) + (1 << i) -1;
 		
-                uint32_t offset = problem_number*e.increment;
-	      
-                update_example_indicies(ec,offset);
-                ec->partial_prediction = 0;
-	      
-		base.learn(ec);
-		
-                update_example_indicies(ec,-offset);
+		base.learn(ec, problem_number);
 		
 		float pred = ec->final_prediction;
 		if (pred > 0.)
@@ -447,10 +415,10 @@ namespace ECT
     }
 
     *(all.p->lp) = OAA::mc_label_parser;
-    create_circuit(all, *data, data->k, data->errors+1);
+    size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner* l = new learner(data, learn, all.l);
+    learner* l = new learner(data, learn, all.l, wpp);
     l->set_finish_example(OAA::finish_example);
     l->set_finish(finish);
 

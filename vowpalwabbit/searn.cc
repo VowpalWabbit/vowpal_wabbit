@@ -62,18 +62,6 @@ namespace SearnUtil
       free(ptr);
   }
 
-  void add_policy_offset(vw&all, example *ec, uint32_t increment, uint32_t policy)
-  {
-    if (policy > 0)
-      update_example_indicies(ec, policy * increment);
-  }
-
-  void remove_policy_offset(vw&all, example *ec, uint32_t increment, uint32_t policy)
-  {
-    if (policy > 0)
-      update_example_indicies(ec, -(policy * increment));
-  }
-
   int random_policy(uint64_t seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)
   {
     if(reset_seed) //reset_seed is false for contextual bandit, so that we only reset the seed if the base learner is not a contextual bandit learner, as this breaks the exploration.
@@ -123,7 +111,7 @@ namespace SearnUtil
   void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h)
   {
     uint64_t v0, v1, v, max_string_length = 0;
-    uint32_t wpp = all.weights_per_problem * all.reg.stride;
+    uint32_t wpp = all.wpp * all.reg.stride;
     if (hinfo.length == 0) return;
     if (h == NULL) {
       cerr << "error: got empty history in add_history_to_example" << endl;
@@ -360,13 +348,11 @@ namespace Searn {
     float best_prediction = 0;
     uint32_t best_action = 0;
     for (uint32_t action=0; action<num_ec; action++) {
-      SearnUtil::add_policy_offset(all, ecs[action], srn->increment, pol);
-      base.learn(ecs[action]);
+      base.learn(ecs[action], pol);
       srn->total_predictions_made++;
       srn->num_features += ecs[action]->num_features;
       srn->empty_example->in_use = true;
       base.learn(srn->empty_example);
-      SearnUtil::remove_policy_offset(all, ecs[action], srn->increment, pol);
 
       if ((action == 0) || 
           ecs[action]->partial_prediction < best_prediction) {
@@ -385,14 +371,11 @@ namespace Searn {
     void* old_label = ec->ld;
     ec->ld = valid_labels;
 
-    SearnUtil::add_policy_offset(all, ec, srn.increment, pol);
-
-    base.learn(ec);
+    base.learn(ec, pol);
     srn.total_predictions_made++;
     srn.num_features += ec->num_features;
     uint32_t final_prediction = (uint32_t)ec->final_prediction;
 
-    SearnUtil::remove_policy_offset(all, ec, srn.increment, pol);
     ec->ld = old_label;
 
     return final_prediction;
@@ -829,9 +812,7 @@ bool snapshot_binary_search_lt(v_array<snapshot_item> a, size_t desired_t, size_
     if (!isLDF(srn)) {
       void* old_label = ec[0]->ld;
       ec[0]->ld = labels;
-      SearnUtil::add_policy_offset(all, ec[0], srn.increment, srn.current_policy);
-      base.learn(ec[0]);
-      SearnUtil::remove_policy_offset(all, ec[0], srn.increment, srn.current_policy);
+      base.learn(ec[0], srn.current_policy);
       ec[0]->ld = old_label;
       srn.total_examples_generated++;
     } else { // isLDF
@@ -1089,7 +1070,7 @@ void print_update(vw& all, searn* srn)
   void add_neighbor_features(searn& srn) {
     size_t neighbor_constant = 8349204823;
     if (srn.neighbor_features.size() == 0) return;
-    uint32_t wpp = srn.all->weights_per_problem * srn.all->reg.stride;
+    uint32_t wpp = srn.all->wpp * srn.all->reg.stride;
 
     for (int32_t n=0; n<(int32_t)srn.ec_seq.size(); n++) {
       example*me = srn.ec_seq[n];
@@ -1472,7 +1453,7 @@ void print_update(vw& all, searn* srn)
       substring me = { p, p+strlen(p) };
       tokenize(':', me, cmd, true);
 
-      int32_t posn; char ns;
+      int32_t posn=0; char ns=0;
       if (cmd.size() == 1) {
         posn = int_of_substring(cmd[0]);
         ns   = ' ';
@@ -1605,8 +1586,6 @@ void print_update(vw& all, searn* srn)
     ss1 << srn->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss1.str()); 
     ss2 << srn->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies",   ss2.str());
 
-    srn->increment = all.weights_per_problem * all.reg.stride;
-    all.weights_per_problem *= srn->total_number_of_policies;
     //clog << "searn increment = " << srn->increment <<  " " << all.reg.stride << endl;
     //clog << "searn current_policy = " << srn->current_policy << " total_number_of_policies = " << srn->total_number_of_policies << endl;
     
@@ -1652,7 +1631,7 @@ void print_update(vw& all, searn* srn)
 
     srn->start_clock_time = clock();
 
-    learner* l = new learner(srn, searn_learn, all.l);
+    learner* l = new learner(srn, searn_learn, all.l, srn->total_number_of_policies);
     l->set_finish_example(finish_example);
     l->set_end_examples(end_examples);
     l->set_finish(searn_finish);
