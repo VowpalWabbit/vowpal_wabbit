@@ -14,6 +14,7 @@ my $Epsilon = 1e-4;
 
 my $VW;
 my $LDA;
+my $RECOMMEND;
 
 # External utilities we use. See init() for Windows specific actions.
 my $Diff = 'diff';
@@ -41,6 +42,20 @@ sub usage(@) {
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
+}
+
+#
+# which recommend executable to test against
+#
+sub which_recommend() {
+        foreach my $dir ('.', '..', '../library', split(':', $ENV{PATH})) {
+            my $exe = "$dir/recommend";
+            if (-x $exe) {
+                printf STDERR "Testing recommend: %s\n", $exe;
+                return $exe;
+            }
+        }
+    usage("can't find a 'recommend' executable to test on");
 }
 
 #
@@ -131,6 +146,7 @@ sub init() {
 
     $VW = which_vw();
     $LDA = which_lda();
+    $RECOMMEND = which_recommend();
 }
 
 sub copy_file {
@@ -187,6 +203,12 @@ sub next_test() {
             }
             next;
         }
+        if ($line =~ /{RECOMMEND}/) {
+            # The command line
+            $cmd = trim_spaces($line);
+            $cmd =~ s/{RECOMMEND}/$RECOMMEND/;
+            next;
+        }
         if ($line =~ /{LDA}/) {
             # The command line
             $cmd = trim_spaces($line);
@@ -213,6 +235,7 @@ sub next_test() {
         printf STDERR "Unrecognized test spec line:\n\t%s\n", $line;
         print STDERR "Test lines must match one of the following patterns:\n";
         print STDERR "\tCommand to run:    {VW}\n";
+        print STDERR "\tCommand to run:    {RECOMMEND}\n";
         print STDERR "\tstdout reference:  *.stdout\n";
         print STDERR "\tstderr reference:  *.stderr\n";
         print STDERR "\tpredict reference: *.predict\n";
@@ -714,14 +737,37 @@ __DATA__
     train-sets/ref/bs.prreg.predict
 
 # Test 27: bagging -- binary classifiers
-{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p predict 
+{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p bs.vote.predict 
     train-sets/ref/bs.vote.stdout
     train-sets/ref/bs.vote.stderr
     train-sets/ref/bs.vote.predict
 
 # Test 28: bagging -- predict with bagged classifier
-{VW} -d train-sets/0001.dat -i models/bs.prvote.model -p prvote.predict -t
+{VW} -d train-sets/0001.dat -i models/bs.prvote.model -p bs.prvote.predict -t
     train-sets/ref/bs.prvote.stdout
     train-sets/ref/bs.prvote.stderr
     train-sets/ref/bs.prvote.predict
 
+# Test 29: train --l1 regularized model
+{VW} -d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01
+    train-sets/ref/mask.stdout
+    train-sets/ref/mask.stderr
+    train-sets/ref/mask.predict
+    
+# Test 30: train model using --feature_mask
+{VW} -d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model
+    train-sets/ref/remask.stdout
+    train-sets/ref/remask.stderr
+    train-sets/ref/remask.predict
+
+# Test 31: train model for recommendations
+{VW} -d train-sets/recommend-purchases.vw -b 10 --passes 10 -q ui --holdout_off -f models/recommend.model --cache_file recommend.cache
+    train-sets/ref/recommendtrain.stdout
+    train-sets/ref/recommendtrain.stderr
+    train-sets/ref/recommendtrain.predict
+
+# Test 32: make recommendations
+{RECOMMEND} --topk 2 --vwparams "-i models/recommend.model" --blacklist train-sets/recommend-blacklist.vw --bf_bits 10 --users train-sets/recommend-users.vw --items train-sets/recommend-items.vw
+    train-sets/ref/recommendtest.stdout
+    train-sets/ref/recommendtest.stderr
+    train-sets/ref/recommendtest.predict
