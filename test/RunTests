@@ -725,3 +725,8 @@ __DATA__
     train-sets/ref/bs.prvote.stderr
     train-sets/ref/bs.prvote.predict
 
+# Test 29: affix features
+{VW} -d train-sets/affix_test.dat -k -c --passes 40 --holdout_after 4 --affix -2
+    train-sets/ref/affix_test.stdout
+    train-sets/ref/affix_test.stderr
+

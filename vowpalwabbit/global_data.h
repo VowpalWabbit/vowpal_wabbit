@@ -191,6 +191,7 @@ struct vw {
   std::vector<std::string> skip_strings; // triples of features to cross.
   uint32_t ngram[256];//ngrams to generate.
   uint32_t skips[256];//skips in ngrams.
+  uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
