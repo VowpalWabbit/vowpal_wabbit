@@ -192,6 +192,7 @@ struct vw {
   uint32_t ngram[256];//ngrams to generate.
   uint32_t skips[256];//skips in ngrams.
   uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
+  bool     spelling_features[256]; // generate spelling features for which namespace
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
   bool training;//Should I train if label data is available?
