@@ -433,6 +433,8 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 	ret += 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
       }
     }
+
+  cout<<"reg="<<ret<<"\n";
   return ret;
 }
 
@@ -470,6 +472,9 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 {
+
+  cout<<"inside preconditioner_to_regularizer() \n";
+ 
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
@@ -489,7 +494,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
     for(uint32_t i = 0; i < length; i++) 
       b.regularizers[2*i] = weights[stride*i+W_COND] + b.regularizers[2*i];
   for(uint32_t i = 0; i < length; i++) 
-    b.regularizers[2*i+1] = weights[stride*i];
+      b.regularizers[2*i+1] = weights[stride*i];
 }
 
 void zero_state(vw& all)
@@ -712,7 +717,7 @@ int process_pass(vw& all, bfgs& b) {
       {
 	if(all.span_server != "")
 	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
-	preconditioner_to_regularizer(all, b, all.l2_lambda);
+	//preconditioner_to_regularizer(all, b, all.l2_lambda);
       }
     ftime(&b.t_end_global);
     b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
@@ -724,6 +729,8 @@ int process_pass(vw& all, bfgs& b) {
 
 void process_example(vw& all, bfgs& b, example *ec)
  {
+  cout<<"1,";
+
   label_data* ld = (label_data*)ec->ld;
   if (b.first_pass)
     b.importance_weight_sum += ld->weight;
@@ -759,27 +766,63 @@ void process_example(vw& all, bfgs& b, example *ec)
 
 void end_pass(void*d)
 {
+  cout<<"\ninside end_pass()\n"; 
+
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
   
   if (b->current_pass <= b->final_pass) 
-      {
-	int status = process_pass(*all, *b);
-	if (status != LEARN_OK && b->final_pass > b->current_pass) {
-	  b->final_pass = b->current_pass;
-	}
-	if (b->output_regularizer && b->current_pass== b->final_pass) {
-	  zero_preconditioner(*all);
-	  b->preconditioner_pass = true;
-	}
-	if(!all->holdout_set_off)
-	  {
-	    if(summarize_holdout_set(*all, b->no_win_counter))
-	      finalize_regressor(*all, all->final_regressor_name); 
-	    if(b->early_stop_thres == b->no_win_counter)
-	      all-> early_terminate = true;
-	  }         
-      }
+  {
+       if(b->current_pass < b->final_pass)
+       { 
+          int status = process_pass(*all, *b);
+
+          //reaching the max number of passes regardless of convergence 
+          if(b->final_pass == b->current_pass)
+          {
+             cout<<"Maximum number of passes reached before convergence. ";
+             if(!b->output_regularizer)
+                cout<<"If you want to optimize further, increase number of passes\n";
+             if(b->output_regularizer)
+             { 
+               cout<<"\nRegular model file will be output. "; 
+               cout<<"Output feature regularizer is crated only when the convergence is reached. Try increasing the number of passes for convergence\n";
+               b->output_regularizer = false;
+             }
+
+          } 
+          
+          //attain convergence before reaching max iterations 
+	   if (status != LEARN_OK && b->final_pass > b->current_pass) {
+	      b->final_pass = b->current_pass;
+	   }
+
+	   if (b->output_regularizer && b->final_pass == b->current_pass) {
+	     zero_preconditioner(*all);
+	     b->preconditioner_pass = true;
+	   }
+
+	   if(!all->holdout_set_off)
+	   {
+	     if(summarize_holdout_set(*all, b->no_win_counter))
+               finalize_regressor(*all, all->final_regressor_name); 
+	     if(b->early_stop_thres == b->no_win_counter)
+	     { 
+               all-> early_terminate = true;
+               cout<<"Early termination reached w.r.t. holdout set error";
+             }
+
+             cout<<"b->no_win_counter="<<b->no_win_counter<<"\n";
+	   } 
+           
+       }else{//reaching convergence in the previous pass
+        cout<<"Convergence reached\n"; 
+        if(b->output_regularizer) 
+           preconditioner_to_regularizer(*all, *b, (*all).l2_lambda);
+        b->current_pass ++;
+      }   
+                
+  }
 }
 
 void learn(void* d, learner& base, example* ec)
@@ -815,6 +858,8 @@ void finish(void* d)
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
 {
+  cout<<"inside save_load_regularizer()\n";  
+
   char buff[512];
   int c = 0;
   uint32_t stride = all.reg.stride;
@@ -863,6 +908,8 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
 void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
+  cout<<"\ninside save_load()\n";
+
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
 
@@ -909,7 +956,12 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
       reset_state(*all, *b, false);
     }
 
-  bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
+  //bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
+  bool reg_vector = (b->output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
+
+  cout<<"read="<<read<<", reg_vector="<<reg_vector<<"\n";
+  cout<<"model_file.files.size()="<<model_file.files.size()<<"\n";
+    
   if (model_file.files.size() > 0)
     {
       char buff[512];

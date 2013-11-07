@@ -187,6 +187,9 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("holdout_off"))
       all->holdout_set_off = true;
 
+  if(vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text"))
+      all->holdout_set_off = true; 
+
   all->data_filename = "";
 
   all->searn = false;

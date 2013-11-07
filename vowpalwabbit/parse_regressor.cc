@@ -48,6 +48,7 @@ const size_t buf_size = 512;
 
 void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 {
+
   char buff[buf_size];
   char buff2[buf_size];
   uint32_t text_len;
@@ -278,6 +279,7 @@ void finalize_regressor(vw& all, string reg_name)
 
 void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
 {
+
   if (vm.count("final_regressor")) {
     all.final_regressor_name = vm["final_regressor"].as<string>();
     if (!all.quiet)
@@ -289,11 +291,14 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
   vector<string> regs;
   if (vm.count("initial_regressor") || vm.count("i"))
     regs = vm["initial_regressor"].as< vector<string> >();
-  
+
+  if (vm.count("input_feature_regularizer"))
+    regs.push_back(vm["input_feature_regularizer"].as<string>());
+
   if (regs.size() > 0) {
     io_temp.open_file(regs[0].c_str(), all.stdin_off, io_buf::READ);
     if (!all.quiet) {
-      //cerr << "initial_regressor = " << regs[0] << endl;
+        //cerr << "initial_regressor = " << regs[0] << endl;
       if (regs.size() > 1) {
         cerr << "warning: ignoring remaining " << (regs.size() - 1) << " initial regressors" << endl;
       }
@@ -301,6 +306,7 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
   }
 
   save_load_header(all, io_temp, true, false);
+
 }
 
 void parse_mask_regressor_args(vw& all, po::variables_map& vm){

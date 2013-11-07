@@ -15,6 +15,7 @@ namespace LEARNER
       {
 	if(all->early_terminate)
 	  {
+            cout<<"LEARNER 1"; 
 	    all->p->done = true;
 	    return;
 	  }
@@ -22,16 +23,22 @@ namespace LEARNER
 	  {
 	    if (ec->indices.size() > 1) // one nonconstant feature.
 	      {
+               //cout<<"LEARNER 2-1, "; 
 		all->l->learn(ec);
 		all->l->finish_example(*all, ec);
 	      }
 	    else if (ec->end_pass)
 	      {
+               //cout<<"LEARNER 2-2, ";
+
 		all->l->end_pass();
 		VW::finish_example(*all,ec);
 	      }
 	    else if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
 	      {//save state
+
+               //cout<<"LEARNER 2-3, ";                         
+
 		string final_regressor_name = all->final_regressor_name;
 		
 		if ((ec->tag).size() >= 6 && (ec->tag)[4] == '_')
@@ -45,12 +52,14 @@ namespace LEARNER
 	      }
 	    else 
 	      {
+               //cout<<"LEARNER 2-4, "; 
 		all->l->learn(ec);
 		all->l->finish_example(*all, ec);
 	      }
 	  }
 	else if (parser_done(all->p))
 	  {
+           cout<<"LEARNER 3";  
 	    all->l->end_examples();
 	    return;
 	  }
