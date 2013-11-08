@@ -361,6 +361,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     }
   }
 
+
   coef_j = alpha[0] - rho[0] * y_r;
   mem = mem0;
   w = w0;
