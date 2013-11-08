@@ -305,6 +305,7 @@ vw::vw()
       ngram[i] = 0;
       skips[i] = 0;
       affix_features[i] = 0;
+      spelling_features[i] = 0;
     }
 
   //by default use invariant normalized adaptive updates
