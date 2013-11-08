@@ -86,7 +86,7 @@ namespace NN {
         n.output_layer.atomics[nn_output_namespace].push_back(output);
         initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
         ++n.output_layer.num_features;
-        output.weight_index += n.increment;
+        output.weight_index += (uint32_t)n.increment;
       }
 
     if (! n.inpass) 
@@ -121,7 +121,7 @@ namespace NN {
 
       for (unsigned int i = 0; i < n.k; ++i)
         {
-          weight_index += n.increment;
+          weight_index += (uint32_t)n.increment;
           all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
         }
     }

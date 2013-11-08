@@ -287,7 +287,7 @@ namespace Searn {
 
   int choose_policy(searn& srn, bool allow_current, bool allow_optimal)
   {
-    uint32_t seed = /* srn.read_example_last_id * 2147483 + */ srn.t * 2147483647;
+    uint32_t seed = /* srn.read_example_last_id * 2147483 + */ (uint32_t)(srn.t * 2147483647);
     return SearnUtil::random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, srn.rollout_all_actions);
   }
 
@@ -402,7 +402,7 @@ namespace Searn {
         if (srn.auto_history) add_history_to_example(all, srn.hinfo, *ecs, srn.rollout_action.begin+srn.t);
         size_t action = single_prediction_notLDF(all, srn, base, *ecs, valid_labels, pol);
         if (srn.auto_history) remove_history_from_example(all, srn.hinfo, *ecs);
-        return action;
+        return (uint32_t)action;
       } else {
         // TODO: auto-history for LDF
         return single_prediction_LDF(all, base, ecs, num_ec, pol);
@@ -924,7 +924,7 @@ bool snapshot_binary_search_lt(v_array<snapshot_item> a, size_t desired_t, size_
             srn.learn_losses.push_back( srn.train_loss );
           else {
             srn.t = 0;
-            srn.learn_a = this_index;
+            srn.learn_a = (uint32_t)this_index;
             srn.loss_last_step = 0;
             srn.learn_loss = 0.f;
 
@@ -1029,8 +1029,8 @@ void print_update(vw& all, searn* srn)
     float avg_loss = 0.;
     float avg_loss_since = 0.;
     if (!all.holdout_set_off && all.current_pass >= 1) {
-      avg_loss       = safediv(all.sd->holdout_sum_loss,                 all.sd->weighted_holdout_examples);
-      avg_loss_since = safediv(all.sd->holdout_sum_loss_since_last_dump, all.sd->weighted_holdout_examples_since_last_dump);
+      avg_loss       = safediv((float)all.sd->holdout_sum_loss, (float)all.sd->weighted_holdout_examples);
+      avg_loss_since = safediv((float)all.sd->holdout_sum_loss_since_last_dump, (float)all.sd->weighted_holdout_examples_since_last_dump);
 
       all.sd->weighted_holdout_examples_since_last_dump = 0;
       all.sd->holdout_sum_loss_since_last_dump = 0.0;
@@ -1257,7 +1257,7 @@ void print_update(vw& all, searn* srn)
     srn.allow_current_policy = false;
     srn.rollout_oracle = false;
     srn.adaptive_beta = false;
-    srn.alpha = 1e-6;
+    srn.alpha = 1e-6f;
     srn.num_features = 0;
     srn.current_policy = 0;
     srn.state = 0;
@@ -1560,7 +1560,7 @@ void print_update(vw& all, searn* srn)
       srn->total_number_of_policies = (uint32_t)vm["searn_total_nb_policies"].as<size_t>();
 
     ensure_param(srn->beta , 0.0, 1.0, 0.5, "warning: searn_beta must be in (0,1); resetting to 0.5");
-    ensure_param(srn->alpha, 0.0, 1.0, 1e-6, "warning: searn_as_dagger must be in (0,1); resetting to 0.001");
+    ensure_param(srn->alpha, 0.0, 1.0, 1e-6f, "warning: searn_as_dagger must be in (0,1); resetting to 0.001");
 
     //compute total number of policies we will have at end of training
     // we add current_policy for cases where we start from an initial set of policies loaded through -i option
