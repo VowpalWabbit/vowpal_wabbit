@@ -79,9 +79,9 @@ public:
   //called once for each example.  Must work under reduction.
   inline void learn(example* ec, size_t i=0) 
   { 
-    ec->ft_offset += increment*i;
+    ec->ft_offset += (uint32_t)(increment*i);
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
-    ec->ft_offset += - (increment*i);
+    ec->ft_offset += - (uint32_t)(increment*i);
   }
 
   //called anytime saving or loading needs to happen. Autorecursive.

@@ -11,6 +11,7 @@ license as described in the file LICENSE.
 #include "cache.h"
 #include "unique_sort.h"
 #include "global_data.h"
+#include "constant.h"
 
 using namespace std;
 
@@ -74,6 +75,9 @@ public:
   parser* p;
   example* ae;
   uint32_t weights_per_problem;
+  uint32_t* affix_features;
+  bool* spelling_features;
+  v_array<char> spelling;
   
   ~TC_parser(){ }
   
@@ -132,6 +136,68 @@ public:
 	feature_v.push_back('\0');
 	audit_data ad = {copy(base),feature_v.begin,word_hash,v,true};
 	ae->audit_features[index].push_back(ad);
+      }
+      if ((affix_features[index] > 0) && (feature_name.end != feature_name.begin)) {
+        if (ae->atomics[affix_namespace].size() == 0)
+          ae->indices.push_back(affix_namespace);
+        uint32_t affix = affix_features[index];
+        while (affix > 0) {
+          bool is_prefix = affix & 0x1;
+          uint32_t len   = (affix >> 1) & 0x7;
+          substring affix_name = { feature_name.begin, feature_name.end };
+          if (affix_name.end > affix_name.begin + len) {
+            if (is_prefix)
+              affix_name.end = affix_name.begin + len;
+            else
+              affix_name.begin = affix_name.end - len;
+          }
+          word_hash = p->hasher(affix_name,(uint32_t)channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
+          feature f2 = { v, (uint32_t) word_hash * weights_per_problem };
+          ae->sum_feat_sq[affix_namespace] += v*v;
+          ae->atomics[affix_namespace].push_back(f2);
+          if (audit) {
+            v_array<char> affix_v;
+            if (index != ' ') affix_v.push_back(index);
+            affix_v.push_back(is_prefix ? '+' : '-');
+            affix_v.push_back('0' + len);
+            affix_v.push_back('=');
+            push_many(affix_v, affix_name.begin, affix_name.end - affix_name.begin);
+            affix_v.push_back('\0');
+            audit_data ad = {copy((char*)"affix"),affix_v.begin,word_hash,v,true};
+            ae->audit_features[affix_namespace].push_back(ad);
+          }
+          
+          affix >>= 4;
+        }
+      }
+      if (spelling_features[index]) {
+        if (ae->atomics[spelling_namespace].size() == 0)
+          ae->indices.push_back(spelling_namespace);
+        //v_array<char> spelling;
+        spelling.erase();
+        for (char*c = feature_name.begin; c!=feature_name.end; ++c) {
+          char d = 0;
+          if      ((*c >= '0') && (*c <= '9')) d = '0';
+          else if ((*c >= 'a') && (*c <= 'z')) d = 'a';
+          else if ((*c >= 'A') && (*c <= 'Z')) d = 'A';
+          else if  (*c == '.')                 d = '.';
+          else                                 d = '#';
+          if ((spelling.size() == 0) || (spelling.last() != d))
+            spelling.push_back(d);
+        }
+        substring spelling_ss = { spelling.begin, spelling.end };
+        size_t word_hash = hashstring(spelling_ss, (uint32_t)channel_hash);
+        feature f2 = { v, (uint32_t) word_hash * weights_per_problem };
+        ae->sum_feat_sq[spelling_namespace] += v*v;
+        ae->atomics[spelling_namespace].push_back(f2);
+        if (audit) {
+          v_array<char> spelling_v;
+          if (index != ' ') { spelling_v.push_back(index); spelling_v.push_back('_'); }
+          push_many(spelling_v, spelling_ss.begin, spelling_ss.end - spelling_ss.begin);
+          spelling_v.push_back('\0');
+          audit_data ad = {copy((char*)"spelling"),spelling_v.begin,word_hash,v,true};
+          ae->audit_features[spelling_namespace].push_back(ad);
+        }
       }
     }
   }
@@ -242,6 +308,8 @@ public:
     this->p = all.p;
     this->ae = ae;
     this->weights_per_problem = all.wpp;
+    this->affix_features = all.affix_features;
+    this->spelling_features = all.spelling_features;
     audit = all.audit || all.hash_inv;
     listNameSpace();
   }

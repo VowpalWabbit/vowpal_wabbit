@@ -288,7 +288,6 @@ namespace cs_test
             IntPtr vw0 = VowpalWabbitInterface.Initialize(@"-d rcv1.train.raw.txt -c");
             VowpalWabbitInterface.StartParser(vw0, false);
 
-            long errCount = 0;
             long instanceCount = 0;
             VWInstanceEx[] vwInstanceExs = new VWInstanceEx[781266];
             Stopwatch s = Stopwatch.StartNew();

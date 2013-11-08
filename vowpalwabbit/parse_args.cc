@@ -52,6 +52,47 @@ bool valid_ns(char c)
     return true;
 }
 
+
+void parse_affix_argument(vw&all, string str) {
+  if (str.length() == 0) return;
+  char*cstr = new char[str.length()+1];
+  strcpy(cstr, str.c_str());
+
+  char*p = strtok(cstr, ",");
+  while (p != 0) {
+    char*q = p;
+    uint16_t prefix = 1;
+    if (q[0] == '+') { q++; }
+    else if (q[0] == '-') { prefix = 0; q++; }
+    if ((q[0] < '1') || (q[0] > '7')) {
+      cerr << "malformed affix argument (length must be 1..7): " << p << endl;
+      throw exception();
+    }
+    uint16_t len = (uint16_t)(q[0] - '0');
+    uint16_t ns = (uint16_t)' ';  // default namespace
+    if (q[1] != 0) {
+      if (valid_ns(q[1]))
+        ns = (uint16_t)q[1];
+      else {      
+        cerr << "malformed affix argument (invalid namespace): " << p << endl;
+        throw exception();
+      }
+      if (q[2] != 0) {
+        cerr << "malformed affix argument (too long): " << p << endl;
+        throw exception();
+      }
+    }
+
+    uint16_t afx = (len << 1) | (prefix & 0x1);
+    all.affix_features[ns] <<= 4;
+    all.affix_features[ns] |=  afx;
+    
+    p = strtok(NULL, ",");
+  }
+  
+  delete cstr;
+}
+
 vw* parse_args(int argc, char *argv[])
 {
   po::options_description desc("VW options");
@@ -160,7 +201,9 @@ vw* parse_args(int argc, char *argv[])
 
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
     ("ngram", po::value< vector<string> >(), "Generate N grams")
-    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.");
+    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.")
+    ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
+    ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)");
 
   //po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
@@ -309,6 +352,18 @@ vw* parse_args(int argc, char *argv[])
       all->skip_strings = vm["skips"].as<vector<string> >();
       compile_gram(all->skip_strings, all->skips, (char*)"skips", all->quiet);
     }
+
+  if (vm.count("affix")) {
+    parse_affix_argument(*all, vm["affix"].as<string>());
+  }
+
+  if (vm.count("spelling")) {
+    vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
+    for (size_t id=0; id<spelling_ns.size(); id++)
+      if (spelling_ns[id][0] == '_') all->spelling_features[' '] = true;
+      else all->spelling_features[(size_t)spelling_ns[id][0]] = true;
+  }
+  
   if (vm.count("bit_precision"))
     {
       all->default_bits = false;

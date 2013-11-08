@@ -179,10 +179,10 @@ namespace WAP {
               uint32_t myi = (uint32_t)vs[i].ci.weight_index;
               uint32_t myj = (uint32_t)vs[j].ci.weight_index;
 
-              mirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
+              mirror_features(all, ec, (uint32_t)((myi-1)*w.increment), (uint32_t)((myj-1)*w.increment));
 
               base.learn(ec);
-              unmirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
+              unmirror_features(all, ec, (uint32_t)((myi-1)*w.increment), (uint32_t)((myj-1)*w.increment));
             }
         }
 
