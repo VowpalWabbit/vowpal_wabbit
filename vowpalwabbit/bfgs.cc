@@ -434,7 +434,6 @@ double add_regularization(vw& all, bfgs& b, float regularization)
       }
     }
 
-  cout<<"reg="<<ret<<"\n";
   return ret;
 }
 
@@ -472,9 +471,6 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 {
-
-  cout<<"inside preconditioner_to_regularizer() \n";
- 
   uint32_t length = 1 << all.num_bits;
   size_t stride = all.reg.stride;
   weight* weights = all.reg.weight_vector;
@@ -729,7 +725,6 @@ int process_pass(vw& all, bfgs& b) {
 
 void process_example(vw& all, bfgs& b, example *ec)
  {
-  cout<<"1,";
 
   label_data* ld = (label_data*)ec->ld;
   if (b.first_pass)
@@ -766,8 +761,6 @@ void process_example(vw& all, bfgs& b, example *ec)
 
 void end_pass(void*d)
 {
-  cout<<"\ninside end_pass()\n"; 
-
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
   
@@ -780,13 +773,13 @@ void end_pass(void*d)
           //reaching the max number of passes regardless of convergence 
           if(b->final_pass == b->current_pass)
           {
-             cout<<"Maximum number of passes reached before convergence. ";
+             cout<<"Maximum number of passes reached. ";
              if(!b->output_regularizer)
                 cout<<"If you want to optimize further, increase number of passes\n";
              if(b->output_regularizer)
              { 
-               cout<<"\nRegular model file will be output. "; 
-               cout<<"Output feature regularizer is crated only when the convergence is reached. Try increasing the number of passes for convergence\n";
+               cout<<"\nRegular model file has been created. "; 
+               cout<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
                b->output_regularizer = false;
              }
 
@@ -812,7 +805,6 @@ void end_pass(void*d)
                cout<<"Early termination reached w.r.t. holdout set error";
              }
 
-             cout<<"b->no_win_counter="<<b->no_win_counter<<"\n";
 	   } 
            
        }else{//reaching convergence in the previous pass
@@ -858,7 +850,6 @@ void finish(void* d)
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
 {
-  cout<<"inside save_load_regularizer()\n";  
 
   char buff[512];
   int c = 0;
@@ -908,7 +899,6 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
 void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
-  cout<<"\ninside save_load()\n";
 
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
@@ -958,9 +948,6 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
 
   //bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
   bool reg_vector = (b->output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
-
-  cout<<"read="<<read<<", reg_vector="<<reg_vector<<"\n";
-  cout<<"model_file.files.size()="<<model_file.files.size()<<"\n";
     
   if (model_file.files.size() > 0)
     {
