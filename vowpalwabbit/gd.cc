@@ -699,8 +699,9 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 	}
       else// write binary or text
 	{
-	  v = &(all.reg.weight_vector[stride*i]);
-	  if (*v != 0.)
+                      
+         v = &(all.reg.weight_vector[stride*i]);
+	 if (*v != 0.)
 	    {
 	      c++;
 	      char buff[512];

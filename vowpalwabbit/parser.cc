@@ -1013,13 +1013,15 @@ void *main_parse_loop(void *in)
 {
 	vw* all = (vw*) in;
 	size_t example_number = 0;  // for variable-size batch learning algorithms
+
+
 	while(!all->p->done)
 	  {
-	    example* ae = get_unused_example(*all);
-	   if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
+            example* ae = get_unused_example(*all);
+	    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
 		   && parse_atomic_example(*all, ae) )  
 	     setup_example(*all, ae);
-	   else
+	    else
 	     {
 	       reset_source(*all, all->num_bits);
 	       all->do_reset_source = false;
@@ -1043,6 +1045,7 @@ void *main_parse_loop(void *in)
 	   all->p->parsed_examples++;
 	   condition_variable_signal_all(&all->p->example_available);
 	   mutex_unlock(&all->p->examples_lock);
+
 	  }  
 	return NULL;
 }
