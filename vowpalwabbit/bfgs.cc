@@ -809,7 +809,7 @@ void end_pass(void*d)
 	   } 
            
        }else{//reaching convergence in the previous pass
-        cout<<"Convergence reached\n"; 
+        //cout<<"Convergence reached\n"; 
         if(b->output_regularizer) 
            preconditioner_to_regularizer(*all, *b, (*all).l2_lambda);
         b->current_pass ++;
