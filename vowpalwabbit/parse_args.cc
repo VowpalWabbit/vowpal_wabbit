@@ -710,7 +710,7 @@ vw* parse_args(int argc, char *argv[])
   all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
   if (!all->quiet)
     {
-      if (all->reg_mode %2)
+      if (all->reg_mode %2 && !vm.count("bfgs"))
 	cerr << "using l1 regularization = " << all->l1_lambda << endl;
       if (all->reg_mode > 1)
 	cerr << "using l2 regularization = " << all->l2_lambda << endl;
