@@ -774,13 +774,13 @@ void end_pass(void*d)
           //reaching the max number of passes regardless of convergence 
           if(b->final_pass == b->current_pass)
           {
-             cout<<"Maximum number of passes reached. ";
+             cerr<<"Maximum number of passes reached. ";
              if(!b->output_regularizer)
-                cout<<"If you want to optimize further, increase number of passes\n";
+                cerr<<"If you want to optimize further, increase the number of passes\n";
              if(b->output_regularizer)
              { 
-               cout<<"\nRegular model file has been created. "; 
-               cout<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
+               cerr<<"\nRegular model file has been created. "; 
+               cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
                b->output_regularizer = false;
              }
 
@@ -803,13 +803,12 @@ void end_pass(void*d)
 	     if(b->early_stop_thres == b->no_win_counter)
 	     { 
                all-> early_terminate = true;
-               cout<<"Early termination reached w.r.t. holdout set error";
+               cerr<<"Early termination reached w.r.t. holdout set error";
              }
 
 	   } 
            
        }else{//reaching convergence in the previous pass
-        //cout<<"Convergence reached\n"; 
         if(b->output_regularizer) 
            preconditioner_to_regularizer(*all, *b, (*all).l2_lambda);
         b->current_pass ++;
