@@ -16,7 +16,7 @@ struct func_data {
   void (*func)(void* data);
 };
 
-inline func_data tuple(void* data, learner* base, void (*func)(void* data))
+inline func_data tuple_dbf(void* data, learner* base, void (*func)(void* data))
 {
   func_data foo;
   foo.data = data;
@@ -92,7 +92,7 @@ public:
     save_load_fd.base = learn_fd.base;}
 
   //called to clean up state.  Autorecursive.
-  void set_finish(void (*f)(void*)) { finisher_fd = tuple(learn_fd.data,learn_fd.base,f); }
+  void set_finish(void (*f)(void*)) { finisher_fd = tuple_dbf(learn_fd.data,learn_fd.base,f); }
   inline void finish() 
   { if (finisher_fd.data) 
       {finisher_fd.func(finisher_fd.data); free(finisher_fd.data); } 
@@ -101,17 +101,17 @@ public:
   void end_pass(){ 
     end_pass_fd.func(end_pass_fd.data);
     if (end_pass_fd.base) end_pass_fd.base->end_pass(); }//autorecursive
-  void set_end_pass(void (*ep)(void*)) {end_pass_fd = tuple(learn_fd.data, learn_fd.base, ep);}
+  void set_end_pass(void (*ep)(void*)) {end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, ep);}
 
   //called after parsing of examples is complete.  Autorecursive.
   void end_examples() 
   { end_examples_fd.func(end_examples_fd.data); 
     if (end_examples_fd.base) end_examples_fd.base->end_examples(); } 
-  void set_end_examples(void (*ee)(void*)) {end_examples_fd = tuple(learn_fd.data,learn_fd.base,ee);}
+  void set_end_examples(void (*ee)(void*)) {end_examples_fd = tuple_dbf(learn_fd.data,learn_fd.base,ee);}
 
   //Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data);}
-  void set_init_driver(void (*id)(void*)) { init_fd = tuple(learn_fd.data,learn_fd.base, id); }
+  void set_init_driver(void (*id)(void*)) { init_fd = tuple_dbf(learn_fd.data,learn_fd.base, id); }
 
   //called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, example* ec) { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}

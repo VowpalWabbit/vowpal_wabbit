@@ -230,6 +230,12 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("holdout_off"))
       all->holdout_set_off = true;
 
+  if(!all->holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
+  {
+      all->holdout_set_off = true;
+      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
+  }   
+
   all->data_filename = "";
 
   all->searn = false;
@@ -704,7 +710,7 @@ vw* parse_args(int argc, char *argv[])
   all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
   if (!all->quiet)
     {
-      if (all->reg_mode %2)
+      if (all->reg_mode %2 && !vm.count("bfgs"))
 	cerr << "using l1 regularization = " << all->l1_lambda << endl;
       if (all->reg_mode > 1)
 	cerr << "using l2 regularization = " << all->l2_lambda << endl;

@@ -15,8 +15,8 @@ namespace LEARNER
       {
 	if(all->early_terminate)
 	  {
-	    all->p->done = true;
-	    return;
+ 	    all->p->done = true;
+ 	    return;
 	  }
 	else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	  {
@@ -32,6 +32,7 @@ namespace LEARNER
 	      }
 	    else if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
 	      {//save state
+
 		string final_regressor_name = all->final_regressor_name;
 		
 		if ((ec->tag).size() >= 6 && (ec->tag)[4] == '_')
