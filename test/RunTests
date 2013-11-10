@@ -730,3 +730,14 @@ __DATA__
     train-sets/ref/affix_test.stdout
     train-sets/ref/affix_test.stderr
 
+# Test 30: train model for topk recommender
+{VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off 
+    train-sets/ref/topk-train.stdout
+    train-sets/ref/topk-train.stderr
+
+# Test 31: train model for topk recommender
+{VW} -d train-sets/topk.vw -i topk.model --topk 2 -p topk.predict
+    train-sets/ref/topk-rec.stdout
+    train-sets/ref/topk-rec.stderr
+    train-sets/ref/topk-rec.predict
+

@@ -1,0 +1,30 @@
+creating quadratic features for pairs: MF 
+final_regressor = topk.model
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = topk-train.cache
+Reading datafile = train-sets/topk.vw
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+3.928039   3.928039            3         3.0   2.0000   0.3865        4
+3.505718   3.083397            6         6.0   3.0000   0.0000        4
+2.476008   1.240357           11        11.0   3.0000   0.9632        4
+1.684657   0.893305           22        22.0   1.0000   1.4393        4
+1.174029   0.663401           44        44.0  unknown   0.7909        1
+0.741233   0.298372           87        87.0   2.0000   2.1010        4
+0.430471   0.119709          174       174.0   3.0000   2.4709        4
+0.225430   0.020390          348       348.0  unknown   0.9266        1
+0.113289   0.001148          696       696.0  unknown   0.9384        1
+
+finished run
+number of examples per pass = 12
+passes used = 100
+weighted example sum = 1200
+weighted label sum = 1500
+average loss = 0.0657109
+best constant = 1.66667
+total feature number = 3900
