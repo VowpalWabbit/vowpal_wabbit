@@ -286,7 +286,7 @@ sub lenient_array_compare($$) {
 sub diff_lenient_float($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
-    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr';
+    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 200';
     my $tmpf = 'lenient-diff.tmp';
     system("$Diff $diff_opts $reffile $outfile >$tmpf");
     $status = $? >> 8;
@@ -729,4 +729,15 @@ __DATA__
 {VW} -d train-sets/affix_test.dat -k -c --passes 40 --holdout_after 4 --affix -2
     train-sets/ref/affix_test.stdout
     train-sets/ref/affix_test.stderr
+
+# Test 30: train model for topk recommender
+{VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off 
+    train-sets/ref/topk-train.stdout
+    train-sets/ref/topk-train.stderr
+
+# Test 31: train model for topk recommender
+{VW} -d train-sets/topk.vw -i topk.model --topk 2 -p topk.predict
+    train-sets/ref/topk-rec.stdout
+    train-sets/ref/topk-rec.stderr
+    train-sets/ref/topk-rec.predict
 
