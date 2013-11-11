@@ -286,7 +286,7 @@ sub lenient_array_compare($$) {
 sub diff_lenient_float($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
-    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr';
+    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 200';
     my $tmpf = 'lenient-diff.tmp';
     system("$Diff $diff_opts $reffile $outfile >$tmpf");
     $status = $? >> 8;
