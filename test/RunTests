@@ -736,7 +736,7 @@ __DATA__
     train-sets/ref/topk-train.stderr
 
 # Test 31: train model for topk recommender
-{VW} -d train-sets/topk.vw -i topk.model --topk 2 -p topk.predict
+{VW} -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
     train-sets/ref/topk-rec.stdout
     train-sets/ref/topk-rec.stderr
     train-sets/ref/topk-rec.predict
