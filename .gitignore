@@ -43,3 +43,4 @@ vowpalwabbit/active_interactor
 vowpalwabbit/vw
 cluster/spanning_tree
 *.d
+*.prev

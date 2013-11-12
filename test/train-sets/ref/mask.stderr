@@ -1,0 +1,28 @@
+final_regressor = models/mask.model
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using l1 regularization = 0.01
+using no cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.345659   0.345659            3         3.0   0.0000   0.1460       57
+0.315263   0.284867            6         6.0   1.0000   0.0793       31
+0.245089   0.160881           11        11.0   0.0000   0.1793       38
+0.269415   0.293741           22        22.0   1.0000   0.4167       88
+0.236489   0.203563           44        44.0   0.0000   0.2383       66
+0.235436   0.234359           87        87.0   1.0000   0.2071       61
+0.248760   0.262084          174       174.0   1.0000   0.3526       26
+
+finished run
+number of examples per pass = 200
+passes used = 1
+weighted example sum = 200
+weighted label sum = 91
+average loss = 0.241252
+best constant = 0.455
+best constant's loss = 0.247975
+total feature number = 15482
