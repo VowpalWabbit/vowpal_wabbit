@@ -77,7 +77,7 @@ namespace TOPK {
     all.sd->example_number++;
  
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      if (example_is_newline(ec) || ec->end_pass)
+      if (example_is_newline(ec))
         TOPK::print_result(*sink, d->pr_queue);
        
     print_update(all, ec);
@@ -112,11 +112,11 @@ namespace TOPK {
   {
     topk* data = (topk*)calloc(1, sizeof(topk));
 
-    data->B = (uint32_t)vm["topk"].as<size_t>();
+    data->B = (uint32_t)vm["top"].as<size_t>();
 
     data->all = &all;
 
-    learner* l = new learner(data, learn, all.l, 0);
+    learner* l = new learner(data, learn, all.l);
     l->set_finish_example(finish_example);
 
     return l;

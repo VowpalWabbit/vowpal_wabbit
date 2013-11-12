@@ -110,7 +110,7 @@ vw* parse_args(int argc, char *argv[])
     ("active_mellowness", po::value<float>(&(all->active_c0)), "active learning mellowness parameter c_0. Default 8")
     ("binary", "report loss as binary classification on -1,1")
     ("bs", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
-    ("topk", po::value<size_t>(), "top k recommendation")
+    ("top", po::value<size_t>(), "top k recommendation")
     ("bs_type", po::value<string>(), "bootstrap mode - currently 'mean' or 'vote'")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("sgd", "use regular stochastic gradient descent update.")
@@ -728,7 +728,7 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("autolink") || vm_file.count("autolinnk") ) 
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
 
-  if(vm.count("topk") || vm_file.count("topk") ) 
+  if(vm.count("top") || vm_file.count("top") ) 
     all->l = TOPK::setup(*all, to_pass_further, vm, vm_file);
   
   if (vm.count("binary") || vm_file.count("binary"))
