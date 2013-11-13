@@ -76,8 +76,8 @@ namespace TOPK {
     all.sd->total_features += ec->num_features;
     all.sd->example_number++;
  
-    for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      if (example_is_newline(ec))
+    if (example_is_newline(ec))
+      for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
         TOPK::print_result(*sink, d->pr_queue);
        
     print_update(all, ec);
