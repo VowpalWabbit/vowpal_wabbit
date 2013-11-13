@@ -74,8 +74,7 @@ template<class T> class v_array{
   
 	size_t push_back_sorted(const T &new_ele)//ANNA
 	{
-		size_t i = 0;
-		size_t index;
+		size_t index = 0;
 		size_t size = end - begin;
 		size_t to_move;
 		T tmp1, tmp2;
@@ -101,7 +100,11 @@ template<class T> class v_array{
 	{
 		T tmp;
 		size_t size = end - begin;	
-		size_t to_move = size - index - 1;
+		int32_t to_move;
+		
+		to_move = size;
+		to_move -= index;
+		to_move -= 1;
 		
 		if(to_move > 0)
 			memmove(begin + index, begin + index + 1, to_move * sizeof(T));

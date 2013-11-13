@@ -366,8 +366,164 @@ namespace TXM_O
 			}
 		}
 	}
-
+	
 	void predict(txm_o* d, example* ec)
+	{
+		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
+		vw* all = d->all;
+		size_t new_cn, other_cn;
+		size_t index;	
+		uint32_t j;
+		bool expandable;
+		v_array<uint32_t> node_list1;
+		v_array<uint32_t> node_list2;
+		v_array<uint32_t> label_list;
+		
+		#ifdef TXM_O_DEBUG_PRED
+		int level = 0;
+		#endif
+		
+		if(command_example(all,ec))
+		{	
+			d->base.learn(ec);
+			return;
+		}
+		
+		node_list1.push_back(0);
+		d->cn = 0;		
+		
+		#ifdef TXM_O_DEBUG_PRED
+		cout << "\nExample: " << d->ex_num << endl;
+		#endif
+		
+		#ifdef TXM_O_DEBUG_FILE2
+		if(!d->nodes[d->cn].node_pred.contain_sorted(txm_o_node_pred_type(mc->label), &index))	//if the label is not in the root
+		{
+			d->nodes[d->cn].node_pred.push_back_sorted(txm_o_node_pred_type(mc->label));	//add the label to the list of labels in the root
+			d->nodes[d->cn].node_pred.contain_sorted(txm_o_node_pred_type(mc->label), &index);
+			d->nodes[d->cn].node_pred[index].label_cnt2++;
+		}
+		else
+		{			
+			d->nodes[d->cn].node_pred[index].label_cnt2++;
+		}
+		d->nodes[d->cn].total_cnt2++;
+		#endif
+		
+		while(node_list1.size() > 0)
+		{
+			if(node_list2.size() > 0)
+			{
+				d->cn = node_list2.pop();
+				expandable = false;
+			}
+			else
+			{
+				d->cn = node_list1.pop();
+				expandable = true;
+			}
+
+			if(d->nodes[d->cn].leaf)
+			{
+				label_list.push_back(d->nodes[d->cn].node_labels.last().label);
+				continue;
+			}
+			
+			update_example_indicies(all->audit, ec, d->increment * d->cn);	
+		
+			ec->test_only = true;
+			label_data simple_temp;	
+			simple_temp.initial = 0.0;
+			simple_temp.weight = mc->weight;
+			simple_temp.label = FLT_MAX;
+			ec->ld = &simple_temp.label;
+			d->base.learn(ec);
+			
+			update_example_indicies(all->audit, ec, -d->increment * d->cn);
+			
+			#ifdef TXM_O_DEBUG_PRED
+			cout << "level: " << level++ << endl;
+			cout << "node: " << d->cn << endl;
+			#endif
+				
+			if(ec->final_prediction < 0)
+			{
+				new_cn = d->nodes[d->cn].id_left;
+				other_cn = d->nodes[d->cn].id_right;
+			}
+			else
+			{
+				new_cn = d->nodes[d->cn].id_right;
+				other_cn = d->nodes[d->cn].id_left;
+			}
+			
+			if(new_cn == 0)		//blad - dziecko ma id 0, nigdy w to nie wchodze
+				break;	
+				
+			if(expandable)
+			{
+				node_list1.push_back(new_cn);
+				node_list2.push_back(other_cn);			
+			}
+			else
+			{
+				node_list2.push_back(new_cn);
+			}
+			
+			/*#ifdef TXM_O_DEBUG_FILE2
+			if(!d->nodes[d->cn].node_pred.contain_sorted(txm_o_node_pred_type(mc->label), &index))	//if the label is not in the root
+			{
+				d->nodes[d->cn].node_pred.push_back_sorted(txm_o_node_pred_type(mc->label));	//add the label to the list of labels in the root
+				d->nodes[d->cn].node_pred.contain_sorted(txm_o_node_pred_type(mc->label), &index);
+				d->nodes[d->cn].node_pred[index].label_cnt2++;
+			}
+			else
+			{			
+				d->nodes[d->cn].node_pred[index].label_cnt2++;
+			}
+			d->nodes[d->cn].total_cnt2++;
+			#endif*/
+		}
+		
+		ec->ld = mc;
+		
+		#ifdef TXM_O_DEBUG_PRED
+		cout << "Prediction finished...\n";
+		#endif
+		
+		#ifdef TXM_O_DEBUG_PRED
+		cout << "Nb of labels in leaf: " << d->nodes[d->cn].node_pred.size() << endl;
+		#endif
+		
+		//ec->final_prediction = d->nodes[d->cn].max_cnt2_label;		//PRZYPISYWANIE PREDYKCJI DO PRZYKLADU (necessary for external evaluation)
+		
+		ec->final_prediction = label_list.last();				
+		
+		for(j = 0; j < label_list.size(); j++)
+		{
+			if(label_list[j] == mc->label)
+			{
+				ec->final_prediction = mc->label;
+				break;
+			}
+		}
+		
+		//cout << label_list.size() << ":" << j << ":" << ec->final_prediction << endl;
+		
+		/*if(d->cn == 0)
+		{
+			ec->final_prediction = -1;
+			cout << "Prediction error: " << err_cnt++ << endl;
+ 		}*/
+		
+		#ifdef TXM_O_DEBUG_PRED
+		cout << "labels O:P:\t" << mc->label << ":" << ec->final_prediction << endl;
+		#endif
+		
+		d->ex_num++;					//pozostalosc po starym kodzie
+	}	
+
+	/*void predict(txm_o* d, example* ec)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		vw* all = d->all;
@@ -481,18 +637,18 @@ namespace TXM_O
 			}
 		}
 		
-		/*if(d->cn == 0)
-		{
-			ec->final_prediction = -1;
-			cout << "Prediction error: " << err_cnt++ << endl;
- 		}*/
+		//if(d->cn == 0)
+		//{
+		//	ec->final_prediction = -1;
+		//	cout << "Prediction error: " << err_cnt++ << endl;
+ 		//}
 		
 		#ifdef TXM_O_DEBUG_PRED
 		cout << "labels O:P:\t" << mc->label << ":" << ec->final_prediction << endl;
 		#endif
 		
 		d->ex_num++;					//pozostalosc po starym kodzie
-	}	
+	}	*/
 	
 	uint32_t predict_node(txm_o* d, example* ec, size_t level_limit)		//to samo co predict tylko nie to samo do konca, minimalny argument z jakim to jest odpalane to jest 1 (czyli masz root i dwa liscie)
 	{
