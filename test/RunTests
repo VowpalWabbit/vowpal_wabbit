@@ -19,6 +19,8 @@ my $LDA;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
+my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr';
+
 my @ToTest = ();
 
 sub usage(@) {
@@ -349,7 +351,7 @@ sub diff($$) {
     }
 
     # Actually run the diff
-    my $diff_cmd = "$Diff -N $reffile $outfile";
+    my $diff_cmd = "$Diff $diff_opts $reffile $outfile";
     system("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     if (-s 'diff.tmp') {
