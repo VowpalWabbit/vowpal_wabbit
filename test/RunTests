@@ -19,6 +19,8 @@ my $LDA;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
+my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 150';
+
 my @ToTest = ();
 
 sub usage(@) {
@@ -286,7 +288,6 @@ sub lenient_array_compare($$) {
 sub diff_lenient_float($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
-    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr';
     my $tmpf = 'lenient-diff.tmp';
     system("$Diff $diff_opts $reffile $outfile >$tmpf");
     $status = $? >> 8;
@@ -349,7 +350,7 @@ sub diff($$) {
     }
 
     # Actually run the diff
-    my $diff_cmd = "$Diff -N $reffile $outfile";
+    my $diff_cmd = "$Diff $diff_opts $reffile $outfile";
     system("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     if (-s 'diff.tmp') {
@@ -726,7 +727,7 @@ __DATA__
     train-sets/ref/bs.prvote.predict
 
 # Test 29: affix features
-{VW} -d train-sets/affix_test.dat -k -c --passes 40 --holdout_after 4 --affix -2
+{VW} -d train-sets/affix_test.dat -k -c --passes 10 --holdout_off --affix -2
     train-sets/ref/affix_test.stdout
     train-sets/ref/affix_test.stderr
 
