@@ -723,7 +723,7 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("nn") || vm_file.count("nn") ) 
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
 
-  if(vm.count("autolink") || vm_file.count("autolinnk") ) 
+  if(vm.count("autolink") || vm_file.count("autolink") ) 
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
   
   if (vm.count("binary") || vm_file.count("binary"))
