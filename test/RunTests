@@ -286,7 +286,7 @@ sub lenient_array_compare($$) {
 sub diff_lenient_float($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
-    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr';
+    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 200';
     my $tmpf = 'lenient-diff.tmp';
     system("$Diff $diff_opts $reffile $outfile >$tmpf");
     $status = $? >> 8;
@@ -695,13 +695,10 @@ __DATA__
     test-sets/ref/ml100k_small.stderr
 
 # Test 24: active-learning -- training
-# Output should make sense, in particular, shouldn't have 'total queries = 0'
-# (regression introduced May 13, 2013)
 {VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
-#{VW} -d train-sets/0002.dat -f models/bs.model --bs 4 -p train-sets/ref/bs.predict > train-sets/ref/bs.stdout 2> train-sets/ref/bs.stderr
 {VW} -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict 
     train-sets/ref/bs.reg.stdout
     train-sets/ref/bs.reg.stderr
@@ -732,13 +729,19 @@ __DATA__
 
 # Test 30: train --l1 regularized model
 {VW} -d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01
-    train-sets/ref/mask.stdout
     train-sets/ref/mask.stderr
-    train-sets/ref/mask.predict
     
 # Test 31: train model using --feature_mask
 {VW} -d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model
-    train-sets/ref/remask.stdout
     train-sets/ref/remask.stderr
-    train-sets/ref/remask.predict
 
+# Test 32: train model for topk recommender
+{VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off 
+    train-sets/ref/topk-train.stdout
+    train-sets/ref/topk-train.stderr
+
+# Test 33: train model for topk recommender
+{VW} -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
+    train-sets/ref/topk-rec.stdout
+    train-sets/ref/topk-rec.stderr
+    train-sets/ref/topk-rec.predict
