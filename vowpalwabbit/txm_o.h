@@ -18,13 +18,12 @@ license as described in the file LICENSE.
 
 //#define TXM_O_OAA_MULTI
 
+//#define TXM_O_TRAIN_ALT_TRK
+
 //#define TXM_O_DEBUG_FILE1
 //#define TXM_O_DEBUG_FILE2
 //#define TXM_O_DEBUG
-//#define TXM_O_DEBUG_PASS_STOP
-//#define TXM_O_DEBUG_EX_STOP
 //#define TXM_O_DEBUG_PRED
-//#define TXM_O_ARBITRARY_ROOT
 
 namespace TXM_O
 {  
