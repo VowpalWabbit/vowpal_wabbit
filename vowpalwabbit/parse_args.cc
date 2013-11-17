@@ -16,6 +16,8 @@ license as described in the file LICENSE.
 #include "global_data.h"
 #include "nn.h"
 #include "oaa.h"
+#include "bs.h"
+#include "topk.h"
 #include "ect.h"
 #include "csoaa.h"
 #include "wap.h"
@@ -30,12 +32,9 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 #include "binary.h"
 #include "autolink.h"
-
 //Anna
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#include "txm.h"
+//#include "txm.h"
 #include "txm_o.h"
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 using namespace std;
 //
@@ -57,15 +56,55 @@ bool valid_ns(char c)
     return true;
 }
 
+
+void parse_affix_argument(vw&all, string str) {
+  if (str.length() == 0) return;
+  char*cstr = new char[str.length()+1];
+  strcpy(cstr, str.c_str());
+
+  char*p = strtok(cstr, ",");
+  while (p != 0) {
+    char*q = p;
+    uint16_t prefix = 1;
+    if (q[0] == '+') { q++; }
+    else if (q[0] == '-') { prefix = 0; q++; }
+    if ((q[0] < '1') || (q[0] > '7')) {
+      cerr << "malformed affix argument (length must be 1..7): " << p << endl;
+      throw exception();
+    }
+    uint16_t len = (uint16_t)(q[0] - '0');
+    uint16_t ns = (uint16_t)' ';  // default namespace
+    if (q[1] != 0) {
+      if (valid_ns(q[1]))
+        ns = (uint16_t)q[1];
+      else {      
+        cerr << "malformed affix argument (invalid namespace): " << p << endl;
+        throw exception();
+      }
+      if (q[2] != 0) {
+        cerr << "malformed affix argument (too long): " << p << endl;
+        throw exception();
+      }
+    }
+
+    uint16_t afx = (len << 1) | (prefix & 0x1);
+    all.affix_features[ns] <<= 4;
+    all.affix_features[ns] |=  afx;
+    
+    p = strtok(NULL, ",");
+  }
+  
+  delete cstr;
+}
+
 vw* parse_args(int argc, char *argv[])
 {
   po::options_description desc("VW options");
   
   vw* all = new vw();
-	//cerr << "foo bar " << endl;
-	//fflush(stderr);
+
   size_t random_seed = 0;
-  all->program_name = argv[0];  
+  all->program_name = argv[0];
   // Declare the supported options.
   desc.add_options()
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
@@ -73,6 +112,9 @@ vw* parse_args(int argc, char *argv[])
     ("active_simulation", "active learning simulation mode")
     ("active_mellowness", po::value<float>(&(all->active_c0)), "active learning mellowness parameter c_0. Default 8")
     ("binary", "report loss as binary classification on -1,1")
+    ("bs", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
+    ("top", po::value<size_t>(), "top k recommendation")
+    ("bs_type", po::value<string>(), "bootstrap mode - currently 'mean' or 'vote'")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("sgd", "use regular stochastic gradient descent update.")
     ("adaptive", "use adaptive, individual learning rates.")
@@ -80,8 +122,7 @@ vw* parse_args(int argc, char *argv[])
     ("normalized", "use per feature normalized updates")
     ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
     ("audit,a", "print weights of features")
-    ("bit_precision,b", po::value<size_t>(),
-     "number of bits in the feature table")
+    ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
     ("bfgs", "use bfgs optimization")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
@@ -109,6 +150,7 @@ vw* parse_args(int argc, char *argv[])
     ("hessian_on", "use second derivative in line search")
     ("holdout_off", "no holdout data in multiple passes")
     ("holdout_period", po::value<uint32_t>(&(all->holdout_period)), "holdout period for test only, default 10")
+    ("holdout_after", po::value<uint32_t>(&(all->holdout_after)), "holdout after n training examples, default off (disables holdout_period)")
     ("version","Version information")
     ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
     ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
@@ -150,10 +192,10 @@ vw* parse_args(int argc, char *argv[])
     ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
 	("examples", po::value<size_t>(&(all->max_examples)), "number of examples to parse")
     ("save_per_pass", "Save the model after every pass over data")
+    ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("searn", po::value<size_t>(), "use searn, argument=maximum action id")
-    ("searnimp", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
+    ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
     ("testonly,t", "Ignore label information and just test")
     ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
     ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
@@ -165,13 +207,15 @@ vw* parse_args(int argc, char *argv[])
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
     ("ngram", po::value< vector<string> >(), "Generate N grams")
     ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram.")
+    ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
+    ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
 	
 	//Anna
 	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	("txm", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
+	//("txm", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
 	("txm_o", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels");
 	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	
+
   //po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
   //p.add("data", -1);
@@ -190,9 +234,18 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(parsed, vm);
   po::notify(vm);
+ 
+  if(all->numpasses > 1)
+      all->holdout_set_off = false;
 
-  all->l = GD::setup(*all, vm);
-  all->scorer = all->l;
+  if(vm.count("holdout_off"))
+      all->holdout_set_off = true;
+
+  if(!all->holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
+  {
+      all->holdout_set_off = true;
+      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
+  }   
 
   all->data_filename = "";
 
@@ -281,8 +334,11 @@ vw* parse_args(int argc, char *argv[])
     }
   }
 
+  all->l = GD::setup(*all, vm);
+  all->scorer = all->l;
+
   if (vm.count("bfgs") || vm.count("conjugate_gradient")) 
-    BFGS::setup(*all, to_pass_further, vm, vm_file);
+    all->l = BFGS::setup(*all, to_pass_further, vm, vm_file);
 
   if (vm.count("version") || argc == 1) {
     /* upon direct query for version -- spit it out to stdout */
@@ -313,6 +369,18 @@ vw* parse_args(int argc, char *argv[])
       all->skip_strings = vm["skips"].as<vector<string> >();
       compile_gram(all->skip_strings, all->skips, (char*)"skips", all->quiet);
     }
+
+  if (vm.count("affix")) {
+    parse_affix_argument(*all, vm["affix"].as<string>());
+  }
+
+  if (vm.count("spelling")) {
+    vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
+    for (size_t id=0; id<spelling_ns.size(); id++)
+      if (spelling_ns[id][0] == '_') all->spelling_features[' '] = true;
+      else all->spelling_features[(size_t)spelling_ns[id][0]] = true;
+  }
+  
   if (vm.count("bit_precision"))
     {
       all->default_bits = false;
@@ -333,12 +401,6 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("compressed"))
       set_compressed(all->p);
-  
-  if(all->numpasses > 1)
-      all->holdout_set_off = false;
-
-  if(vm.count("holdout_off"))
-      all->holdout_set_off = true;
     
   if (vm.count("data")) {
     all->data_filename = vm["data"].as<string>();
@@ -350,8 +412,6 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("sort_features"))
     all->p->sort_features = true;
-
-  
 
   if (vm.count("quadratic"))
     {
@@ -563,25 +623,23 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("loss_function"))
     loss_function = vm["loss_function"].as<string>();
   else
-	loss_function = "squaredloss";  
-  
+    loss_function = "squaredloss";
   float loss_parameter = 0.0;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
 
-  all->is_noop = false;
   if (vm.count("noop")) 
     all->l = NOOP::setup(*all);
   
   if (all->rank != 0) 
     all->l = GDMF::setup(*all);
-
+	
   if(vm.count("txm") || vm_file.count("txm")) //Anna
 	loss_function = "absloss"; 
 
   if(vm.count("txm_o") || vm_file.count("txm_o")) //Anna
 	loss_function = "absloss"; 
-	
+
   all->loss = getLossFunction(all, loss_function, (float)loss_parameter);
 
   if (pow((double)all->eta_decay_rate, (double)all->numpasses) < 0.0001 )
@@ -623,8 +681,11 @@ vw* parse_args(int argc, char *argv[])
   }
 
   if (vm.count("raw_predictions")) {
-    if (!all->quiet)
+    if (!all->quiet) {
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
+      if (vm.count("binary") || vm_file.count("binary"))
+        cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
+    }
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
       all->raw_prediction = 1;//stdout
     else
@@ -646,14 +707,14 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("sendto"))
     all->l = SENDER::setup(*all, vm, all->pairs);
-
-  bool got_mc = false;
+	
+ bool got_mc = false;
   bool got_cs = false;
   bool got_cb = false;
-	
-	//Anna
+  
+  //Anna
 	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
-	if(vm.count("txm") || vm_file.count("txm") ) 
+	/*if(vm.count("txm") || vm_file.count("txm") ) 
 	{
 		if (got_mc) 
 		{ 
@@ -664,7 +725,7 @@ vw* parse_args(int argc, char *argv[])
 
 		all->l = TXM::setup(*all, to_pass_further, vm, vm_file);
 		got_mc = true;
-	}
+	}*/
 
 	if(vm.count("txm_o") || vm_file.count("txm_o") ) 
 	{
@@ -679,11 +740,12 @@ vw* parse_args(int argc, char *argv[])
 		got_mc = true;
 	}
 	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
- 
+	
 
   // load rest of regressor
-  all->l.save_load(io_temp, true, false); 
+  all->l->save_load(io_temp, true, false);
   io_temp.close_file();
+
   //load the mask model, might be different from -i
   parse_mask_regressor_args(*all, vm);
 
@@ -699,17 +761,21 @@ vw* parse_args(int argc, char *argv[])
   all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
   if (!all->quiet)
     {
-      if (all->reg_mode %2)
+      if (all->reg_mode %2 && !vm.count("bfgs"))
 	cerr << "using l1 regularization = " << all->l1_lambda << endl;
       if (all->reg_mode > 1)
 	cerr << "using l2 regularization = " << all->l2_lambda << endl;
     }
 
+ 
   if(vm.count("nn") || vm_file.count("nn") ) 
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
 
-  if(vm.count("autolink") || vm_file.count("autolinnk") ) 
+  if(vm.count("autolink") || vm_file.count("autolink") ) 
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
+
+  if(vm.count("top") || vm_file.count("top") ) 
+    all->l = TOPK::setup(*all, to_pass_further, vm, vm_file);
   
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
@@ -770,11 +836,8 @@ vw* parse_args(int argc, char *argv[])
     got_cb = true;
   }
 
+  all->searnstr = NULL;
   if (vm.count("searn") || vm_file.count("searn") ) { 
-    if (vm.count("searnimp") || vm_file.count("searnimp")) {
-      cerr << "fail: cannot have both --searn and --searnimp" << endl;
-      throw exception();
-    }
     if (!got_cs && !got_cb) {
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
@@ -782,26 +845,17 @@ vw* parse_args(int argc, char *argv[])
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
+    all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
     all->l = Searn::setup(*all, to_pass_further, vm, vm_file);
   }
 
-  if (vm.count("searnimp") || vm_file.count("searnimp") ) { 
-    if (!got_cs && !got_cb) {
-      if( vm_file.count("searnimp") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searnimp"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searnimp"]));
-      
-      all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
-      got_cs = true;
-    }
-    all->searnstr = (ImperativeSearn::searn*)calloc(1, sizeof(ImperativeSearn::searn));
-    all->l = ImperativeSearn::setup(*all, to_pass_further, vm, vm_file);
-  }
-  
-   
   if (got_cb && got_mc) {
     cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
     throw exception();
   }
+
+  if(vm.count("bs") || vm_file.count("bs") ) 
+    all->l = BS::setup(*all, to_pass_further, vm, vm_file);
 
   if (to_pass_further.size() > 0) {
     bool is_actually_okay = false;
@@ -836,11 +890,12 @@ vw* parse_args(int argc, char *argv[])
 
   parse_source_args(*all, vm, all->quiet,all->numpasses);
 
-  // force stride * weights_per_problem to be divisible by 2 to avoid 32-bit overflow
+  // force stride * weights_per_problem to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  while (all->reg.stride * all->weights_per_problem  > (uint32_t)(1 << i))
+  size_t params_per_problem = all->l->increment * all->l->weights;
+  while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all->weights_per_problem = (1 << i) / all->reg.stride;
+  all->wpp = (1 << i) / all->reg.stride;
 
   return all;
 }
@@ -921,10 +976,9 @@ namespace VW {
   void finish(vw& all)
   {
     finalize_regressor(all, all.final_regressor_name);
-    all.l.finish();
+    all.l->finish();
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
-    if (all.searnstr != NULL) free(all.searnstr);
     free_parser(all);
     finalize_source(all.p);
     free(all.p->lp);

@@ -14,7 +14,6 @@ license as described in the file LICENSE.node
 #include "cache.h"
 #include "v_hashmap.h"
 #include "vw.h"
-#include "oaa.h"
 
 using namespace std;
 
@@ -326,12 +325,11 @@ namespace TXM_O
 		}
 	}
 	
-	void predict(txm_o* d, example* ec)
+	void predict(txm_o* d, learner& base, example* ec)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
-		vw* all = d->all;
 		size_t new_cn, other_cn;
-		size_t index;	
+		size_t index = 0;	
 		uint32_t j;
 		bool expandable;
 		v_array<uint32_t> node_list1;
@@ -342,34 +340,14 @@ namespace TXM_O
 		#ifdef TXM_O_DEBUG_PRED
 		int level = 0;
 		#endif
-		
-		if(command_example(all,ec))
-		{	
-			d->base.learn(ec);
-			return;
-		}
-		
+			
 		node_list1.push_back(0);
 		d->cn = 0;		
 		
 		#ifdef TXM_O_DEBUG_PRED
 		cout << "\nExample: " << d->ex_num << endl;
 		#endif
-		
-		#ifdef TXM_O_DEBUG_FILE2
-		if(!d->nodes[d->cn].node_pred.contain_sorted(txm_o_node_pred_type(mc->label), &index))	//if the label is not in the root
-		{
-			d->nodes[d->cn].node_pred.push_back_sorted(txm_o_node_pred_type(mc->label));	//add the label to the list of labels in the root
-			d->nodes[d->cn].node_pred.contain_sorted(txm_o_node_pred_type(mc->label), &index);
-			d->nodes[d->cn].node_pred[index].label_cnt2++;
-		}
-		else
-		{			
-			d->nodes[d->cn].node_pred[index].label_cnt2++;
-		}
-		d->nodes[d->cn].total_cnt2++;
-		#endif
-		
+			
 		while(node_list1.size() > 0)
 		{
 			if(node_list2.size() > 0)
@@ -383,17 +361,13 @@ namespace TXM_O
 				expandable = true;
 			}		
 			
-			update_example_indicies(all->audit, ec, d->increment * d->cn);	
-		
-			ec->test_only = true;
+			//ec->test_only = true;
 			label_data simple_temp;	
 			simple_temp.initial = 0.0;
 			simple_temp.weight = mc->weight;
 			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp.label;
-			d->base.learn(ec);
-			
-			update_example_indicies(all->audit, ec, -d->increment * d->cn);
+			base.learn(ec, d->cn);			
 			
 			if(d->nodes[d->cn].leaf)
 			{
@@ -442,27 +416,33 @@ namespace TXM_O
 		cout << "Nb of labels in leaf: " << d->nodes[d->cn].node_pred.size() << endl;
 		#endif
 		
-		ec->final_prediction = label_list.last();				
 		
-		index = 0;
-		
-		for(j = 1; j < label_list_oaa.size(); j++)
+		if(label_list_oaa.size() > 0)
 		{
-			if(label_list_oaa[j] >= label_list_oaa[index])
+			index = 0;
+		
+			for(j = 1; j < label_list_oaa.size(); j++)
 			{
-				index = j;
+				if(label_list_oaa[j] >= label_list_oaa[index])
+				{
+					index = j;
+				}
 			}
+			
+			ec->final_prediction = label_list[index];
+		}
+		else
+		{
+			ec->final_prediction = -1.f;
 		}
 		
-		ec->final_prediction = label_list[index];
-		
-		cout<<endl;
+		/*cout<<endl;
 		for(j = 0; j < label_list.size(); j++)
 			cout<<label_list[j]<<"\t";
 		cout<<"\t:"<<mc->label<<"\t:"<<ec->final_prediction<<endl;
 		for(j = 0; j < label_list.size(); j++)
 			cout<<label_list_oaa[j]<<"\t";
-		cout<<endl;
+		cout<<endl;*/
 		
 		/*for(j = 0; j < label_list.size(); j++)
 		{
@@ -480,24 +460,15 @@ namespace TXM_O
 		d->ex_num++;					//pozostalosc po starym kodzie
 	}
 
-	void predict_node_list(txm_o* d, example* ec, size_t* node_list, size_t &node_list_index)
+	void predict_node_list(txm_o* d, learner& base, example* ec, size_t* node_list, size_t &node_list_index)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
-		vw* all = d->all;
 		size_t new_cn, other_cn;
-		size_t index;	
-		uint32_t j;
 		bool expandable;
 		v_array<uint32_t> node_list1;
 		v_array<uint32_t> node_list2;
 		
-		node_list_index = 0;
-		
-		if(command_example(all,ec))
-		{	
-			d->base.learn(ec);
-			return;
-		}
+		node_list_index = 0;		
 		
 		node_list1.push_back(0);
 		d->cn = 0;		
@@ -520,20 +491,16 @@ namespace TXM_O
 				node_list[node_list_index] = d->cn;
 				node_list_index++;		
 				continue;
-			}	
+			}			
 			
-			update_example_indicies(all->audit, ec, d->increment * d->cn);	
-		
 			ec->test_only = true;
 			label_data simple_temp;	
 			simple_temp.initial = 0.0;
 			simple_temp.weight = mc->weight;
 			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp.label;
-			d->base.learn(ec);
+			base.learn(ec, d->cn);
 			
-			update_example_indicies(all->audit, ec, -d->increment * d->cn);
-				
 			if(ec->final_prediction < 0)
 			{
 				new_cn = d->nodes[d->cn].id_left;
@@ -559,34 +526,23 @@ namespace TXM_O
 		ec->ld = mc;	
 	}	
 	
-	uint32_t predict_node(txm_o* d, example* ec, size_t level_limit)		//to samo co predict tylko nie to samo do konca, minimalny argument z jakim to jest odpalane to jest 1 (czyli masz root i dwa liscie)
+	uint32_t predict_node(txm_o* d, learner& base, example* ec, size_t level_limit)		//to samo co predict tylko nie to samo do konca, minimalny argument z jakim to jest odpalane to jest 1 (czyli masz root i dwa liscie)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
-		vw* all = d->all;
 		size_t level = 0;	
-		//float Eh_norm;
-		
-		if(command_example(all,ec))
-		{
-			d->base.learn(ec);
-			return 0;
-		}
+		//float Eh_norm;		
 		
 		d->cn = 0;
 		
 		while(!d->nodes[d->cn].leaf && level < level_limit)
-		{
-			update_example_indicies(all->audit, ec, d->increment * d->cn);
-		
+		{			
 			ec->test_only = true;					
 			label_data simple_temp;
 			simple_temp.initial = 0.0;
 			simple_temp.weight = mc->weight;
 			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp.label;
-			d->base.learn(ec);			
-			
-			update_example_indicies(all->audit, ec, -d->increment * d->cn);
+			base.learn(ec, d->cn);
 			
 			#ifdef TXM_O_DEBUG_PRED
 			cout << "level: " << level << endl;
@@ -616,7 +572,7 @@ namespace TXM_O
 		return d->cn;
 	}
 	
-	void learn(void* d, example* ec) 
+	void learn(void* d, learner& base, example* ec)//(void* d, example* ec) 
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		txm_o* b = (txm_o*)d;
@@ -627,11 +583,9 @@ namespace TXM_O
 		size_t index = 0;		
 		size_t id_left;
 		size_t id_right;
-		size_t id_parent;
 		size_t id_current;
 		size_t id_left_right;
-		float ftmp;
-		size_t j, k;
+		size_t j;
 		label_data simple_temp;	
 		size_t node_list[1000];
 		size_t node_list_index;
@@ -647,32 +601,11 @@ namespace TXM_O
 		
 		if(!all->training)
 		{
-			predict(b, ec);
+			predict(b, base, ec);
 			return;
 		}
 		
-		oryginal_label = mc->label;	
-		
-		if(command_example(all,ec))		//po kazdym przejsciu przez zbior danych on wchodzi w command example
-		{		
-			b->base.learn(ec);
-			
-			if(ec->end_pass)
-			{
-				b->ex_total = b->ex_num;
-				
-				b->ex_num = 0;				
-							
-				b->current_pass++;
-
-				#ifdef TXM_O_DEBUG_PASS_STOP
-				cin.ignore();
-				#endif
-				
-				//printf("current pass: %d\n", (int) b->current_pass);
-			}	
-			return;
-		}	
+		oryginal_label = mc->label;				
 
 		b->cl = 0;	
 		
@@ -698,13 +631,13 @@ namespace TXM_O
 			}
 			else								//not the first pass through the data, jezeli b->current_pass == 1 to tworze drugi level drzewa, czyli trenuje regresory pierwszego levela
 			{
-				b->cn = predict_node(b, ec, b->cl);		//current node, ktory ja zamierzam trenowac
+				b->cn = predict_node(b, base, ec, b->cl);		//current node, ktory ja zamierzam trenowac
 				
 				if(b->cn == 0)   //blad, wychodze z learn i dalej bede analizowac kolejny przyklad kolejny przyklad
 				{
 					b->ex_num++;
 					return;
-				}			
+				}
 				
 				if(b->nodes[b->cn].node_pred.contain_sorted(txm_o_node_pred_type(oryginal_label), &index))		//jezeli label jest w tablicy node_pred'ow 
 				{
@@ -727,10 +660,10 @@ namespace TXM_O
 					b->nodes[b->cn].max_cnt2 = b->nodes[b->cn].node_pred[index].label_cnt2;
 					b->nodes[b->cn].max_cnt2_label = b->nodes[b->cn].node_pred[index].label;
 				}
-
+				
 				if(b->cl >= TXM_O_LEVEL_LIM)
 				{				
-					predict_node_list(b, ec, node_list, node_list_index);					
+					predict_node_list(b, base, ec, node_list, node_list_index);					
 					id_current = b->cn;
 					
 					//train for OAA					
@@ -738,21 +671,17 @@ namespace TXM_O
 					{
 						b->cn = node_list[j];
 						
-						//b->cn = 4;
-						
 						if(b->nodes[b->cn].max_cnt2_label == oryginal_label)
 							simple_temp.label = 1.f;
 						else
 							simple_temp.label = 0.f;
 						
-						update_example_indicies(all->audit, ec, b->increment * b->cn);					
 						ec->ld = &simple_temp;				
 						ec->partial_prediction = 0;
 						ec->final_prediction = 0;					
 						ec->test_only = false;					
-						b->base.learn(ec);
-						ec->ld = mc;					
-						update_example_indicies(all->audit, ec, -b->increment * b->cn);							
+						//base.learn(ec, b->cn);
+						ec->ld = mc;						
 					}
 					
 					b->cn = id_current;
@@ -772,11 +701,10 @@ namespace TXM_O
 			all->sd->min_label = -TXM_O_PRED_LIM;
 			all->sd->max_label = TXM_O_PRED_LIM;	
 			//mc->label = 0;	//jezeli jest cos innego tu to on moze zmieniac clipping zakresy
-			update_example_indicies(all->audit, ec, b->increment * b->cn);
 			ec->test_only = true;
 			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp;
-			b->base.learn(ec);	
+			base.learn(ec, b->cn);	
 			//mc->label = oryginal_label;	
 			
 			#ifdef TXM_O_DEBUG
@@ -856,7 +784,7 @@ namespace TXM_O
 			all->sd->min_label = -TXM_O_PRED_LIM;
 			all->sd->max_label = TXM_O_PRED_LIM;
 			ec->test_only = false;
-			b->base.learn(ec);	
+			base.learn(ec, b->cn);	
 			//mc->label = oryginal_label;	
 			ec->ld = mc;	
 				
@@ -884,8 +812,6 @@ namespace TXM_O
 			cout << endl;
 			#endif				
 			
-			update_example_indicies(all->audit, ec, -b->increment * b->cn);
-
 			#ifdef TXM_O_DEBUG
 			cout << "Current Pass: " << b->current_pass << endl;
 			cout << endl;
@@ -901,7 +827,7 @@ namespace TXM_O
 		b->ex_num++;			
 	}
 	
-	void drive(vw* all, void* d)
+	/*void drive(vw* all, void* d)
 	{	
 		txm_o* b = (txm_o*)d;	
 		example* ec = NULL;		
@@ -943,7 +869,7 @@ namespace TXM_O
 				return;
 			}
 		}
-	}
+	}*/
 
 	void finish(void* data)
 	{    
@@ -1035,13 +961,12 @@ namespace TXM_O
 
 	void save_load_tree(vw& all, io_buf& model_file, bool read, bool text)
 	{ 
-		txm_o* b = (txm_o*)all.l.sl.sldata;
+		txm_o* b = (txm_o*)all.l->get_save_load_data();
 		char buff[512];
 		uint32_t i = 0;
 		uint32_t j = 0;
-		uint32_t k = 0;
 		size_t brw = 1; 
-		uint32_t v, w;
+		uint32_t v;
 		int text_len;
 		
 		if(read)
@@ -1122,7 +1047,7 @@ namespace TXM_O
 		}
 	}
 
-	learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+	learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
 	{
 		txm_o* data = (txm_o*)calloc(1, sizeof(txm_o));
 		//first parse for number of actions
@@ -1145,13 +1070,17 @@ namespace TXM_O
 		data->all = &all;
 		*(all.p->lp) = OAA::mc_label_parser;
 		
-		data->increment = all.reg.stride * all.weights_per_problem;
-		all.weights_per_problem *= TXM_O_MULTIPLICATIVE_FACTOR*data->k;
-		data->base = all.l;
+		//data->increment = all.reg.stride * all.weights_per_problem;
+		//all.weights_per_problem *= TXM_O_MULTIPLICATIVE_FACTOR*data->k;
+		//data->base = all.l;
 		//TUTAJ ZAMIAST all.l.sl BEDE MIALA WLASNA STRUKTURE DO ZAPAMIETANIA, powinnam odkomentowac te dwie linijki i zakomentowac linijke z learner
-	    sl_t sl = {data, txm_o_save_load};					//TU JEST MOJA WLASNA STRUKTURA DO ZAPAMIETANIA
-	    learner l(data, drive, learn, finish, sl);		//CZYLI TUTAJ ZAMIAST all.l.sl uzywamy po prostu sl
+	    //sl_t sl = {data, txm_o_save_load};					//TU JEST MOJA WLASNA STRUKTURA DO ZAPAMIETANIA
+	    //learner l(data, drive, learn, finish, sl);		//CZYLI TUTAJ ZAMIAST all.l.sl uzywamy po prostu sl
 		//learner l(data, drive, learn, finish, all.l.sl);
+		
+		//learner* l = new learner(data, learn, txm_o_save_load, 2 * data->k);
+		learner* l = new learner(data, learn, all.l, txm_o_save_load, 2 * data->k);
+		l->set_finish_example(OAA::finish_example);
 		
 		txm_o* b = (txm_o*)data;
 		
@@ -1167,24 +1096,7 @@ namespace TXM_O
 			#ifdef TXM_O_DEBUG_FILE2
 			b->debug2_fp = fopen("atxm_o_debug2.csv", "wt");
 			#endif
-		}
-		
-		#ifdef TXM_O_ARBITRARY_ROOT
-		int i;
-		uint32_t tmp, cnt;
-		b->arbitrary_fp = fopen("atxm_o_arbiter.txt", "rt");
-		
-		fscanf(b->arbitrary_fp, "%d\n", &cnt);
-		printf("\ncnt: %d\n", cnt);
-		
-		for(i = 0; i < cnt; i++)
-		{
-			fscanf(b->arbitrary_fp, "%d\n", &tmp);
-			printf("%d, ", tmp);
-			b->arbitrary.push_back_sorted(tmp);
-		}
-		printf("\n\n");		
-		#endif
+		}		
 		
 		return l;
 	}	

@@ -52,6 +52,11 @@ struct shared_data {
   double weighted_holdout_examples_since_last_dump;
   double holdout_sum_loss_since_last_dump;
   double holdout_sum_loss;
+  //for best model selection
+  double holdout_best_loss;
+  double weighted_holdout_examples_since_last_pass;//reserved for best predictor selection
+  double holdout_sum_loss_since_last_pass;
+  size_t holdout_best_pass; 
 
   bool binary_label;
   uint32_t k;
@@ -93,12 +98,13 @@ struct parser {
   uint32_t in_pass_counter;
   example* examples;
   uint64_t used_index;
+  bool emptylines_separate_examples; // true if you want to have holdout computed on a per-block basis rather than a per-line basis
   MUTEX examples_lock;
   CV example_available;
   CV example_unused;
   MUTEX output_lock;
   CV output_done;
-
+  
   bool done;
   v_array<size_t> gram_mask;
 
@@ -115,7 +121,7 @@ struct parser {
 };
 
 //chop up the string into a v_array of substring.
-void tokenize(char delim, substring s, v_array<substring> &ret);
+void tokenize(char delim, substring s, v_array<substring> &ret, bool allow_empty=false);
 
 inline char* safe_index(char *start, char v, char *max)
 {

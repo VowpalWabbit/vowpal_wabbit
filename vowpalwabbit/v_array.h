@@ -64,13 +64,12 @@ template<class T> class v_array{
       free(begin);
     begin = end = end_array = NULL;
   }
-  
   void push_back(const T &new_ele)
   {
     if(end == end_array)
       resize(2 * (end_array-begin) + 3);
     *(end++) = new_ele;
-  }	
+  }
   
 	size_t push_back_sorted(const T &new_ele)//ANNA
 	{
@@ -253,10 +252,10 @@ template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
   push_many(dst, src.begin, src.size());
 }
 
-template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)(T))
+template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)(T&))
 {
   dst.erase();
-  for (T*item = src.begin; item != src.end; item++)
+  for (T*item = src.begin; item != src.end; ++item)
     dst.push_back(copy_item(*item));
 }
 

@@ -80,8 +80,7 @@ public:
     
   }
   
-  float getLoss(shared_data* sd, float prediction, float label) 
-  {
+  float getLoss(shared_data* sd, float prediction, float label) {
     if (prediction <= sd->max_label && prediction >= sd->min_label)
       {
 	float example_loss = (prediction - label) * (prediction - label);

@@ -76,6 +76,8 @@ namespace BFGS
     v_array<float> predictions;
     size_t example_number;
     size_t current_pass;
+    size_t no_win_counter;
+    size_t early_stop_thres;
     
     // default transition behavior
     bool first_hessian_on;
@@ -359,6 +361,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     }
   }
 
+
   coef_j = alpha[0] - rho[0] * y_r;
   mem = mem0;
   w = w0;
@@ -431,6 +434,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 	ret += 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
       }
     }
+
   return ret;
 }
 
@@ -487,7 +491,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
     for(uint32_t i = 0; i < length; i++) 
       b.regularizers[2*i] = weights[stride*i+W_COND] + b.regularizers[2*i];
   for(uint32_t i = 0; i < length; i++) 
-    b.regularizers[2*i+1] = weights[stride*i];
+      b.regularizers[2*i+1] = weights[stride*i];
 }
 
 void zero_state(vw& all)
@@ -580,9 +584,18 @@ int process_pass(vw& all, bfgs& b) {
 		  }
 		  if (all.l2_lambda > 0.)
 		    b.loss_sum += add_regularization(all, b, all.l2_lambda);
-		  if (!all.quiet)
-		    fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass+1, b.loss_sum / b.importance_weight_sum);
-
+		  if (!all.quiet){
+                    if(!all.holdout_set_off && b.current_pass >= 1){
+                      if(all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.){
+                        fprintf(stderr, "%2lu ", (long unsigned int)b.current_pass+1);
+                        fprintf(stderr, "h unknown    ");
+                      }                      
+                      else
+                        fprintf(stderr, "%2lu h%-10.5f\t", (long unsigned int)b.current_pass+1, all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
+                    }
+                    else
+                      fprintf(stderr, "%2lu %-10.5f\t", (long unsigned int)b.current_pass+1, b.loss_sum / b.importance_weight_sum);
+                  }
 		  double wolfe1;
 		  double new_step = wolfe_eval(all, b, b.mem, b.loss_sum, b.previous_loss_sum, b.step_size, b.importance_weight_sum, b.origin, wolfe1);
 
@@ -701,7 +714,7 @@ int process_pass(vw& all, bfgs& b) {
       {
 	if(all.span_server != "")
 	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
-	preconditioner_to_regularizer(all, b, all.l2_lambda);
+	//preconditioner_to_regularizer(all, b, all.l2_lambda);
       }
     ftime(&b.t_end_global);
     b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
@@ -713,6 +726,7 @@ int process_pass(vw& all, bfgs& b) {
 
 void process_example(vw& all, bfgs& b, example *ec)
  {
+
   label_data* ld = (label_data*)ec->ld;
   if (b.first_pass)
     b.importance_weight_sum += ld->weight;
@@ -746,32 +760,82 @@ void process_example(vw& all, bfgs& b, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void learn(void* d, example* ec)
+void end_pass(void*d)
+{
+  bfgs* b = (bfgs*)d;
+  vw* all = b->all;
+  
+  if (b->current_pass <= b->final_pass) 
+  {
+       if(b->current_pass < b->final_pass)
+       { 
+          int status = process_pass(*all, *b);
+
+          //reaching the max number of passes regardless of convergence 
+          if(b->final_pass == b->current_pass)
+          {
+             cerr<<"Maximum number of passes reached. ";
+             if(!b->output_regularizer)
+                cerr<<"If you want to optimize further, increase the number of passes\n";
+             if(b->output_regularizer)
+             { 
+               cerr<<"\nRegular model file has been created. "; 
+               cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
+               b->output_regularizer = false;
+             }
+
+          } 
+          
+          //attain convergence before reaching max iterations 
+	   if (status != LEARN_OK && b->final_pass > b->current_pass) {
+	      b->final_pass = b->current_pass;
+	   }
+
+	   if (b->output_regularizer && b->final_pass == b->current_pass) {
+	     zero_preconditioner(*all);
+	     b->preconditioner_pass = true;
+	   }
+
+	   if(!all->holdout_set_off)
+	   {
+	     if(summarize_holdout_set(*all, b->no_win_counter))
+               finalize_regressor(*all, all->final_regressor_name); 
+	     if(b->early_stop_thres == b->no_win_counter)
+	     { 
+               all-> early_terminate = true;
+               cerr<<"Early termination reached w.r.t. holdout set error";
+             }
+
+	   } 
+           
+       }else{//reaching convergence in the previous pass
+        if(b->output_regularizer) 
+           preconditioner_to_regularizer(*all, *b, (*all).l2_lambda);
+        b->current_pass ++;
+      }   
+                
+  }
+}
+
+void learn(void* d, learner& base, example* ec)
 {
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
   assert(ec->in_use);
 
-  if (ec->end_pass && b->current_pass <= b->final_pass) 
-      {
-	int status = process_pass(*all, *b);
-	if (status != LEARN_OK && b->final_pass > b->current_pass) {
-	  b->final_pass = b->current_pass;
-	}
-	if (b->output_regularizer && b->current_pass== b->final_pass) {
-	  zero_preconditioner(*all);
-	  b->preconditioner_pass = true;
-	}
-      }
-
   if (b->current_pass <= b->final_pass)
-    if (!command_example(all,ec))
-      {
-	if (test_example(ec))
-	  ec->final_prediction = bfgs_predict(*all,ec);//w[0]
-	else
-	  process_example(*all, *b, ec);
-      }
+    {
+      if(ec->test_only)
+	{ 
+	  label_data* ld = (label_data*)ec->ld;
+	  ec->final_prediction = bfgs_predict(*all,ec); 
+	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
+	}
+      else if (test_example(ec))
+	ec->final_prediction = bfgs_predict(*all,ec);//w[0]
+      else
+	process_example(*all, *b, ec);
+    }
 }
 
 void finish(void* d)
@@ -782,11 +846,11 @@ void finish(void* d)
   free(b->mem);
   free(b->rho);
   free(b->alpha);
-  free(b);
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
 {
+
   char buff[512];
   int c = 0;
   uint32_t stride = all.reg.stride;
@@ -835,6 +899,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
 void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
+
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
 
@@ -881,7 +946,9 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
       reset_state(*all, *b, false);
     }
 
-  bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
+  //bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
+  bool reg_vector = (b->output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
+    
   if (model_file.files.size() > 0)
     {
       char buff[512];
@@ -897,30 +964,13 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     }
 }
 
-void drive(vw* all, void* d)
-{
-  bfgs* b = (bfgs*)d;
+  void init_driver(void* data)
+  {
+    bfgs* b = (bfgs*)data;
+    b->backstep_on = true;
+  }
 
-  example* ec = NULL;
-
-  b->first_hessian_on = true;
-  b->backstep_on = true;
-
-  while ( true )
-    {
-      if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-	{
-	  learn(b, ec);
-	  return_simple_example(*all, ec);
-	}
-      else if (parser_done(all->p))
-	return;
-      else 
-	;//busywait when we have predicted on all examples but not yet trained on all.
-    }
-}
-
-void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
 {
   bfgs* b = (bfgs*)calloc(1,sizeof(bfgs));
   b->all = &all;
@@ -929,14 +979,17 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
   b->first_pass = true;
   b->gradient_pass = true;
   b->preconditioner_pass = true;
+  b->backstep_on = false;
   b->final_pass=all.numpasses;  
-  
-  sl_t sl = {b, save_load};
-  learner t(b,drive,learn,finish,sl);
-  all.l = t;
+  b->no_win_counter = 0;
+  b->early_stop_thres = 3;
 
-  all.bfgs = true;
-  all.reg.stride = 4;
+  if(!all.holdout_set_off)
+  {
+    all.sd->holdout_best_loss = FLT_MAX;
+    if(vm.count("early_terminate"))      
+      b->early_stop_thres = vm["early_terminate"].as< size_t>();     
+  }
   
   if (vm.count("hessian_on") || all.m==0) {
     all.hessian_on = true;
@@ -956,5 +1009,16 @@ void setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::va
       cout << "you must make at least 2 passes to use BFGS" << endl;
       throw exception();
     }
+
+  all.bfgs = true;
+  all.reg.stride = 4;
+
+  learner* l = new learner(b,learn, save_load, all.reg.stride);
+  l->set_save_load(save_load);
+  l->set_init_driver(init_driver);
+  l->set_end_pass(end_pass);
+  l->set_finish(finish);
+
+  return l;
 }
 }

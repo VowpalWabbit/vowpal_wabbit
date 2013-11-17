@@ -11,12 +11,6 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "vw.h"
 
-const size_t wap_ldf_namespace  = 126;
-const size_t history_namespace  = 127;
-const size_t constant_namespace = 128;
-const size_t nn_output_namespace  = 129;
-const size_t autolink_namespace  = 130;
-
 parser* new_parser();
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;

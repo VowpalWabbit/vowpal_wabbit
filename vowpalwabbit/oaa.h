@@ -17,11 +17,11 @@ namespace OAA
 {
 
   struct mc_label {
-    float label;
+    uint32_t label;
     float weight;
   };
   
-  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
@@ -36,22 +36,12 @@ namespace OAA
                                         NULL,
 					sizeof(mc_label)};
   
-  void output_example(vw& all, example* ec);
-
-  inline int example_is_newline(example* ec)
-  {
-    // if only index is constant namespace or no index
-    return ((ec->indices.size() == 0) || 
-            ((ec->indices.size() == 1) &&
-             (ec->indices.last() == constant_namespace)));
-  }
+  void finish_example(vw& all, void*, example* ec);
 
   inline int example_is_test(example* ec)
   {
     return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
   }
-
-
 }
 
 #endif

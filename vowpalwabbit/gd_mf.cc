@@ -24,11 +24,15 @@ license as described in the file LICENSE.
 using namespace std;
 
 namespace GDMF {
+  struct gdmf {
+    vw* all;
+  };
+
 void mf_local_predict(example* ec, regressor& reg);
 
 float mf_inline_predict(vw& all, example* &ec)
 {
-  float prediction = 0.0;
+  float prediction = all.p->lp->get_initial(ec->ld);
 
   // clear stored predictions
   ec->topic_predictions.erase();
@@ -146,8 +150,11 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
     else
       for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
 	{
-	  cout << '\t' << f->weight_index << ':' << f->x;
-	  cout << ':' << weights[(f->weight_index + offset) & mask];
+	  size_t index = (f->weight_index + offset) & all.reg.weight_mask;
+	  
+	  cout << "\tConstant:";
+	  cout << (index/all.reg.stride & all.parse_mask) << ':' << f->x;
+	  cout  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
@@ -161,13 +168,12 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 		  cout << '\t' << f->space << k << '^' << f->feature << ':' << ((f->weight_index+k)&mask) 
 		       <<"(" << ((f->weight_index + offset +k) & mask)  << ")" << ':' << f->x;
 		  cout << ':' << weights[(f->weight_index + offset + k) & mask];
-
-		  cout << ':' << f2->space << k << '^' << f2->feature << ':' << ((f2->weight_index+k)&mask) 
-		       <<"(" << ((f2->weight_index + offset +k) & mask)  << ")" << ':' << f2->x;
-		  cout << ':' << weights[(f2->weight_index + offset + k) & mask];
-
-		  cout << ':' <<  weights[(f->weight_index + offset + k) & mask] * weights[(f2->weight_index + offset + k) & mask];
-
+		  
+		  cout << ':' << f2->space << k << '^' << f2->feature << ':' << ((f2->weight_index+k+all.rank)&mask) 
+		       <<"(" << ((f2->weight_index + offset +k+all.rank) & mask)  << ")" << ':' << f2->x;
+		  cout << ':' << weights[(f2->weight_index + offset + k+all.rank) & mask];
+		  
+		  cout << ':' <<  weights[(f->weight_index + offset + k) & mask] * weights[(f2->weight_index + offset + k + all.rank) & mask];
 		}
 	  }
       }
@@ -175,6 +181,7 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
     cerr << "cannot use triples in matrix factorization" << endl;
     throw exception();
   }
+  cout << endl;
 }
 
 void mf_print_audit_features(vw& all, example* ec, size_t offset)
@@ -211,7 +218,7 @@ float mf_predict(vw& all, example* ex)
 
   void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = (vw*)d;
+  vw* all = ((gdmf*)d)->all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
 
@@ -263,51 +270,33 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
-  void learn(void* d, example* ec)
-  {
-    vw* all = (vw*)d;
-    if (ec->end_pass) 
-    {
-      all->eta *= all->eta_decay_rate;
-      if (all->save_per_pass)
-        save_predictor(*all, all->final_regressor_name, all->current_pass);
-
-      all->current_pass++;
-    }
-
-    if (!command_example(all, ec))
-      {
-	mf_predict(*all,ec);
-	if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
-	  mf_inline_train(*all, ec, ec->eta_round);
-      }    
-  }
-
-  void finish(void* d)
-  { }
-
-  void drive(vw* all, void* d)
+void end_pass(void* d)
 {
-  example* ec = NULL;
-  
-  while ( true )
-    {
-      if ((ec = VW::get_example(all->p)) != NULL)//blocking operation.
-	{
-	  learn(d,ec);
-	  return_simple_example(*all, ec);
-	}
-      else if (parser_done(all->p))
-	return;
-      else 
-	;//busywait when we have predicted on all examples but not yet trained on all.
-    }
+  vw* all = ((gdmf*)d)->all;
+
+   all->eta *= all->eta_decay_rate;
+   if (all->save_per_pass)
+     save_predictor(*all, all->final_regressor_name, all->current_pass);
+   
+   all->current_pass++;
 }
 
-  learner setup(vw& all)
+  void learn(void* d, learner& base, example* ec)
   {
-    sl_t sl = {&all, save_load};
-    learner l(&all,drive,learn,finish,sl);
+    vw* all = ((gdmf*)d)->all;
+ 
+    mf_predict(*all,ec);
+    if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
+      mf_inline_train(*all, ec, ec->eta_round);
+  }
+
+  learner* setup(vw& all)
+  {
+    gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
+    data->all = &all;
+    learner* l = new learner(data,learn, save_load, all.reg.stride);
+    l->set_end_pass(end_pass);
+
     return l;
   }
 }
