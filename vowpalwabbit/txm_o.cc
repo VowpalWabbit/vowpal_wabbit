@@ -87,6 +87,7 @@ namespace TXM_O
 		size_t max_cnt2;                                   //maxymalna wartosc countera 2 w nodzie
 		size_t max_cnt2_label;                             //label z maxymalnym counterem w nodzie
 		size_t total_cnt2;                                 //laczna ilosc punktow nodzie prxzypisanych przez predyktor do noda
+		size_t reg_num;
 		
 		v_array<txm_o_node_pred_type> node_pred;	
 
@@ -108,6 +109,7 @@ namespace TXM_O
 		size_t cl;						//current level
 		size_t ex_num;					//index of current example
 		size_t ex_total;
+		size_t reg_num_max;
 		
 		size_t current_pass;			//index of current pass through the data	
 		size_t level_limit;             //maxymlane glebokosc drzewa (liscie maja byc na tym levelu, czyli 1 odpowiada rootowi i dwom lisciom)
@@ -148,6 +150,7 @@ namespace TXM_O
 		node.max_cnt2 = 0;
 		node.max_cnt2_label = 0;
 		node.total_cnt2 = 0;
+		node.reg_num = 0;
 		
 		return node;
 	}
@@ -157,6 +160,7 @@ namespace TXM_O
 		d->cn = 0;
 		d->ex_num = 0;
 		d->nodes.push_back(init_node(0, 0, 0));
+		d->reg_num_max = (2 << TXM_O_LEVEL_LIM) - 1;
 		d->tree_finished = false;
 		d->only_leafs = false;
 		
@@ -329,7 +333,8 @@ namespace TXM_O
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		size_t new_cn, other_cn;
-		size_t index = 0;	
+		size_t index = 0;
+		size_t orginal_cn;
 		uint32_t j;
 		bool expandable;
 		v_array<uint32_t> node_list1;
@@ -361,16 +366,39 @@ namespace TXM_O
 				expandable = true;
 			}		
 			
-			//ec->test_only = true;
-			label_data simple_temp;	
-			simple_temp.initial = 0.0;
-			simple_temp.weight = mc->weight;
-			simple_temp.label = FLT_MAX;
-			ec->ld = &simple_temp.label;
-			base.learn(ec, d->cn);			
 			
 			if(d->nodes[d->cn].leaf)
 			{
+				orginal_cn = d->cn;
+				
+				#ifdef TXM_O_OAA_MULTI
+				d->cn = d->nodes[d->cn].reg_num + TXM_O_LEVEL_LIM - label_list.size();
+				#else
+				d->cn = d->nodes[d->cn].reg_num;
+				#endif
+				
+				label_data simple_temp;	
+				simple_temp.initial = 0.0;
+				simple_temp.weight = mc->weight;
+				simple_temp.label = FLT_MAX;
+				ec->ld = &simple_temp.label;
+				base.learn(ec, d->cn);
+				
+				d->cn = orginal_cn;
+			}
+			else
+			{
+				label_data simple_temp;	
+				simple_temp.initial = 0.0;
+				simple_temp.weight = mc->weight;
+				simple_temp.label = FLT_MAX;
+				ec->ld = &simple_temp.label;
+				base.learn(ec, d->cn);			
+			}
+			
+			if(d->nodes[d->cn].leaf)
+			{
+				
 				label_list.push_back(d->nodes[d->cn].max_cnt2_label);
 				label_list_oaa.push_back(ec->final_prediction);
 				continue;
@@ -671,16 +699,32 @@ namespace TXM_O
 					{
 						b->cn = node_list[j];
 						
+						if(b->nodes[b->cn].reg_num == 0)
+						{
+							b->nodes[b->cn].reg_num = b->reg_num_max;
+							#ifdef TXM_O_OAA_MULTI
+							b->reg_num_max += TXM_O_LEVEL_LIM + 1;
+							#else
+							b->reg_num_max++;
+							#endif
+						}
+						
 						if(b->nodes[b->cn].max_cnt2_label == oryginal_label)
 							simple_temp.label = 1.f;
 						else
-							simple_temp.label = 0.f;
+							simple_temp.label = -1.f;
+						
+						#ifdef TXM_O_OAA_MULTI
+						b->cn = b->nodes[b->cn].reg_num + node_list_index - j - 1;						
+						#else
+						b->cn = b->nodes[b->cn].reg_num;
+						#endif
 						
 						ec->ld = &simple_temp;				
 						ec->partial_prediction = 0;
 						ec->final_prediction = 0;					
 						ec->test_only = false;					
-						//base.learn(ec, b->cn);
+						base.learn(ec, b->cn);
 						ec->ld = mc;						
 					}
 					
@@ -987,6 +1031,8 @@ namespace TXM_O
 				b->nodes[j].max_cnt2_label = v;				
 				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 				b->nodes[j].leaf = v;
+				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+				b->nodes[j].reg_num = v;
 				//printf("%ld, %ld, %ld, %d, %d, \n", b->nodes[j].id, b->nodes[j].id_left, b->nodes[j].id_right, b->nodes[j].max_cnt2_label, b->nodes[j].leaf);
 			}
 		}
@@ -1016,6 +1062,10 @@ namespace TXM_O
 				
 				text_len = sprintf(buff, ":%d\n", b->nodes[i].leaf);
 				v = b->nodes[i].leaf;
+				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);				
+				
+				text_len = sprintf(buff, ":%d\n", (int) b->nodes[i].reg_num);
+				v = b->nodes[i].reg_num;
 				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);		
 			}	
 		}		
@@ -1079,7 +1129,7 @@ namespace TXM_O
 		//learner l(data, drive, learn, finish, all.l.sl);
 		
 		//learner* l = new learner(data, learn, txm_o_save_load, 2 * data->k);
-		learner* l = new learner(data, learn, all.l, txm_o_save_load, 2 * data->k);
+		learner* l = new learner(data, learn, all.l, txm_o_save_load, (TXM_O_LEVEL_LIM + 3) * data->k);
 		l->set_finish_example(OAA::finish_example);
 		
 		txm_o* b = (txm_o*)data;
