@@ -204,7 +204,10 @@ namespace OAA {
     float score = INT_MIN;
   
     if (mc_label_data->label == 0 || (mc_label_data->label > o->k && mc_label_data->label != (uint32_t)-1))
-      cout << "label " << mc_label_data->label << " is not in {1,"<< o->k << "} This won't work right." << endl;
+      {
+	cout << "label " << mc_label_data->label << " is not in {1,"<< o->k << "} This won't work right." << endl;
+	throw exception();
+      }
   
     string outputString;
     stringstream outputStringStream(outputString);
