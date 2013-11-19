@@ -16,9 +16,7 @@ license as described in the file LICENSE.
 #define TXM_O_LEAF_TOL					4
 #define TXM_O_MULTIPLICATIVE_FACTOR		10
 
-//#define TXM_O_OAA_MULTI
-
-//#define TXM_O_TRAIN_ALT_TRK
+#define TXM_O_TRK_COMP					<
 
 //#define TXM_O_DEBUG_FILE1
 //#define TXM_O_DEBUG_FILE2

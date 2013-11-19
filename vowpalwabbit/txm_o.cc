@@ -119,19 +119,6 @@ namespace TXM_O
 		
 		uint32_t total_wrg;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
 		uint32_t total_cor;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
-		
-		#ifdef TXM_O_DEBUG_FILE1
-		FILE *debug1_fp;
-		#endif
-		
-		#ifdef TXM_O_DEBUG_FILE2
-		FILE *debug2_fp;
-		#endif
-		
-		#ifdef TXM_O_ARBITRARY_ROOT
-		FILE *arbitrary_fp;
-		v_array<uint32_t> arbitrary;
-		#endif
 	};	
 
 	txm_o_node_type init_node(size_t id, size_t id_parent, size_t level)        //inicjalizowanie nowego noda drzewa, odpalane przy tworzeniu nowego noda
@@ -162,159 +149,8 @@ namespace TXM_O
 		d->nodes.push_back(init_node(0, 0, 0));
 		d->reg_num_max = (2 << TXM_O_LEVEL_LIM) - 1;
 		d->tree_finished = false;
-		d->only_leafs = false;
-		
-		#ifdef TXM_O_DEBUG_FILE1
-		d->debug1_fp = fopen("atxm_o_debug1.csv", "wt");
-		#endif		
-	}
-	
-	#ifdef TXM_O_DEBUG_FILE1
-	void save_node_stats(txm_o* b)							//wyswietlam statystyke dla poszczegonym nodow
-	{
-		uint32_t i, j;
-		#ifdef TXM_O_ARBITRARY_ROOT
-		uint32_t total = 0;
-		uint32_t err = 0;
-		float ftmp;
-		#endif
-				
-		for(i = 0; i < b->nodes.size(); i++)
-		{
-			if(b->nodes[i].removed)
-				continue;
-			
-			fprintf(b->debug1_fp, "Node: %4d, Level: %2d, Leaf: %1d, Eh: %7.4f,\n", (int) i, (int) b->nodes[i].level, (int) b->nodes[i].leaf, b->nodes[i].Eh / b->nodes[i].n);
-			
-			fprintf(b->debug1_fp, "Label:, ");
-			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
-			{
-				fprintf(b->debug1_fp, "%6d,", (int) b->nodes[i].node_pred[j].label);
-			}						
-			fprintf(b->debug1_fp, "\n");
-			
-			fprintf(b->debug1_fp, "Ehk:, ");
-			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
-			{
-				fprintf(b->debug1_fp, "%7.4f,", b->nodes[i].node_pred[j].Ehk / b->nodes[i].node_pred[j].nk);
-			}						
-			fprintf(b->debug1_fp, "\n");
-			
-			fprintf(b->debug1_fp, "cnt1:, ");
-			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
-			{
-				fprintf(b->debug1_fp, "%6d,", (int) b->nodes[i].node_pred[j].label_cnt);
-			}						
-			fprintf(b->debug1_fp, "\n");
-			
-			fprintf(b->debug1_fp, "cnt2:, ");
-			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
-			{				
-				fprintf(b->debug1_fp, "%6d,", (int) b->nodes[i].node_pred[j].label_cnt2);
-				
-				#ifdef TXM_O_ARBITRARY_ROOT
-				if(i > 0)
-				{
-					total += b->nodes[i].node_pred[j].label_cnt2;
-					
-					if(b->nodes[i].id == b->nodes[0].id_left)
-					{
-						if(b->arbitrary.contain_sorted(b->nodes[i].node_pred[j].label))
-							err += b->nodes[i].node_pred[j].label_cnt2;
-					}
-					else
-					{
-						if(!b->arbitrary.contain_sorted(b->nodes[i].node_pred[j].label))
-							err += b->nodes[i].node_pred[j].label_cnt2;
-					}
-				}
-				#endif
-			}
-			fprintf(b->debug1_fp, "\n");
-			
-			fprintf(b->debug1_fp, "max(label:cnt:total):, %3d,%6d,%7d,\n",  (int) b->nodes[i].max_cnt2_label, (int) b->nodes[i].max_cnt2, (int) b->nodes[i].total_cnt2);
-			fprintf(b->debug1_fp, "left: %4d, right: %4d, parent: %4d,\n",  (int) b->nodes[i].id_left, (int) b->nodes[i].id_right, (int) b->nodes[i].id_parent);
-			fprintf(b->debug1_fp, "\n");
-		}
-		
-		#ifdef TXM_O_ARBITRARY_ROOT
-		ftmp = err;
-		ftmp /= total;
-		printf("\nerror: %.4f\n", ftmp);
-		#endif
-	}
-	#endif
-	
-	#ifdef TXM_O_DEBUG_FILE2
-	void save_node_stats_pred(txm_o* b)							//wyswietlam statystyke dla poszczegonym nodow
-	{
-		uint32_t i, j;
-		size_t index;
-		float ftmp;
-		uint32_t total = 0;
-		uint32_t err = 0;
-		
-		for(i = 0; i < b->nodes.size(); i++)
-		{
-			if(b->nodes[i].removed)
-				continue;
-			
-			fprintf(b->debug2_fp, "Node: %4d, Level: %2d, Leaf: %1d,\n", (int) i, (int) b->nodes[i].level, (int) b->nodes[i].leaf);
-			
-			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
-			{
-				fprintf(b->debug2_fp, "%6d,", (int) b->nodes[i].node_pred[j].label);
-			}						
-			fprintf(b->debug2_fp, "\n");
-			
-			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
-			{				
-				fprintf(b->debug2_fp, "%6d,", (int) b->nodes[i].node_pred[j].label_cnt2);
-				
-				#ifdef TXM_O_ARBITRARY_ROOT
-				if(i > 0)
-				{
-					total += b->nodes[i].node_pred[j].label_cnt2;
-					
-					if(b->nodes[i].id == b->nodes[0].id_left)
-					{
-						if(b->arbitrary.contain_sorted(b->nodes[i].node_pred[j].label))
-							err += b->nodes[i].node_pred[j].label_cnt2;
-					}
-					else
-					{
-						if(!b->arbitrary.contain_sorted(b->nodes[i].node_pred[j].label))
-							err += b->nodes[i].node_pred[j].label_cnt2;
-					}
-				}
-				#endif
-			}
-			fprintf(b->debug2_fp, "\n");
-			
-			if(b->nodes[i].node_pred.contain_sorted(txm_o_node_pred_type(b->nodes[i].max_cnt2_label), &index))
-			{
-				b->nodes[i].max_cnt2 = b->nodes[i].node_pred[index].label_cnt2;
-				
-				ftmp = b->nodes[i].max_cnt2;
-				ftmp /= b->nodes[i].total_cnt2;
-				ftmp = 1 - ftmp;
-			}
-			else
-			{
-				b->nodes[i].max_cnt2 = 0;
-				ftmp = 1;
-			}
-			
-			fprintf(b->debug2_fp, "max(label:cnt:total:error):, %3d,%6d,%7d,%7.5f,\n",  (int) b->nodes[i].max_cnt2_label, (int) b->nodes[i].max_cnt2, (int) b->nodes[i].total_cnt2, ftmp);
-			fprintf(b->debug2_fp, "left: %4d, right: %4d, parent: %4d\n",  (int) b->nodes[i].id_left, (int) b->nodes[i].id_right, (int) b->nodes[i].id_parent);
-			fprintf(b->debug2_fp, "\n");
-		}
-		
-		ftmp = err;
-		ftmp /= total;
-		printf("\nerror: %.4f\n", ftmp);
-	}
-	#endif
+		d->only_leafs = false;	
+	}	
 	
 	void clear_cnt2(txm_o* b)
 	{
@@ -332,109 +168,102 @@ namespace TXM_O
 	void predict(txm_o* d, learner& base, example* ec)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
-		size_t new_cn, other_cn;
-		size_t index = 0;
-		size_t orginal_cn;
-		uint32_t j;
-		bool expandable;
-		v_array<uint32_t> node_list1;
-		v_array<uint32_t> node_list2;
+		label_data simple_temp;	
+		size_t new_cn;
+		uint32_t j, k;
+		float min_pred, max_oaa;
+		uint32_t min_pred_index;
+		uint32_t max_oaa_index;	
+		v_array<uint32_t> node_list;
+		v_array<float> node_list_pred;
+		
 		v_array<uint32_t> label_list;
-		v_array<float> label_list_oaa;
-				
+		v_array<uint32_t> leaf_list;
+		
 		#ifdef TXM_O_DEBUG_PRED
 		int level = 0;
 		#endif
 			
-		node_list1.push_back(0);
 		d->cn = 0;		
 		
 		#ifdef TXM_O_DEBUG_PRED
 		cout << "\nExample: " << d->ex_num << endl;
 		#endif
-			
-		while(node_list1.size() > 0)
+		
+		for(j = 0; j <= TXM_O_LEVEL_LIM; j++)
 		{
-			if(node_list2.size() > 0)
+			while(!d->nodes[d->cn].leaf)
 			{
-				d->cn = node_list2.pop();
-				expandable = false;
-			}
-			else
-			{
-				d->cn = node_list1.pop();
-				expandable = true;
-			}		
-			
-			
-			if(d->nodes[d->cn].leaf)
-			{
-				orginal_cn = d->cn;
-				
-				#ifdef TXM_O_OAA_MULTI
-				d->cn = d->nodes[d->cn].reg_num + TXM_O_LEVEL_LIM - label_list.size();
-				#else
-				d->cn = d->nodes[d->cn].reg_num;
-				#endif
-				
-				label_data simple_temp;	
-				simple_temp.initial = 0.0;
-				simple_temp.weight = mc->weight;
-				simple_temp.label = FLT_MAX;
-				ec->ld = &simple_temp.label;
-				base.learn(ec, d->cn);
-				
-				d->cn = orginal_cn;
-			}
-			else
-			{
-				label_data simple_temp;	
 				simple_temp.initial = 0.0;
 				simple_temp.weight = mc->weight;
 				simple_temp.label = FLT_MAX;
 				ec->ld = &simple_temp.label;
 				base.learn(ec, d->cn);			
+				
+				#ifdef TXM_O_DEBUG_PRED
+				cout << "level: " << level++ << endl;
+				cout << "node: " << d->cn << endl;
+				#endif
+				
+				node_list.push_back(d->cn);
+				node_list_pred.push_back(fabs(ec->final_prediction));
+	
+				if(ec->final_prediction < 0)
+				{
+					new_cn = d->nodes[d->cn].id_left;
+				}
+				else
+				{
+					new_cn = d->nodes[d->cn].id_right;
+				}
+			
+				if(new_cn != 0)			
+					d->cn = new_cn;
+
+				if(new_cn == 0)		//blad - dziecko ma id 0, nigdy w to nie wchodze
+					break;				
 			}
 			
-			if(d->nodes[d->cn].leaf)
+			label_list.push_back(d->nodes[d->cn].max_cnt2_label);
+			leaf_list.push_back(d->cn);
+			
+			min_pred = node_list_pred[0];
+			min_pred_index = 0;
+			
+			for(k = 1; k < node_list.size(); k++)
 			{
-				
-				label_list.push_back(d->nodes[d->cn].max_cnt2_label);
-				label_list_oaa.push_back(ec->final_prediction);
-				continue;
+				if(node_list_pred[k] TXM_O_TRK_COMP min_pred)
+				{
+					min_pred = node_list_pred[k];
+					min_pred_index = k;
+				}
 			}
 			
-			#ifdef TXM_O_DEBUG_PRED
-			cout << "level: " << level++ << endl;
-			cout << "node: " << d->cn << endl;
-			#endif
-				
-			if(ec->final_prediction < 0)
+			d->cn = node_list[min_pred_index];
+			node_list[min_pred_index] = node_list.pop();
+			node_list_pred[min_pred_index] = node_list_pred.pop();
+			
+			simple_temp.initial = 0.0;
+			simple_temp.weight = mc->weight;
+			simple_temp.label = FLT_MAX;
+			ec->ld = &simple_temp.label;
+			base.learn(ec, d->cn);			
+
+			if(ec->final_prediction > 0)
 			{
 				new_cn = d->nodes[d->cn].id_left;
-				other_cn = d->nodes[d->cn].id_right;
 			}
 			else
 			{
 				new_cn = d->nodes[d->cn].id_right;
-				other_cn = d->nodes[d->cn].id_left;
 			}
-			
-			if(new_cn == 0)		//blad - dziecko ma id 0, nigdy w to nie wchodze
-				break;	
-				
-			if(expandable)
-			{
-				node_list1.push_back(new_cn);
-				node_list2.push_back(other_cn);			
-			}
-			else
-			{
-				node_list2.push_back(new_cn);
-			}
-		}
 		
-		ec->ld = mc;
+			if(new_cn != 0)			
+				d->cn = new_cn;
+
+			if(new_cn == 0)		//blad - dziecko ma id 0, nigdy w to nie wchodze
+				break;
+		}		
 		
 		#ifdef TXM_O_DEBUG_PRED
 		cout << "Prediction finished...\n";
@@ -444,25 +273,31 @@ namespace TXM_O
 		cout << "Nb of labels in leaf: " << d->nodes[d->cn].node_pred.size() << endl;
 		#endif
 		
+		max_oaa_index = 0;
+		max_oaa = -1.f;
 		
-		if(label_list_oaa.size() > 0)
+		for(j = 0; j < leaf_list.size(); j++)
 		{
-			index = 0;
-		
-			for(j = 1; j < label_list_oaa.size(); j++)
-			{
-				if(label_list_oaa[j] >= label_list_oaa[index])
-				{
-					index = j;
-				}
-			}
+			d->cn = leaf_list[j];
 			
-			ec->final_prediction = label_list[index];
+			simple_temp.initial = 0.0;
+			simple_temp.weight = mc->weight;
+			simple_temp.label = FLT_MAX;
+			ec->ld = &simple_temp.label;
+			base.learn(ec, d->nodes[d->cn].reg_num);
+			
+			if(ec->final_prediction > max_oaa)
+			{
+				max_oaa = ec->final_prediction;
+				max_oaa_index = j;
+			}
 		}
-		else
-		{
-			ec->final_prediction = -1.f;
-		}
+		
+		ec->ld = mc;
+		
+		d->cn = leaf_list[max_oaa_index];
+			
+		ec->final_prediction = label_list[max_oaa_index];
 		
 		/*cout<<endl;
 		for(j = 0; j < label_list.size(); j++)
@@ -488,139 +323,110 @@ namespace TXM_O
 		d->ex_num++;					//pozostalosc po starym kodzie
 	}
 
-	void predict_node_list(txm_o* d, learner& base, example* ec, size_t* node_list, size_t &node_list_index)
+	void predict_node_list(txm_o* d, learner& base, example* ec, size_t* out_node_list, size_t &out_node_list_index)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
-		size_t new_cn, other_cn;
-		bool expandable;
-		v_array<uint32_t> node_list1;
-		v_array<uint32_t> node_list2;
+		label_data simple_temp;	
+		size_t new_cn;
+		uint32_t j, k;
+		float min_pred;
+		uint32_t min_pred_index;
+		v_array<uint32_t> node_list;
+		v_array<float> node_list_pred;
 		
-		node_list_index = 0;		
+		#ifdef TXM_O_DEBUG_PRED
+		int level = 0;
+		#endif
 		
-		node_list1.push_back(0);
-		d->cn = 0;		
+		out_node_list_index = 0;	
+		d->cn = 0;				
 		
-		while(node_list1.size() > 0)
+		#ifdef TXM_O_DEBUG_PRED
+		cout << "\nExample: " << d->ex_num << endl;
+		#endif
+					
+		for(j = 0; j <= TXM_O_LEVEL_LIM; j++)
 		{
-			if(node_list2.size() > 0)
+			while(!d->nodes[d->cn].leaf)
 			{
-				d->cn = node_list2.pop();
-				expandable = false;
-			}
-			else
-			{
-				d->cn = node_list1.pop();
-				expandable = true;
-			}	
+				ec->test_only = true;
+				simple_temp.initial = 0.0;
+				simple_temp.weight = mc->weight;
+				simple_temp.label = FLT_MAX;
+				ec->ld = &simple_temp.label;
+				base.learn(ec, d->cn);			
+				
+				#ifdef TXM_O_DEBUG_PRED
+				cout << "level: " << level++ << endl;
+				cout << "node: " << d->cn << endl;
+				#endif
+				
+				node_list.push_back(d->cn);
+				node_list_pred.push_back(fabs(ec->final_prediction));
+	
+				if(ec->final_prediction < 0)
+				{
+					new_cn = d->nodes[d->cn].id_left;
+				}
+				else
+				{
+					new_cn = d->nodes[d->cn].id_right;
+				}
+			
+				if(new_cn != 0)			
+					d->cn = new_cn;
 
+				if(new_cn == 0)		//blad - dziecko ma id 0, nigdy w to nie wchodze
+					break;				
+			}
+			
 			if(d->nodes[d->cn].leaf)
 			{
-				node_list[node_list_index] = d->cn;
-				node_list_index++;		
-				continue;
-			}			
+				out_node_list[out_node_list_index] = d->cn;
+				out_node_list_index++;
+			}
+			
+			min_pred = node_list_pred[0];
+			min_pred_index = 0;
+			
+			for(k = 1; k < node_list.size(); k++)
+			{
+				if(node_list_pred[k] TXM_O_TRK_COMP min_pred)
+				{
+					min_pred = node_list_pred[k];
+					min_pred_index = k;
+				}
+			}
+			
+			d->cn = node_list[min_pred_index];
+			node_list[min_pred_index] = node_list.pop();
+			node_list_pred[min_pred_index] = node_list_pred.pop();
 			
 			ec->test_only = true;
-			label_data simple_temp;	
 			simple_temp.initial = 0.0;
 			simple_temp.weight = mc->weight;
 			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp.label;
-			base.learn(ec, d->cn);
-			
-			if(ec->final_prediction < 0)
+			base.learn(ec, d->cn);			
+
+			if(ec->final_prediction > 0)
 			{
 				new_cn = d->nodes[d->cn].id_left;
-				other_cn = d->nodes[d->cn].id_right;
 			}
 			else
 			{
 				new_cn = d->nodes[d->cn].id_right;
-				other_cn = d->nodes[d->cn].id_left;
 			}
-			
-			if(expandable)
-			{
-				if(new_cn > 0) node_list1.push_back(new_cn);
-				if(other_cn > 0) node_list2.push_back(other_cn);			
-			}
-			else
-			{
-				if(new_cn > 0) node_list2.push_back(new_cn);
-			}
+		
+			if(new_cn != 0)			
+				d->cn = new_cn;
+
+			if(new_cn == 0)		
+				break;
 		}
 		
 		ec->ld = mc;	
 	}	
-	
-	size_t predict_node_list(txm_o* d, learner& base, example* ec, size_t level_limit, size_t* node_list, size_t &node_list_index)
-	{
-		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
-		size_t new_cn, other_cn;
-		bool expandable;
-		v_array<uint32_t> node_list1;
-		v_array<uint32_t> node_list2;
-		
-		node_list_index = 0;		
-		
-		node_list1.push_back(0);
-		d->cn = 0;		
-		
-		while(node_list1.size() > 0)
-		{
-			if(node_list2.size() > 0)
-			{
-				d->cn = node_list2.pop();
-				expandable = false;
-			}
-			else
-			{
-				d->cn = node_list1.pop();
-				expandable = true;
-			}	
-
-			if(d->nodes[d->cn].leaf || d->nodes[d->cn].level >= level_limit)
-			{
-				node_list[node_list_index] = d->cn;
-				node_list_index++;		
-				continue;
-			}			
-			
-			ec->test_only = true;
-			label_data simple_temp;	
-			simple_temp.initial = 0.0;
-			simple_temp.weight = mc->weight;
-			simple_temp.label = FLT_MAX;
-			ec->ld = &simple_temp.label;
-			base.learn(ec, d->cn);
-			
-			if(ec->final_prediction < 0)
-			{
-				new_cn = d->nodes[d->cn].id_left;
-				other_cn = d->nodes[d->cn].id_right;
-			}
-			else
-			{
-				new_cn = d->nodes[d->cn].id_right;
-				other_cn = d->nodes[d->cn].id_left;
-			}
-			
-			if(expandable)
-			{
-				if(new_cn > 0) node_list1.push_back(new_cn);
-				if(other_cn > 0) node_list2.push_back(other_cn);			
-			}
-			else
-			{
-				if(new_cn > 0) node_list2.push_back(new_cn);
-			}
-		}
-		
-		ec->ld = mc;	
-		
-		return node_list[node_list_index - 1];
-	}
 	
 	uint32_t predict_node(txm_o* d, learner& base, example* ec, size_t level_limit)		//to samo co predict tylko nie to samo do konca, minimalny argument z jakim to jest odpalane to jest 1 (czyli masz root i dwa liscie)
 	{
@@ -681,7 +487,7 @@ namespace TXM_O
 		size_t id_right;
 		size_t id_current;
 		size_t id_left_right;
-		size_t j, k;
+		size_t j;
 		label_data simple_temp;	
 		size_t node_list[1000];
 		size_t node_list_index;
@@ -727,7 +533,7 @@ namespace TXM_O
 			}
 			else								//not the first pass through the data, jezeli b->current_pass == 1 to tworze drugi level drzewa, czyli trenuje regresory pierwszego levela
 			{
-				b->cn = predict_node_list(b, base, ec, b->cl, node_list, node_list_index);		//current node, ktory ja zamierzam trenowac
+				b->cn = predict_node(b, base, ec, b->cl);		//current node, ktory ja zamierzam trenowac
 				
 				if(b->cn == 0)   //blad, wychodze z learn i dalej bede analizowac kolejny przyklad kolejny przyklad
 				{
@@ -759,9 +565,10 @@ namespace TXM_O
 				
 				if(b->cl >= TXM_O_LEVEL_LIM)
 				{				
-					predict_node_list(b, base, ec, node_list, node_list_index);					
 					id_current = b->cn;
-					
+					predict_node_list(b, base, ec, node_list, node_list_index);					
+					ec->test_only = false;
+						
 					//train for OAA					
 					for(j = 0; j < node_list_index; j++)	
 					{
@@ -769,12 +576,8 @@ namespace TXM_O
 						
 						if(b->nodes[b->cn].reg_num == 0)
 						{
-							b->nodes[b->cn].reg_num = b->reg_num_max;
-							#ifdef TXM_O_OAA_MULTI
-							b->reg_num_max += TXM_O_LEVEL_LIM + 1;
-							#else
+							b->nodes[b->cn].reg_num = b->reg_num_max;							
 							b->reg_num_max++;
-							#endif
 						}
 						
 						if(b->nodes[b->cn].max_cnt2_label == oryginal_label)
@@ -782,11 +585,7 @@ namespace TXM_O
 						else
 							simple_temp.label = -1.f;
 						
-						#ifdef TXM_O_OAA_MULTI
-						b->cn = b->nodes[b->cn].reg_num + node_list_index - j - 1;						
-						#else
 						b->cn = b->nodes[b->cn].reg_num;
-						#endif
 						
 						ec->ld = &simple_temp;				
 						ec->partial_prediction = 0;
@@ -794,145 +593,129 @@ namespace TXM_O
 						ec->test_only = false;					
 						base.learn(ec, b->cn);
 						ec->ld = mc;						
-					}
+					}				
 					
 					b->cn = id_current;
 					ec->final_prediction = b->nodes[b->cn].max_cnt2_label;
-					b->nodes[b->cn].leaf = true;
-					
+					b->nodes[b->cn].leaf = true;										
 					break;
 				}
-			}			
-			
-			if(b->cn == 0)
-			{
-				node_list_index = 1;
-				node_list[0] = 0;
 			}
 			
-			k = node_list_index - 1;
+			#ifdef TXM_O_DEBUG
+			cout << "Current node: " << b->cn << endl;
+			cout << "Example number: " << b->ex_num << endl;
+			#endif		
+				
+			//do the initial prediction to decide if going left or right
+			all->sd->min_label = -TXM_O_PRED_LIM;
+			all->sd->max_label = TXM_O_PRED_LIM;	
+			//mc->label = 0;	//jezeli jest cos innego tu to on moze zmieniac clipping zakresy
+			ec->test_only = true;
+			simple_temp.label = FLT_MAX;
+			ec->ld = &simple_temp;
+			base.learn(ec, b->cn);	
+			//mc->label = oryginal_label;	
 			
-			#ifdef TXM_O_TRAIN_ALT_TRK
-			for(k = 0; k < node_list_index; k++)
-			#endif
+			#ifdef TXM_O_DEBUG
+			cout << "raw prediction: " << ec->final_prediction << endl;
+			#endif		
+			
+			b->nodes[b->cn].Eh += ec->final_prediction;
+			b->nodes[b->cn].n++;
+			
+			norm_Eh = b->nodes[b->cn].Eh / b->nodes[b->cn].n;
+			
+			b->nodes[b->cn].node_pred.contain_sorted(txm_o_node_pred_type(oryginal_label), &index);
+			b->nodes[b->cn].node_pred[index].Ehk += ec->final_prediction;
+			b->nodes[b->cn].node_pred[index].nk++;
+			
+			norm_Ehk = b->nodes[b->cn].node_pred[index].Ehk / b->nodes[b->cn].node_pred[index].nk;
+			
+			left_or_right = norm_Ehk - TXM_O_PRED_ALFA * norm_Eh;
+			
+			#ifdef TXM_O_DEBUG
+			cout << "norm Ehk:" << norm_Ehk << endl;
+			cout << "norm Eh:" << norm_Eh << endl;
+			cout << "left_or_right: " << left_or_right << endl;	
+			#endif		
+			
+			id_left = b->nodes[b->cn].id_left;
+			id_right = b->nodes[b->cn].id_right;		
+					
+			if(left_or_right < 0)
 			{
-				b->cn = node_list[k];
-			
-				#ifdef TXM_O_DEBUG
-				cout << "Current node: " << b->cn << endl;
-				cout << "Example number: " << b->ex_num << endl;
-				#endif		
-					
-				//do the initial prediction to decide if going left or right
-				all->sd->min_label = -TXM_O_PRED_LIM;
-				all->sd->max_label = TXM_O_PRED_LIM;	
-				//mc->label = 0;	//jezeli jest cos innego tu to on moze zmieniac clipping zakresy
-				ec->test_only = true;
-				simple_temp.label = FLT_MAX;
-				ec->ld = &simple_temp;
-				base.learn(ec, b->cn);	
-				//mc->label = oryginal_label;	
+				//mc->label = -1.f;
+				simple_temp.label = -1.f;
+				id_left_right = id_left;
 				
-				#ifdef TXM_O_DEBUG
-				cout << "raw prediction: " << ec->final_prediction << endl;
-				#endif		
-				
-				b->nodes[b->cn].Eh += ec->final_prediction;
-				b->nodes[b->cn].n++;
-				
-				norm_Eh = b->nodes[b->cn].Eh / b->nodes[b->cn].n;
-				
-				b->nodes[b->cn].node_pred.contain_sorted(txm_o_node_pred_type(oryginal_label), &index);
-				b->nodes[b->cn].node_pred[index].Ehk += ec->final_prediction;
-				b->nodes[b->cn].node_pred[index].nk++;
-				
-				norm_Ehk = b->nodes[b->cn].node_pred[index].Ehk / b->nodes[b->cn].node_pred[index].nk;
-				
-				left_or_right = norm_Ehk - TXM_O_PRED_ALFA * norm_Eh;
-				
-				#ifdef TXM_O_DEBUG
-				cout << "norm Ehk:" << norm_Ehk << endl;
-				cout << "norm Eh:" << norm_Eh << endl;
-				cout << "left_or_right: " << left_or_right << endl;	
-				#endif		
-				
-				id_left = b->nodes[b->cn].id_left;
-				id_right = b->nodes[b->cn].id_right;		
-						
-				if(left_or_right < 0)
+				if(b->nodes[b->cn].id_left == 0)												//if the left child does not exist
 				{
-					//mc->label = -1.f;
-					simple_temp.label = -1.f;
-					id_left_right = id_left;
-					
-					if(b->nodes[b->cn].id_left == 0)												//if the left child does not exist
-					{
-						id_left_right = id_left = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
-						b->nodes.push_back(init_node(id_left, b->cn, b->nodes[b->cn].level + 1));	//add new node to the tree
-						b->nodes[b->cn].id_left = id_left;											//new node is the left child of the current node				
-					}			
-				}
-				else
-				{
-					//mc->label = 1.f;
-					simple_temp.label = 1.f;
-					id_left_right = id_right;
-					
-					if(b->nodes[b->cn].id_right == 0)												//if the right child does not exist
-					{
-						id_left_right = id_right = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
-						b->nodes.push_back(init_node(id_right, b->cn, b->nodes[b->cn].level + 1));	//add new node to the tree
-						b->nodes[b->cn].id_right = id_right;										//new node is the right child of the current node	
-					}
-				}	
-					
-				if(!b->nodes[id_left_right].node_pred.contain_sorted(txm_o_node_pred_type(oryginal_label), &index))  //if the label does not exist in the left/right child of the current node
-				{
-					index = b->nodes[id_left_right].node_pred.push_back_sorted(txm_o_node_pred_type(oryginal_label));		//add the label to the left/right child of the current node					
-				}
-				
-				b->nodes[id_left_right].node_pred[index].label_cnt++;
-				b->nodes[id_left_right].node_pred[index].assigned = true;
-				
-				//learn!!
-				ec->partial_prediction = 0;
-				ec->final_prediction = 0;	
-				all->sd->min_label = -TXM_O_PRED_LIM;
-				all->sd->max_label = TXM_O_PRED_LIM;
-				ec->test_only = false;
-				base.learn(ec, b->cn);	
-				//mc->label = oryginal_label;	
-				ec->ld = mc;	
-					
-				#ifdef TXM_O_DEBUG		
-				cout << "left:  \t";
-				if(id_left > 0) for(j = 0; j < b->nodes[id_left].node_pred.size(); j++) cout << b->nodes[id_left].node_pred[j].label << ":" << b->nodes[id_left].node_pred[j].label_cnt <<"\t";
-				
-				cout << "right: \t";
-				if(id_right > 0) for(j = 0; j < b->nodes[id_right].node_pred.size(); j++) cout << b->nodes[id_right].node_pred[j].label << ":" << b->nodes[id_right].node_pred[j].label_cnt << "\t";
-				cout << endl;
-				
-				cout << "label: " << mc->label << endl;
-				
-				cout << "features: ";
-
-				for (i = ec->indices.begin; (i + 1) < ec->indices.end; i++) 
-				{
-					feature* end = ec->atomics[*i].end;
-
-					for (feature* f = ec->atomics[*i].begin; f!= end; f++) 
-					{
-						cout << f->x << "\t";         
-					}
-				}
-				cout << endl;
-				#endif				
-				
-				#ifdef TXM_O_DEBUG
-				cout << "Current Pass: " << b->current_pass << endl;
-				cout << endl;
-				#endif				
+					id_left_right = id_left = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
+					b->nodes.push_back(init_node(id_left, b->cn, b->nodes[b->cn].level + 1));	//add new node to the tree
+					b->nodes[b->cn].id_left = id_left;											//new node is the left child of the current node				
+				}			
 			}
+			else
+			{
+				//mc->label = 1.f;
+				simple_temp.label = 1.f;
+				id_left_right = id_right;
+				
+				if(b->nodes[b->cn].id_right == 0)												//if the right child does not exist
+				{
+					id_left_right = id_right = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
+					b->nodes.push_back(init_node(id_right, b->cn, b->nodes[b->cn].level + 1));	//add new node to the tree
+					b->nodes[b->cn].id_right = id_right;										//new node is the right child of the current node	
+				}
+			}	
+				
+			if(!b->nodes[id_left_right].node_pred.contain_sorted(txm_o_node_pred_type(oryginal_label), &index))  //if the label does not exist in the left/right child of the current node
+			{
+				index = b->nodes[id_left_right].node_pred.push_back_sorted(txm_o_node_pred_type(oryginal_label));		//add the label to the left/right child of the current node					
+			}
+			
+			b->nodes[id_left_right].node_pred[index].label_cnt++;
+			b->nodes[id_left_right].node_pred[index].assigned = true;
+			
+			//learn!!
+			ec->partial_prediction = 0;
+			ec->final_prediction = 0;	
+			all->sd->min_label = -TXM_O_PRED_LIM;
+			all->sd->max_label = TXM_O_PRED_LIM;
+			ec->test_only = false;
+			base.learn(ec, b->cn);	
+			//mc->label = oryginal_label;	
+			ec->ld = mc;	
+				
+			#ifdef TXM_O_DEBUG		
+			cout << "left:  \t";
+			if(id_left > 0) for(j = 0; j < b->nodes[id_left].node_pred.size(); j++) cout << b->nodes[id_left].node_pred[j].label << ":" << b->nodes[id_left].node_pred[j].label_cnt <<"\t";
+			
+			cout << "right: \t";
+			if(id_right > 0) for(j = 0; j < b->nodes[id_right].node_pred.size(); j++) cout << b->nodes[id_right].node_pred[j].label << ":" << b->nodes[id_right].node_pred[j].label_cnt << "\t";
+			cout << endl;
+			
+			cout << "label: " << mc->label << endl;
+			
+			cout << "features: ";
+
+			for (i = ec->indices.begin; (i + 1) < ec->indices.end; i++) 
+			{
+				feature* end = ec->atomics[*i].end;
+
+				for (feature* f = ec->atomics[*i].begin; f!= end; f++) 
+				{
+					cout << f->x << "\t";         
+				}
+			}
+			cout << endl;
+			#endif				
+			
+			#ifdef TXM_O_DEBUG
+			cout << "Current Pass: " << b->current_pass << endl;
+			cout << endl;
+			#endif				
 			
 			b->cl++;
 		}	
@@ -940,50 +723,6 @@ namespace TXM_O
 		b->ex_num++;			
 	}
 	
-	/*void drive(vw* all, void* d)
-	{	
-		txm_o* b = (txm_o*)d;	
-		example* ec = NULL;		
-		int i;	
-		
-		while (true)
-		{
-			if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-			{
-				learn((txm_o*)d, ec);
-				
-				if (!command_example(all, ec))
-					OAA::output_example(*all, ec);
-					
-				VW::finish_example(*all, ec);				
-			}
-			else if (parser_done(all->p))
-			{			
-				for(i = 0; i < b->nodes.size(); i++)
-				{
-					if(b->nodes[i].leaf) cout << i << endl;
-				}
-				
-				if(all->training)
-				{
-					#ifdef TXM_O_DEBUG_FILE1
-					save_node_stats(b);
-					fclose(b->debug1_fp);
-					#endif
-				}
-				else
-				{
-					#ifdef TXM_O_DEBUG_FILE2
-					save_node_stats_pred(b);
-					fclose(b->debug2_fp);
-					#endif		
-				}	
-					
-				return;
-			}
-		}
-	}*/
-
 	void finish(void* data)
 	{    
 		txm_o* o=(txm_o*)data;
@@ -1198,7 +937,7 @@ namespace TXM_O
 		//learner l(data, drive, learn, finish, all.l.sl);
 		
 		//learner* l = new learner(data, learn, txm_o_save_load, 2 * data->k);
-		learner* l = new learner(data, learn, all.l, txm_o_save_load, (TXM_O_LEVEL_LIM + 3) * data->k);
+		learner* l = new learner(data, learn, all.l, txm_o_save_load, (TXM_O_LEVEL_LIM + 4) * data->k);
 		l->set_finish_example(OAA::finish_example);
 		
 		txm_o* b = (txm_o*)data;
@@ -1211,10 +950,6 @@ namespace TXM_O
 		else	
 		{			
 			b->tree_finished = false;	
-			
-			#ifdef TXM_O_DEBUG_FILE2
-			b->debug2_fp = fopen("atxm_o_debug2.csv", "wt");
-			#endif
 		}		
 		
 		return l;
