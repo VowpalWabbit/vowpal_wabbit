@@ -185,6 +185,19 @@ namespace OAA {
     OAA::print_update(all, ec);
   }
 
+  void label_to_array(void*label, v_array<uint32_t>&out) {
+    mc_label*l = (mc_label*)label;
+    if (l->label == (uint32_t)-1)
+      out.erase();
+    else {
+      if (out.size() == 1) out[0] = l->label;
+      else {
+        out.erase();
+        out.push_back( l->label );
+      }
+    }
+  }
+
   void finish_example(vw& all, void*, example* ec)
   {
     output_example(all, ec);
