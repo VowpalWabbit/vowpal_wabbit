@@ -204,7 +204,15 @@ inline float float_of_substring(substring s)
 
 inline int int_of_substring(substring s)
 {
-  return atoi(std::string(s.begin, s.end-s.begin).c_str());
+  char* endptr = s.end;
+  int i = strtol(s.begin,&endptr,10);
+  if (endptr == s.begin && s.begin != s.end)  
+    {
+      std::cout << "warning: " << std::string(s.begin, s.end-s.begin).c_str() << " is not a good int, replacing with 0" << std::endl;
+      i = 0;
+    }
+
+  return i;
 }
 
 #endif

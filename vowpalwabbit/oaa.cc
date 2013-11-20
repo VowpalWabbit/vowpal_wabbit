@@ -102,6 +102,11 @@ namespace OAA {
       cerr << "malformed example!\n";
       cerr << "words.size() = " << words.size() << endl;
     }
+    if (ld->label == 0)
+      {
+	cout << "label 0 is not allowed for multiclass.  Valid labels are {1,k}" << endl;
+	throw exception();
+      }
   }
 
   void print_update(vw& all, example *ec)
@@ -204,11 +209,8 @@ namespace OAA {
     float score = INT_MIN;
   
     if (mc_label_data->label == 0 || (mc_label_data->label > o->k && mc_label_data->label != (uint32_t)-1))
-      {
-	cout << "label " << mc_label_data->label << " is not in {1,"<< o->k << "} This won't work right." << endl;
-	throw exception();
-      }
-  
+      cout << "label " << mc_label_data->label << " is not in {1,"<< o->k << "} This won't work right." << endl;
+    
     string outputString;
     stringstream outputStringStream(outputString);
 
