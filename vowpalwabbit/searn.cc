@@ -1504,6 +1504,8 @@ void print_update(vw& all, searn* srn)
       
       p = strtok(NULL, ",");
     }
+    cmd.erase();
+    cmd.delete_v();
     
     delete cstr;
   }

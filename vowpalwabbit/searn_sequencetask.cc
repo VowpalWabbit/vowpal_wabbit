@@ -9,7 +9,7 @@ namespace SequenceTask {
   using namespace Searn;
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.task_data            = new v_array<uint32_t>;
+    srn.task_data            = new v_array<uint32_t>();
     srn.auto_history         = true;  // automatically add history features to our examples, please
     srn.examples_dont_change = true;  // we don't do any internal example munging
   }
@@ -22,22 +22,22 @@ namespace SequenceTask {
   }
 
   void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
-    v_array<uint32_t> y_star = *(v_array<uint32_t>*) srn.task_data;
+    v_array<uint32_t> * y_star = (v_array<uint32_t>*) srn.task_data;
     float total_loss  = 0;
 
     for (size_t i=0; i<len; i++) {
       srn.snapshot(i, 1, &i, sizeof(i), true);
       srn.snapshot(i, 2, &total_loss, sizeof(total_loss), false);
 
-      OAA::label_to_array(ec[i]->ld, y_star);
+      OAA::label_to_array(ec[i]->ld, *y_star);
 
-      size_t prediction = srn.predict(ec[i], NULL, &y_star);
+      size_t prediction = srn.predict(ec[i], NULL, y_star);
 
-      if (y_star.size() > 0)
-        total_loss += (float)(prediction != y_star[0]);
+      if (y_star->size() > 0)
+        total_loss += (float)(prediction != y_star->last());
 
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << ((y_star.size() == 0) ? '?' : y_star[0]) << ' ';
+      if (truth_ss ) (*truth_ss ) << ((y_star->size() == 0) ? '?' : y_star->last()) << ' ';
     }
     srn.declare_loss(len, total_loss);
   }
@@ -72,9 +72,7 @@ namespace SequenceSpanTask {
   }
 
   void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
-    v_array<uint32_t> y_allowed = ((task_data*)srn.task_data)->y_allowed;
-    v_array<uint32_t> y_star    = ((task_data*)srn.task_data)->y_star;
-
+    task_data * my_task_data = (task_data*)srn.task_data;
     float total_loss  = 0;
     uint32_t sys_tag = 1;
     
@@ -83,19 +81,26 @@ namespace SequenceSpanTask {
       srn.snapshot(i, 2, &sys_tag, sizeof(sys_tag), true);
       srn.snapshot(i, 3, &total_loss, sizeof(total_loss), false);
 
-      OAA::label_to_array(ec[i]->ld, y_star);
-      y_allowed[y_allowed.size()-1] = sys_tag;
-      size_t prediction = srn.predict(ec[i], &y_allowed, &y_star);
+      OAA::label_to_array(ec[i]->ld, my_task_data->y_star);
+      my_task_data->y_allowed[my_task_data->y_allowed.size()-1] = sys_tag;
+      size_t prediction = srn.predict(ec[i], &my_task_data->y_allowed, &my_task_data->y_star);
 
       if (prediction == 1) sys_tag = 1;
       else sys_tag = ((prediction % 2) == 0) ? (prediction+1) : prediction;
       
-      if (y_star.size() > 0)
-        total_loss += (float)(prediction != y_star[0]);
+      if (my_task_data->y_star.size() > 0)
+        total_loss += (float)(prediction != my_task_data->y_star[0]);
 
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << ((y_star.size() == 0) ? '?' : y_star[0]) << ' ';
+      if (truth_ss ) (*truth_ss ) << ((my_task_data->y_star.size() == 0) ? '?' : my_task_data->y_star[0]) << ' ';
     }
     srn.declare_loss(len, total_loss);
   }
 }
+
+
+
+
+
+
+
