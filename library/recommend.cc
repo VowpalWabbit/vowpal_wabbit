@@ -38,22 +38,12 @@ void progress()
         fprintf(stderr, "%12d %8d %8d %8d %12d %s %s\n", pairs, users, items, recs, skipped, userfilename.c_str(), itemfilename.c_str());
 }
 
-unsigned hash_ber(char *in, size_t len) {
-        unsigned hashv = 0;
-        while (len--)  hashv = ((hashv) * 33) + *in++;
-        return hashv;
-}
-unsigned hash_fnv(char *in, size_t len) {
-        unsigned hashv = 2166136261UL;
-        while(len--) hashv = (hashv * 16777619) ^ *in++;
-        return hashv;
-}
 #define MASK(u,b) ( u & ((1UL << b) - 1))
 #define NUM_HASHES 2
 void get_hashv(char *in, size_t len, unsigned *out) {
         assert(NUM_HASHES==2);
-        out[0] = MASK(hash_ber(in,len),b);
-        out[1] = MASK(hash_fnv(in,len),b);
+        out[0] = MASK(uniform_hash(in,len,1),b);
+        out[1] = MASK(uniform_hash(in,len,2),b);
 }
 
 #define BIT_TEST(c,i) (c[i/8] & (1 << (i % 8)))

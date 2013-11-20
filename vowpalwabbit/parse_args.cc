@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "nn.h"
 #include "oaa.h"
 #include "bs.h"
+#include "topk.h"
 #include "ect.h"
 #include "csoaa.h"
 #include "wap.h"
@@ -109,6 +110,7 @@ vw* parse_args(int argc, char *argv[])
     ("active_mellowness", po::value<float>(&(all->active_c0)), "active learning mellowness parameter c_0. Default 8")
     ("binary", "report loss as binary classification on -1,1")
     ("bs", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
+    ("top", po::value<size_t>(), "top k recommendation")
     ("bs_type", po::value<string>(), "bootstrap mode - currently 'mean' or 'vote'")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("sgd", "use regular stochastic gradient descent update.")
@@ -229,6 +231,12 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("holdout_off"))
       all->holdout_set_off = true;
+
+  if(!all->holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
+  {
+      all->holdout_set_off = true;
+      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
+  }   
 
   all->data_filename = "";
 
@@ -704,7 +712,7 @@ vw* parse_args(int argc, char *argv[])
   all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
   if (!all->quiet)
     {
-      if (all->reg_mode %2)
+      if (all->reg_mode %2 && !vm.count("bfgs"))
 	cerr << "using l1 regularization = " << all->l1_lambda << endl;
       if (all->reg_mode > 1)
 	cerr << "using l2 regularization = " << all->l2_lambda << endl;
@@ -717,8 +725,11 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("nn") || vm_file.count("nn") ) 
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
 
-  if(vm.count("autolink") || vm_file.count("autolinnk") ) 
+  if(vm.count("autolink") || vm_file.count("autolink") ) 
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
+
+  if(vm.count("top") || vm_file.count("top") ) 
+    all->l = TOPK::setup(*all, to_pass_further, vm, vm_file);
   
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);

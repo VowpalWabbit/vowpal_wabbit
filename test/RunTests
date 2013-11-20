@@ -19,6 +19,8 @@ my $LDA;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
+my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 150';
+
 my @ToTest = ();
 
 sub usage(@) {
@@ -286,7 +288,9 @@ sub lenient_array_compare($$) {
 sub diff_lenient_float($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
-    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr';
+
+    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 200';
+
     my $tmpf = 'lenient-diff.tmp';
     system("$Diff $diff_opts $reffile $outfile >$tmpf");
     $status = $? >> 8;
@@ -349,7 +353,7 @@ sub diff($$) {
     }
 
     # Actually run the diff
-    my $diff_cmd = "$Diff -N $reffile $outfile";
+    my $diff_cmd = "$Diff $diff_opts $reffile $outfile";
     system("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     if (-s 'diff.tmp') {
@@ -695,13 +699,10 @@ __DATA__
     test-sets/ref/ml100k_small.stderr
 
 # Test 24: active-learning -- training
-# Output should make sense, in particular, shouldn't have 'total queries = 0'
-# (regression introduced May 13, 2013)
 {VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
-#{VW} -d train-sets/0002.dat -f models/bs.model --bs 4 -p train-sets/ref/bs.predict > train-sets/ref/bs.stdout 2> train-sets/ref/bs.stderr
 {VW} -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict 
     train-sets/ref/bs.reg.stdout
     train-sets/ref/bs.reg.stderr
@@ -714,19 +715,37 @@ __DATA__
     train-sets/ref/bs.prreg.predict
 
 # Test 27: bagging -- binary classifiers
-{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p predict 
+{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p bs.vote.predict 
     train-sets/ref/bs.vote.stdout
     train-sets/ref/bs.vote.stderr
     train-sets/ref/bs.vote.predict
 
 # Test 28: bagging -- predict with bagged classifier
-{VW} -d train-sets/0001.dat -i models/bs.prvote.model -p prvote.predict -t
+{VW} -d train-sets/0001.dat -i models/bs.prvote.model -p bs.prvote.predict -t
     train-sets/ref/bs.prvote.stdout
     train-sets/ref/bs.prvote.stderr
     train-sets/ref/bs.prvote.predict
 
 # Test 29: affix features
-{VW} -d train-sets/affix_test.dat -k -c --passes 40 --holdout_after 4 --affix -2
+{VW} -d train-sets/affix_test.dat -k -c --passes 10 --holdout_off --affix -2
     train-sets/ref/affix_test.stdout
     train-sets/ref/affix_test.stderr
 
+# Test 30: train --l1 regularized model
+{VW} -d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01
+    train-sets/ref/mask.stderr
+    
+# Test 31: train model using --feature_mask
+{VW} -d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model
+    train-sets/ref/remask.stderr
+
+# Test 32: train model for topk recommender
+{VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off 
+    train-sets/ref/topk-train.stdout
+    train-sets/ref/topk-train.stderr
+
+# Test 33: train model for topk recommender
+{VW} -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
+    train-sets/ref/topk-rec.stdout
+    train-sets/ref/topk-rec.stderr
+    train-sets/ref/topk-rec.predict

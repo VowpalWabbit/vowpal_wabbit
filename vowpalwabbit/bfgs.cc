@@ -361,6 +361,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
     }
   }
 
+
   coef_j = alpha[0] - rho[0] * y_r;
   mem = mem0;
   w = w0;
@@ -433,6 +434,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 	ret += 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
       }
     }
+
   return ret;
 }
 
@@ -489,7 +491,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
     for(uint32_t i = 0; i < length; i++) 
       b.regularizers[2*i] = weights[stride*i+W_COND] + b.regularizers[2*i];
   for(uint32_t i = 0; i < length; i++) 
-    b.regularizers[2*i+1] = weights[stride*i];
+      b.regularizers[2*i+1] = weights[stride*i];
 }
 
 void zero_state(vw& all)
@@ -712,7 +714,7 @@ int process_pass(vw& all, bfgs& b) {
       {
 	if(all.span_server != "")
 	  accumulate(all, all.span_server, all.reg, W_COND); //Accumulate preconditioner
-	preconditioner_to_regularizer(all, b, all.l2_lambda);
+	//preconditioner_to_regularizer(all, b, all.l2_lambda);
       }
     ftime(&b.t_end_global);
     b.net_time = (int) (1000.0 * (b.t_end_global.time - b.t_start_global.time) + (b.t_end_global.millitm - b.t_start_global.millitm)); 
@@ -724,6 +726,7 @@ int process_pass(vw& all, bfgs& b) {
 
 void process_example(vw& all, bfgs& b, example *ec)
  {
+
   label_data* ld = (label_data*)ec->ld;
   if (b.first_pass)
     b.importance_weight_sum += ld->weight;
@@ -763,23 +766,55 @@ void end_pass(void*d)
   vw* all = b->all;
   
   if (b->current_pass <= b->final_pass) 
-      {
-	int status = process_pass(*all, *b);
-	if (status != LEARN_OK && b->final_pass > b->current_pass) {
-	  b->final_pass = b->current_pass;
-	}
-	if (b->output_regularizer && b->current_pass== b->final_pass) {
-	  zero_preconditioner(*all);
-	  b->preconditioner_pass = true;
-	}
-	if(!all->holdout_set_off)
-	  {
-	    if(summarize_holdout_set(*all, b->no_win_counter))
-	      finalize_regressor(*all, all->final_regressor_name); 
-	    if(b->early_stop_thres == b->no_win_counter)
-	      all-> early_terminate = true;
-	  }         
-      }
+  {
+       if(b->current_pass < b->final_pass)
+       { 
+          int status = process_pass(*all, *b);
+
+          //reaching the max number of passes regardless of convergence 
+          if(b->final_pass == b->current_pass)
+          {
+             cerr<<"Maximum number of passes reached. ";
+             if(!b->output_regularizer)
+                cerr<<"If you want to optimize further, increase the number of passes\n";
+             if(b->output_regularizer)
+             { 
+               cerr<<"\nRegular model file has been created. "; 
+               cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
+               b->output_regularizer = false;
+             }
+
+          } 
+          
+          //attain convergence before reaching max iterations 
+	   if (status != LEARN_OK && b->final_pass > b->current_pass) {
+	      b->final_pass = b->current_pass;
+	   }
+
+	   if (b->output_regularizer && b->final_pass == b->current_pass) {
+	     zero_preconditioner(*all);
+	     b->preconditioner_pass = true;
+	   }
+
+	   if(!all->holdout_set_off)
+	   {
+	     if(summarize_holdout_set(*all, b->no_win_counter))
+               finalize_regressor(*all, all->final_regressor_name); 
+	     if(b->early_stop_thres == b->no_win_counter)
+	     { 
+               all-> early_terminate = true;
+               cerr<<"Early termination reached w.r.t. holdout set error";
+             }
+
+	   } 
+           
+       }else{//reaching convergence in the previous pass
+        if(b->output_regularizer) 
+           preconditioner_to_regularizer(*all, *b, (*all).l2_lambda);
+        b->current_pass ++;
+      }   
+                
+  }
 }
 
 void learn(void* d, learner& base, example* ec)
@@ -815,6 +850,7 @@ void finish(void* d)
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
 {
+
   char buff[512];
   int c = 0;
   uint32_t stride = all.reg.stride;
@@ -863,6 +899,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
 void save_load(void* d, io_buf& model_file, bool read, bool text)
 {
+
   bfgs* b = (bfgs*)d;
   vw* all = b->all;
 
@@ -909,7 +946,9 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
       reset_state(*all, *b, false);
     }
 
-  bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
+  //bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
+  bool reg_vector = (b->output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
+    
   if (model_file.files.size() > 0)
     {
       char buff[512];

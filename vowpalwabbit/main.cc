@@ -85,7 +85,14 @@ int main(int argc, char *argv[])
       }
       cerr << endl << "weighted example sum = " << all->sd->weighted_examples;
       cerr << endl << "weighted label sum = " << all->sd->weighted_labels;
-      cerr << endl << "average loss = " << all->sd->sum_loss / all->sd->weighted_examples;
+      if(all->holdout_set_off)
+      {
+        cerr << endl << "average loss = " << all->sd->sum_loss / all->sd->weighted_examples;
+      }  
+      else
+      {
+        cerr << endl << "average loss = " << all->sd->holdout_best_loss << " h";
+      }
       cerr << endl << "best constant = " << best_constant;
       if (all->sd->min_label == 0. && all->sd->max_label == 1. && best_constant < 1. && best_constant > 0.)
 	cerr << endl << "best constant's loss = " << constant_loss;

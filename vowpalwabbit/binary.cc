@@ -10,6 +10,12 @@ namespace BINARY {
     if ( ec->final_prediction > 0)
       prediction = 1;
     ec->final_prediction = prediction;
+
+    label_data* ld = (label_data*)ec->ld;
+    if (ld->label == ec->final_prediction)
+      ec->loss = 0.;
+    else
+      ec->loss = 1.;
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -25,7 +31,6 @@ namespace BINARY {
 
     learner* l = new learner(NULL, learn, all.l);
 
-    l->set_finish_example(OAA::finish_example);
     return l;
   }
 }
