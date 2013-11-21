@@ -1019,8 +1019,11 @@ void *main_parse_loop(void *in)
 	  {
             example* ae = get_unused_example(*all);
 	    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
-		   && parse_atomic_example(*all, ae) )  
-	     setup_example(*all, ae);
+		   && parse_atomic_example(*all, ae) )
+	     {
+	       setup_example(*all, ae);
+	       example_number++;
+	     }
 	    else
 	     {
 	       reset_source(*all, all->num_bits);
@@ -1040,7 +1043,6 @@ void *main_parse_loop(void *in)
 			 }
 	       example_number = 0;
 	     }
-	   example_number++;
 	   mutex_lock(&all->p->examples_lock);
 	   all->p->parsed_examples++;
 	   condition_variable_signal_all(&all->p->example_available);
