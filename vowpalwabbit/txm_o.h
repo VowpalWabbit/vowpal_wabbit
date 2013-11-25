@@ -11,15 +11,12 @@ license as described in the file LICENSE.
 
 #define TXM_O_PRED_LIM					1
 #define TXM_O_PRED_ALFA   				1
-#define TXM_O_LEAF_TH					0.95
 #define TXM_O_LEVEL_LIM					4
 #define TXM_O_LEAF_TOL					4
 #define TXM_O_MULTIPLICATIVE_FACTOR		10
 
 #define TXM_O_TRK_COMP					<
 
-//#define TXM_O_DEBUG_FILE1
-//#define TXM_O_DEBUG_FILE2
 //#define TXM_O_DEBUG
 //#define TXM_O_DEBUG_PRED
 

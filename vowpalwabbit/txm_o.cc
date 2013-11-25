@@ -19,7 +19,7 @@ using namespace std;
 
 namespace TXM_O 
 {
-	class txm_o_node_pred_type								//w kazdym nodzie mam jedna tablice elementow tego typu, kazdej wejscie w tej tablicy odpowiada laelowi ktory wpadl do tego noda podczas trenowania lub predykcji (odpalanie funkcji predict_node)
+	class txm_o_node_pred_type								//w kazdym nodzie mam jedna tablice elementow tego typu, kazde wejscie w tej tablicy odpowiada labelowi ktory wpadl do tego noda podczas trenowania lub predykcji (odpalanie funkcji predict_node)
 	{
 		public:
 		
@@ -83,11 +83,10 @@ namespace TXM_O
 		size_t id_parent;                                  //root = 0
 		size_t level;                                      //root = 0
 		bool leaf;                                         //flaga - mamy lisc - ustawiane na podstawie prediction statistics
-		bool removed;                                      //node zostal usuniety, detekuje ze cos jest leafem jak juz mam stworzone jego dzieci i po prostu nie rozwijam tych dzieci dalej a ich samych nie biore pod uwage
 		size_t max_cnt2;                                   //maxymalna wartosc countera 2 w nodzie
 		size_t max_cnt2_label;                             //label z maxymalnym counterem w nodzie
 		size_t total_cnt2;                                 //laczna ilosc punktow nodzie prxzypisanych przez predyktor do noda
-		size_t reg_num;
+		size_t reg_num;									   //regressor number when oaa starts for the node (I have implementations when one regressor is in a leaf or many, for non-leaf it is empty)	
 		
 		v_array<txm_o_node_pred_type> node_pred;	
 
@@ -102,23 +101,15 @@ namespace TXM_O
 		learner base;
 		vw* all;
 		
-		v_array<size_t> ex_node;		//pozostalosc po starym kodzie - nie korzystam teraz
 		v_array<txm_o_node_type> nodes;	//the nodes - czyli nasze drzewo
 		
 		size_t cn;						//current node
-		size_t cl;						//current level
+		size_t cl;						//current level: level of the cn
 		size_t ex_num;					//index of current example
 		size_t ex_total;
-		size_t reg_num_max;
+		size_t reg_num_max;				//index ostatniego regresora (w drzewie + oaa) + 1
 		
-		size_t current_pass;			//index of current pass through the data	
 		size_t level_limit;             //maxymlane glebokosc drzewa (liscie maja byc na tym levelu, czyli 1 odpowiada rootowi i dwom lisciom)
-		
-		bool only_leafs;                //only leafs jest wystaione na true gdy mam same liscie (czyste liscie lub drzewo maxymalnej glebokosci i wtedy wszystkie nody na tej glebokosci sa liscmi)
-		bool tree_finished;             //zakonczenie drzewa
-		
-		uint32_t total_wrg;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
-		uint32_t total_cor;             //w predictie liczone, sluzone do liczenia tego samego bledu ktory liczy VW
 	};	
 
 	txm_o_node_type init_node(size_t id, size_t id_parent, size_t level)        //inicjalizowanie nowego noda drzewa, odpalane przy tworzeniu nowego noda
@@ -133,7 +124,6 @@ namespace TXM_O
 		node.n = 0;
 		node.level = level;
 		node.leaf = false;
-		node.removed = false;
 		node.max_cnt2 = 0;
 		node.max_cnt2_label = 0;
 		node.total_cnt2 = 0;
@@ -147,23 +137,8 @@ namespace TXM_O
 		d->cn = 0;
 		d->ex_num = 0;
 		d->nodes.push_back(init_node(0, 0, 0));
-		d->reg_num_max = (2 << TXM_O_LEVEL_LIM) - 1;
-		d->tree_finished = false;
-		d->only_leafs = false;	
+		d->reg_num_max = (2 << TXM_O_LEVEL_LIM) - 1;	  //ilosc regresorow w samym drzewie (jak bede dodawac oaa bede to zwiekszac)
 	}	
-	
-	void clear_cnt2(txm_o* b)
-	{
-		uint32_t i, j;
-	
-		for(i = 0; i < b->nodes.size(); i++)
-		{
-			for(j = 0; j < b->nodes[i].node_pred.size(); j++)
-			{
-				b->nodes[i].node_pred[j].label_cnt2 = 0;
-			}
-		}
-	}
 	
 	void predict(txm_o* d, learner& base, example* ec)
 	{
@@ -184,7 +159,7 @@ namespace TXM_O
 		int level = 0;
 		#endif
 			
-		d->cn = 0;		
+		d->cn = 0;		//ustawiamy root
 		
 		#ifdef TXM_O_DEBUG_PRED
 		cout << "\nExample: " << d->ex_num << endl;
@@ -194,7 +169,7 @@ namespace TXM_O
 		{
 			while(!d->nodes[d->cn].leaf)
 			{
-				simple_temp.initial = 0.0;
+				simple_temp.initial = 0.0;				//zywcem skopiowane z ich kodow
 				simple_temp.weight = mc->weight;
 				simple_temp.label = FLT_MAX;
 				ec->ld = &simple_temp.label;
@@ -205,7 +180,7 @@ namespace TXM_O
 				cout << "node: " << d->cn << endl;
 				#endif
 				
-				node_list.push_back(d->cn);
+				node_list.push_back(d->cn);				
 				node_list_pred.push_back(fabs(ec->final_prediction));
 	
 				if(ec->final_prediction < 0)
@@ -223,13 +198,14 @@ namespace TXM_O
 				if(new_cn == 0)		//blad - dziecko ma id 0, nigdy w to nie wchodze
 					break;				
 			}
-			
+			//jezeli ta petla sie skonczyla to znaczy ze jestesmy w lisciu
+			//do ponizszych list dodaje wszystkie leafy do ktorych doszlismy (label leafa i index)
 			label_list.push_back(d->nodes[d->cn].max_cnt2_label);
 			leaf_list.push_back(d->cn);
 			
 			min_pred = node_list_pred[0];
 			min_pred_index = 0;
-			
+			//wybieram node z najmniejsza predykcja (przy pierwszym przejsciu petli for(j...) wyberam z nodow pryncypalnej sciezki)
 			for(k = 1; k < node_list.size(); k++)
 			{
 				if(node_list_pred[k] TXM_O_TRK_COMP min_pred)
@@ -239,7 +215,9 @@ namespace TXM_O
 				}
 			}
 			
+			//ustawiam d->cn na node z najmniejsza predykcja
 			d->cn = node_list[min_pred_index];
+			//usuwam d->cn z list node_list i node_list_pred
 			node_list[min_pred_index] = node_list.pop();
 			node_list_pred[min_pred_index] = node_list_pred.pop();
 			
@@ -273,6 +251,7 @@ namespace TXM_O
 		cout << "Nb of labels in leaf: " << d->nodes[d->cn].node_pred.size() << endl;
 		#endif
 		
+		//jeden regresor w leafie, wybieram leaf dla ktorego byla maksymalna predykcja
 		max_oaa_index = 0;
 		max_oaa = -1.f;
 		
@@ -297,7 +276,7 @@ namespace TXM_O
 		
 		d->cn = leaf_list[max_oaa_index];
 			
-		ec->final_prediction = label_list[max_oaa_index];
+		ec->final_prediction = label_list[max_oaa_index];		//do ewaluacji bledu przez vw
 		
 		/*cout<<endl;
 		for(j = 0; j < label_list.size(); j++)
@@ -323,7 +302,7 @@ namespace TXM_O
 		d->ex_num++;					//pozostalosc po starym kodzie
 	}
 
-	void predict_node_list(txm_o* d, learner& base, example* ec, size_t* out_node_list, size_t &out_node_list_index)
+	void predict_node_list(txm_o* d, learner& base, example* ec, size_t* out_node_list, size_t &out_node_list_index)   //dziala tak samo jak predict tylko nie odpala oaa, uzywana w learnie, zwraca liste lisci ktore beda trenowane w oaa
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		label_data simple_temp;	
@@ -428,7 +407,7 @@ namespace TXM_O
 		ec->ld = mc;	
 	}	
 	
-	uint32_t predict_node(txm_o* d, learner& base, example* ec, size_t level_limit)		//to samo co predict tylko nie to samo do konca, minimalny argument z jakim to jest odpalane to jest 1 (czyli masz root i dwa liscie)
+	uint32_t predict_node(txm_o* d, learner& base, example* ec, size_t level_limit)		//dla przykladu wybiera index noda na zadanym poziomie dla danego przykladu do ktorego doszedl
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		size_t level = 0;	
@@ -513,6 +492,7 @@ namespace TXM_O
 		
 		while(b->cl <= TXM_O_LEVEL_LIM)
 		{
+			//ta czesc wybiera b->cn na poziomie b->cl ktory bedziemy trenowac
 			if(b->cl == 0)			
 			{			
 				b->cn = 0;
@@ -531,25 +511,17 @@ namespace TXM_O
 					b->nodes[b->cn].node_pred[index].label_cnt2++;	
 				}
 			}
-			else								//not the first pass through the data, jezeli b->current_pass == 1 to tworze drugi level drzewa, czyli trenuje regresory pierwszego levela
+			else								
 			{
 				b->cn = predict_node(b, base, ec, b->cl);		//current node, ktory ja zamierzam trenowac
 				
-				if(b->cn == 0)   //blad, wychodze z learn i dalej bede analizowac kolejny przyklad kolejny przyklad
+				if(b->cn == 0)   //zabezpieczenie, nigdy w to nie wchodzimy, blad, wychodze z learn i dalej bede analizowac kolejny przyklad kolejny przyklad
 				{
 					b->ex_num++;
 					return;
 				}
 				
-				if(b->nodes[b->cn].node_pred.contain_sorted(txm_o_node_pred_type(oryginal_label), &index))		//jezeli label jest w tablicy node_pred'ow 
-				{
-					if(b->nodes[b->cn].node_pred[index].label_cnt2 > b->nodes[b->cn].max_cnt2)					
-					{
-						b->nodes[b->cn].max_cnt2 = b->nodes[b->cn].node_pred[index].label_cnt2;
-						b->nodes[b->cn].max_cnt2_label = b->nodes[b->cn].node_pred[index].label;
-					}
-				}
-				else
+				if(!b->nodes[b->cn].node_pred.contain_sorted(txm_o_node_pred_type(oryginal_label), &index))		//jezeli label nie jest w tablicy node_pred'ow 
 				{
 					index = b->nodes[b->cn].node_pred.push_back_sorted(txm_o_node_pred_type(oryginal_label));
 				}
@@ -563,18 +535,19 @@ namespace TXM_O
 					b->nodes[b->cn].max_cnt2_label = b->nodes[b->cn].node_pred[index].label;
 				}
 				
-				if(b->cl >= TXM_O_LEVEL_LIM)
-				{				
+				if(b->cl >= TXM_O_LEVEL_LIM)	//leaf level
+				{					
+					b->nodes[b->cn].leaf = true;										
 					id_current = b->cn;
 					predict_node_list(b, base, ec, node_list, node_list_index);					
 					ec->test_only = false;
 						
 					//train for OAA					
-					for(j = 0; j < node_list_index; j++)	
+					for(j = 0; j < node_list_index; j++)	//node list ma indeksy wszystkich lisci od pryncypalnej sciezki i alternatywnych sciezek
 					{
 						b->cn = node_list[j];
 						
-						if(b->nodes[b->cn].reg_num == 0)
+						if(b->nodes[b->cn].reg_num == 0)		//lisc nie ma jeszcze przypisanego regresora oaa
 						{
 							b->nodes[b->cn].reg_num = b->reg_num_max;							
 							b->reg_num_max++;
@@ -585,7 +558,7 @@ namespace TXM_O
 						else
 							simple_temp.label = -1.f;
 						
-						b->cn = b->nodes[b->cn].reg_num;
+						b->cn = b->nodes[b->cn].reg_num;	//biore numer regresora dla liscia i potem go trenuje
 						
 						ec->ld = &simple_temp;				
 						ec->partial_prediction = 0;
@@ -596,12 +569,12 @@ namespace TXM_O
 					}				
 					
 					b->cn = id_current;
-					ec->final_prediction = b->nodes[b->cn].max_cnt2_label;
-					b->nodes[b->cn].leaf = true;										
+					ec->final_prediction = b->nodes[b->cn].max_cnt2_label;		//nie uwzgledniam oaa
 					break;
 				}
 			}
 			
+			//trenujemy wczesniej wybrany node
 			#ifdef TXM_O_DEBUG
 			cout << "Current node: " << b->cn << endl;
 			cout << "Example number: " << b->ex_num << endl;
@@ -942,15 +915,10 @@ namespace TXM_O
 		
 		txm_o* b = (txm_o*)data;
 		
-		b->current_pass = 0;
 		b->level_limit = TXM_O_LEVEL_LIM;
 		
 		if(all.training)
 			init_tree(b);		
-		else	
-		{			
-			b->tree_finished = false;	
-		}		
 		
 		return l;
 	}	
