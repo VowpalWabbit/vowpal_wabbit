@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -269,6 +269,7 @@
     <ClInclude Include="simple_label.h" />
     <ClInclude Include="sparse_dense.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
     <ClInclude Include="vw.h" />
     <ClInclude Include="v_array.h" />
@@ -311,6 +312,7 @@
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
     <ClCompile Include="sparse_dense.cc" />
+    <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="wap.cc" />
   </ItemGroup>
