@@ -693,12 +693,25 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("sendto"))
     all->l = SENDER::setup(*all, vm, all->pairs);
 
-  // load rest of regressor
-  all->l->save_load(io_temp, true, false);
-  io_temp.close_file();
+  // Need to see if we have to load feature mask first or second.
+  // -i and -mask are from same file, load -i file first so mask can use it
+  if (vm.count("feature_mask") && vm.count("initial_regressor")
+      && vm["feature_mask"].as<string>() == vm["initial_regressor"].as< vector<string> >()[0]) {
+    // load rest of regressor
+    all->l->save_load(io_temp, true, false);
+    io_temp.close_file();
 
-  //load the mask model, might be different from -i
-  parse_mask_regressor_args(*all, vm);
+    // set the mask, which will reuse -i file we just loaded
+    parse_mask_regressor_args(*all, vm);
+  }
+  else {
+    // load mask first
+    parse_mask_regressor_args(*all, vm);
+
+    // load rest of regressor
+    all->l->save_load(io_temp, true, false);
+    io_temp.close_file();
+  }
 
   if (all->l1_lambda < 0.) {
     cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;
