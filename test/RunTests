@@ -739,16 +739,16 @@ __DATA__
 {VW} -d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model -f models/remask.model
     train-sets/ref/remask.stderr
 
-# Test 31: train model using --feature_mask and --initial_regressor
+# Test 32: train model using --feature_mask and --initial_regressor
 {VW} -d train-sets/0001.dat --feature_mask models/mask.model -i models/remask.model
     train-sets/ref/remask.final.stderr
 
-# Test 32: train model for topk recommender
+# Test 33: train model for topk recommender
 {VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off 
     train-sets/ref/topk-train.stdout
     train-sets/ref/topk-train.stderr
 
-# Test 33: train model for topk recommender
+# Test 34: train model for topk recommender
 {VW} -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
     train-sets/ref/topk-rec.stdout
     train-sets/ref/topk-rec.stderr
