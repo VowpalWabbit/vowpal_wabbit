@@ -71,166 +71,69 @@ template<class T> class v_array{
     *(end++) = new_ele;
   }
   
+	size_t find_sorted(const T& ele)  //index of the smallest element >= ele, return true if element is in the array
+	{
+		size_t size = end - begin;
+		size_t a = 0;			
+		size_t b = size;	
+		size_t i = (a + b) / 2;
+
+		while(b - a > 1)
+		{
+			if(begin[i] < ele)	//if a = 0, size = 1, if in while we have b - a >= 1 the loop is infinite
+				a = i;
+			else if(begin[i] > ele)
+				b = i;
+			else
+				return i;
+	
+			i = (a + b) / 2;		
+		}
+
+		if((size == 0) || (begin[a] > ele) || (begin[a] == ele))		//pusta tablica, nie wchodzi w while
+			return a;
+		else	//size = 1, ele = 1, begin[0] = 0	
+			return b;
+	}
+	
 	size_t push_back_sorted(const T &new_ele)//ANNA
 	{
 		size_t index = 0;
 		size_t size = end - begin;
 		size_t to_move;
-		T tmp1, tmp2;
 		
-		if(end == end_array)
-			resize(2 * (end_array-begin) + 3);
+		if(!contain_sorted(new_ele, index))
+		{
+			if(end == end_array)
+				resize(2 * (end_array-begin) + 3);
 			
-		contain_sorted(new_ele, &index);
-		
-		to_move = size - index;
-		
-		if(to_move > 0)
-			memmove(begin + index + 1, begin + index, to_move * sizeof(T));
-		
-		begin[index] = new_ele;
-		
-		end++;
+			to_move = size - index;
+			
+			if(to_move > 0)
+				memmove(begin + index + 1, begin + index, to_move * sizeof(T));   //kopiuje to_move*.. bytow z begin+index do begin+index+1
+			
+			begin[index] = new_ele;
+			
+			end++;
+		}
 		
 		return index;
 	}	
 	
-	T remove_sorted(size_t index)//ANNA
+	bool contain_sorted(const T &ele, size_t& index) 
 	{
-		T tmp;
-		size_t size = end - begin;	
-		int32_t to_move;
-		
-		to_move = size;
-		to_move -= index;
-		to_move -= 1;
-		
-		if(to_move > 0)
-			memmove(begin + index, begin + index + 1, to_move * sizeof(T));
-		
-		end--;
-		return tmp;
-	}
+		index = find_sorted(ele);
+
+		if(index == this->size())
+			return false;
 	
-	bool contain_sorted(const T &ele)//ANNA
-	{
-		size_t size = end - begin;
-		size_t a = 0;
-		size_t b = size - 1;
-		size_t i = (a + b) / 2;
+		if(begin[index] == ele) 
+			return true;		
 		
-		if(size < 1)
-			return false;
-		
-		while(a <= b)
-		{
-			if(begin[i] == ele)
-				return true;
-			else if(begin[i] < ele)	
-				a = i + 1;
-			else
-			{
-				if(i == 0)
-					return false;
-					
-				b = i - 1;
-			}
-			
-			i = (a + b) / 2;		
-		}
-		
-		return false;
+		return false;	
 	}
-	
-	bool contain_sorted(const T &ele, size_t *index)//ANNA
-	{
-		size_t size = end - begin;
-		size_t a = 0;
-		size_t b = size - 1;
-		size_t i = (a + b) / 2;
-		
-		if(size < 1)
-		{
-			*index = 0;
-			return false;
-		}
-		
-		while(a <= b)
-		{
-			if(begin[i] == ele)
-			{	
-				*index = i;
-				return true;
-			}
-			else if(begin[i] < ele)	
-				a = i + 1;
-			else
-			{
-				if(i == 0)
-					break;
-					
-				b = i - 1;
-			}
-			
-			i = (a + b) / 2;		
-		}
-		
-		if(begin[i] > ele && i > 0)
-			i -= 1;
-		
-		if(begin[i] > ele)
-			*index = i;
-		else if(i < size)
-			*index = i + 1;
-		
-		return false;
-	}
-	
-	T* contain_sorted_wrp(const T &ele)//ANNA
-	{
-		size_t index;
-		
-		contain_sorted(ele, &index);
-		
-		return &begin[index];
-	}
-  
-	bool contain(const T &ele)//ANNA
-	{
-		size_t i = 0;
-		size_t size = end - begin;		
-		
-		if(size < 1)
-			return false;
-		
-		for(i = 0; i < size; i++)
-		{
-			if(begin[i] == ele)
-				return true;
-		}
-		
-		return false;
-	}
-  
-	bool contain(const T &ele, size_t *index)//ANNA
-	{
-		size_t i = 0;
-		size_t size = end - begin;
-		
-		if(size < 1)
-			return false;
-		
-		for(i = 0; i < size; i++)
-		{
-			if(begin[i] == ele)
-			{
-				*index = i;
-				return true;
-			}
-		}
-		
-		return false;
-	}
+	 
+
 };
 
 
