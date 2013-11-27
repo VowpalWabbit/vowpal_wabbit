@@ -145,7 +145,10 @@ inline float parseFloat(char * p, char **end)
   char* start = p;
   
   if (!*p)
-    return 0;
+    {
+      *end = p;
+      return 0;
+    }
   int s = 1;
   while (*p == ' ') p++;
   
