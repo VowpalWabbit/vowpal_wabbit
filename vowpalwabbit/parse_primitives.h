@@ -163,7 +163,7 @@ inline float parseFloat(char * p, char **end)
   int num_dec = 0;
   if (*p == '.') {
     while (*(++p) >= '0' && *p <= '9') {
-      if (num_dec < 10)
+      if (num_dec < 35)
 	{
 	  acc = acc *10 + (*p - '0');
 	  num_dec++;
