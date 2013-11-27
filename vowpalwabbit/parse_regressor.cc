@@ -26,6 +26,11 @@ using namespace std;
 
 void initialize_regressor(vw& all)
 {
+  // Regressor is already initialized.
+  if (all.reg.weight_vector != NULL) {
+    return;
+  }
+
   size_t length = ((size_t)1) << all.num_bits;
   all.reg.weight_mask = (all.reg.stride * length) - 1;
   all.reg.weight_vector = (weight *)calloc(all.reg.stride*length, sizeof(weight));
@@ -346,6 +351,11 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
       io_temp.open_file(init_filename[0].c_str(), false, io_buf::READ);
       save_load_header(all, io_temp, true, false);
       io_temp.close_file();
+
+      // Re-zero the weights, in case weights of initial regressor use different indices
+      for (size_t j = 0; j < length; j++){
+        all.reg.weight_vector[j*all.reg.stride] = 0.;
+      }
     } else {
       // If no initial regressor, just clear out the options loaded from the header.
       all.options_from_file.assign("");
