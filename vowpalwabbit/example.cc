@@ -125,7 +125,7 @@ void dealloc_example(void(*delete_label)(void*), example&ec)
 
 audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
-  dst.space = (char*)calloc(strlen(dst.space)+1, sizeof(char));
+  dst.space = (char*)calloc(strlen(src.space)+1, sizeof(char));
   strcpy(dst.space, src.space);
   dst.feature = (char*)calloc(strlen(dst.feature)+1, sizeof(char));
   strcpy(dst.feature, src.feature);
