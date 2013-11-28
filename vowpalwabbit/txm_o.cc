@@ -76,9 +76,6 @@ namespace TXM_O
 		v_array<txm_o_node_type> nodes;						//the nodes - our tree
 		v_array<size_t> out_node_list;						//the table of the indexes of leafs of principal path and alternative paths
 		
-		size_t cn;											//current node
-		size_t reg_num_max;									//index of the last regressor used 
-		
 		size_t max_depth; 	            					//maximal tree depth
 	};	
 
@@ -100,169 +97,136 @@ namespace TXM_O
 	
 	void init_tree(txm_o* d)                               	//inicjalizacja drzewa
 	{
-		d->cn = 0;
 		d->nodes.push_back(init_node(0, 0));
-		d->reg_num_max = (2 << d->max_depth) - 1;	  	//number of regressors in the tree itself (not counting oaa regressors in the leafs yet)
 	}	
 	
-	uint32_t predict(txm_o* d, learner& base, example* ec, size_t mode, size_t level_limit)
+	void leafs_to_train(txm_o* d, learner& base, example* ec)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		label_data simple_temp;	
+		bool empty_track = false;
 	
-		v_array<uint32_t> node_list;
+		v_array<uint32_t> altdir_list;
 		v_array<float> node_list_pred;
 		
-		d->out_node_list.erase();	
+		d->out_node_list.erase();		
 		
-		v_array<uint32_t> label_list;
-		v_array<uint32_t> leaf_list;
-		
-		size_t level = 0;
-		size_t new_cn;
 		uint32_t j, k;
 		size_t cn = 0;		//ustawiamy root
-		if(mode == 2)
+		
+		ec->test_only = true;
+		
+		for(j = 0; j <= d->max_depth; j++)				//loop over primal and alternative paths
 		{
-			while(!d->nodes[cn].leaf && level < level_limit)
-			{			
-				ec->test_only = true;					
-				label_data simple_temp;
-				simple_temp.initial = 0.0;
+			while(!d->nodes[cn].leaf && !empty_track)
+			{				
+				simple_temp.initial = 0.0;				
 				simple_temp.weight = mc->weight;
 				simple_temp.label = FLT_MAX;
 				ec->ld = &simple_temp.label;
-				base.learn(ec, cn);
+				base.learn(ec, cn);	
 				
-				if(ec->final_prediction < 0)
-					cn = d->nodes[cn].id_left;
-				else
-					cn = d->nodes[cn].id_right;
-				
-				level++;
-				
-				if(cn == 0)								//zabezpieczenie, nigdy nie jest wywolywane
-				{
-					break;
-				}
-			}		
-			
-			ec->ld = mc;
-			
-			ec->test_only = false;
+				node_list_pred.push_back(fabs(ec->final_prediction));
 	
-			return cn;
+				if(ec->final_prediction < 0)
+				{					
+					altdir_list.push_back(d->nodes[cn].id_right);
+					cn = d->nodes[cn].id_left;
+				}
+				else
+				{					
+					altdir_list.push_back(d->nodes[cn].id_left);
+					cn = d->nodes[cn].id_right;
+				}
+				
+				if(cn == 0)								
+					break;		
+			}
+			
+			if(d->nodes[cn].leaf)
+				d->out_node_list.push_back(cn);			
+			
+			float min_pred = node_list_pred[0];					//choosing the node with smallest prediction confidence (in the first run of loop for(j...) we choose only from principal path nodes)
+			uint32_t min_pred_index = 0;
+			for(k = 1; k < node_list_pred.size(); k++)
+			{
+				if(node_list_pred[k] < min_pred)
+				{
+					min_pred = node_list_pred[k];
+					min_pred_index = k;
+				}
+			}
+			
+			cn = altdir_list[min_pred_index];
+			
+			node_list_pred[min_pred_index] = node_list_pred.pop();
+			altdir_list[min_pred_index] = altdir_list.pop();			
+			
+			if(cn == 0)
+				empty_track = true;	
+			else
+				empty_track = false;
+		}		
+		
+		ec->ld = mc;		
+		ec->test_only = false;	
+	}
+	
+	void train_node(void* d, learner& base, example* ec, size_t& cn, size_t& index)
+	{
+		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
+		txm_o* b = (txm_o*)d;
+		
+		label_data simple_temp;	
+        simple_temp.initial = 0.0;
+		simple_temp.weight = mc->weight;
+		
+		//do the initial prediction to decide if going left or right	
+		simple_temp.label = FLT_MAX;
+		ec->ld = &simple_temp;
+		ec->test_only = true;
+		base.learn(ec, cn);	
+		ec->test_only = false;
+		
+		b->nodes[cn].Eh += ec->final_prediction;
+		b->nodes[cn].n++;
+		
+		float norm_Eh = b->nodes[cn].Eh / b->nodes[cn].n;
+		
+		b->nodes[cn].node_pred[index].Ehk += ec->final_prediction;
+		b->nodes[cn].node_pred[index].nk++;
+		
+		float norm_Ehk = b->nodes[cn].node_pred[index].Ehk / b->nodes[cn].node_pred[index].nk;
+		
+		float left_or_right = norm_Ehk - norm_Eh;
+		
+		size_t id_left = b->nodes[cn].id_left;
+		size_t id_right = b->nodes[cn].id_right;		
+	
+		size_t id_left_right;
+		
+		if(left_or_right < 0)
+		{
+			simple_temp.label = -1.f;
+			id_left_right = id_left;
 		}
 		else
 		{
-			for(j = 0; j <= d->max_depth; j++)				//loop over primal and alternative paths
-			{
-				while(!d->nodes[cn].leaf)
-				{
-					if(mode == 1)
-						ec->test_only = true;
-					
-					simple_temp.initial = 0.0;				
-					simple_temp.weight = mc->weight;
-					simple_temp.label = FLT_MAX;
-					ec->ld = &simple_temp.label;
-					base.learn(ec, cn);	
-					
-					node_list.push_back(cn);				
-					node_list_pred.push_back(fabs(ec->final_prediction));
-		
-					if(ec->final_prediction < 0)
-						new_cn = d->nodes[cn].id_left;
-					else
-						new_cn = d->nodes[cn].id_right;
-				
-					if(new_cn != 0)			
-						cn = new_cn;
-
-					if(new_cn == 0)								//safety check - should never enter it in practice
-						break;				
-				}
-				
-				if(mode == 1)
-				{
-					if(d->nodes[cn].leaf)
-						d->out_node_list.push_back(cn);
-				}
-				else
-				{
-					label_list.push_back(d->nodes[cn].max_cnt2_label);	//we are in leaf here, we add to the lists all leafs we hit and their indexes
-					leaf_list.push_back(cn);
-				}
-				
-				float min_pred = node_list_pred[0];					//choosing the node with smallest prediction confidence (in the first run of loop for(j...) we choose only from principal path nodes)
-				uint32_t min_pred_index = 0;
-				for(k = 1; k < node_list.size(); k++)
-				{
-					if(node_list_pred[k] < min_pred)
-					{
-						min_pred = node_list_pred[k];
-						min_pred_index = k;
-					}
-				}
-				
-				cn = node_list[min_pred_index];				//setting to the node with smallest prediction confidence
-				
-				node_list[min_pred_index] = node_list.pop();    //remove d->cn from lists: node_list and node_list_pred
-				node_list_pred[min_pred_index] = node_list_pred.pop();
-				
-				if(mode == 1)
-					ec->test_only = true;
-				
-				simple_temp.initial = 0.0;
-				simple_temp.weight = mc->weight;
-				simple_temp.label = FLT_MAX;
-				ec->ld = &simple_temp.label;
-				base.learn(ec, cn);			
-
-				if(ec->final_prediction > 0)
-					new_cn = d->nodes[cn].id_left;
-				else
-					new_cn = d->nodes[cn].id_right;
-			
-				if(new_cn != 0)			
-					cn = new_cn;
-
-				if(new_cn == 0)									//safety check - should never enter it in practice
-					break;
-			}	
-			
-			if(mode == 0)
-			{
-				uint32_t max_oaa_index = 0;									//choosing the leaf with the largest prediction confidence
-				float max_oaa = -1.f;
-				
-				for(j = 0; j < leaf_list.size(); j++)
-				{
-					cn = leaf_list[j];
-					
-					simple_temp.initial = 0.0;
-					simple_temp.weight = mc->weight;
-					simple_temp.label = FLT_MAX;
-					ec->ld = &simple_temp.label;
-					base.learn(ec, cn);
-					
-					if(ec->final_prediction > max_oaa)
-					{
-						max_oaa = ec->final_prediction;
-						max_oaa_index = j;
-					}
-				}
-				
-				cn = leaf_list[max_oaa_index];
-				
-				ec->final_prediction = label_list[max_oaa_index];		//used by vw to evaluate the error (average loss)
-			}
-			ec->ld = mc;
-		
-			ec->test_only = false;
-	
-			return mode;
+			simple_temp.label = 1.f;
+			id_left_right = id_right;
 		}
+		
+		if(id_left_right == 0)												//child does not exist
+		{
+			id_left_right = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
+			b->nodes.push_back(init_node(id_left_right, b->nodes[cn].level + 1));	//add new node to the tree
+			if(left_or_right < 0)
+				b->nodes[cn].id_left = id_left_right;											//new node is the left child of the current node	
+			else
+				b->nodes[cn].id_right = id_left_right;										//new node is the right child of the current node
+		}	
+		
+		base.learn(ec, cn);
 	}
 
 	void learn(void* d, learner& base, example* ec)//(void* d, example* ec) 
@@ -278,37 +242,38 @@ namespace TXM_O
 		
 		vw* all = b->all;	
 		
-		if(!all->training || mc->label ==  (uint32_t)-1)
-		{
-			predict(b, base, ec, 0, 0);
-			return;
-		}
-		
 		uint32_t oryginal_label = mc->label;				
 
 		size_t current_level = 0;							
 		
 		size_t tmp_final_prediction;
 		size_t cn = 0;
-		while(current_level <= b->max_depth)
+		while(1)
 		{
-			index = b->nodes[cn].node_pred.push_back_sorted(txm_o_node_pred_type(oryginal_label));	//add the label to the list of labels in the root
-				
-			b->nodes[cn].node_pred[index].label_cnt2++;
-				
-			if(b->nodes[cn].node_pred[index].label_cnt2 > b->nodes[cn].max_cnt2)			
+			if(all->training && mc->label !=  (uint32_t)-1)
 			{
-				b->nodes[cn].max_cnt2 = b->nodes[cn].node_pred[index].label_cnt2;
-				b->nodes[cn].max_cnt2_label = b->nodes[cn].node_pred[index].label;
+				index = b->nodes[cn].node_pred.push_back_sorted(txm_o_node_pred_type(oryginal_label));	//add the label to the list of labels 
+					
+				b->nodes[cn].node_pred[index].label_cnt2++;
+					
+				if(b->nodes[cn].node_pred[index].label_cnt2 > b->nodes[cn].max_cnt2)			
+				{
+					b->nodes[cn].max_cnt2 = b->nodes[cn].node_pred[index].label_cnt2;
+					b->nodes[cn].max_cnt2_label = b->nodes[cn].node_pred[index].label;
+				}
 			}
 
-			if(current_level >= b->max_depth)	//leaf level
+			if(b->nodes[cn].leaf || current_level >= b->max_depth)	//leaf level
 			{					
 				b->nodes[cn].leaf = true;	
-				predict(b, base, ec, 1, 0);		
+				leafs_to_train(b, base, ec);		
 	
-				//train for OAA					
+				//train for OAA		
+				uint32_t max_oaa_index = 0;									
+				float max_oaa = -1.f;			
 				ec->ld = &simple_temp;			
+				string loss_function = "squared";			//IN PARSE_ARGS YOU HAVE "squaredloss", WHICH DOES NOT EXIST
+				all->loss = getLossFunction(all, loss_function, (float)0.0);
 				for(size_t j = 0; j < b->out_node_list.size(); j++)	//node list ma indeksy wszystkich lisci od pryncypalnej sciezki i alternatywnych sciezek
 				{
 					size_t id_current = b->out_node_list[j];
@@ -318,62 +283,36 @@ namespace TXM_O
 					else
 						simple_temp.label = -1.f;
 								
-					base.learn(ec, id_current);							//WHY COMMENTING THIS HAS ANY INFLUENCE ON VW??????????????????
-				}				
+					base.learn(ec, id_current);							//WHY COMMENTING THIS HAS ANY INFLUENCE ON VW??????????????????, ALSO OAA SHOULD USE DIFFERENT LOSS FUNCTION THAN INTERNAL NODES		
+					
+					if(ec->final_prediction > max_oaa)
+					{
+						max_oaa = ec->final_prediction;
+						max_oaa_index = j;
+					}
+				}			
+				loss_function = "quantile"; 
+				all->loss = getLossFunction(all, loss_function, (float)0.5);
+				cn = b->out_node_list[max_oaa_index];					//zakomentuj jezeli chcesz patrzec na blad samego drzewa					
 				tmp_final_prediction = b->nodes[cn].max_cnt2_label;		//nie uwzgledniam oaa
-				break;
+				break;													//if mx depth is reached, finish
 			}
-				
-			//do the initial prediction to decide if going left or right	
+			
+			if(all->training && mc->label !=  (uint32_t)-1)
+				train_node(d, base, ec, cn, index);			
+			
+			current_level++;
+			
 			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp;
 			ec->test_only = true;
 			base.learn(ec, cn);	
 			ec->test_only = false;
 			
-			b->nodes[cn].Eh += ec->final_prediction;
-			b->nodes[cn].n++;
-			
-			float norm_Eh = b->nodes[cn].Eh / b->nodes[cn].n;
-			
-			b->nodes[cn].node_pred[index].Ehk += ec->final_prediction;
-			b->nodes[cn].node_pred[index].nk++;
-			
-			float norm_Ehk = b->nodes[cn].node_pred[index].Ehk / b->nodes[cn].node_pred[index].nk;
-			
-			float left_or_right = norm_Ehk - norm_Eh;
-			
-			size_t id_left = b->nodes[cn].id_left;
-			size_t id_right = b->nodes[cn].id_right;		
-		
-			size_t id_left_right;
-			
-			if(left_or_right < 0)
-			{
-				simple_temp.label = -1.f;
-				id_left_right = id_left;
-			}
+			if(ec->final_prediction < 0)
+				cn = b->nodes[cn].id_left;
 			else
-			{
-				simple_temp.label = 1.f;
-				id_left_right = id_right;
-			}
-			
-			if(id_left_right == 0)												//child does not exist
-			{
-				id_left_right = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
-				b->nodes.push_back(init_node(id_left_right, b->nodes[cn].level + 1));	//add new node to the tree
-				if(left_or_right < 0)
-					b->nodes[cn].id_left = id_left_right;											//new node is the left child of the current node	
-				else
-					b->nodes[cn].id_right = id_left_right;										//new node is the right child of the current node
-			}	
-			
-			base.learn(ec, cn);			
-			
-			current_level++;
-			
-			cn = predict(b, base, ec, 2, current_level);		//current node, ktory ja zamierzam trenowac
+				cn = b->nodes[cn].id_right;
 		}				
 		ec->ld = mc;
 		ec->final_prediction = tmp_final_prediction;
@@ -383,168 +322,66 @@ namespace TXM_O
 	{    
 		txm_o* o=(txm_o*)data;
 		free(o);
-	}	
+	}
 	
-	void txm_o_save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
-	{
-		uint32_t length = 1 << all.num_bits;
-		uint32_t stride = all.reg.stride;
-		int c = 0;
-		uint32_t i = 0;
-		size_t brw = 1;
-
-		if(all.print_invert){ //write readable model with feature names           
-			weight* v;
+	void save_load_tree(void* data, io_buf& model_file, bool read, bool text)
+	{ 
+		if (model_file.files.size() > 0)
+		{		
+			txm_o* g = (txm_o*)data;
+			vw* all = g->all;
+			txm_o* b = (txm_o*)all->l->get_save_load_data();
 			char buff[512];
-			int text_len; 
-			typedef std::map< std::string, size_t> str_int_map;  
-
-			for(str_int_map::iterator it = all.name_index_map.begin(); it != all.name_index_map.end(); ++it){              
-				v = &(all.reg.weight_vector[stride*(it->second)]);
-				if(*v != 0.){
-					text_len = sprintf(buff, "%s", (char*)it->first.c_str());
-					brw = bin_text_write_fixed(model_file, (char*)it->first.c_str(), sizeof(*it->first.c_str()), buff, text_len, true);
-					text_len = sprintf(buff, ":%f\n", *v);
-					brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v), buff, text_len, true);
-				}	
-			}			
-			
-			return;
-		} 
-
-		do 
-		{
-			brw = 1;
-			weight* v;
-			if (read)
-			{
-				c++;
-				brw = bin_read_fixed(model_file, (char*)&i, sizeof(i),"");
-				if (brw > 0)
-				{
-					if(i == 0x7FFFFFFF)
-					{
-						//cout << "TEST!!\n";
-						//cin.ignore();
-						return;
-					}
-	
-					assert (i< length);		
-					v = &(all.reg.weight_vector[stride*i]);
-					brw += bin_read_fixed(model_file, (char*)v, sizeof(*v), "");
-				}
-			}
-			else// write binary or text
-			{
-				v = &(all.reg.weight_vector[stride*i]);
-				if (*v != 0.)
-				{
-					c++;
-					char buff[512];
-					int text_len;
-
-					text_len = sprintf(buff, " %d", i);
-					brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i), buff, text_len, text);
-
-					text_len = sprintf(buff, ":%f\n", *v);
-					brw+= bin_text_write_fixed(model_file,(char *)v, sizeof (*v), buff, text_len, text);
-				}
-			}
-
-			if (!read)
-				i++;
-		}while ((!read && i < length) || (read && brw > 0));  
-		
-		if(!read)		
-		{
-			char buff[512];
+			uint32_t i = 0;
+			uint32_t j = 0;
+			size_t brw = 1; 
+			uint32_t v;
 			int text_len;
 			
-			i = 0x7FFFFFFF;
-			text_len = sprintf(buff, " %d", i);
-			brw = bin_text_write_fixed(model_file,(char *)&i, sizeof (i), buff, text_len, text);
-		}
-	}
-
-	void save_load_tree(vw& all, io_buf& model_file, bool read, bool text)
-	{ 
-		txm_o* b = (txm_o*)all.l->get_save_load_data();
-		char buff[512];
-		uint32_t i = 0;
-		uint32_t j = 0;
-		size_t brw = 1; 
-		uint32_t v;
-		int text_len;
-		
-		if(read)
-		{
-			brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
-			
-			for(j = 0; j < i; j++)
-			{				
-				b->nodes.push_back(init_node(j, 0));
-				
-				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
-				b->nodes[j].id_left = v;
-				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
-				b->nodes[j].id_right = v;				
-				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
-				b->nodes[j].max_cnt2_label = v;				
-				brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
-				b->nodes[j].leaf = v;
-			}
-		}
-		else
-		{
-			text_len = sprintf(buff, ":%d\n", (int) b->nodes.size());
-			v = b->nodes.size();
-			brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
-
-			for(i = 0; i < b->nodes.size(); i++)
-			{	
-				text_len = sprintf(buff, ":%d", (int) b->nodes[i].id_left);
-				v = b->nodes[i].id_left;
-				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
-				
-				text_len = sprintf(buff, ":%d", (int) b->nodes[i].id_right);
-				v = b->nodes[i].id_right;
-				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
-				
-				text_len = sprintf(buff, ":%d", (int) b->nodes[i].max_cnt2_label);
-				v = b->nodes[i].max_cnt2_label;
-				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);				
-				
-				text_len = sprintf(buff, ":%d\n", b->nodes[i].leaf);
-				v = b->nodes[i].leaf;
-				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);				
-			}	
-		}		
-	}
-	
-	void txm_o_save_load(void* data, io_buf& model_file, bool read, bool text)
-	{
-		txm_o* g = (txm_o*)data;			//BARDZO WAZNE JEST ZOSTAWIENIE TEGO g, W PRZECIWNYM WYPADKU ON SIE ODWOLUJE DO TEGO CZEGO NIE MA
-		vw* all = g->all;
-		
-		if(read)
-		{
-			initialize_regressor(*all);
-			if(all->adaptive && all->initial_t > 0)
+			if(read)
 			{
-				uint32_t length = 1 << all->num_bits;
-				uint32_t stride = all->reg.stride;
-				for (size_t j = 1; j < stride*length; j+=stride)
-				{
-					all->reg.weight_vector[j] = all->initial_t;   
+				brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
+				
+				for(j = 0; j < i; j++)
+				{				
+					b->nodes.push_back(init_node(j, 0));
+					
+					brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+					b->nodes[j].id_left = v;
+					brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+					b->nodes[j].id_right = v;				
+					brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+					b->nodes[j].max_cnt2_label = v;				
+					brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+					b->nodes[j].leaf = v;
 				}
 			}
-		}
+			else
+			{
+				text_len = sprintf(buff, ":%d\n", (int) b->nodes.size());			//ilosc nodow
+				v = b->nodes.size();
+				brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
 
-		if (model_file.files.size() > 0)
-		{
-			txm_o_save_load_regressor(*all, model_file, read, text);
-			save_load_tree(*all, model_file, read, text);
-		}
+				for(i = 0; i < b->nodes.size(); i++)
+				{	
+					text_len = sprintf(buff, ":%d", (int) b->nodes[i].id_left);
+					v = b->nodes[i].id_left;
+					brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
+					
+					text_len = sprintf(buff, ":%d", (int) b->nodes[i].id_right);
+					v = b->nodes[i].id_right;
+					brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
+					
+					text_len = sprintf(buff, ":%d", (int) b->nodes[i].max_cnt2_label);
+					v = b->nodes[i].max_cnt2_label;
+					brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);				
+					
+					text_len = sprintf(buff, ":%d\n", b->nodes[i].leaf);
+					v = b->nodes[i].leaf;
+					brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);				
+				}	
+			}	
+		}	
 	}
 
 	learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -575,7 +412,7 @@ namespace TXM_O
 			i++;
 	
 		data->max_depth = i;	
-		learner* l = new learner(data, learn, all.l, txm_o_save_load, 2 << data->max_depth);			//CHECK THIS OUT!!! (it seems to work for (data->max_depth + 4)) - might be indexing back
+		learner* l = new learner(data, learn, all.l, save_load_tree, 2 << data->max_depth);			
 		l->set_finish_example(OAA::finish_example);
 		
 		txm_o* b = (txm_o*)data;
@@ -586,5 +423,3 @@ namespace TXM_O
 		return l;
 	}	
 }
-
-

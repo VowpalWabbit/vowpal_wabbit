@@ -159,7 +159,7 @@ public:
   }
   
   inline learner(void *dat, void (*l)(void*, learner&, example*), learner* base, void (*sl)(void*, io_buf& io, bool read, bool text), size_t ws = 1) 
-  { //the reduction constructor.
+  { //the reduction constructor with save load - by Anna
     *this = *base;
     
     learn_fd.learn_f = l;
