@@ -623,7 +623,7 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("loss_function"))
     loss_function = vm["loss_function"].as<string>();
   else
-    loss_function = "squaredloss";
+    loss_function = "squared";
   float loss_parameter = 0.5;
   if(vm.count("quantile_tau"))
     loss_parameter = vm["quantile_tau"].as<float>();
@@ -635,12 +635,6 @@ vw* parse_args(int argc, char *argv[])
     all->l = GDMF::setup(*all);
 	
   if(vm.count("txm") || vm_file.count("txm")) //Anna
-  {
-	loss_function = "quantile"; 
-	loss_parameter = 0.5;
-  }
-
-  if(vm.count("txm_o") || vm_file.count("txm_o")) //Anna
   {
 	loss_function = "quantile"; 
 	loss_parameter = 0.5;

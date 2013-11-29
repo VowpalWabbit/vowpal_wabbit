@@ -96,7 +96,7 @@ template<class T> class v_array{
 			return b;
 	}
 	
-	size_t push_back_sorted(const T &new_ele)//ANNA
+	size_t unique_add_sorted(const T &new_ele)//ANNA
 	{
 		size_t index = 0;
 		size_t size = end - begin;

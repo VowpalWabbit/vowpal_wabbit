@@ -74,9 +74,13 @@ namespace TXM_O
 		vw* all;
 		
 		v_array<txm_o_node_type> nodes;						//the nodes - our tree
-		v_array<size_t> out_node_list;						//the table of the indexes of leafs of principal path and alternative paths
 		
 		size_t max_depth; 	            					//maximal tree depth
+		
+		loss_function* quantile_loss;						//loss function
+		
+		v_array<uint32_t> altdir_list;
+		v_array<float> node_list_pred;
 	};	
 
 	txm_o_node_type init_node(size_t id, size_t level)        //new node initialization
@@ -100,18 +104,21 @@ namespace TXM_O
 		d->nodes.push_back(init_node(0, 0));
 	}	
 	
-	void leafs_to_train(txm_o* d, learner& base, example* ec)
+	size_t train_leafs(txm_o* d, learner& base, example* ec)
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		label_data simple_temp;	
 		bool empty_track = false;
-	
-		v_array<uint32_t> altdir_list;
-		v_array<float> node_list_pred;
 		
-		d->out_node_list.erase();		
+		uint32_t oryginal_label = mc->label;	
+		size_t final_prediction = 1;
 		
-		uint32_t j, k;
+		d->node_list_pred.erase();
+		d->altdir_list.erase();	
+		
+		uint32_t j, k;								
+		float max_oaa = -1.f;	
+				
 		size_t cn = 0;		//ustawiamy root
 		
 		ec->test_only = true;
@@ -126,16 +133,16 @@ namespace TXM_O
 				ec->ld = &simple_temp.label;
 				base.learn(ec, cn);	
 				
-				node_list_pred.push_back(fabs(ec->final_prediction));
+				d->node_list_pred.push_back(fabs(ec->final_prediction));
 	
 				if(ec->final_prediction < 0)
 				{					
-					altdir_list.push_back(d->nodes[cn].id_right);
+					d->altdir_list.push_back(d->nodes[cn].id_right);
 					cn = d->nodes[cn].id_left;
 				}
 				else
 				{					
-					altdir_list.push_back(d->nodes[cn].id_left);
+					d->altdir_list.push_back(d->nodes[cn].id_left);
 					cn = d->nodes[cn].id_right;
 				}
 				
@@ -144,23 +151,40 @@ namespace TXM_O
 			}
 			
 			if(d->nodes[cn].leaf)
-				d->out_node_list.push_back(cn);			
-			
-			float min_pred = node_list_pred[0];					//choosing the node with smallest prediction confidence (in the first run of loop for(j...) we choose only from principal path nodes)
-			uint32_t min_pred_index = 0;
-			for(k = 1; k < node_list_pred.size(); k++)
-			{
-				if(node_list_pred[k] < min_pred)
+			{	
+				ec->ld = &simple_temp;			
+				
+				if(d->nodes[cn].max_cnt2_label == oryginal_label)
+					simple_temp.label = 1.f;
+				else
+					simple_temp.label = -1.f;
+					
+				ec->test_only = false;		
+				base.learn(ec, cn);							//WHY COMMENTING THIS HAS ANY INFLUENCE ON VW??????????????????, ALSO OAA SHOULD USE DIFFERENT LOSS FUNCTION THAN INTERNAL NODES		
+				ec->test_only = true;	
+				
+				if(ec->final_prediction > max_oaa)
 				{
-					min_pred = node_list_pred[k];
+					max_oaa = ec->final_prediction;
+					final_prediction = d->nodes[cn].max_cnt2_label;
+				}
+			}
+			
+			float min_pred = d->node_list_pred[0];					//choosing the node with smallest prediction confidence (in the first run of loop for(j...) we choose only from principal path nodes)
+			uint32_t min_pred_index = 0;
+			for(k = 1; k < d->node_list_pred.size(); k++)
+			{
+				if(d->node_list_pred[k] < min_pred)
+				{
+					min_pred = d->node_list_pred[k];
 					min_pred_index = k;
 				}
 			}
 			
-			cn = altdir_list[min_pred_index];
+			cn = d->altdir_list[min_pred_index];
 			
-			node_list_pred[min_pred_index] = node_list_pred.pop();
-			altdir_list[min_pred_index] = altdir_list.pop();			
+			d->node_list_pred[min_pred_index] = d->node_list_pred.pop();
+			d->altdir_list[min_pred_index] = d->altdir_list.pop();			
 			
 			if(cn == 0)
 				empty_track = true;	
@@ -169,7 +193,9 @@ namespace TXM_O
 		}		
 		
 		ec->ld = mc;		
-		ec->test_only = false;	
+		ec->test_only = false;
+
+		return final_prediction;
 	}
 	
 	void train_node(void* d, learner& base, example* ec, size_t& cn, size_t& index)
@@ -181,6 +207,9 @@ namespace TXM_O
         simple_temp.initial = 0.0;
 		simple_temp.weight = mc->weight;
 		
+		loss_function* current_loss = b->all->loss; 
+		b->all->loss = b->quantile_loss;
+				
 		//do the initial prediction to decide if going left or right	
 		simple_temp.label = FLT_MAX;
 		ec->ld = &simple_temp;
@@ -227,6 +256,10 @@ namespace TXM_O
 		}	
 		
 		base.learn(ec, cn);
+		
+		ec->ld = mc;
+		
+		b->all->loss = current_loss;
 	}
 
 	void learn(void* d, learner& base, example* ec)//(void* d, example* ec) 
@@ -250,9 +283,9 @@ namespace TXM_O
 		size_t cn = 0;
 		while(1)
 		{
-			if(all->training && mc->label !=  (uint32_t)-1)
+			if(all->training && mc->label !=  (uint32_t)-1 && !ec->test_only)
 			{
-				index = b->nodes[cn].node_pred.push_back_sorted(txm_o_node_pred_type(oryginal_label));	//add the label to the list of labels 
+				index = b->nodes[cn].node_pred.unique_add_sorted(txm_o_node_pred_type(oryginal_label));	//add the label to the list of labels 
 					
 				b->nodes[cn].node_pred[index].label_cnt2++;
 					
@@ -262,59 +295,31 @@ namespace TXM_O
 					b->nodes[cn].max_cnt2_label = b->nodes[cn].node_pred[index].label;
 				}
 			}
-
-			if(b->nodes[cn].leaf || current_level >= b->max_depth)	//leaf level
+			
+			if(current_level >= b->max_depth)	//leaf level
 			{					
 				b->nodes[cn].leaf = true;	
-				leafs_to_train(b, base, ec);		
-	
-				//train for OAA		
-				uint32_t max_oaa_index = 0;									
-				float max_oaa = -1.f;			
-				ec->ld = &simple_temp;			
-				string loss_function = "squared";			//IN PARSE_ARGS YOU HAVE "squaredloss", WHICH DOES NOT EXIST
-				all->loss = getLossFunction(all, loss_function, (float)0.0);
-				for(size_t j = 0; j < b->out_node_list.size(); j++)	//node list ma indeksy wszystkich lisci od pryncypalnej sciezki i alternatywnych sciezek
-				{
-					size_t id_current = b->out_node_list[j];
-					
-					if(b->nodes[id_current].max_cnt2_label == oryginal_label)
-						simple_temp.label = 1.f;
-					else
-						simple_temp.label = -1.f;
-								
-					base.learn(ec, id_current);							//WHY COMMENTING THIS HAS ANY INFLUENCE ON VW??????????????????, ALSO OAA SHOULD USE DIFFERENT LOSS FUNCTION THAN INTERNAL NODES		
-					
-					if(ec->final_prediction > max_oaa)
-					{
-						max_oaa = ec->final_prediction;
-						max_oaa_index = j;
-					}
-				}			
-				loss_function = "quantile"; 
-				all->loss = getLossFunction(all, loss_function, (float)0.5);
-				cn = b->out_node_list[max_oaa_index];					//zakomentuj jezeli chcesz patrzec na blad samego drzewa					
-				tmp_final_prediction = b->nodes[cn].max_cnt2_label;		//nie uwzgledniam oaa
+				tmp_final_prediction = train_leafs(b, base, ec);					
+				//tmp_final_prediction = b->nodes[cn].max_cnt2_label;		//nie uwzgledniam oaa
 				break;													//if mx depth is reached, finish
 			}
 			
-			if(all->training && mc->label !=  (uint32_t)-1)
+			if(all->training && mc->label !=  (uint32_t)-1 && !ec->test_only)
 				train_node(d, base, ec, cn, index);			
-			
-			current_level++;
-			
+						
 			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp;
 			ec->test_only = true;
 			base.learn(ec, cn);	
 			ec->test_only = false;
+			ec->ld = mc;
 			
 			if(ec->final_prediction < 0)
 				cn = b->nodes[cn].id_left;
 			else
 				cn = b->nodes[cn].id_right;
-		}				
-		ec->ld = mc;
+			current_level++;
+		}		
 		ec->final_prediction = tmp_final_prediction;
 	}
 	
@@ -404,6 +409,9 @@ namespace TXM_O
 			all.options_from_file.append(ss.str());
 		}		
 
+		string loss_function = "quantile"; 
+		data->quantile_loss = getLossFunction(&all, loss_function, (float)0.5);
+				
 		data->all = &all;
 		*(all.p->lp) = OAA::mc_label_parser;
 	
@@ -415,10 +423,8 @@ namespace TXM_O
 		learner* l = new learner(data, learn, all.l, save_load_tree, 2 << data->max_depth);			
 		l->set_finish_example(OAA::finish_example);
 		
-		txm_o* b = (txm_o*)data;
-		
 		if(all.training)
-			init_tree(b);		
+			init_tree(data);		
 		
 		return l;
 	}	

@@ -13,67 +13,6 @@ using namespace std;
 #include "loss_functions.h"
 #include "global_data.h"
 
-//Anna
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
-class absloss : public loss_function {
-	public:	absloss() {}
-
-	float getLoss(shared_data*, float prediction, float label) 
-	{
-		float example_loss = abs(prediction - label);
-		return example_loss;
-	}
-
-	float getUpdate(float prediction, float label,float eta_t, float norm) 
-	{
-		if(prediction > label)
-			return -eta_t/norm;
-		else if(prediction < label)
-			return eta_t/norm;
-		else
-			return 0.f;
-	}
-
-	float getUnsafeUpdate(float prediction, float label,float eta_t,float norm)
-	{
-		if(prediction > label)
-			return -eta_t/norm;
-		else if(prediction < label)
-			return eta_t/norm;
-		else
-			return 0.f;
-	}
-
-	float getRevertingWeight(shared_data* sd, float prediction, float eta_t)
-	{
-		return 0.f;
-	}
-
-	float getSquareGrad(float prediction, float label) 
-	{
-		if(prediction != label)		
-			return 1.f;
-		else
-			return 0.f;
-	}
-	
-	float first_derivative(shared_data*, float prediction, float label)
-	{	
-		if(prediction > label)
-			return -1.f;
-		else if(prediction < label)
-			return 1.f;
-		else
-			return 0.f;
-	}
-	
-	float second_derivative(shared_data*, float prediction, float label)
-	{
-		return 0.f;
-	}
-};
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	
-
 class squaredloss : public loss_function {
 public:
   squaredloss() {
@@ -363,8 +302,6 @@ loss_function* getLossFunction(void* a, string funcName, float function_paramete
     return new squaredloss();
   } else if(funcName.compare("classic") == 0){
     return new classic_squaredloss();
-  } else if(funcName.compare("absloss") == 0){ //Anna
-    return new absloss();
   } else if(funcName.compare("hinge") == 0) {
     all->sd->binary_label = true;
     return new hingeloss();
