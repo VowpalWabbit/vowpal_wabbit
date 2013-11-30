@@ -60,6 +60,8 @@ namespace TXM_O
 		size_t level;                                      //root = 0
 		size_t max_cnt2;                                   //maximal value of counter 2 in the node
 		size_t max_cnt2_label;                             //label with maximal value of counter 2 in a node
+		size_t initial_label;
+		int8_t initial_dir;
 		
 		bool leaf;                                         //flag denoting that the node is a leaf
 		v_array<txm_o_node_pred_type> node_pred;	
@@ -76,6 +78,9 @@ namespace TXM_O
 		v_array<txm_o_node_type> nodes;						//the nodes - our tree
 		
 		size_t max_depth; 	            					//maximal tree depth
+		size_t max_nodes;
+		size_t oaa_reg_offset;
+		size_t alt_trk_num;
 		
 		loss_function* quantile_loss;						//loss function
 		
@@ -83,7 +88,7 @@ namespace TXM_O
 		v_array<float> node_list_pred;
 	};	
 
-	txm_o_node_type init_node(size_t id, size_t level)        //new node initialization
+	txm_o_node_type init_node(size_t level)        //new node initialization
 	{
 		txm_o_node_type node;
 		
@@ -95,14 +100,61 @@ namespace TXM_O
 		node.leaf = false;
 		node.max_cnt2 = 0;
 		node.max_cnt2_label = 0;
+		node.initial_label = 0;
+		node.initial_dir = 0;
 		
 		return node;
 	}
 	
 	void init_tree(txm_o* d)                               	//inicjalizacja drzewa
 	{
-		d->nodes.push_back(init_node(0, 0));
-	}	
+		d->nodes.push_back(init_node(0));
+	}
+
+	void display_tree1(txm_o* d)
+	{
+		size_t l, i, k;
+		for(l = 0; l <= d->max_depth; l++)
+		{
+			for(i = 0; i < d->nodes.size(); i++)
+			{
+				if(d->nodes[i].level == l)
+				{
+					cout << "(";
+					for(k = 0; k < d->nodes[i].node_pred.size(); k++)
+					{
+						cout << d->nodes[i].node_pred[k].label << ",";
+					}
+					if(d->nodes[i].node_pred.size() > 0)
+						cout << "\b) ";
+					else
+						cout << " )";
+				}
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
+	
+	void display_tree2(txm_o* d)
+	{
+		size_t l, i;
+		for(l = 0; l <= d->max_depth; l++)
+		{
+			for(i = 0; i < d->nodes.size(); i++)
+			{
+				if(d->nodes[i].level == l)
+				{	
+					if(d->nodes[i].leaf)
+						cout << "[" << i << "] ";
+					else
+						cout << "(" << i << ") ";
+				}
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
 	
 	size_t train_leafs(txm_o* d, learner& base, example* ec)
 	{
@@ -123,7 +175,7 @@ namespace TXM_O
 		
 		ec->test_only = true;
 		
-		for(j = 0; j <= d->max_depth; j++)				//loop over primal and alternative paths
+		for(j = 0; j <= d->alt_trk_num ; j++)				//loop over primal and alternative paths
 		{
 			while(!d->nodes[cn].leaf && !empty_track)
 			{				
@@ -160,7 +212,7 @@ namespace TXM_O
 					simple_temp.label = -1.f;
 					
 				ec->test_only = false;		
-				base.learn(ec, cn);							//WHY COMMENTING THIS HAS ANY INFLUENCE ON VW??????????????????, ALSO OAA SHOULD USE DIFFERENT LOSS FUNCTION THAN INTERNAL NODES		
+				base.learn(ec, d->oaa_reg_offset + cn);							//WHY COMMENTING THIS HAS ANY INFLUENCE ON VW??????????????????, ALSO OAA SHOULD USE DIFFERENT LOSS FUNCTION THAN INTERNAL NODES		
 				ec->test_only = true;	
 				
 				if(ec->final_prediction > max_oaa)
@@ -169,6 +221,9 @@ namespace TXM_O
 					final_prediction = d->nodes[cn].max_cnt2_label;
 				}
 			}
+			
+			if(d->node_list_pred.size() == 0)
+				break;
 			
 			float min_pred = d->node_list_pred[0];					//choosing the node with smallest prediction confidence (in the first run of loop for(j...) we choose only from principal path nodes)
 			uint32_t min_pred_index = 0;
@@ -181,7 +236,7 @@ namespace TXM_O
 				}
 			}
 			
-			cn = d->altdir_list[min_pred_index];
+			cn = d->altdir_list[min_pred_index];			
 			
 			d->node_list_pred[min_pred_index] = d->node_list_pred.pop();
 			d->altdir_list[min_pred_index] = d->altdir_list.pop();			
@@ -198,7 +253,7 @@ namespace TXM_O
 		return final_prediction;
 	}
 	
-	void train_node(void* d, learner& base, example* ec, size_t& cn, size_t& index)
+	void train_node(void* d, learner& base, example* ec, size_t& cn, size_t& index) //return true when reaching leaf
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		txm_o* b = (txm_o*)d;
@@ -245,21 +300,35 @@ namespace TXM_O
 			id_left_right = id_right;
 		}
 		
-		if(id_left_right == 0)												//child does not exist
+		if(b->nodes[cn].initial_dir == 0)
 		{
-			id_left_right = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
-			b->nodes.push_back(init_node(id_left_right, b->nodes[cn].level + 1));	//add new node to the tree
-			if(left_or_right < 0)
+			b->nodes[cn].initial_label = b->nodes[cn].node_pred[0].label;
+			b->nodes[cn].initial_dir = (int8_t)simple_temp.label;
+		}
+		else if(id_left_right == 0)												//child does not exist
+		{
+			if(b->nodes[cn].initial_dir != (int8_t)simple_temp.label && b->nodes.size() + 2 <= b->max_nodes)
+			//if(b->nodes[cn].initial_dir != (int8_t)simple_temp.label && b->nodes[cn].level < b->max_depth)
+			{
+				id_left_right = b->nodes.size();									//node identifier = number-of_existing_nodes + 1
+				b->nodes.push_back(init_node(b->nodes[cn].level + 1));	//add new node to the tree
+				b->nodes.push_back(init_node(b->nodes[cn].level + 1));	//add new node to the tree
 				b->nodes[cn].id_left = id_left_right;											//new node is the left child of the current node	
-			else
-				b->nodes[cn].id_right = id_left_right;										//new node is the right child of the current node
+				b->nodes[cn].id_right = id_left_right + 1;	
+				
+				if(b->nodes[cn].level + 1 > b->max_depth)
+					b->max_depth = b->nodes[cn].level + 1;
+			}
 		}	
 		
 		base.learn(ec, cn);
-		
-		ec->ld = mc;
-		
+		ec->ld = mc;		
 		b->all->loss = current_loss;
+		
+		if(b->nodes[cn].id_left == 0)
+			b->nodes[cn].leaf = true;
+		else	
+			b->nodes[cn].leaf = false;
 	}
 
 	void learn(void* d, learner& base, example* ec)//(void* d, example* ec) 
@@ -296,17 +365,16 @@ namespace TXM_O
 				}
 			}
 			
-			if(current_level >= b->max_depth)	//leaf level
+			if(all->training && mc->label !=  (uint32_t)-1 && !ec->test_only)
+				train_node(d, base, ec, cn, index);
+
+			if(b->nodes[cn].leaf)	
 			{					
-				b->nodes[cn].leaf = true;	
 				tmp_final_prediction = train_leafs(b, base, ec);					
 				//tmp_final_prediction = b->nodes[cn].max_cnt2_label;		//nie uwzgledniam oaa
 				break;													//if mx depth is reached, finish
-			}
+			}		
 			
-			if(all->training && mc->label !=  (uint32_t)-1 && !ec->test_only)
-				train_node(d, base, ec, cn, index);			
-						
 			simple_temp.label = FLT_MAX;
 			ec->ld = &simple_temp;
 			ec->test_only = true;
@@ -320,6 +388,9 @@ namespace TXM_O
 				cn = b->nodes[cn].id_right;
 			current_level++;
 		}		
+		//if(all->training && mc->label !=  (uint32_t)-1 && !ec->test_only)
+		//	display_tree2(b);
+		//cin.ignore();
 		ec->final_prediction = tmp_final_prediction;
 	}
 	
@@ -349,7 +420,7 @@ namespace TXM_O
 				
 				for(j = 0; j < i; j++)
 				{				
-					b->nodes.push_back(init_node(j, 0));
+					b->nodes.push_back(init_node(0));
 					
 					brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 					b->nodes[j].id_left = v;
@@ -419,8 +490,12 @@ namespace TXM_O
 		while (data->k > (uint32_t)(1 << i))
 			i++;
 	
-		data->max_depth = i;	
-		learner* l = new learner(data, learn, all.l, save_load_tree, 2 << data->max_depth);			
+		data->max_depth = i;
+		data->alt_trk_num = data->max_depth;
+		data->max_nodes = (2 << data->max_depth) - 1;
+		data->oaa_reg_offset = data->max_nodes;
+		
+		learner* l = new learner(data, learn, all.l, save_load_tree, 4 << data->max_depth);			
 		l->set_finish_example(OAA::finish_example);
 		
 		if(all.training)
