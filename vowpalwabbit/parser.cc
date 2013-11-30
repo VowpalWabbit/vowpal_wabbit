@@ -775,7 +775,7 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) (constant)};
+    feature temp = {1,(uint32_t) (constant * all.wpp)};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
