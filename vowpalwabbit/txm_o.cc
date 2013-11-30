@@ -160,22 +160,22 @@ namespace TXM_O
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec->ld;
 		label_data simple_temp;	
-		bool empty_track = false;
+		bool empty_track = false;			
+
+		d->node_list_pred.erase();
+		d->altdir_list.erase();		
 		
 		uint32_t oryginal_label = mc->label;	
 		size_t final_prediction = 1;
 		
-		d->node_list_pred.erase();
-		d->altdir_list.erase();	
-		
 		uint32_t j, k;								
 		float max_oaa = -1.f;	
 				
-		size_t cn = 0;		//ustawiamy root
-		
+		size_t cn = 0;	
+	
 		ec->test_only = true;
 		
-		for(j = 0; j <= d->alt_trk_num ; j++)				//loop over primal and alternative paths
+		for(j = 0; j <= d->alt_trk_num; j++)				//loop over primal and alternative paths
 		{
 			while(!d->nodes[cn].leaf && !empty_track)
 			{				
@@ -226,7 +226,7 @@ namespace TXM_O
 				break;
 			
 			float min_pred = d->node_list_pred[0];					//choosing the node with smallest prediction confidence (in the first run of loop for(j...) we choose only from principal path nodes)
-			uint32_t min_pred_index = 0;
+			size_t min_pred_index = 0;
 			for(k = 1; k < d->node_list_pred.size(); k++)
 			{
 				if(d->node_list_pred[k] < min_pred)
@@ -245,7 +245,7 @@ namespace TXM_O
 				empty_track = true;	
 			else
 				empty_track = false;
-		}		
+		}
 		
 		ec->ld = mc;		
 		ec->test_only = false;
@@ -287,7 +287,7 @@ namespace TXM_O
 		size_t id_left = b->nodes[cn].id_left;
 		size_t id_right = b->nodes[cn].id_right;		
 	
-		size_t id_left_right;
+		size_t id_left_right;		
 		
 		if(left_or_right < 0)
 		{
@@ -346,7 +346,7 @@ namespace TXM_O
 		
 		uint32_t oryginal_label = mc->label;				
 
-		size_t current_level = 0;							
+		size_t current_level = 0;			
 		
 		size_t tmp_final_prediction;
 		size_t cn = 0;
@@ -380,17 +380,19 @@ namespace TXM_O
 			ec->test_only = true;
 			base.learn(ec, cn);	
 			ec->test_only = false;
-			ec->ld = mc;
+			ec->ld = mc;			
 			
 			if(ec->final_prediction < 0)
 				cn = b->nodes[cn].id_left;
 			else
 				cn = b->nodes[cn].id_right;
+				
 			current_level++;
 		}		
 		//if(all->training && mc->label !=  (uint32_t)-1 && !ec->test_only)
 		//	display_tree2(b);
 		//cin.ignore();
+		//cout<<b->max_depth<<endl;
 		ec->final_prediction = tmp_final_prediction;
 	}
 	
@@ -481,6 +483,7 @@ namespace TXM_O
 		}		
 
 		string loss_function = "quantile"; 
+		//string loss_function = "absloss"; 
 		data->quantile_loss = getLossFunction(&all, loss_function, (float)0.5);
 				
 		data->all = &all;
