@@ -37,7 +37,7 @@ namespace WAP {
           }
         ec->sum_feat_sq[*i] *= 2;
       }
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       {
         for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -75,7 +75,7 @@ namespace WAP {
           f->weight_index -= offset1;
         ec->sum_feat_sq[*i] /= 2;
       }
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       {
         for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)

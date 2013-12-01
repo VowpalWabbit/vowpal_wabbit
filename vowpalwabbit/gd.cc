@@ -282,7 +282,6 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   else 	if ( index == (((constant * stride + offset)&all.reg.weight_mask)) && all.audit){
     tempstream << "Constant:";
   }  
-
   if(all.audit){
     tempstream << (index/stride & all.parse_mask) << ':' << f->x;
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
@@ -598,6 +597,7 @@ float compute_norm(vw& all, example* &ec)
 
           eta_t = all.eta * norm * ld->weight;
           if(!all.adaptive) eta_t *= powf(t,-all.power_t);
+          
           float update = 0.f;
           if( all.invariant_updates )
             update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm);
