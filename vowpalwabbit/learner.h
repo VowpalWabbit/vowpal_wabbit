@@ -145,7 +145,7 @@ public:
     set_save_load(sl);
     increment = params_per_weight;
   }
-
+  
   inline learner(void *dat, void (*l)(void*, learner&, example*), learner* base, size_t ws = 1) 
   { //the reduction constructor.
     *this = *base;
@@ -156,6 +156,24 @@ public:
 
     increment = base->increment * base->weights;
     weights = ws;
+  }
+  
+  inline learner(void *dat, void (*l)(void*, learner&, example*), learner* base, void (*sl)(void*, io_buf& io, bool read, bool text), size_t ws = 1) 
+  { //the reduction constructor with save load - by Anna
+    *this = *base;
+    
+    learn_fd.learn_f = l;
+    learn_fd.data = dat;
+    learn_fd.base = base;
+    set_save_load(sl);
+
+    increment = base->increment * base->weights;
+    weights = ws;
+  }
+  
+  void* get_save_load_data()
+  {
+	return save_load_fd.data;
   }
 };
 
