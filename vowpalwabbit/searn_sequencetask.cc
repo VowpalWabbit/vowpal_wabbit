@@ -56,7 +56,7 @@ namespace SequenceSpanTask {
     my_task_data->y_allowed.erase();
     my_task_data->y_allowed.push_back(1);
     for (size_t l=2; l<num_actions; l+=2)
-      my_task_data->y_allowed.push_back(l);
+      my_task_data->y_allowed.push_back((uint32_t)l);
     my_task_data->y_allowed.push_back(1);  // push back an extra 1 that we can overwrite later if we want
     
     srn.task_data            = my_task_data;
@@ -86,7 +86,7 @@ namespace SequenceSpanTask {
       size_t prediction = srn.predict(ec[i], &my_task_data->y_allowed, &my_task_data->y_star);
 
       if (prediction == 1) sys_tag = 1;
-      else sys_tag = ((prediction % 2) == 0) ? (prediction+1) : prediction;
+      else sys_tag = ((prediction % 2) == 0) ? (uint32_t)(prediction+1) : (uint32_t)prediction;
       
       if (my_task_data->y_star.size() > 0)
         total_loss += (float)(prediction != my_task_data->y_star[0]);

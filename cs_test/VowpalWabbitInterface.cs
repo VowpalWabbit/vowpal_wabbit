@@ -37,8 +37,7 @@ namespace Microsoft.Research.MachineLearning
             public IntPtr ld;
             public float final_prediction;  
 
-            //byte[] tag;//An identifier for the example.
-            public int tag_len;
+            public UInt64 tag_len;
             public IntPtr tag;//An identifier for the example. 
 
             public UInt64 example_counter;
@@ -47,8 +46,7 @@ namespace Microsoft.Research.MachineLearning
 
             public UInt64 num_features;//precomputed, cause it's fast&easy.  
 
-            //FEATURE[] feature_map; //map to store sparse feature vectors  
-            public int feature_map_len;
+            public UInt64 feature_map_len;
             public IntPtr feature_map; //map to store sparse feature vectors  
         }
 

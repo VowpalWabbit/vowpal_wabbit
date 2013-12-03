@@ -143,9 +143,12 @@ inline void print_substring(substring s)
 inline float parseFloat(char * p, char **end)
 {
   char* start = p;
-
+  
   if (!*p)
-    return 0;
+    {
+      *end = p;
+      return 0;
+    }
   int s = 1;
   while (*p == ' ') p++;
   
@@ -156,15 +159,18 @@ inline float parseFloat(char * p, char **end)
   float acc = 0;
   while (*p >= '0' && *p <= '9')
     acc = acc * 10 + *p++ - '0';
-  
+
   int num_dec = 0;
   if (*p == '.') {
-    p++;
-    while (*p >= '0' && *p <= '9') {
-      acc = acc *10 + (*p++ - '0') ;
-      num_dec++;
+    while (*(++p) >= '0' && *p <= '9') {
+      if (num_dec < 35)
+	{
+	  acc = acc *10 + (*p - '0');
+	  num_dec++;
+	}
     }
   }
+
   int exp_acc = 0;
   if(*p == 'e' || *p == 'E'){
     p++;

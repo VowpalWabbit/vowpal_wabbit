@@ -283,7 +283,7 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   if (a != NULL && all.audit){
     tempstream << tmp << ':';
   }
-  else 	if ( index == (((constant * stride + offset)&all.reg.weight_mask)) && all.audit){
+  else 	if ( index == (((constant * stride * all.wpp + offset)&all.reg.weight_mask)) && all.audit){
     tempstream << "Constant:";
   }  
   if(all.audit){

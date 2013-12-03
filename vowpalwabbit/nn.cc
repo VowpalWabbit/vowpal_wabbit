@@ -63,14 +63,6 @@ namespace NN {
     return -1.0f + 2.0f / (1.0f + fastexp (-2.0f * p));
   }
 
-  static void
-  update_atomics_indices (v_array<feature>& f,
-                          uint32_t          offset)
-    {
-      for (feature* x = f.begin; x != f.end; ++x)
-	x->weight_index += offset;
-    }
-
   void finish_setup (nn& n, vw& all)
   {
     bool initialize = true;
@@ -209,7 +201,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       // nn_output_namespace but at least it will not leak memory
       // in that case
 
-      update_atomics_indices (n->output_layer.atomics[nn_output_namespace], -ec->ft_offset);
       ec->indices.push_back (nn_output_namespace);
       v_array<feature> save_nn_output_namespace = ec->atomics[nn_output_namespace];
       ec->atomics[nn_output_namespace] = n->output_layer.atomics[nn_output_namespace];
@@ -222,7 +213,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->sum_feat_sq[nn_output_namespace] = 0;
       ec->atomics[nn_output_namespace] = save_nn_output_namespace;
       ec->indices.pop ();
-      update_atomics_indices (n->output_layer.atomics[nn_output_namespace], ec->ft_offset);
     }
     else {
       n->output_layer.ld = ec->ld;

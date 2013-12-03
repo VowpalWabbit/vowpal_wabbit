@@ -494,7 +494,7 @@ namespace Searn {
         assert(srn->t < srn->train_action.size());
         srn->t++;
         size_t a = srn->train_action[srn->t - 1];
-        return a;
+        return (uint32_t)a;
       } else if (srn->t == srn->learn_t) {
         if (srn->learn_example_copy == NULL) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
@@ -539,8 +539,8 @@ namespace Searn {
           //clog << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action[srn->t-1] << endl;
           this_a = srn->train_action[srn->t - 1];
         }
-        if (srn->auto_history) srn->rollout_action.push_back(this_a);
-        return this_a;
+        if (srn->auto_history) srn->rollout_action.push_back((uint32_t)this_a);
+        return (uint32_t)this_a;
       }
       assert(false);
     }
