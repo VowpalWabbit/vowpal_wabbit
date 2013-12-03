@@ -1,0 +1,27 @@
+final_regressor = models/bs.vote.model
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+predictions = bs.vote.predict
+using no cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.333333   0.333333            3         3.0   0.0000   0.0000       57
+0.333333   0.333333            6         6.0   1.0000   0.0000       31
+0.636364   1.000000           11        11.0   0.0000  -1.0000       38
+0.818182   1.000000           22        22.0   1.0000  -1.0000       88
+0.909091   1.000000           44        44.0   0.0000  -1.0000       66
+0.954023   1.000000           87        87.0   1.0000  -1.0000       61
+0.977011   1.000000          174       174.0   1.0000  -1.0000       26
+
+finished run
+number of examples per pass = 200
+passes used = 1
+weighted example sum = 200
+weighted label sum = 0
+average loss = 0.98
+best constant = 0
+total feature number = 15482

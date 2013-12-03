@@ -19,6 +19,8 @@ my $LDA;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
+my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 150';
+
 my @ToTest = ();
 
 sub usage(@) {
@@ -225,7 +227,7 @@ sub next_test() {
         die "$0: test $TestNo: command is undefined\n";
     }
     unless (defined $out_ref) {
-        die "$0: test $TestNo: stdout ref: undefined\n";
+        warn "$0: test $TestNo: stdout ref: undefined (assuming empty)\n";
     }
     unless (defined $err_ref) {
         die "$0: test $TestNo: stderr ref: undefined\n";
@@ -286,7 +288,9 @@ sub lenient_array_compare($$) {
 sub diff_lenient_float($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
-    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr';
+
+    my $diff_opts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 200';
+
     my $tmpf = 'lenient-diff.tmp';
     system("$Diff $diff_opts $reffile $outfile >$tmpf");
     $status = $? >> 8;
@@ -325,6 +329,7 @@ sub touch(@) {
 sub diff($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
+    $reffile = '' unless (defined $reffile);
 
     # Special case, empty file w/o reference is not considered a failure.
     # This is a most common case with stdout.
@@ -348,7 +353,7 @@ sub diff($$) {
     }
 
     # Actually run the diff
-    my $diff_cmd = "$Diff -N $reffile $outfile";
+    my $diff_cmd = "$Diff $diff_opts $reffile $outfile";
     system("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     if (-s 'diff.tmp') {
@@ -616,13 +621,13 @@ __DATA__
     pred-sets/ref/0002c.predict
 
 # Test 9: label-dependent features with csoaa_ldf
-{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off
     train-sets/ref/cs_test.ldf.csoaa.stdout
     train-sets/ref/cs_test.ldf.csoaa.stderr
     train-sets/ref/cs_test.ldf.csoaa.predict
 
 # Test 10: label-dependent features with wap_ldf
-{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline
+{VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off
     train-sets/ref/cs_test.ldf.wap.stdout
     train-sets/ref/cs_test.ldf.wap.stderr
     train-sets/ref/cs_test.ldf.wap.predict
@@ -638,12 +643,12 @@ __DATA__
     train-sets/ref/multiclass.stderr
 
 # Test 13: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --searn_passes_per_policy 4 --searn_task sequence --searn 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --searn_passes_per_policy 4 --searn_task sequence --searn 5 --searn_history 2 --searn_bigrams --searn_features 1 --quiet --holdout_off
     train-sets/ref/searn_wsj.stdout
     train-sets/ref/searn_wsj.stderr
 
 # Test 14: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 5 --wap 5 --searn_sequencetask_history 2 --searn_sequencetask_bigrams --searn_sequencetask_features 1 --quiet
+{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --searn_passes_per_policy 1 --searn_task sequence --searn 5 --wap 5 --searn_history 2 --searn_bigrams --searn_features 1 --quiet --holdout_off
     train-sets/ref/searn_wsj2.dat.stdout
     train-sets/ref/searn_wsj2.dat.stderr
 
@@ -663,7 +668,7 @@ __DATA__
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence --quiet
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence --quiet --holdout_off
     train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
 
@@ -692,3 +697,55 @@ __DATA__
 {VW} -i movielens.reg -t -d test-sets/ml100k_small_test
     test-sets/ref/ml100k_small.stdout
     test-sets/ref/ml100k_small.stderr
+
+# Test 24: active-learning -- training
+{VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
+    train-sets/ref/active-simulation.t24.stderr
+
+# Test 25: bagging -- training regressor
+{VW} -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict 
+    train-sets/ref/bs.reg.stdout
+    train-sets/ref/bs.reg.stderr
+    train-sets/ref/bs.reg.predict
+
+# Test 26: bagging -- predicting with bagged regressor
+{VW} -d train-sets/0002.dat -i models/bs.prreg.model -p bs.prreg.predict -t
+    train-sets/ref/bs.prreg.stdout
+    train-sets/ref/bs.prreg.stderr
+    train-sets/ref/bs.prreg.predict
+
+# Test 27: bagging -- binary classifiers
+{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p bs.vote.predict 
+    train-sets/ref/bs.vote.stdout
+    train-sets/ref/bs.vote.stderr
+    train-sets/ref/bs.vote.predict
+
+# Test 28: bagging -- predict with bagged classifier
+{VW} -d train-sets/0001.dat -i models/bs.prvote.model -p bs.prvote.predict -t
+    train-sets/ref/bs.prvote.stdout
+    train-sets/ref/bs.prvote.stderr
+    train-sets/ref/bs.prvote.predict
+
+# Test 29: affix features
+{VW} -d train-sets/affix_test.dat -k -c --passes 10 --holdout_off --affix -2
+    train-sets/ref/affix_test.stdout
+    train-sets/ref/affix_test.stderr
+
+# Test 30: train --l1 regularized model
+{VW} -d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01
+    train-sets/ref/mask.stderr
+    
+# Test 31: train model using --feature_mask
+{VW} -d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model
+    train-sets/ref/remask.stderr
+
+# Test 32: train model for topk recommender
+{VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off 
+    train-sets/ref/topk-train.stdout
+    train-sets/ref/topk-train.stderr
+
+# Test 33: train model for topk recommender
+{VW} -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
+    train-sets/ref/topk-rec.stdout
+    train-sets/ref/topk-rec.stderr
+    train-sets/ref/topk-rec.predict

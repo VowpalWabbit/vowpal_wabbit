@@ -1,0 +1,28 @@
+only testing
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+predictions = bs.prvote.predict
+using no cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.333333   0.333333            3         3.0   0.0000   0.0000       57
+0.333333   0.333333            6         6.0   1.0000   0.0000       31
+0.272727   0.200000           11        11.0   0.0000   0.0000       38
+0.363636   0.454545           22        22.0   1.0000   0.0000       88
+0.363636   0.363636           44        44.0   0.0000   0.0000       66
+0.356322   0.348837           87        87.0   1.0000   0.0000       61
+0.459770   0.563218          174       174.0   1.0000   0.0000       26
+
+finished run
+number of examples per pass = 200
+passes used = 1
+weighted example sum = 200
+weighted label sum = 91
+average loss = 0.455
+best constant = 0.452261
+best constant's loss = 0.247721
+total feature number = 15482

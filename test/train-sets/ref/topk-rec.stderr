@@ -1,0 +1,22 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+predictions = topk.predict
+using no cache
+Reading datafile = train-sets/topk.vw
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.000000   0.000000            3         3.0   2.0000   2.0000        4
+0.000000   0.000000            6         6.0   3.0000   2.9992        4
+0.000000   0.000000           11        11.0   3.0000   2.9999        4
+
+finished run
+number of examples per pass = 12
+passes used = 1
+weighted example sum = 12
+weighted label sum = 0
+average loss = 1.09104e-07
+best constant = 0
+total feature number = 39

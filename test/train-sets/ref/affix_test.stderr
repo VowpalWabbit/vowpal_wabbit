@@ -1,0 +1,24 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/affix_test.dat.cache
+Reading datafile = train-sets/affix_test.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+1.008092   1.008092            3         3.0  -1.0000  -0.2249        3
+0.808355   0.608619            6         6.0   1.0000   0.2517        3
+0.496722   0.122761           11        11.0  -1.0000  -0.7206        3
+0.259290   0.021858           22        22.0   1.0000   0.9391        3
+0.129920   0.000549           44        44.0   1.0000   0.9947        3
+
+finished run
+number of examples per pass = 6
+passes used = 10
+weighted example sum = 60
+weighted label sum = 0
+average loss = 0.0952751
+best constant = 0
+total feature number = 180

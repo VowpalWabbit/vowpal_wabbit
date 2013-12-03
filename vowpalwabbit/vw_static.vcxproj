@@ -204,7 +204,7 @@
   </Target>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BoostIncludeDir);$(ZlibIncludeDir);./win32;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
@@ -256,6 +256,7 @@
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
     <ClInclude Include="oaa.h" />
+    <ClInclude Include="bs.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="parse_args.h" />
     <ClInclude Include="parse_example.h" />
@@ -292,11 +293,13 @@
     <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />
     <ClCompile Include="lda_core.cc" />
+    <ClCompile Include="learner.cc" />
     <ClCompile Include="loss_functions.cc" />
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
     <ClCompile Include="oaa.cc" />
+    <ClCompile Include="bs.cc" />
     <ClCompile Include="parser.cc" />
     <ClCompile Include="parse_args.cc" />
     <ClCompile Include="parse_example.cc" />

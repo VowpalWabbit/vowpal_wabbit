@@ -5,5 +5,5 @@ license as described in the file LICENSE.
 */
 
 namespace NOOP {
-  learner setup(vw&);
+  learner* setup(vw&);
 }

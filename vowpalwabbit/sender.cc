@@ -27,8 +27,11 @@ using namespace std;
 namespace SENDER {
   struct sender {
     io_buf* buf;
-    learner base;
     int sd;
+    vw* all;
+    example** delay_ring;
+    size_t sent_index;
+    size_t received_index;
   };
 
   void open_sockets(sender& s, string host)
@@ -51,73 +54,59 @@ namespace SENDER {
   b->flush();
 }
 
-  void save_load(void* d, io_buf& model_file, bool read, bool text) {}
+void receive_result(sender& s)
+{
+  float res, weight;
+  get_prediction(s.sd,res,weight);
+  
+  example* ec=s.delay_ring[s.received_index++ % s.all->p->ring_size];
+  label_data* ld = (label_data*)ec->ld;
+  
+  ec->final_prediction = res;
+  
+  ec->loss = s.all->loss->getLoss(s.all->sd, ec->final_prediction, ld->label) * ld->weight;
+  
+  return_simple_example(*(s.all), NULL, ec);  
+}
 
-  void drive_send(vw* all, void* d)
+  void learn(void* d, learner& base, example* ec) 
+  { 
+    sender* s = (sender*)d;
+    if (s->received_index + s->all->p->ring_size - 1 == s->sent_index)
+      receive_result(*s);
+
+    label_data* ld = (label_data*)ec->ld;
+    s->all->set_minmax(s->all->sd, ld->label);
+    simple_label.cache_label(ld, *s->buf);//send label information.
+    cache_tag(*s->buf, ec->tag);
+    send_features(s->buf,ec, (uint32_t)s->all->parse_mask);
+    s->delay_ring[s->sent_index++ % s->all->p->ring_size] = ec;
+  }
+
+  void finish_example(vw& all, void*, example*ec)
+{}
+
+void end_examples(void* d)
 {
   sender* s = (sender*)d;
-  example* ec = NULL;
-  v_array<char> null_tag;
-  null_tag.erase();
-
-  example** delay_ring = (example**) calloc(all->p->ring_size, sizeof(example*));
-  size_t sent_index =0;
-  size_t received_index=0;
-
-  bool parser_finished = false;
-  while ( true )
-    {//this is a poor man's select operation.
-      if (received_index + all->p->ring_size == sent_index || (parser_finished & (received_index != sent_index)))
-	{
-	  float res, weight;
-	  get_prediction(s->sd,res,weight);
-	  
-	  ec=delay_ring[received_index++ % all->p->ring_size];
-	  label_data* ld = (label_data*)ec->ld;
-	  
-	  ec->final_prediction = res;
-	  
-	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
-	  
-	  return_simple_example(*all, ec);
-	}
-      else if ((ec = VW::get_example(all->p)) != NULL && !command_example(all,ec))//semiblocking operation.
-        {
-
-          label_data* ld = (label_data*)ec->ld;
-          all->set_minmax(all->sd, ld->label);
-	  simple_label.cache_label(ld, *s->buf);//send label information.
-	  cache_tag(*s->buf, ec->tag);
-	  send_features(s->buf,ec, all->parse_mask);
-	  delay_ring[sent_index++ % all->p->ring_size] = ec;
-        }
-      else if (parser_done(all->p))
-        { //close our outputs to signal finishing.
-	  parser_finished = true;
-	  if (received_index == sent_index)
-	    {
-	      shutdown(s->buf->files[0],SHUT_WR);
-	      s->buf->files.delete_v();
-	      s->buf->space.delete_v();
-	      free(delay_ring);
-	      return;
-	    }
-	}
-      else 
-	;
-    }
-  return;
+  //close our outputs to signal finishing.
+  while (s->received_index != s->sent_index)
+    receive_result(*s);
+  shutdown(s->buf->files[0],SHUT_WR);
 }
-  void learn(void* d, example*ec) { cout << "sender learn can not be used under reduction" << endl; }
+
   void finish(void* d) 
   { 
     sender* s = (sender*)d;
+    s->buf->files.delete_v();
+    s->buf->space.delete_v();
+    free(s->delay_ring);
     delete s->buf;
-    s->base.finish();
-    free(s);
   }
 
-  learner setup(vw& all, po::variables_map& vm, vector<string> pairs)
+  void save_load(void*, io_buf& io, bool read, bool text){}
+
+  learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender* s = (sender*)calloc(1,sizeof(sender));
   s->sd = -1;
@@ -127,9 +116,13 @@ namespace SENDER {
       open_sockets(*s, hosts[0]);
     }
 
-  s->base = all.l;
-  sl_t sl = {NULL, save_load};
-  learner l(s,drive_send,learn,finish,sl);
+  s->all = &all;
+  s->delay_ring = (example**) calloc(all.p->ring_size, sizeof(example*));
+
+  learner* l = new learner(s,learn, save_load, 1);
+  l->set_finish(finish);
+  l->set_finish_example(finish_example); 
+  l->set_end_examples(end_examples);
   return l;
 }
 

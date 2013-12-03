@@ -1,0 +1,36 @@
+only testing
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+predictions = bs.prreg.predict
+using no cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.286797   0.286797            3         3.0   0.5498   0.0000       15
+0.271153   0.255508            6         6.0   0.2681   0.0000       15
+0.310037   0.356697           11        11.0   0.4315   0.0000       15
+0.270070   0.230104           22        22.0   0.5519   0.0000       15
+0.303996   0.337922           44        44.0   0.5514   0.0000       15
+0.284588   0.264729           87        87.0   0.5140   0.0000       15
+0.294585   0.304582          174       174.0   0.5596   0.0000       15
+0.290007   0.285429          348       348.0   0.5475   0.0000       15
+0.278993   0.267978          696       696.0   0.3421   0.0000       15
+0.286305   0.293618         1392      1392.0   0.4996   0.0000       15
+0.274909   0.263514         2784      2784.0   0.5090   0.0000       15
+0.263663   0.252417         5568      5568.0   0.6413   0.0000       15
+0.266312   0.268961        11135     11135.0   0.3869   0.0000       15
+0.260244   0.254175        22269     22269.0   0.5063   0.0000       15
+0.251980   0.243716        44537     44537.0   0.4905   0.0000       15
+
+finished run
+number of examples per pass = 74746
+passes used = 1
+weighted example sum = 69521
+weighted label sum = 35113.3
+average loss = 0.260912
+best constant = 0.505067
+best constant's loss = 0.249974
+total feature number = 1119986

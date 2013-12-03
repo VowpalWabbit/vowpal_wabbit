@@ -50,11 +50,8 @@ namespace ECT
     
     uint32_t last_pair;
     
-    uint32_t increment;
-    
     v_array<bool> tournaments_won;
 
-    learner base;
     vw* all;
   };
 
@@ -97,10 +94,10 @@ namespace ECT
     cout << endl;
   }
 
-  void create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations)
+  size_t create_circuit(vw& all, ect& e, uint32_t max_label, uint32_t eliminations)
   {
     if (max_label == 1)
-      return;
+      return 0;
 
     v_array<v_array<uint32_t > > tournaments;
 
@@ -184,14 +181,11 @@ namespace ECT
     
     if ( max_label > 1)
       e.tree_height = final_depth(eliminations);
-    
-    if (e.last_pair > 0) {
-      all.weights_per_problem *= (e.last_pair + (eliminations-1));
-      e.increment = (uint32_t) all.length() / all.weights_per_problem * all.reg.stride;
-    }
+
+    return e.last_pair + (eliminations-1);
   }
 
-  float ect_predict(vw& all, ect& e, example* ec)
+  float ect_predict(vw& all, ect& e, learner& base, example* ec)
   {
     if (e.k == (size_t)1)
       return 1;
@@ -206,18 +200,10 @@ namespace ECT
       {
         if ((finals_winner | (((size_t)1) << i)) <= e.errors)
           {// a real choice exists
-            uint32_t offset = 0;
-	  
             uint32_t problem_number = e.last_pair + (finals_winner | (((uint32_t)1) << i)) - 1; //This is unique.
-	    offset = problem_number*e.increment;
 	  
-            update_example_indicies(all.audit, ec,offset);
-            ec->partial_prediction = 0;
+            base.learn(ec, problem_number);
 	  
-            e.base.learn(ec);
-	  
-            update_example_indicies(all.audit, ec,-offset);
-	    
 	    float pred = ec->final_prediction;
 	    if (pred > 0.)
               finals_winner = finals_winner | (((size_t)1) << i);
@@ -227,15 +213,9 @@ namespace ECT
     uint32_t id = e.final_nodes[finals_winner];
     while (id >= e.k)
       {
-	uint32_t offset = (id-e.k)*e.increment;
-	
-	ec->partial_prediction = 0;
-	update_example_indicies(all.audit, ec,offset);
-	e.base.learn(ec);
-	float pred = ec->final_prediction;
-	update_example_indicies(all.audit, ec,-offset);
+	base.learn(ec, id - e.k);
 
-	if (pred > 0.)
+	if (ec->final_prediction > 0.)
 	  id = e.directions[id].right;
 	else
 	  id = e.directions[id].left;
@@ -251,7 +231,7 @@ namespace ECT
     return false;
   }
 
-  void ect_train(vw& all, ect& e, example* ec)
+  void ect_train(vw& all, ect& e, learner& base, example* ec)
   {
     if (e.k == 1)//nothing to do
       return;
@@ -261,7 +241,7 @@ namespace ECT
 
     e.tournaments_won.erase();
 
-    uint32_t id = e.directions[(uint32_t)(mc->label)-1].winner;
+    uint32_t id = e.directions[mc->label - 1].winner;
     bool left = e.directions[id].left == mc->label - 1;
     do
       {
@@ -273,17 +253,10 @@ namespace ECT
 	simple_temp.weight = mc->weight;
 	ec->ld = &simple_temp;
 	
-	uint32_t offset = (id-e.k)*e.increment;
-	
-	update_example_indicies(all.audit, ec,offset);
-	
-	ec->partial_prediction = 0;
-	e.base.learn(ec);
+	base.learn(ec, id-e.k);
 	simple_temp.weight = 0.;
-	ec->partial_prediction = 0;
-	e.base.learn(ec);//inefficient, we should extract final prediction exactly.
+	base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
 	float pred = ec->final_prediction;
-	update_example_indicies(all.audit, ec,-offset);
 
 	bool won = pred*simple_temp.label > 0;
 
@@ -335,14 +308,7 @@ namespace ECT
 	      
                 uint32_t problem_number = e.last_pair + j*(1 << (i+1)) + (1 << i) -1;
 		
-                uint32_t offset = problem_number*e.increment;
-	      
-                update_example_indicies(all.audit, ec,offset);
-                ec->partial_prediction = 0;
-	      
-				e.base.learn(ec);
-		
-                update_example_indicies(all.audit, ec,-offset);
+		base.learn(ec, problem_number);
 		
 		float pred = ec->final_prediction;
 		if (pred > 0.)
@@ -357,25 +323,19 @@ namespace ECT
       }
   }
 
-  void learn(void* d, example* ec)
+  void learn(void* d, learner& base, example* ec)
   {
     ect* e=(ect*)d;
     vw* all = e->all;
     
-    if (command_example(all, ec))
-      {
-	e->base.learn(ec);
-	return;
-      }
-
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
       cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
-    float new_label = ect_predict(*all, *e, ec);
+    float new_label = ect_predict(*all, *e, base, ec);
     ec->ld = mc;
     
     if (mc->label != (uint32_t)-1 && all->training)
-      ect_train(*all, *e, ec);
+      ect_train(*all, *e, base, ec);
     ec->ld = mc;
     
     ec->final_prediction = new_label;
@@ -384,7 +344,6 @@ namespace ECT
   void finish(void* d)
   {
     ect* e = (ect*)d;
-    e->base.finish();
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
@@ -402,27 +361,7 @@ namespace ECT
     e->tournaments_won.delete_v();
   }
   
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    while ( true )
-      {
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-            learn(d, ec);
-            OAA::output_example(*all, ec);
-	    VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-          {
-            return;
-          }
-        else 
-          ;
-      }
-  }
-
-  learner setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     ect* data = (ect*)calloc(1, sizeof(ect));
     po::options_description desc("ECT options");
@@ -476,11 +415,13 @@ namespace ECT
     }
 
     *(all.p->lp) = OAA::mc_label_parser;
-    create_circuit(all, *data, data->k, data->errors+1);
+    size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner l(data, drive, learn, finish, all.l.sl);
-    data->base = all.l;
+    learner* l = new learner(data, learn, all.l, wpp);
+    l->set_finish_example(OAA::finish_example);
+    l->set_finish(finish);
+
     return l;
   }
 }

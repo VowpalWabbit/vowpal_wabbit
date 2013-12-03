@@ -31,7 +31,6 @@ using namespace std;
 namespace MF {
 
 struct mf {
-  learner base;
   vector<string> pairs;
 
   uint32_t rank;
@@ -51,20 +50,20 @@ struct mf {
   vw* all;
 };
 
-void inline_predict(mf* data, vw* all, example* &ec) {
+void inline_predict(mf* data, vw* all, learner& base, example* &ec) {
 
   float prediction = 0;
-  data->sub_predictions.erase();
+  data->sub_predictions.resize(2*all->rank+1, true);
 
   // set weight to 0 to indicate test example (predict only)
   float weight = ((label_data*) ec->ld)->weight;
   ((label_data*) ec->ld)->weight = 0;
 
   // predict from linear terms
-  data->base.learn(ec);
+  base.learn(ec);
 
   // store linear prediction
-  data->sub_predictions.push_back(ec->partial_prediction);
+  data->sub_predictions[0] = ec->partial_prediction;
   prediction += ec->partial_prediction;
 
   // store namespace indices
@@ -73,32 +72,30 @@ void inline_predict(mf* data, vw* all, example* &ec) {
   // add interaction terms to prediction
   for (vector<string>::iterator i = data->pairs.begin(); i != data->pairs.end(); i++) {
     if (ec->atomics[(int) (*i)[0]].size() > 0 && ec->atomics[(int) (*i)[1]].size() > 0) {
+
+      // set example to left namespace only
+      ec->indices.erase();
+      ec->indices.push_back((int) (*i)[0]);
+
       for (size_t k = 1; k <= all->rank; k++) {
-	// set example to left namespace only
-	ec->indices.erase();
-	ec->indices.push_back((int) (*i)[0]);
-
 	// compute l^k * x_l using base learner
-	update_example_indicies(all->audit, ec, data->increment*k);
-	data->base.learn(ec);
-	float x_dot_l = ec->partial_prediction;
-	data->sub_predictions.push_back(ec->partial_prediction);
-	update_example_indicies(all->audit, ec, -data->increment*k);
-
-	// set example to right namespace only
-	ec->indices.erase();
-	ec->indices.push_back((int) (*i)[1]);
-
-	// compute r^k * x_r using base learner
-	update_example_indicies(all->audit, ec, data->increment*(k + data->rank));
-	data->base.learn(ec);
-	float x_dot_r = ec->partial_prediction;
-	data->sub_predictions.push_back(ec->partial_prediction);
-	update_example_indicies(all->audit, ec, -data->increment*(k + data->rank));
-
-	// accumulate prediction
-	prediction += (x_dot_l * x_dot_r);
+	base.learn(ec, k);
+	data->sub_predictions[2*k-1] = ec->partial_prediction;
       }
+
+      // set example to right namespace only
+      ec->indices.erase();
+      ec->indices.push_back((int) (*i)[1]);
+
+      for (size_t k = 1; k <= all->rank; k++) {
+	// compute r^k * x_r using base learner
+	base.learn(ec, k + all->rank);
+	data->sub_predictions[2*k] = ec->partial_prediction;
+      }
+
+      // accumulate prediction
+      for (size_t k = 1; k <= all->rank; k++)
+	prediction += (data->sub_predictions[2*k-1] * data->sub_predictions[2*k]);
     }
   }
   // restore namespace indices and label
@@ -113,23 +110,18 @@ void inline_predict(mf* data, vw* all, example* &ec) {
 }
 
 
-void learn(void* d, example* ec) {
+void learn(void* d, learner& base, example* ec) {
   mf* data = (mf*) d;
   vw* all = data->all;
 
-  if (command_example(all, ec)) {
-    data->base.learn(ec);
-    return;
-  }
-
   // predict with current weights
-  inline_predict(data, all, ec);
+  inline_predict(data, all, base, ec);
 
   // force base learner to use precomputed prediction
   ec->precomputed_prediction = true;
 
   // update linear weights
-  data->base.learn(ec);
+  base.learn(ec);
 
   // store namespace indices
   copy_array(data->indices, ec->indices);
@@ -138,41 +130,43 @@ void learn(void* d, example* ec) {
   // looping over all pairs of non-empty namespaces
   for (vector<string>::iterator i = data->pairs.begin(); i != data->pairs.end(); i++) {
     if (ec->atomics[(int) (*i)[0]].size() > 0 && ec->atomics[(int) (*i)[1]].size() > 0) {
-      for (size_t k = 1; k <= all->rank; k++) {
-	// set example to left namespace only
-	ec->indices.erase();
-	ec->indices.push_back((int) (*i)[0]);
 
-	// store feature values for left namespace
-	copy_array(data->temp_features, ec->atomics[(int) (*i)[0]]);
+      // set example to left namespace only
+      ec->indices.erase();
+      ec->indices.push_back((int) (*i)[0]);
+
+      // store feature values in left namespace
+      copy_array(data->temp_features, ec->atomics[(int) (*i)[0]]);
+
+      for (size_t k = 1; k <= all->rank; k++) {
 
 	// multiply features in left namespace by r^k * x_r
 	for (feature* f = ec->atomics[(int) (*i)[0]].begin; f != ec->atomics[(int) (*i)[0]].end; f++)
 	  f->x *= data->sub_predictions[2*k];
 
 	// update l^k using base learner
-	update_example_indicies(all->audit, ec, data->increment*k);
-	data->base.learn(ec);
-	update_example_indicies(all->audit, ec, -data->increment*k);
+	base.learn(ec, k);
 
-	// restore left namespace features
+	// restore left namespace features (undoing multiply)
 	copy_array(ec->atomics[(int) (*i)[0]], data->temp_features);
+      }
 
-	// set example to right namespace only
-	ec->indices.erase();
-	ec->indices.push_back((int) (*i)[1]);
 
-	// store feature values for right namespace
-	copy_array(data->temp_features, ec->atomics[(int) (*i)[1]]);
+      // set example to right namespace only
+      ec->indices.erase();
+      ec->indices.push_back((int) (*i)[1]);
+
+      // store feature values for right namespace
+      copy_array(data->temp_features, ec->atomics[(int) (*i)[1]]);
+
+      for (size_t k = 1; k <= all->rank; k++) {
 
 	// multiply features in right namespace by l^k * x_l
 	for (feature* f = ec->atomics[(int) (*i)[1]].begin; f != ec->atomics[(int) (*i)[1]].end; f++)
 	  f->x *= data->sub_predictions[2*k-1];
 
 	// update r^k using base learner
-	update_example_indicies(all->audit, ec, data->increment*(k + data->rank));
-	data->base.learn(ec);
-	update_example_indicies(all->audit, ec, -data->increment*(k + data->rank));
+	base.learn(ec, k + all->rank);
 
 	// restore right namespace features
 	copy_array(ec->atomics[(int) (*i)[1]], data->temp_features);
@@ -189,34 +183,17 @@ void finish(void* data) {
   mf* o = (mf*) data;
   // restore global pairs
   o->all->pairs = o->pairs;
-  o->base.finish();
 
   // clean up local v_arrays
   o->indices.delete_v();
   o->sub_predictions.delete_v();
-  delete o;
 }
 
-void drive(vw* all, void* d) {
-  example* ec = NULL;
 
-  while (true) {
-    if ((ec = VW::get_example(all->p)) != NULL) //blocking operation.
-      {
-	learn(d, ec);
-	return_simple_example(*all, ec);
-      } else if (parser_done(all->p))
-      return;
-    else
-      ; //busywait when we have predicted on all examples but not yet trained on all.
-  }
-}
-
-learner setup(vw& all, po::variables_map& vm) {
+learner* setup(vw& all, po::variables_map& vm) {
   mf* data = new mf;
 
   // copy global data locally
-  data->base = all.l;
   data->all = &all;
   data->rank = all.rank;
 
@@ -225,17 +202,14 @@ learner setup(vw& all, po::variables_map& vm) {
   data->pairs = all.pairs;
   all.pairs.clear();
 
-  // set index increment between weights
-  data->increment = all.reg.stride * all.weights_per_problem;
-  all.weights_per_problem *= data->rank;
-
   // initialize weights randomly
   if(!vm.count("initial_regressor"))
     {
       for (size_t j = 0; j < (all.reg.weight_mask + 1) / all.reg.stride; j++)
 	all.reg.weight_vector[j*all.reg.stride] = (float) (0.1 * frand48());
     }
-  learner ret(data, drive,learn, finish, all.l.sl);
-  return ret;
+  learner* l = new learner(data, learn, all.l, 2*data->rank+1);
+  l->set_finish(finish);
+  return l;
 }
 }
