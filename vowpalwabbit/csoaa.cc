@@ -1069,9 +1069,16 @@ namespace LabelDict {
       ld->treat_as_classifier = false;
     } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
       ld->treat_as_classifier = true;
-    } else if (all.training) {
-      cerr << "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier" << endl;
-      throw exception();
+    } else {
+      if (all.training) {
+        cerr << "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier" << endl;
+        throw exception();
+      }
+      if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) {
+        ld->treat_as_classifier = false;
+      } else if (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0) {
+        ld->treat_as_classifier = true;
+      }
     }
 
     all.p->emptylines_separate_examples = true; // TODO: check this to be sure!!!  !ld->is_singleline;
