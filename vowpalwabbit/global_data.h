@@ -195,7 +195,7 @@ struct vw {
   bool     spelling_features[256]; // generate spelling features for which namespace
   bool audit;//should I print lots of debugging information?
   bool quiet;//Should I suppress updates?
-  bool training;//Should I train if label data is available?
+  bool training;//Should I train if lable data is available?
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?

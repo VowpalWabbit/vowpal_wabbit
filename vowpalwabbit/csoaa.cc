@@ -1069,9 +1069,8 @@ namespace LabelDict {
       ld->treat_as_classifier = false;
     } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
       ld->treat_as_classifier = true;
-    }
-    else {
-      cerr << "ldf requires either m/multiline or mc/multiline-classifier at the end" << endl;
+    } else if (all.training) {
+      cerr << "ldf requires either m/multiline or mc/multiline-classifier, except in test-mode which can be s/sc/singleline/singleline-classifier" << endl;
       throw exception();
     }
 
