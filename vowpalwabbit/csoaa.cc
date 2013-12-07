@@ -406,6 +406,7 @@ namespace CSOAA_AND_WAP_LDF {
     bool is_wap;
     bool first_pass;
     bool treat_as_classifier;
+    bool is_singleline;
     float csoaa_example_t;
     vw* all;
 
@@ -945,7 +946,11 @@ namespace LabelDict {
       float  min_score = FLT_MAX;
       make_single_prediction(*all, *l, base, ec, &prediction, &min_score, NULL, NULL);
     }
-    if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
+    if (l->is_singleline) {
+      if (ec->in_use)
+        VW::finish_example(*all, ec);
+      l->need_to_clear = true;
+    } else if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
       if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
 	
@@ -1065,6 +1070,7 @@ namespace LabelDict {
     all.sd->k = (uint32_t)-1;
 
     ld->treat_as_classifier = false;
+    ld->is_singleline = false;
     if (ldf_arg.compare("multiline") == 0 || ldf_arg.compare("m") == 0) {
       ld->treat_as_classifier = false;
     } else if (ldf_arg.compare("multiline-classifier") == 0 || ldf_arg.compare("mc") == 0) {
@@ -1076,8 +1082,10 @@ namespace LabelDict {
       }
       if (ldf_arg.compare("singleline") == 0 || ldf_arg.compare("s") == 0) {
         ld->treat_as_classifier = false;
+        ld->is_singleline = true;
       } else if (ldf_arg.compare("singleline-classifier") == 0 || ldf_arg.compare("sc") == 0) {
         ld->treat_as_classifier = true;
+        ld->is_singleline = true;
       }
     }
 
