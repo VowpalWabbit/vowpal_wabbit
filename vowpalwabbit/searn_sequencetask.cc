@@ -4,6 +4,20 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include "searn_sequencetask.h"
+#include "oaa.h"
+
+void label_to_array(void*label, v_array<uint32_t>&out) {
+  OAA::mc_label* l = (OAA::mc_label*)label;
+  if (l->label == (uint32_t)-1)
+    out.erase();
+  else {
+    if (out.size() == 1) out[0] = l->label;
+    else {
+      out.erase();
+      out.push_back( l->label );
+    }
+  }
+}
 
 namespace SequenceTask {
   using namespace Searn;
@@ -25,20 +39,21 @@ namespace SequenceTask {
     v_array<uint32_t> * y_star = (v_array<uint32_t>*) srn.task_data;
     float total_loss  = 0;
 
-    for (size_t i=0; i<len; i++) {
+    for (size_t i=0; i<len; i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
       srn.snapshot(i, 2, &total_loss, sizeof(total_loss), false);
 
-      OAA::label_to_array(ec[i]->ld, *y_star);
-
+      //predict with label advice
+      label_to_array(ec[i]->ld, *y_star);
       size_t prediction = srn.predict(ec[i], NULL, y_star);
 
+      //track loss
       if (y_star->size() > 0)
         total_loss += (float)(prediction != y_star->last());
 
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << ((y_star->size() == 0) ? '?' : y_star->last()) << ' ';
-    }
+    }//declare loss
     srn.declare_loss(len, total_loss);
   }
 }
@@ -81,7 +96,7 @@ namespace SequenceSpanTask {
       srn.snapshot(i, 2, &sys_tag, sizeof(sys_tag), true);
       srn.snapshot(i, 3, &total_loss, sizeof(total_loss), false);
 
-      OAA::label_to_array(ec[i]->ld, my_task_data->y_star);
+      label_to_array(ec[i]->ld, my_task_data->y_star);
       my_task_data->y_allowed[my_task_data->y_allowed.size()-1] = sys_tag;
       size_t prediction = srn.predict(ec[i], &my_task_data->y_allowed, &my_task_data->y_star);
 
