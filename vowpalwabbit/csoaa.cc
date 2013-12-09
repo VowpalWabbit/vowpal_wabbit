@@ -947,8 +947,7 @@ namespace LabelDict {
       make_single_prediction(*all, *l, base, ec, &prediction, &min_score, NULL, NULL);
     }
     if (l->is_singleline) {
-      l->ec_seq.push_back(ec);
-      l->need_to_clear = true;
+      // must be test mode
     } else if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
       if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
@@ -1099,7 +1098,10 @@ namespace LabelDict {
     ld->read_example_this_loop = 0;
     ld->need_to_clear = false;
     learner* l = new learner(ld, learn, all.l);
-    l->set_finish_example(finish_multiline_example); 
+    if (ld->is_singleline)
+      l->set_finish_example(finish_example);
+    else
+      l->set_finish_example(finish_multiline_example);
     l->set_finish(finish);
     l->set_end_examples(end_examples); 
     l->set_end_pass(end_pass);
