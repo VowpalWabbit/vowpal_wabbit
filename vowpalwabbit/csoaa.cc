@@ -915,7 +915,7 @@ namespace LabelDict {
       for (example** ecc=l.ec_seq.begin; ecc!=l.ec_seq.end; ecc++)
         output_example(all, *ecc, hit_loss);
 
-      if (all.raw_prediction > 0)
+      if (!l.is_singleline && (all.raw_prediction > 0))
         all.print_text(all.raw_prediction, "", l.ec_seq[0]->tag);
     }
   }
@@ -947,8 +947,7 @@ namespace LabelDict {
       make_single_prediction(*all, *l, base, ec, &prediction, &min_score, NULL, NULL);
     }
     if (l->is_singleline) {
-      if (ec->in_use)
-        VW::finish_example(*all, ec);
+      l->ec_seq.push_back(ec);
       l->need_to_clear = true;
     } else if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
       if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
