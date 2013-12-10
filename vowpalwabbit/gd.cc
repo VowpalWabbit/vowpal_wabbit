@@ -58,11 +58,7 @@ namespace GD
     if (fabs(update) == 0.)
       return;
     
-    float total_weight = 0.f;
-    if(all.active)
-      total_weight = (float)all.sd->weighted_unlabeled_examples;
-    else
-      total_weight = ec->example_t;
+    float total_weight = ec->example_t;
 
     if(!all.holdout_set_off)
       total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
@@ -279,7 +275,7 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   if (a != NULL && all.audit){
     tempstream << tmp << ':';
   }
-  else 	if ( index == (((constant * stride + offset)&all.reg.weight_mask)) && all.audit){
+  else 	if ( index == (((constant * stride * all.wpp + offset)&all.reg.weight_mask)) && all.audit){
     tempstream << "Constant:";
   }  
   if(all.audit){
@@ -503,17 +499,13 @@ float compute_norm(vw& all, example* &ec)
   foreach_feature<T>(all, ec, &nd);
   
   if(all.normalized_updates) {
-    float total_weight = 0;
-    if(all.active)
-      total_weight = (float)all.sd->weighted_unlabeled_examples;
-    else
-      total_weight = ec->example_t;
+    float total_weight = ec->example_t;
 
     if(!all.holdout_set_off)
       total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     all.normalized_sum_norm_x += ld->weight * nd.norm_x;
-    
+
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
     if(all.power_t == 0.5) {
       if(all.adaptive) nd.norm /= sqrt(avg_sq_norm);
@@ -548,7 +540,7 @@ float compute_norm(vw& all, example* &ec)
   }
 
   float t;
-  if(all.active)
+  if(all.active && ld->label != FLT_MAX)
     t = (float)all.sd->weighted_unlabeled_examples;
   else
     t = (float)(ec->example_t - all.sd->weighted_holdout_examples);

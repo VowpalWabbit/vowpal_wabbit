@@ -152,7 +152,6 @@ namespace CSOAA {
   {
     label* ld = (label*)v;
 
-    //v_array<substring> parse_name; // TODO: make the parser thread safe so we don't have to do this here!
     ld->costs.erase();
     for (unsigned int i = 0; i < words.size(); i++) {
       wclass f = {0.,0,0.,0.};

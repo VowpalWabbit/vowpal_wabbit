@@ -2,7 +2,7 @@ import socket
 import sys
 import argparse
 
-#The following is under GPL licensing
+#readline is under GPL licensing
 #import readline
 
 def recvall(s, n):
@@ -71,7 +71,6 @@ try:
 
     print 'connecting to %s:%d ...'%(args.host,args.port)
     sock.connect((args.host, args.port))
-    sock.sendall('\x00'*4)
     print 'done'
     # Send seed dataset
     if seed:
@@ -89,6 +88,7 @@ try:
         #print 'unlabeled response '+repr(response)
         responselist=response.split(' ')
         if len(responselist)==2:
+            #VW does not care about this label
             continue
         prediction,tag,importance=responselist
         try:

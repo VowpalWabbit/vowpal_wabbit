@@ -143,9 +143,12 @@ inline void print_substring(substring s)
 inline float parseFloat(char * p, char **end)
 {
   char* start = p;
-
+  
   if (!*p)
-    return 0;
+    {
+      *end = p;
+      return 0;
+    }
   int s = 1;
   while (*p == ' ') p++;
   
@@ -156,15 +159,18 @@ inline float parseFloat(char * p, char **end)
   float acc = 0;
   while (*p >= '0' && *p <= '9')
     acc = acc * 10 + *p++ - '0';
-  
+
   int num_dec = 0;
   if (*p == '.') {
-    p++;
-    while (*p >= '0' && *p <= '9') {
-      acc = acc *10 + (*p++ - '0') ;
-      num_dec++;
+    while (*(++p) >= '0' && *p <= '9') {
+      if (num_dec < 35)
+	{
+	  acc = acc *10 + (*p - '0');
+	  num_dec++;
+	}
     }
   }
+
   int exp_acc = 0;
   if(*p == 'e' || *p == 'E'){
     p++;
@@ -204,7 +210,15 @@ inline float float_of_substring(substring s)
 
 inline int int_of_substring(substring s)
 {
-  return atoi(std::string(s.begin, s.end-s.begin).c_str());
+  char* endptr = s.end;
+  int i = strtol(s.begin,&endptr,10);
+  if (endptr == s.begin && s.begin != s.end)  
+    {
+      std::cout << "warning: " << std::string(s.begin, s.end-s.begin).c_str() << " is not a good int, replacing with 0" << std::endl;
+      i = 0;
+    }
+
+  return i;
 }
 
 #endif

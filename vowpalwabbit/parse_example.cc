@@ -111,6 +111,7 @@ public:
     while( !(*reading_head == ' ' || *reading_head == '\t' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine || *reading_head == '\r' ))
       ++reading_head;
     ret.end = reading_head;
+
     return ret;
   }
   
@@ -289,8 +290,7 @@ public:
   }
   
   inline void listNameSpace(){
-    while(*reading_head == '|'){
-      // ListNameSpace --> '|' NameSpace ListNameSpace
+    while(*reading_head == '|'){ // ListNameSpace --> '|' NameSpace ListNameSpace
       ++reading_head;
       nameSpace();
     }
@@ -302,18 +302,20 @@ public:
   }
 
   TC_parser(char* reading_head, char* endLine, vw& all, example* ae){
-    this->beginLine = reading_head;
-    this->reading_head = reading_head;
-    this->endLine = endLine;
-    this->p = all.p;
-    this->ae = ae;
-    this->weights_per_problem = all.wpp;
-    this->affix_features = all.affix_features;
-    this->spelling_features = all.spelling_features;
-    audit = all.audit || all.hash_inv;
-    listNameSpace();
+    if (endLine != reading_head)
+      {
+	this->beginLine = reading_head;
+	this->reading_head = reading_head;
+	this->endLine = endLine;
+	this->p = all.p;
+	this->ae = ae;
+	this->weights_per_problem = all.wpp;
+	this->affix_features = all.affix_features;
+	this->spelling_features = all.spelling_features;
+	audit = all.audit || all.hash_inv;
+	listNameSpace();
+      }
   }
-
 };
 
 void substring_to_example(vw* all, example* ae, substring example)
