@@ -120,6 +120,6 @@ template<class T> v_array<T> pop(v_array<v_array<T> > &stack)
     return *(--stack.end);
   else
     return v_array<T>();
-}
+}  
 
 #endif  // VARRAY_H__

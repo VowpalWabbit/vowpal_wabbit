@@ -9,37 +9,24 @@ namespace SequenceTask {
   using namespace Searn;
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.task_data            = new v_array<uint32_t>();
+    srn.task_data            = NULL;  // we don't need any of our own data
     srn.auto_history         = true;  // automatically add history features to our examples, please
+    srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
     srn.examples_dont_change = true;  // we don't do any internal example munging
   }
 
-  void finish(searn& srn) {
-    v_array<uint32_t> * y_star = (v_array<uint32_t>*) srn.task_data;
-    y_star->erase();
-    y_star->delete_v();
-    delete y_star;
-  }
+  void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
   void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
-    v_array<uint32_t> * y_star = (v_array<uint32_t>*) srn.task_data;
-    float total_loss  = 0;
-
     for (size_t i=0; i<len; i++) {
       srn.snapshot(i, 1, &i, sizeof(i), true);
-      srn.snapshot(i, 2, &total_loss, sizeof(total_loss), false);
 
-      OAA::label_to_array(ec[i]->ld, *y_star);
-
-      size_t prediction = srn.predict(ec[i], NULL, y_star);
-
-      if (y_star->size() > 0)
-        total_loss += (float)(prediction != y_star->last());
+      OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
+      size_t prediction = srn.predict(ec[i], NULL, label);
 
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << ((y_star->size() == 0) ? '?' : y_star->last()) << ' ';
+      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
     }
-    srn.declare_loss(len, total_loss);
   }
 }
 
