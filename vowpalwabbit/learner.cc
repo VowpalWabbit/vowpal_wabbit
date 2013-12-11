@@ -43,16 +43,16 @@ namespace LEARNER
 	      {
 		all->l->learn(ec);
 
-                if(all->early_terminate)
-                  {
-                    all->p->done = true;
-                    all->l->finish_example(*all, ec);
-                    return;
-                  }
-                else
-                  {
-                    all->l->finish_example(*all, ec);
-                  }
+		if(all->early_terminate)
+		  {
+		    all->p->done = true;
+		    all->l->finish_example(*all, ec);
+		    return;
+		  }
+		else
+		  {
+		    all->l->finish_example(*all, ec);
+		  }
 	      }
 	  }
 	else if (parser_done(all->p))
