@@ -401,7 +401,7 @@ namespace Searn {
   uint32_t single_action(vw& all, searn& srn, learner& base, example** ecs, size_t num_ec, void*valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t) {
     //cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
     if (pol == -1) { // optimal policy
-      if ((ystar == NULL) || ((ystar->size() == 0) && (! ystar_is_uint32t))) { // TODO: choose according to current model!
+      if ((ystar == NULL) || ((! ystar_is_uint32t) && (ystar->size() == 0))) { // TODO: choose according to current model!
         if (srn.rollout_all_actions)
           return choose_random<CSOAA::wclass>(((CSOAA::label*)valid_labels)->costs).weight_index;
         else
