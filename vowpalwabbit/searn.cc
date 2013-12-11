@@ -376,6 +376,17 @@ namespace Searn {
     srn.num_features += ec->num_features;
     uint32_t final_prediction = (uint32_t)ec->final_prediction;
 
+    if ((srn.state == INIT_TEST) && (all.raw_prediction > 0) && (srn.rollout_all_actions)) {
+      string outputString;
+      stringstream outputStringStream(outputString);
+      CSOAA::label *ld = (CSOAA::label*)ec->ld;
+      for (CSOAA::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
+        if (c != ld->costs.begin) outputStringStream << ' ';
+        outputStringStream << c->weight_index << ':' << c->partial_prediction;
+      }
+      all.print_text(all.raw_prediction, outputStringStream.str(), ec->tag);
+    }
+    
     ec->ld = old_label;
 
     return final_prediction;
@@ -922,7 +933,8 @@ namespace Searn {
         (!all.training) ||                          // if we're just testing
         (all.current_pass == 0) ||                  // we need error rates for progressive cost
         (all.holdout_set_off) ||                    // no holdout
-        (ec[0]->test_only)                          // it's a holdout example
+        (ec[0]->test_only) ||                       // it's a holdout example
+        (all.raw_prediction > 0)                    // we need raw predictions
         ) {
 
       srn.should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0);
@@ -938,6 +950,10 @@ namespace Searn {
 
       for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
         all.print_text((int)*sink, srn.pred_string->str(), ec[0]->tag);
+
+      if ((all.raw_prediction > 0) && (srn.rollout_all_actions)) {
+        all.print_text(all.raw_prediction, "", ec[0]->tag);
+      }
     }
     
     if ((srn.t > 0) && all.training) {
