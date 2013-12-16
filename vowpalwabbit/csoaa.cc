@@ -337,7 +337,7 @@ namespace CSOAA {
 
 	ec->ld = &simple_temp;
 
-	base.learn(ec, i);
+	base.learn(ec, i - 1);
         cl->partial_prediction = ec->partial_prediction;
 	if (ec->partial_prediction < score || (ec->partial_prediction == score && i < prediction)) {
           score = ec->partial_prediction;
