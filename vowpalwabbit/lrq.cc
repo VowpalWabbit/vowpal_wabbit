@@ -55,8 +55,9 @@ namespace LRQ {
     size_t which = ec->example_counter;
     simple_prediction first_prediction;
     float first_loss;
+    unsigned int maxiter = (all.training && ! example_is_test (ec)) ? 2 : 1;
 
-    for (unsigned int iter = 0; iter < 2; ++iter, ++which)
+    for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
       {
         // Add left LRQ features, holding right LRQ features fixed
         //     and vice versa
