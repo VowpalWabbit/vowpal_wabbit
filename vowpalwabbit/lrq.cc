@@ -1,6 +1,7 @@
 #include "gd.h"
 #include "vw.h"
 #include "lrq.h"
+#include <float.h>
 
 namespace {
   bool 
@@ -12,6 +13,20 @@ namespace {
       (void) v;
 
       return (*s != '\0' && *endptr == '\0');
+    }
+
+  inline float
+  cheesyrand (uint32_t x)
+    {
+      uint32_t v = 1664525 * x + 1013904223;
+
+      return ((float) v) / 2147483648;
+    }
+
+  inline bool
+  example_is_test (example* ec)
+    {
+      return ec->test_only || (((label_data*) ec->ld)->label == FLT_MAX);
     }
 }
 
@@ -66,7 +81,11 @@ namespace LRQ {
                   {
                     uint32_t lwindex = lindex + n * all.reg.stride;
 
-                    float lw = all.reg.weight_vector[lwindex & all.reg.weight_mask];
+                    float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
+
+                    // perturb away from saddle point at (0, 0)
+                    if (all.training && ! example_is_test (ec) && *lw == 0)
+                      *lw = cheesyrand (lwindex);
     
                     for (unsigned int rfn = 0; 
                          rfn < lrq->orig_size[right]; 
@@ -79,7 +98,7 @@ namespace LRQ {
                         uint32_t rwindex = rindex + n * all.reg.stride;
     
                         feature lrq; 
-                        lrq.x = lw;
+                        lrq.x = *lw;
                         lrq.weight_index = rwindex; 
 
                         ec->atomics[right].push_back (lrq);
