@@ -3,6 +3,19 @@
 #include "lrq.h"
 #include <float.h>
 
+namespace LRQ {
+
+  struct LRQstate {
+    vw* all;
+    bool lrindices[256];
+    size_t orig_size[256];
+    std::vector<std::string> lrpairs;
+    bool dropout;
+    uint32_t seed;
+    uint32_t initial_seed;
+  };
+}
+
 namespace {
   bool 
   valid_int (const char* s)
@@ -13,6 +26,25 @@ namespace {
       (void) v;
 
       return (*s != '\0' && *endptr == '\0');
+    }
+
+  inline bool
+  cheesyrbit (uint32_t& seed)
+    {
+      const uint32_t thirty_one = 1 << 31;
+      const uint32_t eight = 1 << 3;
+      const uint32_t one = 1;
+
+      if (seed & thirty_one)
+        {
+          seed = ( (seed ^ eight) << 1 ) | one;
+          return 1;
+        }
+      else
+        { 
+          seed <<= 1;
+          return 0;
+        }
     }
 
   inline float
@@ -28,16 +60,18 @@ namespace {
     {
       return ec->test_only || (((label_data*) ec->ld)->label == FLT_MAX);
     }
+
+  void
+  reset_seed (void* d)
+    {
+      LRQ::LRQstate* lrq = (LRQ::LRQstate*) d;
+
+      if (lrq->all->bfgs)
+        lrq->seed = lrq->initial_seed;
+    }
 }
 
 namespace LRQ {
-
-  struct LRQstate {
-    vw* all;
-    bool lrindices[256];
-    size_t orig_size[256];
-    std::vector<std::string> lrpairs;
-  };
 
   void learn(void* d, learner& base, example* ec)
   {
@@ -56,6 +90,9 @@ namespace LRQ {
     simple_prediction first_prediction;
     float first_loss;
     unsigned int maxiter = (all.training && ! example_is_test (ec)) ? 2 : 1;
+
+    bool do_dropout = lrq->dropout && all.training && ! example_is_test (ec);
+    float scale = (! lrq->dropout || do_dropout) ? 1 : 0.5;
 
     for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
       {
@@ -80,34 +117,37 @@ namespace LRQ {
     
                 for (unsigned int n = 1; n <= k; ++n)
                   {
-                    uint32_t lwindex = lindex + n * all.reg.stride;
-
-                    float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
-
-                    // perturb away from saddle point at (0, 0)
-                    if (all.training && ! example_is_test (ec) && *lw == 0)
-                      *lw = cheesyrand (lwindex);
-    
-                    for (unsigned int rfn = 0; 
-                         rfn < lrq->orig_size[right]; 
-                         ++rfn)
+                    if (! do_dropout || cheesyrbit (lrq->seed))
                       {
-                        feature* rf = ec->atomics[right].begin + rfn;
+                        uint32_t lwindex = lindex + n * all.reg.stride;
 
-                        size_t rindex = 
-                          quadratic_constant * rf->weight_index + k * ec->ft_offset;
-                        uint32_t rwindex = rindex + n * all.reg.stride;
-    
-                        feature lrq; 
-                        lrq.x = *lw;
-                        lrq.weight_index = rwindex; 
+                        float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
-                        ec->atomics[right].push_back (lrq);
-
-                        if (all.audit)
+                        // perturb away from saddle point at (0, 0)
+                        if (all.training && ! example_is_test (ec) && *lw == 0)
+                          *lw = cheesyrand (lwindex);
+        
+                        for (unsigned int rfn = 0; 
+                             rfn < lrq->orig_size[right]; 
+                             ++rfn)
                           {
-                            audit_data ad = { "lrq", "blah", lrq.weight_index, lrq.x, false };
-                            ec->audit_features[right].push_back (ad);
+                            feature* rf = ec->atomics[right].begin + rfn;
+
+                            size_t rindex = 
+                              quadratic_constant * rf->weight_index + k * ec->ft_offset;
+                            uint32_t rwindex = rindex + n * all.reg.stride;
+        
+                            feature lrq; 
+                            lrq.x = scale * *lw;
+                            lrq.weight_index = rwindex; 
+
+                            ec->atomics[right].push_back (lrq);
+
+                            if (all.audit)
+                              {
+                                audit_data ad = { "lrq", "blah", lrq.weight_index, lrq.x, false };
+                                ec->audit_features[right].push_back (ad);
+                              }
                           }
                       }
                   }
@@ -145,10 +185,16 @@ namespace LRQ {
       }
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t random_seed)
   {//parse and set arguments
     LRQstate* lrq = (LRQstate*) calloc (1, sizeof (LRQstate));
     lrq->all = &all;
+
+    lrq->initial_seed = lrq->seed = random_seed ^ 8675309UL;
+    lrq->dropout = vm.count("lrqdropout") || vm_file.count("lrqdropout");
+
+    if (lrq->dropout && !vm_file.count("lrqdropout"))
+      all.options_from_file.append("--lrqdropout");
 
     if (!vm_file.count("lrq"))
       {
@@ -170,7 +216,11 @@ namespace LRQ {
       lrq->lrpairs = vm_file["lrq"].as<vector<string> > ();
 
     if (! all.quiet)
-      cerr << "creating low rank quadratic features for pairs: ";
+      {
+        cerr << "creating low rank quadratic features for pairs: ";
+        if (lrq->dropout)
+          cerr << "(using dropout) ";
+      }
 
     for (vector<string>::iterator i = lrq->lrpairs.begin (); 
          i != lrq->lrpairs.end (); 
@@ -192,7 +242,10 @@ namespace LRQ {
     if(!all.quiet)
       cerr<<endl;
         
+    learner* l = new learner(lrq, learn, all.l);
+    l->set_end_pass (reset_seed);
+
     // TODO: leaks memory ?
-    return new learner(lrq, learn, all.l);
+    return l;
   }
 }
