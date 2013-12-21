@@ -214,6 +214,7 @@ vw* parse_args(int argc, char *argv[])
   po::options_description lrq_opt("Low Rank Quadratic options");
   lrq_opt.add_options()
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
+    ("lrqdropout", "use dropout training for low rank quadratic features")
     ;
 
   po::options_description multiclass_opt("Multiclass options");
@@ -814,7 +815,7 @@ vw* parse_args(int argc, char *argv[])
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
 
   if (vm.count("lrq") || vm_file.count("lrq"))
-    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
+    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file, random_seed);
 
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }

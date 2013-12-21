@@ -2,6 +2,6 @@
 #ifndef LRQ_HEADER
 #define LRQ_HEADER
 namespace LRQ {
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file);
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t random_seed);
 }
 #endif
