@@ -24,7 +24,7 @@ ml-%/ratings.dat: ml-%.zip
 	@touch ml-$*/*
 
 ml-%.ratings.train.vw: ml-%/ratings.dat
-	@echo -n "preprocessing movielens $*m ..."
+	@echo -n "preprocessing movielens $* ..."
 	@./ratings2vw >(sort -R > ml-$*.ratings.train.vw) ml-$*.ratings.test.vw $<
 	@echo " complete"
 
