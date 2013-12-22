@@ -25,7 +25,10 @@ ml-%/ratings.dat: ml-%.zip
 ml-%.ratings.train.vw: ml-%/ratings.dat
 	@echo -n "preprocessing movielens $* ..."
 	@./ratings2vw ml-$*.ratings.pre.train.vw ml-$*.ratings.test.vw $<
-	@sort -R ml-$*.ratings.pre.train.vw > ml-$*.ratings.train.vw
+	@perl -ne 'BEGIN { srand 8675309; }; 		\
+	           1; print join "\t", rand (), $$_;' 	\
+	      ml-$*.ratings.pre.train.vw | sort -k1 |	\
+	      cut -f2- > ml-$*.ratings.train.vw
 	@rm -f ml-$*.ratings.pre.train.vw
 	@echo " complete"
 
@@ -65,12 +68,12 @@ lrq.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	@echo "*********************************************************"
 	@echo "* training low-rank interaction model (without dropout) *"
 	@echo "*                                                       *"
-	@echo "* vw --lrq um5 ...                                      *"
+	@echo "* vw --lrq um7 ...                                      *"
 	@echo "*********************************************************"
 	@echo
 	@${VW} --loss_function quantile -l 0.1 -b 24 --passes 100 	\
 	  -k --cache_file $@.cache -d $(word 2,$+) --holdout_off	\
-	  --l2 1e-6 --lrq um5 --adaptive --invariant -f $@.model
+	  --l2 1e-6 --lrq um7 --adaptive --invariant -f $@.model
 	@echo "********************************************************"
 	@echo "* testing low-rank interaction model (without dropout) *"
 	@echo "********************************************************"
@@ -89,12 +92,12 @@ lrqdropout.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	@echo "******************************************************"
 	@echo "* training low-rank interaction model (with dropout) *"
 	@echo "*                                                    *"
-	@echo "* vw --lrq um10 --lrqdropout ...                     *"
+	@echo "* vw --lrq um14 --lrqdropout ...                     *"
 	@echo "******************************************************"
 	@echo
 	@${VW} --loss_function quantile -l 1 -b 24 --passes 100 	\
 	  -k --cache_file $@.cache -d $(word 2,$+) --holdout_off	\
-	  --lrq um10 --lrqdropout --adaptive --invariant -f $@.model
+	  --lrq um14 --lrqdropout --adaptive --invariant -f $@.model
 	@echo "*****************************************************"
 	@echo "* testing low-rank interaction model (with dropout) *"
 	@echo "*****************************************************"
