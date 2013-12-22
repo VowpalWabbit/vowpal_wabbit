@@ -1,6 +1,7 @@
 #include "gd.h"
 #include "vw.h"
 #include "lrq.h"
+#include "rand48.h"
 #include <float.h>
 
 namespace LRQ {
@@ -11,8 +12,8 @@ namespace LRQ {
     size_t orig_size[256];
     std::vector<std::string> lrpairs;
     bool dropout;
-    uint32_t seed;
-    uint32_t initial_seed;
+    uint64_t seed;
+    uint64_t initial_seed;
   };
 }
 
@@ -29,22 +30,9 @@ namespace {
     }
 
   inline bool
-  cheesyrbit (uint32_t& seed)
+  cheesyrbit (uint64_t& seed)
     {
-      const uint32_t thirty_one = 1 << 31;
-      const uint32_t eight = 1 << 3;
-      const uint32_t one = 1;
-
-      if (seed & thirty_one)
-        {
-          seed = ( (seed ^ eight) << 1 ) | one;
-          return 1;
-        }
-      else
-        { 
-          seed <<= 1;
-          return 0;
-        }
+      return merand48 (seed) > 0.5;
     }
 
   inline float
@@ -145,7 +133,9 @@ namespace LRQ {
 
                             if (all.audit)
                               {
-                                audit_data ad = { "lrq", "blah", lrq.weight_index, lrq.x, false };
+                                char name[4] = { 'l', 'r', 'q', '\0' };
+                                char subname[4] = { left, '^', right, '\0' };
+                                audit_data ad = { name, subname, lrq.weight_index, lrq.x, false };
                                 ec->audit_features[right].push_back (ad);
                               }
                           }
@@ -190,7 +180,7 @@ namespace LRQ {
     LRQstate* lrq = (LRQstate*) calloc (1, sizeof (LRQstate));
     lrq->all = &all;
 
-    lrq->initial_seed = lrq->seed = random_seed ^ 8675309UL;
+    lrq->initial_seed = lrq->seed = random_seed | 8675309;
     lrq->dropout = vm.count("lrqdropout") || vm_file.count("lrqdropout");
 
     if (lrq->dropout && !vm_file.count("lrqdropout"))
