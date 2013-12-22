@@ -1,6 +1,5 @@
 SHELL=/bin/zsh
 VW=../../vowpalwabbit/vw
-HYPERSEARCH=../../utl/vw-hypersearch
 
 .SECONDARY:
 
