@@ -25,7 +25,9 @@ ml-%/ratings.dat: ml-%.zip
 
 ml-%.ratings.train.vw: ml-%/ratings.dat
 	@echo -n "preprocessing movielens $* ..."
-	@./ratings2vw >(sort -R > ml-$*.ratings.train.vw) ml-$*.ratings.test.vw $<
+	@./ratings2vw ml-$*.ratings.pre.train.vw ml-$*.ratings.test.vw $<
+	@sort -R ml-$*.ratings.pre.train.vw > ml-$*.ratings.train.vw
+	@rm -f ml-$*.ratings.pre.train.vw
 	@echo " complete"
 
 %.test.vw: %.train.vw
@@ -63,6 +65,8 @@ linear.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 lrq.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	@echo "*********************************************************"
 	@echo "* training low-rank interaction model (without dropout) *"
+	@echo "*                                                       *"
+	@echo "* vw --lrq um5 ...                                      *"
 	@echo "*********************************************************"
 	@echo
 	@${VW} --loss_function quantile -l 0.1 -b 24 --passes 100 	\
@@ -85,6 +89,8 @@ lrq.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 lrqdropout.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	@echo "******************************************************"
 	@echo "* training low-rank interaction model (with dropout) *"
+	@echo "*                                                    *"
+	@echo "* vw --lrq um10 --lrqdropout ...                     *"
 	@echo "******************************************************"
 	@echo
 	@${VW} --loss_function quantile -l 1 -b 24 --passes 100 	\
