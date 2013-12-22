@@ -96,12 +96,14 @@ namespace LRQ {
             unsigned char left = (*i)[which%2];
             unsigned char right = (*i)[(which+1)%2];
             unsigned int k = atoi (i->c_str () + 2);
+            unsigned int lmaxk = lrq->lrindices[left];
+            unsigned int rmaxk = lrq->lrindices[right];
 
             for (unsigned int lfn = 0; lfn < lrq->orig_size[left]; ++lfn)
               {
                 feature* lf = ec->atomics[left].begin + lfn;
                 size_t lindex = 
-                  quadratic_constant * lf->weight_index + k * ec->ft_offset;
+                  quadratic_constant * lf->weight_index + lmaxk * ec->ft_offset;
     
                 for (unsigned int n = 1; n <= k; ++n)
                   {
@@ -122,7 +124,7 @@ namespace LRQ {
                             feature* rf = ec->atomics[right].begin + rfn;
 
                             size_t rindex = 
-                              quadratic_constant * rf->weight_index + k * ec->ft_offset;
+                              quadratic_constant * rf->weight_index + rmaxk * ec->ft_offset;
                             uint32_t rwindex = rindex + n * all.reg.stride;
         
                             feature lrq; 
@@ -229,8 +231,10 @@ namespace LRQ {
         }
         // TODO: colon-syntax
         
-        lrq->lrindices[(int) (*i)[0]] = 1;
-        lrq->lrindices[(int) (*i)[1]] = 1;
+        unsigned int k = atoi (i->c_str () + 2);
+
+        lrq->lrindices[(int) (*i)[0]] = max (lrq->lrindices[(int) (*i)[0]], k);
+        lrq->lrindices[(int) (*i)[1]] = max (lrq->lrindices[(int) (*i)[1]], k);
       }
 
     if(!all.quiet)
