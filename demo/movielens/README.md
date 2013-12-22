@@ -29,13 +29,14 @@ the full interaction design enabled by specifying `-q ab`, you can have a
 rank-k interaction design by specifying `--lrq abk`.  Additionally 
 specifying `--lrqdropout` trains with dropout which tends to work better.
 When using dropout the best performing rank tends to be about twice as big
-as without dropout.
+as without dropout.  When *not* using dropout you might find
+a bit of `--l2` regularization improves generalization.
 
 ### Demo Instructions ###
 - `make shootout`: eventually produces three results indicating test MAE (mean absolute error) on movielens-1M for
  - linear: a model without any interactions.  basically this creates a user bias and item bias fit.  this is a surprisingly strong baseline in terms of MAE, but is useless for recommendation as it induces the same item ranking for all users.  It achieves test MAE of 0.733 (at the time of this writing).
  - lrq: the linear model augmented with rank-5 interactions between users and movies, aka, "five latent factors".  It achieves test MAE of 0.700.  I determined that 5 was the best number to use through experimentation.  The additional `vw` command-line flag vs. the linear model is `--l2 1e-6 --lrq um5`.
- - lrqdropout: the linear model augmented with rank-10 interactions between users and movies, and trained with dropout.  It achieves test MAE of 0.693.  Dropout effectively halves the number of latent factors, so unsurprisingly 10 factors seem to work best.  The additional `vw` command-line flags vs. the linear model are `--lrq um10 --lrqdropout`.
+ - lrqdropout: the linear model augmented with rank-10 interactions between users and movies, and trained with dropout.  It achieves test MAE of 0.692.  Dropout effectively halves the number of latent factors, so unsurprisingly 10 factors seem to work best.  The additional `vw` command-line flags vs. the linear model are `--lrq um10 --lrqdropout`.
 - the first time you invoke `make shootout` there is a lot of other output.  invoking it a second time will allow you to just see the cached results.
 
 Details about how `vw` is invoked is in the `Makefile`.
