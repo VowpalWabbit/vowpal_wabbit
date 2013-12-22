@@ -9,7 +9,7 @@ all:
 shootout: $(foreach what,linear lrq lrqdropout,$(what).print)
 
 clean:
-	rm -f *results*
+	rm -f $(wildcard *results*) $(wildcard *.vw)
 
 ml-%.zip:
 	@echo "downloading movielens $*"
