@@ -815,7 +815,7 @@ vw* parse_args(int argc, char *argv[])
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
 
   if (vm.count("lrq") || vm_file.count("lrq"))
-    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file, random_seed);
+    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }

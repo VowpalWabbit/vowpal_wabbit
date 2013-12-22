@@ -175,10 +175,14 @@ namespace LRQ {
       }
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file, size_t random_seed)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {//parse and set arguments
     LRQstate* lrq = (LRQstate*) calloc (1, sizeof (LRQstate));
     lrq->all = &all;
+
+    size_t random_seed = 0;
+    if (vm.count("random_seed")) random_seed = vm["random_seed"].as<size_t> ();
+    if (vm_file.count("random_seed")) random_seed = vm_file["random_seed"].as<size_t> ();
 
     lrq->initial_seed = lrq->seed = random_seed | 8675309;
     lrq->dropout = vm.count("lrqdropout") || vm_file.count("lrqdropout");
