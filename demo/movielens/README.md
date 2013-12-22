@@ -5,6 +5,10 @@ This demo shows a low-rank approximation to an interaction design matrix
 for the [movielens-1M](http://files.grouplens.org/papers/ml-10m-README.html)
 dataset.
 
+TLDR for autodidacts: if you have two namespaces `a` and `b`, instead of 
+the full interaction design enabled by specifying `-q ab`, you can have a 
+rank-k interaction design by specifying `--lrq abk`.
+
 ### About Low-Rank Interaction Approximations ###
 
 In movielens-1M, a user has at most one rating per movie, and therefore
@@ -22,7 +26,7 @@ whose raison d'etre is to fit low-rank approximations to interaction
 designs, and the main author [Steffen Rendle](http://www.kaggle.com/users/25112/steffen-rendle) does quite well on Kaggle.  Imitation is the best form
 of flattery.
 
-### Instructions ###
+### Demo Instructions ###
 - `make shootout`: eventually produces three results indicating test MAE (mean absolute error) on movielens-1M for
  - linear: a model without any interactions.  basically this creates a user bias and item bias fit.  this is a surprisingly strong baseline in terms of MAE, but is useless for recommendation as it induces the same item ranking for all users.  It achieves test MAE of 0.733 (at the time of this writing).
  - lrq: the linear model augmented with rank-5 interactions between users and movies, aka, "five latent factors".  It achieves test MAE of 0.716.  I determined that 5 was the best number to use through experimentation.  The additional `vw` command-line flag vs. the linear model is `--lrq um5`.
