@@ -2,7 +2,7 @@ Low rank quadratic demo
 -------------------------------
 
 This demo shows a low-rank approximation to an interaction design matrix
-for the [movielens-1M][http://files.grouplens.org/papers/ml-10m-README.html] 
+for the [movielens-1M](http://files.grouplens.org/papers/ml-10m-README.html)
 dataset.
 
 ### About Low-Rank Interaction Approximations ###
@@ -17,9 +17,9 @@ in non-recommendation settings, e.g., when the interaction between two
 high cardinality categorical variables is desired but the available data
 is too sparse to learn a full interaction model.
 
-There is a great piece of software called [libfm][http://www.libfm.org/]
+There is a great piece of software called [libfm](http://www.libfm.org/)
 whose raison d'etre is to fit low-rank approximations to interaction 
-designs, and the main author [Steffen Rendle][http://www.kaggle.com/users/25112/steffen-rendle] does quite well on Kaggle.  Imitation is the best form
+designs, and the main author [Steffen Rendle](http://www.kaggle.com/users/25112/steffen-rendle) does quite well on Kaggle.  Imitation is the best form
 of flattery.
 
 ### Instructions ###
