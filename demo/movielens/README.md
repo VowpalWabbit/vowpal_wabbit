@@ -5,11 +5,7 @@ This demo shows a low-rank approximation to an interaction design matrix
 for the [movielens-1M](http://files.grouplens.org/papers/ml-10m-README.html)
 dataset.
 
-TLDR for autodidacts: if you have two namespaces `a` and `b`, instead of 
-the full interaction design enabled by specifying `-q ab`, you can have a 
-rank-k interaction design by specifying `--lrq abk`.
-
-### About Low-Rank Interaction Approximations ###
+### About low-rank interactions ###
 
 In movielens-1M, a user has at most one rating per movie, and therefore
 a full interaction design between these two variables (in `vw` syntax:
@@ -25,6 +21,15 @@ There is a great piece of software called [libfm](http://www.libfm.org/)
 whose raison d'etre is to fit low-rank approximations to interaction 
 designs, and the main author [Steffen Rendle](http://www.kaggle.com/users/25112/steffen-rendle) does quite well on Kaggle.  Imitation is the best form
 of flattery.
+
+### How it works ###
+
+If you have two namespaces `a` and `b`, instead of 
+the full interaction design enabled by specifying `-q ab`, you can have a 
+rank-k interaction design by specifying `--lrq abk`.  Additionally 
+specifying `--lrqdropout` trains with dropout which tends to work better.
+When using dropout the best performing rank tends to be about twice as big
+as without dropout.
 
 ### Demo Instructions ###
 - `make shootout`: eventually produces three results indicating test MAE (mean absolute error) on movielens-1M for
