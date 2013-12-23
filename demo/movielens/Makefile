@@ -92,12 +92,12 @@ lrqdropout.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	@echo "******************************************************"
 	@echo "* training low-rank interaction model (with dropout) *"
 	@echo "*                                                    *"
-	@echo "* vw --lrq um14 --lrqdropout ...                     *"
+	@echo "* vw --lrq um12 --lrqdropout ...                     *"
 	@echo "******************************************************"
 	@echo
 	@${VW} --loss_function quantile -l 1 -b 24 --passes 100 	\
 	  -k --cache_file $@.cache -d $(word 2,$+) --holdout_off	\
-	  --lrq um14 --lrqdropout --adaptive --invariant -f $@.model
+	  --lrq um12 --lrqdropout --adaptive --invariant -f $@.model
 	@echo "*****************************************************"
 	@echo "* testing low-rank interaction model (with dropout) *"
 	@echo "*****************************************************"

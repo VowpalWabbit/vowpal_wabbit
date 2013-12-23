@@ -96,14 +96,11 @@ namespace LRQ {
             unsigned char left = (*i)[which%2];
             unsigned char right = (*i)[(which+1)%2];
             unsigned int k = atoi (i->c_str () + 2);
-            unsigned int lmaxk = lrq->lrindices[left];
-            unsigned int rmaxk = lrq->lrindices[right];
 
             for (unsigned int lfn = 0; lfn < lrq->orig_size[left]; ++lfn)
               {
                 feature* lf = ec->atomics[left].begin + lfn;
-                size_t lindex = 
-                  quadratic_constant * lf->weight_index + lmaxk * ec->ft_offset;
+                size_t lindex = lf->weight_index + ec->ft_offset;
     
                 for (unsigned int n = 1; n <= k; ++n)
                   {
@@ -123,8 +120,8 @@ namespace LRQ {
                           {
                             feature* rf = ec->atomics[right].begin + rfn;
 
-                            size_t rindex = 
-                              quadratic_constant * rf->weight_index + rmaxk * ec->ft_offset;
+                            // NB: ec->ft_offset added by base learner
+                            size_t rindex = rf->weight_index;
                             uint32_t rwindex = rindex + n * all.reg.stride;
         
                             feature lrq; 
@@ -180,6 +177,7 @@ namespace LRQ {
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {//parse and set arguments
     LRQstate* lrq = (LRQstate*) calloc (1, sizeof (LRQstate));
+    unsigned int maxk = 0;
     lrq->all = &all;
 
     size_t random_seed = 0;
@@ -235,12 +233,15 @@ namespace LRQ {
 
         lrq->lrindices[(int) (*i)[0]] = max (lrq->lrindices[(int) (*i)[0]], k);
         lrq->lrindices[(int) (*i)[1]] = max (lrq->lrindices[(int) (*i)[1]], k);
+
+        maxk = max (maxk, k);
       }
 
     if(!all.quiet)
       cerr<<endl;
         
-    learner* l = new learner(lrq, learn, all.l);
+    all.wpp = all.wpp * (1 + maxk);
+    learner* l = new learner(lrq, learn, all.l, 1 + maxk);
     l->set_end_pass (reset_seed);
 
     // TODO: leaks memory ?

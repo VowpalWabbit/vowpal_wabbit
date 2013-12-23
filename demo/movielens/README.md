@@ -35,8 +35,8 @@ a bit of `--l2` regularization improves generalization.
 ### Demo Instructions ###
 - `make shootout`: eventually produces three results indicating test MAE (mean absolute error) on movielens-1M for
  - linear: a model without any interactions.  basically this creates a user bias and item bias fit.  this is a surprisingly strong baseline in terms of MAE, but is useless for recommendation as it induces the same item ranking for all users.  It achieves test MAE of 0.731 (at the time of this writing).
- - lrq: the linear model augmented with rank-5 interactions between users and movies, aka, "five latent factors".  It achieves test MAE of 0.699.  I determined that 7 was the best number to use through experimentation.  The additional `vw` command-line flag vs. the linear model is `--l2 1e-6 --lrq um7`.
- - lrqdropout: the linear model augmented with rank-10 interactions between users and movies, and trained with dropout.  It achieves test MAE of 0.691.  Dropout effectively halves the number of latent factors, so unsurprisingly 14 factors seem to work best.  The additional `vw` command-line flags vs. the linear model are `--lrq um14 --lrqdropout`.
+ - lrq: the linear model augmented with rank-7 interactions between users and movies, aka, "seven latent factors".  It achieves test MAE of 0.696.  I determined that 7 was the best number to use through experimentation.  The additional `vw` command-line flags vs. the linear model are `--l2 1e-6 --lrq um7`.  Performance is sensitive to the choice of `--l2` regularization strength.
+ - lrqdropout: the linear model augmented with rank-12 interactions between users and movies, and trained with dropout.  It achieves test MAE of 0.689.  The additional `vw` command-line flags vs. the linear model are `--lrq um12 --lrqdropout`.
 - the first time you invoke `make shootout` there is a lot of other output.  invoking it a second time will allow you to just see the cached results.
 
 Details about how `vw` is invoked is in the `Makefile`.
