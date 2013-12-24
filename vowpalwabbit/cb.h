@@ -22,10 +22,10 @@ license as described in the file LICENSE.
 namespace CB {
 
   struct cb_class {
-    float x;  // the cost of this class
-    uint32_t weight_index;  // the index of this class
-    float prob_action; //new for bandit setting, specifies the probability the data collection policy chose this class for importance weighting
-    bool operator==(cb_class j){return weight_index == j.weight_index;}
+    float cost;  // the cost of this class
+    uint32_t action;  // the index of this class
+    float probability; //new for bandit setting, specifies the probability the data collection policy chose this class for importance weighting
+    bool operator==(cb_class j){return action == j.action;}
   };
 
   struct label {
