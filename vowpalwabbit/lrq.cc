@@ -100,6 +100,7 @@ namespace LRQ {
             for (unsigned int lfn = 0; lfn < lrq->orig_size[left]; ++lfn)
               {
                 feature* lf = ec->atomics[left].begin + lfn;
+                float lfx = lf->x;
                 size_t lindex = lf->weight_index + ec->ft_offset;
     
                 for (unsigned int n = 1; n <= k; ++n)
@@ -121,11 +122,12 @@ namespace LRQ {
                             feature* rf = ec->atomics[right].begin + rfn;
 
                             // NB: ec->ft_offset added by base learner
+                            float rfx = rf->x;
                             size_t rindex = rf->weight_index;
                             uint32_t rwindex = rindex + n * all.reg.stride;
         
                             feature lrq; 
-                            lrq.x = scale * *lw;
+                            lrq.x = scale * *lw * lfx * rfx;
                             lrq.weight_index = rwindex; 
 
                             ec->atomics[right].push_back (lrq);
