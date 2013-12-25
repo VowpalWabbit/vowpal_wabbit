@@ -295,6 +295,7 @@ vw::vw()
 
   eta_decay_rate = 1.0;
   initial_weight = 0.0;
+  initial_constant = 0.0;
 
   unique_id = 0;
   total = 1;

@@ -147,6 +147,7 @@ struct vw {
   bool save_per_pass;
   float active_c0;
   float initial_weight;
+  float initial_constant;
 
   bool bfgs;
   bool hessian_on;
