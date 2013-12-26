@@ -757,9 +757,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(all.minibatch);
-    cout << "minibatch2 = " << minibatch2 << endl;
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
-  cout << "ring_size = " << all.p->ring_size  << endl;
 }
   
   ld->v.resize(all.lda*all.minibatch);
