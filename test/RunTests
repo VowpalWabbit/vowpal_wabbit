@@ -753,3 +753,10 @@ __DATA__
     train-sets/ref/topk-rec.stdout
     train-sets/ref/topk-rec.stderr
     train-sets/ref/topk-rec.predict
+
+# Test 35: non-centered data-set where constant >> 0
+#   To test the new --constant option without which performance is very weak
+{VW} -k --passes 100 -c --holdout_off --constant 1000 -d train-sets/big-constant.dat
+    train-sets/ref/big-constant.stderr
+
+

@@ -41,6 +41,7 @@ namespace GD
     bool feature_mask_off;
     size_t no_win_counter;
     size_t early_stop_thres;
+    float initial_constant;
 
     vw* all;
   };
@@ -839,6 +840,7 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
   if(read)
     {
       initialize_regressor(*all);
+
       if(all->adaptive && all->initial_t > 0)
 	{
 	  uint32_t length = 1 << all->num_bits;
@@ -851,6 +853,10 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
 	    }
 	}
+
+      if (g->initial_constant != 0.0)
+        VW::set_weight(*all, constant, 0, g->initial_constant);
+
     }
 
   if (model_file.files.size() > 0)
@@ -889,7 +895,11 @@ learner* setup(vw& all, po::variables_map& vm)
     if(vm.count("early_terminate"))      
       g->early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
-    
+
+  if (vm.count("constant")) {
+      g->initial_constant = vm["constant"].as<float>();     
+  }
+
   learner* ret = new learner(g,learn, save_load, all.reg.stride);
   ret->set_end_pass(end_pass);
   return ret;
