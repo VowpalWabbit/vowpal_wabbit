@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "network.h"
 #include "global_data.h"
 #include "nn.h"
+#include "cbify.h"
 #include "oaa.h"
 #include "bs.h"
 #include "topk.h"
@@ -245,6 +246,7 @@ vw* parse_args(int argc, char *argv[])
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
     ("lda", po::value<size_t>(&(all->lda)), "Run lda with <int> topics")
     ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
+    ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
     ;
 
@@ -862,6 +864,26 @@ vw* parse_args(int argc, char *argv[])
     all->l = CB::setup(*all, to_pass_further, vm, vm_file);
     got_cb = true;
   }
+
+  if (vm.count("cbify") || vm_file.count("cbify"))
+    {
+      if(!got_cs) {
+	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cbify"]));
+	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
+	
+	all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	got_cs = true;
+      }
+
+      if (!got_cb) {
+	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm_file["cbify"]));
+	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
+	all->l = CB::setup(*all, to_pass_further, vm, vm_file);
+	got_cb = true;
+      }
+      
+      all->l = CBIFY::setup(*all, to_pass_further, vm, vm_file);
+    }
 
   all->searnstr = NULL;
   if (vm.count("searn") || vm_file.count("searn") ) { 

@@ -40,7 +40,7 @@ float mf_inline_predict(vw& all, example* &ec)
   float linear_prediction = 0;
   // linear terms
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    GD::foreach_feature<vec_add>(all, &linear_prediction, ec->atomics[*i].begin, ec->atomics[*i].end);
+    GD::foreach_feature<float*,vec_add>(all, &linear_prediction, ec->atomics[*i].begin, ec->atomics[*i].end);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -59,12 +59,12 @@ float mf_inline_predict(vw& all, example* &ec)
 	      // l^k is from index+1 to index+all.rank
 	      //float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
               float x_dot_l = 0;
-	      GD::foreach_feature<vec_add>(all, &x_dot_l, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+	      GD::foreach_feature<float*,vec_add>(all, &x_dot_l, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
 	      // x_r * r^k
 	      // r^k is from index+all.rank+1 to index+2*all.rank
 	      //float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
               float x_dot_r = 0;
-	      GD::foreach_feature<vec_add>(all, &x_dot_r, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+	      GD::foreach_feature<float*,vec_add>(all, &x_dot_r, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
 
 	      prediction += x_dot_l * x_dot_r;
 

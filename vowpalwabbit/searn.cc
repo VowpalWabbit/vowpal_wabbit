@@ -405,7 +405,7 @@ namespace Searn {
         if (srn.rollout_all_actions)
           return choose_random<CSOAA::wclass>(((CSOAA::label*)valid_labels)->costs).weight_index;
         else
-          return choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).weight_index;
+          return choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
       } else if (ystar_is_uint32t)
         return *((uint32_t*)ystar);
       else
@@ -443,7 +443,7 @@ namespace Searn {
       CB::label *ret = new CB::label();
       v_array<CB::cb_class> costs = ((CB::label*)l)->costs;
       for (size_t i=0; i<costs.size(); i++) {
-        CB::cb_class c = { costs[i].x, costs[i].weight_index, costs[i].prob_action };
+        CB::cb_class c = { costs[i].cost, costs[i].action, costs[i].probability };
         ret->costs.push_back(c);
       }
       return ret;
@@ -851,7 +851,7 @@ namespace Searn {
     if (srn.rollout_all_actions)
       return ((CSOAA::label*)l)->costs[i].weight_index;
     else
-      return ((CB::label*)l)->costs[i].weight_index;
+      return ((CB::label*)l)->costs[i].action;
   }
 
   bool should_print_update(vw& all, bool hit_new_pass=false)
@@ -885,7 +885,7 @@ namespace Searn {
       if (srn.rollout_all_actions)
         ((CSOAA::label*)labels)->costs[i].x = losses[i] - min_loss;
       else
-        ((CB::label*)labels)->costs[i].x = losses[i] - min_loss;
+        ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
 
     if (!isLDF(srn)) {
       void* old_label = ec[0]->ld;

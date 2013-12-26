@@ -115,6 +115,9 @@ namespace Microsoft.Research.MachineLearning
         [DllImport("libvw.dll", EntryPoint = "VW_Get_Weight", CallingConvention = CallingConvention.StdCall)]
         public static extern float Get_Weight(IntPtr vw, UInt32 index, UInt32 offset);
 
+        [DllImport("libvw.dll", EntryPoint = "VW_Set_Weight", CallingConvention = CallingConvention.StdCall)]
+        public static extern void Set_Weight(IntPtr vw, UInt32 index, UInt32 offset, float value);
+
         [DllImport("libvw.dll", EntryPoint = "VW_Num_Weights", CallingConvention = CallingConvention.StdCall)]
         public static extern UInt32 Num_Weights(IntPtr vw);
 
