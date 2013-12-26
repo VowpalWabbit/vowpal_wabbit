@@ -712,9 +712,6 @@ void end_examples(void* d)
 {
   lda* l = (lda*)d;
 
-  if (l->examples.size())
-    learn_batch(*l);
-
   for (size_t i = 0; i < l->all->length(); i++) {
     weight* weights_for_w = & (l->all->reg.weight_vector[i*l->all->reg.stride]);
     float decay = fmin(1.0, exp(l->decay_levels.last() - l->decay_levels.end[(int)(-1- l->example_t +weights_for_w[l->all->lda])]));
