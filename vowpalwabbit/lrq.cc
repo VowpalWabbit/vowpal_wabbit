@@ -38,9 +38,9 @@ namespace {
   inline float
   cheesyrand (uint32_t x)
     {
-      uint32_t v = 1664525 * x + 1013904223;
+      uint64_t seed = x;
 
-      return ((float) v) / 2147483648;
+      return merand48 (seed);
     }
 
   inline bool
