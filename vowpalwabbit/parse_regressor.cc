@@ -17,11 +17,9 @@ using namespace std;
 
 #include "parse_regressor.h"
 #include "loss_functions.h"
-#include "constant.h"
 #include "io_buf.h"
 #include "rand48.h"
 #include "global_data.h"
-#include "vw.h"
 
 /* Define the last version where files are backward compatible. */
 #define LAST_COMPATIBLE_VERSION "6.1.3"
@@ -50,9 +48,6 @@ void initialize_regressor(vw& all)
   if (all.initial_weight != 0.)
     for (size_t j = 0; j < all.reg.stride*length; j+=all.reg.stride)
       all.reg.weight_vector[j] = all.initial_weight;
-
-  if (all.initial_constant != 0.)
-    VW::set_weight(all, constant, 0, all.initial_constant);
 }
 
 const size_t buf_size = 512;
