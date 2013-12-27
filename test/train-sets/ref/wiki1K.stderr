@@ -9,19 +9,19 @@ num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
 10.380811  10.380811           3         3.0  unknown   0.0000       37
-10.456733  10.532656           6         6.0  unknown   0.0000       13
-10.398130  10.327806          11        11.0  unknown   0.0000       31
-10.499983  10.601835          22        22.0  unknown   0.0000        1
-10.451043  10.402103          44        44.0  unknown   0.0000      165
+10.456735  10.532659           6         6.0  unknown   0.0000       13
+10.398132  10.327807          11        11.0  unknown   0.0000       31
+10.499984  10.601836          22        22.0  unknown   0.0000        1
+10.451044  10.402104          44        44.0  unknown   0.0000      165
 10.446730  10.442316          87        87.0  unknown   0.0000       28
 10.086478  9.726226          174       174.0  unknown   0.0000       16
-9.559432   9.032387          348       348.0  unknown   0.0000        1
-9.065834   8.572235          696       696.0  unknown   0.0000      142
+9.559432   9.032385          348       348.0  unknown   0.0000        1
+9.065830   8.572229          696       696.0  unknown   0.0000      142
 
 finished run
 number of examples = 1000
 weighted example sum = 1000
 weighted label sum = 0
-average loss = 8.846
+average loss = 8.84619
 best constant = 1
 total feature number = 86919
