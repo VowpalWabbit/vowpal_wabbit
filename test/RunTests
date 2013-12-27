@@ -8,7 +8,7 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w $opt_y);
+use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w $opt_y $opt_v);
 
 my $Epsilon = 1e-4;
 
@@ -22,6 +22,15 @@ my $Cat = 'cat';
 my $DiffOpts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 200';
 
 my @ToTest = ();
+
+sub v {
+    return unless $opt_v;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
 
 sub usage(@) {
     print STDERR @_, "\n" if (@_);
@@ -40,6 +49,7 @@ sub usage(@) {
         -E<e> Tolerance epsilon <e> for fuzzy float compares (default $Epsilon)
         -o    Overwrite reference file with new/different result
         -y    On error, copy bad files to (eg stderr.test21) for later comparison
+        -v    More verbose
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
@@ -92,7 +102,7 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:o') || usage();
+    getopts('wcdDefyE:ov') || usage();
 
 	print STDERR "testing $^O "; 
     if ($^O =~ /MSWin/i) {
@@ -226,9 +236,6 @@ sub next_test() {
     unless (defined $cmd) {
         die "$0: test $TestNo: command is undefined\n";
     }
-    unless (defined $out_ref) {
-        warn "$0: test $TestNo: stdout ref: undefined (assuming empty)\n";
-    }
     unless (defined $err_ref) {
         die "$0: test $TestNo: stderr ref: undefined\n";
     }
@@ -343,8 +350,7 @@ sub diff($$) {
                   "$0: test $TestNo: -o: creating empty reference $reffile\n";
                 touch($reffile);
             } else {
-                print STDERR
-                  "$0: test $TestNo: empty output with no reference: ignored.\n"
+                v("$0: test $TestNo: empty output w/o reference: ignored.\n");
             }
             return 0;
         }
@@ -493,7 +499,11 @@ sub run_tests() {
             if ($opt_y) { copy_file($outf, $outf . '.test' . $TestNo); }
             exit $status if ($opt_e);
         } else {
-            print STDERR "$0: test $TestNo: stdout OK\n";
+            if (defined $out_ref) {
+                print STDERR "$0: test $TestNo: stdout OK\n";
+            } else {
+                v("$0: test $TestNo: stdout OK (no reference)\n");
+            }
         }
 
         # -- compare stderr
