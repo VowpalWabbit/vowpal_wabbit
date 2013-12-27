@@ -65,7 +65,6 @@ struct example // core example datatype.
   bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?
   bool in_use; //in use or not (for the parser)
-  bool done; //set to false by setup_example()
 };
 
  struct vw;  

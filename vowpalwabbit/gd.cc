@@ -44,6 +44,7 @@ namespace GD
 
     vw* all;
   };
+  template <bool normalized, bool training, bool reg_mode_odd, bool power_t_half>
   void predict(vw& all, gd& g, example* ex);
 
   template<bool adaptive, bool normalized, bool feature_mask_off>
@@ -163,7 +164,31 @@ void learn(void* d, learner& base, example* ec)
 
   assert(ec->in_use);
 
-  predict(*all,*g,ec);
+  if (!ec->precomputed_prediction)
+    {
+    if (all->training)
+      if (all->reg_mode % 2)
+	if (all->power_t == 0.5)
+	  predict<normalized, true, true, true>(*all,*g,ec);
+	else
+	  predict<normalized, true, true, false>(*all,*g,ec);
+      else
+	if (all->power_t == 0.5)
+	  predict<normalized, true, false, true>(*all,*g,ec);
+	else
+	  predict<normalized, true, false, false>(*all,*g,ec);
+    else
+      if (all->reg_mode % 2)
+	if (all->power_t == 0.5)
+	  predict<normalized, false, true, true>(*all,*g,ec);
+	else
+	  predict<normalized, false, true, false>(*all,*g,ec);
+      else
+	if (all->power_t == 0.5)
+	  predict<normalized, false, false, true>(*all,*g,ec);
+	else
+	  predict<normalized, false, false, false>(*all,*g,ec);
+    }
 
   if ((all->holdout_set_off || !ec->test_only) && ld->weight > 0)
     {
@@ -173,9 +198,9 @@ void learn(void* d, learner& base, example* ec)
 	{
           if(all->power_t == 0.5)
 	    generic_train<specialized_update<adaptive, normalized, feature_mask_off> > (*all,ec,(float)ec->eta_round,true);
-          else{
-              generic_train<general_update<feature_mask_off> >(*all,ec,(float)ec->eta_round,false);
-          }
+          else
+	    generic_train<general_update<feature_mask_off> >(*all,ec,(float)ec->eta_round,false);
+
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
 	}
@@ -525,7 +550,7 @@ void local_predict(vw& all, gd& g, example* ec)
             norm = ec->total_sum_feat_sq;
 
           eta_t = all.eta * norm * ld->weight;
-          if(!adaptive) eta_t *= powf(t,-all.power_t);
+          if(!adaptive && all.power_t != 0) eta_t *= powf(t,-all.power_t);
 
           float update = 0.f;
           if( all.invariant_updates )
@@ -539,7 +564,8 @@ void local_predict(vw& all, gd& g, example* ec)
 	    double dev1 = all.loss->first_derivative(all.sd, ec->final_prediction, ld->label);
 	    double eta_bar = (fabs(dev1) > 1e-8) ? (-ec->eta_round / dev1) : 0.0;
 	    if (fabs(dev1) > 1e-8)
-	      all.sd->contraction /= (1. + all.l2_lambda * eta_bar * norm);
+	      all.sd->contraction *= (1. - all.l2_lambda * eta_bar * norm);
+	      //all.sd->contraction /= (1. + all.l2_lambda * eta_bar * norm);
 	    all.sd->gravity += eta_bar * sqrt(norm) * all.l1_lambda;
 	  }
         }
@@ -549,46 +575,38 @@ void local_predict(vw& all, gd& g, example* ec)
 
 }
 
-  void predict(vw& all, gd& g, example* ex)
+  template <bool normalized, bool training, bool reg_mode_odd, bool power_t_half>
+void predict(vw& all, gd& g, example* ec)
 {
+    label_data* ld = (label_data*)ec->ld;
 
-  if (!ex->precomputed_prediction) {
-
-    label_data* ld = (label_data*)ex->ld;
-    float prediction;
-
-    if (all.training && all.normalized_updates && ld->label != FLT_MAX) {
-      if( all.power_t == 0.5 ) {
-	if (all.reg_mode % 2)
-	  prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
+    if (training && normalized && ld->label != FLT_MAX) {
+      if(power_t_half) {
+	if (reg_mode_odd)
+	  ec->partial_prediction = inline_predict<vec_add_trunc_rescale>(all, ec);
 	else
-	  prediction = inline_predict<vec_add_rescale>(all, ex);
+	  ec->partial_prediction = inline_predict<vec_add_rescale>(all, ec);
       }
       else {
-	if (all.reg_mode % 2)
-	  prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
+	if (reg_mode_odd)
+	  ec->partial_prediction = inline_predict<vec_add_trunc_rescale_general>(all, ec);
 	else
-	  prediction = inline_predict<vec_add_rescale_general>(all, ex);
+	  ec->partial_prediction = inline_predict<vec_add_rescale_general>(all, ec);
       }
     }
     else {
-      if (all.reg_mode % 2)
-	prediction = inline_predict<vec_add_trunc>(all, ex);
+      if (reg_mode_odd)
+	ec->partial_prediction = inline_predict<vec_add_trunc>(all, ec);
       else
-	prediction = inline_predict<vec_add>(all, ex);
+	ec->partial_prediction = inline_predict<vec_add>(all, ec);
     }
-
-    ex->partial_prediction = prediction;
 
     all.set_minmax(all.sd, ld->label);
 
-    ex->final_prediction = finalize_prediction(all, ex->partial_prediction * (float)all.sd->contraction);
+    ec->final_prediction = finalize_prediction(all, ec->partial_prediction * (float)all.sd->contraction);
 
-    if ((all.audit && !ex->test_only) || all.hash_inv)
-      print_audit_features(all, ex);
-  }
-
-  ex->done = true;
+    if ((all.audit && !ec->test_only) || all.hash_inv)
+      print_audit_features(all, ec);
 }
 
 

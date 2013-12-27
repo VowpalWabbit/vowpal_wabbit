@@ -84,6 +84,16 @@ public:
     ec->ft_offset -= (uint32_t)(increment*i);
   }
 
+  inline void predict(example* ec, size_t i=0) 
+  { 
+    ec->ft_offset += (uint32_t)(increment*i);
+    void *ld = ec->ld;
+    ec->ld = NULL;
+    learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
+    ec->ld = ld;
+    ec->ft_offset -= (uint32_t)(increment*i);
+  }
+
   //called anytime saving or loading needs to happen. Autorecursive.
   inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
   inline void set_save_load(void (*sl)(void*, io_buf& io, bool read, bool text))
