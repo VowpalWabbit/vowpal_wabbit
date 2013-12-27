@@ -17,6 +17,6 @@ number of examples per pass = 12
 passes used = 1
 weighted example sum = 12
 weighted label sum = 0
-average loss = 1.09104e-07
+average loss = 1.09109e-07
 best constant = 0
 total feature number = 39
