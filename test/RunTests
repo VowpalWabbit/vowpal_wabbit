@@ -113,10 +113,11 @@ sub which_lda() {
 sub init() {
     $0 =~ s{.*/}{};
     getopts('wcdDefyE:ov:') || usage();
+    $opt_v = 0 unless (defined $opt_v and $opt_v);
 
-	print STDERR "testing $^O "; 
+    print STDERR "testing $^O "; 
     if ($^O =~ /MSWin/i) {
-	print STDERR "in windows branch"; 
+        v(1, "OS is $^O\n"); 
         # On MS Windows we need to change paths to external executables
         # Assumes cygwin is installed
         $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
@@ -125,7 +126,7 @@ sub init() {
         $Cat   = 'c:\cygwin\bin\cat.exe';
     }
     elsif ($^O =~ /cygwin/i){
-	print STDERR "in windows branch"; 
+        v("OS is $^O\n"); 
         # On MS Windows we need to change paths to external executables
         # Assumes cygwin is installed
         $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
