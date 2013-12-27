@@ -8,7 +8,8 @@
 # See __DATA__ below for how to add more tests
 #
 use Getopt::Std;
-use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f $opt_E $opt_o $opt_w $opt_y $opt_v);
+use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
+            $opt_E $opt_o $opt_w $opt_y $opt_v);
 
 my $Epsilon = 1e-4;
 
@@ -586,12 +587,10 @@ run_tests();
 __DATA__
 # Test 1:
 {VW} -k -l 20 --initial_t 128000 --power_t 1 -d train-sets/0001.dat -f models/0001.model -c --passes 8 --invariant --ngram 3 --skips 1 --holdout_off
-    train-sets/ref/0001.stdout
     train-sets/ref/0001.stderr
 
 # Test 2: checking predictions as well
 {VW} -k -t train-sets/0001.dat -i models/0001.model -p 001.predict.tmp --invariant
-    test-sets/ref/0001.stdout
     test-sets/ref/0001.stderr
     pred-sets/ref/0001.predict
 
@@ -613,18 +612,15 @@ __DATA__
 # Test 6: run predictions on Test 4 model
 # Pretending the labels aren't there
 {VW} -k -t -i models/0002.model -d train-sets/0002.dat -p 0002b.predict
-    test-sets/ref/0002b.stdout
     test-sets/ref/0002b.stderr
     pred-sets/ref/0002b.predict
 
 # Test 7: using normalized adaptive updates and a low --power_t
 {VW} -k --power_t 0.45 -f models/0002c.model train-sets/0002.dat
-    train-sets/ref/0002c.stdout
     train-sets/ref/0002c.stderr
 
 # Test 8: predicts on test 7 model
 {VW} -k -t -i models/0002c.model -d train-sets/0002.dat -p 0002c.predict
-    test-sets/ref/0002c.stdout
     test-sets/ref/0002c.stderr
     pred-sets/ref/0002c.predict
 
@@ -698,7 +694,6 @@ __DATA__
 
 # Test 22: matrix factorization -- training
 {VW} -k -d train-sets/ml100k_small_train -b 16 -q ui --rank 10 --l2 0.001 --learning_rate 0.025 --passes 2 --decay_learning_rate 0.97 --power_t 0 -f movielens.reg --cache_file movielens.cache --loss_function classic --holdout_off
-    train-sets/ref/ml100k_small.stdout
     train-sets/ref/ml100k_small.stderr
 
 # Test 23: matrix factorization -- testing
