@@ -9,7 +9,8 @@
 #
 use Getopt::Std;
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
-            $opt_E $opt_o $opt_w $opt_y $opt_v);
+            $opt_E $opt_o $opt_w $opt_y
+            $opt_v);
 
 my $Epsilon = 1e-4;
 
@@ -20,12 +21,14 @@ my $LDA;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
-my $DiffOpts = '-N --minimal --side-by-side --suppress-common-lines --ignore-all-space --strip-trailing-cr -W 200';
+my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
 
 my @ToTest = ();
 
-sub v {
-    return unless $opt_v;
+sub v($;@) {
+    my $verbose_level = shift @_;
+    return unless $opt_v >= $verbose_level;
+
     if (@_ == 1) {
         print STDERR @_;
     } else {
@@ -41,19 +44,25 @@ sub usage(@) {
         .  ..  ../vowpalwabbit  \$PATH
 
     Options:
-        -c    print commands before running them
-        -d    print diff output on significant diff failure
-        -D    print diff output even if it is not significant
-        -e    Abort on first diff error
-        -w    Ignore white-space differences (diff --ignore-space-change)
-        -f    Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
-        -E<e> Tolerance epsilon <e> for fuzzy float compares (default $Epsilon)
-        -o    Overwrite reference file with new/different result
-        -y    On error, copy bad files to (eg stderr.test21) for later comparison
-        -v    More verbose
+        -c      print test-suite commands before running them
+        -d      print diff output on significant diff failure
+        -D      print diff output even if it is not significant
+        -e      Abort on first diff error
+        -w      Ignore white-space differences (diff --ignore-space-change)
+        -f      Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
+        -E<e>   Tolerance epsilon <e> for fuzzy float compares (default $Epsilon)
+        -o      Overwrite reference file with new/different result
+        -y      On error, copy bad files to (eg stderr.test21) for later comparison
+        -v<L>   Verbosity <L> (small integer) is verbosity level
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
+}
+
+sub mysystem {
+    my $cmd = shift;
+    v(1, "%s\n", $cmd);
+    system($cmd);
 }
 
 #
@@ -103,7 +112,7 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:ov') || usage();
+    getopts('wcdDefyE:ov:') || usage();
 
 	print STDERR "testing $^O "; 
     if ($^O =~ /MSWin/i) {
@@ -298,17 +307,19 @@ sub diff_lenient_float($$) {
     my $status = 0;
 
     my $tmpf = 'lenient-diff.tmp';
-    system("$Diff $DiffOpts $reffile $outfile >$tmpf");
+    mysystem("$Diff $DiffOpts $reffile $outfile >$tmpf");
     $status = $? >> 8;
+    v(2, "diff produced $tmpf: status=$status\n");
     if (-s $tmpf) {
-        # assume innocent till proven guilty
-        my $fuzzy_status = 0;
+        # The diff has something in it.
+        my $fuzzy_status = 0;   # assume innocent till proven guilty
         open(my $sdiff, $tmpf) || die "$0: diff_lenient_float: $tmpf: $!\n";
         while (<$sdiff>) {
             chomp;
-            my ($line1, $line2) = split(/\s+\|\s+/, $_);
-            # print STDERR "line1: $line1\n";
-            # print STDERR "line2: $line2\n";
+            my ($line1, $line2) = split(/\s*\|\s*/, $_);
+
+            v(3, "line1: $line1\n");
+            v(3, "line2: $line2\n");
 
             # Break lines into tokens/words
             my (@w1) = split(' ', $line1);
@@ -346,23 +357,21 @@ sub diff($$) {
             return 2 unless ($opt_o);
         } else {
             # Empty output without a ref is not considered a failure
-            if ($opt_o) {
-                print STDERR
-                  "$0: test $TestNo: -o: creating empty reference $reffile\n";
-                touch($reffile);
-            } else {
-                v("$0: test $TestNo: empty output w/o reference: ignored.\n");
-            }
+            v(1, "$0: test $TestNo: empty output w/o reference: ignored.\n");
             return 0;
         }
     }
 
     # Actually run the diff
     my $diff_cmd = "$Diff $DiffOpts $reffile $outfile";
-    system("$diff_cmd >diff.tmp");
+    mysystem("$diff_cmd >diff.tmp");
     $status = $? >> 8;
+    v(2, "$diff_cmd >diff.tmp: status=$status\n");
+
     if (-s 'diff.tmp') {
-        # There's a difference, but is it meaningfull?
+        # There's some difference
+        v(2, "diff.tmp has something in it. Is it meaningful?\n");
+
         if ($opt_f && -e $reffile && -e $outfile &&
             diff_lenient_float($reffile, $outfile) == 0) {
 
@@ -374,7 +383,7 @@ sub diff($$) {
             #   1) -D is in effect  OR
             #   2) -d is in effect and diff is significant
             printf STDERR "--- %s\n", $diff_cmd;
-            system("$Cat diff.tmp")
+            mysystem("$Cat diff.tmp")
         }
         if ($opt_o) {
             print STDERR "-o: overwriting reference:\n";
@@ -482,8 +491,8 @@ sub run_tests() {
         ($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
 
         # run the test
-        print STDERR "($cmd) >$outf 2>$errf\n" if ($opt_c);
-        system("($cmd) >$outf 2>$errf");
+        print STDERR "Test $TestNo: ($cmd) >$outf 2>$errf\n" if ($opt_c);
+        mysystem("($cmd) >$outf 2>$errf");
         my $status = $? >> 8;
         if ($status) {
             warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
@@ -503,7 +512,7 @@ sub run_tests() {
             if (defined $out_ref) {
                 print STDERR "$0: test $TestNo: stdout OK\n";
             } else {
-                v("$0: test $TestNo: stdout OK (no reference)\n");
+                v(1, "$0: test $TestNo: stdout OK (no reference)\n");
             }
         }
 
