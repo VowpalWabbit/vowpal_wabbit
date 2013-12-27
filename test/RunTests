@@ -50,7 +50,7 @@ sub usage(@) {
         -e      Abort on first diff error
         -w      Ignore white-space differences (diff --ignore-space-change)
         -f      Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
-        -E<e>   Tolerance epsilon <e> for fuzzy float compares (default $Epsilon)
+        -E<e>   Tolerance epsilon <e> for fuzzy compares (default $Epsilon)
         -o      Overwrite reference file with new/different result
         -y      On error, copy bad files to (eg stderr.test21) for later comparison
         -v<L>   Verbosity <L> (small integer) is verbosity level
@@ -606,7 +606,6 @@ __DATA__
 
 # Test 3: without -d, training only
 {VW} -k train-sets/0002.dat -f models/0002.model --invariant
-    train-sets/ref/0002.stdout
     train-sets/ref/0002.stderr
 
 # Test 4: same, with -d
@@ -616,7 +615,6 @@ __DATA__
 
 # Test 5: add -q .., adaptive, and more (same input, different outputs)
 {VW} -k --initial_t 1 --adaptive --invariant -q Tf -q ff -f models/0002a.model train-sets/0002.dat
-    train-sets/ref/0002a.stdout
     train-sets/ref/0002a.stderr
 
 # Test 6: run predictions on Test 4 model
@@ -636,29 +634,24 @@ __DATA__
 
 # Test 9: label-dependent features with csoaa_ldf
 {VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.csoaa.predict --passes 10 --invariant --csoaa_ldf multiline --holdout_off
-    train-sets/ref/cs_test.ldf.csoaa.stdout
     train-sets/ref/cs_test.ldf.csoaa.stderr
     train-sets/ref/cs_test.ldf.csoaa.predict
 
 # Test 10: label-dependent features with wap_ldf
 {VW} -k -c -d train-sets/cs_test.ldf -p cs_test.ldf.wap.predict --passes 10 --invariant --wap_ldf multiline --holdout_off
-    train-sets/ref/cs_test.ldf.wap.stdout
     train-sets/ref/cs_test.ldf.wap.stderr
     train-sets/ref/cs_test.ldf.wap.predict
 
 # Test 11: one-against-all
 {VW} -k --oaa 10 -c --passes 10 train-sets/multiclass --holdout_off
-    train-sets/ref/oaa.stdout
     train-sets/ref/oaa.stderr
 
 # Test 12: Error Correcting Tournament
 {VW} -k --ect 10 --error 3 -c --passes 10 --invariant train-sets/multiclass --holdout_off
-    train-sets/ref/multiclass.stdout
     train-sets/ref/multiclass.stderr
 
 # Test 13: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
 {VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --searn_passes_per_policy 4 --searn_task sequence --searn 5 --searn_history 2 --searn_bigrams --searn_features 1 --quiet --holdout_off
-    train-sets/ref/searn_wsj.stdout
     train-sets/ref/searn_wsj.stderr
 
 # Test 14: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
@@ -678,28 +671,23 @@ __DATA__
 
 # Test 17: Run LDA with 100 topics on 1000 Wikipedia articles
 {LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -b 13 --minibatch 128 --invariant train-sets/wiki1K.dat
-    train-sets/ref/wiki1K.stdout
     train-sets/ref/wiki1K.stderr
 
 # Test 18: Run searn on seq_small for 12 passes, 4 passes per policy
 {VW} -k -c -d train-sets/seq_small --passes 12 --invariant --searn_passes_per_policy 4 --searn 4 --searn_task sequence --quiet --holdout_off
-    train-sets/ref/searn_small.stdout
     train-sets/ref/searn_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
 {VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 12 --quiet --holdout_off
-    train-sets/ref/3parity.stdout
     train-sets/ref/3parity.stderr
 
 # Test 20: neural network 3-parity with 2 hidden units (predict)
 {VW} -d train-sets/3parity --hash all -t -i models/0021.model -p 0022.predict.tmp
-    pred-sets/ref/0022.stdout
     pred-sets/ref/0022.stderr
     pred-sets/ref/0022.predict
 
 # Test 21: cubic features -- on a parity test case
 {VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100 --holdout_off
-    train-sets/ref/xxor.stdout
     train-sets/ref/xxor.stderr
 
 # Test 22: matrix factorization -- training
@@ -717,31 +705,26 @@ __DATA__
 
 # Test 25: bagging -- training regressor
 {VW} -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict 
-    train-sets/ref/bs.reg.stdout
     train-sets/ref/bs.reg.stderr
     train-sets/ref/bs.reg.predict
 
 # Test 26: bagging -- predicting with bagged regressor
 {VW} -d train-sets/0002.dat -i models/bs.prreg.model -p bs.prreg.predict -t
-    train-sets/ref/bs.prreg.stdout
     train-sets/ref/bs.prreg.stderr
     train-sets/ref/bs.prreg.predict
 
 # Test 27: bagging -- binary classifiers
 {VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p bs.vote.predict 
-    train-sets/ref/bs.vote.stdout
     train-sets/ref/bs.vote.stderr
     train-sets/ref/bs.vote.predict
 
 # Test 28: bagging -- predict with bagged classifier
 {VW} -d train-sets/0001.dat -i models/bs.prvote.model -p bs.prvote.predict -t
-    train-sets/ref/bs.prvote.stdout
     train-sets/ref/bs.prvote.stderr
     train-sets/ref/bs.prvote.predict
 
 # Test 29: affix features
 {VW} -d train-sets/affix_test.dat -k -c --passes 10 --holdout_off --affix -2
-    train-sets/ref/affix_test.stdout
     train-sets/ref/affix_test.stderr
 
 # Test 30: train --l1 regularized model
@@ -758,12 +741,10 @@ __DATA__
 
 # Test 33: train model for topk recommender
 {VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off 
-    train-sets/ref/topk-train.stdout
     train-sets/ref/topk-train.stderr
 
 # Test 34: train model for topk recommender
 {VW} -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
-    train-sets/ref/topk-rec.stdout
     train-sets/ref/topk-rec.stderr
     train-sets/ref/topk-rec.predict
 
