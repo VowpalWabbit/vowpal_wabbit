@@ -229,7 +229,7 @@ float finalize_prediction(vw& all, float ret)
 {
   if ( nanpattern(ret))
     {
-      cout << "you have a NAN!!!!!" << endl;
+      cerr << "You have a NAN in example " << all.sd->example_number + 1 << " !!!" << endl;
       return 0.;
     }
   if ( ret > all.sd->max_label )
