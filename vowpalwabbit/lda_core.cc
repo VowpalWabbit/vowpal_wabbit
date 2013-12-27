@@ -684,6 +684,7 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
   void learn(void* d, learner& base, example* ec) 
   {
     lda* l = (lda*)d;
+
     size_t num_ex = l->examples.size();
     l->examples.push_back(ec);
     l->doc_lengths.push_back(0);
@@ -699,11 +700,17 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
       learn_batch(*l);
   }
 
+  void end_pass(void* d)
+  {
+    lda* l = (lda*)d;
+    
+    if (l->examples.size())
+      learn_batch(*l);
+  }
+
 void end_examples(void* d)
 {
   lda* l = (lda*)d;
-
-  learn_batch(*l);
 
   for (size_t i = 0; i < l->all->length(); i++) {
     weight* weights_for_w = & (l->all->reg.weight_vector[i*l->all->reg.stride]);
@@ -751,7 +758,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(all.minibatch);
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
-  }
+}
   
   ld->v.resize(all.lda*all.minibatch);
   
@@ -761,6 +768,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
   l->set_end_examples(end_examples);  
+  l->set_end_pass(end_pass);  
   
   return l;
 }

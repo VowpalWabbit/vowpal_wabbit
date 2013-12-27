@@ -38,12 +38,26 @@ namespace OAA
   
   void finish_example(vw& all, void*, example* ec);
 
-  void label_to_array(void*label, v_array<uint32_t>&out);
-
   inline int example_is_test(example* ec)
-  {
-    return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1);
-  }
+  { return (((OAA::mc_label*)ec->ld)->label == (uint32_t)-1); }
+
+  inline int label_is_test(mc_label* ld)
+  { return ld->label == (uint32_t)-1; }
+
 }
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+

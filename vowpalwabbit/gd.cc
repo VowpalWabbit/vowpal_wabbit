@@ -41,6 +41,7 @@ namespace GD
     bool feature_mask_off;
     size_t no_win_counter;
     size_t early_stop_thres;
+    float initial_constant;
 
     vw* all;
   };
@@ -53,17 +54,13 @@ namespace GD
     float update;
   };
 
-  template <void (*T)(vw&, void*, float, uint32_t)>
+  template <void (*T)(vw&, train_data*, float, uint32_t)>
   void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
   {
     if (fabs(update) == 0.)
       return;
     
-    float total_weight = 0.f;
-    if(all.active)
-      total_weight = (float)all.sd->weighted_unlabeled_examples;
-    else
-      total_weight = ec->example_t;
+    float total_weight = ec->example_t;
 
     if(!all.holdout_set_off)
       total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
@@ -73,7 +70,7 @@ namespace GD
     
     train_data d = {avg_norm, update};
     
-    foreach_feature<T>(all, ec, &d);
+    foreach_feature<train_data*,T>(all, ec, &d);
   }
 
 float InvSqrt(float x){
@@ -86,11 +83,9 @@ float InvSqrt(float x){
 }
 
 template<bool feature_mask_off>
-inline void general_update(vw& all, void* dat, float x, uint32_t fi)
+inline void general_update(vw& all, train_data* s, float x, uint32_t fi)
 {
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
-    train_data* s = (train_data*)dat;
-
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
     float t = 1.f;
     if(all.adaptive) t = powf(w[1],-all.power_t);
@@ -104,11 +99,9 @@ inline void general_update(vw& all, void* dat, float x, uint32_t fi)
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off>
-inline void specialized_update(vw& all, void* dat, float x, uint32_t fi)
+inline void specialized_update(vw& all, train_data* s, float x, uint32_t fi)
 {
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
-    train_data* s = (train_data*)dat;
-
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
     float t = 1.f;
     float inv_norm = 1.f;
@@ -240,7 +233,7 @@ float finalize_prediction(vw& all, float ret)
 {
   if ( nanpattern(ret))
     {
-      cout << "you have a NAN!!!!!" << endl;
+      cerr << "NAN prediction in example " << all.sd->example_number + 1 << ", forcing 0.0" << endl;
       return 0.;
     }
   if ( ret > all.sd->max_label )
@@ -441,10 +434,9 @@ void print_audit_features(vw& all, example* ec)
   };
 
 template<bool adaptive, bool normalized, bool feature_mask_off>
-inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
+inline void simple_norm_compute(vw& all, norm_data* nd, float x, uint32_t fi) {
 
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
-    norm_data* nd=(norm_data*)v;
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
     float x2 = x * x;
     float t = 1.f;
@@ -474,9 +466,8 @@ inline void simple_norm_compute(vw& all, void* v, float x, uint32_t fi) {
 }
 
 template<bool feature_mask_off>
-inline void powert_norm_compute(vw& all, void* v, float x, uint32_t fi) {
+inline void powert_norm_compute(vw& all, norm_data* nd, float x, uint32_t fi) {
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
-    norm_data* nd=(norm_data*)v;
     float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
 
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
@@ -495,7 +486,7 @@ inline void powert_norm_compute(vw& all, void* v, float x, uint32_t fi) {
   }
 }
 
-  template <void (*T)(vw&,void*,float,uint32_t)>
+  template <void (*T)(vw&,norm_data*,float,uint32_t)>
 float compute_norm(vw& all, example* &ec)
 {//We must traverse the features in _precisely_ the same order as during training.
   label_data* ld = (label_data*)ec->ld;
@@ -504,20 +495,16 @@ float compute_norm(vw& all, example* &ec)
 
   norm_data nd = {g, 0., 0.};
 
-  foreach_feature<T>(all, ec, &nd);
+  foreach_feature<norm_data*,T>(all, ec, &nd);
 
   if(all.normalized_updates) {
-    float total_weight = 0;
-    if(all.active)
-      total_weight = (float)all.sd->weighted_unlabeled_examples;
-    else
-      total_weight = ec->example_t;
+    float total_weight = ec->example_t;
 
     if(!all.holdout_set_off)
       total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     all.normalized_sum_norm_x += ld->weight * nd.norm_x;
-    
+
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
     if(all.power_t == 0.5) {
       if(all.adaptive) nd.norm /= sqrt(avg_sq_norm);
@@ -548,7 +535,7 @@ float compute_norm(vw& all, example* &ec)
   }
 
   float t;
-  if(all.active)
+  if(all.active && ld->label != FLT_MAX)
     t = (float)all.sd->weighted_unlabeled_examples;
   else
     t = (float)(ec->example_t - all.sd->weighted_holdout_examples);
@@ -862,6 +849,7 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
   if(read)
     {
       initialize_regressor(*all);
+
       if(all->adaptive && all->initial_t > 0)
 	{
 	  uint32_t length = 1 << all->num_bits;
@@ -874,6 +862,10 @@ void save_load(void* data, io_buf& model_file, bool read, bool text)
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
 	    }
 	}
+
+      if (g->initial_constant != 0.0)
+        VW::set_weight(*all, constant, 0, g->initial_constant);
+
     }
 
   if (model_file.files.size() > 0)
@@ -912,7 +904,11 @@ learner* setup(vw& all, po::variables_map& vm)
     if(vm.count("early_terminate"))      
       g->early_stop_thres = vm["early_terminate"].as< size_t>();     
   }
-    
+
+  if (vm.count("constant")) {
+      g->initial_constant = vm["constant"].as<float>();     
+  }
+
   learner* ret = new learner(g,learn, save_load, all.reg.stride);
   ret->set_end_pass(end_pass);
   return ret;

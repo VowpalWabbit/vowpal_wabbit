@@ -190,19 +190,6 @@ namespace OAA {
     OAA::print_update(all, ec);
   }
 
-  void label_to_array(void*label, v_array<uint32_t>&out) {
-    mc_label*l = (mc_label*)label;
-    if (l->label == (uint32_t)-1)
-      out.erase();
-    else {
-      if (out.size() == 1) out[0] = l->label;
-      else {
-        out.erase();
-        out.push_back( l->label );
-      }
-    }
-  }
-
   void finish_example(vw& all, void*, example* ec)
   {
     output_example(all, ec);
@@ -227,29 +214,28 @@ namespace OAA {
     string outputString;
     stringstream outputStringStream(outputString);
 
+    label_data simple_temp;
+    simple_temp.initial = 0.;
+    simple_temp.weight = mc_label_data->weight;
+    ec->ld = &simple_temp;
+
     for (size_t i = 1; i <= o->k; i++)
       {
-        label_data simple_temp;
-        simple_temp.initial = 0.;
         if (mc_label_data->label == i)
           simple_temp.label = 1;
         else
           simple_temp.label = -1;
-        simple_temp.weight = mc_label_data->weight;
-        ec->ld = &simple_temp;
         base.learn(ec, i-1);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
             prediction = (float)i;
           }
-
+	
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';
           outputStringStream << i << ':' << ec->partial_prediction;
         }
-
-        ec->partial_prediction = 0.;
       }	
     ec->ld = mc_label_data;
     ec->final_prediction = prediction;

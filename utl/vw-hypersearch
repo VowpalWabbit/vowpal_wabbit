@@ -156,7 +156,7 @@ sub loss($) {
     # Read from the end, so if we run a test after train,
     # we get the last (test) loss, rather than the train loss.
     foreach my $line (reverse @$rv) {
-        next unless $line =~ /^average loss\s*=\s*([0-9.]+)/;
+        next unless $line =~ /^average loss\s*=\s*(\S+)/;
 
         # Found a loss
         $loss = $1;

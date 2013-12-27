@@ -60,11 +60,21 @@ namespace Searn {
     // functions that you will call
 
     inline uint32_t predict(example** ecs, size_t ec_len, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for LDF
-    { return this->predict_f(*this->all, *this->base_learner, ecs, ec_len, yallowed, ystar); }
+    { return this->predict_f(*this->all, *this->base_learner, ecs, ec_len, yallowed, ystar, false); }
 
     inline uint32_t predict(example* ec, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for not LDF
-    { return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, ystar); }
+    { return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, ystar, false); }
 
+    inline uint32_t predict(example* ec, v_array<uint32_t>* yallowed, OAA::mc_label* one_ystar) // for not LDF
+    { if (OAA::label_is_test(one_ystar))
+        return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, NULL, false);
+      else
+        return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar->label, true);
+    }
+        //    { OAA::label_to_array(one_ystar, this->predict_ystar);
+        //      return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, &this->predict_ystar, false); }
+      
+    
     inline void     declare_loss(size_t predictions_since_last, float incr_loss)
     { return this->declare_loss_f(*this->all, predictions_since_last, incr_loss); }
 
@@ -74,14 +84,16 @@ namespace Searn {
     // structure that you must set, and any associated data you want to store
     searn_task* task;
     void* task_data;
-    bool auto_history;  // do you want us to automatically add history features?
+    bool auto_history;          // do you want us to automatically add history features?
+    bool auto_hamming_loss;     // if you're just optimizing hamming loss, we can do it for you!
     bool examples_dont_change;  // set to true if you don't do any internal example munging
 
     // data that you should not look at.  ever.
-    uint32_t (*predict_f)(vw&,learner&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*);
+    uint32_t (*predict_f)(vw&,learner&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*,bool);
     void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
     
+    v_array<uint32_t> predict_ystar;
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
