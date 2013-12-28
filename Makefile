@@ -31,7 +31,7 @@ WARN_FLAGS = -Wall -pedantic
 endif
 
 # for normal fast execution.
-FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
+FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
 
 # for profiling
 #FLAGS = $(ARCH) $(WARN_FLAGS) -O3 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg #-DVW_LDA_NO_SSE

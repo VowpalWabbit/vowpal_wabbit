@@ -29,6 +29,7 @@ struct learn_data {
   void* data;
   learner* base;
   void (*learn_f)(void* data, learner& base, example*);
+  void (*predict_f)(void* data, learner& base, example*);
 };
 
 struct save_load_data{
@@ -51,14 +52,14 @@ using namespace std;
 namespace LEARNER
 {
   void generic_driver(vw* all);
-
+  
   inline void generic_sl(void*, io_buf&, bool, bool) {}
   inline void generic_learner(void* data, learner& base, example*)
   { cout << "calling generic learner\n";}
   inline void generic_func(void* data) {}
 
   const save_load_data generic_save_load_fd = {NULL, NULL, generic_sl};
-  const learn_data generic_learn_fd = {NULL, NULL, generic_learner};
+  const learn_data generic_learn_fd = {NULL, NULL, generic_learner, NULL};
   const func_data generic_func_fd = {NULL, NULL, generic_func};
 }
 
@@ -81,6 +82,13 @@ public:
   { 
     ec->ft_offset += (uint32_t)(increment*i);
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
+    ec->ft_offset -= (uint32_t)(increment*i);
+  }
+
+  inline void predict(example* ec, size_t i=0) 
+  { 
+    ec->ft_offset += (uint32_t)(increment*i);
+    learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
     ec->ft_offset -= (uint32_t)(increment*i);
   }
 
@@ -142,6 +150,7 @@ public:
 
     learn_fd.data = dat;
     learn_fd.learn_f = l;
+    learn_fd.predict_f = l;
     set_save_load(sl);
     increment = params_per_weight;
   }
@@ -151,6 +160,7 @@ public:
     *this = *base;
     
     learn_fd.learn_f = l;
+    learn_fd.predict_f = l;
     learn_fd.data = dat;
     learn_fd.base = base;
 

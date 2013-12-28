@@ -28,6 +28,7 @@ license as described in the file LICENSE.
 #include "lda_core.h"
 #include "noop.h"
 #include "gd_mf.h"
+#include "mf.h"
 #include "vw.h"
 #include "rand48.h"
 #include "parse_args.h"
@@ -799,6 +800,9 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("nn") || vm_file.count("nn") )
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
+
+  // if (all->rank != 0)
+  //   all->l = MF::setup(*all);
 
   if(vm.count("autolink") || vm_file.count("autolink") )
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);

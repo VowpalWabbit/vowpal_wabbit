@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -250,7 +250,7 @@
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="gd.h" />
-    <ClInclude Include="gd_mf.h" />
+    <ClInclude Include="mf.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="io_buf.h" />
@@ -293,7 +293,7 @@
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
-    <ClCompile Include="gd_mf.cc" />
+    <ClCompile Include="mf.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />

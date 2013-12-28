@@ -36,6 +36,7 @@ vw.1
 *.tgz
 test/*.tmp
 test/models
+test/topk.model
 .libs
 .deps
 autom4te.cache/
@@ -44,3 +45,8 @@ vowpalwabbit/vw
 cluster/spanning_tree
 *.d
 *.prev
+library/ezexample_predict
+library/ezexample_train
+library/library_example
+library/recommend
+test/RunTests.last.times
