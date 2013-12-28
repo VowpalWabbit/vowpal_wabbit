@@ -10,7 +10,7 @@
 use Getopt::Std;
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y
-            $opt_v);
+            $opt_v $opt_V);
 
 my $Epsilon = 1e-4;
 
@@ -20,6 +20,11 @@ my $LDA;
 # External utilities we use. See init() for Windows specific actions.
 my $Diff = 'diff';
 my $Cat = 'cat';
+
+# -V prefixes valgrind like this, we should adjust the default
+# options over time to what looks most useful.
+my $Valgrind = 'valgrind --quiet --error-exitcode=100' .
+                ' --track-origins=yes';
 
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
 
@@ -54,6 +59,7 @@ sub usage(@) {
         -o      Overwrite reference file with new/different result
         -y      On error, copy bad files to (eg stderr.test21) for later comparison
         -v<L>   Verbosity <L> (small integer) is verbosity level
+        -V      apply valgrind to vw commands
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
@@ -63,6 +69,11 @@ sub mysystem {
     my $cmd = shift;
     v(1, "%s\n", $cmd);
     system($cmd);
+}
+
+sub valgrind_errfile($) {
+    my $testno = shift;
+    "Test-$testno.valgrind-err";
 }
 
 #
@@ -112,7 +123,7 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:ov:') || usage();
+    getopts('wcdDefyE:ov:V') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
 
     print STDERR "testing $^O "; 
@@ -251,6 +262,10 @@ sub next_test() {
         die "$0: test $TestNo: stderr ref: undefined\n";
     }
     # print STDERR "next_test: (\$cmd, $out_ref, $err_ref, $pred_ref, $pred)\n";
+    if ($opt_V) {
+        $cmd = sprintf("%s --log-file='%s' %s",
+                        $Valgrind, valgrind_errfile($TestNo), $cmd);
+    }
     ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
 }
 
@@ -496,7 +511,12 @@ sub run_tests() {
         mysystem("($cmd) >$outf 2>$errf");
         my $status = $? >> 8;
         if ($status) {
-            warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
+            if ($opt_V && $status == 100) {
+                my $errfile = valgrind_errfile($TestNo);
+                warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+            } else {
+                warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
+            }
             exit $status if ($opt_e);
             next;
         }
