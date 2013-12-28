@@ -39,7 +39,7 @@ namespace CB
     //if we specified more than 1 action for this example, i.e. either we have a limited set of possible actions, or all actions are specified
     //than check if all actions have a specified cost
     for (cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++)
-      if (cl->x == FLT_MAX)
+      if (cl->cost == FLT_MAX)
         return false;
 
     return true;
@@ -50,7 +50,7 @@ namespace CB
     if (ld->costs.size() == 0)
       return true;
     for (size_t i=0; i<ld->costs.size(); i++)
-      if (FLT_MAX != ld->costs[i].x && ld->costs[i].prob_action > 0.)
+      if (FLT_MAX != ld->costs[i].cost && ld->costs[i].probability > 0.)
         return false;
     return true;
   }
@@ -154,19 +154,19 @@ namespace CB
           throw exception();
         }
 
-        f.weight_index = (uint32_t)hashstring(p->parse_name[0], 0);
-        if (f.weight_index < 1 || f.weight_index > sd->k)
+        f.action = (uint32_t)hashstring(p->parse_name[0], 0);
+        if (f.action < 1 || f.action > sd->k)
         {
-          cerr << "invalid action: " << f.weight_index << endl;
+          cerr << "invalid action: " << f.action << endl;
           cerr << "terminating." << endl;
           throw exception();
         }
 
-        f.x = FLT_MAX;
+        f.cost = FLT_MAX;
         if(p->parse_name.size() > 1)
-          f.x = float_of_substring(p->parse_name[1]);
+          f.cost = float_of_substring(p->parse_name[1]);
 
-        if ( nanpattern(f.x))
+        if ( nanpattern(f.cost))
         {
 	  cerr << "error NaN cost for action: ";
 	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
@@ -174,11 +174,11 @@ namespace CB
 	  throw exception();
         }
       
-        f.prob_action = .0;
+        f.probability = .0;
         if(p->parse_name.size() > 2)
-          f.prob_action = float_of_substring(p->parse_name[2]);
+          f.probability = float_of_substring(p->parse_name[2]);
 
-        if ( nanpattern(f.prob_action))
+        if ( nanpattern(f.probability))
         {
 	  cerr << "error NaN probability for action: ";
 	  cerr.write(p->parse_name[0].begin, p->parse_name[0].end - p->parse_name[0].begin);
@@ -186,15 +186,15 @@ namespace CB
 	  throw exception();
         }
         
-        if( f.prob_action > 1.0 )
+        if( f.probability > 1.0 )
         {
           cerr << "invalid probability > 1 specified for an action, resetting to 1." << endl;
-          f.prob_action = 1.0;
+          f.probability = 1.0;
         }
-        if( f.prob_action < 0.0 )
+        if( f.probability < 0.0 )
         {
           cerr << "invalid probability < 0 specified for an action, resetting to 0." << endl;
-          f.prob_action = .0;
+          f.probability = .0;
         }
 
         ld->costs.push_back(f);
@@ -204,7 +204,7 @@ namespace CB
   inline bool observed_cost(cb_class* cl)
   {
     //cost observed for this action if it has non zero probability and cost != FLT_MAX
-    return (cl != NULL && cl->x != FLT_MAX && cl->prob_action > .0);
+    return (cl != NULL && cl->cost != FLT_MAX && cl->probability > .0);
   }
   
   cb_class* get_observed_cost(CB::label* ld)
@@ -235,15 +235,15 @@ namespace CB
         wc.weight_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
-        if( c.known_cost != NULL && i == c.known_cost->weight_index )
+        if( c.known_cost != NULL && i == c.known_cost->action )
         {
-          wc.x = c.known_cost->x / c.known_cost->prob_action; //use importance weighted cost for observed action, 0 otherwise 
+          wc.x = c.known_cost->cost / c.known_cost->probability; //use importance weighted cost for observed action, 0 otherwise 
           //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
           //update the loss of this regressor 
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x)*(c.known_cost->x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost)*(c.known_cost->cost) - c.avg_loss_regressors );
           c.last_pred_reg = 0;
-          c.last_correct_cost = c.known_cost->x;
+          c.last_correct_cost = c.known_cost->cost;
         }
 
         cs_ld.costs.push_back(wc );
@@ -256,19 +256,19 @@ namespace CB
         CSOAA::wclass wc;
         wc.wap_value = 0.;
         wc.x = 0.;
-        wc.weight_index = cl->weight_index;
+        wc.weight_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
-        if( c.known_cost != NULL && cl->weight_index == c.known_cost->weight_index )
+        if( c.known_cost != NULL && cl->action == c.known_cost->action )
         {
-          wc.x = c.known_cost->x / c.known_cost->prob_action; //use importance weighted cost for observed action, 0 otherwise 
+          wc.x = c.known_cost->cost / c.known_cost->probability; //use importance weighted cost for observed action, 0 otherwise 
 
           //ips can be thought as the doubly robust method with a fixed regressor that predicts 0 costs for everything
           //update the loss of this regressor 
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x)*(c.known_cost->x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost)*(c.known_cost->cost) - c.avg_loss_regressors );
           c.last_pred_reg = 0;
-          c.last_correct_cost = c.known_cost->x;
+          c.last_correct_cost = c.known_cost->cost;
         }
 
         cs_ld.costs.push_back( wc );
@@ -294,9 +294,9 @@ namespace CB
 
     label_data simple_temp;
     simple_temp.initial = 0.;
-    if (c.known_cost != NULL && index == c.known_cost->weight_index)
+    if (c.known_cost != NULL && index == c.known_cost->action)
       {
-	simple_temp.label = c.known_cost->x;
+	simple_temp.label = c.known_cost->cost;
 	simple_temp.weight = 1.;
       }
     else 
@@ -343,11 +343,11 @@ namespace CB
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
-        if( c.known_cost != NULL && c.known_cost->weight_index == i ) {
+        if( c.known_cost != NULL && c.known_cost->action == i ) {
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x - wc.x)*(c.known_cost->x - wc.x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
-          c.last_correct_cost = c.known_cost->x;
+          c.last_correct_cost = c.known_cost->cost;
         }
 
         cs_ld.costs.push_back( wc );
@@ -361,22 +361,22 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred(all, c, ec, cl->weight_index - 1);
-	if (wc.x < min || (wc.x == min && cl->weight_index < argmin))
+        wc.x = get_cost_pred(all, c, ec, cl->action - 1);
+	if (wc.x < min || (wc.x == min && cl->action < argmin))
 	  {
 	    min = wc.x;
-	    argmin = cl->weight_index;
+	    argmin = cl->action;
 	  }
 
-        wc.weight_index = cl->weight_index;
+        wc.weight_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
-        if( c.known_cost != NULL && c.known_cost->weight_index == cl->weight_index ) {
+        if( c.known_cost != NULL && c.known_cost->action == cl->action ) {
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x - wc.x)*(c.known_cost->x - wc.x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
-          c.last_correct_cost = c.known_cost->x;
+          c.last_correct_cost = c.known_cost->cost;
         }
 
         cs_ld.costs.push_back( wc );
@@ -406,12 +406,12 @@ namespace CB
         wc.wap_value = 0.;
 
         //add correction if we observed cost for this action and regressor is wrong
-        if( c.known_cost != NULL && c.known_cost->weight_index == i ) {
+        if( c.known_cost != NULL && c.known_cost->action == i ) {
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x - wc.x)*(c.known_cost->x - wc.x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
-          c.last_correct_cost = c.known_cost->x;
-          wc.x += (c.known_cost->x - wc.x) / c.known_cost->prob_action;
+          c.last_correct_cost = c.known_cost->cost;
+          wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
         }
 
         cs_ld.costs.push_back( wc );
@@ -425,18 +425,18 @@ namespace CB
         wc.wap_value = 0.;
 
         //get cost prediction for this label
-        wc.x = get_cost_pred(all, c, ec, all.sd->k + cl->weight_index - 1);
-        wc.weight_index = cl->weight_index;
+        wc.x = get_cost_pred(all, c, ec, all.sd->k + cl->action - 1);
+        wc.weight_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
         //add correction if we observed cost for this action and regressor is wrong
-        if( c.known_cost != NULL && c.known_cost->weight_index == cl->weight_index ) {
+        if( c.known_cost != NULL && c.known_cost->action == cl->action ) {
           c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->x - wc.x)*(c.known_cost->x - wc.x) - c.avg_loss_regressors );
+          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
           c.last_pred_reg = wc.x;
-          c.last_correct_cost = c.known_cost->x;
-          wc.x += (c.known_cost->x - wc.x) / c.known_cost->prob_action;
+          c.last_correct_cost = c.known_cost->cost;
+          wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
         }
 
         cs_ld.costs.push_back( wc );
@@ -457,8 +457,8 @@ namespace CB
         CSOAA::wclass wc;
         wc.wap_value = 0.;
 
-        wc.x = cl->x;
-        wc.weight_index = cl->weight_index;
+        wc.x = cl->cost;
+        wc.weight_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
         
@@ -486,8 +486,8 @@ namespace CB
 
     //now this is a training example
     c->known_cost = get_observed_cost(ld);
-    c->min_cost = min (c->min_cost, c->known_cost->x);
-    c->max_cost = max (c->max_cost, c->known_cost->x);
+    c->min_cost = min (c->min_cost, c->known_cost->cost);
+    c->max_cost = max (c->max_cost, c->known_cost->cost);
     
     //generate a cost-sensitive example to update classifiers
     switch(c->cb_type)
@@ -585,8 +585,8 @@ namespace CB
         float chosen_loss = FLT_MAX;
         if( know_all_cost_example(ld) ) {
           for (cb_class *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
-            if (cl->weight_index == pred)
-              chosen_loss = cl->x;
+            if (cl->action == pred)
+              chosen_loss = cl->cost;
           }
         }
         else {
@@ -595,8 +595,8 @@ namespace CB
             if (cl->weight_index == pred)
 	      {
 		chosen_loss = cl->x;
-		if (c.known_cost->weight_index == pred && c.cb_type == CB_TYPE_DM) 
-		  chosen_loss += (c.known_cost->x - chosen_loss) / c.known_cost->prob_action;
+		if (c.known_cost->action == pred && c.cb_type == CB_TYPE_DM) 
+		  chosen_loss += (c.known_cost->cost - chosen_loss) / c.known_cost->probability;
 	      }
           }
         }

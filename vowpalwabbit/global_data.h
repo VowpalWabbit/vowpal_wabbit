@@ -141,12 +141,13 @@ struct vw {
 
   string data_filename; // was vm["data"]
 
-  bool daemon; 
+  bool daemon;
   size_t num_children;
 
   bool save_per_pass;
   float active_c0;
   float initial_weight;
+  float initial_constant;
 
   bool bfgs;
   bool hessian_on;
@@ -161,14 +162,14 @@ struct vw {
   bool searn;
   void* /*Searn::searn*/ searnstr;
 
-  uint32_t wpp; 
+  uint32_t wpp;
 
   int stdout_fileno;
 
   std::string per_feature_regularizer_input;
   std::string per_feature_regularizer_output;
   std::string per_feature_regularizer_text;
-  
+
   float l1_lambda; //the level of l_1 regularization to impose.
   float l2_lambda; //the level of l_2 regularization to impose.
   float power_t;//the power on learning rate decay.
@@ -222,7 +223,7 @@ struct vw {
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
-  
+
   std::string span_server;
 
   size_t length () { return ((size_t)1) << num_bits; };
@@ -244,7 +245,7 @@ struct vw {
 
   bool stdin_off;
 
-  //runtime accounting variables. 
+  //runtime accounting variables.
   float initial_t;
   float eta;//learning rate control.
   float eta_decay_rate;
@@ -271,4 +272,4 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 int print_tag(std::stringstream& ss, v_array<char> tag);
 
 #endif
- 
+
