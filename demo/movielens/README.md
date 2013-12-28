@@ -24,13 +24,12 @@ of flattery.
 
 ### How it works ###
 
-If you have two namespaces `a` and `b`, instead of 
-the full interaction design enabled by specifying `-q ab`, you can have a 
-rank-k interaction design by specifying `--lrq abk`.  Additionally 
-specifying `--lrqdropout` trains with dropout which tends to work better.
-When using dropout the best performing rank tends to be about twice as big
-as without dropout.  When *not* using dropout you might find
-a bit of `--l2` regularization improves generalization.
+If you have two namespaces `a` and `b`, instead of the full interaction
+design enabled by specifying `-q ab`, you can have a rank-k interaction
+design by specifying `--lrq abk`.  Additionally specifying `--lrqdropout`
+trains with dropout which sometimes works better.  When using dropout the
+best performing rank tends to be about twice as big as without dropout.
+You might find a bit of `--l2` regularization improves generalization.
 
 ### Demo Instructions ###
 - `make shootout`: eventually produces three results indicating test MAE (mean absolute error) on movielens-1M for
