@@ -58,7 +58,7 @@ bool valid_ns(char c)
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
-  char*cstr = new char[str.length()+1];
+  char* cstr = (char*)calloc(str.length()+1, sizeof(char));
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
@@ -93,7 +93,7 @@ void parse_affix_argument(vw&all, string str) {
     p = strtok(NULL, ",");
   }
 
-  delete cstr;
+  free(cstr);
 }
 
 vw* parse_args(int argc, char *argv[])
@@ -1030,6 +1030,7 @@ namespace VW {
   {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
+    delete all.l;
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
     free_parser(all);
