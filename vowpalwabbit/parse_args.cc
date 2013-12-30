@@ -28,10 +28,12 @@ license as described in the file LICENSE.
 #include "lda_core.h"
 #include "noop.h"
 #include "gd_mf.h"
+#include "mf.h"
 #include "vw.h"
 #include "rand48.h"
 #include "parse_args.h"
 #include "binary.h"
+#include "lrq.h"
 #include "autolink.h"
 
 using namespace std;
@@ -212,6 +214,12 @@ vw* parse_args(int argc, char *argv[])
     ("rank", po::value<uint32_t>(&(all->rank)), "rank for matrix factorization.")
     ;
 
+  po::options_description lrq_opt("Low Rank Quadratic options");
+  lrq_opt.add_options()
+    ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
+    ("lrqdropout", "use dropout training for low rank quadratic features")
+    ;
+
   po::options_description multiclass_opt("Multiclass options");
   multiclass_opt.add_options()
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
@@ -268,6 +276,7 @@ vw* parse_args(int argc, char *argv[])
     .add(holdout_opt)
     .add(namespace_opt)
     .add(mf_opt)
+    .add(lrq_opt)
     .add(multiclass_opt)
     .add(active_opt)
     .add(cluster_opt)
@@ -800,6 +809,9 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("nn") || vm_file.count("nn") )
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
 
+  // if (all->rank != 0)
+  //   all->l = MF::setup(*all);
+
   if(vm.count("autolink") || vm_file.count("autolink") )
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
 
@@ -808,6 +820,9 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
+
+  if (vm.count("lrq") || vm_file.count("lrq"))
+    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }

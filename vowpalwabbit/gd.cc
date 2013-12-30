@@ -38,14 +38,18 @@ namespace GD
     bool active;
     bool active_simulation;
     float normalized_sum_norm_x;
-    bool feature_mask_off;
     size_t no_win_counter;
     size_t early_stop_thres;
     float initial_constant;
 
     vw* all;
   };
+  template <bool normalized, bool training, bool reg_mode_odd, bool power_t_half>
   void predict(vw& all, gd& g, example* ex);
+
+  template<bool adaptive, bool normalized, bool feature_mask_off>
+  void local_predict(vw& all, gd& g, example* ex);
+
   void sync_weights(vw& all);
   
   struct train_data {
@@ -151,63 +155,52 @@ inline void specialized_update(vw& all, train_data* s, float x, uint32_t fi)
       }   
   }
 
+template<bool adaptive, bool normalized, bool feature_mask_off>
 void learn(void* d, learner& base, example* ec)
 {
   gd* g = (gd*)d;
   vw* all = g->all;
+  label_data* ld = (label_data*)ec->ld;
 
   assert(ec->in_use);
 
-  predict(*all,*g,ec);
-  
-  if (all->holdout_set_off || !ec->test_only)
+  if (!ec->precomputed_prediction)
     {
+    if (all->training)
+      if (all->reg_mode % 2)
+	if (all->power_t == 0.5)
+	  predict<normalized, true, true, true>(*all,*g,ec);
+	else
+	  predict<normalized, true, true, false>(*all,*g,ec);
+      else
+	if (all->power_t == 0.5)
+	  predict<normalized, true, false, true>(*all,*g,ec);
+	else
+	  predict<normalized, true, false, false>(*all,*g,ec);
+    else
+      if (all->reg_mode % 2)
+	if (all->power_t == 0.5)
+	  predict<normalized, false, true, true>(*all,*g,ec);
+	else
+	  predict<normalized, false, true, false>(*all,*g,ec);
+      else
+	if (all->power_t == 0.5)
+	  predict<normalized, false, false, true>(*all,*g,ec);
+	else
+	  predict<normalized, false, false, false>(*all,*g,ec);
+    }
+
+  if ((all->holdout_set_off || !ec->test_only) && ld->weight > 0)
+    {
+      local_predict<adaptive, normalized, feature_mask_off > (*all, *g, ec);
+
       if (ec->eta_round != 0.)
 	{
-          if(all->power_t == 0.5) { 
-            if (all->adaptive) {
-              if (all->normalized_updates){ 
-                if (g->feature_mask_off) 
-                  generic_train<specialized_update<true, true, true> >
-                    (*all,ec,(float)ec->eta_round,true);
-                else
-                  generic_train<specialized_update<true, true, false> >
-                    (*all,ec,(float)ec->eta_round,true);
-              }
-              else {
-                if (g->feature_mask_off) 
-                  generic_train<specialized_update<true, false, true> >
-                    (*all,ec,(float)ec->eta_round,true);
-                else
-                  generic_train<specialized_update<true, false, false> >
-                    (*all,ec,(float)ec->eta_round,true);
-              }
-            }              
-            else { //for adaptive 
-              if (all->normalized_updates){ 
-                if (g->feature_mask_off) 
-                  generic_train<specialized_update<false, true, true> >
-                    (*all,ec,(float)ec->eta_round,true);
-                else
-                  generic_train<specialized_update<false, true, false> >
-                    (*all,ec,(float)ec->eta_round,true);
-              }
-              else {
-                if (g->feature_mask_off) 
-                  generic_train<specialized_update<false, false, true> >
-                    (*all,ec,(float)ec->eta_round,true);
-                else
-                  generic_train<specialized_update<false, false, false> >
-                    (*all,ec,(float)ec->eta_round,true);
-              }  
-            }
-          }//end of power_t
-          else{
-            if (g->feature_mask_off)
-              generic_train<general_update<true> >(*all,ec,(float)ec->eta_round,false);
-            else
-              generic_train<general_update<false> >(*all,ec,(float)ec->eta_round,false);
-          }  
+          if(all->power_t == 0.5)
+	    generic_train<specialized_update<adaptive, normalized, feature_mask_off> > (*all,ec,(float)ec->eta_round,true);
+          else
+	    generic_train<general_update<feature_mask_off> >(*all,ec,(float)ec->eta_round,false);
+
 	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	    sync_weights(*all);
 	}
@@ -492,7 +485,7 @@ float compute_norm(vw& all, example* &ec)
   norm_data nd = {g, 0., 0.};
 
   foreach_feature<norm_data*,T>(all, ec, &nd);
-  
+
   if(all.normalized_updates) {
     float total_weight = ec->example_t;
 
@@ -514,14 +507,11 @@ float compute_norm(vw& all, example* &ec)
   return nd.norm;
 }
 
-  void local_predict(vw& all, gd& g, example* ec)
+template<bool adaptive, bool normalized, bool feature_mask_off>
+void local_predict(vw& all, gd& g, example* ec)
 {
   label_data* ld = (label_data*)ec->ld;
 
-  all.set_minmax(all.sd, ld->label);
-
-  ec->final_prediction = finalize_prediction(all, ec->partial_prediction * (float)all.sd->contraction);
-  
   if(g.active_simulation){
     float k = ec->example_t - ld->weight;
     ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(k,all.power_t));
@@ -551,40 +541,17 @@ float compute_norm(vw& all, example* &ec)
         {
 	  float eta_t;
 	  float norm;
-          if(all.adaptive || all.normalized_updates) {
-            if(all.power_t == 0.5) {
-                if (all.adaptive && all.normalized_updates){
-                  if (g.feature_mask_off)
-                    norm = compute_norm<simple_norm_compute<true, true, true> >(all,ec);
-                  else
-                    norm = compute_norm<simple_norm_compute<true, true, false> >(all,ec);
-                }
-                else if (all.adaptive){
-                  if (g.feature_mask_off)
-                    norm = compute_norm<simple_norm_compute<true, false, true> >(all,ec);
-                  else
-                    norm = compute_norm<simple_norm_compute<true, false, false> >(all,ec);
-                } 
-                else{ 
-                   if (g.feature_mask_off)
-                    norm = compute_norm<simple_norm_compute<false, true, true> >(all,ec);
-                  else
-                    norm = compute_norm<simple_norm_compute<false, true, false> >(all,ec);
-                }
-            }
-            else{
-              if(g.feature_mask_off)  
-                norm = compute_norm<powert_norm_compute<true> >(all,ec);
-              else
-                norm = compute_norm<powert_norm_compute<false> >(all,ec);
-            }
-          }
-          else 
-            norm = ec->total_sum_feat_sq;  
+          if(adaptive || normalized)
+            if(all.power_t == 0.5)
+	      norm = compute_norm<simple_norm_compute<adaptive, normalized, feature_mask_off> >(all,ec);
+            else
+	      norm = compute_norm<powert_norm_compute<feature_mask_off> >(all,ec);
+          else
+            norm = ec->total_sum_feat_sq;
 
           eta_t = all.eta * norm * ld->weight;
-          if(!all.adaptive) eta_t *= powf(t,-all.power_t);
-          
+          if(!adaptive && all.power_t != 0) eta_t *= powf(t,-all.power_t);
+
           float update = 0.f;
           if( all.invariant_updates )
             update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, norm);
@@ -597,7 +564,8 @@ float compute_norm(vw& all, example* &ec)
 	    double dev1 = all.loss->first_derivative(all.sd, ec->final_prediction, ld->label);
 	    double eta_bar = (fabs(dev1) > 1e-8) ? (-ec->eta_round / dev1) : 0.0;
 	    if (fabs(dev1) > 1e-8)
-	      all.sd->contraction /= (1. + all.l2_lambda * eta_bar * norm);
+	      all.sd->contraction *= (1. - all.l2_lambda * eta_bar * norm);
+	      //all.sd->contraction /= (1. + all.l2_lambda * eta_bar * norm);
 	    all.sd->gravity += eta_bar * sqrt(norm) * all.l1_lambda;
 	  }
         }
@@ -605,41 +573,42 @@ float compute_norm(vw& all, example* &ec)
   else if(all.active)
     ec->revert_weight = all.loss->getRevertingWeight(all.sd, ec->final_prediction, all.eta/powf(t,all.power_t));
 
-  if ((all.audit && !ec->test_only) || all.hash_inv)
-    print_audit_features(all, ec);
 }
 
-  void predict(vw& all, gd& g, example* ex)
+  template <bool normalized, bool training, bool reg_mode_odd, bool power_t_half>
+void predict(vw& all, gd& g, example* ec)
 {
-  label_data* ld = (label_data*)ex->ld;
-  float prediction;
+    label_data* ld = (label_data*)ec->ld;
 
-  if (all.training && all.normalized_updates && ld->label != FLT_MAX && ld->weight > 0) {
-    if( all.power_t == 0.5 ) {
-      if (all.reg_mode % 2)
-        prediction = inline_predict<vec_add_trunc_rescale>(all, ex);
-      else
-        prediction = inline_predict<vec_add_rescale>(all, ex);
+    if (training && normalized && ld->label != FLT_MAX) {
+      if(power_t_half) {
+	if (reg_mode_odd)
+	  ec->partial_prediction = inline_predict<vec_add_trunc_rescale>(all, ec);
+	else
+	  ec->partial_prediction = inline_predict<vec_add_rescale>(all, ec);
+      }
+      else {
+	if (reg_mode_odd)
+	  ec->partial_prediction = inline_predict<vec_add_trunc_rescale_general>(all, ec);
+	else
+	  ec->partial_prediction = inline_predict<vec_add_rescale_general>(all, ec);
+      }
     }
     else {
-      if (all.reg_mode % 2)
-        prediction = inline_predict<vec_add_trunc_rescale_general>(all, ex);
+      if (reg_mode_odd)
+	ec->partial_prediction = inline_predict<vec_add_trunc>(all, ec);
       else
-        prediction = inline_predict<vec_add_rescale_general>(all, ex);
+	ec->partial_prediction = inline_predict<vec_add>(all, ec);
     }
-  }
-  else {
-    if (all.reg_mode % 2)
-      prediction = inline_predict<vec_add_trunc>(all, ex);
-    else
-      prediction = inline_predict<vec_add>(all, ex);
-  }
 
-  ex->partial_prediction = prediction;
+    all.set_minmax(all.sd, ld->label);
 
-  local_predict(all, g, ex);
-  ex->done = true;
+    ec->final_prediction = finalize_prediction(all, ec->partial_prediction * (float)all.sd->contraction);
+
+    if ((all.audit && !ec->test_only) || all.hash_inv)
+      print_audit_features(all, ec);
 }
+
 
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {
@@ -884,10 +853,9 @@ learner* setup(vw& all, po::variables_map& vm)
   g->no_win_counter = 0;
   g->early_stop_thres = 3;
 
+  bool feature_mask_off = true;
   if(vm.count("feature_mask"))
-    g->feature_mask_off = false;
-  else
-    g->feature_mask_off = true;
+    feature_mask_off = false;
 
   if(!all.holdout_set_off)
   {
@@ -900,7 +868,31 @@ learner* setup(vw& all, po::variables_map& vm)
       g->initial_constant = vm["constant"].as<float>();     
   }
 
-  learner* ret = new learner(g,learn, save_load, all.reg.stride);
+  learner* ret;
+
+  if (all.adaptive)
+    if (all.normalized_updates)
+      if (feature_mask_off)
+	ret = new learner(g, learn<true,true,true>, save_load, all.reg.stride);
+      else
+	ret = new learner(g, learn<true,true,false>, save_load, all.reg.stride);
+    else
+      if (feature_mask_off)
+	ret = new learner(g, learn<true,false,true>, save_load, all.reg.stride);
+      else
+	ret = new learner(g, learn<true,false,false>, save_load, all.reg.stride);
+  else
+    if (all.normalized_updates)
+      if (feature_mask_off)
+	ret = new learner(g, learn<false,true,true>, save_load, all.reg.stride);
+      else
+	ret = new learner(g, learn<false,true,false>, save_load, all.reg.stride);
+    else
+      if (feature_mask_off)
+	ret = new learner(g, learn<false,false,true>, save_load, all.reg.stride);
+      else
+	ret = new learner(g, learn<false,false,false>, save_load, all.reg.stride);
+
   ret->set_end_pass(end_pass);
   return ret;
 }

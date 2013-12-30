@@ -59,12 +59,12 @@ struct example // core example datatype.
   float sum_feat_sq[256];//helper for total_sum_feat_sq.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
   float revert_weight;
+  bool precomputed_prediction;
 
   bool test_only;
   bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?
   bool in_use; //in use or not (for the parser)
-  bool done; //set to false by setup_example()
 };
 
  struct vw;  
