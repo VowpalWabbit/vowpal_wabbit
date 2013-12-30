@@ -5,4 +5,4 @@ case $( uname -s ) in
  *)	alias vwlibtool=libtoolize;;
 esac
 
-vwlibtool -f -c && aclocal -I ./acinclude.d -I /usr/share/aclocal && autoheader && automake -ac -Woverride && autoconf && ./configure "$@"
+vwlibtool -f -c && aclocal -I ./acinclude.d -I /usr/share/aclocal && autoheader && touch README && automake -ac -Woverride && autoconf && ./configure "$@"

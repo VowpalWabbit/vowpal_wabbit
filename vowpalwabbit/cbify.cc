@@ -18,9 +18,9 @@ namespace CBIFY {
   void do_uniform(cbify* data, example* ec)
   {
     //Draw an action
-    size_t action = (size_t)ceil(frand48() * data->k);
+    uint32_t action = (uint32_t)ceil(frand48() * data->k);
     
-    ec->final_prediction = action;
+    ec->final_prediction = (float)action;
   }
   
   void do_loss(example* ec)
@@ -45,13 +45,13 @@ namespace CBIFY {
 	do_loss(ec);
 	data->tau--;
 	cout << "tau--" << endl;
-	size_t action = ec->final_prediction;
-	CB::cb_class l = {ec->loss, action, 1. / data->k};
+	uint32_t action = (uint32_t)ec->final_prediction;
+	CB::cb_class l = {ec->loss, action, 1.f / data->k};
 	data->cb_label.costs.erase();
 	data->cb_label.costs.push_back(l);
 	ec->ld = &(data->cb_label);
 	base.learn(ec);
-	ec->final_prediction = action;
+	ec->final_prediction = (float)action;
 	ec->loss = l.cost;
       }
     else
@@ -75,25 +75,25 @@ namespace CBIFY {
     ec->ld = &(data->cb_label);
     base.learn(ec);
     do_loss(ec);
-    float action = ec->final_prediction;
+    uint32_t action = (uint32_t)ec->final_prediction;
 
     float base_prob = data->epsilon / data->k;
     if (frand48() < 1. - data->epsilon)
       {
-	CB::cb_class l = {ec->loss, action, 1. - data->epsilon + base_prob};
+	CB::cb_class l = {ec->loss, action, 1.f - data->epsilon + base_prob};
 	data->cb_label.costs.push_back(l);
       }    
     else
       {
 	do_uniform(data, ec);
 	do_loss(ec);
-	action = ec->final_prediction;
-	CB::cb_class l = {ec->loss, ec->final_prediction, base_prob};
+	action = (uint32_t)ec->final_prediction;
+	CB::cb_class l = {ec->loss, (uint32_t)ec->final_prediction, base_prob};
 	data->cb_label.costs.push_back(l);
       }
     base.learn(ec);
     
-    ec->final_prediction = action;
+    ec->final_prediction = (float)action;
     ec->loss = data->cb_label.costs[0].cost;
     ec->ld = ld;
   }
@@ -116,7 +116,7 @@ namespace CBIFY {
   {//parse and set arguments
     cbify* data = (cbify*)calloc(1, sizeof(cbify));
 
-    data->epsilon = 0.05;
+    data->epsilon = 0.05f;
     data->tau = 1000;
     po::options_description desc("CBIFY options");
     desc.add_options()
