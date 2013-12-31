@@ -841,10 +841,9 @@ void learn(void* d, learner& base, example* ec)
 // placeholder
 void predict(void* d, learner& base, example* ec)
 {
-  bool test_only = ec->test_only;
-  ec->test_only = true;
-  learn(d, base, ec);
-  ec->test_only = test_only;
+  bfgs* b = (bfgs*)d;
+  vw* all = b->all;
+  ec->final_prediction = bfgs_predict(*all,ec);
 }
 
 void finish(void* d)

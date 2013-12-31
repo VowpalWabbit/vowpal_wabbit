@@ -83,13 +83,10 @@ void receive_result(sender& s)
     s->delay_ring[s->sent_index++ % s->all->p->ring_size] = ec;
   }
 
-  //placeholder
+  // placeholder
   void predict(void* d, learner& base, example* ec)
   {
-    bool test_only = ec->test_only;
-    ec->test_only = true;
     learn(d, base, ec);
-    ec->test_only = test_only;
   }
 
   void finish_example(vw& all, void*, example*ec)

@@ -696,7 +696,7 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
 	l->doc_lengths[num_ex] += (int)f->x;
       }
     }
-    if (++num_ex == l->all->minibatch)
+    if (++num_ex == l->all->minibatch && !ec->test_only)
       learn_batch(*l);
   }
 
