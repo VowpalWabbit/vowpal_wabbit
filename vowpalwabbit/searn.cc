@@ -262,14 +262,6 @@ namespace SearnUtil
     }
     ec->indices.decr();
   }
-
-  // size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>* ystar, history_info& hinfo, size_t*history) {
-  //   add_history_to_example(vw, hinfo, ec, history);
-  //   size_t prediction = ((Searn::searn*)vw.searnstr)->predict(vw, &ec, 0, NULL, ystar);
-  //   remove_history_from_example(vw, hinfo, ec);
-  //   return prediction;
-  // }
-
 }
 
 

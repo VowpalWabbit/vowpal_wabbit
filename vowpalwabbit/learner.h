@@ -102,9 +102,14 @@ public:
   //called to clean up state.  Autorecursive.
   void set_finish(void (*f)(void*)) { finisher_fd = tuple_dbf(learn_fd.data,learn_fd.base,f); }
   inline void finish() 
-  { if (finisher_fd.data) 
+  { 
+    if (finisher_fd.data) 
       {finisher_fd.func(finisher_fd.data); free(finisher_fd.data); } 
-    if (finisher_fd.base) finisher_fd.base->finish(); }
+    if (finisher_fd.base) { 
+      finisher_fd.base->finish();
+      delete finisher_fd.base;
+    }
+  }
 
   void end_pass(){ 
     end_pass_fd.func(end_pass_fd.data);
@@ -151,6 +156,11 @@ public:
     learn_fd.data = dat;
     learn_fd.learn_f = l;
     learn_fd.predict_f = l;
+
+    finisher_fd.data = dat;
+    finisher_fd.base = NULL;
+    finisher_fd.func = LEARNER::generic_func;
+
     set_save_load(sl);
     increment = params_per_weight;
   }
@@ -163,6 +173,10 @@ public:
     learn_fd.predict_f = l;
     learn_fd.data = dat;
     learn_fd.base = base;
+
+    finisher_fd.data = dat;
+    finisher_fd.base = base;
+    finisher_fd.func = LEARNER::generic_func;
 
     increment = base->increment * base->weights;
     weights = ws;

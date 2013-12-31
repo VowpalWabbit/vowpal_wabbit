@@ -33,6 +33,7 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "parse_args.h"
 #include "binary.h"
+#include "lrq.h"
 #include "autolink.h"
 
 using namespace std;
@@ -58,7 +59,7 @@ bool valid_ns(char c)
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
-  char*cstr = new char[str.length()+1];
+  char* cstr = (char*)calloc(str.length()+1, sizeof(char));
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
@@ -93,7 +94,7 @@ void parse_affix_argument(vw&all, string str) {
     p = strtok(NULL, ",");
   }
 
-  delete cstr;
+  free(cstr);
 }
 
 vw* parse_args(int argc, char *argv[])
@@ -213,6 +214,12 @@ vw* parse_args(int argc, char *argv[])
     ("rank", po::value<uint32_t>(&(all->rank)), "rank for matrix factorization.")
     ;
 
+  po::options_description lrq_opt("Low Rank Quadratic options");
+  lrq_opt.add_options()
+    ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
+    ("lrqdropout", "use dropout training for low rank quadratic features")
+    ;
+
   po::options_description multiclass_opt("Multiclass options");
   multiclass_opt.add_options()
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
@@ -269,6 +276,7 @@ vw* parse_args(int argc, char *argv[])
     .add(holdout_opt)
     .add(namespace_opt)
     .add(mf_opt)
+    .add(lrq_opt)
     .add(multiclass_opt)
     .add(active_opt)
     .add(cluster_opt)
@@ -813,6 +821,9 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
 
+  if (vm.count("lrq") || vm_file.count("lrq"))
+    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
+
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
 
@@ -1029,6 +1040,7 @@ namespace VW {
   {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
+    delete all.l;
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
     free_parser(all);
