@@ -233,8 +233,8 @@ namespace LRQ {
         
         unsigned int k = atoi (i->c_str () + 2);
 
-        lrq->lrindices[(int) (*i)[0]] = max (lrq->lrindices[(int) (*i)[0]], k);
-        lrq->lrindices[(int) (*i)[1]] = max (lrq->lrindices[(int) (*i)[1]], k);
+        lrq->lrindices[(int) (*i)[0]] = 1;
+        lrq->lrindices[(int) (*i)[1]] = 1;
 
         maxk = max (maxk, k);
       }
