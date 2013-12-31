@@ -293,6 +293,10 @@ void end_pass(void* d)
   // placeholder
   void predict(void* d, learner& base, example* ec)
   {
+    bool test_only = ec->test_only;
+    ec->test_only = true;
+    learn(d, base, ec);
+    ec->test_only = test_only;
   }
 
   learner* setup(vw& all)

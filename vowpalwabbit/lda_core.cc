@@ -681,11 +681,6 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  // placeholder
-  void predict(void* d, learner& base, example* ec)
-  {
-  }
-
   void learn(void* d, learner& base, example* ec) 
   {
     lda* l = (lda*)d;
@@ -703,6 +698,15 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     }
     if (++num_ex == l->all->minibatch)
       learn_batch(*l);
+  }
+
+  // placeholder
+  void predict(void* d, learner& base, example* ec)
+  {
+    bool test_only = ec->test_only;
+    ec->test_only = true;
+    learn(d, base, ec);
+    ec->test_only = test_only;
   }
 
   void end_pass(void* d)

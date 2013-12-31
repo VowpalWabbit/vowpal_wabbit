@@ -69,11 +69,6 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, ec);  
 }
 
-  //placeholder
-  void predict(void* d, learner& base, example* ec)
-  {
-  }
-
   void learn(void* d, learner& base, example* ec) 
   { 
     sender* s = (sender*)d;
@@ -86,6 +81,15 @@ void receive_result(sender& s)
     cache_tag(*s->buf, ec->tag);
     send_features(s->buf,ec, (uint32_t)s->all->parse_mask);
     s->delay_ring[s->sent_index++ % s->all->p->ring_size] = ec;
+  }
+
+  //placeholder
+  void predict(void* d, learner& base, example* ec)
+  {
+    bool test_only = ec->test_only;
+    ec->test_only = true;
+    learn(d, base, ec);
+    ec->test_only = test_only;
   }
 
   void finish_example(vw& all, void*, example*ec)
