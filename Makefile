@@ -22,7 +22,6 @@ ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
 
-#OPTIM_FLAGS = -g
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing -ffast-math #uncomment for speed, comment for testability
 ifeq ($(UNAME), FreeBSD)
 
@@ -57,7 +56,7 @@ spanning_tree:
 	cd cluster; $(MAKE)
 
 vw:
-	cd vowpalwabbit; $(MAKE) -j 2 things
+	cd vowpalwabbit; $(MAKE) -j things
 
 active_interactor:
 	cd vowpalwabbit; $(MAKE)
