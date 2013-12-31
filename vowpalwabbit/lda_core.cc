@@ -681,6 +681,11 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
+  // placeholder
+  void predict(void* d, learner& base, example* ec)
+  {
+  }
+
   void learn(void* d, learner& base, example* ec) 
   {
     lda* l = (lda*)d;
@@ -764,7 +769,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
   
-  learner* l = new learner(ld, learn, save_load, all.reg.stride);
+  learner* l = new learner(ld, learn, predict, save_load, all.reg.stride);
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
   l->set_end_examples(end_examples);  

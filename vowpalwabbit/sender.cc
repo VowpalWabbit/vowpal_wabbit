@@ -69,6 +69,11 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, ec);  
 }
 
+  //placeholder
+  void predict(void* d, learner& base, example* ec)
+  {
+  }
+
   void learn(void* d, learner& base, example* ec) 
   { 
     sender* s = (sender*)d;
@@ -119,7 +124,7 @@ void end_examples(void* d)
   s->all = &all;
   s->delay_ring = (example**) calloc(all.p->ring_size, sizeof(example*));
 
-  learner* l = new learner(s,learn, save_load, 1);
+  learner* l = new learner(s, learn, predict, save_load, 1);
   l->set_finish(finish);
   l->set_finish_example(finish_example); 
   l->set_end_examples(end_examples);

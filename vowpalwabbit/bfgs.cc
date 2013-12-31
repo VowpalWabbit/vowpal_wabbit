@@ -838,6 +838,11 @@ void learn(void* d, learner& base, example* ec)
     }
 }
 
+// placeholder
+void predict(void* d, learner& base, example* ec)
+{
+}
+
 void finish(void* d)
 {
   bfgs* b = (bfgs*)d;
@@ -1013,7 +1018,7 @@ learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po
   all.bfgs = true;
   all.reg.stride = 4;
 
-  learner* l = new learner(b,learn, save_load, all.reg.stride);
+  learner* l = new learner(b, learn, predict, save_load, all.reg.stride);
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);
   l->set_end_pass(end_pass);

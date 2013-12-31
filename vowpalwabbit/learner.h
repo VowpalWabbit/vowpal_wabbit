@@ -149,13 +149,13 @@ public:
     save_load_fd = LEARNER::generic_save_load_fd;
   }
 
-  inline learner(void *dat, void (*l)(void*, learner&, example*), void (*sl)(void*, io_buf& io, bool read, bool text), size_t params_per_weight)
+  inline learner(void *dat, void (*l)(void*, learner&, example*), void (*p)(void*, learner&, example*), void (*sl)(void*, io_buf& io, bool read, bool text), size_t params_per_weight)
   { // the constructor for all learning algorithms.
     *this = learner();
 
     learn_fd.data = dat;
     learn_fd.learn_f = l;
-    learn_fd.predict_f = l;
+    learn_fd.predict_f = p;
 
     finisher_fd.data = dat;
     finisher_fd.base = NULL;
