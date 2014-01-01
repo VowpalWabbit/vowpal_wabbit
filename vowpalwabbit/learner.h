@@ -164,8 +164,8 @@ public:
     learn_fd.data = dat;
     learn_fd.base = base;
 
-    increment = base->increment * base->weights;
     weights = ws;
+    increment = base->increment * weights;
   }
 };
 
