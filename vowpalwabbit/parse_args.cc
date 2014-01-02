@@ -953,9 +953,9 @@ vw* parse_args(int argc, char *argv[])
 
   parse_source_args(*all, vm, all->quiet,all->numpasses);
 
-  // force stride * weights_per_problem to be a power of 2 to avoid 32-bit overflow
+  // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  size_t params_per_problem = all->l->increment * all->l->weights;
+  size_t params_per_problem = all->l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
   all->wpp = (1 << i) / all->reg.stride;

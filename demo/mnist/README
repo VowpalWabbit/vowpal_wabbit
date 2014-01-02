@@ -37,10 +37,10 @@ the original mnist training set augmented with deformations.
         memory requirements: less than 256 megabytes
 
   * make mnist11png.test.confusion
-      ibid with 1 neural network hidden unit ("goes to eleven")
-      results in test errors: 162 out of 10000
+      ibid with 2 neural network hidden units ("goes to eleven")
+      results in test errors: 165 out of 10000
         disk requirements: about 10 megabytes
-        training time requirements: about 3 minutes on 3 cores
+        training time requirements: about 8 minutes on 3 cores
         memory requirements: less than 256 megabytes
 
   * make mnist8mpng.test.confusion
@@ -54,7 +54,7 @@ the original mnist training set augmented with deformations.
 
   * make mnist8m11png.test.confusion
       ibid with 5 neural network hidden units ("goes to eleven")
-      results in test errors: 83 out of 10000
+      results in test errors: 84 out of 10000
         disk requirements: about 2 gigabytes
-        training time requirements: about an hour on 4 cores
+        training time requirements: about 4 hours on 4 cores
         memory requirements: less than 256 megabytes
