@@ -92,7 +92,7 @@ lrqdropout.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	@echo "******************************************************"
 	@echo "* training low-rank interaction model (with dropout) *"
 	@echo "*                                                    *"
-	@echo "* vw --lrq um12 --lrqdropout ...                     *"
+	@echo "* vw --lrq um14 --lrqdropout ...                     *"
 	@echo "******************************************************"
 	@echo
 	@${VW} --loss_function quantile -l 0.45 -b 24 --passes 100 	\
