@@ -217,6 +217,12 @@ namespace BS {
     VW::finish_example(all, ec);
   }
 
+  void finish(void* dat)
+  {
+    bs* d = (bs*)dat;
+    d->pred_vec.~vector();
+  }
+
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     bs* data = (bs*)calloc(1, sizeof(bs));
@@ -292,6 +298,7 @@ namespace BS {
 
     learner* l = new learner(data, learn, all.l, data->B);
     l->set_finish_example(finish_example);
+    l->set_finish(finish);
 
     return l;
   }

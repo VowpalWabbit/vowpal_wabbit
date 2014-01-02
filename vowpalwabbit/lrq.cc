@@ -80,7 +80,7 @@ namespace LRQ {
     unsigned int maxiter = (all.training && ! example_is_test (ec)) ? 2 : 1;
 
     bool do_dropout = lrq->dropout && all.training && ! example_is_test (ec);
-    float scale = (! lrq->dropout || do_dropout) ? 1 : 0.5;
+    float scale = (! lrq->dropout || do_dropout) ? 1.f : 0.5f;
 
     for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
       {
@@ -107,7 +107,7 @@ namespace LRQ {
                   {
                     if (! do_dropout || cheesyrbit (lrq->seed))
                       {
-                        uint32_t lwindex = lindex + n * all.reg.stride;
+                        uint32_t lwindex = (uint32_t)(lindex + n * all.reg.stride);
 
                         float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
@@ -124,7 +124,7 @@ namespace LRQ {
                             // NB: ec->ft_offset added by base learner
                             float rfx = rf->x;
                             size_t rindex = rf->weight_index;
-                            uint32_t rwindex = rindex + n * all.reg.stride;
+                            uint32_t rwindex = (uint32_t)(rindex + n * all.reg.stride);
         
                             feature lrq; 
                             lrq.x = scale * *lw * lfx * rfx;
