@@ -178,8 +178,8 @@ public:
     finisher_fd.base = base;
     finisher_fd.func = LEARNER::generic_func;
 
-    increment = base->increment * base->weights;
     weights = ws;
+    increment = base->increment * weights;
   }
 };
 
