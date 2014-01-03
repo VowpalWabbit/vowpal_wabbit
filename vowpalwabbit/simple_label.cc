@@ -178,7 +178,8 @@ void print_update(vw& all, example *ec)
      
       all.sd->sum_loss_since_last_dump = 0.0;
       all.sd->old_weighted_examples = all.sd->weighted_examples;
-      all.sd->dump_interval *= 2;
+
+      VW::update_dump_interval(all);
     }
 }
 
