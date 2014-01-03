@@ -131,10 +131,10 @@ vw* parse_args(int argc, char *argv[])
   out_opt.add_options()
     ("audit,a", "print weights of features")
     ("predictions,p", po::value< string >(), "File to output predictions to")
-    ("raw_predictions,r", po::value< string >(),
-     "File to output unnormalized predictions to")
+    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("quiet", "Don't output diagnostics")
+    ("quiet", "Don't output progress updates")
+    ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
     ("binary", "report loss as binary classification on -1,1")
     ("min_prediction", po::value<float>(&(all->sd->min_label)), "Smallest prediction to output")
     ("max_prediction", po::value<float>(&(all->sd->max_label)), "Largest prediction to output")
@@ -328,10 +328,43 @@ vw* parse_args(int argc, char *argv[])
     exit(0);
   }
 
-  if (vm.count("quiet"))
-    all->quiet = true;
-  else
-    all->quiet = false;
+  if (vm.count("progress")) {
+    if (vm.count("quiet")) {
+      cerr  << "warning: both --progress and --quiet requested:"
+            << " --progress wins\n";
+    }
+    all->progress_arg = ::atof(vm["progress"].as<string>().c_str());
+    string progress_str = vm["progress"].as<string>();
+    if (progress_str.find_first_of(".") == string::npos) {
+        // No dot in arg: assume integer -> additive
+        all->progress_add = true;
+        // all->progress_arg = vm["progress"].as<float>();
+        if (all->progress_arg < 1) {
+            cerr    << "warning: additive --progress <int>"
+                    << " can't be < 1: forcing to 1\n";
+            all->progress_arg = 1;
+        }
+    } else {
+        // There's a dot in arg: assume floating-point -> multiplicative
+        all->progress_add = false;
+        // all->progress_arg = vm["progress"].as<float>();
+        if (all->progress_arg <= 1.0) {
+            cerr    << "warning: multiplicative --progress <float>: "
+                    << vm["progress"].as<string>()
+                    << " is <= 1.0: adding 1.0\n";
+            all->progress_arg += 1.0;
+
+        } else if (all->progress_arg > 9.0) {
+            cerr    << "warning: multiplicative --progress <float>"
+                    << " is > 9.0: you probably meant to use an integer\n";
+        }
+    }
+  } else {
+    if (vm.count("quiet"))
+      all->quiet = true;
+    else
+      all->quiet = false;
+  }
 
   msrand48(random_seed);
 
