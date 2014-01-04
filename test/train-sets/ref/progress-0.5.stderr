@@ -1,0 +1,31 @@
+warning: multiplicative --progress <float>: 0.5 is <= 1.0: adding 1.0
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+0.346304   0.346304            3         3.0   0.0000   0.1490       57
+0.209216   0.003583            5         5.0   0.0000   0.0590      131
+0.271357   0.426708            7         7.0   0.0000   0.0964       82
+0.265372   0.251409           10        10.0   1.0000   0.1663       34
+0.203393   0.048444           14        14.0   0.0000   0.2347      161
+0.264890   0.387886           21        21.0   1.0000   0.1311       37
+0.243365   0.198161           31        31.0   1.0000   0.5081      118
+0.220845   0.177213           47        47.0   0.0000   0.5093       46
+0.230530   0.250321           70        70.0   1.0000   0.4861      134
+0.221859   0.204516          105       105.0   0.0000   0.6008       48
+0.210383   0.187211          157       157.0   1.0000   0.9172       27
+
+finished run
+number of examples per pass = 200
+passes used = 1
+weighted example sum = 200
+weighted label sum = 91
+average loss = 0.19509
+best constant = 0.455
+best constant's loss = 0.247975
+total feature number = 15482
