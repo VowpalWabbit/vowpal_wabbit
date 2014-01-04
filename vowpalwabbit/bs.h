@@ -9,13 +9,7 @@ license as described in the file LICENSE.
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 
-#include "io_buf.h"
-#include "parse_primitives.h"
 #include "global_data.h"
-#include "example.h"
-#include "parse_args.h"
-#include "v_hashmap.h"
-#include "simple_label.h"
 
 namespace BS
 {

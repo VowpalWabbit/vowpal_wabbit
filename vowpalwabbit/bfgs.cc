@@ -25,6 +25,7 @@ Implementation by Miro Dudik.
 #include "accumulate.h"
 #include <exception>
 #include "vw.h"
+#include "gd.h"
 
 using namespace std;
 
