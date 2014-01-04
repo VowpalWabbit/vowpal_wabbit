@@ -190,7 +190,7 @@ namespace LRQ {
     lrq->dropout = vm.count("lrqdropout") || vm_file.count("lrqdropout");
 
     if (lrq->dropout && !vm_file.count("lrqdropout"))
-      all.options_from_file.append("--lrqdropout");
+      all.options_from_file.append(" --lrqdropout");
 
     if (!vm_file.count("lrq"))
       {
