@@ -23,6 +23,6 @@ paste -d' '                                                             \
 perl -ne ${SHUFFLE} |                                                   \
 ./roundrobin ./pixelngrams 3 |                                          \
 time ../../vowpalwabbit/vw --oaa 10 -f mnist8m11png.model               \
-   -b 24 --adaptive --invariant                                         \
+   -b 20 --adaptive --invariant                                         \
    --nn 5 --inpass                                                      \
    -l 0.05
