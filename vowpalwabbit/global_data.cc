@@ -343,7 +343,7 @@ vw::vw()
   print_invert = false;
 
   // Set by the '--progress <arg>' option and affect sd->dump_interval
-  bool  progress_add = false;   // default is multiplicative progress dumps
-  float progress_arg = 2.0;     // next update progress dump multiplier
+  progress_add = false;   // default is multiplicative progress dumps
+  progress_arg = 2.0;     // next update progress dump multiplier
 }
 
