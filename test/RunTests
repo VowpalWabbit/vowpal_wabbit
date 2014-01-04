@@ -32,7 +32,7 @@ my @ToTest = ();
 
 sub v($;@) {
     my $verbose_level = shift @_;
-    return unless $opt_v >= $verbose_level;
+    return unless ($opt_v >= $verbose_level);
 
     if (@_ == 1) {
         print STDERR @_;
@@ -538,7 +538,7 @@ sub run_tests() {
         }
 
         # -- compare stderr
-        unless (-e $err_ref) {
+        if (! -e $err_ref  and  ! $opt_o) {
             print STDERR "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
             exit 1 if ($opt_e);
             next;
@@ -547,7 +547,7 @@ sub run_tests() {
         if ($status) {
             printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n",
                 $0, $TestNo, $err_ref, $errf;
-            if ($opt_y) { copy_file($errf, $errf . '.test' . $TestNo); }
+            if ($opt_y) { copy_file($errf, "$errf.test.$TestNo"); }
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stderr OK\n";
@@ -559,7 +559,7 @@ sub run_tests() {
         if ($status) {
             printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n",
                 $0, $TestNo, $pred_ref, $predf;
-            if ($opt_y) { copy_file($predf, $predf . '.test' . $TestNo); }
+            if ($opt_y) { copy_file($predf, "$predf.test.$TestNo"); }
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: predict OK\n";
@@ -775,11 +775,11 @@ __DATA__
     train-sets/ref/big-constant.stderr
 
 # Test 36: new option: --progress w/ integer arg
-{VW} -k -d train-sets/big-constant.dat --progress 10
-    train-sets/ref/big-constant-progress-10.stderr
+{VW} -k -d train-sets/0001.dat --progress 10
+    train-sets/ref/progress-10.stderr
 
 # Test 37: new-option: --progress w/ floating-point arg
 #           + alternate short form (-P)
-{VW} -k -d train-sets/big-constant.dat -P 0.25
-    train-sets/ref/big-constant-progress-0.25.stderr
+{VW} -k -d train-sets/0001.dat -P 0.5
+    train-sets/ref/progress-0.5.stderr
 
