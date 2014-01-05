@@ -353,7 +353,7 @@ vw* parse_args(int argc, char *argv[])
       } else {
         // A "." in arg: assume floating-point -> multiplicative
         all->progress_add = false;
-        // all->progress_arg = vm["progress"].as<float>();
+
         if (all->progress_arg <= 1.0) {
           cerr    << "warning: multiplicative --progress <float>: "
                   << vm["progress"].as<string>()
@@ -364,7 +364,6 @@ vw* parse_args(int argc, char *argv[])
           cerr    << "warning: multiplicative --progress <float>"
                   << " is > 9.0: you probably meant to use an integer\n";
         }
-
         all->sd->dump_interval = 1.0;
       }
     }
