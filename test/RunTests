@@ -28,6 +28,8 @@ my $Valgrind = 'valgrind --quiet --error-exitcode=100' .
 
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
 
+my @PathAdd = qw(. .. ../vowpalwabbit);
+
 my @ToTest = ();
 
 sub v($;@) {
@@ -46,7 +48,7 @@ sub usage(@) {
 
     die "Usage: $0 [options] [testno...] [vw-executable]
     By default will run against the 1st 'vw' executable found in:
-        .  ..  ../vowpalwabbit  \$PATH
+        @PathAdd  \$PATH
 
     Options:
         -c      print test-suite commands before running them
@@ -89,7 +91,7 @@ sub which_vw() {
             usage("$0: argument $exe: not an executable file");
         }
     } elsif (@ARGV == 0) {
-        foreach my $dir ('.', '..', '../vowpalwabbit', split(':', $ENV{PATH})) {
+        foreach my $dir (@PathAdd, split(':', $ENV{PATH})) {
             my $exe = "$dir/vw";
             if (-x $exe) {
                 printf STDERR "Testing vw: %s\n", $exe;
@@ -110,7 +112,7 @@ sub which_lda() {
             usage("$0: argument $exe: not an executable file");
         }
     } elsif (@ARGV == 0 || @ARGV == 1) {
-        foreach my $dir ('.', '..', '../vowpalwabbit', split(':', $ENV{PATH})) {
+        foreach my $dir (@PathAdd, split(':', $ENV{PATH})) {
             my $exe = "$dir/vw";
             if (-x $exe) {
                 printf STDERR "Testing lda: %s\n", $exe;
@@ -707,7 +709,7 @@ __DATA__
     pred-sets/ref/0022.predict
 
 # Test 21: cubic features -- on a parity test case
-{VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100 --holdout_off
+{VW} -k -c -f models/xxor.model train-sets/xxor.dat --cubic abc --passes 100 --holdout_off --progress 1.33333
     train-sets/ref/xxor.stderr
 
 # Test 22: matrix factorization -- training
@@ -721,11 +723,11 @@ __DATA__
     test-sets/ref/ml100k_small.stderr
 
 # Test 24: active-learning -- training
-{VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10
+{VW} -k --active_simulation --active_mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --progress 1.25
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
-{VW} -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict
+{VW} -k -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict
     train-sets/ref/bs.reg.stderr
     train-sets/ref/bs.reg.predict
 
@@ -765,7 +767,7 @@ __DATA__
     train-sets/ref/topk-train.stderr
 
 # Test 34: train model for topk recommender
-{VW} -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
+{VW} -P 1 -d train-sets/topk.vw -i topk.model --top 2 -p topk.predict
     train-sets/ref/topk-rec.stderr
     train-sets/ref/topk-rec.predict
 
