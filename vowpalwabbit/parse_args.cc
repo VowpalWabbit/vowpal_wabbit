@@ -346,6 +346,8 @@ vw* parse_args(int argc, char *argv[])
           cerr    << "warning: additive --progress <int>"
                   << " can't be < 1: forcing to 1\n";
           all->progress_arg = 1;
+
+          all->sd->dump_interval = all->progress_arg;
         }
       } else {
         // A "." in arg: assume floating-point -> multiplicative
@@ -361,6 +363,8 @@ vw* parse_args(int argc, char *argv[])
           cerr    << "warning: multiplicative --progress <float>"
                   << " is > 9.0: you probably meant to use an integer\n";
         }
+
+        all->sd->dump_interval = 1.0;
       }
     }
   }
