@@ -8,12 +8,13 @@ Reading datafile = train-sets/multiclass
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
-0.666667   0.666667          3      3.0          3        1        2
-0.833333   1.000000          6      6.0          6        1        2
-0.818182   0.800000         11     11.0          1        1        2
-0.636364   0.454545         22     22.0          2        2        2
-0.318182   0.000000         44     44.0          4        4        2
-0.160920   0.000000         87     87.0          7        7        2
+0.000000   0.000000          1      1.0          1        1        2
+0.500000   1.000000          2      2.0          2        1        2
+0.750000   1.000000          4      4.0          4        1        2
+0.875000   1.000000          8      8.0          8        1        2
+0.812500   0.750000         16     16.0          6        1        2
+0.437500   0.062500         32     32.0          2        2        2
+0.218750   0.000000         64     64.0          4        4        2
 
 finished run
 number of examples per pass = 10

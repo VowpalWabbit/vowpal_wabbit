@@ -9,8 +9,10 @@ Reading datafile = train-sets/3parity
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
-0.000000   0.000000            3         3.0   1.0000   1.0000        4
-0.000000   0.000000            6         6.0   1.0000   1.0000        4
+0.000000   0.000000            1         1.0  -1.0000  -1.0000        4
+0.000000   0.000000            2         2.0  -1.0000  -1.0000        4
+0.000000   0.000000            4         4.0  -1.0000  -1.0000        4
+0.000000   0.000000            8         8.0   1.0000   1.0000        4
 
 finished run
 number of examples per pass = 8
