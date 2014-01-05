@@ -107,9 +107,9 @@ namespace VW {
 
   inline void update_dump_interval(vw& all) {
       if (all.progress_add) { 
-        all.sd->dump_interval += all.progress_arg;
+        all.sd->dump_interval = all.sd->weighted_examples + all.progress_arg;
       } else {
-        all.sd->dump_interval *= all.progress_arg;
+        all.sd->dump_interval = all.sd->weighted_examples * all.progress_arg;
       }
   }
 }
