@@ -10,6 +10,12 @@ license as described in the file LICENSE.
 #include <numeric>
 #include <vector>
 
+#include "io_buf.h"
+#include "parse_primitives.h"
+#include "example.h"
+#include "parse_args.h"
+#include "v_hashmap.h"
+#include "simple_label.h"
 #include "bs.h"
 #include "cache.h"
 #include "v_hashmap.h"
