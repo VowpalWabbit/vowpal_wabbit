@@ -165,6 +165,23 @@ public:
     increment = params_per_weight;
   }
 
+  inline learner(void *dat, void (*l)(void*, learner&, example*), void (*p)(void*, learner&, example*), learner* base, size_t ws = 1) 
+  { //the reduction constructor, with separate learn and predict functions
+    *this = *base;
+    
+    learn_fd.learn_f = l;
+    learn_fd.predict_f = p;
+    learn_fd.data = dat;
+    learn_fd.base = base;
+
+    finisher_fd.data = dat;
+    finisher_fd.base = base;
+    finisher_fd.func = LEARNER::generic_func;
+
+    increment = base->increment * base->weights;
+    weights = ws;
+  }
+
   inline learner(void *dat, void (*l)(void*, learner&, example*), learner* base, size_t ws = 1) 
   { //the reduction constructor.
     *this = *base;
