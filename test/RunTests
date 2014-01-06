@@ -32,7 +32,7 @@ my @ToTest = ();
 
 sub v($;@) {
     my $verbose_level = shift @_;
-    return unless $opt_v >= $verbose_level;
+    return unless ($opt_v >= $verbose_level);
 
     if (@_ == 1) {
         print STDERR @_;
@@ -126,9 +126,9 @@ sub init() {
     getopts('wcdDefyE:ov:V') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
 
-    print STDERR "testing $^O "; 
+    print STDERR "testing $^O ";
     if ($^O =~ /MSWin/i) {
-        v(1, "OS is $^O\n"); 
+        v(1, "OS is $^O\n");
         # On MS Windows we need to change paths to external executables
         # Assumes cygwin is installed
         $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
@@ -137,7 +137,7 @@ sub init() {
         $Cat   = 'c:\cygwin\bin\cat.exe';
     }
     elsif ($^O =~ /cygwin/i){
-        v("OS is $^O\n"); 
+        v("OS is $^O\n");
         # On MS Windows we need to change paths to external executables
         # Assumes cygwin is installed
         $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
@@ -289,8 +289,8 @@ sub lenient_array_compare($$) {
         next if ($word1 eq $word2);
 
         # There's some difference, is it significant?
-        return 1 unless (looks_like_number($word1));        
-        return 1 unless (looks_like_number($word2));        
+        return 1 unless (looks_like_number($word1));
+        return 1 unless (looks_like_number($word2));
 
         my $delta = abs($word1 - $word2);
 
@@ -449,7 +449,7 @@ sub check_for_time_regression() {
     my ($user0, $system0, $cuser0, $csystem0);
     my ($user1, $system1, $cuser1, $csystem1) = times;
     $overall_time1 = $cuser1 + $csystem1;
- 
+
     if (-e $LastTimeFile) {
         ($user0, $system0, $cuser0, $csystem0) = read_times($LastTimeFile);
         if (!(defined $csystem0) or !(defined $cuser0)) {
@@ -538,7 +538,7 @@ sub run_tests() {
         }
 
         # -- compare stderr
-        unless (-e $err_ref) {
+        if (! -e $err_ref  and  ! $opt_o) {
             print STDERR "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
             exit 1 if ($opt_e);
             next;
@@ -547,7 +547,7 @@ sub run_tests() {
         if ($status) {
             printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n",
                 $0, $TestNo, $err_ref, $errf;
-            if ($opt_y) { copy_file($errf, $errf . '.test' . $TestNo); }
+            if ($opt_y) { copy_file($errf, "$errf.test.$TestNo"); }
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: stderr OK\n";
@@ -559,7 +559,7 @@ sub run_tests() {
         if ($status) {
             printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n",
                 $0, $TestNo, $pred_ref, $predf;
-            if ($opt_y) { copy_file($predf, $predf . '.test' . $TestNo); }
+            if ($opt_y) { copy_file($predf, "$predf.test.$TestNo"); }
             exit $status if ($opt_e);
         } else {
             print STDERR "$0: test $TestNo: predict OK\n";
@@ -587,7 +587,7 @@ run_tests();
 # The next (output) line-items are reference files to compare outputs to:
 #    The expected (reference file) standard output
 #    The expected (reference file) standard error
-#    The expected (reference file) for predictions (-p ...) 
+#    The expected (reference file) for predictions (-p ...)
 #    [The above reference files can come in any order.
 #     Their 'type' is determined by their extensions:
 #            .stdout  .stderr  .predict
@@ -698,7 +698,7 @@ __DATA__
     train-sets/ref/searn_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
-{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 12 --quiet --holdout_off
+{VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 15 --quiet --holdout_off
     train-sets/ref/3parity.stderr
 
 # Test 20: neural network 3-parity with 2 hidden units (predict)
@@ -725,7 +725,7 @@ __DATA__
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
-{VW} -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict 
+{VW} -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict
     train-sets/ref/bs.reg.stderr
     train-sets/ref/bs.reg.predict
 
@@ -735,7 +735,7 @@ __DATA__
     train-sets/ref/bs.prreg.predict
 
 # Test 27: bagging -- binary classifiers
-{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p bs.vote.predict 
+{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p bs.vote.predict
     train-sets/ref/bs.vote.stderr
     train-sets/ref/bs.vote.predict
 
@@ -751,7 +751,7 @@ __DATA__
 # Test 30: train --l1 regularized model
 {VW} -d train-sets/0001.dat -f models/mask.model --invert_hash mask.predict --l1 0.01
     train-sets/ref/mask.stderr
-    
+
 # Test 31: train model using --feature_mask
 {VW} -d train-sets/0001.dat --invert_hash remask.predict --feature_mask models/mask.model -f models/remask.model
     train-sets/ref/remask.stderr
@@ -761,7 +761,7 @@ __DATA__
     train-sets/ref/remask.final.stderr
 
 # Test 33: train model for topk recommender
-{VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off 
+{VW} -d train-sets/topk.vw -f topk.model -q MF --passes 100 --cache_file topk-train.cache -k --holdout_off
     train-sets/ref/topk-train.stderr
 
 # Test 34: train model for topk recommender
@@ -774,4 +774,12 @@ __DATA__
 {VW} -k --passes 100 -c --holdout_off --constant 1000 -d train-sets/big-constant.dat
     train-sets/ref/big-constant.stderr
 
+# Test 36: new option: --progress w/ integer arg
+{VW} -k -d train-sets/0001.dat --progress 10
+    train-sets/ref/progress-10.stderr
+
+# Test 37: new-option: --progress w/ floating-point arg
+#           + alternate short form (-P)
+{VW} -k -d train-sets/0001.dat -P 0.5
+    train-sets/ref/progress-0.5.stderr
 

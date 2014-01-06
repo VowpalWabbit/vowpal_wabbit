@@ -131,10 +131,10 @@ vw* parse_args(int argc, char *argv[])
   out_opt.add_options()
     ("audit,a", "print weights of features")
     ("predictions,p", po::value< string >(), "File to output predictions to")
-    ("raw_predictions,r", po::value< string >(),
-     "File to output unnormalized predictions to")
+    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("quiet", "Don't output diagnostics")
+    ("quiet", "Don't output disgnostics and progress updates")
+    ("progress,P", po::value< string >()->default_value("2.0"), "Progress update frequency. int: additive, float: multiplicative")
     ("binary", "report loss as binary classification on -1,1")
     ("min_prediction", po::value<float>(&(all->sd->min_label)), "Smallest prediction to output")
     ("max_prediction", po::value<float>(&(all->sd->max_label)), "Largest prediction to output")
@@ -328,10 +328,42 @@ vw* parse_args(int argc, char *argv[])
     exit(0);
   }
 
-  if (vm.count("quiet"))
+  if (vm.count("quiet")) {
     all->quiet = true;
-  else
+    // --quiet wins over --progress
+  } else {
     all->quiet = false;
+
+    if (vm.count("progress")) {
+      string progress_str = vm["progress"].as<string>();
+      all->progress_arg = ::atof(progress_str.c_str());
+
+      // --progress interval is dual: either integer or floating-point
+      if (progress_str.find_first_of(".") == string::npos) {
+        // No "." in arg: assume integer -> additive
+        all->progress_add = true;
+        if (all->progress_arg < 1) {
+          cerr    << "warning: additive --progress <int>"
+                  << " can't be < 1: forcing to 1\n";
+          all->progress_arg = 1;
+        }
+      } else {
+        // A "." in arg: assume floating-point -> multiplicative
+        all->progress_add = false;
+        // all->progress_arg = vm["progress"].as<float>();
+        if (all->progress_arg <= 1.0) {
+          cerr    << "warning: multiplicative --progress <float>: "
+                  << vm["progress"].as<string>()
+                  << " is <= 1.0: adding 1.0\n";
+          all->progress_arg += 1.0;
+
+        } else if (all->progress_arg > 9.0) {
+          cerr    << "warning: multiplicative --progress <float>"
+                  << " is > 9.0: you probably meant to use an integer\n";
+        }
+      }
+    }
+  }
 
   msrand48(random_seed);
 
@@ -900,7 +932,6 @@ vw* parse_args(int argc, char *argv[])
       all->l = CBIFY::setup(*all, to_pass_further, vm, vm_file);
     }
 
-  all->searnstr = NULL;
   if (vm.count("searn") || vm_file.count("searn") ) {
     if (!got_cs && !got_cb) {
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
@@ -909,7 +940,7 @@ vw* parse_args(int argc, char *argv[])
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
-    all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
+    //all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
     all->l = Searn::setup(*all, to_pass_further, vm, vm_file);
   }
 
@@ -954,9 +985,9 @@ vw* parse_args(int argc, char *argv[])
 
   parse_source_args(*all, vm, all->quiet,all->numpasses);
 
-  // force stride * weights_per_problem to be a power of 2 to avoid 32-bit overflow
+  // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  size_t params_per_problem = all->l->increment * all->l->weights;
+  size_t params_per_problem = all->l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
   all->wpp = (1 << i) / all->reg.stride;

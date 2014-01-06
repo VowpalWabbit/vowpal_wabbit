@@ -65,8 +65,6 @@ namespace NN {
 
   void finish_setup (nn& n, vw& all)
   {
-    bool initialize = true;
-
     // TODO: output_layer audit
 
     memset (&n.output_layer, 0, sizeof (n.output_layer));
@@ -76,7 +74,6 @@ namespace NN {
     for (unsigned int i = 0; i < n.k; ++i)
       {
         n.output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
         ++n.output_layer.num_features;
         output.weight_index += (uint32_t)n.increment;
       }
@@ -84,39 +81,10 @@ namespace NN {
     if (! n.inpass) 
       {
         n.output_layer.atomics[nn_output_namespace].push_back(output);
-        initialize &= (all.reg.weight_vector[output.weight_index & all.reg.weight_mask] == 0);
         ++n.output_layer.num_features;
       }
 
     n.output_layer.in_use = true;
-
-    if (initialize) {
-      // output weights
-
-      float sqrtk = sqrt ((float)n.k);
-      for (feature* x = n.output_layer.atomics[nn_output_namespace].begin; 
-           x != n.output_layer.atomics[nn_output_namespace].end; 
-           ++x)
-        {
-          weight* w = &all.reg.weight_vector[x->weight_index & all.reg.weight_mask];
-
-          w[0] = (float) (frand48 () - 0.5) / sqrtk;
-
-          // prevent divide by zero error
-          if (n.dropout && all.normalized_updates)
-            w[all.normalized_idx] = 1e-4f;
-        }
-
-      // hidden biases
-
-      unsigned int weight_index = constant * all.reg.stride;
-
-      for (unsigned int i = 0; i < n.k; ++i)
-        {
-          weight_index += (uint32_t)n.increment;
-          all.reg.weight_vector[weight_index & all.reg.weight_mask] = (float) (frand48 () - 0.5);
-        }
-    }
 
     n.finished_setup = true;
   }
@@ -160,6 +128,18 @@ namespace NN {
     ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n->k; ++i)
       {
+        uint32_t biasindex = constant * n->all->wpp * n->all->reg.stride + i * n->increment + ec->ft_offset;
+        weight* w = &n->all->reg.weight_vector[biasindex & n->all->reg.weight_mask];
+        
+        // avoid saddle point at 0
+        if (*w == 0)
+          {
+            w[0] = (float) (frand48 () - 0.5);
+
+            if (n->dropout && n->all->normalized_updates)
+              w[n->all->normalized_idx] = 1e-4f;
+          }
+
         base.learn(ec, i);
         hidden_units[i] = ec->final_prediction;
 
@@ -194,6 +174,19 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
         n->output_layer.total_sum_feat_sq += sigmah * sigmah;
         n->output_layer.sum_feat_sq[nn_output_namespace] += sigmah * sigmah;
+
+        uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * n->increment) + ec->ft_offset;
+        weight* w = &n->all->reg.weight_vector[nuindex & n->all->reg.weight_mask];
+        
+        // avoid saddle point at 0
+        if (*w == 0)
+          {
+            float sqrtk = sqrt ((float)n->k);
+            w[0] = (float) (frand48 () - 0.5) / sqrtk;
+
+            if (n->dropout && n->all->normalized_updates)
+              w[n->all->normalized_idx] = 1e-4f;
+          }
       }
 
     if (n->inpass) {
@@ -215,6 +208,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->indices.pop ();
     }
     else {
+      n->output_layer.ft_offset = ec->ft_offset;
       n->output_layer.ld = ec->ld;
       n->output_layer.partial_prediction = 0;
       n->output_layer.eta_round = ec->eta_round;
@@ -250,7 +244,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               n->output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            float nu = n->all->reg.weight_vector[n->output_layer.atomics[nn_output_namespace][i].weight_index & n->all->reg.weight_mask];
+            uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * n->increment) + ec->ft_offset;
+            float nu = n->all->reg.weight_vector[nuindex & n->all->reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
             ld->label = GD::finalize_prediction (*(n->all), hidden_units[i] - gradhw);
@@ -398,11 +393,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->xsubi = vm["random_seed"].as<size_t>();
 
     n->save_xsubi = n->xsubi;
+    n->increment = all.l->increment;//Indexing of output layer is odd.
     learner* l = new learner(n, learn, all.l, n->k+1);
     l->set_finish(finish);
     l->set_finish_example(finish_example);
     l->set_end_pass(end_pass);
-    n->increment = l->increment;//Indexing of output layer is odd.
 
     return l;
   }
