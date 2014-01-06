@@ -272,21 +272,20 @@ void end_pass(void* d)
    all->current_pass++;
 }
 
-  void learn(void* d, learner& base, example* ec)
-  {
-    vw* all = ((gdmf*)d)->all;
- 
-    mf_predict(*all,ec);
-    if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
-      mf_train(*all, ec, ec->eta_round);
-  }
-
-  // placeholder
   void predict(void* d, learner& base, example* ec)
   {
     vw* all = ((gdmf*)d)->all;
  
     mf_predict(*all,ec);
+  }
+
+  void learn(void* d, learner& base, example* ec)
+  {
+    vw* all = ((gdmf*)d)->all;
+ 
+    predict(d, base, ec);
+    if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
+      mf_train(*all, ec, ec->eta_round);
   }
 
   learner* setup(vw& all)

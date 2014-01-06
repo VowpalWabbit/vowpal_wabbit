@@ -181,23 +181,6 @@ public:
     increment = base->increment * base->weights;
     weights = ws;
   }
-
-  inline learner(void *dat, void (*l)(void*, learner&, example*), learner* base, size_t ws = 1) 
-  { //the reduction constructor.
-    *this = *base;
-    
-    learn_fd.learn_f = l;
-    learn_fd.predict_f = l;
-    learn_fd.data = dat;
-    learn_fd.base = base;
-
-    finisher_fd.data = dat;
-    finisher_fd.base = base;
-    finisher_fd.func = LEARNER::generic_func;
-
-    weights = ws;
-    increment = base->increment * weights;
-  }
 };
 
 #endif
