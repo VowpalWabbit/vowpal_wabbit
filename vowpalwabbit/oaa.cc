@@ -196,8 +196,8 @@ namespace OAA {
     VW::finish_example(all, ec);
   }
 
-  void learn(void* d, learner& base, example* ec)
-  {
+  template <bool is_learn>
+  void predict_or_learn(void* d, learner& base, example* ec) {
     oaa* o=(oaa*)d;
 
     vw* all = o->all;
@@ -221,11 +221,18 @@ namespace OAA {
 
     for (size_t i = 1; i <= o->k; i++)
       {
-        if (mc_label_data->label == i)
-          simple_temp.label = 1;
-        else
-          simple_temp.label = -1;
-        base.learn(ec, i-1);
+	if (is_learn)
+	  {
+	    if (mc_label_data->label == i)
+	      simple_temp.label = 1;
+	    else
+	      simple_temp.label = -1;
+
+	    base.learn(ec);
+	  }
+	else
+	  base.predict(ec);
+
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -265,7 +272,7 @@ namespace OAA {
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
 
-    learner* l = new learner(data, learn, all.l, data->k);
+    learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l, data->k);
     l->set_finish_example(finish_example);
 
     return l;

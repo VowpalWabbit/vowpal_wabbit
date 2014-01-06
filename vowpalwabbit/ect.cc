@@ -323,21 +323,29 @@ namespace ECT
       }
   }
 
+  void predict(void *d, learner& base, example* ec) {
+    ect* e=(ect*)d;
+    vw* all = e->all;
+
+    OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
+    if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
+      cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
+    ec->final_prediction = ect_predict(*all, *e, base, ec);
+    ec->ld = mc;
+  }
+
   void learn(void* d, learner& base, example* ec)
   {
     ect* e=(ect*)d;
     vw* all = e->all;
-    
+
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
-    if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
-      cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
-    float new_label = ect_predict(*all, *e, base, ec);
-    ec->ld = mc;
-    
+    predict(d, base, ec);
+
+    float new_label = ec->final_prediction;
     if (mc->label != (uint32_t)-1 && all->training)
       ect_train(*all, *e, base, ec);
     ec->ld = mc;
-    
     ec->final_prediction = new_label;
   }
 
@@ -418,7 +426,7 @@ namespace ECT
     size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner* l = new learner(data, learn, all.l, wpp);
+    learner* l = new learner(data, learn, predict, all.l, wpp);
     l->set_finish_example(OAA::finish_example);
     l->set_finish(finish);
 

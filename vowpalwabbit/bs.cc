@@ -171,7 +171,8 @@ namespace BS {
     print_update(all, ec);
   }
 
-  void learn(void* data, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(void* data, learner& base, example* ec)
   {
     bs* d = (bs*)data;
     vw* all = d->all;
@@ -187,7 +188,10 @@ namespace BS {
       {
         ((label_data*)ec->ld)->weight = weight_temp * weight_gen();
 
-        base.learn(ec, i-1);
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
 
         d->pred_vec.push_back(ec->final_prediction);
 
@@ -302,7 +306,7 @@ namespace BS {
     data->pred_vec.reserve(data->B);
     data->all = &all;
 
-    learner* l = new learner(data, learn, all.l, data->B);
+    learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l, data->B);
     l->set_finish_example(finish_example);
     l->set_finish(finish);
 
