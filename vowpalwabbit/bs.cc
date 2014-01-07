@@ -189,9 +189,9 @@ namespace BS {
         ((label_data*)ec->ld)->weight = weight_temp * weight_gen();
 
 	if (is_learn)
-	  base.learn(ec);
+	  base.learn(ec, i-1);
 	else
-	  base.predict(ec);
+	  base.predict(ec, i-1);
 
         d->pred_vec.push_back(ec->final_prediction);
 

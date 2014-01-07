@@ -228,10 +228,10 @@ namespace OAA {
 	    else
 	      simple_temp.label = -1;
 
-	    base.learn(ec);
+	    base.learn(ec, i-1);
 	  }
 	else
-	  base.predict(ec);
+	  base.predict(ec, i-1);
 
         if (ec->partial_prediction > score)
           {
