@@ -1,4 +1,3 @@
-
 #ifndef BIN
 #define BIN
 namespace BINARY {

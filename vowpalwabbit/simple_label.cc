@@ -136,7 +136,7 @@ float query_decision(vw& all, example* ec, float k)
 
 void print_update(vw& all, example *ec)
 {
-  if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];

@@ -61,6 +61,21 @@ namespace LEARNER
   const save_load_data generic_save_load_fd = {NULL, NULL, generic_sl};
   const learn_data generic_learn_fd = {NULL, NULL, generic_learner, NULL};
   const func_data generic_func_fd = {NULL, NULL, generic_func};
+  
+  template<class R, void (*T)(R*, learner& base, example* ec)>
+    inline void tlearn(void* d, learner& base, example* ec)
+    { T((R*)d, base, ec); }
+
+  template<class R, void (*T)(R*, io_buf& io, bool read, bool text)>
+    inline void tsl(void* d, io_buf& io, bool read, bool text)
+  { T((R*)d, io, read, text); }
+
+  template<class R, void (*T)(R*)>
+    inline void tfunc(void* d) { T((R*)d); }
+
+  template<class R, void (*T)(vw& all, R*, example*)>
+    inline void tend_example(vw& all, void* d, example* ec)
+  { T(all, (R*)d, ec); }
 }
 
 struct learner {

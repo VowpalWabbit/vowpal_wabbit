@@ -234,7 +234,7 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 vw::vw()
 {
   sd = (shared_data *) calloc(1, sizeof(shared_data));
-  sd->dump_interval = (float)exp(1.);   // next update progress dump
+  sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
   sd->max_label = 1.;
 

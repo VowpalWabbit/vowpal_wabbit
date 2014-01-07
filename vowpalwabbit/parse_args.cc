@@ -134,7 +134,7 @@ vw* parse_args(int argc, char *argv[])
     ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
     ("quiet", "Don't output disgnostics and progress updates")
-    ("progress,P", po::value< string >()->default_value("2.0"), "Progress update frequency. int: additive, float: multiplicative")
+    ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
     ("binary", "report loss as binary classification on -1,1")
     ("min_prediction", po::value<float>(&(all->sd->min_label)), "Smallest prediction to output")
     ("max_prediction", po::value<float>(&(all->sd->max_label)), "Largest prediction to output")
@@ -346,11 +346,14 @@ vw* parse_args(int argc, char *argv[])
           cerr    << "warning: additive --progress <int>"
                   << " can't be < 1: forcing to 1\n";
           all->progress_arg = 1;
+
         }
+        all->sd->dump_interval = all->progress_arg;
+
       } else {
         // A "." in arg: assume floating-point -> multiplicative
         all->progress_add = false;
-        // all->progress_arg = vm["progress"].as<float>();
+
         if (all->progress_arg <= 1.0) {
           cerr    << "warning: multiplicative --progress <float>: "
                   << vm["progress"].as<string>()
@@ -361,6 +364,7 @@ vw* parse_args(int argc, char *argv[])
           cerr    << "warning: multiplicative --progress <float>"
                   << " is > 9.0: you probably meant to use an integer\n";
         }
+        all->sd->dump_interval = 1.0;
       }
     }
   }
