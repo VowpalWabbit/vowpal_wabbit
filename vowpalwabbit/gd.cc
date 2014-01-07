@@ -41,6 +41,7 @@ namespace GD
     size_t no_win_counter;
     size_t early_stop_thres;
     float initial_constant;
+    void (*predict)(void*, learner&, example*);
 
     vw* all;
   };
@@ -202,30 +203,7 @@ void learn(void* d, learner& base, example* ec)
   assert(ec->in_use);
 
   if (!ec->precomputed_prediction)
-    {
-    if (all->training && normalized)
-      if (all->reg_mode % 2)
-	if (all->power_t == 0.5)
-	  predict<true, true, true>(d, base, ec);
-	else
-	  predict<true, true, false>(d, base, ec);
-      else
-	if (all->power_t == 0.5)
-	  predict<true, false, true>(d, base, ec);
-	else
-	  predict<true, false, false>(d, base, ec);
-    else
-      if (all->reg_mode % 2)
-	if (all->power_t == 0.5)
-	  predict<false, true, true>(d, base, ec);
-	else
-	  predict<false, true, false>(d, base, ec);
-      else
-	if (all->power_t == 0.5)
-	  predict<false, false, true>(d, base, ec);
-	else
-	  predict<false, false, false>(d, base, ec);
-    }
+    g->predict(d,base,ec);
 
   if ((all->holdout_set_off || !ec->test_only) && ld->weight > 0)
     {
@@ -871,30 +849,28 @@ learner* setup(vw& all, po::variables_map& vm)
   }
 
   // select the appropriate predict function based on normalization, regularization, and power_t
-  void (*p)(void*, learner&, example*) = NULL;
-
   if (all.normalized_updates && all.training)
     if (all.reg_mode % 2)
       if (all.power_t == 0.5)
-	p = predict<true, true, true>;
+	g->predict = predict<true, true, true>;
       else
-	p = predict<true, true, false>;
+	g->predict = predict<true, true, false>;
     else
       if (all.power_t == 0.5)
-	p = predict<true, false, true>;
+	g->predict = predict<true, false, true>;
       else
-	p = predict<true, false, false>;
+	g->predict = predict<true, false, false>;
   else
     if (all.reg_mode % 2)
       if (all.power_t == 0.5)
-	p = predict<false, true, true>;
+	g->predict = predict<false, true, true>;
       else
-	p = predict<false, true, false>;
+	g->predict = predict<false, true, false>;
     else
       if (all.power_t == 0.5)
-	p = predict<false, false, true>;
+	g->predict = predict<false, false, true>;
       else
-	p = predict<false, false, false>;
+	g->predict = predict<false, false, false>;
 
   learner* ret;
 
@@ -902,25 +878,25 @@ learner* setup(vw& all, po::variables_map& vm)
   if (all.adaptive)
     if (all.normalized_updates)
       if (feature_mask_off)
-	ret = new learner(g, learn<true,true,true>, p, save_load, all.reg.stride);
+	ret = new learner(g, learn<true,true,true>, g->predict, save_load, all.reg.stride);
       else
-	ret = new learner(g, learn<true,true,false>, p, save_load, all.reg.stride);
+	ret = new learner(g, learn<true,true,false>, g->predict, save_load, all.reg.stride);
     else
       if (feature_mask_off)
-	ret = new learner(g, learn<true,false,true>, p, save_load, all.reg.stride);
+	ret = new learner(g, learn<true,false,true>, g->predict, save_load, all.reg.stride);
       else
-	ret = new learner(g, learn<true,false,false>, p, save_load, all.reg.stride);
+	ret = new learner(g, learn<true,false,false>, g->predict, save_load, all.reg.stride);
   else
     if (all.normalized_updates)
       if (feature_mask_off)
-	ret = new learner(g, learn<false,true,true>, p, save_load, all.reg.stride);
+	ret = new learner(g, learn<false,true,true>, g->predict, save_load, all.reg.stride);
       else
-	ret = new learner(g, learn<false,true,false>, p, save_load, all.reg.stride);
+	ret = new learner(g, learn<false,true,false>, g->predict, save_load, all.reg.stride);
     else
       if (feature_mask_off)
-	ret = new learner(g, learn<false,false,true>, p, save_load, all.reg.stride);
+	ret = new learner(g, learn<false,false,true>, g->predict, save_load, all.reg.stride);
       else
-	ret = new learner(g, learn<false,false,false>, p, save_load, all.reg.stride);
+	ret = new learner(g, learn<false,false,false>, g->predict, save_load, all.reg.stride);
 
   ret->set_end_pass(end_pass);
   return ret;

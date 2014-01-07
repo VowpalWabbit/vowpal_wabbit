@@ -432,6 +432,24 @@ vw* parse_args(int argc, char *argv[])
     }
   }
 
+  if (all->l1_lambda < 0.) {
+    cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;
+    all->l1_lambda = 0.;
+  }
+  if (all->l2_lambda < 0.) {
+    cerr << "l2_lambda should be nonnegative: resetting from " << all->l2_lambda << " to 0" << endl;
+    all->l2_lambda = 0.;
+  }
+  all->reg_mode += (all->l1_lambda > 0.) ? 1 : 0;
+  all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
+  if (!all->quiet)
+    {
+      if (all->reg_mode %2 && !vm.count("bfgs"))
+	cerr << "using l1 regularization = " << all->l1_lambda << endl;
+      if (all->reg_mode > 1)
+	cerr << "using l2 regularization = " << all->l2_lambda << endl;
+    }
+
   all->l = GD::setup(*all, vm);
   all->scorer = all->l;
 
@@ -819,24 +837,6 @@ vw* parse_args(int argc, char *argv[])
     all->l->save_load(io_temp, true, false);
     io_temp.close_file();
   }
-
-  if (all->l1_lambda < 0.) {
-    cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;
-    all->l1_lambda = 0.;
-  }
-  if (all->l2_lambda < 0.) {
-    cerr << "l2_lambda should be nonnegative: resetting from " << all->l2_lambda << " to 0" << endl;
-    all->l2_lambda = 0.;
-  }
-  all->reg_mode += (all->l1_lambda > 0.) ? 1 : 0;
-  all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
-  if (!all->quiet)
-    {
-      if (all->reg_mode %2 && !vm.count("bfgs"))
-	cerr << "using l1 regularization = " << all->l1_lambda << endl;
-      if (all->reg_mode > 1)
-	cerr << "using l2 regularization = " << all->l2_lambda << endl;
-    }
 
   bool got_mc = false;
   bool got_cs = false;

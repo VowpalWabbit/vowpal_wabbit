@@ -30,6 +30,7 @@ struct learn_data {
   learner* base;
   void (*learn_f)(void* data, learner& base, example*);
   void (*predict_f)(void* data, learner& base, example*);
+  void (*update_f)(void* data, learner& base, example*);
 };
 
 struct save_load_data{
@@ -59,7 +60,7 @@ namespace LEARNER
   inline void generic_func(void* data) {}
 
   const save_load_data generic_save_load_fd = {NULL, NULL, generic_sl};
-  const learn_data generic_learn_fd = {NULL, NULL, generic_learner, NULL};
+  const learn_data generic_learn_fd = {NULL, NULL, generic_learner, NULL, NULL};
   const func_data generic_func_fd = {NULL, NULL, generic_func};
   
   template<class R, void (*T)(R*, learner& base, example* ec)>
@@ -171,6 +172,7 @@ public:
     learn_fd.data = dat;
     learn_fd.learn_f = l;
     learn_fd.predict_f = p;
+    learn_fd.update_f = l;
 
     finisher_fd.data = dat;
     finisher_fd.base = NULL;
@@ -186,6 +188,7 @@ public:
     
     learn_fd.learn_f = l;
     learn_fd.predict_f = p;
+    learn_fd.update_f = l;
     learn_fd.data = dat;
     learn_fd.base = base;
 
