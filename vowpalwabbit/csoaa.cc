@@ -206,7 +206,7 @@ namespace CSOAA {
 
   void print_update(vw& all, bool is_test, example *ec)
   {
-    if ( /* (all.sd->weighted_examples > all.sd->old_weighted_examples) || */ (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs))
+    if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
         char label_buf[32];
         if (is_test)

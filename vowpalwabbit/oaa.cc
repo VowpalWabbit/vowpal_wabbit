@@ -111,7 +111,7 @@ namespace OAA {
 
   void print_update(vw& all, example *ec)
   {
-    if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
+    if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
         mc_label* ld = (mc_label*) ec->ld;
         char label_buf[32];

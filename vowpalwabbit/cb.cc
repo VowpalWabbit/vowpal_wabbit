@@ -521,7 +521,7 @@ namespace CB
 
   void print_update(vw& all, cb& c, bool is_test, example *ec)
   {
-    if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
+    if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
         char label_buf[32];
         if (is_test)

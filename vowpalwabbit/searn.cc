@@ -854,7 +854,7 @@ namespace Searn {
 
     if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
     if (PRINT_UPDATE_EVERY_PASS && hit_new_pass) return true;
-    return (all.sd->weighted_examples > all.sd->dump_interval) && !all.quiet && !all.bfgs;
+    return (all.sd->weighted_examples >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
   bool might_print_update(vw& all)
@@ -864,7 +864,7 @@ namespace Searn {
 
     if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
     if (PRINT_UPDATE_EVERY_PASS) return true;
-    return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+    return (all.sd->weighted_examples + 1. > all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
   void generate_training_example(vw& all, searn& srn, learner& base, example** ec, size_t len, void*labels, v_array<float> losses)
