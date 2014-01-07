@@ -194,6 +194,26 @@ void predict(void* d, learner& base, example* ec)
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off>
+void update(void* d, learner& base, example* ec)
+{
+  gd* g = (gd*)d;
+  vw* all = g->all;
+
+  local_predict<adaptive, normalized, feature_mask_off > (*all, *g, ec);
+  
+  if (ec->eta_round != 0.)
+    {
+      if(all->power_t == 0.5)
+	generic_train<specialized_update<adaptive, normalized, feature_mask_off> > (*all,ec,(float)ec->eta_round,true);
+      else
+	generic_train<general_update<feature_mask_off> >(*all,ec,(float)ec->eta_round,false);
+      
+      if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+	sync_weights(*all);
+    }
+}
+
+template<bool adaptive, bool normalized, bool feature_mask_off>
 void learn(void* d, learner& base, example* ec)
 {
   gd* g = (gd*)d;
@@ -206,20 +226,7 @@ void learn(void* d, learner& base, example* ec)
     g->predict(d,base,ec);
 
   if ((all->holdout_set_off || !ec->test_only) && ld->weight > 0)
-    {
-      local_predict<adaptive, normalized, feature_mask_off > (*all, *g, ec);
-
-      if (ec->eta_round != 0.)
-	{
-          if(all->power_t == 0.5)
-	    generic_train<specialized_update<adaptive, normalized, feature_mask_off> > (*all,ec,(float)ec->eta_round,true);
-          else
-	    generic_train<general_update<feature_mask_off> >(*all,ec,(float)ec->eta_round,false);
-
-	  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-	    sync_weights(*all);
-	}
-    }
+    update<adaptive, normalized, feature_mask_off>(d,base,ec);
 }
 
 void sync_weights(vw& all) {
@@ -878,25 +885,49 @@ learner* setup(vw& all, po::variables_map& vm)
   if (all.adaptive)
     if (all.normalized_updates)
       if (feature_mask_off)
-	ret = new learner(g, learn<true,true,true>, g->predict, save_load, all.reg.stride);
+	{
+	  ret = new learner(g, learn<true,true,true>, g->predict, save_load, all.reg.stride);
+	  ret->set_update(update<true,true,true>);
+	}
       else
-	ret = new learner(g, learn<true,true,false>, g->predict, save_load, all.reg.stride);
+	{
+	  ret = new learner(g, learn<true,true,false>, g->predict, save_load, all.reg.stride);
+	  ret->set_update(update<true,true,false>);
+	}
     else
       if (feature_mask_off)
-	ret = new learner(g, learn<true,false,true>, g->predict, save_load, all.reg.stride);
+	{
+	  ret = new learner(g, learn<true,false,true>, g->predict, save_load, all.reg.stride);
+	  ret->set_update(update<true,false,true>);
+	}
       else
-	ret = new learner(g, learn<true,false,false>, g->predict, save_load, all.reg.stride);
+	{
+	  ret = new learner(g, learn<true,false,false>, g->predict, save_load, all.reg.stride);
+	  ret->set_update(update<true,false,false>);
+	}
   else
     if (all.normalized_updates)
       if (feature_mask_off)
-	ret = new learner(g, learn<false,true,true>, g->predict, save_load, all.reg.stride);
+	{
+	  ret = new learner(g, learn<false,true,true>, g->predict, save_load, all.reg.stride);
+	  ret->set_update(update<false,true,true>);
+	}
       else
-	ret = new learner(g, learn<false,true,false>, g->predict, save_load, all.reg.stride);
+	{
+	  ret = new learner(g, learn<false,true,false>, g->predict, save_load, all.reg.stride);
+	  ret->set_update(update<false,true,false>);
+	}
     else
       if (feature_mask_off)
-	ret = new learner(g, learn<false,false,true>, g->predict, save_load, all.reg.stride);
+	{
+	  ret = new learner(g, learn<false,false,true>, g->predict, save_load, all.reg.stride);
+	  ret->set_update(update<false, false, true>);
+	}
       else
-	ret = new learner(g, learn<false,false,false>, g->predict, save_load, all.reg.stride);
+	{
+	  ret = new learner(g, learn<false,false,false>, g->predict, save_load, all.reg.stride);
+	  ret->set_update(update<false, false, false>);
+	}
 
   ret->set_end_pass(end_pass);
   return ret;
