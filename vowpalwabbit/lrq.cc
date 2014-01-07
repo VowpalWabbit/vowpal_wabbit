@@ -61,7 +61,8 @@ namespace {
 
 namespace LRQ {
 
-  void learn(void* d, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(void* d, learner& base, example* ec)
   {
     LRQstate* lrq = (LRQstate*) d;
     vw& all = *lrq->all;
@@ -145,7 +146,10 @@ namespace LRQ {
               }
           }
 
-        base.learn(ec);//Recursive Call
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
 
         // Restore example
 
@@ -243,7 +247,7 @@ namespace LRQ {
       cerr<<endl;
         
     all.wpp = all.wpp * (1 + maxk);
-    learner* l = new learner(lrq, learn, all.l, 1 + maxk);
+    learner* l = new learner(lrq, predict_or_learn<true>, predict_or_learn<false>, all.l, 1 + maxk);
     l->set_end_pass (reset_seed);
 
     // TODO: leaks memory ?

@@ -32,8 +32,9 @@ namespace CBIFY {
     else
       ec->loss = 0.;
   }
-  
-  void learn_first(void* d, learner& base, example* ec)
+
+  template <bool is_learn>
+  void predict_or_learn_first(void* d, learner& base, example* ec)
   {//Explore tau times, then act according to optimal.
     cbify* data = (cbify*)d;
     
@@ -50,7 +51,10 @@ namespace CBIFY {
 	data->cb_label.costs.erase();
 	data->cb_label.costs.push_back(l);
 	ec->ld = &(data->cb_label);
-	base.learn(ec);
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
 	ec->final_prediction = (float)action;
 	ec->loss = l.cost;
       }
@@ -58,13 +62,17 @@ namespace CBIFY {
       {
 	data->cb_label.costs.erase();
 	ec->ld = &(data->cb_label);
-	base.learn(ec);
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
 	do_loss(ec);
       }
     ec->ld = ld;
   }
   
-  void learn_greedy(void* d, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn_greedy(void* d, learner& base, example* ec)
   {//Explore uniform random an epsilon fraction of the time.
     cbify* data = (cbify*)d;
     
@@ -73,7 +81,7 @@ namespace CBIFY {
     
     data->cb_label.costs.erase();
     ec->ld = &(data->cb_label);
-    base.learn(ec);
+    base.predict(ec);
     do_loss(ec);
     uint32_t action = (uint32_t)ec->final_prediction;
 
@@ -82,7 +90,7 @@ namespace CBIFY {
       {
 	CB::cb_class l = {ec->loss, action, 1.f - data->epsilon + base_prob};
 	data->cb_label.costs.push_back(l);
-      }    
+      }
     else
       {
 	do_uniform(data, ec);
@@ -91,8 +99,10 @@ namespace CBIFY {
 	CB::cb_class l = {ec->loss, (uint32_t)ec->final_prediction, base_prob};
 	data->cb_label.costs.push_back(l);
       }
-    base.learn(ec);
-    
+
+    if (is_learn)
+	base.learn(ec);
+
     ec->final_prediction = (float)action;
     ec->loss = data->cb_label.costs[0].cost;
     ec->ld = ld;
@@ -155,13 +165,13 @@ namespace CBIFY {
     if (vm.count("first") )
       {
 	data->tau = (uint32_t)vm["first"].as<size_t>();
-	l = new learner(data, learn_first, all.l, 1);
+	l = new learner(data, predict_or_learn_first<true>, predict_or_learn_first<false>, all.l, 1);
       }
     else
       {
 	if ( vm.count("greedy") ) 
 	  data->epsilon = vm["greedy"].as<float>();
-	l = new learner(data, learn_greedy, all.l, 1);
+	l = new learner(data, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, all.l, 1);
       }
     l->set_finish_example(OAA::finish_example);
     

@@ -277,17 +277,22 @@ namespace CB
 
   }
 
+  template <bool is_learn>
   void call_scorer(vw& all, cb& c, example* ec, uint32_t index)
   {
     float old_min = all.sd->min_label;
     //all.sd->min_label = c.min_cost;
     float old_max = all.sd->max_label;
     //all.sd->max_label = c.max_cost;
-    all.scorer->learn(ec, 2*(index)-1);
+    if (is_learn)
+      all.scorer->learn(ec, 2*(index)-1);
+    else
+      all.scorer->predict(ec, 2*(index)-1);
     all.sd->min_label = old_min;
     all.sd->max_label = old_max;
    }
   
+  template <bool is_learn>
   float get_cost_pred(vw& all, cb& c, example* ec, uint32_t index)
   {
     CB::label* ld = (CB::label*)ec->ld;
@@ -307,7 +312,7 @@ namespace CB
     
     ec->ld = &simple_temp;
 
-    call_scorer(all, c, ec, index);
+    call_scorer<is_learn>(all, c, ec, index);
     ec->ld = ld;
 
     float cost = ec->final_prediction;
@@ -315,6 +320,7 @@ namespace CB
     return cost;
   }
 
+  template <bool is_learn>
   void gen_cs_example_dm(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
   {
     //this implements the direct estimation method, where costs are directly specified by the learned regressor.
@@ -332,7 +338,7 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred(all, c, ec, i-1);
+        wc.x = get_cost_pred<is_learn>(all, c, ec, i-1);
 	if (wc.x < min)
 	  {
 	    min = wc.x;
@@ -361,7 +367,7 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred(all, c, ec, cl->action - 1);
+        wc.x = get_cost_pred<is_learn>(all, c, ec, cl->action - 1);
 	if (wc.x < min || (wc.x == min && cl->action < argmin))
 	  {
 	    min = wc.x;
@@ -386,6 +392,7 @@ namespace CB
     ec->final_prediction = (float)argmin;
   }
 
+  template <bool is_learn>
   void gen_cs_example_dr(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
   {//this implements the doubly robust method
     CB::label* ld = (CB::label*)ec->ld;
@@ -400,7 +407,7 @@ namespace CB
         wc.wap_value = 0.;
 
         //get cost prediction for this label
-        wc.x = get_cost_pred(all, c,ec, all.sd->k + i - 1);
+        wc.x = get_cost_pred<is_learn>(all, c,ec, all.sd->k + i - 1);
         wc.weight_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
@@ -425,7 +432,7 @@ namespace CB
         wc.wap_value = 0.;
 
         //get cost prediction for this label
-        wc.x = get_cost_pred(all, c, ec, all.sd->k + cl->action - 1);
+        wc.x = get_cost_pred<is_learn>(all, c, ec, all.sd->k + cl->action - 1);
         wc.weight_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
@@ -467,7 +474,8 @@ namespace CB
     }
   }
 
-  void learn(void* d, learner& base, example* ec) {
+  template <bool is_learn>
+  void predict_or_learn(void* d, learner& base, example* ec) {
     cb* c = (cb*)d;
     vw* all = c->all;
     CB::label* ld = (CB::label*)ec->ld;
@@ -475,13 +483,13 @@ namespace CB
     //check if this is a test example where we just want a prediction
     if( CB::is_test_label(ld) )
     {
-       //if so just query base cost-sensitive learner
+      //if so just query base cost-sensitive learner
       cb_test_to_cs_test_label(*all,ec,c->cb_cs_ld);
 
-       ec->ld = &c->cb_cs_ld;
-       base.learn(ec);
-       ec->ld = ld;
-       return;
+      ec->ld = &c->cb_cs_ld;
+      base.predict(ec);
+      ec->ld = ld;
+      return;
     }
 
     //now this is a training example
@@ -496,10 +504,10 @@ namespace CB
         gen_cs_example_ips(*all,*c,ec,c->cb_cs_ld);
         break;
       case CB_TYPE_DM:
-        gen_cs_example_dm(*all,*c,ec,c->cb_cs_ld);
+        gen_cs_example_dm<is_learn>(*all,*c,ec,c->cb_cs_ld);
         break;
       case CB_TYPE_DR:
-        gen_cs_example_dr(*all,*c,ec,c->cb_cs_ld);
+        gen_cs_example_dr<is_learn>(*all,*c,ec,c->cb_cs_ld);
         break;
       default:
         std::cerr << "Unknown cb_type specified for contextual bandit learning: " << c->cb_type << ". Exiting." << endl;
@@ -509,7 +517,12 @@ namespace CB
     if (c->cb_type != CB_TYPE_DM)
       {
 	ec->ld = &c->cb_cs_ld;
-	base.learn(ec);
+
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
+
 	ec->ld = ld;
       }
   }
@@ -728,7 +741,7 @@ namespace CB
 
     *(all.p->lp) = CB::cb_label_parser; 
 
-    learner* l = new learner(c, learn, all.l, problem_multiplier);
+    learner* l = new learner(c, predict_or_learn<true>, predict_or_learn<false>, all.l, problem_multiplier);
     l->set_finish_example(finish_example); 
     l->set_init_driver(init_driver);
     l->set_finish(finish);

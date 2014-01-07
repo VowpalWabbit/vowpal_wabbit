@@ -818,6 +818,14 @@ void end_pass(void*d)
   }
 }
 
+// placeholder
+void predict(void* d, learner& base, example* ec)
+{
+  bfgs* b = (bfgs*)d;
+  vw* all = b->all;
+  ec->final_prediction = bfgs_predict(*all,ec);
+}
+
 void learn(void* d, learner& base, example* ec)
 {
   bfgs* b = (bfgs*)d;
@@ -829,11 +837,11 @@ void learn(void* d, learner& base, example* ec)
       if(ec->test_only)
 	{ 
 	  label_data* ld = (label_data*)ec->ld;
-	  ec->final_prediction = bfgs_predict(*all,ec); 
+	  predict(d, base, ec);
 	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
 	}
       else if (test_example(ec))
-	ec->final_prediction = bfgs_predict(*all,ec);//w[0]
+	predict(d, base, ec);
       else
 	process_example(*all, *b, ec);
     }
@@ -1014,7 +1022,7 @@ learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po
   all.bfgs = true;
   all.reg.stride = 4;
 
-  learner* l = new learner(b,learn, save_load, all.reg.stride);
+  learner* l = new learner(b, learn, predict, save_load, all.reg.stride);
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);
   l->set_end_pass(end_pass);

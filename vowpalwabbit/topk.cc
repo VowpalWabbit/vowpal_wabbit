@@ -83,13 +83,17 @@ namespace TOPK {
     print_update(all, ec);
   }
 
-  void learn(void* data, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(void* data, learner& base, example* ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
 
     topk* d = (topk*)data;
 
-    base.learn(ec);
+    if (is_learn)
+      base.learn(ec);
+    else
+      base.predict(ec);
 
     if(d->pr_queue.size() < d->B)      
       d->pr_queue.push(make_pair(ec->final_prediction, ec->tag));
@@ -116,7 +120,7 @@ namespace TOPK {
 
     data->all = &all;
 
-    learner* l = new learner(data, learn, all.l);
+    learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l);
     l->set_finish_example(finish_example);
 
     return l;

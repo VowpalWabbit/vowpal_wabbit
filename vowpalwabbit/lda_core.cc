@@ -696,8 +696,17 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
 	l->doc_lengths[num_ex] += (int)f->x;
       }
     }
-    if (++num_ex == l->all->minibatch)
+    if (++num_ex == l->all->minibatch && !ec->test_only)
       learn_batch(*l);
+  }
+
+  // placeholder
+  void predict(void* d, learner& base, example* ec)
+  {
+    bool test_only = ec->test_only;
+    ec->test_only = true;
+    learn(d, base, ec);
+    ec->test_only = test_only;
   }
 
   void end_pass(void* d)
@@ -764,7 +773,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
   
-  learner* l = new learner(ld, learn, save_load, all.reg.stride);
+  learner* l = new learner(ld, learn, predict, save_load, all.reg.stride);
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
   l->set_end_examples(end_examples);  

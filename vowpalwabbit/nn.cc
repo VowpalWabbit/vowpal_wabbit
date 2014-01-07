@@ -97,7 +97,8 @@ namespace NN {
       n->xsubi = n->save_xsubi;
   }
 
-  void learn(void* d, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(void* d, learner& base, example* ec)
   {
     nn* n = (nn*)d;
     bool shouldOutput = n->all->raw_prediction > 0;
@@ -106,7 +107,7 @@ namespace NN {
       finish_setup (*n, *(n->all));
 
     label_data* ld = (label_data*)ec->ld;
-    float save_label = ld->label;
+    //float save_label = ld->label;
     void (*save_set_minmax) (shared_data*, float) = n->all->set_minmax;
     float save_min_label;
     float save_max_label;
@@ -125,7 +126,7 @@ namespace NN {
     n->all->sd->min_label = hidden_min_activation;
     save_max_label = n->all->sd->max_label;
     n->all->sd->max_label = hidden_max_activation;
-    ld->label = FLT_MAX;
+    //ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n->k; ++i)
       {
         uint32_t biasindex = constant * n->all->wpp * n->all->reg.stride + i * n->increment + ec->ft_offset;
@@ -140,7 +141,8 @@ namespace NN {
               w[n->all->normalized_idx] = 1e-4f;
           }
 
-        base.learn(ec, i);
+	base.predict(ec, i);
+
         hidden_units[i] = ec->final_prediction;
 
         dropped_out[i] = (n->dropout && merand48 (n->xsubi) < 0.5);
@@ -150,7 +152,7 @@ namespace NN {
           outputStringStream << i << ':' << ec->partial_prediction << ',' << fasttanh (hidden_units[i]);
         }
       }
-    ld->label = save_label;
+    //ld->label = save_label;
     n->all->loss = save_loss;
     n->all->set_minmax = save_set_minmax;
     n->all->sd->min_label = save_min_label;
@@ -199,7 +201,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       ec->atomics[nn_output_namespace] = n->output_layer.atomics[nn_output_namespace];
       ec->sum_feat_sq[nn_output_namespace] = n->output_layer.sum_feat_sq[nn_output_namespace];
       ec->total_sum_feat_sq += n->output_layer.sum_feat_sq[nn_output_namespace];
-      base.learn(ec, n->k);
+      if (is_learn)
+	base.learn(ec, n->k);
+      else
+	base.predict(ec, n->k);
       n->output_layer.partial_prediction = ec->partial_prediction;
       n->output_layer.loss = ec->loss;
       ec->total_sum_feat_sq -= n->output_layer.sum_feat_sq[nn_output_namespace];
@@ -215,7 +220,10 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->output_layer.eta_global = ec->eta_global;
       n->output_layer.global_weight = ec->global_weight;
       n->output_layer.example_t = ec->example_t;
-      base.learn(&n->output_layer, n->k);
+      if (is_learn)
+	base.learn(&n->output_layer, n->k);
+      else
+	base.predict(&n->output_layer, n->k);
       n->output_layer.ld = 0;
     }
 
@@ -226,7 +234,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n->all->print_text(n->all->raw_prediction, outputStringStream.str(), ec->tag);
     }
 
-    if (n->all->training && ld->label != FLT_MAX) {
+    if (is_learn && n->all->training && ld->label != FLT_MAX) {
       float gradient = n->all->loss->first_derivative(n->all->sd, 
                                                   n->output_layer.final_prediction,
                                                   ld->label);
@@ -261,7 +269,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
     }
 
-    ld->label = save_label;
+    //ld->label = save_label;
 
     if (! converse) {
       save_partial_prediction = n->output_layer.partial_prediction;
@@ -394,7 +402,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n->save_xsubi = n->xsubi;
     n->increment = all.l->increment;//Indexing of output layer is odd.
-    learner* l = new learner(n, learn, all.l, n->k+1);
+    learner* l = new learner(n, predict_or_learn<true>, predict_or_learn<false>, all.l, n->k+1);
     l->set_finish(finish);
     l->set_finish_example(finish_example);
     l->set_end_pass(end_pass);
