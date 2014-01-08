@@ -222,8 +222,7 @@ void learn(void* d, learner& base, example* ec)
 
   assert(ec->in_use);
 
-  if (!ec->precomputed_prediction)
-    g->predict(d,base,ec);
+  g->predict(d,base,ec);
 
   if ((all->holdout_set_off || !ec->test_only) && ld->weight > 0)
     update<adaptive, normalized, feature_mask_off>(d,base,ec);
