@@ -759,7 +759,7 @@ namespace LabelDict {
     float  min_cost  = FLT_MAX;
     float  max_cost  = -FLT_MAX;
 
-    cerr << "isTest=" << isTest << " start_K=" << start_K << " K=" << K << endl;
+    //clog << "isTest=" << isTest << " start_K=" << start_K << " K=" << K << endl;
     
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq.begin[k];
@@ -771,7 +771,7 @@ namespace LabelDict {
         cerr << "warning: example headers at position " << k << ": can only have in initial position!" << endl;
         throw exception();
       }
-      cerr << "msp k=" << k << endl;
+      //clog << "msp k=" << k << endl;
       make_single_prediction(all, l, base, ec, &prediction, &min_score, &min_cost, &max_cost);
     }
 
@@ -787,7 +787,7 @@ namespace LabelDict {
       label_data simple_label;
       bool prediction_is_me = false;
       for (size_t j=0; j<costs.size(); j++) {
-        cerr << "j=" << j << " costs.size=" << costs.size() << endl;
+        //clog << "j=" << j << " costs.size=" << costs.size() << endl;
         if (all.training && !isTest) {
           float example_t = ec->example_t;
           ec->example_t = l.csoaa_example_t;
@@ -806,7 +806,7 @@ namespace LabelDict {
             }
           }
           // TODO: check the example->done and ec->partial_prediction = costs[j].partial_prediciton here
-          cerr << "k=" << k << " j=" << j << " label=" << simple_label.label << " cost=" << simple_label.weight << endl;
+          //clog << "k=" << k << " j=" << j << " label=" << simple_label.label << " cost=" << simple_label.weight << endl;
           ec->ld = &simple_label;
           //ec->partial_prediction = costs[j].partial_prediction;
           //cerr << "[" << ec->partial_prediction << "," << ec->done << "]";
@@ -835,7 +835,7 @@ namespace LabelDict {
 
   void do_actual_learning(vw& all, ldf& l, learner& base)
   {
-    cerr << "do_actual_learning size=" << l.ec_seq.size() << endl;
+    //clog << "do_actual_learning size=" << l.ec_seq.size() << endl;
     if (l.ec_seq.size() <= 0) return;  // nothing to do
 
     /////////////////////// handle label definitions

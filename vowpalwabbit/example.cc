@@ -101,7 +101,6 @@ example *alloc_examples(size_t label_size, size_t count=1)
 
 void dealloc_example(void(*delete_label)(void*), example&ec)
 {
-  std::cerr << "dealloc_example me = " << &ec << std::endl;
   if (delete_label) {
     delete_label(ec.ld);
   }
@@ -161,7 +160,7 @@ void copy_example_label(example*dst, example*src, size_t label_size, void(*copy_
 
 void copy_example_data(bool audit, example* dst, example* src)
 {
-  std::cerr << "copy_example_data dst = " << dst << std::endl;
+  //std::cerr << "copy_example_data dst = " << dst << std::endl;
   dst->final_prediction = src->final_prediction;
 
   copy_array(dst->tag, src->tag);

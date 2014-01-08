@@ -123,7 +123,6 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
       for (size_t a=0; a<data->num_actions; a++) {
-        cerr << "structured_predict::copy_example_data" << endl;
         VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
 
         // now, offset it appropriately for the action id
@@ -140,7 +139,6 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
       OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
       size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, label->label - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_it]->ld.costs[0].weight_index
-      cerr << "prediction at " << i << " = " << prediction << endl;
       
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
