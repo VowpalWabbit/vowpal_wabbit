@@ -1019,8 +1019,10 @@ namespace LabelDict {
   {
     ldf* l=(ldf*)data;
     if (l->need_to_clear) {
-      if (l->ec_seq.size() > 0)
+      if (l->ec_seq.size() > 0) {
 	output_example_seq(all, *l);
+        global_print_newline(all);
+      }        
       clear_seq_and_finish_examples(all, *l);
       l->need_to_clear = false;
       if (ec->in_use) VW::finish_example(all, ec);
