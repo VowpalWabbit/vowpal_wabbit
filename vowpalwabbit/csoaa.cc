@@ -942,9 +942,8 @@ namespace LabelDict {
     l.ec_seq.erase();
   }
 
-  void end_pass(void* data)
+  void end_pass(ldf* l)
   {
-    ldf* l=(ldf*)data;
     l->first_pass = false;
   }
 
@@ -1117,7 +1116,7 @@ namespace LabelDict {
       l->set_finish_example(finish_multiline_example);
     l->set_finish<ldf,finish>();
     l->set_end_examples(end_examples); 
-    l->set_end_pass(end_pass);
+    l->set_end_pass<ldf,end_pass>();
     return l;
   }
 

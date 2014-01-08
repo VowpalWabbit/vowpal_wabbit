@@ -52,10 +52,8 @@ namespace {
     }
 
   void
-  reset_seed (void* d)
+  reset_seed (LRQ::LRQstate* lrq)
     {
-      LRQ::LRQstate* lrq = (LRQ::LRQstate*) d;
-
       if (lrq->all->bfgs)
         lrq->seed = lrq->initial_seed;
     }
@@ -250,7 +248,7 @@ namespace LRQ {
         
     all.wpp = all.wpp * (1 + maxk);
     learner* l = new learner(lrq, predict_or_learn<true>, predict_or_learn<false>, all.l, 1 + maxk);
-    l->set_end_pass (reset_seed);
+    l->set_end_pass<LRQstate,reset_seed>();
 
     // TODO: leaks memory ?
     return l;

@@ -762,9 +762,8 @@ void process_example(vw& all, bfgs& b, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void end_pass(void*d)
+void end_pass(bfgs* b)
 {
-  bfgs* b = (bfgs*)d;
   vw* all = b->all;
   
   if (b->current_pass <= b->final_pass) 
@@ -1024,7 +1023,7 @@ learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po
   learner* l = new learner(b, learn, predict, save_load, all.reg.stride);
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);
-  l->set_end_pass(end_pass);
+  l->set_end_pass<bfgs,end_pass>();
   l->set_finish<bfgs,finish>();
 
   return l;

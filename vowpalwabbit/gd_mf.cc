@@ -263,9 +263,9 @@ void mf_print_audit_features(vw& all, example* ec, size_t offset)
     }
 }
 
-void end_pass(void* d)
+void end_pass(gdmf* d)
 {
-  vw* all = ((gdmf*)d)->all;
+  vw* all = d->all;
 
    all->eta *= all->eta_decay_rate;
    if (all->save_per_pass)
@@ -295,7 +295,7 @@ void end_pass(void* d)
     gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
     data->all = &all;
     learner* l = new learner(data, learn, predict, save_load, all.reg.stride);
-    l->set_end_pass(end_pass);
+    l->set_end_pass<gdmf,end_pass>();
 
     return l;
   }

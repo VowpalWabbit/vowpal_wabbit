@@ -140,7 +140,8 @@ public:
   void end_pass(){ 
     end_pass_fd.func(end_pass_fd.data);
     if (end_pass_fd.base) end_pass_fd.base->end_pass(); }//autorecursive
-  void set_end_pass(void (*ep)(void*)) {end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, ep);}
+  template <class T, void (*f)(T*)>
+    void set_end_pass() {end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, tfunc<T,f>);}
 
   //called after parsing of examples is complete.  Autorecursive.
   void end_examples() 

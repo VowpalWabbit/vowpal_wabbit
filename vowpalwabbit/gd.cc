@@ -923,7 +923,7 @@ learner* setup(vw& all, po::variables_map& vm)
 	  ret->set_update(tlearn<gd, update<false, false, false> >);
 	}
 
-  ret->set_end_pass(tfunc<gd, end_pass>);
+  ret->set_end_pass<gd, end_pass>();
   return ret;
 }
 }

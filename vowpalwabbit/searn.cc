@@ -1276,8 +1276,7 @@ void print_update(vw& all, searn* srn)
     }
   }
 
-  void end_pass(void* d) {
-    searn *srn = (searn*)d;
+  void end_pass(searn* srn) {
     vw* all = srn->all;
     srn->hit_new_pass = true;
     srn->read_example_last_pass++;
@@ -1724,7 +1723,7 @@ void print_update(vw& all, searn* srn)
     l->set_finish_example(finish_example);
     l->set_end_examples(end_examples);
     l->set_finish<searn,searn_finish>();
-    l->set_end_pass(end_pass);
+    l->set_end_pass<searn,end_pass>();
     
     return l;
   }

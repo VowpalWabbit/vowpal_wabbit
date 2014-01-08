@@ -711,10 +711,8 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     ec->test_only = test_only;
   }
 
-  void end_pass(void* d)
+  void end_pass(lda* l)
   {
-    lda* l = (lda*)d;
-    
     if (l->examples.size())
       learn_batch(*l);
   }
@@ -779,7 +777,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
   l->set_end_examples(end_examples);  
-  l->set_end_pass(end_pass);  
+  l->set_end_pass<lda,end_pass>();  
   
   return l;
 }

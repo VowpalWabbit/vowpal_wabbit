@@ -90,10 +90,8 @@ namespace NN {
     n.finished_setup = true;
   }
 
-  void end_pass(void* d)
+  void end_pass(nn* n)
   {
-    nn* n = (nn*)d;
-    
     if (n->all->bfgs)
       n->xsubi = n->save_xsubi;
   }
@@ -405,7 +403,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     learner* l = new learner(n, predict_or_learn<true>, predict_or_learn<false>, all.l, n->k+1);
     l->set_finish<nn,finish>();
     l->set_finish_example(finish_example);
-    l->set_end_pass(end_pass);
+    l->set_end_pass<nn,end_pass>();
 
     return l;
   }
