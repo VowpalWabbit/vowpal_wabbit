@@ -195,6 +195,7 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
+}
 
 void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount)
  {
@@ -209,5 +210,5 @@ void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint
 }
 
 
-}
+
 
