@@ -14,9 +14,9 @@ const size_t history_namespace  = 127;
 const size_t constant_namespace = 128;
 const size_t nn_output_namespace  = 129;
 const size_t autolink_namespace  = 130;
-const size_t neighbor_namespace  = 131;
-const size_t affix_namespace     = 132;
-const size_t spelling_namespace  = 133;
+const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
+const size_t affix_namespace     = 132;   // this is \x84
+const size_t spelling_namespace  = 133;   // this is \x85
 
 struct feature {
   float x;
@@ -100,5 +100,7 @@ inline int example_is_newline(example* ec)
           ((ec->indices.size() == 1) &&
            (ec->indices.last() == constant_namespace)));
 }
+
+void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount);
 
 #endif

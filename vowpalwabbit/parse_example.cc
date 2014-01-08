@@ -183,7 +183,7 @@ public:
           else if ((*c >= 'A') && (*c <= 'Z')) d = 'A';
           else if  (*c == '.')                 d = '.';
           else                                 d = '#';
-          if ((spelling.size() == 0) || (spelling.last() != d))
+          //if ((spelling.size() == 0) || (spelling.last() != d))
             spelling.push_back(d);
         }
         substring spelling_ss = { spelling.begin, spelling.end };

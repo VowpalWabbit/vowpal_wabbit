@@ -948,6 +948,7 @@ namespace LabelDict {
     if (l->is_singleline) {
       // must be test mode
     } else if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
+      cerr << "newline, example_is_newline=" << example_is_newline(ec) << ", size=" << l->ec_seq.size() << ", indices.size=" << ec->indices.size() << endl;
       if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
         cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
 	
@@ -973,6 +974,7 @@ namespace LabelDict {
       if (ec->in_use)
         VW::finish_example(*all, ec);
     } else {
+      cerr << "push_back" << endl;
       l->ec_seq.push_back(ec);
     }
     

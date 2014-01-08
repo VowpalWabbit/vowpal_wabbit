@@ -154,6 +154,8 @@ namespace CB
           throw exception();
         }
 
+        f.partial_prediction = 0.;
+        
         f.action = (uint32_t)hashstring(p->parse_name[0], 0);
         if (f.action < 1 || f.action > sd->k)
         {
@@ -481,6 +483,8 @@ namespace CB
        ec->ld = &c->cb_cs_ld;
        base.learn(ec);
        ec->ld = ld;
+       for (size_t i=0; i<ld->costs.size(); i++)
+         ld->costs[i].partial_prediction = c->cb_cs_ld.costs[i].partial_prediction;
        return;
     }
 
@@ -511,6 +515,8 @@ namespace CB
 	ec->ld = &c->cb_cs_ld;
 	base.learn(ec);
 	ec->ld = ld;
+        for (size_t i=0; i<ld->costs.size(); i++)
+          ld->costs[i].partial_prediction = c->cb_cs_ld.costs[i].partial_prediction;
       }
   }
 

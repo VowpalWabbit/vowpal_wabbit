@@ -136,8 +136,7 @@ audit_data copy_audit_data(audit_data &src) {
 }
 
 namespace VW {
-  void copy_example_data(bool audit, example* &dst, example* src, size_t label_size, void(*copy_label)(void*&,void*))
-{
+void copy_example_label(example*dst, example*src, size_t label_size, void(*copy_label)(void*&,void*)) {
   if (!src->ld) {
     if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
     dst->ld = NULL;
@@ -152,7 +151,10 @@ namespace VW {
       memcpy(dst->ld, src->ld, label_size);
     }
   }
+}
 
+void copy_example_data(bool audit, example* dst, example* src)
+{
   dst->final_prediction = src->final_prediction;
 
   copy_array(dst->tag, src->tag);
@@ -182,5 +184,24 @@ namespace VW {
   dst->end_pass = src->end_pass;
   dst->sorted = src->sorted;
   dst->in_use = src->in_use;}
+
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+  copy_example_data(audit, dst, src);
+  copy_example_label(dst, src, label_size, copy_label);
+}
+
+void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount)
+ {
+  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
+    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
+      f->weight_index = (f->weight_index * mult_amount) + plus_amount;
+  if (audit)
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
+          f->weight_index = (f->weight_index * mult_amount) + plus_amount;
+}
+
+
 }
 
