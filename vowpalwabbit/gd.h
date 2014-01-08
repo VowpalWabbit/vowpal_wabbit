@@ -65,9 +65,9 @@ void output_and_account_example(example* ec);
 	 v_array<feature> temp2 = ec->atomics[(int)(*i)[1]];
 	 for (; temp2.begin != temp2.end; temp2.begin++) {
 	   
-     uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
-	 float mult = temp1.begin->x * temp2.begin->x;
-	 foreach_feature<R,T>(all, dat, ec->atomics[(int)(*i)[2]].begin, ec->atomics[(int)(*i)[2]].end, halfhash, mult);
+	   uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
+	   float mult = temp1.begin->x * temp2.begin->x;
+	   foreach_feature<R,T>(all, dat, ec->atomics[(int)(*i)[2]].begin, ec->atomics[(int)(*i)[2]].end, halfhash, mult);
 	 }
        }
      }

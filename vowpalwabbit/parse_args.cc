@@ -23,6 +23,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "wap.h"
 #include "cb.h"
+#include "scorer.h"
 #include "searn.h"
 #include "bfgs.h"
 #include "lda_core.h"
@@ -851,6 +852,8 @@ vw* parse_args(int argc, char *argv[])
 
   if(vm.count("autolink") || vm_file.count("autolink") )
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
+
+  all->l = Scorer::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("top") || vm_file.count("top") )
     all->l = TOPK::setup(*all, to_pass_further, vm, vm_file);

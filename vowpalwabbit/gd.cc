@@ -159,7 +159,6 @@ template<bool normalized_training, bool reg_mode_odd, bool power_t_half>
 void predict(gd* g, learner& base, example* ec)
 {
   vw* all = g->all;
-  label_data* ld = (label_data*)ec->ld;
 
   if (normalized_training) {
     if(power_t_half) {
@@ -183,11 +182,9 @@ void predict(gd* g, learner& base, example* ec)
       ec->partial_prediction = inline_predict<vec_add>(*all, ec);
   }
 
-  all->set_minmax(all->sd, ld->label);
-
   ec->final_prediction = finalize_prediction(*all, ec->partial_prediction * (float)all->sd->contraction);
 
-  if ((all->audit && !ec->test_only) || all->hash_inv)
+  if (all->audit || all->hash_inv)
     print_audit_features(*all, ec);
 }
 
