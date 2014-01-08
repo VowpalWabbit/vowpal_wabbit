@@ -90,7 +90,7 @@ flat_example* flatten_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 }
 
-example *alloc_example(size_t);
+example *alloc_examples(size_t,size_t);
 void dealloc_example(void(*delete_label)(void*), example&);
 
 inline int example_is_newline(example* ec)

@@ -538,12 +538,14 @@ namespace LabelDict {
   void free_label_features(ldf& l) {
     void* label_iter = l.label_features.iterator();
     while (label_iter != NULL) {
-      v_array<feature> features = l.label_features.iterator_get_value(label_iter);
-      features.erase();
-      features.delete_v();
+      v_array<feature> *features = l.label_features.iterator_get_value(label_iter);
+      features->erase();
+      features->delete_v();
 
       label_iter = l.label_features.iterator_next(label_iter);
     }
+    l.label_features.clear();
+    l.label_features.delete_v();
   }
 }
 
@@ -1021,14 +1023,14 @@ namespace LabelDict {
 	output_example_seq(all, *l);
       clear_seq_and_finish_examples(all, *l);
       l->need_to_clear = false;
+      if (ec->in_use) VW::finish_example(all, ec);
     }
-    if (ec->in_use) VW::finish_example(all, ec);
   }
 
   void end_examples(void* data)
   {
     ldf* l=(ldf*)data;
-    vw* all = l->all;
+    //vw* all = l->all;
     if (l->need_to_clear)
       l->ec_seq.erase();
   }
@@ -1153,7 +1155,7 @@ namespace LabelDict {
       all.add_constant = false;
     }
     ld->label_features.init(256, v_array<feature>(), LabelDict::size_t_eq);
-    ld->label_features.get(1, 94717244);
+    ld->label_features.get(1, 94717244); // TODO: figure this out
 
     ld->read_example_this_loop = 0;
     ld->need_to_clear = false;

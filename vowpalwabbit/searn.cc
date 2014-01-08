@@ -125,7 +125,8 @@ namespace SearnUtil
     }
 
     for (uint32_t t=1; t<=hinfo.length; t++) {
-      v0 = (h[hinfo.length-t] * quadratic_constant * (additional_offset+1) + t) * history_constant;
+      v0 = ((h[hinfo.length-t]+1) * quadratic_constant * (additional_offset+1) + t) * history_constant;
+      cerr << "v0 = " << v0 << " additional_offset = " << additional_offset << " h[] = " << h[hinfo.length-t] << endl;
       // add the basic history features
       feature temp = {history_value, (uint32_t) ( (v0*wpp) & all.reg.weight_mask )};
       ec->atomics[history_namespace].push_back(temp);
@@ -143,7 +144,7 @@ namespace SearnUtil
 
       // add the bigram features
       if ((t > 1) && hinfo.bigrams) {
-        v1 = (v0 * cubic_constant + h[hinfo.length-t+1] * (additional_offset+1)) * history_constant;
+        v1 = (v0 * cubic_constant + (h[hinfo.length-t+1]+1) * (additional_offset+1)) * history_constant;
 
         feature temp = {history_value, (uint32_t) ( (v1*wpp) & all.reg.weight_mask )};
         ec->atomics[history_namespace].push_back(temp);
@@ -182,7 +183,7 @@ namespace SearnUtil
           v = f->weight_index + history_constant;
 
           for (uint32_t t=1; t<=hinfo.features; t++) {
-            v0 = (h[hinfo.length-t] * quadratic_constant * (additional_offset+1) + t) * history_constant;
+            v0 = ((h[hinfo.length-t]+1) * quadratic_constant * (additional_offset+1) + t) * history_constant;
           
             // add the history/feature pair
             feature temp = {history_value, (uint32_t) ( ((v0 + v)*wpp) & all.reg.weight_mask )};
@@ -202,7 +203,7 @@ namespace SearnUtil
 
             // add the bigram
             if ((t > 0) && hinfo.bigram_features) {
-              v1 = (v0 * cubic_constant + h[hinfo.length-t+1] * (additional_offset+1)) * history_constant;
+              v1 = (v0 * cubic_constant + (h[hinfo.length-t+1]+1) * (additional_offset+1)) * history_constant;
 
               feature temp = {history_value, (uint32_t) ( ((v + v1)*wpp) & all.reg.weight_mask )};
               ec->atomics[history_namespace].push_back(temp);
@@ -458,9 +459,12 @@ namespace Searn {
         return (uint32_t)action;
       } else {
         if (srn.auto_history)
-          for (size_t a=0; a<num_ec; a++)
+          for (size_t a=0; a<num_ec; a++) {
+            cerr << "weight_index = " << ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index << endl;
             add_history_to_example(all, srn.hinfo, &ecs[a], srn.rollout_action.begin+srn.t,
-                                   ((OAA::mc_label*)ecs[a].ld)->label);
+                                   ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index);
+          }
+                                   //((OAA::mc_label*)ecs[a].ld)->label);
         size_t action = single_prediction_LDF(all, base, ecs, num_ec, pol, allow_exploration);
         if (srn.auto_history)
           for (size_t a=0; a<num_ec; a++)
@@ -532,7 +536,8 @@ namespace Searn {
       uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       clog << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
-      if (srn->auto_history) srn->rollout_action.push_back(a);
+      uint32_t a_name = (! srn->is_ldf) ? a : ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index;
+      if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
       return a;
     }
@@ -546,7 +551,9 @@ namespace Searn {
       //if (! ((srn->current_policy == 0) || (a == a_opt))) { cerr << "FAIL!!!"<<endl;}
       srn->train_action.push_back(a);
       srn->train_labels.push_back(copy_labels(*srn, srn->valid_labels));
-      if (srn->auto_history) srn->rollout_action.push_back(a); // TODO: for ldf make this weight_index
+      uint32_t a_name = (! srn->is_ldf) ? a : ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index;
+      srn->train_action_ids.push_back(a_name);
+      if (srn->auto_history) srn->rollout_action.push_back(a_name); // TODO: for ldf make this weight_index
       srn->t++;
       return a;
     }
@@ -554,20 +561,31 @@ namespace Searn {
       if (srn->t < srn->learn_t) {
         assert(srn->t < srn->train_action.size());
         srn->t++;
-        size_t a = srn->train_action[srn->t - 1];
+        size_t a = srn->train_action_ids[srn->t - 1];
         return (uint32_t)a;
       } else if (srn->t == srn->learn_t) {
         if (srn->learn_example_copy == NULL) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
           srn->learn_example_len = num_to_copy;
           // TODO: move the calloc outside
-          srn->learn_example_copy = (example**)SearnUtil::calloc_or_die(num_to_copy, sizeof(example*));
-          for (size_t n=0; n<num_to_copy; n++) {
-            if (srn->examples_dont_change)
-              srn->learn_example_copy[n] = &ecs[n];
-            else {
-              srn->learn_example_copy[n] = alloc_example(sizeof(CSOAA::label));
-              VW::copy_example_data(all.audit, srn->learn_example_copy[n], &ecs[n], sizeof(CSOAA::label), CSOAA::copy_label);
+          if (srn->examples_dont_change)
+            srn->learn_example_copy = ecs;
+          else {
+            //srn->learn_example_copy = (example**)SearnUtil::calloc_or_die(num_to_copy, sizeof(example*));
+            if (srn->is_ldf) {
+              srn->learn_example_copy = alloc_examples(sizeof(CSOAA::label), num_to_copy);
+              for (size_t n=0; n<num_to_copy; n++) {
+                //srn->learn_example_copy[n] = alloc_example(sizeof(CSOAA::label));
+                cerr << "copy_example_data[" << n << "]: "; GD::print_audit_features(all, &ecs[n]);
+                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(CSOAA::label), CSOAA::copy_label);
+              }
+            } else {
+              srn->learn_example_copy = alloc_examples(sizeof(OAA::mc_label), num_to_copy);
+              for (size_t n=0; n<num_to_copy; n++) {
+                //srn->learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
+                cerr << "copy_example_data[" << n << "]: "; GD::print_audit_features(all, &ecs[n]);
+                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(OAA::mc_label), NULL);
+              }
             }
           }
           //cerr << "copying example to " << srn->learn_example_copy << endl;
@@ -575,7 +593,8 @@ namespace Searn {
         srn->snapshot_is_equivalent_to_t = (size_t)-1;
         srn->snapshot_could_match = true;
         srn->t++;
-        if (srn->auto_history) srn->rollout_action.push_back(srn->learn_a); // TODO: for ldf make this weight_index
+        uint32_t a_name = (! srn->is_ldf) ? srn->learn_a : ((CSOAA::label*)ecs[srn->learn_a].ld)->costs[0].weight_index;
+        if (srn->auto_history) srn->rollout_action.push_back(a_name); // TODO: for ldf make this weight_index
         return srn->learn_a;
       } else { // t > learn_t
         size_t this_a = 0;
@@ -597,10 +616,11 @@ namespace Searn {
         } else {    // we can keep predicting using training trajectory
           srn->snapshot_is_equivalent_to_t++;
           srn->t = srn->snapshot_is_equivalent_to_t;
-          clog << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action[srn->t-1] << endl;
-          this_a = srn->train_action[srn->t - 1];
+          clog << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action_ids[srn->t-1] << endl;
+          this_a = srn->train_action_ids[srn->t - 1];
         }
-        if (srn->auto_history) srn->rollout_action.push_back((uint32_t)this_a); // TODO: for ldf make this weight_index
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
+        if (srn->auto_history) srn->rollout_action.push_back(a_name); // TODO: for ldf make this weight_index
         return (uint32_t)this_a;
       }
       assert(false);
@@ -923,7 +943,7 @@ namespace Searn {
     return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
-  void generate_training_example(vw& all, searn& srn, learner& base, example** ec, size_t len, void*labels, v_array<float> losses)
+  void generate_training_example(vw& all, searn& srn, learner& base, example* ec, size_t len, void*labels, v_array<float> losses)
   {
     assert(labelset_size(srn, labels) == losses.size());
     float min_loss = FLT_MAX;
@@ -936,24 +956,30 @@ namespace Searn {
         ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
 
     if (!srn.is_ldf) {
-      void* old_label = ec[0]->ld;
-      ec[0]->ld = labels;
-      base.learn(ec[0], srn.current_policy);
-      ec[0]->ld = old_label;
+      void* old_label = ec[0].ld;
+      ec[0].ld = labels;
+      if (srn.auto_history) add_history_to_example(all, srn.hinfo, ec, srn.rollout_action.begin+srn.learn_t);
+      base.learn(&ec[0], srn.current_policy);
+      if (srn.auto_history) remove_history_from_example(all, srn.hinfo, ec);
+      ec[0].ld = old_label;
       srn.total_examples_generated++;
     } else { // isLDF
       for (size_t repeat=0; repeat<2; repeat++) {
         cerr <<"repeat = " << repeat<<endl;
       for (size_t a=0; a<len; a++) {
         //((OAA::mc_label*)ec[a]->ld)->weight = losses[a] - min_loss;
-        ((CSOAA::label*)ec[a]->ld)->costs[0].x = losses[a] - min_loss;
-        cerr << "learn t = " << srn.learn_t << " cost = " << ((CSOAA::label*)ec[a]->ld)->costs[0].x << " action = " << ((CSOAA::label*)ec[a]->ld)->costs[0].weight_index << endl;
-        cerr << endl << "this_example = "; GD::print_audit_features(all, ec[a]);
-        base.learn(ec[a], srn.current_policy);
+        ((CSOAA::label*)ec[a].ld)->costs[0].x = losses[a] - min_loss;
+        cerr << "learn t = " << srn.learn_t << " cost = " << ((CSOAA::label*)ec[a].ld)->costs[0].x << " action = " << ((CSOAA::label*)ec[a].ld)->costs[0].weight_index << endl;
+        cerr << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
+        add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t,
+                               ((CSOAA::label*)ec[a].ld)->costs[0].weight_index);
+        base.learn(&ec[a], srn.current_policy);
       }
       cerr << "learn: generate empty example" << endl;
       base.learn(srn.empty_example);
       cerr << "learn done " << repeat << endl;
+      for (size_t a=0; a<len; a++)
+        remove_history_from_example(all, srn.hinfo, &ec[a]);
       srn.total_examples_generated++;
       }
     }
@@ -983,6 +1009,7 @@ namespace Searn {
     srn.learn_example_len  = 0;
     srn.num_features = 0;
     srn.train_action.erase();
+    srn.train_action_ids.erase();
     if (srn.auto_history) clear_rollout_actions(srn);
 
     srn.snapshot_is_equivalent_to_t = (size_t)-1;
@@ -1025,6 +1052,7 @@ namespace Searn {
       clog << "======================================== INIT TRAIN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
       srn.state = INIT_TRAIN;
       srn.train_action.erase();
+      srn.train_action_ids.erase();
       if (srn.auto_history)
         clear_rollout_actions(srn);
       srn.t = 0;
@@ -1058,13 +1086,13 @@ namespace Searn {
             // startup the rollout at the train actions
             clear_rollout_actions(srn);
             //srn.rollout_action.resize(srn.hinfo.length + srn.T);
-            push_many(srn.rollout_action, srn.train_action.begin, t);
+            push_many(srn.rollout_action, srn.train_action_ids.begin, t);
             //memcpy(srn.rollout_action.begin + srn.hinfo.length, srn.train_action.begin, srn.T * sizeof(uint32_t));
           }
           srn.snapshot_last_found_pos = (size_t)-1;
 
           size_t this_index = labelset_weight_index(srn, aset, i);
-          if (this_index == srn.train_action[srn.learn_t])
+          if (this_index == srn.train_action[srn.learn_t]) // TODO??? should this be train_action_ids?
             srn.learn_losses.push_back( srn.train_loss );
           else {
             srn.t = 0;
@@ -1085,12 +1113,14 @@ namespace Searn {
         if (srn.learn_example_copy != NULL) {
           generate_training_example(all, srn, *srn.base_learner, srn.learn_example_copy, srn.learn_example_len, aset, srn.learn_losses);
 
-          if (!srn.examples_dont_change)
+          if (!srn.examples_dont_change) {
             for (size_t n=0; n<srn.learn_example_len; n++) {
-              dealloc_example(OAA::delete_label, *srn.learn_example_copy[n]);
-              free(srn.learn_example_copy[n]);
+              cerr << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &srn.learn_example_copy[n]);
+              if (srn.is_ldf) dealloc_example(CSOAA::delete_label, srn.learn_example_copy[n]);
+              else            dealloc_example(  OAA::delete_label, srn.learn_example_copy[n]);
             }
-          free(srn.learn_example_copy);
+            free(srn.learn_example_copy);
+          }
           srn.learn_example_copy = NULL;
           srn.learn_example_len  = 0;
         } else {
@@ -1101,8 +1131,8 @@ namespace Searn {
     }
     
     clear_snapshot(all, srn);
-    srn.train_action.erase();
     srn.train_action.delete_v();
+    srn.train_action_ids.delete_v();
     srn.rollout_action.erase();
     srn.rollout_action.delete_v();
     for (size_t i=0; i<srn.train_labels.size(); i++) {
@@ -1438,7 +1468,7 @@ void print_update(vw& all, searn* srn)
     srn.examples_dont_change = false;
     srn.is_ldf = false;
     
-    srn.empty_example = alloc_example(sizeof(CSOAA::label));
+    srn.empty_example = alloc_examples(sizeof(CSOAA::label), 1);
     CSOAA::default_label(srn.empty_example->ld);
     srn.empty_example->in_use = true;
   }
@@ -1487,10 +1517,11 @@ void print_update(vw& all, searn* srn)
         delete ((CB::label*)srn->train_labels[i]);
       }
     }
-    srn->train_labels.erase(); srn->train_labels.delete_v();
-    srn->train_action.erase(); srn->train_action.delete_v();
-    srn->rollout_action.erase(); srn->rollout_action.delete_v();
-    srn->learn_losses.erase(); srn->learn_losses.delete_v();
+    srn->train_labels.delete_v();
+    srn->train_action.delete_v();
+    srn->train_action_ids.delete_v();
+    srn->rollout_action.delete_v();
+    srn->learn_losses.delete_v();
 
     if (srn->task->finish != NULL) {
       srn->task->finish(*srn);

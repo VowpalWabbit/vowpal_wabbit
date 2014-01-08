@@ -108,6 +108,7 @@ namespace Searn {
     size_t snapshot_last_found_pos;
     v_array<snapshot_item> snapshot_data;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train (or test) pass?
+    v_array<uint32_t> train_action_ids;  // these are the ids -- the same in non-ldf mode, but the index in ldf mode (while train_action is id.weight_index)
     v_array< void* > train_labels;  // which labels are valid at any given time
     v_array<uint32_t> rollout_action; // for auto_history, we need a space other than train_action for rollouts
     history_info hinfo;   // default history info for auto-history
@@ -126,8 +127,8 @@ namespace Searn {
     float  train_loss;     // total training loss for this example
     float  learn_loss;     // total loss for this "varied" example
 
-    v_array<float> learn_losses;   // losses for all (valid) actions at learn_t
-    example** learn_example_copy; // copy of example(s) at learn_t
+    v_array<float> learn_losses;  // losses for all (valid) actions at learn_t
+    example* learn_example_copy;  // copy of example(s) at learn_t
     size_t learn_example_len;     // number of example(s) at learn_t
 
     float  beta;                  // interpolation rate

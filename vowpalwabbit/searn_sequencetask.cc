@@ -90,18 +90,19 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     CSOAA::wclass default_wclass = { 0., 0, 0., 0. };
-    example* ldf_examples = (example*)calloc(num_actions, sizeof(example));
+
+    example* ldf_examples = alloc_examples(sizeof(CSOAA::label), num_actions);
     for (size_t a=0; a<num_actions; a++) {
-      CSOAA::label* lab = (CSOAA::label*)calloc(1, sizeof(CSOAA::label));
+      CSOAA::label* lab = (CSOAA::label*)ldf_examples[a].ld;
       lab->costs.push_back(default_wclass);
-      ldf_examples[a].ld = lab;
     }
+
     task_data* data = (task_data*)calloc(1, sizeof(task_data));
     data->ldf_examples = ldf_examples;
     data->num_actions  = num_actions;
     
     srn.task_data            = data;
-    srn.auto_history         = false; // automatically add history features to our examples, please
+    srn.auto_history         = true;  // automatically add history features to our examples, please
     srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
     srn.examples_dont_change = false; // we DO internal example munging
     srn.is_ldf               = true;  // we generate ldf examples
@@ -110,7 +111,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   void finish(searn& srn) {
     task_data *data = (task_data*)srn.task_data;
     for (size_t a=0; a<data->num_actions; a++)
-      free(data->ldf_examples[a].ld);
+      dealloc_example(CSOAA::delete_label, data->ldf_examples[a]);
     free(data->ldf_examples);
     free(data);
   }
@@ -122,6 +123,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
       for (size_t a=0; a<data->num_actions; a++) {
+        cerr << "structured_predict::copy_example_data" << endl;
         VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
 
         // now, offset it appropriately for the action id
