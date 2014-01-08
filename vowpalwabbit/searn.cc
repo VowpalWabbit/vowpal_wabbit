@@ -764,6 +764,7 @@ namespace Searn {
       else {
         // if we're doing auto-history and this is the first snapshot of a given index, we need to also snapshot the relevant piece of history
         if (srn->auto_history &&
+            (srn->hinfo.length > 0) &&
             ((srn->snapshot_data.size() == 0) ||
              ((srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().index < index)))) {
           size_t history_size = srn->hinfo.length * sizeof(uint32_t);
@@ -866,8 +867,9 @@ namespace Searn {
 
         if (srn->auto_history && (i>0) && (srn->snapshot_data[i-1].index == index) && (srn->snapshot_data[i-1].tag == 0)) {
           item = srn->snapshot_data[i-1];
+          assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
           if (srn->rollout_action.size() >= srn->t + srn->hinfo.length) {
-            matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, sizeof_data) == 0;
+            matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, item.data_size) == 0;
             if (!matches)
               srn->snapshot_could_match = false;
           }
