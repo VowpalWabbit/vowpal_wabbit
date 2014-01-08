@@ -85,11 +85,9 @@ namespace TOPK {
   }
 
   template <bool is_learn>
-  void predict_or_learn(void* data, learner& base, example* ec)
+  void predict_or_learn(topk* d, learner& base, example* ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
-
-    topk* d = (topk*)data;
 
     if (is_learn)
       base.learn(ec);
@@ -121,7 +119,9 @@ namespace TOPK {
 
     data->all = &all;
 
-    learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l);
+    learner* l = new learner(data, all.l);
+    l->set_learn<topk, predict_or_learn<true> >();
+    l->set_predict<topk, predict_or_learn<false> >();
     l->set_finish_example<topk,finish_example>();
 
     return l;

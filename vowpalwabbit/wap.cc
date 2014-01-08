@@ -218,10 +218,9 @@ namespace WAP {
   }
 
   template <bool is_learn>
-  void predict_or_learn(void* d, learner& base, example* ec)
+  void predict_or_learn(wap* w, learner& base, example* ec)
   {
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
-    wap* w = (wap*)d;
     vw* all = w->all;
     
     size_t prediction = test(*all, *w, base, ec);
@@ -261,7 +260,9 @@ namespace WAP {
 
     all.sd->k = (uint32_t)nb_actions;
 
-    learner* l = new learner(w, predict_or_learn<true>, predict_or_learn<false>, all.l, nb_actions);
+    learner* l = new learner(w, all.l, nb_actions);
+    l->set_learn<wap, predict_or_learn<true> >();
+    l->set_predict<wap, predict_or_learn<false> >();
     l->set_finish_example<wap,finish_example>();
     w->increment = l->increment;
 

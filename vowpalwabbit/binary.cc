@@ -35,6 +35,9 @@ namespace BINARY {
 
     all.sd->binary_label = true;
     //Create new learner
-    return new learner(NULL, predict_or_learn<true>, predict_or_learn<false>, all.l);
+    learner* ret = new learner(NULL, all.l);
+    ret->set_learn<void, predict_or_learn<true> >();
+    ret->set_predict<void, predict_or_learn<false> >();
+    return ret;
   }
 }

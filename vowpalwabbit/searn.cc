@@ -1251,8 +1251,7 @@ void print_update(vw& all, searn* srn)
   }
 
   template <bool is_learn>
-  void searn_predict_or_learn(void*d, learner& base, example*ec) {
-    searn *srn = (searn*)d;
+  void searn_predict_or_learn(searn* srn, learner& base, example*ec) {
     vw* all = srn->all;
     srn->base_learner = &base;
     bool is_real_example = true;
@@ -1716,7 +1715,9 @@ void print_update(vw& all, searn* srn)
 
     srn->start_clock_time = clock();
 
-    learner* l = new learner(srn, searn_predict_or_learn<true>, searn_predict_or_learn<false>, all.l, srn->total_number_of_policies);
+    learner* l = new learner(srn, all.l, srn->total_number_of_policies);
+    l->set_learn<searn, searn_predict_or_learn<true> >();
+    l->set_predict<searn, searn_predict_or_learn<false> >();
     l->set_finish_example<searn,finish_example>();
     l->set_end_examples<searn,end_examples>();
     l->set_finish<searn,searn_finish>();

@@ -36,10 +36,8 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_first(void* d, learner& base, example* ec)
+  void predict_or_learn_first(cbify* data, learner& base, example* ec)
   {//Explore tau times, then act according to optimal.
-    cbify* data = (cbify*)d;
-    
     OAA::mc_label* ld = (OAA::mc_label*)ec->ld;
     //Use CB to find current prediction for remaining rounds.
     if (data->tau > 0)
@@ -74,11 +72,8 @@ namespace CBIFY {
   }
   
   template <bool is_learn>
-  void predict_or_learn_greedy(void* d, learner& base, example* ec)
+  void predict_or_learn_greedy(cbify* data, learner& base, example* ec)
   {//Explore uniform random an epsilon fraction of the time.
-    cbify* data = (cbify*)d;
-    
-    //Use CB to find current prediction.
     OAA::mc_label* ld = (OAA::mc_label*)ec->ld;
     
     data->cb_label.costs.erase();
@@ -169,17 +164,19 @@ namespace CBIFY {
     }
 
     *(all.p->lp) = OAA::mc_label_parser;
-    learner* l;
+    learner* l = new learner(data, all.l, 1);
     if (vm.count("first") )
       {
 	data->tau = (uint32_t)vm["first"].as<size_t>();
-	l = new learner(data, predict_or_learn_first<true>, predict_or_learn_first<false>, all.l, 1);
+	l->set_learn<cbify, predict_or_learn_first<true> >();
+	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
     else
       {
 	if ( vm.count("greedy") ) 
 	  data->epsilon = vm["greedy"].as<float>();
-	l = new learner(data, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, all.l, 1);
+	l->set_learn<cbify, predict_or_learn_greedy<true> >();
+	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }
     l->set_finish_example<cbify,finish_example>();
     

@@ -97,9 +97,8 @@ namespace NN {
   }
 
   template <bool is_learn>
-  void predict_or_learn(void* d, learner& base, example* ec)
+  void predict_or_learn(nn* n, learner& base, example* ec)
   {
-    nn* n = (nn*)d;
     bool shouldOutput = n->all->raw_prediction > 0;
 
     if (! n->finished_setup)
@@ -400,9 +399,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     n->save_xsubi = n->xsubi;
     n->increment = all.l->increment;//Indexing of output layer is odd.
-    learner* l = new learner(n, predict_or_learn<true>, predict_or_learn<false>, all.l, n->k+1);
-    l->set_finish<nn,finish>();
-    l->set_finish_example<nn,finish_example>();
+    learner* l = new learner(n,  all.l, n->k+1);
+    l->set_learn<nn, predict_or_learn<true> >();
+    l->set_predict<nn, predict_or_learn<false> >();
+    l->set_finish<nn, finish>();
+    l->set_finish_example<nn, finish_example>();
     l->set_end_pass<nn,end_pass>();
 
     return l;

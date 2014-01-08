@@ -324,8 +324,7 @@ namespace ECT
       }
   }
 
-  void predict(void *d, learner& base, example* ec) {
-    ect* e=(ect*)d;
+  void predict(ect* e, learner& base, example* ec) {
     vw* all = e->all;
 
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
@@ -335,13 +334,12 @@ namespace ECT
     ec->ld = mc;
   }
 
-  void learn(void* d, learner& base, example* ec)
+  void learn(ect* e, learner& base, example* ec)
   {
-    ect* e=(ect*)d;
     vw* all = e->all;
 
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
-    predict(d, base, ec);
+    predict(e, base, ec);
 
     float new_label = ec->final_prediction;
     if (mc->label != (uint32_t)-1 && all->training)
@@ -432,7 +430,9 @@ namespace ECT
     size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner* l = new learner(data, learn, predict, all.l, wpp);
+    learner* l = new learner(data, all.l, wpp);
+    l->set_learn<ect, learn>();
+    l->set_predict<ect, predict>();
     l->set_finish_example<ect,finish_example>();
     l->set_finish<ect,finish>();
 

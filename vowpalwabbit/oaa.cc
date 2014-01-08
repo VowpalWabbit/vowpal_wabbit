@@ -198,9 +198,7 @@ namespace OAA {
   }
 
   template <bool is_learn>
-  void predict_or_learn(void* d, learner& base, example* ec) {
-    oaa* o=(oaa*)d;
-
+  void predict_or_learn(oaa* o, learner& base, example* ec) {
     vw* all = o->all;
 
     bool shouldOutput = all->raw_prediction > 0;
@@ -273,8 +271,10 @@ namespace OAA {
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
 
-    learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l, data->k);
-    l->set_finish_example<oaa,finish_example>();
+    learner* l = new learner(data, all.l, data->k);
+    l->set_learn<oaa, predict_or_learn<true> >();
+    l->set_predict<oaa, predict_or_learn<false> >();
+    l->set_finish_example<oaa, finish_example>();
 
     return l;
   }

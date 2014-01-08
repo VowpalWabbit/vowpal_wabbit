@@ -477,8 +477,7 @@ namespace CB
   }
 
   template <bool is_learn>
-  void predict_or_learn(void* d, learner& base, example* ec) {
-    cb* c = (cb*)d;
+  void predict_or_learn(cb* c, learner& base, example* ec) {
     vw* all = c->all;
     CB::label* ld = (CB::label*)ec->ld;
 
@@ -741,7 +740,9 @@ namespace CB
 
     *(all.p->lp) = CB::cb_label_parser; 
 
-    learner* l = new learner(c, predict_or_learn<true>, predict_or_learn<false>, all.l, problem_multiplier);
+    learner* l = new learner(c, all.l, problem_multiplier);
+    l->set_learn<cb, predict_or_learn<true> >();
+    l->set_predict<cb, predict_or_learn<false> >();
     l->set_finish_example<cb,finish_example>(); 
     l->set_init_driver<cb,init_driver>();
     l->set_finish<cb,finish>();

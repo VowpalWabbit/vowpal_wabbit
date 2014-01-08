@@ -314,8 +314,7 @@ namespace CSOAA {
   }
 
   template <bool is_learn>
-  void predict_or_learn(void* d, learner& base, example* ec) {
-    csoaa* c = (csoaa*)d;
+  void predict_or_learn(csoaa* c, learner& base, example* ec) {
     vw* all = c->all;
     label* ld = (label*)ec->ld;
 
@@ -386,7 +385,9 @@ namespace CSOAA {
     *(all.p->lp) = cs_label_parser;
     all.sd->k = nb_actions;
 
-    learner* l = new learner(c, predict_or_learn<true>, predict_or_learn<false>, all.l, nb_actions);
+    learner* l = new learner(c, all.l, nb_actions);
+    l->set_learn<csoaa, predict_or_learn<true> >();
+    l->set_predict<csoaa, predict_or_learn<false> >();
     l->set_finish_example<csoaa,finish_example>();
     return l;
   }
@@ -948,9 +949,8 @@ namespace LabelDict {
   }
 
   template <bool is_learn>
-  void predict_or_learn(void* data, learner& base, example *ec) 
+  void predict_or_learn(ldf* l, learner& base, example *ec) 
   {
-    ldf* l=(ldf*)data;
     vw* all = l->all;
     l->base = &base;
 
@@ -1107,7 +1107,9 @@ namespace LabelDict {
 
     ld->read_example_this_loop = 0;
     ld->need_to_clear = false;
-    learner* l = new learner(ld, predict_or_learn<true>, predict_or_learn<false>, all.l);
+    learner* l = new learner(ld, all.l);
+    l->set_learn<ldf, predict_or_learn<true> >();
+    l->set_predict<ldf, predict_or_learn<false> >();
     if (ld->is_singleline)
       l->set_finish_example<ldf,finish_example>();
     else

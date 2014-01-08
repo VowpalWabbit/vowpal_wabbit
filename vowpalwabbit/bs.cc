@@ -173,9 +173,8 @@ namespace BS {
   }
 
   template <bool is_learn>
-  void predict_or_learn(void* data, learner& base, example* ec)
+  void predict_or_learn(bs* d, learner& base, example* ec)
   {
-    bs* d = (bs*)data;
     vw* all = d->all;
     bool shouldOutput = all->raw_prediction > 0;
 
@@ -306,7 +305,9 @@ namespace BS {
     data->pred_vec.reserve(data->B);
     data->all = &all;
 
-    learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l, data->B);
+    learner* l = new learner(data, all.l, data->B);
+    l->set_learn<bs, predict_or_learn<true> >();
+    l->set_predict<bs, predict_or_learn<false> >();
     l->set_finish_example<bs,finish_example>();
     l->set_finish<bs,finish>();
 

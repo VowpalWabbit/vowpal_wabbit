@@ -62,9 +62,8 @@ namespace {
 namespace LRQ {
 
   template <bool is_learn>
-  void predict_or_learn(void* d, learner& base, example* ec)
+  void predict_or_learn(LRQstate* lrq, learner& base, example* ec)
   {
-    LRQstate* lrq = (LRQstate*) d;
     vw& all = *lrq->all;
 
     // Remember original features
@@ -247,7 +246,9 @@ namespace LRQ {
       cerr<<endl;
         
     all.wpp = all.wpp * (1 + maxk);
-    learner* l = new learner(lrq, predict_or_learn<true>, predict_or_learn<false>, all.l, 1 + maxk);
+    learner* l = new learner(lrq, all.l, 1 + maxk);
+    l->set_learn<LRQstate, predict_or_learn<true> >();
+    l->set_predict<LRQstate, predict_or_learn<false> >();
     l->set_end_pass<LRQstate,reset_seed>();
 
     // TODO: leaks memory ?

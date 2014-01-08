@@ -14,10 +14,8 @@ namespace ALINK {
   };
 
   template <bool is_learn>
-  void predict_or_learn(void* d, learner& base, example* ec)
+  void predict_or_learn(autolink* b, learner& base, example* ec)
   {
-    autolink* b = (autolink*)d;
-
     base.predict(ec);
     float base_pred = ec->final_prediction;
 
@@ -58,6 +56,9 @@ namespace ALINK {
 	all.options_from_file.append(ss.str());
       }
 
-    return new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l);
+    learner* ret = new learner(data, all.l);
+    ret->set_learn<autolink, predict_or_learn<true> >();
+    ret->set_predict<autolink, predict_or_learn<false> >();
+    return ret;
   }
 }

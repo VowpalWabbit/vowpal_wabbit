@@ -53,8 +53,7 @@ struct mf {
 };
 
 template <bool cache_sub_predictions>
-void predict(void *d, learner& base, example* ec) {
-  mf* data = (mf*) d;
+void predict(mf *data, learner& base, example* ec) {
   vw* all = data->all;
 
   float prediction = 0;
@@ -110,12 +109,11 @@ void predict(void *d, learner& base, example* ec) {
   ec->final_prediction = GD::finalize_prediction(*(data->all), ec->partial_prediction);
 }
 
-  void learn(void* d, learner& base, example* ec) {
-  mf* data = (mf*) d;
+  void learn(mf* data, learner& base, example* ec) {
   vw* all = data->all;
 
   // predict with current weights
-  predict<true>(d, base, ec);
+  predict<true>(data, base, ec);
 
   // update linear weights
   base.update(ec);
@@ -202,7 +200,9 @@ void finish(mf* o) {
       for (size_t j = 0; j < (all.reg.weight_mask + 1) / all.reg.stride; j++)
 	all.reg.weight_vector[j*all.reg.stride] = (float) (0.1 * frand48());
     }
-  learner* l = new learner(data, learn, predict<false>, all.l, 2*data->rank+1);
+  learner* l = new learner(data, all.l, 2*data->rank+1);
+  l->set_learn<mf, learn>();
+  l->set_predict<mf, predict<false> >();
   l->set_finish<mf,finish>();
   return l;
 }
