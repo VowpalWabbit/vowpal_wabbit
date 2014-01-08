@@ -101,9 +101,9 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     data->num_actions  = num_actions;
     
     srn.task_data            = data;
-    srn.auto_history         = false;  // automatically add history features to our examples, please
+    srn.auto_history         = false; // automatically add history features to our examples, please
     srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
-    srn.examples_dont_change = true;  // we don't do any internal example munging
+    srn.examples_dont_change = false; // we DO internal example munging
     srn.is_ldf               = true;  // we generate ldf examples
   }
 
@@ -129,8 +129,10 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         
         // need to tell searn what the action id is, so that it can add history features correctly!
         CSOAA::label* lab = (CSOAA::label*)data->ldf_examples[a].ld;
-        CSOAA::default_label(lab);
+        lab->costs[0].x = 0.;
         lab->costs[0].weight_index = a+1;
+        lab->costs[0].partial_prediction = 0.;
+        lab->costs[0].wap_value = 0.;
       }
 
       OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;

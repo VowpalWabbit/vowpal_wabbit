@@ -22,6 +22,7 @@ license as described in the file LICENSE.
 #include "v_hashmap.h"
 #include "vw.h"
 #include "rand48.h"
+#include "gd.h" // TODO: get rid of this
 
 // task-specific includes
 #include "searn_sequencetask.h"
@@ -333,6 +334,8 @@ namespace Searn {
   {
     assert(pol >= 0);
     searn *srn = (searn*)all.searnstr;
+    CSOAA::label test_label;
+    CSOAA::default_label(&test_label);
 
     // TODO: modify this to handle contextual bandit base learner with ldf
     // TODO: exploration_temperature
@@ -340,12 +343,16 @@ namespace Searn {
     uint32_t best_action = 0;
     for (uint32_t action=0; action<num_ec; action++) {
       //cerr << "predict: action=" << action << endl;
+      void* old_label = ecs[action].ld;
+      ecs[action].ld = &test_label;
       base.learn(&ecs[action], pol);
       srn->total_predictions_made++;
       srn->num_features += ecs[action].num_features;
       srn->empty_example->in_use = true;
       //cerr << "predict: empty_example" << endl;
       base.learn(srn->empty_example);
+      ecs[action].ld = old_label;
+      cerr << endl << "this_example = "; GD::print_audit_features(all, &ecs[action]);
       cerr << "action=" << action << " pp=" << ecs[action].partial_prediction << endl;
 
       if ((action == 0) || 
@@ -559,8 +566,8 @@ namespace Searn {
             if (srn->examples_dont_change)
               srn->learn_example_copy[n] = &ecs[n];
             else {
-              srn->learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
-              VW::copy_example_data(all.audit, srn->learn_example_copy[n], &ecs[n], sizeof(OAA::mc_label), NULL);
+              srn->learn_example_copy[n] = alloc_example(sizeof(CSOAA::label));
+              VW::copy_example_data(all.audit, srn->learn_example_copy[n], &ecs[n], sizeof(CSOAA::label), CSOAA::copy_label);
             }
           }
           //cerr << "copying example to " << srn->learn_example_copy << endl;
@@ -941,6 +948,7 @@ namespace Searn {
         //((OAA::mc_label*)ec[a]->ld)->weight = losses[a] - min_loss;
         ((CSOAA::label*)ec[a]->ld)->costs[0].x = losses[a] - min_loss;
         cerr << "learn t = " << srn.learn_t << " cost = " << ((CSOAA::label*)ec[a]->ld)->costs[0].x << " action = " << ((CSOAA::label*)ec[a]->ld)->costs[0].weight_index << endl;
+        cerr << endl << "this_example = "; GD::print_audit_features(all, ec[a]);
         base.learn(ec[a], srn.current_policy);
       }
       cerr << "learn: generate empty example" << endl;
