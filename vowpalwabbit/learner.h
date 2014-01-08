@@ -112,6 +112,7 @@ public:
     learn_fd.update_f(learn_fd.data, *learn_fd.base, ec);
     ec->ft_offset -= (uint32_t)(increment*i);
   }
+
   inline void set_update(void (*u)(void* data, learner& base, example*))
   {
     learn_fd.update_f = u;
@@ -119,8 +120,9 @@ public:
 
   //called anytime saving or loading needs to happen. Autorecursive.
   inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
-  inline void set_save_load(void (*sl)(void*, io_buf& io, bool read, bool text))
-  { save_load_fd.save_load_f = sl; 
+  template <class T, void (*sl)(T*, io_buf&, bool, bool)>
+  inline void set_save_load()
+  { save_load_fd.save_load_f = tsl<T,sl>; 
     save_load_fd.data = learn_fd.data; 
     save_load_fd.base = learn_fd.base;}
 
@@ -152,13 +154,15 @@ public:
 
   //Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data);}
-  void set_init_driver(void (*id)(void*)) { init_fd = tuple_dbf(learn_fd.data,learn_fd.base, id); }
+  template <class T, void (*f)(T*)>
+  void set_init_driver() { init_fd = tuple_dbf(learn_fd.data,learn_fd.base, tfunc<T,f>); }
 
   //called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, example* ec) { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
-  void set_finish_example(void (*ef)(vw& all, void*, example*))
+  template<class T, void (*f)(vw& all, T*, example*)>
+  void set_finish_example()
   {finish_example_fd.data = learn_fd.data;
-    finish_example_fd.finish_example_f = ef;}
+    finish_example_fd.finish_example_f = tend_example<T,f>;}
 
   void driver(vw* all) {LEARNER::generic_driver(all);}
 
@@ -177,7 +181,7 @@ public:
     save_load_fd = LEARNER::generic_save_load_fd;
   }
 
-  inline learner(void *dat, void (*l)(void*, learner&, example*), void (*p)(void*, learner&, example*), void (*sl)(void*, io_buf& io, bool read, bool text), size_t params_per_weight)
+  inline learner(void *dat, void (*l)(void*, learner&, example*), void (*p)(void*, learner&, example*), size_t params_per_weight)
   { // the constructor for all learning algorithms.
     *this = learner();
 
@@ -190,7 +194,6 @@ public:
     finisher_fd.base = NULL;
     finisher_fd.func = LEARNER::generic_func;
 
-    set_save_load(sl);
     increment = params_per_weight;
   }
 

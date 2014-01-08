@@ -1296,9 +1296,7 @@ void print_update(vw& all, searn* srn)
     }
   }
 
-  void finish_example(vw& all, void* d, example* ec) {
-    searn *srn = (searn*)d;
-
+  void finish_example(vw& all, searn* srn, example* ec) {
     if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) { 
       print_update(all, srn);
       VW::finish_example(all, ec);
@@ -1719,7 +1717,7 @@ void print_update(vw& all, searn* srn)
     srn->start_clock_time = clock();
 
     learner* l = new learner(srn, searn_predict_or_learn<true>, searn_predict_or_learn<false>, all.l, srn->total_number_of_policies);
-    l->set_finish_example(finish_example);
+    l->set_finish_example<searn,finish_example>();
     l->set_end_examples<searn,end_examples>();
     l->set_finish<searn,searn_finish>();
     l->set_end_pass<searn,end_pass>();

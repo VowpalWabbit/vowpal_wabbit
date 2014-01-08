@@ -516,9 +516,8 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
-void save_load(void* d, io_buf& model_file, bool read, bool text)
+void save_load(lda* l, io_buf& model_file, bool read, bool text)
 {
-  lda* l = (lda*)d;
   vw* all = l->all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
@@ -727,7 +726,7 @@ void end_examples(lda* l)
   }
 }
 
-  void finish_example(vw& all, void*, example*ec)
+  void finish_example(vw& all, lda*, example*ec)
 {}
 
 learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
@@ -771,9 +770,9 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
   
-  learner* l = new learner(ld, learn, predict, save_load, all.reg.stride);
-  l->set_save_load(save_load);
-  l->set_finish_example(finish_example);
+  learner* l = new learner(ld, learn, predict, all.reg.stride);
+  l->set_save_load<lda,save_load>();
+  l->set_finish_example<lda,finish_example>();
   l->set_end_examples<lda,end_examples>();  
   l->set_end_pass<lda,end_pass>();  
   

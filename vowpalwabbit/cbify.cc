@@ -124,6 +124,12 @@ namespace CBIFY {
       //Use cost sensitive oracle to cover actions to form distribution.
     }
 
+  void finish_example(vw& all, cbify*, example* ec)
+  {
+    OAA::output_example(all, ec);
+    VW::finish_example(all, ec);
+  }
+
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {//parse and set arguments
     cbify* data = (cbify*)calloc(1, sizeof(cbify));
@@ -175,7 +181,7 @@ namespace CBIFY {
 	  data->epsilon = vm["greedy"].as<float>();
 	l = new learner(data, predict_or_learn_greedy<true>, predict_or_learn_greedy<false>, all.l, 1);
       }
-    l->set_finish_example(OAA::finish_example);
+    l->set_finish_example<cbify,finish_example>();
     
     cout << "epsilon = " << data->epsilon << endl;
     

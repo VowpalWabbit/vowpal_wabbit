@@ -292,7 +292,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec->loss = save_ec_loss;
   }
 
-  void finish_example(vw& all, void*, example* ec)
+  void finish_example(vw& all, nn*, example* ec)
   {
     int save_raw_prediction = all.raw_prediction;
     all.raw_prediction = -1;
@@ -402,7 +402,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n->increment = all.l->increment;//Indexing of output layer is odd.
     learner* l = new learner(n, predict_or_learn<true>, predict_or_learn<false>, all.l, n->k+1);
     l->set_finish<nn,finish>();
-    l->set_finish_example(finish_example);
+    l->set_finish_example<nn,finish_example>();
     l->set_end_pass<nn,end_pass>();
 
     return l;

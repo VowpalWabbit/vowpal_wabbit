@@ -880,48 +880,49 @@ learner* setup(vw& all, po::variables_map& vm)
     if (all.normalized_updates)
       if (feature_mask_off)
 	{
-	  ret = new learner(g, tlearn<gd, learn<true,true,true> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret = new learner(g, tlearn<gd, learn<true,true,true> >, g->predict, all.reg.stride);
 	  ret->set_update(tlearn<gd, update<true,true,true> >);
 	}
       else
 	{
-	  ret = new learner(g, tlearn<gd, learn<true,true,false> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret = new learner(g, tlearn<gd, learn<true,true,false> >, g->predict, all.reg.stride);
 	  ret->set_update(tlearn<gd, update<true,true,false> >);
 	}
     else
       if (feature_mask_off)
 	{
-	  ret = new learner(g, tlearn<gd, learn<true,false,true> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret = new learner(g, tlearn<gd, learn<true,false,true> >, g->predict, all.reg.stride);
 	  ret->set_update(tlearn<gd, update<true,false,true> >);
 	}
       else
 	{
-	  ret = new learner(g, tlearn<gd, learn<true,false,false> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret = new learner(g, tlearn<gd, learn<true,false,false> >, g->predict, all.reg.stride);
 	  ret->set_update(tlearn<gd, update<true,false,false> >);
 	}
   else
     if (all.normalized_updates)
       if (feature_mask_off)
 	{
-	  ret = new learner(g, tlearn<gd, learn<false,true,true> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret = new learner(g, tlearn<gd, learn<false,true,true> >, g->predict, all.reg.stride);
 	  ret->set_update(tlearn<gd, update<false,true,true> >);
 	}
       else
 	{
-	  ret = new learner(g, tlearn<gd, learn<false,true,false> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret = new learner(g, tlearn<gd, learn<false,true,false> >, g->predict, all.reg.stride);
 	  ret->set_update(tlearn<gd, update<false,true,false> >);
 	}
     else
       if (feature_mask_off)
 	{
-	  ret = new learner(g, tlearn<gd, learn<false,false,true> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret = new learner(g, tlearn<gd, learn<false,false,true> >, g->predict, all.reg.stride);
 	  ret->set_update(tlearn<gd, update<false, false, true> >);
 	}
       else
 	{
-	  ret = new learner(g, tlearn<gd, learn<false,false,false> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret = new learner(g, tlearn<gd, learn<false,false,false> >, g->predict, all.reg.stride);
 	  ret->set_update(tlearn<gd, update<false, false, false> >);
 	}
+  ret->set_save_load<gd,save_load>();
 
   ret->set_end_pass<gd, end_pass>();
   return ret;

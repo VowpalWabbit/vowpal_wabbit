@@ -904,10 +904,8 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 }
 
 
-void save_load(void* d, io_buf& model_file, bool read, bool text)
+void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
 {
-
-  bfgs* b = (bfgs*)d;
   vw* all = b->all;
 
   uint32_t length = 1 << all->num_bits;
@@ -971,9 +969,8 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     }
 }
 
-  void init_driver(void* data)
+  void init_driver(bfgs* b)
   {
-    bfgs* b = (bfgs*)data;
     b->backstep_on = true;
   }
 
@@ -1020,9 +1017,9 @@ learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po
   all.bfgs = true;
   all.reg.stride = 4;
 
-  learner* l = new learner(b, learn, predict, save_load, all.reg.stride);
-  l->set_save_load(save_load);
-  l->set_init_driver(init_driver);
+  learner* l = new learner(b, learn, predict, all.reg.stride);
+  l->set_save_load<bfgs,save_load>();
+  l->set_init_driver<bfgs,init_driver>();
   l->set_end_pass<bfgs,end_pass>();
   l->set_finish<bfgs,finish>();
 

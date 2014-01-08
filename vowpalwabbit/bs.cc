@@ -222,9 +222,9 @@ namespace BS {
 
   }
 
-  void finish_example(vw& all, void* d, example* ec)
+  void finish_example(vw& all, bs* d, example* ec)
   {
-    BS::output_example(all, (bs*)d, ec);
+    BS::output_example(all, d, ec);
     VW::finish_example(all, ec);
   }
 
@@ -307,7 +307,7 @@ namespace BS {
     data->all = &all;
 
     learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l, data->B);
-    l->set_finish_example(finish_example);
+    l->set_finish_example<bs,finish_example>();
     l->set_finish<bs,finish>();
 
     return l;

@@ -108,8 +108,6 @@ void end_examples(sender* s)
     delete s->buf;
   }
 
-  void save_load(sender*, io_buf& io, bool read, bool text){}
-
   learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
   sender* s = (sender*)calloc(1,sizeof(sender));
@@ -123,9 +121,9 @@ void end_examples(sender* s)
   s->all = &all;
   s->delay_ring = (example**) calloc(all.p->ring_size, sizeof(example*));
 
-  learner* l = new learner(s, tlearn<sender, learn>, tlearn<sender, predict>, tsl<sender, save_load>, 1);
+  learner* l = new learner(s, tlearn<sender, learn>, tlearn<sender, predict>, 1);
   l->set_finish<sender, finish>();
-  l->set_finish_example(tend_example<sender, finish_example>); 
+  l->set_finish_example<sender, finish_example>(); 
   l->set_end_examples<sender, end_examples>();
   return l;
 }

@@ -107,9 +107,9 @@ namespace TOPK {
 
   }
 
-  void finish_example(vw& all, void* d, example* ec)
+  void finish_example(vw& all, topk* d, example* ec)
   {
-    TOPK::output_example(all, (topk*)d, ec);
+    TOPK::output_example(all, d, ec);
     VW::finish_example(all, ec);
   }
 
@@ -122,7 +122,7 @@ namespace TOPK {
     data->all = &all;
 
     learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l);
-    l->set_finish_example(finish_example);
+    l->set_finish_example<topk,finish_example>();
 
     return l;
   }

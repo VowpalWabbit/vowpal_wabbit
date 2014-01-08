@@ -209,9 +209,9 @@ void mf_print_audit_features(vw& all, example* ec, size_t offset)
   mf_print_offset_features(all, ec, offset);
 }
 
-  void save_load(void* d, io_buf& model_file, bool read, bool text)
+  void save_load(gdmf* d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = ((gdmf*)d)->all;
+  vw* all = d->all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
 
@@ -294,7 +294,8 @@ void end_pass(gdmf* d)
   {
     gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
     data->all = &all;
-    learner* l = new learner(data, learn, predict, save_load, all.reg.stride);
+    learner* l = new learner(data, learn, predict, all.reg.stride);
+    l->set_save_load<gdmf,save_load>();
     l->set_end_pass<gdmf,end_pass>();
 
     return l;

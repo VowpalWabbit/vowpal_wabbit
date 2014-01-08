@@ -368,6 +368,12 @@ namespace ECT
 
     e->tournaments_won.delete_v();
   }
+
+  void finish_example(vw& all, ect*, example* ec)
+  {
+    OAA::output_example(all, ec);
+    VW::finish_example(all, ec);
+  }
   
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
@@ -427,7 +433,7 @@ namespace ECT
     data->all = &all;
     
     learner* l = new learner(data, learn, predict, all.l, wpp);
-    l->set_finish_example(OAA::finish_example);
+    l->set_finish_example<ect,finish_example>();
     l->set_finish<ect,finish>();
 
     return l;

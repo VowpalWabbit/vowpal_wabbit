@@ -529,7 +529,7 @@ namespace CB
       }
   }
 
-  void init_driver(void*)
+  void init_driver(cb*)
   {
     fprintf(stderr, "*estimate* *estimate*                                                avglossreg last pred  last correct\n");
   }
@@ -655,9 +655,8 @@ namespace CB
     c->cb_cs_ld.costs.delete_v();
   }
 
-  void finish_example(vw& all, void* data, example* ec)
+  void finish_example(vw& all, cb* c, example* ec)
   {
-    cb* c = (cb*)data;
     output_example(all, *c, ec);
     VW::finish_example(all, ec);
   }
@@ -743,8 +742,8 @@ namespace CB
     *(all.p->lp) = CB::cb_label_parser; 
 
     learner* l = new learner(c, predict_or_learn<true>, predict_or_learn<false>, all.l, problem_multiplier);
-    l->set_finish_example(finish_example); 
-    l->set_init_driver(init_driver);
+    l->set_finish_example<cb,finish_example>(); 
+    l->set_init_driver<cb,init_driver>();
     l->set_finish<cb,finish>();
     // preserve the increment of the base learner since we are
     // _adding_ to the number of problems rather than multiplying.

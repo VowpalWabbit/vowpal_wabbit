@@ -357,7 +357,7 @@ namespace CSOAA {
     ec->final_prediction = (float)prediction;
   }
 
-  void finish_example(vw& all, void*, example* ec)
+  void finish_example(vw& all, csoaa*, example* ec)
   {
     output_example(all, ec);
     VW::finish_example(all, ec);
@@ -387,7 +387,7 @@ namespace CSOAA {
     all.sd->k = nb_actions;
 
     learner* l = new learner(c, predict_or_learn<true>, predict_or_learn<false>, all.l, nb_actions);
-    l->set_finish_example(finish_example);
+    l->set_finish_example<csoaa,finish_example>();
     return l;
   }
 
@@ -1005,7 +1005,7 @@ namespace LabelDict {
     LabelDict::free_label_features(*l);
   }
 
-  void finish_example(vw& all, void*, example* ec)
+  void finish_example(vw& all, ldf*, example* ec)
   {
     if (! LabelDict::ec_is_label_definition(ec)) {
       all.sd->weighted_examples += 1;
@@ -1016,9 +1016,8 @@ namespace LabelDict {
     VW::finish_example(all, ec);
   }
 
-  void finish_multiline_example(vw& all, void* data, example* ec)
+  void finish_multiline_example(vw& all, ldf* l, example* ec)
   {
-    ldf* l=(ldf*)data;
     if (l->need_to_clear) {
       if (l->ec_seq.size() > 0)
 	output_example_seq(all, *l);
@@ -1110,9 +1109,9 @@ namespace LabelDict {
     ld->need_to_clear = false;
     learner* l = new learner(ld, predict_or_learn<true>, predict_or_learn<false>, all.l);
     if (ld->is_singleline)
-      l->set_finish_example(finish_example);
+      l->set_finish_example<ldf,finish_example>();
     else
-      l->set_finish_example(finish_multiline_example);
+      l->set_finish_example<ldf,finish_multiline_example>();
     l->set_finish<ldf,finish>();
     l->set_end_examples<ldf,end_examples>(); 
     l->set_end_pass<ldf,end_pass>();

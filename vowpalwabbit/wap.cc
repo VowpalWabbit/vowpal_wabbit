@@ -231,6 +231,12 @@ namespace WAP {
       train(*all, *w, base, ec);
     ec->final_prediction = (float)prediction;
   }
+
+  void finish_example(vw& all, wap*, example* ec)
+  {
+    CSOAA::output_example(all, ec);
+    VW::finish_example(all, ec);
+  }
   
   learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
@@ -256,7 +262,7 @@ namespace WAP {
     all.sd->k = (uint32_t)nb_actions;
 
     learner* l = new learner(w, predict_or_learn<true>, predict_or_learn<false>, all.l, nb_actions);
-    l->set_finish_example(CSOAA::finish_example);
+    l->set_finish_example<wap,finish_example>();
     w->increment = l->increment;
 
     return l;

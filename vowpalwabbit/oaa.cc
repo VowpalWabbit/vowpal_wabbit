@@ -191,7 +191,7 @@ namespace OAA {
     OAA::print_update(all, ec);
   }
 
-  void finish_example(vw& all, void*, example* ec)
+  void finish_example(vw& all, oaa*, example* ec)
   {
     output_example(all, ec);
     VW::finish_example(all, ec);
@@ -274,7 +274,7 @@ namespace OAA {
     *(all.p->lp) = mc_label_parser;
 
     learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l, data->k);
-    l->set_finish_example(finish_example);
+    l->set_finish_example<oaa,finish_example>();
 
     return l;
   }
