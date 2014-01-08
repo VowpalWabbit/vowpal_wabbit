@@ -21,6 +21,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace ECT
 {
@@ -349,9 +350,8 @@ namespace ECT
     ec->final_prediction = new_label;
   }
 
-  void finish(void* d)
+  void finish(ect* e)
   {
-    ect* e = (ect*)d;
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
@@ -428,7 +428,7 @@ namespace ECT
     
     learner* l = new learner(data, learn, predict, all.l, wpp);
     l->set_finish_example(OAA::finish_example);
-    l->set_finish(finish);
+    l->set_finish<ect,finish>();
 
     return l;
   }

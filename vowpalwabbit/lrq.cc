@@ -4,6 +4,8 @@
 #include "rand48.h"
 #include <float.h>
 
+using namespace LEARNER;
+
 namespace LRQ {
 
   struct LRQstate {

@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace NN {
   const float hidden_min_activation = -3;
@@ -301,9 +302,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     all.raw_prediction = save_raw_prediction;
   }
 
-  void finish(void* d)
+  void finish(nn* n)
   {
-    nn* n =(nn*)d;
     delete n->squared_loss;
     free (n->output_layer.indices.begin);
     free (n->output_layer.atomics[nn_output_namespace].begin);
@@ -403,7 +403,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     n->save_xsubi = n->xsubi;
     n->increment = all.l->increment;//Indexing of output layer is odd.
     learner* l = new learner(n, predict_or_learn<true>, predict_or_learn<false>, all.l, n->k+1);
-    l->set_finish(finish);
+    l->set_finish<nn,finish>();
     l->set_finish_example(finish_example);
     l->set_end_pass(end_pass);
 

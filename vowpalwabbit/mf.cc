@@ -28,6 +28,8 @@
 
 using namespace std;
 
+using namespace LEARNER;
+
 namespace MF {
 
 struct mf {
@@ -108,7 +110,7 @@ void predict(void *d, learner& base, example* ec) {
   ec->final_prediction = GD::finalize_prediction(*(data->all), ec->partial_prediction);
 }
 
-void learn(void* d, learner& base, example* ec) {
+  void learn(void* d, learner& base, example* ec) {
   mf* data = (mf*) d;
   vw* all = data->all;
 
@@ -172,8 +174,7 @@ void learn(void* d, learner& base, example* ec) {
   copy_array(ec->indices, data->indices);
 }
 
-void finish(void* data) {
-  mf* o = (mf*) data;
+void finish(mf* o) {
   // restore global pairs
   o->all->pairs = o->pairs;
 
@@ -183,7 +184,7 @@ void finish(void* data) {
 }
 
 
-learner* setup(vw& all, po::variables_map& vm) {
+  learner* setup(vw& all, po::variables_map& vm) {
   mf* data = new mf;
 
   // copy global data locally
@@ -202,7 +203,7 @@ learner* setup(vw& all, po::variables_map& vm) {
 	all.reg.weight_vector[j*all.reg.stride] = (float) (0.1 * frand48());
     }
   learner* l = new learner(data, learn, predict<false>, all.l, 2*data->rank+1);
-  l->set_finish(finish);
+  l->set_finish<mf,finish>();
   return l;
 }
 }

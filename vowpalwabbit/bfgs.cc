@@ -28,6 +28,7 @@ Implementation by Miro Dudik.
 #include "gd.h"
 
 using namespace std;
+using namespace LEARNER;
 
 #define CG_EXTRA 1
 
@@ -847,10 +848,8 @@ void learn(void* d, learner& base, example* ec)
     }
 }
 
-void finish(void* d)
+void finish(bfgs* b)
 {
-  bfgs* b = (bfgs*)d;
-
   b->predictions.delete_v();
   free(b->mem);
   free(b->rho);
@@ -1026,7 +1025,7 @@ learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po
   l->set_save_load(save_load);
   l->set_init_driver(init_driver);
   l->set_end_pass(end_pass);
-  l->set_finish(finish);
+  l->set_finish<bfgs,finish>();
 
   return l;
 }

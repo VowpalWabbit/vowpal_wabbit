@@ -14,6 +14,8 @@ license as described in the file LICENSE.
 #include "parse_primitives.h"
 #include "vw.h"
 
+using namespace LEARNER;
+
 namespace CB
 {
   struct cb {
@@ -648,9 +650,8 @@ namespace CB
     print_update(all, c, CB::is_test_label((CB::label*)ec->ld), ec);
   }
 
-  void finish(void* d)
+  void finish(cb* c)
   {
-    cb* c=(cb*)d;
     c->cb_cs_ld.costs.delete_v();
   }
 
@@ -744,7 +745,7 @@ namespace CB
     learner* l = new learner(c, predict_or_learn<true>, predict_or_learn<false>, all.l, problem_multiplier);
     l->set_finish_example(finish_example); 
     l->set_init_driver(init_driver);
-    l->set_finish(finish);
+    l->set_finish<cb,finish>();
     // preserve the increment of the base learner since we are
     // _adding_ to the number of problems rather than multiplying.
     l->increment = all.l->increment; 

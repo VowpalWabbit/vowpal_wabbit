@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 typedef pair<float, v_array<char> > scored_example;
 

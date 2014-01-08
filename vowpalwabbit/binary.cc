@@ -1,6 +1,8 @@
 #include "oaa.h"
 #include "vw.h"
 
+using namespace LEARNER;
+
 namespace BINARY {
 
   template <bool is_learn>

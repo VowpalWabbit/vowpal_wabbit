@@ -17,6 +17,8 @@ license as described in the file LICENSE.
 
 using namespace std;
 
+using namespace LEARNER;
+
 namespace CSOAA {
   struct csoaa{
     vw* all;
@@ -996,9 +998,8 @@ namespace LabelDict {
     }
   }
 
-  void finish(void* d)
+  void finish(ldf* l)
   {
-    ldf* l=(ldf*)d;
     vw* all = l->all;
     clear_seq(*all, *l);
     l->ec_seq.delete_v();
@@ -1114,7 +1115,7 @@ namespace LabelDict {
       l->set_finish_example(finish_example);
     else
       l->set_finish_example(finish_multiline_example);
-    l->set_finish(finish);
+    l->set_finish<ldf,finish>();
     l->set_end_examples(end_examples); 
     l->set_end_pass(end_pass);
     return l;

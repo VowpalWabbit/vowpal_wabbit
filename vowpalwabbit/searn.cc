@@ -26,6 +26,8 @@ license as described in the file LICENSE.
 // task-specific includes
 #include "searn_sequencetask.h"
 
+using namespace LEARNER;
+
 namespace SearnUtil
 {
   using namespace std;
@@ -1374,9 +1376,8 @@ void print_update(vw& all, searn* srn)
     srn.empty_example->in_use = true;
   }
 
-  void searn_finish(void* d)
+  void searn_finish(searn* srn)
   {
-    searn *srn = (searn*)d;
     vw* all = srn->all;
     //cerr << "searn_finish" << endl;
 
@@ -1722,7 +1723,7 @@ void print_update(vw& all, searn* srn)
     learner* l = new learner(srn, searn_predict_or_learn<true>, searn_predict_or_learn<false>, all.l, srn->total_number_of_policies);
     l->set_finish_example(finish_example);
     l->set_end_examples(end_examples);
-    l->set_finish(searn_finish);
+    l->set_finish<searn,searn_finish>();
     l->set_end_pass(end_pass);
     
     return l;

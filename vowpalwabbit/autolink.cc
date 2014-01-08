@@ -3,6 +3,8 @@
 #include "parser.h"
 #include "vw.h"
 
+using namespace LEARNER;
+
 namespace ALINK {
   const int autoconstant = 524267083;
   

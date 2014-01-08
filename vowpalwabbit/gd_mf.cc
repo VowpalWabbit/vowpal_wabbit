@@ -23,6 +23,8 @@ license as described in the file LICENSE.
 
 using namespace std;
 
+using namespace LEARNER;
+
 namespace GDMF {
   struct gdmf {
     vw* all;

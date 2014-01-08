@@ -24,6 +24,8 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "vw.h"
 
+using namespace LEARNER;
+
 namespace LDA {
 
 class index_feature {

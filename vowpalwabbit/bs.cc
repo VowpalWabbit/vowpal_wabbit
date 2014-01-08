@@ -23,6 +23,7 @@ license as described in the file LICENSE.
 #include "rand48.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace BS {
 
@@ -227,9 +228,8 @@ namespace BS {
     VW::finish_example(all, ec);
   }
 
-  void finish(void* dat)
+  void finish(bs* d)
   {
-    bs* d = (bs*)dat;
     d->pred_vec.~vector();
   }
 
@@ -308,7 +308,7 @@ namespace BS {
 
     learner* l = new learner(data, predict_or_learn<true>, predict_or_learn<false>, all.l, data->B);
     l->set_finish_example(finish_example);
-    l->set_finish(finish);
+    l->set_finish<bs,finish>();
 
     return l;
   }

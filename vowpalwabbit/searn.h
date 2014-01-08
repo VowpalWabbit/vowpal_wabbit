@@ -89,7 +89,7 @@ namespace Searn {
     bool examples_dont_change;  // set to true if you don't do any internal example munging
 
     // data that you should not look at.  ever.
-    uint32_t (*predict_f)(vw&,learner&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*,bool);
+    uint32_t (*predict_f)(vw&, LEARNER::learner&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*,bool);
     void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
     
@@ -152,7 +152,7 @@ namespace Searn {
 
     v_array<example*> ec_seq;
 
-    learner* base_learner;
+    LEARNER::learner* base_learner;
     vw* all;
     void* valid_labels;
     clock_t start_clock_time;
@@ -175,7 +175,7 @@ namespace Searn {
     void (*structured_predict)(searn&, example**,size_t,stringstream*,stringstream*);
   };
 
-  learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  LEARNER::learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);

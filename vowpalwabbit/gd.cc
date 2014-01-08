@@ -31,6 +31,8 @@ license as described in the file LICENSE.
 
 using namespace std;
 
+using namespace LEARNER;
+
 namespace GD
 {
   struct gd{
@@ -45,8 +47,6 @@ namespace GD
 
     vw* all;
   };
-  template<bool normalized_training, bool reg_mode_odd, bool power_t_half>
-  void predict(void* d, learner& base, example* ec);
 
   template<bool adaptive, bool normalized, bool feature_mask_off>
   void local_predict(vw& all, gd& g, example* ex);
@@ -126,9 +126,8 @@ inline void specialized_update(vw& all, train_data* s, float x, uint32_t fi)
   }
 }
 
-  void end_pass(void* d)
+  void end_pass(gd* g)
   {
-    gd* g = (gd*)d;
     vw* all = g->all;
     
     sync_weights(*all);
@@ -157,9 +156,8 @@ inline void specialized_update(vw& all, train_data* s, float x, uint32_t fi)
   }
 
 template<bool normalized_training, bool reg_mode_odd, bool power_t_half>
-void predict(void* d, learner& base, example* ec)
+void predict(gd* g, learner& base, example* ec)
 {
-  gd* g = (gd*)d;
   vw* all = g->all;
   label_data* ld = (label_data*)ec->ld;
 
@@ -194,9 +192,8 @@ void predict(void* d, learner& base, example* ec)
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off>
-void update(void* d, learner& base, example* ec)
+void update(gd* g, learner& base, example* ec)
 {
-  gd* g = (gd*)d;
   vw* all = g->all;
 
   local_predict<adaptive, normalized, feature_mask_off > (*all, *g, ec);
@@ -214,18 +211,17 @@ void update(void* d, learner& base, example* ec)
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off>
-void learn(void* d, learner& base, example* ec)
+void learn(gd* g, learner& base, example* ec)
 {
-  gd* g = (gd*)d;
   vw* all = g->all;
   label_data* ld = (label_data*)ec->ld;
 
   assert(ec->in_use);
 
-  g->predict(d,base,ec);
+  g->predict(g,base,ec);
 
   if ((all->holdout_set_off || !ec->test_only) && ld->weight > 0)
-    update<adaptive, normalized, feature_mask_off>(d,base,ec);
+    update<adaptive, normalized, feature_mask_off>(g,base,ec);
 }
 
 void sync_weights(vw& all) {
@@ -788,9 +784,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load(void* data, io_buf& model_file, bool read, bool text)
+void save_load(gd* g, io_buf& model_file, bool read, bool text)
 {
-  gd* g = (gd*)data;
   vw* all = g->all;
   if(read)
     {
@@ -858,25 +853,25 @@ learner* setup(vw& all, po::variables_map& vm)
   if (all.normalized_updates && all.training)
     if (all.reg_mode % 2)
       if (all.power_t == 0.5)
-	g->predict = predict<true, true, true>;
+	g->predict = tlearn<gd, predict<true, true, true> >;
       else
-	g->predict = predict<true, true, false>;
+	g->predict = tlearn<gd, predict<true, true, false> >;
     else
       if (all.power_t == 0.5)
-	g->predict = predict<true, false, true>;
+	g->predict = tlearn<gd, predict<true, false, true> >;
       else
-	g->predict = predict<true, false, false>;
+	g->predict = tlearn<gd, predict<true, false, false> >;
   else
     if (all.reg_mode % 2)
       if (all.power_t == 0.5)
-	g->predict = predict<false, true, true>;
+	g->predict = tlearn<gd, predict<false, true, true> >;
       else
-	g->predict = predict<false, true, false>;
+	g->predict = tlearn<gd, predict<false, true, false> >;
     else
       if (all.power_t == 0.5)
-	g->predict = predict<false, false, true>;
+	g->predict = tlearn<gd, predict<false, false, true> >;
       else
-	g->predict = predict<false, false, false>;
+	g->predict = tlearn<gd, predict<false, false, false> >;
 
   learner* ret;
 
@@ -885,50 +880,50 @@ learner* setup(vw& all, po::variables_map& vm)
     if (all.normalized_updates)
       if (feature_mask_off)
 	{
-	  ret = new learner(g, learn<true,true,true>, g->predict, save_load, all.reg.stride);
-	  ret->set_update(update<true,true,true>);
+	  ret = new learner(g, tlearn<gd, learn<true,true,true> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret->set_update(tlearn<gd, update<true,true,true> >);
 	}
       else
 	{
-	  ret = new learner(g, learn<true,true,false>, g->predict, save_load, all.reg.stride);
-	  ret->set_update(update<true,true,false>);
+	  ret = new learner(g, tlearn<gd, learn<true,true,false> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret->set_update(tlearn<gd, update<true,true,false> >);
 	}
     else
       if (feature_mask_off)
 	{
-	  ret = new learner(g, learn<true,false,true>, g->predict, save_load, all.reg.stride);
-	  ret->set_update(update<true,false,true>);
+	  ret = new learner(g, tlearn<gd, learn<true,false,true> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret->set_update(tlearn<gd, update<true,false,true> >);
 	}
       else
 	{
-	  ret = new learner(g, learn<true,false,false>, g->predict, save_load, all.reg.stride);
-	  ret->set_update(update<true,false,false>);
+	  ret = new learner(g, tlearn<gd, learn<true,false,false> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret->set_update(tlearn<gd, update<true,false,false> >);
 	}
   else
     if (all.normalized_updates)
       if (feature_mask_off)
 	{
-	  ret = new learner(g, learn<false,true,true>, g->predict, save_load, all.reg.stride);
-	  ret->set_update(update<false,true,true>);
+	  ret = new learner(g, tlearn<gd, learn<false,true,true> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret->set_update(tlearn<gd, update<false,true,true> >);
 	}
       else
 	{
-	  ret = new learner(g, learn<false,true,false>, g->predict, save_load, all.reg.stride);
-	  ret->set_update(update<false,true,false>);
+	  ret = new learner(g, tlearn<gd, learn<false,true,false> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret->set_update(tlearn<gd, update<false,true,false> >);
 	}
     else
       if (feature_mask_off)
 	{
-	  ret = new learner(g, learn<false,false,true>, g->predict, save_load, all.reg.stride);
-	  ret->set_update(update<false, false, true>);
+	  ret = new learner(g, tlearn<gd, learn<false,false,true> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret->set_update(tlearn<gd, update<false, false, true> >);
 	}
       else
 	{
-	  ret = new learner(g, learn<false,false,false>, g->predict, save_load, all.reg.stride);
-	  ret->set_update(update<false, false, false>);
+	  ret = new learner(g, tlearn<gd, learn<false,false,false> >, g->predict, tsl<gd, save_load>, all.reg.stride);
+	  ret->set_update(tlearn<gd, update<false, false, false> >);
 	}
 
-  ret->set_end_pass(end_pass);
+  ret->set_end_pass(tfunc<gd, end_pass>);
   return ret;
 }
 }

@@ -6,52 +6,51 @@ license as described in the file LICENSE.
 #ifndef LEARNER_H
 #define LEARNER_H
 // This is the interface for a learning algorithm
-struct vw;
-
-struct learner;
-
-struct func_data {
-  void* data;
-  learner* base;
-  void (*func)(void* data);
-};
-
-inline func_data tuple_dbf(void* data, learner* base, void (*func)(void* data))
-{
-  func_data foo;
-  foo.data = data;
-  foo.base = base;
-  foo.func = func;
-  return foo;
-}
-
-struct learn_data {
-  void* data;
-  learner* base;
-  void (*learn_f)(void* data, learner& base, example*);
-  void (*predict_f)(void* data, learner& base, example*);
-  void (*update_f)(void* data, learner& base, example*);
-};
-
-struct save_load_data{
-  void* data;
-  learner* base;
-  void (*save_load_f)(void*, io_buf&, bool read, bool text);
-};
-
-struct finish_example_data{
-  void* data;
-  learner* base;
-  void (*finish_example_f)(vw&, void* data, example*);
-};
-
-void return_simple_example(vw& all, void*, example* ec);
-
 #include<iostream>
 using namespace std;
 
+struct vw;
+void return_simple_example(vw& all, void*, example* ec);  
+  
 namespace LEARNER
 {
+  struct learner;
+  
+  struct func_data {
+    void* data;
+    learner* base;
+    void (*func)(void* data);
+  };
+  
+  inline func_data tuple_dbf(void* data, learner* base, void (*func)(void* data))
+  {
+    func_data foo;
+    foo.data = data;
+    foo.base = base;
+    foo.func = func;
+    return foo;
+  }
+  
+  struct learn_data {
+    void* data;
+    learner* base;
+    void (*learn_f)(void* data, learner& base, example*);
+    void (*predict_f)(void* data, learner& base, example*);
+    void (*update_f)(void* data, learner& base, example*);
+  };
+  
+  struct save_load_data{
+    void* data;
+    learner* base;
+    void (*save_load_f)(void*, io_buf&, bool read, bool text);
+  };
+  
+  struct finish_example_data{
+    void* data;
+    learner* base;
+    void (*finish_example_f)(vw&, void* data, example*);
+  };
+  
   void generic_driver(vw* all);
   
   inline void generic_sl(void*, io_buf&, bool, bool) {}
@@ -77,7 +76,6 @@ namespace LEARNER
   template<class R, void (*T)(vw& all, R*, example*)>
     inline void tend_example(vw& all, void* d, example* ec)
   { T(all, (R*)d, ec); }
-}
 
 struct learner {
 private:
@@ -127,7 +125,8 @@ public:
     save_load_fd.base = learn_fd.base;}
 
   //called to clean up state.  Autorecursive.
-  void set_finish(void (*f)(void*)) { finisher_fd = tuple_dbf(learn_fd.data,learn_fd.base,f); }
+  template <class T, void (*f)(T*)>
+  void set_finish() { finisher_fd = tuple_dbf(learn_fd.data,learn_fd.base, tfunc<T, f>); }
   inline void finish() 
   { 
     if (finisher_fd.data) 
@@ -211,5 +210,7 @@ public:
     increment = base->increment * weights;
   }
 };
+
+}
 
 #endif

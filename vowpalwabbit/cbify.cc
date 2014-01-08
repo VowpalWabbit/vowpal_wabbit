@@ -3,6 +3,8 @@
 #include "cb.h"
 #include "rand48.h"
 
+using namespace LEARNER;
+
 namespace CBIFY {
 
   struct cbify {
