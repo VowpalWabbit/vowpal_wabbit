@@ -1027,9 +1027,8 @@ namespace LabelDict {
     }
   }
 
-  void end_examples(void* data)
+  void end_examples(ldf* l)
   {
-    ldf* l=(ldf*)data;
     vw* all = l->all;
     do_actual_learning<true>(*all, *l, *(l->base));
     output_example_seq(*all, *l);
@@ -1115,7 +1114,7 @@ namespace LabelDict {
     else
       l->set_finish_example(finish_multiline_example);
     l->set_finish<ldf,finish>();
-    l->set_end_examples(end_examples); 
+    l->set_end_examples<ldf,end_examples>(); 
     l->set_end_pass<ldf,end_pass>();
     return l;
   }

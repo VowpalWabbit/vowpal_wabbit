@@ -126,7 +126,7 @@ void end_examples(sender* s)
   learner* l = new learner(s, tlearn<sender, learn>, tlearn<sender, predict>, tsl<sender, save_load>, 1);
   l->set_finish<sender, finish>();
   l->set_finish_example(tend_example<sender, finish_example>); 
-  l->set_end_examples(tfunc<sender, end_examples>);
+  l->set_end_examples<sender, end_examples>();
   return l;
 }
 

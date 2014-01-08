@@ -1305,8 +1305,7 @@ void print_update(vw& all, searn* srn)
     }
   }
 
-  void end_examples(void* d) {
-    searn* srn = (searn*)d;
+  void end_examples(searn* srn) {
     vw* all    = srn->all;
 
     do_actual_learning<true>(*all, *srn);
@@ -1721,7 +1720,7 @@ void print_update(vw& all, searn* srn)
 
     learner* l = new learner(srn, searn_predict_or_learn<true>, searn_predict_or_learn<false>, all.l, srn->total_number_of_policies);
     l->set_finish_example(finish_example);
-    l->set_end_examples(end_examples);
+    l->set_end_examples<searn,end_examples>();
     l->set_finish<searn,searn_finish>();
     l->set_end_pass<searn,end_pass>();
     

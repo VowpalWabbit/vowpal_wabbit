@@ -717,10 +717,8 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
       learn_batch(*l);
   }
 
-void end_examples(void* d)
+void end_examples(lda* l)
 {
-  lda* l = (lda*)d;
-
   for (size_t i = 0; i < l->all->length(); i++) {
     weight* weights_for_w = & (l->all->reg.weight_vector[i*l->all->reg.stride]);
     float decay = fmin(1.0, exp(l->decay_levels.last() - l->decay_levels.end[(int)(-1- l->example_t +weights_for_w[l->all->lda])]));
@@ -776,7 +774,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   learner* l = new learner(ld, learn, predict, save_load, all.reg.stride);
   l->set_save_load(save_load);
   l->set_finish_example(finish_example);
-  l->set_end_examples(end_examples);  
+  l->set_end_examples<lda,end_examples>();  
   l->set_end_pass<lda,end_pass>();  
   
   return l;

@@ -146,8 +146,9 @@ public:
   //called after parsing of examples is complete.  Autorecursive.
   void end_examples() 
   { end_examples_fd.func(end_examples_fd.data); 
-    if (end_examples_fd.base) end_examples_fd.base->end_examples(); } 
-  void set_end_examples(void (*ee)(void*)) {end_examples_fd = tuple_dbf(learn_fd.data,learn_fd.base,ee);}
+    if (end_examples_fd.base) end_examples_fd.base->end_examples(); }  
+  template <class T, void (*f)(T*)>
+    void set_end_examples() {end_examples_fd = tuple_dbf(learn_fd.data,learn_fd.base, tfunc<T,f>);}
 
   //Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data);}
