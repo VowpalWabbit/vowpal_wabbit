@@ -38,7 +38,7 @@ namespace LEARNER
     void (*predict_f)(void* data, learner& base, example*);
     void (*update_f)(void* data, learner& base, example*);
   };
-  
+
   struct save_load_data{
     void* data;
     learner* base;
@@ -77,6 +77,17 @@ namespace LEARNER
     inline void tend_example(vw& all, void* d, example* ec)
   { T(all, (R*)d, ec); }
 
+  template <class T, void (*learn)(T* data, learner& base, example*), void (*predict)(T* data, learner& base, example*)>
+    struct learn_helper {
+      void (*learn_f)(void* data, learner& base, example*);
+      void (*predict_f)(void* data, learner& base, example*);
+      
+      learn_helper() 
+      { learn_f = tlearn<T,learn>;
+	predict_f = tlearn<T,predict>;
+      }
+    };
+
 struct learner {
 private:
   func_data init_fd;
@@ -98,12 +109,23 @@ public:
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
     ec->ft_offset -= (uint32_t)(increment*i);
   }
+  template <class T, void (*u)(T* data, learner& base, example*)>
+  inline void set_learn()
+  {
+    learn_fd.learn_f = tlearn<T,u>;
+    learn_fd.update_f = tlearn<T,u>;
+  }
 
   inline void predict(example* ec, size_t i=0) 
   { 
     ec->ft_offset += (uint32_t)(increment*i);
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
     ec->ft_offset -= (uint32_t)(increment*i);
+  }
+  template <class T, void (*u)(T* data, learner& base, example*)>
+  inline void set_predict()
+  {
+    learn_fd.predict_f = tlearn<T,u>;
   }
 
   inline void update(example* ec, size_t i=0) 
@@ -112,10 +134,10 @@ public:
     learn_fd.update_f(learn_fd.data, *learn_fd.base, ec);
     ec->ft_offset -= (uint32_t)(increment*i);
   }
-
-  inline void set_update(void (*u)(void* data, learner& base, example*))
+  template <class T, void (*u)(T* data, learner& base, example*)>
+  inline void set_update()
   {
-    learn_fd.update_f = u;
+    learn_fd.update_f = tlearn<T,u>;
   }
 
   //called anytime saving or loading needs to happen. Autorecursive.
@@ -181,14 +203,11 @@ public:
     save_load_fd = LEARNER::generic_save_load_fd;
   }
 
-  inline learner(void *dat, void (*l)(void*, learner&, example*), void (*p)(void*, learner&, example*), size_t params_per_weight)
+  inline learner(void* dat, size_t params_per_weight)
   { // the constructor for all learning algorithms.
     *this = learner();
 
     learn_fd.data = dat;
-    learn_fd.learn_f = l;
-    learn_fd.predict_f = p;
-    learn_fd.update_f = l;
 
     finisher_fd.data = dat;
     finisher_fd.base = NULL;

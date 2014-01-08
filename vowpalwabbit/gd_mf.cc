@@ -274,16 +274,16 @@ void end_pass(gdmf* d)
    all->current_pass++;
 }
 
-  void predict(void* d, learner& base, example* ec)
+  void predict(gdmf* d, learner& base, example* ec)
   {
-    vw* all = ((gdmf*)d)->all;
+    vw* all = d->all;
  
     mf_predict(*all,ec);
   }
 
-  void learn(void* d, learner& base, example* ec)
+  void learn(gdmf* d, learner& base, example* ec)
   {
-    vw* all = ((gdmf*)d)->all;
+    vw* all = d->all;
  
     predict(d, base, ec);
     if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
@@ -294,7 +294,9 @@ void end_pass(gdmf* d)
   {
     gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
     data->all = &all;
-    learner* l = new learner(data, learn, predict, all.reg.stride);
+    learner* l = new learner(data, all.reg.stride);
+    l->set_learn<gdmf, learn>();
+    l->set_predict<gdmf, predict>();
     l->set_save_load<gdmf,save_load>();
     l->set_end_pass<gdmf,end_pass>();
 

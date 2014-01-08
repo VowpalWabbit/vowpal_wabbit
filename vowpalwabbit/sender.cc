@@ -83,12 +83,6 @@ void receive_result(sender& s)
     s->delay_ring[s->sent_index++ % s->all->p->ring_size] = ec;
   }
 
-  // placeholder
-  void predict(sender* d, learner& base, example* ec)
-  {
-    learn(d, base, ec);
-  }
-
   void finish_example(vw& all, sender*, example*ec)
 {}
 
@@ -121,7 +115,9 @@ void end_examples(sender* s)
   s->all = &all;
   s->delay_ring = (example**) calloc(all.p->ring_size, sizeof(example*));
 
-  learner* l = new learner(s, tlearn<sender, learn>, tlearn<sender, predict>, 1);
+  learner* l = new learner(s, 1);
+  l->set_learn<sender, learn>(); 
+  l->set_predict<sender, learn>(); 
   l->set_finish<sender, finish>();
   l->set_finish_example<sender, finish_example>(); 
   l->set_end_examples<sender, end_examples>();

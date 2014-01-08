@@ -682,10 +682,8 @@ void save_load(lda* l, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(void* d, learner& base, example* ec) 
+  void learn(lda* l, learner& base, example* ec) 
   {
-    lda* l = (lda*)d;
-
     size_t num_ex = l->examples.size();
     l->examples.push_back(ec);
     l->doc_lengths.push_back(0);
@@ -702,11 +700,11 @@ void save_load(lda* l, io_buf& model_file, bool read, bool text)
   }
 
   // placeholder
-  void predict(void* d, learner& base, example* ec)
+  void predict(lda* l, learner& base, example* ec)
   {
     bool test_only = ec->test_only;
     ec->test_only = true;
-    learn(d, base, ec);
+    learn(l, base, ec);
     ec->test_only = test_only;
   }
 
@@ -770,7 +768,9 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
   
-  learner* l = new learner(ld, learn, predict, all.reg.stride);
+  learner* l = new learner(ld, all.reg.stride);
+  l->set_learn<lda,learn>();
+  l->set_predict<lda,predict>();
   l->set_save_load<lda,save_load>();
   l->set_finish_example<lda,finish_example>();
   l->set_end_examples<lda,end_examples>();  
