@@ -274,7 +274,7 @@ namespace Searn {
   const char LEARN      = 2;
 
   const bool PRINT_DEBUG_INFO =0;
-  const bool PRINT_UPDATE_EVERY_EXAMPLE =1;
+  const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
   const bool PRINT_UPDATE_EVERY_PASS =0;
   const bool PRINT_CLOCK_TIME =0;
 
@@ -549,10 +549,10 @@ namespace Searn {
       //clog << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
       //assert((srn->current_policy == 0) || (a == a_opt));
       //if (! ((srn->current_policy == 0) || (a == a_opt))) { cerr << "FAIL!!!"<<endl;}
-      srn->train_action.push_back(a);
+      srn->train_action_ids.push_back(a);
       srn->train_labels.push_back(copy_labels(*srn, srn->valid_labels));
       uint32_t a_name = (! srn->is_ldf) ? a : ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index;
-      srn->train_action_ids.push_back(a_name);
+      srn->train_action.push_back(a_name);
       if (srn->auto_history) srn->rollout_action.push_back(a_name); // TODO: for ldf make this weight_index
       srn->t++;
       return a;
@@ -594,7 +594,7 @@ namespace Searn {
         srn->snapshot_could_match = true;
         srn->t++;
         uint32_t a_name = (! srn->is_ldf) ? srn->learn_a : ((CSOAA::label*)ecs[srn->learn_a].ld)->costs[0].weight_index;
-        if (srn->auto_history) srn->rollout_action.push_back(a_name); // TODO: for ldf make this weight_index
+        if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return srn->learn_a;
       } else { // t > learn_t
         size_t this_a = 0;
@@ -620,7 +620,7 @@ namespace Searn {
           this_a = srn->train_action_ids[srn->t - 1];
         }
         uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
-        if (srn->auto_history) srn->rollout_action.push_back(a_name); // TODO: for ldf make this weight_index
+        if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return (uint32_t)this_a;
       }
       assert(false);
@@ -1088,13 +1088,13 @@ namespace Searn {
             // startup the rollout at the train actions
             clear_rollout_actions(srn);
             //srn.rollout_action.resize(srn.hinfo.length + srn.T);
-            push_many(srn.rollout_action, srn.train_action_ids.begin, t);
+            push_many(srn.rollout_action, srn.train_action.begin, t);
             //memcpy(srn.rollout_action.begin + srn.hinfo.length, srn.train_action.begin, srn.T * sizeof(uint32_t));
           }
           srn.snapshot_last_found_pos = (size_t)-1;
 
           size_t this_index = labelset_weight_index(srn, aset, i);
-          if (this_index == srn.train_action[srn.learn_t]) // TODO??? should this be train_action_ids?
+          if (this_index == srn.train_action_ids[srn.learn_t]) // TODO??? should this be train_action_ids?
             srn.learn_losses.push_back( srn.train_loss );
           else {
             srn.t = 0;
