@@ -104,7 +104,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     srn.task_data            = data;
     srn.auto_history         = true;  // automatically add history features to our examples, please
     srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
-    srn.examples_dont_change = false; // we DO internal example munging
+    srn.examples_dont_change = true;  // we don't do internal example munging -- this is okay because we explicitly copy all examples!
     srn.is_ldf               = true;  // we generate ldf examples
   }
 
