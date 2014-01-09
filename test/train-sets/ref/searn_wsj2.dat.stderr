@@ -1,2 +1,0 @@
-average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
-loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.

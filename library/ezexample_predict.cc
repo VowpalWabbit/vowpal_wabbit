@@ -8,7 +8,6 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
-  //  vw vw = VW::initialize("--hash all -q st --noconstant -i train.w -t --quiet --csoaa_ldf s");
   vw* vw = VW::initialize("-t -i train.w -q st --hash all --noconstant --csoaa_ldf s --quiet");
 
   {

@@ -29,7 +29,7 @@ size_t really_read(int sock, void* in, size_t count)
   int r = 0;
   while (done < count)
     {
-      if ((r = 
+      if ((r =
 #ifdef _WIN32
 		  _read(sock,buf,(unsigned int)(count-done))
 #else
@@ -56,21 +56,19 @@ size_t really_read(int sock, void* in, size_t count)
 void get_prediction(int sock, float& res, float& weight)
 {
   global_prediction p;
-  size_t count = really_read(sock, &p, sizeof(p));
+  really_read(sock, &p, sizeof(p));
   res = p.p;
   weight = p.weight;
-  
-  assert(count == sizeof(p));
 }
 
 void send_prediction(int sock, global_prediction p)
 {
   if (
 #ifdef _WIN32
-	  _write(sock, &p, sizeof(p)) 
+	  _write(sock, &p, sizeof(p))
 #else
-	  write(sock, &p, sizeof(p)) 
-#endif 
+	  write(sock, &p, sizeof(p))
+#endif
 	  < (int)sizeof(p))
     {
       cerr << "argh! bad global write! " << sock << endl;
@@ -93,7 +91,7 @@ int print_tag(std::stringstream& ss, v_array<char> tag)
   if (tag.begin != tag.end){
     ss << ' ';
     ss.write(tag.begin, sizeof(char)*tag.size());
-  } 
+  }
   return tag.begin != tag.end;
 }
 
@@ -132,7 +130,7 @@ void print_raw_text(int f, string s, v_array<char> tag)
   ssize_t len = ss.str().size();
 #ifdef _WIN32
   ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
-#else  
+#else
   ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
 #endif
   if (t != len)
@@ -184,9 +182,9 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
       ssize_t len = ss.str().size();
 #ifdef _WIN32
 	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
-#else	  
+#else
 	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
-#endif 
+#endif
       if (t != len)
 	cerr << "write error" << endl;
     }
@@ -204,7 +202,7 @@ void noop_mm(shared_data* sd, float label)
 
 void vw::learn(example* ec)
 {
-  this->l.learn(ec);
+  this->l->learn(ec);
 }
 
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet)
@@ -234,18 +232,17 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 vw::vw()
 {
   sd = (shared_data *) calloc(1, sizeof(shared_data));
-  sd->dump_interval = (float)exp(1.);
+  sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
   sd->max_label = 1.;
-  
+
   p = new_parser();
+  p->emptylines_separate_examples = false;
   p->lp = (label_parser*)malloc(sizeof(label_parser));
   *(p->lp) = simple_label;
 
   reg_mode = 0;
-
   current_pass = 0;
-  current_command = 0;
 
   bfgs = false;
   hessian_on = false;
@@ -259,12 +256,10 @@ vw::vw()
   lda_D = 10000.;
   minibatch = 1;
   span_server = "";
-  m = 15; 
+  m = 15;
   save_resume = false;
 
   set_minmax = set_mm;
-
-  weights_per_problem = 1;
 
   power_t = 0.5;
   eta = 0.5; //default learning rate for normalized adaptive updates, this is switched to 10 by default for the other updates (see parse_args.cc)
@@ -298,6 +293,7 @@ vw::vw()
 
   eta_decay_rate = 1.0;
   initial_weight = 0.0;
+  initial_constant = 0.0;
 
   unique_id = 0;
   total = 1;
@@ -307,6 +303,8 @@ vw::vw()
     {
       ngram[i] = 0;
       skips[i] = 0;
+      affix_features[i] = 0;
+      spelling_features[i] = 0;
     }
 
   //by default use invariant normalized adaptive updates
@@ -333,6 +331,8 @@ vw::vw()
   do_reset_source = false;
   holdout_set_off = true;
   holdout_period = 10;
+  holdout_after = 0;
+  check_holdout_every_n_passes = 1;
   early_terminate = false;
 
   max_examples = (size_t)-1;
@@ -340,4 +340,8 @@ vw::vw()
   hash_inv = false;
   print_invert = false;
 
+  // Set by the '--progress <arg>' option and affect sd->dump_interval
+  progress_add = false;   // default is multiplicative progress dumps
+  progress_arg = 2.0;     // next update progress dump multiplier
 }
+

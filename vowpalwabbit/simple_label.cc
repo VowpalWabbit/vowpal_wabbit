@@ -6,6 +6,7 @@
 #include "cache.h"
 #include "rand48.h"
 #include "vw.h"
+#include "accumulate.h"
 
 using namespace std;
 
@@ -135,7 +136,7 @@ float query_decision(vw& all, example* ec, float k)
 
 void print_update(vw& all, example *ec)
 {
-  if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
@@ -145,17 +146,24 @@ void print_update(vw& all, example *ec)
 	sprintf(label_buf,"%8.4f",ld->label);
       
       if(!all.holdout_set_off && all.current_pass >= 1){
+        if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
+          fprintf(stderr, " unknown   ");
+        else
+	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples);
 
-        fprintf(stderr, "%-10.6f %-10.6f %10ld %11.1f %s %8.4f %8lu h\n",
-	      all.sd->holdout_sum_loss/all.sd->weighted_holdout_examples,
-	      all.sd->holdout_sum_loss_since_last_dump / all.sd->weighted_holdout_examples_since_last_dump,
+        if(all.sd->holdout_sum_loss_since_last_dump == 0. && all.sd->weighted_holdout_examples_since_last_dump == 0.)
+          fprintf(stderr, " unknown   ");
+        else
+	  fprintf(stderr, "%-10.6f " , all.sd->holdout_sum_loss_since_last_dump/all.sd->weighted_holdout_examples_since_last_dump);
+        
+        fprintf(stderr, "%10ld %11.1f %s %8.4f %8lu h\n",
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
 	      ec->final_prediction,
 	      (long unsigned int)ec->num_features);
 
-        all.sd->weighted_holdout_examples_since_last_dump = 0;
+        all.sd->weighted_holdout_examples_since_last_dump = 0.;
         all.sd->holdout_sum_loss_since_last_dump = 0.0;
       }
       else
@@ -170,7 +178,7 @@ void print_update(vw& all, example *ec)
      
       all.sd->sum_loss_since_last_dump = 0.0;
       all.sd->old_weighted_examples = all.sd->weighted_examples;
-      all.sd->dump_interval *= 2;
+      VW::update_dump_interval(all);
     }
 }
 
@@ -186,15 +194,15 @@ void output_and_account_example(vw& all, example* ec)
     all.sd->holdout_sum_loss += ec->loss;
     all.sd->holdout_sum_loss_since_last_dump += ec->loss;
     all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
-
   }
   else
   {
+    if (ld->label != FLT_MAX)
+      all.sd->weighted_labels += ld->label * ld->weight;
     all.sd->weighted_examples += ld->weight;
-    all.sd->weighted_labels += ld->label == FLT_MAX ? 0 : ld->label * ld->weight;
-    all.sd->total_features += ec->num_features;
     all.sd->sum_loss += ec->loss;
     all.sd->sum_loss_since_last_dump += ec->loss;
+    all.sd->total_features += ec->num_features;
     all.sd->example_number++;
   }
   all.print(all.raw_prediction, ec->partial_prediction, -1, ec->tag);
@@ -215,21 +223,21 @@ void output_and_account_example(vw& all, example* ec)
 	all.print(f, ec->final_prediction, 0, ec->tag);
     }
 
-  
-
   print_update(all, ec);
 }
 
-void return_simple_example(vw& all, example* ec)
+void return_simple_example(vw& all, void*, example* ec)
 {
-  if (!command_example(&all, ec))
-    output_and_account_example(all, ec);
+  output_and_account_example(all, ec);
   VW::finish_example(all,ec);
 }
 
 bool summarize_holdout_set(vw& all, size_t& no_win_counter)
 {
-  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX;
+  float thisLoss = (all.sd->weighted_holdout_examples_since_last_pass > 0) ? (float)(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass) : FLT_MAX;
+
+  if (all.span_server != "")
+    thisLoss = accumulate_scalar(all, all.span_server, thisLoss);
 
   all.sd->weighted_holdout_examples_since_last_pass = 0;
   all.sd->holdout_sum_loss_since_last_pass = 0;

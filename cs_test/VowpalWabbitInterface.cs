@@ -37,8 +37,7 @@ namespace Microsoft.Research.MachineLearning
             public IntPtr ld;
             public float final_prediction;  
 
-            //byte[] tag;//An identifier for the example.
-            public int tag_len;
+            public UInt64 tag_len;
             public IntPtr tag;//An identifier for the example. 
 
             public UInt64 example_counter;
@@ -47,8 +46,7 @@ namespace Microsoft.Research.MachineLearning
 
             public UInt64 num_features;//precomputed, cause it's fast&easy.  
 
-            //FEATURE[] feature_map; //map to store sparse feature vectors  
-            public int feature_map_len;
+            public UInt64 feature_map_len;
             public IntPtr feature_map; //map to store sparse feature vectors  
         }
 
@@ -115,7 +113,10 @@ namespace Microsoft.Research.MachineLearning
         public static extern void AddLabel(IntPtr example, float label=float.MaxValue, float weight=1, float initial=0);
 
         [DllImport("libvw.dll", EntryPoint = "VW_Get_Weight", CallingConvention = CallingConvention.StdCall)]
-        public static extern void Get_Weight(IntPtr vw, UInt32 index);
+        public static extern float Get_Weight(IntPtr vw, UInt32 index, UInt32 offset);
+
+        [DllImport("libvw.dll", EntryPoint = "VW_Set_Weight", CallingConvention = CallingConvention.StdCall)]
+        public static extern void Set_Weight(IntPtr vw, UInt32 index, UInt32 offset, float value);
 
         [DllImport("libvw.dll", EntryPoint = "VW_Num_Weights", CallingConvention = CallingConvention.StdCall)]
         public static extern UInt32 Num_Weights(IntPtr vw);

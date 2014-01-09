@@ -127,27 +127,27 @@ struct vw {
 
   node_socks socks;
 
-  learner l;//the top level leaner
-  learner scorer;//a scoring function
+  LEARNER::learner* l;//the top level learner
+  LEARNER::learner* scorer;//a scoring function
 
   void learn(example*);
 
   void (*set_minmax)(shared_data* sd, float label);
 
   size_t current_pass;
-  size_t current_command;
 
   uint32_t num_bits; // log_2 of the number of features.
   bool default_bits;
 
   string data_filename; // was vm["data"]
 
-  bool daemon; 
+  bool daemon;
   size_t num_children;
 
   bool save_per_pass;
   float active_c0;
   float initial_weight;
+  float initial_constant;
 
   bool bfgs;
   bool hessian_on;
@@ -160,16 +160,16 @@ struct vw {
   int options_from_file_argc;
 
   bool searn;
-  void* /*ImperativeSearn::searn_struct*/ searnstr;
+  void* /*Searn::searn*/ searnstr;
 
-  uint32_t weights_per_problem; //this stores the current number of "weight vector" required by the based learner, which is used to compute offsets when composing reductions
+  uint32_t wpp;
 
   int stdout_fileno;
 
   std::string per_feature_regularizer_input;
   std::string per_feature_regularizer_output;
   std::string per_feature_regularizer_text;
-  
+
   float l1_lambda; //the level of l_1 regularization to impose.
   float l2_lambda; //the level of l_2 regularization to impose.
   float power_t;//the power on learning rate decay.
@@ -192,9 +192,11 @@ struct vw {
   std::vector<std::string> skip_strings; // triples of features to cross.
   uint32_t ngram[256];//ngrams to generate.
   uint32_t skips[256];//skips in ngrams.
+  uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
+  bool     spelling_features[256]; // generate spelling features for which namespace
   bool audit;//should I print lots of debugging information?
-  bool quiet;//Should I suppress updates?
-  bool training;//Should I train if label data is available?
+  bool quiet;//Should I suppress progress-printing of updates?
+  bool training;//Should I train if lable data is available?
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
@@ -207,6 +209,8 @@ struct vw {
   bool holdout_set_off;
   bool early_terminate;
   uint32_t holdout_period;
+  uint32_t holdout_after;
+  size_t check_holdout_every_n_passes;  // default: 1, but searn might want to set it higher if you spend multiple passes learning a single policy
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
@@ -219,7 +223,7 @@ struct vw {
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
-  
+
   std::string span_server;
 
   size_t length () { return ((size_t)1) << num_bits; };
@@ -232,7 +236,6 @@ struct vw {
   size_t unique_id; //unique id for each node in the network, id == 0 means extra io.
   size_t total; //total number of nodes
   size_t node; //node id number
-  bool is_noop; // are we a noop learner?
 
   void (*print)(int,float,float,v_array<char>);
   void (*print_text)(int, string, v_array<char>);
@@ -242,7 +245,7 @@ struct vw {
 
   bool stdin_off;
 
-  //runtime accounting variables. 
+  //runtime accounting variables.
   float initial_t;
   float eta;//learning rate control.
   float eta_decay_rate;
@@ -254,6 +257,11 @@ struct vw {
 
   bool hash_inv;
   bool print_invert;
+
+  // Set by --progress <arg>
+  bool  progress_add;   // additive (rather than multiplicative) progress dumps
+  float progress_arg;   // next update progress dump multiplier
+
   std::map< std::string, size_t> name_index_map;
 
   vw();
@@ -266,6 +274,7 @@ void noop_mm(shared_data*, float label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
+int print_tag(std::stringstream& ss, v_array<char> tag);
 
 #endif
- 
+

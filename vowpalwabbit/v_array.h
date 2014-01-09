@@ -91,10 +91,10 @@ template<class T> void copy_array(v_array<T>& dst, v_array<T> src)
   push_many(dst, src.begin, src.size());
 }
 
-template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)(T))
+template<class T> void copy_array(v_array<T>& dst, v_array<T> src, T(*copy_item)(T&))
 {
   dst.erase();
-  for (T*item = src.begin; item != src.end; item++)
+  for (T*item = src.begin; item != src.end; ++item)
     dst.push_back(copy_item(*item));
 }
 
@@ -120,6 +120,6 @@ template<class T> v_array<T> pop(v_array<v_array<T> > &stack)
     return *(--stack.end);
   else
     return v_array<T>();
-}
+}  
 
 #endif  // VARRAY_H__

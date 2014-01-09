@@ -142,6 +142,7 @@ sub get_args {
                             |--initial_regressor
                             |-f
                             |--final_regressor
+                            |--feature_mask
                             |-r
                             |--raw_predictions
                             |--cache_file

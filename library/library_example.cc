@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     {
       cout << "namespace = " << pfs[i].name;
       for (size_t j = 0; j < pfs[i].len; j++)
-	cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index);
+	cout << " " << pfs[i].fs[j].weight_index << ":" << pfs[i].fs[j].x << ":" << VW::get_weight(*model2, pfs[i].fs[j].weight_index, 0);
       cout << endl;
     }   
 

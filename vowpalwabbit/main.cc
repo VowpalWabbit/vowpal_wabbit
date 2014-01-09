@@ -44,10 +44,10 @@ int main(int argc, char *argv[])
 
   VW::start_parser(*all);
 
-  all->l.drive(all);
+  all->l->driver(all);
 
   VW::end_parser(*all);
-  
+
   ftime(&t_end);
   double net_time = (int) (1000.0 * (t_end.time - t_start.time) + (t_end.millitm - t_start.millitm)); 
   if(!all->quiet && all->span_server != "")
@@ -77,10 +77,22 @@ int main(int argc, char *argv[])
     {
       cerr.precision(6);
       cerr << endl << "finished run";
-      cerr << endl << "number of examples = " << all->sd->example_number;
+      if(all->current_pass == 0)
+        cerr << endl << "number of examples = " << all->sd->example_number;
+      else{
+        cerr << endl << "number of examples per pass = " << all->sd->example_number / all->current_pass;
+        cerr << endl << "passes used = " << all->current_pass;
+      }
       cerr << endl << "weighted example sum = " << all->sd->weighted_examples;
       cerr << endl << "weighted label sum = " << all->sd->weighted_labels;
-      cerr << endl << "average loss = " << all->sd->sum_loss / all->sd->weighted_examples;
+      if(all->holdout_set_off)
+      {
+        cerr << endl << "average loss = " << all->sd->sum_loss / all->sd->weighted_examples;
+      }  
+      else
+      {
+        cerr << endl << "average loss = " << all->sd->holdout_best_loss << " h";
+      }
       cerr << endl << "best constant = " << best_constant;
       if (all->sd->min_label == 0. && all->sd->max_label == 1. && best_constant < 1. && best_constant > 0.)
 	cerr << endl << "best constant's loss = " << constant_loss;

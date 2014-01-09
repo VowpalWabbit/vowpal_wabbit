@@ -139,10 +139,13 @@ void handle_sigterm (int)
   got_sigterm = true;
 }
 
-bool is_test_only(uint32_t counter, uint32_t period, bool holdout_off)
+bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdout_off)
 {
   if(holdout_off) return false;
-  return (counter % period == 0);
+  if (after == 0) // hold out by period
+    return (counter % period == 0);
+  else // hold out by position
+    return (counter+1 >= after);
 }
 
 parser* new_parser()
@@ -719,7 +722,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
   if (all.p->write_cache) 
     {
       all.p->lp->cache_label(ae->ld,*(all.p->output));
-      cache_features(*(all.p->output), ae, all.parse_mask);
+      cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
     }
 
   return true;
@@ -737,11 +740,13 @@ void setup_example(vw& all, example* ae)
   ae->partial_prediction = 0.;
   ae->num_features = 0;
   ae->total_sum_feat_sq = 0;
-  ae->done = false;
+  ae->loss = 0.;
   
   ae->example_counter = (size_t)(all.p->parsed_examples + 1);
-  all.p->in_pass_counter++;
-  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_set_off);
+  if ((!all.p->emptylines_separate_examples) || example_is_newline(ae))
+    all.p->in_pass_counter++;
+
+  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off);
   ae->global_weight = all.p->lp->get_weight(ae->ld);
   all.sd->t += ae->global_weight;
   ae->example_t = (float)all.sd->t;
@@ -769,12 +774,12 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) (constant)};
+    feature temp = {1,(uint32_t) (constant * all.wpp)};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
   
-  if(all.reg.stride != 1 || all.weights_per_problem != 1) //make room for per-feature information.
+  if(all.reg.stride != 1) //make room for per-feature information.
     {
       uint32_t stride = all.reg.stride;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
@@ -1007,13 +1012,18 @@ void *main_parse_loop(void *in)
 {
 	vw* all = (vw*) in;
 	size_t example_number = 0;  // for variable-size batch learning algorithms
+
+
 	while(!all->p->done)
 	  {
-	    example* ae = get_unused_example(*all);
-	   if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
-		   && parse_atomic_example(*all, ae) )  
-	     setup_example(*all, ae);
-	   else
+            example* ae = get_unused_example(*all);
+	    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
+		   && parse_atomic_example(*all, ae) )
+	     {
+	       setup_example(*all, ae);
+	       example_number++;
+	     }
+	    else
 	     {
 	       reset_source(*all, all->num_bits);
 	       all->do_reset_source = false;
@@ -1032,11 +1042,11 @@ void *main_parse_loop(void *in)
 			 }
 	       example_number = 0;
 	     }
-	   example_number++;
 	   mutex_lock(&all->p->examples_lock);
 	   all->p->parsed_examples++;
 	   condition_variable_signal_all(&all->p->example_available);
 	   mutex_unlock(&all->p->examples_lock);
+
 	  }  
 	return NULL;
 }

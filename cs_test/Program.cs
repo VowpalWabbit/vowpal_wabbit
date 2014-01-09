@@ -184,8 +184,8 @@ namespace cs_test
 
         private static void RunFlatExampleTestEx()
         {
-            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d rcv1.train.raw.txt -f out");
-            //IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
+            //IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d rcv1.train.raw.txt -f out");
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
 
             VowpalWabbitInterface.StartParser(vw, false);
 
@@ -221,15 +221,15 @@ namespace cs_test
                 if (flat.tag_len > 0)
                 {
                     flatEx.tag = new byte[flat.tag_len];
-                    Marshal.Copy(flat.tag, flatEx.tag, 0, flat.tag_len);
+                    Marshal.Copy(flat.tag, flatEx.tag, 0, (int)flat.tag_len);
                 }
 
                 IList<int> indices = new List<int>();
-                if (flat.num_features > 0)
+                if (flat.feature_map_len > 0)
                 {
-                    flatEx.feature_map = new VowpalWabbitInterface.FEATURE[flat.num_features];
+                    flatEx.feature_map = new VowpalWabbitInterface.FEATURE[flat.feature_map_len];
                     int feature_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE));
-                    for (int i = 0; i < (int)flat.num_features; i++)
+                    for (int i = 0; i < (int)flat.feature_map_len; i++)
                     {
                         IntPtr curfeaturePos = new IntPtr(flat.feature_map.ToInt32() + i * feature_size);
                         flatEx.feature_map[i] = (VowpalWabbitInterface.FEATURE)Marshal.PtrToStructure(curfeaturePos, typeof(VowpalWabbitInterface.FEATURE));
@@ -282,13 +282,12 @@ namespace cs_test
                 VowpalWabbitInterface.ReleaseFeatureSpace(featureSpacePtr, featureSpaceLen);
             }
         }
-        private static void RunVWParce_and_VWLearn()
+        private static void RunVWParse_and_VWLearn()
         {
             // parse and cache
             IntPtr vw0 = VowpalWabbitInterface.Initialize(@"-d rcv1.train.raw.txt -c");
             VowpalWabbitInterface.StartParser(vw0, false);
 
-            long errCount = 0;
             long instanceCount = 0;
             VWInstanceEx[] vwInstanceExs = new VWInstanceEx[781266];
             Stopwatch s = Stopwatch.StartNew();

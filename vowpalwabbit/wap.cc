@@ -16,11 +16,11 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace WAP {
   struct wap{
-    uint32_t increment;
-    learner base;
+    size_t increment; //wap does funky things with the increment, so we keep explicit access
     vw* all;
   };
   
@@ -29,7 +29,6 @@ namespace WAP {
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
       {
         size_t original_length = ec->atomics[*i].size();
-        //cerr << "original_length = " << original_length << endl;
         for (uint32_t j = 0; j < original_length; j++)
           {
             feature* f = &ec->atomics[*i][j];
@@ -38,9 +37,8 @@ namespace WAP {
             ec->atomics[*i].push_back(temp);
           }
         ec->sum_feat_sq[*i] *= 2;
-        //cerr << "final_length = " << ec->atomics[*i].size() << endl;
       }
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       {
         for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -62,12 +60,10 @@ namespace WAP {
                   f->weight_index += offset1;
                   ec->audit_features[*i].push_back(temp);
                 }
-              //cerr << "final_length = " << ec->audit_features[*i].size() << endl;
             }
       }
     ec->num_features *= 2;
     ec->total_sum_feat_sq *= 2;
-    //cerr << "total_sum_feat_sq = " << ec->total_sum_feat_sq << endl;
   }
 
   void unmirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
@@ -80,7 +76,7 @@ namespace WAP {
           f->weight_index -= offset1;
         ec->sum_feat_sq[*i] /= 2;
       }
-    if (all.audit)
+    if (all.audit || all.hash_inv)
       {
         for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
           if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
@@ -130,7 +126,7 @@ namespace WAP {
   }
   v_array<float_wclass> vs;
 
-  void train(vw& all, wap& w, example* ec)
+  void train(vw& all, wap& w, learner& base, example* ec)
   {
     CSOAA::label* ld = (CSOAA::label*)ec->ld;
 
@@ -184,10 +180,10 @@ namespace WAP {
               uint32_t myi = (uint32_t)vs[i].ci.weight_index;
               uint32_t myj = (uint32_t)vs[j].ci.weight_index;
 
-              mirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
+              mirror_features(all, ec, (uint32_t)((myi-1)*w.increment), (uint32_t)((myj-1)*w.increment));
 
-              w.base.learn(ec);
-              unmirror_features(all, ec,(myi-1)*w.increment, (myj-1)*w.increment);
+              base.learn(ec);
+              unmirror_features(all, ec, (uint32_t)((myi-1)*w.increment), (uint32_t)((myj-1)*w.increment));
             }
         }
 
@@ -195,7 +191,7 @@ namespace WAP {
     ec->ld = ld;
   }
 
-  size_t test(vw& all, wap& w, example* ec)
+  size_t test(vw& all, wap& w, learner& base, example* ec)
   {
     size_t prediction = 1;
     float score = -FLT_MAX;
@@ -209,13 +205,8 @@ namespace WAP {
         simple_temp.weight = 0.;
         simple_temp.label = FLT_MAX;
         uint32_t myi = (uint32_t)cost_label->costs[i].weight_index;
-        if (myi!= 1)
-          update_example_indicies(all.audit, ec, w.increment*(myi-1));
-        ec->partial_prediction = 0.;
         ec->ld = &simple_temp;
-        w.base.learn(ec);
-        if (myi != 1)
-          update_example_indicies(all.audit, ec, -w.increment*(myi-1));
+        base.predict(ec, myi-1);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -226,61 +217,27 @@ namespace WAP {
     return prediction;
   }
 
-  void learn(void* d, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(wap* w, learner& base, example* ec)
   {
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
-    wap* w = (wap*)d;
     vw* all = w->all;
     
-    if (command_example(all, ec))
-      {
-	w->base.learn(ec);
-	return;
-      }
-
-    size_t prediction = test(*all, *w, ec);
+    size_t prediction = test(*all, *w, base, ec);
     ec->ld = cost_label;
     
-    if (cost_label->costs.size() > 0)
-      train(*all, *w, ec);
+    if (is_learn && cost_label->costs.size() > 0)
+      train(*all, *w, base, ec);
     ec->final_prediction = (float)prediction;
   }
-  
-  void finish(void* d)
+
+  void finish_example(vw& all, wap*, example* ec)
   {
-    wap* w=(wap*)d;
-    w->base.finish();
-    free(w);
+    CSOAA::output_example(all, ec);
+    VW::finish_example(all, ec);
   }
   
-  void drive(vw* all, void* d)
-  {
-    example* ec = NULL;
-    while ( true )
-      {
-        if(all-> early_terminate)
-          {
-            all->p->done = true;
-            all->final_regressor_name = "";//skip finalize_regressor
-            all->text_regressor_name = "";
-            all->inv_hash_regressor_name = "";
-            return;
-          } 
-        if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
-          {
-	    learn(d, ec);
-            if (!command_example(all, ec))
-              CSOAA::output_example(*all, ec);
-	    VW::finish_example(*all, ec);
-          }
-        else if (parser_done(all->p))
-	  return;
-        else 
-          ;
-      }
-  }
-  
-  learner setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
     wap* w=(wap*)calloc(1,sizeof(wap));
     w->all = &all;
@@ -302,11 +259,13 @@ namespace WAP {
     *(all.p->lp) = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
-    all.weights_per_problem *= nb_actions;
-    w->increment = (uint32_t)((all.length()/ all.weights_per_problem) * all.reg.stride);
 
-    learner l(w, drive, learn, finish, all.l.sl);
-    w->base = all.l;
+    learner* l = new learner(w, all.l, nb_actions);
+    l->set_learn<wap, predict_or_learn<true> >();
+    l->set_predict<wap, predict_or_learn<false> >();
+    l->set_finish_example<wap,finish_example>();
+    w->increment = l->increment;
+
     return l;
   }
 }
