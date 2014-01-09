@@ -13,6 +13,6 @@ license as described in the file LICENSE.
 #include "gd.h"
 
 namespace MF{
-  learner* setup(vw& all, po::variables_map& vm);
+  LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }
 #endif

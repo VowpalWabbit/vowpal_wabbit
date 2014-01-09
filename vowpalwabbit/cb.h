@@ -33,7 +33,7 @@ namespace CB {
     v_array<cb_class> costs;
   };
 
-  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  LEARNER::learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);

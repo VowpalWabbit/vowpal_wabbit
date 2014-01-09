@@ -11,7 +11,7 @@ license as described in the file LICENSE.
 
 namespace ECT
 {
-  learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map& vm_file);
+  LEARNER::learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map& vm_file);
 }
 
 #endif

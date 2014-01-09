@@ -56,11 +56,9 @@ size_t really_read(int sock, void* in, size_t count)
 void get_prediction(int sock, float& res, float& weight)
 {
   global_prediction p;
-  size_t count = really_read(sock, &p, sizeof(p));
+  really_read(sock, &p, sizeof(p));
   res = p.p;
   weight = p.weight;
-
-  assert(count == sizeof(p));
 }
 
 void send_prediction(int sock, global_prediction p)
@@ -234,7 +232,7 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 vw::vw()
 {
   sd = (shared_data *) calloc(1, sizeof(shared_data));
-  sd->dump_interval = (float)exp(1.);
+  sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
   sd->max_label = 1.;
 
@@ -342,4 +340,8 @@ vw::vw()
   hash_inv = false;
   print_invert = false;
 
+  // Set by the '--progress <arg>' option and affect sd->dump_interval
+  progress_add = false;   // default is multiplicative progress dumps
+  progress_arg = 2.0;     // next update progress dump multiplier
 }
+

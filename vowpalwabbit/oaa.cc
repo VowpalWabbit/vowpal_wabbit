@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace OAA {
 
@@ -111,7 +112,7 @@ namespace OAA {
 
   void print_update(vw& all, example *ec)
   {
-    if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
+    if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
         mc_label* ld = (mc_label*) ec->ld;
         char label_buf[32];
@@ -154,7 +155,7 @@ namespace OAA {
      
         all.sd->sum_loss_since_last_dump = 0.0;
         all.sd->old_weighted_examples = all.sd->weighted_examples;
-        all.sd->dump_interval *= 2;
+        VW::update_dump_interval(all);
       }
   }
 
@@ -190,16 +191,14 @@ namespace OAA {
     OAA::print_update(all, ec);
   }
 
-  void finish_example(vw& all, void*, example* ec)
+  void finish_example(vw& all, oaa*, example* ec)
   {
     output_example(all, ec);
     VW::finish_example(all, ec);
   }
 
-  void learn(void* d, learner& base, example* ec)
-  {
-    oaa* o=(oaa*)d;
-
+  template <bool is_learn>
+  void predict_or_learn(oaa* o, learner& base, example* ec) {
     vw* all = o->all;
 
     bool shouldOutput = all->raw_prediction > 0;
@@ -221,11 +220,18 @@ namespace OAA {
 
     for (size_t i = 1; i <= o->k; i++)
       {
-        if (mc_label_data->label == i)
-          simple_temp.label = 1;
-        else
-          simple_temp.label = -1;
-        base.learn(ec, i-1);
+	if (is_learn)
+	  {
+	    if (mc_label_data->label == i)
+	      simple_temp.label = 1;
+	    else
+	      simple_temp.label = -1;
+
+	    base.learn(ec, i-1);
+	  }
+	else
+	  base.predict(ec, i-1);
+
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -265,8 +271,10 @@ namespace OAA {
     data->all = &all;
     *(all.p->lp) = mc_label_parser;
 
-    learner* l = new learner(data, learn, all.l, data->k);
-    l->set_finish_example(finish_example);
+    learner* l = new learner(data, all.l, data->k);
+    l->set_learn<oaa, predict_or_learn<true> >();
+    l->set_predict<oaa, predict_or_learn<false> >();
+    l->set_finish_example<oaa, finish_example>();
 
     return l;
   }

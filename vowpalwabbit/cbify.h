@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #define CBIFY_H
 
 namespace CBIFY {
-  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  LEARNER::learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 }
 
 #endif

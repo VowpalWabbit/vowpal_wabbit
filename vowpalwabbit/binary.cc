@@ -1,12 +1,18 @@
 #include "oaa.h"
 #include "vw.h"
 
+using namespace LEARNER;
+
 namespace BINARY {
-  void learn(void* d, learner& base, example* ec)
-  {
-    base.learn(ec);//Recursive Call
-    
-    if ( ec->final_prediction > 0)//Thresholding
+
+  template <bool is_learn>
+  void predict_or_learn(void* d, learner& base, example* ec) {
+    if (is_learn)
+      base.learn(ec);
+    else
+      base.predict(ec);
+
+    if ( ec->final_prediction > 0)
       ec->final_prediction = 1;
     else
       ec->final_prediction = -1;
@@ -29,6 +35,9 @@ namespace BINARY {
 
     all.sd->binary_label = true;
     //Create new learner
-    return new learner(NULL, learn, all.l);
+    learner* ret = new learner(NULL, all.l);
+    ret->set_learn<void, predict_or_learn<true> >();
+    ret->set_predict<void, predict_or_learn<false> >();
+    return ret;
   }
 }

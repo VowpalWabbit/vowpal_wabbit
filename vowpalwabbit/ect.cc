@@ -21,6 +21,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace ECT
 {
@@ -323,27 +324,32 @@ namespace ECT
       }
   }
 
-  void learn(void* d, learner& base, example* ec)
-  {
-    ect* e=(ect*)d;
+  void predict(ect* e, learner& base, example* ec) {
     vw* all = e->all;
-    
+
     OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
     if (mc->label == 0 || (mc->label > e->k && mc->label != (uint32_t)-1))
       cout << "label " << mc->label << " is not in {1,"<< e->k << "} This won't work right." << endl;
-    float new_label = ect_predict(*all, *e, base, ec);
+    ec->final_prediction = ect_predict(*all, *e, base, ec);
     ec->ld = mc;
-    
+  }
+
+  void learn(ect* e, learner& base, example* ec)
+  {
+    vw* all = e->all;
+
+    OAA::mc_label* mc = (OAA::mc_label*)ec->ld;
+    predict(e, base, ec);
+
+    float new_label = ec->final_prediction;
     if (mc->label != (uint32_t)-1 && all->training)
       ect_train(*all, *e, base, ec);
     ec->ld = mc;
-    
     ec->final_prediction = new_label;
   }
 
-  void finish(void* d)
+  void finish(ect* e)
   {
-    ect* e = (ect*)d;
     for (size_t l = 0; l < e->all_levels.size(); l++)
       {
 	for (size_t t = 0; t < e->all_levels[l].size(); t++)
@@ -359,6 +365,12 @@ namespace ECT
     e->down_directions.delete_v();
 
     e->tournaments_won.delete_v();
+  }
+
+  void finish_example(vw& all, ect*, example* ec)
+  {
+    OAA::output_example(all, ec);
+    VW::finish_example(all, ec);
   }
   
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -418,9 +430,11 @@ namespace ECT
     size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     
-    learner* l = new learner(data, learn, all.l, wpp);
-    l->set_finish_example(OAA::finish_example);
-    l->set_finish(finish);
+    learner* l = new learner(data, all.l, wpp);
+    l->set_learn<ect, learn>();
+    l->set_predict<ect, predict>();
+    l->set_finish_example<ect,finish_example>();
+    l->set_finish<ect,finish>();
 
     return l;
   }

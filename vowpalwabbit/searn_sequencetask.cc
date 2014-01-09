@@ -25,6 +25,7 @@ namespace SequenceTask {
 
       OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
       size_t prediction = srn.predict(ec[i], NULL, label->label);
+      cerr << "pred=" << prediction << endl;
 
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';

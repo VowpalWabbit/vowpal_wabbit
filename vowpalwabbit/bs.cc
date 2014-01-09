@@ -10,6 +10,12 @@ license as described in the file LICENSE.
 #include <numeric>
 #include <vector>
 
+#include "io_buf.h"
+#include "parse_primitives.h"
+#include "example.h"
+#include "parse_args.h"
+#include "v_hashmap.h"
+#include "simple_label.h"
 #include "bs.h"
 #include "cache.h"
 #include "v_hashmap.h"
@@ -17,6 +23,7 @@ license as described in the file LICENSE.
 #include "rand48.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace BS {
 
@@ -165,9 +172,9 @@ namespace BS {
     print_update(all, ec);
   }
 
-  void learn(void* data, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(bs* d, learner& base, example* ec)
   {
-    bs* d = (bs*)data;
     vw* all = d->all;
     bool shouldOutput = all->raw_prediction > 0;
 
@@ -181,7 +188,10 @@ namespace BS {
       {
         ((label_data*)ec->ld)->weight = weight_temp * weight_gen();
 
-        base.learn(ec, i-1);
+	if (is_learn)
+	  base.learn(ec, i-1);
+	else
+	  base.predict(ec, i-1);
 
         d->pred_vec.push_back(ec->final_prediction);
 
@@ -211,15 +221,14 @@ namespace BS {
 
   }
 
-  void finish_example(vw& all, void* d, example* ec)
+  void finish_example(vw& all, bs* d, example* ec)
   {
-    BS::output_example(all, (bs*)d, ec);
+    BS::output_example(all, d, ec);
     VW::finish_example(all, ec);
   }
 
-  void finish(void* dat)
+  void finish(bs* d)
   {
-    bs* d = (bs*)dat;
     d->pred_vec.~vector();
   }
 
@@ -296,9 +305,11 @@ namespace BS {
     data->pred_vec.reserve(data->B);
     data->all = &all;
 
-    learner* l = new learner(data, learn, all.l, data->B);
-    l->set_finish_example(finish_example);
-    l->set_finish(finish);
+    learner* l = new learner(data, all.l, data->B);
+    l->set_learn<bs, predict_or_learn<true> >();
+    l->set_predict<bs, predict_or_learn<false> >();
+    l->set_finish_example<bs,finish_example>();
+    l->set_finish<bs,finish>();
 
     return l;
   }

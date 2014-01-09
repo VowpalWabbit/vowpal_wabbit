@@ -136,7 +136,7 @@ float query_decision(vw& all, example* ec, float k)
 
 void print_update(vw& all, example *ec)
 {
-  if (all.sd->weighted_examples > all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
     {
       label_data* ld = (label_data*) ec->ld;
       char label_buf[32];
@@ -178,7 +178,7 @@ void print_update(vw& all, example *ec)
      
       all.sd->sum_loss_since_last_dump = 0.0;
       all.sd->old_weighted_examples = all.sd->weighted_examples;
-      all.sd->dump_interval *= 2;
+      VW::update_dump_interval(all);
     }
 }
 

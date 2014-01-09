@@ -39,6 +39,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/parse_example.h \
 	vowpalwabbit/parse_regressor.h \
 	vowpalwabbit/rand48.h \
+	vowpalwabbit/scorer.h \
 	vowpalwabbit/searn.h \
 	vowpalwabbit/searn_sequencetask.h \
 	vowpalwabbit/sender.h \

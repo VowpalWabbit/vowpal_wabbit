@@ -24,6 +24,8 @@ license as described in the file LICENSE.
 #include "rand48.h"
 #include "vw.h"
 
+using namespace LEARNER;
+
 namespace LDA {
 
 class index_feature {
@@ -514,9 +516,8 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
-void save_load(void* d, io_buf& model_file, bool read, bool text)
+void save_load(lda* l, io_buf& model_file, bool read, bool text)
 {
-  lda* l = (lda*)d;
   vw* all = l->all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
@@ -681,10 +682,8 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(void* d, learner& base, example* ec) 
+  void learn(lda* l, learner& base, example* ec) 
   {
-    lda* l = (lda*)d;
-
     size_t num_ex = l->examples.size();
     l->examples.push_back(ec);
     l->doc_lengths.push_back(0);
@@ -696,22 +695,27 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
 	l->doc_lengths[num_ex] += (int)f->x;
       }
     }
-    if (++num_ex == l->all->minibatch)
+    if (++num_ex == l->all->minibatch && !ec->test_only)
       learn_batch(*l);
   }
 
-  void end_pass(void* d)
+  // placeholder
+  void predict(lda* l, learner& base, example* ec)
   {
-    lda* l = (lda*)d;
-    
+    bool test_only = ec->test_only;
+    ec->test_only = true;
+    learn(l, base, ec);
+    ec->test_only = test_only;
+  }
+
+  void end_pass(lda* l)
+  {
     if (l->examples.size())
       learn_batch(*l);
   }
 
-void end_examples(void* d)
+void end_examples(lda* l)
 {
-  lda* l = (lda*)d;
-
   for (size_t i = 0; i < l->all->length(); i++) {
     weight* weights_for_w = & (l->all->reg.weight_vector[i*l->all->reg.stride]);
     float decay = fmin(1.0, exp(l->decay_levels.last() - l->decay_levels.end[(int)(-1- l->example_t +weights_for_w[l->all->lda])]));
@@ -720,7 +724,7 @@ void end_examples(void* d)
   }
 }
 
-  void finish_example(vw& all, void*, example*ec)
+  void finish_example(vw& all, lda*, example*ec)
 {}
 
 learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
@@ -764,11 +768,13 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
   
-  learner* l = new learner(ld, learn, save_load, all.reg.stride);
-  l->set_save_load(save_load);
-  l->set_finish_example(finish_example);
-  l->set_end_examples(end_examples);  
-  l->set_end_pass(end_pass);  
+  learner* l = new learner(ld, all.reg.stride);
+  l->set_learn<lda,learn>();
+  l->set_predict<lda,predict>();
+  l->set_save_load<lda,save_load>();
+  l->set_finish_example<lda,finish_example>();
+  l->set_end_examples<lda,end_examples>();  
+  l->set_end_pass<lda,end_pass>();  
   
   return l;
 }

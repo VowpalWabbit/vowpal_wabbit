@@ -26,6 +26,8 @@ license as described in the file LICENSE.
 // task-specific includes
 #include "searn_sequencetask.h"
 
+using namespace LEARNER;
+
 namespace SearnUtil
 {
   using namespace std;
@@ -272,7 +274,7 @@ namespace Searn {
   const char LEARN      = 2;
 
   const bool PRINT_DEBUG_INFO =0;
-  const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
+  const bool PRINT_UPDATE_EVERY_EXAMPLE =1;
   const bool PRINT_UPDATE_EVERY_PASS =0;
   const bool PRINT_CLOCK_TIME =0;
 
@@ -345,15 +347,14 @@ namespace Searn {
       //cerr << "predict: action=" << action << endl;
       void* old_label = ecs[action].ld;
       ecs[action].ld = &test_label;
-      base.learn(&ecs[action], pol);
+      base.predict(&ecs[action], pol);
       srn->total_predictions_made++;
       srn->num_features += ecs[action].num_features;
       srn->empty_example->in_use = true;
+
       //cerr << "predict: empty_example" << endl;
-      base.learn(srn->empty_example);
+      base.predict(srn->empty_example);
       ecs[action].ld = old_label;
-      //clog << endl << "this_example = "; GD::print_audit_features(all, &ecs[action]);
-      //clog << "action=" << action << " pp=" << ecs[action].partial_prediction << endl;
 
       if ((action == 0) || 
           ecs[action].partial_prediction < best_prediction) {
@@ -404,7 +405,7 @@ namespace Searn {
     void* old_label = ec->ld;
     ec->ld = valid_labels;
 
-    base.learn(ec, pol);
+    base.predict(ec, pol);
     srn.total_predictions_made++;
     srn.num_features += ec->num_features;
     uint32_t final_prediction = (uint32_t)ec->final_prediction;
@@ -931,7 +932,7 @@ namespace Searn {
 
     if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
     if (PRINT_UPDATE_EVERY_PASS && hit_new_pass) return true;
-    return (all.sd->weighted_examples > all.sd->dump_interval) && !all.quiet && !all.bfgs;
+    return (all.sd->weighted_examples >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
   bool might_print_update(vw& all)
@@ -941,7 +942,7 @@ namespace Searn {
 
     if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
     if (PRINT_UPDATE_EVERY_PASS) return true;
-    return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+    return (all.sd->weighted_examples + 1. > all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
   void generate_training_example(vw& all, searn& srn, learner& base, example* ec, size_t len, void*labels, v_array<float> losses)
@@ -960,6 +961,7 @@ namespace Searn {
       void* old_label = ec[0].ld;
       ec[0].ld = labels;
       if (srn.auto_history) add_history_to_example(all, srn.hinfo, ec, srn.rollout_action.begin+srn.learn_t);
+      cerr << "hi" << endl;
       base.learn(&ec[0], srn.current_policy);
       if (srn.auto_history) remove_history_from_example(all, srn.hinfo, ec);
       ec[0].ld = old_label;
@@ -991,6 +993,7 @@ namespace Searn {
   }
 
 
+  template <bool is_learn>
   void train_single_example(vw& all, searn& srn, example**ec, size_t len)
   {
     // do an initial test pass to compute output (and loss)
@@ -1042,8 +1045,8 @@ namespace Searn {
         all.print_text(all.raw_prediction, "", ec[0]->tag);
       }
     }
-    
-    if ((srn.t > 0) && all.training) {
+
+    if (is_learn && (srn.t > 0) && all.training) {
       if (srn.adaptive_beta)
         srn.beta = 1.f - powf(1.f - srn.alpha, (float)srn.total_examples_generated);
 
@@ -1237,7 +1240,7 @@ void print_update(vw& all, searn* srn)
 
     all.sd->sum_loss_since_last_dump = 0.0;
     all.sd->old_weighted_examples = all.sd->weighted_examples;
-    all.sd->dump_interval *= 2;
+    VW::update_dump_interval(all);
   }
 
   void add_neighbor_features(searn& srn) {
@@ -1319,14 +1322,14 @@ void print_update(vw& all, searn* srn)
   }
 
 
-
+  template <bool is_learn>
   void do_actual_learning(vw&all, searn& srn)
   {
     if (srn.ec_seq.size() == 0)
       return;  // nothing to do :)
 
     add_neighbor_features(srn);
-    train_single_example(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
+    train_single_example<is_learn>(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
     del_neighbor_features(srn);
 
     if (srn.ec_seq[0]->test_only) {
@@ -1345,8 +1348,8 @@ void print_update(vw& all, searn* srn)
     }
   }
 
-  void searn_learn(void*d, learner& base, example*ec) {
-    searn *srn = (searn*)d;
+  template <bool is_learn>
+  void searn_predict_or_learn(searn* srn, learner& base, example*ec) {
     vw* all = srn->all;
     srn->base_learner = &base;
     bool is_real_example = true;
@@ -1355,7 +1358,7 @@ void print_update(vw& all, searn* srn)
 	std::cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << std::endl;
       }
 
-      do_actual_learning(*all, *srn);
+      do_actual_learning<is_learn>(*all, *srn);
       clear_seq(*all, *srn);
       srn->hit_new_pass = false;
       
@@ -1370,8 +1373,7 @@ void print_update(vw& all, searn* srn)
     }
   }
 
-  void end_pass(void* d) {
-    searn *srn = (searn*)d;
+  void end_pass(searn* srn) {
     vw* all = srn->all;
     srn->hit_new_pass = true;
     srn->read_example_last_pass++;
@@ -1391,20 +1393,17 @@ void print_update(vw& all, searn* srn)
     }
   }
 
-  void finish_example(vw& all, void* d, example* ec) {
-    searn *srn = (searn*)d;
-
-    if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) { 
+  void finish_example(vw& all, searn* srn, example* ec) {
+    if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) {
       print_update(all, srn);
       VW::finish_example(all, ec);
     }
   }
 
-  void end_examples(void* d) {
-    searn* srn = (searn*)d;
+  void end_examples(searn* srn) {
     vw* all    = srn->all;
 
-    do_actual_learning(*all, *srn);
+    do_actual_learning<true>(*all, *srn);
 
     if( all->training ) {
       std::stringstream ss1;
@@ -1472,9 +1471,8 @@ void print_update(vw& all, searn* srn)
     srn.empty_example->in_use = true;
   }
 
-  void searn_finish(void* d)
+  void searn_finish(searn* srn)
   {
-    searn *srn = (searn*)d;
     vw* all = srn->all;
     //cerr << "searn_finish" << endl;
 
@@ -1828,11 +1826,13 @@ void print_update(vw& all, searn* srn)
 
     srn->start_clock_time = clock();
 
-    learner* l = new learner(srn, searn_learn, all.l, srn->total_number_of_policies);
-    l->set_finish_example(finish_example);
-    l->set_end_examples(end_examples);
-    l->set_finish(searn_finish);
-    l->set_end_pass(end_pass);
+    learner* l = new learner(srn, all.l, srn->total_number_of_policies);
+    l->set_learn<searn, searn_predict_or_learn<true> >();
+    l->set_predict<searn, searn_predict_or_learn<false> >();
+    l->set_finish_example<searn,finish_example>();
+    l->set_end_examples<searn,end_examples>();
+    l->set_finish<searn,searn_finish>();
+    l->set_end_pass<searn,end_pass>();
     
     return l;
   }
