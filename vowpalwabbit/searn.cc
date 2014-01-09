@@ -1051,7 +1051,7 @@ namespace Searn {
         ) {
 
       srn.should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0);
-      if (srn.should_produce_string) {  // TODO: don't do this all the time!!!
+      if (srn.should_produce_string) {
         srn.truth_string->str("");  // erase contents
         srn.pred_string->str("");
       }

@@ -640,7 +640,7 @@ namespace LabelDict {
       ec->partial_prediction = 0.;
       
       ec->ld = &simple_label;
-      base.learn(ec); // make a prediction
+      base.predict(ec); // make a prediction
     } else {
       for (size_t j=0; j<costs.size(); j++) {
         simple_label.initial = 0.;
