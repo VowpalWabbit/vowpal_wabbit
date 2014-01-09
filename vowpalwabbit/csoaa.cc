@@ -320,8 +320,7 @@ namespace CSOAA {
 
     size_t prediction = 1;
     float score = FLT_MAX;
-    label_data simple_temp;
-    simple_temp.initial = 0.;
+    label_data simple_temp = { 0., 0., 0. };
     ec->ld = &simple_temp;
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {

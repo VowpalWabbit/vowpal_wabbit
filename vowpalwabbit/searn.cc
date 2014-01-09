@@ -942,7 +942,7 @@ namespace Searn {
 
     if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
     if (PRINT_UPDATE_EVERY_PASS) return true;
-    return (all.sd->weighted_examples + 1. > all.sd->dump_interval) && !all.quiet && !all.bfgs;
+    return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
   void generate_training_example(vw& all, searn& srn, learner& base, example* ec, size_t len, void*labels, v_array<float> losses)
@@ -961,7 +961,6 @@ namespace Searn {
       void* old_label = ec[0].ld;
       ec[0].ld = labels;
       if (srn.auto_history) add_history_to_example(all, srn.hinfo, ec, srn.rollout_action.begin+srn.learn_t);
-      cerr << "hi" << endl;
       base.learn(&ec[0], srn.current_policy);
       if (srn.auto_history) remove_history_from_example(all, srn.hinfo, ec);
       ec[0].ld = old_label;
