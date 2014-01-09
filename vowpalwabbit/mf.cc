@@ -71,6 +71,10 @@ void predict(mf *data, learner& base, example* ec) {
   // store namespace indices
   copy_array(data->indices, ec->indices);
 
+  // erase indices
+  ec->indices.erase();
+  ec->indices.push_back(0);
+
   // add interaction terms to prediction
   for (vector<string>::iterator i = data->pairs.begin(); i != data->pairs.end(); i++) {
 
@@ -80,9 +84,7 @@ void predict(mf *data, learner& base, example* ec) {
     if (ec->atomics[left_ns].size() > 0 && ec->atomics[right_ns].size() > 0) {
       for (size_t k = 1; k <= all->rank; k++) {
 
-	// set example to left namespace only
-	ec->indices.erase();
-	ec->indices.push_back(left_ns);
+	ec->indices[0] = left_ns;
 
 	// compute l^k * x_l using base learner
 	base.predict(ec, k);
@@ -91,8 +93,7 @@ void predict(mf *data, learner& base, example* ec) {
 	  data->sub_predictions[2*k-1] = x_dot_l;
 
 	// set example to right namespace only
-	ec->indices.erase();
-	ec->indices.push_back(right_ns);
+	ec->indices[0] = right_ns;
 
 	// compute r^k * x_r using base learner
 	base.predict(ec, k + all->rank);
@@ -125,6 +126,10 @@ void learn(mf* data, learner& base, example* ec) {
   // store namespace indices
   copy_array(data->indices, ec->indices);
 
+  // erase indices
+  ec->indices.erase();
+  ec->indices.push_back(0);
+
   // update interaction terms
   // looping over all pairs of non-empty namespaces
   for (vector<string>::iterator i = data->pairs.begin(); i != data->pairs.end(); i++) {
@@ -135,8 +140,7 @@ void learn(mf* data, learner& base, example* ec) {
     if (ec->atomics[left_ns].size() > 0 && ec->atomics[right_ns].size() > 0) {
 
       // set example to left namespace only
-      ec->indices.erase();
-      ec->indices.push_back(left_ns);
+      ec->indices[0] = left_ns;
 
       // store feature values in left namespace
       copy_array(data->temp_features, ec->atomics[left_ns]);
@@ -154,10 +158,8 @@ void learn(mf* data, learner& base, example* ec) {
 	copy_array(ec->atomics[left_ns], data->temp_features);
       }
 
-
       // set example to right namespace only
-      ec->indices.erase();
-      ec->indices.push_back(right_ns);
+      ec->indices[0] = right_ns;
 
       // store feature values for right namespace
       copy_array(data->temp_features, ec->atomics[right_ns]);
