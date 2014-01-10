@@ -110,7 +110,7 @@ namespace SearnUtil
 
   const float history_value = 1.;
 
-  void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h)
+  void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h, size_t additional_offset=0)
   {
     uint64_t v0, v1, v, max_string_length = 0;
     uint32_t wpp = all.wpp * all.reg.stride;
@@ -126,7 +126,8 @@ namespace SearnUtil
     }
 
     for (uint32_t t=1; t<=hinfo.length; t++) {
-      v0 = (h[hinfo.length-t] * quadratic_constant + t) * history_constant;
+      v0 = ((h[hinfo.length-t]+1) * quadratic_constant * (additional_offset+1) + t) * history_constant;
+      //clog << "v0 = " << v0 << " additional_offset = " << additional_offset << " h[] = " << h[hinfo.length-t] << endl;
       // add the basic history features
       feature temp = {history_value, (uint32_t) ( (v0*wpp) & all.reg.weight_mask )};
       ec->atomics[history_namespace].push_back(temp);
@@ -144,7 +145,7 @@ namespace SearnUtil
 
       // add the bigram features
       if ((t > 1) && hinfo.bigrams) {
-        v1 = (v0 * cubic_constant + h[hinfo.length-t+1]) * history_constant;
+        v1 = (v0 * cubic_constant + (h[hinfo.length-t+1]+1) * (additional_offset+1)) * history_constant;
 
         feature temp = {history_value, (uint32_t) ( (v1*wpp) & all.reg.weight_mask )};
         ec->atomics[history_namespace].push_back(temp);
@@ -183,7 +184,7 @@ namespace SearnUtil
           v = f->weight_index + history_constant;
 
           for (uint32_t t=1; t<=hinfo.features; t++) {
-            v0 = (h[hinfo.length-t] * quadratic_constant + t) * history_constant;
+            v0 = ((h[hinfo.length-t]+1) * quadratic_constant * (additional_offset+1) + t) * history_constant;
           
             // add the history/feature pair
             feature temp = {history_value, (uint32_t) ( ((v0 + v)*wpp) & all.reg.weight_mask )};
@@ -203,7 +204,7 @@ namespace SearnUtil
 
             // add the bigram
             if ((t > 0) && hinfo.bigram_features) {
-              v1 = (v0 * cubic_constant + h[hinfo.length-t+1]) * history_constant;
+              v1 = (v0 * cubic_constant + (h[hinfo.length-t+1]+1) * (additional_offset+1)) * history_constant;
 
               feature temp = {history_value, (uint32_t) ( ((v + v1)*wpp) & all.reg.weight_mask )};
               ec->atomics[history_namespace].push_back(temp);
@@ -277,8 +278,6 @@ namespace Searn {
   const bool PRINT_UPDATE_EVERY_PASS =0;
   const bool PRINT_CLOCK_TIME =0;
 
-  inline bool isLDF(searn& srn) { return (srn.A == 0); }
-
   int choose_policy(searn& srn, bool allow_current, bool allow_optimal)
   {
     uint32_t seed = /* srn.read_example_last_id * 2147483 + */ (uint32_t)(srn.t * 2147483647);
@@ -291,7 +290,7 @@ namespace Searn {
     if (srn.rollout_all_actions) { // dst should be a CSOAA::label*
       CSOAA::label *ret = (CSOAA::label*)dst;
       ret->costs.erase();
-      if (isLDF(srn)) {
+      if (srn.is_ldf) {
         for (uint32_t i=0; i<num_ec; i++) {
           CSOAA::wclass cost = { FLT_MAX, i, 0., 0. };
           ret->costs.push_back(cost);
@@ -312,7 +311,7 @@ namespace Searn {
     } else { // dst should be a CB::label*
       CB::label *ret = (CB::label*)dst;
       ret->costs.erase();
-      if (isLDF(srn)) {
+      if (srn.is_ldf) {
         for (uint32_t i=0; i<num_ec; i++) {
           CB::cb_class cost = { FLT_MAX, i, 0. };
           ret->costs.push_back(cost);
@@ -333,32 +332,104 @@ namespace Searn {
     }
   }
 
-  uint32_t single_prediction_LDF(vw& all, learner& base, example** ecs, size_t num_ec, size_t pol)
-  {
-    assert(pol > 0);
-    searn *srn = (searn*)all.searnstr;
+  uint32_t sample_with_temperature_partial_prediction(example* ecs, size_t num_ec, float temp) {
+    float total = 0.;
+    for (size_t a=0; a<num_ec; a++)
+      total += exp(-1.0 * ecs[a].partial_prediction / temp);
+    if ((total >= 0.) && isfinite(total)) {
+      float r = frand48() * total;
+      for (size_t a=0; a<num_ec; a++) {
+        r -= exp(-1.0 * ecs[a].partial_prediction / temp);
+        if (r <= 0.)
+          return a;
+      }
+    }
+    // something failed
+    return 0;
+  }
 
-    // TODO: modify this to handle contextual bandid base learner with ldf
+  uint32_t single_prediction_LDF(vw& all, learner& base, example* ecs, size_t num_ec, size_t pol, bool allow_exploration)
+  {
+    assert(pol >= 0);
+    searn *srn = (searn*)all.searnstr;
+    CSOAA::label test_label;
+    CSOAA::default_label(&test_label);
+    
+    // TODO: modify this to handle contextual bandit base learner with ldf
     float best_prediction = 0;
     uint32_t best_action = 0;
     for (uint32_t action=0; action<num_ec; action++) {
-      base.predict(ecs[action], pol);
+      //cerr << "predict: action=" << action << endl;
+      void* old_label = ecs[action].ld;
+      ecs[action].ld = &test_label;
+      base.predict(&ecs[action], pol);
       srn->total_predictions_made++;
-      srn->num_features += ecs[action]->num_features;
+      srn->num_features += ecs[action].num_features;
       srn->empty_example->in_use = true;
+
+      //cerr << "predict: empty_example" << endl;
       base.predict(srn->empty_example);
+      ecs[action].ld = old_label;
 
       if ((action == 0) || 
-          ecs[action]->partial_prediction < best_prediction) {
-        best_prediction = ecs[action]->partial_prediction;
-        best_action     = action;
+          ecs[action].partial_prediction < best_prediction) {
+        best_prediction = ecs[action].partial_prediction;
+        best_action     = action; // ((CSOAA::label*)ecs[action].ld)->costs[0].weight_index;
+      }
+
+      if ((srn->state == INIT_TEST) && (all.raw_prediction > 0)) {
       }
     }
+        
+    if ((srn->state == INIT_TEST) && (all.raw_prediction > 0)) {
+      string outputString;
+      stringstream outputStringStream(outputString);
+      for (uint32_t action=0; action<num_ec; action++) {
+        if (action != 0) outputStringStream << ' ';
+        outputStringStream << action << ':' << ecs[action].partial_prediction;
+      }
+      all.print_text(all.raw_prediction, outputStringStream.str(), ecs[0].tag);
+    }
 
+    if (allow_exploration && (srn->exploration_temperature > 0.))
+      best_action = sample_with_temperature_partial_prediction(ecs, num_ec, srn->exploration_temperature);
+    
     return best_action;
   }
 
-  uint32_t single_prediction_notLDF(vw& all, searn& srn, learner& base, example* ec, void*valid_labels, uint32_t pol)
+  uint32_t sample_with_temperature_csoaa(CSOAA::label* ld, float temp) {
+    float total = 0.;
+    for (CSOAA::wclass* c = ld->costs.begin; c != ld->costs.end; ++c)
+      total += exp(-1.0 * c->partial_prediction / temp);
+    if ((total >= 0.) && isfinite(total)) {
+      float r = frand48() * total;
+      for (CSOAA::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
+        r -= exp(-1.0 * c->partial_prediction / temp);
+        if (r <= 0.)
+          return c->weight_index;
+      }
+    }
+    // something failed
+    return ld->costs[0].weight_index;
+  }
+
+  uint32_t sample_with_temperature_cb(CB::label* ld, float temp) {
+    float total = 0.;
+    for (CB::cb_class* c = ld->costs.begin; c != ld->costs.end; ++c)
+      total += exp(-1.0 * c->partial_prediction / temp);
+    if ((total >= 0.) && isfinite(total)) {
+      float r = frand48() * total;
+      for (CB::cb_class* c = ld->costs.begin; c != ld->costs.end; ++c) {
+        r -= exp(-1.0 * c->partial_prediction / temp);
+        if (r <= 0.)
+          return c->action;
+      }
+    }
+    // something failed
+    return ld->costs[0].action;
+  }
+
+  uint32_t single_prediction_notLDF(vw& all, searn& srn, learner& base, example* ec, void*valid_labels, uint32_t pol, bool allow_exploration)
   {
     assert(pol >= 0);
 
@@ -370,7 +441,14 @@ namespace Searn {
     srn.num_features += ec->num_features;
     uint32_t final_prediction = (uint32_t)ec->final_prediction;
 
-    if ((srn.state == INIT_TEST) && (all.raw_prediction > 0) && (srn.rollout_all_actions)) {
+    if (allow_exploration && (srn.exploration_temperature > 0.)) {
+      if (srn.rollout_all_actions)
+        final_prediction = sample_with_temperature_csoaa((CSOAA::label*)ec->ld, srn.exploration_temperature);
+      else
+        final_prediction = sample_with_temperature_cb(   (CB::label   *)ec->ld, srn.exploration_temperature);
+    }
+    
+    if ((srn.state == INIT_TEST) && (all.raw_prediction > 0) && (srn.rollout_all_actions)) { // srn.rollout_all_actions ==> this is not CB, so we have CSOAA::labels
       string outputString;
       stringstream outputStringStream(outputString);
       CSOAA::label *ld = (CSOAA::label*)ec->ld;
@@ -392,27 +470,38 @@ namespace Searn {
     return opts[(size_t)(((float)opts.size()) * r)];
   }
 
-  uint32_t single_action(vw& all, searn& srn, learner& base, example** ecs, size_t num_ec, void*valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t) {
+  uint32_t single_action(vw& all, searn& srn, learner& base, example* ecs, size_t num_ec, void*valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t, bool allow_exploration) {
     //cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
     if (pol == -1) { // optimal policy
-      if ((ystar == NULL) || ((! ystar_is_uint32t) && (ystar->size() == 0))) { // TODO: choose according to current model!
+      if (ystar_is_uint32t)
+        return *((uint32_t*)ystar);
+      else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
         if (srn.rollout_all_actions)
           return choose_random<CSOAA::wclass>(((CSOAA::label*)valid_labels)->costs).weight_index;
         else
           return choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
-      } else if (ystar_is_uint32t)
-        return *((uint32_t*)ystar);
-      else
+      } else 
         return choose_random<uint32_t>(*ystar);
     } else {        // learned policy
-      if (!isLDF(srn)) {  // single example
-        if (srn.auto_history) add_history_to_example(all, srn.hinfo, *ecs, srn.rollout_action.begin+srn.t);
-        size_t action = single_prediction_notLDF(all, srn, base, *ecs, valid_labels, pol);
-        if (srn.auto_history) remove_history_from_example(all, srn.hinfo, *ecs);
+      if (!srn.is_ldf) {  // single example
+        if (srn.auto_history) add_history_to_example(all, srn.hinfo, ecs, srn.rollout_action.begin+srn.t);
+        size_t action = single_prediction_notLDF(all, srn, base, ecs, valid_labels, pol, allow_exploration);
+        if (srn.auto_history) remove_history_from_example(all, srn.hinfo, ecs);
         return (uint32_t)action;
       } else {
-        // TODO: auto-history for LDF
-        return single_prediction_LDF(all, base, ecs, num_ec, pol);
+        if (srn.auto_history)
+          for (size_t a=0; a<num_ec; a++) {
+            //clog << "weight_index = " << ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index << endl;
+            add_history_to_example(all, srn.hinfo, &ecs[a], srn.rollout_action.begin+srn.t,
+                                   ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index);
+          }
+                                   //((OAA::mc_label*)ecs[a].ld)->label);
+        size_t action = single_prediction_LDF(all, base, ecs, num_ec, pol, allow_exploration);
+        if (srn.auto_history)
+          for (size_t a=0; a<num_ec; a++)
+            remove_history_from_example(all, srn.hinfo, &ecs[a]);
+
+        return (uint32_t)action;
       }
     }
   }
@@ -459,12 +548,12 @@ namespace Searn {
   //   ystar:
   //     == NULL (or empty) means we don't know the oracle label
   //     otherwise          means the oracle could do any of the listed actions
-  uint32_t searn_predict_without_loss(vw& all, learner& base, example** ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
+  uint32_t searn_predict_without_loss(vw& all, learner& base, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
   {
     searn* srn=(searn*)all.searnstr;
 
     // check ldf sanity
-    if (!isLDF(*srn)) {
+    if (!srn->is_ldf) {
       assert(num_ec == 0); // searntask is trying to define an ldf example in a non-ldf problem
     } else { // is LDF
       assert(num_ec != 0); // searntask is trying to define a non-ldf example in an ldf problem" << endl;
@@ -475,24 +564,27 @@ namespace Searn {
       int pol = choose_policy(*srn, true, false);
       //cerr << "(" << pol << ")";
       get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-      uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t);
+      uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       //clog << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
-      if (srn->auto_history) srn->rollout_action.push_back(a);
+      uint32_t a_name = (! srn->is_ldf) ? a : ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index;
+      if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
       return a;
     }
     if (srn->state == INIT_TRAIN) {
       int pol = choose_policy(*srn, srn->allow_current_policy, true);
       get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-      uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t);
+      uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       //clog << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
       //assert((srn->current_policy == 0) || (a == a_opt));
       //if (! ((srn->current_policy == 0) || (a == a_opt))) { cerr << "FAIL!!!"<<endl;}
-      srn->train_action.push_back(a);
+      srn->train_action_ids.push_back(a);
       srn->train_labels.push_back(copy_labels(*srn, srn->valid_labels));
-      if (srn->auto_history) srn->rollout_action.push_back(a);
+      uint32_t a_name = (! srn->is_ldf) ? a : ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index;
+      srn->train_action.push_back(a_name);
+      if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
       return a;
     }
@@ -500,20 +592,24 @@ namespace Searn {
       if (srn->t < srn->learn_t) {
         assert(srn->t < srn->train_action.size());
         srn->t++;
-        size_t a = srn->train_action[srn->t - 1];
+        size_t a = srn->train_action_ids[srn->t - 1];
         return (uint32_t)a;
       } else if (srn->t == srn->learn_t) {
         if (srn->learn_example_copy == NULL) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
           srn->learn_example_len = num_to_copy;
-          // TODO: move the calloc outside
-          srn->learn_example_copy = (example**)SearnUtil::calloc_or_die(num_to_copy, sizeof(example*));
-          for (size_t n=0; n<num_to_copy; n++) {
-            if (srn->examples_dont_change)
-              srn->learn_example_copy[n] = ecs[n];
-            else {
-              srn->learn_example_copy[n] = alloc_example(sizeof(OAA::mc_label));
-              VW::copy_example_data(all.audit, srn->learn_example_copy[n], ecs[n], sizeof(OAA::mc_label), NULL);
+          // TODO: move the alloc_examples outside
+          if (srn->examples_dont_change)
+            srn->learn_example_copy = ecs;
+          else {
+            if (srn->is_ldf) {
+              srn->learn_example_copy = alloc_examples(sizeof(CSOAA::label), num_to_copy);
+              for (size_t n=0; n<num_to_copy; n++)
+                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(CSOAA::label), CSOAA::copy_label);
+            } else {
+              srn->learn_example_copy = alloc_examples(sizeof(OAA::mc_label), num_to_copy);
+              for (size_t n=0; n<num_to_copy; n++)
+                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(OAA::mc_label), NULL);
             }
           }
           //cerr << "copying example to " << srn->learn_example_copy << endl;
@@ -521,20 +617,21 @@ namespace Searn {
         srn->snapshot_is_equivalent_to_t = (size_t)-1;
         srn->snapshot_could_match = true;
         srn->t++;
-        if (srn->auto_history) srn->rollout_action.push_back(srn->learn_a);
+        uint32_t a_name = (! srn->is_ldf) ? srn->learn_a : ((CSOAA::label*)ecs[srn->learn_a].ld)->costs[0].weight_index;
+        if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return srn->learn_a;
       } else { // t > learn_t
         size_t this_a = 0;
         if (srn->rollout_oracle) {
           get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-          this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, -1, ystar, ystar_is_uint32t);
+          this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, -1, ystar, ystar_is_uint32t, false);
           srn->t++;
           //valid_labels.costs.erase(); valid_labels.costs.delete_v();
         } else if ((!srn->do_fastforward) || (!srn->snapshot_could_match) || (srn->snapshot_is_equivalent_to_t == ((size_t)-1))) { // we haven't converged, continue predicting
           int pol = choose_policy(*srn, srn->allow_current_policy, true);
           get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-          this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t);
-          //clog << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
+          this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
+          //clog << "predict @" << srn->t << " pol=" << pol << " a=" << this_a << endl;
           srn->t++;
           //valid_labels.costs.erase(); valid_labels.costs.delete_v();
 
@@ -543,10 +640,11 @@ namespace Searn {
         } else {    // we can keep predicting using training trajectory
           srn->snapshot_is_equivalent_to_t++;
           srn->t = srn->snapshot_is_equivalent_to_t;
-          //clog << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action[srn->t-1] << endl;
-          this_a = srn->train_action[srn->t - 1];
+          //clog << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action_ids[srn->t-1] << endl;
+          this_a = srn->train_action_ids[srn->t - 1];
         }
-        if (srn->auto_history) srn->rollout_action.push_back((uint32_t)this_a);
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
+        if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return (uint32_t)this_a;
       }
       assert(false);
@@ -580,7 +678,7 @@ namespace Searn {
   }
 
 
-  uint32_t searn_predict(vw& all, learner& base, example** ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
+  uint32_t searn_predict(vw& all, learner& base, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
   {
     searn* srn=(searn*)all.searnstr;
     uint32_t a = searn_predict_without_loss(all, base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
@@ -590,7 +688,7 @@ namespace Searn {
       if (ystar) {
         if (ystar_is_uint32t &&   // single allowed ystar
             (*((uint32_t*)ystar) != (uint32_t)-1) && // not a test example
-            (*((uint32_t*)ystar) != a))
+            (*((uint32_t*)ystar) != a))  // wrong prediction
           this_loss = 1.;
         if ((!ystar_is_uint32t) && // many allowed ystar
             (!v_array_contains(*ystar, a)))
@@ -691,10 +789,11 @@ namespace Searn {
       else {
         // if we're doing auto-history and this is the first snapshot of a given index, we need to also snapshot the relevant piece of history
         if (srn->auto_history &&
+            (srn->hinfo.length > 0) &&
             ((srn->snapshot_data.size() == 0) ||
              ((srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().index < index)))) {
           size_t history_size = srn->hinfo.length * sizeof(uint32_t);
-          void* history_data = malloc(history_size);  // TODO: free these!
+          void* history_data = malloc(history_size);
           memcpy(history_data, srn->rollout_action.begin + srn->t, history_size);
           snapshot_item item = { index, 0, history_data, history_size, srn->t };
           srn->snapshot_data.push_back(item);
@@ -793,8 +892,9 @@ namespace Searn {
 
         if (srn->auto_history && (i>0) && (srn->snapshot_data[i-1].index == index) && (srn->snapshot_data[i-1].tag == 0)) {
           item = srn->snapshot_data[i-1];
+          assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
           if (srn->rollout_action.size() >= srn->t + srn->hinfo.length) {
-            matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, sizeof_data) == 0;
+            matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, item.data_size) == 0;
             if (!matches)
               srn->snapshot_could_match = false;
           }
@@ -866,10 +966,10 @@ namespace Searn {
 
     if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
     if (PRINT_UPDATE_EVERY_PASS) return true;
-    return (all.sd->weighted_examples + 1. > all.sd->dump_interval) && !all.quiet && !all.bfgs;
+    return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
-  void generate_training_example(vw& all, searn& srn, learner& base, example** ec, size_t len, void*labels, v_array<float> losses)
+  void generate_training_example(vw& all, searn& srn, learner& base, example* ec, size_t len, void*labels, v_array<float> losses)
   {
     assert(labelset_size(srn, labels) == losses.size());
     float min_loss = FLT_MAX;
@@ -881,14 +981,31 @@ namespace Searn {
       else
         ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
 
-    if (!isLDF(srn)) {
-      void* old_label = ec[0]->ld;
-      ec[0]->ld = labels;
-      base.learn(ec[0], srn.current_policy);
-      ec[0]->ld = old_label;
+    if (!srn.is_ldf) {
+      void* old_label = ec[0].ld;
+      ec[0].ld = labels;
+      if (srn.auto_history) add_history_to_example(all, srn.hinfo, ec, srn.rollout_action.begin+srn.learn_t);
+      base.learn(&ec[0], srn.current_policy);
+      if (srn.auto_history) remove_history_from_example(all, srn.hinfo, ec);
+      ec[0].ld = old_label;
       srn.total_examples_generated++;
     } else { // isLDF
-      //TODO
+        //clog <<"repeat = " << repeat<<endl;
+      for (size_t a=0; a<len; a++) {
+        //((OAA::mc_label*)ec[a]->ld)->weight = losses[a] - min_loss;
+        ((CSOAA::label*)ec[a].ld)->costs[0].x = losses[a] - min_loss;
+        //clog << "learn t = " << srn.learn_t << " cost = " << ((CSOAA::label*)ec[a].ld)->costs[0].x << " action = " << ((CSOAA::label*)ec[a].ld)->costs[0].weight_index << endl;
+        //clog << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
+        add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t,
+                               ((CSOAA::label*)ec[a].ld)->costs[0].weight_index);
+        base.learn(&ec[a], srn.current_policy);
+      }
+      //clog << "learn: generate empty example" << endl;
+      base.learn(srn.empty_example);
+      //clog << "learn done " << repeat << endl;
+      for (size_t a=0; a<len; a++)
+        remove_history_from_example(all, srn.hinfo, &ec[a]);
+      srn.total_examples_generated++;
     }
   }
 
@@ -917,6 +1034,7 @@ namespace Searn {
     srn.learn_example_len  = 0;
     srn.num_features = 0;
     srn.train_action.erase();
+    srn.train_action_ids.erase();
     if (srn.auto_history) clear_rollout_actions(srn);
 
     srn.snapshot_is_equivalent_to_t = (size_t)-1;
@@ -932,8 +1050,8 @@ namespace Searn {
         (all.raw_prediction > 0)                    // we need raw predictions
         ) {
 
-      srn.should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0);
-      if (srn.should_produce_string) {  // TODO: don't do this all the time!!!
+      srn.should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0);
+      if (srn.should_produce_string) {
         srn.truth_string->str("");  // erase contents
         srn.pred_string->str("");
       }
@@ -950,7 +1068,7 @@ namespace Searn {
         all.print_text(all.raw_prediction, "", ec[0]->tag);
       }
     }
-    
+
     if (is_learn && (srn.t > 0) && all.training) {
       if (srn.adaptive_beta)
         srn.beta = 1.f - powf(1.f - srn.alpha, (float)srn.total_examples_generated);
@@ -959,6 +1077,7 @@ namespace Searn {
       //clog << "======================================== INIT TRAIN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
       srn.state = INIT_TRAIN;
       srn.train_action.erase();
+      srn.train_action_ids.erase();
       if (srn.auto_history)
         clear_rollout_actions(srn);
       srn.t = 0;
@@ -998,7 +1117,7 @@ namespace Searn {
           srn.snapshot_last_found_pos = (size_t)-1;
 
           size_t this_index = labelset_weight_index(srn, aset, i);
-          if (this_index == srn.train_action[srn.learn_t])
+          if (this_index == srn.train_action_ids[srn.learn_t])
             srn.learn_losses.push_back( srn.train_loss );
           else {
             srn.t = 0;
@@ -1019,12 +1138,14 @@ namespace Searn {
         if (srn.learn_example_copy != NULL) {
           generate_training_example(all, srn, *srn.base_learner, srn.learn_example_copy, srn.learn_example_len, aset, srn.learn_losses);
 
-          if (!srn.examples_dont_change)
+          if (!srn.examples_dont_change) {
             for (size_t n=0; n<srn.learn_example_len; n++) {
-              dealloc_example(OAA::delete_label, *srn.learn_example_copy[n]);
-              free(srn.learn_example_copy[n]);
+              //clog << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &srn.learn_example_copy[n]);
+              if (srn.is_ldf) dealloc_example(CSOAA::delete_label, srn.learn_example_copy[n]);
+              else            dealloc_example(  OAA::delete_label, srn.learn_example_copy[n]);
             }
-          free(srn.learn_example_copy);
+            free(srn.learn_example_copy);
+          }
           srn.learn_example_copy = NULL;
           srn.learn_example_len  = 0;
         } else {
@@ -1035,8 +1156,8 @@ namespace Searn {
     }
     
     clear_snapshot(all, srn);
-    srn.train_action.erase();
     srn.train_action.delete_v();
+    srn.train_action_ids.delete_v();
     srn.rollout_action.erase();
     srn.rollout_action.delete_v();
     for (size_t i=0; i<srn.train_labels.size(); i++) {
@@ -1202,8 +1323,6 @@ void print_update(vw& all, searn* srn)
 
           if (you_size > 0) {
             if (me->atomics[neighbor_namespace].size() == you_size) {
-              char last_idx = me->indices.pop();
-              assert(last_idx == (char)neighbor_namespace);
               //cerr << "erasing new ns '" << (char)neighbor_namespace << "' of size " << me->atomics[neighbor_namespace].size() << endl;
               me->atomics[neighbor_namespace].erase();
             } else {
@@ -1296,7 +1415,7 @@ void print_update(vw& all, searn* srn)
   }
 
   void finish_example(vw& all, searn* srn, example* ec) {
-    if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) { 
+    if (ec->end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) {
       print_update(all, srn);
       VW::finish_example(all, ec);
     }
@@ -1338,7 +1457,8 @@ void print_update(vw& all, searn* srn)
     srn.do_snapshot = true;
     srn.do_fastforward = true;
     srn.rollout_all_actions = true;
-
+    srn.exploration_temperature = -1.0; // don't explore
+    
     srn.neighbor_features_string = new string();
     
     srn.passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
@@ -1365,9 +1485,10 @@ void print_update(vw& all, searn* srn)
     srn.auto_history = false;
     srn.auto_hamming_loss = false;
     srn.examples_dont_change = false;
+    srn.is_ldf = false;
     
-    srn.empty_example = alloc_example(sizeof(OAA::mc_label));
-    OAA::default_label(srn.empty_example->ld);
+    srn.empty_example = alloc_examples(sizeof(CSOAA::label), 1);
+    CSOAA::default_label(srn.empty_example->ld);
     srn.empty_example->in_use = true;
   }
 
@@ -1395,7 +1516,7 @@ void print_update(vw& all, searn* srn)
     else // labels are CB
       delete (CB::label*)srn->valid_labels;
 
-    dealloc_example(OAA::delete_label, *(srn->empty_example));
+    dealloc_example(CSOAA::delete_label, *(srn->empty_example));
     free(srn->empty_example);
     
     srn->ec_seq.delete_v();
@@ -1414,10 +1535,11 @@ void print_update(vw& all, searn* srn)
         delete ((CB::label*)srn->train_labels[i]);
       }
     }
-    srn->train_labels.erase(); srn->train_labels.delete_v();
-    srn->train_action.erase(); srn->train_action.delete_v();
-    srn->rollout_action.erase(); srn->rollout_action.delete_v();
-    srn->learn_losses.erase(); srn->learn_losses.delete_v();
+    srn->train_labels.delete_v();
+    srn->train_action.delete_v();
+    srn->train_action_ids.delete_v();
+    srn->rollout_action.delete_v();
+    srn->learn_losses.delete_v();
 
     if (srn->task->finish != NULL) {
       srn->task->finish(*srn);
@@ -1569,7 +1691,9 @@ void print_update(vw& all, searn* srn)
       ("searn_no_snapshot", "turn off snapshotting capabilities")
       ("searn_no_fastforward", "turn off fastforwarding (note: fastforwarding requires snapshotting)")
       ("searn_subsample_timesteps", po::value<float>(), "instead of training at all timesteps, use a subset v. if v<=0, train everywhere. if v in (0,1), train on a random v% (>=1 always selected). if v>=1, train on precisely v steps per example")
-      ("searn_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them");
+      ("searn_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
+      ("searn_exploration_temperature", po::value<float>(), "if <0, always choose policy action (default); if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting");
+
     po::options_description add_desc_file("Searn options only available in regressor file");
     add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
 
@@ -1593,6 +1717,8 @@ void print_update(vw& all, searn* srn)
 
     check_option<float >(srn->beta, all, vm, vm_file, "searn_beta", false, float_equal,
                          "warning: you specified a different value through --searn_beta than the one loaded from predictor. using loaded value of: ", "");
+    check_option<float >(srn->exploration_temperature, all, vm, vm_file, "searn_exploration_temperature", false, float_equal,
+                         "warning: you specified a different value through --searn_exploration_temperature than the one loaded from predictor. using loaded value of: ", "");
     check_option<string>(task_string, all, vm, vm_file, "searn_task", false, string_equal,
                          "warning: specified --searn_task different than the one loaded from regressor. using loaded value of: ",
                          "error: you must specify a task using --searn_task");
@@ -1637,7 +1763,7 @@ void print_update(vw& all, searn* srn)
       srn->total_number_of_policies = (uint32_t)vm["searn_total_nb_policies"].as<size_t>();
 
     ensure_param(srn->beta , 0.0, 1.0, 0.5, "warning: searn_beta must be in (0,1); resetting to 0.5");
-    ensure_param(srn->alpha, 0.0, 1.0, 1e-6f, "warning: searn_as_dagger must be in (0,1); resetting to 0.001");
+    ensure_param(srn->alpha, 0.0, 1.0, 1e-6f, "warning: searn_as_dagger must be in (0,1); resetting to 1e-6");
 
     //compute total number of policies we will have at end of training
     // we add current_policy for cases where we start from an initial set of policies loaded through -i option
@@ -1664,7 +1790,6 @@ void print_update(vw& all, searn* srn)
     ss1 << srn->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss1.str()); 
     ss2 << srn->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies",   ss2.str());
 
-    //clog << "searn increment = " << srn->increment <<  " " << all.reg.stride << endl;
     //clog << "searn current_policy = " << srn->current_policy << " total_number_of_policies = " << srn->total_number_of_policies << endl;
     
     if (task_string.compare("sequence") == 0) {
@@ -1681,13 +1806,20 @@ void print_update(vw& all, searn* srn)
       mytask->structured_predict = SequenceSpanTask::structured_predict;
       all.p->emptylines_separate_examples = true;
       srn->task = mytask;
+    } else if (task_string.compare("sequence_demoldf") == 0) {
+      searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));
+      mytask->initialize = SequenceTask_DemoLDF::initialize;
+      mytask->finish = SequenceTask_DemoLDF::finish;
+      mytask->structured_predict = SequenceTask_DemoLDF::structured_predict;
+      all.p->emptylines_separate_examples = true;
+      srn->task = mytask;
     } else {
       cerr << "fail: unknown task for --searn_task: " << task_string << endl;
       throw exception();
     }
 
     // default to OAA labels unless the task wants to override this!
-    *(all.p->lp) = OAA::mc_label_parser; 
+    all.p->lp = OAA::mc_label_parser; 
     srn->task->initialize(*srn, srn->A, opts, vm, vm_file);
 
     // set up auto-history if they want it

@@ -37,7 +37,7 @@ class ezexample {
 
   example* get_new_example() {
     example* new_ec = VW::new_unused_example(*vw_par_ref);
-    vw_par_ref->p->lp->default_label(new_ec->ld);
+    vw_par_ref->p->lp.default_label(new_ec->ld);
     return new_ec;
   }
 
@@ -133,7 +133,7 @@ class ezexample {
 
   inline ezexample& set_label(string label) {
     VW::parse_example_label(*vw_par_ref, *ec, label);
-    ec->global_weight = vw_par_ref->p->lp->get_weight(ec->ld);
+    ec->global_weight = vw_par_ref->p->lp.get_weight(ec->ld);
     example_changed_since_prediction = true;
     return *this;
   }
@@ -184,7 +184,7 @@ class ezexample {
       // we need to make a copy
       example* copy = get_new_example();
       assert(ec->in_use);
-      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp->label_size, vw_par_ref->p->lp->copy_label);
+      VW::copy_example_data(vw_ref->audit, copy, ec, vw_par_ref->p->lp.label_size, vw_par_ref->p->lp.copy_label);
       assert(copy->in_use);
       vw_ref->learn(copy);
       example_copies.push_back(copy);

@@ -117,7 +117,7 @@ struct parser {
 
   v_array<substring> parse_name;
 
-  label_parser* lp;  // moved from vw
+  label_parser lp;  // moved from vw
 };
 
 //chop up the string into a v_array of substring.

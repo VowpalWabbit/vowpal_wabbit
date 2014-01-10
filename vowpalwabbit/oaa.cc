@@ -269,7 +269,7 @@ namespace OAA {
     }
 
     data->all = &all;
-    *(all.p->lp) = mc_label_parser;
+    all.p->lp = mc_label_parser;
 
     learner* l = new learner(data, all.l, data->k);
     l->set_learn<oaa, predict_or_learn<true> >();
