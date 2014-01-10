@@ -4,6 +4,8 @@
 #include "rand48.h"
 #include <float.h>
 
+using namespace LEARNER;
+
 namespace LRQ {
 
   struct LRQstate {
@@ -50,10 +52,8 @@ namespace {
     }
 
   void
-  reset_seed (void* d)
+  reset_seed (LRQ::LRQstate* lrq)
     {
-      LRQ::LRQstate* lrq = (LRQ::LRQstate*) d;
-
       if (lrq->all->bfgs)
         lrq->seed = lrq->initial_seed;
     }
@@ -61,9 +61,9 @@ namespace {
 
 namespace LRQ {
 
-  void learn(void* d, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(LRQstate* lrq, learner& base, example* ec)
   {
-    LRQstate* lrq = (LRQstate*) d;
     vw& all = *lrq->all;
 
     // Remember original features
@@ -145,7 +145,10 @@ namespace LRQ {
               }
           }
 
-        base.learn(ec);//Recursive Call
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
 
         // Restore example
 
@@ -190,7 +193,7 @@ namespace LRQ {
     lrq->dropout = vm.count("lrqdropout") || vm_file.count("lrqdropout");
 
     if (lrq->dropout && !vm_file.count("lrqdropout"))
-      all.options_from_file.append("--lrqdropout");
+      all.options_from_file.append(" --lrqdropout");
 
     if (!vm_file.count("lrq"))
       {
@@ -233,8 +236,8 @@ namespace LRQ {
         
         unsigned int k = atoi (i->c_str () + 2);
 
-        lrq->lrindices[(int) (*i)[0]] = max (lrq->lrindices[(int) (*i)[0]], k);
-        lrq->lrindices[(int) (*i)[1]] = max (lrq->lrindices[(int) (*i)[1]], k);
+        lrq->lrindices[(int) (*i)[0]] = 1;
+        lrq->lrindices[(int) (*i)[1]] = 1;
 
         maxk = max (maxk, k);
       }
@@ -243,8 +246,10 @@ namespace LRQ {
       cerr<<endl;
         
     all.wpp = all.wpp * (1 + maxk);
-    learner* l = new learner(lrq, learn, all.l, 1 + maxk);
-    l->set_end_pass (reset_seed);
+    learner* l = new learner(lrq, all.l, 1 + maxk);
+    l->set_learn<LRQstate, predict_or_learn<true> >();
+    l->set_predict<LRQstate, predict_or_learn<false> >();
+    l->set_end_pass<LRQstate,reset_seed>();
 
     // TODO: leaks memory ?
     return l;

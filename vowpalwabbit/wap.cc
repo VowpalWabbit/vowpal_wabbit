@@ -16,6 +16,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace WAP {
   struct wap{
@@ -205,7 +206,7 @@ namespace WAP {
         simple_temp.label = FLT_MAX;
         uint32_t myi = (uint32_t)cost_label->costs[i].weight_index;
         ec->ld = &simple_temp;
-        base.learn(ec, myi-1);
+        base.predict(ec, myi-1);
         if (ec->partial_prediction > score)
           {
             score = ec->partial_prediction;
@@ -216,18 +217,24 @@ namespace WAP {
     return prediction;
   }
 
-  void learn(void* d, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(wap* w, learner& base, example* ec)
   {
     CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
-    wap* w = (wap*)d;
     vw* all = w->all;
     
     size_t prediction = test(*all, *w, base, ec);
     ec->ld = cost_label;
     
-    if (cost_label->costs.size() > 0)
+    if (is_learn && cost_label->costs.size() > 0)
       train(*all, *w, base, ec);
     ec->final_prediction = (float)prediction;
+  }
+
+  void finish_example(vw& all, wap*, example* ec)
+  {
+    CSOAA::output_example(all, ec);
+    VW::finish_example(all, ec);
   }
   
   learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
@@ -249,12 +256,14 @@ namespace WAP {
      all.options_from_file.append(ss.str());
     }
 
-    *(all.p->lp) = CSOAA::cs_label_parser;
+    all.p->lp = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
 
-    learner* l = new learner(w, learn, all.l, nb_actions);
-    l->set_finish_example(CSOAA::finish_example);
+    learner* l = new learner(w, all.l, nb_actions);
+    l->set_learn<wap, predict_or_learn<true> >();
+    l->set_predict<wap, predict_or_learn<false> >();
+    l->set_finish_example<wap,finish_example>();
     w->increment = l->increment;
 
     return l;

@@ -25,8 +25,10 @@ Implementation by Miro Dudik.
 #include "accumulate.h"
 #include <exception>
 #include "vw.h"
+#include "gd.h"
 
 using namespace std;
+using namespace LEARNER;
 
 #define CG_EXTRA 1
 
@@ -159,9 +161,9 @@ bool test_example(example* ec)
     return GD::finalize_prediction(all, ec->partial_prediction);
   }
 
-inline void add_grad(vw& all, float* d, float f, uint32_t u)
+inline void add_grad(float& d, float f, float& fw)
 {
-  all.reg.weight_vector[u & all.reg.weight_mask] += (*d) * f;
+  fw += d * f;
 }
 
 float predict_and_gradient(vw& all, example* &ec)
@@ -174,15 +176,15 @@ float predict_and_gradient(vw& all, example* &ec)
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
   
   ec->ft_offset += W_GT;
-  GD::foreach_feature<float*,add_grad>(all, ec, &loss_grad);
+  GD::foreach_feature<float,add_grad>(all, ec, loss_grad);
   ec->ft_offset -= W_GT;
   
   return fp;
 }
 
-inline void add_precond(vw& all, float* d, float f, uint32_t u)
+inline void add_precond(float& d, float f, float& fw)
 {
-  all.reg.weight_vector[u & all.reg.weight_mask] += (*d) * f * f;
+  fw += d * f * f;
 }
 
 void update_preconditioner(vw& all, example* &ec)
@@ -191,7 +193,7 @@ void update_preconditioner(vw& all, example* &ec)
   float curvature = all.loss->second_derivative(all.sd, ec->final_prediction,ld->label) * ld->weight;
   
   ec->ft_offset += W_COND;
-  GD::foreach_feature<float*,add_precond>(all, ec, &curvature);  
+  GD::foreach_feature<float,add_precond>(all, ec, curvature);  
   ec->ft_offset -= W_COND;
 }  
 
@@ -760,9 +762,8 @@ void process_example(vw& all, bfgs& b, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void end_pass(void*d)
+void end_pass(bfgs* b)
 {
-  bfgs* b = (bfgs*)d;
   vw* all = b->all;
   
   if (b->current_pass <= b->final_pass) 
@@ -817,9 +818,15 @@ void end_pass(void*d)
   }
 }
 
-void learn(void* d, learner& base, example* ec)
+// placeholder
+void predict(bfgs* b, learner& base, example* ec)
 {
-  bfgs* b = (bfgs*)d;
+  vw* all = b->all;
+  ec->final_prediction = bfgs_predict(*all,ec);
+}
+
+void learn(bfgs* b, learner& base, example* ec)
+{
   vw* all = b->all;
   assert(ec->in_use);
 
@@ -828,20 +835,18 @@ void learn(void* d, learner& base, example* ec)
       if(ec->test_only)
 	{ 
 	  label_data* ld = (label_data*)ec->ld;
-	  ec->final_prediction = bfgs_predict(*all,ec); 
+	  predict(b, base, ec);
 	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
 	}
       else if (test_example(ec))
-	ec->final_prediction = bfgs_predict(*all,ec);//w[0]
+	predict(b, base, ec);
       else
 	process_example(*all, *b, ec);
     }
 }
 
-void finish(void* d)
+void finish(bfgs* b)
 {
-  bfgs* b = (bfgs*)d;
-
   b->predictions.delete_v();
   free(b->mem);
   free(b->rho);
@@ -897,10 +902,8 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 }
 
 
-void save_load(void* d, io_buf& model_file, bool read, bool text)
+void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
 {
-
-  bfgs* b = (bfgs*)d;
   vw* all = b->all;
 
   uint32_t length = 1 << all->num_bits;
@@ -964,9 +967,8 @@ void save_load(void* d, io_buf& model_file, bool read, bool text)
     }
 }
 
-  void init_driver(void* data)
+  void init_driver(bfgs* b)
   {
-    bfgs* b = (bfgs*)data;
     b->backstep_on = true;
   }
 
@@ -1013,11 +1015,13 @@ learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po
   all.bfgs = true;
   all.reg.stride = 4;
 
-  learner* l = new learner(b,learn, save_load, all.reg.stride);
-  l->set_save_load(save_load);
-  l->set_init_driver(init_driver);
-  l->set_end_pass(end_pass);
-  l->set_finish(finish);
+  learner* l = new learner(b, all.reg.stride);
+  l->set_learn<bfgs, learn>();
+  l->set_predict<bfgs, predict>();
+  l->set_save_load<bfgs,save_load>();
+  l->set_init_driver<bfgs,init_driver>();
+  l->set_end_pass<bfgs,end_pass>();
+  l->set_finish<bfgs,finish>();
 
   return l;
 }

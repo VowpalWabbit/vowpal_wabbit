@@ -23,24 +23,26 @@ license as described in the file LICENSE.
 
 using namespace std;
 
+using namespace LEARNER;
+
 namespace GDMF {
   struct gdmf {
     vw* all;
   };
 
-void mf_local_predict(example* ec, regressor& reg);
+void mf_print_audit_features(vw& all, example* ec, size_t offset);
 
-float mf_inline_predict(vw& all, example* &ec)
+float mf_predict(vw& all, example* ec)
 {
-  float prediction = all.p->lp->get_initial(ec->ld);
+  float prediction = all.p->lp.get_initial(ec->ld);
 
   // clear stored predictions
   ec->topic_predictions.erase();
 
-  float linear_prediction = 0;
+  float linear_prediction = 0.;
   // linear terms
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    GD::foreach_feature<float*,vec_add>(all, &linear_prediction, ec->atomics[*i].begin, ec->atomics[*i].end);
+    GD::foreach_feature<float, vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[*i].begin, ec->atomics[*i].end, linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -58,13 +60,13 @@ float mf_inline_predict(vw& all, example* &ec)
 	      // x_l * l^k
 	      // l^k is from index+1 to index+all.rank
 	      //float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
-              float x_dot_l = 0;
-	      GD::foreach_feature<float*,vec_add>(all, &x_dot_l, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+              float x_dot_l = 0.;
+	      GD::foreach_feature<float, vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, x_dot_l, k);
 	      // x_r * r^k
 	      // r^k is from index+all.rank+1 to index+2*all.rank
 	      //float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
-              float x_dot_r = 0;
-	      GD::foreach_feature<float*,vec_add>(all, &x_dot_r, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+              float x_dot_r = 0.;
+	      GD::foreach_feature<float,vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, x_dot_r, k+all.rank);
 
 	      prediction += x_dot_l * x_dot_r;
 
@@ -79,13 +81,30 @@ float mf_inline_predict(vw& all, example* &ec)
     cerr << "cannot use triples in matrix factorization" << endl;
     throw exception();
   }
-    
+
   // ec->topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ... 
 
-  return prediction;
+  ec->partial_prediction = prediction;
+
+  // finalize prediction and compute loss
+  label_data* ld = (label_data*)ec->ld;
+  all.set_minmax(all.sd, ld->label);
+
+  ec->final_prediction = GD::finalize_prediction(all, ec->partial_prediction);
+
+  if (ld->label != FLT_MAX)
+    {
+      ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
+    }
+
+  if (all.audit)
+    mf_print_audit_features(all, ec, 0);
+
+  return ec->final_prediction;
 }
 
-void mf_inline_train(vw& all, example* &ec, float update)
+
+void mf_train(vw& all, example* &ec, float update)
 {
       weight* weights = all.reg.weight_vector;
       size_t mask = all.reg.weight_mask;
@@ -190,35 +209,9 @@ void mf_print_audit_features(vw& all, example* ec, size_t offset)
   mf_print_offset_features(all, ec, offset);
 }
 
-void mf_local_predict(vw& all, example* ec)
+  void save_load(gdmf* d, io_buf& model_file, bool read, bool text)
 {
-  label_data* ld = (label_data*)ec->ld;
-  all.set_minmax(all.sd, ld->label);
-
-  ec->final_prediction = GD::finalize_prediction(all, ec->partial_prediction);
-
-  if (ld->label != FLT_MAX)
-    {
-      ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
-    }
-
-  if (all.audit)
-    mf_print_audit_features(all, ec, 0);
-}
-
-float mf_predict(vw& all, example* ex)
-{
-  float prediction = mf_inline_predict(all, ex);
-
-  ex->partial_prediction = prediction;
-  mf_local_predict(all, ex);
-
-  return ex->final_prediction;
-}
-
-  void save_load(void* d, io_buf& model_file, bool read, bool text)
-{
-  vw* all = ((gdmf*)d)->all;
+  vw* all = d->all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
 
@@ -270,9 +263,9 @@ float mf_predict(vw& all, example* ex)
     }
 }
 
-void end_pass(void* d)
+void end_pass(gdmf* d)
 {
-  vw* all = ((gdmf*)d)->all;
+  vw* all = d->all;
 
    all->eta *= all->eta_decay_rate;
    if (all->save_per_pass)
@@ -281,21 +274,31 @@ void end_pass(void* d)
    all->current_pass++;
 }
 
-  void learn(void* d, learner& base, example* ec)
+  void predict(gdmf* d, learner& base, example* ec)
   {
-    vw* all = ((gdmf*)d)->all;
+    vw* all = d->all;
  
     mf_predict(*all,ec);
+  }
+
+  void learn(gdmf* d, learner& base, example* ec)
+  {
+    vw* all = d->all;
+ 
+    predict(d, base, ec);
     if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
-      mf_inline_train(*all, ec, ec->eta_round);
+      mf_train(*all, ec, ec->eta_round);
   }
 
   learner* setup(vw& all)
   {
     gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
     data->all = &all;
-    learner* l = new learner(data,learn, save_load, all.reg.stride);
-    l->set_end_pass(end_pass);
+    learner* l = new learner(data, all.reg.stride);
+    l->set_learn<gdmf, learn>();
+    l->set_predict<gdmf, predict>();
+    l->set_save_load<gdmf,save_load>();
+    l->set_end_pass<gdmf,end_pass>();
 
     return l;
   }

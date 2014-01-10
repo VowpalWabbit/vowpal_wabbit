@@ -23,6 +23,7 @@
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 namespace SENDER {
   struct sender {
@@ -69,9 +70,8 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, ec);  
 }
 
-  void learn(void* d, learner& base, example* ec) 
+  void learn(sender* s, learner& base, example* ec) 
   { 
-    sender* s = (sender*)d;
     if (s->received_index + s->all->p->ring_size - 1 == s->sent_index)
       receive_result(*s);
 
@@ -83,28 +83,24 @@ void receive_result(sender& s)
     s->delay_ring[s->sent_index++ % s->all->p->ring_size] = ec;
   }
 
-  void finish_example(vw& all, void*, example*ec)
+  void finish_example(vw& all, sender*, example*ec)
 {}
 
-void end_examples(void* d)
+void end_examples(sender* s)
 {
-  sender* s = (sender*)d;
   //close our outputs to signal finishing.
   while (s->received_index != s->sent_index)
     receive_result(*s);
   shutdown(s->buf->files[0],SHUT_WR);
 }
 
-  void finish(void* d) 
+  void finish(sender* s) 
   { 
-    sender* s = (sender*)d;
     s->buf->files.delete_v();
     s->buf->space.delete_v();
     free(s->delay_ring);
     delete s->buf;
   }
-
-  void save_load(void*, io_buf& io, bool read, bool text){}
 
   learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)
 {
@@ -119,10 +115,12 @@ void end_examples(void* d)
   s->all = &all;
   s->delay_ring = (example**) calloc(all.p->ring_size, sizeof(example*));
 
-  learner* l = new learner(s,learn, save_load, 1);
-  l->set_finish(finish);
-  l->set_finish_example(finish_example); 
-  l->set_end_examples(end_examples);
+  learner* l = new learner(s, 1);
+  l->set_learn<sender, learn>(); 
+  l->set_predict<sender, learn>(); 
+  l->set_finish<sender, finish>();
+  l->set_finish_example<sender, finish_example>(); 
+  l->set_end_examples<sender, end_examples>();
   return l;
 }
 

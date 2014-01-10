@@ -727,7 +727,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 
   if (all.p->write_cache) 
     {
-      all.p->lp->cache_label(ae->ld,*(all.p->output));
+      all.p->lp.cache_label(ae->ld,*(all.p->output));
       cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
     }
 
@@ -736,7 +736,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
 
 void end_pass_example(vw& all, example* ae)
 {
-  all.p->lp->default_label(ae->ld);
+  all.p->lp.default_label(ae->ld);
   ae->end_pass = true;
   all.p->in_pass_counter = 0;
 }
@@ -753,7 +753,7 @@ void setup_example(vw& all, example* ae)
     all.p->in_pass_counter++;
 
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off);
-  ae->global_weight = all.p->lp->get_weight(ae->ld);
+  ae->global_weight = all.p->lp.get_weight(ae->ld);
   all.sd->t += ae->global_weight;
   ae->example_t = (float)all.sd->t;
 
@@ -844,7 +844,7 @@ void setup_example(vw& all, example* ae)
 namespace VW{
   example* new_unused_example(vw& all) { 
     example* ec = get_unused_example(all);
-    all.p->lp->default_label(ec->ld);
+    all.p->lp.default_label(ec->ld);
     all.p->parsed_examples++;
     ec->example_counter = all.p->parsed_examples;
     return ec;
@@ -881,7 +881,7 @@ namespace VW{
   example* import_example(vw& all, vector<feature_space> vf)
   {
     example* ret = get_unused_example(all);
-    all.p->lp->default_label(ret->ld);
+    all.p->lp.default_label(ret->ld);
     for (size_t i = 0; i < vf.size();i++)
       {
 	uint32_t index = vf[i].first;
@@ -901,7 +901,7 @@ namespace VW{
   example* import_example(vw& all, primitive_feature_space* features, size_t len)
   {
     example* ret = get_unused_example(all);
-    all.p->lp->default_label(ret->ld);
+    all.p->lp.default_label(ret->ld);
     for (size_t i = 0; i < len;i++)
       {
 	uint32_t index = features[i].name;
@@ -955,7 +955,7 @@ namespace VW{
     char* cstr = (char*)label.c_str();
     substring str = { cstr, cstr+label.length() };
     words.push_back(str);
-    all.p->lp->parse_label(all.p, all.sd, ec.ld, words);
+    all.p->lp.parse_label(all.p, all.sd, ec.ld, words);
     words.erase();
     words.delete_v();
   }
@@ -1100,7 +1100,7 @@ void initialize_examples(vw& all)
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      all.p->examples[i].ld = calloc(1,all.p->lp->label_size);
+      all.p->examples[i].ld = calloc(1,all.p->lp.label_size);
       all.p->examples[i].in_use = false;
     }
 }
@@ -1143,7 +1143,7 @@ void free_parser(vw& all)
   
   for (size_t i = 0; i < all.p->ring_size; i++) 
     {
-      dealloc_example(all.p->lp->delete_label, all.p->examples[i]);
+      dealloc_example(all.p->lp.delete_label, all.p->examples[i]);
     }
   free(all.p->examples);
   

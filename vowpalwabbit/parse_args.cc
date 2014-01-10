@@ -23,6 +23,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "wap.h"
 #include "cb.h"
+#include "scorer.h"
 #include "searn.h"
 #include "bfgs.h"
 #include "lda_core.h"
@@ -59,7 +60,7 @@ bool valid_ns(char c)
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
-  char*cstr = new char[str.length()+1];
+  char* cstr = (char*)calloc(str.length()+1, sizeof(char));
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
@@ -94,7 +95,7 @@ void parse_affix_argument(vw&all, string str) {
     p = strtok(NULL, ",");
   }
 
-  delete cstr;
+  free(cstr);
 }
 
 vw* parse_args(int argc, char *argv[])
@@ -131,10 +132,10 @@ vw* parse_args(int argc, char *argv[])
   out_opt.add_options()
     ("audit,a", "print weights of features")
     ("predictions,p", po::value< string >(), "File to output predictions to")
-    ("raw_predictions,r", po::value< string >(),
-     "File to output unnormalized predictions to")
+    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
     ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("quiet", "Don't output diagnostics")
+    ("quiet", "Don't output disgnostics and progress updates")
+    ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
     ("binary", "report loss as binary classification on -1,1")
     ("min_prediction", po::value<float>(&(all->sd->min_label)), "Smallest prediction to output")
     ("max_prediction", po::value<float>(&(all->sd->max_label)), "Largest prediction to output")
@@ -212,6 +213,7 @@ vw* parse_args(int argc, char *argv[])
     ("cubic", po::value< vector<string> > (),
      "Create and use cubic features")
     ("rank", po::value<uint32_t>(&(all->rank)), "rank for matrix factorization.")
+    ("new_mf", "use new, reduction-based matrix factorization")
     ;
 
   po::options_description lrq_opt("Low Rank Quadratic options");
@@ -328,10 +330,46 @@ vw* parse_args(int argc, char *argv[])
     exit(0);
   }
 
-  if (vm.count("quiet"))
+  if (vm.count("quiet")) {
     all->quiet = true;
-  else
+    // --quiet wins over --progress
+  } else {
     all->quiet = false;
+
+    if (vm.count("progress")) {
+      string progress_str = vm["progress"].as<string>();
+      all->progress_arg = ::atof(progress_str.c_str());
+
+      // --progress interval is dual: either integer or floating-point
+      if (progress_str.find_first_of(".") == string::npos) {
+        // No "." in arg: assume integer -> additive
+        all->progress_add = true;
+        if (all->progress_arg < 1) {
+          cerr    << "warning: additive --progress <int>"
+                  << " can't be < 1: forcing to 1\n";
+          all->progress_arg = 1;
+
+        }
+        all->sd->dump_interval = all->progress_arg;
+
+      } else {
+        // A "." in arg: assume floating-point -> multiplicative
+        all->progress_add = false;
+
+        if (all->progress_arg <= 1.0) {
+          cerr    << "warning: multiplicative --progress <float>: "
+                  << vm["progress"].as<string>()
+                  << " is <= 1.0: adding 1.0\n";
+          all->progress_arg += 1.0;
+
+        } else if (all->progress_arg > 9.0) {
+          cerr    << "warning: multiplicative --progress <float>"
+                  << " is > 9.0: you probably meant to use an integer\n";
+        }
+        all->sd->dump_interval = 1.0;
+      }
+    }
+  }
 
   msrand48(random_seed);
 
@@ -362,12 +400,12 @@ vw* parse_args(int argc, char *argv[])
     }
 
   all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
-  //if we are doing matrix factorization, or user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
-  if( all->rank > 0 || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  //if the user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
+  if( (all->rank > 0 && !vm.count("new_mf")) || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
   {
-    all->adaptive = all->training && (vm.count("adaptive") && all->rank == 0);
+    all->adaptive = all->training && vm.count("adaptive") && (all->rank == 0 && !vm.count("new_mf"));
     all->invariant_updates = all->training && vm.count("invariant");
-    all->normalized_updates = all->training && (vm.count("normalized") && all->rank == 0);
+    all->normalized_updates = all->training && vm.count("normalized") && (all->rank == 0 && !vm.count("new_mf"));
 
     all->reg.stride = 1;
 
@@ -395,6 +433,24 @@ vw* parse_args(int argc, char *argv[])
       }
     }
   }
+
+  if (all->l1_lambda < 0.) {
+    cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;
+    all->l1_lambda = 0.;
+  }
+  if (all->l2_lambda < 0.) {
+    cerr << "l2_lambda should be nonnegative: resetting from " << all->l2_lambda << " to 0" << endl;
+    all->l2_lambda = 0.;
+  }
+  all->reg_mode += (all->l1_lambda > 0.) ? 1 : 0;
+  all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
+  if (!all->quiet)
+    {
+      if (all->reg_mode %2 && !vm.count("bfgs"))
+	cerr << "using l1 regularization = " << all->l1_lambda << endl;
+      if (all->reg_mode > 1)
+	cerr << "using l2 regularization = " << all->l2_lambda << endl;
+    }
 
   all->l = GD::setup(*all, vm);
   all->scorer = all->l;
@@ -611,8 +667,8 @@ vw* parse_args(int argc, char *argv[])
 	}
     }
 
-  // matrix factorization enabled
-  if (all->rank > 0) {
+  // (non-reduction) matrix factorization enabled
+  if (!vm.count("new_mf") && all->rank > 0) {
     // store linear + 2*rank weights per index, round up to power of two
     float temp = ceilf(logf((float)(all->rank*2+1)) / logf (2.f));
     all->reg.stride = 1 << (int) temp;
@@ -693,7 +749,7 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("noop"))
     all->l = NOOP::setup(*all);
 
-  if (all->rank != 0)
+  if (!vm.count("new_mf") && all->rank > 0)
     all->l = GDMF::setup(*all);
 
   all->loss = getLossFunction(all, loss_function, (float)loss_parameter);
@@ -784,24 +840,6 @@ vw* parse_args(int argc, char *argv[])
     io_temp.close_file();
   }
 
-  if (all->l1_lambda < 0.) {
-    cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;
-    all->l1_lambda = 0.;
-  }
-  if (all->l2_lambda < 0.) {
-    cerr << "l2_lambda should be nonnegative: resetting from " << all->l2_lambda << " to 0" << endl;
-    all->l2_lambda = 0.;
-  }
-  all->reg_mode += (all->l1_lambda > 0.) ? 1 : 0;
-  all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
-  if (!all->quiet)
-    {
-      if (all->reg_mode %2 && !vm.count("bfgs"))
-	cerr << "using l1 regularization = " << all->l1_lambda << endl;
-      if (all->reg_mode > 1)
-	cerr << "using l2 regularization = " << all->l2_lambda << endl;
-    }
-
   bool got_mc = false;
   bool got_cs = false;
   bool got_cb = false;
@@ -809,11 +847,13 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("nn") || vm_file.count("nn") )
     all->l = NN::setup(*all, to_pass_further, vm, vm_file);
 
-  // if (all->rank != 0)
-  //   all->l = MF::setup(*all);
+  if (vm.count("new_mf") && all->rank > 0)
+    all->l = MF::setup(*all, vm);
 
   if(vm.count("autolink") || vm_file.count("autolink") )
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
+
+  all->l = Scorer::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("top") || vm_file.count("top") )
     all->l = TOPK::setup(*all, to_pass_further, vm, vm_file);
@@ -900,7 +940,6 @@ vw* parse_args(int argc, char *argv[])
       all->l = CBIFY::setup(*all, to_pass_further, vm, vm_file);
     }
 
-  all->searnstr = NULL;
   if (vm.count("searn") || vm_file.count("searn") ) {
     if (!got_cs && !got_cb) {
       if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
@@ -909,7 +948,7 @@ vw* parse_args(int argc, char *argv[])
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       got_cs = true;
     }
-    all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
+    //all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
     all->l = Searn::setup(*all, to_pass_further, vm, vm_file);
   }
 
@@ -954,9 +993,9 @@ vw* parse_args(int argc, char *argv[])
 
   parse_source_args(*all, vm, all->quiet,all->numpasses);
 
-  // force stride * weights_per_problem to be a power of 2 to avoid 32-bit overflow
+  // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
-  size_t params_per_problem = all->l->increment * all->l->weights;
+  size_t params_per_problem = all->l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
   all->wpp = (1 << i) / all->reg.stride;
@@ -1041,11 +1080,11 @@ namespace VW {
   {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
+    delete all.l;
     if (all.reg.weight_vector != NULL)
       free(all.reg.weight_vector);
     free_parser(all);
     finalize_source(all.p);
-    free(all.p->lp);
     all.p->parse_name.erase();
     all.p->parse_name.delete_v();
     free(all.p);

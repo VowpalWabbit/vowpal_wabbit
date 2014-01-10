@@ -127,8 +127,8 @@ struct vw {
 
   node_socks socks;
 
-  learner* l;//the top level leaner
-  learner* scorer;//a scoring function
+  LEARNER::learner* l;//the top level learner
+  LEARNER::learner* scorer;//a scoring function
 
   void learn(example*);
 
@@ -195,7 +195,7 @@ struct vw {
   uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool     spelling_features[256]; // generate spelling features for which namespace
   bool audit;//should I print lots of debugging information?
-  bool quiet;//Should I suppress updates?
+  bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?
   bool active;
   bool active_simulation;
@@ -257,6 +257,11 @@ struct vw {
 
   bool hash_inv;
   bool print_invert;
+
+  // Set by --progress <arg>
+  bool  progress_add;   // additive (rather than multiplicative) progress dumps
+  float progress_arg;   // next update progress dump multiplier
+
   std::map< std::string, size_t> name_index_map;
 
   vw();

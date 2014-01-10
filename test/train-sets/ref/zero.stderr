@@ -1,3 +1,4 @@
+using l2 regularization = 1
 enabling BFGS based optimization **without** curvature calculation
 Num weight bits = 20
 learning rate = 0.5
@@ -7,7 +8,6 @@ decay_learning_rate = 1
 m = 7
 Allocated 72M for weights and mem
 ## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size 
-using l2 regularization = 1
 creating cache_file = train-sets/zero.dat.cache
 Reading datafile = train-sets/zero.dat
 num sources = 1

@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 typedef pair<float, v_array<char> > scored_example;
 
@@ -83,13 +84,15 @@ namespace TOPK {
     print_update(all, ec);
   }
 
-  void learn(void* data, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(topk* d, learner& base, example* ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
 
-    topk* d = (topk*)data;
-
-    base.learn(ec);
+    if (is_learn)
+      base.learn(ec);
+    else
+      base.predict(ec);
 
     if(d->pr_queue.size() < d->B)      
       d->pr_queue.push(make_pair(ec->final_prediction, ec->tag));
@@ -102,9 +105,9 @@ namespace TOPK {
 
   }
 
-  void finish_example(vw& all, void* d, example* ec)
+  void finish_example(vw& all, topk* d, example* ec)
   {
-    TOPK::output_example(all, (topk*)d, ec);
+    TOPK::output_example(all, d, ec);
     VW::finish_example(all, ec);
   }
 
@@ -116,8 +119,10 @@ namespace TOPK {
 
     data->all = &all;
 
-    learner* l = new learner(data, learn, all.l);
-    l->set_finish_example(finish_example);
+    learner* l = new learner(data, all.l);
+    l->set_learn<topk, predict_or_learn<true> >();
+    l->set_predict<topk, predict_or_learn<false> >();
+    l->set_finish_example<topk,finish_example>();
 
     return l;
   }

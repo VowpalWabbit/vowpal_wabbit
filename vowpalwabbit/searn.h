@@ -37,7 +37,7 @@ namespace SearnUtil
   void add_policy_offset(vw&, example*, uint32_t, uint32_t);
   void remove_policy_offset(vw&, example*, uint32_t, uint32_t);
  
-  void add_history_to_example(vw&, history_info&, example*, history);
+  void add_history_to_example(vw&, history_info&, example*, history, size_t);
   void remove_history_from_example(vw&, history_info&, example*);
 
   size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>*ystar, history_info &hinfo, size_t*history);
@@ -59,21 +59,25 @@ namespace Searn {
   struct searn {
     // functions that you will call
 
-    inline uint32_t predict(example** ecs, size_t ec_len, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for LDF
+    inline uint32_t predict(example* ecs, size_t ec_len, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for LDF
     { return this->predict_f(*this->all, *this->base_learner, ecs, ec_len, yallowed, ystar, false); }
 
-    inline uint32_t predict(example* ec, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for not LDF
-    { return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, ystar, false); }
-
-    inline uint32_t predict(example* ec, v_array<uint32_t>* yallowed, OAA::mc_label* one_ystar) // for not LDF
-    { if (OAA::label_is_test(one_ystar))
-        return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, NULL, false);
+    inline uint32_t predict(example* ecs, size_t ec_len, v_array<uint32_t>* yallowed, uint32_t one_ystar) // for LDF
+    { if (one_ystar == (uint32_t)-1) // test example
+        return this->predict_f(*this->all, *this->base_learner, ecs, ec_len, yallowed, NULL, false);
       else
-        return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar->label, true);
+        return this->predict_f(*this->all, *this->base_learner, ecs, ec_len, yallowed, (v_array<uint32_t>*)&one_ystar, true);
     }
-        //    { OAA::label_to_array(one_ystar, this->predict_ystar);
-        //      return this->predict_f(*this->all, *this->base_learner, &ec, 0, yallowed, &this->predict_ystar, false); }
-      
+
+    inline uint32_t predict(example* ec, v_array<uint32_t>* yallowed, v_array<uint32_t>* ystar) // for not LDF
+    { return this->predict_f(*this->all, *this->base_learner, ec, 0, yallowed, ystar, false); }
+
+    inline uint32_t predict(example* ec, v_array<uint32_t>* yallowed, uint32_t one_ystar) // for not LDF
+    { if (one_ystar == (uint32_t)-1) // test example
+        return this->predict_f(*this->all, *this->base_learner, ec, 0, yallowed, NULL, false);
+      else
+        return this->predict_f(*this->all, *this->base_learner, ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar, true);
+    }
     
     inline void     declare_loss(size_t predictions_since_last, float incr_loss)
     { return this->declare_loss_f(*this->all, predictions_since_last, incr_loss); }
@@ -87,9 +91,10 @@ namespace Searn {
     bool auto_history;          // do you want us to automatically add history features?
     bool auto_hamming_loss;     // if you're just optimizing hamming loss, we can do it for you!
     bool examples_dont_change;  // set to true if you don't do any internal example munging
+    bool is_ldf;                // set to true if you'll generate LDF data
 
     // data that you should not look at.  ever.
-    uint32_t (*predict_f)(vw&,learner&,example**,size_t,v_array<uint32_t>*,v_array<uint32_t>*,bool);
+    uint32_t (*predict_f)(vw&, LEARNER::learner&,example*,size_t,v_array<uint32_t>*,v_array<uint32_t>*,bool);
     void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
     
@@ -103,6 +108,7 @@ namespace Searn {
     size_t snapshot_last_found_pos;
     v_array<snapshot_item> snapshot_data;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train (or test) pass?
+    v_array<uint32_t> train_action_ids;  // these are the ids -- the same in non-ldf mode, but the index in ldf mode (while train_action is id.weight_index)
     v_array< void* > train_labels;  // which labels are valid at any given time
     v_array<uint32_t> rollout_action; // for auto_history, we need a space other than train_action for rollouts
     history_info hinfo;   // default history info for auto-history
@@ -121,8 +127,8 @@ namespace Searn {
     float  train_loss;     // total training loss for this example
     float  learn_loss;     // total loss for this "varied" example
 
-    v_array<float> learn_losses;   // losses for all (valid) actions at learn_t
-    example** learn_example_copy; // copy of example(s) at learn_t
+    v_array<float> learn_losses;  // losses for all (valid) actions at learn_t
+    example* learn_example_copy;  // copy of example(s) at learn_t
     size_t learn_example_len;     // number of example(s) at learn_t
 
     float  beta;                  // interpolation rate
@@ -133,7 +139,8 @@ namespace Searn {
     float  alpha; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
     uint32_t current_policy;      // what policy are we training right now?
     float gamma;                  // for dagger
-
+    float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
+    
     size_t num_features;
     uint32_t total_number_of_policies;
     bool do_snapshot;
@@ -152,7 +159,7 @@ namespace Searn {
 
     v_array<example*> ec_seq;
 
-    learner* base_learner;
+    LEARNER::learner* base_learner;
     vw* all;
     void* valid_labels;
     clock_t start_clock_time;
@@ -175,7 +182,7 @@ namespace Searn {
     void (*structured_predict)(searn&, example**,size_t,stringstream*,stringstream*);
   };
 
-  learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  LEARNER::learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);

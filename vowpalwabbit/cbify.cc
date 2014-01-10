@@ -3,6 +3,8 @@
 #include "cb.h"
 #include "rand48.h"
 
+using namespace LEARNER;
+
 namespace CBIFY {
 
   struct cbify {
@@ -32,11 +34,10 @@ namespace CBIFY {
     else
       ec->loss = 0.;
   }
-  
-  void learn_first(void* d, learner& base, example* ec)
+
+  template <bool is_learn>
+  void predict_or_learn_first(cbify* data, learner& base, example* ec)
   {//Explore tau times, then act according to optimal.
-    cbify* data = (cbify*)d;
-    
     OAA::mc_label* ld = (OAA::mc_label*)ec->ld;
     //Use CB to find current prediction for remaining rounds.
     if (data->tau > 0)
@@ -50,7 +51,10 @@ namespace CBIFY {
 	data->cb_label.costs.erase();
 	data->cb_label.costs.push_back(l);
 	ec->ld = &(data->cb_label);
-	base.learn(ec);
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
 	ec->final_prediction = (float)action;
 	ec->loss = l.cost;
       }
@@ -58,22 +62,23 @@ namespace CBIFY {
       {
 	data->cb_label.costs.erase();
 	ec->ld = &(data->cb_label);
-	base.learn(ec);
+	if (is_learn)
+	  base.learn(ec);
+	else
+	  base.predict(ec);
 	do_loss(ec);
       }
     ec->ld = ld;
   }
   
-  void learn_greedy(void* d, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn_greedy(cbify* data, learner& base, example* ec)
   {//Explore uniform random an epsilon fraction of the time.
-    cbify* data = (cbify*)d;
-    
-    //Use CB to find current prediction.
     OAA::mc_label* ld = (OAA::mc_label*)ec->ld;
     
     data->cb_label.costs.erase();
     ec->ld = &(data->cb_label);
-    base.learn(ec);
+    base.predict(ec);
     do_loss(ec);
     uint32_t action = (uint32_t)ec->final_prediction;
 
@@ -82,7 +87,7 @@ namespace CBIFY {
       {
 	CB::cb_class l = {ec->loss, action, 1.f - data->epsilon + base_prob};
 	data->cb_label.costs.push_back(l);
-      }    
+      }
     else
       {
 	do_uniform(data, ec);
@@ -91,8 +96,10 @@ namespace CBIFY {
 	CB::cb_class l = {ec->loss, (uint32_t)ec->final_prediction, base_prob};
 	data->cb_label.costs.push_back(l);
       }
-    base.learn(ec);
-    
+
+    if (is_learn)
+	base.learn(ec);
+
     ec->final_prediction = (float)action;
     ec->loss = data->cb_label.costs[0].cost;
     ec->ld = ld;
@@ -111,6 +118,12 @@ namespace CBIFY {
       
       //Use cost sensitive oracle to cover actions to form distribution.
     }
+
+  void finish_example(vw& all, cbify*, example* ec)
+  {
+    OAA::output_example(all, ec);
+    VW::finish_example(all, ec);
+  }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {//parse and set arguments
@@ -150,20 +163,22 @@ namespace CBIFY {
       all.options_from_file.append(ss.str());
     }
 
-    *(all.p->lp) = OAA::mc_label_parser;
-    learner* l;
+    all.p->lp = OAA::mc_label_parser;
+    learner* l = new learner(data, all.l, 1);
     if (vm.count("first") )
       {
 	data->tau = (uint32_t)vm["first"].as<size_t>();
-	l = new learner(data, learn_first, all.l, 1);
+	l->set_learn<cbify, predict_or_learn_first<true> >();
+	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
     else
       {
 	if ( vm.count("greedy") ) 
 	  data->epsilon = vm["greedy"].as<float>();
-	l = new learner(data, learn_greedy, all.l, 1);
+	l->set_learn<cbify, predict_or_learn_greedy<true> >();
+	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }
-    l->set_finish_example(OAA::finish_example);
+    l->set_finish_example<cbify,finish_example>();
     
     cout << "epsilon = " << data->epsilon << endl;
     
