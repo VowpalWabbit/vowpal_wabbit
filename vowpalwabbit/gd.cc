@@ -163,15 +163,51 @@ void predict(gd* g, learner& base, example* ec)
   if (normalized_training) {
     if(power_t_half) {
       if (reg_mode_odd)
-	ec->partial_prediction = inline_predict<vec_add_trunc_rescale>(*all, ec);
+	if (all->adaptive)
+	  if (all->normalized_idx == 1)
+	    ec->partial_prediction = inline_predict<vec_add_trunc_rescale<true, 1> >(*all, ec);
+	  else
+	    ec->partial_prediction = inline_predict<vec_add_trunc_rescale<true, 2> >(*all, ec);
+	else
+	  if (all->normalized_idx == 1)
+	    ec->partial_prediction = inline_predict<vec_add_trunc_rescale<false, 1> >(*all, ec);
+	  else
+	    ec->partial_prediction = inline_predict<vec_add_trunc_rescale<false, 2> >(*all, ec);
       else
-	ec->partial_prediction = inline_predict<vec_add_rescale>(*all, ec);
+	if (all->adaptive)
+	  if (all->normalized_idx == 1)
+	    ec->partial_prediction = inline_predict<vec_add_rescale<true, 1> >(*all, ec);
+	  else
+	    ec->partial_prediction = inline_predict<vec_add_rescale<true, 2> >(*all, ec);
+	else
+	  if (all->normalized_idx == 1)
+	    ec->partial_prediction = inline_predict<vec_add_rescale<false, 1> >(*all, ec);
+	  else
+	    ec->partial_prediction = inline_predict<vec_add_rescale<false, 2> >(*all, ec);
     }
     else {
       if (reg_mode_odd)
-	ec->partial_prediction = inline_predict<vec_add_trunc_rescale_general>(*all, ec);
+	if (all->adaptive)
+	  if (all->normalized_idx == 1)
+	    ec->partial_prediction = inline_predict<vec_add_trunc_rescale_general<true, 1> >(*all, ec);
+	  else
+	    ec->partial_prediction = inline_predict<vec_add_trunc_rescale_general<true, 2> >(*all, ec);
+	else
+	  if (all->normalized_idx == 1)
+	    ec->partial_prediction = inline_predict<vec_add_trunc_rescale_general<false, 1> >(*all, ec);
+	  else
+	    ec->partial_prediction = inline_predict<vec_add_trunc_rescale_general<false, 2> >(*all, ec);
       else
-	ec->partial_prediction = inline_predict<vec_add_rescale_general>(*all, ec);
+	if (all->adaptive)
+	  if (all->normalized_idx == 1)
+	    ec->partial_prediction = inline_predict<vec_add_rescale_general<true, 1> >(*all, ec);
+	  else
+	    ec->partial_prediction = inline_predict<vec_add_rescale_general<true, 2> >(*all, ec);
+	else
+	  if (all->normalized_idx == 1)
+	    ec->partial_prediction = inline_predict<vec_add_rescale_general<false, 1> >(*all, ec);
+	  else
+	    ec->partial_prediction = inline_predict<vec_add_rescale_general<false, 2> >(*all, ec);
     }
   }
   else {
