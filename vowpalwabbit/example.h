@@ -100,6 +100,4 @@ inline int example_is_newline(example* ec)
            (ec->indices.last() == constant_namespace)));
 }
 
-void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount);
-
 #endif

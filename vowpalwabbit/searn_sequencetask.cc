@@ -126,7 +126,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
 
         // now, offset it appropriately for the action id
-        update_example_indicies(true, &data->ldf_examples[a], data->num_actions, a);
+        update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * a);
         
         // need to tell searn what the action id is, so that it can add history features correctly!
         CSOAA::label* lab = (CSOAA::label*)data->ldf_examples[a].ld;
@@ -143,5 +143,16 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
     }
+  }
+
+  void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount) { // this is sort of bogus -- you'd never actually do this!
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
+      for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
+        f->weight_index = (f->weight_index * mult_amount) + plus_amount;
+    if (audit)
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+        if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+          for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
+            f->weight_index = (f->weight_index * mult_amount) + plus_amount;
   }
 }
