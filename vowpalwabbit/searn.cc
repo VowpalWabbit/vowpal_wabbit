@@ -820,18 +820,12 @@ namespace Searn {
 
   
 
-  void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
+  void searn_snapshot_data(vw& all, searn*srn, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
   {
-    searn* srn=(searn*)all.searnstr;
     // TODO: check to make sure that beam_search ==> do_snapshot
     if (! srn->do_snapshot) return;
-    assert(tag > 0);
 
-    //if (srn->state == INIT_TRAIN) return;
-    //if (srn->state == LEARN) return;
-    
     //clog << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(size_t*)data_ptr << ", t=" << srn->t << ", u4p=" << used_for_prediction << " }" << endl;
-    
 
     if (srn->state == INIT_TEST) {
       return;
@@ -841,19 +835,6 @@ namespace Searn {
            ((srn->snapshot_data.last().index == index) && (srn->snapshot_data.last().tag > tag)))) 
         cerr << "warning: trying to snapshot in a non-monotonic order! ignoring this snapshot" << endl;
       else {
-        // if we're doing auto-history and this is the first snapshot of a given index, we need to also snapshot the relevant piece of history
-        if (srn->auto_history &&
-            (srn->hinfo.length > 0) &&
-            ((srn->snapshot_data.size() == 0) ||
-             ((srn->snapshot_data.size() > 0) && (srn->snapshot_data.last().index < index)))) {
-          size_t history_size = srn->hinfo.length * sizeof(uint32_t);
-          void* history_data = malloc(history_size);
-          memcpy(history_data, srn->rollout_action.begin + srn->t, history_size);
-          snapshot_item item = { index, 0, history_data, history_size, srn->t };
-          srn->snapshot_data.push_back(item);
-          //cerr << "ss t=" << srn->t << " 
-        }
-
         void* new_data = malloc(sizeof_data);
         memcpy(new_data, data_ptr, sizeof_data);
         snapshot_item item = { index, tag, new_data, sizeof_data, srn->t };
@@ -868,21 +849,9 @@ namespace Searn {
         found = snapshot_binary_search_lt(srn->snapshot_data, srn->learn_t, tag, i, srn->snapshot_last_found_pos);
         if (!found) return;  // can't do anything
 
-        if (tag == 1) {
-          // restore our own stuff
+        if (tag == 1)
           srn->loss_last_step = srn->snapshot_data[i].pred_step;
         
-          if (srn->auto_history) {
-            assert((i > 0) && (srn->snapshot_data[i-1].pred_step == srn->learn_t) && (srn->snapshot_data[i-1].tag == 0));
-            // restore i-1 as history
-            snapshot_item item = srn->snapshot_data[i-1];
-            assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
-            if (srn->rollout_action.size() < srn->learn_t + srn->hinfo.length)
-              srn->rollout_action.resize(srn->learn_t + srn->hinfo.length);
-            memcpy(srn->rollout_action.begin + srn->learn_t, item.data_ptr, item.data_size);
-          }
-        }
-
         srn->snapshot_last_found_pos = i;
         snapshot_item item = srn->snapshot_data[i];
 
@@ -896,7 +865,7 @@ namespace Searn {
         if (! used_for_prediction) return; // we don't care if it matches or not
         size_t i;
         bool found = snapshot_binary_search_eq(srn->snapshot_data, index, tag, i, srn->snapshot_last_found_pos);
-        if (!found) return; // can't do anything
+        if (!found) return; // can't do anything -- TODO is this right?
       
         srn->snapshot_last_found_pos = i;
         snapshot_item item = srn->snapshot_data[i];
@@ -904,16 +873,6 @@ namespace Searn {
         if (matches) {
           // TODO: make sure it's the right number of snapshots!!!
           srn->snapshot_is_equivalent_to_t = item.pred_step;
-
-          if (srn->auto_history && (i>0) && (srn->snapshot_data[i-1].index == index) && (srn->snapshot_data[i-1].tag == 0)) {
-            item = srn->snapshot_data[i-1];
-            assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
-            if (srn->rollout_action.size() >= srn->t + srn->hinfo.length) {
-              matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, item.data_size) == 0;
-              if (!matches)
-                srn->snapshot_could_match = false;
-            }
-          }
         } else {
           srn->snapshot_could_match = false;
         }
@@ -981,6 +940,29 @@ namespace Searn {
       throw exception();
     }
   }
+
+
+  void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
+    searn* srn=(searn*)all.searnstr;
+    assert(tag > 1);
+
+    if (srn->auto_history && (srn->hinfo.length > 0) && (tag == 1)) { // first, take care of auto-history
+      size_t history_size = srn->hinfo.length * sizeof(uint32_t);
+      if (srn->state == INIT_TRAIN) {
+        if (((srn->snapshot_data.size() == 0) || (srn->snapshot_data.last().index < index)))
+          searn_snapshot_data(all, srn, index, 0, srn->rollout_action.begin + srn->t, history_size, true);
+      } else if (srn->state == LEARN) {
+        if (srn->do_fastforward || (srn->t <= srn->learn_t)) {
+          if (srn->rollout_action.size() < srn->learn_t + srn->hinfo.length)
+            srn->rollout_action.resize(srn->learn_t + srn->hinfo.length);
+          searn_snapshot_data(all, srn, index, 0, srn->rollout_action.begin + srn->learn_t, history_size, true);
+        }
+      }
+    }
+
+    searn_snapshot_data(all, srn, index, tag, data_ptr, sizeof_data, used_for_prediction);
+  }
+      
 
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
 
