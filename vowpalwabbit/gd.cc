@@ -360,7 +360,7 @@ void predict(gd* g, learner& base, example* ec)
     if(power_t_half) {
       if (reg_mode_odd)
 	{
-	  float gravity = all->sd->gravity;
+	  float gravity = (float)all->sd->gravity;
 	  if (all->adaptive)
 	    if (all->normalized_idx == 1)
 	      ec->partial_prediction = inline_predict<float, vec_add_trunc_rescale<true, 1> >(*all, ec, gravity);
@@ -389,7 +389,7 @@ void predict(gd* g, learner& base, example* ec)
     else {
       if (reg_mode_odd)
 	{
-	  gnp temp = {all->sd->gravity, all->power_t};
+	  gnp temp = {(float)all->sd->gravity, all->power_t};
 	  if (all->adaptive)
 	    if (all->normalized_idx == 1)
 	      ec->partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<true, 1> >(*all, ec, temp);
@@ -421,7 +421,7 @@ void predict(gd* g, learner& base, example* ec)
     // no rescaling
     if (reg_mode_odd)
       {
-	float gravity = all->sd->gravity;
+	float gravity = (float)all->sd->gravity;
 	ec->partial_prediction = inline_predict<float, vec_add_trunc>(*all, ec, gravity);
       }
     else

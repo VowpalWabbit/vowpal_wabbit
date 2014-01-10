@@ -43,7 +43,7 @@ struct features_and_source
 };
 
 void vec_store(features_and_source& p, float fx, float& fw) {  
-  feature f = {fx, &fw - p.base};
+  feature f = {fx, (uint32_t)(&fw - p.base)};
   p.feature_map.push_back(f);  
 }  
   

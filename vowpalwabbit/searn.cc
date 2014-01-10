@@ -335,13 +335,13 @@ namespace Searn {
   uint32_t sample_with_temperature_partial_prediction(example* ecs, size_t num_ec, float temp) {
     float total = 0.;
     for (size_t a=0; a<num_ec; a++)
-      total += exp(-1.0 * ecs[a].partial_prediction / temp);
+      total += (float)exp(-1.0 * ecs[a].partial_prediction / temp);
     if ((total >= 0.) && isfinite(total)) {
       float r = frand48() * total;
       for (size_t a=0; a<num_ec; a++) {
-        r -= exp(-1.0 * ecs[a].partial_prediction / temp);
+        r -= (float)exp(-1.0 * ecs[a].partial_prediction / temp);
         if (r <= 0.)
-          return a;
+          return (uint32_t)a;
       }
     }
     // something failed
@@ -400,11 +400,11 @@ namespace Searn {
   uint32_t sample_with_temperature_csoaa(CSOAA::label* ld, float temp) {
     float total = 0.;
     for (CSOAA::wclass* c = ld->costs.begin; c != ld->costs.end; ++c)
-      total += exp(-1.0 * c->partial_prediction / temp);
+      total += (float)exp(-1.0 * c->partial_prediction / temp);
     if ((total >= 0.) && isfinite(total)) {
       float r = frand48() * total;
       for (CSOAA::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
-        r -= exp(-1.0 * c->partial_prediction / temp);
+        r -= (float)exp(-1.0 * c->partial_prediction / temp);
         if (r <= 0.)
           return c->weight_index;
       }
@@ -416,11 +416,11 @@ namespace Searn {
   uint32_t sample_with_temperature_cb(CB::label* ld, float temp) {
     float total = 0.;
     for (CB::cb_class* c = ld->costs.begin; c != ld->costs.end; ++c)
-      total += exp(-1.0 * c->partial_prediction / temp);
+      total += (float)exp(-1.0 * c->partial_prediction / temp);
     if ((total >= 0.) && isfinite(total)) {
       float r = frand48() * total;
       for (CB::cb_class* c = ld->costs.begin; c != ld->costs.end; ++c) {
-        r -= exp(-1.0 * c->partial_prediction / temp);
+        r -= (float)exp(-1.0 * c->partial_prediction / temp);
         if (r <= 0.)
           return c->action;
       }

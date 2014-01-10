@@ -269,6 +269,7 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="rand48.h" />
+    <ClInclude Include="scorer.h" />
     <ClInclude Include="searn.h" />
     <ClInclude Include="searn_sequencetask.h" />
     <ClInclude Include="sender.h" />
@@ -286,8 +287,7 @@
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="allreduce.cc" />
-    <ClCompile Include="beam.cc" />
-    <ClCompile Include="binary.cc" />
+     <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb.cc" />
@@ -316,6 +316,7 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="rand48.cc" />
+    <ClCompile Include="scorer.cc" />
     <ClCompile Include="searn.cc" />
     <ClCompile Include="searn_sequencetask.cc" />
     <ClCompile Include="sender.cc" />

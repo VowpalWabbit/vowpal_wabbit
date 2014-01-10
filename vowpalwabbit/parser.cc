@@ -413,14 +413,19 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
   
   if (all.daemon || all.active)
     {
+#ifdef _WIN32
+      WSAData wsaData;
+      WSAStartup(MAKEWORD(2,2), &wsaData);
+      int lastError = WSAGetLastError();
+#endif
       all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
 #ifdef _WIN32
-		  int lastError = WSAGetLastError();
+	lastError = WSAGetLastError();
 
-		  cerr << "can't open socket! (" << lastError << ")" << endl;
+	cerr << "can't open socket! (" << lastError << ")" << endl;
 #else
-		  cerr << "can't open socket! " << errno << endl;
+        cerr << "can't open socket! " << errno << endl;
 #endif
 	throw exception();
       }
