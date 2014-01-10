@@ -76,7 +76,7 @@ void output_and_account_example(example* ec);
  template <void (*T)(vw&, float*, float,uint32_t)>
    float inline_predict(vw& all, example* ec)
    {
-     float prediction = all.p->lp->get_initial(ec->ld);
+     float prediction = all.p->lp.get_initial(ec->ld);
      foreach_feature<float*, T>(all, ec, &prediction);
      return prediction;
    }

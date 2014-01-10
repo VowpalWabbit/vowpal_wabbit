@@ -1085,7 +1085,6 @@ namespace VW {
       free(all.reg.weight_vector);
     free_parser(all);
     finalize_source(all.p);
-    free(all.p->lp);
     all.p->parse_name.erase();
     all.p->parse_name.delete_v();
     free(all.p);

@@ -1202,8 +1202,6 @@ void print_update(vw& all, searn* srn)
 
           if (you_size > 0) {
             if (me->atomics[neighbor_namespace].size() == you_size) {
-              char last_idx = me->indices.pop();
-              assert(last_idx == (char)neighbor_namespace);
               //cerr << "erasing new ns '" << (char)neighbor_namespace << "' of size " << me->atomics[neighbor_namespace].size() << endl;
               me->atomics[neighbor_namespace].erase();
             } else {
@@ -1687,7 +1685,7 @@ void print_update(vw& all, searn* srn)
     }
 
     // default to OAA labels unless the task wants to override this!
-    *(all.p->lp) = OAA::mc_label_parser; 
+    all.p->lp = OAA::mc_label_parser; 
     srn->task->initialize(*srn, srn->A, opts, vm, vm_file);
 
     // set up auto-history if they want it

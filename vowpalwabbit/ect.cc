@@ -426,7 +426,7 @@ namespace ECT
       data->errors = 0;
     }
 
-    *(all.p->lp) = OAA::mc_label_parser;
+    all.p->lp = OAA::mc_label_parser;
     size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     

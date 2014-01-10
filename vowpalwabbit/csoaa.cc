@@ -382,7 +382,7 @@ namespace CSOAA {
       all.options_from_file.append(ss.str());
     }
 
-    *(all.p->lp) = cs_label_parser;
+    all.p->lp = cs_label_parser;
     all.sd->k = nb_actions;
 
     learner* l = new learner(c, all.l, nb_actions);
@@ -1073,7 +1073,7 @@ namespace LabelDict {
       all.options_from_file.append(ldf_arg);
     }
 
-    *(all.p->lp) = CSOAA::cs_label_parser;
+    all.p->lp = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)-1;
 

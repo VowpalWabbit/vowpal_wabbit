@@ -34,7 +34,7 @@ void mf_print_audit_features(vw& all, example* ec, size_t offset);
 
 float mf_predict(vw& all, example* ec)
 {
-  float prediction = all.p->lp->get_initial(ec->ld);
+  float prediction = all.p->lp.get_initial(ec->ld);
 
   // clear stored predictions
   ec->topic_predictions.erase();
