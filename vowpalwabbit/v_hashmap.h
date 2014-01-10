@@ -52,10 +52,9 @@ template<class K, class V> class v_hashmap{
 
   void set_equivalent(bool (*eq)(K,K)) { equivalent = eq; }
 
-  ~v_hashmap() {
-    //std::cerr << "~v_hashmap" << std::endl;
-    dat.delete_v();
-  }
+  void delete_v() { dat.delete_v(); }
+  
+  ~v_hashmap() { delete_v(); }
 
   void clear() {
     memset(dat.begin, 0, base_size()*sizeof(hash_elem));
@@ -85,9 +84,9 @@ template<class K, class V> class v_hashmap{
     return NULL;
   }
 
-  V iterator_get_value(void* el) {
+  V* iterator_get_value(void* el) {
     hash_elem* e = (hash_elem*)el;
-    return e->val;
+    return &e->val;
   }
 
   void iter(void (*func)(K,V)) {

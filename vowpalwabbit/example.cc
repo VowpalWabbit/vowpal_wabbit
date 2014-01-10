@@ -81,21 +81,26 @@ void free_flatten_example(flat_example* fec)
 
 }
 
-example *alloc_example(size_t label_size)
+example *alloc_examples(size_t label_size, size_t count=1)
 {
-  example* ec = (example*)calloc(1, sizeof(example));
+  example* ec = (example*)calloc(count, sizeof(example));
   if (ec == NULL) return NULL;
-  ec->ld = calloc(1, label_size);
-  if (ec->ld == NULL) { free(ec); return NULL; }
-  ec->in_use = true;
-  ec->ft_offset = 0;
-  //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
+  for (size_t i=0; i<count; i++) {
+    ec[i].ld = calloc(1, label_size);
+    if (ec[i].ld == NULL) {
+      for (size_t j=0; j<i; j++) free(ec[j].ld);
+      free(ec);
+      return NULL;
+    }
+    ec[i].in_use = true;
+    ec[i].ft_offset = 0;
+    //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
+  }
   return ec;
 }
 
 void dealloc_example(void(*delete_label)(void*), example&ec)
 {
-  // std::cerr << "dealloc_example.indices.begin=" << ec.indices.begin << " end=" << ec.indices.end << " // ld = " << ec.ld << "\t|| me = " << &ec << std::endl;
   if (delete_label) {
     delete_label(ec.ld);
   }
@@ -136,8 +141,7 @@ audit_data copy_audit_data(audit_data &src) {
 }
 
 namespace VW {
-  void copy_example_data(bool audit, example* &dst, example* src, size_t label_size, void(*copy_label)(void*&,void*))
-{
+void copy_example_label(example*dst, example*src, size_t label_size, void(*copy_label)(void*&,void*)) {
   if (!src->ld) {
     if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
     dst->ld = NULL;
@@ -148,11 +152,15 @@ namespace VW {
     } else if (copy_label) {
       copy_label(dst->ld, src->ld);
     } else {
-      dst->ld = (void*)malloc(label_size);
+      //dst->ld = (void*)malloc(label_size);
       memcpy(dst->ld, src->ld, label_size);
     }
   }
+}
 
+void copy_example_data(bool audit, example* dst, example* src)
+{
+  //std::cerr << "copy_example_data dst = " << dst << std::endl;
   dst->final_prediction = src->final_prediction;
 
   copy_array(dst->tag, src->tag);
@@ -182,5 +190,13 @@ namespace VW {
   dst->end_pass = src->end_pass;
   dst->sorted = src->sorted;
   dst->in_use = src->in_use;}
+
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+  copy_example_data(audit, dst, src);
+  copy_example_label(dst, src, label_size, copy_label);
 }
+}
+
+
+
 
