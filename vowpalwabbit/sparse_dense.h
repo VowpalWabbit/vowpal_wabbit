@@ -16,15 +16,15 @@ inline float trunc_weight(float w, float gravity){
   return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
 }
 
-inline void vec_add(vw& all, float* p, float fx, uint32_t fi) {
-  *p += all.reg.weight_vector[fi & all.reg.weight_mask] * fx;
+inline void vec_add(vw& all, float& p, float fx, uint32_t fi) {
+  p += all.reg.weight_vector[fi & all.reg.weight_mask] * fx;
 }
 
-inline void vec_add_trunc(vw& all, float* p, float fx, uint32_t fi) {
-  *p += trunc_weight(all.reg.weight_vector[fi & all.reg.weight_mask], (float)all.sd->gravity) * fx;
+inline void vec_add_trunc(vw& all, float& p, float fx, uint32_t fi) {
+  p += trunc_weight(all.reg.weight_vector[fi & all.reg.weight_mask], (float)all.sd->gravity) * fx;
 }
 
-inline void vec_add_rescale(vw& all, float* p, float fx, uint32_t fi) {
+inline void vec_add_rescale(vw& all, float& p, float fx, uint32_t fi) {
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x_abs = fabs(fx);
   if( x_abs > w[all.normalized_idx] ) {// new scale discovered
@@ -34,10 +34,10 @@ inline void vec_add_rescale(vw& all, float* p, float fx, uint32_t fi) {
     }
     w[all.normalized_idx] = x_abs;
   }
-  *p += w[0] * fx;
+  p += w[0] * fx;
 }
 
-inline void vec_add_trunc_rescale(vw& all, float* p, float fx, uint32_t fi) {
+inline void vec_add_trunc_rescale(vw& all, float& p, float fx, uint32_t fi) {
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x_abs = fabs(fx);
   if( x_abs > w[all.normalized_idx] ) {
@@ -47,10 +47,10 @@ inline void vec_add_trunc_rescale(vw& all, float* p, float fx, uint32_t fi) {
     }
     w[all.normalized_idx] = x_abs;
   }
-  *p += trunc_weight(w[0], (float)all.sd->gravity) * fx;
+  p += trunc_weight(w[0], (float)all.sd->gravity) * fx;
 }
 
-inline void vec_add_rescale_general(vw& all, float* p, float fx, uint32_t fi) {
+inline void vec_add_rescale_general(vw& all, float& p, float fx, uint32_t fi) {
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
@@ -61,10 +61,10 @@ inline void vec_add_rescale_general(vw& all, float* p, float fx, uint32_t fi) {
     }
     w[all.normalized_idx] = x_abs;
   }
-  *p += w[0] * fx;
+  p += w[0] * fx;
 }
 
-inline void vec_add_trunc_rescale_general(vw& all, float* p, float fx, uint32_t fi) {
+inline void vec_add_trunc_rescale_general(vw& all, float& p, float fx, uint32_t fi) {
   weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
@@ -75,7 +75,7 @@ inline void vec_add_trunc_rescale_general(vw& all, float* p, float fx, uint32_t 
     }
     w[all.normalized_idx] = x_abs;
   }
-  *p += trunc_weight(w[0], (float)all.sd->gravity) * fx;
+  p += trunc_weight(w[0], (float)all.sd->gravity) * fx;
 }
 
 void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update, float regularization);

@@ -58,7 +58,7 @@ namespace GD
     float update;
   };
 
-  template <void (*T)(vw&, train_data*, float, uint32_t)>
+  template <void (*T)(vw&, train_data&, float, uint32_t)>
   void generic_train(vw& all, example* &ec, float update, bool sqrt_norm)
   {
     if (fabs(update) == 0.)
@@ -74,7 +74,7 @@ namespace GD
     
     train_data d = {avg_norm, update};
     
-    foreach_feature<train_data*,T>(all, ec, &d);
+    foreach_feature<train_data,T>(all, ec, d);
   }
 
 float InvSqrt(float x){
@@ -87,29 +87,29 @@ float InvSqrt(float x){
 }
 
 template<bool feature_mask_off>
-inline void general_update(vw& all, train_data* s, float x, uint32_t fi)
+inline void general_update(vw& all, train_data& s, float x, uint32_t fi)
 {
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
     float t = 1.f;
     if(all.adaptive) t = powf(w[1],-all.power_t);
     if(all.normalized_updates) {
-      float norm = w[all.normalized_idx] * s->avg_norm;
+      float norm = w[all.normalized_idx] * s.avg_norm;
       float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
       t *= powf(norm*norm,-power_t_norm);
     }
-    w[0] += s->update * x * t;
+    w[0] += s.update * x * t;
   }
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off>
-inline void specialized_update(vw& all, train_data* s, float x, uint32_t fi)
+inline void specialized_update(vw& all, train_data& s, float x, uint32_t fi)
 {
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
     float t = 1.f;
     float inv_norm = 1.f;
-    if(normalized) inv_norm /= (w[all.normalized_idx] * s->avg_norm);
+    if(normalized) inv_norm /= (w[all.normalized_idx] * s.avg_norm);
     if(adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
@@ -122,7 +122,7 @@ inline void specialized_update(vw& all, train_data* s, float x, uint32_t fi)
     } else {
       t *= inv_norm*inv_norm; //if only using normalized updates but not adaptive, need to divide by feature norm squared
     }
-    w[0] += s->update * x * t;
+    w[0] += s.update * x * t;
   }
 }
 
@@ -437,7 +437,7 @@ void print_audit_features(vw& all, example* ec)
   };
 
 template<bool adaptive, bool normalized, bool feature_mask_off>
-inline void simple_norm_compute(vw& all, norm_data* nd, float x, uint32_t fi) {
+inline void simple_norm_compute(vw& all, norm_data& nd, float x, uint32_t fi) {
 
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     weight* w = &all.reg.weight_vector[fi & all.reg.weight_mask];
@@ -448,10 +448,10 @@ inline void simple_norm_compute(vw& all, norm_data* nd, float x, uint32_t fi) {
     if(normalized) {
       inv_norm /= w[all.normalized_idx];
       inv_norm2 = inv_norm*inv_norm;
-      nd->norm_x += x2 * inv_norm2;
+      nd.norm_x += x2 * inv_norm2;
     }
     if(adaptive){
-      w[1] += nd->g * x2;
+      w[1] += nd.g * x2;
 
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
     __m128 eta = _mm_load_ss(&w[1]);
@@ -464,12 +464,12 @@ inline void simple_norm_compute(vw& all, norm_data* nd, float x, uint32_t fi) {
     } else {
       t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
     }
-    nd->norm += x2 * t;
+    nd.norm += x2 * t;
   }
 }
 
 template<bool feature_mask_off>
-inline void powert_norm_compute(vw& all, norm_data* nd, float x, uint32_t fi) {
+inline void powert_norm_compute(vw& all, norm_data& nd, float x, uint32_t fi) {
   if(feature_mask_off || all.reg.weight_vector[(fi & all.reg.weight_mask)+all.feature_mask_idx]==1.){
     float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
 
@@ -477,19 +477,19 @@ inline void powert_norm_compute(vw& all, norm_data* nd, float x, uint32_t fi) {
     float x2 = x * x;
     float t = 1.f;
     if(all.adaptive){
-      w[1] += nd->g * x2;
+      w[1] += nd.g * x2;
       t = powf(w[1], -all.power_t);
     }
     if(all.normalized_updates) {
       float range2 = w[all.normalized_idx] * w[all.normalized_idx];
       t *= powf(range2, -power_t_norm);
-      nd->norm_x += x2 / range2;
+      nd.norm_x += x2 / range2;
     }
-    nd->norm += x2 * t;
+    nd.norm += x2 * t;
   }
 }
 
-  template <void (*T)(vw&,norm_data*,float,uint32_t)>
+  template <void (*T)(vw&,norm_data&,float,uint32_t)>
 float compute_norm(vw& all, example* &ec)
 {//We must traverse the features in _precisely_ the same order as during training.
   label_data* ld = (label_data*)ec->ld;
@@ -498,7 +498,7 @@ float compute_norm(vw& all, example* &ec)
 
   norm_data nd = {g, 0., 0.};
 
-  foreach_feature<norm_data*,T>(all, ec, &nd);
+  foreach_feature<norm_data,T>(all, ec, nd);
 
   if(all.normalized_updates) {
     float total_weight = ec->example_t;
