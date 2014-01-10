@@ -693,7 +693,7 @@ namespace Searn {
         else
           return ((CSOAA::label*)srn->valid_labels)->costs[id].weight_index;
       } else {
-        assert(false); // TODO: handle CB
+        throw exception();
       }
     } else {
       cerr << "fail: searn got into ill-defined state (" << (int)srn->state << ")" << endl;
@@ -942,7 +942,10 @@ namespace Searn {
           assert(srn->cur_beam_hyp->parent->snapshot.size() > 0);
           size_t i, desired_index = srn->cur_beam_hyp->parent->snapshot[0].index;
           bool found = snapshot_binary_search_eq(srn->cur_beam_hyp->parent->snapshot, desired_index, tag, i, srn->snapshot_last_found_pos);
-          assert(found);
+          if (! found) {
+            cerr << "beam search failed (snapshot not found)" << endl;
+            throw exception();
+          }
 
           assert(sizeof_data == srn->cur_beam_hyp->parent->snapshot[i].data_size);
           memcpy(data_ptr, srn->cur_beam_hyp->parent->snapshot[i].data_ptr, sizeof_data);
@@ -962,7 +965,10 @@ namespace Searn {
         assert(srn->beam_restore_to_end.size() > 0);
         size_t end_index = srn->beam_restore_to_end[0].index;
         bool found = snapshot_binary_search_eq(srn->beam_restore_to_end, end_index, tag, i, srn->snapshot_last_found_pos);
-        assert(found);
+        if (! found) {
+          cerr << "beam search failed (fast-forward not found)" << endl;
+          throw exception();
+        }
 
         assert(sizeof_data == srn->beam_restore_to_end[i].data_size);
         memcpy(data_ptr, srn->beam_restore_to_end[i].data_ptr, sizeof_data);
@@ -2087,7 +2093,7 @@ void print_update(vw& all, searn* srn)
     }
 
     // default to OAA labels unless the task wants to override this!
-    *(all.p->lp) = OAA::mc_label_parser; 
+    all.p->lp = OAA::mc_label_parser; 
     srn->task->initialize(*srn, srn->A, opts, vm, vm_file);
 
     // set up auto-history if they want it

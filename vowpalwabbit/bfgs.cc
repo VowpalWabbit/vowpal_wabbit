@@ -157,13 +157,13 @@ bool test_example(example* ec)
 
   float bfgs_predict(vw& all, example* &ec)
   {
-    ec->partial_prediction = GD::inline_predict<vec_add>(all,ec);
+    ec->partial_prediction = GD::inline_predict<float, vec_add>(all,ec, 0.);
     return GD::finalize_prediction(all, ec->partial_prediction);
   }
 
-inline void add_grad(vw& all, float* d, float f, uint32_t u)
+inline void add_grad(vw& all, float& d, float f, uint32_t u)
 {
-  all.reg.weight_vector[u & all.reg.weight_mask] += (*d) * f;
+  all.reg.weight_vector[u & all.reg.weight_mask] += d * f;
 }
 
 float predict_and_gradient(vw& all, example* &ec)
@@ -176,15 +176,15 @@ float predict_and_gradient(vw& all, example* &ec)
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
   
   ec->ft_offset += W_GT;
-  GD::foreach_feature<float*,add_grad>(all, ec, &loss_grad);
+  GD::foreach_feature<float,add_grad>(all, ec, loss_grad);
   ec->ft_offset -= W_GT;
   
   return fp;
 }
 
-inline void add_precond(vw& all, float* d, float f, uint32_t u)
+inline void add_precond(vw& all, float& d, float f, uint32_t u)
 {
-  all.reg.weight_vector[u & all.reg.weight_mask] += (*d) * f * f;
+  all.reg.weight_vector[u & all.reg.weight_mask] += d * f * f;
 }
 
 void update_preconditioner(vw& all, example* &ec)
@@ -193,7 +193,7 @@ void update_preconditioner(vw& all, example* &ec)
   float curvature = all.loss->second_derivative(all.sd, ec->final_prediction,ld->label) * ld->weight;
   
   ec->ft_offset += W_COND;
-  GD::foreach_feature<float*,add_precond>(all, ec, &curvature);  
+  GD::foreach_feature<float,add_precond>(all, ec, curvature);  
   ec->ft_offset -= W_COND;
 }  
 
@@ -201,7 +201,7 @@ void update_preconditioner(vw& all, example* &ec)
 float dot_with_direction(vw& all, example* &ec)
 {
   ec->ft_offset+= W_DIR;  
-  float ret = GD::inline_predict<vec_add>(all, ec);
+  float ret = GD::inline_predict<float, vec_add>(all, ec, 0.);
   ec->ft_offset-= W_DIR;
 
   return ret;

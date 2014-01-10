@@ -238,8 +238,7 @@ vw::vw()
 
   p = new_parser();
   p->emptylines_separate_examples = false;
-  p->lp = (label_parser*)malloc(sizeof(label_parser));
-  *(p->lp) = simple_label;
+  p->lp = simple_label;
 
   reg_mode = 0;
   current_pass = 0;

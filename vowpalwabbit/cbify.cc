@@ -163,7 +163,7 @@ namespace CBIFY {
       all.options_from_file.append(ss.str());
     }
 
-    *(all.p->lp) = OAA::mc_label_parser;
+    all.p->lp = OAA::mc_label_parser;
     learner* l = new learner(data, all.l, 1);
     if (vm.count("first") )
       {

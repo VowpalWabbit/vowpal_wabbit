@@ -12,7 +12,7 @@ namespace SequenceTask {
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     srn.task_data            = NULL;  // we don't need any of our own data
-    srn.auto_history         = false;  // automatically add history features to our examples, please
+    srn.auto_history         = true;  // automatically add history features to our examples, please
     srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
     srn.examples_dont_change = true;  // we don't do any internal example munging
   }
@@ -23,11 +23,11 @@ namespace SequenceTask {
     for (size_t i=0; i<len; i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
-      OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
-      size_t prediction = srn.predict(ec[i], NULL, label->label);
+      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      size_t prediction = srn.predict(ec[i], NULL, y->label);
 
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
+      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
     }
   }
 }
@@ -68,14 +68,14 @@ namespace SequenceSpanTask {
       srn.snapshot(i, 2, &sys_tag, sizeof(sys_tag), true);
 
       my_task_data->y_allowed[my_task_data->y_allowed.size()-1] = sys_tag;
-      OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
-      size_t prediction = srn.predict(ec[i], &my_task_data->y_allowed, label->label);
+      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      size_t prediction = srn.predict(ec[i], &my_task_data->y_allowed, y->label);
       
       if (prediction == 1) sys_tag = 1;
       else sys_tag = ((prediction % 2) == 0) ? (uint32_t)(prediction+1) : (uint32_t)prediction;
 
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
+      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
     }
   }
 }
@@ -126,7 +126,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
 
         // now, offset it appropriately for the action id
-        update_example_indicies(true, &data->ldf_examples[a], data->num_actions, a);
+        update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * a);
         
         // need to tell searn what the action id is, so that it can add history features correctly!
         CSOAA::label* lab = (CSOAA::label*)data->ldf_examples[a].ld;
@@ -136,12 +136,23 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
 
-      OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
-      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, label->label - 1);
+      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, y->label - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_it]->ld.costs[0].weight_index
       
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
+      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
     }
+  }
+
+  void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount) { // this is sort of bogus -- you'd never actually do this!
+    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
+      for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
+        f->weight_index = (f->weight_index * mult_amount) + plus_amount;
+    if (audit)
+      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+        if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+          for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
+            f->weight_index = (f->weight_index * mult_amount) + plus_amount;
   }
 }

@@ -11,9 +11,9 @@ license as described in the file LICENSE.
 #include "gd.h"  
 #include "global_data.h"  
   
-void vec_store(vw& all, v_array<feature>* p, float fx, uint32_t fi) {  
+void vec_store(vw& all, v_array<feature>& p, float fx, uint32_t fi) {  
   feature f = {fx, fi};
-  p->push_back(f);  
+  p.push_back(f);  
 }  
   
 int compare_feature(const void* p1, const void* p2) {  
@@ -61,7 +61,7 @@ flat_example* flatten_example(vw& all, example *ec)
 	fec->num_features = ec->num_features;  
     
 	v_array<feature> feature_map; //map to store sparse feature vectors  
-	GD::foreach_feature<v_array<feature>*, vec_store>(all, ec, &feature_map); 
+	GD::foreach_feature<v_array<feature>, vec_store>(all, ec, feature_map); 
 	qsort(feature_map.begin, feature_map.size(), sizeof(feature), compare_feature);  
     
 	fec->feature_map_len = feature_map.size();
@@ -196,22 +196,3 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_label(dst, src, label_size, copy_label);
 }
 }
-
-void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount)
- {
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f) {
-      cerr << f->weight_index << " -> ";
-      f->weight_index = (f->weight_index * mult_amount) + plus_amount;
-      cerr << f->weight_index << endl;
-    }
-  if (audit)
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-      if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-        for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; ++f)
-          f->weight_index = (f->weight_index * mult_amount) + plus_amount;
-}
-
-
-
-

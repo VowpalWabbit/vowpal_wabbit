@@ -256,7 +256,7 @@ namespace WAP {
      all.options_from_file.append(ss.str());
     }
 
-    *(all.p->lp) = CSOAA::cs_label_parser;
+    all.p->lp = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
 
