@@ -23,11 +23,11 @@ namespace SequenceTask {
     for (size_t i=0; i<len; i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
-      OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
-      size_t prediction = srn.predict(ec[i], NULL, label->label);
+      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      size_t prediction = srn.predict(ec[i], NULL, y->label);
 
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
+      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
     }
   }
 }
@@ -68,14 +68,14 @@ namespace SequenceSpanTask {
       srn.snapshot(i, 2, &sys_tag, sizeof(sys_tag), true);
 
       my_task_data->y_allowed[my_task_data->y_allowed.size()-1] = sys_tag;
-      OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
-      size_t prediction = srn.predict(ec[i], &my_task_data->y_allowed, label->label);
+      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      size_t prediction = srn.predict(ec[i], &my_task_data->y_allowed, y->label);
       
       if (prediction == 1) sys_tag = 1;
       else sys_tag = ((prediction % 2) == 0) ? (uint32_t)(prediction+1) : (uint32_t)prediction;
 
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
+      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
     }
   }
 }
@@ -136,12 +136,12 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
 
-      OAA::mc_label* label = (OAA::mc_label*)ec[i]->ld;
-      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, label->label - 1);
+      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, y->label - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_it]->ld.costs[0].weight_index
       
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(label) ? '?' : label->label) << ' ';
+      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
     }
   }
 
