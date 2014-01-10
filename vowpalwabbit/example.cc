@@ -200,8 +200,11 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
 void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount)
  {
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
-    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
+    for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f) {
+      cerr << f->weight_index << " -> ";
       f->weight_index = (f->weight_index * mult_amount) + plus_amount;
+      cerr << f->weight_index << endl;
+    }
   if (audit)
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
       if (ec->audit_features[*i].begin != ec->audit_features[*i].end)

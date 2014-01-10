@@ -22,6 +22,7 @@ license as described in the file LICENSE.
 #include "v_hashmap.h"
 #include "vw.h"
 #include "rand48.h"
+#include "beam.h"
 
 // task-specific includes
 #include "searn_sequencetask.h"
@@ -269,9 +270,12 @@ namespace SearnUtil
 
 
 namespace Searn {
-  const char INIT_TEST  = 0;
-  const char INIT_TRAIN = 1;
-  const char LEARN      = 2;
+  const char INIT_TEST    = 0;
+  const char INIT_TRAIN   = 1;
+  const char LEARN        = 2;
+  const char BEAM_INIT    = 3;
+  const char BEAM_ADVANCE = 4;
+  const char BEAM_PLAYOUT = 5;
 
   const bool PRINT_DEBUG_INFO =0;
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
@@ -284,8 +288,7 @@ namespace Searn {
     return SearnUtil::random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, srn.rollout_all_actions);
   }
 
-  //CSOAA::label get_all_labels(searn& srn, size_t num_ec, v_array<uint32_t> *yallowed)
-  void get_all_labels(void*dst, searn& srn, size_t num_ec, v_array<uint32_t> *yallowed)
+  size_t get_all_labels(void*dst, searn& srn, size_t num_ec, v_array<uint32_t> *yallowed)
   {
     if (srn.rollout_all_actions) { // dst should be a CSOAA::label*
       CSOAA::label *ret = (CSOAA::label*)dst;
@@ -308,6 +311,7 @@ namespace Searn {
           }
         }
       }
+      return ret->costs.size();
     } else { // dst should be a CB::label*
       CB::label *ret = (CB::label*)dst;
       ret->costs.erase();
@@ -329,7 +333,17 @@ namespace Searn {
           }
         }
       }
+      return ret->costs.size();
     }
+  }
+
+  uint32_t get_any_label(searn& srn, v_array<uint32_t> *yallowed) {
+    if (srn.is_ldf)
+      return 0;
+    else if (yallowed == NULL)
+      return 1;
+    else
+      return (*yallowed)[0];
   }
 
   uint32_t sample_with_temperature_partial_prediction(example* ecs, size_t num_ec, float temp) {
@@ -375,9 +389,6 @@ namespace Searn {
           ecs[action].partial_prediction < best_prediction) {
         best_prediction = ecs[action].partial_prediction;
         best_action     = action; // ((CSOAA::label*)ecs[action].ld)->costs[0].weight_index;
-      }
-
-      if ((srn->state == INIT_TEST) && (all.raw_prediction > 0)) {
       }
     }
         
@@ -571,8 +582,7 @@ namespace Searn {
       if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
       return a;
-    }
-    if (srn->state == INIT_TRAIN) {
+    } else if (srn->state == INIT_TRAIN) {
       int pol = choose_policy(*srn, srn->allow_current_policy, true);
       get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
@@ -587,8 +597,7 @@ namespace Searn {
       if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
       return a;
-    }
-    if (srn->state == LEARN) {
+    } else if (srn->state == LEARN) {
       if (srn->t < srn->learn_t) {
         assert(srn->t < srn->train_action.size());
         srn->t++;
@@ -647,16 +656,57 @@ namespace Searn {
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return (uint32_t)this_a;
       }
-      assert(false);
+    } else if (srn->state == BEAM_INIT) {
+      // our job is to fill in srn->valid_labels and the corresponding action costs,
+      // to collect a snapshot at the end, and otherwise to go as fast as possible!
+      if (srn->t == 0) { // collect action info
+        int pol = choose_policy(*srn, true, false);
+        size_t num_actions = get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
+        single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
+        // fill in relevant information
+        srn->cur_beam_hyp->num_actions = num_actions;
+        srn->cur_beam_hyp->filled_in_prediction = true;
+        // TODO: check to see if valid_labels also containts costs!!!
+      }
+      srn->t++;
+      return get_any_label(*srn, yallowed);
+    } else if (srn->state == BEAM_ADVANCE) {
+      if (srn->t == srn->cur_beam_hyp->t) {
+        int pol = choose_policy(*srn, true, false);
+        size_t num_actions = get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
+        single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
+        // fill in relevant information
+        srn->cur_beam_hyp->num_actions = num_actions;
+        srn->cur_beam_hyp->filled_in_prediction = true;
+        // TODO: check to see if valid_labels also containts costs!!!
+      }
+      srn->t++;
+      return get_any_label(*srn, yallowed);
+    } else if (srn->state == BEAM_PLAYOUT) {
+      assert(srn->beam_final_action_sequence.size() > 0);
+      get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
+      srn->t++;
+      if (srn->rollout_all_actions) {
+        uint32_t id = srn->beam_final_action_sequence.pop();
+        if (srn->is_ldf)
+          return id;
+        else
+          return ((CSOAA::label*)srn->valid_labels)->costs[id].weight_index;
+      } else {
+        assert(false); // TODO: handle CB
+      }
+    } else {
+      cerr << "fail: searn got into ill-defined state (" << (int)srn->state << ")" << endl;
+      throw exception();
+      return 0;
     }
-    cerr << "fail: searn got into ill-defined state (" << (int)srn->state << ")" << endl;
-    throw exception();
   }
 
   void searn_declare_loss(vw& all, size_t predictions_since_last, float incr_loss)
   {
     searn* srn=(searn*)all.searnstr;
-    if (srn->t != srn->loss_last_step + predictions_since_last) {
+
+    if ((srn->beam_size == 0) && (srn->t != srn->loss_last_step + predictions_since_last)) {
       cerr << "fail: searntask hasn't counted its predictions correctly.  current time step=" << srn->t << ", last declaration at " << srn->loss_last_step << ", declared # of predictions since then is " << predictions_since_last << endl;
       throw exception();
     }
@@ -666,8 +716,10 @@ namespace Searn {
       srn->test_loss += incr_loss;
     else if (srn->state == INIT_TRAIN)
       srn->train_loss += incr_loss;
-    else
+    else if (srn->state == LEARN)
       srn->learn_loss += incr_loss;
+    else if (srn->state == BEAM_PLAYOUT)
+      srn->test_loss += incr_loss;
   }
 
   template<class T> bool v_array_contains(v_array<T> &A, T x) {
@@ -771,6 +823,7 @@ namespace Searn {
   void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
   {
     searn* srn=(searn*)all.searnstr;
+    // TODO: check to make sure that beam_search ==> do_snapshot
     if (! srn->do_snapshot) return;
     assert(tag > 0);
 
@@ -780,8 +833,9 @@ namespace Searn {
     //clog << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(size_t*)data_ptr << ", t=" << srn->t << ", u4p=" << used_for_prediction << " }" << endl;
     
 
-    if (srn->state == INIT_TEST) return;
-    if (srn->state == INIT_TRAIN) {  // training means "record snapshots"
+    if (srn->state == INIT_TEST) {
+      return;
+    } else if (srn->state == INIT_TRAIN) {  // training means "record snapshots"
       if ((srn->snapshot_data.size() > 0) &&
           ((srn->snapshot_data.last().index > index) ||
            ((srn->snapshot_data.last().index == index) && (srn->snapshot_data.last().tag > tag)))) 
@@ -806,102 +860,119 @@ namespace Searn {
         srn->snapshot_data.push_back(item);
       }
       return;
-    }
+    } else if (srn->state == LEARN) {
+      if (srn->t <= srn->learn_t) {  // RESTORE up to certain point
+        // otherwise, we're restoring snapshots -- we want to find the index of largest value that has .t<=learn_t
+        size_t i;
+        bool found;
+        found = snapshot_binary_search_lt(srn->snapshot_data, srn->learn_t, tag, i, srn->snapshot_last_found_pos);
+        if (!found) return;  // can't do anything
 
-    // ELSE, this is TEST mode
-    if (srn->t <= srn->learn_t) {  // RESTORE up to certain point
-      //cerr << "index=" << index << " tag=" << tag << endl;
-
-      // otherwise, we're restoring snapshots -- we want to find the index of largest value that has .t<=learn_t
-      size_t i;
-      bool found;
-      found = snapshot_binary_search_lt(srn->snapshot_data, srn->learn_t, tag, i, srn->snapshot_last_found_pos);
-      // size_t i2;
-      // bool found2;
-      // found2 = snapshot_linear_search_lt(srn->snapshot_data, srn->learn_t, tag, i2);
-      // assert(found == found2);
-      // assert(i == i2);
-      if (!found) return;  // can't do anything
-
-      if (tag == 1) {
-        // restore our own stuff
-        srn->loss_last_step = srn->snapshot_data[i].pred_step;
+        if (tag == 1) {
+          // restore our own stuff
+          srn->loss_last_step = srn->snapshot_data[i].pred_step;
         
-        if (srn->auto_history) {
-          assert((i > 0) && (srn->snapshot_data[i-1].pred_step == srn->learn_t) && (srn->snapshot_data[i-1].tag == 0));
-          // restore i-1 as history
-          snapshot_item item = srn->snapshot_data[i-1];
-          assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
-          if (srn->rollout_action.size() < srn->learn_t + srn->hinfo.length)
-            srn->rollout_action.resize(srn->learn_t + srn->hinfo.length);
-          //assert(srn->rollout_action.size() >= srn->learn_t + srn->hinfo.length);
-          memcpy(srn->rollout_action.begin + srn->learn_t, item.data_ptr, item.data_size);
-        }
-      }
-      
-      // if (srn->auto_history && (i > 0) && (srn->snapshot_data[i-1].pred_step == srn->learn_t) && (srn->snapshot_data[i-1].tag == 0)) {
-      //   // restore i-1 as history
-      //   snapshot_item item = srn->snapshot_data[i-1];
-      //   assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
-      //   memcpy(srn->rollout_action.begin + srn->learn_t, item.data_ptr, item.data_size);
-      // }
-
-
-      
-      srn->snapshot_last_found_pos = i;
-      snapshot_item item = srn->snapshot_data[i];
-
-      /*
-      //cerr << "restoring snapshot @ " << item.pred_step << " (learn_t=" << srn->learn_t << ") with " << index << "." << tag << ", value=" << *(size_t*)item.data_ptr << endl;
-      cerr << "would restore snapshot: { index=" << item.index << ", tag=" << item.tag << ", data_ptr=";
-      if (item.tag == 1) { cerr << *(size_t*)item.data_ptr; }
-      if (item.tag == 2) {
-      size_t *tmp = (size_t*)item.data_ptr;
-      cerr << tmp[0];
-      }
-      if (item.tag == 3) { cerr << *(float*)item.data_ptr; }
-      cerr << ", pred_step=" << item.pred_step << ", moving from t=" << srn->t << " }" << endl;
-      */
-      assert(sizeof_data == item.data_size);
-
-      memcpy(data_ptr, item.data_ptr, sizeof_data);
-      srn->t = item.pred_step;
-    } else if (srn->do_fastforward) { // can we FAST FORWARD to end???
-      if (srn->rollout_oracle) return;
-      if (! srn->snapshot_could_match) return; // already hosed
-      if (! used_for_prediction) return; // we don't care if it matches or not
-      size_t i;
-      bool found;
-      found = snapshot_binary_search_eq(srn->snapshot_data, index, tag, i, srn->snapshot_last_found_pos);
-
-      // bool found2; size_t i2;
-      // found2 = snapshot_linear_search_eq(srn->snapshot_data, index, tag, i2);
-      // assert(found == found2);
-      // assert(i == i2);
-      
-      if (!found) return; // can't do anything
-
-      
-      srn->snapshot_last_found_pos = i;
-      //clog << "a" << index << "/" << tag << " ";
-      snapshot_item item = srn->snapshot_data[i];
-      bool matches = memcmp(item.data_ptr, data_ptr, sizeof_data) == 0;
-      if (matches) {
-        // TODO: make sure it's the right number of snapshots!!!
-        srn->snapshot_is_equivalent_to_t = item.pred_step;
-
-        if (srn->auto_history && (i>0) && (srn->snapshot_data[i-1].index == index) && (srn->snapshot_data[i-1].tag == 0)) {
-          item = srn->snapshot_data[i-1];
-          assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
-          if (srn->rollout_action.size() >= srn->t + srn->hinfo.length) {
-            matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, item.data_size) == 0;
-            if (!matches)
-              srn->snapshot_could_match = false;
+          if (srn->auto_history) {
+            assert((i > 0) && (srn->snapshot_data[i-1].pred_step == srn->learn_t) && (srn->snapshot_data[i-1].tag == 0));
+            // restore i-1 as history
+            snapshot_item item = srn->snapshot_data[i-1];
+            assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
+            if (srn->rollout_action.size() < srn->learn_t + srn->hinfo.length)
+              srn->rollout_action.resize(srn->learn_t + srn->hinfo.length);
+            memcpy(srn->rollout_action.begin + srn->learn_t, item.data_ptr, item.data_size);
           }
         }
-      } else {
-        srn->snapshot_could_match = false;
+
+        srn->snapshot_last_found_pos = i;
+        snapshot_item item = srn->snapshot_data[i];
+
+        assert(sizeof_data == item.data_size);
+
+        memcpy(data_ptr, item.data_ptr, sizeof_data);
+        srn->t = item.pred_step;
+      } else if (srn->do_fastforward) { // can we FAST FORWARD to end???
+        if (srn->rollout_oracle) return;
+        if (! srn->snapshot_could_match) return; // already hosed
+        if (! used_for_prediction) return; // we don't care if it matches or not
+        size_t i;
+        bool found = snapshot_binary_search_eq(srn->snapshot_data, index, tag, i, srn->snapshot_last_found_pos);
+        if (!found) return; // can't do anything
+      
+        srn->snapshot_last_found_pos = i;
+        snapshot_item item = srn->snapshot_data[i];
+        bool matches = memcmp(item.data_ptr, data_ptr, sizeof_data) == 0;
+        if (matches) {
+          // TODO: make sure it's the right number of snapshots!!!
+          srn->snapshot_is_equivalent_to_t = item.pred_step;
+
+          if (srn->auto_history && (i>0) && (srn->snapshot_data[i-1].index == index) && (srn->snapshot_data[i-1].tag == 0)) {
+            item = srn->snapshot_data[i-1];
+            assert(item.data_size == srn->hinfo.length * sizeof(uint32_t));
+            if (srn->rollout_action.size() >= srn->t + srn->hinfo.length) {
+              matches = memcmp(item.data_ptr, srn->rollout_action.begin + srn->t, item.data_size) == 0;
+              if (!matches)
+                srn->snapshot_could_match = false;
+            }
+          }
+        } else {
+          srn->snapshot_could_match = false;
+        }
       }
+    } else if (srn->state == BEAM_INIT) {
+      // TODO: auto-history
+      size_t cur_size = srn->snapshot_data.size();
+      if ((cur_size > 0) && // only need to keep around the NEWEST set of snapshots
+          (srn->snapshot_data[cur_size - 1].pred_step < srn->t))
+        clear_snapshot(all, *srn);
+      
+      void* new_data = malloc(sizeof_data);
+      memcpy(new_data, data_ptr, sizeof_data);
+      snapshot_item item = { index, tag, new_data, sizeof_data, srn->t };
+      srn->snapshot_data.push_back(item);
+    } else if (srn->state == BEAM_ADVANCE) {
+      clog << "snapshot(BEAM_ADVANCE), srn.t=" << srn->t << ", hyp.t=" << srn->cur_beam_hyp->t << endl;
+      assert(srn->cur_beam_hyp->parent != NULL);
+      if (srn->t < srn->cur_beam_hyp->t) {
+        if (srn->cur_beam_hyp->parent->snapshot.size() == 0) {
+          clog << "skipping because parent snapshot is empty" << endl;
+          assert(srn->cur_beam_hyp->parent->t == 0);
+        } else {
+          clog << "skipping to desired position" << endl;
+          // TODO: restore our own stuff
+          assert(srn->cur_beam_hyp->parent->snapshot.size() > 0);
+          size_t i, desired_index = srn->cur_beam_hyp->parent->snapshot[0].index;
+          bool found = snapshot_binary_search_eq(srn->cur_beam_hyp->parent->snapshot, desired_index, tag, i, srn->snapshot_last_found_pos);
+          assert(found);
+
+          assert(sizeof_data == srn->cur_beam_hyp->parent->snapshot[i].data_size);
+          memcpy(data_ptr, srn->cur_beam_hyp->parent->snapshot[i].data_ptr, sizeof_data);
+          srn->t = srn->cur_beam_hyp->parent->snapshot[i].pred_step;
+        }
+      } else if (srn->t == srn->cur_beam_hyp->t) {
+        clog << "recording" << endl;
+        void* new_data = malloc(sizeof_data);
+        memcpy(new_data, data_ptr, sizeof_data);
+        snapshot_item item = { index, tag, new_data, sizeof_data, srn->t };
+        srn->cur_beam_hyp->snapshot.push_back(item);
+        srn->cur_beam_hyp->filled_in_snapshot = true;
+      } else {
+        clog << "fast forward to end" << endl;
+        // fast foward to end
+        size_t i;
+        assert(srn->beam_restore_to_end.size() > 0);
+        size_t end_index = srn->beam_restore_to_end[0].index;
+        bool found = snapshot_binary_search_eq(srn->beam_restore_to_end, end_index, tag, i, srn->snapshot_last_found_pos);
+        assert(found);
+
+        assert(sizeof_data == srn->beam_restore_to_end[i].data_size);
+        memcpy(data_ptr, srn->beam_restore_to_end[i].data_ptr, sizeof_data);
+        srn->t = srn->beam_restore_to_end[i].pred_step;
+      }
+    } else if (srn->state == BEAM_PLAYOUT) {
+      // don't do any snapshotting
+    } else {
+      cerr << "fail: searn got into ill-defined state (" << (int)srn->state << ")" << endl;
+      throw exception();
     }
   }
 
@@ -996,15 +1067,17 @@ namespace Searn {
         ((CSOAA::label*)ec[a].ld)->costs[0].x = losses[a] - min_loss;
         //clog << "learn t = " << srn.learn_t << " cost = " << ((CSOAA::label*)ec[a].ld)->costs[0].x << " action = " << ((CSOAA::label*)ec[a].ld)->costs[0].weight_index << endl;
         //clog << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
-        add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t,
-                               ((CSOAA::label*)ec[a].ld)->costs[0].weight_index);
+        if (srn.auto_history)
+          add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t,
+                                 ((CSOAA::label*)ec[a].ld)->costs[0].weight_index);
         base.learn(&ec[a], srn.current_policy);
       }
       //clog << "learn: generate empty example" << endl;
       base.learn(srn.empty_example);
       //clog << "learn done " << repeat << endl;
-      for (size_t a=0; a<len; a++)
-        remove_history_from_example(all, srn.hinfo, &ec[a]);
+      if (srn.auto_history)
+        for (size_t a=0; a<len; a++)
+          remove_history_from_example(all, srn.hinfo, &ec[a]);
       srn.total_examples_generated++;
     }
   }
@@ -1016,14 +1089,7 @@ namespace Searn {
   }
 
 
-  template <bool is_learn>
-  void train_single_example(vw& all, searn& srn, example**ec, size_t len)
-  {
-    // do an initial test pass to compute output (and loss)
-    // TODO: don't do this if we don't need it!
-    //clog << "======================================== INIT TEST (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
-
-    srn.state = INIT_TEST;
+  void reset_searn_structure(searn&srn) {
     srn.t = 0;
     srn.T = 0;
     srn.loss_last_step = 0;
@@ -1040,11 +1106,193 @@ namespace Searn {
     srn.snapshot_is_equivalent_to_t = (size_t)-1;
     srn.snapshot_could_match = false;
     srn.snapshot_last_found_pos = (size_t)-1;
+  }
 
-    if ((all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
-        might_print_update(all) ||                  // if we have to print and update to stderr
-        (!all.training) ||                          // if we're just testing
-        (all.current_pass == 0) ||                  // we need error rates for progressive cost
+
+  void beam_predict(vw&all, searn&srn, example**ec, size_t len) {
+    using namespace Beam;
+    uint32_t DEFAULT_HASH = 0;
+
+    v_array<beam_hyp> hyp_pool;
+    size_t hyp_pool_id = 0;
+    hyp_pool.resize(10000, true); // TODO
+
+    beam* cur_beam   = new beam(srn.beam_size);
+    beam* next_beam  = new beam(srn.beam_size);
+    beam* final_beam = new beam(srn.beam_size);  // TODO: or just 1 if not k-best search
+
+    // initialize first beam
+    {
+      // in this call to structured_predict, we do the following:
+      //   1) collect the number of actions & corresponding costs available at time 0
+      //   2) collect the initial snapshot
+      //   3) store the final snapshot so we can fast-foward to the end at will
+      beam_hyp *hyp = hyp_pool.begin;
+    
+      hyp->t            = 0;
+      hyp->parent       = NULL;
+      hyp->action_taken = 0;     // irrelevant because parent==NULL
+      hyp->action_costs = NULL;  // we will fill this in
+      hyp->snapshot.erase();     // will be left empty
+      hyp->incr_cost    = 0.;    // will be left as 0.
+      hyp->num_actions  = 0;     // will get filled in
+      hyp->filled_in_prediction = false; // will (hopefully) get filled in
+      hyp->filled_in_snapshot   = false; // will *not* get filled in
+
+      reset_searn_structure(srn);
+      srn.state        = BEAM_INIT;
+      srn.cur_beam_hyp = hyp;
+      srn.task->structured_predict(srn, ec, len, NULL, NULL);
+    
+      assert(hyp->filled_in_prediction);   // TODO: handle the case that structured_predict just returns or something else weird happens
+
+      // collect the costs
+      if (srn.rollout_all_actions) { // TODO: handle CB
+        v_array<CSOAA::wclass>* costs = &((CSOAA::label*)srn.valid_labels)->costs;
+        assert(hyp->num_actions == costs->size());
+        hyp->action_costs = (float*)calloc(hyp->num_actions, sizeof(float));
+        for (size_t i=0; i<hyp->num_actions; i++) {
+          clog << i << endl;
+          hyp->action_costs[i] = (costs->begin+i)->partial_prediction;
+        }
+      }
+      
+      // collect the final snapshot
+      copy_array(srn.beam_restore_to_end, srn.snapshot_data);
+
+      cur_beam->insert(hyp, 0., DEFAULT_HASH);
+    }
+
+    while (! cur_beam->empty() ) {
+      clog << "cur_beam is not empty" << endl;
+      for (beam_element* be = cur_beam->begin(); be != cur_beam->end(); ++be) {
+        clog << "got be" << endl;
+        beam_hyp* hyp = (beam_hyp*) be->data;
+        for (size_t a=0; a<hyp->num_actions; a++) {
+          clog << "expanding hyp { t=" << hyp->t << ", action_taken=" << hyp->action_taken << ", parent=" << hyp->parent << " a=" << a << "/" << hyp->num_actions << " }" << endl;
+          if (hyp_pool.begin + hyp_pool_id + 1 >= hyp_pool.end_array)
+            hyp_pool.resize(hyp_pool_id * 2 + 1, true);
+          beam_hyp *next = hyp_pool.begin + (++hyp_pool_id);
+          next->t            = hyp->t + 1; // TODO: make this more flexible
+          next->parent       = hyp;
+          next->incr_cost    = hyp->action_costs[a];
+          next->action_taken = a;     // which action did we take from parent->snapshot to get here?
+          next->action_costs = NULL;  // we will fill this in
+          next->num_actions  = 0;     // will get filled in
+          next->snapshot.erase();     // will get filled in
+          next->num_actions  = 0;     // will get filled in
+          next->filled_in_prediction = false; // will (hopefully) get filled in
+          next->filled_in_snapshot   = false; // will (hopefully) get filled in
+
+          reset_searn_structure(srn);
+          srn.state        = BEAM_ADVANCE;
+          srn.cur_beam_hyp = next;
+          srn.task->structured_predict(srn, ec, len, NULL, NULL);
+
+          bool added = false;
+          if (next->filled_in_snapshot) { // another snapshot was called
+            // collect the costs
+            if (srn.rollout_all_actions) { // TODO: handle CB
+              v_array<CSOAA::wclass>* costs = &((CSOAA::label*)srn.valid_labels)->costs;
+              assert(next->num_actions == costs->size());
+              next->action_costs = (float*)calloc(next->num_actions, sizeof(float)); // TODO: free this
+              for (size_t i=0; i<next->num_actions; i++)
+                next->action_costs[i] = (costs->begin+i)->partial_prediction;
+            }
+
+            added = next_beam->insert(next, be->cost + next->incr_cost, DEFAULT_HASH);
+          } else {  // we reached the end of structured_predict
+            added = final_beam->insert(next, be->cost + next->incr_cost, DEFAULT_HASH);
+          }
+          clog << "expansion added=" << added << ", filled_in_snapshot=" << next->filled_in_snapshot << endl;
+          clog << "a = " << a << " / " << hyp->num_actions << endl;
+
+          // TODO: if it wasn't added, we can re-use its memory
+        }
+        next_beam->maybe_compact();
+        final_beam->maybe_compact();
+      }
+
+      // swap beams and finalize
+      next_beam->compact();
+      beam* temp_beam = cur_beam;
+      cur_beam = next_beam;
+      next_beam = temp_beam;
+      next_beam->erase();
+
+      // debugging
+      clog << "NEXT BEAM =" << endl;
+      for (beam_element* be = cur_beam->begin(); be != cur_beam->end(); ++be) {
+        beam_hyp* hyp = (beam_hyp*) be->data;
+        cerr << "\t{ cost=" << be->cost << " t=" << hyp->t << " action_taken=" << hyp->action_taken << " incr_cost=" << hyp->incr_cost << " num_actions=" << hyp->num_actions << " parent=" << hyp->parent << " }" << endl;
+      }
+    }
+
+    // get the final info out
+    final_beam->compact();
+    {
+      srn.beam_final_action_sequence.erase();
+      assert(final_beam->size() > 0);
+      beam_hyp* hyp = (beam_hyp*)final_beam->begin()->data;
+      assert(hyp);
+      assert(hyp->parent);
+      for (; hyp->parent != NULL; hyp = hyp->parent)
+        srn.beam_final_action_sequence.push_back(hyp->action_taken);
+
+      reset_searn_structure(srn);
+      srn.state = BEAM_PLAYOUT;
+      srn.truth_string->str(""); srn.pred_string->str(""); // erase contents; TODO: only do this if we need it
+      srn.task->structured_predict(srn, ec, len, srn.pred_string, srn.truth_string);
+
+      // TODO: print out results to all.final_prediction_sink
+    }
+    
+
+    // debug print the final beam
+    clog << "FINAL BEAM =" << endl;
+    for (beam_element* be = final_beam->begin(); be != final_beam->end(); ++be) {
+      beam_hyp* hyp = (beam_hyp*) be->data;
+      cerr << "\tcost=" << be->cost;
+      while (hyp != NULL) {
+        cerr << " <- " << hyp->action_taken;
+        hyp = hyp->parent;
+      }
+      cerr << endl;
+    }
+    
+    for (size_t i=0; i<hyp_pool_id; i++) {
+      if (hyp_pool[i].action_costs)
+        free(hyp_pool[i].action_costs);
+      for (size_t j=0; j<hyp_pool[i].snapshot.size(); j++)
+        if (hyp_pool[i].snapshot[j].data_ptr)
+          free(hyp_pool[i].snapshot[j].data_ptr);
+      hyp_pool[i].snapshot.delete_v();
+    }
+
+    hyp_pool.delete_v();
+  
+    cur_beam->erase();
+    next_beam->erase();
+    final_beam->erase();
+    delete cur_beam;
+    delete next_beam;
+    delete final_beam;
+  }
+
+template <bool is_learn>
+void train_single_example(vw& all, searn& srn, example**ec, size_t len)
+{
+  // do an initial test pass to compute output (and loss)
+  // TODO: don't do this if we don't need it!
+  //clog << "======================================== INIT TEST (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
+
+  reset_searn_structure(srn);
+  srn.state = INIT_TEST;
+    
+  if ((all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
+      might_print_update(all) ||                  // if we have to print and update to stderr
+      (!all.training) ||                          // if we're just testing
+      (all.current_pass == 0) ||                  // we need error rates for progressive cost
         (all.holdout_set_off) ||                    // no holdout
         (ec[0]->test_only) ||                       // it's a holdout example
         (all.raw_prediction > 0)                    // we need raw predictions
@@ -1324,7 +1572,10 @@ void print_update(vw& all, searn* srn)
           if (you_size > 0) {
             if (me->atomics[neighbor_namespace].size() == you_size) {
               char last_idx = me->indices.pop();
-              assert(last_idx == (char)neighbor_namespace);
+              if (last_idx != (char)neighbor_namespace) {
+                cerr << "error: some namespace was added after the neighbor namespace" << endl;
+                throw exception();
+              }
               //cerr << "erasing new ns '" << (char)neighbor_namespace << "' of size " << me->atomics[neighbor_namespace].size() << endl;
               me->atomics[neighbor_namespace].erase();
             } else {
@@ -1352,7 +1603,10 @@ void print_update(vw& all, searn* srn)
       return;  // nothing to do :)
 
     add_neighbor_features(srn);
-    train_single_example<is_learn>(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
+    if (srn.beam_size == 0)
+      train_single_example<is_learn>(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
+    else
+      beam_predict(all, srn, srn.ec_seq.begin, srn.ec_seq.size());
     del_neighbor_features(srn);
 
     if (srn.ec_seq[0]->test_only) {
@@ -1460,6 +1714,7 @@ void print_update(vw& all, searn* srn)
     srn.do_fastforward = true;
     srn.rollout_all_actions = true;
     srn.exploration_temperature = -1.0; // don't explore
+    srn.beam_size = 0; // 0 ==> no beam
     
     srn.neighbor_features_string = new string();
     
@@ -1543,6 +1798,9 @@ void print_update(vw& all, searn* srn)
     srn->rollout_action.delete_v();
     srn->learn_losses.delete_v();
 
+    srn->beam_restore_to_end.delete_v();
+    srn->beam_final_action_sequence.delete_v();
+    
     if (srn->task->finish != NULL) {
       srn->task->finish(*srn);
       free(srn->task);
@@ -1694,8 +1952,9 @@ void print_update(vw& all, searn* srn)
       ("searn_no_fastforward", "turn off fastforwarding (note: fastforwarding requires snapshotting)")
       ("searn_subsample_timesteps", po::value<float>(), "instead of training at all timesteps, use a subset v. if v<=0, train everywhere. if v in (0,1), train on a random v% (>=1 always selected). if v>=1, train on precisely v steps per example")
       ("searn_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
-      ("searn_exploration_temperature", po::value<float>(), "if <0, always choose policy action (default); if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting");
-
+      ("searn_exploration_temperature", po::value<float>(), "if <0, always choose policy action (default); if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting")
+      ("searn_beam", po::value<size_t>(), "size of beam -- currently only usable in test mode, not for learning");
+    
     po::options_description add_desc_file("Searn options only available in regressor file");
     add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
 
@@ -1733,6 +1992,7 @@ void print_update(vw& all, searn* srn)
     
     if (vm.count("searn_subsample_timesteps"))     srn->subsample_timesteps  = vm["searn_subsample_timesteps"].as<float>();
     if (vm.count("searn_passes_per_policy"))       srn->passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
+    if (vm.count("searn_beam"))                    srn->beam_size            = vm["searn_beam"].as<size_t>();
     if (vm.count("searn_allow_current_policy"))    srn->allow_current_policy = true;
     if (vm.count("searn_rollout_oracle"))          srn->rollout_oracle       = true;
     if (vm.count("searn_no_snapshot"))             srn->do_snapshot          = false;
@@ -1743,6 +2003,12 @@ void print_update(vw& all, searn* srn)
       if (srn->current_policy > 1) srn->current_policy = 1;
       srn->adaptive_beta = true;
       srn->alpha = vm["searn_as_dagger"].as<float>();
+    }
+    if (srn->beam_size == 1)
+      cerr << "warning: setting searn_beam=1 is kind of a weird thing to do -- just don't use a beam at all" << endl;
+    if ((srn->beam_size > 0) && all.training) {
+      cerr << "error: cannot currently train with beam" << endl;
+      throw exception();
     }
 
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.

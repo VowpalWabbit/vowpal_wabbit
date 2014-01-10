@@ -695,7 +695,7 @@ namespace LabelDict {
 
     // do actual learning
     vector<CSOAA::wclass*> all_costs;
-    if (all.training && !isTest) {
+    if (is_learn && all.training && !isTest) {
       for (size_t k=start_K; k<K; k++) {
         v_array<CSOAA::wclass> this_costs = ((label*)l.ec_seq.begin[k]->ld)->costs;
         for (size_t j=0; j<this_costs.size(); j++)
@@ -717,7 +717,7 @@ namespace LabelDict {
 
       for (size_t j1=0; j1<costs1.size(); j1++) {
         if (costs1[j1].weight_index == (uint32_t)-1) continue;
-        if (all.training && !isTest) {
+        if (is_learn && all.training && !isTest) {
           LabelDict::add_example_namespace_from_memory(l, ec1, costs1[j1].weight_index);
 
           for (size_t k2=k1+1; k2<K; k2++) {
@@ -788,7 +788,7 @@ namespace LabelDict {
     }
 
     // do actual learning
-    if (all.training && !isTest)
+    if (is_learn && all.training && !isTest)
       l.csoaa_example_t += 1.;
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq.begin[k];
@@ -800,7 +800,7 @@ namespace LabelDict {
       bool prediction_is_me = false;
       for (size_t j=0; j<costs.size(); j++) {
         //clog << "j=" << j << " costs.size=" << costs.size() << endl;
-        if (all.training && !isTest) {
+        if (is_learn && all.training && !isTest) {
           float example_t = ec->example_t;
           ec->example_t = l.csoaa_example_t;
 
@@ -1085,7 +1085,7 @@ namespace LabelDict {
         throw exception();
       }
 
-      if (! is_test) {
+      if (is_learn && ! is_test) {
         l->ec_seq.push_back(ec);
         do_actual_learning<is_learn>(*all, *l, base);
         l->need_to_clear = true;

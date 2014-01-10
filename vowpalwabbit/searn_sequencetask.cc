@@ -12,7 +12,7 @@ namespace SequenceTask {
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     srn.task_data            = NULL;  // we don't need any of our own data
-    srn.auto_history         = true;  // automatically add history features to our examples, please
+    srn.auto_history         = false;  // automatically add history features to our examples, please
     srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
     srn.examples_dont_change = true;  // we don't do any internal example munging
   }

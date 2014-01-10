@@ -13,6 +13,11 @@ license as described in the file LICENSE.
 
 using namespace std;
 
+// TODO: special case the version where beam_size == 1
+// TODO: *maybe* special case the version where beam_size <= 10
+
+#define BEAM_CONSTANT_SIZE   0
+
 namespace Beam {
 
 struct beam_element {
@@ -73,7 +78,10 @@ class beam {
     best_cost   =  FLT_MAX;
     prune_if_gt =  FLT_MAX;
     best_cost_data = NULL;
-    A.resize((beam_size+1) * 4, true);
+    if (beam_size <= BEAM_CONSTANT_SIZE)
+      A.resize(beam_size, true);
+    else
+      A.resize((beam_size+1) * 4, true);
   }
 
   bool insert(void*data, float cost, uint32_t hash) { // returns TRUE iff element was actually added
@@ -87,14 +95,35 @@ class beam {
     
     if (!should_add) return false;
 
-    beam_element be;
-    be.hash = hash;
-    be.cost = cost;
-    be.data = data;
-    be.active = true;
+    if (beam_size < BEAM_CONSTANT_SIZE) {
+      // find the worst item and directly replace it
+      size_t worst_idx = 0;
+      float  worst_idx_cost = A[0].cost;
+      for (size_t i=1; i<beam_size; i++)
+        if (A[i].cost > worst_idx_cost) {
+          worst_idx = i;
+          worst_idx_cost = A[i].cost;
+          if (worst_idx_cost <= worst_cost)
+            break;
+        }
+      if (cost >= worst_idx_cost)
+        return false;
+      
+      A[worst_idx].hash = hash;
+      A[worst_idx].cost = cost;
+      A[worst_idx].data = data;
+      A[worst_idx].active = true;
+      worst_cost = cost;
+    } else {
+      beam_element be;
+      be.hash = hash;
+      be.cost = cost;
+      be.data = data;
+      be.active = true;
 
-    A.push_back(be);
-    count++;
+      A.push_back(be);
+      count++;
+    }
     
     if (cost < best_cost) {
       best_cost = cost;
@@ -104,7 +133,7 @@ class beam {
       worst_cost  = cost;
       prune_if_gt = max(1., best_cost) * pruning_coefficient;
     }
-
+    
     return true;
   }
 
@@ -136,11 +165,10 @@ class beam {
   }
   
   void compact(void (*free_data)(void*)=NULL) {
-    if (count <= beam_size) return;
-
     if (is_equivalent) do_recombination();
-
     qsort(A.begin, A.size(), sizeof(beam_element), compare_on_cost); // TODO: quick select
+
+    if (count <= beam_size) return;
 
     count = beam_size;
     if (is_equivalent) // we might be able to get rid of even more
@@ -168,6 +196,11 @@ class beam {
       for (beam_element * be = A.begin; be != A.end; ++be)
         free_data(be->data);
     A.erase();
+    count = 0;
+    worst_cost  = -FLT_MAX;
+    best_cost   =  FLT_MAX;
+    prune_if_gt =  FLT_MAX;
+    best_cost_data = NULL;
   }
 
   ~beam() {
@@ -178,6 +211,7 @@ class beam {
   beam_element * begin() { return A.begin; }
   beam_element * end()   { return A.end; }
   size_t         size()  { return count; }
+  bool           empty() { return A.empty(); }
 };
 
 
