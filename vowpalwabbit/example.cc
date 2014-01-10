@@ -11,11 +11,6 @@ license as described in the file LICENSE.
 #include "gd.h"  
 #include "global_data.h"  
   
-void vec_store(vw& all, v_array<feature>& p, float fx, uint32_t fi) {  
-  feature f = {fx, fi};
-  p.push_back(f);  
-}  
-  
 int compare_feature(const void* p1, const void* p2) {  
   feature* f1 = (feature*) p1;  
   feature* f2 = (feature*) p2;  
@@ -41,6 +36,17 @@ float collision_cleanup(v_array<feature>& feature_map) {
   return sum_sq;  
 }  
 
+struct features_and_source 
+{
+  v_array<feature> feature_map; //map to store sparse feature vectors  
+  weight* base;
+};
+
+void vec_store(features_and_source& p, float fx, float& fw) {  
+  feature f = {fx, &fw - p.base};
+  p.feature_map.push_back(f);  
+}  
+  
 namespace VW {
 
 flat_example* flatten_example(vw& all, example *ec) 
@@ -60,14 +66,15 @@ flat_example* flatten_example(vw& all, example *ec)
 	fec->global_weight = ec->global_weight;  
 	fec->num_features = ec->num_features;  
     
-	v_array<feature> feature_map; //map to store sparse feature vectors  
-	GD::foreach_feature<v_array<feature>, vec_store>(all, ec, feature_map); 
-	qsort(feature_map.begin, feature_map.size(), sizeof(feature), compare_feature);  
+	features_and_source fs;
+	fs.base = all.reg.weight_vector;
+	GD::foreach_feature<features_and_source, vec_store>(all, ec, fs); 
+	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
     
-	fec->feature_map_len = feature_map.size();
+	fec->feature_map_len = fs.feature_map.size();
 	if (fec->feature_map_len > 0)
 	{
-		fec->feature_map = feature_map.begin;
+		fec->feature_map = fs.feature_map.begin;
 	}
 
 	return fec;  

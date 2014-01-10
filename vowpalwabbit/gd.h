@@ -31,14 +31,14 @@ void train_one_example_single_thread(regressor& r, example* ex);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void output_and_account_example(example* ec);
 
- template <class R, void (*T)(vw&, R&, float, uint32_t)>
+ template <class R, void (*T)(R&, float, float&)>
    void foreach_feature(vw& all, R& dat, feature* begin, feature* end, uint32_t offset=0, float mult=1.)
    {
      for (feature* f = begin; f!= end; f++)
-       T(all, dat, mult*f->x, f->weight_index + offset);
+       T(dat, mult*f->x, all.reg.weight_vector[(f->weight_index + offset) & all.reg.weight_mask]);
    }
 
- template <class R, void (*T)(vw&, R&, float, uint32_t)>
+ template <class R, void (*T)(R&, float, float&)>
    void foreach_feature(vw& all, example* ec, R& dat)
    {
      uint32_t offset = ec->ft_offset;
@@ -73,7 +73,7 @@ void output_and_account_example(example* ec);
      }
    }
 
- template <class R, void (*T)(vw&, predict_data<R>&, float, uint32_t)>
+ template <class R, void (*T)(predict_data<R>&, float, float&)>
    float inline_predict(vw& all, example* ec, R extra)
    {
      predict_data<R> temp = {all.p->lp.get_initial(ec->ld), extra};
