@@ -374,17 +374,16 @@ void predict(gd* g, learner& base, example* ec)
 	}
       else
 	{
-	  float power_t = all->power_t;
 	  if (all->adaptive)
 	    if (all->normalized_idx == 1)
-	      ec->partial_prediction = inline_predict<float, vec_add_rescale<true, 1> >(*all, ec, power_t);
+	      ec->partial_prediction = inline_predict<vec_add_rescale<true, 1> >(*all, ec);
 	    else
-	      ec->partial_prediction = inline_predict<float, vec_add_rescale<true, 2> >(*all, ec, power_t);
+	      ec->partial_prediction = inline_predict<vec_add_rescale<true, 2> >(*all, ec);
 	  else
 	    if (all->normalized_idx == 1)
-	      ec->partial_prediction = inline_predict<float, vec_add_rescale<false, 1> >(*all, ec, power_t);
+	      ec->partial_prediction = inline_predict<vec_add_rescale<false, 1> >(*all, ec);
 	    else
-	      ec->partial_prediction = inline_predict<float, vec_add_rescale<false, 2> >(*all, ec, power_t);
+	      ec->partial_prediction = inline_predict<vec_add_rescale<false, 2> >(*all, ec);
 	}
     }
     else {
@@ -426,7 +425,7 @@ void predict(gd* g, learner& base, example* ec)
 	ec->partial_prediction = inline_predict<float, vec_add_trunc>(*all, ec, gravity);
       }
     else
-      ec->partial_prediction = inline_predict<float, vec_add>(*all, ec, 0.);
+      ec->partial_prediction = inline_predict<vec_add>(*all, ec);
   }
 
   ec->final_prediction = finalize_prediction(*all, ec->partial_prediction * (float)all->sd->contraction);

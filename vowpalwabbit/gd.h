@@ -80,6 +80,14 @@ void output_and_account_example(example* ec);
      foreach_feature<predict_data<R>, T>(all, ec, temp);
      return temp.prediction;
    }
+
+ template <void (*T)(float&, float, float&)>
+   float inline_predict(vw& all, example* ec)
+   {
+     float temp = all.p->lp.get_initial(ec->ld);
+     foreach_feature<float, T>(all, ec, temp);
+     return temp;
+   }
 }
 
 #endif
