@@ -105,7 +105,7 @@ namespace NN {
       finish_setup (*n, *(n->all));
 
     label_data* ld = (label_data*)ec->ld;
-    //float save_label = ld->label;
+    float save_label = ld->label;
     void (*save_set_minmax) (shared_data*, float) = n->all->set_minmax;
     float save_min_label;
     float save_max_label;
@@ -267,7 +267,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
     }
 
-    //ld->label = save_label;
+    ld->label = save_label;
 
     if (! converse) {
       save_partial_prediction = n->output_layer.partial_prediction;
