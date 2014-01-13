@@ -71,14 +71,20 @@ void predict(mf *data, learner& base, example* ec) {
   // store namespace indices
   copy_array(data->indices, ec->indices);
 
+  // erase indices
+  ec->indices.erase();
+  ec->indices.push_back(0);
+
   // add interaction terms to prediction
   for (vector<string>::iterator i = data->pairs.begin(); i != data->pairs.end(); i++) {
-    if (ec->atomics[(int) (*i)[0]].size() > 0 && ec->atomics[(int) (*i)[1]].size() > 0) {
+
+    int left_ns = (int) (*i)[0];
+    int right_ns = (int) (*i)[1];
+
+    if (ec->atomics[left_ns].size() > 0 && ec->atomics[right_ns].size() > 0) {
       for (size_t k = 1; k <= all->rank; k++) {
 
-	// set example to left namespace only
-	ec->indices.erase();
-	ec->indices.push_back((int) (*i)[0]);
+	ec->indices[0] = left_ns;
 
 	// compute l^k * x_l using base learner
 	base.predict(ec, k);
@@ -87,8 +93,7 @@ void predict(mf *data, learner& base, example* ec) {
 	  data->sub_predictions[2*k-1] = x_dot_l;
 
 	// set example to right namespace only
-	ec->indices.erase();
-	ec->indices.push_back((int) (*i)[1]);
+	ec->indices[0] = right_ns;
 
 	// compute r^k * x_r using base learner
 	base.predict(ec, k + all->rank);
@@ -109,7 +114,7 @@ void predict(mf *data, learner& base, example* ec) {
   ec->final_prediction = GD::finalize_prediction(*(data->all), ec->partial_prediction);
 }
 
-  void learn(mf* data, learner& base, example* ec) {
+void learn(mf* data, learner& base, example* ec) {
   vw* all = data->all;
 
   // predict with current weights
@@ -121,50 +126,55 @@ void predict(mf *data, learner& base, example* ec) {
   // store namespace indices
   copy_array(data->indices, ec->indices);
 
+  // erase indices
+  ec->indices.erase();
+  ec->indices.push_back(0);
+
   // update interaction terms
   // looping over all pairs of non-empty namespaces
   for (vector<string>::iterator i = data->pairs.begin(); i != data->pairs.end(); i++) {
-    if (ec->atomics[(int) (*i)[0]].size() > 0 && ec->atomics[(int) (*i)[1]].size() > 0) {
+
+    int left_ns = (int) (*i)[0];
+    int right_ns = (int) (*i)[1];
+
+    if (ec->atomics[left_ns].size() > 0 && ec->atomics[right_ns].size() > 0) {
 
       // set example to left namespace only
-      ec->indices.erase();
-      ec->indices.push_back((int) (*i)[0]);
+      ec->indices[0] = left_ns;
 
       // store feature values in left namespace
-      copy_array(data->temp_features, ec->atomics[(int) (*i)[0]]);
+      copy_array(data->temp_features, ec->atomics[left_ns]);
 
       for (size_t k = 1; k <= all->rank; k++) {
 
 	// multiply features in left namespace by r^k * x_r
-	for (feature* f = ec->atomics[(int) (*i)[0]].begin; f != ec->atomics[(int) (*i)[0]].end; f++)
+	for (feature* f = ec->atomics[left_ns].begin; f != ec->atomics[left_ns].end; f++)
 	  f->x *= data->sub_predictions[2*k];
 
 	// update l^k using base learner
 	base.update(ec, k);
 
 	// restore left namespace features (undoing multiply)
-	copy_array(ec->atomics[(int) (*i)[0]], data->temp_features);
+	copy_array(ec->atomics[left_ns], data->temp_features);
       }
 
-
       // set example to right namespace only
-      ec->indices.erase();
-      ec->indices.push_back((int) (*i)[1]);
+      ec->indices[0] = right_ns;
 
       // store feature values for right namespace
-      copy_array(data->temp_features, ec->atomics[(int) (*i)[1]]);
+      copy_array(data->temp_features, ec->atomics[right_ns]);
 
       for (size_t k = 1; k <= all->rank; k++) {
 
 	// multiply features in right namespace by l^k * x_l
-	for (feature* f = ec->atomics[(int) (*i)[1]].begin; f != ec->atomics[(int) (*i)[1]].end; f++)
+	for (feature* f = ec->atomics[right_ns].begin; f != ec->atomics[right_ns].end; f++)
 	  f->x *= data->sub_predictions[2*k-1];
 
 	// update r^k using base learner
 	base.update(ec, k + all->rank);
 
 	// restore right namespace features
-	copy_array(ec->atomics[(int) (*i)[1]], data->temp_features);
+	copy_array(ec->atomics[right_ns], data->temp_features);
       }
     }
   }
@@ -182,7 +192,7 @@ void finish(mf* o) {
 }
 
 
-  learner* setup(vw& all, po::variables_map& vm) {
+learner* setup(vw& all, po::variables_map& vm) {
   mf* data = new mf;
 
   // copy global data locally
