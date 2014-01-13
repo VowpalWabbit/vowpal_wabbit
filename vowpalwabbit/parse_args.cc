@@ -338,7 +338,7 @@ vw* parse_args(int argc, char *argv[])
 
     if (vm.count("progress")) {
       string progress_str = vm["progress"].as<string>();
-      all->progress_arg = ::atof(progress_str.c_str());
+      all->progress_arg = (float)::atof(progress_str.c_str());
 
       // --progress interval is dual: either integer or floating-point
       if (progress_str.find_first_of(".") == string::npos) {

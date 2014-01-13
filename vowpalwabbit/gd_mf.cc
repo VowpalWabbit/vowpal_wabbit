@@ -39,16 +39,16 @@ float mf_predict(vw& all, example* ec)
   // clear stored predictions
   ec->topic_predictions.erase();
 
-  predict_data<float> linear_prediction = {0,0};
+  float linear_prediction = 0.;
   // linear terms
   for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    GD::foreach_feature<predict_data<float>,vec_add>(all, linear_prediction, ec->atomics[*i].begin, ec->atomics[*i].end);
+    GD::foreach_feature<float, vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[*i].begin, ec->atomics[*i].end, linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
-  ec->topic_predictions.push_back(linear_prediction.prediction);
+  ec->topic_predictions.push_back(linear_prediction);
   
-  prediction += linear_prediction.prediction;
+  prediction += linear_prediction;
 
   // interaction terms
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
@@ -60,19 +60,19 @@ float mf_predict(vw& all, example* ec)
 	      // x_l * l^k
 	      // l^k is from index+1 to index+all.rank
 	      //float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
-              predict_data<float> x_dot_l = {0, 0};
-	      GD::foreach_feature<predict_data<float>,vec_add>(all, x_dot_l, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
+              float x_dot_l = 0.;
+	      GD::foreach_feature<float, vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, x_dot_l, k);
 	      // x_r * r^k
 	      // r^k is from index+all.rank+1 to index+2*all.rank
 	      //float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
-              predict_data<float> x_dot_r = {0, 0};
-	      GD::foreach_feature<predict_data<float>,vec_add>(all, x_dot_r, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
+              float x_dot_r = 0.;
+	      GD::foreach_feature<float,vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, x_dot_r, k+all.rank);
 
-	      prediction += x_dot_l.prediction * x_dot_r.prediction;
+	      prediction += x_dot_l * x_dot_r;
 
 	      // store prediction from interaction terms
-	      ec->topic_predictions.push_back(x_dot_l.prediction);
-	      ec->topic_predictions.push_back(x_dot_r.prediction);
+	      ec->topic_predictions.push_back(x_dot_l);
+	      ec->topic_predictions.push_back(x_dot_r);
 	    }
 	}
     }

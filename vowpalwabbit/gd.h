@@ -31,20 +31,20 @@ void train_one_example_single_thread(regressor& r, example* ex);
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void output_and_account_example(example* ec);
 
- template <class R, void (*T)(vw&, R&, float, uint32_t)>
-   void foreach_feature(vw& all, R& dat, feature* begin, feature* end, uint32_t offset=0, float mult=1.)
+ template <class R, void (*T)(R&, float, float&)>
+   void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
    {
      for (feature* f = begin; f!= end; f++)
-       T(all, dat, mult*f->x, f->weight_index + offset);
+       T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
    }
 
- template <class R, void (*T)(vw&, R&, float, uint32_t)>
+ template <class R, void (*T)(R&, float, float&)>
    void foreach_feature(vw& all, example* ec, R& dat)
    {
      uint32_t offset = ec->ft_offset;
 
      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-       foreach_feature<R,T>(all, dat, ec->atomics[*i].begin, ec->atomics[*i].end, offset);
+       foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[*i].begin, ec->atomics[*i].end, dat, offset);
      
      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
        if (ec->atomics[(int)(*i)[0]].size() > 0) {
@@ -52,7 +52,7 @@ void output_and_account_example(example* ec);
 		 for (; temp.begin != temp.end; temp.begin++)
 		   {
 			 uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
-			 foreach_feature<R,T>(all, dat, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, 
+			 foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, dat, 
 					halfhash, temp.begin->x);
 		   }
        }
@@ -67,18 +67,26 @@ void output_and_account_example(example* ec);
 	   
 	   uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
 	   float mult = temp1.begin->x * temp2.begin->x;
-	   foreach_feature<R,T>(all, dat, ec->atomics[(int)(*i)[2]].begin, ec->atomics[(int)(*i)[2]].end, halfhash, mult);
+	   foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec->atomics[(int)(*i)[2]].begin, ec->atomics[(int)(*i)[2]].end, dat, halfhash, mult);
 	 }
        }
      }
    }
 
- template <class R, void (*T)(vw&, predict_data<R>&, float, uint32_t)>
+ template <class R, void (*T)(predict_data<R>&, float, float&)>
    float inline_predict(vw& all, example* ec, R extra)
    {
      predict_data<R> temp = {all.p->lp.get_initial(ec->ld), extra};
      foreach_feature<predict_data<R>, T>(all, ec, temp);
      return temp.prediction;
+   }
+
+ template <void (*T)(float&, float, float&)>
+   float inline_predict(vw& all, example* ec)
+   {
+     float temp = all.p->lp.get_initial(ec->ld);
+     foreach_feature<float, T>(all, ec, temp);
+     return temp;
    }
 }
 

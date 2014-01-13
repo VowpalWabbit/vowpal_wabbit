@@ -157,13 +157,13 @@ bool test_example(example* ec)
 
   float bfgs_predict(vw& all, example* &ec)
   {
-    ec->partial_prediction = GD::inline_predict<float, vec_add>(all,ec, 0.);
+    ec->partial_prediction = GD::inline_predict<vec_add>(all,ec);
     return GD::finalize_prediction(all, ec->partial_prediction);
   }
 
-inline void add_grad(vw& all, float& d, float f, uint32_t u)
+inline void add_grad(float& d, float f, float& fw)
 {
-  all.reg.weight_vector[u & all.reg.weight_mask] += d * f;
+  fw += d * f;
 }
 
 float predict_and_gradient(vw& all, example* &ec)
@@ -182,9 +182,9 @@ float predict_and_gradient(vw& all, example* &ec)
   return fp;
 }
 
-inline void add_precond(vw& all, float& d, float f, uint32_t u)
+inline void add_precond(float& d, float f, float& fw)
 {
-  all.reg.weight_vector[u & all.reg.weight_mask] += d * f * f;
+  fw += d * f * f;
 }
 
 void update_preconditioner(vw& all, example* &ec)
@@ -201,7 +201,7 @@ void update_preconditioner(vw& all, example* &ec)
 float dot_with_direction(vw& all, example* &ec)
 {
   ec->ft_offset+= W_DIR;  
-  float ret = GD::inline_predict<float, vec_add>(all, ec, 0.);
+  float ret = GD::inline_predict<vec_add>(all, ec);
   ec->ft_offset-= W_DIR;
 
   return ret;

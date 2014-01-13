@@ -127,7 +127,7 @@ namespace NN {
     //ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n->k; ++i)
       {
-        uint32_t biasindex = constant * n->all->wpp * n->all->reg.stride + i * n->increment + ec->ft_offset;
+        uint32_t biasindex = (uint32_t) constant * n->all->wpp * n->all->reg.stride + i * (uint32_t)n->increment + ec->ft_offset;
         weight* w = &n->all->reg.weight_vector[biasindex & n->all->reg.weight_mask];
         
         // avoid saddle point at 0
@@ -175,7 +175,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n->output_layer.total_sum_feat_sq += sigmah * sigmah;
         n->output_layer.sum_feat_sq[nn_output_namespace] += sigmah * sigmah;
 
-        uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * n->increment) + ec->ft_offset;
+        uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * (uint32_t)n->increment) + ec->ft_offset;
         weight* w = &n->all->reg.weight_vector[nuindex & n->all->reg.weight_mask];
         
         // avoid saddle point at 0
@@ -250,7 +250,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               n->output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * n->increment) + ec->ft_offset;
+            uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * (uint32_t)n->increment) + ec->ft_offset;
             float nu = n->all->reg.weight_vector[nuindex & n->all->reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
