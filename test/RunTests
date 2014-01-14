@@ -7,6 +7,8 @@
 #
 # See __DATA__ below for how to add more tests
 #
+require 5.014;
+
 use Getopt::Std;
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y
@@ -507,6 +509,7 @@ sub run_tests() {
         }
 
         ($outf, $errf) = ('stdout.tmp', 'stderr.tmp');
+        unlink $outf, $errf;    # just in case, to be safer
 
         # run the test
         print STDERR "Test $TestNo: ($cmd) >$outf 2>$errf\n" if ($opt_c);
@@ -784,4 +787,9 @@ __DATA__
 #           + alternate short form (-P)
 {VW} -k -d train-sets/0001.dat -P 0.5
     train-sets/ref/progress-0.5.stderr
+
+# Test 38: --nn without --quiet to avoid nn regressions
+#   (Needs to be a simple test, not one sensitive to symmetry breaking)
+{VW} -k -d train-sets/0001.dat --nn 1
+    train-sets/ref/nn-1-noquiet.stderr
 

@@ -3,7 +3,12 @@
 #include <iostream>
 using namespace std;
 
-uint64_t a = 0xEECE66D5DEECE66D;
+//
+// NB: the 'ULL' suffix is not part of the constant it is there to
+// prevent truncation of constant to (32-bit long) when compiling
+// in a 32-bit env: warning: integer constant is too large for "long" type
+//
+uint64_t a = 0xeece66d5deece66dULL;
 uint64_t c = 2147483647;
 
 int bias = 127 << 23;
