@@ -7,6 +7,8 @@
 #
 # See __DATA__ below for how to add more tests
 #
+require 5.014;
+
 use Getopt::Std;
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
             $opt_E $opt_o $opt_w $opt_y
