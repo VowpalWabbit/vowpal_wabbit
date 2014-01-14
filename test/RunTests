@@ -787,6 +787,6 @@ __DATA__
 
 # Test 38: --nn without --quiet to avoid nn regressions
 #   (Needs to be a simple test, not one sensitive to symmetry breaking)
-{VW} -k -d train-sets/0002.dat -C 0.5 --nn 1 -l 0.7 --l2 0.0003
+{VW} -k -d train-sets/0001.dat --nn 1
     train-sets/ref/nn-1-noquiet.stderr
 
