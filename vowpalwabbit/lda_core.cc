@@ -730,6 +730,7 @@ void end_examples(lda* l)
 learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
 {
   lda* ld = (lda*)calloc(1,sizeof(lda));
+  ld = new(ld) lda; // properly initialize the non-POD members
   ld->all = &all;
   ld->example_t = all.initial_t;
 
