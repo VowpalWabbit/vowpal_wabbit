@@ -139,7 +139,7 @@ audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
   dst.space = (char*)calloc(strlen(src.space)+1, sizeof(char));
   strcpy(dst.space, src.space);
-  dst.feature = (char*)calloc(strlen(dst.feature)+1, sizeof(char));
+  dst.feature = (char*)calloc(strlen(src.feature)+1, sizeof(char));
   strcpy(dst.feature, src.feature);
   dst.weight_index = src.weight_index;
   dst.x = src.x;
