@@ -25,6 +25,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace LEARNER;
+using namespace std;
 
 namespace LDA {
 
@@ -44,7 +45,7 @@ public:
     v_array<int> doc_lengths;
     v_array<float> digammas;
     v_array<float> v;
-    std::vector<index_feature> sorted_features;
+    vector<index_feature> sorted_features;
 
     bool total_lambda_init;
     
@@ -727,9 +728,23 @@ void end_examples(lda* l)
   void finish_example(vw& all, lda*, example*ec)
 {}
 
-learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+  void finish(lda* ld)
+  {
+    ld->sorted_features.~vector<index_feature>();
+    ld->Elogtheta.delete_v();
+    ld->decay_levels.delete_v();
+    ld->total_new.delete_v();
+    ld->examples.delete_v();
+    ld->total_lambda.delete_v();
+    ld->doc_lengths.delete_v();
+    ld->digammas.delete_v();
+    ld->v.delete_v();
+  }
+
+learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
 {
-  lda* ld = new lda;
+  lda* ld = (lda*)calloc(1,sizeof(lda));
+  ld->sorted_features = vector<index_feature>();
   ld->total_lambda_init = 0;
   ld->all = &all;
   ld->example_t = all.initial_t;
@@ -763,12 +778,13 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(all.minibatch);
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
-}
+  }
   
   ld->v.resize(all.lda*all.minibatch);
   
   ld->decay_levels.push_back(0.f);
-  
+
+  all.l->finish();
   learner* l = new learner(ld, all.reg.stride);
   l->set_learn<lda,learn>();
   l->set_predict<lda,predict>();
@@ -776,6 +792,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   l->set_finish_example<lda,finish_example>();
   l->set_end_examples<lda,end_examples>();  
   l->set_end_pass<lda,end_pass>();  
+  l->set_finish<lda,finish>();
   
   return l;
 }
