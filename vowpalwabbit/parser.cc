@@ -239,11 +239,7 @@ void reset_source(vw& all, size_t numbits)
 	{
 	  int fd = input->files.pop();
 	  if (!member(all.final_prediction_sink, (size_t) fd))
-#ifdef _WIN32
-	    _close(fd);
-#else
-	    close(fd);
-#endif
+	    io_buf::close_file_or_socket(fd);
 	}
       input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
       all.p->reader = read_cached_features;
@@ -259,11 +255,7 @@ void reset_source(vw& all, size_t numbits)
 	  mutex_unlock(&all.p->output_lock);
 	  
 	  // close socket, erase final prediction sink and socket
-#ifdef _WIN32
-	  _close(all.p->input->files[0]);
-#else
-	  close(all.p->input->files[0]);
-#endif
+	  io_buf::close_file_or_socket(all.p->input->files[0]);
 	  all.final_prediction_sink.erase();
 	  all.p->input->files.erase();
 	  

@@ -1094,11 +1094,7 @@ namespace VW {
     free(all.options_from_file_argv);
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
-#ifdef _WIN32
-	_close(all.final_prediction_sink[i]);
-#else
-	close(all.final_prediction_sink[i]);
-#endif
+	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
     delete all.loss;
     delete &all;
