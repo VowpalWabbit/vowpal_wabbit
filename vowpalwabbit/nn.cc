@@ -97,14 +97,14 @@ namespace NN {
   }
 
   template <bool is_learn>
-  void predict_or_learn(nn* n, learner& base, example* ec)
+  void predict_or_learn(nn* n, learner& base, example& ec)
   {
     bool shouldOutput = n->all->raw_prediction > 0;
 
     if (! n->finished_setup)
       finish_setup (*n, *(n->all));
 
-    label_data* ld = (label_data*)ec->ld;
+    label_data* ld = (label_data*)ec.ld;
     float save_label = ld->label;
     void (*save_set_minmax) (shared_data*, float) = n->all->set_minmax;
     float save_min_label;
@@ -127,7 +127,7 @@ namespace NN {
     //ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n->k; ++i)
       {
-        uint32_t biasindex = (uint32_t) constant * n->all->wpp * n->all->reg.stride + i * (uint32_t)n->increment + ec->ft_offset;
+        uint32_t biasindex = (uint32_t) constant * n->all->wpp * n->all->reg.stride + i * (uint32_t)n->increment + ec.ft_offset;
         weight* w = &n->all->reg.weight_vector[biasindex & n->all->reg.weight_mask];
         
         // avoid saddle point at 0
@@ -141,13 +141,13 @@ namespace NN {
 
 	base.predict(ec, i);
 
-        hidden_units[i] = ec->final_prediction;
+        hidden_units[i] = ec.final_prediction;
 
         dropped_out[i] = (n->dropout && merand48 (n->xsubi) < 0.5);
 
         if (shouldOutput) {
           if (i > 0) outputStringStream << ' ';
-          outputStringStream << i << ':' << ec->partial_prediction << ',' << fasttanh (hidden_units[i]);
+          outputStringStream << i << ':' << ec.partial_prediction << ',' << fasttanh (hidden_units[i]);
         }
       }
     //ld->label = save_label;
@@ -175,7 +175,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         n->output_layer.total_sum_feat_sq += sigmah * sigmah;
         n->output_layer.sum_feat_sq[nn_output_namespace] += sigmah * sigmah;
 
-        uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * (uint32_t)n->increment) + ec->ft_offset;
+        uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * (uint32_t)n->increment) + ec.ft_offset;
         weight* w = &n->all->reg.weight_vector[nuindex & n->all->reg.weight_mask];
         
         // avoid saddle point at 0
@@ -194,34 +194,34 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       // nn_output_namespace but at least it will not leak memory
       // in that case
 
-      ec->indices.push_back (nn_output_namespace);
-      v_array<feature> save_nn_output_namespace = ec->atomics[nn_output_namespace];
-      ec->atomics[nn_output_namespace] = n->output_layer.atomics[nn_output_namespace];
-      ec->sum_feat_sq[nn_output_namespace] = n->output_layer.sum_feat_sq[nn_output_namespace];
-      ec->total_sum_feat_sq += n->output_layer.sum_feat_sq[nn_output_namespace];
+      ec.indices.push_back (nn_output_namespace);
+      v_array<feature> save_nn_output_namespace = ec.atomics[nn_output_namespace];
+      ec.atomics[nn_output_namespace] = n->output_layer.atomics[nn_output_namespace];
+      ec.sum_feat_sq[nn_output_namespace] = n->output_layer.sum_feat_sq[nn_output_namespace];
+      ec.total_sum_feat_sq += n->output_layer.sum_feat_sq[nn_output_namespace];
       if (is_learn)
 	base.learn(ec, n->k);
       else
 	base.predict(ec, n->k);
-      n->output_layer.partial_prediction = ec->partial_prediction;
-      n->output_layer.loss = ec->loss;
-      ec->total_sum_feat_sq -= n->output_layer.sum_feat_sq[nn_output_namespace];
-      ec->sum_feat_sq[nn_output_namespace] = 0;
-      ec->atomics[nn_output_namespace] = save_nn_output_namespace;
-      ec->indices.pop ();
+      n->output_layer.partial_prediction = ec.partial_prediction;
+      n->output_layer.loss = ec.loss;
+      ec.total_sum_feat_sq -= n->output_layer.sum_feat_sq[nn_output_namespace];
+      ec.sum_feat_sq[nn_output_namespace] = 0;
+      ec.atomics[nn_output_namespace] = save_nn_output_namespace;
+      ec.indices.pop ();
     }
     else {
-      n->output_layer.ft_offset = ec->ft_offset;
-      n->output_layer.ld = ec->ld;
+      n->output_layer.ft_offset = ec.ft_offset;
+      n->output_layer.ld = ec.ld;
       n->output_layer.partial_prediction = 0;
-      n->output_layer.eta_round = ec->eta_round;
-      n->output_layer.eta_global = ec->eta_global;
-      n->output_layer.global_weight = ec->global_weight;
-      n->output_layer.example_t = ec->example_t;
+      n->output_layer.eta_round = ec.eta_round;
+      n->output_layer.eta_global = ec.eta_global;
+      n->output_layer.global_weight = ec.global_weight;
+      n->output_layer.example_t = ec.example_t;
       if (is_learn)
-	base.learn(&n->output_layer, n->k);
+	base.learn(n->output_layer, n->k);
       else
-	base.predict(&n->output_layer, n->k);
+	base.predict(n->output_layer, n->k);
       n->output_layer.ld = 0;
     }
 
@@ -229,7 +229,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (shouldOutput) {
       outputStringStream << ' ' << n->output_layer.partial_prediction;
-      n->all->print_text(n->all->raw_prediction, outputStringStream.str(), ec->tag);
+      n->all->print_text(n->all->raw_prediction, outputStringStream.str(), ec.tag);
     }
 
     if (is_learn && n->all->training && ld->label != FLT_MAX) {
@@ -250,7 +250,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float sigmah = 
               n->output_layer.atomics[nn_output_namespace][i].x / dropscale;
             float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-            uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * (uint32_t)n->increment) + ec->ft_offset;
+            uint32_t nuindex = n->output_layer.atomics[nn_output_namespace][i].weight_index + (n->k * (uint32_t)n->increment) + ec.ft_offset;
             float nu = n->all->reg.weight_vector[nuindex & n->all->reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
@@ -286,9 +286,9 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
         goto CONVERSE;
       }
 
-    ec->partial_prediction = save_partial_prediction;
-    ec->final_prediction = save_final_prediction;
-    ec->loss = save_ec_loss;
+    ec.partial_prediction = save_partial_prediction;
+    ec.final_prediction = save_final_prediction;
+    ec.loss = save_ec_loss;
   }
 
   void finish_example(vw& all, nn*, example* ec)

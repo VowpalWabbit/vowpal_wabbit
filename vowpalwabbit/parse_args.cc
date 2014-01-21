@@ -853,6 +853,9 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("autolink") || vm_file.count("autolink") )
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
 
+  if (vm.count("lrq") || vm_file.count("lrq"))
+    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
+
   all->l = Scorer::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("top") || vm_file.count("top") )
@@ -860,9 +863,6 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
-
-  if (vm.count("lrq") || vm_file.count("lrq"))
-    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }

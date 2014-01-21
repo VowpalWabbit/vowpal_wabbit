@@ -34,9 +34,9 @@ namespace LEARNER
   struct learn_data {
     void* data;
     learner* base;
-    void (*learn_f)(void* data, learner& base, example*);
-    void (*predict_f)(void* data, learner& base, example*);
-    void (*update_f)(void* data, learner& base, example*);
+    void (*learn_f)(void* data, learner& base, example&);
+    void (*predict_f)(void* data, learner& base, example&);
+    void (*update_f)(void* data, learner& base, example&);
   };
 
   struct save_load_data{
@@ -54,7 +54,7 @@ namespace LEARNER
   void generic_driver(vw* all);
   
   inline void generic_sl(void*, io_buf&, bool, bool) {}
-  inline void generic_learner(void* data, learner& base, example*)
+  inline void generic_learner(void* data, learner& base, example&)
   { cout << "calling generic learner\n";}
   inline void generic_func(void* data) {}
 
@@ -62,8 +62,8 @@ namespace LEARNER
   const learn_data generic_learn_fd = {NULL, NULL, generic_learner, NULL, NULL};
   const func_data generic_func_fd = {NULL, NULL, generic_func};
   
-  template<class R, void (*T)(R*, learner& base, example* ec)>
-    inline void tlearn(void* d, learner& base, example* ec)
+  template<class R, void (*T)(R*, learner& base, example& ec)>
+    inline void tlearn(void* d, learner& base, example& ec)
     { T((R*)d, base, ec); }
 
   template<class R, void (*T)(R*, io_buf& io, bool read, bool text)>
@@ -77,10 +77,10 @@ namespace LEARNER
     inline void tend_example(vw& all, void* d, example* ec)
   { T(all, (R*)d, ec); }
 
-  template <class T, void (*learn)(T* data, learner& base, example*), void (*predict)(T* data, learner& base, example*)>
+  template <class T, void (*learn)(T* data, learner& base, example&), void (*predict)(T* data, learner& base, example&)>
     struct learn_helper {
-      void (*learn_f)(void* data, learner& base, example*);
-      void (*predict_f)(void* data, learner& base, example*);
+      void (*learn_f)(void* data, learner& base, example&);
+      void (*predict_f)(void* data, learner& base, example&);
       
       learn_helper() 
       { learn_f = tlearn<T,learn>;
@@ -103,38 +103,38 @@ public:
   size_t increment;
 
   //called once for each example.  Must work under reduction.
-  inline void learn(example* ec, size_t i=0) 
+  inline void learn(example& ec, size_t i=0) 
   { 
-    ec->ft_offset += (uint32_t)(increment*i);
+    ec.ft_offset += (uint32_t)(increment*i);
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
-    ec->ft_offset -= (uint32_t)(increment*i);
+    ec.ft_offset -= (uint32_t)(increment*i);
   }
-  template <class T, void (*u)(T* data, learner& base, example*)>
+  template <class T, void (*u)(T* data, learner& base, example&)>
   inline void set_learn()
   {
     learn_fd.learn_f = tlearn<T,u>;
     learn_fd.update_f = tlearn<T,u>;
   }
 
-  inline void predict(example* ec, size_t i=0) 
+  inline void predict(example& ec, size_t i=0) 
   { 
-    ec->ft_offset += (uint32_t)(increment*i);
+    ec.ft_offset += (uint32_t)(increment*i);
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
-    ec->ft_offset -= (uint32_t)(increment*i);
+    ec.ft_offset -= (uint32_t)(increment*i);
   }
-  template <class T, void (*u)(T* data, learner& base, example*)>
+  template <class T, void (*u)(T* data, learner& base, example&)>
   inline void set_predict()
   {
     learn_fd.predict_f = tlearn<T,u>;
   }
 
-  inline void update(example* ec, size_t i=0) 
+  inline void update(example& ec, size_t i=0) 
   { 
-    ec->ft_offset += (uint32_t)(increment*i);
+    ec.ft_offset += (uint32_t)(increment*i);
     learn_fd.update_f(learn_fd.data, *learn_fd.base, ec);
-    ec->ft_offset -= (uint32_t)(increment*i);
+    ec.ft_offset -= (uint32_t)(increment*i);
   }
-  template <class T, void (*u)(T* data, learner& base, example*)>
+  template <class T, void (*u)(T* data, learner& base, example&)>
   inline void set_update()
   {
     learn_fd.update_f = tlearn<T,u>;

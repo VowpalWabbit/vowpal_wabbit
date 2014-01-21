@@ -6,22 +6,22 @@ using namespace LEARNER;
 namespace BINARY {
 
   template <bool is_learn>
-  void predict_or_learn(void* d, learner& base, example* ec) {
+  void predict_or_learn(void* d, learner& base, example& ec) {
     if (is_learn)
       base.learn(ec);
     else
       base.predict(ec);
 
-    if ( ec->final_prediction > 0)
-      ec->final_prediction = 1;
+    if ( ec.final_prediction > 0)
+      ec.final_prediction = 1;
     else
-      ec->final_prediction = -1;
+      ec.final_prediction = -1;
 
-    label_data* ld = (label_data*)ec->ld;//New loss
-    if (ld->label == ec->final_prediction)
-      ec->loss = 0.;
+    label_data* ld = (label_data*)ec.ld;//New loss
+    if (ld->label == ec.final_prediction)
+      ec.loss = 0.;
     else
-      ec->loss = 1.;
+      ec.loss = 1.;
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)

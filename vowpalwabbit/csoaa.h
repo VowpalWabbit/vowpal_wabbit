@@ -45,7 +45,7 @@ namespace CSOAA {
                                         copy_label,
 					sizeof(label)};
 
-  bool example_is_test(example* ec);
+  bool example_is_test(example& ec);
 }
 
 namespace CSOAA_AND_WAP_LDF {

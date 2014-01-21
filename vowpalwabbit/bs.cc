@@ -62,13 +62,13 @@ namespace BS {
     return 20.;
   }
 
-  void bs_predict_mean(vw& all, example* ec, vector<double> &pred_vec)
+  void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
   {
-    ec->final_prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
-    ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ((label_data*)ec->ld)->label) * ((label_data*)ec->ld)->weight;    
+    ec.final_prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+    ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ((label_data*)ec.ld)->label) * ((label_data*)ec.ld)->weight;    
   }
 
-  void bs_predict_vote(vw& all, example* ec, vector<double> &pred_vec)
+  void bs_predict_vote(vw& all, example& ec, vector<double> &pred_vec)
   { //majority vote in linear time
     unsigned int counter = 0;
     float current_label = 1.;
@@ -92,16 +92,16 @@ namespace BS {
     }
     if(counter == 0)//no majority exists
     {
-      ec->final_prediction = -1;
-      ec->loss = 1.;
+      ec.final_prediction = -1;
+      ec.loss = 1.;
       return;
     }
     //will output majority if it exists
-    ec->final_prediction = current_label;
-    if (ec->final_prediction == ((label_data*)ec->ld)->label)
-      ec->loss = 0.;
+    ec.final_prediction = current_label;
+    if (ec.final_prediction == ((label_data*)ec.ld)->label)
+      ec.loss = 0.;
     else
-      ec->loss = 1.;
+      ec.loss = 1.;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
@@ -173,12 +173,12 @@ namespace BS {
   }
 
   template <bool is_learn>
-  void predict_or_learn(bs* d, learner& base, example* ec)
+  void predict_or_learn(bs* d, learner& base, example& ec)
   {
     vw* all = d->all;
     bool shouldOutput = all->raw_prediction > 0;
 
-    float weight_temp = ((label_data*)ec->ld)->weight;
+    float weight_temp = ((label_data*)ec.ld)->weight;
   
     string outputString;
     stringstream outputStringStream(outputString);
@@ -186,22 +186,22 @@ namespace BS {
 
     for (size_t i = 1; i <= d->B; i++)
       {
-        ((label_data*)ec->ld)->weight = weight_temp * weight_gen();
+        ((label_data*)ec.ld)->weight = weight_temp * weight_gen();
 
 	if (is_learn)
 	  base.learn(ec, i-1);
 	else
 	  base.predict(ec, i-1);
 
-        d->pred_vec.push_back(ec->final_prediction);
+        d->pred_vec.push_back(ec.final_prediction);
 
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';
-          outputStringStream << i << ':' << ec->partial_prediction;
+          outputStringStream << i << ':' << ec.partial_prediction;
         }
       }	
 
-    ((label_data*)ec->ld)->weight = weight_temp;
+    ((label_data*)ec.ld)->weight = weight_temp;
 
     switch(d->bs_type)
     {
@@ -217,7 +217,7 @@ namespace BS {
     }
 
     if (shouldOutput) 
-      all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
+      all->print_text(all->raw_prediction, outputStringStream.str(), ec.tag);
 
   }
 

@@ -198,12 +198,12 @@ namespace OAA {
   }
 
   template <bool is_learn>
-  void predict_or_learn(oaa* o, learner& base, example* ec) {
+  void predict_or_learn(oaa* o, learner& base, example& ec) {
     vw* all = o->all;
 
     bool shouldOutput = all->raw_prediction > 0;
 
-    mc_label* mc_label_data = (mc_label*)ec->ld;
+    mc_label* mc_label_data = (mc_label*)ec.ld;
     float prediction = 1;
     float score = INT_MIN;
   
@@ -216,7 +216,7 @@ namespace OAA {
     label_data simple_temp;
     simple_temp.initial = 0.;
     simple_temp.weight = mc_label_data->weight;
-    ec->ld = &simple_temp;
+    ec.ld = &simple_temp;
 
     for (size_t i = 1; i <= o->k; i++)
       {
@@ -232,22 +232,22 @@ namespace OAA {
 	else
 	  base.predict(ec, i-1);
 
-        if (ec->partial_prediction > score)
+        if (ec.partial_prediction > score)
           {
-            score = ec->partial_prediction;
+            score = ec.partial_prediction;
             prediction = (float)i;
           }
 	
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';
-          outputStringStream << i << ':' << ec->partial_prediction;
+          outputStringStream << i << ':' << ec.partial_prediction;
         }
       }	
-    ec->ld = mc_label_data;
-    ec->final_prediction = prediction;
+    ec.ld = mc_label_data;
+    ec.final_prediction = prediction;
 
     if (shouldOutput) 
-      all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
+      all->print_text(all->raw_prediction, outputStringStream.str(), ec.tag);
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)

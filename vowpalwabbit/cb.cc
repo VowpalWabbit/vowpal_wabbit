@@ -223,9 +223,9 @@ namespace CB
     return NULL;
   }
 
-  void gen_cs_example_ips(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
+  void gen_cs_example_ips(vw& all, cb& c, example& ec, CSOAA::label& cs_ld)
   {//this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
-    CB::label* ld = (CB::label*)ec->ld;
+    CB::label* ld = (CB::label*)ec.ld;
    
     //generate cost-sensitive example
     cs_ld.costs.erase();
@@ -282,7 +282,7 @@ namespace CB
   }
 
   template <bool is_learn>
-  void call_scorer(vw& all, cb& c, example* ec, uint32_t index)
+  void call_scorer(vw& all, cb& c, example& ec, uint32_t index)
   {
     float old_min = all.sd->min_label;
     //all.sd->min_label = c.min_cost;
@@ -297,9 +297,9 @@ namespace CB
    }
   
   template <bool is_learn>
-  float get_cost_pred(vw& all, cb& c, example* ec, uint32_t index)
+  float get_cost_pred(vw& all, cb& c, example& ec, uint32_t index)
   {
-    CB::label* ld = (CB::label*)ec->ld;
+    CB::label* ld = (CB::label*)ec.ld;
 
     label_data simple_temp;
     simple_temp.initial = 0.;
@@ -314,21 +314,21 @@ namespace CB
 	simple_temp.weight = 0.;
       }
     
-    ec->ld = &simple_temp;
+    ec.ld = &simple_temp;
 
     call_scorer<is_learn>(all, c, ec, index);
-    ec->ld = ld;
+    ec.ld = ld;
 
-    float cost = ec->final_prediction;
+    float cost = ec.final_prediction;
 
     return cost;
   }
 
   template <bool is_learn>
-  void gen_cs_example_dm(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
+  void gen_cs_example_dm(vw& all, cb& c, example& ec, CSOAA::label& cs_ld)
   {
     //this implements the direct estimation method, where costs are directly specified by the learned regressor.
-    CB::label* ld = (CB::label*)ec->ld;
+    CB::label* ld = (CB::label*)ec.ld;
 
     float min = FLT_MAX;
     size_t argmin = 1;
@@ -393,13 +393,13 @@ namespace CB
       }
     }
     
-    ec->final_prediction = (float)argmin;
+    ec.final_prediction = (float)argmin;
   }
 
   template <bool is_learn>
-  void gen_cs_example_dr(vw& all, cb& c, example* ec, CSOAA::label& cs_ld)
+  void gen_cs_example_dr(vw& all, cb& c, example& ec, CSOAA::label& cs_ld)
   {//this implements the doubly robust method
-    CB::label* ld = (CB::label*)ec->ld;
+    CB::label* ld = (CB::label*)ec.ld;
     
     //generate cost sensitive example
     cs_ld.costs.erase();
@@ -455,9 +455,9 @@ namespace CB
     }
   }
 
-  void cb_test_to_cs_test_label(vw& all, example* ec, CSOAA::label& cs_ld)
+  void cb_test_to_cs_test_label(vw& all, example& ec, CSOAA::label& cs_ld)
   {
-    CB::label* ld = (CB::label*)ec->ld;
+    CB::label* ld = (CB::label*)ec.ld;
 
     cs_ld.costs.erase();
     if(ld->costs.size() > 0)
@@ -479,9 +479,9 @@ namespace CB
   }
 
   template <bool is_learn>
-  void predict_or_learn(cb* c, learner& base, example* ec) {
+  void predict_or_learn(cb* c, learner& base, example& ec) {
     vw* all = c->all;
-    CB::label* ld = (CB::label*)ec->ld;
+    CB::label* ld = (CB::label*)ec.ld;
 
     //check if this is a test example where we just want a prediction
     if( CB::is_test_label(ld) )
@@ -489,9 +489,9 @@ namespace CB
       //if so just query base cost-sensitive learner
       cb_test_to_cs_test_label(*all,ec,c->cb_cs_ld);
 
-      ec->ld = &c->cb_cs_ld;
+      ec.ld = &c->cb_cs_ld;
       base.predict(ec);
-      ec->ld = ld;
+      ec.ld = ld;
       for (size_t i=0; i<ld->costs.size(); i++)
         ld->costs[i].partial_prediction = c->cb_cs_ld.costs[i].partial_prediction;
       return;
@@ -521,14 +521,14 @@ namespace CB
 
     if (c->cb_type != CB_TYPE_DM)
       {
-	ec->ld = &c->cb_cs_ld;
+	ec.ld = &c->cb_cs_ld;
 
 	if (is_learn)
 	  base.learn(ec);
 	else
 	  base.predict(ec);
 
-	ec->ld = ld;
+	ec.ld = ld;
         for (size_t i=0; i<ld->costs.size(); i++)
           ld->costs[i].partial_prediction = c->cb_cs_ld.costs[i].partial_prediction;
       }

@@ -754,7 +754,7 @@ void setup_example(vw& all, example* ae)
   ae->loss = 0.;
   
   ae->example_counter = (size_t)(all.p->parsed_examples + 1);
-  if ((!all.p->emptylines_separate_examples) || example_is_newline(ae))
+  if ((!all.p->emptylines_separate_examples) || example_is_newline(*ae))
     all.p->in_pass_counter++;
 
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off);
