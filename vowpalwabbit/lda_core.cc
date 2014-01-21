@@ -579,6 +579,15 @@ void save_load(lda* l, io_buf& model_file, bool read, bool text)
 
   void learn_batch(lda& l)
   {
+    if (l.sorted_features.empty()) {
+      // This can happen when the socket connection is dropped by the client.
+      // If l.sorted_features is empty, then l.sorted_features[0] does not
+      // exist, so we should not try to take its address in the beginning of
+      // the for loops down there. Since it seems that there's not much to
+      // do in this case, we just return.
+      return;
+    }
+
     float eta = -1;
     float minuseta = -1;
 
