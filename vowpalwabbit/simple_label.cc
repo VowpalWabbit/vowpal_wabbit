@@ -215,7 +215,7 @@ void output_and_account_example(vw& all, example* ec)
   for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
     {
       int f = (int)all.final_prediction_sink[i];
-      if(all.active)
+      if(all.active && all.lda == 0)
 	active_print_result(f, ec->final_prediction, ai, ec->tag);
       else if (all.lda > 0)
 	print_lda_result(all, f,ec->topic_predictions.begin,0.,ec->tag);
