@@ -415,7 +415,8 @@ vw* parse_args(int argc, char *argv[])
     if( all->normalized_updates ) all->reg.stride *= 2;
 
     if(!vm.count("learning_rate") && !vm.count("l") && !(all->adaptive && all->normalized_updates))
-      all->eta = 10; //default learning rate to 10 for non default update rule
+      if (all->lda == 0)
+        all->eta = 10; //default learning rate to 10 for non default update rule
 
     //if not using normalized or adaptive, default initial_t to 1 instead of 0
     if(!all->adaptive && !all->normalized_updates && !vm.count("initial_t")) {
