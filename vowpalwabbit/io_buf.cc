@@ -7,6 +7,10 @@ license as described in the file LICENSE.
 
 #include "io_buf.h"
 
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+
 size_t buf_read(io_buf &i, char* &pointer, size_t n)
 {//return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (i.space.end + n <= i.endloaded)
@@ -52,7 +56,7 @@ bool isbinary(io_buf &i) {
 size_t readto(io_buf &i, char* &pointer, char terminal)
 {//Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
   pointer = i.space.end;
-  while (pointer != i.endloaded && *pointer != terminal)
+  while (pointer < i.endloaded && *pointer != terminal)
     pointer++;
   if (pointer != i.endloaded)
     {
