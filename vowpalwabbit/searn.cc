@@ -1207,23 +1207,23 @@ namespace Searn {
     out[max_len] = 0;
   }
 
-void print_update(vw& all, searn* srn)
+void print_update(vw& all, searn& srn)
   {
-    if (!srn->printed_output_header && !all.quiet) {
+    if (!srn.printed_output_header && !all.quiet) {
       const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %8s %5s %5s %15s %15s\n";
       fprintf(stderr, header_fmt, "average", "since", "sequence", "example",   "current label", "current predicted",  "current",  "cur", "cur", "predic.", "examples");
       fprintf(stderr, header_fmt, "loss",  "last",  "counter",  "weight", "sequence prefix",   "sequence prefix", "features", "pass", "pol",    "made",   "gener.");
       cerr.precision(5);
-      srn->printed_output_header = true;
+      srn.printed_output_header = true;
     }
 
-    if (!should_print_update(all, srn->hit_new_pass))
+    if (!should_print_update(all, srn.hit_new_pass))
       return;
 
     char true_label[21];
     char pred_label[21];
-    to_short_string(srn->truth_string->str(), 20, true_label);
-    to_short_string(srn->pred_string->str() , 20, pred_label);
+    to_short_string(srn.truth_string->str(), 20, true_label);
+    to_short_string(srn.pred_string->str() , 20, pred_label);
 
     float avg_loss = 0.;
     float avg_loss_since = 0.;
@@ -1245,14 +1245,14 @@ void print_update(vw& all, searn* srn)
             all.sd->weighted_examples,
             true_label,
             pred_label,
-            (long unsigned int)srn->num_features,
-            (int)srn->read_example_last_pass,
-            (int)srn->current_policy,
-            (long unsigned int)srn->total_predictions_made,
-            (long unsigned int)srn->total_examples_generated);
+            (long unsigned int)srn.num_features,
+            (int)srn.read_example_last_pass,
+            (int)srn.current_policy,
+            (long unsigned int)srn.total_predictions_made,
+            (long unsigned int)srn.total_examples_generated);
 
     if (PRINT_CLOCK_TIME) {
-      size_t num_sec = (size_t)(((float)(clock() - srn->start_clock_time)) / CLOCKS_PER_SEC);
+      size_t num_sec = (size_t)(((float)(clock() - srn.start_clock_time)) / CLOCKS_PER_SEC);
       fprintf(stderr, " %15lusec", num_sec);
     }
 
@@ -1394,45 +1394,45 @@ void print_update(vw& all, searn* srn)
     }
   }
 
-  void end_pass(searn* srn) {
-    vw* all = srn->all;
-    srn->hit_new_pass = true;
-    srn->read_example_last_pass++;
-    srn->passes_since_new_policy++;
-    if (srn->passes_since_new_policy >= srn->passes_per_policy) {
-      srn->passes_since_new_policy = 0;
+  void end_pass(searn& srn) {
+    vw* all = srn.all;
+    srn.hit_new_pass = true;
+    srn.read_example_last_pass++;
+    srn.passes_since_new_policy++;
+    if (srn.passes_since_new_policy >= srn.passes_per_policy) {
+      srn.passes_since_new_policy = 0;
       if(all->training)
-        srn->current_policy++;
-      if (srn->current_policy > srn->total_number_of_policies) {
+        srn.current_policy++;
+      if (srn.current_policy > srn.total_number_of_policies) {
         std::cerr << "internal error (bug): too many policies; not advancing" << std::endl;
-        srn->current_policy = srn->total_number_of_policies;
+        srn.current_policy = srn.total_number_of_policies;
       }
       //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
       std::stringstream ss;
-      ss << srn->current_policy;
+      ss << srn.current_policy;
       VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss.str());
     }
   }
 
-  void finish_example(vw& all, searn* srn, example& ec) {
-    if (ec.end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) {
+  void finish_example(vw& all, searn& srn, example& ec) {
+    if (ec.end_pass || example_is_newline(ec) || srn.ec_seq.size() >= all.p->ring_size - 2) {
       print_update(all, srn);
       VW::finish_example(all, &ec);
     }
   }
 
-  void end_examples(searn* srn) {
-    vw* all    = srn->all;
+  void end_examples(searn& srn) {
+    vw* all    = srn.all;
 
-    do_actual_learning<true>(*all, *srn);
+    do_actual_learning<true>(*all, srn);
 
     if( all->training ) {
       std::stringstream ss1;
       std::stringstream ss2;
-      ss1 << ((srn->passes_since_new_policy == 0) ? srn->current_policy : (srn->current_policy+1));
+      ss1 << ((srn.passes_since_new_policy == 0) ? srn.current_policy : (srn.current_policy+1));
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_trained_nb_policies
       VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss1.str()); 
-      ss2 << srn->total_number_of_policies;
+      ss2 << srn.total_number_of_policies;
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
       VW::cmd_string_replace_value(all->options_from_file,"--searn_total_nb_policies", ss2.str());
     }
@@ -1492,58 +1492,58 @@ void print_update(vw& all, searn* srn)
     srn.empty_example->in_use = true;
   }
 
-  void searn_finish(searn* srn)
+  void searn_finish(searn& srn)
   {
-    vw* all = srn->all;
+    vw* all = srn.all;
     //cerr << "searn_finish" << endl;
 
-    delete srn->truth_string;
-    delete srn->pred_string;
-    delete srn->neighbor_features_string;
-    srn->neighbor_features.erase();
-    srn->neighbor_features.delete_v();
+    delete srn.truth_string;
+    delete srn.pred_string;
+    delete srn.neighbor_features_string;
+    srn.neighbor_features.erase();
+    srn.neighbor_features.delete_v();
     
-    if (srn->rollout_all_actions) { // dst should be a CSOAA::label*
-      ((CSOAA::label*)srn->valid_labels)->costs.erase();
-      ((CSOAA::label*)srn->valid_labels)->costs.delete_v();
+    if (srn.rollout_all_actions) { // dst should be a CSOAA::label*
+      ((CSOAA::label*)srn.valid_labels)->costs.erase();
+      ((CSOAA::label*)srn.valid_labels)->costs.delete_v();
     } else {
-      ((CB::label*)srn->valid_labels)->costs.erase();
-      ((CB::label*)srn->valid_labels)->costs.delete_v();
+      ((CB::label*)srn.valid_labels)->costs.erase();
+      ((CB::label*)srn.valid_labels)->costs.delete_v();
     }
     
-    if (srn->rollout_all_actions) // labels are CSOAA
-      delete (CSOAA::label*)srn->valid_labels;
+    if (srn.rollout_all_actions) // labels are CSOAA
+      delete (CSOAA::label*)srn.valid_labels;
     else // labels are CB
-      delete (CB::label*)srn->valid_labels;
+      delete (CB::label*)srn.valid_labels;
 
-    dealloc_example(CSOAA::delete_label, *(srn->empty_example));
-    free(srn->empty_example);
+    dealloc_example(CSOAA::delete_label, *(srn.empty_example));
+    free(srn.empty_example);
     
-    srn->ec_seq.delete_v();
+    srn.ec_seq.delete_v();
 
-    clear_snapshot(*all, *srn);
-    srn->snapshot_data.delete_v();
+    clear_snapshot(*all, srn);
+    srn.snapshot_data.delete_v();
 
-    for (size_t i=0; i<srn->train_labels.size(); i++) {
-      if (srn->rollout_all_actions) {
-        ((CSOAA::label*)srn->train_labels[i])->costs.erase();
-        ((CSOAA::label*)srn->train_labels[i])->costs.delete_v();
-        delete ((CSOAA::label*)srn->train_labels[i]);
+    for (size_t i=0; i<srn.train_labels.size(); i++) {
+      if (srn.rollout_all_actions) {
+        ((CSOAA::label*)srn.train_labels[i])->costs.erase();
+        ((CSOAA::label*)srn.train_labels[i])->costs.delete_v();
+        delete ((CSOAA::label*)srn.train_labels[i]);
       } else {
-        ((CB::label*)srn->train_labels[i])->costs.erase();
-        ((CB::label*)srn->train_labels[i])->costs.delete_v();
-        delete ((CB::label*)srn->train_labels[i]);
+        ((CB::label*)srn.train_labels[i])->costs.erase();
+        ((CB::label*)srn.train_labels[i])->costs.delete_v();
+        delete ((CB::label*)srn.train_labels[i]);
       }
     }
-    srn->train_labels.delete_v();
-    srn->train_action.delete_v();
-    srn->train_action_ids.delete_v();
-    srn->rollout_action.delete_v();
-    srn->learn_losses.delete_v();
+    srn.train_labels.delete_v();
+    srn.train_action.delete_v();
+    srn.train_action_ids.delete_v();
+    srn.rollout_action.delete_v();
+    srn.learn_losses.delete_v();
 
-    if (srn->task->finish != NULL) {
-      srn->task->finish(*srn);
-      free(srn->task);
+    if (srn.task->finish != NULL) {
+      srn.task->finish(srn);
+      free(srn.task);
     }
   }
 

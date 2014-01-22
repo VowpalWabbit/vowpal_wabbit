@@ -534,7 +534,7 @@ namespace CB
       }
   }
 
-  void init_driver(cb*)
+  void init_driver(cb&)
   {
     fprintf(stderr, "*estimate* *estimate*                                                avglossreg last pred  last correct\n");
   }
@@ -655,14 +655,14 @@ namespace CB
     print_update(all, c, CB::is_test_label((CB::label*)ec.ld), ec);
   }
 
-  void finish(cb* c)
+  void finish(cb& c)
   {
-    c->cb_cs_ld.costs.delete_v();
+    c.cb_cs_ld.costs.delete_v();
   }
 
-  void finish_example(vw& all, cb* c, example& ec)
+  void finish_example(vw& all, cb& c, example& ec)
   {
-    output_example(all, *c, ec);
+    output_example(all, c, ec);
     VW::finish_example(all, &ec);
   }
 

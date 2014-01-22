@@ -124,9 +124,9 @@ float InvSqrt(float x){
   }
 }
 
-  void end_pass(gd* g)
+  void end_pass(gd& g)
   {
-    vw* all = g->all;
+    vw* all = g.all;
     
     sync_weights(*all);
     if(all->span_server != "") {
@@ -144,9 +144,9 @@ float InvSqrt(float x){
     
     if(!all->holdout_set_off)
       {
-        if(summarize_holdout_set(*all, g->no_win_counter))
+        if(summarize_holdout_set(*all, g.no_win_counter))
           finalize_regressor(*all, all->final_regressor_name);
-        if((g->early_stop_thres == g->no_win_counter) &&
+        if((g.early_stop_thres == g.no_win_counter) &&
            ((all->check_holdout_every_n_passes <= 1) ||
             ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
           all-> early_terminate = true;
@@ -830,9 +830,9 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load(gd* g, io_buf& model_file, bool read, bool text)
+void save_load(gd& g, io_buf& model_file, bool read, bool text)
 {
-  vw* all = g->all;
+  vw* all = g.all;
   if(read)
     {
       initialize_regressor(*all);
@@ -850,8 +850,8 @@ void save_load(gd* g, io_buf& model_file, bool read, bool text)
 	    }
 	}
 
-      if (g->initial_constant != 0.0)
-        VW::set_weight(*all, constant, 0, g->initial_constant);
+      if (g.initial_constant != 0.0)
+        VW::set_weight(*all, constant, 0, g.initial_constant);
 
     }
 

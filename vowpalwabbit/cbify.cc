@@ -119,7 +119,7 @@ namespace CBIFY {
       //Use cost sensitive oracle to cover actions to form distribution.
     }
 
-  void finish_example(vw& all, cbify*, example& ec)
+  void finish_example(vw& all, cbify&, example& ec)
   {
     OAA::output_example(all, ec);
     VW::finish_example(all, &ec);

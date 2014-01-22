@@ -66,16 +66,16 @@ namespace LEARNER
     inline void tlearn(void* d, learner& base, example& ec)
     { T((R*)d, base, ec); }
 
-  template<class R, void (*T)(R*, io_buf& io, bool read, bool text)>
+  template<class R, void (*T)(R&, io_buf& io, bool read, bool text)>
     inline void tsl(void* d, io_buf& io, bool read, bool text)
-  { T((R*)d, io, read, text); }
+  { T(*(R*)d, io, read, text); }
 
-  template<class R, void (*T)(R*)>
-    inline void tfunc(void* d) { T((R*)d); }
+  template<class R, void (*T)(R&)>
+    inline void tfunc(void* d) { T(*(R*)d); }
 
-  template<class R, void (*T)(vw& all, R*, example&)>
+  template<class R, void (*T)(vw& all, R&, example&)>
     inline void tend_example(vw& all, void* d, example& ec)
-  { T(all, (R*)d, ec); }
+  { T(all, *(R*)d, ec); }
 
   template <class T, void (*learn)(T* data, learner& base, example&), void (*predict)(T* data, learner& base, example&)>
     struct learn_helper {
@@ -142,14 +142,14 @@ public:
 
   //called anytime saving or loading needs to happen. Autorecursive.
   inline void save_load(io_buf& io, bool read, bool text) { save_load_fd.save_load_f(save_load_fd.data, io, read, text); if (save_load_fd.base) save_load_fd.base->save_load(io, read, text); }
-  template <class T, void (*sl)(T*, io_buf&, bool, bool)>
+  template <class T, void (*sl)(T&, io_buf&, bool, bool)>
   inline void set_save_load()
   { save_load_fd.save_load_f = tsl<T,sl>; 
     save_load_fd.data = learn_fd.data; 
     save_load_fd.base = learn_fd.base;}
 
   //called to clean up state.  Autorecursive.
-  template <class T, void (*f)(T*)>
+  template <class T, void (*f)(T&)>
   void set_finish() { finisher_fd = tuple_dbf(learn_fd.data,learn_fd.base, tfunc<T, f>); }
   inline void finish() 
   { 
@@ -164,24 +164,24 @@ public:
   void end_pass(){ 
     end_pass_fd.func(end_pass_fd.data);
     if (end_pass_fd.base) end_pass_fd.base->end_pass(); }//autorecursive
-  template <class T, void (*f)(T*)>
+  template <class T, void (*f)(T&)>
     void set_end_pass() {end_pass_fd = tuple_dbf(learn_fd.data, learn_fd.base, tfunc<T,f>);}
 
   //called after parsing of examples is complete.  Autorecursive.
   void end_examples() 
   { end_examples_fd.func(end_examples_fd.data); 
     if (end_examples_fd.base) end_examples_fd.base->end_examples(); }  
-  template <class T, void (*f)(T*)>
+  template <class T, void (*f)(T&)>
     void set_end_examples() {end_examples_fd = tuple_dbf(learn_fd.data,learn_fd.base, tfunc<T,f>);}
 
   //Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver() { init_fd.func(init_fd.data);}
-  template <class T, void (*f)(T*)>
+  template <class T, void (*f)(T&)>
   void set_init_driver() { init_fd = tuple_dbf(learn_fd.data,learn_fd.base, tfunc<T,f>); }
 
   //called after learn example for each example.  Explicitly not recursive.
   inline void finish_example(vw& all, example& ec) { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
-  template<class T, void (*f)(vw& all, T*, example&)>
+  template<class T, void (*f)(vw& all, T&, example&)>
   void set_finish_example()
   {finish_example_fd.data = learn_fd.data;
     finish_example_fd.finish_example_f = tend_example<T,f>;}

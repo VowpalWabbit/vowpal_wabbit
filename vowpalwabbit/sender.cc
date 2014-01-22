@@ -83,23 +83,23 @@ void receive_result(sender& s)
     s->delay_ring[s->sent_index++ % s->all->p->ring_size] = &ec;
   }
 
-  void finish_example(vw& all, sender*, example& ec)
+  void finish_example(vw& all, sender&, example& ec)
 {}
 
-void end_examples(sender* s)
+void end_examples(sender& s)
 {
   //close our outputs to signal finishing.
-  while (s->received_index != s->sent_index)
-    receive_result(*s);
-  shutdown(s->buf->files[0],SHUT_WR);
+  while (s.received_index != s.sent_index)
+    receive_result(s);
+  shutdown(s.buf->files[0],SHUT_WR);
 }
 
-  void finish(sender* s) 
+  void finish(sender& s) 
   { 
-    s->buf->files.delete_v();
-    s->buf->space.delete_v();
-    free(s->delay_ring);
-    delete s->buf;
+    s.buf->files.delete_v();
+    s.buf->space.delete_v();
+    free(s.delay_ring);
+    delete s.buf;
   }
 
   learner* setup(vw& all, po::variables_map& vm, vector<string> pairs)

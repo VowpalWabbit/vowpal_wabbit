@@ -182,13 +182,13 @@ void learn(mf* data, learner& base, example& ec) {
   copy_array(ec.indices, data->indices);
 }
 
-void finish(mf* o) {
+void finish(mf& o) {
   // restore global pairs
-  o->all->pairs = o->pairs;
+  o.all->pairs = o.pairs;
 
   // clean up local v_arrays
-  o->indices.delete_v();
-  o->sub_predictions.delete_v();
+  o.indices.delete_v();
+  o.sub_predictions.delete_v();
 }
 
 

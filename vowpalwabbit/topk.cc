@@ -67,7 +67,7 @@ namespace TOPK {
     }    
   }
 
-  void output_example(vw& all, topk* d, example& ec)
+  void output_example(vw& all, topk& d, example& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     
@@ -79,7 +79,7 @@ namespace TOPK {
  
     if (example_is_newline(ec))
       for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-        TOPK::print_result(*sink, d->pr_queue);
+        TOPK::print_result(*sink, d.pr_queue);
        
     print_update(all, ec);
   }
@@ -105,7 +105,7 @@ namespace TOPK {
 
   }
 
-  void finish_example(vw& all, topk* d, example& ec)
+  void finish_example(vw& all, topk& d, example& ec)
   {
     TOPK::output_example(all, d, ec);
     VW::finish_example(all, &ec);

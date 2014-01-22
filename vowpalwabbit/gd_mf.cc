@@ -207,9 +207,9 @@ void mf_train(vw& all, example& ec, float update)
 
 }  
 
-  void save_load(gdmf* d, io_buf& model_file, bool read, bool text)
+  void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
 {
-  vw* all = d->all;
+  vw* all = d.all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
 
@@ -261,9 +261,9 @@ void mf_train(vw& all, example& ec, float update)
     }
 }
 
-void end_pass(gdmf* d)
+void end_pass(gdmf& d)
 {
-  vw* all = d->all;
+  vw* all = d.all;
 
    all->eta *= all->eta_decay_rate;
    if (all->save_per_pass)

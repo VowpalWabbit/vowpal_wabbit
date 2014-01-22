@@ -52,10 +52,10 @@ namespace {
     }
 
   void
-  reset_seed (LRQ::LRQstate* lrq)
+  reset_seed (LRQ::LRQstate& lrq)
     {
-      if (lrq->all->bfgs)
-        lrq->seed = lrq->initial_seed;
+      if (lrq.all->bfgs)
+        lrq.seed = lrq.initial_seed;
     }
 }
 

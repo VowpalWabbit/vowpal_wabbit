@@ -90,10 +90,10 @@ namespace NN {
     n.finished_setup = true;
   }
 
-  void end_pass(nn* n)
+  void end_pass(nn& n)
   {
-    if (n->all->bfgs)
-      n->xsubi = n->save_xsubi;
+    if (n.all->bfgs)
+      n.xsubi = n.save_xsubi;
   }
 
   template <bool is_learn>
@@ -291,7 +291,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec.loss = save_ec_loss;
   }
 
-  void finish_example(vw& all, nn*, example& ec)
+  void finish_example(vw& all, nn&, example& ec)
   {
     int save_raw_prediction = all.raw_prediction;
     all.raw_prediction = -1;
@@ -299,11 +299,11 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     all.raw_prediction = save_raw_prediction;
   }
 
-  void finish(nn* n)
+  void finish(nn& n)
   {
-    delete n->squared_loss;
-    free (n->output_layer.indices.begin);
-    free (n->output_layer.atomics[nn_output_namespace].begin);
+    delete n.squared_loss;
+    free (n.output_layer.indices.begin);
+    free (n.output_layer.atomics[nn_output_namespace].begin);
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)

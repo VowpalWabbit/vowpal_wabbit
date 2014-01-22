@@ -131,7 +131,7 @@ namespace BS {
     }    
   }
 
-  void output_example(vw& all, bs* d, example& ec)
+  void output_example(vw& all, bs& d, example& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     
@@ -155,19 +155,19 @@ namespace BS {
     
     if(all.final_prediction_sink.size() != 0)//get confidence interval only when printing out predictions
     {
-      d->lb = FLT_MAX;
-      d->ub = -FLT_MAX;
-      for (unsigned i = 0; i < d->pred_vec.size(); i++)
+      d.lb = FLT_MAX;
+      d.ub = -FLT_MAX;
+      for (unsigned i = 0; i < d.pred_vec.size(); i++)
       {
-        if(d->pred_vec[i] > d->ub)
-          d->ub = (float)d->pred_vec[i];
-        if(d->pred_vec[i] < d->lb)
-          d->lb = (float)d->pred_vec[i];
+        if(d.pred_vec[i] > d.ub)
+          d.ub = (float)d.pred_vec[i];
+        if(d.pred_vec[i] < d.lb)
+          d.lb = (float)d.pred_vec[i];
       }
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      BS::print_result(*sink, ec.final_prediction, 0, ec.tag, d->lb, d->ub);
+      BS::print_result(*sink, ec.final_prediction, 0, ec.tag, d.lb, d.ub);
   
     print_update(all, ec);
   }
@@ -221,15 +221,15 @@ namespace BS {
 
   }
 
-  void finish_example(vw& all, bs* d, example& ec)
+  void finish_example(vw& all, bs& d, example& ec)
   {
     BS::output_example(all, d, ec);
     VW::finish_example(all, &ec);
   }
 
-  void finish(bs* d)
+  void finish(bs& d)
   {
-    d->pred_vec.~vector();
+    d.pred_vec.~vector();
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)

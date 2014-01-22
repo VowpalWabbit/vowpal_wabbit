@@ -517,9 +517,9 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
-void save_load(lda* l, io_buf& model_file, bool read, bool text)
+void save_load(lda& l, io_buf& model_file, bool read, bool text)
 {
-  vw* all = l->all;
+  vw* all = l.all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
   
@@ -709,36 +709,36 @@ void save_load(lda* l, io_buf& model_file, bool read, bool text)
     ec.test_only = test_only;
   }
 
-  void end_pass(lda* l)
+  void end_pass(lda& l)
   {
-    if (l->examples.size())
-      learn_batch(*l);
+    if (l.examples.size())
+      learn_batch(l);
   }
 
-void end_examples(lda* l)
+void end_examples(lda& l)
 {
-  for (size_t i = 0; i < l->all->length(); i++) {
-    weight* weights_for_w = & (l->all->reg.weight_vector[i*l->all->reg.stride]);
-    float decay = fmin(1.0, exp(l->decay_levels.last() - l->decay_levels.end[(int)(-1- l->example_t +weights_for_w[l->all->lda])]));
-    for (size_t k = 0; k < l->all->lda; k++) 
+  for (size_t i = 0; i < l.all->length(); i++) {
+    weight* weights_for_w = & (l.all->reg.weight_vector[i*l.all->reg.stride]);
+    float decay = fmin(1.0, exp(l.decay_levels.last() - l.decay_levels.end[(int)(-1- l.example_t +weights_for_w[l.all->lda])]));
+    for (size_t k = 0; k < l.all->lda; k++) 
       weights_for_w[k] *= decay;
   }
 }
 
-  void finish_example(vw& all, lda*, example& ec)
+  void finish_example(vw& all, lda&, example& ec)
 {}
 
-  void finish(lda* ld)
+  void finish(lda& ld)
   {
-    ld->sorted_features.~vector<index_feature>();
-    ld->Elogtheta.delete_v();
-    ld->decay_levels.delete_v();
-    ld->total_new.delete_v();
-    ld->examples.delete_v();
-    ld->total_lambda.delete_v();
-    ld->doc_lengths.delete_v();
-    ld->digammas.delete_v();
-    ld->v.delete_v();
+    ld.sorted_features.~vector<index_feature>();
+    ld.Elogtheta.delete_v();
+    ld.decay_levels.delete_v();
+    ld.total_new.delete_v();
+    ld.examples.delete_v();
+    ld.total_lambda.delete_v();
+    ld.doc_lengths.delete_v();
+    ld.digammas.delete_v();
+    ld.v.delete_v();
   }
 
 learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)

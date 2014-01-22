@@ -355,7 +355,7 @@ namespace CSOAA {
     ec.final_prediction = (float)prediction;
   }
 
-  void finish_example(vw& all, csoaa*, example& ec)
+  void finish_example(vw& all, csoaa&, example& ec)
   {
     output_example(all, ec);
     VW::finish_example(all, &ec);
@@ -960,9 +960,9 @@ namespace LabelDict {
     l.ec_seq.erase();
   }
 
-  void end_pass(ldf* l)
+  void end_pass(ldf& l)
   {
-    l->first_pass = false;
+    l.first_pass = false;
   }
 
 /*
@@ -1021,7 +1021,7 @@ namespace LabelDict {
   }
 */
 
-  void finish_singleline_example(vw& all, ldf*, example& ec)
+  void finish_singleline_example(vw& all, ldf&, example& ec)
   {
     if (! LabelDict::ec_is_label_definition(ec)) {
       all.sd->weighted_examples += 1;
@@ -1032,31 +1032,31 @@ namespace LabelDict {
     VW::finish_example(all, &ec);
   }
 
-  void finish_multiline_example(vw& all, ldf* l, example& ec)
+  void finish_multiline_example(vw& all, ldf& l, example& ec)
   {
-    if (l->need_to_clear) {
-      if (l->ec_seq.size() > 0) {
-	output_example_seq(all, *l);
+    if (l.need_to_clear) {
+      if (l.ec_seq.size() > 0) {
+	output_example_seq(all, l);
         global_print_newline(all);
       }        
-      clear_seq_and_finish_examples(all, *l);
-      l->need_to_clear = false;
+      clear_seq_and_finish_examples(all, l);
+      l.need_to_clear = false;
       if (ec.in_use) VW::finish_example(all, &ec);
     }
   }
 
-  void end_examples(ldf* l)
+  void end_examples(ldf& l)
   {
-    if (l->need_to_clear)
-      l->ec_seq.erase();
+    if (l.need_to_clear)
+      l.ec_seq.erase();
   }
 
 
-  void finish(ldf* l)
+  void finish(ldf& l)
   {
     //vw* all = l->all;
-    l->ec_seq.delete_v();
-    LabelDict::free_label_features(*l);
+    l.ec_seq.delete_v();
+    LabelDict::free_label_features(l);
   }
 
   template <bool is_learn>

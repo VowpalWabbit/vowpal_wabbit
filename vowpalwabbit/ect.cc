@@ -348,26 +348,26 @@ namespace ECT
     ec.final_prediction = new_label;
   }
 
-  void finish(ect* e)
+  void finish(ect& e)
   {
-    for (size_t l = 0; l < e->all_levels.size(); l++)
+    for (size_t l = 0; l < e.all_levels.size(); l++)
       {
-	for (size_t t = 0; t < e->all_levels[l].size(); t++)
-	  e->all_levels[l][t].delete_v();
-	e->all_levels[l].delete_v();
+	for (size_t t = 0; t < e.all_levels[l].size(); t++)
+	  e.all_levels[l][t].delete_v();
+	e.all_levels[l].delete_v();
       }
-    e->final_nodes.delete_v();
+    e.final_nodes.delete_v();
 
-    e->up_directions.delete_v();
+    e.up_directions.delete_v();
 
-    e->directions.delete_v();
+    e.directions.delete_v();
 
-    e->down_directions.delete_v();
+    e.down_directions.delete_v();
 
-    e->tournaments_won.delete_v();
+    e.tournaments_won.delete_v();
   }
 
-  void finish_example(vw& all, ect*, example& ec)
+  void finish_example(vw& all, ect&, example& ec)
   {
     OAA::output_example(all, ec);
     VW::finish_example(all, &ec);

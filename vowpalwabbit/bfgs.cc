@@ -761,46 +761,46 @@ void process_example(vw& all, bfgs& b, example& ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void end_pass(bfgs* b)
+void end_pass(bfgs& b)
 {
-  vw* all = b->all;
+  vw* all = b.all;
   
-  if (b->current_pass <= b->final_pass) 
+  if (b.current_pass <= b.final_pass) 
   {
-       if(b->current_pass < b->final_pass)
+       if(b.current_pass < b.final_pass)
        { 
-          int status = process_pass(*all, *b);
+          int status = process_pass(*all, b);
 
           //reaching the max number of passes regardless of convergence 
-          if(b->final_pass == b->current_pass)
+          if(b.final_pass == b.current_pass)
           {
              cerr<<"Maximum number of passes reached. ";
-             if(!b->output_regularizer)
+             if(!b.output_regularizer)
                 cerr<<"If you want to optimize further, increase the number of passes\n";
-             if(b->output_regularizer)
+             if(b.output_regularizer)
              { 
                cerr<<"\nRegular model file has been created. "; 
                cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
-               b->output_regularizer = false;
+               b.output_regularizer = false;
              }
 
           } 
           
           //attain convergence before reaching max iterations 
-	   if (status != LEARN_OK && b->final_pass > b->current_pass) {
-	      b->final_pass = b->current_pass;
+	   if (status != LEARN_OK && b.final_pass > b.current_pass) {
+	      b.final_pass = b.current_pass;
 	   }
 
-	   if (b->output_regularizer && b->final_pass == b->current_pass) {
+	   if (b.output_regularizer && b.final_pass == b.current_pass) {
 	     zero_preconditioner(*all);
-	     b->preconditioner_pass = true;
+	     b.preconditioner_pass = true;
 	   }
 
 	   if(!all->holdout_set_off)
 	   {
-	     if(summarize_holdout_set(*all, b->no_win_counter))
+	     if(summarize_holdout_set(*all, b.no_win_counter))
                finalize_regressor(*all, all->final_regressor_name); 
-	     if(b->early_stop_thres == b->no_win_counter)
+	     if(b.early_stop_thres == b.no_win_counter)
 	     { 
                all-> early_terminate = true;
                cerr<<"Early termination reached w.r.t. holdout set error";
@@ -809,9 +809,9 @@ void end_pass(bfgs* b)
 	   } 
            
        }else{//reaching convergence in the previous pass
-        if(b->output_regularizer) 
-           preconditioner_to_regularizer(*all, *b, (*all).l2_lambda);
-        b->current_pass ++;
+        if(b.output_regularizer) 
+           preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
+        b.current_pass ++;
       }   
                 
   }
@@ -844,12 +844,12 @@ void learn(bfgs* b, learner& base, example& ec)
     }
 }
 
-void finish(bfgs* b)
+void finish(bfgs& b)
 {
-  b->predictions.delete_v();
-  free(b->mem);
-  free(b->rho);
-  free(b->alpha);
+  b.predictions.delete_v();
+  free(b.mem);
+  free(b.rho);
+  free(b.alpha);
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
@@ -901,9 +901,9 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 }
 
 
-void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
+void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 {
-  vw* all = b->all;
+  vw* all = b.all;
 
   uint32_t length = 1 << all->num_bits;
 
@@ -912,8 +912,8 @@ void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
       initialize_regressor(*all);
       if (all->per_feature_regularizer_input != "")
 	{
-	  b->regularizers = (weight *)calloc(2*length, sizeof(weight));
-	  if (b->regularizers == NULL)
+	  b.regularizers = (weight *)calloc(2*length, sizeof(weight));
+	  if (b.regularizers == NULL)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
 	      throw exception();
@@ -921,18 +921,18 @@ void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
 	}
       int m = all->m;
       
-      b->mem_stride = (m==0) ? CG_EXTRA : 2*m;
-      b->mem = (float*) malloc(sizeof(float)*all->length()*(b->mem_stride));
-      b->rho = (double*) malloc(sizeof(double)*m);
-      b->alpha = (double*) malloc(sizeof(double)*m);
+      b.mem_stride = (m==0) ? CG_EXTRA : 2*m;
+      b.mem = (float*) malloc(sizeof(float)*all->length()*(b.mem_stride));
+      b.rho = (double*) malloc(sizeof(double)*m);
+      b.alpha = (double*) malloc(sizeof(double)*m);
       
       if (!all->quiet) 
 	{
-	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b->mem_stride)+sizeof(weight)*all->reg.stride) >> 20);
+	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+sizeof(weight)*all->reg.stride) >> 20);
 	}
       
-      b->net_time = 0.0;
-      ftime(&b->t_start_global);
+      b.net_time = 0.0;
+      ftime(&b.t_start_global);
       
       if (!all->quiet)
 	{
@@ -942,14 +942,14 @@ void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
 	  cerr.precision(5);
 	}
       
-      if (b->regularizers != NULL)
+      if (b.regularizers != NULL)
 	all->l2_lambda = 1; // To make sure we are adding the regularization
-      b->output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
-      reset_state(*all, *b, false);
+      b.output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
+      reset_state(*all, b, false);
     }
 
-  //bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
-  bool reg_vector = (b->output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
+  //bool reg_vector = b.output_regularizer || all->per_feature_regularizer_input.length() > 0;
+  bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
     
   if (model_file.files.size() > 0)
     {
@@ -960,15 +960,15 @@ void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
 				buff, text_len, text);
       
       if (reg_vector)
-	save_load_regularizer(*all, *b, model_file, read, text);
+	save_load_regularizer(*all, b, model_file, read, text);
       else
 	GD::save_load_regressor(*all, model_file, read, text);
     }
 }
 
-  void init_driver(bfgs* b)
+  void init_driver(bfgs& b)
   {
-    b->backstep_on = true;
+    b.backstep_on = true;
   }
 
 learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
