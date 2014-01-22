@@ -1370,27 +1370,27 @@ void print_update(vw& all, searn& srn)
   }
 
   template <bool is_learn>
-  void searn_predict_or_learn(searn* srn, learner& base, example& ec) {
-    vw* all = srn->all;
-    srn->base_learner = &base;
+  void searn_predict_or_learn(searn& srn, learner& base, example& ec) {
+    vw* all = srn.all;
+    srn.base_learner = &base;
     bool is_real_example = true;
-    if (example_is_newline(ec) || srn->ec_seq.size() >= all->p->ring_size - 2) { 
-      if (srn->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
+    if (example_is_newline(ec) || srn.ec_seq.size() >= all->p->ring_size - 2) { 
+      if (srn.ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
 	std::cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << std::endl;
       }
 
-      do_actual_learning<is_learn>(*all, *srn);
-      clear_seq(*all, *srn);
-      srn->hit_new_pass = false;
+      do_actual_learning<is_learn>(*all, srn);
+      clear_seq(*all, srn);
+      srn.hit_new_pass = false;
       
       //VW::finish_example(*all, ec);
       is_real_example = false;
     } else {
-      srn->ec_seq.push_back(&ec);
+      srn.ec_seq.push_back(&ec);
     }
     
     if (is_real_example) {
-      srn->read_example_last_id = ec.example_counter;
+      srn.read_example_last_id = ec.example_counter;
     }
   }
 

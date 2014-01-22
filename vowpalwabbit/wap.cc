@@ -218,16 +218,16 @@ namespace WAP {
   }
 
   template <bool is_learn>
-  void predict_or_learn(wap* w, learner& base, example& ec)
+  void predict_or_learn(wap& w, learner& base, example& ec)
   {
     CSOAA::label* cost_label = (CSOAA::label*)ec.ld;
-    vw* all = w->all;
+    vw* all = w.all;
     
-    size_t prediction = test(*all, *w, base, ec);
+    size_t prediction = test(*all, w, base, ec);
     ec.ld = cost_label;
     
     if (is_learn && cost_label->costs.size() > 0)
-      train(*all, *w, base, ec);
+      train(*all, w, base, ec);
     ec.final_prediction = (float)prediction;
   }
 

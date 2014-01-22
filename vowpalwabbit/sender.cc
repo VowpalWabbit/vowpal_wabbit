@@ -70,17 +70,17 @@ void receive_result(sender& s)
   return_simple_example(*(s.all), NULL, *ec);  
 }
 
-  void learn(sender* s, learner& base, example& ec) 
+  void learn(sender& s, learner& base, example& ec) 
   { 
-    if (s->received_index + s->all->p->ring_size - 1 == s->sent_index)
-      receive_result(*s);
+    if (s.received_index + s.all->p->ring_size - 1 == s.sent_index)
+      receive_result(s);
 
     label_data* ld = (label_data*)ec.ld;
-    s->all->set_minmax(s->all->sd, ld->label);
-    simple_label.cache_label(ld, *s->buf);//send label information.
-    cache_tag(*s->buf, ec.tag);
-    send_features(s->buf,ec, (uint32_t)s->all->parse_mask);
-    s->delay_ring[s->sent_index++ % s->all->p->ring_size] = &ec;
+    s.all->set_minmax(s.all->sd, ld->label);
+    simple_label.cache_label(ld, *s.buf);//send label information.
+    cache_tag(*s.buf, ec.tag);
+    send_features(s.buf,ec, (uint32_t)s.all->parse_mask);
+    s.delay_ring[s.sent_index++ % s.all->p->ring_size] = &ec;
   }
 
   void finish_example(vw& all, sender&, example& ec)

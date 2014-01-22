@@ -85,7 +85,7 @@ namespace TOPK {
   }
 
   template <bool is_learn>
-  void predict_or_learn(topk* d, learner& base, example& ec)
+  void predict_or_learn(topk& d, learner& base, example& ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
 
@@ -94,13 +94,13 @@ namespace TOPK {
     else
       base.predict(ec);
 
-    if(d->pr_queue.size() < d->B)      
-      d->pr_queue.push(make_pair(ec.final_prediction, ec.tag));
+    if(d.pr_queue.size() < d.B)      
+      d.pr_queue.push(make_pair(ec.final_prediction, ec.tag));
 
-    else if(d->pr_queue.top().first < ec.final_prediction)
+    else if(d.pr_queue.top().first < ec.final_prediction)
     {
-      d->pr_queue.pop();
-      d->pr_queue.push(make_pair(ec.final_prediction, ec.tag));
+      d.pr_queue.pop();
+      d.pr_queue.push(make_pair(ec.final_prediction, ec.tag));
     }
 
   }

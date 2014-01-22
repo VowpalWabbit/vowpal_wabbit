@@ -198,8 +198,8 @@ namespace OAA {
   }
 
   template <bool is_learn>
-  void predict_or_learn(oaa* o, learner& base, example& ec) {
-    vw* all = o->all;
+  void predict_or_learn(oaa& o, learner& base, example& ec) {
+    vw* all = o.all;
 
     bool shouldOutput = all->raw_prediction > 0;
 
@@ -207,8 +207,8 @@ namespace OAA {
     float prediction = 1;
     float score = INT_MIN;
   
-    if (mc_label_data->label == 0 || (mc_label_data->label > o->k && mc_label_data->label != (uint32_t)-1))
-      cout << "label " << mc_label_data->label << " is not in {1,"<< o->k << "} This won't work right." << endl;
+    if (mc_label_data->label == 0 || (mc_label_data->label > o.k && mc_label_data->label != (uint32_t)-1))
+      cout << "label " << mc_label_data->label << " is not in {1,"<< o.k << "} This won't work right." << endl;
     
     string outputString;
     stringstream outputStringStream(outputString);
@@ -218,7 +218,7 @@ namespace OAA {
     simple_temp.weight = mc_label_data->weight;
     ec.ld = &simple_temp;
 
-    for (size_t i = 1; i <= o->k; i++)
+    for (size_t i = 1; i <= o.k; i++)
       {
 	if (is_learn)
 	  {

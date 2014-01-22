@@ -9,10 +9,10 @@ namespace Scorer {
   };
   
   template <bool is_learn>
-  void predict_or_learn(scorer* s, learner& base, example& ec)
+  void predict_or_learn(scorer& s, learner& base, example& ec)
   {
     label_data* ld = (label_data*)ec.ld;
-    s->all->set_minmax(s->all->sd, ld->label);
+    s.all->set_minmax(s.all->sd, ld->label);
 
     if (is_learn)
       base.learn(ec);

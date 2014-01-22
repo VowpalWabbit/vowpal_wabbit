@@ -17,10 +17,10 @@ namespace CBIFY {
     CB::label cb_label;
   };
   
-  void do_uniform(cbify* data, example& ec)
+  void do_uniform(cbify& data, example& ec)
   {
     //Draw an action
-    uint32_t action = (uint32_t)ceil(frand48() * data->k);
+    uint32_t action = (uint32_t)ceil(frand48() * data.k);
     
     ec.final_prediction = (float)action;
   }
@@ -36,21 +36,21 @@ namespace CBIFY {
   }
 
   template <bool is_learn>
-  void predict_or_learn_first(cbify* data, learner& base, example& ec)
+  void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
     OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
     //Use CB to find current prediction for remaining rounds.
-    if (data->tau > 0)
+    if (data.tau > 0)
       {
 	do_uniform(data, ec);
 	do_loss(ec);
-	data->tau--;
+	data.tau--;
 	cout << "tau--" << endl;
 	uint32_t action = (uint32_t)ec.final_prediction;
-	CB::cb_class l = {ec.loss, action, 1.f / data->k};
-	data->cb_label.costs.erase();
-	data->cb_label.costs.push_back(l);
-	ec.ld = &(data->cb_label);
+	CB::cb_class l = {ec.loss, action, 1.f / data.k};
+	data.cb_label.costs.erase();
+	data.cb_label.costs.push_back(l);
+	ec.ld = &(data.cb_label);
 	if (is_learn)
 	  base.learn(ec);
 	else
@@ -60,8 +60,8 @@ namespace CBIFY {
       }
     else
       {
-	data->cb_label.costs.erase();
-	ec.ld = &(data->cb_label);
+	data.cb_label.costs.erase();
+	ec.ld = &(data.cb_label);
 	if (is_learn)
 	  base.learn(ec);
 	else
@@ -72,21 +72,21 @@ namespace CBIFY {
   }
   
   template <bool is_learn>
-  void predict_or_learn_greedy(cbify* data, learner& base, example& ec)
+  void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
     OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
     
-    data->cb_label.costs.erase();
-    ec.ld = &(data->cb_label);
+    data.cb_label.costs.erase();
+    ec.ld = &(data.cb_label);
     base.predict(ec);
     do_loss(ec);
     uint32_t action = (uint32_t)ec.final_prediction;
 
-    float base_prob = data->epsilon / data->k;
-    if (frand48() < 1. - data->epsilon)
+    float base_prob = data.epsilon / data.k;
+    if (frand48() < 1. - data.epsilon)
       {
-	CB::cb_class l = {ec.loss, action, 1.f - data->epsilon + base_prob};
-	data->cb_label.costs.push_back(l);
+	CB::cb_class l = {ec.loss, action, 1.f - data.epsilon + base_prob};
+	data.cb_label.costs.push_back(l);
       }
     else
       {
@@ -94,14 +94,14 @@ namespace CBIFY {
 	do_loss(ec);
 	action = (uint32_t)ec.final_prediction;
 	CB::cb_class l = {ec.loss, (uint32_t)ec.final_prediction, base_prob};
-	data->cb_label.costs.push_back(l);
+	data.cb_label.costs.push_back(l);
       }
 
     if (is_learn)
 	base.learn(ec);
 
     ec.final_prediction = (float)action;
-    ec.loss = data->cb_label.costs[0].cost;
+    ec.loss = data.cb_label.costs[0].cost;
     ec.ld = ld;
   }
 

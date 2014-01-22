@@ -314,8 +314,8 @@ namespace CSOAA {
   }
 
   template <bool is_learn>
-  void predict_or_learn(csoaa* c, learner& base, example& ec) {
-    vw* all = c->all;
+  void predict_or_learn(csoaa& c, learner& base, example& ec) {
+    vw* all = c.all;
     label* ld = (label*)ec.ld;
 
     size_t prediction = 1;
@@ -1060,42 +1060,42 @@ namespace LabelDict {
   }
 
   template <bool is_learn>
-  void predict_or_learn(ldf* l, learner& base, example &ec) {
-    vw* all = l->all;
-    l->base = &base;
+  void predict_or_learn(ldf& l, learner& base, example &ec) {
+    vw* all = l.all;
+    l.base = &base;
 
     bool is_test = CSOAA::example_is_test(ec) || !all->training;
     
     if (is_test)
-      make_single_prediction(*all, *l, base, ec, NULL, NULL, NULL, NULL);
+      make_single_prediction(*all, l, base, ec, NULL, NULL, NULL, NULL);
 
-    bool need_to_break = l->ec_seq.size() >= all->p->ring_size - 2;
+    bool need_to_break = l.ec_seq.size() >= all->p->ring_size - 2;
     
-    if (l->is_singleline)
+    if (l.is_singleline)
       assert(is_test);
     else if (example_is_newline(ec) || need_to_break) {
-      if (need_to_break && l->first_pass)
+      if (need_to_break && l.first_pass)
         cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
 
-      do_actual_learning<is_learn>(*all, *l, base);
-      l->need_to_clear = true;
+      do_actual_learning<is_learn>(*all, l, base);
+      l.need_to_clear = true;
     } else if (LabelDict::ec_is_label_definition(ec)) {
-      if (l->ec_seq.size() > 0) {
+      if (l.ec_seq.size() > 0) {
         cerr << "error: label definition encountered in data block" << endl;
         throw exception();
       }
 
       if (! is_test) {
-        l->ec_seq.push_back(&ec);
-        do_actual_learning<is_learn>(*all, *l, base);
-        l->need_to_clear = true;
+        l.ec_seq.push_back(&ec);
+        do_actual_learning<is_learn>(*all, l, base);
+        l.need_to_clear = true;
       }
     } else {
-      if (l->need_to_clear) {  // should only happen if we're NOT driving
-        l->ec_seq.erase();
-        l->need_to_clear = false;
+      if (l.need_to_clear) {  // should only happen if we're NOT driving
+        l.ec_seq.erase();
+        l.need_to_clear = false;
       }
-      l->ec_seq.push_back(&ec);
+      l.ec_seq.push_back(&ec);
     }
   }
 

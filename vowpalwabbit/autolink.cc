@@ -14,7 +14,7 @@ namespace ALINK {
   };
 
   template <bool is_learn>
-  void predict_or_learn(autolink* b, learner& base, example& ec)
+  void predict_or_learn(autolink& b, learner& base, example& ec)
   {
     base.predict(ec);
     float base_pred = ec.final_prediction;
@@ -22,10 +22,10 @@ namespace ALINK {
     // add features of label
     ec.indices.push_back(autolink_namespace);
     float sum_sq = 0;
-    for (size_t i = 0; i < b->d; i++)
+    for (size_t i = 0; i < b.d; i++)
       if (base_pred != 0.)
 	{
-	  feature f = { base_pred, (uint32_t) (autoconstant + i * b->stride) };
+	  feature f = { base_pred, (uint32_t) (autoconstant + i * b.stride) };
 	  ec.atomics[autolink_namespace].push_back(f);
 	  sum_sq += base_pred*base_pred;
 	  base_pred *= ec.final_prediction;

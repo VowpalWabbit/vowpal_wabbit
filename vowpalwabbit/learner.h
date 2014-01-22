@@ -62,9 +62,9 @@ namespace LEARNER
   const learn_data generic_learn_fd = {NULL, NULL, generic_learner, NULL, NULL};
   const func_data generic_func_fd = {NULL, NULL, generic_func};
   
-  template<class R, void (*T)(R*, learner& base, example& ec)>
+  template<class R, void (*T)(R&, learner& base, example& ec)>
     inline void tlearn(void* d, learner& base, example& ec)
-    { T((R*)d, base, ec); }
+    { T(*(R*)d, base, ec); }
 
   template<class R, void (*T)(R&, io_buf& io, bool read, bool text)>
     inline void tsl(void* d, io_buf& io, bool read, bool text)
@@ -109,7 +109,7 @@ public:
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
-  template <class T, void (*u)(T* data, learner& base, example&)>
+  template <class T, void (*u)(T& data, learner& base, example&)>
   inline void set_learn()
   {
     learn_fd.learn_f = tlearn<T,u>;
@@ -122,7 +122,7 @@ public:
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
-  template <class T, void (*u)(T* data, learner& base, example&)>
+  template <class T, void (*u)(T& data, learner& base, example&)>
   inline void set_predict()
   {
     learn_fd.predict_f = tlearn<T,u>;
@@ -134,7 +134,7 @@ public:
     learn_fd.update_f(learn_fd.data, *learn_fd.base, ec);
     ec.ft_offset -= (uint32_t)(increment*i);
   }
-  template <class T, void (*u)(T* data, learner& base, example&)>
+  template <class T, void (*u)(T& data, learner& base, example&)>
   inline void set_update()
   {
     learn_fd.update_f = tlearn<T,u>;

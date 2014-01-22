@@ -479,49 +479,49 @@ namespace CB
   }
 
   template <bool is_learn>
-  void predict_or_learn(cb* c, learner& base, example& ec) {
-    vw* all = c->all;
+  void predict_or_learn(cb& c, learner& base, example& ec) {
+    vw* all = c.all;
     CB::label* ld = (CB::label*)ec.ld;
 
     //check if this is a test example where we just want a prediction
     if( CB::is_test_label(ld) )
     {
       //if so just query base cost-sensitive learner
-      cb_test_to_cs_test_label(*all,ec,c->cb_cs_ld);
+      cb_test_to_cs_test_label(*all,ec,c.cb_cs_ld);
 
-      ec.ld = &c->cb_cs_ld;
+      ec.ld = &c.cb_cs_ld;
       base.predict(ec);
       ec.ld = ld;
       for (size_t i=0; i<ld->costs.size(); i++)
-        ld->costs[i].partial_prediction = c->cb_cs_ld.costs[i].partial_prediction;
+        ld->costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
       return;
     }
 
     //now this is a training example
-    c->known_cost = get_observed_cost(ld);
-    c->min_cost = min (c->min_cost, c->known_cost->cost);
-    c->max_cost = max (c->max_cost, c->known_cost->cost);
+    c.known_cost = get_observed_cost(ld);
+    c.min_cost = min (c.min_cost, c.known_cost->cost);
+    c.max_cost = max (c.max_cost, c.known_cost->cost);
     
     //generate a cost-sensitive example to update classifiers
-    switch(c->cb_type)
+    switch(c.cb_type)
     {
       case CB_TYPE_IPS:
-        gen_cs_example_ips(*all,*c,ec,c->cb_cs_ld);
+        gen_cs_example_ips(*all,c,ec,c.cb_cs_ld);
         break;
       case CB_TYPE_DM:
-        gen_cs_example_dm<is_learn>(*all,*c,ec,c->cb_cs_ld);
+        gen_cs_example_dm<is_learn>(*all,c,ec,c.cb_cs_ld);
         break;
       case CB_TYPE_DR:
-        gen_cs_example_dr<is_learn>(*all,*c,ec,c->cb_cs_ld);
+        gen_cs_example_dr<is_learn>(*all,c,ec,c.cb_cs_ld);
         break;
       default:
-        std::cerr << "Unknown cb_type specified for contextual bandit learning: " << c->cb_type << ". Exiting." << endl;
+        std::cerr << "Unknown cb_type specified for contextual bandit learning: " << c.cb_type << ". Exiting." << endl;
         throw exception();
     }
 
-    if (c->cb_type != CB_TYPE_DM)
+    if (c.cb_type != CB_TYPE_DM)
       {
-	ec.ld = &c->cb_cs_ld;
+	ec.ld = &c.cb_cs_ld;
 
 	if (is_learn)
 	  base.learn(ec);
@@ -530,7 +530,7 @@ namespace CB
 
 	ec.ld = ld;
         for (size_t i=0; i<ld->costs.size(); i++)
-          ld->costs[i].partial_prediction = c->cb_cs_ld.costs[i].partial_prediction;
+          ld->costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
       }
   }
 

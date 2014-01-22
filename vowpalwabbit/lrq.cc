@@ -62,16 +62,16 @@ namespace {
 namespace LRQ {
 
   template <bool is_learn>
-  void predict_or_learn(LRQstate* lrq, learner& base, example& ec)
+  void predict_or_learn(LRQstate& lrq, learner& base, example& ec)
   {
-    vw& all = *lrq->all;
+    vw& all = *lrq.all;
 
     // Remember original features
         
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
       {
-        if (lrq->lrindices[*i])
-          lrq->orig_size[*i] = ec.atomics[*i].size ();
+        if (lrq.lrindices[*i])
+          lrq.orig_size[*i] = ec.atomics[*i].size ();
       }
 
     size_t which = ec.example_counter;
@@ -79,8 +79,8 @@ namespace LRQ {
     float first_loss;
     unsigned int maxiter = (all.training && ! example_is_test (ec)) ? 2 : 1;
 
-    bool do_dropout = lrq->dropout && all.training && ! example_is_test (ec);
-    float scale = (! lrq->dropout || do_dropout) ? 1.f : 0.5f;
+    bool do_dropout = lrq.dropout && all.training && ! example_is_test (ec);
+    float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
 
     for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
       {
@@ -89,15 +89,15 @@ namespace LRQ {
         // TODO: what happens with --lrq ab2 --lrq ac2
         //       i.e. namespace occurs multiple times (?)
     
-        for (vector<string>::iterator i = lrq->lrpairs.begin ();
-             i != lrq->lrpairs.end ();
+        for (vector<string>::iterator i = lrq.lrpairs.begin ();
+             i != lrq.lrpairs.end ();
              ++i)
           {
             unsigned char left = (*i)[which%2];
             unsigned char right = (*i)[(which+1)%2];
             unsigned int k = atoi (i->c_str () + 2);
 
-            for (unsigned int lfn = 0; lfn < lrq->orig_size[left]; ++lfn)
+            for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
               {
                 feature* lf = ec.atomics[left].begin + lfn;
                 float lfx = lf->x;
@@ -105,7 +105,7 @@ namespace LRQ {
     
                 for (unsigned int n = 1; n <= k; ++n)
                   {
-                    if (! do_dropout || cheesyrbit (lrq->seed))
+                    if (! do_dropout || cheesyrbit (lrq.seed))
                       {
                         uint32_t lwindex = (uint32_t)(lindex + n * all.reg.stride);
 
@@ -116,7 +116,7 @@ namespace LRQ {
                           *lw = cheesyrand (lwindex);
         
                         for (unsigned int rfn = 0; 
-                             rfn < lrq->orig_size[right]; 
+                             rfn < lrq.orig_size[right]; 
                              ++rfn)
                           {
                             feature* rf = ec.atomics[right].begin + rfn;
@@ -163,18 +163,18 @@ namespace LRQ {
             ec.loss = first_loss;
           }
 
-        for (vector<string>::iterator i = lrq->lrpairs.begin ();
-             i != lrq->lrpairs.end ();
+        for (vector<string>::iterator i = lrq.lrpairs.begin ();
+             i != lrq.lrpairs.end ();
              ++i)
           {
             unsigned char right = (*i)[(which+1)%2];
 
             ec.atomics[right].end = 
-              ec.atomics[right].begin + lrq->orig_size[right];
+              ec.atomics[right].begin + lrq.orig_size[right];
 
             if (all.audit)
               ec.audit_features[right].end = 
-                ec.audit_features[right].begin + lrq->orig_size[right];
+                ec.audit_features[right].begin + lrq.orig_size[right];
           }
       }
   }

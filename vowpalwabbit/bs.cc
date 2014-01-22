@@ -173,18 +173,18 @@ namespace BS {
   }
 
   template <bool is_learn>
-  void predict_or_learn(bs* d, learner& base, example& ec)
+  void predict_or_learn(bs& d, learner& base, example& ec)
   {
-    vw* all = d->all;
+    vw* all = d.all;
     bool shouldOutput = all->raw_prediction > 0;
 
     float weight_temp = ((label_data*)ec.ld)->weight;
   
     string outputString;
     stringstream outputStringStream(outputString);
-    d->pred_vec.clear();
+    d.pred_vec.clear();
 
-    for (size_t i = 1; i <= d->B; i++)
+    for (size_t i = 1; i <= d.B; i++)
       {
         ((label_data*)ec.ld)->weight = weight_temp * weight_gen();
 
@@ -193,7 +193,7 @@ namespace BS {
 	else
 	  base.predict(ec, i-1);
 
-        d->pred_vec.push_back(ec.final_prediction);
+        d.pred_vec.push_back(ec.final_prediction);
 
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';
@@ -203,16 +203,16 @@ namespace BS {
 
     ((label_data*)ec.ld)->weight = weight_temp;
 
-    switch(d->bs_type)
+    switch(d.bs_type)
     {
       case BS_TYPE_MEAN:
-        bs_predict_mean(*all, ec, d->pred_vec);
+        bs_predict_mean(*all, ec, d.pred_vec);
         break;
       case BS_TYPE_VOTE:
-        bs_predict_vote(*all, ec, d->pred_vec);
+        bs_predict_vote(*all, ec, d.pred_vec);
         break;
       default:
-        std::cerr << "Unknown bs_type specified: " << d->bs_type << ". Exiting." << endl;
+        std::cerr << "Unknown bs_type specified: " << d.bs_type << ". Exiting." << endl;
         throw exception();
     }
 

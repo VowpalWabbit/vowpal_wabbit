@@ -43,7 +43,7 @@ namespace GD
     size_t no_win_counter;
     size_t early_stop_thres;
     float initial_constant;
-    void (*predict)(gd*, learner&, example&);
+    void (*predict)(gd&, learner&, example&);
 
     vw* all;
   };
@@ -352,9 +352,9 @@ float finalize_prediction(vw& all, float ret)
 }
 
 template<bool normalized_training, bool reg_mode_odd, bool power_t_half>
-void predict(gd* g, learner& base, example& ec)
+void predict(gd& g, learner& base, example& ec)
 {
-  vw* all = g->all;
+  vw* all = g.all;
 
   if (normalized_training) {
     if(power_t_half) {
@@ -595,11 +595,11 @@ void local_predict(vw& all, gd& g, example& ec)
 }
 
   template<bool adaptive, bool normalized, bool feature_mask_off, size_t normalized_idx, size_t feature_mask_idx>
-void update(gd* g, learner& base, example& ec)
+void update(gd& g, learner& base, example& ec)
 {
-  vw* all = g->all;
+  vw* all = g.all;
 
-  local_predict<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx > (*all, *g, ec);
+  local_predict<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx > (*all, g, ec);
   
   if (ec.eta_round != 0.)
     {
@@ -614,14 +614,14 @@ void update(gd* g, learner& base, example& ec)
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off, size_t normalized_idx, size_t feature_mask_idx>
-void learn(gd* g, learner& base, example& ec)
+void learn(gd& g, learner& base, example& ec)
 {
-  vw* all = g->all;
+  vw* all = g.all;
   label_data* ld = (label_data*)ec.ld;
 
   assert(ec.in_use);
 
-  g->predict(g,base,ec);
+  g.predict(g,base,ec);
 
   if ((all->holdout_set_off || !ec.test_only) && ld->weight > 0)
     update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx>(g,base,ec);

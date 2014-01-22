@@ -272,16 +272,16 @@ void end_pass(gdmf& d)
    all->current_pass++;
 }
 
-  void predict(gdmf* d, learner& base, example& ec)
+  void predict(gdmf& d, learner& base, example& ec)
   {
-    vw* all = d->all;
+    vw* all = d.all;
  
     mf_predict(*all,ec);
   }
 
-  void learn(gdmf* d, learner& base, example& ec)
+  void learn(gdmf& d, learner& base, example& ec)
   {
-    vw* all = d->all;
+    vw* all = d.all;
  
     predict(d, base, ec);
     if (all->training && ((label_data*)(ec.ld))->label != FLT_MAX)

@@ -818,18 +818,18 @@ void end_pass(bfgs& b)
 }
 
 // placeholder
-void predict(bfgs* b, learner& base, example& ec)
+void predict(bfgs& b, learner& base, example& ec)
 {
-  vw* all = b->all;
+  vw* all = b.all;
   ec.final_prediction = bfgs_predict(*all,ec);
 }
 
-void learn(bfgs* b, learner& base, example& ec)
+void learn(bfgs& b, learner& base, example& ec)
 {
-  vw* all = b->all;
+  vw* all = b.all;
   assert(ec.in_use);
 
-  if (b->current_pass <= b->final_pass)
+  if (b.current_pass <= b.final_pass)
     {
       if(ec.test_only)
 	{ 
@@ -840,7 +840,7 @@ void learn(bfgs* b, learner& base, example& ec)
       else if (test_example(ec))
 	predict(b, base, ec);
       else
-	process_example(*all, *b, ec);
+	process_example(*all, b, ec);
     }
 }
 
