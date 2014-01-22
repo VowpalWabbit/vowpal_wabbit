@@ -534,7 +534,7 @@ void local_predict(vw& all, gd& g, example& ec)
   if(g.active_simulation){
     float k = ec.example_t - ld->weight;
     ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.final_prediction, all.eta/powf(k,all.power_t));
-    float importance = query_decision(all, &ec, k);
+    float importance = query_decision(all, ec, k);
     if(importance > 0){
       all.sd->queries += 1;
       ld->weight *= importance;

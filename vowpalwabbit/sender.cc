@@ -67,7 +67,7 @@ void receive_result(sender& s)
   
   ec->loss = s.all->loss->getLoss(s.all->sd, ec->final_prediction, ld->label) * ld->weight;
   
-  return_simple_example(*(s.all), NULL, ec);  
+  return_simple_example(*(s.all), NULL, *ec);  
 }
 
   void learn(sender* s, learner& base, example& ec) 
@@ -83,7 +83,7 @@ void receive_result(sender& s)
     s->delay_ring[s->sent_index++ % s->all->p->ring_size] = &ec;
   }
 
-  void finish_example(vw& all, sender*, example*ec)
+  void finish_example(vw& all, sender*, example& ec)
 {}
 
 void end_examples(sender* s)

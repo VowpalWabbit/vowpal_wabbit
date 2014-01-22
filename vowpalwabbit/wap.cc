@@ -231,10 +231,10 @@ namespace WAP {
     ec.final_prediction = (float)prediction;
   }
 
-  void finish_example(vw& all, wap*, example* ec)
+  void finish_example(vw& all, wap*, example& ec)
   {
     CSOAA::output_example(all, ec);
-    VW::finish_example(all, ec);
+    VW::finish_example(all, &ec);
   }
   
   learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)

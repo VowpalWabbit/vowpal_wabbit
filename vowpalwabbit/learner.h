@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 using namespace std;
 
 struct vw;
-void return_simple_example(vw& all, void*, example* ec);  
+void return_simple_example(vw& all, void*, example& ec);  
   
 namespace LEARNER
 {
@@ -48,7 +48,7 @@ namespace LEARNER
   struct finish_example_data{
     void* data;
     learner* base;
-    void (*finish_example_f)(vw&, void* data, example*);
+    void (*finish_example_f)(vw&, void* data, example&);
   };
   
   void generic_driver(vw* all);
@@ -73,8 +73,8 @@ namespace LEARNER
   template<class R, void (*T)(R*)>
     inline void tfunc(void* d) { T((R*)d); }
 
-  template<class R, void (*T)(vw& all, R*, example*)>
-    inline void tend_example(vw& all, void* d, example* ec)
+  template<class R, void (*T)(vw& all, R*, example&)>
+    inline void tend_example(vw& all, void* d, example& ec)
   { T(all, (R*)d, ec); }
 
   template <class T, void (*learn)(T* data, learner& base, example&), void (*predict)(T* data, learner& base, example&)>
@@ -180,8 +180,8 @@ public:
   void set_init_driver() { init_fd = tuple_dbf(learn_fd.data,learn_fd.base, tfunc<T,f>); }
 
   //called after learn example for each example.  Explicitly not recursive.
-  inline void finish_example(vw& all, example* ec) { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
-  template<class T, void (*f)(vw& all, T*, example*)>
+  inline void finish_example(vw& all, example& ec) { finish_example_fd.finish_example_f(all, finish_example_fd.data, ec);}
+  template<class T, void (*f)(vw& all, T*, example&)>
   void set_finish_example()
   {finish_example_fd.data = learn_fd.data;
     finish_example_fd.finish_example_f = tend_example<T,f>;}

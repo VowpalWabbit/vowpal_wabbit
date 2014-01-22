@@ -367,10 +367,10 @@ namespace ECT
     e->tournaments_won.delete_v();
   }
 
-  void finish_example(vw& all, ect*, example* ec)
+  void finish_example(vw& all, ect*, example& ec)
   {
     OAA::output_example(all, ec);
-    VW::finish_example(all, ec);
+    VW::finish_example(all, &ec);
   }
   
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)

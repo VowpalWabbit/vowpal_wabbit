@@ -30,7 +30,7 @@ namespace CSOAA {
   
   LEARNER::learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 
-  void output_example(vw& all, example* ec);
+  void output_example(vw& all, example& ec);
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
   void default_label(void* v);
@@ -53,7 +53,7 @@ namespace CSOAA_AND_WAP_LDF {
 
   LEARNER::learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
   void global_print_newline(vw& all);
-  void output_example(vw& all, example* ec, bool&hit_loss);
+  void output_example(vw& all, example& ec, bool& hit_loss);
 
   const label_parser cs_label_parser = CSOAA::cs_label_parser;
 }

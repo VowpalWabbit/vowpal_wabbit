@@ -52,6 +52,7 @@ void output_and_account_example(example* ec);
 		 for (; temp.begin != temp.end; temp.begin++)
 		   {
 			 uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
+       
 			 foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, dat, 
 					halfhash, temp.begin->x);
 		   }

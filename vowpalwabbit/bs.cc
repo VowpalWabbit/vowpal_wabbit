@@ -131,25 +131,25 @@ namespace BS {
     }    
   }
 
-  void output_example(vw& all, bs* d, example* ec)
+  void output_example(vw& all, bs* d, example& ec)
   {
-    label_data* ld = (label_data*)ec->ld;
+    label_data* ld = (label_data*)ec.ld;
     
-    if(ec->test_only)
+    if(ec.test_only)
       {
 	all.sd->weighted_holdout_examples += ld->weight;//test weight seen
 	all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
 	all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
-	all.sd->holdout_sum_loss += ec->loss;
-	all.sd->holdout_sum_loss_since_last_dump += ec->loss;
-	all.sd->holdout_sum_loss_since_last_pass += ec->loss;//since last pass
+	all.sd->holdout_sum_loss += ec.loss;
+	all.sd->holdout_sum_loss_since_last_dump += ec.loss;
+	all.sd->holdout_sum_loss_since_last_pass += ec.loss;//since last pass
       }
     else
       {
 	all.sd->weighted_examples += ld->weight;
-	all.sd->sum_loss += ec->loss;
-	all.sd->sum_loss_since_last_dump += ec->loss;
-	all.sd->total_features += ec->num_features;
+	all.sd->sum_loss += ec.loss;
+	all.sd->sum_loss_since_last_dump += ec.loss;
+	all.sd->total_features += ec.num_features;
 	all.sd->example_number++;
       }
     
@@ -167,7 +167,7 @@ namespace BS {
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      BS::print_result(*sink, ec->final_prediction, 0, ec->tag, d->lb, d->ub);
+      BS::print_result(*sink, ec.final_prediction, 0, ec.tag, d->lb, d->ub);
   
     print_update(all, ec);
   }
@@ -221,10 +221,10 @@ namespace BS {
 
   }
 
-  void finish_example(vw& all, bs* d, example* ec)
+  void finish_example(vw& all, bs* d, example& ec)
   {
     BS::output_example(all, d, ec);
-    VW::finish_example(all, ec);
+    VW::finish_example(all, &ec);
   }
 
   void finish(bs* d)

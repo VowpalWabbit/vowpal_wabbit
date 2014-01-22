@@ -110,11 +110,11 @@ namespace OAA {
       }
   }
 
-  void print_update(vw& all, example *ec)
+  void print_update(vw& all, example &ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        mc_label* ld = (mc_label*) ec->ld;
+        mc_label* ld = (mc_label*) ec.ld;
         char label_buf[32];
         if (ld->label == INT_MAX)
           strcpy(label_buf," unknown");
@@ -137,8 +137,8 @@ namespace OAA {
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
-	      (long int)ec->final_prediction,
-	      (long unsigned int)ec->num_features);
+	      (long int)ec.final_prediction,
+	      (long unsigned int)ec.num_features);
 
           all.sd->weighted_holdout_examples_since_last_dump = 0;
           all.sd->holdout_sum_loss_since_last_dump = 0.0;
@@ -150,8 +150,8 @@ namespace OAA {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long int)ec->final_prediction,
-                (long unsigned int)ec->num_features);
+                (long int)ec.final_prediction,
+                (long unsigned int)ec.num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
         all.sd->old_weighted_examples = all.sd->weighted_examples;
@@ -159,19 +159,19 @@ namespace OAA {
       }
   }
 
-  void output_example(vw& all, example* ec)
+  void output_example(vw& all, example& ec)
   {
-    mc_label* ld = (mc_label*)ec->ld;
+    mc_label* ld = (mc_label*)ec.ld;
 
     size_t loss = 1;
-    if (ld->label == (uint32_t)ec->final_prediction)
+    if (ld->label == (uint32_t)ec.final_prediction)
       loss = 0;
 
-    if(ec->test_only)
+    if(ec.test_only)
     {
-      all.sd->weighted_holdout_examples += ec->global_weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ec->global_weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ec->global_weight;
+      all.sd->weighted_holdout_examples += ec.global_weight;//test weight seen
+      all.sd->weighted_holdout_examples_since_last_dump += ec.global_weight;
+      all.sd->weighted_holdout_examples_since_last_pass += ec.global_weight;
       all.sd->holdout_sum_loss += loss;
       all.sd->holdout_sum_loss_since_last_dump += loss;
       all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
@@ -179,22 +179,22 @@ namespace OAA {
     else
     {
       all.sd->weighted_examples += ld->weight;
-      all.sd->total_features += ec->num_features;
+      all.sd->total_features += ec.num_features;
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
       all.sd->example_number++;
     }
  
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, ec->final_prediction, 0, ec->tag);
+      all.print(*sink, ec.final_prediction, 0, ec.tag);
 
     OAA::print_update(all, ec);
   }
 
-  void finish_example(vw& all, oaa*, example* ec)
+  void finish_example(vw& all, oaa*, example& ec)
   {
     output_example(all, ec);
-    VW::finish_example(all, ec);
+    VW::finish_example(all, &ec);
   }
 
   template <bool is_learn>

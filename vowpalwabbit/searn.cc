@@ -1414,10 +1414,10 @@ void print_update(vw& all, searn* srn)
     }
   }
 
-  void finish_example(vw& all, searn* srn, example* ec) {
-    if (ec->end_pass || example_is_newline(*ec) || srn->ec_seq.size() >= all.p->ring_size - 2) {
+  void finish_example(vw& all, searn* srn, example& ec) {
+    if (ec.end_pass || example_is_newline(ec) || srn->ec_seq.size() >= all.p->ring_size - 2) {
       print_update(all, srn);
-      VW::finish_example(all, ec);
+      VW::finish_example(all, &ec);
     }
   }
 

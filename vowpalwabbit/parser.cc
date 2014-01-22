@@ -965,14 +965,14 @@ namespace VW{
     words.delete_v();
   }
 
-  void empty_example(vw& all, example* ec)
+  void empty_example(vw& all, example& ec)
   {
 	if (all.audit || all.hash_inv)
-      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
 	{
 	  for (audit_data* temp 
-		 = ec->audit_features[*i].begin; 
-	       temp != ec->audit_features[*i].end; temp++)
+		 = ec.audit_features[*i].begin; 
+	       temp != ec.audit_features[*i].end; temp++)
 	    {
 	      if (temp->alloced)
 		{
@@ -981,19 +981,19 @@ namespace VW{
 		  temp->alloced=false;
 		}
 	    }
-	  ec->audit_features[*i].erase();
+	  ec.audit_features[*i].erase();
 	}
     
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
       {  
-	ec->atomics[*i].erase();
-	ec->sum_feat_sq[*i]=0;
+	ec.atomics[*i].erase();
+	ec.sum_feat_sq[*i]=0;
       }
     
-    ec->indices.erase();
-    ec->tag.erase();
-    ec->sorted = false;
-    ec->end_pass = false;
+    ec.indices.erase();
+    ec.tag.erase();
+    ec.sorted = false;
+    ec.end_pass = false;
   }
 
   void finish_example(vw& all, example* ec)
@@ -1003,7 +1003,7 @@ namespace VW{
     condition_variable_signal(&all.p->output_done);
     mutex_unlock(&all.p->output_lock);
     
-    empty_example(all, ec);
+    empty_example(all, *ec);
     
     mutex_lock(&all.p->examples_lock);
     assert(ec->in_use);

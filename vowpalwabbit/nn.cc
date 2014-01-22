@@ -291,7 +291,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec.loss = save_ec_loss;
   }
 
-  void finish_example(vw& all, nn*, example* ec)
+  void finish_example(vw& all, nn*, example& ec)
   {
     int save_raw_prediction = all.raw_prediction;
     all.raw_prediction = -1;

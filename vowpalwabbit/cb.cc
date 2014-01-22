@@ -539,7 +539,7 @@ namespace CB
     fprintf(stderr, "*estimate* *estimate*                                                avglossreg last pred  last correct\n");
   }
 
-  void print_update(vw& all, cb& c, bool is_test, example *ec)
+  void print_update(vw& all, cb& c, bool is_test, example& ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
@@ -565,8 +565,8 @@ namespace CB
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
-              (long unsigned int)ec->final_prediction,
-              (long unsigned int)ec->num_features,
+              (long unsigned int)ec.final_prediction,
+              (long unsigned int)ec.num_features,
               c.avg_loss_regressors,
               c.last_pred_reg,
               c.last_correct_cost);
@@ -581,8 +581,8 @@ namespace CB
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)ec->final_prediction,
-                (long unsigned int)ec->num_features,
+                (long unsigned int)ec.final_prediction,
+                (long unsigned int)ec.num_features,
                 c.avg_loss_regressors,
                 c.last_pred_reg,
                 c.last_correct_cost);
@@ -593,14 +593,14 @@ namespace CB
       }
   }
 
-  void output_example(vw& all, cb& c, example* ec)
+  void output_example(vw& all, cb& c, example& ec)
   {
-    CB::label* ld = (CB::label*)ec->ld;
+    CB::label* ld = (CB::label*)ec.ld;
 
     float loss = 0.;
     if (!CB::is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = (size_t)ec->final_prediction;
+        size_t pred = (size_t)ec.final_prediction;
 
         float chosen_loss = FLT_MAX;
         if( know_all_cost_example(ld) ) {
@@ -626,11 +626,11 @@ namespace CB
         loss = chosen_loss;
       }
 
-    if(ec->test_only)
+    if(ec.test_only)
     {
-      all.sd->weighted_holdout_examples += ec->global_weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ec->global_weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ec->global_weight;
+      all.sd->weighted_holdout_examples += ec.global_weight;//test weight seen
+      all.sd->weighted_holdout_examples_since_last_dump += ec.global_weight;
+      all.sd->weighted_holdout_examples_since_last_pass += ec.global_weight;
       all.sd->holdout_sum_loss += loss;
       all.sd->holdout_sum_loss_since_last_dump += loss;
       all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
@@ -640,19 +640,19 @@ namespace CB
       all.sd->sum_loss += loss;
       all.sd->sum_loss_since_last_dump += loss;
       all.sd->weighted_examples += 1.;
-      all.sd->total_features += ec->num_features;
+      all.sd->total_features += ec.num_features;
       all.sd->example_number++;
     }
 
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
         int f = all.final_prediction_sink[i];
-        all.print(f, ec->final_prediction, 0, ec->tag);
+        all.print(f, ec.final_prediction, 0, ec.tag);
       }
   
 
 
-    print_update(all, c, CB::is_test_label((CB::label*)ec->ld), ec);
+    print_update(all, c, CB::is_test_label((CB::label*)ec.ld), ec);
   }
 
   void finish(cb* c)
@@ -660,10 +660,10 @@ namespace CB
     c->cb_cs_ld.costs.delete_v();
   }
 
-  void finish_example(vw& all, cb* c, example* ec)
+  void finish_example(vw& all, cb* c, example& ec)
   {
     output_example(all, *c, ec);
-    VW::finish_example(all, ec);
+    VW::finish_example(all, &ec);
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
