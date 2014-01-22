@@ -239,6 +239,8 @@ public:
 	v_array<char> base_v_array;
 	push_many(base_v_array, name.begin, name.end - name.begin);
 	base_v_array.push_back('\0');
+	if (base != NULL)
+	  free(base);
 	base = base_v_array.begin;
       }
       channel_hash = p->hasher(name, hash_base);
@@ -260,7 +262,6 @@ public:
     
   inline void nameSpace(){
     cur_channel_v = 1.0;
-    base = NULL;
     index = 0;
     new_index = false;
     anon = 0;
@@ -271,6 +272,8 @@ public:
 	new_index = true;
       if(audit)
 	{
+	  if (base != NULL)
+	    free(base);
 	  base = (char *) calloc(2,sizeof(char));
 	  base[0] = ' ';
 	  base[1] = '\0';
@@ -312,8 +315,11 @@ public:
 	this->weights_per_problem = all.wpp;
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
+	this->base = NULL;
 	audit = all.audit || all.hash_inv;
 	listNameSpace();
+	if (base != NULL)
+	  free(base);	
       }
   }
 };
