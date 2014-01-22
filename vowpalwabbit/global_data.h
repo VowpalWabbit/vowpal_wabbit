@@ -220,6 +220,7 @@ struct vw {
   float lda_alpha;
   float lda_rho;
   float lda_D;
+  float lda_epsilon;
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
