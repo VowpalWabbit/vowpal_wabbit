@@ -496,7 +496,7 @@ v_array<float> old_gamma;
       for (size_t k =0; k<all.lda; k++)
 	new_gamma[k] = new_gamma[k]*v[k]+all.lda_alpha;
     }
-  while (average_diff(all, old_gamma.begin, new_gamma.begin) > 0.001);
+  while (average_diff(all, old_gamma.begin, new_gamma.begin) > all.lda_epsilon);
 
   ec->topic_predictions.erase();
   ec->topic_predictions.resize(all.lda);
@@ -580,6 +580,15 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 
   void learn_batch(lda& l)
   {
+    if (l.sorted_features.empty()) {
+      // This can happen when the socket connection is dropped by the client.
+      // If l.sorted_features is empty, then l.sorted_features[0] does not
+      // exist, so we should not try to take its address in the beginning of
+      // the for loops down there. Since it seems that there's not much to
+      // do in this case, we just return.
+      return;
+    }
+
     float eta = -1;
     float minuseta = -1;
 
@@ -754,6 +763,7 @@ learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
     ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
     ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
+    ("lda_epsilon", po::value<float>(&all.lda_epsilon), "Loop convergence threshold")
     ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
 
   po::parsed_options parsed = po::command_line_parser(opts).

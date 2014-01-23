@@ -121,11 +121,7 @@ namespace BS {
       ss << temp;
       ss << '\n';
       ssize_t len = ss.str().size();
-#ifdef _WIN32
-	  ssize_t t = _write(f, ss.str().c_str(), (unsigned int)len);
-#else
-	  ssize_t t = write(f, ss.str().c_str(), (unsigned int)len);
-#endif
+      ssize_t t = io_buf::write_file_or_socket(f, ss.str().c_str(), (unsigned int)len);
       if (t != len)
         cerr << "write error" << endl;
     }    
