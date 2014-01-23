@@ -319,7 +319,7 @@ public:
 	audit = all.audit || all.hash_inv;
 	listNameSpace();
 	if (base != NULL)
-	  free(base);	
+	  free(base);
       }
   }
 };
