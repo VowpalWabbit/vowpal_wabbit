@@ -282,22 +282,7 @@ namespace CB
   }
 
   template <bool is_learn>
-  void call_scorer(vw& all, cb& c, example& ec, uint32_t index)
-  {
-    float old_min = all.sd->min_label;
-    //all.sd->min_label = c.min_cost;
-    float old_max = all.sd->max_label;
-    //all.sd->max_label = c.max_cost;
-    if (is_learn)
-      all.scorer->learn(ec, 2*(index)-1);
-    else
-      all.scorer->predict(ec, 2*(index)-1);
-    all.sd->min_label = old_min;
-    all.sd->max_label = old_max;
-   }
-  
-  template <bool is_learn>
-  float get_cost_pred(vw& all, cb& c, example& ec, uint32_t index)
+  float get_cost_pred(vw& all, cb& c, example& ec, uint32_t index, uint32_t base)
   {
     CB::label* ld = (CB::label*)ec.ld;
 
@@ -316,7 +301,10 @@ namespace CB
     
     ec.ld = &simple_temp;
 
-    call_scorer<is_learn>(all, c, ec, index);
+    if (is_learn)
+      all.scorer->learn(ec, index-1+base);
+    else
+      all.scorer->predict(ec, index-1+base);
     ec.ld = ld;
 
     float cost = ec.final_prediction;
@@ -342,7 +330,7 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred<is_learn>(all, c, ec, i-1);
+        wc.x = get_cost_pred<is_learn>(all, c, ec, i, 0);
 	if (wc.x < min)
 	  {
 	    min = wc.x;
@@ -371,7 +359,7 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred<is_learn>(all, c, ec, cl->action - 1);
+        wc.x = get_cost_pred<is_learn>(all, c, ec, cl->action, 0);
 	if (wc.x < min || (wc.x == min && cl->action < argmin))
 	  {
 	    min = wc.x;
@@ -411,7 +399,7 @@ namespace CB
         wc.wap_value = 0.;
 
         //get cost prediction for this label
-        wc.x = get_cost_pred<is_learn>(all, c,ec, all.sd->k + i - 1);
+        wc.x = get_cost_pred<is_learn>(all, c,ec, i, all.sd->k);
         wc.weight_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
@@ -436,7 +424,7 @@ namespace CB
         wc.wap_value = 0.;
 
         //get cost prediction for this label
-        wc.x = get_cost_pred<is_learn>(all, c, ec, all.sd->k + cl->action - 1);
+        wc.x = get_cost_pred<is_learn>(all, c, ec, cl->action, all.sd->k);
         wc.weight_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;

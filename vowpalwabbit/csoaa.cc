@@ -339,10 +339,10 @@ namespace CSOAA {
 		simple_temp.weight = 1.;
 	      }
 
-	    base.learn(ec, i);
+	    base.learn(ec, i-1);
 	  }
 	else
-	  base.predict(ec, i);
+	  base.predict(ec, i-1);
 
         cl->partial_prediction = ec.partial_prediction;
 	if (ec.partial_prediction < score || (ec.partial_prediction == score && i < prediction)) {
