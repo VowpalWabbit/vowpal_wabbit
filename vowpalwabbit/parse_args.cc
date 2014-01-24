@@ -496,7 +496,7 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
     for (size_t id=0; id<spelling_ns.size(); id++)
-      if (spelling_ns[id][0] == '_') all->spelling_features[' '] = true;
+      if (spelling_ns[id][0] == '_') all->spelling_features[(unsigned char)' '] = true;
       else all->spelling_features[(size_t)spelling_ns[id][0]] = true;
   }
 
