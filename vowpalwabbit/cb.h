@@ -25,7 +25,7 @@ namespace CB {
     float cost;  // the cost of this class
     uint32_t action;  // the index of this class
     float probability; //new for bandit setting, specifies the probability the data collection policy chose this class for importance weighting
-    float partial_prediction;
+    float partial_prediction;//essentially a return value
     bool operator==(cb_class j){return action == j.action;}
   };
 

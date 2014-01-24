@@ -464,6 +464,21 @@ namespace CB
         cs_ld.costs.push_back(wc);
       }
     }
+    else
+      {
+	for (size_t i = 0; i < all.sd->k; i++)
+	  {
+	    CSOAA::wclass wc;
+	    wc.wap_value = 0.;
+	    
+	    wc.x = FLT_MAX;
+	    wc.weight_index = i+1;
+	    wc.partial_prediction = 0.;
+	    wc.wap_value = 0.;
+	    
+	    cs_ld.costs.push_back(wc);
+	  }
+      }
   }
 
   template <bool is_learn>

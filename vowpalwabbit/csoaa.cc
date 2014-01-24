@@ -317,7 +317,6 @@ namespace CSOAA {
   void predict_or_learn(csoaa& c, learner& base, example& ec) {
     vw* all = c.all;
     label* ld = (label*)ec.ld;
-
     size_t prediction = 1;
     float score = FLT_MAX;
     label_data simple_temp = { 0., 0., 0. };
@@ -338,7 +337,6 @@ namespace CSOAA {
 		simple_temp.label = cl->x;
 		simple_temp.weight = 1.;
 	      }
-
 	    base.learn(ec, i-1);
 	  }
 	else
