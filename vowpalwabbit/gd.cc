@@ -354,66 +354,66 @@ float finalize_prediction(vw& all, float ret)
 template<bool normalized_training, bool reg_mode_odd, bool power_t_half>
 void predict(gd& g, learner& base, example& ec)
 {
-  vw* all = g.all;
+  vw& all = *g.all;
 
   if (normalized_training) {
     if(power_t_half) {
       if (reg_mode_odd)
 	{
-	  float gravity = (float)all->sd->gravity;
-	  if (all->adaptive)
-	    if (all->normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<true, 1> >(*all, ec, gravity);
+	  float gravity = (float)all.sd->gravity;
+	  if (all.adaptive)
+	    if (all.normalized_idx == 1)
+	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<true, 1> >(all, ec, gravity);
 	    else
-	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<true, 2> >(*all, ec, gravity);
+	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<true, 2> >(all, ec, gravity);
 	  else
-	    if (all->normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<false, 1> >(*all, ec, gravity);
+	    if (all.normalized_idx == 1)
+	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<false, 1> >(all, ec, gravity);
 	    else
-	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<false, 2> >(*all, ec, gravity);
+	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<false, 2> >(all, ec, gravity);
 	}
       else
 	{
-	  if (all->adaptive)
-	    if (all->normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<vec_add_rescale<true, 1> >(*all, ec);
+	  if (all.adaptive)
+	    if (all.normalized_idx == 1)
+	      ec.partial_prediction = inline_predict<vec_add_rescale<true, 1> >(all, ec);
 	    else
-	      ec.partial_prediction = inline_predict<vec_add_rescale<true, 2> >(*all, ec);
+	      ec.partial_prediction = inline_predict<vec_add_rescale<true, 2> >(all, ec);
 	  else
-	    if (all->normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<vec_add_rescale<false, 1> >(*all, ec);
+	    if (all.normalized_idx == 1)
+	      ec.partial_prediction = inline_predict<vec_add_rescale<false, 1> >(all, ec);
 	    else
-	      ec.partial_prediction = inline_predict<vec_add_rescale<false, 2> >(*all, ec);
+	      ec.partial_prediction = inline_predict<vec_add_rescale<false, 2> >(all, ec);
 	}
     }
     else {
       if (reg_mode_odd)
 	{
-	  gnp temp = {(float)all->sd->gravity, all->power_t};
-	  if (all->adaptive)
-	    if (all->normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<true, 1> >(*all, ec, temp);
+	  gnp temp = {(float)all.sd->gravity, all.power_t};
+	  if (all.adaptive)
+	    if (all.normalized_idx == 1)
+	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<true, 1> >(all, ec, temp);
 	    else
-	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<true, 2> >(*all, ec, temp);
+	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<true, 2> >(all, ec, temp);
 	  else
-	    if (all->normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<false, 1> >(*all, ec, temp);
+	    if (all.normalized_idx == 1)
+	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<false, 1> >(all, ec, temp);
 	    else
-	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<false, 2> >(*all, ec, temp);
+	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<false, 2> >(all, ec, temp);
 	}
       else
 	{
-	  float power_t = all->power_t;
-	  if (all->adaptive)
-	    if (all->normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<true, 1> >(*all, ec, power_t);
+	  float power_t = all.power_t;
+	  if (all.adaptive)
+	    if (all.normalized_idx == 1)
+	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<true, 1> >(all, ec, power_t);
 	    else
-	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<true, 2> >(*all, ec, power_t);
+	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<true, 2> >(all, ec, power_t);
 	  else
-	    if (all->normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<false, 1> >(*all, ec, power_t);
+	    if (all.normalized_idx == 1)
+	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<false, 1> >(all, ec, power_t);
 	    else
-	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<false, 2> >(*all, ec, power_t);
+	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<false, 2> >(all, ec, power_t);
 	}
     }
   }
@@ -421,17 +421,17 @@ void predict(gd& g, learner& base, example& ec)
     // no rescaling
     if (reg_mode_odd)
       {
-	float gravity = (float)all->sd->gravity;
-	ec.partial_prediction = inline_predict<float, vec_add_trunc>(*all, ec, gravity);
+	float gravity = (float)all.sd->gravity;
+	ec.partial_prediction = inline_predict<float, vec_add_trunc>(all, ec, gravity);
       }
     else
-      ec.partial_prediction = inline_predict<vec_add>(*all, ec);
+      ec.partial_prediction = inline_predict<vec_add>(all, ec);
   }
 
-  ec.final_prediction = finalize_prediction(*all, ec.partial_prediction * (float)all->sd->contraction);
+  ec.final_prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
 
-  if (all->audit || all->hash_inv)
-    print_audit_features(*all, ec);
+  if (all.audit || all.hash_inv)
+    print_audit_features(all, ec);
 }
 
   struct norm_data {
