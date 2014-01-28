@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "nn.h"
 #include "cbify.h"
 #include "oaa.h"
+#include "rand48.h"
 #include "bs.h"
 #include "topk.h"
 #include "ect.h"
@@ -883,6 +884,7 @@ vw* parse_args(int argc, char *argv[])
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);
+    all->cost_sensitive = all->l;
     got_cs = true;
   }
 
@@ -890,6 +892,7 @@ vw* parse_args(int argc, char *argv[])
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     all->l = WAP::setup(*all, to_pass_further, vm, vm_file);
+    all->cost_sensitive = all->l;
     got_cs = true;
   }
 
@@ -897,6 +900,7 @@ vw* parse_args(int argc, char *argv[])
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     all->l = CSOAA_AND_WAP_LDF::setup(*all, to_pass_further, vm, vm_file);
+    all->cost_sensitive = all->l;
     got_cs = true;
   }
 
@@ -904,6 +908,7 @@ vw* parse_args(int argc, char *argv[])
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     all->l = CSOAA_AND_WAP_LDF::setup(*all, to_pass_further, vm, vm_file);
+    all->cost_sensitive = all->l;
     got_cs = true;
   }
 
@@ -914,6 +919,7 @@ vw* parse_args(int argc, char *argv[])
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+      all->cost_sensitive = all->l;
       got_cs = true;
     }
 
@@ -928,6 +934,7 @@ vw* parse_args(int argc, char *argv[])
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
 	all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	all->cost_sensitive = all->l;
 	got_cs = true;
       }
 
@@ -947,6 +954,7 @@ vw* parse_args(int argc, char *argv[])
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
 
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      all->cost_sensitive = all->l;
       got_cs = true;
     }
     //all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
