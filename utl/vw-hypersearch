@@ -6,18 +6,20 @@
 #
 # Call without parameters for a full usage message
 #
-# Paul Mineiro ('vowpalwabbit/demo') wrote the original script
-#
-# Ariel Faigon (2013)
-#   - Generalize, refactor
-#   - Add usage message
-#   - Add tolerance as optional parameter
-#   - Add documentation
-#   - Golden-section search bug-fix
-#   - Better error messages in case underlying command fails
-#     for any reason
-#   - Add '-t test-set' to optimize on test error rather than
-#     train-set error
+# Credits:
+#   * Paul Mineiro ('vowpalwabbit/demo') wrote the original script
+#   * Ariel Faigon (2013)
+#       - Generalize, rewrite, refactor
+#       - Add usage message
+#       - Add tolerance as optional parameter
+#       - Add documentation
+#       - Better error messages when underlying command fails for any reason
+#       - Add '-t test-set' to optimize on test error rather than
+#         train-set error
+#       - Add integral-value option support
+#       Bug fixes:
+#           - Golden-section search bug-fix
+#           - Loss value capture bug-fix (can be in scientific notation)
 #
 use warnings;
 use strict;
@@ -29,6 +31,7 @@ use vars qw($opt_v $opt_b $opt_t);
 my $MaxDouble = 1.79769e+308;
 my $ModelFile;
 my $ScratchModel = 0;
+my $IntegerOpt = 0;
 
 sub v(@) {
     return unless ($opt_v);
@@ -220,6 +223,21 @@ sub usage(@) {
 "
 }
 
+#
+# opt_value($)
+#   Make sure integer-args remain integers, and that we have not
+#   gotten into a loop returning the same number (no progress)
+#
+sub opt_value($) {
+    my ($value) = @_;
+    my $new_value = $value;
+    if ($IntegerOpt) {
+        # round it
+        $new_value = int($value + 0.5);
+        # v("opt_value($value): $new_value\n");
+    }
+    $new_value;
+}
 
 my $MaxIter = 50;
 
@@ -240,9 +258,9 @@ sub BrentsSearch($$$) {
 
     if ($fa * $fb >= 0) {
         if ($fa < $fb) {
-            return $a;
+            return opt_value($a);
         } else {
-            return $b;
+            return opt_value($b);
         }
     }
 
@@ -314,7 +332,7 @@ sub BrentsSearch($$$) {
             die "Brent's method error too many iterations: $i: f(b): $fb\n";
         }
     }
-    $b;
+    opt_value($b);
 }
 
 my $Phi = (1.0 + sqrt (5.0)) / 2.0;
@@ -327,6 +345,7 @@ sub goldenSectionSearch($$$$) {
 
     my $x;
 
+    $mid = opt_value($mid);
     my $upper_range = $high - $mid;
     my $lower_range = $mid - $low;
     if ($upper_range > $lower_range) {
@@ -334,33 +353,35 @@ sub goldenSectionSearch($$$$) {
     } else {
         $x = $mid - $ResPhi * $lower_range;
     }
+    $x = opt_value($x);
 
     if (abs($high - $low) < $tau * (abs($mid) + abs($x))) {
-        return (($high + $low) / 2.0);
+        return opt_value(($high + $low) / 2.0);
     }
 
     # assert(loss($x) != loss($mid));
     if (loss($x) == loss($mid)) {
         printf STDERR "%s: loss(%g) == loss(%g): %g\n",
                             $0, $x, $mid, loss($x);
-        return (($x + $mid) / 2.0);
+        return opt_value(($x + $mid) / 2.0);
     }
 
     if (loss($x) < loss($mid)) {
         if ($upper_range > $lower_range) {
-            return goldenSectionSearch($mid, $x, $high, $tau)
+            return opt_value(goldenSectionSearch($mid, $x, $high, $tau));
         } else {
-            return goldenSectionSearch($low, $x, $mid, $tau);
+            return opt_value(goldenSectionSearch($low, $x, $mid, $tau));
         }
     }
 
     # else:
     if ($upper_range > $lower_range) {
-        return goldenSectionSearch($low, $mid, $x, $tau);
+        return opt_value(goldenSectionSearch($low, $mid, $x, $tau));
     }
     # else
-    return goldenSectionSearch($x, $mid, $high, $tau);
+    return opt_value(goldenSectionSearch($x, $mid, $high, $tau));
 }
+
 
 #
 # best_hyperparam(lower_bound, upper_bound, tolerance)
@@ -402,6 +423,39 @@ sub fullpath($) {
     '';
 }
 
+#
+# is_integer_option($option)
+#   Return true for all options which expect an integral argument
+#
+sub is_integer_option($) {
+    my $opt = shift;
+    my $expects_integer =
+        ($opt =~ qr{^-*
+            bs?
+            |(?:csoaa|wap)(?:_ldf)?
+            |cb
+            |num_children
+            |holdout_(?:period|after)
+            |initial_pass_length
+            |lda
+            |nn
+            |oaa
+            |ect
+            |passes
+            |rank
+            |ring_size
+            |examples
+            |searn
+            |total
+            |ngram
+            |skips
+        $}x);
+
+    v("is_integer_option(%s): %d\n", $opt, $expects_integer);
+
+    $expects_integer;
+}
+
 sub process_args {
     $0 =~ s{.*/}{};
 
@@ -435,14 +489,27 @@ sub process_args {
     usage("command: $ARGV[0]: must start with an executable")
         unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
 
+    my $vw_command_line = "@ARGV";
     usage("command '@ARGV': must include a '%' wildcard to optimize on")
-        unless ("@ARGV" =~ /%/);
+        unless ($vw_command_line =~ /%/);
+
+    # Some vw option arguments must be integers, if we want to
+    # optimize those, we must bisect while rounding to an integer
+    my ($option_before_pct) = ($vw_command_line =~ /(\S+)\s+%/);
+    $IntegerOpt = is_integer_option($option_before_pct);
+
+    if ($vw_command_line =~ /--passes/ and
+        $vw_command_line !~ /--holdout_off/) {
+        # Not very nice, but unfortunately, average_loss when
+        # hold-out is in effect (default), is printed as 0.
+        warn "$0: multiple passes: forcing --holdout_off\n";
+        push(@ARGV, "--holdout_off");
+    }
 
     if ($opt_t) {
         # Evaluate on test:
         #   1) Make sure we store the model after training
         #   2) Call vw again, loading model and evaluating on test-set
-        my $vw_command_line = "@ARGV";
         if ($vw_command_line =~ /-f\s+(\S+)/) {
             $ModelFile = $1;
         } else {
