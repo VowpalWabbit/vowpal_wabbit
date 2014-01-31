@@ -543,6 +543,8 @@ sub run_tests() {
             if ($opt_V && $status == 100) {
                 my $errfile = valgrind_errfile($TestNo);
                 warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+            } elsif ($TimeOut && $status == 124) {
+                warn "$0: test $TestNo: FAILED: timeout $TimeOutSec exceeded\n";
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
             }
