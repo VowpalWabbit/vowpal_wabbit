@@ -324,7 +324,6 @@ namespace CSOAA {
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
         uint32_t i = cl->weight_index;
-
 	if (is_learn)
 	  {
 	    if (cl->x == FLT_MAX || !all->training)

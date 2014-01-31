@@ -5,10 +5,10 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 
+#include "csoaa.h"
 #include "cb.h"
 #include "simple_label.h"
 #include "example.h"
-#include "csoaa.h"
 #include "oaa.h"
 #include "parse_example.h"
 #include "parse_primitives.h"
@@ -25,14 +25,14 @@ namespace CB
     size_t nb_ex_regressors;
     float last_pred_reg;
     float last_correct_cost;
-
+    
     float min_cost;
     float max_cost;
 
     cb_class* known_cost;
     vw* all;
   };
-
+  
   bool know_all_cost_example(CB::label* ld)
   {
     if (ld->costs.size() <= 1) //this means we specified an example where all actions are possible but only specified the cost for the observed action
@@ -282,37 +282,6 @@ namespace CB
   }
 
   template <bool is_learn>
-  float get_cost_pred(vw& all, cb& c, example& ec, uint32_t index, uint32_t base)
-  {
-    CB::label* ld = (CB::label*)ec.ld;
-
-    label_data simple_temp;
-    simple_temp.initial = 0.;
-    if (c.known_cost != NULL && index == c.known_cost->action)
-      {
-	simple_temp.label = c.known_cost->cost;
-	simple_temp.weight = 1.;
-      }
-    else 
-      {
-	simple_temp.label = FLT_MAX;
-	simple_temp.weight = 0.;
-      }
-    
-    ec.ld = &simple_temp;
-
-    if (is_learn)
-      all.scorer->learn(ec, index-1+base);
-    else
-      all.scorer->predict(ec, index-1+base);
-    ec.ld = ld;
-
-    float cost = ec.final_prediction;
-
-    return cost;
-  }
-
-  template <bool is_learn>
   void gen_cs_example_dm(vw& all, cb& c, example& ec, CSOAA::label& cs_ld)
   {
     //this implements the direct estimation method, where costs are directly specified by the learned regressor.
@@ -330,7 +299,7 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred<is_learn>(all, c, ec, i, 0);
+        wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, i, 0);
 	if (wc.x < min)
 	  {
 	    min = wc.x;
@@ -359,7 +328,7 @@ namespace CB
         wc.wap_value = 0.;
       
         //get cost prediction for this action
-        wc.x = get_cost_pred<is_learn>(all, c, ec, cl->action, 0);
+        wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, cl->action, 0);
 	if (wc.x < min || (wc.x == min && cl->action < argmin))
 	  {
 	    min = wc.x;
@@ -385,62 +354,43 @@ namespace CB
   }
 
   template <bool is_learn>
+  void gen_cs_label(vw& all, cb& c, example& ec, CSOAA::label& cs_ld, uint32_t label)
+  {
+    CSOAA::wclass wc;
+    wc.wap_value = 0.;
+    
+    //get cost prediction for this label
+    wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, label, all.sd->k);
+    wc.weight_index = label;
+    wc.partial_prediction = 0.;
+    wc.wap_value = 0.;
+    
+    //add correction if we observed cost for this action and regressor is wrong
+    if( c.known_cost != NULL && c.known_cost->action == label ) {
+      c.nb_ex_regressors++;
+      c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
+      c.last_pred_reg = wc.x;
+      c.last_correct_cost = c.known_cost->cost;
+      wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
+    }
+    cs_ld.costs.push_back( wc );
+  }
+
+  template <bool is_learn>
   void gen_cs_example_dr(vw& all, cb& c, example& ec, CSOAA::label& cs_ld)
   {//this implements the doubly robust method
     CB::label* ld = (CB::label*)ec.ld;
     
     //generate cost sensitive example
     cs_ld.costs.erase();
-    if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
+    if( ld->costs.size() == 1) //this is a typical example where we can perform all actions
       //in this case generate cost-sensitive example with all actions
       for(uint32_t i = 1; i <= all.sd->k; i++)
-      {
-        CSOAA::wclass wc;
-        wc.wap_value = 0.;
-
-        //get cost prediction for this label
-        wc.x = get_cost_pred<is_learn>(all, c,ec, i, all.sd->k);
-        wc.weight_index = i;
-        wc.partial_prediction = 0.;
-        wc.wap_value = 0.;
-
-        //add correction if we observed cost for this action and regressor is wrong
-        if( c.known_cost != NULL && c.known_cost->action == i ) {
-          c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
-          c.last_pred_reg = wc.x;
-          c.last_correct_cost = c.known_cost->cost;
-          wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
-        }
-
-        cs_ld.costs.push_back( wc );
-      }
-    }
-    else { //this is an example where we can only perform a subset of the actions
+	gen_cs_label<is_learn>(all, c, ec, cs_ld, i);
+    else  //this is an example where we can only perform a subset of the actions
       //in this case generate cost-sensitive example with only allowed actions
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
-      {
-        CSOAA::wclass wc;
-        wc.wap_value = 0.;
-
-        //get cost prediction for this label
-        wc.x = get_cost_pred<is_learn>(all, c, ec, cl->action, all.sd->k);
-        wc.weight_index = cl->action;
-        wc.partial_prediction = 0.;
-        wc.wap_value = 0.;
-
-        //add correction if we observed cost for this action and regressor is wrong
-        if( c.known_cost != NULL && c.known_cost->action == cl->action ) {
-          c.nb_ex_regressors++;
-          c.avg_loss_regressors += (1.0f/c.nb_ex_regressors)*( (c.known_cost->cost - wc.x)*(c.known_cost->cost - wc.x) - c.avg_loss_regressors );
-          c.last_pred_reg = wc.x;
-          c.last_correct_cost = c.known_cost->cost;
-          wc.x += (c.known_cost->cost - wc.x) / c.known_cost->probability;
-        }
-
-        cs_ld.costs.push_back( wc );
-      }
-    }
+	gen_cs_label<is_learn>(all, c, ec, cs_ld, cl->action);
   }
 
   void cb_test_to_cs_test_label(vw& all, example& ec, CSOAA::label& cs_ld)
