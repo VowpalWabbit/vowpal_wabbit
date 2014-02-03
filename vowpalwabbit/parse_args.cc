@@ -29,6 +29,7 @@ license as described in the file LICENSE.
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
+#include "print.h"
 #include "gd_mf.h"
 #include "mf.h"
 #include "vw.h"
@@ -266,7 +267,8 @@ vw* parse_args(int argc, char *argv[])
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
     ("version","Version information")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
-    ("noop","do no learning")										     ;
+    ("noop","do no learning")
+    ("print","print examples");
 
   //po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
@@ -750,6 +752,12 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("noop"))
     all->l = NOOP::setup(*all);
+
+  if (vm.count("print"))
+    {
+      all->l = PRINT::setup(*all);
+      all->reg.stride = 1;
+    }
 
   if (!vm.count("new_mf") && all->rank > 0)
     all->l = GDMF::setup(*all);
