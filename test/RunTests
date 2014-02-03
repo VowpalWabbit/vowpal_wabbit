@@ -11,7 +11,7 @@ require 5.014;
 
 use Getopt::Std;
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
-            $opt_E $opt_o $opt_w $opt_y
+            $opt_E $opt_o $opt_w $opt_y $opt_t
             $opt_v $opt_V);
 
 my $Epsilon = 1e-4;
@@ -27,6 +27,10 @@ my $Cat = 'cat';
 # options over time to what looks most useful.
 my $Valgrind = 'valgrind --quiet --error-exitcode=100' .
                 ' --track-origins=yes';
+
+# -- timeout is part of GNU coreutils, some systems may not have it
+my $TimeOut = '';
+my $TimeOutSec = 20;    # max allowed time for single vw command run
 
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
 
@@ -64,6 +68,8 @@ sub usage(@) {
         -y      On error, copy bad files to (eg stderr.test21) for later comparison
         -v<L>   Verbosity <L> (small integer) is verbosity level
         -V      apply valgrind to vw commands
+        -t<T>   Apply timeout <T> (default $TimeOutSec) secs to individual tests
+                (will only work where GNU coreutils 'timeout' is present)
 
     [testno...]   Optional integer args: explicit test numbers (skip others)
 ";
@@ -127,7 +133,7 @@ sub which_lda() {
 
 sub init() {
     $0 =~ s{.*/}{};
-    getopts('wcdDefyE:ov:V') || usage();
+    getopts('wcdDefyE:ov:Vt:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
 
     print STDERR "testing $^O ";
@@ -141,7 +147,7 @@ sub init() {
         $Cat   = 'c:\cygwin\bin\cat.exe';
     }
     elsif ($^O =~ /cygwin/i){
-        v("OS is $^O\n");
+        v(1,"OS is $^O\n");
         # On MS Windows we need to change paths to external executables
         # Assumes cygwin is installed
         $ENV{'PATH'} .= ':/cygdrive/c/cygwin/bin';
@@ -169,6 +175,22 @@ sub init() {
 
     $VW = which_vw();
     $LDA = which_lda();
+
+    my $timeout = `which timeout 2>/dev/null`;
+    if ($timeout =~ /timeout$/) {
+        chomp($timeout);
+        $TimeOut = $timeout;
+        v(1,"timeout is: %s\n", $TimeOut);
+    }
+    if ($opt_t) {
+        if ($opt_t =~ /^\d+$/) {
+            $TimeOutSec = $opt_t;
+        } else {
+            usage("-t $opt_t: -t can only accept integer seconds");
+        }
+        warn "-t passed but this env doesn't have timeout installed\n"
+            unless ($TimeOut);
+    }
 }
 
 sub copy_file {
@@ -269,6 +291,8 @@ sub next_test() {
     if ($opt_V) {
         $cmd = sprintf("%s --log-file='%s' %s",
                         $Valgrind, valgrind_errfile($TestNo), $cmd);
+    } elsif ($TimeOut) {
+        $cmd = sprintf("%s %u %s", $TimeOut, $TimeOutSec, $cmd);
     }
     ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
 }
@@ -519,6 +543,8 @@ sub run_tests() {
             if ($opt_V && $status == 100) {
                 my $errfile = valgrind_errfile($TestNo);
                 warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
+            } elsif ($TimeOut && $status == 124) {
+                warn "$0: test $TestNo: FAILED: timeout $TimeOutSec exceeded\n";
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
             }
@@ -806,6 +832,6 @@ __DATA__
     train-sets/ref/rcv1_raw_cb_dm.stderr
 
 # Test 42: --lda --passes 2 hang regression
-timeout 5 {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2
+{VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2
     train-sets/ref/lda-2pass-hang.stderr
 
