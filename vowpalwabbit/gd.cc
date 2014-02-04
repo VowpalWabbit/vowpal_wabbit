@@ -166,7 +166,7 @@ bool operator<(const string_value& first, const string_value& second)
 
 #include <algorithm>
 
-void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, string& ns_pre, size_t offset = 0)
+  void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& results, string prepend, string& ns_pre, size_t offset = 0, float mult = 1)
 { 
   ostringstream tempstream;
   size_t index = (f->weight_index + offset) & all.reg.weight_mask;
@@ -190,7 +190,7 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
     tempstream << "Constant:";
   }  
   if(all.audit){
-    tempstream << (index/stride & all.parse_mask) << ':' << f->x;
+    tempstream << (index/stride & all.parse_mask) << ':' << mult*f->x;
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
   if(all.current_pass == 0 && all.inv_hash_regressor_name != ""){ //for invert_hash
@@ -212,13 +212,13 @@ void audit_feature(vw& all, feature* f, audit_data* a, vector<string_value>& res
   results.push_back(sv);
 }
 
-void audit_features(vw& all, v_array<feature>& fs, v_array<audit_data>& as, vector<string_value>& results, string prepend, string& ns_pre, size_t offset = 0)
+  void audit_features(vw& all, v_array<feature>& fs, v_array<audit_data>& as, vector<string_value>& results, string prepend, string& ns_pre, size_t offset = 0, float mult = 1)
 {
   for (size_t j = 0; j< fs.size(); j++)
     if (as.begin != as.end)
-      audit_feature(all, & fs[j], & as[j], results, prepend, ns_pre, offset);
+      audit_feature(all, & fs[j], & as[j], results, prepend, ns_pre, offset, mult);
     else
-      audit_feature(all, & fs[j], NULL, results, prepend, ns_pre, offset);
+      audit_feature(all, & fs[j], NULL, results, prepend, ns_pre, offset, mult);
 }
 
 void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<feature> &right_features, v_array<audit_data> &audit_right, vector<string_value>& results, string& ns_pre, uint32_t offset = 0)
@@ -236,7 +236,7 @@ void audit_quad(vw& all, feature& left_feature, audit_data* left_audit, v_array<
     ns_pre = ns_pre + '^' + left_audit->feature + '^';
   }
  
-  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset);
+  audit_features(all, right_features, audit_right, results, prepend, ns_pre, halfhash + offset, left_audit->x);
 }
 
 void audit_triple(vw& all, feature& f0, audit_data* f0_audit, feature& f1, audit_data* f1_audit, 
