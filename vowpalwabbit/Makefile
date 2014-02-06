@@ -21,7 +21,7 @@ vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
 vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 
 %.d:	%.cc config.h
-	gcc -MM $< > $@
+	$(COMPILER) -MM -I$(BOOST_INCLUDE) $< > $@
 
 -include $(vw_DEPS)
 

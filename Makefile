@@ -3,6 +3,8 @@ UNAME := $(shell uname)
 
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/include
+BOOST_LIBRARY = /usr/lib
+
 ifeq ($(UNAME), FreeBSD)
 LIBS = -l boost_program_options	-l pthread -l z -l compat
 BOOST_INCLUDE = /usr/local/include
@@ -13,10 +15,9 @@ BOOST_INCLUDE = /usr/include
 endif
 ifeq ($(UNAME), Darwin)
 LIBS = -lboost_program_options-mt -lboost_serialization-mt -l pthread -l z
-BOOST_INCLUDE = /usr/local/include
+BOOST_INCLUDE = /opt/local/include
+BOOST_LIBRARY = /opt/local/lib
 endif
-
-BOOST_LIBRARY = /usr/local/lib
 
 ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 
@@ -31,7 +32,7 @@ WARN_FLAGS = -Wall -pedantic
 endif
 
 # for normal fast execution.
-FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
+FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
 
 # for profiling
 #FLAGS = $(ARCH) $(WARN_FLAGS) -O3 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg #-DVW_LDA_NO_SSE
@@ -56,13 +57,13 @@ spanning_tree:
 	cd cluster; $(MAKE)
 
 vw:
-	cd vowpalwabbit; $(MAKE) -j 8 things
+	cd vowpalwabbit; $(MAKE) things
 
 active_interactor:
 	cd vowpalwabbit; $(MAKE)
 
 library_example: vw
-	cd library; $(MAKE) -j 8
+	cd library; $(MAKE)
 
 .FORCE:
 
