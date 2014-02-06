@@ -32,7 +32,18 @@ my $Valgrind = 'valgrind --quiet --error-exitcode=100' .
 my $TimeOut = '';
 my $TimeOutSec = 20;    # max allowed time for single vw command run
 
+# By default, we run all tests in the list
+my $FullRun = 1;
+my $ErrorCount = 0;
+
+# These --side-by-side diff opts are used to make the
+# fuzzy-compare easier: just split on '|' and compare numeric values
+# word by word:
 my $DiffOpts = '-N --minimal --suppress-common-lines --ignore-all-space --strip-trailing-cr --side-by-side -W 160';
+
+# These diff options are used for the diff we want to show the user
+# The intent is to make them easier to parse (and compare values) by a human
+my $DisplayDiffOpts = '-u --minimal';
 
 my @PathAdd = qw(. .. ../vowpalwabbit);
 
@@ -170,6 +181,7 @@ sub init() {
         @ToTest = sort { $a <=> $b } @num_args;
         # add dummy element so we don't become empty on last test
         push(@ToTest, -1);
+        $FullRun = 0;
     }
     @ARGV = @exe_args;
 
@@ -387,6 +399,14 @@ sub touch(@) {
     utime $now, $now, @_;
 }
 
+sub display_diff($$) {
+    my ($reference_file, $actual_file) = @_;
+    my $diff_cmd = "$Diff $DisplayDiffOpts $reference_file $actual_file";
+
+    printf STDERR "--- %s\n", $diff_cmd;
+    mysystem($diff_cmd);
+}
+
 sub diff($$) {
     my ($reffile, $outfile) = @_;
     my $status = 0;
@@ -426,8 +446,7 @@ sub diff($$) {
             # Print the diff only iff:
             #   1) -D is in effect  OR
             #   2) -d is in effect and diff is significant
-            printf STDERR "--- %s\n", $diff_cmd;
-            mysystem("$Cat diff.tmp")
+            display_diff($reffile, $outfile);
         }
         if ($opt_o) {
             print STDERR "-o: overwriting reference:\n";
@@ -540,6 +559,7 @@ sub run_tests() {
         mysystem("($cmd) >$outf 2>$errf");
         my $status = $? >> 8;
         if ($status) {
+            $ErrorCount++;
             if ($opt_V && $status == 100) {
                 my $errfile = valgrind_errfile($TestNo);
                 warn "$0: test $TestNo: FAILED: valgrind errors in $errfile\n";
@@ -556,6 +576,7 @@ sub run_tests() {
         # -- compare stdout
         $status = diff($out_ref, $outf);
         if ($status) {
+            $ErrorCount++;
             printf STDERR "%s: test %d: FAILED: ref(%s) != stdout(%s)\n",
                 $0, $TestNo, $out_ref, $outf;
             if ($opt_y) { copy_file($outf, $outf . '.test' . $TestNo); }
@@ -570,12 +591,14 @@ sub run_tests() {
 
         # -- compare stderr
         if (! -e $err_ref  and  ! $opt_o) {
+            $ErrorCount++;
             print STDERR "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
             exit 1 if ($opt_e);
             next;
         }
         $status = diff($err_ref, $errf);
         if ($status) {
+            $ErrorCount++;
             printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n",
                 $0, $TestNo, $err_ref, $errf;
             if ($opt_y) { copy_file($errf, "$errf.test.$TestNo"); }
@@ -588,6 +611,7 @@ sub run_tests() {
         $predf = 'predict.tmp' unless (defined $predf);
         $status = diff($pred_ref, $predf);
         if ($status) {
+            $ErrorCount++;
             printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n",
                 $0, $TestNo, $pred_ref, $predf;
             if ($opt_y) { copy_file($predf, "$predf.test.$TestNo"); }
@@ -596,7 +620,16 @@ sub run_tests() {
             print STDERR "$0: test $TestNo: predict OK\n";
         }
     }
-    check_for_time_regression();
+
+    if ($FullRun == 0) {
+        v(1, "Partial run: not recording overall time\n");
+    } elsif ($ErrorCount > 0) {
+        v(1, "Errors found: not recording overall time\n");
+    } elsif ($opt_V) {
+        v(1, "valgrind run: not recording overall time\n");
+    } else {
+        check_for_time_regression();
+    }
 }
 
 # --- main
