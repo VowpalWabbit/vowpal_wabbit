@@ -1,4 +1,4 @@
-COMPILER = g++
+CXX=g++
 UNAME := $(shell uname)
 
 LIBS = -l boost_program_options -l pthread -l z
