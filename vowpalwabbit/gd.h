@@ -77,7 +77,8 @@ void output_and_account_example(example* ec);
  template <class R, void (*T)(predict_data<R>&, const float, float&)>
    float inline_predict(vw& all, example& ec, R extra)
    {
-     predict_data<R> temp = {all.p->lp.get_initial(ec.ld), extra};
+     label_data* ld = (label_data*)ec.ld;
+     predict_data<R> temp = {ld->initial, extra};
      foreach_feature<predict_data<R>, T>(all, ec, temp);
      return temp.prediction;
    }
@@ -85,7 +86,8 @@ void output_and_account_example(example* ec);
  template <void (*T)(float&, const float, float&)>
    float inline_predict(vw& all, example& ec)
    {
-     float temp = all.p->lp.get_initial(ec.ld);
+     label_data* ld = (label_data*)ec.ld;
+     float temp = ld->initial;
      foreach_feature<float, T>(all, ec, temp);
      return temp;
    }

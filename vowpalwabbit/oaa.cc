@@ -51,11 +51,6 @@ namespace OAA {
     return (ld->weight > 0) ? ld->weight : 0.f;
   }
 
-  float initial(void* v)
-  {
-    return 0.;
-  }
-
   char* bufcache_label(mc_label* ld, char* c)
   {
     *(uint32_t *)c = ld->label;

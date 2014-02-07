@@ -87,7 +87,8 @@ void mf_print_audit_features(vw& all, example& ec, size_t offset)
 
 float mf_predict(vw& all, example& ec)
 {
-  float prediction = all.p->lp.get_initial(ec.ld);
+  label_data* ld = (label_data*)ec.ld;
+  float prediction = ld->initial;
 
   // clear stored predictions
   ec.topic_predictions.erase();
@@ -139,8 +140,6 @@ float mf_predict(vw& all, example& ec)
 
   ec.partial_prediction = prediction;
 
-  // finalize prediction and compute loss
-  label_data* ld = (label_data*)ec.ld;
   all.set_minmax(all.sd, ld->label);
 
   ec.final_prediction = GD::finalize_prediction(all, ec.partial_prediction);

@@ -41,12 +41,6 @@ float get_weight(void* v)
   return ld->weight;
 }
 
-float get_initial(void* v)
-{
-  label_data* ld = (label_data*) v;
-  return ld->initial;
-}
-
 char* bufcache_simple_label(label_data* ld, char* c)
 {
   *(float *)c = ld->label;

@@ -99,11 +99,6 @@ namespace CSOAA {
     return 1.;
   }
 
-  float initial(void* v)
-  {
-    return 0.;
-  }
-
   char* bufcache_label(label* ld, char* c)
   {
     *(size_t *)c = ld->costs.size();

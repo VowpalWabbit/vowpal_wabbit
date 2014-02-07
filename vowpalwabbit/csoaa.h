@@ -38,10 +38,9 @@ namespace CSOAA {
   void delete_label(void* v);
   void copy_label(void*&dst,void*src);
   float weight(void* v);
-  float initial(void* v);
   const label_parser cs_label_parser = {default_label, parse_label, 
 					cache_label, read_cached_label, 
-					delete_label, weight, initial, 
+					delete_label, weight, 
                                         copy_label,
 					sizeof(label)};
 

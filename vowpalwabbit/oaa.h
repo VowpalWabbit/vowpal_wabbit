@@ -29,10 +29,9 @@ namespace OAA
   void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words);
   void delete_label(void* v);
   float weight(void* v);
-  float initial(void* v);
   const label_parser mc_label_parser = {default_label, parse_label, 
 					cache_label, read_cached_label, 
-					delete_label, weight, initial, 
+					delete_label, weight, 
                                         NULL,
 					sizeof(mc_label)};
   

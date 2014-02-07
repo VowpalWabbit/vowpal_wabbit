@@ -41,11 +41,10 @@ namespace CB {
   void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words);
   void delete_label(void* v);
   float weight(void* v);
-  float initial(void* v);
   void copy_label(void*&dst,void*src);
   const label_parser cb_label_parser = {default_label, parse_label, 
 					cache_label, read_cached_label, 
-					delete_label, weight, initial, 
+					delete_label, weight, 
                                         copy_label,
 					sizeof(label)};
 

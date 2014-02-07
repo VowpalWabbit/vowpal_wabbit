@@ -96,11 +96,6 @@ namespace CB
     return 1.;
   }
 
-  float initial(void* v)
-  {
-    return 0.;
-  }
-
   char* bufcache_label(CB::label* ld, char* c)
   {
     *(size_t *)c = ld->costs.size();
