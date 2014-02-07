@@ -1,6 +1,17 @@
-CXX=g++
-UNAME := $(shell uname)
+CXX = $(shell which clang++)
+ifneq ($(CXX),)
+$(warning Using clang: "$(CXX)")
+else
+CXX = g++
+$(warning Using g++)
+endif
 
+ifeq ($(CXX),)
+$(waninng No compiler found)
+exit 1
+endif
+
+UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/include
 BOOST_LIBRARY = /usr/lib
