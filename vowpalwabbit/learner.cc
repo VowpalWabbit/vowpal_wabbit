@@ -17,8 +17,8 @@ namespace LEARNER
 	  {
 	    if (ec->indices.size() > 1) // one nonconstant feature.
 	      {
-		all->l->learn(ec);
-		all->l->finish_example(*all, ec);
+		all->l->learn(*ec);
+		all->l->finish_example(*all, *ec);
 	      }
 	    else if (ec->end_pass)
 	      {
@@ -41,17 +41,17 @@ namespace LEARNER
 	      }
 	    else 
 	      {
-		all->l->learn(ec);
+		all->l->learn(*ec);
 
 		if(all->early_terminate)
 		  {
 		    all->p->done = true;
-		    all->l->finish_example(*all, ec);
+		    all->l->finish_example(*all, *ec);
 		    return;
 		  }
 		else
 		  {
-		    all->l->finish_example(*all, ec);
+		    all->l->finish_example(*all, *ec);
 		  }
 	      }
 	  }

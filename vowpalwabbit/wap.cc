@@ -24,29 +24,29 @@ namespace WAP {
     vw* all;
   };
   
-  void mirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
+  void mirror_features(vw& all, example& ec, uint32_t offset1, uint32_t offset2)
   {
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
       {
-        size_t original_length = ec->atomics[*i].size();
+        size_t original_length = ec.atomics[*i].size();
         for (uint32_t j = 0; j < original_length; j++)
           {
-            feature* f = &ec->atomics[*i][j];
+            feature* f = &ec.atomics[*i][j];
             feature temp = {- f->x, f->weight_index + offset2};
             f->weight_index += offset1;
-            ec->atomics[*i].push_back(temp);
+            ec.atomics[*i].push_back(temp);
           }
-        ec->sum_feat_sq[*i] *= 2;
+        ec.sum_feat_sq[*i] *= 2;
       }
     if (all.audit || all.hash_inv)
       {
-        for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-          if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+        for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+          if (ec.audit_features[*i].begin != ec.audit_features[*i].end)
             {
-              size_t original_length = ec->audit_features[*i].size();
+              size_t original_length = ec.audit_features[*i].size();
               for (uint32_t j = 0; j < original_length; j++)
                 {
-                  audit_data* f = &ec->audit_features[*i][j];
+                  audit_data* f = &ec.audit_features[*i][j];
                   char* new_space = NULL;
                   if (f->space != NULL)
                     {
@@ -58,43 +58,43 @@ namespace WAP {
                   *new_feature = '-';
                   audit_data temp = {new_space, new_feature, f->weight_index + offset2, - f->x, true};
                   f->weight_index += offset1;
-                  ec->audit_features[*i].push_back(temp);
+                  ec.audit_features[*i].push_back(temp);
                 }
             }
       }
-    ec->num_features *= 2;
-    ec->total_sum_feat_sq *= 2;
+    ec.num_features *= 2;
+    ec.total_sum_feat_sq *= 2;
   }
 
-  void unmirror_features(vw& all, example* ec, uint32_t offset1, uint32_t offset2)
+  void unmirror_features(vw& all, example& ec, uint32_t offset1, uint32_t offset2)
   {
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
       {
-        ec->atomics[*i].end = ec->atomics[*i].begin+ec->atomics[*i].size()/2;
-        feature* end = ec->atomics[*i].end;
-        for (feature* f = ec->atomics[*i].begin; f!= end; f++)
+        ec.atomics[*i].end = ec.atomics[*i].begin+ec.atomics[*i].size()/2;
+        feature* end = ec.atomics[*i].end;
+        for (feature* f = ec.atomics[*i].begin; f!= end; f++)
           f->weight_index -= offset1;
-        ec->sum_feat_sq[*i] /= 2;
+        ec.sum_feat_sq[*i] /= 2;
       }
     if (all.audit || all.hash_inv)
       {
-        for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-          if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
+        for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+          if (ec.audit_features[*i].begin != ec.audit_features[*i].end)
             {
-              for (audit_data *f = ec->audit_features[*i].begin + ec->audit_features[*i].size()/2; f != ec->audit_features[*i].end; f++)
+              for (audit_data *f = ec.audit_features[*i].begin + ec.audit_features[*i].size()/2; f != ec.audit_features[*i].end; f++)
                 {
                   if (f->space != NULL)
                     free(f->space);
                   free(f->feature);
                   f->alloced = false;
                 }
-              ec->audit_features[*i].end = ec->audit_features[*i].begin+ec->audit_features[*i].size()/2;
-              for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+              ec.audit_features[*i].end = ec.audit_features[*i].begin+ec.audit_features[*i].size()/2;
+              for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
                 f->weight_index -= offset1;
             }
       }
-    ec->num_features /= 2;
-    ec->total_sum_feat_sq /= 2;
+    ec.num_features /= 2;
+    ec.total_sum_feat_sq /= 2;
   }
 
   struct float_wclass
@@ -126,9 +126,9 @@ namespace WAP {
   }
   v_array<float_wclass> vs;
 
-  void train(vw& all, wap& w, learner& base, example* ec)
+  void train(vw& all, wap& w, learner& base, example& ec)
   {
-    CSOAA::label* ld = (CSOAA::label*)ec->ld;
+    CSOAA::label* ld = (CSOAA::label*)ec.ld;
 
     CSOAA::wclass* old_end = ld->costs.end;
     CSOAA::wclass* j = ld->costs.begin; 
@@ -174,9 +174,9 @@ namespace WAP {
               else
                 simple_temp.label = -1;
 	    
-              ec->ld = &simple_temp;
+              ec.ld = &simple_temp;
 	    
-              ec->partial_prediction = 0.;
+              ec.partial_prediction = 0.;
               uint32_t myi = (uint32_t)vs[i].ci.weight_index;
               uint32_t myj = (uint32_t)vs[j].ci.weight_index;
 
@@ -188,15 +188,15 @@ namespace WAP {
         }
 
     ld->costs.end = old_end;
-    ec->ld = ld;
+    ec.ld = ld;
   }
 
-  size_t test(vw& all, wap& w, learner& base, example* ec)
+  size_t test(vw& all, wap& w, learner& base, example& ec)
   {
     size_t prediction = 1;
     float score = -FLT_MAX;
   
-    CSOAA::label* cost_label = (CSOAA::label*)ec->ld; 
+    CSOAA::label* cost_label = (CSOAA::label*)ec.ld; 
 
     for (uint32_t i = 0; i < cost_label->costs.size(); i++)
       {
@@ -205,36 +205,36 @@ namespace WAP {
         simple_temp.weight = 0.;
         simple_temp.label = FLT_MAX;
         uint32_t myi = (uint32_t)cost_label->costs[i].weight_index;
-        ec->ld = &simple_temp;
+        ec.ld = &simple_temp;
         base.predict(ec, myi-1);
-        if (ec->partial_prediction > score)
+        if (ec.partial_prediction > score)
           {
-            score = ec->partial_prediction;
+            score = ec.partial_prediction;
             prediction = myi;
           }
-        cost_label->costs[i].partial_prediction = -ec->partial_prediction;
+        cost_label->costs[i].partial_prediction = -ec.partial_prediction;
       }
     return prediction;
   }
 
   template <bool is_learn>
-  void predict_or_learn(wap* w, learner& base, example* ec)
+  void predict_or_learn(wap& w, learner& base, example& ec)
   {
-    CSOAA::label* cost_label = (CSOAA::label*)ec->ld;
-    vw* all = w->all;
+    CSOAA::label* cost_label = (CSOAA::label*)ec.ld;
+    vw* all = w.all;
     
-    size_t prediction = test(*all, *w, base, ec);
-    ec->ld = cost_label;
+    size_t prediction = test(*all, w, base, ec);
+    ec.ld = cost_label;
     
     if (is_learn && cost_label->costs.size() > 0)
-      train(*all, *w, base, ec);
-    ec->final_prediction = (float)prediction;
+      train(*all, w, base, ec);
+    ec.final_prediction = (float)prediction;
   }
 
-  void finish_example(vw& all, wap*, example* ec)
+  void finish_example(vw& all, wap&, example& ec)
   {
     CSOAA::output_example(all, ec);
-    VW::finish_example(all, ec);
+    VW::finish_example(all, &ec);
   }
   
   learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
@@ -256,7 +256,7 @@ namespace WAP {
      all.options_from_file.append(ss.str());
     }
 
-    *(all.p->lp) = CSOAA::cs_label_parser;
+    all.p->lp = CSOAA::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
 

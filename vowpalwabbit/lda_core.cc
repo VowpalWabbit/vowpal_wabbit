@@ -25,6 +25,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace LEARNER;
+using namespace std;
 
 namespace LDA {
 
@@ -44,7 +45,7 @@ public:
     v_array<int> doc_lengths;
     v_array<float> digammas;
     v_array<float> v;
-    std::vector<index_feature> sorted_features;
+    vector<index_feature> sorted_features;
 
     bool total_lambda_init;
     
@@ -495,7 +496,7 @@ v_array<float> old_gamma;
       for (size_t k =0; k<all.lda; k++)
 	new_gamma[k] = new_gamma[k]*v[k]+all.lda_alpha;
     }
-  while (average_diff(all, old_gamma.begin, new_gamma.begin) > 0.001);
+  while (average_diff(all, old_gamma.begin, new_gamma.begin) > all.lda_epsilon);
 
   ec->topic_predictions.erase();
   ec->topic_predictions.resize(all.lda);
@@ -516,9 +517,9 @@ size_t next_pow2(size_t x) {
   return ((size_t)1) << i;
 }
 
-void save_load(lda* l, io_buf& model_file, bool read, bool text)
+void save_load(lda& l, io_buf& model_file, bool read, bool text)
 {
-  vw* all = l->all;
+  vw* all = l.all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
   
@@ -579,6 +580,15 @@ void save_load(lda* l, io_buf& model_file, bool read, bool text)
 
   void learn_batch(lda& l)
   {
+    if (l.sorted_features.empty()) {
+      // This can happen when the socket connection is dropped by the client.
+      // If l.sorted_features is empty, then l.sorted_features[0] does not
+      // exist, so we should not try to take its address in the beginning of
+      // the for loops down there. Since it seems that there's not much to
+      // do in this case, we just return.
+      return;
+    }
+
     float eta = -1;
     float minuseta = -1;
 
@@ -639,13 +649,13 @@ void save_load(lda* l, io_buf& model_file, bool read, bool text)
       {
 	float score = lda_loop(*l.all, l.Elogtheta, &(l.v[d*l.all->lda]), weights, l.examples[d],l.all->power_t);
 	if (l.all->audit)
-	  GD::print_audit_features(*l.all, l.examples[d]);
+	  GD::print_audit_features(*l.all, *l.examples[d]);
 	// If the doc is empty, give it loss of 0.
 	if (l.doc_lengths[d] > 0) {
 	  l.all->sd->sum_loss -= score;
 	  l.all->sd->sum_loss_since_last_dump -= score;
 	}
-	return_simple_example(*l.all, NULL, l.examples[d]);
+	return_simple_example(*l.all, NULL, *l.examples[d]);
       }
     
     for (index_feature* s = &l.sorted_features[0]; s <= &l.sorted_features.back();)
@@ -682,54 +692,69 @@ void save_load(lda* l, io_buf& model_file, bool read, bool text)
     l.doc_lengths.erase();
   }
   
-  void learn(lda* l, learner& base, example* ec) 
+  void learn(lda& l, learner& base, example& ec) 
   {
-    size_t num_ex = l->examples.size();
-    l->examples.push_back(ec);
-    l->doc_lengths.push_back(0);
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) {
-      feature* f = ec->atomics[*i].begin;
-      for (; f != ec->atomics[*i].end; f++) {
+    size_t num_ex = l.examples.size();
+    l.examples.push_back(&ec);
+    l.doc_lengths.push_back(0);
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) {
+      feature* f = ec.atomics[*i].begin;
+      for (; f != ec.atomics[*i].end; f++) {
 	index_feature temp = {(uint32_t)num_ex, *f};
-	l->sorted_features.push_back(temp);
-	l->doc_lengths[num_ex] += (int)f->x;
+	l.sorted_features.push_back(temp);
+	l.doc_lengths[num_ex] += (int)f->x;
       }
     }
-    if (++num_ex == l->all->minibatch && !ec->test_only)
-      learn_batch(*l);
+    if (++num_ex == l.all->minibatch)
+      learn_batch(l);
   }
 
   // placeholder
-  void predict(lda* l, learner& base, example* ec)
+  void predict(lda& l, learner& base, example& ec)
   {
-    bool test_only = ec->test_only;
-    ec->test_only = true;
+    bool test_only = ec.test_only;
+    ec.test_only = true;
     learn(l, base, ec);
-    ec->test_only = test_only;
+    ec.test_only = test_only;
   }
 
-  void end_pass(lda* l)
+  void end_pass(lda& l)
   {
-    if (l->examples.size())
-      learn_batch(*l);
+    if (l.examples.size())
+      learn_batch(l);
   }
 
-void end_examples(lda* l)
+void end_examples(lda& l)
 {
-  for (size_t i = 0; i < l->all->length(); i++) {
-    weight* weights_for_w = & (l->all->reg.weight_vector[i*l->all->reg.stride]);
-    float decay = fmin(1.0, exp(l->decay_levels.last() - l->decay_levels.end[(int)(-1- l->example_t +weights_for_w[l->all->lda])]));
-    for (size_t k = 0; k < l->all->lda; k++) 
+  for (size_t i = 0; i < l.all->length(); i++) {
+    weight* weights_for_w = & (l.all->reg.weight_vector[i*l.all->reg.stride]);
+    float decay = fmin(1.0, exp(l.decay_levels.last() - l.decay_levels.end[(int)(-1- l.example_t +weights_for_w[l.all->lda])]));
+    for (size_t k = 0; k < l.all->lda; k++) 
       weights_for_w[k] *= decay;
   }
 }
 
-  void finish_example(vw& all, lda*, example*ec)
+  void finish_example(vw& all, lda&, example& ec)
 {}
 
-learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+  void finish(lda& ld)
+  {
+    ld.sorted_features.~vector<index_feature>();
+    ld.Elogtheta.delete_v();
+    ld.decay_levels.delete_v();
+    ld.total_new.delete_v();
+    ld.examples.delete_v();
+    ld.total_lambda.delete_v();
+    ld.doc_lengths.delete_v();
+    ld.digammas.delete_v();
+    ld.v.delete_v();
+  }
+
+learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
 {
   lda* ld = (lda*)calloc(1,sizeof(lda));
+  ld->sorted_features = vector<index_feature>();
+  ld->total_lambda_init = 0;
   ld->all = &all;
   ld->example_t = all.initial_t;
 
@@ -738,6 +763,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
     ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
     ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
+    ("lda_epsilon", po::value<float>(&all.lda_epsilon), "Loop convergence threshold")
     ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
 
   po::parsed_options parsed = po::command_line_parser(opts).
@@ -762,12 +788,13 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   if (vm.count("minibatch")) {
     size_t minibatch2 = next_pow2(all.minibatch);
     all.p->ring_size = all.p->ring_size > minibatch2 ? all.p->ring_size : minibatch2;
-}
+  }
   
   ld->v.resize(all.lda*all.minibatch);
   
   ld->decay_levels.push_back(0.f);
-  
+
+  all.l->finish();
   learner* l = new learner(ld, all.reg.stride);
   l->set_learn<lda,learn>();
   l->set_predict<lda,predict>();
@@ -775,6 +802,7 @@ learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   l->set_finish_example<lda,finish_example>();
   l->set_end_examples<lda,end_examples>();  
   l->set_end_pass<lda,end_pass>();  
+  l->set_finish<lda,finish>();
   
   return l;
 }

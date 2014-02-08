@@ -83,7 +83,7 @@ try:
     print 'sending unlabeled examples ...'
     for i,line in enumerate(unlabeled):
         sock.sendall(line)
-        #print 'sending unlabeled '+repr(line[:20])
+        print 'sending unlabeled '+repr(line[:20])
         response=recvall(sock, 256)
         #print 'unlabeled response '+repr(response)
         responselist=response.split(' ')

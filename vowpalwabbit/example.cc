@@ -11,11 +11,6 @@ license as described in the file LICENSE.
 #include "gd.h"  
 #include "global_data.h"  
   
-void vec_store(vw& all, v_array<feature>* p, float fx, uint32_t fi) {  
-  feature f = {fx, fi};
-  p->push_back(f);  
-}  
-  
 int compare_feature(const void* p1, const void* p2) {  
   feature* f1 = (feature*) p1;  
   feature* f2 = (feature*) p2;  
@@ -41,6 +36,17 @@ float collision_cleanup(v_array<feature>& feature_map) {
   return sum_sq;  
 }  
 
+struct features_and_source 
+{
+  v_array<feature> feature_map; //map to store sparse feature vectors  
+  weight* base;
+};
+
+void vec_store(features_and_source& p, float fx, float& fw) {  
+  feature f = {fx, (uint32_t)(&fw - p.base)};
+  p.feature_map.push_back(f);  
+}  
+  
 namespace VW {
 
 flat_example* flatten_example(vw& all, example *ec) 
@@ -60,14 +66,15 @@ flat_example* flatten_example(vw& all, example *ec)
 	fec->global_weight = ec->global_weight;  
 	fec->num_features = ec->num_features;  
     
-	v_array<feature> feature_map; //map to store sparse feature vectors  
-	GD::foreach_feature<v_array<feature>*, vec_store>(all, ec, &feature_map); 
-	qsort(feature_map.begin, feature_map.size(), sizeof(feature), compare_feature);  
+	features_and_source fs;
+	fs.base = all.reg.weight_vector;
+	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 
+	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
     
-	fec->feature_map_len = feature_map.size();
+	fec->feature_map_len = fs.feature_map.size();
 	if (fec->feature_map_len > 0)
 	{
-		fec->feature_map = feature_map.begin;
+		fec->feature_map = fs.feature_map.begin;
 	}
 
 	return fec;  
@@ -81,21 +88,26 @@ void free_flatten_example(flat_example* fec)
 
 }
 
-example *alloc_example(size_t label_size)
+example *alloc_examples(size_t label_size, size_t count=1)
 {
-  example* ec = (example*)calloc(1, sizeof(example));
+  example* ec = (example*)calloc(count, sizeof(example));
   if (ec == NULL) return NULL;
-  ec->ld = calloc(1, label_size);
-  if (ec->ld == NULL) { free(ec); return NULL; }
-  ec->in_use = true;
-  ec->ft_offset = 0;
-  //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
+  for (size_t i=0; i<count; i++) {
+    ec[i].ld = calloc(1, label_size);
+    if (ec[i].ld == NULL) {
+      for (size_t j=0; j<i; j++) free(ec[j].ld);
+      free(ec);
+      return NULL;
+    }
+    ec[i].in_use = true;
+    ec[i].ft_offset = 0;
+    //  std::cerr << "  alloc_example.indices.begin=" << ec->indices.begin << " end=" << ec->indices.end << " // ld = " << ec->ld << "\t|| me = " << ec << std::endl;
+  }
   return ec;
 }
 
 void dealloc_example(void(*delete_label)(void*), example&ec)
 {
-  // std::cerr << "dealloc_example.indices.begin=" << ec.indices.begin << " end=" << ec.indices.end << " // ld = " << ec.ld << "\t|| me = " << &ec << std::endl;
   if (delete_label) {
     delete_label(ec.ld);
   }
@@ -127,7 +139,7 @@ audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
   dst.space = (char*)calloc(strlen(src.space)+1, sizeof(char));
   strcpy(dst.space, src.space);
-  dst.feature = (char*)calloc(strlen(dst.feature)+1, sizeof(char));
+  dst.feature = (char*)calloc(strlen(src.feature)+1, sizeof(char));
   strcpy(dst.feature, src.feature);
   dst.weight_index = src.weight_index;
   dst.x = src.x;
@@ -136,8 +148,7 @@ audit_data copy_audit_data(audit_data &src) {
 }
 
 namespace VW {
-  void copy_example_data(bool audit, example* &dst, example* src, size_t label_size, void(*copy_label)(void*&,void*))
-{
+void copy_example_label(example*dst, example*src, size_t label_size, void(*copy_label)(void*&,void*)) {
   if (!src->ld) {
     if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
     dst->ld = NULL;
@@ -148,11 +159,15 @@ namespace VW {
     } else if (copy_label) {
       copy_label(dst->ld, src->ld);
     } else {
-      dst->ld = (void*)malloc(label_size);
+      //dst->ld = (void*)malloc(label_size);
       memcpy(dst->ld, src->ld, label_size);
     }
   }
+}
 
+void copy_example_data(bool audit, example* dst, example* src)
+{
+  //std::cerr << "copy_example_data dst = " << dst << std::endl;
   dst->final_prediction = src->final_prediction;
 
   copy_array(dst->tag, src->tag);
@@ -182,5 +197,13 @@ namespace VW {
   dst->end_pass = src->end_pass;
   dst->sorted = src->sorted;
   dst->in_use = src->in_use;}
+
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+  copy_example_data(audit, dst, src);
+  copy_example_label(dst, src, label_size, copy_label);
 }
+}
+
+
+
 
