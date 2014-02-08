@@ -69,13 +69,13 @@ spanning_tree:
 	cd cluster; $(MAKE)
 
 vw:
-	cd vowpalwabbit; $(MAKE) things
+	cd vowpalwabbit; $(MAKE) -j 8 things
 
 active_interactor:
 	cd vowpalwabbit; $(MAKE)
 
 library_example: vw
-	cd library; $(MAKE)
+	cd library; $(MAKE) -j 8
 
 .FORCE:
 
