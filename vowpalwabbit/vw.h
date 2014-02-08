@@ -60,7 +60,8 @@ namespace VW {
   //notify VW that you are done with the example.
   void finish_example(vw& all, example* ec);
 
-  void copy_example_data(bool audit, example*&, example*, size_t, void(*copy_example)(void*&,void*));
+  void copy_example_data(bool audit, example*, example*, size_t, void(*copy_label)(void*&,void*));
+  void copy_example_data(bool audit, example*, example*);  // don't copy the label
 
   // after export_example, must call releaseFeatureSpace to free native memory
   primitive_feature_space* export_example(vw& all, example* e, size_t& len);
@@ -107,9 +108,9 @@ namespace VW {
 
   inline void update_dump_interval(vw& all) {
       if (all.progress_add) { 
-        all.sd->dump_interval = all.sd->weighted_examples + all.progress_arg;
+        all.sd->dump_interval = (float)all.sd->weighted_examples + all.progress_arg;
       } else {
-        all.sd->dump_interval = all.sd->weighted_examples * all.progress_arg;
+        all.sd->dump_interval = (float)all.sd->weighted_examples * all.progress_arg;
       }
   }
 }

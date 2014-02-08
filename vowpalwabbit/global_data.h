@@ -129,6 +129,7 @@ struct vw {
 
   LEARNER::learner* l;//the top level learner
   LEARNER::learner* scorer;//a scoring function
+  LEARNER::learner* cost_sensitive;//a cost sensitive learning algorithm.
 
   void learn(example*);
 
@@ -220,6 +221,7 @@ struct vw {
   float lda_alpha;
   float lda_rho;
   float lda_D;
+  float lda_epsilon;
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;

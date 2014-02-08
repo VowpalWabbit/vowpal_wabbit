@@ -46,41 +46,41 @@ namespace {
     }
 
   inline bool
-  example_is_test (example* ec)
+  example_is_test (example& ec)
     {
-      return ec->test_only || (((label_data*) ec->ld)->label == FLT_MAX);
+      return ec.test_only || (((label_data*) ec.ld)->label == FLT_MAX);
     }
 
   void
-  reset_seed (LRQ::LRQstate* lrq)
+  reset_seed (LRQ::LRQstate& lrq)
     {
-      if (lrq->all->bfgs)
-        lrq->seed = lrq->initial_seed;
+      if (lrq.all->bfgs)
+        lrq.seed = lrq.initial_seed;
     }
 }
 
 namespace LRQ {
 
   template <bool is_learn>
-  void predict_or_learn(LRQstate* lrq, learner& base, example* ec)
+  void predict_or_learn(LRQstate& lrq, learner& base, example& ec)
   {
-    vw& all = *lrq->all;
+    vw& all = *lrq.all;
 
     // Remember original features
         
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; ++i)
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; ++i)
       {
-        if (lrq->lrindices[*i])
-          lrq->orig_size[*i] = ec->atomics[*i].size ();
+        if (lrq.lrindices[*i])
+          lrq.orig_size[*i] = ec.atomics[*i].size ();
       }
 
-    size_t which = ec->example_counter;
+    size_t which = ec.example_counter;
     simple_prediction first_prediction;
     float first_loss;
     unsigned int maxiter = (all.training && ! example_is_test (ec)) ? 2 : 1;
 
-    bool do_dropout = lrq->dropout && all.training && ! example_is_test (ec);
-    float scale = (! lrq->dropout || do_dropout) ? 1.f : 0.5f;
+    bool do_dropout = lrq.dropout && all.training && ! example_is_test (ec);
+    float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
 
     for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
       {
@@ -89,23 +89,23 @@ namespace LRQ {
         // TODO: what happens with --lrq ab2 --lrq ac2
         //       i.e. namespace occurs multiple times (?)
     
-        for (vector<string>::iterator i = lrq->lrpairs.begin ();
-             i != lrq->lrpairs.end ();
+        for (vector<string>::iterator i = lrq.lrpairs.begin ();
+             i != lrq.lrpairs.end ();
              ++i)
           {
             unsigned char left = (*i)[which%2];
             unsigned char right = (*i)[(which+1)%2];
             unsigned int k = atoi (i->c_str () + 2);
 
-            for (unsigned int lfn = 0; lfn < lrq->orig_size[left]; ++lfn)
+            for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
               {
-                feature* lf = ec->atomics[left].begin + lfn;
+                feature* lf = ec.atomics[left].begin + lfn;
                 float lfx = lf->x;
-                size_t lindex = lf->weight_index + ec->ft_offset;
+                size_t lindex = lf->weight_index + ec.ft_offset;
     
                 for (unsigned int n = 1; n <= k; ++n)
                   {
-                    if (! do_dropout || cheesyrbit (lrq->seed))
+                    if (! do_dropout || cheesyrbit (lrq.seed))
                       {
                         uint32_t lwindex = (uint32_t)(lindex + n * all.reg.stride);
 
@@ -116,12 +116,12 @@ namespace LRQ {
                           *lw = cheesyrand (lwindex);
         
                         for (unsigned int rfn = 0; 
-                             rfn < lrq->orig_size[right]; 
+                             rfn < lrq.orig_size[right]; 
                              ++rfn)
                           {
-                            feature* rf = ec->atomics[right].begin + rfn;
+                            feature* rf = ec.atomics[right].begin + rfn;
 
-                            // NB: ec->ft_offset added by base learner
+                            // NB: ec.ft_offset added by base learner
                             float rfx = rf->x;
                             size_t rindex = rf->weight_index;
                             uint32_t rwindex = (uint32_t)(rindex + n * all.reg.stride);
@@ -130,14 +130,14 @@ namespace LRQ {
                             lrq.x = scale * *lw * lfx * rfx;
                             lrq.weight_index = rwindex; 
 
-                            ec->atomics[right].push_back (lrq);
+                            ec.atomics[right].push_back (lrq);
 
                             if (all.audit)
                               {
                                 char name[4] = { 'l', 'r', 'q', '\0' };
                                 char subname[4] = { left, '^', right, '\0' };
                                 audit_data ad = { name, subname, lrq.weight_index, lrq.x, false };
-                                ec->audit_features[right].push_back (ad);
+                                ec.audit_features[right].push_back (ad);
                               }
                           }
                       }
@@ -154,27 +154,27 @@ namespace LRQ {
 
         if (iter == 0)
           {
-            first_prediction = ec->final_prediction;
-            first_loss = ec->loss;
+            first_prediction = ec.final_prediction;
+            first_loss = ec.loss;
           }
         else
           {
-            ec->final_prediction = first_prediction;
-            ec->loss = first_loss;
+            ec.final_prediction = first_prediction;
+            ec.loss = first_loss;
           }
 
-        for (vector<string>::iterator i = lrq->lrpairs.begin ();
-             i != lrq->lrpairs.end ();
+        for (vector<string>::iterator i = lrq.lrpairs.begin ();
+             i != lrq.lrpairs.end ();
              ++i)
           {
             unsigned char right = (*i)[(which+1)%2];
 
-            ec->atomics[right].end = 
-              ec->atomics[right].begin + lrq->orig_size[right];
+            ec.atomics[right].end = 
+              ec.atomics[right].begin + lrq.orig_size[right];
 
             if (all.audit)
-              ec->audit_features[right].end = 
-                ec->audit_features[right].begin + lrq->orig_size[right];
+              ec.audit_features[right].end = 
+                ec.audit_features[right].begin + lrq.orig_size[right];
           }
       }
   }

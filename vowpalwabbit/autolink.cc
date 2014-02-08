@@ -14,23 +14,23 @@ namespace ALINK {
   };
 
   template <bool is_learn>
-  void predict_or_learn(autolink* b, learner& base, example* ec)
+  void predict_or_learn(autolink& b, learner& base, example& ec)
   {
     base.predict(ec);
-    float base_pred = ec->final_prediction;
+    float base_pred = ec.final_prediction;
 
     // add features of label
-    ec->indices.push_back(autolink_namespace);
+    ec.indices.push_back(autolink_namespace);
     float sum_sq = 0;
-    for (size_t i = 0; i < b->d; i++)
+    for (size_t i = 0; i < b.d; i++)
       if (base_pred != 0.)
 	{
-	  feature f = { base_pred, (uint32_t) (autoconstant + i * b->stride) };
-	  ec->atomics[autolink_namespace].push_back(f);
+	  feature f = { base_pred, (uint32_t) (autoconstant + i * b.stride) };
+	  ec.atomics[autolink_namespace].push_back(f);
 	  sum_sq += base_pred*base_pred;
-	  base_pred *= ec->final_prediction;
+	  base_pred *= ec.final_prediction;
 	}
-    ec->total_sum_feat_sq += sum_sq;
+    ec.total_sum_feat_sq += sum_sq;
 
     // apply predict or learn
     if (is_learn)
@@ -38,9 +38,9 @@ namespace ALINK {
     else
       base.predict(ec);
 
-    ec->atomics[autolink_namespace].erase();
-    ec->indices.pop();
-    ec->total_sum_feat_sq -= sum_sq;
+    ec.atomics[autolink_namespace].erase();
+    ec.indices.pop();
+    ec.total_sum_feat_sq -= sum_sq;
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
