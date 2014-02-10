@@ -91,8 +91,6 @@ namespace TXM_O
 		
 		size_t max_depth;					//maximal tree depth
 		size_t max_nodes;                                       //maximal number of nodes allowed in the tree - stopping criterion 
-		
-		loss_function* quantile_loss;				//loss function
 	};	
 
 	txm_o_node_type init_node(size_t level)				//function initializing new node (level - level on which a node is located in the tree)
@@ -112,9 +110,9 @@ namespace TXM_O
 		return node;
 	}
 	
-	void init_tree(txm_o* d)					//tree initialization
+	void init_tree(txm_o& d)					//tree initialization
 	{
-		d->nodes.push_back(init_node(0));			//adding a node (root) to a table of tree nodes
+		d.nodes.push_back(init_node(0));			//adding a node (root) to a table of tree nodes
 	}
 		
 	void train_node(txm_o& b, learner& base, example& ec, size_t& cn, size_t& index)		//function training node (executed in learn during tree training), ec is the current example,
@@ -122,19 +120,13 @@ namespace TXM_O
 		OAA::mc_label *mc = (OAA::mc_label*)ec.ld;					//in the table node_pred
 			
 		label_data simple_temp;					//variable of type label_data containing binary label of an example, used by base.learn() while training a node regressor 
-		simple_temp.initial = 0.0;				//???????????
-		simple_temp.weight = mc->weight;			//weight of an example ???????????
-		
-		loss_function* current_loss = b.all->loss;		//setting loss to quantile loss (MIGHT BE SPURIOUS NOW?????????????)
-		b.all->loss = b.quantile_loss;	
-				
-									//do the initial prediction to decide if going left or right	
+		simple_temp.initial = 0.0;				//offset for binary prediction
+		simple_temp.weight = mc->weight;			//importance weight
+													//do the initial prediction to decide if going left or right	
 		simple_temp.label = FLT_MAX;				//if simple_temp.label is set to FLT_MAX, base.learn() is not training a regressor, but only perform testing
 		ec.ld = &simple_temp;					//label data for an example is set to simple_temp containing binary label (in this case FLT_MAX)
-		ec.test_only = true;					//testing only
-		base.learn(ec, cn);					//running base.learn()
-		ec.test_only = false;					//training
-		
+		base.predict(ec, cn);					//running base.learn()
+			
 		b.nodes[cn].Eh += ec.final_prediction;		//incrementing margin 
 		b.nodes[cn].n++;					//incrementing counter of examples reaching node cn
 		
@@ -204,67 +196,90 @@ namespace TXM_O
 		base.learn(ec, cn);				//train regressor of node cn
 		
 		ec.ld = mc;					//we assign original label data to an example				
-		b.all->loss = current_loss;			//CURRENTLY NOT NECESSARY
-		
+				
 		if(b.nodes[cn].id_left == 0)			//cn did not create children
 			b.nodes[cn].leaf = true;		//cn is a leaf
 		else	
 			b.nodes[cn].leaf = false;		//cn is not a leaf
 	}
 
-	void learn(txm_o& b, learner& base, example& ec)		//function building the tree, ec is the current example
+	void predict(txm_o& b, learner& base, example& ec)		//function building the tree, ec is the current example
 	{
 		OAA::mc_label *mc = (OAA::mc_label*)ec.ld;
 				
-		size_t index = 0;				//only variable declaration
-		
 		label_data simple_temp;				//variable of type label_data containing binary label of an example, used by base.learn() while training a node regressor 
 		simple_temp.initial = 0.0;			//???????????
 		simple_temp.weight = mc->weight;		//weight of an example ???????????
-		
-		vw* all = b.all;	
-		
-		uint32_t oryginal_label = mc->label;		//oryginal label of ec		                		
-
-		size_t tmp_final_prediction;			//label that the tree assigns to ec
+		ec.ld = &simple_temp;											//label data for an example is set to simple_temp containing binary label (in this case FLT_MAX)								
 		size_t cn = 0;					//current node cn is the root (cn = 0)
 		while(1)
 		{
-			if(all->training && mc->label !=  (uint32_t)-1 && !ec.test_only)					//if training the tree
-			{
-				index = b.nodes[cn].node_pred.unique_add_sorted(txm_o_node_pred_type(oryginal_label));		//if the label of ec is not in cn, add it to table node_pred in cn, return an index in the tabel, where it was added (or if it was there, return the index where it was) 
-					
-				b.nodes[cn].node_pred[index].label_cnt2++;							//increase the counter of the label of ec in table node_pred
-					
-				if(b.nodes[cn].node_pred[index].label_cnt2 > b.nodes[cn].max_cnt2)				//update the most frequent label (and a correponding counter) for cn
-				{
-					b.nodes[cn].max_cnt2 = b.nodes[cn].node_pred[index].label_cnt2;
-					b.nodes[cn].max_cnt2_label = b.nodes[cn].node_pred[index].label;
-				}
-				
-				train_node(b, base, ec, cn, index);								//train cn
-			}
-
 			if(b.nodes[cn].leaf)											//if cn is a leaf
 			{					
-				tmp_final_prediction = b.nodes[cn].max_cnt2_label;						//assign the most frequent label of a leaf to an example
+				ec.final_prediction = b.nodes[cn].max_cnt2_label;						//assign the most frequent label of a leaf to an example
+				ec.ld = mc;												//we assign original label data to an example			
 				break;												
 			}
 																//do the prediction to decide if going left or right using trained regressor in cn	
 			simple_temp.label = FLT_MAX;										//if simple_temp.label is set to FLT_MAX, base.learn() is not training a regressor, but only perform testing
-			ec.ld = &simple_temp;											//label data for an example is set to simple_temp containing binary label (in this case FLT_MAX)								
-			ec.test_only = true;											//testing only										
-			base.learn(ec, cn);											//running base.learn()
-			ec.test_only = false;											//training
-			ec.ld = mc;												//we assign original label data to an example			
+			base.predict(ec, cn);											//running base.learn()
 			
 			if(ec.final_prediction < 0)										//if the regressor's prediction is < 0
 				cn = b.nodes[cn].id_left;									//set cn to the left child of cn
 			else													//if the regressor's prediction is >= 0
 				cn = b.nodes[cn].id_right;									//set cn to the right child of cn
 		}	
+	}
+
+	void learn(txm_o& b, learner& base, example& ec)		//function building the tree, ec is the current example
+	{
+	        predict(b,base,ec);
+	
+		OAA::mc_label *mc = (OAA::mc_label*)ec.ld;
+				
+		if(b.all->training && (mc->label !=  (uint32_t)-1) && !ec.test_only)					//if training the tree
+	        {
+		  size_t index = 0;				//only variable declaration
 		
-		ec.final_prediction = tmp_final_prediction;									//final prediction for ec is set to the most frequent label of a leaf cn
+		  label_data simple_temp;				//variable of type label_data containing binary label of an example, used by base.learn() while training a node regressor 
+		  simple_temp.initial = 0.0;			//???????????
+		  simple_temp.weight = mc->weight;		//weight of an example ???????????
+		  ec.ld = &simple_temp;											//label data for an example is set to simple_temp containing binary label (in this case FLT_MAX)								
+		  uint32_t oryginal_label = mc->label;		//oryginal label of ec		                		
+
+		  size_t tmp_final_prediction = ec.final_prediction;			//label that the tree assigns to ec
+		  size_t cn = 0;					//current node cn is the root (cn = 0)
+		  while(1)
+		    {
+		      index = b.nodes[cn].node_pred.unique_add_sorted(txm_o_node_pred_type(oryginal_label));		//if the label of ec is not in cn, add it to table node_pred in cn, return an index in the tabel, where it was added (or if it was there, return the index where it was) 
+					
+		      b.nodes[cn].node_pred[index].label_cnt2++;							//increase the counter of the label of ec in table node_pred
+					
+		      if(b.nodes[cn].node_pred[index].label_cnt2 > b.nodes[cn].max_cnt2)				//update the most frequent label (and a correponding counter) for cn
+			{
+			    b.nodes[cn].max_cnt2 = b.nodes[cn].node_pred[index].label_cnt2;
+			    b.nodes[cn].max_cnt2_label = b.nodes[cn].node_pred[index].label;
+			}
+				
+		      train_node(b, base, ec, cn, index);								//train cn
+		      
+		      if(b.nodes[cn].leaf)											//if cn is a leaf
+			{					
+			  ec.final_prediction = tmp_final_prediction;						//assign the most frequent label of a leaf to an example
+			  ec.ld = mc;												//we assign original label data to an example			
+			
+			  break;												
+			}
+		      //do the prediction to decide if going left or right using trained regressor in cn	
+		      simple_temp.label = FLT_MAX;										//if simple_temp.label is set to FLT_MAX, base.learn() is not training a regressor, but only perform testing
+		      base.predict(ec, cn);											//running base.learn()
+			
+		      if(ec.final_prediction < 0)										//if the regressor's prediction is < 0
+			cn = b.nodes[cn].id_left;									//set cn to the left child of cn
+		      else													//if the regressor's prediction is >= 0
+			cn = b.nodes[cn].id_right;									//set cn to the right child of cn
+		    }	
+		}
 	}
 	
 	void finish(void* data)
@@ -359,9 +374,6 @@ namespace TXM_O
 			ss << " --txm_o " << data->k;
 			all.options_from_file.append(ss.str());
 		}		
-
-		string loss_function = "quantile";									//choosing quantile loss (used for training tree nodes)
-		data->quantile_loss = getLossFunction(&all, loss_function, (float)0.5);
 				
 		data->all = &all;
 		(all.p->lp) = OAA::mc_label_parser;
@@ -372,12 +384,13 @@ namespace TXM_O
 		learner* l = new learner(data, all.l, 2 << i);					//initialize learner (last input: number of regressors that the tree will use)
                 l->set_save_load<txm_o,save_load_tree>();
                 l->set_learn<txm_o,learn>();
+                l->set_predict<txm_o,predict>();
 		l->set_finish_example<txm_o,finish_example>();
 
 		data->max_depth = 0;
 		
 		if(all.training)
-			init_tree(data);		
+			init_tree(*data);		
 		
 		return l;
 	}	
