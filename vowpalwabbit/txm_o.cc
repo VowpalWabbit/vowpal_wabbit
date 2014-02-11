@@ -216,7 +216,7 @@ namespace TXM_O
 		{
 			if(b.nodes[cn].leaf)											//if cn is a leaf
 			{					
-				ec.final_prediction = b.nodes[cn].max_cnt2_label;						//assign the most frequent label of a leaf to an example
+			        ec.final_prediction = b.nodes[cn].max_cnt2_label;						//assign the most frequent label of a leaf to an example
 				ec.ld = mc;												//we assign original label data to an example			
 				break;												
 			}
@@ -233,8 +233,9 @@ namespace TXM_O
 
 	void learn(txm_o& b, learner& base, example& ec)		//function building the tree, ec is the current example
 	{
+	  static size_t ex_num = 0, a=0, bb=0, c=0, d=0;
 	        predict(b,base,ec);
-	
+		ex_num++;
 		OAA::mc_label *mc = (OAA::mc_label*)ec.ld;
 				
 		if(b.all->training && (mc->label !=  (uint32_t)-1) && !ec.test_only)					//if training the tree
@@ -246,6 +247,12 @@ namespace TXM_O
 		  simple_temp.weight = mc->weight;		//weight of an example ???????????
 		  ec.ld = &simple_temp;											//label data for an example is set to simple_temp containing binary label (in this case FLT_MAX)								
 		  uint32_t oryginal_label = mc->label;		//oryginal label of ec		                		
+
+		  if (oryginal_label == 1) a++;
+                  if (oryginal_label == 2) bb++;
+                  if (oryginal_label == 3) c++;
+                  if (oryginal_label == 4) d++;
+		  //if(ex_num % 100 == 1)cout << ex_num << "\t" << a << "\t" << bb <<"\t" << c <<"\t" << d << endl;
 
 		  size_t tmp_final_prediction = ec.final_prediction;			//label that the tree assigns to ec
 		  size_t cn = 0;					//current node cn is the root (cn = 0)
