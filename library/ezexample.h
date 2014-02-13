@@ -127,6 +127,7 @@ class ezexample {
     ec->total_sum_feat_sq += v * v;
     ec->num_features++;
     example_changed_since_prediction = true;
+    return fint;
   }
 
   inline fid addf(fid fint, float v) { return addf(current_ns, fint, v); }
