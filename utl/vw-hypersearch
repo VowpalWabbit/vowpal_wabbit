@@ -129,6 +129,16 @@ sub ExecCmd {
 }
 
 #
+# real_param($)
+#   real-space value of param, use this to make sure whetever we show
+#   to the user has the correct value when -L is present or not.
+#
+sub real_param($) {
+    my $param = shift;
+    ($opt_L) ? exp($param) : $param;
+}
+
+#
 # loss(param)
 #   Input:
 #       @ARGV - A vw command where the parameter we want to optimize
@@ -151,7 +161,7 @@ sub loss($) {
     }
     return  $Loss{$param} if (exists $Loss{$param});
 
-    print STDERR "trying ", $param;
+    printf STDERR "trying %s ", $param;
 
     my @command = @ARGV;
     foreach my $c (@command) {
@@ -370,7 +380,7 @@ sub goldenSectionSearch($$$$) {
     # assert(loss($x) != loss($mid));
     if (loss($x) == loss($mid)) {
         printf STDERR "%s: loss(%g) == loss(%g): %g\n",
-                            $0, $x, $mid, loss($x);
+                            $0, real_param($x), real_param($mid), loss($x);
         return opt_value(($x + $mid) / 2.0);
     }
 
@@ -421,6 +431,10 @@ sub best_hyperparam($$$) {
         my $mid = $lb + $ResPhi * ($ub - $lb);
         $best = goldenSectionSearch($lb, $mid, $ub, $tol);
         $fbest = loss($best);
+    }
+    if ($opt_L) {
+        # remap to real range
+        $best = exp($best);
     }
 
     # Still happens that what we finally return is not the best...
