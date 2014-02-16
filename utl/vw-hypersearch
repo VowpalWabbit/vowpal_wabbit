@@ -8,7 +8,7 @@
 #
 # Credits:
 #   * Paul Mineiro ('vowpalwabbit/demo') wrote the original script
-#   * Ariel Faigon (2013)
+#   * Ariel Faigon
 #       - Generalize, rewrite, refactor
 #       - Add usage message
 #       - Add tolerance as optional parameter
@@ -20,13 +20,16 @@
 #       Bug fixes:
 #           - Golden-section search bug-fix
 #           - Loss value capture bug-fix (can be in scientific notation)
+#   * Alex Hudek:
+#       - Support log-space search which seems to work better when
+#         with --l1 (very small values) and/or hinge_loss
 #
 use warnings;
 use strict;
 use Getopt::Std;
 use Scalar::Util qw(looks_like_number);
 use File::Temp;
-use vars qw($opt_v $opt_b $opt_t);
+use vars qw($opt_v $opt_b $opt_t $opt_L);
 
 my $MaxDouble = 1.79769e+308;
 my $ModelFile;
@@ -142,9 +145,13 @@ my $BestLoss = $MaxDouble;
 sub loss($) {
     my ($param) = @_;
 
+    if ($opt_L) {
+        # -- map back from log-space to real value of the parameter
+       $param = exp($param);  
+    }
     return  $Loss{$param} if (exists $Loss{$param});
 
-    printf STDERR "trying %.5g ", $param;
+    print STDERR "trying ", $param;
 
     my @command = @ARGV;
     foreach my $c (@command) {
@@ -206,6 +213,7 @@ sub usage(@) {
 
     Options:
         -t <TS>     Use <TS> as test-set file + evaluate goodness on it
+        -L          Use log-space for mid-point bisection
 
     lower_bound     lower bound of the parameter search range
     upper_bound     upper bound of the parameter search range
@@ -395,6 +403,15 @@ sub goldenSectionSearch($$$$) {
 sub best_hyperparam($$$) {
     my ($lb, $ub, $tol) = @_;
 
+    # log-space search trick: map the inital end-points of the range
+    # to log-space and let the bisection algo work in the new range as
+    # if it is linear. Only 'loss()' knows about this trick to reverse it,
+    # goldenSectionSearch is oblivious to it.
+    if ($opt_L) {
+      $lb = log($lb);
+      $ub = log($ub);
+    }
+
     my ($best, $fbest);
 
     if ($opt_b) {
@@ -459,7 +476,8 @@ sub is_integer_option($) {
 sub process_args {
     $0 =~ s{.*/}{};
 
-    getopts('vbt:');
+    getopts('vbLt:');
+
     # Brent is not ready for prime-time yet so don't advertise it.
     warn "$0: using Brent's method search\n" if ($opt_b);
     if ($opt_t) {       # evaluate on test-set
@@ -480,6 +498,12 @@ sub process_args {
     my $lower_bound = shift @ARGV;
     my $upper_bound = shift @ARGV;
 
+    if ($upper_bound < $lower_bound) {
+        warn "$0: upper bound $upper_bound < $lower_bound lower bound: swapping them for you\n";
+        my $t = $lower_bound;
+        $lower_bound = $upper_bound;
+        $upper_bound = $t;
+    }
     my $tolerance = 0.001;
     if (looks_like_number($ARGV[0])) {
         $tolerance = shift @ARGV;
@@ -525,6 +549,21 @@ sub process_args {
         push(@ARGV, '&&', $ARGV[0], '-t', '-i', $ModelFile, $opt_t);
         v("New -t command line: %s\n", "@ARGV");
     }
+
+    if ((defined $opt_L) and $opt_L) {
+        warn "$0: -L: using log-space search\n";
+    } else {
+        $opt_L = 0;
+        if ($vw_command_line =~ /--l1\s+%/  or
+            $vw_command_line =~ /--loss_function\s+hinge/  or
+            $lower_bound =~ /e/i  or
+            $upper_bound =~ /e/i
+        ) {
+            warn "$0: you may get better results with -L (log-space search)\n" .
+                "when any of --l1/hinge-loss/small-param-values are present\n";
+        }
+    }
+
     return ($lower_bound, $upper_bound, $tolerance);
 }
 
