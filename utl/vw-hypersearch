@@ -21,8 +21,8 @@
 #           - Golden-section search bug-fix
 #           - Loss value capture bug-fix (can be in scientific notation)
 #   * Alex Hudek:
-#       - Support log-space search which seems to work better when
-#         with --l1 (very small values) and/or hinge_loss
+#       - Support log-space search which seems to work better
+#         with --l1 (very small values) and/or hinge-loss
 #
 use warnings;
 use strict;
@@ -512,13 +512,13 @@ sub process_args {
     my $lower_bound = shift @ARGV;
     my $upper_bound = shift @ARGV;
 
-    if ($upper_bound < $lower_bound) {
-        warn "$0: upper bound $upper_bound < $lower_bound lower bound: swapping them for you\n";
+    if ($lower_bound > $upper_bound) {
+        warn "$0: lower bound $lower_bound > $upper_bound upper bound: swapping them for you\n";
         my $t = $lower_bound;
         $lower_bound = $upper_bound;
         $upper_bound = $t;
     }
-    my $tolerance = 0.001;
+    my $tolerance = 1e-4;
     if (looks_like_number($ARGV[0])) {
         $tolerance = shift @ARGV;
         usage("3rd argument (tolerance): $tolerance: not in the (0, 1) range")
@@ -565,16 +565,24 @@ sub process_args {
     }
 
     if ((defined $opt_L) and $opt_L) {
-        warn "$0: -L: using log-space search\n";
+        if ($IntegerOpt) {
+            warn "$0: -L: incompatible with integer option $option_before_pct" .
+                    " - ignoring -L\n";
+            $opt_L = 0;
+        } else {
+            warn "$0: -L: using log-space search\n";
+        }
     } else {
         $opt_L = 0;
-        if ($vw_command_line =~ /--l1\s+%/  or
-            $vw_command_line =~ /--loss_function\s+hinge/  or
-            $lower_bound =~ /e/i  or
-            $upper_bound =~ /e/i
+        if (! $IntegerOpt
+                and
+            ($vw_command_line =~ /--l1\s+%/  ||
+             $vw_command_line =~ /--loss_function\s+hinge/  ||
+             $lower_bound =~ /e/i  ||
+             $upper_bound =~ /e/i)
         ) {
             warn "$0: you may get better results with -L (log-space search)\n" .
-                "when any of --l1/hinge-loss/small-param-values are present\n";
+                "\t\twhen any of --l1/hinge-loss/small-param-values are used\n";
         }
     }
 
