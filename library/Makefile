@@ -1,12 +1,12 @@
 BOOST_PROGRAM_OPTIONS = boost_program_options
 ifeq ($(UNAME), FreeBSD)
-BOOST_PROGRAM_OPTIONS = boost_program_options
+  BOOST_PROGRAM_OPTIONS = boost_program_options
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
-BOOST_PROGRAM_OPTIONS = boost_program_options-mt
+  BOOST_PROGRAM_OPTIONS = boost_program_options-mt
 endif
 ifeq ($(UNAME), Darwin)
-BOOST_PROGRAM_OPTIONS = boost_program_options-mt
+  BOOST_PROGRAM_OPTIONS = boost_program_options-mt
 endif
 
 all: ezexample_predict ezexample_train library_example recommend
