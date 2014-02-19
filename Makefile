@@ -1,33 +1,45 @@
-COMPILER = g++
-UNAME := $(shell uname)
+CXX = $(shell which clang++)
+ifneq ($(CXX),)
+  $(warning Using clang: "$(CXX)")
+  ARCH = -D__extern_always_inline=inline
+else
+  CXX = g++
+  $(warning Using g++)
+  ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
+endif
 
+ifeq ($(CXX),)
+  $(waninng No compiler found)
+  exit 1
+endif
+
+UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/include
+BOOST_LIBRARY = /usr/lib
+
 ifeq ($(UNAME), FreeBSD)
-LIBS = -l boost_program_options	-l pthread -l z -l compat
-BOOST_INCLUDE = /usr/local/include
+  LIBS = -l boost_program_options	-l pthread -l z -l compat
+  BOOST_INCLUDE = /usr/local/include
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
-LIBS = -l boost_program_options-mt -l pthread -l z
-BOOST_INCLUDE = /usr/include
+  LIBS = -l boost_program_options-mt -l pthread -l z
+  BOOST_INCLUDE = /usr/include
 endif
 ifeq ($(UNAME), Darwin)
-LIBS = -lboost_program_options-mt -lboost_serialization-mt -l pthread -l z
-BOOST_INCLUDE = /usr/local/include
+  LIBS = -lboost_program_options-mt -lboost_serialization-mt -l pthread -l z
+  BOOST_INCLUDE = /opt/local/include
+  BOOST_LIBRARY = /opt/local/lib
 endif
 
-BOOST_LIBRARY = /usr/local/lib
-
-ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
 
 OPTIM_FLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing -ffast-math #uncomment for speed, comment for testability
 ifeq ($(UNAME), FreeBSD)
-
-WARN_FLAGS = -Wall
+  WARN_FLAGS = -Wall
 else
-WARN_FLAGS = -Wall -pedantic
+  WARN_FLAGS = -Wall -pedantic
 endif
 
 # for normal fast execution.

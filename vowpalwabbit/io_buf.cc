@@ -7,6 +7,10 @@ license as described in the file LICENSE.
 
 #include "io_buf.h"
 
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+
 size_t buf_read(io_buf &i, char* &pointer, size_t n)
 {//return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (i.space.end + n <= i.endloaded)
@@ -52,7 +56,7 @@ bool isbinary(io_buf &i) {
 size_t readto(io_buf &i, char* &pointer, char terminal)
 {//Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
   pointer = i.space.end;
-  while (pointer != i.endloaded && *pointer != terminal)
+  while (pointer < i.endloaded && *pointer != terminal)
     pointer++;
   if (pointer != i.endloaded)
     {
@@ -103,4 +107,52 @@ void buf_write(io_buf &o, char* &pointer, size_t n)
 	}
       buf_write (o, pointer,n);
     }
+}
+
+bool io_buf::is_socket(int f)
+{
+  // this appears to work in practice, but could probably be done in a cleaner fashion
+  const int _nhandle = 32;
+  return f >= _nhandle;
+}
+
+ssize_t io_buf::read_file_or_socket(int f, void* buf, size_t nbytes) {
+#ifdef _WIN32
+  if (is_socket(f)) {
+    return recv(f, reinterpret_cast<char*>(buf), static_cast<int>(nbytes), 0);
+  }
+  else {
+    return _read(f, buf, (unsigned int)nbytes); 
+  }
+#else
+  return read(f, buf, (unsigned int)nbytes); 
+#endif
+}
+
+ssize_t io_buf::write_file_or_socket(int f, const void* buf, size_t nbytes)
+{
+#ifdef _WIN32
+  if (is_socket(f)) {
+    return send(f, reinterpret_cast<const char*>(buf), static_cast<int>(nbytes), 0);
+  }
+  else {
+    return _write(f, buf, (unsigned int)nbytes);
+  }
+#else
+  return write(f, buf, (unsigned int)nbytes);
+#endif
+}
+
+void io_buf::close_file_or_socket(int f)
+{
+#ifdef _WIN32
+  if (io_buf::is_socket(f)) {
+    closesocket(f);
+  }
+  else {
+    _close(f);
+  }
+#else
+  close(f);
+#endif
 }

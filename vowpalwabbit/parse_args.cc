@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "nn.h"
 #include "cbify.h"
 #include "oaa.h"
+#include "rand48.h"
 #include "bs.h"
 #include "topk.h"
 #include "ect.h"
@@ -28,6 +29,7 @@ license as described in the file LICENSE.
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
+#include "print.h"
 #include "gd_mf.h"
 #include "mf.h"
 #include "vw.h"
@@ -265,7 +267,8 @@ vw* parse_args(int argc, char *argv[])
     ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
     ("version","Version information")
     ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
-    ("noop","do no learning")										     ;
+    ("noop","do no learning")
+    ("print","print examples");
 
   //po::positional_options_description p;
   // Be friendly: if -d was left out, treat positional param as data file
@@ -415,7 +418,8 @@ vw* parse_args(int argc, char *argv[])
     if( all->normalized_updates ) all->reg.stride *= 2;
 
     if(!vm.count("learning_rate") && !vm.count("l") && !(all->adaptive && all->normalized_updates))
-      all->eta = 10; //default learning rate to 10 for non default update rule
+      if (all->lda == 0)
+        all->eta = 10; //default learning rate to 10 for non default update rule
 
     //if not using normalized or adaptive, default initial_t to 1 instead of 0
     if(!all->adaptive && !all->normalized_updates && !vm.count("initial_t")) {
@@ -495,7 +499,7 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
     for (size_t id=0; id<spelling_ns.size(); id++)
-      if (spelling_ns[id][0] == '_') all->spelling_features[' '] = true;
+      if (spelling_ns[id][0] == '_') all->spelling_features[(unsigned char)' '] = true;
       else all->spelling_features[(size_t)spelling_ns[id][0]] = true;
   }
 
@@ -749,6 +753,12 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("noop"))
     all->l = NOOP::setup(*all);
 
+  if (vm.count("print"))
+    {
+      all->l = PRINT::setup(*all);
+      all->reg.stride = 1;
+    }
+
   if (!vm.count("new_mf") && all->rank > 0)
     all->l = GDMF::setup(*all);
 
@@ -853,6 +863,9 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("autolink") || vm_file.count("autolink") )
     all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
 
+  if (vm.count("lrq") || vm_file.count("lrq"))
+    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
+
   all->l = Scorer::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("top") || vm_file.count("top") )
@@ -860,9 +873,6 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
-
-  if (vm.count("lrq") || vm_file.count("lrq"))
-    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
@@ -882,6 +892,7 @@ vw* parse_args(int argc, char *argv[])
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);
+    all->cost_sensitive = all->l;
     got_cs = true;
   }
 
@@ -889,6 +900,7 @@ vw* parse_args(int argc, char *argv[])
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     all->l = WAP::setup(*all, to_pass_further, vm, vm_file);
+    all->cost_sensitive = all->l;
     got_cs = true;
   }
 
@@ -896,6 +908,7 @@ vw* parse_args(int argc, char *argv[])
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     all->l = CSOAA_AND_WAP_LDF::setup(*all, to_pass_further, vm, vm_file);
+    all->cost_sensitive = all->l;
     got_cs = true;
   }
 
@@ -903,6 +916,7 @@ vw* parse_args(int argc, char *argv[])
     if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
 
     all->l = CSOAA_AND_WAP_LDF::setup(*all, to_pass_further, vm, vm_file);
+    all->cost_sensitive = all->l;
     got_cs = true;
   }
 
@@ -913,6 +927,7 @@ vw* parse_args(int argc, char *argv[])
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+      all->cost_sensitive = all->l;
       got_cs = true;
     }
 
@@ -927,6 +942,7 @@ vw* parse_args(int argc, char *argv[])
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
 	all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	all->cost_sensitive = all->l;
 	got_cs = true;
       }
 
@@ -946,6 +962,7 @@ vw* parse_args(int argc, char *argv[])
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
 
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      all->cost_sensitive = all->l;
       got_cs = true;
     }
     //all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
@@ -1094,11 +1111,7 @@ namespace VW {
     free(all.options_from_file_argv);
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
-#ifdef _WIN32
-	_close(all.final_prediction_sink[i]);
-#else
-	close(all.final_prediction_sink[i]);
-#endif
+	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
     delete all.loss;
     delete &all;

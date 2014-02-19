@@ -68,7 +68,7 @@ flat_example* flatten_example(vw& all, example *ec)
     
 	features_and_source fs;
 	fs.base = all.reg.weight_vector;
-	GD::foreach_feature<features_and_source, vec_store>(all, ec, fs); 
+	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 
 	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
     
 	fec->feature_map_len = fs.feature_map.size();

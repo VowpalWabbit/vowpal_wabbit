@@ -6,29 +6,35 @@
 #
 # Call without parameters for a full usage message
 #
-# Paul Mineiro ('vowpalwabbit/demo') wrote the original script
-#
-# Ariel Faigon (2013)
-#   - Generalize, refactor
-#   - Add usage message
-#   - Add tolerance as optional parameter
-#   - Add documentation
-#   - Golden-section search bug-fix
-#   - Better error messages in case underlying command fails
-#     for any reason
-#   - Add '-t test-set' to optimize on test error rather than
-#     train-set error
+# Credits:
+#   * Paul Mineiro ('vowpalwabbit/demo') wrote the original script
+#   * Ariel Faigon
+#       - Generalize, rewrite, refactor
+#       - Add usage message
+#       - Add tolerance as optional parameter
+#       - Add documentation
+#       - Better error messages when underlying command fails for any reason
+#       - Add '-t test-set' to optimize on test error rather than
+#         train-set error
+#       - Add integral-value option support
+#       Bug fixes:
+#           - Golden-section search bug-fix
+#           - Loss value capture bug-fix (can be in scientific notation)
+#   * Alex Hudek:
+#       - Support log-space search which seems to work better
+#         with --l1 (very small values) and/or hinge-loss
 #
 use warnings;
 use strict;
 use Getopt::Std;
 use Scalar::Util qw(looks_like_number);
 use File::Temp;
-use vars qw($opt_v $opt_b $opt_t);
+use vars qw($opt_v $opt_b $opt_t $opt_L);
 
 my $MaxDouble = 1.79769e+308;
 my $ModelFile;
 my $ScratchModel = 0;
+my $IntegerOpt = 0;
 
 sub v(@) {
     return unless ($opt_v);
@@ -123,6 +129,16 @@ sub ExecCmd {
 }
 
 #
+# real_param($)
+#   real-space value of param, use this to make sure whetever we show
+#   to the user has the correct value when -L is present or not.
+#
+sub real_param($) {
+    my $param = shift;
+    ($opt_L) ? exp($param) : $param;
+}
+
+#
 # loss(param)
 #   Input:
 #       @ARGV - A vw command where the parameter we want to optimize
@@ -139,9 +155,13 @@ my $BestLoss = $MaxDouble;
 sub loss($) {
     my ($param) = @_;
 
+    if ($opt_L) {
+        # -- map back from log-space to real value of the parameter
+       $param = exp($param);  
+    }
     return  $Loss{$param} if (exists $Loss{$param});
 
-    printf STDERR "trying %.5g ", $param;
+    printf STDERR "trying %s ", $param;
 
     my @command = @ARGV;
     foreach my $c (@command) {
@@ -203,6 +223,7 @@ sub usage(@) {
 
     Options:
         -t <TS>     Use <TS> as test-set file + evaluate goodness on it
+        -L          Use log-space for mid-point bisection
 
     lower_bound     lower bound of the parameter search range
     upper_bound     upper bound of the parameter search range
@@ -220,6 +241,21 @@ sub usage(@) {
 "
 }
 
+#
+# opt_value($)
+#   Make sure integer-args remain integers, and that we have not
+#   gotten into a loop returning the same number (no progress)
+#
+sub opt_value($) {
+    my ($value) = @_;
+    my $new_value = $value;
+    if ($IntegerOpt) {
+        # round it
+        $new_value = int($value + 0.5);
+        # v("opt_value($value): $new_value\n");
+    }
+    $new_value;
+}
 
 my $MaxIter = 50;
 
@@ -240,9 +276,9 @@ sub BrentsSearch($$$) {
 
     if ($fa * $fb >= 0) {
         if ($fa < $fb) {
-            return $a;
+            return opt_value($a);
         } else {
-            return $b;
+            return opt_value($b);
         }
     }
 
@@ -314,7 +350,7 @@ sub BrentsSearch($$$) {
             die "Brent's method error too many iterations: $i: f(b): $fb\n";
         }
     }
-    $b;
+    opt_value($b);
 }
 
 my $Phi = (1.0 + sqrt (5.0)) / 2.0;
@@ -327,6 +363,7 @@ sub goldenSectionSearch($$$$) {
 
     my $x;
 
+    $mid = opt_value($mid);
     my $upper_range = $high - $mid;
     my $lower_range = $mid - $low;
     if ($upper_range > $lower_range) {
@@ -334,33 +371,35 @@ sub goldenSectionSearch($$$$) {
     } else {
         $x = $mid - $ResPhi * $lower_range;
     }
+    $x = opt_value($x);
 
     if (abs($high - $low) < $tau * (abs($mid) + abs($x))) {
-        return (($high + $low) / 2.0);
+        return opt_value(($high + $low) / 2.0);
     }
 
     # assert(loss($x) != loss($mid));
     if (loss($x) == loss($mid)) {
         printf STDERR "%s: loss(%g) == loss(%g): %g\n",
-                            $0, $x, $mid, loss($x);
-        return (($x + $mid) / 2.0);
+                            $0, real_param($x), real_param($mid), loss($x);
+        return opt_value(($x + $mid) / 2.0);
     }
 
     if (loss($x) < loss($mid)) {
         if ($upper_range > $lower_range) {
-            return goldenSectionSearch($mid, $x, $high, $tau)
+            return opt_value(goldenSectionSearch($mid, $x, $high, $tau));
         } else {
-            return goldenSectionSearch($low, $x, $mid, $tau);
+            return opt_value(goldenSectionSearch($low, $x, $mid, $tau));
         }
     }
 
     # else:
     if ($upper_range > $lower_range) {
-        return goldenSectionSearch($low, $mid, $x, $tau);
+        return opt_value(goldenSectionSearch($low, $mid, $x, $tau));
     }
     # else
-    return goldenSectionSearch($x, $mid, $high, $tau);
+    return opt_value(goldenSectionSearch($x, $mid, $high, $tau));
 }
+
 
 #
 # best_hyperparam(lower_bound, upper_bound, tolerance)
@@ -374,6 +413,15 @@ sub goldenSectionSearch($$$$) {
 sub best_hyperparam($$$) {
     my ($lb, $ub, $tol) = @_;
 
+    # log-space search trick: map the inital end-points of the range
+    # to log-space and let the bisection algo work in the new range as
+    # if it is linear. Only 'loss()' knows about this trick to reverse it,
+    # goldenSectionSearch is oblivious to it.
+    if ($opt_L) {
+      $lb = log($lb);
+      $ub = log($ub);
+    }
+
     my ($best, $fbest);
 
     if ($opt_b) {
@@ -383,6 +431,10 @@ sub best_hyperparam($$$) {
         my $mid = $lb + $ResPhi * ($ub - $lb);
         $best = goldenSectionSearch($lb, $mid, $ub, $tol);
         $fbest = loss($best);
+    }
+    if ($opt_L) {
+        # remap to real range
+        $best = exp($best);
     }
 
     # Still happens that what we finally return is not the best...
@@ -402,10 +454,44 @@ sub fullpath($) {
     '';
 }
 
+#
+# is_integer_option($option)
+#   Return true for all options which expect an integral argument
+#
+sub is_integer_option($) {
+    my $opt = shift;
+    my $expects_integer =
+        ($opt =~ qr{^-*
+            bs?
+            |(?:csoaa|wap)(?:_ldf)?
+            |cb
+            |num_children
+            |holdout_(?:period|after)
+            |initial_pass_length
+            |lda
+            |nn
+            |oaa
+            |ect
+            |passes
+            |rank
+            |ring_size
+            |examples
+            |searn
+            |total
+            |ngram
+            |skips
+        $}x);
+
+    v("is_integer_option(%s): %d\n", $opt, $expects_integer);
+
+    $expects_integer;
+}
+
 sub process_args {
     $0 =~ s{.*/}{};
 
-    getopts('vbt:');
+    getopts('vbLt:');
+
     # Brent is not ready for prime-time yet so don't advertise it.
     warn "$0: using Brent's method search\n" if ($opt_b);
     if ($opt_t) {       # evaluate on test-set
@@ -426,7 +512,13 @@ sub process_args {
     my $lower_bound = shift @ARGV;
     my $upper_bound = shift @ARGV;
 
-    my $tolerance = 0.001;
+    if ($lower_bound > $upper_bound) {
+        warn "$0: lower bound $lower_bound > $upper_bound upper bound: swapping them for you\n";
+        my $t = $lower_bound;
+        $lower_bound = $upper_bound;
+        $upper_bound = $t;
+    }
+    my $tolerance = 1e-4;
     if (looks_like_number($ARGV[0])) {
         $tolerance = shift @ARGV;
         usage("3rd argument (tolerance): $tolerance: not in the (0, 1) range")
@@ -435,14 +527,27 @@ sub process_args {
     usage("command: $ARGV[0]: must start with an executable")
         unless (-x $ARGV[0] || -x (fullpath($ARGV[0])));
 
+    my $vw_command_line = "@ARGV";
     usage("command '@ARGV': must include a '%' wildcard to optimize on")
-        unless ("@ARGV" =~ /%/);
+        unless ($vw_command_line =~ /%/);
+
+    # Some vw option arguments must be integers, if we want to
+    # optimize those, we must bisect while rounding to an integer
+    my ($option_before_pct) = ($vw_command_line =~ /(\S+)\s+%/);
+    $IntegerOpt = is_integer_option($option_before_pct);
+
+    if ($vw_command_line =~ /--passes/ and
+        $vw_command_line !~ /--holdout_off/) {
+        # Not very nice, but unfortunately, average_loss when
+        # hold-out is in effect (default), is printed as 0.
+        warn "$0: multiple passes: forcing --holdout_off\n";
+        push(@ARGV, "--holdout_off");
+    }
 
     if ($opt_t) {
         # Evaluate on test:
         #   1) Make sure we store the model after training
         #   2) Call vw again, loading model and evaluating on test-set
-        my $vw_command_line = "@ARGV";
         if ($vw_command_line =~ /-f\s+(\S+)/) {
             $ModelFile = $1;
         } else {
@@ -458,6 +563,29 @@ sub process_args {
         push(@ARGV, '&&', $ARGV[0], '-t', '-i', $ModelFile, $opt_t);
         v("New -t command line: %s\n", "@ARGV");
     }
+
+    if ((defined $opt_L) and $opt_L) {
+        if ($IntegerOpt) {
+            warn "$0: -L: incompatible with integer option $option_before_pct" .
+                    " - ignoring -L\n";
+            $opt_L = 0;
+        } else {
+            warn "$0: -L: using log-space search\n";
+        }
+    } else {
+        $opt_L = 0;
+        if (! $IntegerOpt
+                and
+            ($vw_command_line =~ /--l1\s+%/  ||
+             $vw_command_line =~ /--loss_function\s+hinge/  ||
+             $lower_bound =~ /e/i  ||
+             $upper_bound =~ /e/i)
+        ) {
+            warn "$0: you may get better results with -L (log-space search)\n" .
+                "\t\twhen any of --l1/hinge-loss/small-param-values are used\n";
+        }
+    }
+
     return ($lower_bound, $upper_bound, $tolerance);
 }
 

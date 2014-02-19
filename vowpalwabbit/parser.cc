@@ -239,11 +239,7 @@ void reset_source(vw& all, size_t numbits)
 	{
 	  int fd = input->files.pop();
 	  if (!member(all.final_prediction_sink, (size_t) fd))
-#ifdef _WIN32
-	    _close(fd);
-#else
-	    close(fd);
-#endif
+	    io_buf::close_file_or_socket(fd);
 	}
       input->open_file(all.p->output->finalname.begin, all.stdin_off, io_buf::READ); //pushing is merged into open_file
       all.p->reader = read_cached_features;
@@ -259,11 +255,7 @@ void reset_source(vw& all, size_t numbits)
 	  mutex_unlock(&all.p->output_lock);
 	  
 	  // close socket, erase final prediction sink and socket
-#ifdef _WIN32
-	  _close(all.p->input->files[0]);
-#else
-	  close(all.p->input->files[0]);
-#endif
+	  io_buf::close_file_or_socket(all.p->input->files[0]);
 	  all.final_prediction_sink.erase();
 	  all.p->input->files.erase();
 	  
@@ -754,7 +746,7 @@ void setup_example(vw& all, example* ae)
   ae->loss = 0.;
   
   ae->example_counter = (size_t)(all.p->parsed_examples + 1);
-  if ((!all.p->emptylines_separate_examples) || example_is_newline(ae))
+  if ((!all.p->emptylines_separate_examples) || example_is_newline(*ae))
     all.p->in_pass_counter++;
 
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off);
@@ -965,14 +957,14 @@ namespace VW{
     words.delete_v();
   }
 
-  void empty_example(vw& all, example* ec)
+  void empty_example(vw& all, example& ec)
   {
 	if (all.audit || all.hash_inv)
-      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+      for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
 	{
 	  for (audit_data* temp 
-		 = ec->audit_features[*i].begin; 
-	       temp != ec->audit_features[*i].end; temp++)
+		 = ec.audit_features[*i].begin; 
+	       temp != ec.audit_features[*i].end; temp++)
 	    {
 	      if (temp->alloced)
 		{
@@ -981,19 +973,19 @@ namespace VW{
 		  temp->alloced=false;
 		}
 	    }
-	  ec->audit_features[*i].erase();
+	  ec.audit_features[*i].erase();
 	}
     
-    for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
       {  
-	ec->atomics[*i].erase();
-	ec->sum_feat_sq[*i]=0;
+	ec.atomics[*i].erase();
+	ec.sum_feat_sq[*i]=0;
       }
     
-    ec->indices.erase();
-    ec->tag.erase();
-    ec->sorted = false;
-    ec->end_pass = false;
+    ec.indices.erase();
+    ec.tag.erase();
+    ec.sorted = false;
+    ec.end_pass = false;
   }
 
   void finish_example(vw& all, example* ec)
@@ -1003,7 +995,7 @@ namespace VW{
     condition_variable_signal(&all.p->output_done);
     mutex_unlock(&all.p->output_lock);
     
-    empty_example(all, ec);
+    empty_example(all, *ec);
     
     mutex_lock(&all.p->examples_lock);
     assert(ec->in_use);

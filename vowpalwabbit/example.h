@@ -92,12 +92,12 @@ void free_flatten_example(flat_example* fec);
 example *alloc_examples(size_t,size_t);
 void dealloc_example(void(*delete_label)(void*), example&);
 
-inline int example_is_newline(example* ec)
+inline int example_is_newline(example& ec)
 {
   // if only index is constant namespace or no index
-  return ((ec->indices.size() == 0) || 
-          ((ec->indices.size() == 1) &&
-           (ec->indices.last() == constant_namespace)));
+  return ((ec.indices.size() == 0) || 
+          ((ec.indices.size() == 1) &&
+           (ec.indices.last() == constant_namespace)));
 }
 
 #endif

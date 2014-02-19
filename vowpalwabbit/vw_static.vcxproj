@@ -262,6 +262,7 @@
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
+    <ClInclude Include="print.h" />
     <ClInclude Include="oaa.h" />
     <ClInclude Include="bs.h" />
     <ClInclude Include="parser.h" />
@@ -309,6 +310,7 @@
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
+    <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="bs.cc" />
     <ClCompile Include="parser.cc" />

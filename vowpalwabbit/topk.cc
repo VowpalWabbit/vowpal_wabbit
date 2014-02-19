@@ -67,25 +67,25 @@ namespace TOPK {
     }    
   }
 
-  void output_example(vw& all, topk* d, example* ec)
+  void output_example(vw& all, topk& d, example& ec)
   {
-    label_data* ld = (label_data*)ec->ld;
+    label_data* ld = (label_data*)ec.ld;
     
     all.sd->weighted_examples += ld->weight;
-    all.sd->sum_loss += ec->loss;
-    all.sd->sum_loss_since_last_dump += ec->loss;
-    all.sd->total_features += ec->num_features;
+    all.sd->sum_loss += ec.loss;
+    all.sd->sum_loss_since_last_dump += ec.loss;
+    all.sd->total_features += ec.num_features;
     all.sd->example_number++;
  
     if (example_is_newline(ec))
       for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-        TOPK::print_result(*sink, d->pr_queue);
+        TOPK::print_result(*sink, d.pr_queue);
        
     print_update(all, ec);
   }
 
   template <bool is_learn>
-  void predict_or_learn(topk* d, learner& base, example* ec)
+  void predict_or_learn(topk& d, learner& base, example& ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
 
@@ -94,21 +94,21 @@ namespace TOPK {
     else
       base.predict(ec);
 
-    if(d->pr_queue.size() < d->B)      
-      d->pr_queue.push(make_pair(ec->final_prediction, ec->tag));
+    if(d.pr_queue.size() < d.B)      
+      d.pr_queue.push(make_pair(ec.final_prediction, ec.tag));
 
-    else if(d->pr_queue.top().first < ec->final_prediction)
+    else if(d.pr_queue.top().first < ec.final_prediction)
     {
-      d->pr_queue.pop();
-      d->pr_queue.push(make_pair(ec->final_prediction, ec->tag));
+      d.pr_queue.pop();
+      d.pr_queue.push(make_pair(ec.final_prediction, ec.tag));
     }
 
   }
 
-  void finish_example(vw& all, topk* d, example* ec)
+  void finish_example(vw& all, topk& d, example& ec)
   {
     TOPK::output_example(all, d, ec);
-    VW::finish_example(all, ec);
+    VW::finish_example(all, &ec);
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)

@@ -22,16 +22,16 @@ inline float trunc_weight(const float w, const float gravity){
   return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
 }
 
-inline void vec_add(float& p, float fx, float& fw) {
+inline void vec_add(float& p, const float fx, float& fw) {
   p += fw * fx;
 }
 
-inline void vec_add_trunc(predict_data<float>& p, float fx, float& fw) {
+inline void vec_add_trunc(predict_data<float>& p, const float fx, float& fw) {
   p.prediction += trunc_weight(fw, p.extra) * fx;
 }
 
 template <bool adaptive, size_t normalized_idx>
-inline void vec_add_rescale(float& p, float fx, float& fw) {
+inline void vec_add_rescale(float& p, const float fx, float& fw) {
   weight* w = &fw;
   float x_abs = fabs(fx);
   if( x_abs > w[normalized_idx] ) {// new scale discovered
@@ -45,7 +45,7 @@ inline void vec_add_rescale(float& p, float fx, float& fw) {
 }
 
 template <bool adaptive, size_t normalized_idx>
-inline void vec_add_trunc_rescale(predict_data<float>& p, float fx, float& fw) {
+inline void vec_add_trunc_rescale(predict_data<float>& p, const float fx, float& fw) {
   weight* w = &fw;
   float x_abs = fabs(fx);
   if( x_abs > w[normalized_idx] ) {
@@ -59,7 +59,7 @@ inline void vec_add_trunc_rescale(predict_data<float>& p, float fx, float& fw) {
 }
 
 template <bool adaptive, size_t normalized_idx>
-inline void vec_add_rescale_general(predict_data<float>& p, float fx, float& fw) {
+inline void vec_add_rescale_general(predict_data<float>& p, const float fx, float& fw) {
   weight* w = &fw;
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (adaptive ? p.extra : 0.f);
@@ -79,7 +79,7 @@ struct gnp {
 };
 
 template <bool adaptive, size_t normalized_idx>
-inline void vec_add_trunc_rescale_general(predict_data<gnp>& p, float fx, float& fw) {
+inline void vec_add_trunc_rescale_general(predict_data<gnp>& p, const float fx, float& fw) {
   weight* w = &fw;
   float x_abs = fabs(fx);
   float power_t_norm = 1.f - (adaptive ? p.extra.power_t : 0.f);
