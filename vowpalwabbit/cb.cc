@@ -589,6 +589,7 @@ namespace CB
      
         all.sd->sum_loss_since_last_dump = 0.0;
         all.sd->old_weighted_examples = all.sd->weighted_examples;
+	fflush(stderr);
         VW::update_dump_interval(all);
       }
   }
