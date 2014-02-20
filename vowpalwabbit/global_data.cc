@@ -238,7 +238,7 @@ vw::vw()
   lda_alpha = 0.1f;
   lda_rho = 0.1f;
   lda_D = 10000.;
-  lda_epsilon = 0.001;
+  lda_epsilon = 0.001f;
   minibatch = 1;
   span_server = "";
   m = 15;

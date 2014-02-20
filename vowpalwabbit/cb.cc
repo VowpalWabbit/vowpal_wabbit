@@ -411,7 +411,7 @@ namespace CB
     }
     else
       {
-	for (size_t i = 0; i < all.sd->k; i++)
+	for (uint32_t i = 0; i < all.sd->k; i++)
 	  {
 	    CSOAA::wclass wc;
 	    wc.wap_value = 0.;

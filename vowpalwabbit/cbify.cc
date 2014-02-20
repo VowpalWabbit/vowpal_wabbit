@@ -54,9 +54,9 @@ namespace CBIFY {
   {//Explore tau times, then act according to optimal.
     OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
     //Use CB to find current prediction for remaining rounds.
-    if (data.tau && is_learn > 0)
+    if (data.tau && is_learn)
       {
-	ec.final_prediction = do_uniform(data);
+	ec.final_prediction = (float)do_uniform(data);
 	ec.loss = loss(ld->label, ec.final_prediction);
 	data.tau--;
 	uint32_t action = (uint32_t)ec.final_prediction;
@@ -98,7 +98,7 @@ namespace CBIFY {
     else
       {
 	action = do_uniform(data);
-	CB::cb_class l = {loss(ld->label, action), 
+	CB::cb_class l = {loss(ld->label, (float)action), 
 			  action, base_prob};
 	if (action == ec.final_prediction)
 	  l.probability = 1.f - data.epsilon + base_prob;
@@ -125,19 +125,19 @@ namespace CBIFY {
        data.count[j] = 0;
 	 
     size_t bag = choose_bag(data);
-    size_t action = 0;
+    uint32_t action = 0;
     for (size_t i = 0; i < data.bags; i++)
       {
 	base.predict(ec,i);
-	data.count[ec.final_prediction]++;
+	data.count[(uint32_t)ec.final_prediction]++;
 	if (i == bag)
-	  action = ec.final_prediction;
+	  action = (uint32_t)ec.final_prediction;
       }
     assert(action != 0);
     if (is_learn)
       {
 	float probability = (float)data.count[action] / (float)data.bags;
-	CB::cb_class l = {loss(ld->label, action), 
+	CB::cb_class l = {loss(ld->label, (float)action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
 	for (size_t i = 0; i < data.bags; i++)
@@ -148,7 +148,7 @@ namespace CBIFY {
 	  }
       }
     ec.ld = ld;
-    ec.final_prediction = action;
+    ec.final_prediction = (float)action;
   }
   
   uint32_t choose_action(v_array<float>& distribution)
@@ -175,7 +175,7 @@ namespace CBIFY {
 	  distribution[i] = min_prob;
 	}
     
-    float ratio = 1. / (1. + added_mass);
+    float ratio = 1.f / (1.f + added_mass);
     if (ratio < 0.999)
       {
 	for (uint32_t i = 0; i < distribution.size(); i++)
@@ -211,7 +211,7 @@ namespace CBIFY {
 
     data.count.erase();
     data.cs_label.costs.erase();
-    for (size_t j = 0; j < data.k; j++)
+    for (uint32_t j = 0; j < data.k; j++)
       {
 	data.count.push_back(0);
 
@@ -225,7 +225,7 @@ namespace CBIFY {
 	data.cs_label.costs.push_back(wc);
       }
 
-    float additive_probability = 1. / (float)data.bags;
+    float additive_probability = 1.f / (float)data.bags;
 
     ec.ld = &data.cs_label;
     for (size_t i = 0; i < data.bags; i++)
@@ -234,11 +234,11 @@ namespace CBIFY {
 	  data.cs->predict(ec, i);
 	else
 	  data.cs->predict(ec,i+1);
-	data.count[ec.final_prediction-1] += additive_probability;
-	data.predictions[i] = ec.final_prediction;
+	data.count[(size_t)ec.final_prediction-1] += additive_probability;
+	data.predictions[i] = (uint32_t)ec.final_prediction;
       }
 
-    float min_prob = data.epsilon * min (1. / data.k, 1. / sqrt(data.counter * data.k));
+    float min_prob = data.epsilon * min (1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
     
     safety(data.count, min_prob);
     
@@ -249,7 +249,7 @@ namespace CBIFY {
       {
 	data.cb_label.costs.erase();
 	float probability = (float)data.count[action-1];
-	CB::cb_class l = {loss(ld->label, action), 
+	CB::cb_class l = {loss(ld->label, (float)action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
 	ec.ld = &(data.cb_label);
@@ -270,7 +270,7 @@ namespace CBIFY {
 	//2. Update functions
 	for (size_t i = 0; i < data.bags; i++)
 	  { //get predicted cost-sensitive predictions
-	    for (size_t j = 0; j < data.k; j++)
+	    for (uint32_t j = 0; j < data.k; j++)
 	      {
 		float pseudo_cost = data.cs_label.costs[j].x - data.epsilon * min_prob / (max(data.count[j], min_prob) / norm) + 1;
 		data.second_cs_label.costs[j].weight_index = j+1;
@@ -287,7 +287,7 @@ namespace CBIFY {
       }
 
     ec.ld = ld;
-    ec.final_prediction = action;
+    ec.final_prediction = (float)action;
   }
   
   void init_driver(cbify&) {}

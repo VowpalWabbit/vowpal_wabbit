@@ -3,15 +3,14 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#ifndef _WIN32
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 #include <iostream>
 #include <float.h>
 #include <stdio.h>
 #include <math.h>
+#ifndef _WIN32
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 #include "searn.h"
 #include "gd.h"
 #include "parser.h"
@@ -22,6 +21,10 @@ license as described in the file LICENSE.
 #include "v_hashmap.h"
 #include "vw.h"
 #include "rand48.h"
+#ifdef _WIN32
+bool isfinite(float x)
+{ return !infpattern(x);}
+#endif
 
 // task-specific includes
 #include "searn_sequencetask.h"
