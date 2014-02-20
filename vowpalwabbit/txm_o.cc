@@ -142,7 +142,7 @@ namespace TXM_O
 
 		base.predict(ec, cn);					//running base.learn()
 			
-		b.nodes[cn].Eh += (double)ec.partial_prediction;		//incrementing margin 
+		b.nodes[cn].Eh += (double)ec.final_prediction;		//incrementing margin 
 		b.nodes[cn].n++;					//incrementing counter of examples reaching node cn
 		
 		float norm_Eh = b.nodes[cn].Eh / b.nodes[cn].n;	//computing expected margin
@@ -159,7 +159,7 @@ namespace TXM_O
 		//else if(ec.final_prediction < -treshold)		//if one Ehk has value -1 and the others have value 1, then Eh will never beat Ehk's that have value 1 and balancing doe not work
 		//	b.nodes[cn].node_pred[index].Ehk -= treshold;
 		//else
-			b.nodes[cn].node_pred[index].Ehk += (double)ec.partial_prediction;	
+			b.nodes[cn].node_pred[index].Ehk += (double)ec.final_prediction;	
 		
 		float norm_Ehk = b.nodes[cn].node_pred[index].Ehk / b.nodes[cn].node_pred[index].nk;		//computing expected conditional margin over the example label
 		//	if(cn == 0)
@@ -186,7 +186,7 @@ namespace TXM_O
 		    // getchar();
 		    //}
 
-		float left_or_right = norm_Eh - norm_Ehk;// + 0.01*(log(b.nodes[cn].L) - log(b.nodes[cn].R));		//computing difference of expected conditional margin over the example label and expected margin
+		float left_or_right = norm_Ehk - norm_Eh;// + 0.01*(log(b.nodes[cn].L) - log(b.nodes[cn].R));		//computing difference of expected conditional margin over the example label and expected margin
 		
 		size_t id_left = b.nodes[cn].id_left;			//index of left child of cn
 		size_t id_right = b.nodes[cn].id_right;		//index of right child of cn
@@ -206,16 +206,23 @@ namespace TXM_O
 			b.nodes[cn].myR++;
 		}
 		
-		if(cn == 0)
-		{
-			cout << "label: " << b.nodes[cn].node_pred[index].label << "\t\t" << "diff of exp: " << left_or_right << "\t\t" << "where we go: " << ec.final_prediction - norm_Eh << endl; 
-		}	
+		//if(cn == 0)
+		//{
+		//	cout << "label: " << b.nodes[cn].node_pred[index].label << "\t\t" << "diff of exp: " << left_or_right << "\t\t" << "where we go: " << ec.final_prediction - norm_Eh << endl; 
+		//}	
 		
-		if(b.nodes[cn].initial_dir == 0)					//if ec is the first example reaching cn
-		{
-			b.nodes[cn].initial_dir = (int8_t)simple_temp->label;		//set the initial direction to the direction where regressor (before training) in cn wants to send an example
-		}
-		else if(id_left_right == 0)						//if the node does not have children
+		//if(b.nodes[cn].initial_dir == 0)					//if ec is the first example reaching cn
+		//{
+		//	b.nodes[cn].initial_dir = (int8_t)simple_temp->label;		//set the initial direction to the direction where regressor (before training) in cn wants to send an example
+		//}
+		//else
+
+
+
+		//I create children when there are log(k) points that want to go left and log(k) points that want to go right in the node  
+		if((b.nodes[cn].myR > ceil_log2(b.k)) && (b.nodes[cn].myL > ceil_log2(b.k)))
+		  {
+		if(id_left_right == 0)						//if the node does not have children
 		{	//condition checking whether cn can create children:		1) the number of examples that already reached cn > treshold_n, 
 			//								2) regressor in node cn wants to send ec opposite to initial direction
 			//								3) total number of nodes in the tree + 2 potential children is smaller than the maximal allowed number of nodes 
@@ -238,7 +245,7 @@ namespace TXM_O
 				}	
 			}
 		}	
-		
+		  }
 		base.learn(ec, cn);				//train regressor of node cn
 		
 		if(b.nodes[cn].id_left == 0)			//cn did not create children
@@ -426,8 +433,8 @@ namespace TXM_O
 	
 	void finish(txm_o& b)
 	{
-	        display_tree2(b);  
-		save_node_stats(b);  
+	  display_tree2(b);  
+	  save_node_stats(b);  
 	}
 	
 	void save_load_tree(txm_o& b, io_buf& model_file, bool read, bool text)
@@ -461,9 +468,9 @@ namespace TXM_O
 			}
 			else
 			{
-				cout << endl;
-				cout << "Tree depth: " << b.max_depth << endl;
-				cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
+			  //cout << endl;
+			  //	cout << "Tree depth: " << b.max_depth << endl;
+			  //	cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
 				
 				text_len = sprintf(buff, ":%d\n", (int) b.nodes.size());			//ilosc nodow
 				v = b.nodes.size();
