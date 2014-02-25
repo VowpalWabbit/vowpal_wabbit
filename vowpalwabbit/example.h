@@ -14,9 +14,9 @@ const size_t history_namespace  = 127;
 const size_t constant_namespace = 128;
 const size_t nn_output_namespace  = 129;
 const size_t autolink_namespace  = 130;
-const size_t neighbor_namespace  = 131;
-const size_t affix_namespace     = 132;
-const size_t spelling_namespace  = 133;
+const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
+const size_t affix_namespace     = 132;   // this is \x84
+const size_t spelling_namespace  = 133;   // this is \x85
 
 struct feature {
   float x;
@@ -64,7 +64,6 @@ struct example // core example datatype.
   bool end_pass;//special example indicating end of pass.
   bool sorted;//Are the features sorted or not?
   bool in_use; //in use or not (for the parser)
-  bool done; //set to false by setup_example()
 };
 
  struct vw;  
@@ -90,15 +89,15 @@ flat_example* flatten_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 }
 
-example *alloc_example(size_t);
+example *alloc_examples(size_t,size_t);
 void dealloc_example(void(*delete_label)(void*), example&);
 
-inline int example_is_newline(example* ec)
+inline int example_is_newline(example& ec)
 {
   // if only index is constant namespace or no index
-  return ((ec->indices.size() == 0) || 
-          ((ec->indices.size() == 1) &&
-           (ec->indices.last() == constant_namespace)));
+  return ((ec.indices.size() == 0) || 
+          ((ec.indices.size() == 1) &&
+           (ec.indices.last() == constant_namespace)));
 }
 
 #endif

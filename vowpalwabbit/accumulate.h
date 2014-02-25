@@ -6,8 +6,6 @@ license as described in the file LICENSE.
 //This implements various accumulate functions building on top of allreduce.  
 #ifndef ACCUMULATE_H
 #define ACCUMULATE_H
-
-#include "allreduce.h"
 #include "global_data.h"
 
 void accumulate(vw& all, std::string master_location, regressor& reg, size_t o);

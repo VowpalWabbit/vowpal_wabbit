@@ -13,17 +13,12 @@ namespace LEARNER
     all->l->init_driver();
     while ( true )
       {
-	if(all->early_terminate)
-	  {
- 	    all->p->done = true;
- 	    return;
-	  }
-	else if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
+	if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	  {
 	    if (ec->indices.size() > 1) // one nonconstant feature.
 	      {
-		all->l->learn(ec);
-		all->l->finish_example(*all, ec);
+		all->l->learn(*ec);
+		all->l->finish_example(*all, *ec);
 	      }
 	    else if (ec->end_pass)
 	      {
@@ -46,8 +41,18 @@ namespace LEARNER
 	      }
 	    else 
 	      {
-		all->l->learn(ec);
-		all->l->finish_example(*all, ec);
+		all->l->learn(*ec);
+
+		if(all->early_terminate)
+		  {
+		    all->p->done = true;
+		    all->l->finish_example(*all, *ec);
+		    return;
+		  }
+		else
+		  {
+		    all->l->finish_example(*all, *ec);
+		  }
 	      }
 	  }
 	else if (parser_done(all->p))

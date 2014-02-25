@@ -1,26 +1,32 @@
 #include "oaa.h"
 #include "vw.h"
 
-namespace BINARY {
-  void learn(void* d, learner& base, example* ec)
-  {
-    base.learn(ec);
-    
-    float prediction = -1;
-    if ( ec->final_prediction > 0)
-      prediction = 1;
-    ec->final_prediction = prediction;
+using namespace LEARNER;
 
-    label_data* ld = (label_data*)ec->ld;
-    if (ld->label == ec->final_prediction)
-      ec->loss = 0.;
+namespace BINARY {
+
+  template <bool is_learn>
+  void predict_or_learn(float&, learner& base, example& ec) {
+    if (is_learn)
+      base.learn(ec);
     else
-      ec->loss = 1.;
+      base.predict(ec);
+
+    if ( ec.final_prediction > 0)
+      ec.final_prediction = 1;
+    else
+      ec.final_prediction = -1;
+
+    label_data* ld = (label_data*)ec.ld;//New loss
+    if (ld->label == ec.final_prediction)
+      ec.loss = 0.;
+    else
+      ec.loss = 1.;
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
-  {
-    if (!vm_file.count("binary")) 
+  {//parse and set arguments
+    if (!vm_file.count("binary"))
       {
 	std::stringstream ss;
 	ss << " --binary ";
@@ -28,9 +34,10 @@ namespace BINARY {
       }
 
     all.sd->binary_label = true;
-
-    learner* l = new learner(NULL, learn, all.l);
-
-    return l;
+    //Create new learner
+    learner* ret = new learner(NULL, all.l);
+    ret->set_learn<float, predict_or_learn<true> >();
+    ret->set_predict<float, predict_or_learn<false> >();
+    return ret;
   }
 }

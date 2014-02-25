@@ -59,7 +59,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -216,6 +216,8 @@
       <OmitFramePointers Condition="'$(Configuration)'=='Release'">true</OmitFramePointers>
       <EnableFiberSafeOptimizations Condition="'$(Configuration)'=='Release'">false</EnableFiberSafeOptimizations>
       <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EditAndContinue</DebugInformationFormat>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -250,7 +252,9 @@
     <ClInclude Include="ect.h" />
     <ClInclude Include="example.h" />
     <ClInclude Include="gd.h" />
+    <ClInclude Include="mf.h" />
     <ClInclude Include="gd_mf.h" />
+    <ClInclude Include="lrq.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="io_buf.h" />
@@ -259,6 +263,7 @@
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
     <ClInclude Include="noop.h" />
+    <ClInclude Include="print.h" />
     <ClInclude Include="oaa.h" />
     <ClInclude Include="bs.h" />
     <ClInclude Include="parser.h" />
@@ -267,6 +272,7 @@
     <ClInclude Include="parse_primitives.h" />
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="rand48.h" />
+    <ClInclude Include="scorer.h" />
     <ClInclude Include="searn.h" />
     <ClInclude Include="searn_sequencetask.h" />
     <ClInclude Include="sender.h" />
@@ -284,16 +290,18 @@
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
     <ClCompile Include="allreduce.cc" />
-    <ClCompile Include="beam.cc" />
     <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
     <ClCompile Include="cache.cc" />
     <ClCompile Include="cb.cc" />
+    <ClCompile Include="cbify.cc" />
     <ClCompile Include="csoaa.cc" />
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
+    <ClCompile Include="mf.cc" />
     <ClCompile Include="gd_mf.cc" />
+    <ClCompile Include="lrq.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />
@@ -303,6 +311,7 @@
     <ClCompile Include="network.cc" />
     <ClCompile Include="nn.cc" />
     <ClCompile Include="noop.cc" />
+    <ClCompile Include="print.cc" />
     <ClCompile Include="oaa.cc" />
     <ClCompile Include="bs.cc" />
     <ClCompile Include="parser.cc" />
@@ -311,6 +320,7 @@
     <ClCompile Include="parse_primitives.cc" />
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="rand48.cc" />
+    <ClCompile Include="scorer.cc" />
     <ClCompile Include="searn.cc" />
     <ClCompile Include="searn_sequencetask.cc" />
     <ClCompile Include="sender.cc" />

@@ -12,7 +12,7 @@ Basic Installation
 
 Briefly, the shell commands `./configure; make; make install' should
 configure, build, and install this package.  The following
-more-detailed instructions are generic; see the `README' file for
+more-detailed instructions are generic; see the `README.md' file for
 instructions specific to this package.
 
    The `configure' shell script attempts to guess correct values for
@@ -32,7 +32,7 @@ cache files.
 
    If you need to do unusual things to compile the package, please try
 to figure out how `configure' could check whether to do them, and mail
-diffs or instructions to the address given in the `README' so they can
+diffs or instructions to the address given in the `README.md' so they can
 be considered for the next release.  If you are using the cache, and at
 some point `config.cache' contains results you don't want to keep, you
 may remove or edit it.
@@ -127,7 +127,7 @@ Some packages pay attention to `--enable-FEATURE' options to
 `configure', where FEATURE indicates an optional part of the package.
 They may also pay attention to `--with-PACKAGE' options, where PACKAGE
 is something like `gnu-as' or `x' (for the X Window System).  The
-`README' should mention any `--enable-' and `--with-' options that the
+`README.md' should mention any `--enable-' and `--with-' options that the
 package recognizes.
 
    For packages that use the X Window System, `configure' can usually

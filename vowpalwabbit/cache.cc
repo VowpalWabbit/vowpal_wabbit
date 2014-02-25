@@ -55,7 +55,7 @@ int read_cached_features(void* in, example* ec)
   ae->sorted = all->p->sorted_cache;
   io_buf* input = all->p->input;
 
-  size_t total = all->p->lp->read_cached_label(all->sd, ae->ld, *input);
+  size_t total = all->p->lp.read_cached_label(all->sd, ae->ld, *input);
   if (total == 0)
     return 0;
   if (read_cached_tag(*input,ae) == 0)

@@ -127,8 +127,9 @@ struct vw {
 
   node_socks socks;
 
-  learner* l;//the top level leaner
-  learner* scorer;//a scoring function
+  LEARNER::learner* l;//the top level learner
+  LEARNER::learner* scorer;//a scoring function
+  LEARNER::learner* cost_sensitive;//a cost sensitive learning algorithm.
 
   void learn(example*);
 
@@ -141,12 +142,13 @@ struct vw {
 
   string data_filename; // was vm["data"]
 
-  bool daemon; 
+  bool daemon;
   size_t num_children;
 
   bool save_per_pass;
   float active_c0;
   float initial_weight;
+  float initial_constant;
 
   bool bfgs;
   bool hessian_on;
@@ -161,14 +163,14 @@ struct vw {
   bool searn;
   void* /*Searn::searn*/ searnstr;
 
-  uint32_t wpp; 
+  uint32_t wpp;
 
   int stdout_fileno;
 
   std::string per_feature_regularizer_input;
   std::string per_feature_regularizer_output;
   std::string per_feature_regularizer_text;
-  
+
   float l1_lambda; //the level of l_1 regularization to impose.
   float l2_lambda; //the level of l_2 regularization to impose.
   float power_t;//the power on learning rate decay.
@@ -194,8 +196,8 @@ struct vw {
   uint32_t affix_features[256]; // affixes to generate (up to 8 per namespace)
   bool     spelling_features[256]; // generate spelling features for which namespace
   bool audit;//should I print lots of debugging information?
-  bool quiet;//Should I suppress updates?
-  bool training;//Should I train if label data is available?
+  bool quiet;//Should I suppress progress-printing of updates?
+  bool training;//Should I train if lable data is available?
   bool active;
   bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
@@ -215,14 +217,15 @@ struct vw {
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
   size_t feature_mask_idx; //offset idx where mask is stored
 
-  size_t lda;
+  uint32_t lda;
   float lda_alpha;
   float lda_rho;
   float lda_D;
+  float lda_epsilon;
 
   std::string text_regressor_name;
   std::string inv_hash_regressor_name;
-  
+
   std::string span_server;
 
   size_t length () { return ((size_t)1) << num_bits; };
@@ -244,7 +247,7 @@ struct vw {
 
   bool stdin_off;
 
-  //runtime accounting variables. 
+  //runtime accounting variables.
   float initial_t;
   float eta;//learning rate control.
   float eta_decay_rate;
@@ -256,6 +259,11 @@ struct vw {
 
   bool hash_inv;
   bool print_invert;
+
+  // Set by --progress <arg>
+  bool  progress_add;   // additive (rather than multiplicative) progress dumps
+  float progress_arg;   // next update progress dump multiplier
+
   std::map< std::string, size_t> name_index_map;
 
   vw();
@@ -271,4 +279,4 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 int print_tag(std::stringstream& ss, v_array<char> tag);
 
 #endif
- 
+

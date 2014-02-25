@@ -3,6 +3,8 @@
 #include "parser.h"
 #include "vw.h"
 
+using namespace LEARNER;
+
 namespace ALINK {
   const int autoconstant = 524267083;
   
@@ -11,38 +13,36 @@ namespace ALINK {
     uint32_t stride;
   };
 
-  void learn(void* d, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(autolink& b, learner& base, example& ec)
   {
-    autolink* b = (autolink*)d;
+    base.predict(ec);
+    float base_pred = ec.final_prediction;
 
-    float label = ((label_data*)ec->ld)->label;
-    float weight = ((label_data*)ec->ld)->weight;
-    ((label_data*)ec->ld)->label = FLT_MAX;
-    ((label_data*)ec->ld)->weight = 0;
-    base.learn(ec);
-    ((label_data*)ec->ld)->label = label;
-    ((label_data*)ec->ld)->weight = weight;
-    float base_pred = ec->final_prediction;
-    
-    ec->indices.push_back(autolink_namespace);
-    
+    // add features of label
+    ec.indices.push_back(autolink_namespace);
     float sum_sq = 0;
-    for (size_t i = 0; i < b->d; i++)
+    for (size_t i = 0; i < b.d; i++)
       if (base_pred != 0.)
 	{
-	  feature f = { base_pred, (uint32_t) (autoconstant + i * b->stride) };
-	  ec->atomics[autolink_namespace].push_back(f);
+	  feature f = { base_pred, (uint32_t) (autoconstant + i * b.stride) };
+	  ec.atomics[autolink_namespace].push_back(f);
 	  sum_sq += base_pred*base_pred;
-	  base_pred *= ec->final_prediction;
+	  base_pred *= ec.final_prediction;
 	}
-    ec->total_sum_feat_sq += sum_sq;
-    base.learn(ec);
-   
-    ec->atomics[autolink_namespace].erase();
-    ec->indices.pop();
-    ec->total_sum_feat_sq -= sum_sq;
+    ec.total_sum_feat_sq += sum_sq;
+
+    // apply predict or learn
+    if (is_learn)
+      base.learn(ec);
+    else
+      base.predict(ec);
+
+    ec.atomics[autolink_namespace].erase();
+    ec.indices.pop();
+    ec.total_sum_feat_sq -= sum_sq;
   }
-  
+
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     autolink* data = (autolink*)calloc(1,sizeof(autolink));
@@ -56,6 +56,9 @@ namespace ALINK {
 	all.options_from_file.append(ss.str());
       }
 
-    return new learner(data, learn, all.l);
+    learner* ret = new learner(data, all.l);
+    ret->set_learn<autolink, predict_or_learn<true> >();
+    ret->set_predict<autolink, predict_or_learn<false> >();
+    return ret;
   }
 }

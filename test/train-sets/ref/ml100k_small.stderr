@@ -1,31 +1,32 @@
+using l2 regularization = 2e-06
 creating quadratic features for pairs: ui 
 final_regressor = movielens.reg
 Num weight bits = 16
-learning rate = 0.025
+learning rate = 0.05
 initial_t = 1
 power_t = 0
 decay_learning_rate = 0.97
 rank = 10
-using l2 regularization = 0.001
 creating cache_file = movielens.cache
 Reading datafile = train-sets/ml100k_small_train
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
-8.699942   8.699942            3         3.0   4.0000   0.2004       23
-11.041393  13.382844           6         6.0   4.0000   0.3577       23
-8.934545   6.406327           11        11.0   1.0000   0.6111       23
-7.357914   5.781282           22        22.0   2.0000   1.2071       23
-6.031830   4.705747           44        44.0   4.0000   1.7897       23
-4.832065   3.604398           87        87.0   3.0000   2.9281       23
-3.078799   1.325534          174       174.0   4.0000   3.4095       23
-2.182642   1.286485          348       348.0   5.0000   3.7808       23
+3.457930   3.457930            1         1.0   2.0000   0.1404       23
+5.743041   8.028152            2         2.0   3.0000   0.1666       23
+9.391515   13.039988           4         4.0   4.0000   0.5033       23
+9.041728   8.691941            8         8.0   2.0000   0.8482       23
+6.344679   3.647631           16        16.0   3.0000   1.3200       23
+4.815768   3.286856           32        32.0   2.0000   2.1091       23
+3.394970   1.974173           64        64.0   5.0000   2.8885       23
+2.366933   1.338895          128       128.0   4.0000   3.8108       23
+1.826340   1.285746          256       256.0   3.0000   3.1742       23
 
 finished run
 number of examples per pass = 237
 passes used = 2
 weighted example sum = 474
 weighted label sum = 1666
-average loss = 1.945
-best constant = 3.52
+average loss = 1.51233
+best constant = 3.52008
 total feature number = 10902

@@ -7,6 +7,8 @@ license as described in the file LICENSE.
 
 #include "vw.h"
 
+using namespace LEARNER;
+
 namespace NOOP {
   learner* setup(vw& all)
   {

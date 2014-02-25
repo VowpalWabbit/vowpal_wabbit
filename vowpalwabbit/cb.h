@@ -22,17 +22,18 @@ license as described in the file LICENSE.
 namespace CB {
 
   struct cb_class {
-    float x;  // the cost of this class
-    uint32_t weight_index;  // the index of this class
-    float prob_action; //new for bandit setting, specifies the probability the data collection policy chose this class for importance weighting
-    bool operator==(cb_class j){return weight_index == j.weight_index;}
+    float cost;  // the cost of this class
+    uint32_t action;  // the index of this class
+    float probability; //new for bandit setting, specifies the probability the data collection policy chose this class for importance weighting
+    float partial_prediction;//essentially a return value
+    bool operator==(cb_class j){return action == j.action;}
   };
 
   struct label {
     v_array<cb_class> costs;
   };
 
-  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  LEARNER::learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
 
   size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
   void cache_label(void* v, io_buf& cache);
@@ -40,14 +41,41 @@ namespace CB {
   void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words);
   void delete_label(void* v);
   float weight(void* v);
-  float initial(void* v);
   void copy_label(void*&dst,void*src);
   const label_parser cb_label_parser = {default_label, parse_label, 
 					cache_label, read_cached_label, 
-					delete_label, weight, initial, 
+					delete_label, weight, 
                                         copy_label,
 					sizeof(label)};
 
+  template <bool is_learn>
+  float get_cost_pred(vw& all, cb_class* known_cost, example& ec, uint32_t index, uint32_t base)
+  {
+    CB::label* ld = (CB::label*)ec.ld;
+
+    label_data simple_temp;
+    simple_temp.initial = 0.;
+    if (known_cost != NULL && index == known_cost->action)
+      {
+	simple_temp.label = known_cost->cost;
+	simple_temp.weight = 1.;
+      }
+    else 
+      {
+	simple_temp.label = FLT_MAX;
+	simple_temp.weight = 0.;
+      }
+    
+    ec.ld = &simple_temp;
+
+    if (is_learn)
+      all.scorer->learn(ec, index-1+base);
+    else
+      all.scorer->predict(ec, index-1+base);
+    ec.ld = ld;
+
+    return ec.final_prediction;
+  }
 }
 
 #endif

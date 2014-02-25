@@ -17,6 +17,7 @@ license as described in the file LICENSE.
 #include "vw.h"
 
 using namespace std;
+using namespace LEARNER;
 
 typedef pair<float, v_array<char> > scored_example;
 
@@ -66,46 +67,48 @@ namespace TOPK {
     }    
   }
 
-  void output_example(vw& all, topk* d, example* ec)
+  void output_example(vw& all, topk& d, example& ec)
   {
-    label_data* ld = (label_data*)ec->ld;
+    label_data* ld = (label_data*)ec.ld;
     
     all.sd->weighted_examples += ld->weight;
-    all.sd->sum_loss += ec->loss;
-    all.sd->sum_loss_since_last_dump += ec->loss;
-    all.sd->total_features += ec->num_features;
+    all.sd->sum_loss += ec.loss;
+    all.sd->sum_loss_since_last_dump += ec.loss;
+    all.sd->total_features += ec.num_features;
     all.sd->example_number++;
  
     if (example_is_newline(ec))
       for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-        TOPK::print_result(*sink, d->pr_queue);
+        TOPK::print_result(*sink, d.pr_queue);
        
     print_update(all, ec);
   }
 
-  void learn(void* data, learner& base, example* ec)
+  template <bool is_learn>
+  void predict_or_learn(topk& d, learner& base, example& ec)
   {
     if (example_is_newline(ec)) return;//do not predict newline
 
-    topk* d = (topk*)data;
+    if (is_learn)
+      base.learn(ec);
+    else
+      base.predict(ec);
 
-    base.learn(ec);
+    if(d.pr_queue.size() < d.B)      
+      d.pr_queue.push(make_pair(ec.final_prediction, ec.tag));
 
-    if(d->pr_queue.size() < d->B)      
-      d->pr_queue.push(make_pair(ec->final_prediction, ec->tag));
-
-    else if(d->pr_queue.top().first < ec->final_prediction)
+    else if(d.pr_queue.top().first < ec.final_prediction)
     {
-      d->pr_queue.pop();
-      d->pr_queue.push(make_pair(ec->final_prediction, ec->tag));
+      d.pr_queue.pop();
+      d.pr_queue.push(make_pair(ec.final_prediction, ec.tag));
     }
 
   }
 
-  void finish_example(vw& all, void* d, example* ec)
+  void finish_example(vw& all, topk& d, example& ec)
   {
-    TOPK::output_example(all, (topk*)d, ec);
-    VW::finish_example(all, ec);
+    TOPK::output_example(all, d, ec);
+    VW::finish_example(all, &ec);
   }
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
@@ -116,8 +119,10 @@ namespace TOPK {
 
     data->all = &all;
 
-    learner* l = new learner(data, learn, all.l);
-    l->set_finish_example(finish_example);
+    learner* l = new learner(data, all.l);
+    l->set_learn<topk, predict_or_learn<true> >();
+    l->set_predict<topk, predict_or_learn<false> >();
+    l->set_finish_example<topk,finish_example>();
 
     return l;
   }

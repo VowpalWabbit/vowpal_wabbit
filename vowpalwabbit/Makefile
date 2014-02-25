@@ -1,4 +1,3 @@
-COMPILER = g++
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
@@ -21,15 +20,15 @@ vw_OBJECTS = $(patsubst %.cc,%.o,$(vw_SOURCES))
 vw_DEPS = $(patsubst %.cc,%.d,$(vw_SOURCES))
 
 %.d:	%.cc config.h
-	gcc -MM $< > $@
+	$(CXX) -MM -I$(BOOST_INCLUDE) $< > $@
 
 -include $(vw_DEPS)
 
 %.o:	 %.cc  %.h
-	$(COMPILER) $(FLAGS) -c $< -o $@
+	$(CXX) $(FLAGS) -c $< -o $@
 
 %.o:	 %.cc
-	$(COMPILER) $(FLAGS) -c $< -o $@
+	$(CXX) $(FLAGS) -c $< -o $@
 
 liballreduce.a:	allreduce.o
 	ar rcs $@ $<
@@ -38,10 +37,10 @@ libvw.a: $(filter-out vw.o,$(vw_OBJECTS))
 	ar rcs $@ $+
 
 vw: main.o libvw.a liballreduce.a
-	$(COMPILER) $(FLAGS) -L$(BOOST_LIBRARY) -L. -o $@ $< -l vw -l allreduce $(LIBS)
+	$(CXX) $(FLAGS) -L$(BOOST_LIBRARY) -L. -o $@ $< -l vw -l allreduce $(LIBS)
 
 active_interactor: active_interactor.cc
-	$(COMPILER) $(FLAGS) -o $@ $+
+	$(CXX) $(FLAGS) -o $@ $+
 
 install: $(BINARIES)
 	cp $(BINARIES) /usr/local/bin; cd cluster; $(MAKE) install
