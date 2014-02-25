@@ -931,7 +931,7 @@ namespace VW {
     
     vw* all = parse_args(argc, argv);
     
-    initialize_examples(*all);
+    initialize_parser_datastructures(*all);
 
     for(int i = 0; i < argc; i++)
       free(argv[i]);
