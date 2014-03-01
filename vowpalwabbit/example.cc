@@ -203,7 +203,3 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_label(dst, src, label_size, copy_label);
 }
 }
-
-
-
-

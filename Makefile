@@ -1,10 +1,10 @@
 CXX = $(shell which clang++)
 ifneq ($(CXX),)
-  $(warning Using clang: "$(CXX)")
+  #$(warning Using clang: "$(CXX)")
   ARCH = -D__extern_always_inline=inline
 else
   CXX = g++
-  $(warning Using g++)
+  #$(warning Using g++)
   ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 endif
 
@@ -48,7 +48,7 @@ FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG -I 
 # for profiling
 #FLAGS = $(ARCH) $(WARN_FLAGS) -O3 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg #-DVW_LDA_NO_SSE
 
-# for valgrind
+# for valgrind / gdb debugging
 #FLAGS = $(ARCH) $(WARN_FLAGS) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'

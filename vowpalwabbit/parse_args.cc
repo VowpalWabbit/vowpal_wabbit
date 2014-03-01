@@ -492,10 +492,6 @@ vw* parse_args(int argc, char *argv[])
       compile_gram(all->skip_strings, all->skips, (char*)"skips", all->quiet);
     }
 
-  if (vm.count("affix")) {
-    parse_affix_argument(*all, vm["affix"].as<string>());
-  }
-
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
     for (size_t id=0; id<spelling_ns.size(); id++)
@@ -629,7 +625,7 @@ vw* parse_args(int argc, char *argv[])
   for (size_t i = 0; i < 256; i++)
     all->ignore[i] = false;
   all->ignore_some = false;
-
+  
   if (vm.count("ignore"))
     {
       all->ignore_some = true;
@@ -955,6 +951,20 @@ vw* parse_args(int argc, char *argv[])
 
       all->l = CBIFY::setup(*all, to_pass_further, vm, vm_file);
     }
+
+  
+  if (vm_file.count("affix") && vm.count("affix")) {
+    cerr << "should not specify --affix when loading a model trained with affix features (they're turned on by default)" << endl;
+    throw exception();
+  }
+  if (vm_file.count("affix"))
+    parse_affix_argument(*all, vm_file["affix"].as<string>());
+  if (vm.count("affix")) {
+    parse_affix_argument(*all, vm["affix"].as<string>());
+    stringstream ss;
+    ss << " --affix " << vm["affix"].as<string>();
+    all->options_from_file.append(ss.str());
+  }
 
   if (vm.count("searn") || vm_file.count("searn") ) {
     if (!got_cs && !got_cb) {

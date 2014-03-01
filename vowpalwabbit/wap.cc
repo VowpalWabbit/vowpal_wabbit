@@ -124,7 +124,7 @@ namespace WAP {
     else
       return 0;
   }
-  v_array<float_wclass> vs;
+  v_array<float_wclass> vs;  // TODO: fix this since it's not re-entrant!
 
   void train(vw& all, wap& w, learner& base, example& ec)
   {

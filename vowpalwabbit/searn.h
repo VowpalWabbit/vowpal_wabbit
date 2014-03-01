@@ -2,7 +2,7 @@
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
- */
+*/
 #ifndef SEARN_H
 #define SEARN_H
 
@@ -55,6 +55,18 @@ namespace Searn {
   };
   
   struct searn_task;
+
+  struct beam_hyp {
+    size_t t;           // the value of srn.t here
+    size_t action_taken;// which action was this (i.e., how did we get here from parent?)
+    float  incr_cost;   // how much did this recent action cost
+    v_array<snapshot_item> snapshot;  // some information so we can restore the snapshot
+    beam_hyp* parent;   // our parent hypothesis
+    size_t num_actions; // how many actions are available now
+    float*action_costs; // cost of each action
+    bool   filled_in_prediction;   // has this been filled in properly by predict?
+    bool   filled_in_snapshot;     // has this been filled in properly by snapshot?
+  };
 
   struct searn {
     // functions that you will call
@@ -114,6 +126,10 @@ namespace Searn {
     history_info hinfo;   // default history info for auto-history
     string *neighbor_features_string;
     v_array<int32_t> neighbor_features; // ugly encoding of neighbor feature requirements
+
+    beam_hyp * cur_beam_hyp;
+    v_array<snapshot_item> beam_restore_to_end;
+    v_array<uint32_t> beam_final_action_sequence;
     
     bool should_produce_string;
     stringstream *pred_string;
@@ -140,6 +156,7 @@ namespace Searn {
     uint32_t current_policy;      // what policy are we training right now?
     float gamma;                  // for dagger
     float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
+    size_t beam_size;
     
     size_t num_features;
     uint32_t total_number_of_policies;
