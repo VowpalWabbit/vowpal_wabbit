@@ -24,7 +24,9 @@ namespace SequenceTask {
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
       OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      clog << "task: asking for prediction @ " << i << endl;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
+      clog << "task: got prediction @ " << i << " = " << prediction << endl;
 
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
