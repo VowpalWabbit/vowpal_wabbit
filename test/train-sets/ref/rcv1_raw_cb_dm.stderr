@@ -1,0 +1,35 @@
+Generating 2-grams for all namespaces.
+Generating 4-skips for all namespaces.
+Num weight bits = 24
+learning rate = 0.125
+initial_t = 0
+power_t = 0.5
+using no cache
+Reading datafile = train-sets/rcv1_raw_cb_small.vw
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+*estimate* *estimate*                                                avglossreg last pred  last correct
+2.000000   2.000000          1      1.0    known        1      280   1.000000   0.000000   1.000000  
+1.000000   0.000000          2      2.0    known        2      598   0.500397   0.028172   0.000000  
+0.500000   0.000000          4      4.0    known        2      784   0.250681   0.023444   0.000000  
+0.250000   0.000000          8      8.0    known        2      850   0.247231   0.064843   0.000000  
+0.620405   0.990810         16     16.0    known        2      118   0.473622   0.062276   1.000000  
+0.320962   0.021519         32     32.0    known        1      166   0.391822   0.037413   0.000000  
+0.334178   0.347393         64     64.0    known        1      340   0.400066   0.213940   1.000000  
+0.288107   0.242037        128    128.0    known        1      610   0.326892   0.213630   1.000000  
+0.234279   0.180451        256    256.0    known        2      712   0.306077   0.517904   0.000000  
+0.204043   0.173807        512    512.0    known        1      424   0.275817   0.297387   1.000000  
+0.148564   0.093086       1024   1024.0    known        1      574   0.231517   0.755463   1.000000  
+0.120964   0.093363       2048   2048.0    known        2      166   0.190603   0.217041   0.000000  
+0.111878   0.102792       4096   4096.0    known        1      664   0.156218   0.363329   0.000000  
+0.096249   0.080620       8192   8192.0    known        2      598   0.125803   0.838514   0.000000  
+
+finished run
+number of examples per pass = 10000
+passes used = 1
+weighted example sum = 10000
+weighted label sum = 0
+average loss = 0.0934776
+best constant = 0
+total feature number = 4476364

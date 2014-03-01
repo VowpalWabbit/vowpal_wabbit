@@ -24,9 +24,9 @@ namespace SequenceTask {
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
       OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
-      clog << "task: asking for prediction @ " << i << endl;
+      //clog << "task: asking for prediction @ " << i << endl;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
-      clog << "task: got prediction @ " << i << " = " << prediction << endl;
+      //clog << "task: got prediction @ " << i << " = " << prediction << endl;
 
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
@@ -128,12 +128,12 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
 
         // now, offset it appropriately for the action id
-        update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * a);
+        update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * (uint32_t)a);
         
         // need to tell searn what the action id is, so that it can add history features correctly!
         CSOAA::label* lab = (CSOAA::label*)data->ldf_examples[a].ld;
         lab->costs[0].x = 0.;
-        lab->costs[0].weight_index = a+1;
+        lab->costs[0].weight_index = (uint32_t)a+1;
         lab->costs[0].partial_prediction = 0.;
         lab->costs[0].wap_value = 0.;
       }

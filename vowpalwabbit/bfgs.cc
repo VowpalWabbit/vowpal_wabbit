@@ -150,59 +150,59 @@ void reset_state(vw& all, bfgs& b, bool zero)
 // w[2] = step direction
 // w[3] = preconditioner
 
-bool test_example(example* ec)
+bool test_example(example& ec)
 {
-  return ((label_data*)ec->ld)->label == FLT_MAX;
+  return ((label_data*)ec.ld)->label == FLT_MAX;
 }
 
-  float bfgs_predict(vw& all, example* &ec)
+  float bfgs_predict(vw& all, example& ec)
   {
-    ec->partial_prediction = GD::inline_predict<float, vec_add>(all,ec, 0.);
-    return GD::finalize_prediction(all, ec->partial_prediction);
+    ec.partial_prediction = GD::inline_predict<vec_add>(all,ec);
+    return GD::finalize_prediction(all, ec.partial_prediction);
   }
 
-inline void add_grad(vw& all, float& d, float f, uint32_t u)
+inline void add_grad(float& d, float f, float& fw)
 {
-  all.reg.weight_vector[u & all.reg.weight_mask] += d * f;
+  fw += d * f;
 }
 
-float predict_and_gradient(vw& all, example* &ec)
+float predict_and_gradient(vw& all, example &ec)
 {
   float fp = bfgs_predict(all, ec);
 
-  label_data* ld = (label_data*)ec->ld;
+  label_data* ld = (label_data*)ec.ld;
   all.set_minmax(all.sd, ld->label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp,ld->label)*ld->weight;
   
-  ec->ft_offset += W_GT;
+  ec.ft_offset += W_GT;
   GD::foreach_feature<float,add_grad>(all, ec, loss_grad);
-  ec->ft_offset -= W_GT;
+  ec.ft_offset -= W_GT;
   
   return fp;
 }
 
-inline void add_precond(vw& all, float& d, float f, uint32_t u)
+inline void add_precond(float& d, float f, float& fw)
 {
-  all.reg.weight_vector[u & all.reg.weight_mask] += d * f * f;
+  fw += d * f * f;
 }
 
-void update_preconditioner(vw& all, example* &ec)
+void update_preconditioner(vw& all, example& ec)
 {
-  label_data* ld = (label_data*)ec->ld;
-  float curvature = all.loss->second_derivative(all.sd, ec->final_prediction,ld->label) * ld->weight;
+  label_data* ld = (label_data*)ec.ld;
+  float curvature = all.loss->second_derivative(all.sd, ec.final_prediction,ld->label) * ld->weight;
   
-  ec->ft_offset += W_COND;
+  ec.ft_offset += W_COND;
   GD::foreach_feature<float,add_precond>(all, ec, curvature);  
-  ec->ft_offset -= W_COND;
+  ec.ft_offset -= W_COND;
 }  
 
 
-float dot_with_direction(vw& all, example* &ec)
+float dot_with_direction(vw& all, example& ec)
 {
-  ec->ft_offset+= W_DIR;  
-  float ret = GD::inline_predict<float, vec_add>(all, ec, 0.);
-  ec->ft_offset-= W_DIR;
+  ec.ft_offset+= W_DIR;  
+  float ret = GD::inline_predict<vec_add>(all, ec);
+  ec.ft_offset-= W_DIR;
 
   return ret;
 }
@@ -726,10 +726,9 @@ int process_pass(vw& all, bfgs& b) {
     return status;
 }
 
-void process_example(vw& all, bfgs& b, example *ec)
+void process_example(vw& all, bfgs& b, example& ec)
  {
-
-  label_data* ld = (label_data*)ec->ld;
+  label_data* ld = (label_data*)ec.ld;
   if (b.first_pass)
     b.importance_weight_sum += ld->weight;
   
@@ -738,10 +737,10 @@ void process_example(vw& all, bfgs& b, example *ec)
   /********************************************************************/ 
   if (b.gradient_pass)
     {
-      ec->final_prediction = predict_and_gradient(all, ec);//w[0] & w[1]
-      ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
-      b.loss_sum += ec->loss;
-      b.predictions.push_back(ec->final_prediction);
+      ec.final_prediction = predict_and_gradient(all, ec);//w[0] & w[1]
+      ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld->label) * ld->weight;
+      b.loss_sum += ec.loss;
+      b.predictions.push_back(ec.final_prediction);
     }
   /********************************************************************/
   /* II) CURVATURE CALCULATION ****************************************/
@@ -751,9 +750,9 @@ void process_example(vw& all, bfgs& b, example *ec)
       float d_dot_x = dot_with_direction(all, ec);//w[2]
       if (b.example_number >= b.predictions.size())//Make things safe in case example source is strange.
 	b.example_number = b.predictions.size()-1;
-      ec->final_prediction = b.predictions[b.example_number];
-      ec->partial_prediction = b.predictions[b.example_number];
-      ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;	      
+      ec.final_prediction = b.predictions[b.example_number];
+      ec.partial_prediction = b.predictions[b.example_number];
+      ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld->label) * ld->weight;	      
       float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++],ld->label);
       b.curvature += d_dot_x*d_dot_x*sd*ld->weight;
     }
@@ -762,46 +761,46 @@ void process_example(vw& all, bfgs& b, example *ec)
     update_preconditioner(all, ec);//w[3]
  }
 
-void end_pass(bfgs* b)
+void end_pass(bfgs& b)
 {
-  vw* all = b->all;
+  vw* all = b.all;
   
-  if (b->current_pass <= b->final_pass) 
+  if (b.current_pass <= b.final_pass) 
   {
-       if(b->current_pass < b->final_pass)
+       if(b.current_pass < b.final_pass)
        { 
-          int status = process_pass(*all, *b);
+          int status = process_pass(*all, b);
 
           //reaching the max number of passes regardless of convergence 
-          if(b->final_pass == b->current_pass)
+          if(b.final_pass == b.current_pass)
           {
              cerr<<"Maximum number of passes reached. ";
-             if(!b->output_regularizer)
+             if(!b.output_regularizer)
                 cerr<<"If you want to optimize further, increase the number of passes\n";
-             if(b->output_regularizer)
+             if(b.output_regularizer)
              { 
                cerr<<"\nRegular model file has been created. "; 
                cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
-               b->output_regularizer = false;
+               b.output_regularizer = false;
              }
 
           } 
           
           //attain convergence before reaching max iterations 
-	   if (status != LEARN_OK && b->final_pass > b->current_pass) {
-	      b->final_pass = b->current_pass;
+	   if (status != LEARN_OK && b.final_pass > b.current_pass) {
+	      b.final_pass = b.current_pass;
 	   }
 
-	   if (b->output_regularizer && b->final_pass == b->current_pass) {
+	   if (b.output_regularizer && b.final_pass == b.current_pass) {
 	     zero_preconditioner(*all);
-	     b->preconditioner_pass = true;
+	     b.preconditioner_pass = true;
 	   }
 
 	   if(!all->holdout_set_off)
 	   {
-	     if(summarize_holdout_set(*all, b->no_win_counter))
+	     if(summarize_holdout_set(*all, b.no_win_counter))
                finalize_regressor(*all, all->final_regressor_name); 
-	     if(b->early_stop_thres == b->no_win_counter)
+	     if(b.early_stop_thres == b.no_win_counter)
 	     { 
                all-> early_terminate = true;
                cerr<<"Early termination reached w.r.t. holdout set error";
@@ -810,47 +809,47 @@ void end_pass(bfgs* b)
 	   } 
            
        }else{//reaching convergence in the previous pass
-        if(b->output_regularizer) 
-           preconditioner_to_regularizer(*all, *b, (*all).l2_lambda);
-        b->current_pass ++;
+        if(b.output_regularizer) 
+           preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
+        b.current_pass ++;
       }   
                 
   }
 }
 
 // placeholder
-void predict(bfgs* b, learner& base, example* ec)
+void predict(bfgs& b, learner& base, example& ec)
 {
-  vw* all = b->all;
-  ec->final_prediction = bfgs_predict(*all,ec);
+  vw* all = b.all;
+  ec.final_prediction = bfgs_predict(*all,ec);
 }
 
-void learn(bfgs* b, learner& base, example* ec)
+void learn(bfgs& b, learner& base, example& ec)
 {
-  vw* all = b->all;
-  assert(ec->in_use);
+  vw* all = b.all;
+  assert(ec.in_use);
 
-  if (b->current_pass <= b->final_pass)
+  if (b.current_pass <= b.final_pass)
     {
-      if(ec->test_only)
+      if(ec.test_only)
 	{ 
-	  label_data* ld = (label_data*)ec->ld;
+	  label_data* ld = (label_data*)ec.ld;
 	  predict(b, base, ec);
-	  ec->loss = all->loss->getLoss(all->sd, ec->final_prediction, ld->label) * ld->weight;
+	  ec.loss = all->loss->getLoss(all->sd, ec.final_prediction, ld->label) * ld->weight;
 	}
       else if (test_example(ec))
 	predict(b, base, ec);
       else
-	process_example(*all, *b, ec);
+	process_example(*all, b, ec);
     }
 }
 
-void finish(bfgs* b)
+void finish(bfgs& b)
 {
-  b->predictions.delete_v();
-  free(b->mem);
-  free(b->rho);
-  free(b->alpha);
+  b.predictions.delete_v();
+  free(b.mem);
+  free(b.rho);
+  free(b.alpha);
 }
 
 void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool text)
@@ -902,9 +901,9 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 }
 
 
-void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
+void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 {
-  vw* all = b->all;
+  vw* all = b.all;
 
   uint32_t length = 1 << all->num_bits;
 
@@ -913,8 +912,8 @@ void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
       initialize_regressor(*all);
       if (all->per_feature_regularizer_input != "")
 	{
-	  b->regularizers = (weight *)calloc(2*length, sizeof(weight));
-	  if (b->regularizers == NULL)
+	  b.regularizers = (weight *)calloc(2*length, sizeof(weight));
+	  if (b.regularizers == NULL)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
 	      throw exception();
@@ -922,18 +921,18 @@ void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
 	}
       int m = all->m;
       
-      b->mem_stride = (m==0) ? CG_EXTRA : 2*m;
-      b->mem = (float*) malloc(sizeof(float)*all->length()*(b->mem_stride));
-      b->rho = (double*) malloc(sizeof(double)*m);
-      b->alpha = (double*) malloc(sizeof(double)*m);
+      b.mem_stride = (m==0) ? CG_EXTRA : 2*m;
+      b.mem = (float*) malloc(sizeof(float)*all->length()*(b.mem_stride));
+      b.rho = (double*) malloc(sizeof(double)*m);
+      b.alpha = (double*) malloc(sizeof(double)*m);
       
       if (!all->quiet) 
 	{
-	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b->mem_stride)+sizeof(weight)*all->reg.stride) >> 20);
+	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+sizeof(weight)*all->reg.stride) >> 20);
 	}
       
-      b->net_time = 0.0;
-      ftime(&b->t_start_global);
+      b.net_time = 0.0;
+      ftime(&b.t_start_global);
       
       if (!all->quiet)
 	{
@@ -943,14 +942,14 @@ void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
 	  cerr.precision(5);
 	}
       
-      if (b->regularizers != NULL)
+      if (b.regularizers != NULL)
 	all->l2_lambda = 1; // To make sure we are adding the regularization
-      b->output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
-      reset_state(*all, *b, false);
+      b.output_regularizer =  (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
+      reset_state(*all, b, false);
     }
 
-  //bool reg_vector = b->output_regularizer || all->per_feature_regularizer_input.length() > 0;
-  bool reg_vector = (b->output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
+  //bool reg_vector = b.output_regularizer || all->per_feature_regularizer_input.length() > 0;
+  bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
     
   if (model_file.files.size() > 0)
     {
@@ -961,15 +960,15 @@ void save_load(bfgs* b, io_buf& model_file, bool read, bool text)
 				buff, text_len, text);
       
       if (reg_vector)
-	save_load_regularizer(*all, *b, model_file, read, text);
+	save_load_regularizer(*all, b, model_file, read, text);
       else
 	GD::save_load_regressor(*all, model_file, read, text);
     }
 }
 
-  void init_driver(bfgs* b)
+  void init_driver(bfgs& b)
   {
-    b->backstep_on = true;
+    b.backstep_on = true;
   }
 
 learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)

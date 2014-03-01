@@ -30,144 +30,20 @@ namespace GDMF {
     vw* all;
   };
 
-void mf_print_audit_features(vw& all, example* ec, size_t offset);
-
-float mf_predict(vw& all, example* ec)
-{
-  float prediction = all.p->lp.get_initial(ec->ld);
-
-  // clear stored predictions
-  ec->topic_predictions.erase();
-
-  predict_data<float> linear_prediction = {0,0};
-  // linear terms
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    GD::foreach_feature<predict_data<float>,vec_add>(all, linear_prediction, ec->atomics[*i].begin, ec->atomics[*i].end);
-
-  // store constant + linear prediction
-  // note: constant is now automatically added
-  ec->topic_predictions.push_back(linear_prediction.prediction);
-  
-  prediction += linear_prediction.prediction;
-
-  // interaction terms
-  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    {
-      if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
-	{
-	  for (uint32_t k = 1; k <= all.rank; k++)
-	    {
-	      // x_l * l^k
-	      // l^k is from index+1 to index+all.rank
-	      //float x_dot_l = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
-              predict_data<float> x_dot_l = {0, 0};
-	      GD::foreach_feature<predict_data<float>,vec_add>(all, x_dot_l, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k);
-	      // x_r * r^k
-	      // r^k is from index+all.rank+1 to index+2*all.rank
-	      //float x_dot_r = sd_offset_add(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
-              predict_data<float> x_dot_r = {0, 0};
-	      GD::foreach_feature<predict_data<float>,vec_add>(all, x_dot_r, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank);
-
-	      prediction += x_dot_l.prediction * x_dot_r.prediction;
-
-	      // store prediction from interaction terms
-	      ec->topic_predictions.push_back(x_dot_l.prediction);
-	      ec->topic_predictions.push_back(x_dot_r.prediction);
-	    }
-	}
-    }
-
-  if (all.triples.begin() != all.triples.end()) {
-    cerr << "cannot use triples in matrix factorization" << endl;
-    throw exception();
-  }
-
-  // ec->topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ... 
-
-  ec->partial_prediction = prediction;
-
-  // finalize prediction and compute loss
-  label_data* ld = (label_data*)ec->ld;
-  all.set_minmax(all.sd, ld->label);
-
-  ec->final_prediction = GD::finalize_prediction(all, ec->partial_prediction);
-
-  if (ld->label != FLT_MAX)
-    {
-      ec->loss = all.loss->getLoss(all.sd, ec->final_prediction, ld->label) * ld->weight;
-    }
-
-  if (all.audit)
-    mf_print_audit_features(all, ec, 0);
-
-  return ec->final_prediction;
-}
-
-
-void mf_train(vw& all, example* &ec, float update)
-{
-      weight* weights = all.reg.weight_vector;
-      size_t mask = all.reg.weight_mask;
-      label_data* ld = (label_data*)ec->ld;
-
-      // use final prediction to get update size
-      // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-      float eta_t = all.eta/pow(ec->example_t,all.power_t) / 3.f * ld->weight;
-      update = all.loss->getUpdate(ec->final_prediction, ld->label, eta_t, 1.); //ec->total_sum_feat_sq);
-
-      float regularization = eta_t * all.l2_lambda;
-
-      // linear update
-      for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-	sd_offset_update(weights, mask, ec->atomics[*i].begin, ec->atomics[*i].end, 0, update, regularization);
-      
-      // quadratic update
-      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-	{
-	  if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
-	    {
-
-	      // update l^k weights
-	      for (size_t k = 1; k <= all.rank; k++)
-		{
-		  // r^k \cdot x_r
-		  float r_dot_x = ec->topic_predictions[2*k];
-		  // l^k <- l^k + update * (r^k \cdot x_r) * x_l
-		  sd_offset_update(weights, mask, ec->atomics[(int)(*i)[0]].begin, ec->atomics[(int)(*i)[0]].end, k, update*r_dot_x, regularization);
-		}
-
-	      // update r^k weights
-	      for (size_t k = 1; k <= all.rank; k++)
-		{
-		  // l^k \cdot x_l
-		  float l_dot_x = ec->topic_predictions[2*k-1];
-		  // r^k <- r^k + update * (l^k \cdot x_l) * x_r
-		  sd_offset_update(weights, mask, ec->atomics[(int)(*i)[1]].begin, ec->atomics[(int)(*i)[1]].end, k+all.rank, update*l_dot_x, regularization);
-		}
-
-	    }
-	}
-  if (all.triples.begin() != all.triples.end()) {
-    cerr << "cannot use triples in matrix factorization" << endl;
-    throw exception();
-  }
-
-}  
-
-void mf_print_offset_features(vw& all, example* &ec, size_t offset)
+void mf_print_offset_features(vw& all, example& ec, size_t offset)
 {
   weight* weights = all.reg.weight_vector;
   size_t mask = all.reg.weight_mask;
-  for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++) 
-    if (ec->audit_features[*i].begin != ec->audit_features[*i].end)
-      for (audit_data *f = ec->audit_features[*i].begin; f != ec->audit_features[*i].end; f++)
+  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+    if (ec.audit_features[*i].begin != ec.audit_features[*i].end)
+      for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
 	{
 	  cout << '\t' << f->space << '^' << f->feature << ':' << f->weight_index <<"(" << ((f->weight_index + offset) & mask)  << ")" << ':' << f->x;
 
 	  cout << ':' << weights[(f->weight_index + offset) & mask];
 	}
     else
-      for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
+      for (feature *f = ec.atomics[*i].begin; f != ec.atomics[*i].end; f++)
 	{
 	  size_t index = (f->weight_index + offset) & all.reg.weight_mask;
 	  
@@ -176,13 +52,13 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
 	  cout  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
-    if (ec->atomics[(int)(*i)[0]].size() > 0 && ec->atomics[(int)(*i)[1]].size() > 0)
+    if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
       {
 	/* print out nsk^feature:hash:value:weight:nsk^feature^:hash:value:weight:prod_weights */
 	for (size_t k = 1; k <= all.rank; k++)
 	  {
-	    for (audit_data* f = ec->audit_features[(int)(*i)[0]].begin; f!= ec->audit_features[(int)(*i)[0]].end; f++)
-	      for (audit_data* f2 = ec->audit_features[(int)(*i)[1]].begin; f2!= ec->audit_features[(int)(*i)[1]].end; f2++)
+	    for (audit_data* f = ec.audit_features[(int)(*i)[0]].begin; f!= ec.audit_features[(int)(*i)[0]].end; f++)
+	      for (audit_data* f2 = ec.audit_features[(int)(*i)[1]].begin; f2!= ec.audit_features[(int)(*i)[1]].end; f2++)
 		{
 		  cout << '\t' << f->space << k << '^' << f->feature << ':' << ((f->weight_index+k)&mask) 
 		       <<"(" << ((f->weight_index + offset +k) & mask)  << ")" << ':' << f->x;
@@ -203,15 +79,136 @@ void mf_print_offset_features(vw& all, example* &ec, size_t offset)
   cout << endl;
 }
 
-void mf_print_audit_features(vw& all, example* ec, size_t offset)
+void mf_print_audit_features(vw& all, example& ec, size_t offset)
 {
-  print_result(all.stdout_fileno,ec->final_prediction,-1,ec->tag);
+  print_result(all.stdout_fileno,ec.final_prediction,-1,ec.tag);
   mf_print_offset_features(all, ec, offset);
 }
 
-  void save_load(gdmf* d, io_buf& model_file, bool read, bool text)
+float mf_predict(vw& all, example& ec)
 {
-  vw* all = d->all;
+  label_data* ld = (label_data*)ec.ld;
+  float prediction = ld->initial;
+
+  // clear stored predictions
+  ec.topic_predictions.erase();
+
+  float linear_prediction = 0.;
+  // linear terms
+  for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+    GD::foreach_feature<float, vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, linear_prediction);
+
+  // store constant + linear prediction
+  // note: constant is now automatically added
+  ec.topic_predictions.push_back(linear_prediction);
+  
+  prediction += linear_prediction;
+
+  // interaction terms
+  for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+    {
+      if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
+	{
+	  for (uint32_t k = 1; k <= all.rank; k++)
+	    {
+	      // x_l * l^k
+	      // l^k is from index+1 to index+all.rank
+	      //float x_dot_l = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, k);
+              float x_dot_l = 0.;
+	      GD::foreach_feature<float, vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, x_dot_l, k);
+	      // x_r * r^k
+	      // r^k is from index+all.rank+1 to index+2*all.rank
+	      //float x_dot_r = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, k+all.rank);
+              float x_dot_r = 0.;
+	      GD::foreach_feature<float,vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, x_dot_r, k+all.rank);
+
+	      prediction += x_dot_l * x_dot_r;
+
+	      // store prediction from interaction terms
+	      ec.topic_predictions.push_back(x_dot_l);
+	      ec.topic_predictions.push_back(x_dot_r);
+	    }
+	}
+    }
+
+  if (all.triples.begin() != all.triples.end()) {
+    cerr << "cannot use triples in matrix factorization" << endl;
+    throw exception();
+  }
+
+  // ec.topic_predictions has linear, x_dot_l_1, x_dot_r_1, x_dot_l_2, x_dot_r_2, ... 
+
+  ec.partial_prediction = prediction;
+
+  all.set_minmax(all.sd, ld->label);
+
+  ec.final_prediction = GD::finalize_prediction(all, ec.partial_prediction);
+
+  if (ld->label != FLT_MAX)
+    {
+      ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld->label) * ld->weight;
+    }
+
+  if (all.audit)
+    mf_print_audit_features(all, ec, 0);
+
+  return ec.final_prediction;
+}
+
+
+void mf_train(vw& all, example& ec, float update)
+{
+      weight* weights = all.reg.weight_vector;
+      size_t mask = all.reg.weight_mask;
+      label_data* ld = (label_data*)ec.ld;
+
+      // use final prediction to get update size
+      // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
+      float eta_t = all.eta/pow(ec.example_t,all.power_t) / 3.f * ld->weight;
+      update = all.loss->getUpdate(ec.final_prediction, ld->label, eta_t, 1.); //ec.total_sum_feat_sq);
+
+      float regularization = eta_t * all.l2_lambda;
+
+      // linear update
+      for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+	sd_offset_update(weights, mask, ec.atomics[*i].begin, ec.atomics[*i].end, 0, update, regularization);
+      
+      // quadratic update
+      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
+	{
+	  if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
+	    {
+
+	      // update l^k weights
+	      for (size_t k = 1; k <= all.rank; k++)
+		{
+		  // r^k \cdot x_r
+		  float r_dot_x = ec.topic_predictions[2*k];
+		  // l^k <- l^k + update * (r^k \cdot x_r) * x_l
+		  sd_offset_update(weights, mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, k, update*r_dot_x, regularization);
+		}
+
+	      // update r^k weights
+	      for (size_t k = 1; k <= all.rank; k++)
+		{
+		  // l^k \cdot x_l
+		  float l_dot_x = ec.topic_predictions[2*k-1];
+		  // r^k <- r^k + update * (l^k \cdot x_l) * x_r
+		  sd_offset_update(weights, mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, k+all.rank, update*l_dot_x, regularization);
+		}
+
+	    }
+	}
+  if (all.triples.begin() != all.triples.end()) {
+    cerr << "cannot use triples in matrix factorization" << endl;
+    throw exception();
+  }
+
+}  
+
+  void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+{
+  vw* all = d.all;
   uint32_t length = 1 << all->num_bits;
   uint32_t stride = all->reg.stride;
 
@@ -263,9 +260,9 @@ void mf_print_audit_features(vw& all, example* ec, size_t offset)
     }
 }
 
-void end_pass(gdmf* d)
+void end_pass(gdmf& d)
 {
-  vw* all = d->all;
+  vw* all = d.all;
 
    all->eta *= all->eta_decay_rate;
    if (all->save_per_pass)
@@ -274,20 +271,20 @@ void end_pass(gdmf* d)
    all->current_pass++;
 }
 
-  void predict(gdmf* d, learner& base, example* ec)
+  void predict(gdmf& d, learner& base, example& ec)
   {
-    vw* all = d->all;
+    vw* all = d.all;
  
     mf_predict(*all,ec);
   }
 
-  void learn(gdmf* d, learner& base, example* ec)
+  void learn(gdmf& d, learner& base, example& ec)
   {
-    vw* all = d->all;
+    vw* all = d.all;
  
     predict(d, base, ec);
-    if (all->training && ((label_data*)(ec->ld))->label != FLT_MAX)
-      mf_train(*all, ec, ec->eta_round);
+    if (all->training && ((label_data*)(ec.ld))->label != FLT_MAX)
+      mf_train(*all, ec, ec.eta_round);
   }
 
   learner* setup(vw& all)
