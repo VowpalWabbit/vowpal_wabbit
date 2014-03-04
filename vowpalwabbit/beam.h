@@ -131,7 +131,7 @@ class beam {
     }
     if (cost > worst_cost) {
       worst_cost  = cost;
-      prune_if_gt = max(1., best_cost) * pruning_coefficient;
+      prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
     }
     
     return true;
@@ -182,7 +182,7 @@ class beam {
 
     best_cost = A[0].cost;
     worst_cost = A[count-1].cost;
-    prune_if_gt = max(1., best_cost) * pruning_coefficient;
+    prune_if_gt = max(1.f, best_cost) * pruning_coefficient;
     best_cost_data = A[0].data;
   }
 

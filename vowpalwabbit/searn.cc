@@ -686,7 +686,7 @@ namespace Searn {
     } else if (srn->state == BEAM_ADVANCE) {
       if (srn->t + 1 == srn->cur_beam_hyp->t) {
         srn->t++;
-        uint32_t this_a = srn->cur_beam_hyp->action_taken;
+        uint32_t this_a = (uint32_t)srn->cur_beam_hyp->action_taken;
         if (!srn->is_ldf)
           this_a = ((CSOAA::label*)srn->valid_labels)->costs[this_a].weight_index;
         uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
@@ -1277,7 +1277,7 @@ namespace Searn {
       assert(hyp);
       assert(hyp->parent);
       for (; hyp->parent != NULL; hyp = hyp->parent)
-        srn.beam_final_action_sequence.push_back(hyp->action_taken);
+        srn.beam_final_action_sequence.push_back((uint32_t)hyp->action_taken);
 
       //UNDOMEclog << "========== FINAL ROLLOUT ==" <<endl;
       reset_searn_structure(srn);
@@ -1572,7 +1572,7 @@ void print_update(vw& all, searn& srn)
 
             if (all->audit) {
               for (audit_data*f = you->audit_features[old_ns].begin; f != you->audit_features[old_ns].end; ++f) {
-                uint32_t wi = ((*f).weight_index * neighbor_constant + enc_offset) & srn.all->reg.weight_mask;
+                uint32_t wi = (uint32_t)((*f).weight_index * neighbor_constant + enc_offset) & srn.all->reg.weight_mask;
                 audit_data f2 = { NULL, NULL, wi, f->x, true };
 
                 f2.space = (char*) calloc_or_die(neighbor_feature_space.length()+1, sizeof(char));
