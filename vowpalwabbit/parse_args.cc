@@ -39,6 +39,7 @@ license as described in the file LICENSE.
 #include "lrq.h"
 #include "autolink.h"
 #include "txm_o.h"
+#include "txm.h"
 #include "rtree.h"
 
 using namespace std;
@@ -235,6 +236,7 @@ vw* parse_args(int argc, char *argv[])
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("txm_o", po::value<size_t>(), "Use online multiclass partition tree learning with <k> labels")
+    ("txm", po::value<size_t>(), "Use online multiclass partition tree learning with <k> labels")
     ("rtree", po::value<size_t>(), "Use online multiclass random tree learning with <k> labels")
     ;
 
@@ -761,6 +763,12 @@ vw* parse_args(int argc, char *argv[])
 	loss_function = "quantile"; 
 	loss_parameter = 0.5;
   }
+  
+  if(vm.count("txm") || vm_file.count("txm")) 
+  {
+	loss_function = "quantile"; 
+	loss_parameter = 0.5;
+  }
 
   if(vm.count("rtree") || vm_file.count("rtree"))
   {
@@ -880,6 +888,13 @@ vw* parse_args(int argc, char *argv[])
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }	
 
     all->l = TXM_O::setup(*all, to_pass_further, vm, vm_file);
+    got_mc = true;
+  }
+  
+  if(vm.count("txm") || vm_file.count("txm") ){
+    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }	
+
+    all->l = TXM::setup(*all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
 
