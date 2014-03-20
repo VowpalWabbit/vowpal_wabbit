@@ -170,10 +170,13 @@ void copy_example_data(bool audit, example* dst, example* src)
   //std::cerr << "copy_example_data dst = " << dst << std::endl;
   dst->final_prediction = src->final_prediction;
 
+  clog << "copy tag" << endl;
   copy_array(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 
+  clog << "copy indices" << endl;
   copy_array(dst->indices, src->indices);
+  clog << "copy atomics" << endl;
   for (size_t i=0; i<256; i++)
     copy_array(dst->atomics[i], src->atomics[i]);
   dst->ft_offset = src->ft_offset;

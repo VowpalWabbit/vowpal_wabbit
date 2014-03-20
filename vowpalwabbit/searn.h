@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include <time.h>
 
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
+#define MAX_BRANCHING_FACTOR 65536
 
 typedef uint32_t* history;
 
@@ -53,7 +54,7 @@ namespace Searn {
     size_t data_size;  // sizeof(data_ptr)
     size_t pred_step;  // srn->t when snapshot is made
   };
-  
+
   struct searn_task;
 
   struct beam_hyp {
@@ -144,7 +145,8 @@ namespace Searn {
     float  learn_loss;     // total loss for this "varied" example
 
     v_array<float> learn_losses;  // losses for all (valid) actions at learn_t
-    example* learn_example_copy;  // copy of example(s) at learn_t
+    example learn_example_copy[MAX_BRANCHING_FACTOR];   // copy of example(s) at learn_t
+    example*learn_example_ref;    // reference to example at learn_t, when there's not example munging
     size_t learn_example_len;     // number of example(s) at learn_t
 
     float  beta;                  // interpolation rate

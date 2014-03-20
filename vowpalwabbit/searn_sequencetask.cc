@@ -14,7 +14,7 @@ namespace SequenceTask {
     srn.task_data            = NULL;  // we don't need any of our own data
     srn.auto_history         = true;  // automatically add history features to our examples, please
     srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
-    srn.examples_dont_change = true;  // we don't do any internal example munging
+    srn.examples_dont_change = false;  // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here

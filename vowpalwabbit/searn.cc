@@ -632,22 +632,20 @@ namespace Searn {
         size_t a = srn->train_action_ids[srn->t - 1];
         return (uint32_t)a;
       } else if (srn->t == srn->learn_t) {
-        if (srn->learn_example_copy == NULL) {
+        if (srn->learn_example_len == 0) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
-          srn->learn_example_len = num_to_copy;
           // TODO: move the alloc_examples outside
-          if (srn->examples_dont_change)
-            srn->learn_example_copy = ecs;
-          else {
-            if (srn->is_ldf) {
-              srn->learn_example_copy = alloc_examples(sizeof(CSOAA::label), num_to_copy);
-              for (size_t n=0; n<num_to_copy; n++)
-                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(CSOAA::label), CSOAA::copy_label);
-            } else {
-              srn->learn_example_copy = alloc_examples(sizeof(OAA::mc_label), num_to_copy);
-              for (size_t n=0; n<num_to_copy; n++)
-                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(OAA::mc_label), NULL);
-            }
+          if (srn->examples_dont_change) {
+            srn->learn_example_ref = ecs;
+            srn->learn_example_len = 1;
+          } else {
+            size_t label_size = srn->is_ldf ? sizeof(CSOAA::label) : sizeof(OAA::mc_label);
+            void (*label_copy_fn)(void*&,void*) = srn->is_ldf ? CSOAA::copy_label : NULL;
+            assert(num_to_copy < MAX_BRANCHING_FACTOR);
+            clog << "copying " << num_to_copy << " items to learn_example_copy" << endl;
+            for (size_t n=0; n<num_to_copy; n++)
+              VW::copy_example_data(all.audit, srn->learn_example_copy+n, &ecs[n], label_size, label_copy_fn);
+            srn->learn_example_len = num_to_copy;
           }
           ///*UNDOME*/clog << "copying example to " << srn->learn_example_copy << endl;
         }
@@ -1113,6 +1111,7 @@ namespace Searn {
       void* old_label = ec[0].ld;
       ec[0].ld = labels;
       if (srn.auto_history) add_history_to_example(all, srn.hinfo, ec, srn.rollout_action.begin+srn.learn_t);
+      ec[0].in_use = true;
       base.learn(ec[0], srn.current_policy);
       if (srn.auto_history) remove_history_from_example(all, srn.hinfo, ec);
       ec[0].ld = old_label;
@@ -1126,6 +1125,7 @@ namespace Searn {
         if (srn.auto_history)
           add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t,
                                  ((CSOAA::label*)ec[a].ld)->costs[0].weight_index);
+        ec[a].in_use = true;
         base.learn(ec[a], srn.current_policy);
       }
       ///*UNDOME*/clog << "learn: generate empty example" << endl;
@@ -1153,8 +1153,6 @@ namespace Searn {
     srn.test_loss = 0.f;
     srn.train_loss = 0.f;
     srn.learn_loss = 0.f;
-    srn.learn_example_copy = NULL;
-    srn.learn_example_len  = 0;
     srn.num_features = 0;
     srn.train_action.erase();
     srn.train_action_ids.erase();
@@ -1443,19 +1441,19 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
           }
         }
 
-        if (srn.learn_example_copy != NULL) {
-          generate_training_example(all, srn, *srn.base_learner, srn.learn_example_copy, srn.learn_example_len, aset, srn.learn_losses);
+        if (srn.learn_example_len != 0) {
+          clog << "generate_training_example on " << srn.learn_example_len << " learn_example_copy items" << endl;
+          example * ptr = srn.examples_dont_change ? srn.learn_example_ref : srn.learn_example_copy;
+          generate_training_example(all, srn, *srn.base_learner, ptr, srn.learn_example_len, aset, srn.learn_losses);
 
           if (!srn.examples_dont_change) {
+            clog << "deleting labels for " << srn.learn_example_len << " learn_example_copy items" << endl;
             for (size_t n=0; n<srn.learn_example_len; n++) {
               ///*UNDOME*/clog << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &srn.learn_example_copy[n]);
-              if (srn.is_ldf) dealloc_example(CSOAA::delete_label, srn.learn_example_copy[n]);
-              else            dealloc_example(  OAA::delete_label, srn.learn_example_copy[n]);
+              if (srn.is_ldf) CSOAA::delete_label(srn.learn_example_copy[n].ld);
+              else              OAA::delete_label(srn.learn_example_copy[n].ld);
             }
-            free(srn.learn_example_copy);
           }
-          srn.learn_example_copy = NULL;
-          srn.learn_example_len  = 0;
         } else {
           cerr << "warning: searn did not generate an example for a given time-step" << endl;
         }
@@ -1877,6 +1875,14 @@ void print_update(vw& all, searn& srn)
         delete ((CB::label*)srn.train_labels[i]);
       }
     }
+
+    // destroy copied examples if we needed them
+    if (! srn.examples_dont_change) {
+      void (*delete_label)(void*) = srn.is_ldf ? CSOAA::delete_label : OAA::delete_label;
+      for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
+        dealloc_example(delete_label, srn.learn_example_copy[n]);
+    }
+
     
     if (srn.task->finish != NULL) {
       srn.task->finish(srn);
@@ -2192,6 +2198,13 @@ void print_update(vw& all, searn& srn)
       srn->hinfo.features = 0;
       srn->hinfo.bigrams = false;
       srn->hinfo.bigram_features = false;
+    }
+
+    // set up copied examples if we need them
+    if (! srn->examples_dont_change) {
+      size_t label_size = srn->is_ldf ? sizeof(CSOAA::label) : sizeof(OAA::mc_label);
+      for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
+        srn->learn_example_copy[n].ld = calloc(1, label_size);
     }
     
     if (!srn->allow_current_policy) // if we're not dagger
