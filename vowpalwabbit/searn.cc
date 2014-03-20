@@ -556,10 +556,10 @@ namespace Searn {
   }
 
   template<class T> void push_at(v_array<T>& v, T item, size_t pos) {
-    if (v.size() >= pos)
+    if (v.size() > pos)
       v.begin[pos] = item;
     else {
-      if (v.end_array >= v.begin + pos) {
+      if (v.end_array > v.begin + pos) {
         // there's enough memory, just not enough filler
         v.begin[pos] = item;
         v.end = v.begin + pos + 1;
@@ -735,7 +735,7 @@ namespace Searn {
         uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t);
         clog << "rollout_action.push_back(" << a_name << ", @ " << (srn->t) << ")" << endl;
-        clog << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) clog << " " << srn->rollout_action.begin[i]; clog << " ], len=" << srn->rollout_action.size() << endl;
+        //clog << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) clog << " " << srn->rollout_action.begin[i]; clog << " ], len=" << srn->rollout_action.size() << endl;
         return this_a;
       }
     } else if (srn->state == BEAM_PLAYOUT) {
@@ -1016,12 +1016,7 @@ namespace Searn {
         /*UNDOME*/clog << "BEAM_INIT snapshot rollout_action srn.t=" << srn->t << endl;
         searn_snapshot_data(all, srn, index, 0, srn->rollout_action.begin + srn->t, history_size, true);
       } else if (srn->state == BEAM_ADVANCE) {
-        uint32_t t = srn->t; // srn->cur_beam_hyp->t - 1;
-        if (srn->t < srn->cur_beam_hyp->t)
-          t = srn->cur_beam_hyp->t - 1;
-        else
-          t = srn->t;
-        
+        uint32_t t = (srn->t < srn->cur_beam_hyp->t) ? srn->cur_beam_hyp->t - 1 : srn->t; 
         /*UNDOME*/clog << "BEAM_ADVANCE snapshot rollout_action srn.t=" << srn->t << " cur_beam_hyp.t=" << srn->cur_beam_hyp->t << endl;
         clog << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) clog << " " << srn->rollout_action.begin[i]; clog << " ], len=" << srn->rollout_action.size() << endl;
         if (srn->rollout_action.size() <= /*srn->*/t + srn->hinfo.length)
@@ -1030,7 +1025,7 @@ namespace Searn {
         searn_snapshot_data(all, srn, index, 0, srn->rollout_action.begin + /*srn->*/t, history_size, true);
         if (srn->rollout_action.end < srn->rollout_action.begin + t)
           srn->rollout_action.end = srn->rollout_action.begin + t;
-        clog << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) clog << " " << srn->rollout_action.begin[i]; clog << " ], len=" << srn->rollout_action.size() << endl;
+        //clog << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) clog << " " << srn->rollout_action.begin[i]; clog << " ], len=" << srn->rollout_action.size() << endl;
       }
     }
 
@@ -1896,10 +1891,6 @@ void print_update(vw& all, searn& srn)
 
     srn.beam_restore_to_end.delete_v();
     srn.beam_final_action_sequence.delete_v();
-
-    if (srn.task->finish != NULL) {
-      srn.task->finish(srn);
-    }
   }
 
   void ensure_param(float &v, float lo, float hi, float def, const char* string) {
