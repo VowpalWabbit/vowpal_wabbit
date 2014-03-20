@@ -21,12 +21,14 @@ namespace SequenceTask {
 
   void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
     for (size_t i=0; i<len; i++) { //save state for optimization
+      clog << "task: calling snapshot i=" << i << endl;
       srn.snapshot(i, 1, &i, sizeof(i), true);
+      clog << "task: return from snapshot i=" << i << endl;
 
       OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
-      //clog << "task: asking for prediction @ " << i << endl;
+      clog << "task: asking for prediction @ " << i << endl;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
-      //clog << "task: got prediction @ " << i << " = " << prediction << endl;
+      clog << "task: got prediction @ " << i << " = " << prediction << endl;
 
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
