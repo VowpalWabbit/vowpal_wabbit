@@ -15,7 +15,7 @@ license as described in the file LICENSE.
 #include <time.h>
 
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
-#define MAX_BRANCHING_FACTOR 65536
+#define MAX_BRANCHING_FACTOR 128
 
 typedef uint32_t* history;
 
