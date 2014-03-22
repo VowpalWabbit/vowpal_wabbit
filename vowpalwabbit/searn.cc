@@ -369,7 +369,7 @@ namespace Searn {
     return 0;
   }
 
-  uint32_t single_prediction_LDF(vw& all, learner& base, example* ecs, size_t num_ec, size_t pol, bool allow_exploration)
+  uint32_t single_prediction_LDF(vw& all, learner& base, example* ecs, size_t num_ec, CSOAA::label* valid_labels, size_t pol, bool allow_exploration)
   {
     assert(pol >= 0);
     searn *srn = (searn*)all.searnstr;
@@ -379,6 +379,7 @@ namespace Searn {
     // TODO: modify this to handle contextual bandit base learner with ldf
     float best_prediction = 0;
     uint32_t best_action = 0;
+    assert(num_ec == valid_labels->costs.size());
     for (uint32_t action=0; action<num_ec; action++) {
       clog << "predict: action=" << action << endl;
       void* old_label = ecs[action].ld;
@@ -392,6 +393,7 @@ namespace Searn {
       base.predict(*(srn->empty_example));
       ecs[action].ld = old_label;
       clog << "predict: partial_prediction[" << action << "] = " << ecs[action].partial_prediction << endl;
+      valid_labels->costs[action].partial_prediction = ecs[action].partial_prediction;
 
       if ((action == 0) || 
           (ecs[action].partial_prediction < best_prediction)) {
@@ -514,11 +516,11 @@ namespace Searn {
         if (srn.auto_history)
           for (size_t a=0; a<num_ec; a++) {
             clog << "weight_index = " << ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index << ":" << ((CSOAA::label*)ecs[a].ld)->costs[0].x << endl;
-            add_history_to_example(all, srn.hinfo, &ecs[a], srn.rollout_action.begin+srn.t, a);
+            add_history_to_example(all, srn.hinfo, &ecs[a], srn.rollout_action.begin+srn.t, a * history_constant);
             //((CSOAA::label*)ecs[a].ld)->costs[0].weight_index);
           }
                                    //((OAA::mc_label*)ecs[a].ld)->label);
-        size_t action = single_prediction_LDF(all, base, ecs, num_ec, pol, allow_exploration);
+        size_t action = single_prediction_LDF(all, base, ecs, num_ec, (CSOAA::label*)valid_labels, pol, allow_exploration);
         if (srn.auto_history)
           for (size_t a=0; a<num_ec; a++)
             remove_history_from_example(all, srn.hinfo, &ecs[a]);
@@ -1133,7 +1135,7 @@ namespace Searn {
         clog << "learn t = " << srn.learn_t << " cost = " << ((CSOAA::label*)ec[a].ld)->costs[0].x << " action = " << ((CSOAA::label*)ec[a].ld)->costs[0].weight_index << endl;
         //clog << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
         if (srn.auto_history)
-          add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t, a);
+          add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t, a * history_constant);
         //((CSOAA::label*)ec[a].ld)->costs[0].weight_index);
         ec[a].in_use = true;
         base.learn(ec[a], srn.current_policy);
@@ -1215,10 +1217,13 @@ namespace Searn {
       if (srn.rollout_all_actions) { // TODO: handle CB
         v_array<CSOAA::wclass>* costs = &((CSOAA::label*)srn.valid_labels)->costs;
         assert(hyp->num_actions == costs->size());
+        clog << "action_costs =";
         hyp->action_costs = (float*)calloc(hyp->num_actions, sizeof(float));
         for (size_t i=0; i<hyp->num_actions; i++) {
           hyp->action_costs[i] = (costs->begin+i)->partial_prediction;
+          clog << " " << hyp->action_costs[i];
         }
+        clog << endl;
       }
       
       // collect the final snapshot
@@ -1267,8 +1272,10 @@ namespace Searn {
                 next->action_costs[i] = (costs->begin+i)->partial_prediction;
             }
 
+            clog << "next_beam->insert(a=" << next->action_taken << ", cost=" << (be->cost + next->incr_cost) << ")" << endl;
             added = next_beam->insert(next, be->cost + next->incr_cost, DEFAULT_HASH);
           } else {  // we reached the end of structured_predict
+            clog << "final_beam->insert(a=" << next->action_taken << ", cost=" << (be->cost + next->incr_cost) << ")" << endl;
             added = final_beam->insert(next, be->cost + next->incr_cost, DEFAULT_HASH);
           }
           /*UNDOME*/clog << "expansion added=" << added << ", filled_in_snapshot=" << next->filled_in_snapshot << endl;
@@ -2233,14 +2240,6 @@ void print_update(vw& all, searn& srn)
       size_t label_size = srn->is_ldf ? sizeof(CSOAA::label) : sizeof(OAA::mc_label);
       for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
         srn->learn_example_copy[n].ld = calloc(1, label_size);
-      /*
-      for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
-        if (srn->is_ldf) {
-          CSOAA::label *lab = new CSOAA::label();
-          srn->learn_example_copy[n].ld = lab;
-        }
-        else
-        srn->learn_example_copy[n].ld = new OAA::mc_label(); */
     }
     
     if (!srn->allow_current_policy) // if we're not dagger
