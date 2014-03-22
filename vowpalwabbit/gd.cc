@@ -321,7 +321,8 @@ void print_features(vw& all, example& ec)
 	}
 
       sort(features.begin(),features.end());
-      if(all.audit){ 
+      if(all.audit){
+        cout << '\t' << "offset=" << ec.ft_offset;
         for (vector<string_value>::iterator sv = features.begin(); sv!= features.end(); sv++)
 	  cout << '\t' << (*sv).s;
         cout << endl;

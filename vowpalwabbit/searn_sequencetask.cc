@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include "searn_sequencetask.h"
 #include "oaa.h"
 #include "example.h"
+#include "gd.h"
 
 namespace SequenceTask {
   using namespace Searn;
@@ -108,7 +109,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     srn.task_data            = data;
     srn.auto_history         = true;  // automatically add history features to our examples, please
     srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
-    srn.examples_dont_change = true;  // we don't do internal example munging -- this is okay because we explicitly copy all examples!
+    srn.examples_dont_change = false; // we do internal example munging -- we use the same memory space (data->ldf_examples) for everything
     srn.is_ldf               = true;  // we generate ldf examples
   }
 
@@ -124,10 +125,14 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     task_data *data = (task_data*)srn.task_data;
     
     for (size_t i=0; i<len; i++) { //save state for optimization
+      clog << "task: calling snapshot i=" << i << endl;
       srn.snapshot(i, 1, &i, sizeof(i), true);
+      clog << "task: return from snapshot i=" << i << endl;
 
       for (size_t a=0; a<data->num_actions; a++) {
         VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
+        cout << "before index munging for a=" << a << endl;
+        GD::print_audit_features(*srn.all, data->ldf_examples[a]);
 
         // now, offset it appropriately for the action id
         update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * (uint32_t)a);
@@ -139,17 +144,24 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].partial_prediction = 0.;
         lab->costs[0].wap_value = 0.;
       }
-
+      for (size_t a=0; a<data->num_actions; a++) {
+        cout << "after index munging for a=" << a << endl;
+        GD::print_audit_features(*srn.all, data->ldf_examples[a]);
+      }
+      
       OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      clog << "task: asking for prediction @ " << i << endl;
       size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, y->label - 1);
-      size_t prediction = pred_id + 1;  // or ldf_examples[pred_it]->ld.costs[0].weight_index
+      size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
+      clog << "task: got prediction @ " << i << " = " << prediction << endl;
       
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
     }
   }
 
-  void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount) { // this is sort of bogus -- you'd never actually do this!
+  // this is totally bogus for the example -- you'd never actually do this!
+  void update_example_indicies(bool audit, example* ec, uint32_t mult_amount, uint32_t plus_amount) {
     for (unsigned char* i = ec->indices.begin; i != ec->indices.end; i++)
       for (feature* f = ec->atomics[*i].begin; f != ec->atomics[*i].end; ++f)
         f->weight_index = (f->weight_index * mult_amount) + plus_amount;
