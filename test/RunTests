@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 #
 # Test suite for vw:
 #
@@ -8,6 +8,7 @@
 # See __DATA__ below for how to add more tests
 #
 require 5.014;
+use warnings;
 
 use Getopt::Std;
 use vars qw($opt_d $opt_D $opt_c $opt_e $opt_f
