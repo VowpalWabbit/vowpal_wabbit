@@ -111,7 +111,6 @@ namespace Searn {
     void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
     
-    v_array<uint32_t> predict_ystar;
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
@@ -159,6 +158,7 @@ namespace Searn {
     float gamma;                  // for dagger
     float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
     size_t beam_size;
+    size_t kbest;
     
     size_t num_features;
     uint32_t total_number_of_policies;
