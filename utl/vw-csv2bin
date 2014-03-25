@@ -76,7 +76,7 @@ for line in infile:
   for col in data:
     colstr = str(colnum)
     #col = re.sub(r'\s','',col) # remove all whitespace
-    if re.search('^[0-9.]*$', col): # If the feature is a number, then give it a label
+    if re.search('^(\-)?[0-9.]*$', col) or re.search('^(\-)?[0-9.]*e(\+|-)[0-9.]*$', col): # If the feature is a number, then give it a label
       outline = outline + "f" + colstr + ":" + col + " "
     else: # If the feature is a string, then let vw handle it directly
       outline = outline + col + ' '
