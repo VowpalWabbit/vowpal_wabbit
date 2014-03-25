@@ -1,5 +1,5 @@
 #include <float.h>
-#include "oaa.h"
+#include "multiclass.h"
 #include "vw.h"
 #include "csoaa.h"
 #include "cb.h"
@@ -52,7 +52,7 @@ namespace CBIFY {
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
-    OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* ld = (MULTICLASS::mc_label*)ec.ld;
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
@@ -81,7 +81,7 @@ namespace CBIFY {
   template <bool is_learn>
   void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
-    OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* ld = (MULTICLASS::mc_label*)ec.ld;
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
@@ -117,7 +117,7 @@ namespace CBIFY {
   void predict_or_learn_bag(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use CB to find current predictions.
-    OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* ld = (MULTICLASS::mc_label*)ec.ld;
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
 
@@ -206,7 +206,7 @@ namespace CBIFY {
   void predict_or_learn_cover(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
-    OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* ld = (MULTICLASS::mc_label*)ec.ld;
     data.counter++;
 
     data.count.erase();
@@ -294,7 +294,7 @@ namespace CBIFY {
 
   void finish_example(vw& all, cbify&, example& ec)
   {
-    OAA::output_example(all, ec);
+    MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);
   }
 
@@ -340,7 +340,7 @@ namespace CBIFY {
       all.options_from_file.append(ss.str());
     }
 
-    all.p->lp = OAA::mc_label_parser;
+    all.p->lp = MULTICLASS::mc_label_parser;
     learner* l;
     if (vm.count("cover"))
       {

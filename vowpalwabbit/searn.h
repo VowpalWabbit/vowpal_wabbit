@@ -8,7 +8,6 @@ license as described in the file LICENSE.
 
 #include <stdio.h>
 #include "parse_args.h"
-#include "oaa.h"
 #include "parse_primitives.h"
 #include "v_hashmap.h"
 #include "csoaa.h"

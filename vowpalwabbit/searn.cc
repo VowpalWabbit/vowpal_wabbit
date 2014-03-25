@@ -15,7 +15,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "parser.h"
 #include "constant.h"
-#include "oaa.h"
+#include "multiclass.h"
 #include "csoaa.h"
 #include "cb.h"
 #include "v_hashmap.h"
@@ -626,9 +626,9 @@ namespace Searn {
               for (size_t n=0; n<num_to_copy; n++)
                 VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(CSOAA::label), CSOAA::copy_label);
             } else {
-              srn->learn_example_copy = alloc_examples(sizeof(OAA::mc_label), num_to_copy);
+              srn->learn_example_copy = alloc_examples(sizeof(MULTICLASS::mc_label), num_to_copy);
               for (size_t n=0; n<num_to_copy; n++)
-                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(OAA::mc_label), NULL);
+                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(MULTICLASS::mc_label), NULL);
             }
           }
           ////UNDOMEclog << "copying example to " << srn->learn_example_copy << endl;
@@ -1418,7 +1418,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
             for (size_t n=0; n<srn.learn_example_len; n++) {
               ////UNDOMEclog << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &srn.learn_example_copy[n]);
               if (srn.is_ldf) dealloc_example(CSOAA::delete_label, srn.learn_example_copy[n]);
-              else            dealloc_example(  OAA::delete_label, srn.learn_example_copy[n]);
+              else            dealloc_example(  MULTICLASS::delete_label, srn.learn_example_copy[n]);
             }
             free(srn.learn_example_copy);
           }
@@ -2145,7 +2145,7 @@ void print_update(vw& all, searn& srn)
     }
 
     // default to OAA labels unless the task wants to override this!
-    all.p->lp = OAA::mc_label_parser; 
+    all.p->lp = MULTICLASS::mc_label_parser; 
     srn->task->initialize(*srn, srn->A, opts, vm, vm_file);
 
     // set up auto-history if they want it

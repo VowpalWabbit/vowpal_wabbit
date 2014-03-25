@@ -9,7 +9,7 @@ license as described in the file LICENSE.
 #include "cb.h"
 #include "simple_label.h"
 #include "example.h"
-#include "oaa.h"
+#include "multiclass.h"
 #include "parse_example.h"
 #include "parse_primitives.h"
 #include "vw.h"
