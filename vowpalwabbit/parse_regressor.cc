@@ -150,7 +150,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 	  if (read)
 	    {
 	      string temp(triple,3);
-	      all.triples.push_back(temp);
+	      if (count(all.triples.begin(), all.triples.end(), temp) == 0)
+		all.triples.push_back(temp);
 	    }
 	}
       bin_text_read_write_fixed(model_file,buff,0,
