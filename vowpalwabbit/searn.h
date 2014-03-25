@@ -17,10 +17,9 @@ license as described in the file LICENSE.
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
 #define MAX_BRANCHING_FACTOR 128
 
-typedef uint32_t* history;
+namespace Searn {
+  typedef uint32_t* history;
 
-namespace SearnUtil
-{
   struct history_info {
     size_t length;          // was history_length, must be >= features
     bool   bigrams;         // was sequence_bigrams
@@ -35,17 +34,8 @@ namespace SearnUtil
 
   int  random_policy(uint64_t, float, bool, int, bool, bool);
 
-  void add_policy_offset(vw&, example*, uint32_t, uint32_t);
-  void remove_policy_offset(vw&, example*, uint32_t, uint32_t);
- 
   void add_history_to_example(vw&, history_info&, example*, history, size_t);
   void remove_history_from_example(vw&, history_info&, example*);
-
-  size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>*ystar, history_info &hinfo, size_t*history);
-}      
-
-namespace Searn {
-  using namespace SearnUtil;
 
   struct snapshot_item {
     size_t index;

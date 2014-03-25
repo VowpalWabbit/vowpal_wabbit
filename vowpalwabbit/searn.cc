@@ -33,7 +33,7 @@ bool isfinite(float x)
 
 using namespace LEARNER;
 
-namespace SearnUtil
+namespace Searn
 {
   using namespace std;
 
@@ -270,10 +270,8 @@ namespace SearnUtil
     }
     ec->indices.decr();
   }
-}
 
 
-namespace Searn {
   const char INIT_TEST    = 0;
   const char INIT_TRAIN   = 1;
   const char LEARN        = 2;
@@ -291,7 +289,7 @@ namespace Searn {
   int choose_policy(searn& srn, bool allow_current, bool allow_optimal)
   {
     uint32_t seed = /* srn.read_example_last_id * 2147483 + */ (uint32_t)(srn.t * 2147483647);
-    return SearnUtil::random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, srn.rollout_all_actions);
+    return random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, srn.rollout_all_actions);
   }
 
   size_t get_all_labels(void*dst, searn& srn, size_t num_ec, v_array<uint32_t> *yallowed)
@@ -2375,3 +2373,15 @@ void print_update(vw& all, searn& srn)
   
   
  */
+
+
+/* TODO LIST:
+
+ * fix --searn_history 0
+ * make tests
+ * write documentation
+ * pull munge/unmunge out of structured_predict
+ * make searn tasks classes
+ * hide stuff in the searn class (HOW?)
+
+*/
