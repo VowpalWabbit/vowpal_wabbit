@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include <stdio.h>
 #include <float.h>
+#include <sstream>
 
 #include "cache.h"
 #include "io_buf.h"
@@ -565,8 +566,11 @@ vw* parse_args(int argc, char *argv[])
         else if((*i)[0]==':'&&(*i)[1]!=':'){
           newpairs.reserve(newpairs.size() + valid_ns_size);
           for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j))
-              newpairs.push_back(string(&j)+(*i)[1]);
+            if(valid_ns(j)){
+	      stringstream ss;
+	      ss << j << (*i)[1];
+	      newpairs.push_back(ss.str());
+	    }
           }
         }
         //-q ::
@@ -575,8 +579,11 @@ vw* parse_args(int argc, char *argv[])
           for (char j=printable_start; j<=printable_end; j++){
             if(valid_ns(j)){
               for (char k=printable_start; k<=printable_end; k++){
-                if(valid_ns(k))
-                  newpairs.push_back(string(&j)+k);
+                if(valid_ns(k)){
+		  stringstream ss;
+                  ss << j << k;
+                  newpairs.push_back(ss.str());
+		}
               }
             }
           }
