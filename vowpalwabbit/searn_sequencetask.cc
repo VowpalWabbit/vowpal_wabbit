@@ -37,6 +37,60 @@ namespace SequenceTask {
   }
 }
 
+namespace OneOfManyTask {
+  using namespace Searn;
+
+  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+    srn.task_data            = NULL;  // we don't need any of our own data
+    srn.auto_history         = true;  // automatically add history features to our examples, please
+    srn.auto_hamming_loss    = false; // we will compute our own loss
+    srn.examples_dont_change = true;  // we don't do any internal example munging
+  }
+
+  void finish(searn& srn) { }    // if we had task data, we'd want to free it here
+
+  void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
+    bool predicted_true_yet = false;
+    bool output_has_true    = false;
+    for (size_t i=0; i<len; i++) {
+      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
+      if (y->label == 2) output_has_true = true;
+    }
+        
+    for (size_t i=0; i<len; i++) {
+      // labels should be 1 or 2, and our output is MAX of all predicted values
+      srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
+      srn.snapshot(i, 2, &predicted_true_yet, sizeof(predicted_true_yet), false);  // not used for prediction
+
+      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
+      size_t prediction = srn.predict(ec[i], NULL, y->label);
+
+      float cur_loss = 0.;
+      if (prediction == 2) { // we predicted "yes"
+        if (!predicted_true_yet) { // and this is the first time
+          if (output_has_true) cur_loss = 0.;
+          else cur_loss = 1.;
+        } else { // we've predicted true earlier
+          if (output_has_true) cur_loss = 0.;
+          else cur_loss = 1.; // TODO: should this be zero? i.e., should we not get repeatedly punished?
+        }
+        predicted_true_yet = true;
+      } else { // we predicted "no"
+        if (!predicted_true_yet) { // no predictions of true at all
+          if ((i == len-1) && output_has_true)
+            cur_loss = 1.;  // totally hosed
+        } else { // we've predicted true in the past
+          // no loss
+        }
+      }
+      srn.declare_loss(1, cur_loss);
+
+      if (output_ss) (*output_ss) << prediction << ' ';
+      if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
+    }
+  }
+}
+
 namespace SequenceSpanTask {
   enum EncodingType { BIO, BILOU };
 // the format for the BIO encoding is:

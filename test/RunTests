@@ -945,3 +945,7 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf-bilou.test-beam20.stderr
     train-sets/ref/sequencespan_data.nonldf-bilou.test-beam20.predict
 
+# Test 59: silly test for "oneofmany" task
+{VW} -d train-sets/oneofmany_data -k -c --passes 20 --searn_as_dagger 1e-8 --searn_task oneofmany --searn 2 --holdout_off
+    train-sets/ref/oneofmany_data.stderr
+

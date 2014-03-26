@@ -504,8 +504,8 @@ namespace Searn
         return choose_random<uint32_t>(*ystar);
     } else {        // learned policy
       if (!srn.is_ldf) {  // single example
-        cdbg << "add_history_to_example: srn.t=" << srn.t << " h=" << srn.rollout_action.begin[srn.t] << endl;
-        cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.t+1; i++) cdbg << " " << srn.rollout_action.begin[i]; cdbg << " ], len=" << srn.rollout_action.size() << endl;
+        if (srn.hinfo.length>0) {cdbg << "add_history_to_example: srn.t=" << srn.t << " h=" << srn.rollout_action.begin[srn.t] << endl;}
+        if (srn.hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.t+1; i++) cdbg << " " << srn.rollout_action.begin[i]; cdbg << " ], len=" << srn.rollout_action.size() << endl;}
         if (srn.auto_history) add_history_to_example(all, srn.hinfo, ecs, srn.rollout_action.begin+srn.t);
         size_t action = single_prediction_notLDF(all, srn, base, *ecs, valid_labels, pol, allow_exploration);
         if (srn.auto_history) remove_history_from_example(all, srn.hinfo, ecs);
@@ -701,7 +701,7 @@ namespace Searn
       uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
       if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t);
       cdbg << "A rollout_action.push_back(" << a_name << ", @ " << (srn->t) << ")" << endl;
-      cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;
+      if (srn->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;}
       return this_a;
     } else if (srn->state == BEAM_ADVANCE) {
       if (srn->t + 1 == srn->cur_beam_hyp->t) {
@@ -715,7 +715,7 @@ namespace Searn
         uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t);
         cdbg << "B rollout_action.push_back(" << a_name << ", @ " << (srn->t) << ")" << endl;
-        cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;
+        if (srn->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;}
         return this_a;
       } else if (srn->t == srn->cur_beam_hyp->t) {
         int pol = choose_policy(*srn, true, false);
@@ -729,7 +729,7 @@ namespace Searn
         uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t);
         cdbg << "C rollout_action.push_back(" << a_name << ", @ " << (srn->t) << ")" << endl;
-        cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;
+        if (srn->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;}
         return this_a;
       } else {
         // TODO: check if auto history, etc., is necessary here
@@ -883,7 +883,7 @@ namespace Searn
   {
     if (! srn->do_snapshot) return;
 
-    /*UNDOME*/cdbg << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(uint32_t*)data_ptr << ", t=" << srn->t << ", u4p=" << used_for_prediction << " }" << endl;
+    /*UNDOME*/cdbg << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(uint32_t*)data_ptr << ", sizeof_data=" << sizeof_data << ", t=" << srn->t << ", u4p=" << used_for_prediction << " }" << endl;
 
     if (srn->state == INIT_TEST) {
       return;
@@ -1002,6 +1002,7 @@ namespace Searn
   void searn_snapshot(vw& all, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
     searn* srn=(searn*)all.searnstr;
     assert(tag >= 1);
+    if (sizeof_data == 0) return;
 
     if (srn->auto_history && (srn->hinfo.length > 0) && (tag == 1)) { // first, take care of auto-history
       size_t history_size = sizeof(uint32_t) * srn->hinfo.length;
@@ -2222,31 +2223,32 @@ void print_update(vw& all, searn& srn)
 
     cdbg << "searn current_policy = " << srn->current_policy << " total_number_of_policies = " << srn->total_number_of_policies << endl;
     
+    searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));
     if (task_string.compare("sequence") == 0) {
-      searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));
       mytask->initialize = SequenceTask::initialize;
       mytask->finish = SequenceTask::finish;
       mytask->structured_predict = SequenceTask::structured_predict;
       all.p->emptylines_separate_examples = true;
-      srn->task = mytask;
     } else if (task_string.compare("sequencespan") == 0) {
-      searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));
       mytask->initialize = SequenceSpanTask::initialize;
       mytask->finish = SequenceSpanTask::finish;
       mytask->structured_predict = SequenceSpanTask::structured_predict;
       all.p->emptylines_separate_examples = true;
-      srn->task = mytask;
     } else if (task_string.compare("sequence_demoldf") == 0) {
-      searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));
       mytask->initialize = SequenceTask_DemoLDF::initialize;
       mytask->finish = SequenceTask_DemoLDF::finish;
       mytask->structured_predict = SequenceTask_DemoLDF::structured_predict;
       all.p->emptylines_separate_examples = true;
-      srn->task = mytask;
+    } else if (task_string.compare("oneofmany") == 0) {
+      mytask->initialize = OneOfManyTask::initialize;
+      mytask->finish = OneOfManyTask::finish;
+      mytask->structured_predict = OneOfManyTask::structured_predict;
+      all.p->emptylines_separate_examples = true;
     } else {
       cerr << "fail: unknown task for --searn_task: " << task_string << endl;
       throw exception();
     }
+    srn->task = mytask;
 
     // default to OAA labels unless the task wants to override this!
     all.p->lp = MULTICLASS::mc_label_parser; 
@@ -2378,7 +2380,6 @@ void print_update(vw& all, searn& srn)
 /* TODO LIST:
 
  * fix --searn_history 0
- * make tests
  * write documentation
  * pull munge/unmunge out of structured_predict
  * make searn tasks classes
