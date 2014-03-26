@@ -352,7 +352,7 @@ namespace LabelDict {
         ec.ld = &simple_label;
         base.predict(ec); // make a prediction
         costs[j].partial_prediction = ec.partial_prediction;
-        cdbg << "costs[" << j << "].partial_prediction = " << ec.partial_prediction << endl;
+        //cdbg << "costs[" << j << "].partial_prediction = " << ec.partial_prediction << endl;
 
         if (min_score && prediction && (ec.partial_prediction < *min_score)) {
           *min_score = ec.partial_prediction;
