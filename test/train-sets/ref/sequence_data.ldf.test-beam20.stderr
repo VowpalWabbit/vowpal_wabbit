@@ -1,0 +1,23 @@
+only testing
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+predictions = sequence_data.predict
+using no cache
+Reading datafile = train-sets/sequence_data
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
+loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
+3.000000   3.000000          1        1.000000   [5 4 3 2 1           ] [5 4 3 2 1           ]        0     0     0            1155               0
+
+finished run
+number of examples per pass = 1
+passes used = 1
+weighted example sum = 1
+weighted label sum = 0
+average loss = 3
+best constant = -inf
+total feature number = 0

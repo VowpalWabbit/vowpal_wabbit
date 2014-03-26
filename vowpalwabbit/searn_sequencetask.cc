@@ -252,8 +252,8 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
 
       for (size_t a=0; a<data->num_actions; a++) {
         VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
-        cout << "before index munging for a=" << a << endl;
-        GD::print_audit_features(*srn.all, data->ldf_examples[a]);
+        //cout << "before index munging for a=" << a << endl;
+        //GD::print_audit_features(*srn.all, data->ldf_examples[a]);
 
         // now, offset it appropriately for the action id
         update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * (uint32_t)a);
@@ -265,10 +265,10 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].partial_prediction = 0.;
         lab->costs[0].wap_value = 0.;
       }
-      for (size_t a=0; a<data->num_actions; a++) {
-        cout << "after index munging for a=" << a << endl;
-        GD::print_audit_features(*srn.all, data->ldf_examples[a]);
-      }
+      // for (size_t a=0; a<data->num_actions; a++) {
+      //   cout << "after index munging for a=" << a << endl;
+      //   GD::print_audit_features(*srn.all, data->ldf_examples[a]);
+      // }
       
       OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
       cdbg << "task: asking for prediction @ " << i << endl;
