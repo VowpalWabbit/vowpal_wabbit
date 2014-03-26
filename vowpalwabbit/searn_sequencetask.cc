@@ -4,7 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include "searn_sequencetask.h"
-#include "oaa.h"
+#include "multiclass.h"
 #include "example.h"
 #include "gd.h"
 
@@ -26,13 +26,13 @@ namespace SequenceTask {
       srn.snapshot(i, 1, &i, sizeof(i), true);
       cdbg << "task: return from snapshot i=" << i << endl;
 
-      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
       cdbg << "task: asking for prediction @ " << i << endl;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
       cdbg << "task: got prediction @ " << i << " = " << prediction << " (label=" << y->label << ")" << endl;
 
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
+      if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
     }
   }
 }
@@ -68,9 +68,9 @@ namespace SequenceSpanTask {
 
   void convert_bio_to_bilou(example**ec, size_t len) {
     for (size_t n=0; n<len; n++) {
-      OAA::mc_label* ylab = (OAA::mc_label*)ec[n]->ld;
+      MULTICLASS::mc_label* ylab = (MULTICLASS::mc_label*)ec[n]->ld;
       uint32_t y = ylab->label;
-      uint32_t nexty = (n == len-1) ? 0 : ((OAA::mc_label*)ec[n+1]->ld)->label;
+      uint32_t nexty = (n == len-1) ? 0 : ((MULTICLASS::mc_label*)ec[n+1]->ld)->label;
       if (y == 1) { // do nothing
       } else if (y % 2 == 0) { // this is a begin-X
         if (nexty != y + 1) // should be unit
@@ -183,7 +183,7 @@ namespace SequenceSpanTask {
           my_task_data->only_two_allowed[1] = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
         }
       }
-      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
       cdbg << "task: asking for prediction @ " << i << " (last_prediction=" << last_prediction << ")" << endl;
       cdbg << "y_allowed = " << y_allowed << " = ["; for (uint32_t*it=y_allowed->begin; it!=y_allowed->end; ++it) cdbg << " " << *it; cdbg << " ]" << endl;
       last_prediction = srn.predict(ec[i], y_allowed, y->label);
@@ -195,12 +195,12 @@ namespace SequenceSpanTask {
       //printed_truth = y->label;
       
       if (output_ss) (*output_ss) << printed_prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : printed_truth) << ' ';
+      if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : printed_truth) << ' ';
     }
 
     if (my_task_data->encoding == BILOU)  // TODO: move this out of here!
       for (size_t n=0; n<len; n++) {
-        OAA::mc_label* ylab = (OAA::mc_label*)ec[n]->ld;
+        MULTICLASS::mc_label* ylab = (MULTICLASS::mc_label*)ec[n]->ld;
         ylab->label = bilou_to_bio(ylab->label);
       }
   }
@@ -213,13 +213,13 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     example* ldf_examples;
     size_t   num_actions;
   };
-
+  
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    CSOAA::wclass default_wclass = { 0., 0, 0., 0. };
+    COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };
 
-    example* ldf_examples = alloc_examples(sizeof(CSOAA::label), num_actions);
+    example* ldf_examples = alloc_examples(sizeof(COST_SENSITIVE::label), num_actions);
     for (size_t a=0; a<num_actions; a++) {
-      CSOAA::label* lab = (CSOAA::label*)ldf_examples[a].ld;
+      COST_SENSITIVE::label* lab = (COST_SENSITIVE::label*)ldf_examples[a].ld;
       lab->costs.push_back(default_wclass);
     }
 
@@ -237,7 +237,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   void finish(searn& srn) {
     task_data *data = (task_data*)srn.task_data;
     for (size_t a=0; a<data->num_actions; a++)
-      dealloc_example(CSOAA::delete_label, data->ldf_examples[a]);
+      dealloc_example(COST_SENSITIVE::delete_label, data->ldf_examples[a]);
     free(data->ldf_examples);
     free(data);
   }
@@ -259,7 +259,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * (uint32_t)a);
         
         // need to tell searn what the action id is, so that it can add history features correctly!
-        CSOAA::label* lab = (CSOAA::label*)data->ldf_examples[a].ld;
+        COST_SENSITIVE::label* lab = (COST_SENSITIVE::label*)data->ldf_examples[a].ld;
         lab->costs[0].x = 0.;
         lab->costs[0].weight_index = (uint32_t)a+1;
         lab->costs[0].partial_prediction = 0.;
@@ -270,14 +270,15 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
       //   GD::print_audit_features(*srn.all, data->ldf_examples[a]);
       // }
       
-      OAA::mc_label* y = (OAA::mc_label*)ec[i]->ld;
+      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
       cdbg << "task: asking for prediction @ " << i << endl;
+
       size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, y->label - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       cdbg << "task: got prediction @ " << i << " = " << prediction << endl;
       
       if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (OAA::label_is_test(y) ? '?' : y->label) << ' ';
+      if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
     }
   }
 

@@ -24,6 +24,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/cache.h \
 	vowpalwabbit/cb.h \
 	vowpalwabbit/constant.h \
+	vowpalwabbit/cost_sensitive.h \
 	vowpalwabbit/csoaa.h \
 	vowpalwabbit/ect.h \
 	vowpalwabbit/gd.h \
@@ -35,6 +36,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/nn.h \
 	vowpalwabbit/noop.h \
 	vowpalwabbit/print.h \
+	vowpalwabbit/multiclass.h \
 	vowpalwabbit/oaa.h \
 	vowpalwabbit/parse_args.h \
 	vowpalwabbit/parse_example.h \

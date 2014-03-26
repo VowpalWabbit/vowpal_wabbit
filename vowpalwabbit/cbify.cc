@@ -1,7 +1,7 @@
 #include <float.h>
-#include "oaa.h"
+#include "multiclass.h"
 #include "vw.h"
-#include "csoaa.h"
+#include "cost_sensitive.h"
 #include "cb.h"
 #include "rand48.h"
 #include "bs.h"
@@ -24,8 +24,8 @@ namespace CBIFY {
     v_array<uint32_t> predictions;
     
     CB::label cb_label;
-    CSOAA::label cs_label;
-    CSOAA::label second_cs_label;
+    COST_SENSITIVE::label cs_label;
+    COST_SENSITIVE::label second_cs_label;
 
     learner* cs;
     vw* all;
@@ -52,7 +52,7 @@ namespace CBIFY {
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
-    OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* ld = (MULTICLASS::mc_label*)ec.ld;
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
@@ -81,7 +81,7 @@ namespace CBIFY {
   template <bool is_learn>
   void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
-    OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* ld = (MULTICLASS::mc_label*)ec.ld;
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
@@ -117,7 +117,7 @@ namespace CBIFY {
   void predict_or_learn_bag(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use CB to find current predictions.
-    OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* ld = (MULTICLASS::mc_label*)ec.ld;
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
 
@@ -185,9 +185,9 @@ namespace CBIFY {
       }
   }
 
-  void gen_cs_label(vw& all, CB::cb_class& known_cost, example& ec, CSOAA::label& cs_ld, uint32_t label)
+  void gen_cs_label(vw& all, CB::cb_class& known_cost, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
   {
-    CSOAA::wclass wc;
+    COST_SENSITIVE::wclass wc;
     
     //get cost prediction for this label
     wc.x = CB::get_cost_pred<false>(all, &known_cost, ec, label, all.sd->k);
@@ -206,7 +206,7 @@ namespace CBIFY {
   void predict_or_learn_cover(cbify& data, learner& base, example& ec)
   {//Randomize over predictions from a base set of predictors
     //Use cost sensitive oracle to cover actions to form distribution.
-    OAA::mc_label* ld = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* ld = (MULTICLASS::mc_label*)ec.ld;
     data.counter++;
 
     data.count.erase();
@@ -215,7 +215,7 @@ namespace CBIFY {
       {
 	data.count.push_back(0);
 
-	CSOAA::wclass wc;
+	COST_SENSITIVE::wclass wc;
 	
 	//get cost prediction for this label
 	wc.x = FLT_MAX;
@@ -294,7 +294,7 @@ namespace CBIFY {
 
   void finish_example(vw& all, cbify&, example& ec)
   {
-    OAA::output_example(all, ec);
+    MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);
   }
 
@@ -340,7 +340,7 @@ namespace CBIFY {
       all.options_from_file.append(ss.str());
     }
 
-    all.p->lp = OAA::mc_label_parser;
+    all.p->lp = MULTICLASS::mc_label_parser;
     learner* l;
     if (vm.count("cover"))
       {

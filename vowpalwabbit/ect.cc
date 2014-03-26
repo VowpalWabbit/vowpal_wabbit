@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include <float.h>
 #include <time.h>
 #include <boost/program_options.hpp>
+#include "multiclass.h"
 #include "ect.h"
 #include "parser.h"
 #include "simple_label.h"
@@ -236,7 +237,7 @@ namespace ECT
   {
     if (e.k == 1)//nothing to do
       return;
-    OAA::mc_label * mc = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label * mc = (MULTICLASS::mc_label*)ec.ld;
   
     label_data simple_temp = {1.,mc->weight,0.};
 
@@ -327,7 +328,7 @@ namespace ECT
   void predict(ect& e, learner& base, example& ec) {
     vw* all = e.all;
 
-    OAA::mc_label* mc = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* mc = (MULTICLASS::mc_label*)ec.ld;
     if (mc->label == 0 || (mc->label > e.k && mc->label != (uint32_t)-1))
       cout << "label " << mc->label << " is not in {1,"<< e.k << "} This won't work right." << endl;
     ec.final_prediction = ect_predict(*all, e, base, ec);
@@ -338,7 +339,7 @@ namespace ECT
   {
     vw* all = e.all;
 
-    OAA::mc_label* mc = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label* mc = (MULTICLASS::mc_label*)ec.ld;
     predict(e, base, ec);
 
     float new_label = ec.final_prediction;
@@ -369,7 +370,7 @@ namespace ECT
 
   void finish_example(vw& all, ect&, example& ec)
   {
-    OAA::output_example(all, ec);
+    MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);
   }
   
@@ -426,7 +427,7 @@ namespace ECT
       data->errors = 0;
     }
 
-    all.p->lp = OAA::mc_label_parser;
+    all.p->lp = MULTICLASS::mc_label_parser;
     size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;
     

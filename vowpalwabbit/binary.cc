@@ -1,4 +1,4 @@
-#include "oaa.h"
+#include "multiclass.h"
 #include "vw.h"
 
 using namespace LEARNER;
