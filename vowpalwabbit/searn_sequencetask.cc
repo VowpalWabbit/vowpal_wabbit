@@ -89,13 +89,13 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     example* ldf_examples;
     size_t   num_actions;
   };
-
+  
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    CSOAA::wclass default_wclass = { 0., 0, 0., 0. };
+    COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };
 
-    example* ldf_examples = alloc_examples(sizeof(CSOAA::label), num_actions);
+    example* ldf_examples = alloc_examples(sizeof(COST_SENSITIVE::label), num_actions);
     for (size_t a=0; a<num_actions; a++) {
-      CSOAA::label* lab = (CSOAA::label*)ldf_examples[a].ld;
+      COST_SENSITIVE::label* lab = (COST_SENSITIVE::label*)ldf_examples[a].ld;
       lab->costs.push_back(default_wclass);
     }
 
@@ -113,7 +113,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   void finish(searn& srn) {
     task_data *data = (task_data*)srn.task_data;
     for (size_t a=0; a<data->num_actions; a++)
-      dealloc_example(CSOAA::delete_label, data->ldf_examples[a]);
+      dealloc_example(COST_SENSITIVE::delete_label, data->ldf_examples[a]);
     free(data->ldf_examples);
     free(data);
   }
@@ -131,7 +131,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * (uint32_t)a);
         
         // need to tell searn what the action id is, so that it can add history features correctly!
-        CSOAA::label* lab = (CSOAA::label*)data->ldf_examples[a].ld;
+        COST_SENSITIVE::label* lab = (COST_SENSITIVE::label*)data->ldf_examples[a].ld;
         lab->costs[0].x = 0.;
         lab->costs[0].weight_index = (uint32_t)a+1;
         lab->costs[0].partial_prediction = 0.;

@@ -11,7 +11,7 @@ license as described in the file LICENSE.
 #include "wap.h"
 #include "simple_label.h"
 #include "cache.h"
-#include "csoaa.h"
+#include "cost_sensitive.h"
 #include "vw.h"
 
 using namespace std;
@@ -99,7 +99,7 @@ namespace WAP {
   struct float_wclass
   {
     float v;
-    CSOAA::wclass ci;
+    COST_SENSITIVE::wclass ci;
   };
   int fi_compare(const void *e1, const void* e2)
   {
@@ -127,18 +127,18 @@ namespace WAP {
 
   void train(vw& all, wap& w, learner& base, example& ec)
   {
-    CSOAA::label* ld = (CSOAA::label*)ec.ld;
+    COST_SENSITIVE::label* ld = (COST_SENSITIVE::label*)ec.ld;
 
-    CSOAA::wclass* old_end = ld->costs.end;
-    CSOAA::wclass* j = ld->costs.begin; 
-    for (CSOAA::wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
+    COST_SENSITIVE::wclass* old_end = ld->costs.end;
+    COST_SENSITIVE::wclass* j = ld->costs.begin; 
+    for (COST_SENSITIVE::wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       if (cl->x != FLT_MAX)
         *j++ = *cl;
     ld->costs.end = j;
   
     float score = FLT_MAX;
     vs.erase();
-    for (CSOAA::wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
+    for (COST_SENSITIVE::wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
         float_wclass temp = {0., *cl};
         if (temp.ci.x < score)
@@ -195,7 +195,7 @@ namespace WAP {
     size_t prediction = 1;
     float score = -FLT_MAX;
   
-    CSOAA::label* cost_label = (CSOAA::label*)ec.ld; 
+    COST_SENSITIVE::label* cost_label = (COST_SENSITIVE::label*)ec.ld; 
 
     for (uint32_t i = 0; i < cost_label->costs.size(); i++)
       {
@@ -219,7 +219,7 @@ namespace WAP {
   template <bool is_learn>
   void predict_or_learn(wap& w, learner& base, example& ec)
   {
-    CSOAA::label* cost_label = (CSOAA::label*)ec.ld;
+    COST_SENSITIVE::label* cost_label = (COST_SENSITIVE::label*)ec.ld;
     vw* all = w.all;
     
     size_t prediction = test(*all, w, base, ec);
@@ -232,7 +232,7 @@ namespace WAP {
 
   void finish_example(vw& all, wap&, example& ec)
   {
-    CSOAA::output_example(all, ec);
+    COST_SENSITIVE::output_example(all, ec);
     VW::finish_example(all, &ec);
   }
   
@@ -255,7 +255,7 @@ namespace WAP {
      all.options_from_file.append(ss.str());
     }
 
-    all.p->lp = CSOAA::cs_label_parser;
+    all.p->lp = COST_SENSITIVE::cs_label_parser;
 
     all.sd->k = (uint32_t)nb_actions;
 

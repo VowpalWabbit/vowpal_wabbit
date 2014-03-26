@@ -24,6 +24,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/cache.h \
 	vowpalwabbit/cb.h \
 	vowpalwabbit/constant.h \
+	vowpalwabbit/cost_sensitive.h \
 	vowpalwabbit/csoaa.h \
 	vowpalwabbit/ect.h \
 	vowpalwabbit/gd.h \

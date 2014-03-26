@@ -5,7 +5,7 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 
-#include "csoaa.h"
+#include "cost_sensitive.h"
 #include "cb.h"
 #include "simple_label.h"
 #include "example.h"
@@ -20,7 +20,7 @@ namespace CB
 {
   struct cb {
     size_t cb_type;
-    CSOAA::label cb_cs_ld; 
+    COST_SENSITIVE::label cb_cs_ld; 
     float avg_loss_regressors;
     size_t nb_ex_regressors;
     float last_pred_reg;
@@ -218,7 +218,7 @@ namespace CB
     return NULL;
   }
 
-  void gen_cs_example_ips(vw& all, cb& c, example& ec, CSOAA::label& cs_ld)
+  void gen_cs_example_ips(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
   {//this implements the inverse propensity score method, where cost are importance weighted by the probability of the chosen action
     CB::label* ld = (CB::label*)ec.ld;
    
@@ -228,7 +228,7 @@ namespace CB
       //in this case generate cost-sensitive example with all actions
       for(uint32_t i = 1; i <= all.sd->k; i++)
       {
-        CSOAA::wclass wc;
+        COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
         wc.x = 0.;
         wc.weight_index = i;
@@ -252,7 +252,7 @@ namespace CB
       //in this case generate cost-sensitive example with only allowed actions
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
-        CSOAA::wclass wc;
+        COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
         wc.x = 0.;
         wc.weight_index = cl->action;
@@ -277,7 +277,7 @@ namespace CB
   }
 
   template <bool is_learn>
-  void gen_cs_example_dm(vw& all, cb& c, example& ec, CSOAA::label& cs_ld)
+  void gen_cs_example_dm(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
   {
     //this implements the direct estimation method, where costs are directly specified by the learned regressor.
     CB::label* ld = (CB::label*)ec.ld;
@@ -290,7 +290,7 @@ namespace CB
       //in this case generate cost-sensitive example with all actions  
       for(uint32_t i = 1; i <= all.sd->k; i++)
       {
-        CSOAA::wclass wc;
+        COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
       
         //get cost prediction for this action
@@ -319,7 +319,7 @@ namespace CB
       //in this case generate cost-sensitive example with only allowed actions
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++ )
       {
-        CSOAA::wclass wc;
+        COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
       
         //get cost prediction for this action
@@ -349,9 +349,9 @@ namespace CB
   }
 
   template <bool is_learn>
-  void gen_cs_label(vw& all, cb& c, example& ec, CSOAA::label& cs_ld, uint32_t label)
+  void gen_cs_label(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
   {
-    CSOAA::wclass wc;
+    COST_SENSITIVE::wclass wc;
     wc.wap_value = 0.;
     
     //get cost prediction for this label
@@ -372,7 +372,7 @@ namespace CB
   }
 
   template <bool is_learn>
-  void gen_cs_example_dr(vw& all, cb& c, example& ec, CSOAA::label& cs_ld)
+  void gen_cs_example_dr(vw& all, cb& c, example& ec, COST_SENSITIVE::label& cs_ld)
   {//this implements the doubly robust method
     CB::label* ld = (CB::label*)ec.ld;
     
@@ -388,7 +388,7 @@ namespace CB
 	gen_cs_label<is_learn>(all, c, ec, cs_ld, cl->action);
   }
 
-  void cb_test_to_cs_test_label(vw& all, example& ec, CSOAA::label& cs_ld)
+  void cb_test_to_cs_test_label(vw& all, example& ec, COST_SENSITIVE::label& cs_ld)
   {
     CB::label* ld = (CB::label*)ec.ld;
 
@@ -398,7 +398,7 @@ namespace CB
       //if this is a test example and we specified actions, this means we are only allowed to perform these actions, so copy all actions with their specified costs
       for( cb_class* cl = ld->costs.begin; cl != ld->costs.end; cl++)
       {
-        CSOAA::wclass wc;
+        COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
 
         wc.x = cl->cost;
@@ -413,7 +413,7 @@ namespace CB
       {
 	for (uint32_t i = 0; i < all.sd->k; i++)
 	  {
-	    CSOAA::wclass wc;
+	    COST_SENSITIVE::wclass wc;
 	    wc.wap_value = 0.;
 	    
 	    wc.x = FLT_MAX;
@@ -560,7 +560,7 @@ namespace CB
         }
         else {
           //we do not know exact cost of each action, so evaluate on generated cost-sensitive example currently stored in cb_cs_ld
-          for (CSOAA::wclass *cl = c.cb_cs_ld.costs.begin; cl != c.cb_cs_ld.costs.end; cl ++) {
+          for (COST_SENSITIVE::wclass *cl = c.cb_cs_ld.costs.begin; cl != c.cb_cs_ld.costs.end; cl ++) {
             if (cl->weight_index == pred)
 	      {
 		chosen_loss = cl->x;

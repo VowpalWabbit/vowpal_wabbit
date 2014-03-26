@@ -1,7 +1,7 @@
 #include <float.h>
 #include "multiclass.h"
 #include "vw.h"
-#include "csoaa.h"
+#include "cost_sensitive.h"
 #include "cb.h"
 #include "rand48.h"
 #include "bs.h"
@@ -24,8 +24,8 @@ namespace CBIFY {
     v_array<uint32_t> predictions;
     
     CB::label cb_label;
-    CSOAA::label cs_label;
-    CSOAA::label second_cs_label;
+    COST_SENSITIVE::label cs_label;
+    COST_SENSITIVE::label second_cs_label;
 
     learner* cs;
     vw* all;
@@ -185,9 +185,9 @@ namespace CBIFY {
       }
   }
 
-  void gen_cs_label(vw& all, CB::cb_class& known_cost, example& ec, CSOAA::label& cs_ld, uint32_t label)
+  void gen_cs_label(vw& all, CB::cb_class& known_cost, example& ec, COST_SENSITIVE::label& cs_ld, uint32_t label)
   {
-    CSOAA::wclass wc;
+    COST_SENSITIVE::wclass wc;
     
     //get cost prediction for this label
     wc.x = CB::get_cost_pred<false>(all, &known_cost, ec, label, all.sd->k);
@@ -215,7 +215,7 @@ namespace CBIFY {
       {
 	data.count.push_back(0);
 
-	CSOAA::wclass wc;
+	COST_SENSITIVE::wclass wc;
 	
 	//get cost prediction for this label
 	wc.x = FLT_MAX;

@@ -297,23 +297,23 @@ namespace Searn {
 
   size_t get_all_labels(void*dst, searn& srn, size_t num_ec, v_array<uint32_t> *yallowed)
   {
-    if (srn.rollout_all_actions) { // dst should be a CSOAA::label*
-      CSOAA::label *ret = (CSOAA::label*)dst;
+    if (srn.rollout_all_actions) { // dst should be a COST_SENSITIVE::label*
+      COST_SENSITIVE::label *ret = (COST_SENSITIVE::label*)dst;
       ret->costs.erase();
       if (srn.is_ldf) {
         for (uint32_t i=0; i<num_ec; i++) {
-          CSOAA::wclass cost = { FLT_MAX, i, 0., 0. };
+          COST_SENSITIVE::wclass cost = { FLT_MAX, i, 0., 0. };
           ret->costs.push_back(cost);
         }
       } else { // is not LDF
         if (yallowed == NULL) {
           for (uint32_t i=1; i<=srn.A; i++) {
-            CSOAA::wclass cost = { FLT_MAX, i, 0., 0. };
+            COST_SENSITIVE::wclass cost = { FLT_MAX, i, 0., 0. };
             ret->costs.push_back(cost);
           }
         } else {
           for (size_t i=0; i<yallowed->size(); i++) {
-            CSOAA::wclass cost = { FLT_MAX, (*yallowed)[i], 0., 0. };
+            COST_SENSITIVE::wclass cost = { FLT_MAX, (*yallowed)[i], 0., 0. };
             ret->costs.push_back(cost);
           }
         }
@@ -373,8 +373,8 @@ namespace Searn {
   {
     assert(pol >= 0);
     searn *srn = (searn*)all.searnstr;
-    CSOAA::label test_label;
-    CSOAA::default_label(&test_label);
+    COST_SENSITIVE::label test_label;
+    COST_SENSITIVE::default_label(&test_label);
     
     // TODO: modify this to handle contextual bandit base learner with ldf
     float best_prediction = 0;
@@ -395,7 +395,7 @@ namespace Searn {
       if ((action == 0) || 
           ecs[action].partial_prediction < best_prediction) {
         best_prediction = ecs[action].partial_prediction;
-        best_action     = action; // ((CSOAA::label*)ecs[action].ld)->costs[0].weight_index;
+        best_action     = action; // ((COST_SENSITIVE::label*)ecs[action].ld)->costs[0].weight_index;
       }
     }
         
@@ -415,13 +415,13 @@ namespace Searn {
     return best_action;
   }
 
-  uint32_t sample_with_temperature_csoaa(CSOAA::label* ld, float temp) {
+  uint32_t sample_with_temperature_csoaa(COST_SENSITIVE::label* ld, float temp) {
     float total = 0.;
-    for (CSOAA::wclass* c = ld->costs.begin; c != ld->costs.end; ++c)
+    for (COST_SENSITIVE::wclass* c = ld->costs.begin; c != ld->costs.end; ++c)
       total += (float)exp(-1.0 * c->partial_prediction / temp);
     if ((total >= 0.) && isfinite(total)) {
       float r = frand48() * total;
-      for (CSOAA::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
+      for (COST_SENSITIVE::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
         r -= (float)exp(-1.0 * c->partial_prediction / temp);
         if (r <= 0.)
           return c->weight_index;
@@ -461,16 +461,16 @@ namespace Searn {
 
     if (allow_exploration && (srn.exploration_temperature > 0.)) {
       if (srn.rollout_all_actions)
-        final_prediction = sample_with_temperature_csoaa((CSOAA::label*)ec.ld, srn.exploration_temperature);
+        final_prediction = sample_with_temperature_csoaa((COST_SENSITIVE::label*)ec.ld, srn.exploration_temperature);
       else
         final_prediction = sample_with_temperature_cb(   (CB::label   *)ec.ld, srn.exploration_temperature);
     }
     
-    if ((srn.state == INIT_TEST) && (all.raw_prediction > 0) && (srn.rollout_all_actions)) { // srn.rollout_all_actions ==> this is not CB, so we have CSOAA::labels
+    if ((srn.state == INIT_TEST) && (all.raw_prediction > 0) && (srn.rollout_all_actions)) { // srn.rollout_all_actions ==> this is not CB, so we have COST_SENSITIVE::labels
       string outputString;
       stringstream outputStringStream(outputString);
-      CSOAA::label *ld = (CSOAA::label*)ec.ld;
-      for (CSOAA::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
+      COST_SENSITIVE::label *ld = (COST_SENSITIVE::label*)ec.ld;
+      for (COST_SENSITIVE::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
         if (c != ld->costs.begin) outputStringStream << ' ';
         outputStringStream << c->weight_index << ':' << c->partial_prediction;
       }
@@ -495,7 +495,7 @@ namespace Searn {
         return *((uint32_t*)ystar);
       else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
         if (srn.rollout_all_actions)
-          return choose_random<CSOAA::wclass>(((CSOAA::label*)valid_labels)->costs).weight_index;
+          return choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).weight_index;
         else
           return choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
       } else 
@@ -510,9 +510,9 @@ namespace Searn {
       } else {
         if (srn.auto_history)
           for (size_t a=0; a<num_ec; a++) {
-            ////UNDOMEclog << "weight_index = " << ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index << endl;
+            ////UNDOMEclog << "weight_index = " << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].weight_index << endl;
             add_history_to_example(all, srn.hinfo, &ecs[a], srn.rollout_action.begin+srn.t,
-                                   ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index);
+                                   ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].weight_index);
           }
                                    //((OAA::mc_label*)ecs[a].ld)->label);
         size_t action = single_prediction_LDF(all, base, ecs, num_ec, pol, allow_exploration);
@@ -536,10 +536,10 @@ namespace Searn {
 
   void* copy_labels(searn &srn, void* l) {
     if (srn.rollout_all_actions) {
-      CSOAA::label *ret = new CSOAA::label();
-      v_array<CSOAA::wclass> costs = ((CSOAA::label*)l)->costs;
+      COST_SENSITIVE::label *ret = new COST_SENSITIVE::label();
+      v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)l)->costs;
       for (size_t i=0; i<costs.size(); i++) {
-        CSOAA::wclass c = { costs[i].x, costs[i].weight_index, costs[i].partial_prediction, costs[i].wap_value };
+        COST_SENSITIVE::wclass c = { costs[i].x, costs[i].weight_index, costs[i].partial_prediction, costs[i].wap_value };
         ret->costs.push_back(c);
       }
       return ret;
@@ -588,7 +588,7 @@ namespace Searn {
       uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       ////UNDOMEclog << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
-      uint32_t a_name = (! srn->is_ldf) ? a : ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index;
+      uint32_t a_name = (! srn->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].weight_index;
       if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
       return a;
@@ -602,7 +602,7 @@ namespace Searn {
       //if (! ((srn->current_policy == 0) || (a == a_opt))) { //UNDOMEclog << "FAIL!!!"<<endl;}
       srn->train_action_ids.push_back(a);
       srn->train_labels.push_back(copy_labels(*srn, srn->valid_labels));
-      uint32_t a_name = (! srn->is_ldf) ? a : ((CSOAA::label*)ecs[a].ld)->costs[0].weight_index;
+      uint32_t a_name = (! srn->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].weight_index;
       srn->train_action.push_back(a_name);
       if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
@@ -622,9 +622,9 @@ namespace Searn {
             srn->learn_example_copy = ecs;
           else {
             if (srn->is_ldf) {
-              srn->learn_example_copy = alloc_examples(sizeof(CSOAA::label), num_to_copy);
+              srn->learn_example_copy = alloc_examples(sizeof(COST_SENSITIVE::label), num_to_copy);
               for (size_t n=0; n<num_to_copy; n++)
-                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(CSOAA::label), CSOAA::copy_label);
+                VW::copy_example_data(all.audit, &srn->learn_example_copy[n], &ecs[n], sizeof(COST_SENSITIVE::label), COST_SENSITIVE::copy_label);
             } else {
               srn->learn_example_copy = alloc_examples(sizeof(MULTICLASS::mc_label), num_to_copy);
               for (size_t n=0; n<num_to_copy; n++)
@@ -636,7 +636,7 @@ namespace Searn {
         srn->snapshot_is_equivalent_to_t = (size_t)-1;
         srn->snapshot_could_match = true;
         srn->t++;
-        uint32_t a_name = (! srn->is_ldf) ? srn->learn_a : ((CSOAA::label*)ecs[srn->learn_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? srn->learn_a : ((COST_SENSITIVE::label*)ecs[srn->learn_a].ld)->costs[0].weight_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return srn->learn_a;
       } else { // t > learn_t
@@ -662,7 +662,7 @@ namespace Searn {
           ////UNDOMEclog << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action_ids[srn->t-1] << endl;
           this_a = srn->train_action_ids[srn->t - 1];
         }
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return (uint32_t)this_a;
       }
@@ -680,7 +680,7 @@ namespace Searn {
       }
       srn->t++;
       uint32_t this_a = get_any_label(*srn, yallowed);
-      uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
+      uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
       if (srn->auto_history) srn->rollout_action.push_back(a_name);
       return this_a;
     } else if (srn->state == BEAM_ADVANCE) {
@@ -688,8 +688,8 @@ namespace Searn {
         srn->t++;
         uint32_t this_a = (uint32_t)srn->cur_beam_hyp->action_taken;
         if (!srn->is_ldf)
-          this_a = ((CSOAA::label*)srn->valid_labels)->costs[this_a].weight_index;
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
+          this_a = ((COST_SENSITIVE::label*)srn->valid_labels)->costs[this_a].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return this_a;
       } else if (srn->t == srn->cur_beam_hyp->t) {
@@ -701,14 +701,14 @@ namespace Searn {
         srn->cur_beam_hyp->filled_in_prediction = true;
         srn->t++;
         uint32_t this_a = get_any_label(*srn, yallowed);
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return this_a;
       } else {
         // TODO: check if auto history, etc., is necessary here
         srn->t++;
         uint32_t this_a = get_any_label(*srn, yallowed);
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return this_a;
       }
@@ -719,8 +719,8 @@ namespace Searn {
       if (srn->rollout_all_actions) {
         uint32_t this_a = srn->beam_final_action_sequence.pop();
         if (!srn->is_ldf)
-          this_a = ((CSOAA::label*)srn->valid_labels)->costs[this_a].weight_index;
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((CSOAA::label*)ecs[this_a].ld)->costs[0].weight_index;
+          this_a = ((COST_SENSITIVE::label*)srn->valid_labels)->costs[this_a].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return this_a;
       } else {
@@ -1032,14 +1032,14 @@ namespace Searn {
 
   size_t labelset_size(searn&srn,void*l) {
     if (srn.rollout_all_actions)
-      return ((CSOAA::label*)l)->costs.size();
+      return ((COST_SENSITIVE::label*)l)->costs.size();
     else
       return ((CB::label*)l)->costs.size();
   }
 
   size_t labelset_weight_index(searn&srn, void*l, size_t i) {
     if (srn.rollout_all_actions)
-      return ((CSOAA::label*)l)->costs[i].weight_index;
+      return ((COST_SENSITIVE::label*)l)->costs[i].weight_index;
     else
       return ((CB::label*)l)->costs[i].action;
   }
@@ -1073,7 +1073,7 @@ namespace Searn {
       if (losses[i] < min_loss) min_loss = losses[i];
     for (size_t i=0; i<losses.size(); i++)
       if (srn.rollout_all_actions)
-        ((CSOAA::label*)labels)->costs[i].x = losses[i] - min_loss;
+        ((COST_SENSITIVE::label*)labels)->costs[i].x = losses[i] - min_loss;
       else
         ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
 
@@ -1088,12 +1088,12 @@ namespace Searn {
     } else { // isLDF
       for (size_t a=0; a<len; a++) {
         //((OAA::mc_label*)ec[a]->ld)->weight = losses[a] - min_loss;
-        ((CSOAA::label*)ec[a].ld)->costs[0].x = losses[a] - min_loss;
-        ////UNDOMEclog << "learn t = " << srn.learn_t << " cost = " << ((CSOAA::label*)ec[a].ld)->costs[0].x << " action = " << ((CSOAA::label*)ec[a].ld)->costs[0].weight_index << endl;
+        ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].x = losses[a] - min_loss;
+        ////UNDOMEclog << "learn t = " << srn.learn_t << " cost = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].x << " action = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].weight_index << endl;
         ////UNDOMEclog << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
         if (srn.auto_history)
           add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t,
-                                 ((CSOAA::label*)ec[a].ld)->costs[0].weight_index);
+                                 ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].weight_index);
         base.learn(ec[a], srn.current_policy);
       }
       ////UNDOMEclog << "learn: generate empty example" << endl;
@@ -1173,7 +1173,7 @@ namespace Searn {
 
       // collect the costs
       if (srn.rollout_all_actions) { // TODO: handle CB
-        v_array<CSOAA::wclass>* costs = &((CSOAA::label*)srn.valid_labels)->costs;
+        v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)srn.valid_labels)->costs;
         assert(hyp->num_actions == costs->size());
         hyp->action_costs = (float*)calloc(hyp->num_actions, sizeof(float));
         for (size_t i=0; i<hyp->num_actions; i++) {
@@ -1220,7 +1220,7 @@ namespace Searn {
           if (next->filled_in_snapshot) { // another snapshot was called
             // collect the costs
             if (srn.rollout_all_actions) { // TODO: handle CB
-              v_array<CSOAA::wclass>* costs = &((CSOAA::label*)srn.valid_labels)->costs;
+              v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)srn.valid_labels)->costs;
               assert(next->num_actions == costs->size());
               next->action_costs = (float*)calloc(next->num_actions, sizeof(float)); // TODO: free this
               for (size_t i=0; i<next->num_actions; i++)
@@ -1417,7 +1417,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
           if (!srn.examples_dont_change) {
             for (size_t n=0; n<srn.learn_example_len; n++) {
               ////UNDOMEclog << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &srn.learn_example_copy[n]);
-              if (srn.is_ldf) dealloc_example(CSOAA::delete_label, srn.learn_example_copy[n]);
+              if (srn.is_ldf) dealloc_example(COST_SENSITIVE::delete_label, srn.learn_example_copy[n]);
               else            dealloc_example(  MULTICLASS::delete_label, srn.learn_example_copy[n]);
             }
             free(srn.learn_example_copy);
@@ -1437,9 +1437,9 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
     srn.rollout_action.delete_v();
     for (size_t i=0; i<srn.train_labels.size(); i++) {
       if (srn.rollout_all_actions) {
-        ((CSOAA::label*)srn.train_labels[i])->costs.erase();
-        ((CSOAA::label*)srn.train_labels[i])->costs.delete_v();
-        delete ((CSOAA::label*)srn.train_labels[i]);
+        ((COST_SENSITIVE::label*)srn.train_labels[i])->costs.erase();
+        ((COST_SENSITIVE::label*)srn.train_labels[i])->costs.delete_v();
+        delete ((COST_SENSITIVE::label*)srn.train_labels[i]);
       } else {
         ((CB::label*)srn.train_labels[i])->costs.erase();
         ((CB::label*)srn.train_labels[i])->costs.delete_v();
@@ -1797,8 +1797,8 @@ void print_update(vw& all, searn& srn)
     srn.examples_dont_change = false;
     srn.is_ldf = false;
     
-    srn.empty_example = alloc_examples(sizeof(CSOAA::label), 1);
-    CSOAA::default_label(srn.empty_example->ld);
+    srn.empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);
+    COST_SENSITIVE::default_label(srn.empty_example->ld);
     srn.empty_example->in_use = true;
   }
 
@@ -1813,20 +1813,20 @@ void print_update(vw& all, searn& srn)
     srn.neighbor_features.erase();
     srn.neighbor_features.delete_v();
     
-    if (srn.rollout_all_actions) { // dst should be a CSOAA::label*
-      ((CSOAA::label*)srn.valid_labels)->costs.erase();
-      ((CSOAA::label*)srn.valid_labels)->costs.delete_v();
+    if (srn.rollout_all_actions) { // dst should be a COST_SENSITIVE::label*
+      ((COST_SENSITIVE::label*)srn.valid_labels)->costs.erase();
+      ((COST_SENSITIVE::label*)srn.valid_labels)->costs.delete_v();
     } else {
       ((CB::label*)srn.valid_labels)->costs.erase();
       ((CB::label*)srn.valid_labels)->costs.delete_v();
     }
     
-    if (srn.rollout_all_actions) // labels are CSOAA
-      delete (CSOAA::label*)srn.valid_labels;
+    if (srn.rollout_all_actions) // labels are COST_SENSITIVE
+      delete (COST_SENSITIVE::label*)srn.valid_labels;
     else // labels are CB
       delete (CB::label*)srn.valid_labels;
 
-    dealloc_example(CSOAA::delete_label, *(srn.empty_example));
+    dealloc_example(COST_SENSITIVE::delete_label, *(srn.empty_example));
     free(srn.empty_example);
     
     srn.ec_seq.delete_v();
@@ -1836,9 +1836,9 @@ void print_update(vw& all, searn& srn)
 
     for (size_t i=0; i<srn.train_labels.size(); i++) {
       if (srn.rollout_all_actions) {
-        ((CSOAA::label*)srn.train_labels[i])->costs.erase();
-        ((CSOAA::label*)srn.train_labels[i])->costs.delete_v();
-        delete ((CSOAA::label*)srn.train_labels[i]);
+        ((COST_SENSITIVE::label*)srn.train_labels[i])->costs.erase();
+        ((COST_SENSITIVE::label*)srn.train_labels[i])->costs.delete_v();
+        delete ((COST_SENSITIVE::label*)srn.train_labels[i]);
       } else {
         ((CB::label*)srn.train_labels[i])->costs.erase();
         ((CB::label*)srn.train_labels[i])->costs.delete_v();
@@ -2075,7 +2075,7 @@ void print_update(vw& all, searn& srn)
       srn->valid_labels = new CB::label();
     } else {
       srn->rollout_all_actions = true;
-      srn->valid_labels = new CSOAA::label();
+      srn->valid_labels = new COST_SENSITIVE::label();
     }
     
     //if we loaded a regressor with -i option, --searn_trained_nb_policies contains the number of trained policies in the file
