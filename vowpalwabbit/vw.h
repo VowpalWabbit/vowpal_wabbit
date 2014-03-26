@@ -11,11 +11,6 @@ license as described in the file LICENSE.
 #include "hash.h"
 #include "simple_label.h"
 
-
-#define cdbg clog
-#undef cdbg
-#define cdbg if (1) {} else clog
-
 namespace VW {
 
 /*    Caveats:

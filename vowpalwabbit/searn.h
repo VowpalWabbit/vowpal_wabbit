@@ -16,6 +16,10 @@ license as described in the file LICENSE.
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
 #define MAX_BRANCHING_FACTOR 128
 
+#define cdbg clog
+#undef cdbg
+#define cdbg if (1) {} else clog
+
 namespace Searn {
   typedef uint32_t* history;
 
