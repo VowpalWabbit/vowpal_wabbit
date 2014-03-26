@@ -9,7 +9,7 @@ else
 endif
 
 ifeq ($(CXX),)
-  $(waninng No compiler found)
+  $(warning No compiler found)
   exit 1
 endif
 
