@@ -1,0 +1,24 @@
+only testing
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+predictions = sequencespan_data.predict
+switching to BILOU encoding for sequence span labeling
+using no cache
+Reading datafile = train-sets/sequencespan_data
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
+loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
+10.000000  10.000000         1        1.000000   [2 1 1 2 2 1 6 7 7 ..] [2 6 1 6 2 1 6 4 5 ..]        0     0     0            1192               0
+
+finished run
+number of examples per pass = 1
+passes used = 1
+weighted example sum = 1
+weighted label sum = 0
+average loss = 10
+best constant = -inf
+total feature number = 0

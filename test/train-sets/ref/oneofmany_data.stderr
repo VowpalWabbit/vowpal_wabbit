@@ -1,0 +1,28 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/oneofmany_data.cache
+Reading datafile = train-sets/oneofmany_data
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
+loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
+1.000000   1.000000          1        1.000000   [2 1 1 1 1           ] [1 1 1 1 1           ]       15     0     0               5               5
+1.500000   2.000000          2        2.000000   [1 1 1 1             ] [2 1 1 2             ]       12     0     0               9               9
+1.000000   0.500000          4        4.000000   [2 1 1               ] [1 1 1               ]        9     0     0              15              15
+1.000000   1.000000          8        8.000000   [2 1 1               ] [2 1 1               ]        9     1     0              30              30
+0.500000   0.000000         16       16.000000   [2 1 1               ] [2 1 1               ]        9     3     0              60              60
+0.250000   0.000000         32       32.000000   [2 1 1               ] [2 1 1               ]        9     7     0             120             120
+0.125000   0.000000         64       64.000000   [2 1 1               ] [2 1 1               ]        9    15     0             240             240
+
+finished run
+number of examples per pass = 4
+passes used = 20
+weighted example sum = 80
+weighted label sum = 0
+average loss = 0.1
+best constant = 0
+total feature number = 900

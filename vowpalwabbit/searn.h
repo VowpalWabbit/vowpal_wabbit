@@ -14,11 +14,15 @@ license as described in the file LICENSE.
 #include <time.h>
 
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
+#define MAX_BRANCHING_FACTOR 128
 
-typedef uint32_t* history;
+#define cdbg clog
+#undef cdbg
+#define cdbg if (1) {} else clog
 
-namespace SearnUtil
-{
+namespace Searn {
+  typedef uint32_t* history;
+
   struct history_info {
     size_t length;          // was history_length, must be >= features
     bool   bigrams;         // was sequence_bigrams
@@ -33,17 +37,8 @@ namespace SearnUtil
 
   int  random_policy(uint64_t, float, bool, int, bool, bool);
 
-  void add_policy_offset(vw&, example*, uint32_t, uint32_t);
-  void remove_policy_offset(vw&, example*, uint32_t, uint32_t);
- 
   void add_history_to_example(vw&, history_info&, example*, history, size_t);
   void remove_history_from_example(vw&, history_info&, example*);
-
-  size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>*ystar, history_info &hinfo, size_t*history);
-}      
-
-namespace Searn {
-  using namespace SearnUtil;
 
   struct snapshot_item {
     size_t index;
@@ -52,7 +47,7 @@ namespace Searn {
     size_t data_size;  // sizeof(data_ptr)
     size_t pred_step;  // srn->t when snapshot is made
   };
-  
+
   struct searn_task;
 
   struct beam_hyp {
@@ -109,7 +104,6 @@ namespace Searn {
     void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
     
-    v_array<uint32_t> predict_ystar;
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
@@ -143,7 +137,8 @@ namespace Searn {
     float  learn_loss;     // total loss for this "varied" example
 
     v_array<float> learn_losses;  // losses for all (valid) actions at learn_t
-    example* learn_example_copy;  // copy of example(s) at learn_t
+    example learn_example_copy[MAX_BRANCHING_FACTOR];   // copy of example(s) at learn_t
+    example*learn_example_ref;    // reference to example at learn_t, when there's not example munging
     size_t learn_example_len;     // number of example(s) at learn_t
 
     float  beta;                  // interpolation rate
@@ -156,6 +151,7 @@ namespace Searn {
     float gamma;                  // for dagger
     float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
     size_t beam_size;
+    size_t kbest;
     
     size_t num_features;
     uint32_t total_number_of_policies;

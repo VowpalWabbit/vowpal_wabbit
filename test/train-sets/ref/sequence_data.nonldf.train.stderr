@@ -1,0 +1,27 @@
+final_regressor = models/sequence_data.model
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/sequence_data.cache
+Reading datafile = train-sets/sequence_data
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
+loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
+4.000000   4.000000          1        1.000000   [5 4 3 2 1           ] [1 1 1 1 1           ]       15     0     0               5               5
+4.000000   4.000000          2        2.000000   [5 4 3 2 1           ] [1 1 1 1 1           ]       15     1     0              10              10
+2.000000   0.000000          4        4.000000   [5 4 3 2 1           ] [5 4 3 2 1           ]       15     3     0              20              20
+1.000000   0.000000          8        8.000000   [5 4 3 2 1           ] [5 4 3 2 1           ]       15     7     0              40              40
+0.500000   0.000000         16       16.000000   [5 4 3 2 1           ] [5 4 3 2 1           ]       15    15     0              80              80
+
+finished run
+number of examples per pass = 1
+passes used = 20
+weighted example sum = 20
+weighted label sum = 0
+average loss = 0.4
+best constant = -0.0526316
+total feature number = 300
