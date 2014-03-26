@@ -23,6 +23,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/bs.h \
 	vowpalwabbit/cache.h \
 	vowpalwabbit/cb.h \
+	vowpalwabbit/cb_algs.h \
 	vowpalwabbit/constant.h \
 	vowpalwabbit/cost_sensitive.h \
 	vowpalwabbit/csoaa.h \

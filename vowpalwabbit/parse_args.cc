@@ -25,6 +25,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "wap.h"
 #include "cb.h"
+#include "cb_algs.h"
 #include "scorer.h"
 #include "searn.h"
 #include "bfgs.h"
@@ -934,7 +935,7 @@ vw* parse_args(int argc, char *argv[])
       got_cs = true;
     }
 
-    all->l = CB::setup(*all, to_pass_further, vm, vm_file);
+    all->l = CB_ALGS::setup(*all, to_pass_further, vm, vm_file);
     got_cb = true;
   }
 
@@ -952,7 +953,7 @@ vw* parse_args(int argc, char *argv[])
       if (!got_cb) {
 	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm_file["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all->l = CB::setup(*all, to_pass_further, vm, vm_file);
+	all->l = CB_ALGS::setup(*all, to_pass_further, vm, vm_file);
 	got_cb = true;
       }
 

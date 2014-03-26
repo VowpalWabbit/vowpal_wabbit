@@ -3,6 +3,7 @@
 #include "vw.h"
 #include "cost_sensitive.h"
 #include "cb.h"
+#include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
 
@@ -190,7 +191,7 @@ namespace CBIFY {
     COST_SENSITIVE::wclass wc;
     
     //get cost prediction for this label
-    wc.x = CB::get_cost_pred<false>(all, &known_cost, ec, label, all.sd->k);
+    wc.x = CB_ALGS::get_cost_pred<false>(all, &known_cost, ec, label, all.sd->k);
     wc.weight_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
