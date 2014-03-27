@@ -13,13 +13,10 @@ license as described in the file LICENSE.
 #include <fstream>
 #include <float.h>
 #include <time.h>
-#include <boost/program_options.hpp>
+
+#include "reductions.h"
 #include "multiclass.h"
-#include "ect.h"
-#include "parser.h"
 #include "simple_label.h"
-#include "parse_args.h"
-#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;

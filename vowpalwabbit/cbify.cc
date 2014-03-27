@@ -1,6 +1,6 @@
 #include <float.h>
+#include "reductions.h"
 #include "multiclass.h"
-#include "vw.h"
 #include "cost_sensitive.h"
 #include "cb.h"
 #include "cb_algs.h"

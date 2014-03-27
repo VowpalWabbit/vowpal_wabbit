@@ -1,8 +1,6 @@
-#include "gd.h"
-#include "vw.h"
-#include "lrq.h"
-#include "rand48.h"
 #include <float.h>
+#include "reductions.h"
+#include "rand48.h"
 
 using namespace LEARNER;
 

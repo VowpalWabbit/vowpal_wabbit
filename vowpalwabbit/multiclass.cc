@@ -1,8 +1,11 @@
+#include <limits.h>
 #include "multiclass.h"
+#include "global_data.h"
+#include "vw.h"
 
 namespace MULTICLASS {
 
-    char* bufread_label(mc_label* ld, char* c)
+  char* bufread_label(mc_label* ld, char* c)
   {
     ld->label = *(uint32_t *)c;
     c += sizeof(ld->label);
@@ -10,7 +13,7 @@ namespace MULTICLASS {
     c += sizeof(ld->weight);
     return c;
   }
-
+  
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
     mc_label* ld = (mc_label*) v;
@@ -19,16 +22,16 @@ namespace MULTICLASS {
     if (buf_read(cache, c, total) < total) 
       return 0;
     c = bufread_label(ld,c);
-
+    
     return total;
   }
-
+  
   float weight(void* v)
   {
     mc_label* ld = (mc_label*) v;
     return (ld->weight > 0) ? ld->weight : 0.f;
   }
-
+  
   char* bufcache_label(mc_label* ld, char* c)
   {
     *(uint32_t *)c = ld->label;

@@ -4,15 +4,11 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <float.h>
-#include <math.h>
-#include <stdio.h>
 
+#include "reductions.h"
 #include "cost_sensitive.h"
 #include "simple_label.h"
-#include "cache.h"
 #include "v_hashmap.h"
-#include "parse_example.h"
-#include "vw.h"
 
 using namespace std;
 

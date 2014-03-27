@@ -8,12 +8,10 @@ license as described in the file LICENSE.
 #include <stdio.h>
 #include <sstream>
 
+#include "reductions.h"
 #include "constant.h"
 #include "simple_label.h"
-#include "cache.h"
-#include "v_hashmap.h"
 #include "rand48.h"
-#include "vw.h"
 #include "gd.h"
 
 using namespace std;

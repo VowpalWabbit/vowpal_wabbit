@@ -1,7 +1,5 @@
+#include "reductions.h"
 #include "simple_label.h"
-#include <float.h>
-#include "parser.h"
-#include "vw.h"
 
 using namespace LEARNER;
 

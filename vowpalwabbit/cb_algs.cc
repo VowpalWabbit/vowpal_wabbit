@@ -5,15 +5,11 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 
+#include "reductions.h"
 #include "cost_sensitive.h"
 #include "cb.h"
 #include "cb_algs.h"
 #include "simple_label.h"
-#include "example.h"
-#include "multiclass.h"
-#include "parse_example.h"
-#include "parse_primitives.h"
-#include "vw.h"
 
 using namespace LEARNER;
 
