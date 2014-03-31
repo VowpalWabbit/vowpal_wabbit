@@ -83,7 +83,7 @@ namespace TXM
     uint32_t L;
     uint32_t R;
     float objective;
-    
+
     uint32_t myL;
     uint32_t myR;
     bool leaf;
@@ -140,26 +140,42 @@ namespace TXM
     d.ctl = 0;
     //d.ex_fp = fopen("ex_nums.txt", "wt");
   }
+
+  float print_intercept(vw& all, example& ec, learner& base, size_t& cn)
+  {
+    float w_1 = 0.;
+    float w_0 = 0.;
+					       
+    bool got_first = true;
+
+    ec.ft_offset += (uint32_t)(base.increment*cn);
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+      if (got_first)
+	{
+	  w_1 = all.reg.weight_vector[((ec.atomics[*i].begin)->weight_index + ec.ft_offset) & all.reg.weight_mask];
+	  got_first = false;
+	}
+      else
+	w_0 = all.reg.weight_vector[((ec.atomics[*i].begin)->weight_index + ec.ft_offset) & all.reg.weight_mask];
+    ec.ft_offset -= (uint32_t)(base.increment*cn);
+
+    float w_ratio = -w_0/w_1;
+
+    return w_ratio;
+  }
   
   void train_node(txm& b, learner& base, example& ec, size_t& cn, size_t& index)
   {
-    if(b.nodes[cn].level != b.ctl)
-	return;
-    
     label_data* simple_temp = (label_data*)ec.ld;
-   
-    simple_temp->label = FLT_MAX;
     
-    base.predict(ec, cn);
-   
-    b.nodes[cn].Eh += (double)ec.partial_prediction;
-    b.nodes[cn].node_pred[index].Ehk += (double)ec.partial_prediction;
-    b.nodes[cn].n++;
-    b.nodes[cn].node_pred[index].nk++;	
- 
-    b.nodes[cn].norm_Eh = b.nodes[cn].Eh / b.nodes[cn].n;          
-    b.nodes[cn].node_pred[index].norm_Ehk = b.nodes[cn].node_pred[index].Ehk / b.nodes[cn].node_pred[index].nk;
-    
+    if(b.nodes[cn].level != b.ctl)
+    {
+	simple_temp->label = FLT_MAX;
+	base.predict(ec, cn);
+	
+	return;    
+    }   
+       
     b.nodes[cn].objective = 0;
     float tmp1, tmp2, tmp3;
     for(size_t i = 0; i < b.nodes[cn].node_pred.size(); i++)
@@ -188,7 +204,12 @@ namespace TXM
 	id_left_right = id_right;
 	b.nodes[cn].myR++;
       }
-    
+    /*  
+    if(cn == 1)
+      {
+	cout << b.nodes[cn].node_pred[index].label << "\t" << simple_temp->label;
+      }
+    */    
     if((b.nodes[cn].myR > 0) && (b.nodes[cn].myL > 0))
       {
 	if(id_left_right == 0)
@@ -212,6 +233,29 @@ namespace TXM
 	  }	
       }
     base.learn(ec, cn);	
+
+    simple_temp->label = FLT_MAX;
+    base.predict(ec, cn);
+        
+    b.nodes[cn].Eh += (double)ec.partial_prediction;
+    b.nodes[cn].node_pred[index].Ehk += (double)ec.partial_prediction;
+    b.nodes[cn].n++;
+    b.nodes[cn].node_pred[index].nk++;	
+  
+    b.nodes[cn].norm_Eh = b.nodes[cn].Eh / b.nodes[cn].n;          
+    b.nodes[cn].node_pred[index].norm_Ehk = b.nodes[cn].node_pred[index].Ehk / b.nodes[cn].node_pred[index].nk;
+    
+    /*if(cn == 1)
+	{
+	  cout << "\t" << ec.partial_prediction << "\t" << ec.final_prediction<< "\t" << print_intercept(*b.all, ec, base, cn) << endl;
+	  cin.ignore();
+	  }*/
+	
+	/*if(cn == 1)
+      {
+	cout << b.nodes[cn].node_pred[index].label << "\t" << b.nodes[cn].norm_Eh << "\t" << b.nodes[cn].node_pred[index].norm_Ehk  << "\t" << left_or_right << "\t" << simple_temp->label << "\t" <<  ec.final_prediction << "\t" << ec.partial_prediction << "\t" << print_intercept(*b.all, ec) << endl;
+	//cin.ignore();
+      }*/
     
     if(b.nodes[cn].id_left == 0)	
       b.nodes[cn].leaf = true;
@@ -239,7 +283,7 @@ namespace TXM
 	simple_temp.label = FLT_MAX;
 	base.predict(ec, cn);
   
-	if(ec.final_prediction < 0)//b.nodes[cn].Eh/b.nodes[cn].n)	
+	if(ec.final_prediction < 0)//b.nodes[cn].norm_Eh)	
 	  cn = b.nodes[cn].id_left;
 	else
 	  cn = b.nodes[cn].id_right;	
@@ -325,7 +369,7 @@ namespace TXM
 	b.ctl = b.all->current_pass / b.passes_per_level;
 	cout << "ctl: " << b.ctl << endl;
     }
-    
+
     if(b.all->training && (mc->label != (uint32_t)-1) && !ec.test_only)	//if training the tree
       {
 	size_t index = 0;
@@ -341,7 +385,9 @@ namespace TXM
 
 	while(1)
 	  {
-	    b.nodes[cn].ec_count++;
+	    if(b.nodes[cn].level == b.ctl)
+	      b.nodes[cn].ec_count++;
+
 	    index = b.nodes[cn].node_pred.unique_add_sorted(txm_node_pred_type(oryginal_label));
 	    
 	    b.nodes[cn].node_pred[index].label_cnt2++;
@@ -361,35 +407,17 @@ namespace TXM
 		
 		break;	
 	      }
-
-	    simple_temp.label = FLT_MAX;
-	    base.predict(ec, cn);
 	    
-	    float left_or_right = b.nodes[cn].node_pred[index].norm_Ehk - b.nodes[cn].norm_Eh;
-	    if(ec.final_prediction < 0)//b.nodes[cn].Eh/b.nodes[cn].n)
-	      //if(left_or_right < 0)
+	    if(ec.final_prediction < 0)//b.nodes[cn].norm_Eh)
 		{
-		b.nodes[cn].L++;	
-		/*
-		if(cn == 0)
-		  {
-		    cout << b.nodes[cn].node_pred[index].label << "\t" << b.nodes[cn].norm_Eh << "\t" << b.nodes[cn].node_pred[index].norm_Ehk  << "\t" << left_or_right << "\t" << ec.final_prediction << "\t" << ec.partial_prediction << endl;
-		    cin.ignore();
-		  }
-		*/
-		cn = b.nodes[cn].id_left;
-	      }	
+
+		  b.nodes[cn].L++;
+		  cn = b.nodes[cn].id_left;
+		}	
 	    else
 	      {
 		b.nodes[cn].R++;
 		b.nodes[cn].node_pred[index].Rk++;
-		/*
-		if(cn == 0)
-		  {
-		    cout << b.nodes[cn].node_pred[index].label << "\t" << b.nodes[cn].norm_Eh << "\t" << b.nodes[cn].node_pred[index].norm_Ehk  << "\t" << left_or_right << "\t" << ec.final_prediction << "\t" << ec.partial_prediction << endl;
-		    cin.ignore();
-		  }
-		*/
 		cn = b.nodes[cn].id_right;	
 	      }
 	  }	
@@ -505,7 +533,7 @@ namespace TXM
     l->set_finish<txm,finish>();
     
     data->max_depth = 0;
-    data->passes_per_level = 2;
+    data->passes_per_level = 1;
     
     if(all.training)
       init_tree(*data);	
