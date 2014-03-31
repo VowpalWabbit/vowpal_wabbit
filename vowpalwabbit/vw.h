@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef VW_H
-#define VW_H
+#ifndef VOWPAL_WABBIT_H
+#define VOWPAL_WABBIT_H
 
 #include "global_data.h"
 #include "example.h"

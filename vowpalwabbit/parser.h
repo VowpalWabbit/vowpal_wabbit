@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef SCE
-#define SCE
+#ifndef PARSER_H
+#define PARSER_H
 
 #include "io_buf.h"
 #include "parse_primitives.h"

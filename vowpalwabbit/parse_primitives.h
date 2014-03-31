@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef PP
-#define PP
+#ifndef PARSE_PRIMITIVES_H
+#define PARSE_PRIMITIVES_H
 
 #include<iostream>
 #include <stdint.h>
