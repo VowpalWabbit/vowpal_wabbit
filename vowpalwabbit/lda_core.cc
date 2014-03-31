@@ -14,15 +14,12 @@ license as described in the file LICENSE.
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include "parse_example.h"
 #include "constant.h"
 #include "sparse_dense.h"
 #include "gd.h"
-#include "lda_core.h"
-#include "cache.h"
 #include "simple_label.h"
 #include "rand48.h"
-#include "vw.h"
+#include "reductions.h"
 
 using namespace LEARNER;
 using namespace std;
@@ -752,7 +749,7 @@ void end_examples(lda& l)
 
 learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
 {
-  lda* ld = (lda*)calloc(1,sizeof(lda));
+  lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
   ld->sorted_features = vector<index_feature>();
   ld->total_lambda_init = 0;
   ld->all = &all;

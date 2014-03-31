@@ -306,7 +306,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    nn* n = (nn*)calloc(1,sizeof(nn));
+    nn* n = (nn*)calloc_or_die(1,sizeof(nn));
     n->all = &all;
 
     po::options_description desc("NN options");

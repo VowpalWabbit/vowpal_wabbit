@@ -14,5 +14,6 @@ namespace po = boost::program_options;
 #include "parser.h" // for finish_example()
 #include "learner.h" // for core reduction definition
 #include "global_data.h" // for vw datastructure
+#include "memory.h"
 
 #endif

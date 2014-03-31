@@ -196,7 +196,7 @@ namespace BS {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    bs* data = (bs*)calloc(1, sizeof(bs));
+    bs* data = (bs*)calloc_or_die(1, sizeof(bs));
     data->ub = FLT_MAX;
     data->lb = -FLT_MAX;
 

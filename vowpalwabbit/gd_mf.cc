@@ -5,21 +5,20 @@ license as described in the file LICENSE.
  */
 #include <fstream>
 #include <float.h>
+#include <string.h>
+#include <stdio.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #else
 #include <netdb.h>
 #endif
-#include <string.h>
-#include <stdio.h>
-#include "parse_example.h"
+
 #include "constant.h"
 #include "sparse_dense.h"
 #include "gd.h"
-#include "cache.h"
 #include "simple_label.h"
 #include "rand48.h"
-#include "vw.h"
+#include "reductions.h"
 
 using namespace std;
 
@@ -289,7 +288,7 @@ void end_pass(gdmf& d)
 
   learner* setup(vw& all)
   {
-    gdmf* data = (gdmf*)calloc(1,sizeof(gdmf)); 
+    gdmf* data = (gdmf*)calloc_or_die(1,sizeof(gdmf)); 
     data->all = &all;
     learner* l = new learner(data, all.reg.stride);
     l->set_learn<gdmf, learn>();

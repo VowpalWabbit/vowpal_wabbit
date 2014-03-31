@@ -301,7 +301,7 @@ namespace CBIFY {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {//parse and set arguments
-    cbify* data = (cbify*)calloc(1, sizeof(cbify));
+    cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
 
     data->epsilon = 0.05f;
     data->counter = 0;

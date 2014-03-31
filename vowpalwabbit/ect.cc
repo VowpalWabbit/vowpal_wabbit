@@ -373,7 +373,7 @@ namespace ECT
   
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    ect* data = (ect*)calloc(1, sizeof(ect));
+    ect* data = (ect*)calloc_or_die(1, sizeof(ect));
     po::options_description desc("ECT options");
     desc.add_options()
       ("error", po::value<size_t>(), "error in ECT");

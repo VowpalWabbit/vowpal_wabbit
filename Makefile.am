@@ -31,6 +31,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/gd.h \
 	vowpalwabbit/gd_mf.h \
 	vowpalwabbit/mf.h \
+	vowpalwabbit/memory.h \
 	vowpalwabbit/lda_core.h \
 	vowpalwabbit/lrq.h \
 	vowpalwabbit/network.h \

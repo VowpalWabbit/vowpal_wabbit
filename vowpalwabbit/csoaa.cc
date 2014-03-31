@@ -68,7 +68,7 @@ namespace CSOAA {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    csoaa* c=(csoaa*)calloc(1,sizeof(csoaa));
+    csoaa* c=(csoaa*)calloc_or_die(1,sizeof(csoaa));
     c->all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
@@ -797,7 +797,7 @@ namespace LabelDict {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    ldf* ld = (ldf*)calloc(1, sizeof(ldf));
+    ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
 
     ld->all = &all;
     ld->need_to_clear = true;

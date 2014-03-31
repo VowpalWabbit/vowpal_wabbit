@@ -477,7 +477,7 @@ namespace CB_ALGS
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    cb* c = (cb*)calloc(1, sizeof(cb));
+    cb* c = (cb*)calloc_or_die(1, sizeof(cb));
     c->all = &all;
     c->min_cost = 0.;
     c->max_cost = 1.;

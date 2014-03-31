@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include "searn_sequencetask.h"
 #include "multiclass.h"
+#include "memory.h"
 #include "example.h"
 #include "gd.h"
 
@@ -277,7 +278,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
       lab->costs.push_back(default_wclass);
     }
 
-    task_data* data = (task_data*)calloc(1, sizeof(task_data));
+    task_data* data = (task_data*)calloc_or_die(1, sizeof(task_data));
     data->ldf_examples = ldf_examples;
     data->num_actions  = num_actions;
     

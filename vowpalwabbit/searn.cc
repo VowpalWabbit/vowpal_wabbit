@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "csoaa.h"
 #include "cb.h"
+#include "memory.h"
 #include "v_hashmap.h"
 #include "vw.h"
 #include "rand48.h"
@@ -48,25 +49,6 @@ namespace Searn
     hinfo->features          = 0;
     hinfo->bigram_features   = false;
     hinfo->length            = 1;
-  }
-
-  void* calloc_or_die(size_t nmemb, size_t size)
-  {
-    if (nmemb == 0 || size == 0)
-      return NULL;
-
-    void* data = calloc(nmemb, size);
-    if (data == NULL) {
-      std::cerr << "internal error: memory allocation failed; dying!" << std::endl;
-      throw exception();
-    }
-    return data;
-  }
-
-  void free_it(void*ptr)
-  {
-    if (ptr != NULL)
-      free(ptr);
   }
 
   int random_policy(uint64_t seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)
@@ -1219,7 +1201,7 @@ namespace Searn
         v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)srn.valid_labels)->costs;
         assert(hyp->num_actions == costs->size());
         cdbg << "action_costs =";
-        hyp->action_costs = (float*)calloc(hyp->num_actions, sizeof(float));
+        hyp->action_costs = (float*)calloc_or_die(hyp->num_actions, sizeof(float));
         for (size_t i=0; i<hyp->num_actions; i++) {
           hyp->action_costs[i] = (costs->begin+i)->partial_prediction;
           cdbg << " " << hyp->action_costs[i];
@@ -1268,7 +1250,7 @@ namespace Searn
             if (srn.rollout_all_actions) { // TODO: handle CB
               v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)srn.valid_labels)->costs;
               assert(next->num_actions == costs->size());
-              next->action_costs = (float*)calloc(next->num_actions, sizeof(float));
+              next->action_costs = (float*)calloc_or_die(next->num_actions, sizeof(float));
               for (size_t i=0; i<next->num_actions; i++)
                 next->action_costs[i] = (costs->begin+i)->partial_prediction;
             }
@@ -2087,7 +2069,7 @@ void print_update(vw& all, searn& srn)
 
   learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    searn* srn = (searn*)calloc(1,sizeof(searn));
+    searn* srn = (searn*)calloc_or_die(1,sizeof(searn));
     srn->all = &all;
 
     searn_initialize(all, *srn);
@@ -2223,7 +2205,7 @@ void print_update(vw& all, searn& srn)
 
     cdbg << "searn current_policy = " << srn->current_policy << " total_number_of_policies = " << srn->total_number_of_policies << endl;
     
-    searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));
+    searn_task* mytask = (searn_task*)calloc_or_die(1, sizeof(searn_task));
     if (task_string.compare("sequence") == 0) {
       mytask->initialize = SequenceTask::initialize;
       mytask->finish = SequenceTask::finish;
@@ -2276,7 +2258,7 @@ void print_update(vw& all, searn& srn)
     if (! srn->examples_dont_change) {
       size_t label_size = srn->is_ldf ? sizeof(COST_SENSITIVE::label) : sizeof(MULTICLASS::mc_label);
       for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
-        srn->learn_example_copy[n].ld = calloc(1, label_size);
+        srn->learn_example_copy[n].ld = calloc_or_die(1, label_size);
     }
     
     if (!srn->allow_current_policy) // if we're not dagger

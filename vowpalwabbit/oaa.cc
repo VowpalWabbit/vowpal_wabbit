@@ -11,7 +11,7 @@ license as described in the file LICENSE.
 
 #include "multiclass.h"
 #include "simple_label.h"
-#include "parser.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -84,7 +84,7 @@ namespace OAA {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    oaa* data = (oaa*)calloc(1, sizeof(oaa));
+    oaa* data = (oaa*)calloc_or_die(1, sizeof(oaa));
     //first parse for number of actions
     if( vm_file.count("oaa") ) {
       data->k = (uint32_t)vm_file["oaa"].as<size_t>();

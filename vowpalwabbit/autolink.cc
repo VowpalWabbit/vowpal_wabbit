@@ -43,7 +43,7 @@ namespace ALINK {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    autolink* data = (autolink*)calloc(1,sizeof(autolink));
+    autolink* data = (autolink*)calloc_or_die(1,sizeof(autolink));
     data->d = (uint32_t)vm["autolink"].as<size_t>();
     data->stride = all.reg.stride;
     

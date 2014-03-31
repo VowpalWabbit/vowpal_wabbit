@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "parser.h"
 #include "gd.h"
+#include "memory.h"
 
 using namespace std;
 
@@ -216,7 +217,7 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 
 vw::vw()
 {
-  sd = (shared_data *) calloc(1, sizeof(shared_data));
+  sd = (shared_data *) calloc_or_die(1, sizeof(shared_data));
   sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
   sd->max_label = 1.;

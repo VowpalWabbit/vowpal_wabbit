@@ -1,5 +1,4 @@
-#include "vw.h"
-#include "parse_args.h"
+#include "reductions.h"
 
 using namespace LEARNER;
 
@@ -22,7 +21,7 @@ namespace Scorer {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    scorer* s = (scorer*)calloc(1, sizeof(scorer));
+    scorer* s = (scorer*)calloc_or_die(1, sizeof(scorer));
     s->all = &all;
 
     learner* l = new learner(s, all.l);

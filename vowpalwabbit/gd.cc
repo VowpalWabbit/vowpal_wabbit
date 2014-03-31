@@ -19,15 +19,11 @@ license as described in the file LICENSE.
 #include <xmmintrin.h>
 #endif
 
-#include "parse_example.h"
-#include "constant.h"
 #include "sparse_dense.h"
 #include "gd.h"
-#include "cache.h"
 #include "simple_label.h"
 #include "accumulate.h"
-#include "learner.h"
-#include "vw.h"
+#include "reductions.h"
 
 using namespace std;
 
@@ -872,7 +868,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 
 learner* setup(vw& all, po::variables_map& vm)
 {
-  gd* g = (gd*)calloc(1, sizeof(gd));
+  gd* g = (gd*)calloc_or_die(1, sizeof(gd));
   g->all = &all;
   g->active = all.active;
   g->active_simulation = all.active_simulation;
