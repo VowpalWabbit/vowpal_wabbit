@@ -25,10 +25,8 @@ struct beam_element {
   float    cost;   // cost of this element
   void*    data;   // pointer to element data -- rarely accessed!
   bool     active; // is this currently active
-  /* TODO: recombination
-  bool     recombined;                 // if we're not the BEST then we've been recombined
-  v_array<void*> * recomb_friends;   // if we're the BEST (among ~= elements), then recomb_friends is everything that's equivalent to us but worse... NOT USED if we're not doing k-best predictions
-  */
+  //  bool     recombined;                 // if we're not the BEST then we've been recombined
+  //  v_array<void*> * recomb_friends;   // if we're the BEST (among ~= elements), then recomb_friends is everything that's equivalent to us but worse... NOT USED if we're not doing k-best predictions
 };
 
 inline int compare_on_cost(const void *void_a, const void *void_b) {
@@ -64,15 +62,21 @@ class beam {
   float  best_cost;   // what is the cost of the best (lowest cost) item in the beam
   float  prune_if_gt; // prune any element with cost greater than this
   void*  best_cost_data;  // easy access to best-cost item
+  bool   do_kbest;
   v_array<beam_element> A; // the actual data
+  //  v_array<v_array<beam_element*>> recomb_buckets;
+
+  //  static size_t NUM_RECOMB_BUCKETS = 10231;
   
   bool (*is_equivalent)(void*,void*);  // test if two items are equivalent; NULL means don't do hypothesis recombination
   
  public:
-  beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(void*,void*)=NULL)
+  beam(size_t beam_size, float prune_coeff=FLT_MAX, bool (*test_equiv)(void*,void*)=NULL, bool kbest=false)
       : beam_size(beam_size)
       , pruning_coefficient(prune_coeff)
-      , is_equivalent(test_equiv) {
+      , do_kbest(kbest)
+      , is_equivalent(test_equiv)
+  {
     count = 0;
     worst_cost  = -FLT_MAX;
     best_cost   =  FLT_MAX;
@@ -82,6 +86,7 @@ class beam {
       A.resize(beam_size, true);
     else
       A.resize((beam_size+1) * 4, true);
+    if (beam_size == 1) do_kbest = false;  // automatically turn of kbest
   }
 
   bool insert(void*data, float cost, uint32_t hash) { // returns TRUE iff element was actually added
@@ -95,6 +100,21 @@ class beam {
     
     if (!should_add) return false;
 
+    bool we_were_worse = false;
+    // if (is_equivalent) {
+    //   size_t mod = recomb_buckets.size();
+    //   size_t id  = hash % mod;
+    //   size_t equiv_pos = bucket_contains_equiv(recomb_buckets[i], data, hash);
+    //   if (equiv_pos != (size_t) -1) { // we can recombing at equiv_pos
+    //     if (cost >= recomb_buckets[i][equiv_pos].cost) {
+    //       // we are more expensive, so ignore
+    //       we_were_worse = true;
+    //       beam_element * be = new beam_element;
+    //       be->hash = hash; be->cost = cost; be->data = data; be->active = true; be->recombined = false; be->recomb_friends = NULL;
+    //       add_recomb_friend(recomb_buckets[i][equiv_pos], be);
+    //   }
+    // }
+    
     if (beam_size < BEAM_CONSTANT_SIZE) {
       // find the worst item and directly replace it
       size_t worst_idx = 0;
@@ -113,6 +133,8 @@ class beam {
       A[worst_idx].cost = cost;
       A[worst_idx].data = data;
       A[worst_idx].active = true;
+      // A[worst_idx].recombined = false;
+      // A[worst_idx].recomb_friends = NULL;  // TODO: free it if it isn't NULL
       worst_cost = cost;
     } else {
       beam_element be;
@@ -120,6 +142,8 @@ class beam {
       be.cost = cost;
       be.data = data;
       be.active = true;
+      // be.recombined = false;
+      // be.recomb_friends = NULL;
 
       A.push_back(be);
       count++;
@@ -212,6 +236,20 @@ class beam {
   beam_element * end()   { return A.end; }
   size_t         size()  { return count; }
   bool           empty() { return A.empty(); }
+
+ private:
+  // void add_recomb_friend(beam_element *better, beam_element *worse) {
+  //   assert( better->cost <= worse->cost );
+  //   if (better->recomb_friends == NULL) {
+  //     if (worse->recomb_friends != NULL) {
+  //       better->recomb_friends = worse->recomb_friends;
+  //       worse->recomb_friends = NULL;
+  //     } else
+  //       better->recomb_friends = new vector<beam_element*>;
+  //   } else {
+  //     assert(worse->recomb_friends == NULL);
+  //   }
+  // }
 };
 
 
