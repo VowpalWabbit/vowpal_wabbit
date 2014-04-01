@@ -193,7 +193,7 @@ namespace OAA {
     update_example_indicies(all->audit, ec, -d->total_increment);
 
     if (shouldOutput) {
-      outputStringStream << endl;
+      //outputStringStream << endl;
       all->print_text(all->raw_prediction, outputStringStream.str(), ec->tag);
     }
   }
