@@ -270,28 +270,35 @@ namespace Searn
 
   int choose_policy(searn& srn, bool allow_current, bool allow_optimal)
   {
-    uint32_t seed = /* srn.read_example_last_id * 2147483 + */ (uint32_t)(srn.t * 2147483647);
-    return random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, srn.rollout_all_actions);
+    uint32_t seed = srn.read_example_last_id * 2147483 + (uint32_t)(srn.t * 2147483647);
+    return random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, false); // srn.rollout_all_actions);
   }
 
   size_t get_all_labels(void*dst, searn& srn, size_t num_ec, v_array<uint32_t> *yallowed)
   {
     if (srn.rollout_all_actions) { // dst should be a COST_SENSITIVE::label*
+
       COST_SENSITIVE::label *ret = (COST_SENSITIVE::label*)dst;
-      ret->costs.erase();
+
       if (srn.is_ldf) {
-        for (uint32_t i=0; i<num_ec; i++) {
-          COST_SENSITIVE::wclass cost = { FLT_MAX, i, 0., 0. };
-          ret->costs.push_back(cost);
-        }
-      } else { // is not LDF
-        if (yallowed == NULL) {
-          for (uint32_t i=1; i<=srn.A; i++) {
+        if (ret->costs.size() > num_ec)
+          ret->costs.resize(num_ec);
+        else if (ret->costs.size() < num_ec)
+          for (uint32_t i=ret->costs.size(); i<num_ec; i++) {
             COST_SENSITIVE::wclass cost = { FLT_MAX, i, 0., 0. };
             ret->costs.push_back(cost);
-            assert(i <= srn.A);
           }
-        } else {
+      } else { // is not LDF
+        if (yallowed == NULL) { // any action is allowed
+          if (ret->costs.size() != srn.A) {
+            ret->costs.erase();
+            for (uint32_t i=1; i<=srn.A; i++) {
+              COST_SENSITIVE::wclass cost = { FLT_MAX, i, 0., 0. };
+              ret->costs.push_back(cost);
+            }
+          }
+        } else { // yallowed is not null
+          ret->costs.erase();
           for (size_t i=0; i<yallowed->size(); i++) {
             COST_SENSITIVE::wclass cost = { FLT_MAX, (*yallowed)[i], 0., 0. };
             ret->costs.push_back(cost);
@@ -300,6 +307,7 @@ namespace Searn
       }
       return ret->costs.size();
     } else { // dst should be a CB::label*
+      // TODO: speed this up as above
       CB::label *ret = (CB::label*)dst;
       ret->costs.erase();
       if (srn.is_ldf) {
@@ -596,6 +604,7 @@ namespace Searn
       return a;
     } else if (srn->state == INIT_TRAIN) {
       int pol = choose_policy(*srn, srn->allow_current_policy, true);
+      cdbg << "{" << pol << "}";
       get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
@@ -642,8 +651,10 @@ namespace Searn
       } else { // t > learn_t
         size_t this_a = 0;
         if (srn->rollout_oracle) {
-          get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-          this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, -1, ystar, ystar_is_uint32t, false);
+          assert(ystar_is_uint32t);
+          this_a = *(uint32_t*)ystar;
+          //get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
+          //this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, -1, ystar, ystar_is_uint32t, false);
           srn->t++;
           //valid_labels.costs.erase(); valid_labels.costs.delete_v();
         } else if ((!srn->do_fastforward) || (!srn->snapshot_could_match) || (srn->snapshot_is_equivalent_to_t == ((size_t)-1))) { // we haven't converged, continue predicting
@@ -1095,7 +1106,7 @@ namespace Searn
         ((COST_SENSITIVE::label*)labels)->costs[i].x = losses[i] - min_loss;
       else
         ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
-    cdbg << "losses.size = " << losses.size() << endl; for (size_t i=0; i<losses.size(); i++) cdbg << "    " << losses[i]; cdbg << endl;
+    cdbg << "losses.size = " << losses.size() << " = {"; for (size_t i=0; i<losses.size(); i++) cdbg << " " << ((COST_SENSITIVE::label*)labels)->costs[i].x; cdbg << " }" << endl;
 
     if (!srn.is_ldf) {
       void* old_label = ec[0].ld;
@@ -1427,12 +1438,14 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
       cdbg << "======================================== LEARN (" << srn.current_policy << "," << srn.read_example_last_pass << ") ========================================" << endl;
       srn.state = LEARN;
       v_array<size_t> tset = get_training_timesteps(all, srn);
+      cdbg << "tset ="; for (size_t*t=tset.begin; t!=tset.end; ++t) cdbg << " " << (*t); cdbg << endl;
       for (size_t tid=0; tid<tset.size(); tid++) {
         size_t t = tset[tid];
         void *aset = srn.train_labels[t];
         srn.learn_t = t;
         srn.learn_losses.erase();
 
+        cdbg << "t=" << tid << ", labelset_size=" << labelset_size(srn, aset) << endl;
         for (size_t i=0; i<labelset_size(srn, aset); i++) {
           if (srn.auto_history) {
             // startup the rollout at the train actions
@@ -1445,9 +1458,10 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
 
           size_t this_index = labelset_weight_index(srn, aset, i);
           assert(this_index <= srn.A);
-          if (this_index == srn.train_action_ids[srn.learn_t])
+          if (false && (this_index == srn.train_action_ids[srn.learn_t])) {  // TODO: fix this!
             srn.learn_losses.push_back( srn.train_loss );
-          else {
+            cdbg << srn.train_loss << "* ";
+          } else {
             srn.t = 0;
             srn.learn_a = (uint32_t)this_index;
             srn.loss_last_step = 0;
@@ -1460,6 +1474,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
             srn.task->structured_predict(srn, ec, len, NULL, NULL);
 
             srn.learn_losses.push_back( srn.learn_loss );
+            cdbg << srn.learn_loss << " ";
             cdbg << "total loss: " << srn.learn_loss << endl;
           }
         }
@@ -1499,8 +1514,10 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
         } else {
           cerr << "warning: searn did not generate an example for a given time-step" << endl;
         }
+        cdbg << " | ";
       }
       tset.erase(); tset.delete_v();
+      cdbg << endl;
     }
     
     clear_snapshot(all, srn, true);
@@ -1602,6 +1619,8 @@ void print_update(vw& all, searn& srn)
       size_t num_sec = (size_t)(((float)(clock() - srn.start_clock_time)) / CLOCKS_PER_SEC);
       fprintf(stderr, " %15lusec", num_sec);
     }
+
+    //fprintf(stderr, " beta=%g", srn.beta);
 
     if (!all.holdout_set_off && all.current_pass >= 1)
       fprintf(stderr, " h");
@@ -2361,10 +2380,29 @@ void print_update(vw& all, searn& srn)
 
 /* TODO LIST:
 
- * fix --searn_history 0
  * write documentation
  * pull munge/unmunge out of structured_predict
  * make searn tasks classes
  * hide stuff in the searn class (HOW?)
+ * add --searn_dont_rollout option
+
+time ./vw -k -c -d pos.gz --searn_as_dagger 1e-8 --searn_task sequence --searn 45 --holdout_off
+
+real	1m40.899s
+user	1m41.810s
+sys	0m0.256s
+
+down to:
+
+real	0m54.234s
+user	0m55.195s
+sys	0m0.208s
+
+./vw -k -c -d pos.gz --searn_as_dagger 1e-6 --searn_task sequence --searn 45 --holdout_off
+
+./vw -k -c -d pos.gz --searn_as_dagger 1e-8 --searn_task sequence --searn 45 --holdout_off -f m
+./vw -d pos.gz -t --searn_task sequence --searn 45 -i m -p output
+
+
 
 */

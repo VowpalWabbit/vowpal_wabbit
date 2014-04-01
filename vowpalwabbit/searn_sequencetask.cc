@@ -23,14 +23,10 @@ namespace SequenceTask {
 
   void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
     for (size_t i=0; i<len; i++) { //save state for optimization
-      cdbg << "task: calling snapshot i=" << i << endl;
       srn.snapshot(i, 1, &i, sizeof(i), true);
-      cdbg << "task: return from snapshot i=" << i << endl;
 
       MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
-      cdbg << "task: asking for prediction @ " << i << endl;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
-      cdbg << "task: got prediction @ " << i << " = " << prediction << " (label=" << y->label << ")" << endl;
 
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
@@ -239,15 +235,10 @@ namespace SequenceSpanTask {
         }
       }
       MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
-      cdbg << "task: asking for prediction @ " << i << " (last_prediction=" << last_prediction << ")" << endl;
-      cdbg << "y_allowed = " << y_allowed << " = ["; for (uint32_t*it=y_allowed->begin; it!=y_allowed->end; ++it) cdbg << " " << *it; cdbg << " ]" << endl;
       last_prediction = srn.predict(ec[i], y_allowed, y->label);
-      cdbg << "task: got prediction @ " << i << " = " << last_prediction << " (label=" << y->label << ")" << endl;
 
       uint32_t printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
       uint32_t printed_truth      = (my_task_data->encoding == BIO) ? y->label        : bilou_to_bio(y->label);
-      //printed_prediction = last_prediction;
-      //printed_truth = y->label;
       
       if (output_ss) (*output_ss) << printed_prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : printed_truth) << ' ';
@@ -301,14 +292,10 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     task_data *data = (task_data*)srn.task_data;
     
     for (size_t i=0; i<len; i++) { //save state for optimization
-      cdbg << "task: calling snapshot i=" << i << endl;
       srn.snapshot(i, 1, &i, sizeof(i), true);
-      cdbg << "task: return from snapshot i=" << i << endl;
 
       for (size_t a=0; a<data->num_actions; a++) {
         VW::copy_example_data(false, &data->ldf_examples[a], ec[i]);  // copy but leave label alone!
-        //cout << "before index munging for a=" << a << endl;
-        //GD::print_audit_features(*srn.all, data->ldf_examples[a]);
 
         // now, offset it appropriately for the action id
         update_example_indicies(true, &data->ldf_examples[a], quadratic_constant, cubic_constant * (uint32_t)a);
@@ -320,17 +307,10 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].partial_prediction = 0.;
         lab->costs[0].wap_value = 0.;
       }
-      // for (size_t a=0; a<data->num_actions; a++) {
-      //   cout << "after index munging for a=" << a << endl;
-      //   GD::print_audit_features(*srn.all, data->ldf_examples[a]);
-      // }
       
       MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
-      cdbg << "task: asking for prediction @ " << i << endl;
-
       size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, y->label - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
-      cdbg << "task: got prediction @ " << i << " = " << prediction << endl;
       
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
