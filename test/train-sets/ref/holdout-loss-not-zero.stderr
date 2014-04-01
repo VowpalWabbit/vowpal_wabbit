@@ -1,0 +1,29 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/0001.dat.cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+1.000000   1.000000            1         1.0   1.0000   0.0000       51
+0.508353   0.016707            2         2.0   0.0000   0.1293      104
+0.260650   0.012946            4         4.0   0.0000   0.0607      135
+0.242874   0.225099            8         8.0   0.0000   0.2086      146
+0.252709   0.262543           16        16.0   1.0000   0.2181      143
+0.232971   0.213234           32        32.0   1.0000   0.4298       70
+0.233056   0.233140           64        64.0   0.0000   0.3871       34
+0.219917   0.206779          128       128.0   0.0000   0.1824       30
+0.171715   0.171715          256       256.0   0.0000   0.1204       72 h
+
+finished run
+number of examples per pass = 180
+passes used = 2
+weighted example sum = 360
+weighted label sum = 160
+average loss = 0.149439 h
+best constant = 0.444444
+best constant's loss = 0.246914
+total feature number = 27566
