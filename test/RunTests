@@ -949,3 +949,8 @@ __DATA__
 {VW} -d train-sets/oneofmany_data -k -c --passes 20 --searn_as_dagger 1e-8 --searn_task oneofmany --searn 2 --holdout_off
     train-sets/ref/oneofmany_data.stderr
 
+# Test 60: (holdout-broken regression)
+# ensure we have no holdout loss of '0 h'
+{VW} -k -c --passes 2 train-sets/0001.dat
+    train-sets/ref/holdout-loss-not-zero.stderr
+
