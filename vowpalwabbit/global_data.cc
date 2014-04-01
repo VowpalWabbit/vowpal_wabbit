@@ -221,6 +221,7 @@ vw::vw()
   sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
   sd->max_label = 1.;
+  sd->min_label = 0.;
 
   p = new_parser();
   p->emptylines_separate_examples = false;

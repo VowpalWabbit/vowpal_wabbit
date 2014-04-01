@@ -523,7 +523,7 @@ float compute_norm(vw& all, example& ec)
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off, size_t normalized_idx, size_t feature_mask_idx>
-void local_predict(vw& all, gd& g, example& ec)
+void compute_update(vw& all, gd& g, example& ec)
 {
   label_data* ld = (label_data*)ec.ld;
 
@@ -595,7 +595,7 @@ void update(gd& g, learner& base, example& ec)
 {
   vw* all = g.all;
 
-  local_predict<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx > (*all, g, ec);
+  compute_update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx > (*all, g, ec);
   
   if (ec.eta_round != 0.)
     {
