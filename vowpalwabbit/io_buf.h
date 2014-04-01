@@ -83,18 +83,18 @@ class io_buf {
 #endif
       if(ret!=-1)
         files.push_back(ret);
-      else
-	{
-	  cout << "can't open: " << name << " for read or write, exiting on error" << strerror(errno) << endl;
-	  throw exception();
-	}
       break;
 
     default:
       std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
       ret = -1;
     }
-
+    if (ret == -1)
+      {
+	cout << "can't open: " << name << ", error = " << strerror(errno) << endl;
+	throw exception();
+      }
+    
     return ret;
   }
 
