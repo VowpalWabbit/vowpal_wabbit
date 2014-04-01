@@ -621,6 +621,8 @@ void learn(gd& g, learner& base, example& ec)
 
   if ((all->holdout_set_off || !ec.test_only) && ld->weight > 0)
     update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx>(g,base,ec);
+  else if(ld->weight > 0)
+    ec.loss = all->loss->getLoss(all->sd, ec.final_prediction, ld->label) * ld->weight;
 }
 
 void sync_weights(vw& all) {
