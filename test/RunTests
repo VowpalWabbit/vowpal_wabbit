@@ -795,7 +795,7 @@ __DATA__
     train-sets/ref/bs.reg.predict
 
 # Test 26: bagging -- predicting with bagged regressor
-{VW} -d train-sets/0002.dat -i models/bs.prreg.model -p bs.prreg.predict -t
+{VW} -d train-sets/0002.dat -i models/bs.reg.model -p bs.prreg.predict -t
     train-sets/ref/bs.prreg.stderr
     train-sets/ref/bs.prreg.predict
 
@@ -805,7 +805,7 @@ __DATA__
     train-sets/ref/bs.vote.predict
 
 # Test 28: bagging -- predict with bagged classifier
-{VW} -d train-sets/0001.dat -i models/bs.prvote.model -p bs.prvote.predict -t
+{VW} -d train-sets/0001.dat -i models/bs.vote.model -p bs.prvote.predict -t
     train-sets/ref/bs.prvote.stderr
     train-sets/ref/bs.prvote.predict
 
