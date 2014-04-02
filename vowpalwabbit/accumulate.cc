@@ -27,7 +27,7 @@ void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
       local_grad[i] = weights[stride*i+o];
     }
 
-  all_reduce(local_grad, length, master_location, all.unique_id, all.total, all.node, all.socks);
+  all_reduce<float>(local_grad, length, master_location, all.unique_id, all.total, all.node, all.socks);
   for(uint32_t i = 0;i < length;i++) 
     {
       weights[stride*i+o] = local_grad[i];
@@ -37,7 +37,7 @@ void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
 
 float accumulate_scalar(vw& all, string master_location, float local_sum) {
   float temp = local_sum;
-  all_reduce(&temp, 1, master_location, all.unique_id, all.total, all.node, all.socks);
+  all_reduce<float>(&temp, 1, master_location, all.unique_id, all.total, all.node, all.socks);
   return temp;
 }
 
@@ -46,15 +46,18 @@ void accumulate_avg(vw& all, string master_location, regressor& reg, size_t o) {
   size_t stride = all.reg.stride;
   float* local_grad = new float[length];
   weight* weights = reg.weight_vector;
-  float numnodes = (float)all.total;
-
+  float numnodes = 1.;
+  all_reduce<float>(&numnodes, 1, master_location, all.unique_id, all.total, all.node, all.socks);
   for(uint32_t i = 0;i < length;i++) 
-    local_grad[i] = weights[stride*i+o];
-  
-  all_reduce(local_grad, length, master_location, all.unique_id, all.total, all.node, all.socks);
-  for(uint32_t i = 0;i < length;i++) 
-    weights[stride*i+o] = local_grad[i]/numnodes;
+    {
+      local_grad[i] = weights[stride*i+o];
+    }
 
+  all_reduce<float>(local_grad, length, master_location, all.unique_id, all.total, all.node, all.socks);
+  for(uint32_t i = 0;i < length;i++) 
+    {
+      weights[stride*i+o] = local_grad[i]/numnodes;
+    }
   delete[] local_grad;
 }
 
@@ -77,55 +80,26 @@ void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
     cerr<<"Weighted averaging is implemented only for adaptive gradient, use accumulate_avg instead\n";
     return;
   }
-  uint32_t length = 1 << all.num_bits; //This is the number of parameters
+  uint32_t length = 1 << all.num_bits; //This is size of gradient
   size_t stride = all.reg.stride;
   weight* weights = reg.weight_vector;
   float* local_weights = new float[length];
 
   for(uint32_t i = 0;i < length;i++) 
-    local_weights[i] = weights[stride*i+1];
+    local_weights[i] = sqrt(weights[stride*i+1]*weights[stride*i+1]);
   
-  //find weighting for average
-  all_reduce(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
+  all_reduce<float>(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
 
-  for(uint32_t i = 0;i < length;i++) //Compute weighted versions 
+  for(uint32_t i = 0;i < length;i++) 
     if(local_weights[i] > 0) {
-      float ratio = weights[stride*i+1]/local_weights[i];
-      local_weights[i] = weights[stride*i] * ratio;
-      weights[stride*i+1] *= ratio; //A crude max
-      if (stride > 2)
-	weights[stride*i+2] *= ratio; //A crude max
+      float ratio = sqrt(weights[stride*i+1]*weights[stride*i+1])/local_weights[i];
+      weights[stride*i] *= ratio;
+      weights[stride*i+1] *= ratio;
     }
     else 
-      local_weights[i] = 0; 
+      weights[stride*i] = 0; 
 
-  //Find weighted average weight
-  all_reduce(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
-
-  for(uint32_t i = 0;i < length;i++) 
-    {
-      weights[stride*i] = local_weights[i];
-      local_weights[i] = weights[stride*i+1];
-    }
-
-  //Find weighted average for adaptation
-  all_reduce(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
-
-  for(uint32_t i = 0;i < length;i++) 
-    {
-      weights[stride*i+1] = local_weights[i];
-      if (stride > 2)
-	local_weights[i] = weights[stride*i+2];
-    }
-
-  if (stride > 2)
-    {
-      //Find weighted average for normalization
-      all_reduce(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
-      
-      for(uint32_t i = 0;i < length;i++) 
-	weights[stride*i+2] = local_weights[i];
-    }
+  all_reduce<float>(weights, (int)stride*length, master_location, all.unique_id, all.total, all.node, all.socks);
 
   delete[] local_weights;
 }

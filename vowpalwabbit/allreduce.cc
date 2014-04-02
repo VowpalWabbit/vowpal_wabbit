@@ -24,10 +24,8 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 
 using namespace std;
 
-const int buf_size = 1<<16;
-
 // port is already in network order
-socket_t sock_connect(const uint32_t ip, const int port) {
+static socket_t sock_connect(const uint32_t ip, const int port) {
 
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
@@ -71,7 +69,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   return sock;
 }
 
-socket_t getsock()
+static socket_t getsock()
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
@@ -89,13 +87,18 @@ socket_t getsock()
   return sock;
 }
 
+
+
 void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks)
 {
+cerr<<"Init\n";
 #ifdef _WIN32
   WSAData wsaData;
   WSAStartup(MAKEWORD(2,2), &wsaData);
   int lastError = WSAGetLastError();
 #endif
+
+  
 
   struct hostent* master = gethostbyname(master_location.c_str());
 
@@ -104,6 +107,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     throw exception();
   }
   socks.current_master = master_location;
+  cerr<<"Contacting master "<<master_location<<endl;
 
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
   int port = 26543;
@@ -186,8 +190,10 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   shutdown(master_sock, SHUT_RDWR);
 
   //int parent_sock;
-  if(parent_ip != (uint32_t)-1) 
+  if(parent_ip != (uint32_t)-1) {
+    cerr<<"Connecting to parent\n";
     socks.parent = sock_connect(parent_ip, parent_port);
+  }
   else
     socks.parent = -1;
 
@@ -196,49 +202,30 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   {
     sockaddr_in child_address;
     socklen_t size = sizeof(child_address);
-    socket_t f = accept(sock,(sockaddr*)&child_address,&size);
+    socket_t f = accept(sock,(sockaddr*)&child_address,&size);    
     if (f < 0)
     {
       cerr << "bad client socket!" << endl;
       throw exception();
     }
+    char hostname[NI_MAXHOST];
+    char servInfo[NI_MAXSERV];
+    getnameinfo((sockaddr *) &child_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV);
+    cerr << "connected to " << hostname << ':' << ntohs(port) << endl;
     socks.children[i] = f;
   }
 
+  cerr<<"In init "<<socks.parent<<" "<<socks.children[0]<<" "<<socks.children[1]<<endl;
+
   if (kid_count > 0)
     shutdown(sock, SHUT_RDWR);
+  cerr<<"In init "<<socks.parent<<" "<<socks.children[0]<<" "<<socks.children[1]<<endl;
 }
 
-void addbufs(float* buf1, const float* buf2, const int n) {
-  for(int i = 0;i < n;i++) 
-//     {
-//       uint32_t first = *((uint32_t*)(buf1+i));
-//       uint32_t second = *((uint32_t*)(buf2+i));
-//       uint32_t xkindaor = first^second;
-//       buf1[i] = *(float*)(&xkindaor);
-//     }
-    buf1[i] += buf2[i];
-}
-
-
-void pass_up(char* buffer, int left_read_pos, int right_read_pos, int& parent_sent_pos, socket_t parent_sock, int n) {
-  int my_bufsize = min(buf_size, ((int)(floor(left_read_pos/((float)sizeof(float)))*sizeof(float)) - parent_sent_pos));
-  my_bufsize = min(my_bufsize, ((int)(floor(right_read_pos/((float)sizeof(float)))*sizeof(float)) - parent_sent_pos));
-
-  if(my_bufsize > 0) {
-    //going to pass up this chunk of data to the parent
-    int write_size = send(parent_sock, buffer+parent_sent_pos, my_bufsize, 0);
-    if(write_size < my_bufsize) 
-      cerr<<"Write to parent failed "<<my_bufsize<<" "<<write_size<<" "<<parent_sent_pos<<" "<<left_read_pos<<" "<<right_read_pos<<endl ;
-    parent_sent_pos += my_bufsize;
-    //cerr<<"buf size = "<<my_bufsize<<" "<<parent_sent_pos<<endl;
-  }
-
-}
 
 void pass_down(char* buffer, const int parent_read_pos, int&children_sent_pos, const socket_t * child_sockets, const int n) {
 
-  int my_bufsize = min(buf_size, (parent_read_pos - children_sent_pos));
+  int my_bufsize = min(ar_buf_size, (parent_read_pos - children_sent_pos));
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the children
@@ -251,105 +238,6 @@ void pass_down(char* buffer, const int parent_read_pos, int&children_sent_pos, c
   }
 }
 
-
-void reduce(char* buffer, const int n, const socket_t parent_sock, const socket_t* child_sockets) {
-
-  fd_set fds;
-  FD_ZERO(&fds);
-  if(child_sockets[0] != -1)
-    FD_SET(child_sockets[0],&fds);
-  if(child_sockets[1] != -1)
-    FD_SET(child_sockets[1],&fds);
-
-  socket_t max_fd = max(child_sockets[0],child_sockets[1])+1;
-  int child_read_pos[2] = {0,0}; //First unread float from left and right children
-  int child_unprocessed[2] = {0,0}; //The number of bytes sent by the child but not yet added to the buffer
-  char child_read_buf[2][buf_size+sizeof(float)-1];
-  int parent_sent_pos = 0; //First unsent float to parent
-  //parent_sent_pos <= left_read_pos
-  //parent_sent_pos <= right_read_pos
-  
-  if(child_sockets[0] == -1) {
-    child_read_pos[0] = n;
-  }
-  if(child_sockets[1] == -1) {
-    child_read_pos[1] = n;						 
-  }
-
-  while (parent_sent_pos < n || child_read_pos[0] < n || child_read_pos[1] < n)
-    {
-      if(parent_sock != -1)
-	pass_up(buffer, child_read_pos[0], child_read_pos[1], parent_sent_pos, parent_sock, n);
-
-      if(parent_sent_pos >= n && child_read_pos[0] >= n && child_read_pos[1] >= n) break;
-
-      //      cout<<"Before select parent_sent_pos = "<<parent_sent_pos<<" child_read_pos[0] = "<<child_read_pos[0]<<" max fd = "<<max_fd<<endl;
-      
-      if(child_read_pos[0] < n || child_read_pos[1] < n) {
-	if (max_fd > 0 && select((int)max_fd,&fds,NULL, NULL, NULL) == -1)
-	  {
-	    cerr << "Select failed!" << endl;
-	    perror(NULL);
-	    throw exception();
-	  }
-      
-	for(int i = 0;i < 2;i++) {
-	  if(child_sockets[i] != -1 && FD_ISSET(child_sockets[i],&fds)) {
-	    //there is data to be left from left child
-	    if(child_read_pos[i] == n) {
-	      cerr<<"I think child has no data to send but he thinks he has "<<FD_ISSET(child_sockets[0],&fds)<<" "<<FD_ISSET(child_sockets[1],&fds)<<endl;
-	      fflush(stderr);
-	      throw exception();
-	    }
-	  
-	
-	    //float read_buf[buf_size];
-	    size_t count = min(buf_size,n - child_read_pos[i]);
-	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
-	    if(read_size == -1) {
-	      cerr <<" Read from child failed\n";
-	      perror(NULL);
-	      throw exception();
-	    }
-	    
-	    //cout<<"Read "<<read_size<<" bytes\n";
-// 	    char pattern[4] = {'A','B','C','D'};
-// 	    for(int j = 0; j < (child_read_pos[i] + read_size)/sizeof(float) - child_read_pos[i]/sizeof(float);j++) {
-// 	      if((buffer[(child_read_pos[i]/sizeof(float))*sizeof(float)+j] != pattern[j%4] && buffer[(child_read_pos[i]/sizeof(float))*sizeof(float)+j] != '\0') || (child_read_buf[i][j] != pattern[j%4]&& child_read_buf[i][j] != '\0')) {
-// 		cerr<<"Wrong data "<<pattern[j%4]<<" "<<buffer[(child_read_pos[i]/sizeof(float))*sizeof(float)+j]<<" "<<child_read_buf[i][j]<<endl;
-// 		cerr<<"Reading from positions "<<child_read_pos[i]/sizeof(float)+j<<" "<<j<<" "<<child_unprocessed[i]<<" "<<child_read_pos[i]<<endl;
-// 		cerr<<"Reading from child "<<i<<" "<<child_read_pos[0]<<" "<<child_read_pos[1]<<endl;
-// 	      }
-// 	    }
-
-	    addbufs((float*)buffer + child_read_pos[i]/sizeof(float), (float*)child_read_buf[i], (child_read_pos[i] + read_size)/sizeof(float) - child_read_pos[i]/sizeof(float));
-	    
-	    child_read_pos[i] += read_size;
-	    int old_unprocessed = child_unprocessed[i];
-	    child_unprocessed[i] = child_read_pos[i] % (int)sizeof(float);
-	    //cout<<"Unprocessed "<<child_unprocessed[i]<<" "<<(old_unprocessed + read_size)%(int)sizeof(float)<<" ";
-	    for(int j = 0;j < child_unprocessed[i];j++) {
-	      // cout<<(child_read_pos[i]/(int)sizeof(float))*(int)sizeof(float)+j<<" ";
-	      child_read_buf[i][j] = child_read_buf[i][((old_unprocessed + read_size)/(int)sizeof(float))*sizeof(float)+j];
-	    }
-	    //cout<<endl;
-	  
-	    if(child_read_pos[i] == n) //Done reading parent
-	      FD_CLR(child_sockets[i],&fds);
-	    //cerr<<"Clearing socket "<<i<<" "<<FD_ISSET(child_sockets[i],&fds)<<endl;
-	    //cerr<<"Child_unprocessed should be 0"<<child_unprocessed[i]<<endl;
-	    //fflush(stderr);
-	  }
-	  else if(child_sockets[i] != -1 && child_read_pos[i] != n)
-	    FD_SET(child_sockets[i],&fds);      
-	}
-      }
-      if(parent_sock == -1 && child_read_pos[0] == n && child_read_pos[1] == n) 
-	parent_sent_pos = n;
-
-    }  
-  
-}
 
 
 void broadcast(char* buffer, const int n, const socket_t parent_sock, const socket_t * child_sockets) {
@@ -376,7 +264,7 @@ void broadcast(char* buffer, const int n, const socket_t parent_sock, const sock
 	  cerr<<"I think parent has no data to send but he thinks he has\n";
 	  throw exception();
 	}
-	size_t count = min(buf_size,n-parent_read_pos);
+	size_t count = min(ar_buf_size,n-parent_read_pos);
 	int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);
 	if(read_size == -1) {
 	  cerr <<" Read from parent failed\n";
@@ -385,13 +273,5 @@ void broadcast(char* buffer, const int n, const socket_t parent_sock, const sock
 	parent_read_pos += read_size;	
       }
     }
-}
-
-void all_reduce(float* buffer, const int n, const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks) 
-{
-  if(master_location != socks.current_master) 
-    all_reduce_init(master_location, unique_id, total, node, socks);
-  reduce((char*)buffer, n*sizeof(float), socks.parent, socks.children);
-  broadcast((char*)buffer, n*sizeof(float), socks.parent, socks.children);
 }
 
