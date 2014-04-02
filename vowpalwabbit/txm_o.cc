@@ -87,7 +87,6 @@ namespace TXM_O
     uint32_t myL;
     uint32_t myR;
     bool leaf;
-    bool eliminated;
     v_array<txm_o_node_pred_type> node_pred;
     
     double Eh;	
@@ -123,7 +122,6 @@ namespace TXM_O
     node.n = 0;
     node.level = level;
     node.leaf = true;
-    node.eliminated = false;
     node.max_cnt2 = 0;
     node.max_cnt2_label = 0;
     node.ec_count = 0;
@@ -166,36 +164,37 @@ namespace TXM_O
     return w_ratio;
   }
   
-  size_t find_node_to_eliminate(txm_o& b, size_t& pp)	
+  bool find_switch_nodes(txm_o& b, size_t& c, size_t& p, size_t& pp)	
   {
-    size_t cn = 0;
-    size_t min_ec = b.nodes[0].min_ec_count;
-    size_t p = 0;
+    c = 0;
+    p = 0;
     pp = 0;
+    bool lr;
 
     while(1)
-    {
-      b.min_ec_path.push_back(pp);
-      
-      if(b.nodes[cn].leaf)
-	return p;
-
-      if(b.nodes[b.nodes[cn].id_left].min_ec_count < b.nodes[b.nodes[cn].id_right].min_ec_count)
       {
-	pp = p;
-	p = cn;
-	cn = b.nodes[cn].id_left; 
-      }
-      else
-      {
-	pp = p;
-	p = cn;
-	cn = b.nodes[cn].id_right;
-      }     
-            
-      if(cn == 0)
-        return 0;
-    }    
+	b.min_ec_path.push_back(p);
+	
+	if(b.nodes[c].leaf)
+	  {
+	    return lr;
+	  }
+	
+	if(b.nodes[b.nodes[c].id_left].min_ec_count < b.nodes[b.nodes[c].id_right].min_ec_count)
+	  {
+	    pp = p;
+	    p = c;
+	    c = b.nodes[c].id_left; 
+	    lr = false;
+	  }
+	else
+	  {
+	    pp = p;
+	    p = c;
+	    c = b.nodes[c].id_right;
+	    lr = true;
+	  }     
+      }    
   }
   
   void update_min_ec_count(txm_o& b, v_array<size_t>* arr)	
@@ -206,39 +205,54 @@ namespace TXM_O
 	size_t l = b.nodes[p].id_left;
 	size_t r = b.nodes[p].id_right;	
 	
-	if(b.nodes[l].leaf && b.nodes[r].leaf)
-	  b.nodes[p].min_ec_count = b.nodes[p].ec_count;
-	else if(b.nodes[l].leaf)
-	  b.nodes[p].min_ec_count = b.nodes[r].min_ec_count;
-	else if(b.nodes[r].leaf)
+	if(b.nodes[l].leaf)
+	  b.nodes[l].min_ec_count = b.nodes[l].ec_count;
+
+	if(b.nodes[r].leaf)
+	  b.nodes[r].min_ec_count = b.nodes[r].ec_count;
+
+	if(b.nodes[l].min_ec_count < b.nodes[r].min_ec_count)
 	  b.nodes[p].min_ec_count = b.nodes[l].min_ec_count;
 	else
-	  {
-	    if(b.nodes[l].min_ec_count < b.nodes[r].min_ec_count)
-	      b.nodes[p].min_ec_count = b.nodes[l].min_ec_count;
-	    else
-	      b.nodes[p].min_ec_count = b.nodes[r].min_ec_count;	
-	  }
+	  b.nodes[p].min_ec_count = b.nodes[r].min_ec_count;
       }
   }
-  
-  bool loopcheck(txm_o& b, size_t cn, size_t ref) //return true if there is loop
+
+  void display_tree2(txm_o& d)
   {
-    if(cn == ref)
-      return true;
-    else if(b.nodes[cn].leaf)
-      return false;
-    else
-    {	
-      bool res = false;
-	
-      res = loopcheck(b, b.nodes[cn].id_left, ref);
-      res |= loopcheck(b, b.nodes[cn].id_right, ref);
-      
-      return res;
-    }
+    size_t l, i;
+    for(l = 0; l <= d.max_depth; l++)
+      {
+	for(i = 0; i < d.nodes.size(); i++)
+	  {
+	    if(d.nodes[i].level == l)
+	      {	
+		if(d.nodes[i].leaf)
+		  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << "] ";
+		else
+		  cout << "(" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << ") ";
+	      }
+	  }
+	cout << endl;
+      }
+    cout << endl;
+    
+    cout << endl;
+    cout << "Tree depth: " << d.max_depth << endl;
+    cout << "ceil of log2(k): " << ceil_log2(d.k) << endl;
   }
-        
+
+  void update_levels(txm_o& b, size_t n, size_t cl)
+  {
+    b.nodes[n].level = cl;
+
+    if(b.nodes[n].id_left != 0)
+      update_levels(b, b.nodes[n].id_left, cl + 1);
+
+    if(b.nodes[n].id_right != 0)
+      update_levels(b, b.nodes[n].id_right, cl + 1);
+  }
+          
   void train_node(txm_o& b, learner& base, example& ec, size_t& cn, size_t& index)
   {
     label_data* simple_temp = (label_data*)ec.ld;
@@ -287,48 +301,61 @@ namespace TXM_O
 		b.nodes[b.nodes[cn].id_right].max_cnt2_label = b.nodes[cn].max_cnt2_label;
 
 		if(b.nodes[cn].level + 1 > b.max_depth)
-		  {
 		    b.max_depth = b.nodes[cn].level + 1;	
-		  }	
 	      }
 	      else
 	      {
-		size_t cn_el_p;
-		size_t cn_el = find_node_to_eliminate(b, cn_el_p);
-		size_t cn_el_l = b.nodes[cn_el].level;
-		size_t trsh = b.nodes[0].ec_count >> (cn_el_l + 1);
-		size_t cn_el_s;
-		
-		if(cn_el == b.nodes[cn_el_p].id_left)
-		  cn_el_s = b.nodes[cn_el_p].id_right;
-		else
-		  cn_el_s = b.nodes[cn_el_p].id_left;
-		  
-		float ratio = (float)b.nodes[cn_el].ec_count;
-		ratio /= (float)b.nodes[cn_el_s].ec_count;
-		
-		id_left = b.nodes[cn_el].id_left;
-		id_right = b.nodes[cn_el].id_right;
-		
-		if(b.nodes[0].min_ec_count < trsh && cn_el != 0 && id_left != cn && id_right != cn && !loopcheck(b, cn_el ,cn))// && ratio < 0.5)
+		size_t nc, np, npp;
+		bool lr = find_switch_nodes(b, nc, np, npp);
+		size_t nc_l = b.nodes[nc].level;
+		size_t trsh = b.nodes[0].ec_count >> (nc_l + 1);
+
+		/*display_tree2(b);
+		cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << endl;
+		cin.ignore();
+		*/
+		//if(((b.nodes[id_left].ec_count < trsh) || (b.nodes[id_right].ec_count < trsh)) && ratio_cn < ratio_cn_el && cn_el != 0 && id_left != cn && id_right != cn)
+		if(b.nodes[0].min_ec_count < trsh && cn != nc && b.nodes[cn].ec_count > b.nodes[np].ec_count)
 		{
+		  //display_tree2(b);
 		  cout << "\nSWAP!!" << endl;
-		  cout << cn << "\t" << id_left << "\t" << id_right << "\t" << cn_el << "\t" << cn_el_p << endl;
-		  
-		  if(b.nodes[cn_el_p].id_left == cn_el)
-		    b.nodes[cn_el_p].id_left = cn;
+		  cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << endl;
+		  // cin.ignore();
+
+		  if(b.nodes[npp].id_left == np)
+		    {
+		      if(lr == false)
+			b.nodes[npp].id_left = b.nodes[np].id_right;
+		      else
+			b.nodes[npp].id_left = b.nodes[np].id_left;
+
+		      update_levels(b, b.nodes[npp].id_left, b.nodes[npp].level + 1);
+		    }
 		  else
-		    b.nodes[cn_el_p].id_right = cn;	    
-		  
-		  b.nodes[cn].id_left = id_left;
-		  b.nodes[cn].id_right = id_right;
-		  b.nodes[id_left].level = b.nodes[cn].level + 1;
-		  b.nodes[id_right].level = b.nodes[cn].level + 1;
-		  b.nodes[cn_el].eliminated = true;
+		    {
+		      if(lr == false)
+			b.nodes[npp].id_right = b.nodes[np].id_right;
+		      else
+			b.nodes[npp].id_right = b.nodes[np].id_left;
+
+		      update_levels(b, b.nodes[npp].id_right, b.nodes[npp].level + 1);
+		    }
+
+		  b.nodes[cn].id_left = np;
+		  b.nodes[cn].id_right = nc;
+		  b.nodes[np].leaf = true;
+		  b.nodes[np].id_left = 0;
+		  b.nodes[np].id_right = 0;
+		  b.nodes[nc].leaf = true;
+		  b.nodes[nc].id_left = 0;
+		  b.nodes[nc].id_right = 0;
+		  b.nodes[np].level = b.nodes[cn].level + 1;
+		  b.nodes[nc].level = b.nodes[cn].level + 1;
 		  
 		  if(b.nodes[cn].level + 1 > b.max_depth)
-		      b.max_depth = b.nodes[cn].level + 1;	    
+		    b.max_depth = b.nodes[cn].level + 1;	    
 
+		  b.min_ec_path.pop();
 		  b.min_ec_path.pop();
 		  update_min_ec_count(b, &b.min_ec_path);		    	
 		  }
@@ -381,30 +408,6 @@ namespace TXM_O
       }	
   }
 
-  void display_tree2(txm_o& d)
-  {
-    size_t l, i;
-    for(l = 0; l <= d.max_depth; l++)
-      {
-	for(i = 0; i < d.nodes.size(); i++)
-	  {
-	    if(d.nodes[i].level == l && d.nodes[i].eliminated == false)
-	      {	
-		if(d.nodes[i].leaf)
-		  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << "] ";
-		else
-		  cout << "(" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << ") ";
-	      }
-	  }
-	cout << endl;
-      }
-    cout << endl;
-    
-    cout << endl;
-    cout << "Tree depth: " << d.max_depth << endl;
-    cout << "ceil of log2(k): " << ceil_log2(d.k) << endl;
-  }
-  
   void save_node_stats(txm_o& d)
   {
     FILE *fp;
@@ -476,13 +479,13 @@ namespace TXM_O
 	  {
 	    //cout << cn << "\t";
 	    
-	    if(!track.contain_sorted(cn, tmp))
-		track.unique_add_sorted(cn);
-	    else
-	    {	
-		cout << "loop detected!!";
-		cin.ignore();
-	    }
+	    //if(!track.contain_sorted(cn, tmp))
+	    //	track.unique_add_sorted(cn);
+	    //else
+	    //{	
+	    //	cout << "loop detected!!";
+	    //	cin.ignore();
+	    //}
 	
 	    b.nodes[cn].ec_count++;
 
