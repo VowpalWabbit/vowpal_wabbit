@@ -15,7 +15,7 @@ namespace LEARNER
       {
 	if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	  {
-	    if (ec->indices.size() > 1) // one nonconstant feature.
+	    if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
 	      {
 		all->l->learn(*ec);
 		all->l->finish_example(*all, *ec);
@@ -24,9 +24,14 @@ namespace LEARNER
 	      {
 		all->l->end_pass();
 		VW::finish_example(*all,ec);
+		if(all->early_terminate)
+		  {
+		    all->p->done = true;
+		    return;
+		  }
 	      }
 	    else if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
-	      {//save state
+	      {// save state command
 
 		string final_regressor_name = all->final_regressor_name;
 		
@@ -39,20 +44,10 @@ namespace LEARNER
 		
 		VW::finish_example(*all,ec);
 	      }
-	    else 
+	    else // empty example
 	      {
 		all->l->learn(*ec);
-
-		if(all->early_terminate)
-		  {
-		    all->p->done = true;
-		    all->l->finish_example(*all, *ec);
-		    return;
-		  }
-		else
-		  {
-		    all->l->finish_example(*all, *ec);
-		  }
+	        all->l->finish_example(*all, *ec);
 	      }
 	  }
 	else if (parser_done(all->p))
