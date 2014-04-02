@@ -4,15 +4,11 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <float.h>
-#include <math.h>
-#include <stdio.h>
 
+#include "reductions.h"
 #include "cost_sensitive.h"
 #include "simple_label.h"
-#include "cache.h"
 #include "v_hashmap.h"
-#include "parse_example.h"
-#include "vw.h"
 
 using namespace std;
 
@@ -72,7 +68,7 @@ namespace CSOAA {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    csoaa* c=(csoaa*)calloc(1,sizeof(csoaa));
+    csoaa* c=(csoaa*)calloc_or_die(1,sizeof(csoaa));
     c->all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
@@ -554,7 +550,7 @@ namespace LabelDict {
     if (l.ec_seq.size() <= 0) return;  // nothing to do
 
     /////////////////////// handle label definitions
-    if (LabelDict::ec_seq_is_label_definition(l, l.ec_seq)) {
+    if (LabelDict::ec_seq_is_label_definition(l, l.ec_seq)) {  
       for (size_t i=0; i<l.ec_seq.size(); i++) {
         v_array<feature> features;
         for (feature*f=l.ec_seq[i]->atomics[l.ec_seq[i]->indices[0]].begin; f!=l.ec_seq[i]->atomics[l.ec_seq[i]->indices[0]].end; f++) {
@@ -763,7 +759,6 @@ namespace LabelDict {
   void predict_or_learn(ldf& l, learner& base, example &ec) {
     vw* all = l.all;
     l.base = &base;
-
     bool is_test = COST_SENSITIVE::example_is_test(ec) || !all->training;
     
     if (is_test)
@@ -773,10 +768,9 @@ namespace LabelDict {
     
     if (l.is_singleline)
       assert(is_test);
-    else if (example_is_newline(ec) || need_to_break) {
+    else if ((example_is_newline(ec) && COST_SENSITIVE::example_is_test(ec)) || need_to_break) {
       if (need_to_break && l.first_pass)
         cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
-
       do_actual_learning<is_learn>(*all, l, base);
       l.need_to_clear = true;
     } else if (LabelDict::ec_is_label_definition(ec)) {
@@ -801,7 +795,7 @@ namespace LabelDict {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    ldf* ld = (ldf*)calloc(1, sizeof(ldf));
+    ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
 
     ld->all = &all;
     ld->need_to_clear = true;

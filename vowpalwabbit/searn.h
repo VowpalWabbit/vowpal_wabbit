@@ -31,10 +31,6 @@ namespace Searn {
   };
   void default_info(history_info*);
 
-
-  void* calloc_or_die(size_t, size_t);
-  void free_it(void*);
-
   int  random_policy(uint64_t, float, bool, int, bool, bool);
 
   void add_history_to_example(vw&, history_info&, example*, history, size_t);

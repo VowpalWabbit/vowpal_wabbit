@@ -13,13 +13,10 @@ license as described in the file LICENSE.
 #include <fstream>
 #include <float.h>
 #include <time.h>
-#include <boost/program_options.hpp>
+
+#include "reductions.h"
 #include "multiclass.h"
-#include "ect.h"
-#include "parser.h"
 #include "simple_label.h"
-#include "parse_args.h"
-#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -376,7 +373,7 @@ namespace ECT
   
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    ect* data = (ect*)calloc(1, sizeof(ect));
+    ect* data = (ect*)calloc_or_die(1, sizeof(ect));
     po::options_description desc("ECT options");
     desc.add_options()
       ("error", po::value<size_t>(), "error in ECT");

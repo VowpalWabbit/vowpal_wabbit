@@ -56,6 +56,7 @@ namespace po = boost::program_options;
 #include "example.h"
 #include "simple_label.h"
 #include "vw.h"
+#include "memory.h"
 
 using namespace std;
 
@@ -150,7 +151,7 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
 
 parser* new_parser()
 {
-  parser* ret = (parser*) calloc(1,sizeof(parser));
+  parser* ret = (parser*) calloc_or_die(1,sizeof(parser));
   ret->input = new io_buf;
   ret->output = new io_buf;
   ret->local_example_number = 0;
@@ -1093,11 +1094,11 @@ void initialize_examples(vw& all)
   all.p->parsed_examples = 0;
   all.p->done = false;
 
-  all.p->examples = (example*)calloc(all.p->ring_size, sizeof(example));
+  all.p->examples = (example*)calloc_or_die(all.p->ring_size, sizeof(example));
 
   for (size_t i = 0; i < all.p->ring_size; i++)
     {
-      all.p->examples[i].ld = calloc(1,all.p->lp.label_size);
+      all.p->examples[i].ld = calloc_or_die(1,all.p->lp.label_size);
       all.p->examples[i].in_use = false;
     }
 }

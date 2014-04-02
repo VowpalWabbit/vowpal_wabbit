@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef EX_H
-#define EX_H
+#ifndef EXAMPLE_H
+#define EXAMPLE_H
 
 #include <stdint.h>
 #include "v_array.h"

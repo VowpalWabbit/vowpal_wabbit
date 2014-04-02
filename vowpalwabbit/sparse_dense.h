@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef SPARSE_DENSE_VECTOR_H
-#define SPARSE_DENSE_VECTOR_H
+#ifndef SPARSE_DENSE_H
+#define SPARSE_DENSE_H
 
 #include <math.h>
 #include "parse_example.h"

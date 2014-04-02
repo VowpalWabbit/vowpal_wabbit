@@ -8,11 +8,9 @@ license as described in the file LICENSE.
 #include <math.h>
 #include <stdio.h>
 
-#include "wap.h"
 #include "simple_label.h"
-#include "cache.h"
 #include "cost_sensitive.h"
-#include "vw.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -49,10 +47,10 @@ namespace WAP {
                   char* new_space = NULL;
                   if (f->space != NULL)
                     {
-                      new_space = (char*)calloc(strlen(f->space)+1,sizeof(char));
+                      new_space = (char*)calloc_or_die(strlen(f->space)+1,sizeof(char));
                       strcpy(new_space, f->space);
                     }
-                  char* new_feature = (char*)calloc(strlen(f->feature)+2,sizeof(char));
+                  char* new_feature = (char*)calloc_or_die(strlen(f->feature)+2,sizeof(char));
                   strcpy(new_feature+1, f->feature);
                   *new_feature = '-';
                   audit_data temp = {new_space, new_feature, f->weight_index + offset2, - f->x, true};
@@ -238,7 +236,7 @@ namespace WAP {
   
   learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file)
   {
-    wap* w=(wap*)calloc(1,sizeof(wap));
+    wap* w=(wap*)calloc_or_die(1,sizeof(wap));
     w->all = &all;
     uint32_t nb_actions = 0;
     if( vm_file.count("wap") ) { //if loaded options from regressor

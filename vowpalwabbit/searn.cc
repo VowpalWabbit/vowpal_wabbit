@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include "multiclass.h"
 #include "csoaa.h"
 #include "cb.h"
+#include "memory.h"
 #include "v_hashmap.h"
 #include "vw.h"
 #include "rand48.h"
@@ -48,25 +49,6 @@ namespace Searn
     hinfo->features          = 0;
     hinfo->bigram_features   = false;
     hinfo->length            = 1;
-  }
-
-  void* calloc_or_die(size_t nmemb, size_t size)
-  {
-    if (nmemb == 0 || size == 0)
-      return NULL;
-
-    void* data = calloc(nmemb, size);
-    if (data == NULL) {
-      std::cerr << "internal error: memory allocation failed; dying!" << std::endl;
-      throw exception();
-    }
-    return data;
-  }
-
-  void free_it(void*ptr)
-  {
-    if (ptr != NULL)
-      free(ptr);
   }
 
   int random_policy(uint64_t seed, float beta, bool allow_current_policy, int current_policy, bool allow_optimal, bool reset_seed)
@@ -288,7 +270,7 @@ namespace Searn
 
   int choose_policy(searn& srn, bool allow_current, bool allow_optimal)
   {
-    uint32_t seed = srn.read_example_last_id * 2147483 + (uint32_t)(srn.t * 2147483647);
+    uint32_t seed = (uint32_t) srn.read_example_last_id * 2147483 + (uint32_t)(srn.t * 2147483647);
     return random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, false); // srn.rollout_all_actions);
   }
 
@@ -302,7 +284,7 @@ namespace Searn
         if (ret->costs.size() > num_ec)
           ret->costs.resize(num_ec);
         else if (ret->costs.size() < num_ec)
-          for (uint32_t i=ret->costs.size(); i<num_ec; i++) {
+          for (uint32_t i= (uint32_t) ret->costs.size(); i<num_ec; i++) {
             COST_SENSITIVE::wclass cost = { FLT_MAX, i, 0., 0. };
             ret->costs.push_back(cost);
           }
@@ -1030,7 +1012,7 @@ namespace Searn
         /*UNDOME*/cdbg << "BEAM_INIT snapshot rollout_action srn.t=" << srn->t << endl;
         searn_snapshot_data(all, srn, index, 0, srn->rollout_action.begin + srn->t, history_size, true);
       } else if (srn->state == BEAM_ADVANCE) {
-        uint32_t t = (srn->t < srn->cur_beam_hyp->t) ? srn->cur_beam_hyp->t - 1 : srn->t; 
+        uint32_t t = (srn->t < srn->cur_beam_hyp->t) ? (uint32_t)srn->cur_beam_hyp->t - 1 : (uint32_t)srn->t; 
         /*UNDOME*/cdbg << "BEAM_ADVANCE snapshot rollout_action srn.t=" << srn->t << " cur_beam_hyp.t=" << srn->cur_beam_hyp->t << endl;
         cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;
         if (srn->rollout_action.size() <= /*srn->*/t + srn->hinfo.length)
@@ -1142,7 +1124,7 @@ namespace Searn
         //((OAA::mc_label*)ec[a]->ld)->weight = losses[a] - min_loss;
         COST_SENSITIVE::label* lab = (COST_SENSITIVE::label*)ec[a].ld;
         COST_SENSITIVE::default_label(lab);
-        COST_SENSITIVE::wclass c = { losses[a] - min_loss, a, 0., 0. };
+        COST_SENSITIVE::wclass c = { losses[a] - min_loss, (uint32_t)a, 0., 0. };
         lab->costs.push_back(c);
         cdbg << "learn t = " << srn.learn_t << " cost = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].x << " action = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].weight_index << endl;
         //cdbg << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
@@ -1230,7 +1212,7 @@ namespace Searn
         v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)srn.valid_labels)->costs;
         assert(hyp->num_actions == costs->size());
         cdbg << "action_costs =";
-        hyp->action_costs = (float*)calloc(hyp->num_actions, sizeof(float));
+        hyp->action_costs = (float*)calloc_or_die(hyp->num_actions, sizeof(float));
         for (size_t i=0; i<hyp->num_actions; i++) {
           hyp->action_costs[i] = (costs->begin+i)->partial_prediction;
           cdbg << " " << hyp->action_costs[i];
@@ -1279,7 +1261,7 @@ namespace Searn
             if (srn.rollout_all_actions) { // TODO: handle CB
               v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)srn.valid_labels)->costs;
               assert(next->num_actions == costs->size());
-              next->action_costs = (float*)calloc(next->num_actions, sizeof(float));
+              next->action_costs = (float*)calloc_or_die(next->num_actions, sizeof(float));
               for (size_t i=0; i<next->num_actions; i++)
                 next->action_costs[i] = (costs->begin+i)->partial_prediction;
             }
@@ -2157,7 +2139,7 @@ void print_update(vw& all, searn& srn)
 
   learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    searn* srn = (searn*)calloc(1,sizeof(searn));
+    searn* srn = (searn*)calloc_or_die(1,sizeof(searn));
     srn->all = &all;
 
     searn_initialize(all, *srn);
@@ -2293,7 +2275,7 @@ void print_update(vw& all, searn& srn)
 
     cdbg << "searn current_policy = " << srn->current_policy << " total_number_of_policies = " << srn->total_number_of_policies << endl;
     
-    searn_task* mytask = (searn_task*)calloc(1, sizeof(searn_task));
+    searn_task* mytask = (searn_task*)calloc_or_die(1, sizeof(searn_task));
     if (task_string.compare("sequence") == 0) {
       mytask->initialize = SequenceTask::initialize;
       mytask->finish = SequenceTask::finish;
@@ -2346,7 +2328,7 @@ void print_update(vw& all, searn& srn)
     if (! srn->examples_dont_change) {
       size_t label_size = srn->is_ldf ? sizeof(COST_SENSITIVE::label) : sizeof(MULTICLASS::mc_label);
       for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
-        srn->learn_example_copy[n].ld = calloc(1, label_size);
+        srn->learn_example_copy[n].ld = calloc_or_die(1, label_size);
     }
     
     if (!srn->allow_current_policy) // if we're not dagger

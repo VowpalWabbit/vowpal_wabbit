@@ -8,12 +8,10 @@ license as described in the file LICENSE.
 #include <stdio.h>
 #include <sstream>
 
+#include "reductions.h"
 #include "constant.h"
 #include "simple_label.h"
-#include "cache.h"
-#include "v_hashmap.h"
 #include "rand48.h"
-#include "vw.h"
 #include "gd.h"
 
 using namespace std;
@@ -308,7 +306,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    nn* n = (nn*)calloc(1,sizeof(nn));
+    nn* n = (nn*)calloc_or_die(1,sizeof(nn));
     n->all = &all;
 
     po::options_description desc("NN options");

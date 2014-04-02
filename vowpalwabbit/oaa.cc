@@ -4,16 +4,14 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <float.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <sstream>
 
 #include "multiclass.h"
-#include "oaa.h"
 #include "simple_label.h"
-#include "cache.h"
-#include "v_hashmap.h"
-#include "vw.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -23,14 +21,13 @@ namespace OAA {
 
   struct oaa{
     uint32_t k;
+    bool shouldOutput;
     vw* all;
   };
 
   template <bool is_learn>
   void predict_or_learn(oaa& o, learner& base, example& ec) {
     vw* all = o.all;
-
-    bool shouldOutput = all->raw_prediction > 0;
 
     mc_label* mc_label_data = (mc_label*)ec.ld;
     float prediction = 1;
@@ -67,18 +64,18 @@ namespace OAA {
             prediction = (float)i;
           }
 	
-        if (shouldOutput) {
+        if (o.shouldOutput) {
           if (i > 1) outputStringStream << ' ';
           outputStringStream << i << ':' << ec.partial_prediction;
         }
       }	
     ec.ld = mc_label_data;
     ec.final_prediction = prediction;
-
-    if (shouldOutput) 
+    
+    if (o.shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec.tag);
   }
-
+  
   void finish_example(vw& all, oaa&, example& ec)
   {
     MULTICLASS::output_example(all, ec);
@@ -87,7 +84,7 @@ namespace OAA {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    oaa* data = (oaa*)calloc(1, sizeof(oaa));
+    oaa* data = (oaa*)calloc_or_die(1, sizeof(oaa));
     //first parse for number of actions
     if( vm_file.count("oaa") ) {
       data->k = (uint32_t)vm_file["oaa"].as<size_t>();
@@ -103,6 +100,8 @@ namespace OAA {
       all.options_from_file.append(ss.str());
     }
 
+
+    data->shouldOutput = all.raw_prediction > 0;
     data->all = &all;
     all.p->lp = mc_label_parser;
 

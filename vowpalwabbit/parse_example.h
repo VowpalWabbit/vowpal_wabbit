@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef PE_H
-#define PE_H
+#ifndef PARSE_EXAMPLE_H
+#define PARSE_EXAMPLE_H
 #include <stdint.h>
 #include "parse_regressor.h"
 #include "parse_primitives.h"

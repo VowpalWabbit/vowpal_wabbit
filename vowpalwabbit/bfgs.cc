@@ -9,6 +9,7 @@ Implementation by Miro Dudik.
  */
 #include <fstream>
 #include <float.h>
+#include <exception>
 #ifndef _WIN32
 #include <netdb.h>
 #endif
@@ -16,16 +17,12 @@ Implementation by Miro Dudik.
 #include <stdio.h>
 #include <assert.h>
 #include <sys/timeb.h>
-#include "parse_example.h"
 #include "constant.h"
-#include "sparse_dense.h"
-#include "bfgs.h"
-#include "cache.h"
 #include "simple_label.h"
 #include "accumulate.h"
-#include <exception>
 #include "vw.h"
 #include "gd.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -479,7 +476,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     {
-      b.regularizers = (weight *)calloc(2*length, sizeof(weight));
+      b.regularizers = (weight *)calloc_or_die(2*length, sizeof(weight));
       
       if (b.regularizers == NULL)
 	{
@@ -912,7 +909,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       initialize_regressor(*all);
       if (all->per_feature_regularizer_input != "")
 	{
-	  b.regularizers = (weight *)calloc(2*length, sizeof(weight));
+	  b.regularizers = (weight *)calloc_or_die(2*length, sizeof(weight));
 	  if (b.regularizers == NULL)
 	    {
 	      cerr << all->program_name << ": Failed to allocate regularizers array: try decreasing -b <bits>" << endl;
@@ -973,7 +970,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
 learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
 {
-  bfgs* b = (bfgs*)calloc(1,sizeof(bfgs));
+  bfgs* b = (bfgs*)calloc_or_die(1,sizeof(bfgs));
   b->all = &all;
   b->wolfe1_bound = 0.01;
   b->first_hessian_on=true;

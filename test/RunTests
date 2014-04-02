@@ -795,7 +795,7 @@ __DATA__
     train-sets/ref/bs.reg.predict
 
 # Test 26: bagging -- predicting with bagged regressor
-{VW} -d train-sets/0002.dat -i models/bs.prreg.model -p bs.prreg.predict -t
+{VW} -d train-sets/0002.dat -i models/bs.reg.model -p bs.prreg.predict -t
     train-sets/ref/bs.prreg.stderr
     train-sets/ref/bs.prreg.predict
 
@@ -805,7 +805,7 @@ __DATA__
     train-sets/ref/bs.vote.predict
 
 # Test 28: bagging -- predict with bagged classifier
-{VW} -d train-sets/0001.dat -i models/bs.prvote.model -p bs.prvote.predict -t
+{VW} -d train-sets/0001.dat -i models/bs.vote.model -p bs.prvote.predict -t
     train-sets/ref/bs.prvote.stderr
     train-sets/ref/bs.prvote.predict
 
@@ -948,4 +948,9 @@ __DATA__
 # Test 59: silly test for "oneofmany" task
 {VW} -d train-sets/oneofmany_data -k -c --passes 20 --searn_as_dagger 1e-8 --searn_task oneofmany --searn 2 --holdout_off
     train-sets/ref/oneofmany_data.stderr
+
+# Test 60: (holdout-broken regression)
+# ensure we have no holdout loss of '0 h'
+{VW} -k -c --passes 2 train-sets/0001.dat
+    train-sets/ref/holdout-loss-not-zero.stderr
 

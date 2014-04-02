@@ -12,6 +12,7 @@ license as described in the file LICENSE.
 #include "unique_sort.h"
 #include "global_data.h"
 #include "constant.h"
+#include "memory.h"
 
 using namespace std;
 
@@ -53,7 +54,7 @@ char* copy(char* base)
 {
   size_t len = 0;
   while (base[len++] != '\0');
-  char* ret = (char *)calloc(len,sizeof(char));
+  char* ret = (char *)calloc_or_die(len,sizeof(char));
   memcpy(ret,base,len);
   return ret;
 }
@@ -274,7 +275,7 @@ public:
 	{
 	  if (base != NULL)
 	    free(base);
-	  base = (char *) calloc(2,sizeof(char));
+	  base = (char *) calloc_or_die(2,sizeof(char));
 	  base[0] = ' ';
 	  base[1] = '\0';
 	}

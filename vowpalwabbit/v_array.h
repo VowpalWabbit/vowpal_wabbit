@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef VARRAY_H__
-#define VARRAY_H__
+#ifndef VARRAY_H
+#define VARRAY_H
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>

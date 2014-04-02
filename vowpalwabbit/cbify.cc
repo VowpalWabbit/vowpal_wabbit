@@ -1,8 +1,9 @@
 #include <float.h>
+#include "reductions.h"
 #include "multiclass.h"
-#include "vw.h"
 #include "cost_sensitive.h"
 #include "cb.h"
+#include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
 
@@ -190,7 +191,7 @@ namespace CBIFY {
     COST_SENSITIVE::wclass wc;
     
     //get cost prediction for this label
-    wc.x = CB::get_cost_pred<false>(all, &known_cost, ec, label, all.sd->k);
+    wc.x = CB_ALGS::get_cost_pred<false>(all, &known_cost, ec, label, all.sd->k);
     wc.weight_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
@@ -300,7 +301,7 @@ namespace CBIFY {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {//parse and set arguments
-    cbify* data = (cbify*)calloc(1, sizeof(cbify));
+    cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
 
     data->epsilon = 0.05f;
     data->counter = 0;

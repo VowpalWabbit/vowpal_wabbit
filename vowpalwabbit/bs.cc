@@ -5,22 +5,14 @@ license as described in the file LICENSE.
  */
 #include <float.h>
 #include <math.h>
-#include <stdio.h>
 #include <sstream>
 #include <numeric>
 #include <vector>
 
-#include "io_buf.h"
-#include "parse_primitives.h"
-#include "example.h"
-#include "parse_args.h"
-#include "v_hashmap.h"
+#include "reductions.h"
 #include "simple_label.h"
 #include "rand48.h"
 #include "bs.h"
-#include "cache.h"
-#include "v_hashmap.h"
-#include "vw.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -204,7 +196,7 @@ namespace BS {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    bs* data = (bs*)calloc(1, sizeof(bs));
+    bs* data = (bs*)calloc_or_die(1, sizeof(bs));
     data->ub = FLT_MAX;
     data->lb = -FLT_MAX;
 

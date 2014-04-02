@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 
                                 const string str(estr);
 
-                                if(pr_queue.size() < topk)
+                                if(pr_queue.size() < (size_t)topk)
                                 {        
                                         pr_queue.push(make_pair(ex->final_prediction, str));
                                 }

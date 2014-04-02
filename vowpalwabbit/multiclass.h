@@ -8,10 +8,7 @@ license as described in the file LICENSE.
 
 #include "io_buf.h"
 #include "parse_primitives.h"
-#include "global_data.h"
 #include "example.h"
-#include "parse_args.h"
-#include "v_hashmap.h"
 
 namespace MULTICLASS
 {

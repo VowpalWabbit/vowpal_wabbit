@@ -9,21 +9,20 @@ Reading datafile = train-sets/0001.dat
 num sources = 1
 average    since         example     example  current  current  current
 loss       last          counter      weight    label  predict features
-1.000000   1.000000            1         1.0   1.0000   0.0000       51
-0.500000   0.000000            2         2.0   0.0000   0.0000      104
-0.250000   0.000000            4         4.0   0.0000   0.0000      135
-0.250000   0.250000            8         8.0   0.0000   0.0000      146
-0.312500   0.375000           16        16.0   1.0000   0.0000       24
-0.343750   0.375000           32        32.0   0.0000   0.0000       32
-0.359375   0.375000           64        64.0   0.0000   0.0000       61
-0.414062   0.468750          128       128.0   1.0000   0.0000      106
+1.000000   1.000000            1         1.0   1.0000  -1.0000       51
+1.000000   1.000000            2         2.0   0.0000  -1.0000      104
+1.000000   1.000000            4         4.0   0.0000  -1.0000      135
+1.000000   1.000000            8         8.0   0.0000  -1.0000      146
+1.000000   1.000000           16        16.0   1.0000  -1.0000       24
+1.000000   1.000000           32        32.0   0.0000  -1.0000       32
+0.968750   0.937500           64        64.0   0.0000  -1.0000       61
+0.953125   0.937500          128       128.0   1.0000  -1.0000      106
 
 finished run
 number of examples per pass = 200
 passes used = 1
 weighted example sum = 200
-weighted label sum = 91
-average loss = 0.455
-best constant = 0.452261
-best constant's loss = 0.247721
+weighted label sum = 0
+average loss = 0.945
+best constant = -0.00502513
 total feature number = 15482

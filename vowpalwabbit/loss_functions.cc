@@ -133,14 +133,14 @@ public:
   }
   
   float getUpdate(float prediction, float label,float eta_t, float norm) {
-    if(label*prediction >= label*label) return 0;
-    float err=(label*label-label*prediction)/(label*label);
+    if(label*prediction >= 1) return 0;
+    float err = 1 - label*prediction;
     float normal= eta_t;
     return label * (normal < err ? normal : err)/norm;
   }
 
   float getUnsafeUpdate(float prediction, float label,float eta_t, float norm) {
-    if(label*prediction >= label*label) return 0;
+    if(label*prediction >= 1) return 0;
     return label * eta_t/norm;
   }
 
@@ -155,7 +155,7 @@ public:
 
   float first_derivative(shared_data*, float prediction, float label)
   {
-    return (label*prediction >= label*label) ? 0 : -label;
+    return (label*prediction >= 1) ? 0 : -label;
   }
 
   float second_derivative(shared_data*, float prediction, float label)

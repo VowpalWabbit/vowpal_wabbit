@@ -25,6 +25,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "wap.h"
 #include "cb.h"
+#include "cb_algs.h"
 #include "scorer.h"
 #include "searn.h"
 #include "bfgs.h"
@@ -39,6 +40,7 @@ license as described in the file LICENSE.
 #include "binary.h"
 #include "lrq.h"
 #include "autolink.h"
+#include "memory.h"
 
 using namespace std;
 //
@@ -63,7 +65,7 @@ bool valid_ns(char c)
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
-  char* cstr = (char*)calloc(str.length()+1, sizeof(char));
+  char* cstr = (char*)calloc_or_die(str.length()+1, sizeof(char));
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
@@ -934,7 +936,7 @@ vw* parse_args(int argc, char *argv[])
       got_cs = true;
     }
 
-    all->l = CB::setup(*all, to_pass_further, vm, vm_file);
+    all->l = CB_ALGS::setup(*all, to_pass_further, vm, vm_file);
     got_cb = true;
   }
 
@@ -952,7 +954,7 @@ vw* parse_args(int argc, char *argv[])
       if (!got_cb) {
 	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm_file["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all->l = CB::setup(*all, to_pass_further, vm, vm_file);
+	all->l = CB_ALGS::setup(*all, to_pass_further, vm, vm_file);
 	got_cb = true;
       }
 
@@ -982,7 +984,7 @@ vw* parse_args(int argc, char *argv[])
       all->cost_sensitive = all->l;
       got_cs = true;
     }
-    //all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
+    //all->searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
     all->l = Searn::setup(*all, to_pass_further, vm, vm_file);
   }
 
@@ -1070,7 +1072,7 @@ namespace VW {
 
   char** get_argv_from_string(string s, int& argc)
   {
-    char* c = (char*)calloc(s.length()+3, sizeof(char));
+    char* c = (char*)calloc_or_die(s.length()+3, sizeof(char));
     c[0] = 'b';
     c[1] = ' ';
     strcpy(c+2, s.c_str());
@@ -1079,11 +1081,11 @@ namespace VW {
     foo.end_array = foo.begin = foo.end = NULL;
     tokenize(' ', ss, foo);
 
-    char** argv = (char**)calloc(foo.size(), sizeof(char*));
+    char** argv = (char**)calloc_or_die(foo.size(), sizeof(char*));
     for (size_t i = 0; i < foo.size(); i++)
       {
 	*(foo[i].end) = '\0';
-	argv[i] = (char*)calloc(foo[i].end-foo[i].begin+1, sizeof(char));
+	argv[i] = (char*)calloc_or_die(foo[i].end-foo[i].begin+1, sizeof(char));
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
