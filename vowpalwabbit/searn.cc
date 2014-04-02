@@ -1659,12 +1659,14 @@ void print_update(vw& all, searn& srn)
 
     for (int32_t n=0; n<(int32_t)srn.ec_seq.size(); n++) {
       example*me = srn.ec_seq[n];
-      cdbg << "o=" << me->num_features << endl;
+      cdbg << "add " << n << " n=" << me->num_features << endl;
       for (int32_t*enc=srn.neighbor_features.begin; enc!=srn.neighbor_features.end; ++enc) {
         int32_t offset = (*enc) >> 24;
         size_t  old_ns = (*enc) & 0xFF;
         size_t  enc_offset = wpp * ((2 * (size_t)(*enc)) + ((*enc < 0) ? 1 : 0));
 
+        cdbg << "old_ns = " << old_ns << endl;
+        
         if ((n + offset >= 0) && (n + offset < (int32_t)srn.ec_seq.size())) { // we're okay on position
           example*you = srn.ec_seq[n+offset];
           size_t  you_size = you->atomics[old_ns].size();
@@ -1677,9 +1679,11 @@ void print_update(vw& all, searn& srn)
             for (feature*f = you->atomics[old_ns].begin; f != you->atomics[old_ns].end; ++f) {
               feature f2 = { (*f).x, (uint32_t)( ((*f).weight_index * neighbor_constant + enc_offset) & srn.all->reg.weight_mask ) };
               me->atomics[neighbor_namespace].push_back(f2);
+              cdbg << "_";
             }
 
-            if (all->audit) {
+            if (all->audit && (all->current_pass==0)) {
+              assert(you->atomics[old_ns].size() == you->audit_features[old_ns].size());
               for (audit_data*f = you->audit_features[old_ns].begin; f != you->audit_features[old_ns].end; ++f) {
                 uint32_t wi = (uint32_t)((*f).weight_index * neighbor_constant + enc_offset) & srn.all->reg.weight_mask;
                 audit_data f2 = { NULL, NULL, wi, f->x, true };
@@ -1687,7 +1691,7 @@ void print_update(vw& all, searn& srn)
                 f2.space = (char*) calloc_or_die(neighbor_feature_space.length()+1, sizeof(char));
                 strcpy(f2.space, neighbor_feature_space.c_str());
 
-                f2.feature = (char*) calloc_or_die( strlen(f->feature) + 5, sizeof(char) );
+                f2.feature = (char*) calloc_or_die( strlen(f->feature) + 6, sizeof(char) );
                 f2.feature[0] = '@';
                 f2.feature[1] = (offset > 0) ? '+' : '-';
                 f2.feature[2] = (char)(abs(offset) + '0');
@@ -1696,6 +1700,7 @@ void print_update(vw& all, searn& srn)
                 strcpy(f2.feature+5, f->feature);
 
                 me->audit_features[neighbor_namespace].push_back(f2);
+                cdbg << "+" << "[" << me->audit_features[neighbor_namespace].size() << "]";
               }
 
             }
@@ -1704,19 +1709,50 @@ void print_update(vw& all, searn& srn)
             me->total_sum_feat_sq += you->sum_feat_sq[old_ns];
             me->num_features += you_size;            
           }
-        } else {
-          // TODO: add dummy features for <s> or </s>
+        } else if ((n + offset == -1) || (n + offset == (int32_t)srn.ec_seq.size())) { // handle <s> and </s>
+          size_t bias  = constant * ((n + offset < 0) ? 2 : 3);
+          uint32_t fid = ((uint32_t)(( bias * neighbor_constant + enc_offset))) & srn.all->reg.weight_mask;
+
+          if (me->atomics[neighbor_namespace].size() == 0)
+            me->indices.push_back(neighbor_namespace);
+
+          feature f = { 1., fid };
+          me->atomics[neighbor_namespace].push_back(f);
+          cdbg << ".";
+
+          if (all->audit && (all->current_pass==0)) {
+            audit_data f2 = { NULL, NULL, fid, 1., true };
+
+            f2.space = (char*) calloc_or_die(neighbor_feature_space.length()+1, sizeof(char));
+            strcpy(f2.space, neighbor_feature_space.c_str());
+
+            f2.feature = (char*) calloc_or_die(4, sizeof(char) );
+            f2.feature[0] = 'b';
+            f2.feature[1] = '@';
+            f2.feature[2] = (offset > 0) ? '+' : '-';
+            f2.feature[3] = 0;
+
+            me->audit_features[neighbor_namespace].push_back(f2);
+            cdbg << "+" << "{" << me->audit_features[neighbor_namespace].size() << "}";
+          }
+
+          me->sum_feat_sq[neighbor_namespace] += 1.;
+          me->total_sum_feat_sq += 1.;
+          me->num_features += 1;
         }
       }
+      cdbg << "audit=" << me->audit_features[neighbor_namespace].size() << ", atomics=" << me->atomics[neighbor_namespace].size() << endl;
+      cdbg << "add n'=" << me->num_features << endl;
     }
   }
 
   void del_neighbor_features(searn& srn) {
     if (srn.neighbor_features.size() == 0) return;
+    vw*all = srn.all;
 
     for (int32_t n=0; n<(int32_t)srn.ec_seq.size(); n++) {
       example*me = srn.ec_seq[n];
-      cdbg << "n=" << me->num_features;
+      cdbg << "del n=" << me->num_features;
       size_t total_size = 0;
       float total_sfs = 0.;
         
@@ -1728,6 +1764,9 @@ void print_update(vw& all, searn& srn)
           example*you = srn.ec_seq[n+offset];
           total_size += you->atomics[old_ns].size();
           total_sfs  += you->sum_feat_sq[old_ns];
+        } else if ((n + offset == -1) || (n + offset == (int32_t)srn.ec_seq.size())) {
+          total_size += 1;
+          total_sfs += 1;
         }
       }
 
@@ -1744,7 +1783,19 @@ void print_update(vw& all, searn& srn)
           cerr << "warning: neighbor namespace seems to be the wrong size? (total_size=" << total_size << " but ns.size=" << me->atomics[neighbor_namespace].size() << ")" << endl;
           assert(false);
           me->atomics[neighbor_namespace].end -= total_size;
-          //cdbg << "erasing " << you_size << " features" << endl;
+          cdbg << "erasing " << total_size << " features" << endl;
+        }
+
+        if (all->audit && (all->current_pass == 0)) {
+          assert(total_size == me->audit_features[neighbor_namespace].size());
+
+          for (audit_data*ad = me->audit_features[neighbor_namespace].begin; ad != me->audit_features[neighbor_namespace].end; ++ad)
+            if (ad->alloced) {
+              free(ad->space);
+              free(ad->feature);
+            }
+          
+          me->audit_features[neighbor_namespace].end -= total_size;
         }
             
         me->sum_feat_sq[neighbor_namespace] -= total_sfs;
@@ -1753,7 +1804,7 @@ void print_update(vw& all, searn& srn)
       } else {
         // TODO: add dummy features for <s> or </s>
       }
-      cdbg << " " << me->num_features << endl;
+      cdbg<< "del n'=" << me->num_features << endl;
     }
   }
 

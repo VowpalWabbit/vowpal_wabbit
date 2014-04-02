@@ -100,7 +100,7 @@ class beam {
     
     if (!should_add) return false;
 
-    bool we_were_worse = false;
+    //bool we_were_worse = false;
     // if (is_equivalent) {
     //   size_t mod = recomb_buckets.size();
     //   size_t id  = hash % mod;
