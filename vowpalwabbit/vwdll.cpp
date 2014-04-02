@@ -34,7 +34,6 @@ extern "C"
 	{
 		string s(pstrArgs);
 		vw* all = VW::initialize(s);
-		initialize_parser_datastructures(*all);
 		return static_cast<VW_HANDLE>(all);
 	}
 	

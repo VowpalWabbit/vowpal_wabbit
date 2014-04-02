@@ -1,9 +1,8 @@
 #include "example.h"
-#include "io_buf.h"
-#include "learner.h"
 #include "simple_label.h"
 #include "gd.h"
 #include "float.h"
+#include "reductions.h"
 
 using namespace LEARNER;
 
@@ -49,7 +48,7 @@ namespace PRINT
   
   learner* setup(vw& all)
   {
-    print* p = (print*)calloc(1, sizeof(print));
+    print* p = (print*)calloc_or_die(1, sizeof(print));
     p->all = &all;
     size_t length = ((size_t)1) << all.num_bits;
     all.reg.weight_mask = (all.reg.stride * length) - 1;

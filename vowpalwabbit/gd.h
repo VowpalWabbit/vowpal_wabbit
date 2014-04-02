@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef GD_H
-#define GD_H
+#ifndef GRADIENT_DESCENT_H
+#define GRADIENT_DESCENT_H
 
 #ifdef __FreeBSD__
 #include <sys/socket.h>

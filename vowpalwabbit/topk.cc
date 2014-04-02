@@ -11,10 +11,7 @@ license as described in the file LICENSE.
 #include <vector>
 #include <queue>
 
-#include "topk.h"
-#include "cache.h"
-#include "v_hashmap.h"
-#include "vw.h"
+#include "reductions.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -113,7 +110,7 @@ namespace TOPK {
 
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
-    topk* data = (topk*)calloc(1, sizeof(topk));
+    topk* data = (topk*)calloc_or_die(1, sizeof(topk));
 
     data->B = (uint32_t)vm["top"].as<size_t>();
 

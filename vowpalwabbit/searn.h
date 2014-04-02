@@ -2,24 +2,27 @@
 Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
- */
+*/
 #ifndef SEARN_H
 #define SEARN_H
 
 #include <stdio.h>
 #include "parse_args.h"
-#include "oaa.h"
 #include "parse_primitives.h"
 #include "v_hashmap.h"
-#include "csoaa.h"
+#include "cost_sensitive.h"
 #include <time.h>
 
 #define clog_print_audit_features(ec,reg) { print_audit_features(reg, ec); }
+#define MAX_BRANCHING_FACTOR 128
 
-typedef uint32_t* history;
+#define cdbg clog
+#undef cdbg
+#define cdbg if (1) {} else clog
 
-namespace SearnUtil
-{
+namespace Searn {
+  typedef uint32_t* history;
+
   struct history_info {
     size_t length;          // was history_length, must be >= features
     bool   bigrams;         // was sequence_bigrams
@@ -28,23 +31,10 @@ namespace SearnUtil
   };
   void default_info(history_info*);
 
-
-  void* calloc_or_die(size_t, size_t);
-  void free_it(void*);
-
   int  random_policy(uint64_t, float, bool, int, bool, bool);
 
-  void add_policy_offset(vw&, example*, uint32_t, uint32_t);
-  void remove_policy_offset(vw&, example*, uint32_t, uint32_t);
- 
   void add_history_to_example(vw&, history_info&, example*, history, size_t);
   void remove_history_from_example(vw&, history_info&, example*);
-
-  size_t predict_with_history(vw&vw, example*ec, v_array<uint32_t>*ystar, history_info &hinfo, size_t*history);
-}      
-
-namespace Searn {
-  using namespace SearnUtil;
 
   struct snapshot_item {
     size_t index;
@@ -53,8 +43,20 @@ namespace Searn {
     size_t data_size;  // sizeof(data_ptr)
     size_t pred_step;  // srn->t when snapshot is made
   };
-  
+
   struct searn_task;
+
+  struct beam_hyp {
+    size_t t;           // the value of srn.t here
+    size_t action_taken;// which action was this (i.e., how did we get here from parent?)
+    float  incr_cost;   // how much did this recent action cost
+    v_array<snapshot_item> snapshot;  // some information so we can restore the snapshot
+    beam_hyp* parent;   // our parent hypothesis
+    size_t num_actions; // how many actions are available now
+    float*action_costs; // cost of each action
+    bool   filled_in_prediction;   // has this been filled in properly by predict?
+    bool   filled_in_snapshot;     // has this been filled in properly by snapshot?
+  };
 
   struct searn {
     // functions that you will call
@@ -98,7 +100,6 @@ namespace Searn {
     void     (*declare_loss_f)(vw&,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(vw&,size_t,size_t,void*,size_t,bool);
     
-    v_array<uint32_t> predict_ystar;
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     char state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
@@ -114,6 +115,10 @@ namespace Searn {
     history_info hinfo;   // default history info for auto-history
     string *neighbor_features_string;
     v_array<int32_t> neighbor_features; // ugly encoding of neighbor feature requirements
+
+    beam_hyp * cur_beam_hyp;
+    v_array<snapshot_item> beam_restore_to_end;
+    v_array<uint32_t> beam_final_action_sequence;
     
     bool should_produce_string;
     stringstream *pred_string;
@@ -128,7 +133,8 @@ namespace Searn {
     float  learn_loss;     // total loss for this "varied" example
 
     v_array<float> learn_losses;  // losses for all (valid) actions at learn_t
-    example* learn_example_copy;  // copy of example(s) at learn_t
+    example learn_example_copy[MAX_BRANCHING_FACTOR];   // copy of example(s) at learn_t
+    example*learn_example_ref;    // reference to example at learn_t, when there's not example munging
     size_t learn_example_len;     // number of example(s) at learn_t
 
     float  beta;                  // interpolation rate
@@ -140,6 +146,8 @@ namespace Searn {
     uint32_t current_policy;      // what policy are we training right now?
     float gamma;                  // for dagger
     float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
+    size_t beam_size;
+    size_t kbest;
     
     size_t num_features;
     uint32_t total_number_of_policies;

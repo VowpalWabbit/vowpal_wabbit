@@ -1,0 +1,28 @@
+final_regressor = models/sequencespan_data.model
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+decay_learning_rate = 1
+switching to BILOU encoding for sequence span labeling
+creating cache_file = train-sets/sequencespan_data.cache
+Reading datafile = train-sets/sequencespan_data
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
+loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
+10.000000  10.000000         1        1.000000   [2 1 1 2 2 1 6 7 7 ..] [1 1 1 1 1 1 1 1 1 ..]       45     0     0              15              15
+7.500000   5.000000          2        2.000000   [2 1 1 2 2 1 6 7 7 ..] [2 1 1 6 4 1 6 7 7 ..]       45     1     0              30              30
+3.750000   0.000000          4        4.000000   [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]       45     3     0              60              60
+1.875000   0.000000          8        8.000000   [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]       45     7     0             120             120
+0.937500   0.000000         16       16.000000   [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]       45    15     0             240             240
+
+finished run
+number of examples per pass = 1
+passes used = 20
+weighted example sum = 20
+weighted label sum = 0
+average loss = 0.75
+best constant = -0.0526316
+total feature number = 900

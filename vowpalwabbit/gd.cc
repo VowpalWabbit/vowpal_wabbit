@@ -19,15 +19,11 @@ license as described in the file LICENSE.
 #include <xmmintrin.h>
 #endif
 
-#include "parse_example.h"
-#include "constant.h"
 #include "sparse_dense.h"
 #include "gd.h"
-#include "cache.h"
 #include "simple_label.h"
 #include "accumulate.h"
-#include "learner.h"
-#include "vw.h"
+#include "reductions.h"
 
 using namespace std;
 
@@ -321,7 +317,7 @@ void print_features(vw& all, example& ec)
 	}
 
       sort(features.begin(),features.end());
-      if(all.audit){ 
+      if(all.audit){
         for (vector<string_value>::iterator sv = features.begin(); sv!= features.end(); sv++)
 	  cout << '\t' << (*sv).s;
         cout << endl;
@@ -527,7 +523,7 @@ float compute_norm(vw& all, example& ec)
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off, size_t normalized_idx, size_t feature_mask_idx>
-void local_predict(vw& all, gd& g, example& ec)
+void compute_update(vw& all, gd& g, example& ec)
 {
   label_data* ld = (label_data*)ec.ld;
 
@@ -599,7 +595,7 @@ void update(gd& g, learner& base, example& ec)
 {
   vw* all = g.all;
 
-  local_predict<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx > (*all, g, ec);
+  compute_update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx > (*all, g, ec);
   
   if (ec.eta_round != 0.)
     {
@@ -625,6 +621,8 @@ void learn(gd& g, learner& base, example& ec)
 
   if ((all->holdout_set_off || !ec.test_only) && ld->weight > 0)
     update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx>(g,base,ec);
+  else if(ld->weight > 0)
+    ec.loss = all->loss->getLoss(all->sd, ec.final_prediction, ld->label) * ld->weight;
 }
 
 void sync_weights(vw& all) {
@@ -872,7 +870,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 
 learner* setup(vw& all, po::variables_map& vm)
 {
-  gd* g = (gd*)calloc(1, sizeof(gd));
+  gd* g = (gd*)calloc_or_die(1, sizeof(gd));
   g->all = &all;
   g->active = all.active;
   g->active_simulation = all.active_simulation;

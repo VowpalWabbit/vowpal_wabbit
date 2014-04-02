@@ -14,6 +14,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"
 #include "parser.h"
 #include "gd.h"
+#include "memory.h"
 
 using namespace std;
 
@@ -216,10 +217,11 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
 
 vw::vw()
 {
-  sd = (shared_data *) calloc(1, sizeof(shared_data));
+  sd = (shared_data *) calloc_or_die(1, sizeof(shared_data));
   sd->dump_interval = 1.;   // next update progress dump
   sd->contraction = 1.;
   sd->max_label = 1.;
+  sd->min_label = 0.;
 
   p = new_parser();
   p->emptylines_separate_examples = false;
@@ -238,7 +240,7 @@ vw::vw()
   lda_alpha = 0.1f;
   lda_rho = 0.1f;
   lda_D = 10000.;
-  lda_epsilon = 0.001;
+  lda_epsilon = 0.001f;
   minibatch = 1;
   span_server = "";
   m = 15;

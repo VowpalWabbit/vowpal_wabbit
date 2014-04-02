@@ -18,6 +18,7 @@ using namespace std;
 #include "parse_regressor.h"
 #include "loss_functions.h"
 #include "io_buf.h"
+#include "memory.h"
 #include "rand48.h"
 #include "global_data.h"
 
@@ -34,7 +35,7 @@ void initialize_regressor(vw& all)
 
   size_t length = ((size_t)1) << all.num_bits;
   all.reg.weight_mask = (all.reg.stride * length) - 1;
-  all.reg.weight_vector = (weight *)calloc(all.reg.stride*length, sizeof(weight));
+  all.reg.weight_vector = (weight *)calloc_or_die(all.reg.stride*length, sizeof(weight));
   if (all.reg.weight_vector == NULL)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
@@ -150,7 +151,8 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 	  if (read)
 	    {
 	      string temp(triple,3);
-	      all.triples.push_back(temp);
+	      if (count(all.triples.begin(), all.triples.end(), temp) == 0)
+		all.triples.push_back(temp);
 	    }
 	}
       bin_text_read_write_fixed(model_file,buff,0,

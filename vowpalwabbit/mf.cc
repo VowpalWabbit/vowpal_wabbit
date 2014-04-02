@@ -3,28 +3,15 @@
  individual contributors. All rights reserved.  Released under a BSD (revised)
  license as described in the file LICENSE.
  */
-#include <fstream>
-#include <float.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #else
 #include <netdb.h>
 #endif
-#include <string.h>
-#include <stdio.h>
-#include <map>
-#include "parse_example.h"
-#include "constant.h"
-#include "sparse_dense.h"
-#include "gd.h"
-#include "cache.h"
+#include "reductions.h"
 #include "simple_label.h"
+#include "gd.h"
 #include "rand48.h"
-#include "vw.h"
-#include <algorithm>
-#include "hash.h"
-#include <sstream>
-#include "parse_primitives.h"
 
 using namespace std;
 

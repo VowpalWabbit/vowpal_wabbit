@@ -10,6 +10,7 @@ license as described in the file LICENSE.
 #include "simple_label.h"  
 #include "gd.h"  
 #include "global_data.h"  
+#include "memory.h"
   
 int compare_feature(const void* p1, const void* p2) {  
   feature* f1 = (feature*) p1;  
@@ -51,7 +52,7 @@ namespace VW {
 
 flat_example* flatten_example(vw& all, example *ec) 
 {  
-	flat_example* fec = (flat_example*) calloc(1,sizeof(flat_example));  
+	flat_example* fec = (flat_example*) calloc_or_die(1,sizeof(flat_example));  
 	fec->ld = ec->ld;
 	fec->final_prediction = ec->final_prediction;  
 
@@ -90,10 +91,10 @@ void free_flatten_example(flat_example* fec)
 
 example *alloc_examples(size_t label_size, size_t count=1)
 {
-  example* ec = (example*)calloc(count, sizeof(example));
+  example* ec = (example*)calloc_or_die(count, sizeof(example));
   if (ec == NULL) return NULL;
   for (size_t i=0; i<count; i++) {
-    ec[i].ld = calloc(1, label_size);
+    ec[i].ld = calloc_or_die(1, label_size);
     if (ec[i].ld == NULL) {
       for (size_t j=0; j<i; j++) free(ec[j].ld);
       free(ec);
@@ -137,9 +138,9 @@ void dealloc_example(void(*delete_label)(void*), example&ec)
 
 audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
-  dst.space = (char*)calloc(strlen(src.space)+1, sizeof(char));
+  dst.space = (char*)calloc_or_die(strlen(src.space)+1, sizeof(char));
   strcpy(dst.space, src.space);
-  dst.feature = (char*)calloc(strlen(src.feature)+1, sizeof(char));
+  dst.feature = (char*)calloc_or_die(strlen(src.feature)+1, sizeof(char));
   strcpy(dst.feature, src.feature);
   dst.weight_index = src.weight_index;
   dst.x = src.x;
@@ -203,7 +204,3 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_label(dst, src, label_size, copy_label);
 }
 }
-
-
-
-

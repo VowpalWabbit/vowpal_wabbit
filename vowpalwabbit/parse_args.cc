@@ -5,6 +5,7 @@ license as described in the file LICENSE.
  */
 #include <stdio.h>
 #include <float.h>
+#include <sstream>
 
 #include "cache.h"
 #include "io_buf.h"
@@ -24,6 +25,7 @@ license as described in the file LICENSE.
 #include "csoaa.h"
 #include "wap.h"
 #include "cb.h"
+#include "cb_algs.h"
 #include "scorer.h"
 #include "searn.h"
 #include "bfgs.h"
@@ -41,6 +43,7 @@ license as described in the file LICENSE.
 #include "txm_o.h"
 #include "txm.h"
 #include "rtree.h"
+#include "memory.h"
 
 using namespace std;
 //
@@ -65,7 +68,7 @@ bool valid_ns(char c)
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
-  char* cstr = (char*)calloc(str.length()+1, sizeof(char));
+  char* cstr = (char*)calloc_or_die(str.length()+1, sizeof(char));
   strcpy(cstr, str.c_str());
 
   char*p = strtok(cstr, ",");
@@ -262,7 +265,7 @@ vw* parse_args(int argc, char *argv[])
     ("bs_type", po::value<string>(), "bootstrap mode - currently 'mean' or 'vote'")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
-    ("lda", po::value<size_t>(&(all->lda)), "Run lda with <int> topics")
+    ("lda", po::value<uint32_t>(&(all->lda)), "Run lda with <int> topics")
     ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
     ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
@@ -485,10 +488,6 @@ vw* parse_args(int argc, char *argv[])
       compile_gram(all->skip_strings, all->skips, (char*)"skips", all->quiet);
     }
 
-  if (vm.count("affix")) {
-    parse_affix_argument(*all, vm["affix"].as<string>());
-  }
-
   if (vm.count("spelling")) {
     vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
     for (size_t id=0; id<spelling_ns.size(); id++)
@@ -562,8 +561,11 @@ vw* parse_args(int argc, char *argv[])
         else if((*i)[0]==':'&&(*i)[1]!=':'){
           newpairs.reserve(newpairs.size() + valid_ns_size);
           for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j))
-              newpairs.push_back(string(&j)+(*i)[1]);
+            if(valid_ns(j)){
+	      stringstream ss;
+	      ss << j << (*i)[1];
+	      newpairs.push_back(ss.str());
+	    }
           }
         }
         //-q ::
@@ -572,8 +574,11 @@ vw* parse_args(int argc, char *argv[])
           for (char j=printable_start; j<=printable_end; j++){
             if(valid_ns(j)){
               for (char k=printable_start; k<=printable_end; k++){
-                if(valid_ns(k))
-                  newpairs.push_back(string(&j)+k);
+                if(valid_ns(k)){
+		  stringstream ss;
+                  ss << j << k;
+                  newpairs.push_back(ss.str());
+		}
               }
             }
           }
@@ -622,7 +627,7 @@ vw* parse_args(int argc, char *argv[])
   for (size_t i = 0; i < 256; i++)
     all->ignore[i] = false;
   all->ignore_some = false;
-
+  
   if (vm.count("ignore"))
     {
       all->ignore_some = true;
@@ -955,7 +960,7 @@ vw* parse_args(int argc, char *argv[])
       got_cs = true;
     }
 
-    all->l = CB::setup(*all, to_pass_further, vm, vm_file);
+    all->l = CB_ALGS::setup(*all, to_pass_further, vm, vm_file);
     got_cb = true;
   }
 
@@ -973,12 +978,26 @@ vw* parse_args(int argc, char *argv[])
       if (!got_cb) {
 	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm_file["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all->l = CB::setup(*all, to_pass_further, vm, vm_file);
+	all->l = CB_ALGS::setup(*all, to_pass_further, vm, vm_file);
 	got_cb = true;
       }
 
       all->l = CBIFY::setup(*all, to_pass_further, vm, vm_file);
     }
+
+  
+  if (vm_file.count("affix") && vm.count("affix")) {
+    cerr << "should not specify --affix when loading a model trained with affix features (they're turned on by default)" << endl;
+    throw exception();
+  }
+  if (vm_file.count("affix"))
+    parse_affix_argument(*all, vm_file["affix"].as<string>());
+  if (vm.count("affix")) {
+    parse_affix_argument(*all, vm["affix"].as<string>());
+    stringstream ss;
+    ss << " --affix " << vm["affix"].as<string>();
+    all->options_from_file.append(ss.str());
+  }
 
   if (vm.count("searn") || vm_file.count("searn") ) {
     if (!got_cs && !got_cb) {
@@ -989,7 +1008,7 @@ vw* parse_args(int argc, char *argv[])
       all->cost_sensitive = all->l;
       got_cs = true;
     }
-    //all->searnstr = (Searn::searn*)calloc(1, sizeof(Searn::searn));
+    //all->searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
     all->l = Searn::setup(*all, to_pass_further, vm, vm_file);
   }
 
@@ -1097,7 +1116,7 @@ namespace VW {
 
   char** get_argv_from_string(string s, int& argc)
   {
-    char* c = (char*)calloc(s.length()+3, sizeof(char));
+    char* c = (char*)calloc_or_die(s.length()+3, sizeof(char));
     c[0] = 'b';
     c[1] = ' ';
     strcpy(c+2, s.c_str());
@@ -1106,11 +1125,11 @@ namespace VW {
     foo.end_array = foo.begin = foo.end = NULL;
     tokenize(' ', ss, foo);
 
-    char** argv = (char**)calloc(foo.size(), sizeof(char*));
+    char** argv = (char**)calloc_or_die(foo.size(), sizeof(char*));
     for (size_t i = 0; i < foo.size(); i++)
       {
 	*(foo[i].end) = '\0';
-	argv[i] = (char*)calloc(foo[i].end-foo[i].begin+1, sizeof(char));
+	argv[i] = (char*)calloc_or_die(foo[i].end-foo[i].begin+1, sizeof(char));
         sprintf(argv[i],"%s",foo[i].begin);
       }
 
@@ -1127,8 +1146,8 @@ namespace VW {
     char** argv = get_argv_from_string(s,argc);
 
     vw* all = parse_args(argc, argv);
-
-    initialize_examples(*all);
+    
+    initialize_parser_datastructures(*all);
 
     for(int i = 0; i < argc; i++)
       free(argv[i]);

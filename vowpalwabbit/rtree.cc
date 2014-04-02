@@ -10,14 +10,9 @@ license as described in the file LICENSE.node
 #include <sstream>
 #include <ctime>
 
-#include "parse_args.h"
-#include "learner.h"
-#include "rtree.h"
+#include "reductions.h"
 #include "simple_label.h"
-#include "cache.h"
-#include "v_hashmap.h"
-#include "vw.h"
-#include "oaa.h"
+#include "multiclass.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -127,7 +122,7 @@ namespace RTREE
 	
 	void train_node(rtree& b, learner& base, example& ec, size_t& cn, size_t& index) //return true when reaching leaf
 	{
-		OAA::mc_label *mc = (OAA::mc_label*)ec.ld;
+		MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
 		
 		label_data simple_temp; 
 		simple_temp.initial = 0.0;
@@ -193,7 +188,7 @@ namespace RTREE
 
 	void learn(rtree& b, learner& base, example& ec)//(void* d, example* ec) 
 	{
-		OAA::mc_label *mc = (OAA::mc_label*)ec.ld;
+		MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
 		
 		size_t index = 0;
 		
@@ -319,7 +314,7 @@ namespace RTREE
 
   void finish_example(vw& all, rtree&, example& ec)
   {
-    OAA::output_example(all, ec);
+    MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);
   }
 
@@ -344,7 +339,7 @@ namespace RTREE
 		}
 				
 		data->all = &all;
-		(all.p->lp) = OAA::mc_label_parser;
+		(all.p->lp) = MULTICLASS::mc_label_parser;
 	
 		uint32_t i = ceil_log2(data->k);
 	

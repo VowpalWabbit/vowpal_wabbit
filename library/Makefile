@@ -1,15 +1,15 @@
 BOOST_PROGRAM_OPTIONS = boost_program_options
 ifeq ($(UNAME), FreeBSD)
-BOOST_PROGRAM_OPTIONS = boost_program_options
+  BOOST_PROGRAM_OPTIONS = boost_program_options
 endif
 ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
-BOOST_PROGRAM_OPTIONS = boost_program_options-mt
+  BOOST_PROGRAM_OPTIONS = boost_program_options-mt
 endif
 ifeq ($(UNAME), Darwin)
-BOOST_PROGRAM_OPTIONS = boost_program_options-mt
+  BOOST_PROGRAM_OPTIONS = boost_program_options-mt
 endif
 
-all: ezexample_predict ezexample_train library_example recommend
+all: ezexample_predict ezexample_train library_example recommend gd_mf_weights
 
 ezexample_predict: ezexample_predict.cc ../vowpalwabbit/libvw.a ezexample.h
 	$(CXX) -g $(FLAGS) -o $@ $< -L ../vowpalwabbit -l vw -l allreduce -L$(BOOST_LIBRARY) -l $(BOOST_PROGRAM_OPTIONS) -l z -l pthread
@@ -24,6 +24,9 @@ library_example: library_example.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< -L ../vowpalwabbit -l vw -l allreduce -L$(BOOST_LIBRARY) -l $(BOOST_PROGRAM_OPTIONS) -l z -l pthread
 
 recommend: recommend.cc ../vowpalwabbit/libvw.a ezexample.h
+	$(CXX) -g $(FLAGS) -o $@ $< -L ../vowpalwabbit -l vw -l allreduce -L$(BOOST_LIBRARY) -l $(BOOST_PROGRAM_OPTIONS) -l z -l pthread
+
+gd_mf_weights: gd_mf_weights.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< -L ../vowpalwabbit -l vw -l allreduce -L$(BOOST_LIBRARY) -l $(BOOST_PROGRAM_OPTIONS) -l z -l pthread
 
 clean:

@@ -1,5 +1,6 @@
-#include "oaa.h"
-#include "vw.h"
+#include "reductions.h"
+#include "multiclass.h"
+#include "simple_label.h"
 
 using namespace LEARNER;
 

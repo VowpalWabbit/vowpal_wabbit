@@ -23,22 +23,27 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/bs.h \
 	vowpalwabbit/cache.h \
 	vowpalwabbit/cb.h \
+	vowpalwabbit/cb_algs.h \
 	vowpalwabbit/constant.h \
+	vowpalwabbit/cost_sensitive.h \
 	vowpalwabbit/csoaa.h \
 	vowpalwabbit/ect.h \
 	vowpalwabbit/gd.h \
 	vowpalwabbit/gd_mf.h \
 	vowpalwabbit/mf.h \
+	vowpalwabbit/memory.h \
 	vowpalwabbit/lda_core.h \
 	vowpalwabbit/lrq.h \
 	vowpalwabbit/network.h \
 	vowpalwabbit/nn.h \
 	vowpalwabbit/noop.h \
 	vowpalwabbit/print.h \
+	vowpalwabbit/multiclass.h \
 	vowpalwabbit/oaa.h \
 	vowpalwabbit/parse_args.h \
 	vowpalwabbit/parse_example.h \
 	vowpalwabbit/parse_regressor.h \
+	vowpalwabbit/reductions.h \
 	vowpalwabbit/rand48.h \
 	vowpalwabbit/scorer.h \
 	vowpalwabbit/searn.h \

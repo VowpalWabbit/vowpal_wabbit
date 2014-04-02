@@ -9,14 +9,9 @@ license as described in the file LICENSE.node
 #include <stdio.h>
 #include <sstream>
 
-#include "parse_args.h"
-#include "learner.h"
-#include "txm_o.h"
+#include "reductions.h"
 #include "simple_label.h"
-#include "cache.h"
-#include "v_hashmap.h"
-#include "vw.h"
-#include "oaa.h"
+#include "multiclass.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -383,7 +378,7 @@ namespace TXM_O
   
   void predict(txm_o& b, learner& base, example& ec)	
   {
-    OAA::mc_label *mc = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
     
     label_data simple_temp;
     simple_temp.initial = 0.0;
@@ -456,7 +451,7 @@ namespace TXM_O
   void learn(txm_o& b, learner& base, example& ec)
   {
     predict(b,base,ec);
-    OAA::mc_label *mc = (OAA::mc_label*)ec.ld;
+    MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
     b.ec_cnt_update = true;
     
     v_array<size_t> track;
@@ -602,7 +597,7 @@ namespace TXM_O
   
   void finish_example(vw& all, txm_o&, example& ec)
   {
-    OAA::output_example(all, ec);
+    MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);
   }
   
@@ -627,7 +622,7 @@ namespace TXM_O
       }	
     
     data->all = &all;
-    (all.p->lp) = OAA::mc_label_parser;
+    (all.p->lp) = MULTICLASS::mc_label_parser;
     
     uint32_t i = ceil_log2(data->k);	
     data->max_nodes = (2 << i) - 1;

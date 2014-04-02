@@ -3,8 +3,8 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD
 license as described in the file LICENSE.
  */
-#ifndef MF_H
-#define MF_H
+#ifndef MATRIX_FACTORIZATION_H
+#define MATRIX_FACTORIZATION_H
 
 #include <math.h>
 #include "example.h"
