@@ -164,7 +164,7 @@ namespace TXM_O
     c = 0;
     p = 0;
     pp = 0;
-    bool lr;
+    bool lr = true;
 
     while(1)
       {
@@ -175,17 +175,16 @@ namespace TXM_O
 	    return lr;
 	  }
 	
+	pp = p;
+	p = c;
+	
 	if(b.nodes[b.nodes[c].id_left].min_ec_count < b.nodes[b.nodes[c].id_right].min_ec_count)
 	  {
-	    pp = p;
-	    p = c;
 	    c = b.nodes[c].id_left; 
 	    lr = false;
 	  }
 	else
 	  {
-	    pp = p;
-	    p = c;
 	    c = b.nodes[c].id_right;
 	    lr = true;
 	  }     
@@ -216,6 +215,7 @@ namespace TXM_O
   void display_tree2(txm_o& d)
   {
     size_t l, i;
+    float ratio;
     for(l = 0; l <= d.max_depth; l++)
       {
 	for(i = 0; i < d.nodes.size(); i++)
@@ -223,7 +223,12 @@ namespace TXM_O
 	    if(d.nodes[i].level == l)
 	      {	
 		if(d.nodes[i].leaf)
-		  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << "] ";
+		  {
+		  ratio = (float)d.nodes[i].max_cnt2;
+		  ratio /= (float)d.nodes[i].ec_count;
+		  ratio = 1 - ratio;
+		  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << ratio << "] ";
+		  }
 		else
 		  cout << "(" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << ") ";
 	      }
@@ -303,19 +308,27 @@ namespace TXM_O
 		size_t nc, np, npp;
 		bool lr = find_switch_nodes(b, nc, np, npp);
 		size_t nc_l = b.nodes[nc].level;
-		size_t trsh = b.nodes[0].ec_count >> (nc_l + 1);
+		//size_t trsh = b.nodes[0].ec_count >> (nc_l + 1);
 
 		/*display_tree2(b);
 		cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << endl;
 		cin.ignore();
 		*/
 		//if(((b.nodes[id_left].ec_count < trsh) || (b.nodes[id_right].ec_count < trsh)) && ratio_cn < ratio_cn_el && cn_el != 0 && id_left != cn && id_right != cn)
-		if(b.nodes[0].min_ec_count < trsh && cn != nc && b.nodes[cn].ec_count > b.nodes[np].ec_count)
+		//if(b.nodes[0].min_ec_count < trsh && cn != nc && b.nodes[cn].ec_count > b.nodes[np].ec_count)
+		
+		size_t min_myR_myL;
+		if(b.nodes[cn].myR > b.nodes[cn].myL)
+		  min_myR_myL = b.nodes[cn].myL;
+		else
+		  min_myR_myL = b.nodes[cn].myR;
+
+		if(min_myR_myL > 2*b.nodes[0].min_ec_count && cn != nc)
 		{
 		  //display_tree2(b);
-		  cout << "\nSWAP!!" << endl;
-		  cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << endl;
-		  // cin.ignore();
+		  //cout << "\nSWAP!!" << endl;
+		  //cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << "\t" << b.nodes[0].min_ec_count << endl;
+		  //cin.ignore();
 
 		  if(b.nodes[npp].id_left == np)
 		    {
@@ -346,7 +359,10 @@ namespace TXM_O
 		  b.nodes[nc].id_right = 0;
 		  b.nodes[np].level = b.nodes[cn].level + 1;
 		  b.nodes[nc].level = b.nodes[cn].level + 1;
-		  
+
+		  b.nodes[np].ec_count = b.nodes[cn].myR;
+		  b.nodes[nc].ec_count = b.nodes[cn].myL;
+
 		  if(b.nodes[cn].level + 1 > b.max_depth)
 		    b.max_depth = b.nodes[cn].level + 1;	    
 
@@ -625,7 +641,7 @@ namespace TXM_O
     (all.p->lp) = MULTICLASS::mc_label_parser;
     
     uint32_t i = ceil_log2(data->k);	
-    data->max_nodes = (2 << i) - 1;
+    data->max_nodes = (2 << (i+1)) - 1;
     
     learner* l = new learner(data, all.l, data->max_nodes + 1);
     l->set_save_load<txm_o,save_load_tree>();

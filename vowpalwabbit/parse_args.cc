@@ -44,6 +44,7 @@ license as described in the file LICENSE.
 #include "txm.h"
 #include "rtree.h"
 #include "memory.h"
+#include "centering.h"
 
 using namespace std;
 //
@@ -269,6 +270,7 @@ vw* parse_args(int argc, char *argv[])
     ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
     ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
+    ("centering", po::value<size_t>(), "feature centering")
     ;
 
   // Declare the supported options.
