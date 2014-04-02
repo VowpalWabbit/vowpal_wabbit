@@ -270,7 +270,7 @@ namespace Searn
 
   int choose_policy(searn& srn, bool allow_current, bool allow_optimal)
   {
-    uint32_t seed = srn.read_example_last_id * 2147483 + (uint32_t)(srn.t * 2147483647);
+    uint32_t seed = (uint32_t) srn.read_example_last_id * 2147483 + (uint32_t)(srn.t * 2147483647);
     return random_policy(seed, srn.beta, allow_current, srn.current_policy, allow_optimal, false); // srn.rollout_all_actions);
   }
 
@@ -284,7 +284,7 @@ namespace Searn
         if (ret->costs.size() > num_ec)
           ret->costs.resize(num_ec);
         else if (ret->costs.size() < num_ec)
-          for (uint32_t i=ret->costs.size(); i<num_ec; i++) {
+          for (uint32_t i= (uint32_t) ret->costs.size(); i<num_ec; i++) {
             COST_SENSITIVE::wclass cost = { FLT_MAX, i, 0., 0. };
             ret->costs.push_back(cost);
           }
@@ -1012,7 +1012,7 @@ namespace Searn
         /*UNDOME*/cdbg << "BEAM_INIT snapshot rollout_action srn.t=" << srn->t << endl;
         searn_snapshot_data(all, srn, index, 0, srn->rollout_action.begin + srn->t, history_size, true);
       } else if (srn->state == BEAM_ADVANCE) {
-        uint32_t t = (srn->t < srn->cur_beam_hyp->t) ? srn->cur_beam_hyp->t - 1 : srn->t; 
+        uint32_t t = (srn->t < srn->cur_beam_hyp->t) ? (uint32_t)srn->cur_beam_hyp->t - 1 : (uint32_t)srn->t; 
         /*UNDOME*/cdbg << "BEAM_ADVANCE snapshot rollout_action srn.t=" << srn->t << " cur_beam_hyp.t=" << srn->cur_beam_hyp->t << endl;
         cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;
         if (srn->rollout_action.size() <= /*srn->*/t + srn->hinfo.length)
@@ -1124,7 +1124,7 @@ namespace Searn
         //((OAA::mc_label*)ec[a]->ld)->weight = losses[a] - min_loss;
         COST_SENSITIVE::label* lab = (COST_SENSITIVE::label*)ec[a].ld;
         COST_SENSITIVE::default_label(lab);
-        COST_SENSITIVE::wclass c = { losses[a] - min_loss, a, 0., 0. };
+        COST_SENSITIVE::wclass c = { losses[a] - min_loss, (uint32_t)a, 0., 0. };
         lab->costs.push_back(c);
         cdbg << "learn t = " << srn.learn_t << " cost = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].x << " action = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].weight_index << endl;
         //cdbg << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
