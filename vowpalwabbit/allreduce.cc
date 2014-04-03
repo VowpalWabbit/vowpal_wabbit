@@ -25,7 +25,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 using namespace std;
 
 // port is already in network order
-static socket_t sock_connect(const uint32_t ip, const int port) {
+socket_t sock_connect(const uint32_t ip, const int port) {
 
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
@@ -69,7 +69,7 @@ static socket_t sock_connect(const uint32_t ip, const int port) {
   return sock;
 }
 
-static socket_t getsock()
+socket_t getsock()
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
@@ -87,11 +87,8 @@ static socket_t getsock()
   return sock;
 }
 
-
-
 void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks)
 {
-cerr<<"Init\n";
 #ifdef _WIN32
   WSAData wsaData;
   WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -107,7 +104,6 @@ cerr<<"Init\n";
     throw exception();
   }
   socks.current_master = master_location;
-  cerr<<"Contacting master "<<master_location<<endl;
 
   uint32_t master_ip = * ((uint32_t*)master->h_addr);
   int port = 26543;
@@ -189,9 +185,7 @@ cerr<<"Init\n";
 
   shutdown(master_sock, SHUT_RDWR);
 
-  //int parent_sock;
   if(parent_ip != (uint32_t)-1) {
-    cerr<<"Connecting to parent\n";
     socks.parent = sock_connect(parent_ip, parent_port);
   }
   else
@@ -208,18 +202,15 @@ cerr<<"Init\n";
       cerr << "bad client socket!" << endl;
       throw exception();
     }
-    char hostname[NI_MAXHOST];
-    char servInfo[NI_MAXSERV];
-    getnameinfo((sockaddr *) &child_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV);
-    cerr << "connected to " << hostname << ':' << ntohs(port) << endl;
+    // char hostname[NI_MAXHOST];
+    // char servInfo[NI_MAXSERV];
+    // getnameinfo((sockaddr *) &child_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV);
+    // cerr << "connected to " << hostname << ':' << ntohs(port) << endl;
     socks.children[i] = f;
   }
 
-  cerr<<"In init "<<socks.parent<<" "<<socks.children[0]<<" "<<socks.children[1]<<endl;
-
   if (kid_count > 0)
     shutdown(sock, SHUT_RDWR);
-  cerr<<"In init "<<socks.parent<<" "<<socks.children[0]<<" "<<socks.children[1]<<endl;
 }
 
 
