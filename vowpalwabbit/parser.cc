@@ -356,7 +356,10 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
     {
       int f = -1;
       if (!vm.count("kill_cache"))
+	try {
         f = all.p->input->open_file(caches[i].c_str(), all.stdin_off, io_buf::READ);
+	}
+	catch (exception e){ f = -1;}
       if (f == -1)
 	make_write_cache(all, caches[i], quiet);
       else {
