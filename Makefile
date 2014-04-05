@@ -17,6 +17,8 @@ UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = /usr/include
 BOOST_LIBRARY = /usr/lib
+# for building a portable binary with dependencies like Boost bundled up:
+#IS_STATIC = -static
 
 ifeq ($(UNAME), FreeBSD)
   LIBS = -l boost_program_options	-l pthread -l z -l compat
@@ -43,16 +45,16 @@ else
 endif
 
 # for normal fast execution.
-FLAGS = $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
+FLAGS = $(IS_STATIC) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
 
 # for profiling
-#FLAGS = $(ARCH) $(WARN_FLAGS) -O3 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg #-DVW_LDA_NO_SSE
+#FLAGS = $(IS_STATIC) $(ARCH) $(WARN_FLAGS) -O3 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg #-DVW_LDA_NO_SSE
 
 # for valgrind / gdb debugging
-#FLAGS = $(ARCH) $(WARN_FLAGS) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
+#FLAGS = $(IS_STATIC) $(ARCH) $(WARN_FLAGS) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
-#FLAGS = -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
+#FLAGS = $(IS_STATIC) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing
 
 BINARIES = vw active_interactor
 MANPAGES = vw.1
