@@ -12,6 +12,7 @@ license as described in the file LICENSE.node
 #include "reductions.h"
 #include "simple_label.h"
 #include "multiclass.h"
+#include "gd.h"
 
 using namespace std;
 using namespace LEARNER;
@@ -87,6 +88,8 @@ namespace TXM
     double Eh;	
     float norm_Eh;
     uint32_t n;	
+    v_array<double> means;
+    size_t means_cnt;
   } txm_node_type;
   
   struct txm	
@@ -102,6 +105,9 @@ namespace TXM
     size_t passes_per_level; //number of passes per level	
     size_t ctl; //current training level
     size_t ex_num;
+    bool check;
+    size_t cn;
+    example ec;
     FILE *ex_fp;
   };	
   
@@ -125,6 +131,7 @@ namespace TXM
     node.objective = 0;
     node.myL = 0;
     node.myR = 0;
+    node.means_cnt = 0;
     return node;
   }
   
@@ -135,6 +142,44 @@ namespace TXM
     d.ctl = 0;
     //d.ex_fp = fopen("ex_nums.txt", "wt");
   }
+  
+  void add_mean_to_features(vw& all, example& ec, txm& b)
+  {
+    size_t index = 0;
+    double tmp;
+    
+    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+      {
+        size_t original_length = ec.atomics[*i].size();
+        for (uint32_t j = 0; j < original_length; j++)
+          {
+            feature* f = &ec.atomics[*i][j];
+            if(index < b.nodes[b.cn].means.size())
+	    {
+		tmp = b.nodes[b.cn].means[index++];
+		tmp /= b.nodes[b.cn].means_cnt;
+		f->x = f->x - (float)tmp;
+	    }
+          }
+      }
+  }
+  
+  inline void update_mean(txm& b, float x, float& fw, size_t index)
+  {
+    if(index == 0)
+    {
+      if(b.check)
+	return;
+      else
+        b.check = true;
+    }
+    
+    if(index >= b.nodes[b.cn].means.size())
+      b.nodes[b.cn].means.push_back(x);
+    else
+      b.nodes[b.cn].means[index] += x;
+    //cout << index << ":" << x << ":" << b.means[index] <<"\t";
+  }   
 
   float print_intercept(vw& all, example& ec, learner& base, size_t& cn)
   {
@@ -163,11 +208,18 @@ namespace TXM
   {
     label_data* simple_temp = (label_data*)ec.ld;
     
+    b.cn = cn;
+    VW::copy_example_data(b.all->audit, &b.ec, &ec);    
+    if(b.cn > 0)
+	add_mean_to_features(*b.all, b.ec, b);    
+    b.ec.ld = ec.ld;
+    
     if(b.nodes[cn].level != b.ctl)
     {
 	simple_temp->label = FLT_MAX;
-	base.predict(ec, cn);
-	
+	base.predict(b.ec, cn);
+	ec.final_prediction = b.ec.final_prediction;
+	ec.partial_prediction = b.ec.partial_prediction;  
 	return;    
     }   
        
@@ -227,13 +279,13 @@ namespace TXM
 	      }
 	  }	
       }
-    base.learn(ec, cn);	
+    base.learn(b.ec, cn);	
 
     simple_temp->label = FLT_MAX;
-    base.predict(ec, cn);
+    base.predict(b.ec, cn);
         
-    b.nodes[cn].Eh += (double)ec.partial_prediction;
-    b.nodes[cn].node_pred[index].Ehk += (double)ec.partial_prediction;
+    b.nodes[cn].Eh += (double)b.ec.partial_prediction;
+    b.nodes[cn].node_pred[index].Ehk += (double)b.ec.partial_prediction;
     b.nodes[cn].n++;
     b.nodes[cn].node_pred[index].nk++;	
   
@@ -256,19 +308,28 @@ namespace TXM
       b.nodes[cn].leaf = true;
     else	
       b.nodes[cn].leaf = false;	
+      
+    ec.final_prediction = b.ec.final_prediction;
+    ec.partial_prediction = b.ec.partial_prediction;  
   }
   
   void predict(txm& b, learner& base, example& ec)	
   {
     MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
-    
+     
     label_data simple_temp;
     simple_temp.initial = 0.0;
     simple_temp.weight = mc->weight;	
-    ec.ld = &simple_temp;
+    b.ec.ld = &simple_temp;
     size_t cn = 0;
     while(1)
-      {
+      {	
+	b.cn = cn;
+	VW::copy_example_data(b.all->audit, &b.ec, &ec);    
+        if(b.cn > 0)
+	  add_mean_to_features(*b.all, b.ec, b);    
+        b.ec.ld = ec.ld;    
+	
 	if(b.nodes[cn].leaf)	
 	  {	
 	    ec.final_prediction = b.nodes[cn].max_cnt2_label;
@@ -276,9 +337,9 @@ namespace TXM
 	    break;	
 	  }
 	simple_temp.label = FLT_MAX;
-	base.predict(ec, cn);
+	base.predict(b.ec, cn);
   
-	if(ec.final_prediction < 0)//b.nodes[cn].norm_Eh)	
+	if(b.ec.final_prediction < 0)//b.nodes[cn].norm_Eh)	
 	  cn = b.nodes[cn].id_left;
 	else
 	  cn = b.nodes[cn].id_right;	
@@ -288,16 +349,58 @@ namespace TXM
   void display_tree2(txm& d)
   {
     size_t l, i;
+    
+    if(d.k < 200)
+    {
+	    for(l = 0; l <= d.max_depth; l++)
+	      {
+		for(i = 0; i < d.nodes.size(); i++)
+		  {
+		    if(d.nodes[i].level == l)
+		      {	
+			if(d.nodes[i].leaf)
+			  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].objective << "] ";
+			else
+			  cout << "(" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].objective << ") ";
+		      }
+		  }
+		cout << endl;
+	      }
+	    cout << endl;
+    }
+    
+    cout << endl;
+    cout << "Tree depth: " << d.max_depth << endl;
+    cout << "ceil of log2(k): " << ceil_log2(d.k) << endl;
+  }
+  
+  void display_tree3(txm& d)
+  {
+    if(d.k >= 200)
+	return;
+	
+    size_t l, i, j;
+        
     for(l = 0; l <= d.max_depth; l++)
       {
 	for(i = 0; i < d.nodes.size(); i++)
 	  {
 	    if(d.nodes[i].level == l)
 	      {	
-		if(d.nodes[i].leaf)
-		  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].objective << "] ";
+		if(d.nodes[i].leaf) 
+		{
+		  cout << "[";
+		  for(j = 0; j < d.nodes[i].means.size(); j++) 
+		    cout << d.nodes[i].means[j] / d.nodes[i].means_cnt << ",";
+		  cout << "] ";
+		}
 		else
-		  cout << "(" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].objective << ") ";
+		{
+		 cout << "(";
+		  for(j = 0; j < d.nodes[i].means.size(); j++) 
+		    cout << d.nodes[i].means[j] / d.nodes[i].means_cnt << ",";
+		 cout << ") ";
+		}
 	      }
 	  }
 	cout << endl;
@@ -415,6 +518,14 @@ namespace TXM
 		b.nodes[cn].node_pred[index].Rk++;
 		cn = b.nodes[cn].id_right;	
 	      }
+	      
+	      if(b.nodes[cn].level == b.ctl + 1)
+	      {
+		 b.check = false;
+		 b.cn = cn;
+		 GD::foreach_feature<txm, update_mean>(*b.all, ec, b);
+		 b.nodes[cn].means_cnt++;
+	      }
 	  }	
       }
       b.ex_num++;
@@ -423,6 +534,7 @@ namespace TXM
   void finish(txm& b)
   {
     display_tree2(b);
+    //display_tree3(b);
     save_node_stats(b);
     //fclose(b.ex_fp);
   }
@@ -436,7 +548,10 @@ namespace TXM
 	uint32_t j = 0;
 	size_t brw = 1;
 	uint32_t v;
+	double vd;
+	uint32_t tmp;
 	int text_len;
+	uint32_t k;
 	
 	if(read)
 	  {
@@ -454,6 +569,15 @@ namespace TXM
 		b.nodes[j].max_cnt2_label = v;
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 		b.nodes[j].leaf = v;
+		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+		b.nodes[j].means_cnt = v;
+		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+		tmp = v;
+		for(k = 0; k < tmp; k++)
+		{
+		  brw +=bin_read_fixed(model_file, (char*)&vd, sizeof(vd), "");
+		  b.nodes[j].means.push_back(vd);
+		}
 	      }
 	  }
 	else
@@ -483,6 +607,21 @@ namespace TXM
 		text_len = sprintf(buff, ":%d\n", b.nodes[i].leaf);
 		v = b.nodes[i].leaf;
 		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);	
+		
+		text_len = sprintf(buff, ":%d\n", b.nodes[i].means_cnt);
+		v = b.nodes[i].means_cnt;
+		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);	
+		
+		text_len = sprintf(buff, ":%d\n", b.nodes[i].means_cnt);
+		v = b.nodes[i].means.size();
+		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);	
+		
+		for(k = 0; k < b.nodes[i].means.size(); k++)
+		{
+		  text_len = sprintf(buff, ":%d\n", b.nodes[i].means[k]);
+		  vd = b.nodes[i].means[k];
+		  brw = bin_text_write_fixed(model_file,(char *)&vd, sizeof (vd), buff, text_len, text);	
+		}
 	      }	
 	  }	
       }	
@@ -528,7 +667,7 @@ namespace TXM
     l->set_finish<txm,finish>();
     
     data->max_depth = 0;
-    data->passes_per_level = 1;
+    data->passes_per_level = 2;
     
     if(all.training)
       init_tree(*data);	

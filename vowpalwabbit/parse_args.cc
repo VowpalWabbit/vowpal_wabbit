@@ -270,7 +270,7 @@ vw* parse_args(int argc, char *argv[])
     ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
     ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
-    ("centering", po::value<size_t>(), "feature centering")
+    ("centering", "feature centering")
     ;
 
   // Declare the supported options.
@@ -883,6 +883,9 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
+
+  if (vm.count("centering") || vm_file.count("centering"))
+    all->l = CENTERING::setup(*all, to_pass_further, vm, vm_file);
 
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
