@@ -1002,7 +1002,6 @@ vw* parse_args(int argc, char *argv[])
     // special case to try to emulate the missing -d
     if ((to_pass_further.size() == 1) &&
         (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
-
       int f = io_buf().open_file(last_unrec_arg.c_str(), all->stdin_off, io_buf::READ);
       if (f != -1) {
 #ifdef _WIN32

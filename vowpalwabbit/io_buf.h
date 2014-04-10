@@ -52,7 +52,6 @@ class io_buf {
   }
 
   virtual int open_file(const char* name, bool stdin_off, int flag=READ){
-
     int ret = -1;
     switch(flag){
     case READ:
@@ -89,7 +88,7 @@ class io_buf {
       std::cerr << "Unknown file operation. Something other than READ/WRITE specified" << std::endl;
       ret = -1;
     }
-    if (ret == -1)
+    if (ret == -1 && *name != '\0')
       {
 	cout << "can't open: " << name << ", error = " << strerror(errno) << endl;
 	throw exception();
