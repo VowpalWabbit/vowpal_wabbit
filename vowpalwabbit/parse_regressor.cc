@@ -99,7 +99,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				buff, text_len, text);
       if (all.default_bits != true && all.num_bits != local_num_bits)
 	{
-	  cout << "Wrong number of bits for source!" << endl;
+	  cout << "vw: -b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model" << endl;
 	  throw exception();
 	}
       all.default_bits = false;
