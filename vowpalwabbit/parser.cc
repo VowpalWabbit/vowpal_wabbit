@@ -449,6 +449,25 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       // listen on socket
       listen(all.p->bound_sock, source_count);
 
+      // write port file
+      if (vm.count("port_file"))
+	{
+          socklen_t address_size = sizeof(address);
+          if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
+            {
+              cerr << "failure to get port number!" << endl;
+            }
+	  ofstream port_file;
+	  port_file.open(vm["port_file"].as<string>().c_str());
+	  if (!port_file.is_open())
+	    {
+	      cerr << "error writing port file" << endl;
+	      throw exception();
+	    }
+	  port_file << ntohs(address.sin_port) << endl;
+	  port_file.close();
+	}
+
       // background process
       if (!all.active && daemon(1,1))
 	{
