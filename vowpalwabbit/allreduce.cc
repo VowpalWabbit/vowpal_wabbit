@@ -31,23 +31,23 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   if (sock == -1)
     {
       cerr << "can't get socket " << endl;
-	  throw exception();
+      throw exception();
     }
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
   far_end.sin_port = port;
-
+  
   far_end.sin_addr = *(in_addr*)&ip;
   memset(&far_end.sin_zero, '\0',8);
-
+  
   {
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];
     getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV);
-
+    
     cerr << "connecting to " << hostname << ':' << ntohs(port) << endl;
   }
-
+  
   size_t count = 0;
   int ret;
   while ( (ret =connect(sock,(sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
@@ -67,6 +67,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
       cerr << ':' << ntohs(port) << endl;
       perror(NULL);
       count++;
+      sleep(1);
     }
   if (ret == -1)
     throw exception();
