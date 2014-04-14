@@ -48,24 +48,28 @@ socket_t sock_connect(const uint32_t ip, const int port) {
     cerr << "connecting to " << hostname << ':' << ntohs(port) << endl;
   }
 
-  if (connect(sock,(sockaddr*)&far_end, sizeof(far_end)) == -1)
-  {
-#ifdef _WIN32
-    int err_code = WSAGetLastError();
-    cerr << "Windows Sockets error code: " << err_code << endl;
-#endif
-    cerr << "can't connect to: " ;
-    uint32_t pip = ntohl(ip);
-    unsigned char * pp = (unsigned char*)&pip;
-
-    for (size_t i = 0; i < 4; i++)
+  size_t count = 0;
+  int ret;
+  while ( (ret =connect(sock,(sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
     {
-      cerr << static_cast<unsigned int>(static_cast<unsigned short>(pp[3-i])) << ".";
+#ifdef _WIN32
+      int err_code = WSAGetLastError();
+      cerr << "Windows Sockets error code: " << err_code << endl;
+#endif
+      cerr << "can't connect to: " ;
+      uint32_t pip = ntohl(ip);
+      unsigned char * pp = (unsigned char*)&pip;
+      
+      for (size_t i = 0; i < 4; i++)
+	{
+	  cerr << static_cast<unsigned int>(static_cast<unsigned short>(pp[3-i])) << ".";
+	}
+      cerr << ':' << ntohs(port) << endl;
+      perror(NULL);
+      count++;
     }
-    cerr << ':' << ntohs(port) << endl;
-    perror(NULL);
+  if (ret == -1)
     throw exception();
-  }
   return sock;
 }
 
