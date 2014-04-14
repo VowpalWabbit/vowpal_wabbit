@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
 	exit(1);
       }
   
-  if (argc == 2)
+  if (argc == 2 && strcmp("--nondaemon",argv[1])!=0)
     {	  
       ofstream pid_file;
       pid_file.open(argv[1]);
@@ -286,6 +286,7 @@ int main(int argc, char* argv[]) {
 		fail_send(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));
 	      }
 	    shutdown(partial_nodeset.nodes[i].socket, SHUT_RDWR);
+	    close(partial_nodeset.nodes[i].socket);
 	  }
 	free (partial_nodeset.nodes);
       }
