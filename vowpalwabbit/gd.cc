@@ -773,7 +773,18 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
 			    "", read, 
 			    buff, text_len, text);
-
+  if (!all.training) // reset various things so that we report test set performance properly
+    {
+      all.sd->sum_loss = 0;
+      all.sd->sum_loss_since_last_dump = 0;
+      all.sd->dump_interval = 1.;
+      all.sd->weighted_examples = 0.;
+      all.sd->weighted_labels = 0.;
+      all.sd->weighted_unlabeled_examples = 0.;
+      all.sd->example_number = 0;
+      all.sd->total_features = 0;
+    }
+  
   uint32_t length = 1 << all.num_bits;
   uint32_t stride = all.reg.stride;
   int c = 0;
@@ -782,7 +793,7 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   do 
     {
       brw = 1;
-      weight* v;
+      weight* v; 
       if (read)
 	{
 	  c++;
@@ -795,6 +806,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*2, "");
 	      else //adaptive and normalized
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*3, "");	
+	      if (!all.training)
+		v[1]=v[2]=0.;
 	    }
 	}
       else // write binary or text
