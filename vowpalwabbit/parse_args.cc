@@ -1132,6 +1132,7 @@ namespace VW {
       if (all.final_prediction_sink[i] != 1)
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
+    all.socks.~node_socks();
     delete all.loss;
     delete &all;
   }
