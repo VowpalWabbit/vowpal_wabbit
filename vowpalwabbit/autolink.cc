@@ -8,7 +8,7 @@ namespace ALINK {
   
   struct autolink {
     uint32_t d;
-    uint32_t stride;
+    uint32_t stride_shift;
   };
 
   template <bool is_learn>
@@ -23,7 +23,7 @@ namespace ALINK {
     for (size_t i = 0; i < b.d; i++)
       if (base_pred != 0.)
 	{
-	  feature f = { base_pred, (uint32_t) (autoconstant + i * b.stride) };
+	  feature f = { base_pred, (uint32_t) (autoconstant + i < b.stride_shift) };
 	  ec.atomics[autolink_namespace].push_back(f);
 	  sum_sq += base_pred*base_pred;
 	  base_pred *= ec.final_prediction;
@@ -45,7 +45,7 @@ namespace ALINK {
   {
     autolink* data = (autolink*)calloc_or_die(1,sizeof(autolink));
     data->d = (uint32_t)vm["autolink"].as<size_t>();
-    data->stride = all.reg.stride;
+    data->stride_shift = all.reg.stride_shift;
     
     if (!vm_file.count("autolink")) 
       {

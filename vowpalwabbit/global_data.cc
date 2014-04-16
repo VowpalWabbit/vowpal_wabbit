@@ -232,7 +232,7 @@ vw::vw()
 
   bfgs = false;
   hessian_on = false;
-  reg.stride = 1;
+  reg.stride_shift = 0;
   num_bits = 18;
   default_bits = true;
   daemon = false;

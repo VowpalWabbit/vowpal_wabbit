@@ -194,8 +194,8 @@ learner* setup(vw& all, po::variables_map& vm) {
   // initialize weights randomly
   if(!vm.count("initial_regressor"))
     {
-      for (size_t j = 0; j < (all.reg.weight_mask + 1) / all.reg.stride; j++)
-	all.reg.weight_vector[j*all.reg.stride] = (float) (0.1 * frand48());
+      for (size_t j = 0; j < (all.reg.weight_mask + 1) >> all.reg.stride_shift; j++)
+	all.reg.weight_vector[j << all.reg.stride_shift] = (float) (0.1 * frand48());
     }
   learner* l = new learner(data, all.l, 2*data->rank+1);
   l->set_learn<mf, learn>();

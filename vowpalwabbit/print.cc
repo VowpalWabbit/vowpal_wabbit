@@ -51,7 +51,7 @@ namespace PRINT
     print* p = (print*)calloc_or_die(1, sizeof(print));
     p->all = &all;
     size_t length = ((size_t)1) << all.num_bits;
-    all.reg.weight_mask = (all.reg.stride * length) - 1;
+    all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
     learner* ret = new learner(p, 1);
     ret->set_learn<print,learn>();
     ret->set_predict<print,learn>();

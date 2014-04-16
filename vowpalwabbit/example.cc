@@ -40,12 +40,13 @@ float collision_cleanup(v_array<feature>& feature_map) {
 struct features_and_source 
 {
   v_array<feature> feature_map; //map to store sparse feature vectors  
+  uint32_t stride_shift;
   weight* base;
 };
 
 void vec_store(features_and_source& p, float fx, float& fw) {  
-  feature f = {fx, (uint32_t)(&fw - p.base)};
-  p.feature_map.push_back(f);  
+  feature f = {fx, (uint32_t)(&fw - p.base) >> p.stride_shift};
+  p.feature_map.push_back(f);
 }  
   
 namespace VW {
@@ -69,6 +70,7 @@ flat_example* flatten_example(vw& all, example *ec)
     
 	features_and_source fs;
 	fs.base = all.reg.weight_vector;
+	fs.stride_shift = all.reg.stride_shift;
 	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 
 	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
     
