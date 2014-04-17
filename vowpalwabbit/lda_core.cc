@@ -583,6 +583,9 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
       // exist, so we should not try to take its address in the beginning of
       // the for loops down there. Since it seems that there's not much to
       // do in this case, we just return.
+      for (size_t d = 0; d < l.examples.size(); d++)
+	return_simple_example(*l.all, NULL, *l.examples[d]);
+      l.examples.erase();
       return;
     }
 
