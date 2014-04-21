@@ -95,16 +95,16 @@ namespace VW {
   }
 
   inline float get_weight(vw& all, uint32_t index, uint32_t offset)
-  { return all.reg.weight_vector[((index * all.reg.stride + offset) & all.reg.weight_mask)];}
+  { return all.reg.weight_vector[(((index << all.reg.stride_shift) + offset) & all.reg.weight_mask)];}
 
   inline void set_weight(vw& all, uint32_t index, uint32_t offset, float value)
-  { all.reg.weight_vector[((index * all.reg.stride + offset) & all.reg.weight_mask)] = value;}
+  { all.reg.weight_vector[(((index << all.reg.stride_shift) + offset) & all.reg.weight_mask)] = value;}
 
   inline uint32_t num_weights(vw& all)
   { return (uint32_t)all.length();}
 
   inline uint32_t get_stride(vw& all)
-  { return (uint32_t)all.reg.stride;}
+  { return (uint32_t)(1 << all.reg.stride_shift);}
 
   inline void update_dump_interval(vw& all) {
       if (all.progress_add) { 

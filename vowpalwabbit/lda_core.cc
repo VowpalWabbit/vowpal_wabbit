@@ -518,7 +518,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 {
   vw* all = l.all;
   uint32_t length = 1 << all->num_bits;
-  uint32_t stride = all->reg.stride;
+  uint32_t stride = 1 << all->reg.stride_shift;
   
   if (read)
     {
@@ -597,7 +597,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 	for (size_t k = 0; k < l.all->lda; k++)
 	  l.total_lambda.push_back(0.f);
 	
-	size_t stride = l.all->reg.stride;
+	size_t stride = 1 << l.all->reg.stride_shift;
 	for (size_t i =0; i <= l.all->reg.weight_mask;i+=stride)
 	  for (size_t k = 0; k < l.all->lda; k++)
 	    l.total_lambda[k] += l.all->reg.weight_vector[i+k];
@@ -727,7 +727,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 void end_examples(lda& l)
 {
   for (size_t i = 0; i < l.all->length(); i++) {
-    weight* weights_for_w = & (l.all->reg.weight_vector[i*l.all->reg.stride]);
+    weight* weights_for_w = & (l.all->reg.weight_vector[i << l.all->reg.stride_shift]);
     float decay = fmin(1.0, exp(l.decay_levels.last() - l.decay_levels.end[(int)(-1- l.example_t +weights_for_w[l.all->lda])]));
     for (size_t k = 0; k < l.all->lda; k++) 
       weights_for_w[k] *= decay;
@@ -775,7 +775,7 @@ learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
 
   all.p->sort_features = true;
   float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
-  all.reg.stride = ((size_t)1) << (int) temp;
+  all.reg.stride_shift = (size_t)temp;
   all.random_weights = true;
   all.add_constant = false;
 
@@ -795,7 +795,7 @@ learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
   ld->decay_levels.push_back(0.f);
 
   all.l->finish();
-  learner* l = new learner(ld, all.reg.stride);
+  learner* l = new learner(ld, 1 << all.reg.stride_shift);
   l->set_learn<lda,learn>();
   l->set_predict<lda,predict>();
   l->set_save_load<lda,save_load>();

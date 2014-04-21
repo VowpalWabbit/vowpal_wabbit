@@ -495,10 +495,10 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 #else
 	  // weights will be shared across processes, accessible to children
 	  float* shared_weights = 
-	    (float*)mmap(0,all.reg.stride * all.length() * sizeof(float), 
+	    (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float), 
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 
-	  size_t float_count = all.reg.stride * all.length();
+	  size_t float_count = all.length() << all.reg.stride_shift;
 	  weight* dest = shared_weights;
 	  memcpy(dest, all.reg.weight_vector, float_count*sizeof(float));
 	  free(all.reg.weight_vector);
@@ -813,16 +813,16 @@ void setup_example(vw& all, example* ae)
     ae->total_sum_feat_sq++;
   }
   
-  if(all.reg.stride != 1) //make room for per-feature information.
+  if(all.reg.stride_shift != 0) //make room for per-feature information.
     {
-      uint32_t stride = all.reg.stride;
+      uint32_t stride_shift = all.reg.stride_shift;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-	  j->weight_index = j->weight_index*stride;
+	  j->weight_index = (j->weight_index << stride_shift);
       if (all.audit || all.hash_inv)
 	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-	    j->weight_index = j->weight_index*stride;
+	    j->weight_index = (j->weight_index << stride_shift);
     }
   
   for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++) 
@@ -962,7 +962,7 @@ namespace VW{
 		for (feature *f = ec->atomics[*i].begin; f != ec->atomics[*i].end; f++)
 		  {
 			feature t = *f;
-			t.weight_index /= all.reg.stride;
+			t.weight_index >>= all.reg.stride_shift;
 			fs_ptr[fs_count].fs[f_count] = t;
 			f_count++;
 		  }

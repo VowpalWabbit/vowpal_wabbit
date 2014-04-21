@@ -406,7 +406,7 @@ vw* parse_args(int argc, char *argv[])
       throw exception();
     }
 
-  all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
+  all->reg.stride_shift = 2; //use stride of 4 for default invariant normalized adaptive updates
   //if the user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
   if( (all->rank > 0 && !vm.count("new_mf")) || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
   {
@@ -414,12 +414,12 @@ vw* parse_args(int argc, char *argv[])
     all->invariant_updates = all->training && vm.count("invariant");
     all->normalized_updates = all->training && vm.count("normalized") && (all->rank == 0 && !vm.count("new_mf"));
 
-    all->reg.stride = 1;
+    all->reg.stride_shift = 0;
 
-    if( all->adaptive ) all->reg.stride *= 2;
+    if( all->adaptive ) all->reg.stride_shift += 1;
     else all->normalized_idx = 1; //store per feature norm at 1 index offset from weight value instead of 2
 
-    if( all->normalized_updates ) all->reg.stride *= 2;
+    if( all->normalized_updates ) all->reg.stride_shift += 1;
 
     if(!vm.count("learning_rate") && !vm.count("l") && !(all->adaptive && all->normalized_updates))
       if (all->lda == 0)
@@ -432,12 +432,12 @@ vw* parse_args(int argc, char *argv[])
       all->initial_t = 1.f;
     }
     if (vm.count("feature_mask")){
-      if(all->reg.stride == 1){
-        all->reg.stride *= 2;//if --sgd, stride->2 and use the second position as mask
+      if(all->reg.stride_shift == 0){
+        all->reg.stride_shift += 1;//if --sgd, stride->2 and use the second position as mask
         all->feature_mask_idx = 1;
       }
-      else if(all->reg.stride == 2){
-        all->reg.stride *= 2;//if either normalized or adaptive, stride->4, mask_idx is still 3
+      else if(all->reg.stride_shift == 1){
+        all->reg.stride_shift += 1;//if either normalized or adaptive, stride->4, mask_idx is still 3
       }
     }
   }
@@ -681,7 +681,7 @@ vw* parse_args(int argc, char *argv[])
   if (!vm.count("new_mf") && all->rank > 0) {
     // store linear + 2*rank weights per index, round up to power of two
     float temp = ceilf(logf((float)(all->rank*2+1)) / logf (2.f));
-    all->reg.stride = 1 << (int) temp;
+    all->reg.stride_shift = (size_t) temp;
     all->random_weights = true;
 
     if ( vm.count("adaptive") )
@@ -762,7 +762,7 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("print"))
     {
       all->l = PRINT::setup(*all);
-      all->reg.stride = 1;
+      all->reg.stride_shift = 0;
     }
 
   if (!vm.count("new_mf") && all->rank > 0)
@@ -1034,7 +1034,7 @@ vw* parse_args(int argc, char *argv[])
   size_t params_per_problem = all->l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all->wpp = (1 << i) / all->reg.stride;
+  all->wpp = (1 << i) >> all->reg.stride_shift;
 
   return all;
 }

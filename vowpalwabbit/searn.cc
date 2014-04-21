@@ -100,7 +100,7 @@ namespace Searn
   void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h, size_t additional_offset=0)
   {
     uint64_t v0, v1, v, max_string_length = 0;
-    uint32_t wpp = all.wpp * all.reg.stride;
+    uint32_t wpp = all.wpp << all.reg.stride_shift;
     if (hinfo.length == 0) return;
     if (h == NULL) {
       cerr << "error: got empty history in add_history_to_example" << endl;
@@ -1637,7 +1637,7 @@ void print_update(vw& all, searn& srn)
     size_t neighbor_constant = 8349204823;
     vw*all = srn.all;
     if (srn.neighbor_features.size() == 0) return;
-    uint32_t wpp = srn.all->wpp * srn.all->reg.stride;
+    uint32_t wpp = srn.all->wpp << srn.all->reg.stride_shift;
 
     for (int32_t n=0; n<(int32_t)srn.ec_seq.size(); n++) {
       example*me = srn.ec_seq[n];

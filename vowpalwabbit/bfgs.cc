@@ -111,19 +111,19 @@ const char* curv_message = "Zero or negative curvature detected.\n"
 void zero_derivative(vw& all)
 {//set derivative to 0.
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
-    weights[stride*i+W_GT] = 0;
+    weights[(i << stride_shift) +W_GT] = 0;
 }
 
 void zero_preconditioner(vw& all)
 {//set derivative to 0.
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
-    weights[stride*i+W_COND] = 0;
+    weights[(i << stride_shift)+W_COND] = 0;
 }
 
 void reset_state(vw& all, bfgs& b, bool zero)
@@ -212,14 +212,14 @@ double regularizer_direction_magnitude(vw& all, bfgs& b, float regularizer)
     return ret;
 
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     for(uint32_t i = 0; i < length; i++)
-      ret += regularizer*weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
+      ret += regularizer*weights[(i << stride_shift)+W_DIR]*weights[(i << stride_shift)+W_DIR];
   else
     for(uint32_t i = 0; i < length; i++) 
-      ret += b.regularizers[2*i]*weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
+      ret += b.regularizers[2*i]*weights[(i << stride_shift)+W_DIR]*weights[(i << stride_shift)+W_DIR];
 
   return ret;
 }
@@ -228,10 +228,10 @@ float direction_magnitude(vw& all)
 {//compute direction magnitude
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++)
-    ret += weights[stride*i+W_DIR]*weights[stride*i+W_DIR];
+    ret += weights[(i << stride_shift)+W_DIR]*weights[(i << stride_shift)+W_DIR];
   
   return (float)ret;
 }
@@ -239,7 +239,7 @@ float direction_magnitude(vw& all)
 void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int&origin)
 {
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride = 1 << all.reg.stride_shift;
   weight* w = all.reg.weight_vector;
 
   double g1_Hg1 = 0.;
@@ -265,7 +265,7 @@ void bfgs_iter_start(vw& all, bfgs& b, float* mem, int& lastj, double importance
 void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int &origin) 
 {  
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride = 1 << all.reg.stride_shift;
   weight* w = all.reg.weight_vector;
   
   float* mem0 = mem;
@@ -387,7 +387,7 @@ void bfgs_iter_middle(vw& all, bfgs& b, float* mem, double* rho, double* alpha, 
 
 double wolfe_eval(vw& all, bfgs& b, float* mem, double loss_sum, double previous_loss_sum, double step_size, double importance_weight_sum, int &origin, double& wolfe1) { 
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride = 1 << all.reg.stride_shift;
   weight* w = all.reg.weight_vector;
   
   double g0_d = 0.;
@@ -416,20 +416,20 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 {//compute the derivative difference
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride_shift = all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     {
       for(uint32_t i = 0; i < length; i++) {
-	weights[stride*i+W_GT] += regularization*weights[stride*i];
-	ret += 0.5*regularization*weights[stride*i]*weights[stride*i];
+	weights[(i << stride_shift)+W_GT] += regularization*weights[i << stride_shift];
+	ret += 0.5*regularization*weights[i << stride_shift]*weights[i << stride_shift];
       }
     }
   else
     {
       for(uint32_t i = 0; i < length; i++) {
-	weight delta_weight = weights[stride*i] - b.regularizers[2*i+1];
-	weights[stride*i+W_GT] += b.regularizers[2*i]*delta_weight;
+	weight delta_weight = weights[i << stride_shift] - b.regularizers[2*i+1];
+	weights[(i << stride_shift)+W_GT] += b.regularizers[2*i]*delta_weight;
 	ret += 0.5*b.regularizers[2*i]*delta_weight*delta_weight;
       }
     }
@@ -440,7 +440,7 @@ double add_regularization(vw& all, bfgs& b, float regularization)
 void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 {
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride = 1 << all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   float max_hessian = 0.f;
 
@@ -472,7 +472,7 @@ void finalize_preconditioner(vw& all, bfgs& b, float regularization)
 void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 {
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride = 1 << all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   if (b.regularizers == NULL)
     {
@@ -496,7 +496,7 @@ void preconditioner_to_regularizer(vw& all, bfgs& b, float regularization)
 void zero_state(vw& all)
 {
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride = 1 << all.reg.stride_shift;
   weight* weights = all.reg.weight_vector;
   for(uint32_t i = 0; i < length; i++) 
     {
@@ -510,7 +510,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
   {  
   double ret = 0.;
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride = 1 << all.reg.stride_shift;
   weight* w = all.reg.weight_vector;
   
   for(uint32_t i = 0; i < length; i++, w+=stride, mem+=b.mem_stride)
@@ -521,7 +521,7 @@ double derivative_in_direction(vw& all, bfgs& b, float* mem, int &origin)
 void update_weight(vw& all, float step_size, size_t current_pass)
   {
     uint32_t length = 1 << all.num_bits;
-    size_t stride = all.reg.stride;
+    size_t stride = 1 << all.reg.stride_shift;
     weight* w = all.reg.weight_vector;
     
     for(uint32_t i = 0; i < length; i++, w+=stride)
@@ -854,7 +854,7 @@ void save_load_regularizer(vw& all, bfgs& b, io_buf& model_file, bool read, bool
 
   char buff[512];
   int c = 0;
-  uint32_t stride = all.reg.stride;
+  uint32_t stride = 1 << all.reg.stride_shift;
   uint32_t length = 2*(1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
@@ -925,7 +925,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
       
       if (!all->quiet) 
 	{
-	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+sizeof(weight)*all->reg.stride) >> 20);
+	  fprintf(stderr, "m = %d\nAllocated %luM for weights and mem\n", m, (long unsigned int)all->length()*(sizeof(float)*(b.mem_stride)+(sizeof(weight) << all->reg.stride_shift)) >> 20);
 	}
       
       b.net_time = 0.0;
@@ -1009,9 +1009,9 @@ learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po
     }
 
   all.bfgs = true;
-  all.reg.stride = 4;
+  all.reg.stride_shift = 2;
 
-  learner* l = new learner(b, all.reg.stride);
+  learner* l = new learner(b, 1 << all.reg.stride_shift);
   l->set_learn<bfgs, learn>();
   l->set_predict<bfgs, predict>();
   l->set_save_load<bfgs,save_load>();

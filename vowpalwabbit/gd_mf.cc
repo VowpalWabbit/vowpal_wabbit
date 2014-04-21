@@ -47,7 +47,7 @@ void mf_print_offset_features(vw& all, example& ec, size_t offset)
 	  size_t index = (f->weight_index + offset) & all.reg.weight_mask;
 	  
 	  cout << "\tConstant:";
-	  cout << (index/all.reg.stride & all.parse_mask) << ':' << f->x;
+	  cout << ((index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
 	  cout  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
@@ -209,13 +209,13 @@ void mf_train(vw& all, example& ec, float update)
 {
   vw* all = d.all;
   uint32_t length = 1 << all->num_bits;
-  uint32_t stride = all->reg.stride;
+  uint32_t stride_shift = all->reg.stride_shift;
 
   if(read)
     {
       initialize_regressor(*all);
       if(all->random_weights)
-	for (size_t j = 0; j < all->reg.stride*length; j++)
+	for (size_t j = 0; j < (length << stride_shift); j++)
 	  all->reg.weight_vector[j] = (float) (0.1 * frand48()); 
     }
 
@@ -238,7 +238,7 @@ void mf_train(vw& all, example& ec, float update)
 	  if (brw != 0)
 	    for (uint32_t k = 0; k < K; k++)
 	      {
-		uint32_t ndx = stride*i+k;
+		uint32_t ndx = (i << stride_shift)+k;
 		
 		weight* v = &(all->reg.weight_vector[ndx]);
 		text_len = sprintf(buff, "%f ", *v);
@@ -290,7 +290,7 @@ void end_pass(gdmf& d)
   {
     gdmf* data = (gdmf*)calloc_or_die(1,sizeof(gdmf)); 
     data->all = &all;
-    learner* l = new learner(data, all.reg.stride);
+    learner* l = new learner(data, 1 << all.reg.stride_shift);
     l->set_learn<gdmf, learn>();
     l->set_predict<gdmf, predict>();
     l->set_save_load<gdmf,save_load>();

@@ -112,7 +112,7 @@ typedef float weight;
 struct regressor {
   weight* weight_vector;
   size_t weight_mask; // (stride*(1 << num_bits) -1)
-  uint32_t stride;
+  uint32_t stride_shift;
 };
 
 struct vw {

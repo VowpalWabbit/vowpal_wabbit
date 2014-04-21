@@ -68,7 +68,7 @@ namespace NN {
 
     memset (&n.output_layer, 0, sizeof (n.output_layer));
     n.output_layer.indices.push_back(nn_output_namespace);
-    feature output = {1., nn_constant*all.reg.stride};
+    feature output = {1., nn_constant << all.reg.stride_shift};
 
     for (unsigned int i = 0; i < n.k; ++i)
       {
@@ -125,7 +125,7 @@ namespace NN {
     //ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n.k; ++i)
       {
-        uint32_t biasindex = (uint32_t) constant * n.all->wpp * n.all->reg.stride + i * (uint32_t)n.increment + ec.ft_offset;
+        uint32_t biasindex = (uint32_t) constant * (n.all->wpp << n.all->reg.stride_shift) + i * (uint32_t)n.increment + ec.ft_offset;
         weight* w = &n.all->reg.weight_vector[biasindex & n.all->reg.weight_mask];
         
         // avoid saddle point at 0
