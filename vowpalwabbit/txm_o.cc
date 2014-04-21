@@ -545,7 +545,7 @@ namespace TXM_O
   
   void finish(txm_o& b)
   {
-    display_tree2(b);
+    //display_tree2(b);
     save_node_stats(b);
     //fclose(b.ex_fp);
   }
@@ -641,7 +641,7 @@ namespace TXM_O
     (all.p->lp) = MULTICLASS::mc_label_parser;
     
     uint32_t i = ceil_log2(data->k);	
-    data->max_nodes = (2 << (i+1)) - 1;
+    data->max_nodes = (2 << (i+2)) - 1;
     
     learner* l = new learner(data, all.l, data->max_nodes + 1);
     l->set_save_load<txm_o,save_load_tree>();
