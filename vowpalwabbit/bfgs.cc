@@ -799,7 +799,7 @@ void end_pass(bfgs& b)
                finalize_regressor(*all, all->final_regressor_name); 
 	     if(b.early_stop_thres == b.no_win_counter)
 	     { 
-               all-> early_terminate = true;
+               set_done(*all);
                cerr<<"Early termination reached w.r.t. holdout set error";
              }
 

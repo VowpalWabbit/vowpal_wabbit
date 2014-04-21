@@ -145,7 +145,7 @@ float InvSqrt(float x){
         if((g.early_stop_thres == g.no_win_counter) &&
            ((all->check_holdout_every_n_passes <= 1) ||
             ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
-          all-> early_terminate = true;
+	  set_done(*all);
       }   
   }
 

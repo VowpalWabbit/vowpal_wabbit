@@ -652,6 +652,14 @@ bool parser_done(parser* p)
   return false;
 }
 
+void set_done(vw& all)
+{
+  all.early_terminate = true;
+  mutex_lock(&all.p->examples_lock);
+  all.p->done = true;
+  mutex_unlock(&all.p->examples_lock);
+}
+
 void addgrams(vw& all, size_t ngram, size_t skip_gram, v_array<feature>& atomics, v_array<audit_data>& audits,
 	      size_t initial_length, v_array<size_t> &gram_mask, size_t skips)
 {

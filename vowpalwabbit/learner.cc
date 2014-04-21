@@ -24,11 +24,6 @@ namespace LEARNER
 	      {
 		all->l->end_pass();
 		VW::finish_example(*all,ec);
-		if(all->early_terminate)
-		  {
-		    all->p->done = true;
-		    return;
-		  }
 	      }
 	    else if (ec->tag.size() >= 4 && !strncmp((const char*) ec->tag.begin, "save", 4))
 	      {// save state command
