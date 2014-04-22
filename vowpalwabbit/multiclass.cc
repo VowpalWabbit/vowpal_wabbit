@@ -5,7 +5,7 @@
 
 namespace MULTICLASS {
 
-  char* bufread_label(mc_label* ld, char* c)
+  char* bufread_label(multiclass* ld, char* c)
   {
     ld->label = *(uint32_t *)c;
     c += sizeof(ld->label);
@@ -16,7 +16,7 @@ namespace MULTICLASS {
   
   size_t read_cached_label(shared_data*, void* v, io_buf& cache)
   {
-    mc_label* ld = (mc_label*) v;
+    multiclass* ld = (multiclass*) v;
     char *c;
     size_t total = sizeof(ld->label)+sizeof(ld->weight);
     if (buf_read(cache, c, total) < total) 
@@ -28,11 +28,11 @@ namespace MULTICLASS {
   
   float weight(void* v)
   {
-    mc_label* ld = (mc_label*) v;
+    multiclass* ld = (multiclass*) v;
     return (ld->weight > 0) ? ld->weight : 0.f;
   }
   
-  char* bufcache_label(mc_label* ld, char* c)
+  char* bufcache_label(multiclass* ld, char* c)
   {
     *(uint32_t *)c = ld->label;
     c += sizeof(ld->label);
@@ -44,14 +44,14 @@ namespace MULTICLASS {
   void cache_label(void* v, io_buf& cache)
   {
     char *c;
-    mc_label* ld = (mc_label*) v;
+    multiclass* ld = (multiclass*) v;
     buf_write(cache, c, sizeof(ld->label)+sizeof(ld->weight));
     c = bufcache_label(ld,c);
   }
 
   void default_label(void* v)
   {
-    mc_label* ld = (mc_label*) v;
+    multiclass* ld = (multiclass*) v;
     ld->label = (uint32_t)-1;
     ld->weight = 1.;
   }
@@ -62,7 +62,7 @@ namespace MULTICLASS {
 
   void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words)
   {
-    mc_label* ld = (mc_label*)v;
+    multiclass* ld = (multiclass*)v;
 
     switch(words.size()) {
     case 0:
@@ -86,11 +86,17 @@ namespace MULTICLASS {
       }
   }
 
+  label_parser mc_label = {default_label, parse_label, 
+				  cache_label, read_cached_label, 
+				  delete_label, weight, 
+				  NULL,
+				  sizeof(multiclass)};
+  
   void print_update(vw& all, example &ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-        mc_label* ld = (mc_label*) ec.ld;
+        multiclass* ld = (multiclass*) ec.ld;
         char label_buf[32];
         if (ld->label == INT_MAX)
           strcpy(label_buf," unknown");
@@ -138,7 +144,7 @@ namespace MULTICLASS {
 
   void output_example(vw& all, example& ec)
   {
-    mc_label* ld = (mc_label*)ec.ld;
+    multiclass* ld = (multiclass*)ec.ld;
 
     size_t loss = 1;
     if (ld->label == (uint32_t)ec.final_prediction)

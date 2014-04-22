@@ -28,18 +28,7 @@ namespace COST_SENSITIVE {
   };
   
   void output_example(vw& all, example& ec);
-  size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
-  void cache_label(void* v, io_buf& cache);
-  void default_label(void* v);
-  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words);
-  void delete_label(void* v);
-  void copy_label(void*&dst,void*src);
-  float weight(void* v);
-  const label_parser cs_label_parser = {default_label, parse_label, 
-					cache_label, read_cached_label, 
-					delete_label, weight, 
-                                        copy_label,
-					sizeof(label)};
+  extern label_parser cs_label;
 
   bool example_is_test(example& ec);
 

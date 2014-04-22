@@ -578,6 +578,7 @@ vw* parse_args(int argc, char *argv[])
         }
         //-q ::
         else if((*i)[0]==':'&&(*i)[1]==':'){
+	  cout << "in pair creation" << endl;
           newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
           for (char j=printable_start; j<=printable_end; j++){
             if(valid_ns(j)){

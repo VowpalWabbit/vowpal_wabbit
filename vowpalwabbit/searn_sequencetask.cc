@@ -25,7 +25,7 @@ namespace SequenceTask {
     for (size_t i=0; i<len; i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
-      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
+      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
 
       if (output_ss) (*output_ss) << prediction << ' ';
@@ -50,7 +50,7 @@ namespace OneOfManyTask {
     bool predicted_true_yet = false;
     bool output_has_true    = false;
     for (size_t i=0; i<len; i++) {
-      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
+      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
       if (y->label == 2) output_has_true = true;
     }
         
@@ -59,7 +59,7 @@ namespace OneOfManyTask {
       srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
       srn.snapshot(i, 2, &predicted_true_yet, sizeof(predicted_true_yet), false);  // not used for prediction
 
-      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
+      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
 
       float cur_loss = 0.;
@@ -119,9 +119,9 @@ namespace SequenceSpanTask {
 
   void convert_bio_to_bilou(example**ec, size_t len) {
     for (size_t n=0; n<len; n++) {
-      MULTICLASS::mc_label* ylab = (MULTICLASS::mc_label*)ec[n]->ld;
+      MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
       uint32_t y = ylab->label;
-      uint32_t nexty = (n == len-1) ? 0 : ((MULTICLASS::mc_label*)ec[n+1]->ld)->label;
+      uint32_t nexty = (n == len-1) ? 0 : ((MULTICLASS::multiclass*)ec[n+1]->ld)->label;
       if (y == 1) { // do nothing
       } else if (y % 2 == 0) { // this is a begin-X
         if (nexty != y + 1) // should be unit
@@ -234,7 +234,7 @@ namespace SequenceSpanTask {
           my_task_data->only_two_allowed[1] = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
         }
       }
-      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
+      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
       last_prediction = srn.predict(ec[i], y_allowed, y->label);
 
       uint32_t printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
@@ -246,7 +246,7 @@ namespace SequenceSpanTask {
 
     if (my_task_data->encoding == BILOU)  // TODO: move this out of here!
       for (size_t n=0; n<len; n++) {
-        MULTICLASS::mc_label* ylab = (MULTICLASS::mc_label*)ec[n]->ld;
+        MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
         ylab->label = bilou_to_bio(ylab->label);
       }
   }
@@ -283,7 +283,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   void finish(searn& srn) {
     task_data *data = (task_data*)srn.task_data;
     for (size_t a=0; a<data->num_actions; a++)
-      dealloc_example(COST_SENSITIVE::delete_label, data->ldf_examples[a]);
+      dealloc_example(COST_SENSITIVE::cs_label.delete_label, data->ldf_examples[a]);
     free(data->ldf_examples);
     free(data);
   }
@@ -308,7 +308,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
       
-      MULTICLASS::mc_label* y = (MULTICLASS::mc_label*)ec[i]->ld;
+      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
       size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, y->label - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       

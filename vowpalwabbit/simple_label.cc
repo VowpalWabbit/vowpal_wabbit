@@ -99,6 +99,12 @@ void parse_simple_label(parser* p, shared_data* sd, void* v, v_array<substring>&
     cout << "You are using a label not -1 or 1 with a loss function expecting that!" << endl;
 }
 
+label_parser simple_label = {default_simple_label, parse_simple_label, 
+				   cache_simple_label, read_cached_simple_label, 
+				   delete_simple_label, get_weight,  
+                                   NULL,
+				   sizeof(label_data)};
+
 float get_active_coin_bias(float k, float l, float g, float c0)
 {
   float b,sb,rs,sl;

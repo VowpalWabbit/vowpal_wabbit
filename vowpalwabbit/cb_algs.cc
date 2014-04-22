@@ -553,7 +553,7 @@ namespace CB_ALGS
       all.options_from_file.append(" --cb_type dr");
     }
 
-    all.p->lp = CB::cb_label_parser; 
+    all.p->lp = CB::cb_label; 
 
     learner* l = new learner(c, all.l, problem_multiplier);
     l->set_learn<cb, predict_or_learn<true> >();

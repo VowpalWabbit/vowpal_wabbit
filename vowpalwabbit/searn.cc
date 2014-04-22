@@ -362,7 +362,7 @@ namespace Searn
     assert(pol >= 0);
     searn *srn = (searn*)all.searnstr;
     COST_SENSITIVE::label test_label;
-    COST_SENSITIVE::default_label(&test_label);
+    COST_SENSITIVE::cs_label.default_label(&test_label);
     
     // TODO: modify this to handle contextual bandit base learner with ldf
     float best_prediction = 0;
@@ -633,7 +633,7 @@ namespace Searn
             cdbg << "examples_dont_change so setting ref to ecs, len=" << num_to_copy << " and t=" << srn->t << endl;
           } else {
             size_t label_size = srn->is_ldf ? sizeof(COST_SENSITIVE::label) : sizeof(MULTICLASS::mc_label);
-            void (*label_copy_fn)(void*&,void*) = srn->is_ldf ? COST_SENSITIVE::copy_label : NULL;
+            void (*label_copy_fn)(void*&,void*) = srn->is_ldf ? COST_SENSITIVE::cs_label.copy_label : NULL;
             assert(num_to_copy < MAX_BRANCHING_FACTOR);
             cdbg << "copying " << num_to_copy << " items to learn_example_copy" << endl;
             for (size_t n=0; n<num_to_copy; n++)
@@ -1123,7 +1123,7 @@ namespace Searn
         cdbg << "losses[" << a << "] = " << losses[a] << endl;
         //((OAA::mc_label*)ec[a]->ld)->weight = losses[a] - min_loss;
         COST_SENSITIVE::label* lab = (COST_SENSITIVE::label*)ec[a].ld;
-        COST_SENSITIVE::default_label(lab);
+        COST_SENSITIVE::cs_label.default_label(lab);
         COST_SENSITIVE::wclass c = { losses[a] - min_loss, (uint32_t)a, 0., 0. };
         lab->costs.push_back(c);
         cdbg << "learn t = " << srn.learn_t << " cost = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].x << " action = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].weight_index << endl;
@@ -1504,12 +1504,10 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
 
           if (!srn.examples_dont_change) {
             cdbg << "deleting labels for " << srn.learn_example_len << " learn_example_copy items" << endl;
-            for (size_t n=0; n<srn.learn_example_len; n++) {
+            for (size_t n=0; n<srn.learn_example_len; n++) 
               //cdbg << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &srn.learn_example_copy[n]);
-              if (srn.is_ldf) COST_SENSITIVE::delete_label(srn.learn_example_copy[n].ld);
-              else                MULTICLASS::delete_label(srn.learn_example_copy[n].ld);
-
-            }
+	      if (srn.is_ldf) COST_SENSITIVE::cs_label.delete_label(srn.learn_example_copy[n].ld);
+              else                MULTICLASS::mc_label.delete_label(srn.learn_example_copy[n].ld);
           }
         } else {
           cerr << "warning: searn did not generate an example for a given time-step" << endl;
@@ -1890,7 +1888,7 @@ void print_update(vw& all, searn& srn)
     srn.is_ldf = false;
     
     srn.empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);
-    COST_SENSITIVE::default_label(srn.empty_example->ld);
+    COST_SENSITIVE::cs_label.default_label(srn.empty_example->ld);
     srn.empty_example->in_use = true;
   }
 
@@ -1918,7 +1916,7 @@ void print_update(vw& all, searn& srn)
     else // labels are CB
       delete (CB::label*)srn.valid_labels;
 
-    dealloc_example(COST_SENSITIVE::delete_label, *(srn.empty_example));
+    dealloc_example(COST_SENSITIVE::cs_label.delete_label, *(srn.empty_example));
     free(srn.empty_example);
     
     srn.ec_seq.delete_v();
@@ -1940,7 +1938,8 @@ void print_update(vw& all, searn& srn)
 
     // destroy copied examples if we needed them
     if (! srn.examples_dont_change) {
-      void (*delete_label)(void*) = srn.is_ldf ? COST_SENSITIVE::delete_label : MULTICLASS::delete_label;
+      void (*delete_label)(void*) = srn.is_ldf ? COST_SENSITIVE::cs_label.delete_label : MULTICLASS::mc_label.delete_label;
+
       for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
         dealloc_example(delete_label, srn.learn_example_copy[n]);
     }
@@ -2252,7 +2251,7 @@ void print_update(vw& all, searn& srn)
     srn->task = mytask;
 
     // default to OAA labels unless the task wants to override this!
-    all.p->lp = MULTICLASS::mc_label_parser; 
+    all.p->lp = MULTICLASS::mc_label; 
     srn->task->initialize(*srn, srn->A, opts, vm, vm_file);
 
     // set up auto-history if they want it

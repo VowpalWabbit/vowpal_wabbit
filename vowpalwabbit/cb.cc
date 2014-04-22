@@ -160,4 +160,10 @@ namespace CB
         ld->costs.push_back(f);
       }
   }
+
+  label_parser cb_label = {default_label, parse_label, 
+				  cache_label, read_cached_label, 
+				  delete_label, weight, 
+				  copy_label,
+				  sizeof(label)};
 }
