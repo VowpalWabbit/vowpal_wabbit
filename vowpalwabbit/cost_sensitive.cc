@@ -190,7 +190,7 @@ namespace COST_SENSITIVE {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
-	label_data* ld = (label_data*)ec.ld;
+	label* ld = (label*)ec.ld;
         char label_buf[32];
         if (is_test)
           strcpy(label_buf," unknown");

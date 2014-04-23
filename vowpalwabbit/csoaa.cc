@@ -627,7 +627,6 @@ namespace LabelDict {
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
     
-
     COST_SENSITIVE::print_update(all, COST_SENSITIVE::example_is_test(ec), ec);
   }
 
