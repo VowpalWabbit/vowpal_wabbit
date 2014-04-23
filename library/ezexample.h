@@ -169,7 +169,7 @@ class ezexample {
       if (is_multiline) vw_ref->learn(empty_example);
       example_changed_since_prediction = false;
     }
-    return ec->final_prediction;
+    return ((label_data*) ec->ld)->prediction;
   }
 
   void train() {  // if multiline, add to stack; otherwise, actually train

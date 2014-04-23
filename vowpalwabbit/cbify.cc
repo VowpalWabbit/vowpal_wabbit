@@ -57,16 +57,16 @@ namespace CBIFY {
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
-	ec.final_prediction = (float)do_uniform(data);
-	ec.loss = loss(ld->label, ec.final_prediction);
+	ld->prediction = (float)do_uniform(data);
+	ec.loss = loss(ld->label, ld->prediction);
 	data.tau--;
-	uint32_t action = (uint32_t)ec.final_prediction;
+	uint32_t action = ld->prediction;
 	CB::cb_class l = {ec.loss, action, 1.f / data.k};
 	data.cb_label.costs.erase();
 	data.cb_label.costs.push_back(l);
 	ec.ld = &(data.cb_label);
 	base.learn(ec);
-	ec.final_prediction = (float)action;
+	ld->prediction = action;
 	ec.loss = l.cost;
       }
     else
@@ -74,7 +74,7 @@ namespace CBIFY {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
 	base.predict(ec);
-	ec.loss = loss(ld->label, ec.final_prediction);
+	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
   }
@@ -87,12 +87,12 @@ namespace CBIFY {
     data.cb_label.costs.erase();
     
     base.predict(ec);
-    uint32_t action = (uint32_t)ec.final_prediction;
+    uint32_t action = ld->prediction;
 
     float base_prob = data.epsilon / data.k;
     if (frand48() < 1. - data.epsilon)
       {
-	CB::cb_class l = {loss(ld->label, ec.final_prediction), 
+	CB::cb_class l = {loss(ld->label, ld->prediction), 
 			  action, 1.f - data.epsilon + base_prob};
 	data.cb_label.costs.push_back(l);
       }
@@ -101,7 +101,7 @@ namespace CBIFY {
 	action = do_uniform(data);
 	CB::cb_class l = {loss(ld->label, (float)action), 
 			  action, base_prob};
-	if (action == ec.final_prediction)
+	if (action == ld->prediction)
 	  l.probability = 1.f - data.epsilon + base_prob;
 	data.cb_label.costs.push_back(l);
       }
@@ -109,8 +109,8 @@ namespace CBIFY {
     if (is_learn)
       base.learn(ec);
     
-    ec.final_prediction = (float)action;
-    ec.loss = loss(ld->label, ec.final_prediction);
+    ld->prediction = (float)action;
+    ec.loss = loss(ld->label, ld->prediction);
     ec.ld = ld;
   }
 
@@ -130,9 +130,9 @@ namespace CBIFY {
     for (size_t i = 0; i < data.bags; i++)
       {
 	base.predict(ec,i);
-	data.count[(uint32_t)ec.final_prediction]++;
+	data.count[ld->prediction]++;
 	if (i == bag)
-	  action = (uint32_t)ec.final_prediction;
+	  action = ld->prediction;
       }
     assert(action != 0);
     if (is_learn)
@@ -148,8 +148,8 @@ namespace CBIFY {
 	      base.learn(ec,i);
 	  }
       }
+    ld->prediction = action;
     ec.ld = ld;
-    ec.final_prediction = (float)action;
   }
   
   uint32_t choose_action(v_array<float>& distribution)
@@ -235,8 +235,8 @@ namespace CBIFY {
 	  data.cs->predict(ec, i);
 	else
 	  data.cs->predict(ec,i+1);
-	data.count[(size_t)ec.final_prediction-1] += additive_probability;
-	data.predictions[i] = (uint32_t)ec.final_prediction;
+	data.count[data.cs_label.prediction-1] += additive_probability;
+	data.predictions[i] = (uint32_t)data.cs_label.prediction;
       }
 
     float min_prob = data.epsilon * min (1.f / data.k, 1.f / (float)sqrt(data.counter * data.k));
@@ -287,8 +287,8 @@ namespace CBIFY {
 	  }
       }
 
+    ld->prediction = action;
     ec.ld = ld;
-    ec.final_prediction = (float)action;
   }
   
   void init_driver(cbify&) {}

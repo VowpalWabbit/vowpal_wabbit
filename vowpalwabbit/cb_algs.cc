@@ -205,7 +205,7 @@ namespace CB_ALGS
       }
     }
     
-    ec.final_prediction = (float)argmin;
+    ld->prediction = (float)argmin;
   }
 
   template <bool is_learn>
@@ -357,6 +357,7 @@ namespace CB_ALGS
         else
           sprintf(label_buf," known");
 
+	CB::label& ld = (CB::label&)ec.ld;
         if(!all.holdout_set_off && all.current_pass >= 1)
         {
           if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)
@@ -373,7 +374,7 @@ namespace CB_ALGS
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
-              (long unsigned int)ec.final_prediction,
+              (long unsigned int)ld.prediction,
               (long unsigned int)ec.num_features,
               c.avg_loss_regressors,
               c.last_pred_reg,
@@ -389,7 +390,7 @@ namespace CB_ALGS
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)ec.final_prediction,
+                (long unsigned int)ld.prediction,
                 (long unsigned int)ec.num_features,
                 c.avg_loss_regressors,
                 c.last_pred_reg,
@@ -409,7 +410,7 @@ namespace CB_ALGS
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = (size_t)ec.final_prediction;
+        size_t pred = (size_t)ld->prediction;
 
         float chosen_loss = FLT_MAX;
         if( know_all_cost_example(ld) ) {
@@ -456,7 +457,7 @@ namespace CB_ALGS
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
         int f = all.final_prediction_sink[i];
-        all.print(f, ec.final_prediction, 0, ec.tag);
+        all.print(f, ld->prediction, 0, ec.tag);
       }
   
 

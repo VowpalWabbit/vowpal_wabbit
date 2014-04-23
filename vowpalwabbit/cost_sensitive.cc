@@ -190,6 +190,7 @@ namespace COST_SENSITIVE {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
+	label_data* ld = (label_data*)ec.ld;
         char label_buf[32];
         if (is_test)
           strcpy(label_buf," unknown");
@@ -212,7 +213,7 @@ namespace COST_SENSITIVE {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)ec.final_prediction,
+                (long unsigned int)ld->prediction,
                 (long unsigned int)ec.num_features);
 
           all.sd->weighted_holdout_examples_since_last_dump = 0;
@@ -225,7 +226,7 @@ namespace COST_SENSITIVE {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)ec.final_prediction,
+                (long unsigned int)ld->prediction,
                 (long unsigned int)ec.num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -241,7 +242,7 @@ namespace COST_SENSITIVE {
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = (size_t)ec.final_prediction;
+        size_t pred = (size_t)ld->prediction;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
@@ -276,7 +277,7 @@ namespace COST_SENSITIVE {
       }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print((int)*sink, ec.final_prediction, 0, ec.tag);
+      all.print((int)*sink, ld->prediction, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
       string outputString;

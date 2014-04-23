@@ -56,8 +56,8 @@ namespace CSOAA {
         }
 	ec.partial_prediction = 0.;
       }
+    ld->prediction = (float)prediction;
     ec.ld = ld;
-    ec.final_prediction = (float)prediction;
   }
 
   void finish_example(vw& all, csoaa&, example& ec)
@@ -323,7 +323,7 @@ namespace LabelDict {
     ec->indices.decr();
   }
 
-  void make_single_prediction(vw& all, ldf& l, learner& base, example& ec, size_t*prediction, float*min_score, float*min_cost, float*max_cost) {
+  void make_single_prediction(vw& all, ldf& l, learner& base, example& ec, size_t* prediction, float*min_score, float*min_cost, float*max_cost) {
     label   *ld = (label*)ec.ld;
     v_array<COST_SENSITIVE::wclass> costs = ld->costs;
     label_data simple_label;
@@ -451,7 +451,7 @@ namespace LabelDict {
 
         if (prediction == costs1[j1].weight_index) prediction_is_me = true;
       }
-      ec1->final_prediction = prediction_is_me ? (float)prediction : 0;
+      ld1->prediction = prediction_is_me ? prediction : 0;
       ec1->ld = ld1;
       ec1->example_t = example_t1;
     }
@@ -532,12 +532,11 @@ namespace LabelDict {
         ec->partial_prediction = costs[j].partial_prediction;
         if (prediction == costs[j].weight_index) prediction_is_me = true;
       }
-      ec->final_prediction = prediction_is_me ? (float)prediction : 0;
+      ld->prediction = prediction_is_me ? prediction : 0;
 
       if (isTest && (costs.size() == 1)) {
-        ec->final_prediction = costs[0].partial_prediction;
+        ld->prediction = costs[0].partial_prediction;
       }
-
       // restore label
       ec->ld = ld;
     }
@@ -598,7 +597,7 @@ namespace LabelDict {
     all.sd->total_features += ec.num_features;
 
     float loss = 0.;
-    size_t final_pred = (size_t)ec.final_prediction;
+    size_t final_pred = ld->prediction;
 
     if (!COST_SENSITIVE::example_is_test(ec)) {
       for (size_t j=0; j<costs.size(); j++) {
@@ -615,7 +614,7 @@ namespace LabelDict {
     }
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, ec.final_prediction, 0, ec.tag);
+      all.print(*sink, ld->prediction, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
       string outputString;

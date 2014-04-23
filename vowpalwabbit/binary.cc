@@ -13,13 +13,13 @@ namespace BINARY {
     else
       base.predict(ec);
 
-    if ( ec.final_prediction > 0)
-      ec.final_prediction = 1;
-    else
-      ec.final_prediction = -1;
-
     label_data* ld = (label_data*)ec.ld;//New loss
-    if (ld->label == ec.final_prediction)
+    if ( ld->prediction > 0)
+      ld->prediction = 1;
+    else
+      ld->prediction = -1;
+
+    if (ld->label == ld->prediction)
       ec.loss = 0.;
     else
       ec.loss = 1.;

@@ -30,8 +30,9 @@ namespace BS {
 
   void bs_predict_mean(vw& all, example& ec, vector<double> &pred_vec)
   {
-    ec.final_prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
-    ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ((label_data*)ec.ld)->label) * ((label_data*)ec.ld)->weight;    
+    label_data& ld = *(label_data*)ec.ld;
+    ld.prediction = (float)accumulate(pred_vec.begin(), pred_vec.end(), 0.0)/pred_vec.size();
+    ec.loss = all.loss->getLoss(all.sd, ld.prediction, ((label_data*)ec.ld)->label) * ((label_data*)ec.ld)->weight;    
   }
 
   void bs_predict_vote(vw& all, example& ec, vector<double> &pred_vec)
@@ -56,15 +57,12 @@ namespace BS {
       if(counter==0)
         current_label = -1;
     }
+    label_data& ld = *(label_data*)ec.ld;
     if(counter == 0)//no majority exists
-    {
-      ec.final_prediction = -1;
-      ec.loss = 1.;
-      return;
-    }
+      ld.prediction = 1;
     //will output majority if it exists
-    ec.final_prediction = current_label;
-    if (ec.final_prediction == ((label_data*)ec.ld)->label)
+    ld.prediction = current_label;
+    if (ld.prediction == ld.label)
       ec.loss = 0.;
     else
       ec.loss = 1.;
@@ -129,7 +127,7 @@ namespace BS {
     }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      BS::print_result(*sink, ec.final_prediction, 0, ec.tag, d.lb, d.ub);
+      BS::print_result(*sink, ld->prediction, 0, ec.tag, d.lb, d.ub);
   
     print_update(all, ec);
   }
@@ -155,7 +153,7 @@ namespace BS {
 	else
 	  base.predict(ec, i-1);
 
-        d.pred_vec.push_back(ec.final_prediction);
+        d.pred_vec.push_back(((label_data*)ec.ld)->prediction);
 
         if (shouldOutput) {
           if (i > 1) outputStringStream << ' ';

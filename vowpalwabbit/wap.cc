@@ -225,7 +225,7 @@ namespace WAP {
     
     if (is_learn && cost_label->costs.size() > 0)
       train(*all, w, base, ec);
-    ec.final_prediction = (float)prediction;
+    cost_label->prediction = prediction;
   }
 
   void finish_example(vw& all, wap&, example& ec)
