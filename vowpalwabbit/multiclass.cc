@@ -152,9 +152,9 @@ namespace MULTICLASS {
 
     if(ec.test_only)
     {
-      all.sd->weighted_holdout_examples += ec.global_weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ec.global_weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ec.global_weight;
+      all.sd->weighted_holdout_examples += ld->weight;//test weight seen
+      all.sd->weighted_holdout_examples_since_last_dump += ld->weight;
+      all.sd->weighted_holdout_examples_since_last_pass += ld->weight;
       all.sd->holdout_sum_loss += loss;
       all.sd->holdout_sum_loss_since_last_dump += loss;
       all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass

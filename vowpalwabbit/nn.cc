@@ -214,7 +214,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.partial_prediction = 0;
       n.output_layer.eta_round = ec.eta_round;
       n.output_layer.eta_global = ec.eta_global;
-      n.output_layer.global_weight = ec.global_weight;
       n.output_layer.example_t = ec.example_t;
       if (is_learn)
 	base.learn(n.output_layer, n.k);

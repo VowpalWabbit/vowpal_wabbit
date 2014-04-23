@@ -781,8 +781,7 @@ void setup_example(vw& all, example* ae)
     all.p->in_pass_counter++;
 
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off);
-  ae->global_weight = all.p->lp.get_weight(ae->ld);
-  all.sd->t += ae->global_weight;
+  all.sd->t += all.p->lp.get_weight(ae->ld);
   ae->example_t = (float)all.sd->t;
 
   if (all.ignore_some)
