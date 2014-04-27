@@ -70,6 +70,65 @@ template<class T> class v_array{
       resize(2 * (end_array-begin) + 3);
     *(end++) = new_ele;
   }
+  size_t find_sorted(const T& ele)  //index of the smallest element >= ele, return true if element is in the array
+  {
+    size_t size = end - begin;
+    size_t a = 0;			
+    size_t b = size;	
+    size_t i = (a + b) / 2;
+
+    while(b - a > 1)
+    {
+	if(begin[i] < ele)	//if a = 0, size = 1, if in while we have b - a >= 1 the loop is infinite
+		a = i;
+	else if(begin[i] > ele)
+		b = i;
+	else
+		return i;
+
+	i = (a + b) / 2;		
+    }
+
+    if((size == 0) || (begin[a] > ele) || (begin[a] == ele))		//pusta tablica, nie wchodzi w while
+	return a;
+    else	//size = 1, ele = 1, begin[0] = 0	
+	return b;
+ }
+ size_t unique_add_sorted(const T &new_ele)//ANNA
+ {
+   size_t index = 0;
+   size_t size = end - begin;
+   size_t to_move;
+
+   if(!contain_sorted(new_ele, index))
+   {
+	if(end == end_array)
+		resize(2 * (end_array-begin) + 3);
+
+	to_move = size - index;
+
+	if(to_move > 0)
+		memmove(begin + index + 1, begin + index, to_move * sizeof(T));   //kopiuje to_move*.. bytow z begin+index do begin+index+1
+
+	begin[index] = new_ele;
+
+	end++;
+   }
+
+   return index;
+ }
+ bool contain_sorted(const T &ele, size_t& index) 
+ {
+   index = find_sorted(ele);
+
+   if(index == this->size())
+	return false;
+
+   if(begin[index] == ele) 
+	return true;		
+
+   return false;	
+ }
 };
 
 

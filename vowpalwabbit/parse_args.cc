@@ -40,7 +40,11 @@ license as described in the file LICENSE.
 #include "binary.h"
 #include "lrq.h"
 #include "autolink.h"
+#include "txm_o.h"
+#include "txm.h"
+#include "rtree.h"
 #include "memory.h"
+#include "centering.h"
 
 using namespace std;
 //
@@ -236,6 +240,9 @@ vw* parse_args(int argc, char *argv[])
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
+    ("txm_o", po::value<size_t>(), "Use online multiclass partition tree learning with <k> labels")
+    ("txm", po::value<size_t>(), "Use online multiclass partition tree learning with <k> labels")
+    ("rtree", po::value<size_t>(), "Use online multiclass random tree learning with <k> labels")
     ;
 
   po::options_description active_opt("Active Learning options");
@@ -264,6 +271,7 @@ vw* parse_args(int argc, char *argv[])
     ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
     ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
     ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
+    ("centering", "feature centering")
     ;
 
   // Declare the supported options.
@@ -459,19 +467,6 @@ vw* parse_args(int argc, char *argv[])
       if (all->reg_mode > 1)
 	cerr << "using l2 regularization = " << all->l2_lambda << endl;
     }
-
-  all->l = GD::setup(*all, vm);
-  all->scorer = all->l;
-
-  if (vm.count("bfgs") || vm.count("conjugate_gradient"))
-    all->l = BFGS::setup(*all, to_pass_further, vm, vm_file);
-
-  if (vm.count("version") || argc == 1) {
-    /* upon direct query for version -- spit it out to stdout */
-    cout << version.to_string() << "\n";
-    exit(0);
-  }
-
 
   if(vm.count("ngram")){
     if(vm.count("sort_features"))
@@ -720,6 +715,18 @@ vw* parse_args(int argc, char *argv[])
   //if (vm.count("nonormalize"))
   //  all->nonormalize = true;
 
+  all->l = GD::setup(*all, vm);
+  all->scorer = all->l;
+
+  if (vm.count("bfgs") || vm.count("conjugate_gradient"))
+    all->l = BFGS::setup(*all, to_pass_further, vm, vm_file);
+
+  if (vm.count("version") || argc == 1) {
+    /* upon direct query for version -- spit it out to stdout */
+    cout << version.to_string() << "\n";
+    exit(0);
+  }
+
   if (vm.count("lda"))
     all->l = LDA::setup(*all, to_pass_further, vm);
 
@@ -759,6 +766,24 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("noop"))
     all->l = NOOP::setup(*all);
+
+  if(vm.count("txm_o") || vm_file.count("txm_o")) 
+  {
+	loss_function = "quantile"; 
+	loss_parameter = 0.5;
+  }
+  
+  if(vm.count("txm") || vm_file.count("txm")) 
+  {
+	loss_function = "quantile"; 
+	loss_parameter = 0.5;
+  }
+
+  if(vm.count("rtree") || vm_file.count("rtree"))
+  {
+	loss_function = "quantile"; 
+	loss_parameter = 0.5;
+  }
 
   if (vm.count("print"))
     {
@@ -837,26 +862,6 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("sendto"))
     all->l = SENDER::setup(*all, vm, all->pairs);
 
-  // Need to see if we have to load feature mask first or second.
-  // -i and -mask are from same file, load -i file first so mask can use it
-  if (vm.count("feature_mask") && vm.count("initial_regressor")
-      && vm["feature_mask"].as<string>() == vm["initial_regressor"].as< vector<string> >()[0]) {
-    // load rest of regressor
-    all->l->save_load(io_temp, true, false);
-    io_temp.close_file();
-
-    // set the mask, which will reuse -i file we just loaded
-    parse_mask_regressor_args(*all, vm);
-  }
-  else {
-    // load mask first
-    parse_mask_regressor_args(*all, vm);
-
-    // load rest of regressor
-    all->l->save_load(io_temp, true, false);
-    io_temp.close_file();
-  }
-
   bool got_mc = false;
   bool got_cs = false;
   bool got_cb = false;
@@ -881,10 +886,34 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("binary") || vm_file.count("binary"))
     all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
 
+  if (vm.count("centering") || vm_file.count("centering"))
+    all->l = CENTERING::setup(*all, to_pass_further, vm, vm_file);
+
   if(vm.count("oaa") || vm_file.count("oaa") ) {
     if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
 
     all->l = OAA::setup(*all, to_pass_further, vm, vm_file);
+    got_mc = true;
+  }
+
+  if(vm.count("txm_o") || vm_file.count("txm_o") ){
+    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }	
+
+    all->l = TXM_O::setup(*all, to_pass_further, vm, vm_file);
+    got_mc = true;
+  }
+  
+  if(vm.count("txm") || vm_file.count("txm") ){
+    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }	
+
+    all->l = TXM::setup(*all, to_pass_further, vm, vm_file);
+    got_mc = true;
+  }
+
+  if(vm.count("rtree") || vm_file.count("rtree") ){
+    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }	
+
+    all->l = RTREE::setup(*all, to_pass_further, vm, vm_file);
     got_mc = true;
   }
 
@@ -1026,6 +1055,26 @@ vw* parse_args(int argc, char *argv[])
       cerr << endl;
       throw exception();
     }
+  }
+
+  // Need to see if we have to load feature mask first or second.
+  // -i and -mask are from same file, load -i file first so mask can use it
+  if (vm.count("feature_mask") && vm.count("initial_regressor")
+      && vm["feature_mask"].as<string>() == vm["initial_regressor"].as< vector<string> >()[0]) {
+    // load rest of regressor
+    all->l->save_load(io_temp, true, false);
+    io_temp.close_file();
+
+    // set the mask, which will reuse -i file we just loaded
+    parse_mask_regressor_args(*all, vm);
+  }
+  else {
+    // load mask first
+    parse_mask_regressor_args(*all, vm);
+
+    // load rest of regressor
+    all->l->save_load(io_temp, true, false);
+    io_temp.close_file();
   }
 
   parse_source_args(*all, vm, all->quiet,all->numpasses);
