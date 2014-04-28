@@ -581,9 +581,9 @@ namespace TXM_O
 	  }
 	else
 	  {
-	    //cout << endl;
-	    // cout << "Tree depth: " << b.max_depth << endl;
-	    // cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
+	    cout << endl;
+	    cout << "Tree depth: " << b.max_depth << endl;
+	    cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
 	    
 	    text_len = sprintf(buff, ":%d\n", (int) b.nodes.size());	//ilosc nodow
 	    v = b.nodes.size();
@@ -641,7 +641,7 @@ namespace TXM_O
     (all.p->lp) = MULTICLASS::mc_label_parser;
     
     uint32_t i = ceil_log2(data->k);	
-    data->max_nodes = (2 << (i+2)) - 1;
+    data->max_nodes = (2 << (i+1)) - 1;
     
     learner* l = new learner(data, all.l, data->max_nodes + 1);
     l->set_save_load<txm_o,save_load_tree>();
