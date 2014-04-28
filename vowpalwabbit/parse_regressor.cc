@@ -34,8 +34,8 @@ void initialize_regressor(vw& all)
   }
 
   size_t length = ((size_t)1) << all.num_bits;
-  all.reg.weight_mask = (all.reg.stride * length) - 1;
-  all.reg.weight_vector = (weight *)calloc_or_die(all.reg.stride*length, sizeof(weight));
+  all.reg.weight_mask = (length << all.reg.stride_shift) - 1;
+  all.reg.weight_vector = (weight *)calloc_or_die(length << all.reg.stride_shift, sizeof(weight));
   if (all.reg.weight_vector == NULL)
     {
       cerr << all.program_name << ": Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>" << endl;
@@ -44,10 +44,10 @@ void initialize_regressor(vw& all)
   if (all.random_weights)
     {
       for (size_t j = 0; j < length; j++)
-	all.reg.weight_vector[j*all.reg.stride] = (float)(frand48() - 0.5);
+	all.reg.weight_vector[j << all.reg.stride_shift] = (float)(frand48() - 0.5);
     }
   if (all.initial_weight != 0.)
-    for (size_t j = 0; j < all.reg.stride*length; j+=all.reg.stride)
+    for (size_t j = 0; j < length << all.reg.stride_shift; j+= (1 << all.reg.stride_shift))
       all.reg.weight_vector[j] = all.initial_weight;
 }
 
@@ -99,7 +99,7 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				buff, text_len, text);
       if (all.default_bits != true && all.num_bits != local_num_bits)
 	{
-	  cout << "Wrong number of bits for source!" << endl;
+	  cout << "vw: -b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model" << endl;
 	  throw exception();
 	}
       all.default_bits = false;
@@ -327,8 +327,8 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
       if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
            
         for (size_t j = 0; j < length; j++){	 
-          if(all.reg.weight_vector[j*all.reg.stride] != 0.)
-            all.reg.weight_vector[j*all.reg.stride + all.feature_mask_idx] = 1.;
+          if(all.reg.weight_vector[j << all.reg.stride_shift] != 0.)
+            all.reg.weight_vector[(j << all.reg.stride_shift) + all.feature_mask_idx] = 1.;
         } 
         return;
       }
@@ -341,8 +341,8 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
     for (size_t j = 0; j < length; j++){	 
-      if(all.reg.weight_vector[j*all.reg.stride] != 0.)
-        all.reg.weight_vector[j*all.reg.stride + all.feature_mask_idx] = 1.;
+      if(all.reg.weight_vector[j << all.reg.stride_shift] != 0.)
+        all.reg.weight_vector[(j << all.reg.stride_shift) + all.feature_mask_idx] = 1.;
     }
 
     // Deal with the over-written header from initial regressor
@@ -357,7 +357,7 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
 
       // Re-zero the weights, in case weights of initial regressor use different indices
       for (size_t j = 0; j < length; j++){
-        all.reg.weight_vector[j*all.reg.stride] = 0.;
+        all.reg.weight_vector[j << all.reg.stride_shift] = 0.;
       }
     } else {
       // If no initial regressor, just clear out the options loaded from the header.

@@ -68,7 +68,7 @@ namespace NN {
 
     memset (&n.output_layer, 0, sizeof (n.output_layer));
     n.output_layer.indices.push_back(nn_output_namespace);
-    feature output = {1., nn_constant*all.reg.stride};
+    feature output = {1., nn_constant << all.reg.stride_shift};
 
     for (unsigned int i = 0; i < n.k; ++i)
       {
@@ -125,7 +125,7 @@ namespace NN {
     //ld->label = FLT_MAX;
     for (unsigned int i = 0; i < n.k; ++i)
       {
-        uint32_t biasindex = (uint32_t) constant * n.all->wpp * n.all->reg.stride + i * (uint32_t)n.increment + ec.ft_offset;
+        uint32_t biasindex = (uint32_t) constant * (n.all->wpp << n.all->reg.stride_shift) + i * (uint32_t)n.increment + ec.ft_offset;
         weight* w = &n.all->reg.weight_vector[biasindex & n.all->reg.weight_mask];
         
         // avoid saddle point at 0
@@ -214,7 +214,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.partial_prediction = 0;
       n.output_layer.eta_round = ec.eta_round;
       n.output_layer.eta_global = ec.eta_global;
-      n.output_layer.global_weight = ec.global_weight;
       n.output_layer.example_t = ec.example_t;
       if (is_learn)
 	base.learn(n.output_layer, n.k);

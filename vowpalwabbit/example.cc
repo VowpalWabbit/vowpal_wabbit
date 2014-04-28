@@ -40,12 +40,13 @@ float collision_cleanup(v_array<feature>& feature_map) {
 struct features_and_source 
 {
   v_array<feature> feature_map; //map to store sparse feature vectors  
+  uint32_t stride_shift;
   weight* base;
 };
 
 void vec_store(features_and_source& p, float fx, float& fw) {  
-  feature f = {fx, (uint32_t)(&fw - p.base)};
-  p.feature_map.push_back(f);  
+  feature f = {fx, (uint32_t)(&fw - p.base) >> p.stride_shift};
+  p.feature_map.push_back(f);
 }  
   
 namespace VW {
@@ -64,11 +65,11 @@ flat_example* flatten_example(vw& all, example *ec)
 
 	fec->example_counter = ec->example_counter;  
 	fec->ft_offset = ec->ft_offset;  
-	fec->global_weight = ec->global_weight;  
 	fec->num_features = ec->num_features;  
     
 	features_and_source fs;
 	fs.base = all.reg.weight_vector;
+	fs.stride_shift = all.reg.stride_shift;
 	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 
 	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
     
@@ -189,7 +190,6 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->loss = src->loss;
   dst->eta_round = src->eta_round;
   dst->eta_global = src->eta_global;
-  dst->global_weight = src->global_weight;
   dst->example_t = src->example_t;
   memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
   dst->total_sum_feat_sq = src->total_sum_feat_sq;

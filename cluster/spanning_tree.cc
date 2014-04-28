@@ -42,6 +42,7 @@ typedef int socket_t;
 
 #endif
 
+#include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -112,7 +113,7 @@ void fail_send(const socket_t fd, const void* buf, const int count)
 int main(int argc, char* argv[]) {
   if (argc > 2)
     {
-      cout << "usage: spanning_tree [pid_file]" << endl;
+      cout << "usage: spanning_tree [--nondaemon | pid_file]" << endl;
       exit(0);
     }
 
@@ -150,13 +151,16 @@ int main(int argc, char* argv[]) {
       exit(1);
     }
 
-  if (daemon(1,1))
-    {
-      cerr << "failure to background!" << endl;
-      exit(1);
-    }
-
-  if (argc == 2)
+  if (argc == 2 && strcmp("--nondaemon",argv[1])==0)
+    ;
+  else
+    if (daemon(1,1))
+      {
+	cerr << "failure to background!" << endl;
+	exit(1);
+      }
+  
+  if (argc == 2 && strcmp("--nondaemon",argv[1])!=0)
     {	  
       ofstream pid_file;
       pid_file.open(argv[1]);
@@ -282,6 +286,7 @@ int main(int argc, char* argv[]) {
 		fail_send(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));
 	      }
 	    shutdown(partial_nodeset.nodes[i].socket, SHUT_RDWR);
+	    close(partial_nodeset.nodes[i].socket);
 	  }
 	free (partial_nodeset.nodes);
       }

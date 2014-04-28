@@ -437,9 +437,9 @@ namespace CB_ALGS
 
     if(ec.test_only)
     {
-      all.sd->weighted_holdout_examples += ec.global_weight;//test weight seen
-      all.sd->weighted_holdout_examples_since_last_dump += ec.global_weight;
-      all.sd->weighted_holdout_examples_since_last_pass += ec.global_weight;
+      all.sd->weighted_holdout_examples += 1.;//test weight seen
+      all.sd->weighted_holdout_examples_since_last_dump += 1.;
+      all.sd->weighted_holdout_examples_since_last_pass += 1.;
       all.sd->holdout_sum_loss += loss;
       all.sd->holdout_sum_loss_since_last_dump += loss;
       all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass
@@ -553,7 +553,7 @@ namespace CB_ALGS
       all.options_from_file.append(" --cb_type dr");
     }
 
-    all.p->lp = CB::cb_label_parser; 
+    all.p->lp = CB::cb_label; 
 
     learner* l = new learner(c, all.l, problem_multiplier);
     l->set_learn<cb, predict_or_learn<true> >();

@@ -20,18 +20,7 @@ namespace CB {
     v_array<cb_class> costs;
   };
 
-  size_t read_cached_label(shared_data* sd, void* v, io_buf& cache);
-  void cache_label(void* v, io_buf& cache);
-  void default_label(void* v);
-  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words);
-  void delete_label(void* v);
-  float weight(void* v);
-  void copy_label(void*&dst,void*src);
-  const label_parser cb_label_parser = {default_label, parse_label, 
-					cache_label, read_cached_label, 
-					delete_label, weight, 
-                                        copy_label,
-					sizeof(label)};
+  extern label_parser cb_label;
 }
 
 #endif

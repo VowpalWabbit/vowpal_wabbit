@@ -145,7 +145,7 @@ float InvSqrt(float x){
         if((g.early_stop_thres == g.no_win_counter) &&
            ((all->check_holdout_every_n_passes <= 1) ||
             ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
-          all-> early_terminate = true;
+	  set_done(*all);
       }   
   }
 
@@ -167,7 +167,7 @@ bool operator<(const string_value& first, const string_value& second)
   ostringstream tempstream;
   size_t index = (f->weight_index + offset) & all.reg.weight_mask;
   weight* weights = all.reg.weight_vector;
-  size_t stride = all.reg.stride;
+  size_t stride_shift = all.reg.stride_shift;
   
   if(all.audit) tempstream << prepend;
   
@@ -182,23 +182,23 @@ bool operator<(const string_value& first, const string_value& second)
   if (a != NULL && all.audit){
     tempstream << tmp << ':';
   }
-  else 	if ( index == (((constant * stride * all.wpp + offset)&all.reg.weight_mask)) && all.audit){
+  else 	if ( index == ((( (constant << stride_shift) * all.wpp + offset)&all.reg.weight_mask)) && all.audit){
     tempstream << "Constant:";
   }  
   if(all.audit){
-    tempstream << (index/stride & all.parse_mask) << ':' << mult*f->x;
+    tempstream << ((index >> stride_shift) & all.parse_mask) << ':' << mult*f->x;
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
   if(all.current_pass == 0 && all.inv_hash_regressor_name != ""){ //for invert_hash
-    if ( index == ((constant * stride + offset )& all.reg.weight_mask))
+    if ( index == (((constant << stride_shift) + offset )& all.reg.weight_mask))
       tmp = "Constant";
 
     ostringstream convert;
-    convert << (index/stride & all.parse_mask);
+    convert << ((index >>stride_shift) & all.parse_mask);
     tmp = ns_pre + tmp + ":"+ convert.str();
     
     if(!all.name_index_map.count(tmp)){
-      all.name_index_map.insert(std::map< std::string, size_t>::value_type(tmp, (index/stride & all.parse_mask)));
+      all.name_index_map.insert(std::map< std::string, size_t>::value_type(tmp, ((index >> stride_shift) & all.parse_mask)));
     }
   }
 
@@ -266,7 +266,7 @@ void print_features(vw& all, example& ec)
       for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
 	for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
 	  {
-	    cout << '\t' << f->space << '^' << f->feature << ':' << (f->weight_index/all.reg.stride & all.parse_mask) << ':' << f->x;
+	    cout << '\t' << f->space << '^' << f->feature << ':' << ((f->weight_index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
 	    for (size_t k = 0; k < all.lda; k++)
 	      cout << ':' << weights[(f->weight_index+k) & all.reg.weight_mask];
 	  }
@@ -629,7 +629,7 @@ void sync_weights(vw& all) {
   if (all.sd->gravity == 0. && all.sd->contraction == 1.)  // to avoid unnecessary weight synchronization
     return;
   uint32_t length = 1 << all.num_bits;
-  size_t stride = all.reg.stride;
+  size_t stride = 1 << all.reg.stride_shift;
   for(uint32_t i = 0; i < length && all.reg_mode; i++)
     all.reg.weight_vector[stride*i] = trunc_weight(all.reg.weight_vector[stride*i], (float)all.sd->gravity) * (float)all.sd->contraction;
   all.sd->gravity = 0.;
@@ -639,7 +639,7 @@ void sync_weights(vw& all) {
 void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
 {
   uint32_t length = 1 << all.num_bits;
-  uint32_t stride = all.reg.stride;
+  uint32_t stride = 1 << all.reg.stride_shift;
   int c = 0;
   uint32_t i = 0;
   size_t brw = 1;
@@ -773,16 +773,27 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
   bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
 			    "", read, 
 			    buff, text_len, text);
-
+  if (!all.training) // reset various things so that we report test set performance properly
+    {
+      all.sd->sum_loss = 0;
+      all.sd->sum_loss_since_last_dump = 0;
+      all.sd->dump_interval = 1.;
+      all.sd->weighted_examples = 0.;
+      all.sd->weighted_labels = 0.;
+      all.sd->weighted_unlabeled_examples = 0.;
+      all.sd->example_number = 0;
+      all.sd->total_features = 0;
+    }
+  
   uint32_t length = 1 << all.num_bits;
-  uint32_t stride = all.reg.stride;
+  uint32_t stride = 1 << all.reg.stride_shift;
   int c = 0;
   uint32_t i = 0;
   size_t brw = 1;
   do 
     {
       brw = 1;
-      weight* v;
+      weight* v; 
       if (read)
 	{
 	  c++;
@@ -795,6 +806,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*2, "");
 	      else //adaptive and normalized
 		brw += bin_read_fixed(model_file, (char*)v, sizeof(*v)*3, "");	
+	      if (!all.training)
+		v[1]=v[2]=0.;
 	    }
 	}
       else // write binary or text
@@ -838,7 +851,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       if(all->adaptive && all->initial_t > 0)
 	{
 	  uint32_t length = 1 << all->num_bits;
-	  uint32_t stride = all->reg.stride;
+	  uint32_t stride = 1 << all->reg.stride_shift;
 	  for (size_t j = 1; j < stride*length; j+=stride)
 	    {
 	      all->reg.weight_vector[j] = all->initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
@@ -893,7 +906,7 @@ learner* setup(vw& all, po::variables_map& vm)
       g->initial_constant = vm["constant"].as<float>();     
   }
 
-  learner* ret = new learner(g, all.reg.stride);
+  learner* ret = new learner(g, 1 << all.reg.stride_shift);
 
   // select the appropriate predict function based on normalization, regularization, and power_t
   if (all.normalized_updates && all.training)

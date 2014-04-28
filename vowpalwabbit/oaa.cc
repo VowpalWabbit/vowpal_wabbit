@@ -29,7 +29,7 @@ namespace OAA {
   void predict_or_learn(oaa& o, learner& base, example& ec) {
     vw* all = o.all;
 
-    mc_label* mc_label_data = (mc_label*)ec.ld;
+    multiclass* mc_label_data = (multiclass*)ec.ld;
     float prediction = 1;
     float score = INT_MIN;
   
@@ -103,7 +103,7 @@ namespace OAA {
 
     data->shouldOutput = all.raw_prediction > 0;
     data->all = &all;
-    all.p->lp = mc_label_parser;
+    all.p->lp = mc_label;
 
     learner* l = new learner(data, all.l, data->k);
     l->set_learn<oaa, predict_or_learn<true> >();

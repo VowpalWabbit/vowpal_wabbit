@@ -120,9 +120,10 @@ vw* parse_args(int argc, char *argv[])
     ("examples", po::value<size_t>(&(all->max_examples)), "number of examples to parse")
     ("testonly,t", "Ignore label information and just test")
     ("daemon", "persistent daemon mode on port 26542")
-    ("port", po::value<size_t>(),"port to listen on")
+    ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
     ("num_children", po::value<size_t>(&(all->num_children)), "number of children for persistent daemon mode")
     ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
+    ("port_file", po::value< string >(), "Write port used in persistent daemon mode")
     ("passes", po::value<size_t>(&(all->numpasses)),"Number of Training Passes")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
@@ -405,7 +406,7 @@ vw* parse_args(int argc, char *argv[])
       throw exception();
     }
 
-  all->reg.stride = 4; //use stride of 4 for default invariant normalized adaptive updates
+  all->reg.stride_shift = 2; //use stride of 4 for default invariant normalized adaptive updates
   //if the user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
   if( (all->rank > 0 && !vm.count("new_mf")) || !all->training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
   {
@@ -413,12 +414,12 @@ vw* parse_args(int argc, char *argv[])
     all->invariant_updates = all->training && vm.count("invariant");
     all->normalized_updates = all->training && vm.count("normalized") && (all->rank == 0 && !vm.count("new_mf"));
 
-    all->reg.stride = 1;
+    all->reg.stride_shift = 0;
 
-    if( all->adaptive ) all->reg.stride *= 2;
+    if( all->adaptive ) all->reg.stride_shift += 1;
     else all->normalized_idx = 1; //store per feature norm at 1 index offset from weight value instead of 2
 
-    if( all->normalized_updates ) all->reg.stride *= 2;
+    if( all->normalized_updates ) all->reg.stride_shift += 1;
 
     if(!vm.count("learning_rate") && !vm.count("l") && !(all->adaptive && all->normalized_updates))
       if (all->lda == 0)
@@ -431,12 +432,12 @@ vw* parse_args(int argc, char *argv[])
       all->initial_t = 1.f;
     }
     if (vm.count("feature_mask")){
-      if(all->reg.stride == 1){
-        all->reg.stride *= 2;//if --sgd, stride->2 and use the second position as mask
+      if(all->reg.stride_shift == 0){
+        all->reg.stride_shift += 1;//if --sgd, stride->2 and use the second position as mask
         all->feature_mask_idx = 1;
       }
-      else if(all->reg.stride == 2){
-        all->reg.stride *= 2;//if either normalized or adaptive, stride->4, mask_idx is still 3
+      else if(all->reg.stride_shift == 1){
+        all->reg.stride_shift += 1;//if either normalized or adaptive, stride->4, mask_idx is still 3
       }
     }
   }
@@ -577,6 +578,7 @@ vw* parse_args(int argc, char *argv[])
         }
         //-q ::
         else if((*i)[0]==':'&&(*i)[1]==':'){
+	  cout << "in pair creation" << endl;
           newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
           for (char j=printable_start; j<=printable_end; j++){
             if(valid_ns(j)){
@@ -680,7 +682,7 @@ vw* parse_args(int argc, char *argv[])
   if (!vm.count("new_mf") && all->rank > 0) {
     // store linear + 2*rank weights per index, round up to power of two
     float temp = ceilf(logf((float)(all->rank*2+1)) / logf (2.f));
-    all->reg.stride = 1 << (int) temp;
+    all->reg.stride_shift = (size_t) temp;
     all->random_weights = true;
 
     if ( vm.count("adaptive") )
@@ -761,7 +763,7 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("print"))
     {
       all->l = PRINT::setup(*all);
-      all->reg.stride = 1;
+      all->reg.stride_shift = 0;
     }
 
   if (!vm.count("new_mf") && all->rank > 0)
@@ -1002,7 +1004,6 @@ vw* parse_args(int argc, char *argv[])
     // special case to try to emulate the missing -d
     if ((to_pass_further.size() == 1) &&
         (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
-
       int f = io_buf().open_file(last_unrec_arg.c_str(), all->stdin_off, io_buf::READ);
       if (f != -1) {
 #ifdef _WIN32
@@ -1034,7 +1035,7 @@ vw* parse_args(int argc, char *argv[])
   size_t params_per_problem = all->l->increment;
   while (params_per_problem > (uint32_t)(1 << i))
     i++;
-  all->wpp = (1 << i) / all->reg.stride;
+  all->wpp = (1 << i) >> all->reg.stride_shift;
 
   return all;
 }

@@ -180,6 +180,12 @@ namespace COST_SENSITIVE {
     }
   }
 
+  label_parser cs_label = {default_label, parse_label, 
+				  cache_label, read_cached_label, 
+				  delete_label, weight, 
+				  copy_label,
+				  sizeof(label)};
+
   void print_update(vw& all, bool is_test, example& ec)
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
@@ -253,9 +259,9 @@ namespace COST_SENSITIVE {
 
     if(ec.test_only)
       {
-        all.sd->weighted_holdout_examples += ec.global_weight;//test weight seen
-        all.sd->weighted_holdout_examples_since_last_dump += ec.global_weight;
-        all.sd->weighted_holdout_examples_since_last_pass += ec.global_weight;
+        all.sd->weighted_holdout_examples += 1;//test weight seen
+        all.sd->weighted_holdout_examples_since_last_dump += 1;
+        all.sd->weighted_holdout_examples_since_last_pass += 1;
         all.sd->holdout_sum_loss += loss;
         all.sd->holdout_sum_loss_since_last_dump += loss;
         all.sd->holdout_sum_loss_since_last_pass += loss;//since last pass

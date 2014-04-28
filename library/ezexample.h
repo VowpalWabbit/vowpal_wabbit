@@ -121,7 +121,7 @@ class ezexample {
     if (to_ns == 0) return 0;
     if (ensure_ns_exists(to_ns)) return 0;
 
-    feature f = { v, fint * vw_ref->reg.stride };
+    feature f = { v, fint << vw_ref->reg.stride_shift };
     ec->atomics[(int)to_ns].push_back(f);
     ec->sum_feat_sq[(int)to_ns] += v * v;
     ec->total_sum_feat_sq += v * v;
@@ -134,14 +134,13 @@ class ezexample {
 
   inline ezexample& set_label(string label) {
     VW::parse_example_label(*vw_par_ref, *ec, label);
-    ec->global_weight = vw_par_ref->p->lp.get_weight(ec->ld);
     example_changed_since_prediction = true;
     return *this;
   }
 
   void mini_setup_example() {
     ec->partial_prediction = 0.;
-    vw_ref->sd->t += ec->global_weight;
+    vw_ref->sd->t += vw_par_ref->p->lp.get_weight(ec->ld);
     ec->example_t = vw_ref->sd->t;
 
     ec->num_features      -= quadratic_features_num;

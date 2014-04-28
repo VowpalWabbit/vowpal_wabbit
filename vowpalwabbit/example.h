@@ -54,7 +54,6 @@ struct example // core example datatype.
   float loss;
   float eta_round;
   float eta_global;
-  float global_weight;
   float example_t;//sum of importance weights so far.
   float sum_feat_sq[256];//helper for total_sum_feat_sq.
   float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.

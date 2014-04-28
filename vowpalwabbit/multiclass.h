@@ -13,30 +13,20 @@ license as described in the file LICENSE.
 namespace MULTICLASS
 {
 
-  struct mc_label {
+  struct multiclass {
     uint32_t label;
     float weight;
   };
   
-  size_t read_cached_label(shared_data*, void* v, io_buf& cache);
-  void cache_label(void* v, io_buf& cache);
-  void default_label(void* v);
-  void parse_label(parser* p, shared_data*, void* v, v_array<substring>& words);
-  void delete_label(void* v);
-  float weight(void* v);
-  const label_parser mc_label_parser = {default_label, parse_label, 
-					cache_label, read_cached_label, 
-					delete_label, weight, 
-                                        NULL,
-					sizeof(mc_label)};
+  extern label_parser mc_label;
   
   void output_example(vw& all, example& ec);
 
-  inline int label_is_test(mc_label* ld)
+  inline int label_is_test(multiclass* ld)
   { return ld->label == (uint32_t)-1; }
 
   inline int example_is_test(example* ec)
-  { return label_is_test((mc_label*)ec->ld); }
+  { return label_is_test((multiclass*)ec->ld); }
 
 }
 
