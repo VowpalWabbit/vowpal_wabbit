@@ -153,11 +153,6 @@ namespace SequenceSpanTask {
 
     po::options_description desc("Searn options");
     desc.add_options()("searn_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
-    po::options_description add_desc_file("Searn options only available in regressor file");
-    add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
-
-    po::options_description desc_file;
-    desc_file.add(desc).add(add_desc_file);
 
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -166,11 +161,6 @@ namespace SequenceSpanTask {
     po::store(parsed, vm);
     po::notify(vm);
 
-    po::parsed_options parsed_file = po::command_line_parser(srn.all->options_from_file_argc, srn.all->options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc_file).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
     if (vm.count("searn_bilou") || vm_file.count("searn_bilou")) {
       cerr << "switching to BILOU encoding for sequence span labeling" << endl;
       my_task_data->encoding = BILOU;

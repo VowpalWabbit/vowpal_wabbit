@@ -2436,7 +2436,8 @@ void print_update(vw& all, searn& srn)
  * make searn tasks classes
  * hide stuff in the searn class (HOW?)
  * add --searn_dont_rollout option
-
+ * allow loss to also adjust count
+ 
 time ./vw -k -c -d pos.gz --searn_as_dagger 1e-8 --searn_task sequence --searn 45 --holdout_off
 
 real	1m40.899s
