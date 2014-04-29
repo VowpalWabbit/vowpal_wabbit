@@ -28,6 +28,12 @@ namespace SequenceTask {
       MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
 
+      // if (srn.should_generate_output)
+      //   srn.output << prediction << ' ';
+
+      // string prediction_string = lots of work;
+      // srn.output << prediction_string << ' ';
+    
       if (output_ss) (*output_ss) << prediction << ' ';
       if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
     }
@@ -151,8 +157,8 @@ namespace SequenceSpanTask {
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     task_data * my_task_data = new task_data();
 
-    po::options_description desc("Searn options");
-    desc.add_options()("searn_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
+    po::options_description desc("search sequencespan options");
+    desc.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
 
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -161,7 +167,7 @@ namespace SequenceSpanTask {
     po::store(parsed, vm);
     po::notify(vm);
 
-    if (vm.count("searn_bilou") || vm_file.count("searn_bilou")) {
+    if (vm.count("search_span_bilou") || vm_file.count("search_span_bilou")) {
       cerr << "switching to BILOU encoding for sequence span labeling" << endl;
       my_task_data->encoding = BILOU;
       num_actions = num_actions * 2 - 1;

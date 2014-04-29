@@ -36,6 +36,7 @@ namespace Searn {
   void add_history_to_example(vw&, history_info&, example*, history, size_t);
   void remove_history_from_example(vw&, history_info&, example*);
 
+
   struct snapshot_item {
     size_t index;
     size_t tag;
@@ -138,14 +139,17 @@ namespace Searn {
     size_t learn_example_len;     // number of example(s) at learn_t
 
     float  beta;                  // interpolation rate
+    float  alpha; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
+
+    short rollout_method; // 0=policy, 1=oracle, 2=none
+    bool  trajectory_oracle; // if true, only construct trajectories using the oracle
+    
     bool   allow_current_policy;  // should the current policy be used for training? true for dagger
-    bool   rollout_oracle; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
+    //bool   rollout_oracle; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
     bool   adaptive_beta; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
     bool   rollout_all_actions;   // by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
-    float  alpha; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
     uint32_t current_policy;      // what policy are we training right now?
-    float gamma;                  // for dagger
-    float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
+    //float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
     size_t beam_size;
     size_t kbest;
     

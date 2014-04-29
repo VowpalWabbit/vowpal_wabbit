@@ -401,8 +401,8 @@ namespace Searn
       all.print_text(all.raw_prediction, outputStringStream.str(), ecs[0].tag);
     }
 
-    if (allow_exploration && (srn->exploration_temperature > 0.))
-      best_action = sample_with_temperature_partial_prediction(ecs, num_ec, srn->exploration_temperature);
+    //if (allow_exploration && (srn->exploration_temperature > 0.))
+    //  best_action = sample_with_temperature_partial_prediction(ecs, num_ec, srn->exploration_temperature);
     
     return best_action;
   }
@@ -451,13 +451,13 @@ namespace Searn
     srn.num_features += ec.num_features;
     uint32_t final_prediction = (uint32_t)ec.final_prediction;
 
-    if (allow_exploration && (srn.exploration_temperature > 0.)) {
-      if (srn.rollout_all_actions)
-        final_prediction = sample_with_temperature_csoaa((COST_SENSITIVE::label*)ec.ld, srn.exploration_temperature);
-      else
-        final_prediction = sample_with_temperature_cb(   (CB::label   *)ec.ld, srn.exploration_temperature);
-    }
-    
+    // if (allow_exploration && (srn.exploration_temperature > 0.)) {
+    //   if (srn.rollout_all_actions)
+    //     final_prediction = sample_with_temperature_csoaa((COST_SENSITIVE::label*)ec.ld, srn.exploration_temperature);
+    //   else
+    //     final_prediction = sample_with_temperature_cb(   (CB::label   *)ec.ld, srn.exploration_temperature);
+    // }
+
     if ((srn.state == INIT_TEST) && (all.raw_prediction > 0) && (srn.rollout_all_actions)) { // srn.rollout_all_actions ==> this is not CB, so we have COST_SENSITIVE::labels
       string outputString;
       stringstream outputStringStream(outputString);
@@ -483,15 +483,17 @@ namespace Searn
   uint32_t single_action(vw& all, searn& srn, learner& base, example* ecs, size_t num_ec, void*valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t, bool allow_exploration) {
     //cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
     if (pol == -1) { // optimal policy
+      uint32_t oracle_action = 0;
       if (ystar_is_uint32t)
-        return *((uint32_t*)ystar);
+        oracle_action = *((uint32_t*)ystar);
       else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
         if (srn.rollout_all_actions)
-          return choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).weight_index;
+          oracle_action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).weight_index;
         else
-          return choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
+          oracle_action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
       } else 
-        return choose_random<uint32_t>(*ystar);
+        oracle_action = choose_random<uint32_t>(*ystar);
+      return oracle_action;
     } else {        // learned policy
       if (!srn.is_ldf) {  // single example
         if (srn.hinfo.length>0) {cdbg << "add_history_to_example: srn.t=" << srn.t << " h=" << srn.rollout_action.begin[srn.t] << endl;}
@@ -603,7 +605,9 @@ namespace Searn
       srn->t++;
       return a;
     } else if (srn->state == INIT_TRAIN) {
-      int pol = choose_policy(*srn, srn->allow_current_policy, true);
+      int pol = -1; // oracle
+      if (!srn->trajectory_oracle)
+        pol = choose_policy(*srn, srn->allow_current_policy, true);
       cdbg << "{" << pol << "}";
       get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
@@ -650,28 +654,34 @@ namespace Searn
         return srn->learn_a;
       } else { // t > learn_t
         size_t this_a = 0;
-        if (srn->rollout_oracle) {
+                
+        if (srn->rollout_method == 1) { // rollout by oracle
           assert(ystar_is_uint32t);
           this_a = *(uint32_t*)ystar;
           //get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
           //this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, -1, ystar, ystar_is_uint32t, false);
           srn->t++;
           //valid_labels.costs.erase(); valid_labels.costs.delete_v();
-        } else if ((!srn->do_fastforward) || (!srn->snapshot_could_match) || (srn->snapshot_is_equivalent_to_t == ((size_t)-1))) { // we haven't converged, continue predicting
-          int pol = choose_policy(*srn, srn->allow_current_policy, true);
-          get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-          this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
-          cdbg << "predict @" << srn->t << " pol=" << pol << " a=" << this_a << endl;
-          srn->t++;
-          //valid_labels.costs.erase(); valid_labels.costs.delete_v();
+        } else if (srn->rollout_method == 0) { // rollout by policy
+          if ((!srn->do_fastforward) || (!srn->snapshot_could_match) || (srn->snapshot_is_equivalent_to_t == ((size_t)-1))) { // we haven't converged, continue predicting
+            int pol = choose_policy(*srn, srn->allow_current_policy, true);
+            get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
+            this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
+            cdbg << "predict @" << srn->t << " pol=" << pol << " a=" << this_a << endl;
+            srn->t++;
+            //valid_labels.costs.erase(); valid_labels.costs.delete_v();
 
-          srn->snapshot_could_match = true;
-          srn->snapshot_is_equivalent_to_t = (size_t)-1;
-        } else {    // we can keep predicting using training trajectory
-          srn->snapshot_is_equivalent_to_t++;
-          srn->t = srn->snapshot_is_equivalent_to_t;
-          cdbg << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action_ids[srn->t-1] << endl;
-          this_a = srn->train_action_ids[srn->t - 1];
+            srn->snapshot_could_match = true;
+            srn->snapshot_is_equivalent_to_t = (size_t)-1;
+          } else {    // we can keep predicting using training trajectory
+            srn->snapshot_is_equivalent_to_t++;
+            srn->t = srn->snapshot_is_equivalent_to_t;
+            cdbg << "restoring previous prediction @ " << (srn->t-1) << " = " << srn->train_action_ids[srn->t-1] << endl;
+            this_a = srn->train_action_ids[srn->t - 1];
+          }
+        } else { // rollout_method == 2 ==> rollout by NONE
+          // TODO: implement me
+          throw exception();
         }
         uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
@@ -911,7 +921,7 @@ namespace Searn
         memcpy(data_ptr, item.data_ptr, sizeof_data);
         srn->t = item.pred_step;
       } else if (srn->do_fastforward) { // can we FAST FORWARD to end???
-        if (srn->rollout_oracle) return;
+        if (srn->rollout_method == 1) return; // if rollout_oracle, return; TODO: what about none?
         if (! srn->snapshot_could_match) return; // already hosed
         if (! used_for_prediction) return; // we don't care if it matches or not
         size_t i;
@@ -1823,6 +1833,7 @@ void print_update(vw& all, searn& srn)
     vw* all = srn.all;
     srn.base_learner = &base;
     bool is_real_example = true;
+
     if (example_is_newline(ec) || srn.ec_seq.size() >= all->p->ring_size - 2) { 
       if (srn.ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
 	std::cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << std::endl;
@@ -1848,6 +1859,7 @@ void print_update(vw& all, searn& srn)
     srn.hit_new_pass = true;
     srn.read_example_last_pass++;
     srn.passes_since_new_policy++;
+
     if (srn.passes_since_new_policy >= srn.passes_per_policy) {
       srn.passes_since_new_policy = 0;
       if(all->training)
@@ -1859,7 +1871,7 @@ void print_update(vw& all, searn& srn)
       //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
       std::stringstream ss;
       ss << srn.current_policy;
-      VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss.str());
+      VW::cmd_string_replace_value(all->options_from_file,"--search_trained_nb_policies", ss.str());
     }
   }
 
@@ -1879,11 +1891,11 @@ void print_update(vw& all, searn& srn)
       std::stringstream ss1;
       std::stringstream ss2;
       ss1 << ((srn.passes_since_new_policy == 0) ? srn.current_policy : (srn.current_policy+1));
-      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_trained_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--searn_trained_nb_policies", ss1.str()); 
+      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --search_trained_nb_policies
+      VW::cmd_string_replace_value(all->options_from_file,"--search_trained_nb_policies", ss1.str()); 
       ss2 << srn.total_number_of_policies;
-      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --searn_total_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--searn_total_nb_policies", ss2.str());
+      //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --search_total_nb_policies
+      VW::cmd_string_replace_value(all->options_from_file,"--search_total_nb_policies", ss2.str());
     }
   }
 
@@ -1896,17 +1908,18 @@ void print_update(vw& all, searn& srn)
     srn.examples_dont_change = false;
     
     srn.beta = 0.5;
+    srn.alpha = 1e-10f;
     srn.allow_current_policy = false;
-    srn.rollout_oracle = false;
+    srn.rollout_method = 0;
+    srn.trajectory_oracle = false;
     srn.adaptive_beta = false;
-    srn.alpha = 1e-6f;
     srn.num_features = 0;
     srn.current_policy = 0;
     srn.state = 0;
     srn.do_snapshot = true;
     srn.do_fastforward = true;
     srn.rollout_all_actions = true;
-    srn.exploration_temperature = -1.0; // don't explore
+    //srn.exploration_temperature = -1.0; // don't explore
     srn.beam_size = 0; // 0 ==> no beam
     srn.kbest = 0; // 0 or 1 means just 1 best
     
@@ -1969,7 +1982,7 @@ void print_update(vw& all, searn& srn)
 
     dealloc_example(COST_SENSITIVE::cs_label.delete_label, *(srn.empty_example));
     free(srn.empty_example);
-    
+
     srn.ec_seq.delete_v();
 
     clear_snapshot(*all, srn, true);
@@ -2077,26 +2090,26 @@ void print_update(vw& all, searn& srn)
 
 
   void handle_history_options(vw& vw, history_info &hinfo, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    po::options_description desc("Searn[sequence] options");
+    po::options_description desc("search options");
     desc.add_options()
-      ("searn_history",  po::value<size_t>(), "length of history to use")
-      ("searn_features", po::value<size_t>(), "length of history to pair with observed features")
-      ("searn_bigrams",                       "use bigrams from history")
-      ("searn_bigram_features",               "use bigrams from history paired with observed features");
+      ("search_history",  po::value<size_t>(), "length of history to use")
+      ("search_features", po::value<size_t>(), "length of history to pair with observed features")
+      ("search_bigrams",                       "use bigrams from history")
+      ("search_bigram_features",               "use bigrams from history paired with observed features");
 
     setup_searn_options(desc, vw, opts, vm, vm_file);
     
-    check_option<size_t>(hinfo.length, vw, vm, vm_file, "searn_history", false, size_equal,
-                         "warning: you specified a different value for --searn_history than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option<size_t>(hinfo.length, vw, vm, vm_file, "search_history", false, size_equal,
+                         "warning: you specified a different value for --search_history than the one loaded from regressor. proceeding with loaded value: ", "");
     
-    check_option<size_t>(hinfo.features, vw, vm, vm_file, "searn_features", false, size_equal,
-                         "warning: you specified a different value for --searn_features than the one loaded from regressor. proceeding with loaded value: ", "");
+    check_option<size_t>(hinfo.features, vw, vm, vm_file, "search_features", false, size_equal,
+                         "warning: you specified a different value for --search_features than the one loaded from regressor. proceeding with loaded value: ", "");
     
-    check_option        (hinfo.bigrams, vw, vm, vm_file, "searn_bigrams", false,
-                         "warning: you specified --searn_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
+    check_option        (hinfo.bigrams, vw, vm, vm_file, "search_bigrams", false,
+                         "warning: you specified --search_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
     
-    check_option        (hinfo.bigram_features, vw, vm, vm_file, "searn_bigram_features", false,
-                         "warning: you specified --searn_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
+    check_option        (hinfo.bigram_features, vw, vm, vm_file, "search_bigram_features", false,
+                         "warning: you specified --search_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
   }
 
   void parse_neighbor_features(searn&srn) {
@@ -2145,23 +2158,34 @@ void print_update(vw& all, searn& srn)
 
     po::options_description desc("Searn options");
     desc.add_options()
-      ("searn_task", po::value<string>(), "the searn task")
-      ("searn_passes_per_policy", po::value<size_t>(), "maximum number of datapasses per policy")
-      ("searn_beta", po::value<float>(), "interpolation rate for policies")
-      ("searn_allow_current_policy", "allow searn labeling to use the current policy")
-      ("searn_rollout_oracle", "allow searn/dagger to do rollouts with the oracle when estimating cost-to-go")
-      ("searn_as_dagger", po::value<float>(), "sets options to make searn operate as dagger. parameter is the sliding autonomy rate (rate at which beta tends to 1).")
-      ("searn_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
-      ("searn_no_snapshot", "turn off snapshotting capabilities")
-      ("searn_no_fastforward", "turn off fastforwarding (note: fastforwarding requires snapshotting)")
-      ("searn_subsample_timesteps", po::value<float>(), "instead of training at all timesteps, use a subset v. if v<=0, train everywhere. if v in (0,1), train on a random v% (>=1 always selected). if v>=1, train on precisely v steps per example")
-      ("searn_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
-      ("searn_exploration_temperature", po::value<float>(), "if <0, always choose policy action (default); if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting")
-      ("searn_beam", po::value<size_t>(), "size of beam -- currently only usable in test mode, not for learning")
-      ("searn_kbest", po::value<size_t>(), "return kbest lists -- currently only usable in test mode, requires beam >= kbest size");
+        ("search_task",              po::value<string>(), "the search task")
+        ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
+        ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [*policy|oracle|none]")
+        ("search_trajectory",        po::value<string>(), "how should past trajectories be generated? [*policy|oracle]")
+
+        ("search_passes_per_policy", po::value<size_t>(), "number of passes per policy (only valid for search_interpolation=policy)     [def=1]")
+        ("search_beta",              po::value<float>(),  "interpolation rate for policies (only valid for search_interpolation=policy) [def=0.5]")
+
+        ("search_alpha",             po::value<float>(),  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
+
+        ("search_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
+        
+        ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")
+        ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
+        ("search_beam", po::value<size_t>(), "size of beam -- currently only usable in test mode, not for learning")
+        ("search_kbest", po::value<size_t>(), "return kbest lists -- currently only usable in test mode, requires beam >= kbest size")
+
+        ("search_no_snapshot",                            "turn off snapshotting capabilities")
+        ("search_no_fastforward",                         "turn off fastforwarding (note: fastforwarding requires snapshotting)");
+    
+        // removed options:
+        //("search_allow_current_policy", "allow searn labeling to use the current policy")
+        //("search_rollout_oracle", "allow searn/dagger to do rollouts with the oracle when estimating cost-to-go")
+        //("search_as_dagger", po::value<float>(), "sets options to make searn operate as dagger. parameter is the sliding autonomy rate (rate at which beta tends to 1).")
+        //("search_exploration_temperature", po::value<float>(), "if <0, always choose policy action (default); if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting")
     
     po::options_description add_desc_file("Searn options only available in regressor file");
-    add_desc_file.add_options()("searn_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
+    add_desc_file.add_options()("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
 
     po::options_description desc_file;
     desc_file.add(desc).add(add_desc_file);
@@ -2180,36 +2204,77 @@ void print_update(vw& all, searn& srn)
     po::notify(vm_file);
   
     std::string task_string;
+    std::string interpolation_string = "data";
+    std::string rollout_string = "policy";
+    std::string trajectory_string = "policy";
 
-    check_option<float >(srn->beta, all, vm, vm_file, "searn_beta", false, float_equal,
-                         "warning: you specified a different value through --searn_beta than the one loaded from predictor. using loaded value of: ", "");
-    check_option<float >(srn->exploration_temperature, all, vm, vm_file, "searn_exploration_temperature", false, float_equal,
-                         "warning: you specified a different value through --searn_exploration_temperature than the one loaded from predictor. using loaded value of: ", "");
-    check_option<string>(task_string, all, vm, vm_file, "searn_task", false, string_equal,
-                         "warning: specified --searn_task different than the one loaded from regressor. using loaded value of: ",
-                         "error: you must specify a task using --searn_task");
-    check_option<size_t>(srn->A, all, vm, vm_file, "searn", false, size_equal,
-                         "warning: you specified a different number of actions through --searn than the one loaded from predictor. using loaded value of: ", "");
-    check_option<string>(*srn->neighbor_features_string, all, vm, vm_file, "searn_neighbor_features", false, string_equal,
-                         "warning: you specified a different feature structure with --searn_neighbor_features than the one loaded from predictor. using loaded value of: ", "");
+    check_option<string>(task_string, all, vm, vm_file, "search_task", false, string_equal,
+                         "warning: specified --search_task different than the one loaded from regressor. using loaded value of: ",
+                         "error: you must specify a task using --search_task");
+    check_option<string>(interpolation_string, all, vm, vm_file, "search_interpolation", false, string_equal,
+                         "warning: specified --search_interpolation different than the one loaded from regressor. using loaded value of: ", "");
+    check_option<string>(rollout_string, all, vm, vm_file, "search_rollout", false, string_equal,
+                         "warning: specified --search_rollout different than the one loaded from regressor. using loaded value of: ", "");
+    check_option<string>(trajectory_string, all, vm, vm_file, "search_trajectory", false, string_equal,
+                         "warning: specified --search_trajectory different than the one loaded from regressor. using loaded value of: ", "");
 
-    parse_neighbor_features(*srn);
+    if (vm.count("search_passes_per_policy"))       srn->passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
+    if (vm.count("search_beta"))                    srn->beta                 = vm["search_beta"             ].as<float>();
+
+    if (vm.count("search_alpha"))                   srn->alpha                = vm["search_alpha"            ].as<float>();
+
+    if (vm.count("search_subsample_time"))          srn->subsample_timesteps  = vm["search_subsample_time"].as<float>();
     
-    if (vm.count("searn_subsample_timesteps"))     srn->subsample_timesteps  = vm["searn_subsample_timesteps"].as<float>();
-    if (vm.count("searn_passes_per_policy"))       srn->passes_per_policy    = vm["searn_passes_per_policy"].as<size_t>();
-    if (vm.count("searn_beam"))                    srn->beam_size            = vm["searn_beam"].as<size_t>();
-    if (vm.count("searn_kbest"))                   srn->kbest                = vm["searn_kbest"].as<size_t>();
-    if (vm.count("searn_allow_current_policy"))    srn->allow_current_policy = true;
-    if (vm.count("searn_rollout_oracle"))          srn->rollout_oracle       = true;
-    if (vm.count("searn_no_snapshot"))             srn->do_snapshot          = false;
-    if (vm.count("searn_no_fastforward"))          srn->do_fastforward       = false;
-    if (vm.count("searn_as_dagger")) {
+    check_option<string>(*srn->neighbor_features_string, all, vm, vm_file, "search_neighbor_features", false, string_equal,
+                         "warning: you specified a different feature structure with --search_neighbor_features than the one loaded from predictor. using loaded value of: ", "");
+    parse_neighbor_features(*srn);
+
+    if (vm.count("search_beam"))                    srn->beam_size            = vm["search_beam"].as<size_t>();
+    if (vm.count("search_kbest"))                   srn->kbest                = vm["search_kbest"].as<size_t>();
+
+    if (vm.count("search_no_snapshot"))             srn->do_snapshot          = false;
+    if (vm.count("search_no_fastforward"))          srn->do_fastforward       = false;
+
+
+    if (interpolation_string.compare("data") == 0) { // run as dagger
+      srn->adaptive_beta = true;
       srn->allow_current_policy = true;
       srn->passes_per_policy = all.numpasses;
       if (srn->current_policy > 1) srn->current_policy = 1;
-      srn->adaptive_beta = true;
-      srn->alpha = vm["searn_as_dagger"].as<float>();
+    } else if (interpolation_string.compare("policy") == 0) {
+    } else {
+      cerr << "error: --search_interpolation must be 'data' or 'policy'" << endl;
+      throw exception();
     }
+
+    if (rollout_string.compare("policy")) {
+      srn->rollout_method = 0;
+    } else if (rollout_string.compare("oracle")) {
+      srn->rollout_method = 1;
+    } else if (rollout_string.compare("none")) {
+      srn->rollout_method = 2;
+    } else {
+      cerr << "error: --search_rollout must be 'policy', 'oracle' or 'none'" << endl;
+      throw exception();
+    }
+
+    if (trajectory_string.compare("policy")) {
+      srn->trajectory_oracle = false;
+    } else if (trajectory_string.compare("oracle")) {
+      srn->trajectory_oracle = true;
+    } else {
+      cerr << "error: --search_trajectory must be 'policy' or 'oracle'" << endl;
+      throw exception();
+    }
+
+    //check_option<float >(srn->exploration_temperature, all, vm, vm_file, "search_exploration_temperature", false, float_equal,
+    //                     "warning: you specified a different value through --search_exploration_temperature than the one loaded from predictor. using loaded value of: ", "");
+    check_option<size_t>(srn->A, all, vm, vm_file, "search", false, size_equal,
+                         "warning: you specified a different number of actions through --search than the one loaded from predictor. using loaded value of: ", "");
+    
+    //if (vm.count("search_allow_current_policy"))    srn->allow_current_policy = true;
+    //if (vm.count("search_rollout_oracle"))          srn->rollout_oracle       = true;
+
     if (srn->beam_size == 1)
       cerr << "warning: setting searn_beam=1 is kind of a weird thing to do -- just don't use a beam at all" << endl;
     if ((srn->beam_size > 0) && all.training) {
@@ -2224,7 +2289,7 @@ void print_update(vw& all, searn& srn)
       cerr << "error: kbest must be at least equal to beam_size" << endl;
       throw exception();
     }
-
+    
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
     if (vm.count("cb") || vm_file.count("cb")) {
       srn->rollout_all_actions = false;
@@ -2234,18 +2299,18 @@ void print_update(vw& all, searn& srn)
       srn->valid_labels = new COST_SENSITIVE::label();
     }
     
-    //if we loaded a regressor with -i option, --searn_trained_nb_policies contains the number of trained policies in the file
-    // and --searn_total_nb_policies contains the total number of policies in the file
-    if ( vm_file.count("searn_total_nb_policies") ) {
-      srn->current_policy = (uint32_t)vm_file["searn_trained_nb_policies"].as<size_t>();
-      srn->total_number_of_policies = (uint32_t)vm_file["searn_total_nb_policies"].as<size_t>();
-      if (vm.count("searn_total_nb_policies") && (uint32_t)vm["searn_total_nb_policies"].as<size_t>() != srn->total_number_of_policies)
-        std::cerr << "warning: --searn_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << srn->total_number_of_policies << endl;
-    } else if (vm.count("searn_total_nb_policies"))
-      srn->total_number_of_policies = (uint32_t)vm["searn_total_nb_policies"].as<size_t>();
+    //if we loaded a regressor with -i option, --search_trained_nb_policies contains the number of trained policies in the file
+    // and --search_total_nb_policies contains the total number of policies in the file
+    if ( vm_file.count("search_total_nb_policies") ) {
+      srn->current_policy = (uint32_t)vm_file["search_trained_nb_policies"].as<size_t>();
+      srn->total_number_of_policies = (uint32_t)vm_file["search_total_nb_policies"].as<size_t>();
+      if (vm.count("search_total_nb_policies") && (uint32_t)vm["search_total_nb_policies"].as<size_t>() != srn->total_number_of_policies)
+        std::cerr << "warning: --search_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << srn->total_number_of_policies << endl;
+    } else if (vm.count("search_total_nb_policies"))
+      srn->total_number_of_policies = (uint32_t)vm["search_total_nb_policies"].as<size_t>();
 
-    ensure_param(srn->beta , 0.0, 1.0, 0.5, "warning: searn_beta must be in (0,1); resetting to 0.5");
-    ensure_param(srn->alpha, 0.0, 1.0, 1e-6f, "warning: searn_as_dagger must be in (0,1); resetting to 1e-6");
+    ensure_param(srn->beta , 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
+    ensure_param(srn->alpha, 0.0, 1.0, 1e-10f, "warning: search_alpha must be in (0,1); resetting to 1e-10");
 
     //compute total number of policies we will have at end of training
     // we add current_policy for cases where we start from an initial set of policies loaded through -i option
@@ -2269,10 +2334,10 @@ void print_update(vw& all, searn& srn)
       srn->current_policy--;
 
     std::stringstream ss1, ss2;
-    ss1 << srn->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--searn_trained_nb_policies", ss1.str()); 
-    ss2 << srn->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--searn_total_nb_policies",   ss2.str());
+    ss1 << srn->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--search_trained_nb_policies", ss1.str()); 
+    ss2 << srn->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--search_total_nb_policies",   ss2.str());
 
-    cdbg << "searn current_policy = " << srn->current_policy << " total_number_of_policies = " << srn->total_number_of_policies << endl;
+    cdbg << "search current_policy = " << srn->current_policy << " total_number_of_policies = " << srn->total_number_of_policies << endl;
     
     searn_task* mytask = (searn_task*)calloc_or_die(1, sizeof(searn_task));
     if (task_string.compare("sequence") == 0) {
@@ -2296,7 +2361,7 @@ void print_update(vw& all, searn& srn)
       mytask->structured_predict = OneOfManyTask::structured_predict;
       all.p->emptylines_separate_examples = true;
     } else {
-      cerr << "fail: unknown task for --searn_task: " << task_string << endl;
+      cerr << "fail: unknown task for --search_task: " << task_string << endl;
       throw exception();
     }
     srn->task = mytask;
@@ -2329,7 +2394,7 @@ void print_update(vw& all, searn& srn)
       for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
         srn->learn_example_copy[n].ld = calloc_or_die(1, label_size);
     }
-    
+
     if (!srn->allow_current_policy) // if we're not dagger
       all.check_holdout_every_n_passes = srn->passes_per_policy;
 
@@ -2349,80 +2414,80 @@ void print_update(vw& all, searn& srn)
   }
 }
 
-// ./vw -k -c -d train.f2.gz --passes 1 --searn_passes_per_policy 10 --searn_task sequence --searn 9 --searn_as_dagger 1e-6 --holdout_off -f foo --searn_neighbor_features -2,-1,1,2
+// ./vw -k -c -d train.f2.gz --passes 1 --search_passes_per_policy 10 --search_task sequence --search 9 --search_as_dagger 1e-6 --holdout_off -f foo --search_neighbor_features -2,-1,1,2
 
-// ./vw -k -c -d seqtest --passes 5 --searn_as_dagger 1e-8 --holdout_off --searn 7 --searn_task sequencespan
+// ./vw -k -c -d seqtest --passes 5 --search_as_dagger 1e-8 --holdout_off --search 7 --search_task sequencespan
 
 /*
   NON-LDF TRAIN
 
-  ./vw -k -c -d z2 --passes 50 --invariant --searn_as_dagger 1e-8 --searn_task sequence --searn 5 --holdout_off -f z2.model
+  ./vw -k -c -d z2 --passes 50 --invariant --search_as_dagger 1e-8 --search_task sequence --search 5 --holdout_off -f z2.model
 
   NON-LDF NO BEAM
 
-  ./vw -k -c -d z2 -t --searn_as_dagger 1e-8 --searn_task sequence --searn 5 -i z2.model -p out
+  ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence --search 5 -i z2.model -p out
 
   NON-LDF BEAM 1
 
-  ./vw -k -c -d z2 -t --searn_as_dagger 1e-8 --searn_task sequence --searn 5 -i z2.model -p out --searn_beam 1
+  ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence --search 5 -i z2.model -p out --search_beam 1
 
   NON-LDF BEAM 100
 
-  ./vw -k -c -d z2 -t --searn_as_dagger 1e-8 --searn_task sequence --searn 5 -i z2.model -p out --searn_beam 100 --searn_kbest 100
+  ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence --search 5 -i z2.model -p out --search_beam 100 --search_kbest 100
   
 
   
   LDF TRAIN
-  ./vw -k -c -d z2 --passes 50 --invariant --searn_as_dagger 1e-8 --searn_task sequence_demoldf --searn 5 --holdout_off -f z2.model --audit --csoaa_ldf m
+  ./vw -k -c -d z2 --passes 50 --invariant --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 --holdout_off -f z2.model --audit --csoaa_ldf m
 
   LDF NO BEAM
-  ./vw -k -c -d z2 -t --searn_as_dagger 1e-8 --searn_task sequence_demoldf --searn 5 -i z2.model --audit --csoaa_ldf m -p out  
+  ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 -i z2.model --audit --csoaa_ldf m -p out  
 
   LDF BEAM 1
   
-  ./vw -k -c -d z2 -t --searn_as_dagger 1e-8 --searn_task sequence_demoldf --searn 5 -i z2.model --audit --csoaa_ldf m -p out --searn_beam 1
+  ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 -i z2.model --audit --csoaa_ldf m -p out --search_beam 1
 
   LDF BEAM 100
   
-  ./vw -k -c -d z2 -t --searn_as_dagger 1e-8 --searn_task sequence_demoldf --searn 5 -i z2.model --audit --csoaa_ldf m -p out --searn_beam 100 --searn_kbest 100
+  ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 -i z2.model --audit --csoaa_ldf m -p out --search_beam 100 --search_kbest 100
 
 
   === SPAN ===
   
   TRAIN
 
-  ./vw -k -c -d seqtest --passes 50 --invariant --searn_as_dagger 1e-8 --searn_task sequencespan --searn 7 --holdout_off -f seqtest.model
+  ./vw -k -c -d seqtest --passes 50 --invariant --search_as_dagger 1e-8 --search_task sequencespan --search 7 --holdout_off -f seqtest.model
 
   NO BEAM
 
-  ./vw -k -c -d seqtest -t --searn_as_dagger 1e-8 --searn_task sequencespan --searn 7 -i seqtest.model -p out
+  ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out
 
   BEAM 1
   
-  ./vw -k -c -d seqtest -t --searn_as_dagger 1e-8 --searn_task sequencespan --searn 7 -i seqtest.model -p out --searn_beam 1
+  ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_beam 1
 
   BEAM 100
   
-  ./vw -k -c -d seqtest -t --searn_as_dagger 1e-8 --searn_task sequencespan --searn 7 -i seqtest.model -p out --searn_beam 100 --searn_kbest 100
+  ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_beam 100 --search_kbest 100
 
 
   === SPAN WITH BILOU ===
 
   TRAIN
 
-  ./vw -k -c -d seqtest --passes 50 --invariant --searn_as_dagger 1e-8 --searn_task sequencespan --searn 7 --holdout_off -f seqtest.model --searn_bilou
+  ./vw -k -c -d seqtest --passes 50 --invariant --search_as_dagger 1e-8 --search_task sequencespan --search 7 --holdout_off -f seqtest.model --search_bilou
 
   NO BEAM
 
-  ./vw -k -c -d seqtest -t --searn_as_dagger 1e-8 --searn_task sequencespan --searn 7 -i seqtest.model -p out --searn_bilou
+  ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_bilou
 
   BEAM 1
   
-  ./vw -k -c -d seqtest -t --searn_as_dagger 1e-8 --searn_task sequencespan --searn 7 -i seqtest.model -p out --searn_bilou --searn_beam 1
+  ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_bilou --search_beam 1
 
   BEAM 100
   
-  ./vw -k -c -d seqtest -t --searn_as_dagger 1e-8 --searn_task sequencespan --searn 7 -i seqtest.model -p out --searn_beam 100 --searn_kbest 100 --searn_bilou
+  ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_beam 100 --search_kbest 100 --search_bilou
   
   
  */
@@ -2434,10 +2499,11 @@ void print_update(vw& all, searn& srn)
  * pull munge/unmunge out of structured_predict
  * make searn tasks classes
  * hide stuff in the searn class (HOW?)
- * add --searn_dont_rollout option
- * allow loss to also adjust count
+ * add --search_dont_rollout option
+ * allow loss to also adjust count --> put in documentation
+ * confusion matrix for faster errors?
  
-time ./vw -k -c -d pos.gz --searn_as_dagger 1e-8 --searn_task sequence --searn 45 --holdout_off
+time ./vw -k -c -d pos.gz --search_as_dagger 1e-8 --search_task sequence --search 45 --holdout_off
 
 real	1m40.899s
 user	1m41.810s
@@ -2449,10 +2515,10 @@ real	0m54.234s
 user	0m55.195s
 sys	0m0.208s
 
-./vw -k -c -d pos.gz --searn_as_dagger 1e-6 --searn_task sequence --searn 45 --holdout_off
+./vw -k -c -d pos.gz --search_as_dagger 1e-6 --search_task sequence --search 45 --holdout_off
 
-./vw -k -c -d pos.gz --searn_as_dagger 1e-8 --searn_task sequence --searn 45 --holdout_off -f m
-./vw -d pos.gz -t --searn_task sequence --searn 45 -i m -p output
+./vw -k -c -d pos.gz --search_as_dagger 1e-8 --search_task sequence --search 45 --holdout_off -f m
+./vw -d pos.gz -t --search_task sequence --search 45 -i m -p output
 
 
 
