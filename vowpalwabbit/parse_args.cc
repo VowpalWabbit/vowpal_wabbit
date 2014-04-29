@@ -263,7 +263,7 @@ vw* parse_args(int argc, char *argv[])
     ("lda", po::value<uint32_t>(&(all->lda)), "Run lda with <int> topics")
     ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
     ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
-    ("searn", po::value<size_t>(), "use searn, argument=maximum action id or 0 for LDF")
+    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
     ;
 
   // Declare the supported options.
@@ -977,10 +977,10 @@ vw* parse_args(int argc, char *argv[])
     all->options_from_file.append(ss.str());
   }
 
-  if (vm.count("searn") || vm_file.count("searn") ) {
+  if (vm.count("search") || vm_file.count("search") ) {
     if (!got_cs && !got_cb) {
-      if( vm_file.count("searn") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["searn"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searn"]));
+      if( vm_file.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["search"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
 
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
       all->cost_sensitive = all->l;
