@@ -55,7 +55,6 @@ flat_example* flatten_example(vw& all, example *ec)
 {  
 	flat_example* fec = (flat_example*) calloc_or_die(1,sizeof(flat_example));  
 	fec->ld = ec->ld;
-	fec->final_prediction = ec->final_prediction;  
 
 	fec->tag_len = ec->tag.size();
 	if (fec->tag_len >0)
@@ -170,8 +169,6 @@ void copy_example_label(example*dst, example*src, size_t label_size, void(*copy_
 void copy_example_data(bool audit, example* dst, example* src)
 {
   //std::cerr << "copy_example_data dst = " << dst << std::endl;
-  dst->final_prediction = src->final_prediction;
-
   copy_array(dst->tag, src->tag);
   dst->example_counter = src->example_counter;
 

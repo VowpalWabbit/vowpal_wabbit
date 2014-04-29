@@ -139,19 +139,19 @@ namespace COST_SENSITIVE {
         if (substring_eq(p->parse_name[0], "shared")) {
           if (p->parse_name.size() == 1) {
             f.x = -1;
-            f.weight_index = 0;
+            f.class_index = 0;
           } else
             cerr << "shared feature vectors should not have costs" << endl;
         } else if (substring_eq(p->parse_name[0], "label")) {
           if (p->parse_name.size() == 2) {
-            f.weight_index = (size_t)f.x;
+            f.class_index = (size_t)f.x;
             f.x = -1;
           } else
             cerr << "label feature vectors must have label ids" << endl;
         } else {
-          f.weight_index = 0;
+          f.class_index = 0;
           if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3) {
-            f.weight_index = (uint32_t)hashstring(p->parse_name[0], 0);
+            f.class_index = (uint32_t)hashstring(p->parse_name[0], 0);
             if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
               f.x = FLT_MAX;
           } else 
@@ -184,6 +184,7 @@ namespace COST_SENSITIVE {
   {
     if (all.sd->weighted_examples >= all.sd->dump_interval && !all.quiet && !all.bfgs)
       {
+	label* ld = (label*)ec.ld;
         char label_buf[32];
         if (is_test)
           strcpy(label_buf," unknown");
@@ -206,7 +207,7 @@ namespace COST_SENSITIVE {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)ec.final_prediction,
+                (long unsigned int)ld->prediction,
                 (long unsigned int)ec.num_features);
 
           all.sd->weighted_holdout_examples_since_last_dump = 0;
@@ -219,7 +220,7 @@ namespace COST_SENSITIVE {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long unsigned int)ec.final_prediction,
+                (long unsigned int)ld->prediction,
                 (long unsigned int)ec.num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -235,12 +236,12 @@ namespace COST_SENSITIVE {
     float loss = 0.;
     if (!is_test_label(ld))
       {//need to compute exact loss
-        size_t pred = (size_t)ec.final_prediction;
+        size_t pred = (size_t)ld->prediction;
 
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
         for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
-          if (cl->weight_index == pred)
+          if (cl->class_index == pred)
             chosen_loss = cl->x;
           if (cl->x < min)
             min = cl->x;
@@ -270,7 +271,7 @@ namespace COST_SENSITIVE {
       }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print((int)*sink, ec.final_prediction, 0, ec.tag);
+      all.print((int)*sink, ld->prediction, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
       string outputString;
@@ -278,7 +279,7 @@ namespace COST_SENSITIVE {
       for (unsigned int i = 0; i < ld->costs.size(); i++) {
         wclass cl = ld->costs[i];
         if (i > 0) outputStringStream << ' ';
-        outputStringStream << cl.weight_index << ':' << cl.partial_prediction;
+        outputStringStream << cl.class_index << ':' << cl.partial_prediction;
       }
       //outputStringStream << endl;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);

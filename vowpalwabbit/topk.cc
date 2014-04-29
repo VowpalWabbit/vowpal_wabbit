@@ -91,13 +91,14 @@ namespace TOPK {
     else
       base.predict(ec);
 
+    label_data* ld = (label_data*)ec.ld;
     if(d.pr_queue.size() < d.B)      
-      d.pr_queue.push(make_pair(ec.final_prediction, ec.tag));
+      d.pr_queue.push(make_pair(ld->prediction, ec.tag));
 
-    else if(d.pr_queue.top().first < ec.final_prediction)
+    else if(d.pr_queue.top().first < ld->prediction)
     {
       d.pr_queue.pop();
-      d.pr_queue.push(make_pair(ec.final_prediction, ec.tag));
+      d.pr_queue.push(make_pair(ld->prediction, ec.tag));
     }
 
   }

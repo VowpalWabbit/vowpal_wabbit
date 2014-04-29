@@ -160,7 +160,7 @@ void print_update(vw& all, example& ec)
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
-	      ec.final_prediction,
+	      ld->prediction,
 	      (long unsigned int)ec.num_features);
 
         all.sd->weighted_holdout_examples_since_last_dump = 0.;
@@ -173,7 +173,7 @@ void print_update(vw& all, example& ec)
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
-	      ec.final_prediction,
+	      ld->prediction,
 	      (long unsigned int)ec.num_features);
      
       all.sd->sum_loss_since_last_dump = 0.0;
@@ -217,11 +217,11 @@ void output_and_account_example(vw& all, example& ec)
     {
       int f = (int)all.final_prediction_sink[i];
       if(all.active && all.lda == 0)
-	active_print_result(f, ec.final_prediction, ai, ec.tag);
+	active_print_result(f, ld->prediction, ai, ec.tag);
       else if (all.lda > 0)
 	print_lda_result(all, f,ec.topic_predictions.begin,0.,ec.tag);
       else
-	all.print(f, ec.final_prediction, 0, ec.tag);
+	all.print(f, ld->prediction, 0, ec.tag);
     }
 
   print_update(all, ec);

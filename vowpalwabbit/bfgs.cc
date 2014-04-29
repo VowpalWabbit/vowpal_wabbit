@@ -187,7 +187,7 @@ inline void add_precond(float& d, float f, float& fw)
 void update_preconditioner(vw& all, example& ec)
 {
   label_data* ld = (label_data*)ec.ld;
-  float curvature = all.loss->second_derivative(all.sd, ec.final_prediction,ld->label) * ld->weight;
+  float curvature = all.loss->second_derivative(all.sd, ld->prediction,ld->label) * ld->weight;
   
   ec.ft_offset += W_COND;
   GD::foreach_feature<float,add_precond>(all, ec, curvature);  
@@ -734,10 +734,10 @@ void process_example(vw& all, bfgs& b, example& ec)
   /********************************************************************/ 
   if (b.gradient_pass)
     {
-      ec.final_prediction = predict_and_gradient(all, ec);//w[0] & w[1]
-      ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld->label) * ld->weight;
+      ld->prediction = predict_and_gradient(all, ec);//w[0] & w[1]
+      ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;
       b.loss_sum += ec.loss;
-      b.predictions.push_back(ec.final_prediction);
+      b.predictions.push_back(ld->prediction);
     }
   /********************************************************************/
   /* II) CURVATURE CALCULATION ****************************************/
@@ -747,9 +747,9 @@ void process_example(vw& all, bfgs& b, example& ec)
       float d_dot_x = dot_with_direction(all, ec);//w[2]
       if (b.example_number >= b.predictions.size())//Make things safe in case example source is strange.
 	b.example_number = b.predictions.size()-1;
-      ec.final_prediction = b.predictions[b.example_number];
+      ld->prediction = b.predictions[b.example_number];
       ec.partial_prediction = b.predictions[b.example_number];
-      ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld->label) * ld->weight;	      
+      ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;	      
       float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++],ld->label);
       b.curvature += d_dot_x*d_dot_x*sd*ld->weight;
     }
@@ -818,7 +818,7 @@ void end_pass(bfgs& b)
 void predict(bfgs& b, learner& base, example& ec)
 {
   vw* all = b.all;
-  ec.final_prediction = bfgs_predict(*all,ec);
+  ((label_data*) ec.ld)->prediction = bfgs_predict(*all,ec);
 }
 
 void learn(bfgs& b, learner& base, example& ec)
@@ -832,7 +832,7 @@ void learn(bfgs& b, learner& base, example& ec)
 	{ 
 	  label_data* ld = (label_data*)ec.ld;
 	  predict(b, base, ec);
-	  ec.loss = all->loss->getLoss(all->sd, ec.final_prediction, ld->label) * ld->weight;
+	  ec.loss = all->loss->getLoss(all->sd, ld->prediction, ld->label) * ld->weight;
 	}
       else if (test_example(ec))
 	predict(b, base, ec);

@@ -69,8 +69,8 @@ namespace OAA {
           outputStringStream << i << ':' << ec.partial_prediction;
         }
       }	
+    mc_label_data->prediction = prediction;
     ec.ld = mc_label_data;
-    ec.final_prediction = prediction;
     
     if (o.shouldOutput) 
       all->print_text(all->raw_prediction, outputStringStream.str(), ec.tag);

@@ -119,7 +119,7 @@ namespace MULTICLASS {
 	      (long int)all.sd->example_number,
 	      all.sd->weighted_examples,
 	      label_buf,
-	      (long int)ec.final_prediction,
+	      (long int)ld->prediction,
 	      (long unsigned int)ec.num_features);
 
           all.sd->weighted_holdout_examples_since_last_dump = 0;
@@ -132,7 +132,7 @@ namespace MULTICLASS {
                 (long int)all.sd->example_number,
                 all.sd->weighted_examples,
                 label_buf,
-                (long int)ec.final_prediction,
+                (long int)ld->prediction,
                 (long unsigned int)ec.num_features);
      
         all.sd->sum_loss_since_last_dump = 0.0;
@@ -147,7 +147,7 @@ namespace MULTICLASS {
     multiclass* ld = (multiclass*)ec.ld;
 
     size_t loss = 1;
-    if (ld->label == (uint32_t)ec.final_prediction)
+    if (ld->label == (uint32_t)ld->prediction)
       loss = 0;
 
     if(ec.test_only)
@@ -169,7 +169,7 @@ namespace MULTICLASS {
     }
  
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, ec.final_prediction, 0, ec.tag);
+      all.print(*sink, ld->prediction, 0, ec.tag);
 
     MULTICLASS::print_update(all, ec);
   }

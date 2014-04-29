@@ -303,7 +303,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         // need to tell searn what the action id is, so that it can add history features correctly!
         COST_SENSITIVE::label* lab = (COST_SENSITIVE::label*)data->ldf_examples[a].ld;
         lab->costs[0].x = 0.;
-        lab->costs[0].weight_index = (uint32_t)a+1;
+        lab->costs[0].class_index = (uint32_t)a+1;
         lab->costs[0].partial_prediction = 0.;
         lab->costs[0].wap_value = 0.;
       }

@@ -18,6 +18,7 @@ namespace CB {
 
   struct label {
     v_array<cb_class> costs;
+    uint32_t prediction;
   };
 
   extern label_parser cb_label;
