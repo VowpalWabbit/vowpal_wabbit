@@ -122,12 +122,11 @@ namespace LabelDict {
   
   bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
   {
-    if (ec.indices.size() == 0) return false;
-    if (ec.indices.size() >  2) return false;
+    if (ec.indices.size() != 1) return false;
     if (ec.indices[0] != 'l') return false;
     v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)ec.ld)->costs;
     for (size_t j=0; j<costs.size(); j++)
-      if ((costs[j].class_index == 0) && (costs[j].x > 0.)) return true;
+      if ((costs[j].class_index != 0) || (costs[j].x <= 0.)) return false;
     return true;    
   }
 
@@ -137,7 +136,6 @@ namespace LabelDict {
     if (costs.size() != 1) return false;
     if (costs[0].class_index != 0) return false;
     if (costs[0].x >= 0) return false;
-    assert(false);
     return true;    
   }
 
@@ -560,7 +558,7 @@ namespace LabelDict {
 
         v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)l.ec_seq[i]->ld)->costs;
         for (size_t j=0; j<costs.size(); j++) {
-          size_t lab = costs[j].class_index;
+          size_t lab = (size_t)costs[j].x;
           LabelDict::set_label_features(l, lab, features);
         }
       }
