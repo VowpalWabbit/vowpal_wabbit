@@ -31,7 +31,7 @@ namespace CSOAA {
     ec.ld = &simple_temp;
     for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++)
       {
-        uint32_t i = cl->weight_index;
+        uint32_t i = cl->class_index;
 	if (is_learn)
 	  {
 	    if (cl->x == FLT_MAX || !all->training)
@@ -135,7 +135,7 @@ namespace LabelDict {
   {
     v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)ec.ld)->costs;
     if (costs.size() != 1) return false;
-    if (costs[0].weight_index != 0) return false;
+    if (costs[0].class_index != 0) return false;
     if (costs[0].x >= 0) return false;
     return true;    
   }
@@ -343,7 +343,7 @@ namespace LabelDict {
         simple_label.weight = 0.;
         ec.partial_prediction = 0.;
 
-        LabelDict::add_example_namespace_from_memory(l, ec, costs[j].weight_index);
+        LabelDict::add_example_namespace_from_memory(l, ec, costs[j].class_index);
       
         ec.ld = &simple_label;
         base.predict(ec); // make a prediction
@@ -352,13 +352,13 @@ namespace LabelDict {
 
         if (min_score && prediction && (ec.partial_prediction < *min_score)) {
           *min_score = ec.partial_prediction;
-          *prediction = costs[j].weight_index;
+          *prediction = costs[j].class_index;
         }
 
         if (min_cost && (costs[j].x < *min_cost)) *min_cost = costs[j].x;
         if (max_cost && (costs[j].x > *max_cost)) *max_cost = costs[j].x;
 
-        LabelDict::del_example_namespace_from_memory(l, ec, costs[j].weight_index);
+        LabelDict::del_example_namespace_from_memory(l, ec, costs[j].class_index);
       }
     }
     
@@ -412,9 +412,9 @@ namespace LabelDict {
       float example_t1 = ec1->example_t;
 
       for (size_t j1=0; j1<costs1.size(); j1++) {
-        if (costs1[j1].weight_index == (uint32_t)-1) continue;
+        if (costs1[j1].class_index == (uint32_t)-1) continue;
         if (is_learn && all.training && !isTest) {
-          LabelDict::add_example_namespace_from_memory(l, *ec1, costs1[j1].weight_index);
+          LabelDict::add_example_namespace_from_memory(l, *ec1, costs1[j1].class_index);
 
           for (size_t k2=k1+1; k2<K; k2++) {
             example *ec2 = l.ec_seq.begin[k2];
@@ -422,13 +422,13 @@ namespace LabelDict {
             v_array<COST_SENSITIVE::wclass> costs2 = ld2->costs;
 
             for (size_t j2=0; j2<costs2.size(); j2++) {
-              if (costs2[j2].weight_index == (uint32_t)-1) continue;
+              if (costs2[j2].class_index == (uint32_t)-1) continue;
               float value_diff = fabs(costs2[j2].wap_value - costs1[j1].wap_value);
               //float value_diff = fabs(costs2[j2].x - costs1[j1].x);
               if (value_diff < 1e-6)
                 continue;
 
-              LabelDict::add_example_namespace_from_memory(l, *ec2, costs2[j2].weight_index);
+              LabelDict::add_example_namespace_from_memory(l, *ec2, costs2[j2].class_index);
 
               // learn
               ec1->example_t = l.csoaa_example_t;
@@ -443,13 +443,13 @@ namespace LabelDict {
 		base.predict(*ec1);
               unsubtract_example(all, ec1);
               
-              LabelDict::del_example_namespace_from_memory(l, *ec2, costs2[j2].weight_index);
+              LabelDict::del_example_namespace_from_memory(l, *ec2, costs2[j2].class_index);
             }
           }
-          LabelDict::del_example_namespace_from_memory(l, *ec1, costs1[j1].weight_index);
+          LabelDict::del_example_namespace_from_memory(l, *ec1, costs1[j1].class_index);
         }
 
-        if (prediction == costs1[j1].weight_index) prediction_is_me = true;
+        if (prediction == costs1[j1].class_index) prediction_is_me = true;
       }
       ld1->prediction = prediction_is_me ? prediction : 0;
       ec1->ld = ld1;
@@ -519,18 +519,18 @@ namespace LabelDict {
           //ec->partial_prediction = costs[j].partial_prediction;
           //cerr << "[" << ec->partial_prediction << "," << ec->done << "]";
           //ec->done = false;
-          LabelDict::add_example_namespace_from_memory(l, *ec, costs[j].weight_index);
+          LabelDict::add_example_namespace_from_memory(l, *ec, costs[j].class_index);
 	  if (is_learn)
 	    base.learn(*ec);
 	  else
 	    base.predict(*ec);
-          LabelDict::del_example_namespace_from_memory(l, *ec, costs[j].weight_index);
+          LabelDict::del_example_namespace_from_memory(l, *ec, costs[j].class_index);
           ec->example_t = example_t;
         }
 
         // fill in test predictions
         ec->partial_prediction = costs[j].partial_prediction;
-        if (prediction == costs[j].weight_index) prediction_is_me = true;
+        if (prediction == costs[j].class_index) prediction_is_me = true;
       }
       ld->prediction = prediction_is_me ? prediction : 0;
 
@@ -559,7 +559,7 @@ namespace LabelDict {
 
         v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)l.ec_seq[i]->ld)->costs;
         for (size_t j=0; j<costs.size(); j++) {
-          size_t lab = costs[j].weight_index;
+          size_t lab = costs[j].class_index;
           LabelDict::set_label_features(l, lab, features);
         }
       }
@@ -602,7 +602,7 @@ namespace LabelDict {
     if (!COST_SENSITIVE::example_is_test(ec)) {
       for (size_t j=0; j<costs.size(); j++) {
         if (hit_loss) break;
-        if (final_pred == costs[j].weight_index) {
+        if (final_pred == costs[j].class_index) {
           loss = costs[j].x;
           hit_loss = true;
         }
@@ -621,7 +621,7 @@ namespace LabelDict {
       stringstream outputStringStream(outputString);
       for (size_t i = 0; i < costs.size(); i++) {
         if (i > 0) outputStringStream << ' ';
-        outputStringStream << costs[i].weight_index << ':' << costs[i].partial_prediction;
+        outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
       }
       //outputStringStream << endl;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);

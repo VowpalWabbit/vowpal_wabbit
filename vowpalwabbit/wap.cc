@@ -114,9 +114,9 @@ namespace WAP {
   {
     float_wclass* fi1 = (float_wclass*)e1;
     float_wclass* fi2 = (float_wclass*)e2;
-    if (fi1->ci.weight_index > fi2->ci.weight_index)
+    if (fi1->ci.class_index > fi2->ci.class_index)
       return 1;
-    else if (fi1->ci.weight_index < fi2->ci.weight_index)
+    else if (fi1->ci.class_index < fi2->ci.class_index)
       return -1;
     else
       return 0;
@@ -174,8 +174,8 @@ namespace WAP {
               ec.ld = &simple_temp;
 	    
               ec.partial_prediction = 0.;
-              uint32_t myi = (uint32_t)vs[i].ci.weight_index;
-              uint32_t myj = (uint32_t)vs[j].ci.weight_index;
+              uint32_t myi = (uint32_t)vs[i].ci.class_index;
+              uint32_t myj = (uint32_t)vs[j].ci.class_index;
 
               mirror_features(all, ec, (uint32_t)((myi-1)*w.increment), (uint32_t)((myj-1)*w.increment));
 
@@ -201,7 +201,7 @@ namespace WAP {
         simple_temp.initial = 0.;
         simple_temp.weight = 0.;
         simple_temp.label = FLT_MAX;
-        uint32_t myi = (uint32_t)cost_label->costs[i].weight_index;
+        uint32_t myi = (uint32_t)cost_label->costs[i].class_index;
         ec.ld = &simple_temp;
         base.predict(ec, myi-1);
         if (ec.partial_prediction > score)

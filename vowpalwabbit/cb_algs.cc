@@ -91,7 +91,7 @@ namespace CB_ALGS
         COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
         wc.x = 0.;
-        wc.weight_index = i;
+        wc.class_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
         if( c.known_cost != NULL && i == c.known_cost->action )
@@ -115,7 +115,7 @@ namespace CB_ALGS
         COST_SENSITIVE::wclass wc;
         wc.wap_value = 0.;
         wc.x = 0.;
-        wc.weight_index = cl->action;
+        wc.class_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
         if( c.known_cost != NULL && cl->action == c.known_cost->action )
@@ -161,7 +161,7 @@ namespace CB_ALGS
 	    argmin = i;
 	  }
 
-        wc.weight_index = i;
+        wc.class_index = i;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
@@ -190,7 +190,7 @@ namespace CB_ALGS
 	    argmin = cl->action;
 	  }
 
-        wc.weight_index = cl->action;
+        wc.class_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
 
@@ -216,7 +216,7 @@ namespace CB_ALGS
     
     //get cost prediction for this label
     wc.x = get_cost_pred<is_learn>(all, c.known_cost, ec, label, all.sd->k);
-    wc.weight_index = label;
+    wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
     
@@ -262,7 +262,7 @@ namespace CB_ALGS
         wc.wap_value = 0.;
 
         wc.x = cl->cost;
-        wc.weight_index = cl->action;
+        wc.class_index = cl->action;
         wc.partial_prediction = 0.;
         wc.wap_value = 0.;
         
@@ -277,7 +277,7 @@ namespace CB_ALGS
 	    wc.wap_value = 0.;
 	    
 	    wc.x = FLT_MAX;
-	    wc.weight_index = i+1;
+	    wc.class_index = i+1;
 	    wc.partial_prediction = 0.;
 	    wc.wap_value = 0.;
 	    
@@ -336,9 +336,10 @@ namespace CB_ALGS
 	else
 	  base.predict(ec);
 
-	ec.ld = ld;
+	ld->prediction = c.cb_cs_ld.prediction;
         for (size_t i=0; i<ld->costs.size(); i++)
           ld->costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
+	ec.ld = ld;
       }
   }
 
@@ -422,7 +423,7 @@ namespace CB_ALGS
         else {
           //we do not know exact cost of each action, so evaluate on generated cost-sensitive example currently stored in cb_cs_ld
           for (COST_SENSITIVE::wclass *cl = c.cb_cs_ld.costs.begin; cl != c.cb_cs_ld.costs.end; cl ++) {
-            if (cl->weight_index == pred)
+            if (cl->class_index == pred)
 	      {
 		chosen_loss = cl->x;
 		if (c.known_cost->action == pred && c.cb_type == CB_TYPE_DM) 

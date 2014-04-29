@@ -192,7 +192,7 @@ namespace CBIFY {
     
     //get cost prediction for this label
     wc.x = CB_ALGS::get_cost_pred<false>(all, &known_cost, ec, label, all.sd->k);
-    wc.weight_index = label;
+    wc.class_index = label;
     wc.partial_prediction = 0.;
     wc.wap_value = 0.;
     
@@ -220,7 +220,7 @@ namespace CBIFY {
 	
 	//get cost prediction for this label
 	wc.x = FLT_MAX;
-	wc.weight_index = j+1;
+	wc.class_index = j+1;
 	wc.partial_prediction = 0.;
 	wc.wap_value = 0.;
 	data.cs_label.costs.push_back(wc);
@@ -274,7 +274,7 @@ namespace CBIFY {
 	    for (uint32_t j = 0; j < data.k; j++)
 	      {
 		float pseudo_cost = data.cs_label.costs[j].x - data.epsilon * min_prob / (max(data.count[j], min_prob) / norm) + 1;
-		data.second_cs_label.costs[j].weight_index = j+1;
+		data.second_cs_label.costs[j].class_index = j+1;
 		data.second_cs_label.costs[j].x = pseudo_cost;
 	      }
 	    if (i != 0)

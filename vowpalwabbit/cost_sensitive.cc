@@ -139,27 +139,27 @@ namespace COST_SENSITIVE {
         if (substring_eq(p->parse_name[0], "shared")) {
           if (p->parse_name.size() == 1) {
             f.x = -1;
-            f.weight_index = 0;
+            f.class_index = 0;
           } else
             cerr << "shared feature vectors should not have costs" << endl;
         } else if (substring_eq(p->parse_name[0], "label")) {
           if (p->parse_name.size() == 2) {
-            f.weight_index = (size_t)f.x;
+            f.class_index = (size_t)f.x;
             f.x = -1;
           } else
             cerr << "label feature vectors must have label ids" << endl;
         } else {
-          f.weight_index = 0;
+          f.class_index = 0;
           if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3) {
-            f.weight_index = (uint32_t)hashstring(p->parse_name[0], 0);
+            f.class_index = (uint32_t)hashstring(p->parse_name[0], 0);
             if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
               f.x = FLT_MAX;
 
-            if ((f.weight_index >= 1) && (f.weight_index <= sd->k) && (f.x >= 0)) {}  // normal example
-            else if ((f.weight_index >= 1) && (f.weight_index <= sd->k) && (f.x <= -1)) {}   // label definition
-            else if ((f.weight_index == 0) && (f.x <= -1)) {} // shared header
+            if ((f.class_index >= 1) && (f.class_index <= sd->k) && (f.x >= 0)) {}  // normal example
+            else if ((f.class_index >= 1) && (f.class_index <= sd->k) && (f.x <= -1)) {}   // label definition
+            else if ((f.class_index == 0) && (f.x <= -1)) {} // shared header
             else
-              cerr << "invalid cost specification: " << f.weight_index << endl;
+              cerr << "invalid cost specification: " << f.class_index << endl;
           } else 
             cerr << "malformed cost specification on '" << (p->parse_name[0].begin) << "'" << endl;
         }
@@ -247,7 +247,7 @@ namespace COST_SENSITIVE {
         float chosen_loss = FLT_MAX;
         float min = FLT_MAX;
         for (wclass *cl = ld->costs.begin; cl != ld->costs.end; cl ++) {
-          if (cl->weight_index == pred)
+          if (cl->class_index == pred)
             chosen_loss = cl->x;
           if (cl->x < min)
             min = cl->x;
@@ -285,7 +285,7 @@ namespace COST_SENSITIVE {
       for (unsigned int i = 0; i < ld->costs.size(); i++) {
         wclass cl = ld->costs[i];
         if (i > 0) outputStringStream << ' ';
-        outputStringStream << cl.weight_index << ':' << cl.partial_prediction;
+        outputStringStream << cl.class_index << ':' << cl.partial_prediction;
       }
       //outputStringStream << endl;
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
