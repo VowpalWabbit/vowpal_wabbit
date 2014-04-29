@@ -73,7 +73,7 @@ namespace LRQ {
       }
 
     size_t which = ec.example_counter;
-    simple_prediction first_prediction;
+    float first_prediction;
     float first_loss;
     unsigned int maxiter = (all.training && ! example_is_test (ec)) ? 2 : 1;
 
@@ -149,15 +149,16 @@ namespace LRQ {
 	  base.predict(ec);
 
         // Restore example
-
+	
+	label_data* ld = (label_data*)ec.ld;
         if (iter == 0)
           {
-            first_prediction = ec.final_prediction;
+            first_prediction = ld->prediction;
             first_loss = ec.loss;
           }
         else
           {
-            ec.final_prediction = first_prediction;
+            ld->prediction = first_prediction;
             ec.loss = first_loss;
           }
 

@@ -203,8 +203,7 @@ namespace ECT
 	  
             base.learn(ec, problem_number);
 	  
-	    float pred = ec.final_prediction;
-	    if (pred > 0.)
+	    if (simple_temp.prediction > 0.)
               finals_winner = finals_winner | (((size_t)1) << i);
           }
       }
@@ -214,7 +213,7 @@ namespace ECT
       {
 	base.learn(ec, id - e.k);
 
-	if (ec.final_prediction > 0.)
+	if (simple_temp.prediction > 0.)
 	  id = e.directions[id].right;
 	else
 	  id = e.directions[id].left;
@@ -255,7 +254,7 @@ namespace ECT
 	base.learn(ec, id-e.k);
 	simple_temp.weight = 0.;
 	base.learn(ec, id-e.k);//inefficient, we should extract final prediction exactly.
-	float pred = ec.final_prediction;
+	float pred = simple_temp.prediction;
 
 	bool won = pred*simple_temp.label > 0;
 
@@ -309,7 +308,7 @@ namespace ECT
 		
 		base.learn(ec, problem_number);
 		
-		float pred = ec.final_prediction;
+		float pred = simple_temp.prediction;
 		if (pred > 0.)
                   e.tournaments_won[j] = right;
                 else
@@ -328,7 +327,7 @@ namespace ECT
     MULTICLASS::multiclass* mc = (MULTICLASS::multiclass*)ec.ld;
     if (mc->label == 0 || (mc->label > e.k && mc->label != (uint32_t)-1))
       cout << "label " << mc->label << " is not in {1,"<< e.k << "} This won't work right." << endl;
-    ec.final_prediction = ect_predict(*all, e, base, ec);
+    mc->prediction = ect_predict(*all, e, base, ec);
     ec.ld = mc;
   }
 
@@ -336,14 +335,14 @@ namespace ECT
   {
     vw* all = e.all;
 
-    MULTICLASS::multiclass* mc = (MULTICLASS::multiclass*)ec.ld;
+    MULTICLASS::multiclass& mc = *(MULTICLASS::multiclass*)ec.ld;
     predict(e, base, ec);
 
-    float new_label = ec.final_prediction;
-    if (mc->label != (uint32_t)-1 && all->training)
+    uint32_t new_label = mc.prediction;
+    if (mc.label != (uint32_t)-1 && all->training)
       ect_train(*all, e, base, ec);
-    ec.ld = mc;
-    ec.final_prediction = new_label;
+    mc.prediction = new_label;
+    ec.ld = &mc;
   }
 
   void finish(ect& e)

@@ -327,8 +327,9 @@ void print_features(vw& all, example& ec)
 
 void print_audit_features(vw& all, example& ec)
 {
+  label_data& ld = *(label_data*)ec.ld;
   if(all.audit)
-    print_result(all.stdout_fileno,ec.final_prediction,-1,ec.tag);
+    print_result(all.stdout_fileno,ld.prediction,-1,ec.tag);
   fflush(stdout);
   print_features(all, ec);
 }
@@ -424,7 +425,8 @@ void predict(gd& g, learner& base, example& ec)
       ec.partial_prediction = inline_predict<vec_add>(all, ec);
   }
 
-  ec.final_prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
+  label_data& ld = *(label_data*)ec.ld;
+  ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
 
   if (all.audit || all.hash_inv)
     print_audit_features(all, ec);
@@ -494,7 +496,7 @@ inline void powert_norm_compute(norm_data& nd, float x, float& fw) {
 float compute_norm(vw& all, example& ec)
 {//We must traverse the features in _precisely_ the same order as during training.
   label_data* ld = (label_data*)ec.ld;
-  float g = all.loss->getSquareGrad(ec.final_prediction, ld->label) * ld->weight;
+  float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
   if (g==0) return 1.;
 
   norm_data nd = {g, 0., 0., all.power_t};
@@ -529,7 +531,7 @@ void compute_update(vw& all, gd& g, example& ec)
 
   if(g.active_simulation){
     float k = ec.example_t - ld->weight;
-    ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.final_prediction, all.eta/powf(k,all.power_t));
+    ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(k,all.power_t));
     float importance = query_decision(all, ec, k);
     if(importance > 0){
       all.sd->queries += 1;
@@ -548,7 +550,7 @@ void compute_update(vw& all, gd& g, example& ec)
   ec.eta_round = 0;
 
   if (ld->label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ec.final_prediction, ld->label) * ld->weight;
+    ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;
 
   if (ld->label != FLT_MAX && !ec.test_only)
     {
@@ -569,14 +571,14 @@ void compute_update(vw& all, gd& g, example& ec)
 
           float update = 0.f;
           if( all.invariant_updates )
-            update = all.loss->getUpdate(ec.final_prediction, ld->label, eta_t, norm);
+            update = all.loss->getUpdate(ld->prediction, ld->label, eta_t, norm);
           else
-            update = all.loss->getUnsafeUpdate(ec.final_prediction, ld->label, eta_t, norm);
+            update = all.loss->getUnsafeUpdate(ld->prediction, ld->label, eta_t, norm);
 
 	  ec.eta_round = (float) (update / all.sd->contraction);
 
 	  if (all.reg_mode && fabs(ec.eta_round) > 1e-8) {
-	    double dev1 = all.loss->first_derivative(all.sd, ec.final_prediction, ld->label);
+	    double dev1 = all.loss->first_derivative(all.sd, ld->prediction, ld->label);
 	    double eta_bar = (fabs(dev1) > 1e-8) ? (-ec.eta_round / dev1) : 0.0;
 	    if (fabs(dev1) > 1e-8)
 	      all.sd->contraction *= (1. - all.l2_lambda * eta_bar * norm);
@@ -586,7 +588,7 @@ void compute_update(vw& all, gd& g, example& ec)
         }
     }
   else if(all.active)
-    ec.revert_weight = all.loss->getRevertingWeight(all.sd, ec.final_prediction, all.eta/powf(t,all.power_t));
+    ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(t,all.power_t));
 
 }
 
@@ -622,7 +624,7 @@ void learn(gd& g, learner& base, example& ec)
   if ((all->holdout_set_off || !ec.test_only) && ld->weight > 0)
     update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx>(g,base,ec);
   else if(ld->weight > 0)
-    ec.loss = all->loss->getLoss(all->sd, ec.final_prediction, ld->label) * ld->weight;
+    ec.loss = all->loss->getLoss(all->sd, ld->prediction, ld->label) * ld->weight;
 }
 
 void sync_weights(vw& all) {

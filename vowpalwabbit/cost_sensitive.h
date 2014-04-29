@@ -16,15 +16,16 @@ license as described in the file LICENSE.
 namespace COST_SENSITIVE {
   struct wclass {
     float x;
-    uint32_t weight_index;
+    uint32_t class_index;
     float partial_prediction;  // a partial prediction: new!
     float wap_value;  // used for wap to store values derived from costs
-    bool operator==(wclass j){return weight_index == j.weight_index;}
+    bool operator==(wclass j){return class_index == j.class_index;}
   };
 
   
   struct label {
     v_array<wclass> costs;
+    uint32_t prediction;
   };
   
   void output_example(vw& all, example& ec);

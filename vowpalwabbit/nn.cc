@@ -26,6 +26,7 @@ namespace NN {
     uint32_t k;
     loss_function* squared_loss;
     example output_layer;
+    float prediction;
     size_t increment;
     bool dropout;
     uint64_t xsubi;
@@ -139,7 +140,7 @@ namespace NN {
 
 	base.predict(ec, i);
 
-        hidden_units[i] = ec.final_prediction;
+        hidden_units[i] = ld->prediction;
 
         dropped_out[i] = (n.dropout && merand48 (n.xsubi) < 0.5);
 
@@ -222,7 +223,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.ld = 0;
     }
 
-    n.output_layer.final_prediction = GD::finalize_prediction (*(n.all), n.output_layer.partial_prediction);
+    n.prediction = GD::finalize_prediction (*(n.all), n.output_layer.partial_prediction);
 
     if (shouldOutput) {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
@@ -231,7 +232,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (is_learn && n.all->training && ld->label != FLT_MAX) {
       float gradient = n.all->loss->first_derivative(n.all->sd, 
-                                                  n.output_layer.final_prediction,
+                                                  n.prediction,
                                                   ld->label);
 
       if (fabs (gradient) > 0) {
@@ -268,7 +269,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
 
     if (! converse) {
       save_partial_prediction = n.output_layer.partial_prediction;
-      save_final_prediction = n.output_layer.final_prediction;
+      save_final_prediction = n.prediction;
       save_ec_loss = n.output_layer.loss;
     }
 
@@ -284,7 +285,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       }
 
     ec.partial_prediction = save_partial_prediction;
-    ec.final_prediction = save_final_prediction;
+    ld->prediction = save_final_prediction;
     ec.loss = save_ec_loss;
   }
 

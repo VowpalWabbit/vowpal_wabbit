@@ -407,7 +407,8 @@ namespace Searn
     return best_action;
   }
 
-  uint32_t sample_with_temperature_csoaa(COST_SENSITIVE::label* ld, float temp) {
+  uint32_t sample_with_temperature_csoaa(void* l, float temp) {
+    COST_SENSITIVE::label* ld = (COST_SENSITIVE::label*)l;
     float total = 0.;
     for (COST_SENSITIVE::wclass* c = ld->costs.begin; c != ld->costs.end; ++c)
       total += (float)exp(-1.0 * c->partial_prediction / temp);
@@ -416,14 +417,15 @@ namespace Searn
       for (COST_SENSITIVE::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
         r -= (float)exp(-1.0 * c->partial_prediction / temp);
         if (r <= 0.)
-          return c->weight_index;
+          return c->class_index;
       }
     }
     // something failed
-    return ld->costs[0].weight_index;
+    return ld->costs[0].class_index;
   }
 
-  uint32_t sample_with_temperature_cb(CB::label* ld, float temp) {
+  uint32_t sample_with_temperature_cb(void* l, float temp) {
+    CB::label* ld = (CB::label*)l;
     float total = 0.;
     for (CB::cb_class* c = ld->costs.begin; c != ld->costs.end; ++c)
       total += (float)exp(-1.0 * c->partial_prediction / temp);
@@ -439,7 +441,8 @@ namespace Searn
     return ld->costs[0].action;
   }
 
-  uint32_t single_prediction_notLDF(vw& all, searn& srn, learner& base, example& ec, void*valid_labels, uint32_t pol, bool allow_exploration)
+  template <class T>
+  uint32_t single_prediction_notLDF(vw& all, searn& srn, learner& base, example& ec, T* valid_labels, uint32_t pol, bool allow_exploration)
   {
     assert(pol >= 0);
 
@@ -449,22 +452,23 @@ namespace Searn
     base.predict(ec, pol);
     srn.total_predictions_made++;
     srn.num_features += ec.num_features;
-    uint32_t final_prediction = (uint32_t)ec.final_prediction;
+    T* ld = (T*)ec.ld;
+    uint32_t final_prediction = ld->prediction;
 
     // if (allow_exploration && (srn.exploration_temperature > 0.)) {
     //   if (srn.rollout_all_actions)
-    //     final_prediction = sample_with_temperature_csoaa((COST_SENSITIVE::label*)ec.ld, srn.exploration_temperature);
+    //     final_prediction = sample_with_temperature_csoaa(ld, srn.exploration_temperature);
     //   else
-    //     final_prediction = sample_with_temperature_cb(   (CB::label   *)ec.ld, srn.exploration_temperature);
+    //     final_prediction = sample_with_temperature_cb(ld, srn.exploration_temperature);
     // }
-
+    
     if ((srn.state == INIT_TEST) && (all.raw_prediction > 0) && (srn.rollout_all_actions)) { // srn.rollout_all_actions ==> this is not CB, so we have COST_SENSITIVE::labels
       string outputString;
       stringstream outputStringStream(outputString);
       COST_SENSITIVE::label *ld = (COST_SENSITIVE::label*)ec.ld;
       for (COST_SENSITIVE::wclass* c = ld->costs.begin; c != ld->costs.end; ++c) {
         if (c != ld->costs.begin) outputStringStream << ' ';
-        outputStringStream << c->weight_index << ':' << c->partial_prediction;
+        outputStringStream << c->class_index << ':' << c->partial_prediction;
       }
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
@@ -480,32 +484,31 @@ namespace Searn
     return opts[(size_t)(((float)opts.size()) * r)];
   }
 
-  uint32_t single_action(vw& all, searn& srn, learner& base, example* ecs, size_t num_ec, void*valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t, bool allow_exploration) {
+  template <class T>
+  uint32_t single_action(vw& all, searn& srn, learner& base, example* ecs, size_t num_ec, T* valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t, bool allow_exploration) {
     //cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
     if (pol == -1) { // optimal policy
-      uint32_t oracle_action = 0;
       if (ystar_is_uint32t)
-        oracle_action = *((uint32_t*)ystar);
+        return *((uint32_t*)ystar);
       else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
         if (srn.rollout_all_actions)
-          oracle_action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).weight_index;
+          return choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).class_index;
         else
-          oracle_action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
+          return choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
       } else 
-        oracle_action = choose_random<uint32_t>(*ystar);
-      return oracle_action;
+        return choose_random<uint32_t>(*ystar);
     } else {        // learned policy
       if (!srn.is_ldf) {  // single example
         if (srn.hinfo.length>0) {cdbg << "add_history_to_example: srn.t=" << srn.t << " h=" << srn.rollout_action.begin[srn.t] << endl;}
         if (srn.hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.t+1; i++) cdbg << " " << srn.rollout_action.begin[i]; cdbg << " ], len=" << srn.rollout_action.size() << endl;}
         if (srn.auto_history) add_history_to_example(all, srn.hinfo, ecs, srn.rollout_action.begin+srn.t);
-        size_t action = single_prediction_notLDF(all, srn, base, *ecs, valid_labels, pol, allow_exploration);
+        size_t action = single_prediction_notLDF<T>(all, srn, base, *ecs, valid_labels, pol, allow_exploration);
         if (srn.auto_history) remove_history_from_example(all, srn.hinfo, ecs);
         return (uint32_t)action;
       } else {
         if (srn.auto_history)
           for (size_t a=0; a<num_ec; a++) {
-            cdbg << "weight_index = " << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].weight_index << ":" << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].x << endl;
+            cdbg << "class_index = " << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index << ":" << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].x << endl;
             add_history_to_example(all, srn.hinfo, &ecs[a], srn.rollout_action.begin+srn.t, a * history_constant);
           }
                                    //((OAA::mc_label*)ecs[a].ld)->label);
@@ -533,8 +536,8 @@ namespace Searn
       COST_SENSITIVE::label *ret = new COST_SENSITIVE::label();
       v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)l)->costs;
       for (size_t i=0; i<costs.size(); i++) {
-        COST_SENSITIVE::wclass c = { costs[i].x, costs[i].weight_index, costs[i].partial_prediction, costs[i].wap_value };
-        assert(costs[i].weight_index <= srn.A);
+        COST_SENSITIVE::wclass c = { costs[i].x, costs[i].class_index, costs[i].partial_prediction, costs[i].wap_value };
+        assert(costs[i].class_index <= srn.A);
         ret->costs.push_back(c);
       }
       return ret;
@@ -581,6 +584,7 @@ namespace Searn
   //   ystar:
   //     == NULL (or empty) means we don't know the oracle label
   //     otherwise          means the oracle could do any of the listed actions
+  template <class T>
   uint32_t searn_predict_without_loss(vw& all, learner& base, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
   {
     searn* srn=(searn*)all.searnstr;
@@ -597,10 +601,10 @@ namespace Searn
       int pol = choose_policy(*srn, true, false);
       //cerr << "(" << pol << ")";
       get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-      uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
+      uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       cdbg << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
-      uint32_t a_name = (! srn->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].weight_index;
+      uint32_t a_name = (! srn->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index;
       if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
       return a;
@@ -610,14 +614,14 @@ namespace Searn
         pol = choose_policy(*srn, srn->allow_current_policy, true);
       cdbg << "{" << pol << "}";
       get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-      uint32_t a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
+      uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       cdbg << "predict @" << srn->t << " pol=" << pol << " a=" << a << endl;
       //assert((srn->current_policy == 0) || (a == a_opt));
       //if (! ((srn->current_policy == 0) || (a == a_opt))) { /*UNDOME*/cdbg << "FAIL!!!"<<endl;}
       srn->train_action_ids.push_back(a);
       srn->train_labels.push_back(copy_labels(*srn, srn->valid_labels));
-      uint32_t a_name = (! srn->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].weight_index;
+      uint32_t a_name = (! srn->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index;
       srn->train_action.push_back(a_name);
       if (srn->auto_history) srn->rollout_action.push_back(a_name);
       srn->t++;
@@ -649,7 +653,7 @@ namespace Searn
         srn->snapshot_is_equivalent_to_t = (size_t)-1;
         srn->snapshot_could_match = true;
         srn->t++;
-        uint32_t a_name = (! srn->is_ldf) ? srn->learn_a : ((COST_SENSITIVE::label*)ecs[srn->learn_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? srn->learn_a : ((COST_SENSITIVE::label*)ecs[srn->learn_a].ld)->costs[0].class_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return srn->learn_a;
       } else { // t > learn_t
@@ -666,7 +670,7 @@ namespace Searn
           if ((!srn->do_fastforward) || (!srn->snapshot_could_match) || (srn->snapshot_is_equivalent_to_t == ((size_t)-1))) { // we haven't converged, continue predicting
             int pol = choose_policy(*srn, srn->allow_current_policy, true);
             get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-            this_a = single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
+            this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->valid_labels, pol, ystar, ystar_is_uint32t, true);
             cdbg << "predict @" << srn->t << " pol=" << pol << " a=" << this_a << endl;
             srn->t++;
             //valid_labels.costs.erase(); valid_labels.costs.delete_v();
@@ -683,7 +687,7 @@ namespace Searn
           // TODO: implement me
           throw exception();
         }
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
         if (srn->auto_history) srn->rollout_action.push_back(a_name);
         return (uint32_t)this_a;
       }
@@ -693,7 +697,7 @@ namespace Searn
       if (srn->t == 0) { // collect action info
         int pol = choose_policy(*srn, true, false);
         size_t num_actions = get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-        single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
+        single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
         // fill in relevant information
         srn->cur_beam_hyp->num_actions = num_actions;
         srn->cur_beam_hyp->filled_in_prediction = true;
@@ -701,7 +705,7 @@ namespace Searn
       }
       srn->t++;
       uint32_t this_a = get_any_label(*srn, yallowed);
-      uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
+      uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
       if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t);
       cdbg << "A rollout_action.push_back(" << a_name << ", @ " << (srn->t) << ")" << endl;
       if (srn->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;}
@@ -712,10 +716,10 @@ namespace Searn
         uint32_t this_a = (uint32_t)srn->cur_beam_hyp->action_taken;
         get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
         if (!srn->is_ldf) {
-          this_a = ((COST_SENSITIVE::label*)srn->valid_labels)->costs[this_a].weight_index;
-          cdbg << "valid_labels = ["; for (COST_SENSITIVE::wclass*wc=((COST_SENSITIVE::label*)srn->valid_labels)->costs.begin; wc!= ((COST_SENSITIVE::label*)srn->valid_labels)->costs.end; ++wc) cdbg << " " << wc->weight_index; cdbg << " ]" << endl;
+          this_a = ((COST_SENSITIVE::label*)srn->valid_labels)->costs[this_a].class_index;
+          cdbg << "valid_labels = ["; for (COST_SENSITIVE::wclass*wc=((COST_SENSITIVE::label*)srn->valid_labels)->costs.begin; wc!= ((COST_SENSITIVE::label*)srn->valid_labels)->costs.end; ++wc) cdbg << " " << wc->class_index; cdbg << " ]" << endl;
         }
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
         if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t);
         cdbg << "B rollout_action.push_back(" << a_name << ", @ " << (srn->t) << ")" << endl;
         if (srn->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;}
@@ -723,13 +727,13 @@ namespace Searn
       } else if (srn->t == srn->cur_beam_hyp->t) {
         int pol = choose_policy(*srn, true, false);
         size_t num_actions = get_all_labels(srn->valid_labels, *srn, num_ec, yallowed);
-        single_action(all, *srn, base, ecs, num_ec, srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
+        single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->valid_labels, pol, ystar, ystar_is_uint32t, false);
         // fill in relevant information
         srn->cur_beam_hyp->num_actions = num_actions;
         srn->cur_beam_hyp->filled_in_prediction = true;
         srn->t++;
         uint32_t this_a = get_any_label(*srn, yallowed);
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
         if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t);
         cdbg << "C rollout_action.push_back(" << a_name << ", @ " << (srn->t) << ")" << endl;
         if (srn->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;}
@@ -738,7 +742,7 @@ namespace Searn
         // TODO: check if auto history, etc., is necessary here
         srn->t++;
         uint32_t this_a = get_any_label(*srn, yallowed);
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
         if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t);
         cdbg << "D rollout_action.push_back(" << a_name << ", @ " << (srn->t) << ")" << endl;
         //cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->t+1; i++) cdbg << " " << srn->rollout_action.begin[i]; cdbg << " ], len=" << srn->rollout_action.size() << endl;
@@ -751,8 +755,8 @@ namespace Searn
       if (srn->rollout_all_actions) {
         uint32_t this_a = srn->beam_final_action_sequence.pop();
         if (!srn->is_ldf)
-          this_a = ((COST_SENSITIVE::label*)srn->valid_labels)->costs[this_a].weight_index;
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].weight_index;
+          this_a = ((COST_SENSITIVE::label*)srn->valid_labels)->costs[this_a].class_index;
+        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
         if (srn->auto_history) push_at(srn->rollout_action, a_name, srn->t - 1);
         return this_a;
       } else {
@@ -795,7 +799,11 @@ namespace Searn
   uint32_t searn_predict(vw& all, learner& base, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
   {
     searn* srn=(searn*)all.searnstr;
-    uint32_t a = searn_predict_without_loss(all, base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
+    uint32_t a;
+    if (srn->rollout_all_actions)
+      a = searn_predict_without_loss<COST_SENSITIVE::label>(all, base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
+    else
+      a = searn_predict_without_loss<CB::label>(all, base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
 
     if (srn->auto_hamming_loss) {
       float this_loss = 0.;
@@ -1075,9 +1083,9 @@ namespace Searn
       return ((CB::label*)l)->costs.size();
   }
 
-  size_t labelset_weight_index(searn&srn, void*l, size_t i) {
+  size_t labelset_class_index(searn&srn, void*l, size_t i) {
     if (srn.rollout_all_actions)
-      return ((COST_SENSITIVE::label*)l)->costs[i].weight_index;
+      return ((COST_SENSITIVE::label*)l)->costs[i].class_index;
     else
       return ((CB::label*)l)->costs[i].action;
   }
@@ -1136,11 +1144,11 @@ namespace Searn
         COST_SENSITIVE::cs_label.default_label(lab);
         COST_SENSITIVE::wclass c = { losses[a] - min_loss, (uint32_t)a, 0., 0. };
         lab->costs.push_back(c);
-        cdbg << "learn t = " << srn.learn_t << " cost = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].x << " action = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].weight_index << endl;
+        cdbg << "learn t = " << srn.learn_t << " cost = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].x << " action = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].class_index << endl;
         //cdbg << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
         if (srn.auto_history)
           add_history_to_example(all, srn.hinfo, &ec[a], srn.rollout_action.begin+srn.learn_t, a * history_constant);
-        //((COST_SENSITIVE::label*)ec[a].ld)->costs[0].weight_index);
+        //((COST_SENSITIVE::label*)ec[a].ld)->costs[0].class_index);
         ec[a].in_use = true;
         base.learn(ec[a], srn.current_policy);
       }
@@ -1466,7 +1474,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
           }
           srn.snapshot_last_found_pos = (size_t)-1;
 
-          size_t this_index = labelset_weight_index(srn, aset, i);
+          size_t this_index = labelset_class_index(srn, aset, i);
           assert(this_index <= srn.A);
           if (false && (this_index == srn.train_action_ids[srn.learn_t])) {  // TODO: fix this!
             srn.learn_losses.push_back( srn.train_loss );
@@ -1497,7 +1505,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
           //   cdbg << " {";
           //   COST_SENSITIVE::label* ld = ((COST_SENSITIVE::label*)ptr[n].ld);
           //   for (size_t m=0; m<ld->costs.size(); m++)
-          //     cdbg << " " << ld->costs[m].weight_index << ":" << ld->costs[m].x;
+          //     cdbg << " " << ld->costs[m].class_index << ":" << ld->costs[m].x;
           //     cdbg << " }";
           // }
           // cdbg << endl;
@@ -1507,7 +1515,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
           //   cdbg << " {";
           //   COST_SENSITIVE::label* ld = ((COST_SENSITIVE::label*)ptr[n].ld);
           //   for (size_t m=0; m<ld->costs.size(); m++)
-          //     cdbg << " " << ld->costs[m].weight_index << ":" << ld->costs[m].x;
+          //     cdbg << " " << ld->costs[m].class_index << ":" << ld->costs[m].x;
           //     cdbg << " }";
           // }
           // cdbg << endl;

@@ -32,14 +32,14 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text);
 void output_and_account_example(example* ec);
 
  template <class R, void (*T)(R&, const float, float&)>
-   void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
+   inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
    {
      for (feature* f = begin; f!= end; f++)
        T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
    }
 
  template <class R, void (*T)(R&, const float, float&)>
-   void foreach_feature(vw& all, example& ec, R& dat)
+   inline void foreach_feature(vw& all, example& ec, R& dat)
    {
      uint32_t offset = ec.ft_offset;
 
@@ -75,7 +75,7 @@ void output_and_account_example(example* ec);
    }
 
  template <class R, void (*T)(predict_data<R>&, const float, float&)>
-   float inline_predict(vw& all, example& ec, R extra)
+   inline float inline_predict(vw& all, example& ec, R extra)
    {
      label_data* ld = (label_data*)ec.ld;
      predict_data<R> temp = {ld->initial, extra};
@@ -84,7 +84,7 @@ void output_and_account_example(example* ec);
    }
 
  template <void (*T)(float&, const float, float&)>
-   float inline_predict(vw& all, example& ec)
+  inline float inline_predict(vw& all, example& ec)
    {
      label_data* ld = (label_data*)ec.ld;
      float temp = ld->initial;

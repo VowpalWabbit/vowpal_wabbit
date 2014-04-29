@@ -62,9 +62,9 @@ void receive_result(sender& s)
   example* ec=s.delay_ring[s.received_index++ % s.all->p->ring_size];
   label_data* ld = (label_data*)ec->ld;
   
-  ec->final_prediction = res;
+  ld->prediction = res;
   
-  ec->loss = s.all->loss->getLoss(s.all->sd, ec->final_prediction, ld->label) * ld->weight;
+  ec->loss = s.all->loss->getLoss(s.all->sd, ld->prediction, ld->label) * ld->weight;
   
   return_simple_example(*(s.all), NULL, *ec);  
 }
