@@ -241,6 +241,36 @@ namespace TXM_O
     cout << "Tree depth: " << d.max_depth << endl;
     cout << "ceil of log2(k): " << ceil_log2(d.k) << endl;
   }
+  
+  void update_depth(txm_o& b)
+  {
+	size_t cn = 0;
+	size_t *stack;
+	size_t index = 0;
+	
+	stack = new size_t[b.max_nodes];
+	
+	stack[index++] = 0;
+	b.nodes[0].level = 0;	
+	b.max_depth = 0;
+	
+	while(index > 0) {
+		cn = stack[--index];
+		
+		if(b.nodes[cn].id_left != 0) {
+			stack[index++] = b.nodes[cn].id_left;
+			b.nodes[b.nodes[cn].id_left].level = b.nodes[cn].level + 1;	
+		}
+		
+		if(b.nodes[cn].id_right != 0) {
+			stack[index++] = b.nodes[cn].id_right;
+			b.nodes[b.nodes[cn].id_right].level = b.nodes[cn].level + 1;
+		}
+		
+		if(b.nodes[cn].level > b.max_depth)
+			b.max_depth = b.nodes[cn].level;
+	}
+  }
 
   void update_levels(txm_o& b, size_t n, size_t cl)
   {
@@ -466,6 +496,8 @@ namespace TXM_O
   
   void learn(txm_o& b, learner& base, example& ec)
   {
+    static size_t  ec_cnt = 0;
+    
     predict(b,base,ec);
     MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
     b.ec_cnt_update = true;
@@ -474,6 +506,10 @@ namespace TXM_O
 
     if(b.all->training && (mc->label != (uint32_t)-1) && !ec.test_only)	//if training the tree
       {
+	ec_cnt++;
+	if(ec_cnt % 100000 == 0)
+		cout << ec_cnt << endl;	
+	
 	size_t index = 0;
 		
 	label_data simple_temp;	
@@ -581,6 +617,7 @@ namespace TXM_O
 	  }
 	else
 	  {
+	    update_depth(b);
 	    cout << endl;
 	    cout << "Tree depth: " << b.max_depth << endl;
 	    cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
