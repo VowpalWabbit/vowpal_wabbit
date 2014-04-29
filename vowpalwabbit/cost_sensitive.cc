@@ -154,12 +154,6 @@ namespace COST_SENSITIVE {
             f.class_index = (uint32_t)hashstring(p->parse_name[0], 0);
             if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
               f.x = FLT_MAX;
-
-            if ((f.class_index >= 1) && (f.class_index <= sd->k) && (f.x >= 0)) {}  // normal example
-            else if ((f.class_index >= 1) && (f.class_index <= sd->k) && (f.x <= -1)) {}   // label definition
-            else if ((f.class_index == 0) && (f.x <= -1)) {} // shared header
-            else
-              cerr << "invalid cost specification: " << f.class_index << endl;
           } else 
             cerr << "malformed cost specification on '" << (p->parse_name[0].begin) << "'" << endl;
         }
