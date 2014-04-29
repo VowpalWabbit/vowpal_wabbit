@@ -138,18 +138,17 @@ namespace COST_SENSITIVE {
       else {
         if (substring_eq(p->parse_name[0], "shared")) {
           if (p->parse_name.size() == 1) {
-            f.x = -1;
             f.class_index = 0;
+            f.x = -1.f;
           } else
             cerr << "shared feature vectors should not have costs" << endl;
         } else if (substring_eq(p->parse_name[0], "label")) {
           if (p->parse_name.size() == 2) {
-            f.class_index = (size_t)f.x;
-            f.x = -1;
+            f.class_index = 0;
+            // f.x is already set properly
           } else
             cerr << "label feature vectors must have label ids" << endl;
         } else {
-          f.class_index = 0;
           if (p->parse_name.size() == 1 || p->parse_name.size() == 2 || p->parse_name.size() == 3) {
             f.class_index = (uint32_t)hashstring(p->parse_name[0], 0);
             if (p->parse_name.size() == 1 && f.x >= 0)  // test examples are specified just by un-valued class #s
