@@ -120,18 +120,17 @@ namespace LabelDict {
 
   size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
   
-  bool ec_is_label_definition(example& ec) // label defs look like "___:-1"
+  bool ec_is_label_definition(example& ec) // label defs look like "0:___" or just "label:___"
   {
+    if (ec.indices.size() != 1) return false;
+    if (ec.indices[0] != 'l') return false;
     v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)ec.ld)->costs;
     for (size_t j=0; j<costs.size(); j++)
-      if (costs[j].x >= 0.) return false;
-    if (ec.indices.size() == 0) return false;
-    if (ec.indices.size() >  2) return false;
-    if (ec.indices[0] != 'l') return false;
+      if ((costs[j].class_index != 0) || (costs[j].x <= 0.)) return false;
     return true;    
   }
 
-  bool ec_is_example_header(example& ec)  // example headers look like "0:-1"
+  bool ec_is_example_header(example& ec)  // example headers look like "0:-1" or just "shared"
   {
     v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)ec.ld)->costs;
     if (costs.size() != 1) return false;
@@ -559,7 +558,7 @@ namespace LabelDict {
 
         v_array<COST_SENSITIVE::wclass> costs = ((COST_SENSITIVE::label*)l.ec_seq[i]->ld)->costs;
         for (size_t j=0; j<costs.size(); j++) {
-          size_t lab = costs[j].class_index;
+          size_t lab = (size_t)costs[j].x;
           LabelDict::set_label_features(l, lab, features);
         }
       }
