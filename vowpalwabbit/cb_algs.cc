@@ -358,7 +358,7 @@ namespace CB_ALGS
         else
           sprintf(label_buf," known");
 
-	CB::label& ld = (CB::label&)ec.ld;
+	CB::label& ld = *(CB::label*)ec.ld;
         if(!all.holdout_set_off && all.current_pass >= 1)
         {
           if(all.sd->holdout_sum_loss == 0. && all.sd->weighted_holdout_examples == 0.)

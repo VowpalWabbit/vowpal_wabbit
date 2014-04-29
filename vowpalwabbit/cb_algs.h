@@ -37,7 +37,7 @@ namespace CB_ALGS {
       all.scorer->predict(ec, index-1+base);
     ec.ld = ld;
 
-    return ld->prediction;
+    return simple_temp.prediction;
   }
 }
 
