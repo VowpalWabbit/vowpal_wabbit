@@ -979,7 +979,7 @@ vw* parse_args(int argc, char *argv[])
 
   if (vm.count("search") || vm_file.count("search") ) {
     if (!got_cs && !got_cb) {
-      if( vm_file.count("searc") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["search"]));
+      if( vm_file.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["search"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
 
       all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified

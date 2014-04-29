@@ -1,4 +1,4 @@
-#CXX = $(shell which clang++)
+CXX = $(shell which clang++)
 ifneq ($(CXX),)
   #$(warning Using clang: "$(CXX)")
   ARCH = -D__extern_always_inline=inline
