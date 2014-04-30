@@ -52,13 +52,12 @@ namespace Searn {
         return this->predict_f(this->priv, ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar, true);
     }
     
-    inline void     declare_loss(size_t predictions_since_last, float incr_loss)
+    inline void     loss(size_t predictions_since_last, float incr_loss)
     { return this->declare_loss_f(this->priv, predictions_since_last, incr_loss); }
 
     inline void     snapshot(size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
     { return this->snapshot_f(this->priv, index, tag, data_ptr, sizeof_data, used_for_prediction); }
 
-    inline bool          should_generate_output() { return this->should_generate_output_f(this->priv); }
     inline stringstream& output()                 { return this->output_stringstream_f(this->priv); }
     
     inline void  set_task_data(void*data)   { this->set_task_data_f(this->priv, data); }
@@ -72,7 +71,6 @@ namespace Searn {
     uint32_t (*predict_f)(searn_private*,example*,size_t,v_array<uint32_t>*,v_array<uint32_t>*,bool);
     void     (*declare_loss_f)(searn_private*,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(searn_private*,size_t,size_t,void*,size_t,bool);
-    bool     (*should_generate_output_f)(searn_private*);
     stringstream& (*output_stringstream_f)(searn_private*);
     void     (*set_task_data_f)(searn_private*,void*data);
     void*    (*get_task_data_f)(searn_private*);
@@ -90,7 +88,7 @@ namespace Searn {
     const char* task_name;
     void (*initialize)(searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
     void (*finish)(searn&);
-    void (*structured_predict)(searn&, example**,size_t);
+    void (*structured_predict)(searn&, std::vector<example*>);
   };
 
   LEARNER::learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
