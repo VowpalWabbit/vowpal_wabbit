@@ -65,11 +65,10 @@ namespace Searn {
     inline void* get_task_data()            { return this->get_task_data_f(this->priv); }
     inline void  set_options(uint32_t opts) { this->set_options_f(this->priv, opts); }
 
-    // structure that you must set, and any associated data you want to store
     searn_task*    task;
     searn_private* priv;
 
-    // functions that you should never call directly
+    // the actual implementation of the functions above, which you could call directly if you want, but using the above funcions is much easier!
     uint32_t (*predict_f)(searn_private*,example*,size_t,v_array<uint32_t>*,v_array<uint32_t>*,bool);
     void     (*declare_loss_f)(searn_private*,size_t,float);   // <0 means it was a test example!
     void     (*snapshot_f)(searn_private*,size_t,size_t,void*,size_t,bool);
@@ -88,6 +87,7 @@ namespace Searn {
   bool size_equal(size_t a, size_t b);
 
   struct searn_task {
+    const char* task_name;
     void (*initialize)(searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
     void (*finish)(searn&);
     void (*structured_predict)(searn&, example**,size_t);

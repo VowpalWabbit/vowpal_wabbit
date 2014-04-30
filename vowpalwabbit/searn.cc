@@ -43,6 +43,12 @@ namespace Searn
   const bool PRINT_UPDATE_EVERY_PASS =0;
   const bool PRINT_CLOCK_TIME =0;
 
+  searn_task* all_tasks[] = { &SequenceTask::task,
+                              &OneOfManyTask::task,
+                              &SequenceTask_DemoLDF::task,
+                              &SequenceSpanTask::task,
+                              NULL };   // must NULL terminate!
+
   string   neighbor_feature_space("neighbor");
 
   uint32_t OPT_AUTO_HISTORY = 1, OPT_AUTO_HAMMING_LOSS = 2, OPT_EXAMPLES_DONT_CHANGE = 4, OPT_IS_LDF = 8;
@@ -2188,7 +2194,6 @@ void print_update(vw& all, searn& srn)
     
     if (srn.task->finish != NULL) {
       srn.task->finish(srn);
-      free(srn.task);
     }
     
     srn.priv->train_labels.delete_v();
@@ -2559,33 +2564,18 @@ void print_update(vw& all, searn& srn)
     ss2 << srn->priv->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--search_total_nb_policies",   ss2.str());
 
     cdbg << "search current_policy = " << srn->priv->current_policy << " total_number_of_policies = " << srn->priv->total_number_of_policies << endl;
-    
-    searn_task* mytask = (searn_task*)calloc_or_die(1, sizeof(searn_task));
-    if (task_string.compare("sequence") == 0) {
-      mytask->initialize = SequenceTask::initialize;
-      mytask->finish = SequenceTask::finish;
-      mytask->structured_predict = SequenceTask::structured_predict;
-      all.p->emptylines_separate_examples = true;
-    } else if (task_string.compare("sequencespan") == 0) {
-      mytask->initialize = SequenceSpanTask::initialize;
-      mytask->finish = SequenceSpanTask::finish;
-      mytask->structured_predict = SequenceSpanTask::structured_predict;
-      all.p->emptylines_separate_examples = true;
-    } else if (task_string.compare("sequence_demoldf") == 0) {
-      mytask->initialize = SequenceTask_DemoLDF::initialize;
-      mytask->finish = SequenceTask_DemoLDF::finish;
-      mytask->structured_predict = SequenceTask_DemoLDF::structured_predict;
-      all.p->emptylines_separate_examples = true;
-    } else if (task_string.compare("oneofmany") == 0) {
-      mytask->initialize = OneOfManyTask::initialize;
-      mytask->finish = OneOfManyTask::finish;
-      mytask->structured_predict = OneOfManyTask::structured_predict;
-      all.p->emptylines_separate_examples = true;
-    } else {
+
+    srn->task = NULL;
+    for (searn_task** mytask = all_tasks; mytask != NULL; mytask++)
+      if (task_string.compare((*mytask)->task_name) == 0) {
+        srn->task = *mytask;
+        break;
+      }
+    if (srn->task == NULL) {
       cerr << "fail: unknown task for --search_task: " << task_string << endl;
       throw exception();
     }
-    srn->task = mytask;
+    all.p->emptylines_separate_examples = true;
 
     // default to OAA labels unless the task wants to override this!
     all.p->lp = MULTICLASS::mc_label; 
@@ -2746,3 +2736,4 @@ sys	0m0.208s
 
 
 */
+
