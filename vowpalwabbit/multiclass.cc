@@ -169,7 +169,7 @@ namespace MULTICLASS {
     }
  
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, ld->prediction, 0, ec.tag);
+      all.print(*sink, (float)ld->prediction, 0, ec.tag);
 
     MULTICLASS::print_update(all, ec);
   }

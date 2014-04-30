@@ -184,7 +184,7 @@ namespace ECT
     return e.last_pair + (eliminations-1);
   }
 
-  float ect_predict(vw& all, ect& e, learner& base, example& ec)
+  uint32_t ect_predict(vw& all, ect& e, learner& base, example& ec)
   {
     if (e.k == (size_t)1)
       return 1;
@@ -218,7 +218,7 @@ namespace ECT
 	else
 	  id = e.directions[id].left;
       }
-    return (float)(id+1);
+    return id+1;
   }
 
   bool member(size_t t, v_array<size_t> ar)

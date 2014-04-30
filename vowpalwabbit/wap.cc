@@ -188,9 +188,9 @@ namespace WAP {
     ec.ld = ld;
   }
 
-  size_t test(vw& all, wap& w, learner& base, example& ec)
+  uint32_t test(vw& all, wap& w, learner& base, example& ec)
   {
-    size_t prediction = 1;
+    uint32_t prediction = 1;
     float score = -FLT_MAX;
   
     COST_SENSITIVE::label* cost_label = (COST_SENSITIVE::label*)ec.ld; 
@@ -220,7 +220,7 @@ namespace WAP {
     COST_SENSITIVE::label* cost_label = (COST_SENSITIVE::label*)ec.ld;
     vw* all = w.all;
     
-    size_t prediction = test(*all, w, base, ec);
+    uint32_t prediction = test(*all, w, base, ec);
     ec.ld = cost_label;
     
     if (is_learn && cost_label->costs.size() > 0)

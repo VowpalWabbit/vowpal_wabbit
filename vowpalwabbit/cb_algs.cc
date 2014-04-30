@@ -143,7 +143,7 @@ namespace CB_ALGS
     CB::label* ld = (CB::label*)ec.ld;
 
     float min = FLT_MAX;
-    size_t argmin = 1;
+    uint32_t argmin = 1;
     //generate cost sensitive example
     cs_ld.costs.erase();  
     if( ld->costs.size() == 1) { //this is a typical example where we can perform all actions
@@ -205,7 +205,7 @@ namespace CB_ALGS
       }
     }
     
-    ld->prediction = (float)argmin;
+    ld->prediction = argmin;
   }
 
   template <bool is_learn>
@@ -458,7 +458,7 @@ namespace CB_ALGS
     for (size_t i = 0; i<all.final_prediction_sink.size(); i++)
       {
         int f = all.final_prediction_sink[i];
-        all.print(f, ld->prediction, 0, ec.tag);
+        all.print(f, (float)ld->prediction, 0, ec.tag);
       }
   
 

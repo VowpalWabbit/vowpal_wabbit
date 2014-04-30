@@ -29,7 +29,7 @@ typedef int socket_t;
 
 using namespace std;
 
-const int ar_buf_size = 1<<16;
+const size_t ar_buf_size = 1<<16;
 
 struct node_socks {
   std::string current_master;
@@ -53,20 +53,20 @@ struct node_socks {
 };
 
 
-template <class T> void addbufs(T* buf1, const T* buf2, const int n) {
+template <class T> void addbufs(T* buf1, const T* buf2, const size_t n) {
   for(int i = 0;i < n;i++) 
     buf1[i] += buf2[i];
 }
 
 void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks);
 
-template <class T> void pass_up(char* buffer, int left_read_pos, int right_read_pos, int& parent_sent_pos, socket_t parent_sock, int n) {
-  int my_bufsize = min(ar_buf_size, ((int)(floor(left_read_pos/((float)sizeof(T)))*sizeof(T)) - parent_sent_pos));
+template <class T> void pass_up(char* buffer, size_t left_read_pos, size_t right_read_pos, size_t& parent_sent_pos, socket_t parent_sock, size_t n) {
+  size_t my_bufsize = min(ar_buf_size, ((int)(floor(left_read_pos/((float)sizeof(T)))*sizeof(T)) - parent_sent_pos));
   my_bufsize = min(my_bufsize, ((int)(floor(right_read_pos/((float)sizeof(T)))*sizeof(T)) - parent_sent_pos));
   
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the parent
-    int write_size = send(parent_sock, buffer+parent_sent_pos, my_bufsize, 0);
+    int write_size = send(parent_sock, buffer+parent_sent_pos, (int)my_bufsize, 0);
     if(write_size < my_bufsize) 
       cerr<<"Write to parent failed "<<my_bufsize<<" "<<write_size<<" "<<parent_sent_pos<<" "<<left_read_pos<<" "<<right_read_pos<<endl ;
     parent_sent_pos += my_bufsize;
@@ -74,7 +74,7 @@ template <class T> void pass_up(char* buffer, int left_read_pos, int right_read_
 
 }
 
-template <class T>void reduce(char* buffer, const int n, const socket_t parent_sock, const socket_t* child_sockets) {
+template <class T>void reduce(char* buffer, const size_t n, const socket_t parent_sock, const socket_t* child_sockets) {
 
   fd_set fds;
   FD_ZERO(&fds);
@@ -84,10 +84,10 @@ template <class T>void reduce(char* buffer, const int n, const socket_t parent_s
     FD_SET(child_sockets[1],&fds);
 
   socket_t max_fd = max(child_sockets[0],child_sockets[1])+1;
-  int child_read_pos[2] = {0,0}; //First unread float from left and right children
+  size_t child_read_pos[2] = {0,0}; //First unread float from left and right children
   int child_unprocessed[2] = {0,0}; //The number of bytes sent by the child but not yet added to the buffer
   char child_read_buf[2][ar_buf_size+sizeof(T)-1];
-  int parent_sent_pos = 0; //First unsent float to parent
+  size_t parent_sent_pos = 0; //First unsent float to parent
   //parent_sent_pos <= left_read_pos
   //parent_sent_pos <= right_read_pos
   
@@ -153,10 +153,10 @@ template <class T>void reduce(char* buffer, const int n, const socket_t parent_s
   
 }
 
-void broadcast(char* buffer, const int n, const socket_t parent_sock, const socket_t * child_sockets);
+void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const socket_t * child_sockets);
 
 
-template <class T> void all_reduce(T* buffer, const int n, const std::string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks) 
+template <class T> void all_reduce(T* buffer, const size_t n, const std::string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks) 
 {
   if(master_location != socks.current_master) 
     all_reduce_init(master_location, unique_id, total, node, socks);

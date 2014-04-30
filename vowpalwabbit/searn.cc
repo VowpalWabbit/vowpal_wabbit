@@ -2306,8 +2306,8 @@ void print_update(vw& all, searn& srn)
     bool* bg = (bool*)malloc((A+1)*(A+1) * sizeof(bool));
     int rd,from,to,count=0;
     while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0) {
-      if ((from < 0) || (from > A)) { cerr << "warning: ignoring transition from " << from << " because it's out of the range [0," << A << "]" << endl; }
-      if ((to   < 0) || (to   > A)) { cerr << "warning: ignoring transition to "   << to   << " because it's out of the range [0," << A << "]" << endl; }
+      if ((from < 0) || (from > (int)A)) { cerr << "warning: ignoring transition from " << from << " because it's out of the range [0," << A << "]" << endl; }
+      if ((to   < 0) || (to   > (int)A)) { cerr << "warning: ignoring transition to "   << to   << " because it's out of the range [0," << A << "]" << endl; }
       bg[from * (A+1) + to] = true;
       count++;
     }
@@ -2320,7 +2320,7 @@ void print_update(vw& all, searn& srn)
       
       for (size_t to=0; to<A; to++)
         if (bg[from * (A+1) + to]) {
-          COST_SENSITIVE::wclass c = { FLT_MAX, to, 0., 0. };
+          COST_SENSITIVE::wclass c = { FLT_MAX, (uint32_t)to, 0., 0. };
           costs.push_back(c);
         }
 
@@ -2581,7 +2581,7 @@ void print_update(vw& all, searn& srn)
     all.p->lp = MULTICLASS::mc_label; 
     srn->task->initialize(*srn, srn->priv->A, opts, vm, vm_file);
 
-    if (vm.count("search_allowed_transitions"))     read_allowed_transitions(srn->priv->A, vm["search_allowed_transitions"].as<string>().c_str());
+    if (vm.count("search_allowed_transitions"))     read_allowed_transitions((uint32_t)srn->priv->A, vm["search_allowed_transitions"].as<string>().c_str());
     
     // set up auto-history if they want it
     if (srn->priv->auto_history) {

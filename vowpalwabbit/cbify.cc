@@ -42,7 +42,7 @@ namespace CBIFY {
     return (uint32_t)floor(frand48() * data.bags);
   }
 
-  float loss(uint32_t label, float final_prediction)
+  float loss(uint32_t label, uint32_t final_prediction)
   {
     if (label != final_prediction)
       return 1.;
@@ -57,7 +57,7 @@ namespace CBIFY {
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
-	ld->prediction = (float)do_uniform(data);
+	ld->prediction = (uint32_t)do_uniform(data);
 	ec.loss = loss(ld->label, ld->prediction);
 	data.tau--;
 	uint32_t action = ld->prediction;
@@ -99,7 +99,7 @@ namespace CBIFY {
     else
       {
 	action = do_uniform(data);
-	CB::cb_class l = {loss(ld->label, (float)action), 
+	CB::cb_class l = {loss(ld->label, action), 
 			  action, base_prob};
 	if (action == ld->prediction)
 	  l.probability = 1.f - data.epsilon + base_prob;
@@ -109,7 +109,7 @@ namespace CBIFY {
     if (is_learn)
       base.learn(ec);
     
-    ld->prediction = (float)action;
+    ld->prediction = action;
     ec.loss = loss(ld->label, ld->prediction);
     ec.ld = ld;
   }
@@ -138,7 +138,7 @@ namespace CBIFY {
     if (is_learn)
       {
 	float probability = (float)data.count[action] / (float)data.bags;
-	CB::cb_class l = {loss(ld->label, (float)action), 
+	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
 	for (size_t i = 0; i < data.bags; i++)
@@ -250,7 +250,7 @@ namespace CBIFY {
       {
 	data.cb_label.costs.erase();
 	float probability = (float)data.count[action-1];
-	CB::cb_class l = {loss(ld->label, (float)action), 
+	CB::cb_class l = {loss(ld->label, action), 
 			  action, probability};
 	data.cb_label.costs.push_back(l);
 	ec.ld = &(data.cb_label);
