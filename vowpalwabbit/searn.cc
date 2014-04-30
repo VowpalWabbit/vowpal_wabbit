@@ -123,6 +123,7 @@ namespace Searn
     bool should_produce_string;
     stringstream *pred_string;
     stringstream *truth_string;
+    stringstream *bad_string_stream;
     bool printed_output_header;
 
     size_t t;              // the current time step
@@ -2069,8 +2070,9 @@ void print_update(vw& all, searn& srn)
 
   bool searn_should_generate_output(searn_private* priv) { return priv->should_produce_string; }
   stringstream& searn_output_streamstream(searn_private* priv) {
-    assert(priv->should_produce_string);
-    if (priv->state == GET_TRUTH_STRING)
+    if (! priv->should_produce_string)
+      return *(priv->bad_string_stream);
+    else if (priv->state == GET_TRUTH_STRING)
       return *(priv->truth_string);
     else
       return *(priv->pred_string);
@@ -2094,7 +2096,6 @@ void print_update(vw& all, searn& srn)
     srn.predict_f = searn_predict;
     srn.declare_loss_f = searn_declare_loss;
     srn.snapshot_f = searn_snapshot;
-    srn.should_generate_output_f = searn_should_generate_output;
     srn.output_stringstream_f = searn_output_streamstream;
     srn.set_task_data_f = searn_set_task_data;
     srn.get_task_data_f = searn_get_task_data;
@@ -2137,6 +2138,9 @@ void print_update(vw& all, searn& srn)
 
     srn.priv->truth_string = new stringstream();
     srn.priv->pred_string  = new stringstream();
+    srn.priv->bad_string_stream = new stringstream();
+    srn.priv->bad_string_stream->clear(srn.priv->bad_string_stream->badbit);
+    
     srn.priv->should_produce_string = false;
 
     srn.priv->printed_output_header = false;
@@ -2158,6 +2162,7 @@ void print_update(vw& all, searn& srn)
 
     delete srn.priv->truth_string;
     delete srn.priv->pred_string;
+    delete srn.priv->bad_string_stream;
     delete srn.priv->neighbor_features_string;
     srn.priv->neighbor_features.erase();
     srn.priv->neighbor_features.delete_v();
