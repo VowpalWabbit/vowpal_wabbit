@@ -102,7 +102,7 @@ namespace SequenceSpanTask {
 //     *       -> n even  (anything in BEGIN X)
 //     n even  -> n+1     (BEGIN X to IN X)
 //     n odd>1 -> n       (IN X to IN X)
-// the format for the BILOU (begin, inside, last, out, unit-ec.size()gth) encoding is:
+// the format for the BILOU (begin, inside, last, out, unit-length) encoding is:
 //     label     description
 //     1         out
 //     n>1: let m=n-2:
@@ -115,7 +115,7 @@ namespace SequenceSpanTask {
 //     m%4=0 -> 1; 2, 6, 8, ..., 3, 7, 9, ...         unit-X to { out, unit-Y, begin-Y }    2, 6, 10, 14, ...
 //     m%4=1 -> m+1, m+2                              begin-X to { in-X, last-X }           3, 7, 11, 15, ...
 //     m%4=2 -> m, m+1                                in-X to { in-X, last-X }              4, 8, 12, 16, ...
-//     m%4=3 -> 1; 2, 6, 8, ...; 3, 7, 9, ...         last-X to { out, unit-Y, begin-Y }     5, 9, 13, 17, ...
+//     m%4=3 -> 1; 2, 6, 8, ...; 3, 7, 9, ...         last-X to { out, unit-Y, begin-Y }    5, 9, 13, 17, ...
 
   using namespace Searn;
 
