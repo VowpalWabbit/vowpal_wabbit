@@ -21,21 +21,15 @@ namespace SequenceTask {
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
-  void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
+  void structured_predict(searn& srn, example**ec, size_t len) {
     for (size_t i=0; i<len; i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
       MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
       size_t prediction = srn.predict(ec[i], NULL, y->label);
 
-      // if (srn.should_generate_output)
-      //   srn.output << prediction << ' ';
-
-      // string prediction_string = lots of work;
-      // srn.output << prediction_string << ' ';
-    
-      if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
+      if (srn.should_generate_output())
+        srn.output() << prediction << ' ';
     }
   }
 }
@@ -52,7 +46,7 @@ namespace OneOfManyTask {
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
-  void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
+  void structured_predict(searn& srn, example**ec, size_t len) {
     bool predicted_true_yet = false;
     bool output_has_true    = false;
     for (size_t i=0; i<len; i++) {
@@ -88,8 +82,8 @@ namespace OneOfManyTask {
       }
       srn.declare_loss(1, cur_loss);
 
-      if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
+      if (srn.should_generate_output())
+        srn.output() << prediction << ' ';
     }
   }
 }
@@ -205,7 +199,7 @@ namespace SequenceSpanTask {
     delete my_task_data;
   }
 
-  void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
+  void structured_predict(searn& srn, example**ec, size_t len) {
     task_data * my_task_data = (task_data*)srn.task_data;
     uint32_t last_prediction = 1;
     v_array<uint32_t> * y_allowed = &(my_task_data->y_allowed);
@@ -234,10 +228,10 @@ namespace SequenceSpanTask {
       last_prediction = srn.predict(ec[i], y_allowed, y->label);
 
       uint32_t printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
-      uint32_t printed_truth      = (my_task_data->encoding == BIO) ? y->label        : bilou_to_bio(y->label);
+      //uint32_t printed_truth      = (my_task_data->encoding == BIO) ? y->label        : bilou_to_bio(y->label);
       
-      if (output_ss) (*output_ss) << printed_prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : printed_truth) << ' ';
+      if (srn.should_generate_output())
+        srn.output() << printed_prediction << ' ';
     }
 
     if (my_task_data->encoding == BILOU)  // TODO: move this out of here!
@@ -284,7 +278,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     free(data);
   }
 
-  void structured_predict(searn& srn, example**ec, size_t len, stringstream*output_ss, stringstream*truth_ss) {
+  void structured_predict(searn& srn, example**ec, size_t len) {
     task_data *data = (task_data*)srn.task_data;
     
     for (size_t i=0; i<len; i++) { //save state for optimization
@@ -308,8 +302,8 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
       size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, y->label - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       
-      if (output_ss) (*output_ss) << prediction << ' ';
-      if (truth_ss ) (*truth_ss ) << (MULTICLASS::label_is_test(y) ? '?' : y->label) << ' ';
+      if (srn.should_generate_output())
+        srn.output() << prediction << ' ';
     }
   }
 
