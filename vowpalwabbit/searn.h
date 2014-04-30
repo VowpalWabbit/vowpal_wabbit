@@ -25,6 +25,10 @@ namespace Searn {
   struct searn_private;
   struct searn_task;
 
+  // options:
+  extern uint32_t OPT_AUTO_HISTORY, OPT_AUTO_HAMMING_LOSS, OPT_EXAMPLES_DONT_CHANGE, OPT_IS_LDF;
+
+
   struct searn {
     // functions that you will call
 
@@ -57,14 +61,12 @@ namespace Searn {
     inline bool          should_generate_output() { return this->should_generate_output_f(this->priv); }
     inline stringstream& output()                 { return this->output_stringstream_f(this->priv); }
     
-    // structure that you must set, and any associated data you want to store
-    searn_task* task;
-    void* task_data;
-    bool auto_history;          // do you want us to automatically add history features?
-    bool auto_hamming_loss;     // if you're just optimizing hamming loss, we can do it for you!
-    bool examples_dont_change;  // set to true if you don't do any internal example munging
-    bool is_ldf;                // set to true if you'll generate LDF data
+    inline void  set_task_data(void*data)   { this->set_task_data_f(this->priv, data); }
+    inline void* get_task_data()            { return this->get_task_data_f(this->priv); }
+    inline void  set_options(uint32_t opts) { this->set_options_f(this->priv, opts); }
 
+    // structure that you must set, and any associated data you want to store
+    searn_task*    task;
     searn_private* priv;
 
     // functions that you should never call directly
@@ -73,6 +75,9 @@ namespace Searn {
     void     (*snapshot_f)(searn_private*,size_t,size_t,void*,size_t,bool);
     bool     (*should_generate_output_f)(searn_private*);
     stringstream& (*output_stringstream_f)(searn_private*);
+    void     (*set_task_data_f)(searn_private*,void*data);
+    void*    (*get_task_data_f)(searn_private*);
+    void     (*set_options_f)(searn_private*,uint32_t opts);
   };
 
   template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string);

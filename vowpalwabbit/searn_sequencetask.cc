@@ -13,15 +13,18 @@ namespace SequenceTask {
   using namespace Searn;
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.task_data            = NULL;  // we don't need any of our own data
-    srn.auto_history         = true;  // automatically add history features to our examples, please
-    srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
-    srn.examples_dont_change = true;  // we don't do any internal example munging
+    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare_loss
+                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
   void structured_predict(searn& srn, example**ec, size_t len) {
+    // for (size_t i=1; i<len; i++)
+    //   if (ec[i] != ec[i-1]+1)
+    //     cerr << "nope: i=" << i << "/" << len << " and ec[i] = " << ec[i] << " and ec[i-1] = " << ec[i-1] << endl;
+
     for (size_t i=0; i<len; i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
@@ -38,10 +41,8 @@ namespace OneOfManyTask {
   using namespace Searn;
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.task_data            = NULL;  // we don't need any of our own data
-    srn.auto_history         = true;  // automatically add history features to our examples, please
-    srn.auto_hamming_loss    = false; // we will compute our own loss
-    srn.examples_dont_change = true;  // we don't do any internal example munging
+    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
@@ -185,22 +186,22 @@ namespace SequenceSpanTask {
       my_task_data->only_two_allowed.push_back(0);
       my_task_data->only_two_allowed.push_back(0);
     }
-    
-    srn.task_data            = my_task_data;
-    srn.auto_history         = true;  // automatically add history features to our examples, please
-    srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won'td eclare_loss
-    srn.examples_dont_change = true;  // we don't do any internal example munging
+
+    srn.set_task_data(my_task_data);
+    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare_loss
+                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) {
-    task_data * my_task_data = (task_data*)srn.task_data;
+    task_data * my_task_data = (task_data*)srn.get_task_data();
     my_task_data->y_allowed.delete_v();
     my_task_data->only_two_allowed.delete_v();
     delete my_task_data;
   }
 
   void structured_predict(searn& srn, example**ec, size_t len) {
-    task_data * my_task_data = (task_data*)srn.task_data;
+    task_data * my_task_data = (task_data*)srn.get_task_data();
     uint32_t last_prediction = 1;
     v_array<uint32_t> * y_allowed = &(my_task_data->y_allowed);
 
@@ -262,16 +263,15 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     task_data* data = (task_data*)calloc_or_die(1, sizeof(task_data));
     data->ldf_examples = ldf_examples;
     data->num_actions  = num_actions;
-    
-    srn.task_data            = data;
-    srn.auto_history         = true;  // automatically add history features to our examples, please
-    srn.auto_hamming_loss    = true;  // please just use hamming loss on individual predictions -- we won't declare_loss
-    srn.examples_dont_change = false; // we do internal example munging -- we use the same memory space (data->ldf_examples) for everything
-    srn.is_ldf               = true;  // we generate ldf examples
+
+    srn.set_task_data(data);
+    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare_loss
+                     OPT_IS_LDF               );   // we generate ldf examples
   }
 
   void finish(searn& srn) {
-    task_data *data = (task_data*)srn.task_data;
+    task_data *data = (task_data*)srn.get_task_data();
     for (size_t a=0; a<data->num_actions; a++)
       dealloc_example(COST_SENSITIVE::cs_label.delete_label, data->ldf_examples[a]);
     free(data->ldf_examples);
@@ -279,7 +279,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   }
 
   void structured_predict(searn& srn, example**ec, size_t len) {
-    task_data *data = (task_data*)srn.task_data;
+    task_data *data = (task_data*)srn.get_task_data();
     
     for (size_t i=0; i<len; i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);

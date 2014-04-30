@@ -45,7 +45,7 @@ namespace Searn
 
   string   neighbor_feature_space("neighbor");
 
-
+  uint32_t OPT_AUTO_HISTORY = 1, OPT_AUTO_HAMMING_LOSS = 2, OPT_EXAMPLES_DONT_CHANGE = 4, OPT_IS_LDF = 8;
   enum SearnState { NONE, INIT_TEST, INIT_TRAIN, LEARN, GET_TRUTH_STRING, BEAM_INIT, BEAM_ADVANCE, BEAM_PLAYOUT };
 
   typedef uint32_t* history;
@@ -88,6 +88,12 @@ namespace Searn
   struct searn_private {
     vw* all;
 
+    void* task_data;
+    bool auto_history;          // do you want us to automatically add history features?
+    bool auto_hamming_loss;     // if you're just optimizing hamming loss, we can do it for you!
+    bool examples_dont_change;  // set to true if you don't do any internal example munging
+    bool is_ldf;                // set to true if you'll generate LDF data
+    
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     SearnState state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
@@ -392,7 +398,7 @@ namespace Searn
 
       COST_SENSITIVE::label *ret = (COST_SENSITIVE::label*)dst;
 
-      if (srn.is_ldf) {
+      if (srn.priv->is_ldf) {
         if (ret->costs.size() > num_ec)
           ret->costs.resize(num_ec);
         else if (ret->costs.size() < num_ec)
@@ -422,7 +428,7 @@ namespace Searn
       // TODO: speed this up as above
       CB::label *ret = (CB::label*)dst;
       ret->costs.erase();
-      if (srn.is_ldf) {
+      if (srn.priv->is_ldf) {
         for (uint32_t i=0; i<num_ec; i++) {
           CB::cb_class cost = { FLT_MAX, i, 0. };
           ret->costs.push_back(cost);
@@ -445,7 +451,7 @@ namespace Searn
   }
 
   uint32_t get_any_label(searn& srn, v_array<uint32_t> *yallowed) {
-    if (srn.is_ldf)
+    if (srn.priv->is_ldf)
       return 0;
     else if (yallowed == NULL)
       return 1;
@@ -610,22 +616,22 @@ namespace Searn
       } else 
         return choose_random<uint32_t>(*ystar);
     } else {        // learned policy
-      if (!srn.is_ldf) {  // single example
+      if (!srn.priv->is_ldf) {  // single example
         if (srn.priv->hinfo.length>0) {cdbg << "add_history_to_example: srn.priv->t=" << srn.priv->t << " h=" << srn.priv->rollout_action.begin[srn.priv->t] << endl;}
         if (srn.priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.priv->t+1; i++) cdbg << " " << srn.priv->rollout_action.begin[i]; cdbg << " ], len=" << srn.priv->rollout_action.size() << endl;}
-        if (srn.auto_history) add_history_to_example(all, srn.priv->hinfo, ecs, srn.priv->rollout_action.begin+srn.priv->t);
+        if (srn.priv->auto_history) add_history_to_example(all, srn.priv->hinfo, ecs, srn.priv->rollout_action.begin+srn.priv->t);
         size_t action = single_prediction_notLDF<T>(all, srn, base, *ecs, valid_labels, pol, allow_exploration);
-        if (srn.auto_history) remove_history_from_example(all, srn.priv->hinfo, ecs);
+        if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ecs);
         return (uint32_t)action;
       } else {
-        if (srn.auto_history)
+        if (srn.priv->auto_history)
           for (size_t a=0; a<num_ec; a++) {
             cdbg << "class_index = " << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index << ":" << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].x << endl;
             add_history_to_example(all, srn.priv->hinfo, &ecs[a], srn.priv->rollout_action.begin+srn.priv->t, a * history_constant);
           }
                                    //((OAA::mc_label*)ecs[a].ld)->label);
         size_t action = single_prediction_LDF(all, base, ecs, num_ec, (COST_SENSITIVE::label*)valid_labels, pol, allow_exploration);
-        if (srn.auto_history)
+        if (srn.priv->auto_history)
           for (size_t a=0; a<num_ec; a++)
             remove_history_from_example(all, srn.priv->hinfo, &ecs[a]);
 
@@ -702,7 +708,7 @@ namespace Searn
     searn* srn=(searn*)all.searnstr;
 
     // check ldf sanity
-    if (!srn->is_ldf) {
+    if (!srn->priv->is_ldf) {
       assert(num_ec == 0); // searntask is trying to define an ldf example in a non-ldf problem
     } else { // is LDF
       assert(num_ec != 0); // searntask is trying to define a non-ldf example in an ldf problem" << endl;
@@ -716,8 +722,8 @@ namespace Searn
       uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, false);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
       cdbg << "predict @" << srn->priv->t << " pol=" << pol << " a=" << a << endl;
-      uint32_t a_name = (! srn->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index;
-      if (srn->auto_history) srn->priv->rollout_action.push_back(a_name);
+      uint32_t a_name = (! srn->priv->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index;
+      if (srn->priv->auto_history) srn->priv->rollout_action.push_back(a_name);
       srn->priv->t++;
       return a;
     } else if (srn->priv->state == GET_TRUTH_STRING) {
@@ -739,9 +745,9 @@ namespace Searn
       //if (! ((srn->priv->current_policy == 0) || (a == a_opt))) { /*UNDOME*/cdbg << "FAIL!!!"<<endl;}
       srn->priv->train_action_ids.push_back(a);
       srn->priv->train_labels.push_back(copy_labels(*srn, srn->priv->valid_labels));
-      uint32_t a_name = (! srn->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index;
+      uint32_t a_name = (! srn->priv->is_ldf) ? a : ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index;
       srn->priv->train_action.push_back(a_name);
-      if (srn->auto_history) srn->priv->rollout_action.push_back(a_name);
+      if (srn->priv->auto_history) srn->priv->rollout_action.push_back(a_name);
       srn->priv->t++;
       return a;
     } else if (srn->priv->state == LEARN) {
@@ -753,13 +759,13 @@ namespace Searn
       } else if (srn->priv->t == srn->priv->learn_t) {
         if (srn->priv->learn_example_len == 0) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
-          if (srn->examples_dont_change) {
+          if (srn->priv->examples_dont_change) {
             srn->priv->learn_example_ref = ecs;
             srn->priv->learn_example_len = num_to_copy;
             cdbg << "examples_dont_change so setting ref to ecs, len=" << num_to_copy << " and t=" << srn->priv->t << endl;
           } else {
-            size_t label_size = srn->is_ldf ? sizeof(COST_SENSITIVE::label) : sizeof(MULTICLASS::mc_label);
-            void (*label_copy_fn)(void*&,void*) = srn->is_ldf ? COST_SENSITIVE::cs_label.copy_label : NULL;
+            size_t label_size = srn->priv->is_ldf ? sizeof(COST_SENSITIVE::label) : sizeof(MULTICLASS::mc_label);
+            void (*label_copy_fn)(void*&,void*) = srn->priv->is_ldf ? COST_SENSITIVE::cs_label.copy_label : NULL;
             assert(num_to_copy < MAX_BRANCHING_FACTOR);
             cdbg << "copying " << num_to_copy << " items to learn_example_copy" << endl;
             for (size_t n=0; n<num_to_copy; n++)
@@ -771,8 +777,8 @@ namespace Searn
         srn->priv->snapshot_is_equivalent_to_t = (size_t)-1;
         srn->priv->snapshot_could_match = true;
         srn->priv->t++;
-        uint32_t a_name = (! srn->is_ldf) ? srn->priv->learn_a : ((COST_SENSITIVE::label*)ecs[srn->priv->learn_a].ld)->costs[0].class_index;
-        if (srn->auto_history) srn->priv->rollout_action.push_back(a_name);
+        uint32_t a_name = (! srn->priv->is_ldf) ? srn->priv->learn_a : ((COST_SENSITIVE::label*)ecs[srn->priv->learn_a].ld)->costs[0].class_index;
+        if (srn->priv->auto_history) srn->priv->rollout_action.push_back(a_name);
         return srn->priv->learn_a;
       } else { // t > learn_t
         size_t this_a = 0;
@@ -805,8 +811,8 @@ namespace Searn
           // TODO: implement me
           throw exception();
         }
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
-        if (srn->auto_history) srn->priv->rollout_action.push_back(a_name);
+        uint32_t a_name = (! srn->priv->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
+        if (srn->priv->auto_history) srn->priv->rollout_action.push_back(a_name);
         return (uint32_t)this_a;
       }
     } else if (srn->priv->state == BEAM_INIT) {
@@ -823,8 +829,8 @@ namespace Searn
       }
       srn->priv->t++;
       uint32_t this_a = get_any_label(*srn, yallowed);
-      uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
-      if (srn->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t);
+      uint32_t a_name = (! srn->priv->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
+      if (srn->priv->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t);
       cdbg << "A rollout_action.push_back(" << a_name << ", @ " << (srn->priv->t) << ")" << endl;
       if (srn->priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->priv->t+1; i++) cdbg << " " << srn->priv->rollout_action.begin[i]; cdbg << " ], len=" << srn->priv->rollout_action.size() << endl;}
       return this_a;
@@ -833,12 +839,12 @@ namespace Searn
         srn->priv->t++;
         uint32_t this_a = (uint32_t)srn->priv->cur_beam_hyp->action_taken;
         get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
-        if (!srn->is_ldf) {
+        if (!srn->priv->is_ldf) {
           this_a = ((COST_SENSITIVE::label*)srn->priv->valid_labels)->costs[this_a].class_index;
           cdbg << "valid_labels = ["; for (COST_SENSITIVE::wclass*wc=((COST_SENSITIVE::label*)srn->priv->valid_labels)->costs.begin; wc!= ((COST_SENSITIVE::label*)srn->priv->valid_labels)->costs.end; ++wc) cdbg << " " << wc->class_index; cdbg << " ]" << endl;
         }
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
-        if (srn->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t);
+        uint32_t a_name = (! srn->priv->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
+        if (srn->priv->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t);
         cdbg << "B rollout_action.push_back(" << a_name << ", @ " << (srn->priv->t) << ")" << endl;
         if (srn->priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->priv->t+1; i++) cdbg << " " << srn->priv->rollout_action.begin[i]; cdbg << " ], len=" << srn->priv->rollout_action.size() << endl;}
         return this_a;
@@ -851,8 +857,8 @@ namespace Searn
         srn->priv->cur_beam_hyp->filled_in_prediction = true;
         srn->priv->t++;
         uint32_t this_a = get_any_label(*srn, yallowed);
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
-        if (srn->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t);
+        uint32_t a_name = (! srn->priv->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
+        if (srn->priv->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t);
         cdbg << "C rollout_action.push_back(" << a_name << ", @ " << (srn->priv->t) << ")" << endl;
         if (srn->priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->priv->t+1; i++) cdbg << " " << srn->priv->rollout_action.begin[i]; cdbg << " ], len=" << srn->priv->rollout_action.size() << endl;}
         return this_a;
@@ -860,8 +866,8 @@ namespace Searn
         // TODO: check if auto history, etc., is necessary here
         srn->priv->t++;
         uint32_t this_a = get_any_label(*srn, yallowed);
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
-        if (srn->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t);
+        uint32_t a_name = (! srn->priv->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
+        if (srn->priv->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t);
         cdbg << "D rollout_action.push_back(" << a_name << ", @ " << (srn->priv->t) << ")" << endl;
         //cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->priv->t+1; i++) cdbg << " " << srn->priv->rollout_action.begin[i]; cdbg << " ], len=" << srn->priv->rollout_action.size() << endl;
         return this_a;
@@ -872,10 +878,10 @@ namespace Searn
       srn->priv->t++;
       if (srn->priv->rollout_all_actions) {
         uint32_t this_a = srn->priv->beam_final_action_sequence.pop();
-        if (!srn->is_ldf)
+        if (!srn->priv->is_ldf)
           this_a = ((COST_SENSITIVE::label*)srn->priv->valid_labels)->costs[this_a].class_index;
-        uint32_t a_name = (! srn->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
-        if (srn->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t - 1);
+        uint32_t a_name = (! srn->priv->is_ldf) ? (uint32_t)this_a : ((COST_SENSITIVE::label*)ecs[this_a].ld)->costs[0].class_index;
+        if (srn->priv->auto_history) push_at(srn->priv->rollout_action, a_name, srn->priv->t - 1);
         return this_a;
       } else {
         throw exception();
@@ -926,7 +932,7 @@ namespace Searn
     else
       a = searn_predict_without_loss<CB::label>(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
 
-    if (srn->auto_hamming_loss) {
+    if (srn->priv->auto_hamming_loss) {
       float this_loss = 0.;
       if (ystar) {
         if (ystar_is_uint32t &&   // single allowed ystar
@@ -1139,7 +1145,7 @@ namespace Searn
     assert(tag >= 1);
     if (sizeof_data == 0) return;
 
-    if (srn->auto_history && (srn->priv->hinfo.length > 0) && (tag == 1)) { // first, take care of auto-history
+    if (srn->priv->auto_history && (srn->priv->hinfo.length > 0) && (tag == 1)) { // first, take care of auto-history
       size_t history_size = sizeof(uint32_t) * srn->priv->hinfo.length;
       if (srn->priv->state == INIT_TRAIN) {
         if (((srn->priv->snapshot_data.size() == 0) || (srn->priv->snapshot_data.last().index < index)))
@@ -1250,13 +1256,13 @@ namespace Searn
         ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
     cdbg << "losses.size = " << losses.size() << " = {"; for (size_t i=0; i<losses.size(); i++) cdbg << " " << ((COST_SENSITIVE::label*)labels)->costs[i].x; cdbg << " }" << endl;
 
-    if (!srn.is_ldf) {
+    if (!srn.priv->is_ldf) {
       void* old_label = ec[0].ld;
       ec[0].ld = labels;
-      if (srn.auto_history) add_history_to_example(all, srn.priv->hinfo, ec, srn.priv->rollout_action.begin+srn.priv->learn_t);
+      if (srn.priv->auto_history) add_history_to_example(all, srn.priv->hinfo, ec, srn.priv->rollout_action.begin+srn.priv->learn_t);
       ec[0].in_use = true;
       base.learn(ec[0], srn.priv->current_policy);
-      if (srn.auto_history) remove_history_from_example(all, srn.priv->hinfo, ec);
+      if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ec);
       ec[0].ld = old_label;
       srn.priv->total_examples_generated++;
     } else { // isLDF
@@ -1270,7 +1276,7 @@ namespace Searn
         lab->costs.push_back(c);
         cdbg << "learn t = " << srn.priv->learn_t << " cost = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].x << " action = " << ((COST_SENSITIVE::label*)ec[a].ld)->costs[0].class_index << endl;
         //cdbg << endl << "this_example = "; GD::print_audit_features(all, &ec[a]);
-        if (srn.auto_history)
+        if (srn.priv->auto_history)
           add_history_to_example(all, srn.priv->hinfo, &ec[a], srn.priv->rollout_action.begin+srn.priv->learn_t, a * history_constant);
         //((COST_SENSITIVE::label*)ec[a].ld)->costs[0].class_index);
         ec[a].in_use = true;
@@ -1279,7 +1285,7 @@ namespace Searn
       cdbg << "learn: generate empty example" << endl;
       base.learn(*srn.priv->empty_example);
       //cdbg << "learn done " << repeat << endl;
-      if (srn.auto_history)
+      if (srn.priv->auto_history)
         for (size_t a=0; a<len; a++)
           remove_history_from_example(all, srn.priv->hinfo, &ec[a]);
       srn.priv->total_examples_generated++;
@@ -1304,7 +1310,7 @@ namespace Searn
     srn.priv->num_features = 0;
     srn.priv->train_action.erase();
     srn.priv->train_action_ids.erase();
-    if (srn.auto_history) clear_rollout_actions(srn);
+    if (srn.priv->auto_history) clear_rollout_actions(srn);
 
     srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
     srn.priv->snapshot_could_match = false;
@@ -1571,7 +1577,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
       srn.priv->state = INIT_TRAIN;
       srn.priv->train_action.erase();
       srn.priv->train_action_ids.erase();
-      if (srn.auto_history) clear_rollout_actions(srn);
+      if (srn.priv->auto_history) clear_rollout_actions(srn);
       srn.priv->t = 0;
       srn.priv->loss_last_step = 0;
       clear_snapshot(all, srn, true);
@@ -1601,7 +1607,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
 
         cdbg << "t=" << tid << ", labelset_size=" << labelset_size(srn, aset) << endl;
         for (size_t i=0; i<labelset_size(srn, aset); i++) {
-          if (srn.auto_history) {
+          if (srn.priv->auto_history) {
             // startup the rollout at the train actions
             clear_rollout_actions(srn);
             //srn.priv->rollout_action.resize(srn.priv->hinfo.length + srn.priv->T);
@@ -1634,7 +1640,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
         }
 
         if (srn.priv->learn_example_len != 0) {
-          example * ptr = srn.examples_dont_change ? srn.priv->learn_example_ref : srn.priv->learn_example_copy;
+          example * ptr = srn.priv->examples_dont_change ? srn.priv->learn_example_ref : srn.priv->learn_example_copy;
           cdbg << "generate_training_example on " << srn.priv->learn_example_len << " learn_example_copy items" << endl;
           // cdbg << "losses:";
           // for (size_t n=0; n<srn.priv->learn_example_len; n++) {
@@ -1656,11 +1662,11 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
           // }
           // cdbg << endl;
 
-          if (!srn.examples_dont_change) {
+          if (!srn.priv->examples_dont_change) {
             cdbg << "deleting labels for " << srn.priv->learn_example_len << " learn_example_copy items" << endl;
             for (size_t n=0; n<srn.priv->learn_example_len; n++) 
               //cdbg << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &srn.priv->learn_example_copy[n]);
-	      if (srn.is_ldf) COST_SENSITIVE::cs_label.delete_label(srn.priv->learn_example_copy[n].ld);
+	      if (srn.priv->is_ldf) COST_SENSITIVE::cs_label.delete_label(srn.priv->learn_example_copy[n].ld);
               else                MULTICLASS::mc_label.delete_label(srn.priv->learn_example_copy[n].ld);
           }
         } else {
@@ -2052,6 +2058,19 @@ void print_update(vw& all, searn& srn)
       return *(priv->pred_string);
   }
 
+  void  searn_set_task_data(searn_private* priv, void* data) { priv->task_data = data; }
+  void* searn_get_task_data(searn_private* priv) { return priv->task_data; }
+  void  searn_set_options(searn_private* priv, uint32_t opts) {
+    if (priv->state != NONE) {
+      cerr << "error: task cannot set options except in initialize function!" << endl;
+      throw exception();
+    }
+    if ((opts & OPT_AUTO_HISTORY)         != 0) priv->auto_history = true;
+    if ((opts & OPT_AUTO_HAMMING_LOSS)    != 0) priv->auto_hamming_loss = true;
+    if ((opts & OPT_EXAMPLES_DONT_CHANGE) != 0) priv->examples_dont_change = true;
+    if ((opts & OPT_IS_LDF)               != 0) priv->is_ldf = true;
+  }
+
   void searn_initialize(vw& all, searn& srn)
   {
     srn.predict_f = searn_predict;
@@ -2059,8 +2078,11 @@ void print_update(vw& all, searn& srn)
     srn.snapshot_f = searn_snapshot;
     srn.should_generate_output_f = searn_should_generate_output;
     srn.output_stringstream_f = searn_output_streamstream;
+    srn.set_task_data_f = searn_set_task_data;
+    srn.get_task_data_f = searn_get_task_data;
+    srn.set_options_f = searn_set_options;
 
-    srn.examples_dont_change = false;
+    srn.priv->examples_dont_change = false;
     
     srn.priv->beta = 0.5;
     srn.priv->alpha = 1e-10f;
@@ -2083,7 +2105,7 @@ void print_update(vw& all, searn& srn)
     srn.priv->passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
     srn.task = NULL;
-    srn.task_data = NULL;
+    srn.priv->task_data = NULL;
     
     srn.priv->read_example_last_id = 0;
     srn.priv->passes_since_new_policy = 0;
@@ -2101,10 +2123,10 @@ void print_update(vw& all, searn& srn)
 
     srn.priv->printed_output_header = false;
 
-    srn.auto_history = false;
-    srn.auto_hamming_loss = false;
-    srn.examples_dont_change = false;
-    srn.is_ldf = false;
+    srn.priv->auto_history = false;
+    srn.priv->auto_hamming_loss = false;
+    srn.priv->examples_dont_change = false;
+    srn.priv->is_ldf = false;
     
     srn.priv->empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);
     COST_SENSITIVE::cs_label.default_label(srn.priv->empty_example->ld);
@@ -2156,8 +2178,8 @@ void print_update(vw& all, searn& srn)
     }
 
     // destroy copied examples if we needed them
-    if (! srn.examples_dont_change) {
-      void (*delete_label)(void*) = srn.is_ldf ? COST_SENSITIVE::cs_label.delete_label : MULTICLASS::mc_label.delete_label;
+    if (! srn.priv->examples_dont_change) {
+      void (*delete_label)(void*) = srn.priv->is_ldf ? COST_SENSITIVE::cs_label.delete_label : MULTICLASS::mc_label.delete_label;
 
       for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
         dealloc_example(delete_label, srn.priv->learn_example_copy[n]);
@@ -2269,6 +2291,45 @@ void print_update(vw& all, searn& srn)
                          "warning: you specified --search_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
   }
 
+  v_array<COST_SENSITIVE::label> read_allowed_transitions(uint32_t A, const char* filename) {
+    FILE *f = fopen(filename, "r");
+    if (f == NULL) {
+      cerr << "error: could not read file " << filename << "; assuming all transitions are valid" << endl;
+      throw exception();
+    }
+
+    bool* bg = (bool*)malloc((A+1)*(A+1) * sizeof(bool));
+    int rd,from,to,count=0;
+    while ((rd = fscanf(f, "%d:%d", &from, &to)) > 0) {
+      if ((from < 0) || (from > A)) { cerr << "warning: ignoring transition from " << from << " because it's out of the range [0," << A << "]" << endl; }
+      if ((to   < 0) || (to   > A)) { cerr << "warning: ignoring transition to "   << to   << " because it's out of the range [0," << A << "]" << endl; }
+      bg[from * (A+1) + to] = true;
+      count++;
+    }
+    fclose(f);
+   
+    v_array<COST_SENSITIVE::label> allowed;
+
+    for (size_t from=0; from<A; from++) {
+      v_array<COST_SENSITIVE::wclass> costs;
+      
+      for (size_t to=0; to<A; to++)
+        if (bg[from * (A+1) + to]) {
+          COST_SENSITIVE::wclass c = { FLT_MAX, to, 0., 0. };
+          costs.push_back(c);
+        }
+
+      COST_SENSITIVE::label ld = { costs, 0 };
+      allowed.push_back(ld);
+    }
+    free(bg);
+
+    cerr << "read " << count << " allowed transitions from " << filename << endl;
+    
+    return allowed;
+  }
+
+
   void parse_neighbor_features(searn&srn) {
     srn.priv->neighbor_features.erase();
     size_t len = srn.priv->neighbor_features_string->length();
@@ -2328,6 +2389,7 @@ void print_update(vw& all, searn& srn)
 
         ("search_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
         
+        ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
         ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")
         ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
         ("search_beam", po::value<size_t>(), "size of beam -- currently only usable in test mode, not for learning")
@@ -2335,6 +2397,7 @@ void print_update(vw& all, searn& srn)
 
         ("search_no_snapshot",                            "turn off snapshotting capabilities")
         ("search_no_fastforward",                         "turn off fastforwarding (note: fastforwarding requires snapshotting)");
+
     
         // removed options:
         //("search_allow_current_policy", "allow searn labeling to use the current policy")
@@ -2375,7 +2438,7 @@ void print_update(vw& all, searn& srn)
                          "warning: specified --search_rollout different than the one loaded from regressor. using loaded value of: ", "");
     check_option<string>(trajectory_string, all, vm, vm_file, "search_trajectory", false, string_equal,
                          "warning: specified --search_trajectory different than the one loaded from regressor. using loaded value of: ", "");
-
+    
     if (vm.count("search_passes_per_policy"))       srn->priv->passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
     if (vm.count("search_beta"))                    srn->priv->beta                 = vm["search_beta"             ].as<float>();
 
@@ -2528,8 +2591,10 @@ void print_update(vw& all, searn& srn)
     all.p->lp = MULTICLASS::mc_label; 
     srn->task->initialize(*srn, srn->priv->A, opts, vm, vm_file);
 
+    if (vm.count("search_allowed_transitions"))     read_allowed_transitions(srn->priv->A, vm["search_allowed_transitions"].as<string>().c_str());
+    
     // set up auto-history if they want it
-    if (srn->auto_history) {
+    if (srn->priv->auto_history) {
       default_info(&srn->priv->hinfo);
 
       handle_history_options(all, srn->priv->hinfo, opts, vm, vm_file);
@@ -2538,7 +2603,7 @@ void print_update(vw& all, searn& srn)
         srn->priv->hinfo.length = srn->priv->hinfo.features;
       
       if (srn->priv->hinfo.length == 0)
-        srn->auto_history = false;
+        srn->priv->auto_history = false;
     } else {
       srn->priv->hinfo.length = 0;
       srn->priv->hinfo.features = 0;
@@ -2547,8 +2612,8 @@ void print_update(vw& all, searn& srn)
     }
 
     // set up copied examples if we need them
-    if (! srn->examples_dont_change) {
-      size_t label_size = srn->is_ldf ? sizeof(COST_SENSITIVE::label) : sizeof(MULTICLASS::mc_label);
+    if (! srn->priv->examples_dont_change) {
+      size_t label_size = srn->priv->is_ldf ? sizeof(COST_SENSITIVE::label) : sizeof(MULTICLASS::mc_label);
       for (size_t n=0; n<MAX_BRANCHING_FACTOR; n++)
         srn->priv->learn_example_copy[n].ld = calloc_or_die(1, label_size);
     }
