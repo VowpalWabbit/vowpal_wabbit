@@ -533,9 +533,6 @@ namespace LabelDict {
       }
       ld->prediction = prediction_is_me ? prediction : 0;
 
-      if (isTest && (costs.size() == 1)) {
-        ld->prediction = costs[0].partial_prediction;
-      }
       // restore label
       ec->ld = ld;
     }
@@ -763,24 +760,22 @@ namespace LabelDict {
 
     bool need_to_break = l.ec_seq.size() >= all->p->ring_size - 2;
     
-    if (l.is_singleline)
+    if (l.is_singleline) {
       assert(is_test);
-    else if ((example_is_newline(ec) && COST_SENSITIVE::example_is_test(ec)) || need_to_break) {
-      if (need_to_break && l.first_pass)
-        cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
-      do_actual_learning<is_learn>(*all, l, base);
-      l.need_to_clear = true;
     } else if (LabelDict::ec_is_label_definition(ec)) {
       if (l.ec_seq.size() > 0) {
         cerr << "error: label definition encountered in data block" << endl;
         throw exception();
       }
 
-      if (is_learn && ! is_test) {
-        l.ec_seq.push_back(&ec);
-        do_actual_learning<is_learn>(*all, l, base);
-        l.need_to_clear = true;
-      }
+      l.ec_seq.push_back(&ec);
+      do_actual_learning<is_learn>(*all, l, base);
+      l.need_to_clear = true;
+    } else if ((example_is_newline(ec) && COST_SENSITIVE::example_is_test(ec)) || need_to_break) {
+      if (need_to_break && l.first_pass)
+        cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << endl;
+      do_actual_learning<is_learn>(*all, l, base);
+      l.need_to_clear = true;
     } else {
       if (l.need_to_clear) {  // should only happen if we're NOT driving
         l.ec_seq.erase();
