@@ -32,6 +32,8 @@ bool isfinite(float x)
 // task-specific includes
 #include "searn_sequencetask.h"
 
+//#define DEBUG_COLLISIONS
+
 using namespace LEARNER;
 
 namespace Searn
@@ -177,11 +179,33 @@ namespace Searn
     clock_t start_clock_time;
     
     example*empty_example;
+
+#ifdef DEBUG_COLLISIONS
+#define PRED_COLLISION_COUNT 472389011
+    uint32_t num_learn_calls;
+    short    prediction_hashes[PRED_COLLISION_COUNT];
+    uint32_t total_num_collisions;
+#endif
   };
 
   string   audit_feature_space("history");
   uint32_t history_constant    = 8290743;
   uint32_t example_number = 0;
+
+  uint32_t hash_example(example&ec, uint32_t seed) {
+    uint32_t hash = seed;
+    
+    for (unsigned char* i=ec.indices.begin; i != ec.indices.end; i++)
+      hash = uniform_hash((unsigned char*) ec.atomics[*i].begin,
+                          sizeof(feature) * (ec.atomics[*i].end - ec.atomics[*i].begin),
+                          hash );
+
+    hash = uniform_hash( (unsigned char*) &ec.ft_offset,
+                         sizeof(uint32_t),
+                         hash );
+    
+    return hash;
+  }
 
 
   void default_info(history_info* hinfo)
@@ -575,6 +599,13 @@ namespace Searn
     void* old_label = ec.ld;
     ec.ld = valid_labels;
 
+#ifdef DEBUG_COLLISIONS    
+    if ((srn.priv->state == INIT_TRAIN) || (srn.priv->state == LEARN)) {
+      uint32_t ec_hash = hash_example(ec, srn.priv->num_learn_calls * 324879021);
+      srn.priv->prediction_hashes[ec_hash % PRED_COLLISION_COUNT]++;
+    }
+#endif
+    
     base.predict(ec, pol);
     srn.priv->total_predictions_made++;
     srn.priv->num_features += ec.num_features;
@@ -612,7 +643,7 @@ namespace Searn
 
   template <class T>
   uint32_t single_action(vw& all, searn& srn, learner& base, example* ecs, size_t num_ec, T* valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t, bool allow_exploration) {
-    //cerr << "pol=" << pol << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
+    // cerr << "pol=" << pol << endl; //  << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
     if (pol == -1) { // optimal policy
       if (ystar_is_uint32t)
         return *((uint32_t*)ystar);
@@ -744,7 +775,7 @@ namespace Searn
       int pol = -1; // oracle
       if (!srn->priv->trajectory_oracle)
         pol = choose_policy(*srn, srn->priv->allow_current_policy, true);
-      cdbg << "{" << pol << "}";
+      cdbg << "{" << pol << "," << srn->priv->trajectory_oracle << "}";
       get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, true);
       //uint32_t a_opt = single_action(all, *srn, ecs, num_ec, valid_labels, -1, ystar);
@@ -1267,12 +1298,15 @@ namespace Searn
         ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
     cdbg << "losses.size = " << losses.size() << " = {"; for (size_t i=0; i<losses.size(); i++) cdbg << " " << ((COST_SENSITIVE::label*)labels)->costs[i].x; cdbg << " }" << endl;
 
-    if (!srn.priv->is_ldf) {
+    if (!srn.priv->is_ldf) { // not LDF
       void* old_label = ec[0].ld;
       ec[0].ld = labels;
       if (srn.priv->auto_history) add_history_to_example(all, srn.priv->hinfo, ec, srn.priv->rollout_action.begin+srn.priv->learn_t);
       ec[0].in_use = true;
       base.learn(ec[0], srn.priv->current_policy);
+#ifdef DEBUG_COLLISIONS
+      srn.priv->num_learn_calls++;
+#endif
       if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ec);
       ec[0].ld = old_label;
       srn.priv->total_examples_generated++;
@@ -1292,9 +1326,15 @@ namespace Searn
         //((COST_SENSITIVE::label*)ec[a].ld)->costs[0].class_index);
         ec[a].in_use = true;
         base.learn(ec[a], srn.priv->current_policy);
+#ifdef DEBUG_COLLISIONS
+        srn.priv->num_learn_calls++;
+#endif
       }
       cdbg << "learn: generate empty example" << endl;
       base.learn(*srn.priv->empty_example);
+#ifdef DEBUG_COLLISIONS
+      srn.priv->num_learn_calls++;
+#endif
       //cdbg << "learn done " << repeat << endl;
       if (srn.priv->auto_history)
         for (size_t a=0; a<len; a++)
@@ -1974,6 +2014,10 @@ void print_update(vw& all, searn& srn)
     if (srn.priv->ec_seq.size() == 0)
       return;  // nothing to do :)
 
+#ifdef DEBUG_COLLISIONS
+    memset(srn.priv->prediction_hashes, 0, PRED_COLLISION_COUNT * sizeof(short));
+#endif
+    
     add_neighbor_features(srn);
     if (srn.priv->beam_size == 0)
       train_single_example<is_learn>(all, srn, srn.priv->ec_seq);
@@ -1981,6 +2025,21 @@ void print_update(vw& all, searn& srn)
       beam_predict(all, srn, srn.priv->ec_seq);
     del_neighbor_features(srn);
 
+#ifdef DEBUG_COLLISIONS
+    uint32_t num_collisions = 0;
+    cerr << "collisions:";
+    for (size_t i=0; i<PRED_COLLISION_COUNT; i++) {
+      if (srn.priv->prediction_hashes[i] > 1)
+        num_collisions += srn.priv->prediction_hashes[i] - 1;
+      if (srn.priv->prediction_hashes[i] >= 1)
+        cerr << ' ' << srn.priv->prediction_hashes[i];
+    }
+    srn.priv->total_num_collisions += num_collisions;
+    cerr << endl;
+    //if (num_collisions > 0)
+    //cerr << "num_collisions = " << num_collisions << endl;
+#endif
+    
     if (srn.priv->ec_seq[0]->test_only) {
       all.sd->weighted_holdout_examples += 1.f;//test weight seen
       all.sd->weighted_holdout_examples_since_last_dump += 1.f;
@@ -2153,6 +2212,9 @@ void print_update(vw& all, searn& srn)
     srn.priv->empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);
     COST_SENSITIVE::cs_label.default_label(srn.priv->empty_example->ld);
     srn.priv->empty_example->in_use = true;
+#ifdef DEBUG_COLLISIONS
+    srn.priv->num_learn_calls = 0;
+#endif
   }
 
   void searn_finish(searn& srn)
@@ -2222,6 +2284,9 @@ void print_update(vw& all, searn& srn)
     srn.priv->beam_restore_to_end.delete_v();
     srn.priv->beam_final_action_sequence.delete_v();
 
+#ifdef DEBUG_COLLISIONS
+    cerr << "total num_collisions = " << srn.priv->total_num_collisions << " out of " << srn.priv->total_predictions_made << endl;
+#endif    
     free(srn.priv);
   }
 
@@ -2490,20 +2555,20 @@ void print_update(vw& all, searn& srn)
       throw exception();
     }
 
-    if (rollout_string.compare("policy")) {
+    if (rollout_string.compare("policy") == 0) {
       srn->priv->rollout_method = 0;
-    } else if (rollout_string.compare("oracle")) {
+    } else if (rollout_string.compare("oracle") == 0) {
       srn->priv->rollout_method = 1;
-    } else if (rollout_string.compare("none")) {
+    } else if (rollout_string.compare("none") == 0) {
       srn->priv->rollout_method = 2;
     } else {
       cerr << "error: --search_rollout must be 'policy', 'oracle' or 'none'" << endl;
       throw exception();
     }
 
-    if (trajectory_string.compare("policy")) {
+    if (trajectory_string.compare("policy") == 0) {
       srn->priv->trajectory_oracle = false;
-    } else if (trajectory_string.compare("oracle")) {
+    } else if (trajectory_string.compare("oracle") == 0) {
       srn->priv->trajectory_oracle = true;
     } else {
       cerr << "error: --search_trajectory must be 'policy' or 'oracle'" << endl;
