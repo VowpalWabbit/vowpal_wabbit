@@ -20,26 +20,22 @@ namespace SequenceTask {
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
     srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare_loss
+                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
                      OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
-  void structured_predict(searn& srn, example**ec, size_t len) {
-    // for (size_t i=1; i<len; i++)
-    //   if (ec[i] != ec[i-1]+1)
-    //     cerr << "nope: i=" << i << "/" << len << " and ec[i] = " << ec[i] << " and ec[i-1] = " << ec[i-1] << endl;
-
-    for (size_t i=0; i<len; i++) { //save state for optimization
+  void structured_predict(searn& srn, vector<example*> ec) {
+    for (size_t i=0; i<ec.size(); i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
-      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
-      size_t prediction = srn.predict(ec[i], NULL, y->label);
+      size_t prediction = srn.predict(ec[i], NULL, MULTICLASS::get_example_label(ec[i]));
 
       if (srn.should_generate_output())
         srn.output() << prediction << ' ';
     }
+    // at end of INIT_TRAIN, if not test and no declare loss, then warn
   }
 }
 
@@ -53,15 +49,15 @@ namespace OneOfManyTask {
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
-  void structured_predict(searn& srn, example**ec, size_t len) {
+  void structured_predict(searn& srn, vector<example*> ec) {
     bool predicted_true_yet = false;
     bool output_has_true    = false;
-    for (size_t i=0; i<len; i++) {
+    for (size_t i=0; i<ec.size(); i++) {
       MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
       if (y->label == 2) output_has_true = true;
     }
         
-    for (size_t i=0; i<len; i++) {
+    for (size_t i=0; i<ec.size(); i++) {
       // labels should be 1 or 2, and our output is MAX of all predicted values
       srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
       srn.snapshot(i, 2, &predicted_true_yet, sizeof(predicted_true_yet), false);  // not used for prediction
@@ -81,13 +77,13 @@ namespace OneOfManyTask {
         predicted_true_yet = true;
       } else { // we predicted "no"
         if (!predicted_true_yet) { // no predictions of true at all
-          if ((i == len-1) && output_has_true)
+          if ((i == ec.size()-1) && output_has_true)
             cur_loss = 1.;  // totally hosed
         } else { // we've predicted true in the past
           // no loss
         }
       }
-      srn.declare_loss(1, cur_loss);
+      srn.loss(1, cur_loss);
 
       if (srn.should_generate_output())
         srn.output() << prediction << ' ';
@@ -107,7 +103,7 @@ namespace SequenceSpanTask {
 //     *       -> n even  (anything in BEGIN X)
 //     n even  -> n+1     (BEGIN X to IN X)
 //     n odd>1 -> n       (IN X to IN X)
-// the format for the BILOU (begin, inside, last, out, unit-length) encoding is:
+// the format for the BILOU (begin, inside, last, out, unit-ec.size()gth) encoding is:
 //     label     description
 //     1         out
 //     n>1: let m=n-2:
@@ -124,11 +120,11 @@ namespace SequenceSpanTask {
 
   using namespace Searn;
 
-  void convert_bio_to_bilou(example**ec, size_t len) {
-    for (size_t n=0; n<len; n++) {
+  void convert_bio_to_bilou(vector<example*> ec) {
+    for (size_t n=0; n<ec.size(); n++) {
       MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
       uint32_t y = ylab->label;
-      uint32_t nexty = (n == len-1) ? 0 : ((MULTICLASS::multiclass*)ec[n+1]->ld)->label;
+      uint32_t nexty = (n == ec.size()-1) ? 0 : ((MULTICLASS::multiclass*)ec[n+1]->ld)->label;
       if (y == 1) { // do nothing
       } else if (y % 2 == 0) { // this is a begin-X
         if (nexty != y + 1) // should be unit
@@ -195,7 +191,7 @@ namespace SequenceSpanTask {
 
     srn.set_task_data(my_task_data);
     srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare_loss
+                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
                      OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
@@ -206,15 +202,15 @@ namespace SequenceSpanTask {
     delete my_task_data;
   }
 
-  void structured_predict(searn& srn, example**ec, size_t len) {
+  void structured_predict(searn& srn, vector<example*> ec) {
     task_data * my_task_data = (task_data*)srn.get_task_data();
     uint32_t last_prediction = 1;
     v_array<uint32_t> * y_allowed = &(my_task_data->y_allowed);
 
     if (my_task_data->encoding == BILOU)  // TODO: move this out of here!
-      convert_bio_to_bilou(ec, len);
+      convert_bio_to_bilou(ec);
     
-    for (size_t i=0; i<len; i++) {
+    for (size_t i=0; i<ec.size(); i++) {
       srn.snapshot(i, 1, &i, sizeof(i), true);
       srn.snapshot(i, 2, &last_prediction, sizeof(last_prediction), true);
 
@@ -242,7 +238,7 @@ namespace SequenceSpanTask {
     }
 
     if (my_task_data->encoding == BILOU)  // TODO: move this out of here!
-      for (size_t n=0; n<len; n++) {
+      for (size_t n=0; n<ec.size(); n++) {
         MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
         ylab->label = bilou_to_bio(ylab->label);
       }
@@ -272,7 +268,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
 
     srn.set_task_data(data);
     srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare_loss
+                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
                      OPT_IS_LDF               );   // we generate ldf examples
   }
 
@@ -284,10 +280,10 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     free(data);
   }
 
-  void structured_predict(searn& srn, example**ec, size_t len) {
+  void structured_predict(searn& srn, vector<example*> ec) {
     task_data *data = (task_data*)srn.get_task_data();
     
-    for (size_t i=0; i<len; i++) { //save state for optimization
+    for (size_t i=0; i<ec.size(); i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
       for (size_t a=0; a<data->num_actions; a++) {

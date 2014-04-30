@@ -52,7 +52,7 @@ namespace Searn {
         return this->predict_f(this->priv, ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar, true);
     }
     
-    inline void     declare_loss(size_t predictions_since_last, float incr_loss)
+    inline void     loss(size_t predictions_since_last, float incr_loss)
     { return this->declare_loss_f(this->priv, predictions_since_last, incr_loss); }
 
     inline void     snapshot(size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
@@ -90,7 +90,7 @@ namespace Searn {
     const char* task_name;
     void (*initialize)(searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
     void (*finish)(searn&);
-    void (*structured_predict)(searn&, example**,size_t);
+    void (*structured_predict)(searn&, std::vector<example*>);
   };
 
   LEARNER::learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
