@@ -67,7 +67,11 @@ socket_t sock_connect(const uint32_t ip, const int port) {
       cerr << ':' << ntohs(port) << endl;
       perror(NULL);
       count++;
+#ifdef _WIN32      
       Sleep(1);
+#else
+      sleep(1);
+#endif
     }
   if (ret == -1)
     throw exception();
