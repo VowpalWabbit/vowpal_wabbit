@@ -1606,11 +1606,12 @@ void train_single_example(vw& all, searn& srn, vector<example*>ec)
         ) {
 
       srn.priv->should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0);
-      if (srn.priv->should_produce_string)
+      //if (srn.priv->should_produce_string)
         srn.priv->pred_string->str("");
       
       assert(srn.priv->truth_string != NULL);
       srn.task->structured_predict(srn, ec);
+      srn.priv->should_produce_string = false;
 
       for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
         all.print_text((int)*sink, srn.priv->pred_string->str(), ec[0]->tag);
@@ -1638,6 +1639,7 @@ void train_single_example(vw& all, searn& srn, vector<example*>ec)
       srn.priv->snapshot_last_found_pos = (size_t)-1;
       srn.priv->snapshot_could_match = false;
       srn.priv->loss_declared = false;
+      srn.priv->should_produce_string = false;
       
       srn.task->structured_predict(srn, ec);
 

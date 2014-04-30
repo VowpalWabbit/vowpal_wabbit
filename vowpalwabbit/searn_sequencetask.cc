@@ -61,8 +61,7 @@ namespace OneOfManyTask {
       srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
       srn.snapshot(i, 2, &predicted_true_yet, sizeof(predicted_true_yet), false);  // not used for prediction
 
-      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
-      size_t prediction = srn.predict(ec[i], NULL, y->label);
+      size_t prediction = srn.predict(ec[i], NULL, MULTICLASS::get_example_label(ec[i]));
 
       float cur_loss = 0.;
       if (prediction == 2) { // we predicted "yes"
@@ -226,8 +225,7 @@ namespace SequenceSpanTask {
           my_task_data->only_two_allowed[1] = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
         }
       }
-      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
-      last_prediction = srn.predict(ec[i], y_allowed, y->label);
+      last_prediction = srn.predict(ec[i], y_allowed, MULTICLASS::get_example_label(ec[i]));
 
       uint32_t printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
       //uint32_t printed_truth      = (my_task_data->encoding == BIO) ? y->label        : bilou_to_bio(y->label);
@@ -299,8 +297,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
       
-      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
-      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, y->label - 1);
+      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, MULTICLASS::get_example_label(ec[i]) - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       
       if (srn.output().good())
