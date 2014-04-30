@@ -30,7 +30,7 @@ namespace OAA {
     vw* all = o.all;
 
     multiclass* mc_label_data = (multiclass*)ec.ld;
-    float prediction = 1;
+    uint32_t prediction = 1;
     float score = INT_MIN;
   
     if (mc_label_data->label == 0 || (mc_label_data->label > o.k && mc_label_data->label != (uint32_t)-1))
@@ -44,7 +44,7 @@ namespace OAA {
     simple_temp.weight = mc_label_data->weight;
     ec.ld = &simple_temp;
 
-    for (size_t i = 1; i <= o.k; i++)
+    for (uint32_t i = 1; i <= o.k; i++)
       {
 	if (is_learn)
 	  {
@@ -61,7 +61,7 @@ namespace OAA {
         if (ec.partial_prediction > score)
           {
             score = ec.partial_prediction;
-            prediction = (float)i;
+            prediction = i;
           }
 	
         if (o.shouldOutput) {

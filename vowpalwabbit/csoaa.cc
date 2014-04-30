@@ -25,7 +25,7 @@ namespace CSOAA {
   void predict_or_learn(csoaa& c, learner& base, example& ec) {
     vw* all = c.all;
     label* ld = (label*)ec.ld;
-    size_t prediction = 1;
+    uint32_t prediction = 1;
     float score = FLT_MAX;
     label_data simple_temp = { 0., 0., 0. };
     ec.ld = &simple_temp;
@@ -56,7 +56,7 @@ namespace CSOAA {
         }
 	ec.partial_prediction = 0.;
       }
-    ld->prediction = (float)prediction;
+    ld->prediction = prediction;
     ec.ld = ld;
   }
 
@@ -322,7 +322,7 @@ namespace LabelDict {
     ec->indices.decr();
   }
 
-  void make_single_prediction(vw& all, ldf& l, learner& base, example& ec, size_t* prediction, float*min_score, float*min_cost, float*max_cost) {
+  void make_single_prediction(vw& all, ldf& l, learner& base, example& ec, uint32_t* prediction, float*min_score, float*min_cost, float*max_cost) {
     label   *ld = (label*)ec.ld;
     v_array<COST_SENSITIVE::wclass> costs = ld->costs;
     label_data simple_label;
@@ -370,7 +370,7 @@ namespace LabelDict {
   {
     size_t K = l.ec_seq.size();
     bool   isTest = COST_SENSITIVE::example_is_test(*l.ec_seq[start_K]);
-    size_t prediction = 0;
+    uint32_t prediction = 0;
     float  min_score = FLT_MAX;
 
     for (size_t k=start_K; k<K; k++) {
@@ -460,7 +460,7 @@ namespace LabelDict {
   void do_actual_learning_oaa(vw& all, ldf& l, learner& base, size_t start_K)
   {
     size_t K = l.ec_seq.size();
-    size_t prediction = 0;
+    uint32_t prediction = 0;
     bool   isTest = COST_SENSITIVE::example_is_test(*l.ec_seq[start_K]);
     float  min_score = FLT_MAX;
     float  min_cost  = FLT_MAX;
@@ -613,7 +613,7 @@ namespace LabelDict {
     }
   
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print(*sink, ld->prediction, 0, ec.tag);
+      all.print(*sink, (float)ld->prediction, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
       string outputString;

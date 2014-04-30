@@ -270,7 +270,7 @@ namespace COST_SENSITIVE {
       }
 
     for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; sink++)
-      all.print((int)*sink, ld->prediction, 0, ec.tag);
+      all.print((int)*sink, (float)ld->prediction, 0, ec.tag);
 
     if (all.raw_prediction > 0) {
       string outputString;

@@ -67,7 +67,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
       cerr << ':' << ntohs(port) << endl;
       perror(NULL);
       count++;
-      sleep(1);
+      Sleep(1);
     }
   if (ret == -1)
     throw exception();
@@ -219,15 +219,15 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 }
 
 
-void pass_down(char* buffer, const int parent_read_pos, int&children_sent_pos, const socket_t * child_sockets, const int n) {
+void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos, const socket_t * child_sockets, const size_t n) {
 
-  int my_bufsize = min(ar_buf_size, (parent_read_pos - children_sent_pos));
+  size_t my_bufsize = min(ar_buf_size, (parent_read_pos - children_sent_pos));
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the children
-    if(child_sockets[0] != -1 && send(child_sockets[0], buffer+children_sent_pos, my_bufsize, 0) < my_bufsize) 
+    if(child_sockets[0] != -1 && send(child_sockets[0], buffer+children_sent_pos, (int)my_bufsize, 0) < my_bufsize) 
       cerr<<"Write to left child failed\n";
-    if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, my_bufsize, 0) < my_bufsize) 
+    if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, (int)my_bufsize, 0) < my_bufsize) 
       cerr<<"Write to right child failed\n";
 
     children_sent_pos += my_bufsize;
@@ -236,10 +236,10 @@ void pass_down(char* buffer, const int parent_read_pos, int&children_sent_pos, c
 
 
 
-void broadcast(char* buffer, const int n, const socket_t parent_sock, const socket_t * child_sockets) {
+void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const socket_t * child_sockets) {
  
-   int parent_read_pos = 0; //First unread float from parent
-   int children_sent_pos = 0; //First unsent float to children
+   size_t parent_read_pos = 0; //First unread float from parent
+   size_t children_sent_pos = 0; //First unsent float to children
   //parent_sent_pos <= left_read_pos
   //parent_sent_pos <= right_read_pos
   

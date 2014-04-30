@@ -5,6 +5,7 @@
 
 #include "vwdll.h"
 #include "parser.h"
+#include "simple_label.h"
 #include "parse_args.h"
 #include "vw.h"
 
@@ -161,7 +162,8 @@ extern "C"
 		vw * pointer = static_cast<vw*>(handle);
 		example * ex = static_cast<example*>(e);
 		pointer->learn(ex);
-		return ex->final_prediction;
+		label_data* l = static_cast<label_data*>(ex->ld);
+		return l->prediction;
 	}
 
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, size_t index, size_t offset)

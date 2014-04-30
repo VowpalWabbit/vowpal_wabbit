@@ -286,7 +286,11 @@ int main(int argc, char* argv[]) {
 		fail_send(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));
 	      }
 	    shutdown(partial_nodeset.nodes[i].socket, SHUT_RDWR);
+#ifdef _WIN32
+		_close(partial_nodeset.nodes[i].socket);
+#else
 	    close(partial_nodeset.nodes[i].socket);
+#endif
 	  }
 	free (partial_nodeset.nodes);
       }
