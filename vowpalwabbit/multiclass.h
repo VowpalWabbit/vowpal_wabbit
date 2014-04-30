@@ -29,6 +29,8 @@ namespace MULTICLASS
   inline int example_is_test(example* ec)
   { return label_is_test((multiclass*)ec->ld); }
 
+  inline uint32_t get_example_label(example* ec)
+  { return ((multiclass*)ec->ld)->label; }
 }
 
 #endif

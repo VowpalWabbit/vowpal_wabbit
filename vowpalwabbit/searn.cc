@@ -123,6 +123,7 @@ namespace Searn
     bool should_produce_string;
     stringstream *pred_string;
     stringstream *truth_string;
+    stringstream *bad_string_stream;
     bool printed_output_header;
 
     size_t t;              // the current time step
@@ -131,6 +132,7 @@ namespace Searn
     float  test_loss;      // total test loss for this example
     float  train_loss;     // total training loss for this example
     float  learn_loss;     // total loss for this "varied" example
+    bool   loss_declared;  // have we declared a loss at all?
 
     v_array<float> learn_losses;  // losses for all (valid) actions at learn_t
     example learn_example_copy[MAX_BRANCHING_FACTOR];   // copy of example(s) at learn_t
@@ -168,7 +170,7 @@ namespace Searn
     
     size_t passes_per_policy;
 
-    v_array<example*> ec_seq;
+    vector<example*> ec_seq;
 
     LEARNER::learner* base_learner;
     void* valid_labels;
@@ -907,6 +909,9 @@ namespace Searn
       cerr << "fail: searntask hasn't counted its predictions correctly.  current time step=" << srn->priv->t << ", last declaration at " << srn->priv->loss_last_step << ", declared # of predictions since then is " << predictions_since_last << endl;
       throw exception();
     }
+
+    srn->priv->loss_declared = true;
+    
     srn->priv->loss_last_step = srn->priv->t;
     cdbg<<"new loss_last_step="<<srn->priv->t<<" incr_loss=" << incr_loss <<endl;
     if (srn->priv->state == INIT_TEST)
@@ -1316,6 +1321,7 @@ namespace Searn
     srn.priv->num_features = 0;
     srn.priv->train_action.erase();
     srn.priv->train_action_ids.erase();
+    srn.priv->loss_declared = false;
     if (srn.priv->auto_history) clear_rollout_actions(srn);
 
     srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
@@ -1324,7 +1330,7 @@ namespace Searn
   }
 
 
-  void beam_predict(vw&all, searn&srn, example**ec, size_t len) {
+  void beam_predict(vw&all, searn&srn, vector<example*>ec) {
     using namespace Beam;
     uint32_t DEFAULT_HASH = 0;
 
@@ -1357,7 +1363,7 @@ namespace Searn
       reset_searn_structure(srn);
       srn.priv->state        = BEAM_INIT;
       srn.priv->cur_beam_hyp = hyp;
-      srn.task->structured_predict(srn, ec, len);
+      srn.task->structured_predict(srn, ec);
     
       assert(hyp->filled_in_prediction);   // TODO: handle the case that structured_predict just returns or something else weird happens
 
@@ -1407,7 +1413,7 @@ namespace Searn
           srn.priv->state        = BEAM_ADVANCE;
           srn.priv->cur_beam_hyp = next;
           /*UNDOME*/cdbg << "======== BEAM_ADVANCE ==" << endl;
-          srn.task->structured_predict(srn, ec, len);
+          srn.task->structured_predict(srn, ec);
 
           bool added = false;
           if (next->filled_in_snapshot) { // another snapshot was called
@@ -1465,7 +1471,7 @@ namespace Searn
       srn.priv->state = GET_TRUTH_STRING;
       srn.priv->should_produce_string = true;
       srn.priv->truth_string->str("");
-      srn.task->structured_predict(srn, ec, len);
+      srn.task->structured_predict(srn, ec);
     }
     
     // get the final info out
@@ -1490,7 +1496,7 @@ namespace Searn
         srn.priv->state = BEAM_PLAYOUT;
         srn.priv->pred_string = is_first ? old_pred_string : &spred;
         spred.str("");
-        srn.task->structured_predict(srn, ec, len);
+        srn.task->structured_predict(srn, ec);
 
         if (all.final_prediction_sink.size() > 0)
           for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink) {
@@ -1532,7 +1538,7 @@ namespace Searn
   }
 
 template <bool is_learn>
-void train_single_example(vw& all, searn& srn, example**ec, size_t len)
+void train_single_example(vw& all, searn& srn, vector<example*>ec)
 {
   // if we're going to have to print to the screen, generate the "truth" string
   cdbg << "======================================== GET TRUTH STRING (" << srn.priv->current_policy << "," << srn.priv->read_example_last_pass << ") ========================================" << endl;
@@ -1541,7 +1547,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
     srn.priv->state = GET_TRUTH_STRING;
     srn.priv->should_produce_string = true;
     srn.priv->truth_string->str("");
-    srn.task->structured_predict(srn, ec, len);
+    srn.task->structured_predict(srn, ec);
   }
   
   // do an initial test pass to compute output (and loss)
@@ -1564,7 +1570,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
         srn.priv->pred_string->str("");
       
       assert(srn.priv->truth_string != NULL);
-      srn.task->structured_predict(srn, ec, len);
+      srn.task->structured_predict(srn, ec);
 
       for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
         all.print_text((int)*sink, srn.priv->pred_string->str(), ec[0]->tag);
@@ -1591,8 +1597,16 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
       srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
       srn.priv->snapshot_last_found_pos = (size_t)-1;
       srn.priv->snapshot_could_match = false;
-      srn.task->structured_predict(srn, ec, len);
+      srn.priv->loss_declared = false;
+      
+      srn.task->structured_predict(srn, ec);
 
+      if ( (! srn.priv->loss_declared) &&   // no loss was declared
+           (is_learn)                  &&   // and we're trying to learn
+           (all.training)              &&   // in training mode
+           (! ec[0]->test_only) )           // and not a test example
+        cerr << "warning: no loss declared by task on something that looks like a training example!" << endl;
+      
       if (srn.priv->t == 0) {
         clear_snapshot(all, srn, true);
         return;  // there was no data
@@ -1637,7 +1651,7 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
             cdbg << "learn_t = " << srn.priv->learn_t << " || learn_a = " << srn.priv->learn_a << endl;
             srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
             srn.priv->snapshot_could_match = true;
-            srn.task->structured_predict(srn, ec, len);
+            srn.task->structured_predict(srn, ec);
 
             srn.priv->learn_losses.push_back( srn.priv->learn_loss );
             cdbg << srn.priv->learn_loss << " ";
@@ -1709,11 +1723,10 @@ void train_single_example(vw& all, searn& srn, example**ec, size_t len)
 
   void clear_seq(vw&all, searn& srn)
   {
-    if (srn.priv->ec_seq.size() > 0) 
-      for (example** ecc=srn.priv->ec_seq.begin; ecc!=srn.priv->ec_seq.end; ecc++) {
-	VW::finish_example(all, *ecc);
-      }
-    srn.priv->ec_seq.erase();
+    if (srn.priv->ec_seq.size() > 0)
+      for (size_t i=0; i < srn.priv->ec_seq.size(); i++)
+        VW::finish_example(all, srn.priv->ec_seq[i]);
+    srn.priv->ec_seq.clear();
   }
 
   float safediv(float a,float b) { if (b == 0.f) return 0.f; else return (a/b); }
@@ -1963,9 +1976,9 @@ void print_update(vw& all, searn& srn)
 
     add_neighbor_features(srn);
     if (srn.priv->beam_size == 0)
-      train_single_example<is_learn>(all, srn, srn.priv->ec_seq.begin, srn.priv->ec_seq.size());
+      train_single_example<is_learn>(all, srn, srn.priv->ec_seq);
     else
-      beam_predict(all, srn, srn.priv->ec_seq.begin, srn.priv->ec_seq.size());
+      beam_predict(all, srn, srn.priv->ec_seq);
     del_neighbor_features(srn);
 
     if (srn.priv->ec_seq[0]->test_only) {
@@ -2057,8 +2070,9 @@ void print_update(vw& all, searn& srn)
 
   bool searn_should_generate_output(searn_private* priv) { return priv->should_produce_string; }
   stringstream& searn_output_streamstream(searn_private* priv) {
-    assert(priv->should_produce_string);
-    if (priv->state == GET_TRUTH_STRING)
+    if (! priv->should_produce_string)
+      return *(priv->bad_string_stream);
+    else if (priv->state == GET_TRUTH_STRING)
       return *(priv->truth_string);
     else
       return *(priv->pred_string);
@@ -2082,7 +2096,6 @@ void print_update(vw& all, searn& srn)
     srn.predict_f = searn_predict;
     srn.declare_loss_f = searn_declare_loss;
     srn.snapshot_f = searn_snapshot;
-    srn.should_generate_output_f = searn_should_generate_output;
     srn.output_stringstream_f = searn_output_streamstream;
     srn.set_task_data_f = searn_set_task_data;
     srn.get_task_data_f = searn_get_task_data;
@@ -2125,6 +2138,9 @@ void print_update(vw& all, searn& srn)
 
     srn.priv->truth_string = new stringstream();
     srn.priv->pred_string  = new stringstream();
+    srn.priv->bad_string_stream = new stringstream();
+    srn.priv->bad_string_stream->clear(srn.priv->bad_string_stream->badbit);
+    
     srn.priv->should_produce_string = false;
 
     srn.priv->printed_output_header = false;
@@ -2146,6 +2162,7 @@ void print_update(vw& all, searn& srn)
 
     delete srn.priv->truth_string;
     delete srn.priv->pred_string;
+    delete srn.priv->bad_string_stream;
     delete srn.priv->neighbor_features_string;
     srn.priv->neighbor_features.erase();
     srn.priv->neighbor_features.delete_v();
@@ -2166,7 +2183,7 @@ void print_update(vw& all, searn& srn)
     dealloc_example(COST_SENSITIVE::cs_label.delete_label, *(srn.priv->empty_example));
     free(srn.priv->empty_example);
 
-    srn.priv->ec_seq.delete_v();
+    srn.priv->ec_seq.clear();
 
     clear_snapshot(*all, srn, true);
     srn.priv->snapshot_data.delete_v();
