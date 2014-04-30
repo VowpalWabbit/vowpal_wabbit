@@ -9,6 +9,12 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "gd.h"
 
+namespace SequenceTask         {  Searn::searn_task task = { "sequence",         initialize, finish, structured_predict };  }
+namespace OneOfManyTask        {  Searn::searn_task task = { "oneofmany",        initialize, finish, structured_predict };  }
+namespace SequenceTask_DemoLDF {  Searn::searn_task task = { "sequence_demoldf", initialize, finish, structured_predict };  }
+namespace SequenceSpanTask     {  Searn::searn_task task = { "sequencespan",     initialize, finish, structured_predict };  }
+
+
 namespace SequenceTask {
   using namespace Searn;
 
