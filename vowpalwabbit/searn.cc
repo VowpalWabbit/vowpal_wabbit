@@ -119,7 +119,7 @@ namespace Searn
     bool snapshot_could_match;
     size_t snapshot_last_found_pos;
     v_array<snapshot_item> snapshot_data;
-    snapmap snapshot_map;
+    snapmap* snapshot_map;
     v_array<uint32_t> train_action;  // which actions did we actually take in the train (or test) pass?
     v_array<uint32_t> train_action_ids;  // these are the ids -- the same in non-ldf mode, but the index in ldf mode (while train_action is id.weight_index)
     v_array< void* > train_labels;  // which labels are valid at any given time
@@ -661,7 +661,7 @@ namespace Searn
     snapshot_item_ptr sip = { priv->most_recent_snapshot_begin,
                               priv->most_recent_snapshot_end,
                               priv->most_recent_snapshot_hash };
-    action = priv->snapshot_map.get(sip, sip.hash_value);
+    action = priv->snapshot_map->get(sip, sip.hash_value);
     if (action == 0) return false;
     return true;
   }
@@ -671,8 +671,14 @@ namespace Searn
     snapshot_item_ptr sip = { priv->most_recent_snapshot_begin,
                               priv->most_recent_snapshot_end,
                               priv->most_recent_snapshot_hash };
-    priv->snapshot_map.put(sip, sip.hash_value, action);
+    priv->snapshot_map->put(sip, sip.hash_value, action);
   }
+
+  // void remove_most_recent_snapshot(searn_private* priv) {
+  //   if (! priv->snapshotted_since_predict) return;
+  //   size_t len = priv->most_recent_snapshot_end - priv->most_recent_snapshot_begin + 1;
+  //   priv->snapshot_data.end -= len;
+  // }
 
 
   template <class T>
@@ -690,29 +696,30 @@ namespace Searn
         return choose_random<uint32_t>(*ystar);
     } else {        // learned policy
       uint32_t action;
-      if (get_most_recent_snapshot_action(srn.priv, action))
-        return action;
-      
-      if (!srn.priv->is_ldf) {  // single example
-        if (srn.priv->hinfo.length>0) {cdbg << "add_history_to_example: srn.priv->t=" << srn.priv->t << " h=" << srn.priv->rollout_action.begin[srn.priv->t] << endl;}
-        if (srn.priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.priv->t+1; i++) cdbg << " " << srn.priv->rollout_action.begin[i]; cdbg << " ], len=" << srn.priv->rollout_action.size() << endl;}
-        if (srn.priv->auto_history) add_history_to_example(all, srn.priv->hinfo, ecs, srn.priv->rollout_action.begin+srn.priv->t);
-        action = single_prediction_notLDF<T>(all, srn, base, *ecs, valid_labels, pol, allow_exploration);
-        if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ecs);
+      if (get_most_recent_snapshot_action(srn.priv, action)) {
+        //remove_most_recent_snapshot(srn.priv);
       } else {
-        if (srn.priv->auto_history)
-          for (size_t a=0; a<num_ec; a++) {
-            cdbg << "class_index = " << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index << ":" << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].x << endl;
-            add_history_to_example(all, srn.priv->hinfo, &ecs[a], srn.priv->rollout_action.begin+srn.priv->t, a * history_constant);
-          }
-                                   //((OAA::mc_label*)ecs[a].ld)->label);
-        action = single_prediction_LDF(all, base, ecs, num_ec, (COST_SENSITIVE::label*)valid_labels, pol, allow_exploration);
-        if (srn.priv->auto_history)
-          for (size_t a=0; a<num_ec; a++)
-            remove_history_from_example(all, srn.priv->hinfo, &ecs[a]);
+        if (!srn.priv->is_ldf) {  // single example
+          if (srn.priv->hinfo.length>0) {cdbg << "add_history_to_example: srn.priv->t=" << srn.priv->t << " h=" << srn.priv->rollout_action.begin[srn.priv->t] << endl;}
+          if (srn.priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.priv->t+1; i++) cdbg << " " << srn.priv->rollout_action.begin[i]; cdbg << " ], len=" << srn.priv->rollout_action.size() << endl;}
+          if (srn.priv->auto_history) add_history_to_example(all, srn.priv->hinfo, ecs, srn.priv->rollout_action.begin+srn.priv->t);
+          action = single_prediction_notLDF<T>(all, srn, base, *ecs, valid_labels, pol, allow_exploration);
+          if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ecs);
+        } else {
+          if (srn.priv->auto_history)
+            for (size_t a=0; a<num_ec; a++) {
+              cdbg << "class_index = " << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index << ":" << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].x << endl;
+              add_history_to_example(all, srn.priv->hinfo, &ecs[a], srn.priv->rollout_action.begin+srn.priv->t, a * history_constant);
+            }
+          //((OAA::mc_label*)ecs[a].ld)->label);
+          action = single_prediction_LDF(all, base, ecs, num_ec, (COST_SENSITIVE::label*)valid_labels, pol, allow_exploration);
+          if (srn.priv->auto_history)
+            for (size_t a=0; a<num_ec; a++)
+              remove_history_from_example(all, srn.priv->hinfo, &ecs[a]);
+        }
+        set_most_recent_snapshot_action(srn.priv, action);
       }
-      set_most_recent_snapshot_action(srn.priv, action);
-      return (uint32_t)action;
+      return action;
     }
   }
 
@@ -723,7 +730,7 @@ namespace Searn
       for (size_t i=0; i<srn.priv->snapshot_data.size(); i++)
         free(srn.priv->snapshot_data[i].data_ptr);
     srn.priv->snapshot_data.erase();
-    srn.priv->snapshot_map.clear();
+    srn.priv->snapshot_map->clear();
   }
 
   void* copy_labels(searn &srn, void* l) {
@@ -1019,7 +1026,7 @@ namespace Searn
     else
       a = searn_predict_without_loss<CB::label            >(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
 
-    //if (!found_ss) set_most_recent_snapshot_action(priv, a);
+    //set_most_recent_snapshot_action(priv, a);
     priv->snapshotted_since_predict = false;
 
     if (priv->auto_hamming_loss) {
@@ -1040,70 +1047,70 @@ namespace Searn
   } 
       
 
-  // bool snapshot_binary_search_lt(v_array<snapshot_item> a, size_t desired_t, size_t tag, size_t &pos, size_t last_found_pos) {
-  //   size_t hi  = a.size();
-  //   if (hi == 0) return false;
-  //   if (last_found_pos + 1 < hi) {
-  //     pos = last_found_pos+1;
-  //     if ((a[pos].pred_step == desired_t) && (a[pos].tag == tag)) return true;
-  //     if (pos == hi - 1) { // this is the last item
-  //       if ((a[pos].pred_step < desired_t) && (a[pos].tag == tag)) return true;
-  //       else return false;
-  //     }
-  //     // not the last item
-  //     if ((a[pos].pred_step <= desired_t) && (a[pos].tag == tag) &&
-  //         ((a[pos+1].pred_step >  desired_t) ||
-  //          ((a[pos+1].pred_step == desired_t) && (a[pos+1].tag > tag))))
-  //       return true;
-  //   }
-  //   pos = hi >> 1;
-  //   while (true) {
-  //     if (hi <= 5) break;
-  //     if ((a[pos].pred_step == desired_t) && (a[pos].tag == tag)) return true;
-  //     if ((a[pos].pred_step >  desired_t) ||
-  //         ((a[pos].pred_step == desired_t) && (a[pos].tag >  tag)))
-  //       hi = pos;
-  //     else break;
+  bool snapshot_binary_search_lt(v_array<snapshot_item> a, size_t desired_t, size_t tag, size_t &pos, size_t last_found_pos) {
+    size_t hi  = a.size();
+    if (hi == 0) return false;
+    if (last_found_pos + 1 < hi) {
+      pos = last_found_pos+1;
+      if ((a[pos].pred_step == desired_t) && (a[pos].tag == tag)) return true;
+      if (pos == hi - 1) { // this is the last item
+        if ((a[pos].pred_step < desired_t) && (a[pos].tag == tag)) return true;
+        else return false;
+      }
+      // not the last item
+      if ((a[pos].pred_step <= desired_t) && (a[pos].tag == tag) &&
+          ((a[pos+1].pred_step >  desired_t) ||
+           ((a[pos+1].pred_step == desired_t) && (a[pos+1].tag > tag))))
+        return true;
+    }
+    pos = hi >> 1;
+    while (true) {
+      if (hi <= 5) break;
+      if ((a[pos].pred_step == desired_t) && (a[pos].tag == tag)) return true;
+      if ((a[pos].pred_step >  desired_t) ||
+          ((a[pos].pred_step == desired_t) && (a[pos].tag >  tag)))
+        hi = pos;
+      else break;
       
-  //     pos = hi >> 1;
-  //   }
+      pos = hi >> 1;
+    }
 
-  //   for (pos=hi-1; ; pos--) {
-  //     if ((a[pos].pred_step <= desired_t) && (tag == a[pos].tag)) return true;
-  //     if (pos == 0) return false;
-  //   }
-  //   return false;
-  // }
+    for (pos=hi-1; ; pos--) {
+      if ((a[pos].pred_step <= desired_t) && (tag == a[pos].tag)) return true;
+      if (pos == 0) return false;
+    }
+    return false;
+  }
 
 
-  // bool snapshot_binary_search_eq(v_array<snapshot_item> a, size_t desired_index, size_t tag, size_t &pos, size_t last_found_pos) {
-  //   size_t lo  = 0;  // the answer is always >= lo
-  //   size_t hi  = a.size();  // the answer is always < hi
-  //   if (hi == 0) return false;
+  bool snapshot_binary_search_eq(v_array<snapshot_item> a, size_t desired_index, size_t tag, size_t &pos, size_t last_found_pos) {
+    size_t lo  = 0;  // the answer is always >= lo
+    size_t hi  = a.size();  // the answer is always < hi
+    if (hi == 0) return false;
 
-  //   if (last_found_pos + 1 < hi) {
-  //     pos = last_found_pos+1;
-  //     if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
-  //   } else      
-  //     pos = (lo + hi) >> 1;
-  //   while (true) {
-  //     if (lo == hi) return false;
-  //     if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
-  //     if (hi - lo <= 5) break;
-  //     if ((a[pos].index <  desired_index) ||
-  //         ((a[pos].index == desired_index) && (a[pos].tag <  tag)))
-  //       lo = pos;
-  //     else
-  //       hi = pos;
-  //     pos = (lo + hi) >> 1;
-  //   }
+    if (last_found_pos + 1 < hi) {
+      pos = last_found_pos+1;
+      if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
+    } else      
+      pos = (lo + hi) >> 1;
+    while (true) {
+      if (lo == hi) return false;
+      if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
+      if (hi - lo <= 5) break;
+      if ((a[pos].index <  desired_index) ||
+          ((a[pos].index == desired_index) && (a[pos].tag <  tag)))
+        lo = pos;
+      else
+        hi = pos;
+      pos = (lo + hi) >> 1;
+    }
 
-  //   for (pos=lo; pos<hi; pos++) {
-  //     if (a[pos].index > desired_index) return false;
-  //     if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
-  //   }
-  //   return false;
-  // }
+    for (pos=lo; pos<hi; pos++) {
+      if (a[pos].index > desired_index) return false;
+      if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
+    }
+    return false;
+  }
 
   
 
@@ -1269,13 +1276,8 @@ namespace Searn
 
   void searn_snapshot_data(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
     //if (!used_for_prediction) return; // TODO: once we have fast-forward, we'll need to keep track of this!
-    if ((priv->state == NONE) || (priv->state == INIT_TEST) || (priv->state == GET_TRUTH_STRING))
+    if ((priv->state == NONE) || (priv->state == INIT_TEST) || (priv->state == GET_TRUTH_STRING) || (priv->state == BEAM_PLAYOUT))
       return;
-
-    if ((priv->state == BEAM_INIT) || (priv->state == BEAM_ADVANCE) || (priv->state == BEAM_PLAYOUT)) {
-      cerr << "beam not implemented" << endl;
-      throw exception();
-    }
 
     if ((priv->state == INIT_TRAIN) || (priv->state == LEARN)) {
       priv->snapshotted_since_predict = true;
@@ -1285,12 +1287,85 @@ namespace Searn
       if ((data_ptr != NULL) && (sizeof_data != 0)) {
         new_data = malloc(sizeof_data);
         memcpy(new_data, data_ptr, sizeof_data);
+        // if (     sizeof_data >= 4) priv->most_recent_snapshot_hash = 1348901 * priv->most_recent_snapshot_hash + *(uint32_t*)data_ptr;
+        // else if (sizeof_data >= 2) priv->most_recent_snapshot_hash = 1348901 * priv->most_recent_snapshot_hash + *(uint16_t*)data_ptr;
+        // else priv->most_recent_snapshot_hash = 1348901 * priv->most_recent_snapshot_hash + *(uint8_t*)data_ptr;
+        priv->most_recent_snapshot_hash = uniform_hash(data_ptr, sizeof_data, priv->most_recent_snapshot_hash);
+        // no hash takes 23s (81m collisions)
+        // halhash takes 23s (0   collisions)
+        // murmur  takes 24s (858 collisions)
       }
       snapshot_item item = { index, tag, new_data, sizeof_data, priv->t };
       priv->snapshot_data.push_back(item);
+
       return;
     }        
 
+    if (priv->state == BEAM_INIT) {
+      vw* all = priv->all;
+      searn* srn=(searn*)all->searnstr;
+      size_t cur_size = priv->snapshot_data.size();
+      if ((cur_size > 0) && // only need to keep around the NEWEST set of snapshots
+          (priv->snapshot_data[cur_size - 1].pred_step < priv->t))
+        clear_snapshot(*all, *srn, true);
+      
+      void* new_data = malloc(sizeof_data);
+      memcpy(new_data, data_ptr, sizeof_data);
+      snapshot_item item = { index, tag, new_data, sizeof_data, priv->t };
+      priv->snapshot_data.push_back(item);
+
+      return;
+    }
+
+    if (priv->state == BEAM_ADVANCE) {
+      /*UNDOME*/cdbg << "snapshot(BEAM_ADVANCE), srn.priv->t=" << priv->t << ", hyp.t=" << priv->cur_beam_hyp->t << " { cur_beam_hyp=" << priv->cur_beam_hyp << ", parent=" << priv->cur_beam_hyp->parent << " }" << endl;
+      assert(priv->cur_beam_hyp->parent != NULL);
+      if (priv->t < priv->cur_beam_hyp->t) {
+        if (priv->cur_beam_hyp->parent->snapshot.size() == 0) {
+          /*UNDOME*/cdbg << "skipping because parent snapshot is empty" << endl;
+          assert(priv->cur_beam_hyp->parent->t == 0);
+        } else {
+          /*UNDOME*/cdbg << "skipping to desired position" << endl;
+          assert(priv->cur_beam_hyp->parent->snapshot.size() > 0);
+          size_t i, desired_index = priv->cur_beam_hyp->parent->snapshot[0].index;
+          bool found = snapshot_binary_search_eq(priv->cur_beam_hyp->parent->snapshot, desired_index, tag, i, priv->snapshot_last_found_pos);
+          if (! found) {
+            cerr << "beam search failed (snapshot not found)" << endl;
+            throw exception();
+          }
+
+          assert(sizeof_data == priv->cur_beam_hyp->parent->snapshot[i].data_size);
+          memcpy(data_ptr, priv->cur_beam_hyp->parent->snapshot[i].data_ptr, sizeof_data);
+          priv->t = priv->cur_beam_hyp->parent->snapshot[i].pred_step;
+          cdbg << "  set data_ptr to " << *(uint32_t*)data_ptr << ", and priv->t to " << priv->t << " { cur_beam_hyp=" << priv->cur_beam_hyp << ", parent=" << priv->cur_beam_hyp->parent << " }" << endl;
+        }
+      } else if (priv->t == priv->cur_beam_hyp->t) {
+        /*UNDOME*/cdbg << "recording index=" << index << " tag=" << tag << " data_ptr=" << *(uint32_t*)data_ptr << " { cur_beam_hyp=" << priv->cur_beam_hyp << ", parent=" << priv->cur_beam_hyp->parent << " }" << endl;
+        void* new_data = malloc(sizeof_data);
+        memcpy(new_data, data_ptr, sizeof_data);
+        snapshot_item item = { index, tag, new_data, sizeof_data, priv->t };
+        priv->cur_beam_hyp->snapshot.push_back(item);
+        priv->cur_beam_hyp->filled_in_snapshot = true;
+      } else {
+        /*UNDOME*/cdbg << "fast forward to end" << endl;
+        // fast foward to end
+        size_t i;
+        assert(priv->beam_restore_to_end.size() > 0);
+        size_t end_index = priv->beam_restore_to_end[0].index;
+        bool found = snapshot_binary_search_eq(priv->beam_restore_to_end, end_index, tag, i, priv->snapshot_last_found_pos);
+        if (! found) {
+          cerr << "beam search failed (fast-forward not found)" << endl;
+          throw exception();
+        }
+
+        assert(sizeof_data == priv->beam_restore_to_end[i].data_size);
+        memcpy(data_ptr, priv->beam_restore_to_end[i].data_ptr, sizeof_data);
+        priv->t = priv->beam_restore_to_end[i].pred_step;
+      }
+
+      return;
+    }
+    
     cerr << "yikes, how did I get here? state = " << priv->state << endl;
     throw exception();
   }
@@ -1300,6 +1375,7 @@ namespace Searn
     if (! priv->do_snapshot) return;
 
     if (tag == 1) {
+      priv->most_recent_snapshot_hash  = 38429103;
       priv->most_recent_snapshot_begin = priv->snapshot_data.size();
       priv->most_recent_snapshot_end   = -1;
       if (priv->auto_history) {
@@ -2245,7 +2321,7 @@ void print_update(vw& all, searn& srn)
     if ((opts & OPT_IS_LDF)               != 0) priv->is_ldf = true;
   }
 
-  bool snapshot_item_ptr_eq(void*ss_data, snapshot_item_ptr &a, snapshot_item_ptr &b) {
+  bool snapshot_item_ptr_eq0(void*ss_data, snapshot_item_ptr &a, snapshot_item_ptr &b) {
     if ((a.start == b.start) && (a.end == b.end)) return true;
     v_array<snapshot_item> *ss = (v_array<snapshot_item>*)ss_data;
     if (a.hash_value != b.hash_value) return false;
@@ -2258,6 +2334,12 @@ void print_update(vw& all, searn& srn)
       if (memcmp(ss->get(a.start + i).data_ptr, ss->get(b.start + i).data_ptr, a_ds) != 0) return false;
     }
     return true;
+  }
+
+  bool snapshot_item_ptr_eq(void*ss_data, snapshot_item_ptr &a, snapshot_item_ptr &b) {
+    bool r = snapshot_item_ptr_eq0(ss_data, a, b);
+    //cerr << r;
+    return r;
   }
 
   void searn_initialize(vw& all, searn& srn)
@@ -2319,7 +2401,7 @@ void print_update(vw& all, searn& srn)
     srn.priv->examples_dont_change = false;
     srn.priv->is_ldf = false;
 
-    srn.priv->snapshot_map.init(1023, 0, snapshot_item_ptr_eq, &srn.priv->snapshot_data);
+    srn.priv->snapshot_map = new snapmap(102341, 0, snapshot_item_ptr_eq, &srn.priv->snapshot_data);
     
     srn.priv->empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);
     COST_SENSITIVE::cs_label.default_label(srn.priv->empty_example->ld);
@@ -2398,8 +2480,9 @@ void print_update(vw& all, searn& srn)
 
 #ifdef DEBUG_COLLISIONS
     cerr << "total num_collisions = " << srn.priv->total_num_collisions << " out of " << srn.priv->total_predictions_made << endl;
-#endif    
-    free(srn.priv);
+#endif
+    delete srn.priv->snapshot_map;
+    delete srn.priv;
   }
 
   void ensure_param(float &v, float lo, float hi, float def, const char* string) {
@@ -2569,7 +2652,7 @@ void print_update(vw& all, searn& srn)
   learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
   {
     searn* srn = (searn*)calloc_or_die(1,sizeof(searn));
-    srn->priv = (searn_private*)calloc_or_die(1,sizeof(searn_private));
+    srn->priv = new searn_private();
     srn->priv->all = &all;
 
     searn_initialize(all, *srn);

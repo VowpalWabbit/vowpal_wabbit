@@ -29,7 +29,7 @@ template<class K, class V> class v_hashmap{
   size_t last_position;
   size_t num_occupants;
   void*eq_data;
-
+  //size_t num_linear_steps, num_clear, total_size_at_clears;
 
   size_t base_size() {
     return dat.end_array-dat.begin;
@@ -56,9 +56,16 @@ template<class K, class V> class v_hashmap{
 
   void delete_v() { dat.delete_v(); }
   
-  ~v_hashmap() { delete_v(); }
+  ~v_hashmap() {
+    //cerr << "num_linear_steps = " << num_linear_steps << ", total_size_at_clears = " << total_size_at_clears << ", num_clear = " << num_clear << endl;
+    delete_v();
+  }
 
   void clear() {
+    if (num_occupants == 0) return;
+    //total_size_at_clears += num_occupants;
+    //num_clear++;
+
     memset(dat.begin, 0, base_size()*sizeof(hash_elem));
     last_position = 0;
     num_occupants = 0;
@@ -113,6 +120,7 @@ template<class K, class V> class v_hashmap{
   void double_size() {
     //    printf("doubling size!\n");
     // remember the old occupants
+    cerr << "[(double)]";
     v_array<hash_elem>tmp = v_array<hash_elem>();
     tmp.resize(num_occupants+10, true);
     for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
@@ -149,6 +157,8 @@ template<class K, class V> class v_hashmap{
         return dat[last_position].val;
 
       // there's something there that's NOT us -- advance pointer
+      //cerr << "+";
+      //num_linear_steps++;
       last_position++;
       if (last_position >= sz)
         last_position = 0;
