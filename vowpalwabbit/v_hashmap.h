@@ -23,6 +23,7 @@ template<class K, class V> class v_hashmap{
   };
 
   bool (*equivalent)(void*,K&,K&);
+  bool (*equivalent_no_data)(K&,K&);
   //  size_t (*hash)(K);
   V default_value;
   v_array<hash_elem> dat;
@@ -42,30 +43,38 @@ template<class K, class V> class v_hashmap{
 
     default_value = def;
     equivalent = eq;
+    equivalent_no_data = NULL;
     eq_data = eq_dat;
 
     last_position = 0;
     num_occupants = 0;
   }
 
-  v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=NULL) {
-    init(min_size, def, eq, eq_dat);
+  void init(size_t min_size, V def, bool (*eq)(K&,K&)) {
+    dat = v_array<hash_elem>();
+    if (min_size < 1023) min_size = 1023;
+    dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
+
+    default_value = def;
+    equivalent = NULL;
+    equivalent_no_data = eq;
+    eq_data = NULL;
+
+    last_position = 0;
+    num_occupants = 0;
   }
+  
+  v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=NULL) { init(min_size, def, eq, eq_dat); }
+  v_hashmap(size_t min_size, V def, bool (*eq)(K&,K&))                         { init(min_size, def, eq); }
 
   void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=NULL) { equivalent = eq; eq_data = eq_dat; }
 
   void delete_v() { dat.delete_v(); }
   
-  ~v_hashmap() {
-    //cerr << "num_linear_steps = " << num_linear_steps << ", total_size_at_clears = " << total_size_at_clears << ", num_clear = " << num_clear << endl;
-    delete_v();
-  }
+  ~v_hashmap() { delete_v(); }
 
   void clear() {
     if (num_occupants == 0) return;
-    //total_size_at_clears += num_occupants;
-    //num_clear++;
-
     memset(dat.begin, 0, base_size()*sizeof(hash_elem));
     last_position = 0;
     num_occupants = 0;
@@ -141,6 +150,15 @@ template<class K, class V> class v_hashmap{
     tmp.delete_v();
   }
 
+  bool is_equivalent(K key, K key2) {
+    if ((equivalent == NULL) && (equivalent_no_data == NULL))
+      return true;
+    if (equivalent != NULL)
+      return equivalent(eq_data, key, key2);
+    else
+      return equivalent_no_data(key, key2);
+  }
+  
   V get(K key, size_t hash) {
     size_t sz  = base_size();
     size_t first_position = hash % sz;
@@ -151,9 +169,7 @@ template<class K, class V> class v_hashmap{
         return default_value;
 
       // there's something there: maybe it's us
-      if ((dat[last_position].hash == hash) &&
-          ((equivalent == NULL) ||
-           (equivalent(eq_data, key, dat[last_position].key))))
+      if ((dat[last_position].hash == hash) && is_equivalent(key, dat[last_position].key))
         return dat[last_position].val;
 
       // there's something there that's NOT us -- advance pointer
@@ -181,9 +197,7 @@ template<class K, class V> class v_hashmap{
         return false;
 
       // there's something there: maybe it's us
-      if ((dat[last_position].hash == hash) &&
-          ((equivalent == NULL) ||
-           (equivalent(eq_data, key, dat[last_position].key))))
+      if ((dat[last_position].hash == hash) && is_equivalent(key, dat[last_position].key))
         return true;
 
       // there's something there that's NOT us -- advance pointer

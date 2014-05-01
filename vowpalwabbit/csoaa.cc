@@ -116,7 +116,7 @@ namespace CSOAA_AND_WAP_LDF {
   };
 
 namespace LabelDict { 
-  bool size_t_eq(void*none, size_t &a, size_t &b) { return (a==b); }
+  bool size_t_eq(size_t &a, size_t &b) { return (a==b); }
 
   size_t hash_lab(size_t lab) { return 328051 + 94389193 * lab; }
   

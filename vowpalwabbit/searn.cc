@@ -1345,19 +1345,13 @@ namespace Searn
     // srn.priv->snapshot_last_found_pos = (size_t)-1;
   }
 
-
-  void beam_predict(vw&all, searn&srn, vector<example*>ec) {
+void compute_full_beam(vw&all, searn&srn, vector<example*>ec, v_array<beam_hyp>& hyp_pool, size_t& hyp_pool_id, Beam::beam* final_beam) {
     using namespace Beam;
     uint32_t DEFAULT_HASH = 0;
 
-    v_array<beam_hyp> hyp_pool;
-    size_t hyp_pool_id = 0;
-    hyp_pool.resize(10000, true);
-
     beam* cur_beam   = new beam(srn.priv->beam_size);
     beam* next_beam  = new beam(srn.priv->beam_size);
-    beam* final_beam = new beam(max(1, min(srn.priv->beam_size, srn.priv->kbest)));  // at least 1, but otherwise the min of beam_size and kbest
-
+    
     // initialize first beam
     {
       // in this call to structured_predict, we do the following:
@@ -1482,6 +1476,33 @@ namespace Searn
       /*UNDOME*/cdbg << endl;
     }
 
+    // get the final info out
+    final_beam->compact();
+
+    cur_beam->erase();
+    next_beam->erase();
+    delete cur_beam;
+    delete next_beam;
+  }
+
+
+  void free_hyp_pool(v_array<beam_hyp> &hyp_pool, size_t &hyp_pool_id) {
+    for (size_t i=0; i<hyp_pool_id; i++) {
+      if (hyp_pool[i].action_costs)
+        free(hyp_pool[i].action_costs);
+      for (size_t j=0; j<hyp_pool[i].snapshot.size(); j++)
+        if (hyp_pool[i].snapshot[j].data_ptr)
+          free(hyp_pool[i].snapshot[j].data_ptr);
+      hyp_pool[i].snapshot.delete_v();
+    }
+
+    hyp_pool.delete_v();
+  }
+
+
+  void beam_predict(vw&all, searn&srn, vector<example*>ec, v_array<beam_hyp> &hyp_pool, size_t &hyp_pool_id) {
+    using namespace Beam;
+    
     if (might_print_update(all)) {
       reset_searn_structure(srn);
       srn.priv->state = GET_TRUTH_STRING;
@@ -1489,15 +1510,18 @@ namespace Searn
       srn.priv->truth_string->str("");
       srn.task->structured_predict(srn, ec);
     }
+
+    beam* final_beam = new beam(max(1, min(srn.priv->beam_size, srn.priv->kbest)));  // at least 1, but otherwise the min of beam_size and kbest
     
-    // get the final info out
-    final_beam->compact();
+    compute_full_beam(all, srn, ec, hyp_pool, hyp_pool_id, final_beam);
+    
     { // TODO: check if this is going to be used at all!!!
       /*UNDOME*/cdbg << "========== FINAL ROLLOUT(S) ==" <<endl;
       assert(final_beam->size() > 0);
       stringstream spred;
       stringstream* old_pred_string = srn.priv->pred_string;
 
+      srn.priv->pred_string->str("");
       bool is_first = true;
       srn.priv->should_produce_string = true;
       for (beam_element * be = final_beam->begin(); be != final_beam->end(); ++be) {
@@ -1532,24 +1556,8 @@ namespace Searn
         for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
           all.print_text(*sink, "", ec[0]->tag);
     }
-
-    
-    for (size_t i=0; i<hyp_pool_id; i++) {
-      if (hyp_pool[i].action_costs)
-        free(hyp_pool[i].action_costs);
-      for (size_t j=0; j<hyp_pool[i].snapshot.size(); j++)
-        if (hyp_pool[i].snapshot[j].data_ptr)
-          free(hyp_pool[i].snapshot[j].data_ptr);
-      hyp_pool[i].snapshot.delete_v();
-    }
-
-    hyp_pool.delete_v();
   
-    cur_beam->erase();
-    next_beam->erase();
     final_beam->erase();
-    delete cur_beam;
-    delete next_beam;
     delete final_beam;
   }
 
@@ -1993,10 +2001,17 @@ void print_update(vw& all, searn& srn)
       return;  // nothing to do :)
 
     add_neighbor_features(srn);
+    
     if (srn.priv->beam_size == 0)
       train_single_example<is_learn>(all, srn, srn.priv->ec_seq);
-    else
-      beam_predict(all, srn, srn.priv->ec_seq);
+    else {
+      v_array<beam_hyp> hyp_pool;
+      size_t hyp_pool_id = 0;
+      hyp_pool.resize(10000, true);
+      beam_predict(all, srn, srn.priv->ec_seq, hyp_pool, hyp_pool_id);
+      free_hyp_pool(hyp_pool, hyp_pool_id);
+    }
+    
     del_neighbor_features(srn);
 
     if (srn.priv->ec_seq[0]->test_only) {
