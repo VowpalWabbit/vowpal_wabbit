@@ -32,8 +32,6 @@ bool isfinite(float x)
 // task-specific includes
 #include "searn_sequencetask.h"
 
-//#define DEBUG_COLLISIONS
-
 using namespace LEARNER;
 
 namespace Searn
@@ -194,13 +192,6 @@ namespace Searn
     clock_t start_clock_time;
     
     example*empty_example;
-
-#ifdef DEBUG_COLLISIONS
-#define PRED_COLLISION_COUNT 472389011
-    uint32_t num_learn_calls;
-    short    prediction_hashes[PRED_COLLISION_COUNT];
-    uint32_t total_num_collisions;
-#endif
   };
 
   string   audit_feature_space("history");
@@ -614,13 +605,6 @@ namespace Searn
     void* old_label = ec.ld;
     ec.ld = valid_labels;
 
-#ifdef DEBUG_COLLISIONS    
-    if ((srn.priv->state == INIT_TRAIN) || (srn.priv->state == LEARN)) {
-      uint32_t ec_hash = hash_example(ec, srn.priv->num_learn_calls * 324879021);
-      srn.priv->prediction_hashes[ec_hash % PRED_COLLISION_COUNT]++;
-    }
-#endif
-    
     base.predict(ec, pol);
     srn.priv->total_predictions_made++;
     srn.priv->num_features += ec.num_features;
@@ -1112,168 +1096,6 @@ namespace Searn
     return false;
   }
 
-  
-
-  // void searn_snapshot_data(vw& all, searn*srn, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
-  // {
-  //   if (! srn->priv->do_snapshot) return;
-
-  //   /*UNDOME*/cdbg << "snapshot called with:   { index=" << index << ", tag=" << tag << ", data_ptr=" << *(uint32_t*)data_ptr << ", sizeof_data=" << sizeof_data << ", t=" << srn->priv->t << ", u4p=" << used_for_prediction << " }" << endl;
-
-  //   if (srn->priv->state == INIT_TEST) {
-  //     return;
-  //   } else if (srn->priv->state == GET_TRUTH_STRING) {
-  //     return;
-  //   } else if (srn->priv->state == INIT_TRAIN) {  // training means "record snapshots"
-  //     if ((srn->priv->snapshot_data.size() > 0) &&
-  //         ((srn->priv->snapshot_data.last().index > index) ||
-  //          ((srn->priv->snapshot_data.last().index == index) && (srn->priv->snapshot_data.last().tag > tag)))) 
-  //       cerr << "warning: trying to snapshot in a non-monotonic order! ignoring this snapshot" << endl;
-  //     else {
-  //       void* new_data = malloc(sizeof_data);
-  //       memcpy(new_data, data_ptr, sizeof_data);
-  //       snapshot_item item = { index, tag, new_data, sizeof_data, srn->priv->t };
-  //       srn->priv->snapshot_data.push_back(item);
-  //     }
-  //     return;
-  //   } else if (srn->priv->state == LEARN) {
-  //     if (srn->priv->t <= srn->priv->learn_t) {  // RESTORE up to certain point
-  //       // otherwise, we're restoring snapshots -- we want to find the index of largest value that has .t<=learn_t
-  //       size_t i;
-  //       bool found;
-  //       found = snapshot_binary_search_lt(srn->priv->snapshot_data, srn->priv->learn_t, tag, i, srn->priv->snapshot_last_found_pos);
-  //       if (!found) return;  // can't do anything
-
-  //       if (tag == 1)
-  //         srn->priv->loss_last_step = srn->priv->snapshot_data[i].pred_step;
-        
-  //       srn->priv->snapshot_last_found_pos = i;
-  //       snapshot_item item = srn->priv->snapshot_data[i];
-
-  //       assert(sizeof_data == item.data_size);
-
-  //       memcpy(data_ptr, item.data_ptr, sizeof_data);
-  //       srn->priv->t = item.pred_step;
-  //     } else if (srn->priv->do_fastforward) { // can we FAST FORWARD to end???
-  //       if (srn->priv->rollout_method == 1) return; // if rollout_oracle, return; TODO: what about none?
-  //       if (! srn->priv->snapshot_could_match) return; // already hosed
-  //       if (! used_for_prediction) return; // we don't care if it matches or not
-  //       size_t i;
-  //       bool found = snapshot_binary_search_eq(srn->priv->snapshot_data, index, tag, i, srn->priv->snapshot_last_found_pos);
-  //       if (!found) return; // can't do anything -- TODO is this right?
-      
-  //       srn->priv->snapshot_last_found_pos = i;
-  //       snapshot_item item = srn->priv->snapshot_data[i];
-  //       bool matches = memcmp(item.data_ptr, data_ptr, sizeof_data) == 0;
-  //       if (matches) {
-  //         // TODO: make sure it's the right number of snapshots!!!
-  //         srn->priv->snapshot_is_equivalent_to_t = item.pred_step;
-  //       } else {
-  //         srn->priv->snapshot_could_match = false;
-  //       }
-  //     }
-  //   } else if (srn->priv->state == BEAM_INIT) {
-  //     size_t cur_size = srn->priv->snapshot_data.size();
-  //     if ((cur_size > 0) && // only need to keep around the NEWEST set of snapshots
-  //         (srn->priv->snapshot_data[cur_size - 1].pred_step < srn->priv->t))
-  //       clear_snapshot(all, *srn, true);
-      
-  //     void* new_data = malloc(sizeof_data);
-  //     memcpy(new_data, data_ptr, sizeof_data);
-  //     snapshot_item item = { index, tag, new_data, sizeof_data, srn->priv->t };
-  //     srn->priv->snapshot_data.push_back(item);
-  //   } else if (srn->priv->state == BEAM_ADVANCE) {
-  //     /*UNDOME*/cdbg << "snapshot(BEAM_ADVANCE), srn.priv->t=" << srn->priv->t << ", hyp.t=" << srn->priv->cur_beam_hyp->t << " { cur_beam_hyp=" << srn->priv->cur_beam_hyp << ", parent=" << srn->priv->cur_beam_hyp->parent << " }" << endl;
-  //     assert(srn->priv->cur_beam_hyp->parent != NULL);
-  //     if (srn->priv->t < srn->priv->cur_beam_hyp->t) {
-  //       if (srn->priv->cur_beam_hyp->parent->snapshot.size() == 0) {
-  //         /*UNDOME*/cdbg << "skipping because parent snapshot is empty" << endl;
-  //         assert(srn->priv->cur_beam_hyp->parent->t == 0);
-  //       } else {
-  //         /*UNDOME*/cdbg << "skipping to desired position" << endl;
-  //         assert(srn->priv->cur_beam_hyp->parent->snapshot.size() > 0);
-  //         size_t i, desired_index = srn->priv->cur_beam_hyp->parent->snapshot[0].index;
-  //         bool found = snapshot_binary_search_eq(srn->priv->cur_beam_hyp->parent->snapshot, desired_index, tag, i, srn->priv->snapshot_last_found_pos);
-  //         if (! found) {
-  //           cerr << "beam search failed (snapshot not found)" << endl;
-  //           throw exception();
-  //         }
-
-  //         assert(sizeof_data == srn->priv->cur_beam_hyp->parent->snapshot[i].data_size);
-  //         memcpy(data_ptr, srn->priv->cur_beam_hyp->parent->snapshot[i].data_ptr, sizeof_data);
-  //         srn->priv->t = srn->priv->cur_beam_hyp->parent->snapshot[i].pred_step;
-  //         cdbg << "  set data_ptr to " << *(uint32_t*)data_ptr << ", and srn->priv->t to " << srn->priv->t << " { cur_beam_hyp=" << srn->priv->cur_beam_hyp << ", parent=" << srn->priv->cur_beam_hyp->parent << " }" << endl;
-  //       }
-  //     } else if (srn->priv->t == srn->priv->cur_beam_hyp->t) {
-  //       /*UNDOME*/cdbg << "recording index=" << index << " tag=" << tag << " data_ptr=" << *(uint32_t*)data_ptr << " { cur_beam_hyp=" << srn->priv->cur_beam_hyp << ", parent=" << srn->priv->cur_beam_hyp->parent << " }" << endl;
-  //       void* new_data = malloc(sizeof_data);
-  //       memcpy(new_data, data_ptr, sizeof_data);
-  //       snapshot_item item = { index, tag, new_data, sizeof_data, srn->priv->t };
-  //       srn->priv->cur_beam_hyp->snapshot.push_back(item);
-  //       srn->priv->cur_beam_hyp->filled_in_snapshot = true;
-  //     } else {
-  //       /*UNDOME*/cdbg << "fast forward to end" << endl;
-  //       // fast foward to end
-  //       size_t i;
-  //       assert(srn->priv->beam_restore_to_end.size() > 0);
-  //       size_t end_index = srn->priv->beam_restore_to_end[0].index;
-  //       bool found = snapshot_binary_search_eq(srn->priv->beam_restore_to_end, end_index, tag, i, srn->priv->snapshot_last_found_pos);
-  //       if (! found) {
-  //         cerr << "beam search failed (fast-forward not found)" << endl;
-  //         throw exception();
-  //       }
-
-  //       assert(sizeof_data == srn->priv->beam_restore_to_end[i].data_size);
-  //       memcpy(data_ptr, srn->priv->beam_restore_to_end[i].data_ptr, sizeof_data);
-  //       srn->priv->t = srn->priv->beam_restore_to_end[i].pred_step;
-  //     }
-  //   } else if (srn->priv->state == BEAM_PLAYOUT) {
-  //     // don't do any snapshotting
-  //   } else {
-  //     cerr << "fail: searn got into ill-defined state (" << (int)srn->priv->state << ")" << endl;
-  //     throw exception();
-  //   }
-  // }
-
-
-  // void searn_snapshot(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
-  //   vw* all = priv->all;
-  //   searn* srn=(searn*)all->searnstr;
-  //   assert(tag >= 1);
-  //   if (sizeof_data == 0) return;
-
-  //   if (srn->priv->auto_history && (srn->priv->hinfo.length > 0) && (tag == 1)) { // first, take care of auto-history
-  //     size_t history_size = sizeof(uint32_t) * srn->priv->hinfo.length;
-  //     if (srn->priv->state == INIT_TRAIN) {
-  //       if (((srn->priv->snapshot_data.size() == 0) || (srn->priv->snapshot_data.last().index < index)))
-  //         searn_snapshot_data(*all, srn, index, 0, srn->priv->rollout_action.begin + srn->priv->t, history_size, true);
-  //     } else if (srn->priv->state == LEARN) {
-  //       if (srn->priv->do_fastforward || (srn->priv->t <= srn->priv->learn_t)) {
-  //         if (srn->priv->rollout_action.size() < srn->priv->learn_t + srn->priv->hinfo.length)
-  //           srn->priv->rollout_action.resize(srn->priv->learn_t + srn->priv->hinfo.length, true);
-  //         searn_snapshot_data(*all, srn, index, 0, srn->priv->rollout_action.begin + srn->priv->learn_t, history_size, true);
-  //       }
-  //     } else if (srn->priv->state == BEAM_INIT) {
-  //       /*UNDOME*/cdbg << "BEAM_INIT snapshot rollout_action srn.priv->t=" << srn->priv->t << endl;
-  //       searn_snapshot_data(*all, srn, index, 0, srn->priv->rollout_action.begin + srn->priv->t, history_size, true);
-  //     } else if (srn->priv->state == BEAM_ADVANCE) {
-  //       uint32_t t = (srn->priv->t < srn->priv->cur_beam_hyp->t) ? (uint32_t)srn->priv->cur_beam_hyp->t - 1 : (uint32_t)srn->priv->t; 
-  //       /*UNDOME*/cdbg << "BEAM_ADVANCE snapshot rollout_action srn.priv->t=" << srn->priv->t << " cur_beam_hyp.t=" << srn->priv->cur_beam_hyp->t << endl;
-  //       cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->priv->t+1; i++) cdbg << " " << srn->priv->rollout_action.begin[i]; cdbg << " ], len=" << srn->priv->rollout_action.size() << endl;
-  //       if (srn->priv->rollout_action.size() <= /*srn->priv->*/t + srn->priv->hinfo.length)
-  //         srn->priv->rollout_action.resize(/*srn->priv->*/t + srn->priv->hinfo.length + 1, false);
-  //       cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->priv->t+1; i++) cdbg << " " << srn->priv->rollout_action.begin[i]; cdbg << " ], len=" << srn->priv->rollout_action.size() << endl;
-  //       searn_snapshot_data(*all, srn, index, 0, srn->priv->rollout_action.begin + /*srn->priv->*/t, history_size, true);
-  //       if (srn->priv->rollout_action.end < srn->priv->rollout_action.begin + t)
-  //         srn->priv->rollout_action.end = srn->priv->rollout_action.begin + t;
-  //       //cdbg << "  rollout_action = ["; for (size_t i=0; i<srn->priv->t+1; i++) cdbg << " " << srn->priv->rollout_action.begin[i]; cdbg << " ], len=" << srn->priv->rollout_action.size() << endl;
-  //     }
-  //   }
-
-  //   searn_snapshot_data(*all, srn, index, tag, data_ptr, sizeof_data, used_for_prediction);
-  // }
-
-
   void searn_snapshot_data(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
     //if (!used_for_prediction) return; // TODO: once we have fast-forward, we'll need to keep track of this!
     if ((priv->state == NONE) || (priv->state == INIT_TEST) || (priv->state == GET_TRUTH_STRING) || (priv->state == BEAM_PLAYOUT))
@@ -1287,13 +1109,7 @@ namespace Searn
       if ((data_ptr != NULL) && (sizeof_data != 0)) {
         new_data = malloc(sizeof_data);
         memcpy(new_data, data_ptr, sizeof_data);
-        // if (     sizeof_data >= 4) priv->most_recent_snapshot_hash = 1348901 * priv->most_recent_snapshot_hash + *(uint32_t*)data_ptr;
-        // else if (sizeof_data >= 2) priv->most_recent_snapshot_hash = 1348901 * priv->most_recent_snapshot_hash + *(uint16_t*)data_ptr;
-        // else priv->most_recent_snapshot_hash = 1348901 * priv->most_recent_snapshot_hash + *(uint8_t*)data_ptr;
         priv->most_recent_snapshot_hash = uniform_hash(data_ptr, sizeof_data, priv->most_recent_snapshot_hash);
-        // no hash takes 23s (81m collisions)
-        // halhash takes 23s (0   collisions)
-        // murmur  takes 24s (858 collisions)
       }
       snapshot_item item = { index, tag, new_data, sizeof_data, priv->t };
       priv->snapshot_data.push_back(item);
@@ -1473,9 +1289,6 @@ namespace Searn
       if (srn.priv->auto_history) add_history_to_example(all, srn.priv->hinfo, ec, srn.priv->rollout_action.begin+srn.priv->learn_t);
       ec[0].in_use = true;
       base.learn(ec[0], srn.priv->current_policy);
-#ifdef DEBUG_COLLISIONS
-      srn.priv->num_learn_calls++;
-#endif
       if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ec);
       ec[0].ld = old_label;
       srn.priv->total_examples_generated++;
@@ -1495,15 +1308,9 @@ namespace Searn
         //((COST_SENSITIVE::label*)ec[a].ld)->costs[0].class_index);
         ec[a].in_use = true;
         base.learn(ec[a], srn.priv->current_policy);
-#ifdef DEBUG_COLLISIONS
-        srn.priv->num_learn_calls++;
-#endif
       }
       cdbg << "learn: generate empty example" << endl;
       base.learn(*srn.priv->empty_example);
-#ifdef DEBUG_COLLISIONS
-      srn.priv->num_learn_calls++;
-#endif
       //cdbg << "learn done " << repeat << endl;
       if (srn.priv->auto_history)
         for (size_t a=0; a<len; a++)
@@ -2185,10 +1992,6 @@ void print_update(vw& all, searn& srn)
     if (srn.priv->ec_seq.size() == 0)
       return;  // nothing to do :)
 
-#ifdef DEBUG_COLLISIONS
-    memset(srn.priv->prediction_hashes, 0, PRED_COLLISION_COUNT * sizeof(short));
-#endif
-    
     add_neighbor_features(srn);
     if (srn.priv->beam_size == 0)
       train_single_example<is_learn>(all, srn, srn.priv->ec_seq);
@@ -2196,21 +1999,6 @@ void print_update(vw& all, searn& srn)
       beam_predict(all, srn, srn.priv->ec_seq);
     del_neighbor_features(srn);
 
-#ifdef DEBUG_COLLISIONS
-    uint32_t num_collisions = 0;
-    cerr << "collisions:";
-    for (size_t i=0; i<PRED_COLLISION_COUNT; i++) {
-      if (srn.priv->prediction_hashes[i] > 1)
-        num_collisions += srn.priv->prediction_hashes[i] - 1;
-      if (srn.priv->prediction_hashes[i] >= 1)
-        cerr << ' ' << srn.priv->prediction_hashes[i];
-    }
-    srn.priv->total_num_collisions += num_collisions;
-    cerr << endl;
-    //if (num_collisions > 0)
-    //cerr << "num_collisions = " << num_collisions << endl;
-#endif
-    
     if (srn.priv->ec_seq[0]->test_only) {
       all.sd->weighted_holdout_examples += 1.f;//test weight seen
       all.sd->weighted_holdout_examples_since_last_dump += 1.f;
@@ -2406,9 +2194,6 @@ void print_update(vw& all, searn& srn)
     srn.priv->empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);
     COST_SENSITIVE::cs_label.default_label(srn.priv->empty_example->ld);
     srn.priv->empty_example->in_use = true;
-#ifdef DEBUG_COLLISIONS
-    srn.priv->num_learn_calls = 0;
-#endif
   }
 
   void searn_finish(searn& srn)
@@ -2478,9 +2263,6 @@ void print_update(vw& all, searn& srn)
     srn.priv->beam_restore_to_end.delete_v();
     srn.priv->beam_final_action_sequence.delete_v();
 
-#ifdef DEBUG_COLLISIONS
-    cerr << "total num_collisions = " << srn.priv->total_num_collisions << " out of " << srn.priv->total_predictions_made << endl;
-#endif
     delete srn.priv->snapshot_map;
     delete srn.priv;
   }
