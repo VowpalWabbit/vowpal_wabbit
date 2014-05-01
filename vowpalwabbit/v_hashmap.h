@@ -22,35 +22,37 @@ template<class K, class V> class v_hashmap{
     size_t hash;
   };
 
-  bool (*equivalent)(K,K);
+  bool (*equivalent)(void*,K&,K&);
   //  size_t (*hash)(K);
   V default_value;
   v_array<hash_elem> dat;
   size_t last_position;
   size_t num_occupants;
+  void*eq_data;
 
 
   size_t base_size() {
     return dat.end_array-dat.begin;
   }
 
-  void init(size_t min_size, V def, bool (*eq)(K,K)) {
+  void init(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=NULL) {
     dat = v_array<hash_elem>();
     if (min_size < 1023) min_size = 1023;
     dat.resize(min_size, true); // resize sets to 0 ==> occupied=false
 
     default_value = def;
     equivalent = eq;
+    eq_data = eq_dat;
 
     last_position = 0;
     num_occupants = 0;
   }
 
-  v_hashmap(size_t min_size, V def, bool (*eq)(K,K)) {
-    init(min_size, def, eq);
+  v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=NULL) {
+    init(min_size, def, eq, eq_dat);
   }
 
-  void set_equivalent(bool (*eq)(K,K)) { equivalent = eq; }
+  void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=NULL) { equivalent = eq; eq_data = eq_dat; }
 
   void delete_v() { dat.delete_v(); }
   
@@ -143,7 +145,7 @@ template<class K, class V> class v_hashmap{
       // there's something there: maybe it's us
       if ((dat[last_position].hash == hash) &&
           ((equivalent == NULL) ||
-           (equivalent(key, dat[last_position].key))))
+           (equivalent(eq_data, key, dat[last_position].key))))
         return dat[last_position].val;
 
       // there's something there that's NOT us -- advance pointer
@@ -171,7 +173,7 @@ template<class K, class V> class v_hashmap{
       // there's something there: maybe it's us
       if ((dat[last_position].hash == hash) &&
           ((equivalent == NULL) ||
-           (equivalent(key, dat[last_position].key))))
+           (equivalent(eq_data, key, dat[last_position].key))))
         return true;
 
       // there's something there that's NOT us -- advance pointer

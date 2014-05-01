@@ -51,10 +51,11 @@ namespace OneOfManyTask {
   void structured_predict(searn& srn, vector<example*> ec) {
     bool predicted_true_yet = false;
     bool output_has_true    = false;
-    for (size_t i=0; i<ec.size(); i++) {
-      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
-      if (y->label == 2) output_has_true = true;
-    }
+    for (size_t i=0; i<ec.size(); i++)
+      if (MULTICLASS::get_example_label(ec[i]) == 2) {
+        output_has_true = true;
+        break;
+      }
         
     for (size_t i=0; i<ec.size(); i++) {
       // labels should be 1 or 2, and our output is MAX of all predicted values
