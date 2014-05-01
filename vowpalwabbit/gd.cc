@@ -908,6 +908,42 @@ learner* setup(vw& all, po::variables_map& vm)
       g->initial_constant = vm["constant"].as<float>();     
   }
 
+  all.reg.stride_shift = 2; //use stride of 4 for default invariant normalized adaptive updates
+  //if the user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
+  if( (all.rank > 0 && !vm.count("new_mf")) || !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  {
+    all.adaptive = all.training && vm.count("adaptive") && (all.rank == 0 && !vm.count("new_mf"));
+    all.invariant_updates = all.training && vm.count("invariant");
+    all.normalized_updates = all.training && vm.count("normalized") && (all.rank == 0 && !vm.count("new_mf"));
+
+    all.reg.stride_shift = 0;
+
+    if( all.adaptive ) all.reg.stride_shift += 1;
+    else all.normalized_idx = 1; //store per feature norm at 1 index offset from weight value instead of 2
+
+    if( all.normalized_updates ) all.reg.stride_shift += 1;
+
+    if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
+      if (all.lda == 0)
+        all.eta = 10; //default learning rate to 10 for non default update rule
+
+    //if not using normalized or adaptive, default initial_t to 1 instead of 0
+    if(!all.adaptive && !all.normalized_updates && !vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
+    if (vm.count("feature_mask")){
+      if(all.reg.stride_shift == 0){
+        all.reg.stride_shift += 1;//if --sgd, stride->2 and use the second position as mask
+        all.feature_mask_idx = 1;
+      }
+      else if(all.reg.stride_shift == 1){
+        all.reg.stride_shift += 1;//if either normalized or adaptive, stride->4, mask_idx is still 3
+      }
+    }
+  }
+
   learner* ret = new learner(g, 1 << all.reg.stride_shift);
 
   // select the appropriate predict function based on normalization, regularization, and power_t
