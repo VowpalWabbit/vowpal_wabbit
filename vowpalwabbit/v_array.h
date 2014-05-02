@@ -32,6 +32,7 @@ template<class T> class v_array{
   void decr() { end--;}
   v_array() { begin= NULL; end = NULL; end_array=NULL; erase_count = 0;}
   T& operator[](size_t i) { return begin[i]; }
+  T& get(size_t i) { return begin[i]; }
   size_t size(){return end-begin;}
   void resize(size_t length, bool zero_everything=false)
     {
