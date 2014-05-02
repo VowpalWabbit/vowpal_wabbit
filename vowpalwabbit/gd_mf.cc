@@ -259,17 +259,17 @@ void mf_train(vw& all, example& ec, float update)
       while ((!read && i < length) || (read && brw >0));
     }
 }
-
-void end_pass(gdmf& d)
-{
-  vw* all = d.all;
-
-   all->eta *= all->eta_decay_rate;
-   if (all->save_per_pass)
-     save_predictor(*all, all->final_regressor_name, all->current_pass);
-   
-   all->current_pass++;
-}
+  
+  void end_pass(gdmf& d)
+  {
+    vw* all = d.all;
+    
+    all->eta *= all->eta_decay_rate;
+    if (all->save_per_pass)
+      save_predictor(*all, all->final_regressor_name, all->current_pass);
+    
+    all->current_pass++;
+  }
 
   void predict(gdmf& d, learner& base, example& ec)
   {
@@ -287,10 +287,48 @@ void end_pass(gdmf& d)
       mf_train(*all, ec, ec.eta_round);
   }
 
-  learner* setup(vw& all)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     gdmf* data = (gdmf*)calloc_or_die(1,sizeof(gdmf)); 
     data->all = &all;
+
+    // store linear + 2*rank weights per index, round up to power of two
+    float temp = ceilf(logf((float)(all.rank*2+1)) / logf (2.f));
+    all.reg.stride_shift = (size_t) temp;
+    all.random_weights = true;
+    
+    if ( vm.count("adaptive") )
+      {
+	cerr << "adaptive is not implemented for matrix factorization" << endl;
+	throw exception();
+      }
+    if ( vm.count("normalized") )
+      {
+	cerr << "normalized is not implemented for matrix factorization" << endl;
+	throw exception();
+      }
+    if ( vm.count("exact_adaptive_norm") )
+      {
+	cerr << "normalized adaptive updates is not implemented for matrix factorization" << endl;
+	throw exception();
+      }
+    if (vm.count("bfgs") || vm.count("conjugate_gradient"))
+      {
+	cerr << "bfgs is not implemented for matrix factorization" << endl;
+	throw exception();
+      }	
+    
+    if(!vm.count("learning_rate") && !vm.count("l"))
+      all.eta = 10; //default learning rate to 10 for non default update rule
+    
+    //default initial_t to 1 instead of 0
+    if(!vm.count("initial_t")) {
+      all.sd->t = 1.f;
+      all.sd->weighted_unlabeled_examples = 1.f;
+      all.initial_t = 1.f;
+    }
+    all.eta *= powf((float)(all.sd->t), all.power_t);
+
     learner* l = new learner(data, 1 << all.reg.stride_shift);
     l->set_learn<gdmf, learn>();
     l->set_predict<gdmf, predict>();

@@ -1,6 +1,6 @@
 Num weight bits = 13
 learning rate = 1
-initial_t = 1
+initial_t = 0
 power_t = 0.5
 using no cache
 Reading datafile = train-sets/wiki1K.dat
@@ -15,13 +15,13 @@ loss       last          counter      weight    label  predict features
 10.472940  10.589588          32        32.0  unknown   0.0000      125
 10.474844  10.476749          64        64.0  unknown   0.0000      313
 10.425304  10.375763         128       128.0  unknown   0.0000       50
-9.797446   9.169588          256       256.0  unknown   0.0000       33
-9.251716   8.705987          512       512.0  unknown   0.0000       26
+10.005548  9.585792          256       256.0  unknown   0.0000       33
+9.331692   8.657836          512       512.0  unknown   0.0000       26
 
 finished run
 number of examples = 1000
 weighted example sum = 1000
 weighted label sum = 0
-average loss = 8.84619
-best constant = 1
+average loss = 8.87286
+best constant = -nan
 total feature number = 86919

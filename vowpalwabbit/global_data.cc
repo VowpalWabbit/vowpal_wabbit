@@ -230,6 +230,8 @@ vw::vw()
   reg_mode = 0;
   current_pass = 0;
 
+  data_filename = "";
+
   bfgs = false;
   hessian_on = false;
   reg.stride_shift = 0;
@@ -273,6 +275,7 @@ vw::vw()
   #endif
 
   searn = false;
+  searnstr = NULL;
 
   nonormalize = false;
   l1_lambda = 0.0;

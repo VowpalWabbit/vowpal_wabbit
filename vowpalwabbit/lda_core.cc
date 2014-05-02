@@ -794,7 +794,6 @@ learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
   
   ld->decay_levels.push_back(0.f);
 
-  all.l->finish();
   learner* l = new learner(ld, 1 << all.reg.stride_shift);
   l->set_learn<lda,learn>();
   l->set_predict<lda,predict>();

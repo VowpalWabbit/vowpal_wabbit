@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
         if (all->sd->min_label == 0. && all->sd->max_label == 1. && best_constant < 1. && best_constant > 0.)
             cerr << endl << "best constant's loss = " << constant_loss;
         cerr << endl << "total feature number = " << all->sd->total_features;
-        if (all->active_simulation)
+        if (all->sd->queries > 0)
             cerr << endl << "total queries = " << all->sd->queries << endl;
         cerr << endl;
         }

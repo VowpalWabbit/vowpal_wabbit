@@ -866,7 +866,7 @@ __DATA__
     train-sets/ref/rcv1_raw_cb_dm.stderr
 
 # Test 42: --lda --passes 2 hang regression
-{VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2
+{VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off
     train-sets/ref/lda-2pass-hang.stderr
 
 # Test 43: searn sequence labeling, non-ldf train

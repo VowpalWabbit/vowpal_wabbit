@@ -229,9 +229,9 @@ void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the children
-    if(child_sockets[0] != -1 && send(child_sockets[0], buffer+children_sent_pos, (int)my_bufsize, 0) < my_bufsize) 
+    if(child_sockets[0] != -1 && send(child_sockets[0], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize) 
       cerr<<"Write to left child failed\n";
-    if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, (int)my_bufsize, 0) < my_bufsize) 
+    if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize) 
       cerr<<"Write to right child failed\n";
 
     children_sent_pos += my_bufsize;

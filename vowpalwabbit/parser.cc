@@ -397,16 +397,11 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
-
-void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes)
+void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 {
   all.p->input->current = 0;
   parse_cache(all, vm, all.data_filename, quiet);
 
-  string hash_function("strings");
-  if(vm.count("hash")) 
-    hash_function = vm["hash"].as<string>();
-  
   if (all.daemon || all.active)
     {
 #ifdef _WIN32
@@ -582,34 +577,23 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
       all.p->max_fd = max(f, all.p->max_fd);
       if (!all.quiet)
 	cerr << "reading data from port " << port << endl;
-
+      
       all.p->max_fd++;
       if(all.active)
-	{
-	  all.p->reader = read_features;
-	  all.p->hasher = getHasher(hash_function);
-	}
+	all.p->reader = read_features;
       else {
 	if (isbinary(*(all.p->input))) {
 	  all.p->reader = read_cached_features;
 	  all.print = binary_print_result;
 	} else {
 	  all.p->reader = read_features;
-	  
 	}
-	all.p->hasher = getHasher(hash_function);
 	all.p->sorted_cache = true;
       }
-
       all.p->resettable = all.p->write_cache || all.daemon;
     }
-  
   else  // was: else if (vm.count("data"))
     {
-      string hash_function("strings");
-      if(vm.count("hash")) 
-	hash_function = vm["hash"].as<string>();
-
       if (all.p->input->files.size() > 0)
 	{
 	  if (!quiet)
@@ -626,11 +610,10 @@ void parse_source_args(vw& all, po::variables_map& vm, bool quiet, size_t passes
 			cerr << "can't open '" << temp << "', sailing on!" << endl;
 	    }
 	  all.p->reader = read_features;
-	  all.p->hasher = getHasher(hash_function);
 	  all.p->resettable = all.p->write_cache;
 	}
     }
-
+  
   if (passes > 1 && !all.p->resettable)
     {
       cerr << all.program_name << ": need a cache file for multiple passes: try using --cache_file" << endl;  
