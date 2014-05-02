@@ -327,7 +327,8 @@ void mf_train(vw& all, example& ec, float update)
       all.sd->weighted_unlabeled_examples = 1.f;
       all.initial_t = 1.f;
     }
-  
+    all.eta *= powf((float)(all.sd->t), all.power_t);
+
     learner* l = new learner(data, 1 << all.reg.stride_shift);
     l->set_learn<gdmf, learn>();
     l->set_predict<gdmf, predict>();

@@ -103,6 +103,594 @@ void parse_affix_argument(vw&all, string str) {
   free(cstr);
 }
 
+void parse_diagnostics(vw& all, po::variables_map& vm, po::options_description& desc, int argc)
+{
+  // Begin diagnostic options
+  if (vm.count("help") || argc == 1) {
+    /* upon direct query for help -- spit it out to stdout */
+    cout << "\n" << desc << "\n";
+    exit(0);
+  }
+
+  if (vm.count("version")) {
+    /* upon direct query for version -- spit it out to stdout */
+    cout << version.to_string() << "\n";
+    exit(0);
+  }
+
+  if (vm.count("quiet")) {
+    all.quiet = true;
+    // --quiet wins over --progress
+  } else {
+    all.quiet = false;
+
+    if (vm.count("progress")) {
+      string progress_str = vm["progress"].as<string>();
+      all.progress_arg = (float)::atof(progress_str.c_str());
+
+      // --progress interval is dual: either integer or floating-point
+      if (progress_str.find_first_of(".") == string::npos) {
+        // No "." in arg: assume integer -> additive
+        all.progress_add = true;
+        if (all.progress_arg < 1) {
+          cerr    << "warning: additive --progress <int>"
+                  << " can't be < 1: forcing to 1\n";
+          all.progress_arg = 1;
+
+        }
+        all.sd->dump_interval = all.progress_arg;
+
+      } else {
+        // A "." in arg: assume floating-point -> multiplicative
+        all.progress_add = false;
+
+        if (all.progress_arg <= 1.0) {
+          cerr    << "warning: multiplicative --progress <float>: "
+                  << vm["progress"].as<string>()
+                  << " is <= 1.0: adding 1.0\n";
+          all.progress_arg += 1.0;
+
+        } else if (all.progress_arg > 9.0) {
+          cerr    << "warning: multiplicative --progress <float>"
+                  << " is > 9.0: you probably meant to use an integer\n";
+        }
+        all.sd->dump_interval = 1.0;
+      }
+    }
+  }  
+
+  if (vm.count("audit")){
+    all.audit = true;
+  }
+}
+
+void parse_source(vw& all, po::variables_map& vm)
+{
+  //begin input source
+  if (vm.count("no_stdin"))
+    all.stdin_off = true;
+  
+  if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
+    {
+      cout << "you must specificy unique_id, total, and node if you specify any" << endl;
+      throw exception();
+    }
+  
+  if (vm.count("daemon") || vm.count("pid_file") || (vm.count("port") && !all.active) ) {
+    all.daemon = true;
+    
+    // allow each child to process up to 1e5 connections
+    all.numpasses = (size_t) 1e5;
+  }
+
+  if (vm.count("compressed"))
+      set_compressed(all.p);
+
+  if (vm.count("data")) {
+    all.data_filename = vm["data"].as<string>();
+    if (ends_with(all.data_filename, ".gz"))
+      set_compressed(all.p);
+  } else
+    all.data_filename = "";
+}
+
+void parse_feature_tweaks(vw& all, po::variables_map& vm, po::variables_map& vm_file)
+{
+  //feature manipulation
+  string hash_function("strings");
+  if(vm.count("hash")) 
+    hash_function = vm["hash"].as<string>();
+  all.p->hasher = getHasher(hash_function);
+      
+  if (vm.count("spelling")) {
+    vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
+    for (size_t id=0; id<spelling_ns.size(); id++)
+      if (spelling_ns[id][0] == '_') all.spelling_features[(unsigned char)' '] = true;
+      else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
+  }
+
+  if (vm_file.count("affix") && vm.count("affix")) {
+    cerr << "should not specify --affix when loading a model trained with affix features (they're turned on by default)" << endl;
+    throw exception();
+  }
+  if (vm_file.count("affix"))
+    parse_affix_argument(all, vm_file["affix"].as<string>());
+  if (vm.count("affix")) {
+    parse_affix_argument(all, vm["affix"].as<string>());
+    stringstream ss;
+    ss << " --affix " << vm["affix"].as<string>();
+    all.options_from_file.append(ss.str());
+  }
+
+  if(vm.count("ngram")){
+    if(vm.count("sort_features"))
+      {
+	cerr << "ngram is incompatible with sort_features.  " << endl;
+	throw exception();
+      }
+
+    all.ngram_strings = vm["ngram"].as< vector<string> >();
+    compile_gram(all.ngram_strings, all.ngram, (char*)"grams", all.quiet);
+  }
+
+  if(vm.count("skips"))
+    {
+      if(!vm.count("ngram"))
+	{
+	  cout << "You can not skip unless ngram is > 1" << endl;
+	  throw exception();
+	}
+
+      all.skip_strings = vm["skips"].as<vector<string> >();
+      compile_gram(all.skip_strings, all.skips, (char*)"skips", all.quiet);
+    }
+
+  if (vm.count("bit_precision"))
+    {
+      all.default_bits = false;
+      all.num_bits = (uint32_t)vm["bit_precision"].as< size_t>();
+      if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
+	{
+	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
+	  throw exception();
+	}
+    }
+
+  if (vm.count("quadratic"))
+    {
+      all.pairs = vm["quadratic"].as< vector<string> >();
+      vector<string> newpairs;
+      //string tmp;
+      char printable_start = '!';
+      char printable_end = '~';
+      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
+
+      if(!all.quiet)
+        cerr<<"creating quadratic features for pairs: ";
+
+      for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++){
+        if(!all.quiet){
+          cerr << *i << " ";
+          if (i->length() > 2)
+            cerr << endl << "warning, ignoring characters after the 2nd.\n";
+          if (i->length() < 2) {
+            cerr << endl << "error, quadratic features must involve two sets.\n";
+            throw exception();
+          }
+        }
+        //-q x:
+        if((*i)[0]!=':'&&(*i)[1]==':'){
+          newpairs.reserve(newpairs.size() + valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j))
+              newpairs.push_back(string(1,(*i)[0])+j);
+          }
+        }
+        //-q :x
+        else if((*i)[0]==':'&&(*i)[1]!=':'){
+          newpairs.reserve(newpairs.size() + valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j)){
+	      stringstream ss;
+	      ss << j << (*i)[1];
+	      newpairs.push_back(ss.str());
+	    }
+          }
+        }
+        //-q ::
+        else if((*i)[0]==':'&&(*i)[1]==':'){
+	  cout << "in pair creation" << endl;
+          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
+          for (char j=printable_start; j<=printable_end; j++){
+            if(valid_ns(j)){
+              for (char k=printable_start; k<=printable_end; k++){
+                if(valid_ns(k)){
+		  stringstream ss;
+                  ss << j << k;
+                  newpairs.push_back(ss.str());
+		}
+              }
+            }
+          }
+        }
+        else{
+          newpairs.push_back(string(*i));
+        }
+      }
+      newpairs.swap(all.pairs);
+      if(!all.quiet)
+        cerr<<endl;
+    }
+
+  if (vm.count("cubic"))
+    {
+      all.triples = vm["cubic"].as< vector<string> >();
+      if (!all.quiet)
+	{
+	  cerr << "creating cubic features for triples: ";
+	  for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+	    cerr << *i << " ";
+	    if (i->length() > 3)
+	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
+	    if (i->length() < 3) {
+	      cerr << endl << "error, cubic features must involve three sets.\n";
+	      throw exception();
+	    }
+	  }
+	  cerr << endl;
+	}
+    }
+
+  for (size_t i = 0; i < 256; i++)
+    all.ignore[i] = false;
+  all.ignore_some = false;
+  
+  if (vm.count("ignore"))
+    {
+      all.ignore_some = true;
+
+      vector<unsigned char> ignore = vm["ignore"].as< vector<unsigned char> >();
+      for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
+	{
+	  all.ignore[*i] = true;
+	}
+      if (!all.quiet)
+	{
+	  cerr << "ignoring namespaces beginning with: ";
+	  for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
+	    cerr << *i << " ";
+
+	  cerr << endl;
+	}
+    }
+
+  if (vm.count("keep"))
+    {
+      for (size_t i = 0; i < 256; i++)
+        all.ignore[i] = true;
+
+      all.ignore_some = true;
+
+      vector<unsigned char> keep = vm["keep"].as< vector<unsigned char> >();
+      for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
+	{
+	  all.ignore[*i] = false;
+	}
+      if (!all.quiet)
+	{
+	  cerr << "using namespaces beginning with: ";
+	  for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
+	    cerr << *i << " ";
+
+	  cerr << endl;
+	}
+    }
+
+  if (vm.count("noconstant"))
+    all.add_constant = false;
+}
+
+void parse_example_tweaks(vw& all, po::variables_map& vm)
+{
+  if (vm.count("testonly") || all.eta == 0.)
+    {
+      if (!all.quiet)
+	cerr << "only testing" << endl;
+      all.training = false;
+      if (all.lda > 0)
+        all.eta = 0;
+    }
+  else
+    all.training = true;
+
+  if(all.numpasses > 1)
+      all.holdout_set_off = false;
+
+  if(vm.count("holdout_off"))
+      all.holdout_set_off = true;
+
+  if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
+  {
+      all.holdout_set_off = true;
+      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
+  }
+
+  if(vm.count("sort_features"))
+    all.p->sort_features = true;
+  
+  if (vm.count("min_prediction"))
+    all.sd->min_label = vm["min_prediction"].as<float>();
+  if (vm.count("max_prediction"))
+    all.sd->max_label = vm["max_prediction"].as<float>();
+  if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
+    all.set_minmax = noop_mm;
+
+  string loss_function;
+  if(vm.count("loss_function"))
+    loss_function = vm["loss_function"].as<string>();
+  else
+    loss_function = "squaredloss";
+  float loss_parameter = 0.0;
+  if(vm.count("quantile_tau"))
+    loss_parameter = vm["quantile_tau"].as<float>();
+
+  all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+
+  if (all.l1_lambda < 0.) {
+    cerr << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
+    all.l1_lambda = 0.;
+  }
+  if (all.l2_lambda < 0.) {
+    cerr << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
+    all.l2_lambda = 0.;
+  }
+  all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
+  all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
+  if (!all.quiet)
+    {
+      if (all.reg_mode %2 && !vm.count("bfgs"))
+	cerr << "using l1 regularization = " << all.l1_lambda << endl;
+      if (all.reg_mode > 1)
+	cerr << "using l2 regularization = " << all.l2_lambda << endl;
+    }
+}
+
+void parse_output_preds(vw& all, po::variables_map& vm, po::variables_map& vm_file)
+{
+  if (vm.count("predictions")) {
+    if (!all.quiet)
+      cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
+    if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
+      {
+	all.final_prediction_sink.push_back((size_t) 1);//stdout
+      }
+    else
+      {
+	const char* fstr = (vm["predictions"].as< string >().c_str());
+	int f;
+#ifdef _WIN32
+	_sopen_s(&f, fstr, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
+#else
+	f = open(fstr, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+#endif
+	if (f < 0)
+	  cerr << "Error opening the predictions file: " << fstr << endl;
+	all.final_prediction_sink.push_back((size_t) f);
+      }
+  }
+
+  if (vm.count("raw_predictions")) {
+    if (!all.quiet) {
+      cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
+      if (vm.count("binary") || vm_file.count("binary"))
+        cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
+    }
+    if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
+      all.raw_prediction = 1;//stdout
+    else
+	{
+	  const char* t = vm["raw_predictions"].as< string >().c_str();
+	  int f;
+#ifdef _WIN32
+	  _sopen_s(&f, t, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
+#else
+	  f = open(t, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
+#endif
+	  all.raw_prediction = f;
+	}
+  }
+}
+
+void parse_output_model(vw& all, po::variables_map& vm)
+{
+  if (vm.count("final_regressor")) {
+    all.final_regressor_name = vm["final_regressor"].as<string>();
+    if (!all.quiet)
+      cerr << "final_regressor = " << vm["final_regressor"].as<string>() << endl;
+  }
+  else
+    all.final_regressor_name = "";
+
+  if (vm.count("readable_model"))
+    all.text_regressor_name = vm["readable_model"].as<string>();
+
+  if (vm.count("invert_hash")){
+    all.inv_hash_regressor_name = vm["invert_hash"].as<string>();
+    all.hash_inv = true;
+  }
+
+  if (vm.count("save_per_pass"))
+    all.save_per_pass = true;
+
+  if (vm.count("save_resume"))
+    all.save_resume = true;
+}
+
+void parse_base_algorithm(vw& all, vector<string>& to_pass_further, po::variables_map& vm)
+{
+  //base learning algorithm.
+  if (vm.count("bfgs") || vm.count("conjugate_gradient"))
+    all.l = BFGS::setup(all, to_pass_further, vm);
+  else if (vm.count("lda"))
+    all.l = LDA::setup(all, to_pass_further, vm);
+  else if (vm.count("noop"))
+    all.l = NOOP::setup(all);
+  else if (vm.count("print"))
+    all.l = PRINT::setup(all);
+  else if (!vm.count("new_mf") && all.rank > 0)
+    all.l = GDMF::setup(all, vm);
+  else if (vm.count("sendto"))
+    all.l = SENDER::setup(all, vm, all.pairs);
+  else
+    {
+      all.l = GD::setup(all, vm);
+      all.scorer = all.l;
+    }
+}
+
+void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
+{
+  // Need to see if we have to load feature mask first or second.
+  // -i and -mask are from same file, load -i file first so mask can use it
+  if (vm.count("feature_mask") && vm.count("initial_regressor")
+      && vm["feature_mask"].as<string>() == vm["initial_regressor"].as< vector<string> >()[0]) {
+    // load rest of regressor
+    all.l->save_load(io_temp, true, false);
+    io_temp.close_file();
+
+    // set the mask, which will reuse -i file we just loaded
+    parse_mask_regressor_args(all, vm);
+  }
+  else {
+    // load mask first
+    parse_mask_regressor_args(all, vm);
+
+    // load rest of regressor
+    all.l->save_load(io_temp, true, false);
+    io_temp.close_file();
+  }
+}
+
+void parse_scorer_reductions(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file)
+{
+  if(vm.count("nn") || vm_file.count("nn") )
+    all.l = NN::setup(all, to_pass_further, vm, vm_file);
+  
+  if (vm.count("new_mf") && all.rank > 0)
+    all.l = MF::setup(all, vm);
+  
+  if(vm.count("autolink") || vm_file.count("autolink") )
+    all.l = ALINK::setup(all, to_pass_further, vm, vm_file);
+  
+  if (vm.count("lrq") || vm_file.count("lrq"))
+    all.l = LRQ::setup(all, to_pass_further, vm, vm_file);
+  
+  all.l = Scorer::setup(all, to_pass_further, vm, vm_file);
+}
+
+LEARNER::learner* exclusive_setup(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& score_consumer, LEARNER::learner* (*setup)(vw&, vector<string>&, po::variables_map&, po::variables_map&))
+{
+  if (score_consumer) { cerr << "error: cannot specify multiple direct score consumers" << endl; throw exception(); }
+  score_consumer = true;
+  return setup(all, to_pass_further, vm, vm_file);
+}
+
+void parse_score_users(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs)
+{
+  bool score_consumer = false;
+  
+  if(vm.count("top") || vm_file.count("top") )
+    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, TOPK::setup);
+  
+  if (vm.count("binary") || vm_file.count("binary"))
+    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, BINARY::setup);
+  
+  if (vm.count("oaa") || vm_file.count("oaa") ) 
+    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, OAA::setup);
+  
+  if (vm.count("ect") || vm_file.count("ect") ) 
+    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, ECT::setup);
+  
+  if(vm.count("csoaa") || vm_file.count("csoaa") ) {
+    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA::setup);
+    all.cost_sensitive = all.l;
+    got_cs = true;
+  }
+  
+  if(vm.count("wap") || vm_file.count("wap") ) {
+    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, WAP::setup);
+    all.cost_sensitive = all.l;
+    got_cs = true;
+  }
+  
+  if(vm.count("csoaa_ldf") || vm_file.count("csoaa_ldf")) {
+    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA_AND_WAP_LDF::setup);
+    all.cost_sensitive = all.l;
+    got_cs = true;
+  }
+  
+  if(vm.count("wap_ldf") || vm_file.count("wap_ldf") ) {
+    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA_AND_WAP_LDF::setup);
+    all.cost_sensitive = all.l;
+    got_cs = true;
+  }
+}
+
+void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs, bool& got_cb)
+{
+  if( vm.count("cb") || vm_file.count("cb") )
+    {
+      if(!got_cs) {
+	if( vm_file.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cb"]));
+	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
+	
+	all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	all.cost_sensitive = all.l;
+	got_cs = true;
+      }
+      
+      all.l = CB_ALGS::setup(all, to_pass_further, vm, vm_file);
+      got_cb = true;
+    }
+
+  if (vm.count("cbify") || vm_file.count("cbify"))
+    {
+      if(!got_cs) {
+	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cbify"]));
+	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
+	
+	all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	all.cost_sensitive = all.l;
+	got_cs = true;
+      }
+
+      if (!got_cb) {
+	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm_file["cbify"]));
+	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
+	all.l = CB_ALGS::setup(all, to_pass_further, vm, vm_file);
+	got_cb = true;
+      }
+
+      all.l = CBIFY::setup(all, to_pass_further, vm, vm_file);
+    }
+}
+
+void parse_search(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs, bool& got_cb)
+{
+  if (vm.count("search") || vm_file.count("search") ) {
+    if (!got_cs && !got_cb) {
+      if( vm_file.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["search"]));
+      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
+      
+      all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      all.cost_sensitive = all.l;
+      got_cs = true;
+    }
+    //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
+    all.l = Searn::setup(all, to_pass_further, vm, vm_file);
+  }
+}
+
 vw* parse_args(int argc, char *argv[])
 {
   po::options_description desc("VW options");
@@ -306,79 +894,9 @@ vw* parse_args(int argc, char *argv[])
   po::store(parsed, vm);
   po::notify(vm);
 
-  if(all->numpasses > 1)
-      all->holdout_set_off = false;
-
-  if(vm.count("holdout_off"))
-      all->holdout_set_off = true;
-
-  if(!all->holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
-  {
-      all->holdout_set_off = true;
-      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
-  }
-
-  all->data_filename = "";
-
-  all->searn = false;
-  all->searnstr = NULL;
-
-  all->sd->weighted_unlabeled_examples = all->sd->t;
-  all->initial_t = (float)all->sd->t;
-
-  if(all->initial_t > 0)
-  {
-    all->normalized_sum_norm_x = all->initial_t;//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all->initial_t) previous fake datapoints all with norm 1
-  }
-
-  if (vm.count("help") || argc == 1) {
-    /* upon direct query for help -- spit it out to stdout */
-    cout << "\n" << desc << "\n";
-    exit(0);
-  }
-
-  if (vm.count("quiet")) {
-    all->quiet = true;
-    // --quiet wins over --progress
-  } else {
-    all->quiet = false;
-
-    if (vm.count("progress")) {
-      string progress_str = vm["progress"].as<string>();
-      all->progress_arg = (float)::atof(progress_str.c_str());
-
-      // --progress interval is dual: either integer or floating-point
-      if (progress_str.find_first_of(".") == string::npos) {
-        // No "." in arg: assume integer -> additive
-        all->progress_add = true;
-        if (all->progress_arg < 1) {
-          cerr    << "warning: additive --progress <int>"
-                  << " can't be < 1: forcing to 1\n";
-          all->progress_arg = 1;
-
-        }
-        all->sd->dump_interval = all->progress_arg;
-
-      } else {
-        // A "." in arg: assume floating-point -> multiplicative
-        all->progress_add = false;
-
-        if (all->progress_arg <= 1.0) {
-          cerr    << "warning: multiplicative --progress <float>: "
-                  << vm["progress"].as<string>()
-                  << " is <= 1.0: adding 1.0\n";
-          all->progress_arg += 1.0;
-
-        } else if (all->progress_arg > 9.0) {
-          cerr    << "warning: multiplicative --progress <float>"
-                  << " is > 9.0: you probably meant to use an integer\n";
-        }
-        all->sd->dump_interval = 1.0;
-      }
-    }
-  }
-
   msrand48(random_seed);
+
+  parse_diagnostics(*all, vm, desc, argc);
 
   if (vm.count("active_simulation"))
     all->active_simulation = true;
@@ -386,201 +904,18 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all->active_simulation)
     all->active = true;
   
-  if (vm.count("no_stdin"))
-    all->stdin_off = true;
+  parse_source(*all, vm);
 
-  if (vm.count("testonly") || all->eta == 0.)
-    {
-      if (!all->quiet)
-	cerr << "only testing" << endl;
-      all->training = false;
-      if (all->lda > 0)
-        all->eta = 0;
-    }
-  else
-    all->training = true;
+  all->sd->weighted_unlabeled_examples = all->sd->t;
+  all->initial_t = (float)all->sd->t;
 
-  if ( (vm.count("total") || vm.count("node") || vm.count("unique_id")) && !(vm.count("total") && vm.count("node") && vm.count("unique_id")) )
-    {
-      cout << "you must specificy unique_id, total, and node if you specify any" << endl;
-      throw exception();
-    }
+  if(all->initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all->initial_t) previous fake datapoints all with norm 1
+    all->normalized_sum_norm_x = all->initial_t;
 
-  if (all->l1_lambda < 0.) {
-    cerr << "l1_lambda should be nonnegative: resetting from " << all->l1_lambda << " to 0" << endl;
-    all->l1_lambda = 0.;
-  }
-  if (all->l2_lambda < 0.) {
-    cerr << "l2_lambda should be nonnegative: resetting from " << all->l2_lambda << " to 0" << endl;
-    all->l2_lambda = 0.;
-  }
-  all->reg_mode += (all->l1_lambda > 0.) ? 1 : 0;
-  all->reg_mode += (all->l2_lambda > 0.) ? 2 : 0;
-  if (!all->quiet)
-    {
-      if (all->reg_mode %2 && !vm.count("bfgs"))
-	cerr << "using l1 regularization = " << all->l1_lambda << endl;
-      if (all->reg_mode > 1)
-	cerr << "using l2 regularization = " << all->l2_lambda << endl;
-    }
-
-  if (vm.count("version") || argc == 1) {
-    /* upon direct query for version -- spit it out to stdout */
-    cout << version.to_string() << "\n";
-    exit(0);
-  }
-
-  if(vm.count("ngram")){
-    if(vm.count("sort_features"))
-      {
-	cerr << "ngram is incompatible with sort_features.  " << endl;
-	throw exception();
-      }
-
-    all->ngram_strings = vm["ngram"].as< vector<string> >();
-    compile_gram(all->ngram_strings, all->ngram, (char*)"grams", all->quiet);
-  }
-
-  if(vm.count("skips"))
-    {
-      if(!vm.count("ngram"))
-	{
-	  cout << "You can not skip unless ngram is > 1" << endl;
-	  throw exception();
-	}
-
-      all->skip_strings = vm["skips"].as<vector<string> >();
-      compile_gram(all->skip_strings, all->skips, (char*)"skips", all->quiet);
-    }
-
-  if (vm.count("spelling")) {
-    vector<string> spelling_ns = vm["spelling"].as< vector<string> >();
-    for (size_t id=0; id<spelling_ns.size(); id++)
-      if (spelling_ns[id][0] == '_') all->spelling_features[(unsigned char)' '] = true;
-      else all->spelling_features[(size_t)spelling_ns[id][0]] = true;
-  }
-
-  if (vm.count("bit_precision"))
-    {
-      all->default_bits = false;
-      all->num_bits = (uint32_t)vm["bit_precision"].as< size_t>();
-      if (all->num_bits > min(32, sizeof(size_t)*8 - 3))
-	{
-	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
-	  throw exception();
-	}
-    }
-
-  if (vm.count("daemon") || vm.count("pid_file") || (vm.count("port") && !all->active) ) {
-    all->daemon = true;
-
-    // allow each child to process up to 1e5 connections
-    all->numpasses = (size_t) 1e5;
-  }
-
-  if (vm.count("compressed"))
-      set_compressed(all->p);
-
-  if (vm.count("data")) {
-    all->data_filename = vm["data"].as<string>();
-    if (ends_with(all->data_filename, ".gz"))
-      set_compressed(all->p);
-  } else {
-    all->data_filename = "";
-  }
-
-  if(vm.count("sort_features"))
-    all->p->sort_features = true;
-
-  if (vm.count("quadratic"))
-    {
-      all->pairs = vm["quadratic"].as< vector<string> >();
-      vector<string> newpairs;
-      //string tmp;
-      char printable_start = '!';
-      char printable_end = '~';
-      int valid_ns_size = printable_end - printable_start - 1; //will skip two characters
-
-      if(!all->quiet)
-        cerr<<"creating quadratic features for pairs: ";
-
-      for (vector<string>::iterator i = all->pairs.begin(); i != all->pairs.end();i++){
-        if(!all->quiet){
-          cerr << *i << " ";
-          if (i->length() > 2)
-            cerr << endl << "warning, ignoring characters after the 2nd.\n";
-          if (i->length() < 2) {
-            cerr << endl << "error, quadratic features must involve two sets.\n";
-            throw exception();
-          }
-        }
-        //-q x:
-        if((*i)[0]!=':'&&(*i)[1]==':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j))
-              newpairs.push_back(string(1,(*i)[0])+j);
-          }
-        }
-        //-q :x
-        else if((*i)[0]==':'&&(*i)[1]!=':'){
-          newpairs.reserve(newpairs.size() + valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-	      stringstream ss;
-	      ss << j << (*i)[1];
-	      newpairs.push_back(ss.str());
-	    }
-          }
-        }
-        //-q ::
-        else if((*i)[0]==':'&&(*i)[1]==':'){
-	  cout << "in pair creation" << endl;
-          newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
-          for (char j=printable_start; j<=printable_end; j++){
-            if(valid_ns(j)){
-              for (char k=printable_start; k<=printable_end; k++){
-                if(valid_ns(k)){
-		  stringstream ss;
-                  ss << j << k;
-                  newpairs.push_back(ss.str());
-		}
-              }
-            }
-          }
-        }
-        else{
-          newpairs.push_back(string(*i));
-        }
-      }
-      newpairs.swap(all->pairs);
-      if(!all->quiet)
-        cerr<<endl;
-    }
-
-  if (vm.count("cubic"))
-    {
-      all->triples = vm["cubic"].as< vector<string> >();
-      if (!all->quiet)
-	{
-	  cerr << "creating cubic features for triples: ";
-	  for (vector<string>::iterator i = all->triples.begin(); i != all->triples.end();i++) {
-	    cerr << *i << " ";
-	    if (i->length() > 3)
-	      cerr << endl << "warning, ignoring characters after the 3rd.\n";
-	    if (i->length() < 3) {
-	      cerr << endl << "error, cubic features must involve three sets.\n";
-	      throw exception();
-	    }
-	  }
-	  cerr << endl;
-	}
-    }
-
+  //Input regressor header
   io_buf io_temp;
   parse_regressor_args(*all, vm, io_temp);
 
-  //parse flags from regressor file
   all->options_from_file_argv = VW::get_argv_from_string(all->options_from_file,all->options_from_file_argc);
 
   po::parsed_options parsed_file = po::command_line_parser(all->options_from_file_argc, all->options_from_file_argv).
@@ -590,114 +925,11 @@ vw* parse_args(int argc, char *argv[])
   po::store(parsed_file, vm_file);
   po::notify(vm_file);
 
-  if (vm.count("bfgs") || vm.count("conjugate_gradient"))
-    all->l = BFGS::setup(*all, to_pass_further, vm);
-  else if (vm.count("lda"))
-    all->l = LDA::setup(*all, to_pass_further, vm);
-  else if (vm.count("noop"))
-    all->l = NOOP::setup(*all);
-  else if (vm.count("print"))
-    all->l = PRINT::setup(*all);
-  else if (!vm.count("new_mf") && all->rank > 0)
-    all->l = GDMF::setup(*all, vm);
-  else if (vm.count("sendto"))
-    all->l = SENDER::setup(*all, vm, all->pairs);
-  else
-    {
-      all->l = GD::setup(*all, vm);
-      all->scorer = all->l;
-    }
+  parse_feature_tweaks(*all, vm, vm_file); //feature tweaks
 
-  for (size_t i = 0; i < 256; i++)
-    all->ignore[i] = false;
-  all->ignore_some = false;
-  
-  if (vm.count("ignore"))
-    {
-      all->ignore_some = true;
+  parse_example_tweaks(*all, vm); //example manipulation
 
-      vector<unsigned char> ignore = vm["ignore"].as< vector<unsigned char> >();
-      for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
-	{
-	  all->ignore[*i] = true;
-	}
-      if (!all->quiet)
-	{
-	  cerr << "ignoring namespaces beginning with: ";
-	  for (vector<unsigned char>::iterator i = ignore.begin(); i != ignore.end();i++)
-	    cerr << *i << " ";
-
-	  cerr << endl;
-	}
-    }
-
-  if (vm.count("keep"))
-    {
-      for (size_t i = 0; i < 256; i++)
-        all->ignore[i] = true;
-
-      all->ignore_some = true;
-
-      vector<unsigned char> keep = vm["keep"].as< vector<unsigned char> >();
-      for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
-	{
-	  all->ignore[*i] = false;
-	}
-      if (!all->quiet)
-	{
-	  cerr << "using namespaces beginning with: ";
-	  for (vector<unsigned char>::iterator i = keep.begin(); i != keep.end();i++)
-	    cerr << *i << " ";
-
-	  cerr << endl;
-	}
-    }
-
-  if (vm.count("noconstant"))
-    all->add_constant = false;
-
-  //if (vm.count("nonormalize"))
-  //  all->nonormalize = true;
-
-  if (!vm.count("lda") && !all->adaptive && !all->normalized_updates)
-    all->eta *= powf((float)(all->sd->t), all->power_t);
-
-  if (vm.count("readable_model"))
-    all->text_regressor_name = vm["readable_model"].as<string>();
-
-  if (vm.count("invert_hash")){
-    all->inv_hash_regressor_name = vm["invert_hash"].as<string>();
-
-    all->hash_inv = true;
-  }
-
-  if (vm.count("save_per_pass"))
-    all->save_per_pass = true;
-
-  if (vm.count("save_resume"))
-    all->save_resume = true;
-
-  if (vm.count("min_prediction"))
-    all->sd->min_label = vm["min_prediction"].as<float>();
-  if (vm.count("max_prediction"))
-    all->sd->max_label = vm["max_prediction"].as<float>();
-  if (vm.count("min_prediction") || vm.count("max_prediction") || vm.count("testonly"))
-    all->set_minmax = noop_mm;
-
-  string loss_function;
-  if(vm.count("loss_function"))
-    loss_function = vm["loss_function"].as<string>();
-  else
-    loss_function = "squaredloss";
-  float loss_parameter = 0.0;
-  if(vm.count("quantile_tau"))
-    loss_parameter = vm["quantile_tau"].as<float>();
-
-  all->loss = getLossFunction(all, loss_function, (float)loss_parameter);
-
-  if (pow((double)all->eta_decay_rate, (double)all->numpasses) < 0.0001 )
-    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all->eta_decay_rate, (double)all->numpasses)
-	 << " adjust --decay_learning_rate larger to avoid this." << endl;
+  parse_base_algorithm(*all, to_pass_further, vm);
 
   if (!all->quiet)
     {
@@ -711,210 +943,23 @@ vw* parse_args(int argc, char *argv[])
 	cerr << "rank = " << all->rank << endl;
     }
 
-  if (vm.count("predictions")) {
-    if (!all->quiet)
-      cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
-    if (strcmp(vm["predictions"].as< string >().c_str(), "stdout") == 0)
-      {
-	all->final_prediction_sink.push_back((size_t) 1);//stdout
-      }
-    else
-      {
-	const char* fstr = (vm["predictions"].as< string >().c_str());
-	int f;
-#ifdef _WIN32
-	_sopen_s(&f, fstr, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
-#else
-	f = open(fstr, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
-#endif
-	if (f < 0)
-	  cerr << "Error opening the predictions file: " << fstr << endl;
-	all->final_prediction_sink.push_back((size_t) f);
-      }
-  }
-
-  if (vm.count("raw_predictions")) {
-    if (!all->quiet) {
-      cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
-      if (vm.count("binary") || vm_file.count("binary"))
-        cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
-    }
-    if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
-      all->raw_prediction = 1;//stdout
-    else
-	{
-	  const char* t = vm["raw_predictions"].as< string >().c_str();
-	  int f;
-#ifdef _WIN32
-	  _sopen_s(&f, t, _O_CREAT|_O_WRONLY|_O_BINARY|_O_TRUNC, _SH_DENYWR, _S_IREAD|_S_IWRITE);
-#else
-	  f = open(t, O_CREAT|O_WRONLY|O_LARGEFILE|O_TRUNC,0666);
-#endif
-	  all->raw_prediction = f;
-	}
-  }
-
-  if (vm.count("audit")){
-    all->audit = true;
-  }
-
-  // Need to see if we have to load feature mask first or second.
-  // -i and -mask are from same file, load -i file first so mask can use it
-  if (vm.count("feature_mask") && vm.count("initial_regressor")
-      && vm["feature_mask"].as<string>() == vm["initial_regressor"].as< vector<string> >()[0]) {
-    // load rest of regressor
-    all->l->save_load(io_temp, true, false);
-    io_temp.close_file();
-
-    // set the mask, which will reuse -i file we just loaded
-    parse_mask_regressor_args(*all, vm);
-  }
-  else {
-    // load mask first
-    parse_mask_regressor_args(*all, vm);
-
-    // load rest of regressor
-    all->l->save_load(io_temp, true, false);
-    io_temp.close_file();
-  }
-
-  bool got_mc = false;
-  bool got_cs = false;
-  bool got_cb = false;
-
-  if(vm.count("nn") || vm_file.count("nn") )
-    all->l = NN::setup(*all, to_pass_further, vm, vm_file);
-
-  if (vm.count("new_mf") && all->rank > 0)
-    all->l = MF::setup(*all, vm);
-
-  if(vm.count("autolink") || vm_file.count("autolink") )
-    all->l = ALINK::setup(*all, to_pass_further, vm, vm_file);
-
-  if (vm.count("lrq") || vm_file.count("lrq"))
-    all->l = LRQ::setup(*all, to_pass_further, vm, vm_file);
-
-  all->l = Scorer::setup(*all, to_pass_further, vm, vm_file);
-
-  if(vm.count("top") || vm_file.count("top") )
-    all->l = TOPK::setup(*all, to_pass_further, vm, vm_file);
-
-  if (vm.count("binary") || vm_file.count("binary"))
-    all->l = BINARY::setup(*all, to_pass_further, vm, vm_file);
-
-  if(vm.count("oaa") || vm_file.count("oaa") ) {
-    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
-
-    all->l = OAA::setup(*all, to_pass_further, vm, vm_file);
-    got_mc = true;
-  }
-
-  if (vm.count("ect") || vm_file.count("ect") ) {
-    if (got_mc) { cerr << "error: cannot specify multiple MC learners" << endl; throw exception(); }
-
-    all->l = ECT::setup(*all, to_pass_further, vm, vm_file);
-    got_mc = true;
-  }
-
-  if(vm.count("csoaa") || vm_file.count("csoaa") ) {
-    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
-
-    all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);
-    all->cost_sensitive = all->l;
-    got_cs = true;
-  }
-
-  if(vm.count("wap") || vm_file.count("wap") ) {
-    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
-
-    all->l = WAP::setup(*all, to_pass_further, vm, vm_file);
-    all->cost_sensitive = all->l;
-    got_cs = true;
-  }
-
-  if(vm.count("csoaa_ldf") || vm_file.count("csoaa_ldf")) {
-    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
-
-    all->l = CSOAA_AND_WAP_LDF::setup(*all, to_pass_further, vm, vm_file);
-    all->cost_sensitive = all->l;
-    got_cs = true;
-  }
-
-  if(vm.count("wap_ldf") || vm_file.count("wap_ldf") ) {
-    if (got_cs) { cerr << "error: cannot specify multiple CS learners" << endl; throw exception(); }
-
-    all->l = CSOAA_AND_WAP_LDF::setup(*all, to_pass_further, vm, vm_file);
-    all->cost_sensitive = all->l;
-    got_cs = true;
-  }
-
-  if( vm.count("cb") || vm_file.count("cb") )
-  {
-    if(!got_cs) {
-      if( vm_file.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cb"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
-
-      all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
-      all->cost_sensitive = all->l;
-      got_cs = true;
-    }
-
-    all->l = CB_ALGS::setup(*all, to_pass_further, vm, vm_file);
-    got_cb = true;
-  }
-
-  if (vm.count("cbify") || vm_file.count("cbify"))
-    {
-      if(!got_cs) {
-	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cbify"]));
-	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
-	
-	all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
-	all->cost_sensitive = all->l;
-	got_cs = true;
-      }
-
-      if (!got_cb) {
-	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm_file["cbify"]));
-	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all->l = CB_ALGS::setup(*all, to_pass_further, vm, vm_file);
-	got_cb = true;
-      }
-
-      all->l = CBIFY::setup(*all, to_pass_further, vm, vm_file);
-    }
-
+  parse_output_model(*all, vm);
   
-  if (vm_file.count("affix") && vm.count("affix")) {
-    cerr << "should not specify --affix when loading a model trained with affix features (they're turned on by default)" << endl;
-    throw exception();
-  }
-  if (vm_file.count("affix"))
-    parse_affix_argument(*all, vm_file["affix"].as<string>());
-  if (vm.count("affix")) {
-    parse_affix_argument(*all, vm["affix"].as<string>());
-    stringstream ss;
-    ss << " --affix " << vm["affix"].as<string>();
-    all->options_from_file.append(ss.str());
-  }
+  parse_output_preds(*all, vm, vm_file);
 
-  if (vm.count("search") || vm_file.count("search") ) {
-    if (!got_cs && !got_cb) {
-      if( vm_file.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["search"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
+  load_input_model(*all, vm, io_temp);
 
-      all->l = CSOAA::setup(*all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
-      all->cost_sensitive = all->l;
-      got_cs = true;
-    }
-    //all->searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
-    all->l = Searn::setup(*all, to_pass_further, vm, vm_file);
-  }
+  parse_scorer_reductions(*all, to_pass_further, vm, vm_file);
 
-  if (got_cb && got_mc) {
-    cerr << "error: doesn't make sense to do both MC learning and CB learning" << endl;
-    throw exception();
-  }
+  bool got_cs = false;
+  
+  parse_score_users(*all, to_pass_further, vm, vm_file, got_cs);
+
+  bool got_cb = false;
+  
+  parse_cb(*all, to_pass_further, vm, vm_file, got_cs, got_cb);
+
+  parse_search(*all, to_pass_further, vm, vm_file, got_cs, got_cb);
 
   if(vm.count("bs") || vm_file.count("bs") )
     all->l = BS::setup(*all, to_pass_further, vm, vm_file);
@@ -932,7 +977,6 @@ vw* parse_args(int argc, char *argv[])
 #else
 		  close(f);
 #endif
-        //cerr << "warning: final argument '" << last_unrec_arg << "' assumed to be input file; in the future, please use -d" << endl;
         all->data_filename = last_unrec_arg;
         if (ends_with(last_unrec_arg, ".gz"))
           set_compressed(all->p);
@@ -949,7 +993,7 @@ vw* parse_args(int argc, char *argv[])
     }
   }
 
-  parse_source_args(*all, vm, all->quiet,all->numpasses);
+  enable_sources(*all, vm, all->quiet,all->numpasses);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;

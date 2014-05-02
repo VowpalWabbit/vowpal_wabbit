@@ -928,10 +928,13 @@ learner* setup(vw& all, po::variables_map& vm)
         all.eta = 10; //default learning rate to 10 for non default update rule
 
     //if not using normalized or adaptive, default initial_t to 1 instead of 0
-    if(!all.adaptive && !all.normalized_updates && !vm.count("initial_t")) {
-      all.sd->t = 1.f;
-      all.sd->weighted_unlabeled_examples = 1.f;
-      all.initial_t = 1.f;
+    if(!all.adaptive && !all.normalized_updates){
+      if (!vm.count("initial_t")) {
+	all.sd->t = 1.f;
+	all.sd->weighted_unlabeled_examples = 1.f;
+	all.initial_t = 1.f;
+      }
+      all.eta *= powf((float)(all.sd->t), all.power_t);
     }
     if (vm.count("feature_mask")){
       if(all.reg.stride_shift == 0){
@@ -944,6 +947,10 @@ learner* setup(vw& all, po::variables_map& vm)
     }
   }
 
+  if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
+    cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
+	 << " adjust --decay_learning_rate larger to avoid this." << endl;
+  
   learner* ret = new learner(g, 1 << all.reg.stride_shift);
 
   // select the appropriate predict function based on normalization, regularization, and power_t

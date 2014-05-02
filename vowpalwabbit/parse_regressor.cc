@@ -287,15 +287,6 @@ void finalize_regressor(vw& all, string reg_name)
 
 void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
 {
-
-  if (vm.count("final_regressor")) {
-    all.final_regressor_name = vm["final_regressor"].as<string>();
-    if (!all.quiet)
-      cerr << "final_regressor = " << vm["final_regressor"].as<string>() << endl;
-  }
-  else
-    all.final_regressor_name = "";
-
   vector<string> regs;
   if (vm.count("initial_regressor") || vm.count("i"))
     regs = vm["initial_regressor"].as< vector<string> >();
@@ -314,7 +305,6 @@ void parse_regressor_args(vw& all, po::variables_map& vm, io_buf& io_temp)
   }
 
   save_load_header(all, io_temp, true, false);
-
 }
 
 void parse_mask_regressor_args(vw& all, po::variables_map& vm){
