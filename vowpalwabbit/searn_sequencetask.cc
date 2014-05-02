@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 
 namespace SequenceTask         {  Searn::searn_task task = { "sequence",         initialize, finish, structured_predict };  }
-namespace OneOfManyTask        {  Searn::searn_task task = { "oneofmany",        initialize, finish, structured_predict };  }
+namespace ArgmaxTask        {  Searn::searn_task task = { "argmax",        initialize, finish, structured_predict };  }
 namespace SequenceTask_DemoLDF {  Searn::searn_task task = { "sequence_demoldf", initialize, finish, structured_predict };  }
 namespace SequenceSpanTask     {  Searn::searn_task task = { "sequencespan",     initialize, finish, structured_predict };  }
 
@@ -39,23 +39,22 @@ namespace SequenceTask {
 }
 
 
-namespace OneOfManyTask {
+namespace ArgmaxTask {
   using namespace Searn;
 
   struct task_data {
     float false_negative_cost;
+    bool predict_max;
   };
 
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-
-	  task_data* my_task_data = new task_data();
-
-
-	  srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
-
+  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) 
+  {
+    
+    task_data* my_task_data = new task_data();
+    
     po::options_description desc("search sequencespan options");
     desc.add_options()("cost", po::value<float>(&(my_task_data->false_negative_cost))->default_value(10.0), "False Negative Cost");
+    desc.add_options()("max", po::value<bool>(&(my_task_data->predict_max))->default_value(false), "Disable structure: just predict the max");
 
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -65,23 +64,35 @@ namespace OneOfManyTask {
     po::notify(vm);
 
     srn.set_task_data(my_task_data);
+
+    if (my_task_data->predict_max)
+      srn.set_options( EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+    else
+      srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+		       EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
   void structured_predict(searn& srn, vector<example*> ec) {
-    task_data * my_task_data = (task_data*)srn.get_task_data();
+    task_data* my_task_data = (task_data*)srn.get_task_data();
     uint32_t max_prediction = 1;
     uint32_t max_label = 1;
+
+    for(size_t i = 0; i < ec.size(); i++)
+      max_label = max(MULTICLASS::get_example_label(ec[i]), max_label);
         
     for (size_t i=0; i<ec.size(); i++) {
       // labels should be 1 or 2, and our output is MAX of all predicted values
       srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
-      srn.snapshot(i, 2, &max_label, sizeof(max_label), false);  
       srn.snapshot(i, 2, &max_prediction, sizeof(max_prediction), false); 
 
-      uint32_t prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]));
-      max_label = max(MULTICLASS::get_example_label(ec[i]), max_label);
+      uint32_t prediction;
+      if (my_task_data->predict_max)
+	prediction = srn.predict(ec[i], max_label);
+      else
+	prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]));
+
       max_prediction = max(prediction, max_prediction);
     }
     float loss = 0.;
@@ -92,11 +103,9 @@ namespace OneOfManyTask {
     srn.loss(loss);
 
     if (srn.output().good())
-      srn.output() << max_prediction << ' ';
+      srn.output() << max_prediction;
   }
 }
-
-
 
 namespace SequenceSpanTask {
   enum EncodingType { BIO, BILOU };

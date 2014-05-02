@@ -44,7 +44,7 @@ namespace Searn
   const bool PRINT_CLOCK_TIME =0;
 
   searn_task* all_tasks[] = { &SequenceTask::task,
-                              &OneOfManyTask::task,
+                              &ArgmaxTask::task,
                               &SequenceTask_DemoLDF::task,
                               &SequenceSpanTask::task,
                               NULL };   // must NULL terminate!
