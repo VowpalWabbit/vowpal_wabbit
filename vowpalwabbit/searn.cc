@@ -2148,14 +2148,6 @@ void print_update(vw& all, searn& srn)
 
   void searn_initialize(vw& all, searn& srn)
   {
-    srn.predict_f = searn_predict;
-    srn.declare_loss_f = searn_declare_loss;
-    srn.snapshot_f = searn_snapshot;
-    srn.output_stringstream_f = searn_output_streamstream;
-    srn.set_task_data_f = searn_set_task_data;
-    srn.get_task_data_f = searn_get_task_data;
-    srn.set_options_f = searn_set_options;
-
     srn.priv->examples_dont_change = false;
     
     srn.priv->beta = 0.5;
@@ -2699,6 +2691,49 @@ void print_update(vw& all, searn& srn)
     l->set_end_pass<searn,end_pass>();
     
     return l;
+  }
+
+
+  // the interface:
+  uint32_t searn::predict(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for LDF
+  { return searn_predict(this->priv, ecs, ec_len, yallowed, ystar, false); }
+
+  uint32_t searn::predict(example* ecs, size_t ec_len, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for LDF
+  { if (one_ystar == (uint32_t)-1) // test example
+      return searn_predict(this->priv, ecs, ec_len, yallowed, NULL, false);
+    else
+      return searn_predict(this->priv, ecs, ec_len, yallowed, (v_array<uint32_t>*)&one_ystar, true);
+  }
+  
+  uint32_t searn::predict(example* ec, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for not LDF
+  { return searn_predict(this->priv, ec, 0, yallowed, ystar, false); }
+  
+  uint32_t searn::predict(example* ec, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for not LDF
+  { if (one_ystar == (uint32_t)-1) // test example
+      return searn_predict(this->priv, ec, 0, yallowed, NULL, false);
+    else
+      return searn_predict(this->priv, ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar, true);
+  }
+      
+  void     searn::loss(float incr_loss, size_t predictions_since_last)
+  { searn_declare_loss(this->priv, predictions_since_last, incr_loss); }
+  
+  void     searn::snapshot(size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
+  { searn_snapshot(this->priv, index, tag, data_ptr, sizeof_data, used_for_prediction); }
+  
+  stringstream& searn::output() {
+    return searn_output_streamstream(this->priv);
+  }
+      
+  void  searn::set_task_data(void*data) {
+    searn_set_task_data(this->priv, data);
+  }
+
+  void* searn::get_task_data() {
+    return searn_get_task_data(this->priv);
+  }
+  void  searn::set_options(uint32_t opts) {
+    searn_set_options(this->priv, opts);
   }
 }
 

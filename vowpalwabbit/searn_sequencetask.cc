@@ -30,7 +30,7 @@ namespace SequenceTask {
     for (size_t i=0; i<ec.size(); i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
-      size_t prediction = srn.predict(ec[i], NULL, MULTICLASS::get_example_label(ec[i]));
+      size_t prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]));
 
       if (srn.output().good())
         srn.output() << prediction << ' ';
@@ -59,7 +59,7 @@ namespace OneOfManyTask {
       srn.snapshot(i, 2, &max_label, sizeof(max_label), false);  
       srn.snapshot(i, 2, &max_prediction, sizeof(max_prediction), false); 
 
-      uint32_t prediction = srn.predict(ec[i], NULL, MULTICLASS::get_example_label(ec[i]));
+      uint32_t prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]));
       max_label = max(MULTICLASS::get_example_label(ec[i]), max_label);
       max_prediction = max(prediction, max_prediction);
     }
@@ -213,7 +213,7 @@ namespace SequenceSpanTask {
           my_task_data->only_two_allowed[1] = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
         }
       }
-      last_prediction = srn.predict(ec[i], y_allowed, MULTICLASS::get_example_label(ec[i]));
+      last_prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]), y_allowed);
 
       uint32_t printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
       //uint32_t printed_truth      = (my_task_data->encoding == BIO) ? y->label        : bilou_to_bio(y->label);
@@ -285,7 +285,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
       
-      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, MULTICLASS::get_example_label(ec[i]) - 1);
+      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, MULTICLASS::get_example_label(ec[i]) - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       
       if (srn.output().good())
