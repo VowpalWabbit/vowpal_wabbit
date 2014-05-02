@@ -42,14 +42,34 @@ namespace SequenceTask {
 namespace OneOfManyTask {
   using namespace Searn;
 
+  struct task_data {
+    float false_negative_cost;
+  };
+
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+
+	  task_data * my_task_data = new task_data();
+
+	  srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
                      EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+
+    po::options_description desc("search sequencespan options");
+    desc.add_options()("cost", po::value<float>(&(my_task_data->false_negative_cost)), "False Negative Cost");
+
+    po::parsed_options parsed = po::command_line_parser(opts).
+      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+      options(desc).allow_unregistered().run();
+    opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+
+    srn.set_task_data(my_task_data);
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
   void structured_predict(searn& srn, vector<example*> ec) {
+    task_data * my_task_data = (task_data*)srn.get_task_data();
     uint32_t max_prediction = 1;
     uint32_t max_label = 1;
         
@@ -65,7 +85,7 @@ namespace OneOfManyTask {
     }
     float loss = 0.;
     if (max_label > max_prediction)
-      loss = 10.;
+      loss = my_task_data->false_negative_cost;
     else if (max_prediction > max_label)
       loss = 1.;		
     srn.loss(loss);
