@@ -48,13 +48,14 @@ namespace OneOfManyTask {
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
 
-	  task_data * my_task_data = new task_data();
+	  task_data* my_task_data = new task_data();
+
 
 	  srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
                      EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
 
     po::options_description desc("search sequencespan options");
-    desc.add_options()("cost", po::value<float>(&(my_task_data->false_negative_cost)), "False Negative Cost");
+    desc.add_options()("cost", po::value<float>(&(my_task_data->false_negative_cost))->default_value(10.0), "False Negative Cost");
 
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
