@@ -104,7 +104,6 @@ namespace Searn
   struct searn_private {
     vw* all;
 
-    void* task_data;
     bool auto_history;          // do you want us to automatically add history features?
     bool auto_hamming_loss;     // if you're just optimizing hamming loss, we can do it for you!
     bool examples_dont_change;  // set to true if you don't do any internal example munging
@@ -2111,11 +2110,11 @@ void print_update(vw& all, searn& srn)
       v_array<beam_hyp> hyp_pool;
       size_t hyp_pool_id = 0;
       hyp_pool.resize(10000, true);
-      srn.priv->beam_is_training = is_learn;
-      beam_predict(all, srn, srn.priv->ec_seq, hyp_pool, hyp_pool_id, is_learn);
-      if (is_learn) {
+      srn.priv->beam_is_training = is_learn && all.training && !srn.priv->ec_seq[0]->test_only;
+      beam_predict(all, srn, srn.priv->ec_seq, hyp_pool, hyp_pool_id, srn.priv->beam_is_training);
+      if (srn.priv->beam_is_training)
         train_single_example_beam(all, srn, hyp_pool, hyp_pool_id);
-      }
+
       free_hyp_pool(hyp_pool, hyp_pool_id);
     }
     
@@ -2218,8 +2217,6 @@ void print_update(vw& all, searn& srn)
       return *(priv->pred_string);
   }
 
-  void  searn_set_task_data(searn_private* priv, void* data) { priv->task_data = data; }
-  void* searn_get_task_data(searn_private* priv) { return priv->task_data; }
   void  searn_set_options(searn_private* priv, uint32_t opts) {
     if (priv->state != NONE) {
       cerr << "error: task cannot set options except in initialize function!" << endl;
@@ -2277,7 +2274,7 @@ void print_update(vw& all, searn& srn)
     srn.priv->passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
     srn.task = NULL;
-    srn.priv->task_data = NULL;
+    srn.task_data = NULL;
     
     srn.priv->read_example_last_id = 0;
     srn.priv->passes_since_new_policy = 0;
@@ -2830,14 +2827,7 @@ void print_update(vw& all, searn& srn)
   stringstream& searn::output() {
     return searn_output_streamstream(this->priv);
   }
-      
-  void  searn::set_task_data(void*data) {
-    searn_set_task_data(this->priv, data);
-  }
 
-  void* searn::get_task_data() {
-    return searn_get_task_data(this->priv);
-  }
   void  searn::set_options(uint32_t opts) {
     searn_set_options(this->priv, opts);
   }
