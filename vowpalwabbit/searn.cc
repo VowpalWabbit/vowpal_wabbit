@@ -1528,6 +1528,7 @@ void compute_full_beam(vw&all, searn&srn, vector<example*>ec, v_array<beam_hyp>&
         beam_hyp* hyp = (beam_hyp*)be->data;
         assert(hyp);
         assert(hyp->parent);
+        // TODO: proper k-best using reverse exact a* search
         srn.priv->beam_final_action_sequence.erase();
         for (; hyp->parent != NULL; hyp = hyp->parent)
           srn.priv->beam_final_action_sequence.push_back((uint32_t)hyp->action_taken);

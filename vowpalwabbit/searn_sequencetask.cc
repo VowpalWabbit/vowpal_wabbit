@@ -38,6 +38,7 @@ namespace SequenceTask {
   }
 }
 
+
 namespace OneOfManyTask {
   using namespace Searn;
 
@@ -49,46 +50,32 @@ namespace OneOfManyTask {
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
   void structured_predict(searn& srn, vector<example*> ec) {
-    bool predicted_true_yet = false;
-    bool output_has_true    = false;
-    for (size_t i=0; i<ec.size(); i++)
-      if (MULTICLASS::get_example_label(ec[i]) == 2) {
-        output_has_true = true;
-        break;
-      }
+    uint32_t max_prediction = 1;
+    uint32_t max_label = 1;
         
     for (size_t i=0; i<ec.size(); i++) {
       // labels should be 1 or 2, and our output is MAX of all predicted values
       srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
-      srn.snapshot(i, 2, &predicted_true_yet, sizeof(predicted_true_yet), false);  // not used for prediction
+      srn.snapshot(i, 2, &max_label, sizeof(max_label), false);  
+      srn.snapshot(i, 2, &max_prediction, sizeof(max_prediction), false); 
 
-      size_t prediction = srn.predict(ec[i], NULL, MULTICLASS::get_example_label(ec[i]));
-
-      float cur_loss = 0.;
-      if (prediction == 2) { // we predicted "yes"
-        if (!predicted_true_yet) { // and this is the first time
-          if (output_has_true) cur_loss = 0.;
-          else cur_loss = 1.;
-        } else { // we've predicted true earlier
-          if (output_has_true) cur_loss = 0.;
-          else cur_loss = 1.; // TODO: should this be zero? i.e., should we not get repeatedly punished?
-        }
-        predicted_true_yet = true;
-      } else { // we predicted "no"
-        if (!predicted_true_yet) { // no predictions of true at all
-          if ((i == ec.size()-1) && output_has_true)
-            cur_loss = 1.;  // totally hosed
-        } else { // we've predicted true in the past
-          // no loss
-        }
-      }
-      srn.loss(1, cur_loss);
-
-      if (srn.output().good())
-        srn.output() << prediction << ' ';
+      uint32_t prediction = srn.predict(ec[i], NULL, MULTICLASS::get_example_label(ec[i]));
+      max_label = max(MULTICLASS::get_example_label(ec[i]), max_label);
+      max_prediction = max(prediction, max_prediction);
     }
+    float loss = 0.;
+    if (max_label > max_prediction)
+      loss = 1.;
+    else if (max_prediction > max_label)
+      loss = 10.;		
+    srn.loss(ec.size()+1, loss);
+
+    if (srn.output().good())
+      srn.output() << max_prediction << ' ';
   }
 }
+
+
 
 namespace SequenceSpanTask {
   enum EncodingType { BIO, BILOU };
