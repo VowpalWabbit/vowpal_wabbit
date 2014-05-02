@@ -19,9 +19,9 @@ namespace SequenceTask {
   using namespace Searn;
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
-                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
+                     EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
@@ -30,64 +30,52 @@ namespace SequenceTask {
     for (size_t i=0; i<ec.size(); i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
-      size_t prediction = srn.predict(ec[i], NULL, MULTICLASS::get_example_label(ec[i]));
+      size_t prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]));
 
       if (srn.output().good())
         srn.output() << prediction << ' ';
     }
   }
 }
+
 
 namespace OneOfManyTask {
   using namespace Searn;
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
   void structured_predict(searn& srn, vector<example*> ec) {
-    bool predicted_true_yet = false;
-    bool output_has_true    = false;
-    for (size_t i=0; i<ec.size(); i++) {
-      MULTICLASS::multiclass* y = (MULTICLASS::multiclass*)ec[i]->ld;
-      if (y->label == 2) output_has_true = true;
-    }
+    uint32_t max_prediction = 1;
+    uint32_t max_label = 1;
         
     for (size_t i=0; i<ec.size(); i++) {
       // labels should be 1 or 2, and our output is MAX of all predicted values
       srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
-      srn.snapshot(i, 2, &predicted_true_yet, sizeof(predicted_true_yet), false);  // not used for prediction
+      srn.snapshot(i, 2, &max_label, sizeof(max_label), false);  
+      srn.snapshot(i, 2, &max_prediction, sizeof(max_prediction), false); 
 
-      size_t prediction = srn.predict(ec[i], NULL, MULTICLASS::get_example_label(ec[i]));
-
-      float cur_loss = 0.;
-      if (prediction == 2) { // we predicted "yes"
-        if (!predicted_true_yet) { // and this is the first time
-          if (output_has_true) cur_loss = 0.;
-          else cur_loss = 1.;
-        } else { // we've predicted true earlier
-          if (output_has_true) cur_loss = 0.;
-          else cur_loss = 1.; // TODO: should this be zero? i.e., should we not get repeatedly punished?
-        }
-        predicted_true_yet = true;
-      } else { // we predicted "no"
-        if (!predicted_true_yet) { // no predictions of true at all
-          if ((i == ec.size()-1) && output_has_true)
-            cur_loss = 1.;  // totally hosed
-        } else { // we've predicted true in the past
-          // no loss
-        }
-      }
-      srn.loss(1, cur_loss);
-
-      if (srn.output().good())
-        srn.output() << prediction << ' ';
+      uint32_t prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]));
+      max_label = max(MULTICLASS::get_example_label(ec[i]), max_label);
+      max_prediction = max(prediction, max_prediction);
     }
+    float loss = 0.;
+    if (max_label > max_prediction)
+      loss = 1.;
+    else if (max_prediction > max_label)
+      loss = 10.;		
+    srn.loss(ec.size()+1, loss);
+
+    if (srn.output().good())
+      srn.output() << max_prediction << ' ';
   }
 }
+
+
 
 namespace SequenceSpanTask {
   enum EncodingType { BIO, BILOU };
@@ -188,9 +176,9 @@ namespace SequenceSpanTask {
     }
 
     srn.set_task_data(my_task_data);
-    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
-                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
+                     EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) {
@@ -225,7 +213,7 @@ namespace SequenceSpanTask {
           my_task_data->only_two_allowed[1] = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
         }
       }
-      last_prediction = srn.predict(ec[i], y_allowed, MULTICLASS::get_example_label(ec[i]));
+      last_prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]), y_allowed);
 
       uint32_t printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
       //uint32_t printed_truth      = (my_task_data->encoding == BIO) ? y->label        : bilou_to_bio(y->label);
@@ -264,9 +252,9 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     data->num_actions  = num_actions;
 
     srn.set_task_data(data);
-    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
-                     OPT_IS_LDF               );   // we generate ldf examples
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
+                     IS_LDF               );   // we generate ldf examples
   }
 
   void finish(searn& srn) {
@@ -297,7 +285,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
       
-      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, NULL, MULTICLASS::get_example_label(ec[i]) - 1);
+      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, MULTICLASS::get_example_label(ec[i]) - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       
       if (srn.output().good())
