@@ -689,9 +689,9 @@ namespace Searn
         v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)valid_labels)->costs;
         for (size_t i=0; i<costs->size(); i++) {
           if (ystar_is_uint32t)
-            costs->get(i).partial_prediction = (costs->get(i).class_index == action) ? 0. : 1.;
+            costs->get(i).partial_prediction = (costs->get(i).class_index == action) ? 0.f : 1.f;
           else   // ystar is actually v_array<uint32_t>
-            costs->get(i).partial_prediction = v_array_contains<uint32_t>(*ystar, costs->get(i).class_index) ? 0. : 1.;
+            costs->get(i).partial_prediction = v_array_contains<uint32_t>(*ystar, costs->get(i).class_index) ? 0.f : 1.f;
         }
       }
       return action;
@@ -2040,7 +2040,7 @@ void print_update(vw& all, searn& srn)
       
       // TODO: prune training steps ala get_training_timesteps
       cdbg << "t=" << me.t << ", labelset_size=" << me.num_actions << endl;
-      for (size_t aid=0; aid<me.num_actions; aid++) {
+      for (uint32_t aid=0; aid<me.num_actions; aid++) {
         COST_SENSITIVE::wclass my_class = { 0., aid+1, 0., 0. }; // TODO: make this valid for LDF
         aset.costs.push_back( my_class );
         
@@ -2052,8 +2052,8 @@ void print_update(vw& all, searn& srn)
         beam_hyp *h = &me;
         for (size_t t=0; t<me.t; t++) {
           assert(h != NULL);
-          priv->train_action[me.t - t - 1] = h->action_taken+1;
-          priv->train_action_ids[me.t - t - 1] = h->action_taken+1;  // TODO: make this valid for ldf
+          priv->train_action[me.t - t - 1] = (uint32_t)h->action_taken+1;
+          priv->train_action_ids[me.t - t - 1] = (uint32_t)h->action_taken+1;  // TODO: make this valid for ldf
           cdbg << "set train_action[" << (me.t-t-1) << "] = " << h->action_taken+1 << endl;
           h = h->parent;
         }
