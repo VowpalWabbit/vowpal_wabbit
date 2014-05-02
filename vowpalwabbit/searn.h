@@ -31,8 +31,8 @@ namespace Searn {
   struct searn {
     // INTERFACE
     // for managing task-specific data that you want on the heap:
-    void  set_task_data(void*data);
-    void* get_task_data();
+    template<class T> void  set_task_data(T*data)           { task_data = data; }
+    template<class T> T*    get_task_data()                 { return (T*)task_data; }
 
     // for setting programmatic options during initialization
     void set_options(uint32_t opts);
@@ -57,6 +57,7 @@ namespace Searn {
     // internal data
     searn_task*    task;
     searn_private* priv;
+    void*          task_data;
   };
 
   template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string);

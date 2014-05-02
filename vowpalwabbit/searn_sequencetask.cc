@@ -75,7 +75,7 @@ namespace ArgmaxTask {
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
   void structured_predict(searn& srn, vector<example*> ec) {
-    task_data* my_task_data = (task_data*)srn.get_task_data();
+    task_data * my_task_data = srn.get_task_data<task_data>();
     uint32_t max_prediction = 1;
     uint32_t max_label = 1;
 
@@ -205,21 +205,21 @@ namespace SequenceSpanTask {
       my_task_data->only_two_allowed.push_back(0);
     }
 
-    srn.set_task_data(my_task_data);
+    srn.set_task_data<task_data>(my_task_data);
     srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
                      AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
                      EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) {
-    task_data * my_task_data = (task_data*)srn.get_task_data();
+    task_data * my_task_data = srn.get_task_data<task_data>();
     my_task_data->y_allowed.delete_v();
     my_task_data->only_two_allowed.delete_v();
     delete my_task_data;
   }
 
   void structured_predict(searn& srn, vector<example*> ec) {
-    task_data * my_task_data = (task_data*)srn.get_task_data();
+    task_data * my_task_data = srn.get_task_data<task_data>();
     uint32_t last_prediction = 1;
     v_array<uint32_t> * y_allowed = &(my_task_data->y_allowed);
 
@@ -281,14 +281,14 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     data->ldf_examples = ldf_examples;
     data->num_actions  = num_actions;
 
-    srn.set_task_data(data);
+    srn.set_task_data<task_data>(data);
     srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
                      AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
                      IS_LDF               );   // we generate ldf examples
   }
 
   void finish(searn& srn) {
-    task_data *data = (task_data*)srn.get_task_data();
+    task_data *data = srn.get_task_data<task_data>();
     for (size_t a=0; a<data->num_actions; a++)
       dealloc_example(COST_SENSITIVE::cs_label.delete_label, data->ldf_examples[a]);
     free(data->ldf_examples);
@@ -296,7 +296,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
   }
 
   void structured_predict(searn& srn, vector<example*> ec) {
-    task_data *data = (task_data*)srn.get_task_data();
+    task_data *data = srn.get_task_data<task_data>();
     
     for (size_t i=0; i<ec.size(); i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
