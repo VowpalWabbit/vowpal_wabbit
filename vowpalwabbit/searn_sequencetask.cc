@@ -68,7 +68,7 @@ namespace OneOfManyTask {
       loss = 1.;
     else if (max_prediction > max_label)
       loss = 10.;		
-    srn.loss(ec.size()+1, loss);
+    srn.loss(loss);
 
     if (srn.output().good())
       srn.output() << max_prediction << ' ';
