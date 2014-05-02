@@ -910,11 +910,11 @@ learner* setup(vw& all, po::variables_map& vm)
 
   all.reg.stride_shift = 2; //use stride of 4 for default invariant normalized adaptive updates
   //if the user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
-  if( (all.rank > 0 && !vm.count("new_mf")) || !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
+  if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
   {
-    all.adaptive = all.training && vm.count("adaptive") && (all.rank == 0 && !vm.count("new_mf"));
+    all.adaptive = all.training && vm.count("adaptive");
     all.invariant_updates = all.training && vm.count("invariant");
-    all.normalized_updates = all.training && vm.count("normalized") && (all.rank == 0 && !vm.count("new_mf"));
+    all.normalized_updates = all.training && vm.count("normalized");
 
     all.reg.stride_shift = 0;
 

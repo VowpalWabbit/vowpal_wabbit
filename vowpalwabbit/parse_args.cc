@@ -590,6 +590,24 @@ vw* parse_args(int argc, char *argv[])
   po::store(parsed_file, vm_file);
   po::notify(vm_file);
 
+  if (vm.count("bfgs") || vm.count("conjugate_gradient"))
+    all->l = BFGS::setup(*all, to_pass_further, vm);
+  else if (vm.count("lda"))
+    all->l = LDA::setup(*all, to_pass_further, vm);
+  else if (vm.count("noop"))
+    all->l = NOOP::setup(*all);
+  else if (vm.count("print"))
+    all->l = PRINT::setup(*all);
+  else if (!vm.count("new_mf") && all->rank > 0)
+    all->l = GDMF::setup(*all, vm);
+  else if (vm.count("sendto"))
+    all->l = SENDER::setup(*all, vm, all->pairs);
+  else
+    {
+      all->l = GD::setup(*all, vm);
+      all->scorer = all->l;
+    }
+
   for (size_t i = 0; i < 256; i++)
     all->ignore[i] = false;
   all->ignore_some = false;
@@ -640,24 +658,6 @@ vw* parse_args(int argc, char *argv[])
 
   //if (vm.count("nonormalize"))
   //  all->nonormalize = true;
-
-  if (!vm.count("bfgs") && !vm.count("conjugate_gradient") && !vm.count("noop") && !vm.count("lda") && !vm.count("print") && !vm.count("new_mf") && !vm.count("sendto"))
-    {
-      all->l = GD::setup(*all, vm);
-      all->scorer = all->l;
-    }
-  else if (vm.count("bfgs") || vm.count("conjugate_gradient"))
-    all->l = BFGS::setup(*all, to_pass_further, vm, vm_file);
-  else if (vm.count("lda"))
-    all->l = LDA::setup(*all, to_pass_further, vm);
-  else if (vm.count("noop"))
-    all->l = NOOP::setup(*all);
-  else if (vm.count("print"))
-    all->l = PRINT::setup(*all);
-  else if (!vm.count("new_mf") && all->rank > 0)
-    all->l = GDMF::setup(*all, vm);
-  else if (vm.count("sendto"))
-    all->l = SENDER::setup(*all, vm, all->pairs);
 
   if (!vm.count("lda") && !all->adaptive && !all->normalized_updates)
     all->eta *= powf((float)(all->sd->t), all->power_t);

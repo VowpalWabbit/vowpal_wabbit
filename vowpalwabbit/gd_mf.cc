@@ -259,17 +259,17 @@ void mf_train(vw& all, example& ec, float update)
       while ((!read && i < length) || (read && brw >0));
     }
 }
-
-void end_pass(gdmf& d)
-{
-  vw* all = d.all;
-
-   all->eta *= all->eta_decay_rate;
-   if (all->save_per_pass)
-     save_predictor(*all, all->final_regressor_name, all->current_pass);
-   
-   all->current_pass++;
-}
+  
+  void end_pass(gdmf& d)
+  {
+    vw* all = d.all;
+    
+    all->eta *= all->eta_decay_rate;
+    if (all->save_per_pass)
+      save_predictor(*all, all->final_regressor_name, all->current_pass);
+    
+    all->current_pass++;
+  }
 
   void predict(gdmf& d, learner& base, example& ec)
   {
@@ -317,6 +317,9 @@ void end_pass(gdmf& d)
 	cerr << "bfgs is not implemented for matrix factorization" << endl;
 	throw exception();
       }	
+    
+    if(!vm.count("learning_rate") && !vm.count("l"))
+      all.eta = 10; //default learning rate to 10 for non default update rule
     
     //default initial_t to 1 instead of 0
     if(!vm.count("initial_t")) {
