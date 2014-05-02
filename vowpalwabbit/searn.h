@@ -26,7 +26,7 @@ namespace Searn {
   struct searn_task;
 
   // options:
-  extern uint32_t OPT_AUTO_HISTORY, OPT_AUTO_HAMMING_LOSS, OPT_EXAMPLES_DONT_CHANGE, OPT_IS_LDF;
+  extern uint32_t AUTO_HISTORY, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF;
 
   struct searn {
     // INTERFACE

@@ -19,9 +19,9 @@ namespace SequenceTask {
   using namespace Searn;
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
-                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
+                     EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
@@ -43,8 +43,8 @@ namespace OneOfManyTask {
   using namespace Searn;
 
   void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
@@ -176,9 +176,9 @@ namespace SequenceSpanTask {
     }
 
     srn.set_task_data(my_task_data);
-    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
-                     OPT_EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
+                     EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
   }
 
   void finish(searn& srn) {
@@ -252,9 +252,9 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     data->num_actions  = num_actions;
 
     srn.set_task_data(data);
-    srn.set_options( OPT_AUTO_HISTORY         |    // automatically add history features to our examples, please
-                     OPT_AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
-                     OPT_IS_LDF               );   // we generate ldf examples
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
+                     IS_LDF               );   // we generate ldf examples
   }
 
   void finish(searn& srn) {

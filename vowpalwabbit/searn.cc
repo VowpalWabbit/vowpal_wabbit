@@ -51,7 +51,7 @@ namespace Searn
 
   string   neighbor_feature_space("neighbor");
 
-  uint32_t OPT_AUTO_HISTORY = 1, OPT_AUTO_HAMMING_LOSS = 2, OPT_EXAMPLES_DONT_CHANGE = 4, OPT_IS_LDF = 8;
+  uint32_t AUTO_HISTORY = 1, AUTO_HAMMING_LOSS = 2, EXAMPLES_DONT_CHANGE = 4, IS_LDF = 8;
   enum SearnState { NONE, INIT_TEST, INIT_TRAIN, LEARN, GET_TRUTH_STRING, BEAM_INIT, BEAM_ADVANCE, BEAM_PLAYOUT };
 
   typedef uint32_t* history;
@@ -2119,10 +2119,10 @@ void print_update(vw& all, searn& srn)
       cerr << "error: task cannot set options except in initialize function!" << endl;
       throw exception();
     }
-    if ((opts & OPT_AUTO_HISTORY)         != 0) priv->auto_history = true;
-    if ((opts & OPT_AUTO_HAMMING_LOSS)    != 0) priv->auto_hamming_loss = true;
-    if ((opts & OPT_EXAMPLES_DONT_CHANGE) != 0) priv->examples_dont_change = true;
-    if ((opts & OPT_IS_LDF)               != 0) priv->is_ldf = true;
+    if ((opts & AUTO_HISTORY)         != 0) priv->auto_history = true;
+    if ((opts & AUTO_HAMMING_LOSS)    != 0) priv->auto_hamming_loss = true;
+    if ((opts & EXAMPLES_DONT_CHANGE) != 0) priv->examples_dont_change = true;
+    if ((opts & IS_LDF)               != 0) priv->is_ldf = true;
   }
 
   bool snapshot_item_ptr_eq0(void*ss_data, snapshot_item_ptr &a, snapshot_item_ptr &b) {
