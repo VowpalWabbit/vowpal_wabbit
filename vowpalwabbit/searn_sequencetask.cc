@@ -65,9 +65,9 @@ namespace OneOfManyTask {
     }
     float loss = 0.;
     if (max_label > max_prediction)
-      loss = 1.;
+      loss = 10.;
     else if (max_prediction > max_label)
-      loss = 10.;		
+      loss = 1.;		
     srn.loss(loss);
 
     if (srn.output().good())
