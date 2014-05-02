@@ -194,7 +194,7 @@ void parse_source(vw& all, po::variables_map& vm)
     all.data_filename = "";
 }
 
-void parse_feature_tweaks(vw& all, po::variables_map& vm, po::variables_map& vm_file)
+void parse_feature_tweaks(vw& all, po::variables_map& vm)
 {
   //feature manipulation
   string hash_function("strings");
@@ -209,12 +209,6 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm, po::variables_map& vm_
       else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
   }
 
-  if (vm_file.count("affix") && vm.count("affix")) {
-    cerr << "should not specify --affix when loading a model trained with affix features (they're turned on by default)" << endl;
-    throw exception();
-  }
-  if (vm_file.count("affix"))
-    parse_affix_argument(all, vm_file["affix"].as<string>());
   if (vm.count("affix")) {
     parse_affix_argument(all, vm["affix"].as<string>());
     stringstream ss;
@@ -455,7 +449,7 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     }
 }
 
-void parse_output_preds(vw& all, po::variables_map& vm, po::variables_map& vm_file)
+void parse_output_preds(vw& all, po::variables_map& vm)
 {
   if (vm.count("predictions")) {
     if (!all.quiet)
@@ -482,7 +476,7 @@ void parse_output_preds(vw& all, po::variables_map& vm, po::variables_map& vm_fi
   if (vm.count("raw_predictions")) {
     if (!all.quiet) {
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
-      if (vm.count("binary") || vm_file.count("binary"))
+      if (vm.count("binary"))
         cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
     }
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
@@ -571,21 +565,21 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
   }
 }
 
-void parse_scorer_reductions(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file)
+void parse_scorer_reductions(vw& all, vector<string>& to_pass_further, po::variables_map& vm)
 {
-  if(vm.count("nn") || vm_file.count("nn") )
-    all.l = NN::setup(all, to_pass_further, vm, vm_file);
+  if(vm.count("nn"))
+    all.l = NN::setup(all, to_pass_further, vm);
   
   if (vm.count("new_mf") && all.rank > 0)
     all.l = MF::setup(all, vm);
   
-  if(vm.count("autolink") || vm_file.count("autolink") )
-    all.l = ALINK::setup(all, to_pass_further, vm, vm_file);
+  if(vm.count("autolink"))
+    all.l = ALINK::setup(all, to_pass_further, vm);
   
-  if (vm.count("lrq") || vm_file.count("lrq"))
-    all.l = LRQ::setup(all, to_pass_further, vm, vm_file);
+  if (vm.count("lrq"))
+    all.l = LRQ::setup(all, to_pass_further, vm);
   
-  all.l = Scorer::setup(all, to_pass_further, vm, vm_file);
+  all.l = Scorer::setup(all, to_pass_further, vm);
 }
 
 LEARNER::learner* exclusive_setup(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& score_consumer, LEARNER::learner* (*setup)(vw&, vector<string>&, po::variables_map&, po::variables_map&))
@@ -595,99 +589,99 @@ LEARNER::learner* exclusive_setup(vw& all, vector<string>& to_pass_further, po::
   return setup(all, to_pass_further, vm, vm_file);
 }
 
-void parse_score_users(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs)
+void parse_score_users(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& got_cs)
 {
   bool score_consumer = false;
   
-  if(vm.count("top") || vm_file.count("top") )
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, TOPK::setup);
+  if(vm.count("top") || vm.count("top") )
+    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, TOPK::setup);
   
-  if (vm.count("binary") || vm_file.count("binary"))
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, BINARY::setup);
+  if (vm.count("binary") || vm.count("binary"))
+    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, BINARY::setup);
   
-  if (vm.count("oaa") || vm_file.count("oaa") ) 
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, OAA::setup);
+  if (vm.count("oaa") || vm.count("oaa") ) 
+    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, OAA::setup);
   
-  if (vm.count("ect") || vm_file.count("ect") ) 
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, ECT::setup);
+  if (vm.count("ect") || vm.count("ect") ) 
+    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, ECT::setup);
   
-  if(vm.count("csoaa") || vm_file.count("csoaa") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA::setup);
+  if(vm.count("csoaa") || vm.count("csoaa") ) {
+    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, CSOAA::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
-  if(vm.count("wap") || vm_file.count("wap") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, WAP::setup);
+  if(vm.count("wap") || vm.count("wap") ) {
+    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, WAP::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
-  if(vm.count("csoaa_ldf") || vm_file.count("csoaa_ldf")) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA_AND_WAP_LDF::setup);
+  if(vm.count("csoaa_ldf") || vm.count("csoaa_ldf")) {
+    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
-  if(vm.count("wap_ldf") || vm_file.count("wap_ldf") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA_AND_WAP_LDF::setup);
+  if(vm.count("wap_ldf") || vm.count("wap_ldf") ) {
+    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
 }
 
-void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs, bool& got_cb)
+void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  if( vm.count("cb") || vm_file.count("cb") )
+  if( vm.count("cb") || vm.count("cb") )
     {
       if(!got_cs) {
-	if( vm_file.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cb"]));
+	if( vm.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	
-	all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	all.l = CSOAA::setup(all, to_pass_further, vm, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
       
-      all.l = CB_ALGS::setup(all, to_pass_further, vm, vm_file);
+      all.l = CB_ALGS::setup(all, to_pass_further, vm, vm);
       got_cb = true;
     }
 
-  if (vm.count("cbify") || vm_file.count("cbify"))
+  if (vm.count("cbify") || vm.count("cbify"))
     {
       if(!got_cs) {
-	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cbify"]));
+	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
-	all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	all.l = CSOAA::setup(all, to_pass_further, vm, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
 
       if (!got_cb) {
-	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm_file["cbify"]));
+	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all.l = CB_ALGS::setup(all, to_pass_further, vm, vm_file);
+	all.l = CB_ALGS::setup(all, to_pass_further, vm, vm);
 	got_cb = true;
       }
 
-      all.l = CBIFY::setup(all, to_pass_further, vm, vm_file);
+      all.l = CBIFY::setup(all, to_pass_further, vm, vm);
     }
 }
 
-void parse_search(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs, bool& got_cb)
+void parse_search(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  if (vm.count("search") || vm_file.count("search") ) {
+  if (vm.count("search") || vm.count("search") ) {
     if (!got_cs && !got_cb) {
-      if( vm_file.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["search"]));
+      if( vm.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       
-      all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      all.l = CSOAA::setup(all, to_pass_further, vm, vm);  // default to CSOAA unless others have been specified
       all.cost_sensitive = all.l;
       got_cs = true;
     }
     //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
-    all.l = Searn::setup(all, to_pass_further, vm, vm_file);
+    all.l = Searn::setup(all, to_pass_further, vm, vm);
   }
 }
 
@@ -880,7 +874,6 @@ vw* parse_args(int argc, char *argv[])
     .add(other_opt);
 
   po::variables_map vm = po::variables_map();
-  po::variables_map vm_file = po::variables_map(); //separate variable map for storing flags in regressor file
 
   po::parsed_options parsed = po::command_line_parser(argc, argv).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -922,10 +915,10 @@ vw* parse_args(int argc, char *argv[])
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(desc).allow_unregistered().run();
 
-  po::store(parsed_file, vm_file);
-  po::notify(vm_file);
+  po::store(parsed_file, vm);
+  po::notify(vm);
 
-  parse_feature_tweaks(*all, vm, vm_file); //feature tweaks
+  parse_feature_tweaks(*all, vm); //feature tweaks
 
   parse_example_tweaks(*all, vm); //example manipulation
 
@@ -945,24 +938,24 @@ vw* parse_args(int argc, char *argv[])
 
   parse_output_model(*all, vm);
   
-  parse_output_preds(*all, vm, vm_file);
+  parse_output_preds(*all, vm);
 
   load_input_model(*all, vm, io_temp);
 
-  parse_scorer_reductions(*all, to_pass_further, vm, vm_file);
+  parse_scorer_reductions(*all, to_pass_further, vm);
 
   bool got_cs = false;
   
-  parse_score_users(*all, to_pass_further, vm, vm_file, got_cs);
+  parse_score_users(*all, to_pass_further, vm, got_cs);
 
   bool got_cb = false;
   
-  parse_cb(*all, to_pass_further, vm, vm_file, got_cs, got_cb);
+  parse_cb(*all, to_pass_further, vm, got_cs, got_cb);
 
-  parse_search(*all, to_pass_further, vm, vm_file, got_cs, got_cb);
+  parse_search(*all, to_pass_further, vm, got_cs, got_cb);
 
-  if(vm.count("bs") || vm_file.count("bs") )
-    all->l = BS::setup(*all, to_pass_further, vm, vm_file);
+  if(vm.count("bs") || vm.count("bs") )
+    all->l = BS::setup(*all, to_pass_further, vm);
 
   if (to_pass_further.size() > 0) {
     bool is_actually_okay = false;

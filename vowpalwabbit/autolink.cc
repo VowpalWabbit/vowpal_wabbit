@@ -42,18 +42,15 @@ namespace ALINK {
     ec.total_sum_feat_sq -= sum_sq;
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     autolink* data = (autolink*)calloc_or_die(1,sizeof(autolink));
     data->d = (uint32_t)vm["autolink"].as<size_t>();
     data->stride_shift = all.reg.stride_shift;
     
-    if (!vm_file.count("autolink")) 
-      {
-	std::stringstream ss;
-	ss << " --autolink " << data->d << " ";
-	all.options_from_file.append(ss.str());
-      }
+    std::stringstream ss;
+    ss << " --autolink " << data->d << " ";
+    all.options_from_file.append(ss.str());
 
     learner* ret = new learner(data, all.l);
     ret->set_learn<autolink, predict_or_learn<true> >();

@@ -178,7 +178,7 @@ namespace LRQ {
       }
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
   {//parse and set arguments
     LRQstate* lrq = (LRQstate*) calloc (1, sizeof (LRQstate));
     unsigned int maxk = 0;
@@ -186,33 +186,22 @@ namespace LRQ {
 
     size_t random_seed = 0;
     if (vm.count("random_seed")) random_seed = vm["random_seed"].as<size_t> ();
-    if (vm_file.count("random_seed")) random_seed = vm_file["random_seed"].as<size_t> ();
 
     lrq->initial_seed = lrq->seed = random_seed | 8675309;
-    lrq->dropout = vm.count("lrqdropout") || vm_file.count("lrqdropout");
+    lrq->dropout = vm.count("lrqdropout");
 
-    if (lrq->dropout && !vm_file.count("lrqdropout"))
-      all.options_from_file.append(" --lrqdropout");
-
-    if (!vm_file.count("lrq"))
-      {
-        lrq->lrpairs = vm["lrq"].as<vector<string> > ();
-
-        // TODO: doesn't work for non-printable stuff
-        
-        stringstream ss;
-        for (vector<string>::iterator i = lrq->lrpairs.begin (); 
-             i != lrq->lrpairs.end (); 
-             ++i)
-          {
-            ss << " --lrq " << *i;
-          }
-
-        all.options_from_file.append(ss.str());
-      }
-    else
-      lrq->lrpairs = vm_file["lrq"].as<vector<string> > ();
-
+    all.options_from_file.append(" --lrqdropout");
+    
+    lrq->lrpairs = vm["lrq"].as<vector<string> > ();
+    
+    stringstream ss;
+    for (vector<string>::iterator i = lrq->lrpairs.begin (); 
+	 i != lrq->lrpairs.end (); 
+	 ++i)
+      ss << " --lrq " << *i;
+    
+    all.options_from_file.append(ss.str());
+    
     if (! all.quiet)
       {
         cerr << "creating low rank quadratic features for pairs: ";
