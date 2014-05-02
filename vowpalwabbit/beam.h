@@ -197,7 +197,7 @@ class beam {
     count = beam_size;
     if (is_equivalent) // we might be able to get rid of even more
       while ((count > 1) && !A[count-1].active) count--;
-    
+
     if (free_data)
       for (beam_element * be = A.begin+count; be != A.end; ++be)
         free_data(be->data);
