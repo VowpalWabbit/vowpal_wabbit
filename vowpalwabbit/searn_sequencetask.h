@@ -15,7 +15,7 @@ namespace SequenceTask {
   extern Searn::searn_task task;
 }
 
-namespace OneOfManyTask {
+namespace ArgmaxTask {
   void initialize(Searn::searn&, size_t&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
   void finish(Searn::searn&);
   void structured_predict(Searn::searn&, vector<example*>);
