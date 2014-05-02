@@ -70,7 +70,7 @@ namespace OneOfManyTask {
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
   void structured_predict(searn& srn, vector<example*> ec) {
-    task_data * my_task_data = (task_data*)srn.get_task_data();
+    task_data * my_task_data = srn.get_task_data<task_data>();
     uint32_t max_prediction = 1;
     uint32_t max_label = 1;
         
