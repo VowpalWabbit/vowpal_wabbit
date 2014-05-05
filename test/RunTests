@@ -93,6 +93,24 @@ sub mysystem {
     system($cmd);
 }
 
+sub command_failed($) {
+    # Deal with cases where vw crashes, exits prematurely etc.
+    my $cmd = shift;
+    if ($?) {
+        my $exitcode = $? >> 8;
+        my $signal = $? & 127; 
+        my $core = ''; if ($? & 128) { $core = ' (core dumped)'; }
+        if ($signal) {
+            printf STDERR
+                "$0: test $TestNo: '%s' died from signal $signal$core\n", $cmd;
+        } elsif ($exitcode) {
+            printf STDERR
+                "$0: test $TestNo: '%s' failed ((exitcode=$exitcode)\n", $cmd;
+        }
+    }
+    $?
+}
+
 sub valgrind_errfile($) {
     my $testno = shift;
     "Test-$testno.valgrind-err";
@@ -374,7 +392,10 @@ sub diff_lenient_float($$) {
         while (<$sdiff>) {
             chomp;
             my ($line1, $line2) = split(/\s*\|\s*/, $_);
-
+            unless (defined $line2) {
+                warn "$0: test $TestNo: $outfile: no data. Can't compare\n";
+                return 1;
+            }
             v(3, "line1: $line1\n");
             v(3, "line2: $line2\n");
 
@@ -432,7 +453,7 @@ sub diff($$) {
     mysystem("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     v(2, "$diff_cmd >diff.tmp: status=$status\n");
-
+ 
     if (-s 'diff.tmp') {
         # There's some difference
         v(2, "diff.tmp has something in it. Is it meaningful?\n");
@@ -558,6 +579,13 @@ sub run_tests() {
         # run the test
         print STDERR "Test $TestNo: ($cmd) >$outf 2>$errf\n" if ($opt_c);
         mysystem("($cmd) >$outf 2>$errf");
+        unless ($opt_V) {
+            if (command_failed($cmd)) {
+                # already printed error
+                exit $status if ($opt_e);
+                next;
+            }
+        }
         my $status = $? >> 8;
         if ($status) {
             $ErrorCount++;
