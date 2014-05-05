@@ -25,7 +25,7 @@ namespace BINARY {
       ec.loss = 1.;
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     all.sd->binary_label = true;
     //Create new learner

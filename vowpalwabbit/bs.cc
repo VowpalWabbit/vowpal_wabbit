@@ -192,29 +192,24 @@ namespace BS {
     d.pred_vec.~vector();
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     bs* data = (bs*)calloc_or_die(1, sizeof(bs));
     data->ub = FLT_MAX;
     data->lb = -FLT_MAX;
 
-    po::options_description desc("BS options");
-    desc.add_options()
+    po::options_description bs_options("BS options");
+    bs_options.add_options()
       ("bs_type", po::value<string>(), "prediction type {mean,vote}");
-
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    
+    vm = add_options(all, bs_options);
 
     data->B = (uint32_t)vm["bs"].as<size_t>();
 
     //append bs with number of samples to options_from_file so it is saved to regressor later
     std::stringstream ss;
     ss << " --bs " << data->B;
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
 
     if (vm.count("bs_type"))
     {
@@ -222,8 +217,8 @@ namespace BS {
 
       type_string = vm["bs_type"].as<std::string>();
       
-      all.options_from_file.append(" --bs_type ");
-      all.options_from_file.append(type_string);
+      all.file_options.append(" --bs_type ");
+      all.file_options.append(type_string);
 
       if (type_string.compare("mean") == 0) { 
         data->bs_type = BS_TYPE_MEAN;
@@ -239,7 +234,7 @@ namespace BS {
     else {
       //by default use mean
       data->bs_type = BS_TYPE_MEAN;
-      all.options_from_file.append(" --bs_type mean");
+      all.file_options.append(" --bs_type mean");
     }
 
     data->pred_vec.reserve(data->B);

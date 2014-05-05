@@ -82,7 +82,7 @@ namespace OAA {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     oaa* data = (oaa*)calloc_or_die(1, sizeof(oaa));
     //first parse for number of actions
@@ -92,7 +92,7 @@ namespace OAA {
     //append oaa with nb_actions to options_from_file so it is saved to regressor later
     std::stringstream ss;
     ss << " --oaa " << data->k;
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
 
     data->shouldOutput = all.raw_prediction > 0;
     data->all = &all;

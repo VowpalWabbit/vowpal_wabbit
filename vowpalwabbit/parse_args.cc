@@ -103,15 +103,8 @@ void parse_affix_argument(vw&all, string str) {
   free(cstr);
 }
 
-void parse_diagnostics(vw& all, po::variables_map& vm, po::options_description& desc, int argc)
+void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
 {
-  // Begin diagnostic options
-  if (vm.count("help") || argc == 1) {
-    /* upon direct query for help -- spit it out to stdout */
-    cout << "\n" << desc << "\n";
-    exit(0);
-  }
-
   if (vm.count("version")) {
     /* upon direct query for version -- spit it out to stdout */
     cout << version.to_string() << "\n";
@@ -213,7 +206,7 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
     parse_affix_argument(all, vm["affix"].as<string>());
     stringstream ss;
     ss << " --affix " << vm["affix"].as<string>();
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
   }
 
   if(vm.count("ngram")){
@@ -520,13 +513,13 @@ void parse_output_model(vw& all, po::variables_map& vm)
     all.save_resume = true;
 }
 
-void parse_base_algorithm(vw& all, vector<string>& to_pass_further, po::variables_map& vm)
+void parse_base_algorithm(vw& all, po::variables_map& vm)
 {
   //base learning algorithm.
   if (vm.count("bfgs") || vm.count("conjugate_gradient"))
-    all.l = BFGS::setup(all, to_pass_further, vm);
+    all.l = BFGS::setup(all, vm);
   else if (vm.count("lda"))
-    all.l = LDA::setup(all, to_pass_further, vm);
+    all.l = LDA::setup(all, vm);
   else if (vm.count("noop"))
     all.l = NOOP::setup(all);
   else if (vm.count("print"))
@@ -565,72 +558,72 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
   }
 }
 
-void parse_scorer_reductions(vw& all, vector<string>& to_pass_further, po::variables_map& vm)
+void parse_scorer_reductions(vw& all, po::variables_map& vm)
 {
   if(vm.count("nn"))
-    all.l = NN::setup(all, to_pass_further, vm);
+    all.l = NN::setup(all, vm);
   
   if (vm.count("new_mf") && all.rank > 0)
     all.l = MF::setup(all, vm);
   
   if(vm.count("autolink"))
-    all.l = ALINK::setup(all, to_pass_further, vm);
+    all.l = ALINK::setup(all, vm);
   
   if (vm.count("lrq"))
-    all.l = LRQ::setup(all, to_pass_further, vm);
+    all.l = LRQ::setup(all, vm);
   
-  all.l = Scorer::setup(all, to_pass_further, vm);
+  all.l = Scorer::setup(all, vm);
 }
 
-LEARNER::learner* exclusive_setup(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& score_consumer, LEARNER::learner* (*setup)(vw&, vector<string>&, po::variables_map&))
+LEARNER::learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_consumer, LEARNER::learner* (*setup)(vw&, po::variables_map&))
 {
   if (score_consumer) { cerr << "error: cannot specify multiple direct score consumers" << endl; throw exception(); }
   score_consumer = true;
-  return setup(all, to_pass_further, vm);
+  return setup(all, vm);
 }
 
-void parse_score_users(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& got_cs)
+void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
 {
   bool score_consumer = false;
   
-  if(vm.count("top") || vm.count("top") )
-    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, TOPK::setup);
+  if(vm.count("top"))
+    all.l = exclusive_setup(all, vm, score_consumer, TOPK::setup);
   
-  if (vm.count("binary") || vm.count("binary"))
-    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, BINARY::setup);
+  if (vm.count("binary"))
+    all.l = exclusive_setup(all, vm, score_consumer, BINARY::setup);
   
-  if (vm.count("oaa") || vm.count("oaa") ) 
-    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, OAA::setup);
+  if (vm.count("oaa")) 
+    all.l = exclusive_setup(all, vm, score_consumer, OAA::setup);
   
-  if (vm.count("ect") || vm.count("ect") ) 
-    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, ECT::setup);
+  if (vm.count("ect")) 
+    all.l = exclusive_setup(all, vm, score_consumer, ECT::setup);
   
-  if(vm.count("csoaa") || vm.count("csoaa") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, CSOAA::setup);
+  if(vm.count("csoaa")) {
+    all.l = exclusive_setup(all, vm, score_consumer, CSOAA::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
-  if(vm.count("wap") || vm.count("wap") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, WAP::setup);
+  if(vm.count("wap")) {
+    all.l = exclusive_setup(all, vm, score_consumer, WAP::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
   if(vm.count("csoaa_ldf") || vm.count("csoaa_ldf")) {
-    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
+    all.l = exclusive_setup(all, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
   if(vm.count("wap_ldf") || vm.count("wap_ldf") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
+    all.l = exclusive_setup(all, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
 }
 
-void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& got_cs, bool& got_cb)
+void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
   if( vm.count("cb") || vm.count("cb") )
     {
@@ -638,13 +631,12 @@ void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, b
 	if( vm.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	
-	all.l = CSOAA::setup(all, to_pass_further, vm);  // default to CSOAA unless wap is specified
+	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
       
-
-      all.l = CB_ALGS::setup(all, to_pass_further, vm);
+      all.l = CB_ALGS::setup(all, vm);
       got_cb = true;
     }
 
@@ -654,7 +646,7 @@ void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, b
 	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
-	all.l = CSOAA::setup(all, to_pass_further, vm);  // default to CSOAA unless wap is specified
+	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
@@ -662,28 +654,34 @@ void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, b
       if (!got_cb) {
 	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all.l = CB_ALGS::setup(all, to_pass_further, vm);
+	all.l = CB_ALGS::setup(all, vm);
 	got_cb = true;
       }
 
-      all.l = CBIFY::setup(all, to_pass_further, vm);
+      all.l = CBIFY::setup(all, vm);
     }
 }
 
-void parse_search(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& got_cs, bool& got_cb)
+void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
   if (vm.count("search")) {
     if (!got_cs && !got_cb) {
       if( vm.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       
-      all.l = CSOAA::setup(all, to_pass_further, vm);  // default to CSOAA unless others have been specified
+      all.l = CSOAA::setup(all, vm);  // default to CSOAA unless others have been specified
       all.cost_sensitive = all.l;
       got_cs = true;
     }
     //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
-    all.l = Searn::setup(all, to_pass_further, vm);
+    all.l = Searn::setup(all, vm);
   }
+}
+
+void add_to_args(vw& all, int argc, char* argv[])
+{
+  for (int i = 1; i < argc; i++)
+    all.args.push_back(string(argv[i]));
 }
 
 vw* parse_args(int argc, char *argv[])
@@ -691,6 +689,8 @@ vw* parse_args(int argc, char *argv[])
   po::options_description desc("VW options");
 
   vw* all = new vw();
+
+  add_to_args(*all, argc, argv);
 
   size_t random_seed = 0;
   all->program_name = argv[0];
@@ -857,10 +857,6 @@ vw* parse_args(int argc, char *argv[])
     ("noop","do no learning")
     ("print","print examples");
 
-  //po::positional_options_description p;
-  // Be friendly: if -d was left out, treat positional param as data file
-  //p.add("data", -1);
-
   desc.add(in_opt)
     .add(out_opt)
     .add(update_opt)
@@ -874,23 +870,9 @@ vw* parse_args(int argc, char *argv[])
     .add(cluster_opt)
     .add(other_opt);
 
-  po::variables_map vm = po::variables_map();
+  po::variables_map vm = add_options(*all, desc);
 
-  po::parsed_options parsed = po::command_line_parser(argc, argv).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();   // got rid of ".positional(p)" because it doesn't work well with unrecognized options
-  vector<string> to_pass_further = po::collect_unrecognized(parsed.options, po::include_positional);
-  string last_unrec_arg =
-    (to_pass_further.size() > 0)
-    ? string(to_pass_further[to_pass_further.size()-1])  // we want to write this down in case it's a data argument ala the positional option we got rid of
-    : "";
-
-  po::store(parsed, vm);
-  po::notify(vm);
-
-  msrand48(random_seed);
-
-  parse_diagnostics(*all, vm, desc, argc);
+  parse_diagnostics(*all, vm, argc);
 
   if (vm.count("active_simulation"))
     all->active_simulation = true;
@@ -898,8 +880,6 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all->active_simulation)
     all->active = true;
   
-  parse_source(*all, vm);
-
   all->sd->weighted_unlabeled_examples = all->sd->t;
   all->initial_t = (float)all->sd->t;
 
@@ -909,21 +889,25 @@ vw* parse_args(int argc, char *argv[])
   //Input regressor header
   io_buf io_temp;
   parse_regressor_args(*all, vm, io_temp);
-
-  all->options_from_file_argv = VW::get_argv_from_string(all->options_from_file,all->options_from_file_argc);
-
-  po::parsed_options parsed_file = po::command_line_parser(all->options_from_file_argc, all->options_from_file_argv).
+  
+  int temp_argc = 0;
+  char** temp_argv = VW::get_argv_from_string(all->file_options, argc);
+  add_to_args(*all, temp_argc, temp_argv);
+  
+  po::parsed_options pos = po::command_line_parser(all->args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();
+    options(all->opts).allow_unregistered().run();
 
-  po::store(parsed_file, vm);
+  vm = po::variables_map();
+
+  po::store(pos, vm);
   po::notify(vm);
 
   parse_feature_tweaks(*all, vm); //feature tweaks
 
   parse_example_tweaks(*all, vm); //example manipulation
 
-  parse_base_algorithm(*all, to_pass_further, vm);
+  parse_base_algorithm(*all, vm);
 
   if (!all->quiet)
     {
@@ -943,49 +927,33 @@ vw* parse_args(int argc, char *argv[])
 
   load_input_model(*all, vm, io_temp);
 
-  parse_scorer_reductions(*all, to_pass_further, vm);
+  parse_scorer_reductions(*all, vm);
 
   bool got_cs = false;
   
-  parse_score_users(*all, to_pass_further, vm, got_cs);
+  parse_score_users(*all, vm, got_cs);
 
   bool got_cb = false;
   
-  parse_cb(*all, to_pass_further, vm, got_cs, got_cb);
+  parse_cb(*all, vm, got_cs, got_cb);
 
-  parse_search(*all, to_pass_further, vm, got_cs, got_cb);
+  parse_search(*all, vm, got_cs, got_cb);
 
   if(vm.count("bs") || vm.count("bs") )
-    all->l = BS::setup(*all, to_pass_further, vm);
+    all->l = BS::setup(*all, vm);
 
-  if (to_pass_further.size() > 0) {
-    bool is_actually_okay = false;
+  // Be friendly: if -d was left out, treat positional param as data file
+  po::positional_options_description p;  
+  p.add("data", -1);
 
-    // special case to try to emulate the missing -d
-    if ((to_pass_further.size() == 1) &&
-        (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
-      int f = io_buf().open_file(last_unrec_arg.c_str(), all->stdin_off, io_buf::READ);
-      if (f != -1) {
-#ifdef _WIN32
-		 _close(f);
-#else
-		  close(f);
-#endif
-        all->data_filename = last_unrec_arg;
-        if (ends_with(last_unrec_arg, ".gz"))
-          set_compressed(all->p);
-        is_actually_okay = true;
-      }
-    }
+  vm = po::variables_map();
+  pos = po::command_line_parser(all->args).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(all->opts).positional(p).run();
+    vm = po::variables_map();
+  po::store(pos, vm);
 
-    if (!is_actually_okay) {
-      cerr << "unrecognized options:";
-      for (size_t i=0; i<to_pass_further.size(); i++)
-        cerr << " " << to_pass_further[i];
-      cerr << endl;
-      throw exception();
-    }
-  }
+  parse_source(*all, vm);
 
   enable_sources(*all, vm, all->quiet,all->numpasses);
 
@@ -996,6 +964,12 @@ vw* parse_args(int argc, char *argv[])
     i++;
   all->wpp = (1 << i) >> all->reg.stride_shift;
 
+  if (vm.count("help")) {
+    /* upon direct query for help -- spit it out to stdout */
+    cout << "\n" << all->opts << "\n";
+    exit(0);
+  }
+  
   return all;
 }
 
@@ -1085,9 +1059,6 @@ namespace VW {
     all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
-    for (int i = 0; i < all.options_from_file_argc; i++)
-      free(all.options_from_file_argv[i]);
-    free(all.options_from_file_argv);
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);

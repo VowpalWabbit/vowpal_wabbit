@@ -178,7 +178,7 @@ namespace LRQ {
       }
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     LRQstate* lrq = (LRQstate*) calloc (1, sizeof (LRQstate));
     unsigned int maxk = 0;
@@ -190,7 +190,7 @@ namespace LRQ {
     lrq->initial_seed = lrq->seed = random_seed | 8675309;
     lrq->dropout = vm.count("lrqdropout");
 
-    all.options_from_file.append(" --lrqdropout");
+    all.file_options.append(" --lrqdropout");
     
     lrq->lrpairs = vm["lrq"].as<vector<string> > ();
     
@@ -200,8 +200,9 @@ namespace LRQ {
 	 ++i)
       ss << " --lrq " << *i;
     
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
     
+
     if (! all.quiet)
       {
         cerr << "creating low rank quadratic features for pairs: ";

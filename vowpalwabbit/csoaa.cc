@@ -66,7 +66,7 @@ namespace CSOAA {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     csoaa* c=(csoaa*)calloc_or_die(1,sizeof(csoaa));
     c->all = &all;
@@ -75,10 +75,10 @@ namespace CSOAA {
 
     nb_actions = (uint32_t)vm["csoaa"].as<size_t>();
 
-    //append csoaa with nb_actions to options_from_file so it is saved to regressor later
+    //append csoaa with nb_actions to file_options so it is saved to regressor later
     std::stringstream ss;
     ss << " --csoaa " << nb_actions;
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
 
     all.p->lp = cs_label;
     all.sd->k = nb_actions;
@@ -779,7 +779,7 @@ namespace LabelDict {
     }
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
 
@@ -791,14 +791,14 @@ namespace LabelDict {
 
     if( vm.count("csoaa_ldf") ){
       ldf_arg = vm["csoaa_ldf"].as<string>();
-      all.options_from_file.append(" --csoaa_ldf ");
-      all.options_from_file.append(ldf_arg);
+      all.file_options.append(" --csoaa_ldf ");
+      all.file_options.append(ldf_arg);
     }
     else {
       ldf_arg = vm["wap_ldf"].as<string>();
       ld->is_wap = true;
-      all.options_from_file.append(" --wap_ldf ");
-      all.options_from_file.append(ldf_arg);
+      all.file_options.append(" --wap_ldf ");
+      all.file_options.append(ldf_arg);
     }
 
     all.p->lp = COST_SENSITIVE::cs_label;

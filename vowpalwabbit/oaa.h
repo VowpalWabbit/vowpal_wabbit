@@ -8,7 +8,7 @@ license as described in the file LICENSE.
 
 namespace OAA
 {
-  LEARNER::learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm);
+  LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }
 
 #endif

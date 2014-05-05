@@ -234,7 +234,7 @@ namespace WAP {
     VW::finish_example(all, &ec);
   }
   
-  learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     wap* w=(wap*)calloc_or_die(1,sizeof(wap));
     w->all = &all;
@@ -246,7 +246,7 @@ namespace WAP {
     std::stringstream ss;
     ss << " --wap " << nb_actions;
 
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
     all.p->lp = COST_SENSITIVE::cs_label;
 
     all.sd->k = (uint32_t)nb_actions;

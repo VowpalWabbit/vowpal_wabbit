@@ -56,6 +56,7 @@ namespace Searn {
     
     // internal data
     searn_task*    task;
+    vw* all;
     searn_private* priv;
     void*          task_data;
   };
@@ -69,12 +70,12 @@ namespace Searn {
 
   struct searn_task {
     const char* task_name;
-    void (*initialize)(searn&,size_t&,std::vector<std::string>&, po::variables_map&);
+    void (*initialize)(searn&,size_t&, po::variables_map&);
     void (*finish)(searn&);
     void (*structured_predict)(searn&, std::vector<example*>);
   };
 
-  LEARNER::learner* setup(vw&, std::vector<std::string>&, po::variables_map&);
+  LEARNER::learner* setup(vw&, po::variables_map&);
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);

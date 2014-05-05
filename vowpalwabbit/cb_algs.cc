@@ -477,30 +477,25 @@ namespace CB_ALGS
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     cb* c = (cb*)calloc_or_die(1, sizeof(cb));
     c->all = &all;
     c->min_cost = 0.;
     c->max_cost = 1.;
-    po::options_description desc("CB options");
-    desc.add_options()
+    po::options_description cb_opts("CB options");
+    cb_opts.add_options()
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
-
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    
+    vm = add_options(all, cb_opts);
 
     uint32_t nb_actions = 0;
 
     nb_actions = (uint32_t)vm["cb"].as<size_t>();
-    //append cb with nb_actions to options_from_file so it is saved to regressor later
+    //append cb with nb_actions to file_options so it is saved to regressor later
     std::stringstream ss;
     ss << " --cb " << nb_actions;
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
 
     all.sd->k = nb_actions;
 
@@ -511,8 +506,8 @@ namespace CB_ALGS
 
       type_string = vm["cb_type"].as<std::string>();
       
-      all.options_from_file.append(" --cb_type ");
-      all.options_from_file.append(type_string);
+      all.file_options.append(" --cb_type ");
+      all.file_options.append(type_string);
 
       if (type_string.compare("dr") == 0) 
         c->cb_type = CB_TYPE_DR;
@@ -534,7 +529,7 @@ namespace CB_ALGS
     else {
       //by default use doubly robust
       c->cb_type = CB_TYPE_DR;
-      all.options_from_file.append(" --cb_type dr");
+      all.file_options.append(" --cb_type dr");
     }
 
     all.p->lp = CB::cb_label; 

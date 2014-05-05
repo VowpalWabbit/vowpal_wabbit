@@ -2179,7 +2179,7 @@ void print_update(vw& all, searn& srn)
       //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
       std::stringstream ss;
       ss << srn.priv->current_policy;
-      VW::cmd_string_replace_value(all->options_from_file,"--search_trained_nb_policies", ss.str());
+      VW::cmd_string_replace_value(all->file_options,"--search_trained_nb_policies", ss.str());
     }
   }
 
@@ -2200,10 +2200,10 @@ void print_update(vw& all, searn& srn)
       std::stringstream ss2;
       ss1 << ((srn.priv->passes_since_new_policy == 0) ? srn.priv->current_policy : (srn.priv->current_policy+1));
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --search_trained_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--search_trained_nb_policies", ss1.str()); 
+      VW::cmd_string_replace_value(all->file_options,"--search_trained_nb_policies", ss1.str()); 
       ss2 << srn.priv->total_number_of_policies;
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --search_total_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--search_total_nb_policies", ss2.str());
+      VW::cmd_string_replace_value(all->file_options,"--search_total_nb_policies", ss2.str());
     }
   }
 
@@ -2395,7 +2395,7 @@ void print_update(vw& all, searn& srn)
       ret = vm[opt_name].as<T>();
       stringstream ss;
       ss << " --" << opt_name << " " << ret;
-      all.options_from_file.append(ss.str());
+      all.file_options.append(ss.str());
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
       throw exception();
@@ -2407,30 +2407,20 @@ void print_update(vw& all, searn& srn)
       ret = true;
       stringstream ss;
       ss << " " << opt_name;
-      all.options_from_file.append(ss.str());
+      all.file_options.append(ss.str());
     } else 
       ret = false;
   }  
 
-  void setup_searn_options(po::options_description& desc, vw&vw, std::vector<std::string>&opts, po::variables_map& vm) {
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
-  }
-
-
-  void handle_history_options(vw& vw, history_info &hinfo, std::vector<std::string>&opts, po::variables_map& vm) {
-    po::options_description desc("search options");
-    desc.add_options()
+  void handle_history_options(vw& vw, history_info &hinfo, po::variables_map& vm) {
+    po::options_description history_options("history options");
+    history_options.add_options()
       ("search_history",  po::value<size_t>(), "length of history to use")
       ("search_features", po::value<size_t>(), "length of history to pair with observed features")
       ("search_bigrams",                       "use bigrams from history")
       ("search_bigram_features",               "use bigrams from history paired with observed features");
 
-    setup_searn_options(desc, vw, opts, vm);
+    vm = add_options(vw, history_options);
     
     check_option<size_t>(hinfo.length, vw, vm, "search_history", false, size_equal,
                          "warning: you specified a different value for --search_history than the one loaded from regressor. proceeding with loaded value: ", "");
@@ -2521,7 +2511,7 @@ void print_update(vw& all, searn& srn)
     delete cstr;
   }
 
-  learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw&all, po::variables_map& vm)
   {
     searn* srn = (searn*)calloc_or_die(1,sizeof(searn));
     srn->priv = new searn_private();
@@ -2529,8 +2519,8 @@ void print_update(vw& all, searn& srn)
 
     searn_initialize(all, *srn);
 
-    po::options_description desc("Searn options");
-    desc.add_options()
+    po::options_description searn_opts("Searn options");
+    searn_opts.add_options()
         ("search_task",              po::value<string>(), "the search task")
         ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
         ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [*policy|oracle|none]")
@@ -2552,25 +2542,7 @@ void print_update(vw& all, searn& srn)
         ("search_no_snapshot",                            "turn off snapshotting capabilities")
         ("search_no_fastforward",                         "turn off fastforwarding (note: fastforwarding requires snapshotting)");
 
-    
-        // removed options:
-        //("search_allow_current_policy", "allow searn labeling to use the current policy")
-        //("search_rollout_oracle", "allow searn/dagger to do rollouts with the oracle when estimating cost-to-go")
-        //("search_as_dagger", po::value<float>(), "sets options to make searn operate as dagger. parameter is the sliding autonomy rate (rate at which beta tends to 1).")
-        //("search_exploration_temperature", po::value<float>(), "if <0, always choose policy action (default); if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting")
-    
-    po::options_description add_desc_file("Searn options only available in regressor file");
-    add_desc_file.add_options()("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
-
-    po::options_description desc_file;
-    desc_file.add(desc).add(add_desc_file);
-
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    vm = add_options(all, searn_opts);
 
     std::string task_string;
     std::string interpolation_string = "data";
@@ -2698,8 +2670,8 @@ void print_update(vw& all, searn& srn)
       srn->priv->current_policy--;
 
     std::stringstream ss1, ss2;
-    ss1 << srn->priv->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--search_trained_nb_policies", ss1.str()); 
-    ss2 << srn->priv->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--search_total_nb_policies",   ss2.str());
+    ss1 << srn->priv->current_policy;           VW::cmd_string_replace_value(all.file_options,"--search_trained_nb_policies", ss1.str()); 
+    ss2 << srn->priv->total_number_of_policies; VW::cmd_string_replace_value(all.file_options,"--search_total_nb_policies",   ss2.str());
 
     cdbg << "search current_policy = " << srn->priv->current_policy << " total_number_of_policies = " << srn->priv->total_number_of_policies << endl;
 
@@ -2717,7 +2689,7 @@ void print_update(vw& all, searn& srn)
 
     // default to OAA labels unless the task wants to override this!
     all.p->lp = MULTICLASS::mc_label; 
-    srn->task->initialize(*srn, srn->priv->A, opts, vm);
+    srn->task->initialize(*srn, srn->priv->A, vm);
 
     if (vm.count("search_allowed_transitions"))     read_allowed_transitions((uint32_t)srn->priv->A, vm["search_allowed_transitions"].as<string>().c_str());
     
@@ -2725,7 +2697,7 @@ void print_update(vw& all, searn& srn)
     if (srn->priv->auto_history) {
       default_info(&srn->priv->hinfo);
 
-      handle_history_options(all, srn->priv->hinfo, opts, vm);
+      handle_history_options(all, srn->priv->hinfo, vm);
       
       if (srn->priv->hinfo.length < srn->priv->hinfo.features)
         srn->priv->hinfo.length = srn->priv->hinfo.features;

@@ -109,7 +109,7 @@ namespace TOPK {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     topk* data = (topk*)calloc_or_die(1, sizeof(topk));
 

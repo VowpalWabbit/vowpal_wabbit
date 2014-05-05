@@ -299,7 +299,7 @@ namespace CBIFY {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
 
@@ -307,26 +307,21 @@ namespace CBIFY {
     data->counter = 0;
     data->tau = 1000;
     data->all = &all;
-    po::options_description desc("CBIFY options");
-    desc.add_options()
+    po::options_description cb_opts("CBIFY options");
+    cb_opts.add_options()
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")
       ("cover",po::value<size_t>() ,"bagging-based exploration");
     
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    vm = add_options(all, cb_opts);
     
     data->k = (uint32_t)vm["cbify"].as<size_t>();
     
     //appends nb_actions to options_from_file so it is saved to regressor later
     std::stringstream ss;
     ss << " --cbify " << data->k;
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
 
     all.p->lp = MULTICLASS::mc_label;
     learner* l;

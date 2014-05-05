@@ -19,7 +19,7 @@ namespace Scorer {
       base.predict(ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     scorer* s = (scorer*)calloc_or_die(1, sizeof(scorer));
     s->all = &all;

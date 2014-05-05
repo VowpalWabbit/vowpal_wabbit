@@ -7,7 +7,7 @@ license as described in the file LICENSE.
 #define BFGS_H
 
 namespace BFGS {
-  LEARNER::learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm);
+  LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }
 
 #endif

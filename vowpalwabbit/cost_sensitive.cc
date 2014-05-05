@@ -1,5 +1,6 @@
 #include "float.h"
 #include "cost_sensitive.h"
+#include "gd.h"
 
 namespace COST_SENSITIVE {
 

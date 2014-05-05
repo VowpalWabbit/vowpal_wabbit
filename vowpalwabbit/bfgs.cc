@@ -968,7 +968,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     b.backstep_on = true;
   }
 
-learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
+learner* setup(vw& all, po::variables_map& vm)
 {
   bfgs* b = (bfgs*)calloc_or_die(1,sizeof(bfgs));
   b->all = &all;

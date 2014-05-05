@@ -9,6 +9,9 @@ license as described in the file LICENSE.
 #include <map>
 #include <stdint.h>
 #include <cstdio>
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
 #include "v_array.h"
 #include "parse_primitives.h"
 #include "loss_functions.h"
@@ -156,9 +159,9 @@ struct vw {
 
   bool save_resume;
 
-  std::string options_from_file;
-  char** options_from_file_argv;
-  int options_from_file_argc;
+  po::options_description opts;
+  std::string file_options;
+  vector<std::string> args;
 
   bool searn;
   void* /*Searn::searn*/ searnstr;
@@ -277,6 +280,7 @@ void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> ta
 void get_prediction(int sock, float& res, float& weight);
 void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool quiet);
 int print_tag(std::stringstream& ss, v_array<char> tag);
+po::variables_map add_options(vw& all, po::options_description& opts);
 
 #endif
 
