@@ -1,0 +1,202 @@
+#!/usr/bin/perl -w
+# vim: ts=4 sw=4 nosmarttab
+#
+# Goal: improve learning (smaller generalization error)
+#
+#
+# How:  Inspect the learning process in real-time. Single-out
+#       the elements leading to its biggest weaknesses.  More
+#       specifically: track the online learning-process largest
+#       errors (deviations from convergenge) and drill-down
+#       to uncover the features that underlie these biggest errors.
+#
+# The process has two steps:
+#   1) Train with --progress 1 to capture the examples that cause
+#      the biggest divergences (increase in progressive loss) in
+#      the learning process.
+#   2) Audit the examples from step 1) and drill down to their
+#      largest weight features (the features that presumably are
+#      throwing the learning process off course: i.e. cause 'un-learning').
+#
+# First step:
+#   input:    VW training data and args   (to generate stderr with -P 1)
+#   output:   N biggest error pairs (example_number   delta_error_since_last)
+#
+# Second step:
+#   input:    The same training set and args as first step
+#             plus the output from the 1st step (N biggest errors)
+#   output:   A dump of the biggest-error examples each with its
+#             top-N highest weight features.
+#
+use Getopt::Std;
+use vars qw($opt_v $opt_V $opt_a);
+
+my %ExampleDelta = ();
+my $TopN = 5;
+my $TopWeights = 20;
+my %ExampleNos;
+my @ExampleNos;
+
+sub v {
+    return unless $opt_v;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+sub V {
+    return unless $opt_V;
+    if (@_ == 1) {
+        print STDERR @_;
+    } else {
+        printf STDERR @_;
+    }
+}
+
+sub collect_errors() {
+    my ($prev_avgloss, $prev_sincelast);
+    while (<>) {
+        next unless (/^([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s/);
+        my ($avgloss, $sincelast, $example) = ($1, $2, $3);
+        if (defined $prev_sincelast) {
+            my $delta_since_last = $sincelast - $prev_sincelast;
+            $ExampleDelta{$example} = $delta_since_last;
+        }
+
+        ($prev_avgloss, $prev_sincelast) = ($avgloss, $sincelast);
+    }
+}
+
+sub by_weight_desc {
+    my $weight1 = (split(':', $a))[3];
+    my $weight2 = (split(':', $b))[3];
+    $weight1 =~ s/\@.*$//;
+    $weight2 =~ s/\@.*$//;
+
+    $weight2 <=> $weight1;
+}
+
+sub audit_top_weights(@) {
+    unless (@_) {
+        die "$0: audit_top_weights: no wanted examples given\n";
+    }
+
+    my @example_nos = sort { $a <=> $b } @_;
+
+    # -- scan the audit
+    my $example_count = 0;
+    while (<>) {
+        # need to skip regular progress lines as well
+        next if (/^[0-9.]+\s+[0-9.]+\s+\d+\s+[0-9]+\.[0-9]\s+/);
+
+        # real audit line
+        next unless (/^-?[0-9.]+\s/);
+        # found an example:
+        $example_count++;
+
+        last unless (@example_nos);
+
+        if ($example_nos[0] == $example_count) {
+            shift @example_nos;
+            # the matching label/tag etc. header
+            printf "#%d: %s", $example_count, $_;
+            my $audit_line = <>;
+            chomp $audit_line;
+            $audit_line =~ s/^\s+//;
+            my @features = split(/\s+/, $audit_line);
+            my @sorted_features = sort by_weight_desc @features;
+            for (my $i = 0; $i < $TopWeights; $i++) {
+                my $feature = $sorted_features[$i];
+                printf "\t%s\n", $feature;
+            }
+        }
+    }
+}
+
+sub by_delta() {
+    $ExampleDelta{$b} <=> $ExampleDelta{$a};
+}
+
+sub biggest_errors($) {
+    my $howmany = shift;
+
+    my @sorted_examples = sort by_delta keys %ExampleDelta;
+
+    @sorted_examples[0 .. $howmany-1];
+}
+
+sub print_errors(@) {
+    foreach my $example (@_) {
+        printf "%d\t%g\n", $example, $ExampleDelta{$example};
+    }
+}
+
+sub usage(@) {
+    # FINISH ME
+    print STDERR @_, "\n" if @_;
+    die "Usage:
+
+        $0 [Genericoptions] TopN files...
+            Look for the TopN errors in vw-progress output
+            (vw-progress output assumed to be generated with --progress/-P 1)
+
+        $0 [Genericoptions] -a example_numbers... files...
+            Report the top weights for each of example_numbers...
+            in vw --audit output
+            (vw output assumed to be generated with --audit/-a)
+
+    GenericOptions:
+        -v      verbose
+        -V      more verbose
+";
+}
+
+sub get_args {
+    # FINISH ME
+    $0 =~ s{.*/}{};
+
+    getopts('vVa');
+
+    my @file_args = ();
+    my @num_args = ();
+    my %seen;
+
+    foreach my $arg (@ARGV) {
+        if (-f $arg) {
+            push(@file_args, $arg);
+            next;
+        }
+        if ($arg =~ /^\d+$/) {
+            if ($opt_a) {
+                unless (exists $seen{$arg}) {
+                    push(@ExampleNos, $arg);
+                    $seen{$arg} = 1;
+                }
+            } else {
+                $TopN = $arg;
+            }
+            next;
+        }
+        usage("Unrecognized argument: $arg");
+    }
+    @ARGV = @file_args;
+}
+
+sub top_errors($) {
+    my $top_n = shift;
+    collect_errors();
+    print_errors(biggest_errors($top_n));
+}
+
+# -- main
+# FINISH ME
+get_args();
+
+if ($opt_a) {
+    audit_top_weights(@ExampleNos);
+} else {
+    top_errors($TopN);
+}
+
