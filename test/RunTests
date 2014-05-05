@@ -582,7 +582,7 @@ sub run_tests() {
         unless ($opt_V) {
             if (command_failed($cmd)) {
                 # already printed error
-                exit $status if ($opt_e);
+                exit $? if ($opt_e);
                 next;
             }
         }
