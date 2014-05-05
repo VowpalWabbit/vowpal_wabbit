@@ -477,7 +477,7 @@ namespace CB_ALGS
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     cb* c = (cb*)calloc_or_die(1, sizeof(cb));
     c->all = &all;
@@ -494,43 +494,25 @@ namespace CB_ALGS
     po::store(parsed, vm);
     po::notify(vm);
 
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
-
     uint32_t nb_actions = 0;
-    if( vm_file.count("cb") ) { //if loaded options from regressor file already
-      nb_actions = (uint32_t)vm_file["cb"].as<size_t>();
-      if( vm.count("cb") && (uint32_t)vm["cb"].as<size_t>() != nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --cb than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = (uint32_t)vm["cb"].as<size_t>();
-      //append cb with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --cb " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
+
+    nb_actions = (uint32_t)vm["cb"].as<size_t>();
+    //append cb with nb_actions to options_from_file so it is saved to regressor later
+    std::stringstream ss;
+    ss << " --cb " << nb_actions;
+    all.options_from_file.append(ss.str());
+
     all.sd->k = nb_actions;
 
     size_t problem_multiplier = 2;//default for DR
-    if (vm.count("cb_type") || vm_file.count("cb_type"))
+    if (vm.count("cb_type"))
     {
       std::string type_string;
 
-      if(vm_file.count("cb_type")) {
-        type_string = vm_file["cb_type"].as<std::string>();
-        if( vm.count("cb_type") && type_string.compare(vm["cb_type"].as<string>()) != 0)
-          cerr << "You specified a different --cb_type than the one loaded from regressor file. Pursuing with loaded value of: " << type_string << endl;
-      }
-      else {
-        type_string = vm["cb_type"].as<std::string>();
-
-        all.options_from_file.append(" --cb_type ");
-        all.options_from_file.append(type_string);
-      }
+      type_string = vm["cb_type"].as<std::string>();
+      
+      all.options_from_file.append(" --cb_type ");
+      all.options_from_file.append(type_string);
 
       if (type_string.compare("dr") == 0) 
         c->cb_type = CB_TYPE_DR;

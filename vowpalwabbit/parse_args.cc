@@ -582,11 +582,11 @@ void parse_scorer_reductions(vw& all, vector<string>& to_pass_further, po::varia
   all.l = Scorer::setup(all, to_pass_further, vm);
 }
 
-LEARNER::learner* exclusive_setup(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& score_consumer, LEARNER::learner* (*setup)(vw&, vector<string>&, po::variables_map&, po::variables_map&))
+LEARNER::learner* exclusive_setup(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& score_consumer, LEARNER::learner* (*setup)(vw&, vector<string>&, po::variables_map&))
 {
   if (score_consumer) { cerr << "error: cannot specify multiple direct score consumers" << endl; throw exception(); }
   score_consumer = true;
-  return setup(all, to_pass_further, vm, vm_file);
+  return setup(all, to_pass_further, vm);
 }
 
 void parse_score_users(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& got_cs)
@@ -594,37 +594,37 @@ void parse_score_users(vw& all, vector<string>& to_pass_further, po::variables_m
   bool score_consumer = false;
   
   if(vm.count("top") || vm.count("top") )
-    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, TOPK::setup);
+    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, TOPK::setup);
   
   if (vm.count("binary") || vm.count("binary"))
-    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, BINARY::setup);
+    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, BINARY::setup);
   
   if (vm.count("oaa") || vm.count("oaa") ) 
-    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, OAA::setup);
+    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, OAA::setup);
   
   if (vm.count("ect") || vm.count("ect") ) 
-    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, ECT::setup);
+    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, ECT::setup);
   
   if(vm.count("csoaa") || vm.count("csoaa") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, CSOAA::setup);
+    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, CSOAA::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
   if(vm.count("wap") || vm.count("wap") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, WAP::setup);
+    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, WAP::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
   if(vm.count("csoaa_ldf") || vm.count("csoaa_ldf")) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
+    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
   if(vm.count("wap_ldf") || vm.count("wap_ldf") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
+    all.l = exclusive_setup(all, to_pass_further, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
@@ -638,12 +638,13 @@ void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, b
 	if( vm.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	
-	all.l = CSOAA::setup(all, to_pass_further, vm, vm);  // default to CSOAA unless wap is specified
+	all.l = CSOAA::setup(all, to_pass_further, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
       
-      all.l = CB_ALGS::setup(all, to_pass_further, vm, vm);
+
+      all.l = CB_ALGS::setup(all, to_pass_further, vm);
       got_cb = true;
     }
 
@@ -653,7 +654,7 @@ void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, b
 	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
-	all.l = CSOAA::setup(all, to_pass_further, vm, vm);  // default to CSOAA unless wap is specified
+	all.l = CSOAA::setup(all, to_pass_further, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
@@ -661,27 +662,27 @@ void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, b
       if (!got_cb) {
 	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
 	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all.l = CB_ALGS::setup(all, to_pass_further, vm, vm);
+	all.l = CB_ALGS::setup(all, to_pass_further, vm);
 	got_cb = true;
       }
 
-      all.l = CBIFY::setup(all, to_pass_further, vm, vm);
+      all.l = CBIFY::setup(all, to_pass_further, vm);
     }
 }
 
 void parse_search(vw& all, vector<string>& to_pass_further, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  if (vm.count("search") || vm.count("search") ) {
+  if (vm.count("search")) {
     if (!got_cs && !got_cb) {
       if( vm.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       
-      all.l = CSOAA::setup(all, to_pass_further, vm, vm);  // default to CSOAA unless others have been specified
+      all.l = CSOAA::setup(all, to_pass_further, vm);  // default to CSOAA unless others have been specified
       all.cost_sensitive = all.l;
       got_cs = true;
     }
     //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
-    all.l = Searn::setup(all, to_pass_further, vm, vm);
+    all.l = Searn::setup(all, to_pass_further, vm);
   }
 }
 

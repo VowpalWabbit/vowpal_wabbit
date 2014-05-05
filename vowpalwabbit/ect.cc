@@ -370,7 +370,7 @@ namespace ECT
     VW::finish_example(all, &ec);
   }
   
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     ect* data = (ect*)calloc_or_die(1, sizeof(ect));
     po::options_description desc("ECT options");
@@ -384,45 +384,24 @@ namespace ECT
     po::store(parsed, vm);
     po::notify(vm);
 
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
-
     //first parse for number of actions
-    data->k = 0;
-    if( vm_file.count("ect") ) {
-      data->k = (int)vm_file["ect"].as<size_t>();
-      if( vm.count("ect") && vm["ect"].as<size_t>() != data->k )
-        std::cerr << "warning: you specified a different number of actions through --ect than the one loaded from predictor. Pursuing with loaded value of: " << data->k << endl;
-    }
-    else {
-      data->k = (int)vm["ect"].as<size_t>();
+    data->k = (int)vm["ect"].as<size_t>();
+    
+    //append ect with nb_actions to options_from_file so it is saved to regressor later
+    std::stringstream ss;
+    ss << " --ect " << data->k;
+    all.options_from_file.append(ss.str());
 
-      //append ect with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --ect " << data->k;
-      all.options_from_file.append(ss.str());
-    }
-
-    if(vm_file.count("error")) {
-      data->errors = (uint32_t)vm_file["error"].as<size_t>();
-      if (vm.count("error") && (uint32_t)vm["error"].as<size_t>() != data->errors) {
-        cerr << "warning: specified value for --error different than the one loaded from predictor file. Pursuing with loaded value of: " << data->errors << endl;
-      }
-    }
-    else if (vm.count("error")) {
+    if (vm.count("error")) {
       data->errors = (uint32_t)vm["error"].as<size_t>();
-
+      
       //append error flag to options_from_file so it is saved in regressor file later
       stringstream ss;
       ss << " --error " << data->errors;
       all.options_from_file.append(ss.str());
-    } else {
+    } else 
       data->errors = 0;
-    }
-
+    
     all.p->lp = MULTICLASS::mc_label;
     size_t wpp = create_circuit(all, *data, data->k, data->errors+1);
     data->all = &all;

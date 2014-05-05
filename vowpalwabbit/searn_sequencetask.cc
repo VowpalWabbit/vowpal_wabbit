@@ -18,7 +18,7 @@ namespace SequenceSpanTask     {  Searn::searn_task task = { "sequencespan",    
 namespace SequenceTask {
   using namespace Searn;
 
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm) {
     srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
                      AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
                      EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
@@ -47,7 +47,7 @@ namespace ArgmaxTask {
     bool predict_max;
   };
 
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) 
+  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm) 
   {
     
     task_data* my_task_data = new task_data();
@@ -167,7 +167,7 @@ namespace SequenceSpanTask {
     v_array<uint32_t> only_two_allowed;  // used for BILOU encoding
   };
 
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
 
     po::options_description desc("search sequencespan options");
@@ -180,7 +180,7 @@ namespace SequenceSpanTask {
     po::store(parsed, vm);
     po::notify(vm);
 
-    if (vm.count("search_span_bilou") || vm_file.count("search_span_bilou")) {
+    if (vm.count("search_span_bilou")) {
       cerr << "switching to BILOU encoding for sequence span labeling" << endl;
       my_task_data->encoding = BILOU;
       num_actions = num_actions * 2 - 1;
@@ -268,7 +268,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     size_t   num_actions;
   };
   
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm) {
     COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };
 
     example* ldf_examples = alloc_examples(sizeof(COST_SENSITIVE::label), num_actions);

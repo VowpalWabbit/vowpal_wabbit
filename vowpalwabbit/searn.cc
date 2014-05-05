@@ -2390,15 +2390,8 @@ void print_update(vw& all, searn& srn)
   bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
   bool size_equal(size_t a, size_t b) { return a==b; }
 
-  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
-    if (vm_file.count(opt_name)) { // loaded from regressor file
-      ret = vm_file[opt_name].as<T>();
-      if (vm.count(opt_name) && !equal(ret, vm[opt_name].as<T>())) {
-        if (default_to_cmdline)
-          ret = vm[opt_name].as<T>();
-        std::cerr << mismatch_error_string << ret << endl;
-      }
-    } else if (vm.count(opt_name)) {
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
+    if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
       stringstream ss;
       ss << " --" << opt_name << " " << ret;
@@ -2409,41 +2402,27 @@ void print_update(vw& all, searn& srn)
     }
   }  
 
-  void check_option(bool& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
-    if (vm_file.count(opt_name)) { // loaded from regressor file
-      ret = true;
-      if (!vm.count(opt_name)) {
-        if (default_to_cmdline)
-          ret = false;
-        std::cerr << mismatch_error_string << ret << endl;
-      }
-    } else if (vm.count(opt_name)) {
+  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
+    if (vm.count(opt_name)) {
       ret = true;
       stringstream ss;
       ss << " " << opt_name;
       all.options_from_file.append(ss.str());
-    } else {
+    } else 
       ret = false;
-    }
   }  
 
-  void setup_searn_options(po::options_description& desc, vw&vw, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void setup_searn_options(po::options_description& desc, vw&vw, std::vector<std::string>&opts, po::variables_map& vm) {
     po::parsed_options parsed = po::command_line_parser(opts).
       style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
       options(desc).allow_unregistered().run();
     opts = po::collect_unrecognized(parsed.options, po::include_positional);
     po::store(parsed, vm);
     po::notify(vm);
-
-    po::parsed_options parsed_file = po::command_line_parser(vw.options_from_file_argc, vw.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
   }
 
 
-  void handle_history_options(vw& vw, history_info &hinfo, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void handle_history_options(vw& vw, history_info &hinfo, std::vector<std::string>&opts, po::variables_map& vm) {
     po::options_description desc("search options");
     desc.add_options()
       ("search_history",  po::value<size_t>(), "length of history to use")
@@ -2451,18 +2430,18 @@ void print_update(vw& all, searn& srn)
       ("search_bigrams",                       "use bigrams from history")
       ("search_bigram_features",               "use bigrams from history paired with observed features");
 
-    setup_searn_options(desc, vw, opts, vm, vm_file);
+    setup_searn_options(desc, vw, opts, vm);
     
-    check_option<size_t>(hinfo.length, vw, vm, vm_file, "search_history", false, size_equal,
+    check_option<size_t>(hinfo.length, vw, vm, "search_history", false, size_equal,
                          "warning: you specified a different value for --search_history than the one loaded from regressor. proceeding with loaded value: ", "");
     
-    check_option<size_t>(hinfo.features, vw, vm, vm_file, "search_features", false, size_equal,
+    check_option<size_t>(hinfo.features, vw, vm, "search_features", false, size_equal,
                          "warning: you specified a different value for --search_features than the one loaded from regressor. proceeding with loaded value: ", "");
     
-    check_option        (hinfo.bigrams, vw, vm, vm_file, "search_bigrams", false,
+    check_option        (hinfo.bigrams, vw, vm, "search_bigrams", false,
                          "warning: you specified --search_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
     
-    check_option        (hinfo.bigram_features, vw, vm, vm_file, "search_bigram_features", false,
+    check_option        (hinfo.bigram_features, vw, vm, "search_bigram_features", false,
                          "warning: you specified --search_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
   }
 
@@ -2542,7 +2521,7 @@ void print_update(vw& all, searn& srn)
     delete cstr;
   }
 
-  learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     searn* srn = (searn*)calloc_or_die(1,sizeof(searn));
     srn->priv = new searn_private();
@@ -2593,25 +2572,19 @@ void print_update(vw& all, searn& srn)
     po::store(parsed, vm);
     po::notify(vm);
 
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc_file).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
-  
     std::string task_string;
     std::string interpolation_string = "data";
     std::string rollout_string = "policy";
     std::string trajectory_string = "policy";
 
-    check_option<string>(task_string, all, vm, vm_file, "search_task", false, string_equal,
+    check_option<string>(task_string, all, vm, "search_task", false, string_equal,
                          "warning: specified --search_task different than the one loaded from regressor. using loaded value of: ",
                          "error: you must specify a task using --search_task");
-    check_option<string>(interpolation_string, all, vm, vm_file, "search_interpolation", false, string_equal,
+    check_option<string>(interpolation_string, all, vm, "search_interpolation", false, string_equal,
                          "warning: specified --search_interpolation different than the one loaded from regressor. using loaded value of: ", "");
-    check_option<string>(rollout_string, all, vm, vm_file, "search_rollout", false, string_equal,
+    check_option<string>(rollout_string, all, vm, "search_rollout", false, string_equal,
                          "warning: specified --search_rollout different than the one loaded from regressor. using loaded value of: ", "");
-    check_option<string>(trajectory_string, all, vm, vm_file, "search_trajectory", false, string_equal,
+    check_option<string>(trajectory_string, all, vm, "search_trajectory", false, string_equal,
                          "warning: specified --search_trajectory different than the one loaded from regressor. using loaded value of: ", "");
     
     if (vm.count("search_passes_per_policy"))       srn->priv->passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
@@ -2621,7 +2594,7 @@ void print_update(vw& all, searn& srn)
 
     if (vm.count("search_subsample_time"))          srn->priv->subsample_timesteps  = vm["search_subsample_time"].as<float>();
     
-    check_option<string>(*srn->priv->neighbor_features_string, all, vm, vm_file, "search_neighbor_features", false, string_equal,
+    check_option<string>(*srn->priv->neighbor_features_string, all, vm, "search_neighbor_features", false, string_equal,
                          "warning: you specified a different feature structure with --search_neighbor_features than the one loaded from predictor. using loaded value of: ", "");
     parse_neighbor_features(*srn);
 
@@ -2663,9 +2636,9 @@ void print_update(vw& all, searn& srn)
       throw exception();
     }
 
-    //check_option<float >(srn->priv->exploration_temperature, all, vm, vm_file, "search_exploration_temperature", false, float_equal,
+    //check_option<float >(srn->priv->exploration_temperature, all, vm, "search_exploration_temperature", false, float_equal,
     //                     "warning: you specified a different value through --search_exploration_temperature than the one loaded from predictor. using loaded value of: ", "");
-    check_option<size_t>(srn->priv->A, all, vm, vm_file, "search", false, size_equal,
+    check_option<size_t>(srn->priv->A, all, vm, "search", false, size_equal,
                          "warning: you specified a different number of actions through --search than the one loaded from predictor. using loaded value of: ", "");
     
     //if (vm.count("search_allow_current_policy"))    srn->priv->allow_current_policy = true;
@@ -2687,7 +2660,7 @@ void print_update(vw& all, searn& srn)
     }
     
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-    if (vm.count("cb") || vm_file.count("cb")) {
+    if (vm.count("cb")) {
       srn->priv->rollout_all_actions = false;
       srn->priv->valid_labels = new CB::label();
     } else {
@@ -2697,14 +2670,9 @@ void print_update(vw& all, searn& srn)
     
     //if we loaded a regressor with -i option, --search_trained_nb_policies contains the number of trained policies in the file
     // and --search_total_nb_policies contains the total number of policies in the file
-    if ( vm_file.count("search_total_nb_policies") ) {
-      srn->priv->current_policy = (uint32_t)vm_file["search_trained_nb_policies"].as<size_t>();
-      srn->priv->total_number_of_policies = (uint32_t)vm_file["search_total_nb_policies"].as<size_t>();
-      if (vm.count("search_total_nb_policies") && (uint32_t)vm["search_total_nb_policies"].as<size_t>() != srn->priv->total_number_of_policies)
-        std::cerr << "warning: --search_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << srn->priv->total_number_of_policies << endl;
-    } else if (vm.count("search_total_nb_policies"))
+    if (vm.count("search_total_nb_policies"))
       srn->priv->total_number_of_policies = (uint32_t)vm["search_total_nb_policies"].as<size_t>();
-
+    
     ensure_param(srn->priv->beta , 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
     ensure_param(srn->priv->alpha, 0.0, 1.0, 1e-10f, "warning: search_alpha must be in (0,1); resetting to 1e-10");
 
@@ -2749,7 +2717,7 @@ void print_update(vw& all, searn& srn)
 
     // default to OAA labels unless the task wants to override this!
     all.p->lp = MULTICLASS::mc_label; 
-    srn->task->initialize(*srn, srn->priv->A, opts, vm, vm_file);
+    srn->task->initialize(*srn, srn->priv->A, opts, vm);
 
     if (vm.count("search_allowed_transitions"))     read_allowed_transitions((uint32_t)srn->priv->A, vm["search_allowed_transitions"].as<string>().c_str());
     
@@ -2757,7 +2725,7 @@ void print_update(vw& all, searn& srn)
     if (srn->priv->auto_history) {
       default_info(&srn->priv->hinfo);
 
-      handle_history_options(all, srn->priv->hinfo, opts, vm, vm_file);
+      handle_history_options(all, srn->priv->hinfo, opts, vm);
       
       if (srn->priv->hinfo.length < srn->priv->hinfo.features)
         srn->priv->hinfo.length = srn->priv->hinfo.features;

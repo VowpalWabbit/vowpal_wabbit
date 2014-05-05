@@ -299,7 +299,7 @@ namespace CBIFY {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
   {//parse and set arguments
     cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
 
@@ -321,25 +321,12 @@ namespace CBIFY {
     po::store(parsed, vm);
     po::notify(vm);
     
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
+    data->k = (uint32_t)vm["cbify"].as<size_t>();
     
-    if( vm_file.count("cbify") ) {
-      data->k = (uint32_t)vm_file["cbify"].as<size_t>();
-      if( vm.count("cbify") && (uint32_t)vm["cbify"].as<size_t>() != data->k )
-        std::cerr << "warning: you specified a different number of actions through --cbify than the one loaded from predictor. Pursuing with loaded value of: " << data->k << endl;
-    }
-    else {
-      data->k = (uint32_t)vm["cbify"].as<size_t>();
-      
-      //appends nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --cbify " << data->k;
-      all.options_from_file.append(ss.str());
-    }
+    //appends nb_actions to options_from_file so it is saved to regressor later
+    std::stringstream ss;
+    ss << " --cbify " << data->k;
+    all.options_from_file.append(ss.str());
 
     all.p->lp = MULTICLASS::mc_label;
     learner* l;

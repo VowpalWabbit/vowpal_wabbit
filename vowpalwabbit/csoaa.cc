@@ -66,25 +66,19 @@ namespace CSOAA {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     csoaa* c=(csoaa*)calloc_or_die(1,sizeof(csoaa));
     c->all = &all;
     //first parse for number of actions
     uint32_t nb_actions = 0;
-    if( vm_file.count("csoaa") ) { //if loaded options from regressor
-      nb_actions = (uint32_t)vm_file["csoaa"].as<size_t>();
-      if( vm.count("csoaa") && (uint32_t)vm["csoaa"].as<size_t>() != nb_actions ) //if csoaa was also specified in commandline, warn user if its different
-        std::cerr << "warning: you specified a different number of actions through --csoaa than the one loaded from predictor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = (uint32_t)vm["csoaa"].as<size_t>();
 
-      //append csoaa with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --csoaa " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
+    nb_actions = (uint32_t)vm["csoaa"].as<size_t>();
+
+    //append csoaa with nb_actions to options_from_file so it is saved to regressor later
+    std::stringstream ss;
+    ss << " --csoaa " << nb_actions;
+    all.options_from_file.append(ss.str());
 
     all.p->lp = cs_label;
     all.sd->k = nb_actions;
@@ -785,7 +779,7 @@ namespace LabelDict {
     }
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
   {
     ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
 
@@ -794,27 +788,11 @@ namespace LabelDict {
     ld->first_pass = true;
  
     string ldf_arg;
-    if(vm_file.count("csoaa_ldf")) {
-      ldf_arg = vm_file["csoaa_ldf"].as<string>();
-      
-      if(vm.count("csoaa_ldf") && ldf_arg.compare(vm["csoaa_ldf"].as<string>()) != 0) {
-        ldf_arg = vm["csoaa_ldf"].as<string>();
-        //std::cerr << "warning: you specified a different ldf argument through --csoaa_ldf than the one loaded from regressor. Proceeding with value of: " << ldf_arg << endl;
-      }
-    }
-    else if( vm.count("csoaa_ldf") ){
+
+    if( vm.count("csoaa_ldf") ){
       ldf_arg = vm["csoaa_ldf"].as<string>();
       all.options_from_file.append(" --csoaa_ldf ");
       all.options_from_file.append(ldf_arg);
-    }
-    else if( vm_file.count("wap_ldf") ) {
-      ldf_arg = vm_file["wap_ldf"].as<string>();
-      ld->is_wap = true;
-      
-      if(vm.count("wap_ldf") && ldf_arg.compare(vm["wap_ldf"].as<string>()) != 0) {
-        ldf_arg = vm["csoaa_ldf"].as<string>();
-        //std::cerr << "warning: you specified a different value for --wap_ldf than the one loaded from regressor. Proceeding with value of: " << ldf_arg << endl;
-      }
     }
     else {
       ldf_arg = vm["wap_ldf"].as<string>();

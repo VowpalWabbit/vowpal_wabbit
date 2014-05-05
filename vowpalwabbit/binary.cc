@@ -25,15 +25,8 @@ namespace BINARY {
       ec.loss = 1.;
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm)
   {//parse and set arguments
-    if (!vm_file.count("binary"))
-      {
-	std::stringstream ss;
-	ss << " --binary ";
-	all.options_from_file.append(ss.str());
-      }
-
     all.sd->binary_label = true;
     //Create new learner
     learner* ret = new learner(NULL, all.l);
