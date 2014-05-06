@@ -288,6 +288,9 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
         else if((*i)[0]==':'&&(*i)[1]==':'){
 	  cout << "in pair creation" << endl;
           newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
+	  stringstream ss;
+	  ss << ' ' << ' ';
+	  newpairs.push_back(ss.str());
           for (char j=printable_start; j<=printable_end; j++){
             if(valid_ns(j)){
               for (char k=printable_start; k<=printable_end; k++){
