@@ -198,28 +198,25 @@ namespace BS {
     data->ub = FLT_MAX;
     data->lb = -FLT_MAX;
 
-    po::options_description bs_options("BS options");
+    po::options_description bs_options("Bootstrap options");
     bs_options.add_options()
       ("bs_type", po::value<string>(), "prediction type {mean,vote}");
     
     vm = add_options(all, bs_options);
 
-    data->B = (uint32_t)vm["bs"].as<size_t>();
+    data->B = (uint32_t)vm["bootstrap"].as<size_t>();
 
     //append bs with number of samples to options_from_file so it is saved to regressor later
     std::stringstream ss;
-    ss << " --bs " << data->B;
+    ss << " --bootstrap " << data->B;
     all.file_options.append(ss.str());
+
+    std::string type_string("mean");
 
     if (vm.count("bs_type"))
     {
-      std::string type_string;
-
       type_string = vm["bs_type"].as<std::string>();
       
-      all.file_options.append(" --bs_type ");
-      all.file_options.append(type_string);
-
       if (type_string.compare("mean") == 0) { 
         data->bs_type = BS_TYPE_MEAN;
       }
@@ -231,11 +228,10 @@ namespace BS {
         data->bs_type = BS_TYPE_MEAN;
       }
     }
-    else {
-      //by default use mean
+    else //by default use mean
       data->bs_type = BS_TYPE_MEAN;
-      all.file_options.append(" --bs_type mean");
-    }
+    all.file_options.append(" --bs_type ");
+    all.file_options.append(type_string);
 
     data->pred_vec.reserve(data->B);
     data->all = &all;

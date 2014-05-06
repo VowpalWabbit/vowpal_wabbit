@@ -318,8 +318,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     vm = add_options(all, nn_opts);
 
     //first parse for number of hidden units
-    n->k = 0;
-
     n->k = (uint32_t)vm["nn"].as<size_t>();
     
     std::stringstream ss;

@@ -2516,6 +2516,7 @@ void print_update(vw& all, searn& srn)
     searn* srn = (searn*)calloc_or_die(1,sizeof(searn));
     srn->priv = new searn_private();
     srn->priv->all = &all;
+    srn->all = &all;
 
     searn_initialize(all, *srn);
 
@@ -2532,6 +2533,8 @@ void print_update(vw& all, searn& srn)
         ("search_alpha",             po::value<float>(),  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
 
         ("search_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
+
+        ("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in a file")
         
         ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
         ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")

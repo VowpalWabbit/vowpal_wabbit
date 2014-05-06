@@ -226,13 +226,11 @@ po::variables_map add_options(vw& all, po::options_description& opts)
     options(opts).allow_unregistered().run();
   po::store(parsed, new_vm);
   po::notify(new_vm); 
-
   //parse all opts for a complete variable map.
   parsed = po::command_line_parser(all.args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
     options(all.opts).allow_unregistered().run();
   po::store(parsed, new_vm);
-
   return new_vm;
 }
 

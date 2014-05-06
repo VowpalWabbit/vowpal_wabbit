@@ -838,9 +838,8 @@ vw* parse_args(int argc, char *argv[])
 
   po::options_description other_opt("Other options");
   other_opt.add_options()
-    ("bs", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
+    ("bootstrap", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
     ("top", po::value<size_t>(), "top k recommendation")
-    ("bs_type", po::value<string>(), "bootstrap mode - currently 'mean' or 'vote'")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
     ("lda", po::value<uint32_t>(&(all->lda)), "Run lda with <int> topics")
@@ -872,6 +871,8 @@ vw* parse_args(int argc, char *argv[])
 
   po::variables_map vm = add_options(*all, desc);
 
+  msrand48(random_seed);
+
   parse_diagnostics(*all, vm, argc);
 
   if (vm.count("active_simulation"))
@@ -891,7 +892,7 @@ vw* parse_args(int argc, char *argv[])
   parse_regressor_args(*all, vm, io_temp);
   
   int temp_argc = 0;
-  char** temp_argv = VW::get_argv_from_string(all->file_options, argc);
+  char** temp_argv = VW::get_argv_from_string(all->file_options, temp_argc);
   add_to_args(*all, temp_argc, temp_argv);
   
   po::parsed_options pos = po::command_line_parser(all->args).
@@ -939,7 +940,7 @@ vw* parse_args(int argc, char *argv[])
 
   parse_search(*all, vm, got_cs, got_cb);
 
-  if(vm.count("bs") || vm.count("bs") )
+  if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);
 
   // Be friendly: if -d was left out, treat positional param as data file
