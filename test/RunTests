@@ -50,6 +50,9 @@ my @PathAdd = qw(. .. ../vowpalwabbit);
 
 my @ToTest = ();
 
+# __DATA__ test counter
+my $TestNo = 0;
+
 sub v($;@) {
     my $verbose_level = shift @_;
     return unless ($opt_v >= $verbose_level);
@@ -254,9 +257,6 @@ sub ref_file($) {
     }
     $file;
 }
-
-# __DATA__ test counter
-my $TestNo = 0;
 
 sub next_test() {
     my ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
