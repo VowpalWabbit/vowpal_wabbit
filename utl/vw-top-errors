@@ -300,7 +300,6 @@ sub second_pass($@) {
 }
 
 # -- main
-# FINISH ME
 get_args;
 my @top_errors = first_pass($TopN);
 second_pass($TopWeights, @top_errors);
