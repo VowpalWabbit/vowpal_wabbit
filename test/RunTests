@@ -108,7 +108,7 @@ sub command_failed($) {
                 "$0: test $TestNo: '%s' died from signal $signal$core\n", $cmd;
         } elsif ($exitcode) {
             printf STDERR
-                "$0: test $TestNo: '%s' failed ((exitcode=$exitcode)\n", $cmd;
+                "$0: test $TestNo: '%s' failed (exitcode=$exitcode)\n", $cmd;
         }
     }
     $?
