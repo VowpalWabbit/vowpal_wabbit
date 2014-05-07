@@ -3,7 +3,6 @@
 #
 # Goal: improve learning (smaller generalization error)
 #
-#
 # How:  Inspect the learning process in real-time. Single-out
 #       the elements leading to its biggest weaknesses.  More
 #       specifically: track the online learning-process largest
@@ -32,10 +31,15 @@ use Getopt::Std;
 use vars qw($opt_v $opt_V $opt_a);
 
 my %ExampleDelta = ();
-my $TopN = 5;
-my $TopWeights = 20;
+my $TopN;
+my $TopWeights;
 my %ExampleNos;
 my @ExampleNos;
+
+my $DefaultTopN = 5;
+my $DefaultTopWeights = 10;
+
+my $VWCmd;
 
 sub v {
     return unless $opt_v;
@@ -55,9 +59,72 @@ sub V {
     }
 }
 
-sub collect_errors() {
+sub usage(@) {
+    print STDERR @_, "\n" if @_;
+    die "Usage: $0 [options] [args] vw <vw-training-arguments>...
+
+    Will run 2 passes:
+    1) Learning with --progress 1: catch the biggest errors
+    2) Learning with --audit: intercept the biggest errors
+       and print their highest weights.
+
+    $0 options (must precede the 'vw' and its args):
+        -v      verbose
+
+    $0 args (must precede the 'vw' and its args):
+        <TopN>          Integer: how many (top error) examples to print
+                        (Default: $DefaultTopN)
+        <TopWeights>    Integer: how many top weights to print for each
+                        (top error) example
+                        (Default: $DefaultTopWeights)
+";
+}
+
+sub get_args {
+    $0 =~ s{.*/}{};
+
+    # Separate our args, from vw and its args...
+    my (@our_args, @vw_args);
+    my $saw_vw = 0;
+    foreach my $arg (@ARGV) {
+        if ($saw_vw) {
+            push(@vw_args, $arg);
+            next;
+        } elsif ($arg =~ /^\S*vw$/) {
+            $saw_vw = 1;
+            push(@vw_args, $arg);
+            next;
+        }
+        if ($arg =~ /^\d+$/) {
+            if (! defined $TopN) {
+                $TopN = $arg;
+            } elsif (! defined $TopWeights) {
+                $TopWeights = $arg;
+            } else {
+                printf STDERR "Too many integer args: ignoring $arg\n"
+            }
+        }
+        push(@our_args, $arg);
+    }
+
+    $TopN = $DefaultTopN unless (defined $TopN);
+    $TopWeights = $DefaultTopWeights unless (defined $TopWeights);
+
+    unless (@vw_args >= 2) {
+        usage("Expecting a 'vw' argument followed by training-args");
+    }
+    $VWCmd = "@vw_args";
+
+    @ARGV = @our_args;
+    getopts('v');
+}
+
+
+sub collect_errors($) {
+    my $vw_stderr = shift;
+
     my ($prev_avgloss, $prev_sincelast);
-    while (<>) {
+    while (<$vw_stderr>) {
         next unless (/^([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s/);
         my ($avgloss, $sincelast, $example) = ($1, $2, $3);
         if (defined $prev_sincelast) {
@@ -69,49 +136,105 @@ sub collect_errors() {
     }
 }
 
-sub by_weight_desc {
+#
+# by_abs_weight_desc($a, $b)
+#   compare function to sort features by abs(weight) largest first
+#
+sub by_abs_weight_desc {
     my $weight1 = (split(':', $a))[3];
     my $weight2 = (split(':', $b))[3];
     $weight1 =~ s/\@.*$//;
     $weight2 =~ s/\@.*$//;
 
-    $weight2 <=> $weight1;
+    abs($weight2) <=> abs($weight1);
 }
 
-sub audit_top_weights(@) {
-    unless (@_) {
+#
+# audit_top_weights($vwh, $top_weights, @example_nos);
+#   $vwh            file handle of vw audit stream
+#   $top_weights    number of weights to print per example
+#   @example_nos    example numbers to cover
+#
+sub audit_top_weights($$@) {
+    my ($vw_stderr, $top_weights, @example_nos) = @_;
+
+    unless (@example_nos) {
         die "$0: audit_top_weights: no wanted examples given\n";
     }
 
-    my @example_nos = sort { $a <=> $b } @_;
+    # Make sure we have example numbers in order from low to high
+    @example_nos = sort { $a <=> $b } @example_nos;
 
-    # -- scan the audit
+    my %feature_weights = ();
+    my %feature_examples = ();
+
+    printf "=== Top-weighting underlying %d features" .
+            " @ diverging examples:\n", $top_weights;
+
+    # -- Scan the vw audit output
     my $example_count = 0;
-    while (<>) {
-        # need to skip regular progress lines as well
-        next if (/^[0-9.]+\s+[0-9.]+\s+\d+\s+[0-9]+\.[0-9]\s+/);
-
-        # real audit line
-        next unless (/^-?[0-9.]+\s/);
-        # found an example:
-        $example_count++;
-
+    while (<$vw_stderr>) {
         last unless (@example_nos);
 
-        if ($example_nos[0] == $example_count) {
+        # No need to skip regular progress lines because
+        # we rn with --quiet
+        # next if (/^[0-9.]+\s+[0-9.]+\s+\d+\s+[0-9]+\.[0-9]\s+/);
+
+        # Look for an audit-preceding line
+        next unless (/^-?[0-9.]+\s/);
+
+        # Found an example:
+        $example_count++;
+
+        my $wanted_example = $example_nos[0];
+
+        if ($example_count == $wanted_example) {
+            # Found the next wanted one
             shift @example_nos;
-            # the matching label/tag etc. header
-            printf "#%d: %s", $example_count, $_;
-            my $audit_line = <>;
+
+            # -- print the matching label/tag etc. header
+            printf "Example #%d: %s", $wanted_example, $_;
+
+            # Next line has the features and weights
+            my $audit_line = <$vw_stderr>;
             chomp $audit_line;
             $audit_line =~ s/^\s+//;
+
             my @features = split(/\s+/, $audit_line);
-            my @sorted_features = sort by_weight_desc @features;
+            my @sorted_features = sort by_abs_weight_desc @features;
+
+            printf "\t%s\t%-8s\t%s\n", 'Feature', 'Weight', 'Full-audit-data';
             for (my $i = 0; $i < $TopWeights; $i++) {
                 my $feature = $sorted_features[$i];
-                printf "\t%s\n", $feature;
+                my ($name, $hash, $value, $weight) = split(':', $feature);
+                $weight =~ s/\@.*$//;
+                printf "\t%s\t%7.6f\t%s\n", $name, $weight, $feature;
+
+                $feature_weights{$name} += abs($weight);
+
+                unless (exists $feature_examples{$name}) {
+                    $feature_examples{$name} = {};
+                }
+                $feature_examples{$name}->{$wanted_example} = $weight;
             }
         }
+    }
+
+    print "\n";
+    print "=== Top adverse features (in descending cumulative weight)\n";
+    printf "%-20s\t%-10s  %s\n", 'Name', 'Weight-Sum', 'Examples';
+    foreach my $name (sort {$feature_weights{$b} <=> $feature_weights{$a}}
+                         keys %feature_weights) {
+        
+        my @example_list = sort {
+                                $feature_examples{$name}->{$b}
+                                    <=>
+                                $feature_examples{$name}->{$a}
+                            }
+                            keys %{$feature_examples{$name}};
+
+        printf "%-20s\t%-10.6f  @example_list\n",
+                $name, $feature_weights{$name};
     }
 }
 
@@ -128,75 +251,58 @@ sub biggest_errors($) {
 }
 
 sub print_errors(@) {
+    printf "=== Top-%d (highest loss) diverging examples:\n", scalar(@_);
+
+    print "Example\tLoss\n";
     foreach my $example (@_) {
         printf "%d\t%g\n", $example, $ExampleDelta{$example};
     }
+    print "\n";
 }
-
-sub usage(@) {
-    # FINISH ME
-    print STDERR @_, "\n" if @_;
-    die "Usage:
-
-        $0 [Genericoptions] TopN files...
-            Look for the TopN errors in vw-progress output
-            (vw-progress output assumed to be generated with --progress/-P 1)
-
-        $0 [Genericoptions] -a example_numbers... files...
-            Report the top weights for each of example_numbers...
-            in vw --audit output
-            (vw output assumed to be generated with --audit/-a)
-
-    GenericOptions:
-        -v      verbose
-        -V      more verbose
-";
-}
-
-sub get_args {
-    # FINISH ME
-    $0 =~ s{.*/}{};
-
-    getopts('vVa');
-
-    my @file_args = ();
-    my @num_args = ();
-    my %seen;
-
-    foreach my $arg (@ARGV) {
-        if (-f $arg) {
-            push(@file_args, $arg);
-            next;
-        }
-        if ($arg =~ /^\d+$/) {
-            if ($opt_a) {
-                unless (exists $seen{$arg}) {
-                    push(@ExampleNos, $arg);
-                    $seen{$arg} = 1;
-                }
-            } else {
-                $TopN = $arg;
-            }
-            next;
-        }
-        usage("Unrecognized argument: $arg");
-    }
-    @ARGV = @file_args;
-}
-
-sub top_errors($) {
+sub first_pass($) {
     my $top_n = shift;
-    collect_errors();
-    print_errors(biggest_errors($top_n));
+
+    my $vw_cmd = $VWCmd;
+    $vw_cmd =~ s/(?:--progress|-P)\s*[0-9.]+\b//;
+    $vw_cmd =~ s/(?:--quiet\b)//;
+    $vw_cmd .= " --progress 1";
+
+    v("+----- 1st pass: find top %d errors\n", $top_n);
+    v("| 1st pass: \$vw_cmd: %s\n", $vw_cmd);
+    open(my $vwh, "$vw_cmd 2>&1 |");
+    collect_errors($vwh);
+    close $vwh;
+    my @top_error_examples = biggest_errors($top_n);
+    print_errors(@top_error_examples);
+    v("+--- 1st pass: done!\n\n");
+
+    @top_error_examples;
+}
+
+sub second_pass($@) {
+    my ($top_weights, @example_nos) = @_;
+
+    v("+----- 2nd pass: --audit to find top bad features\n");
+    v("| 2nd pass: \$top_weights: %d\n", $top_weights);
+    v("| 2nd pass: \@example_nos: @example_nos\n");
+
+    my $vw_cmd = $VWCmd;
+    $vw_cmd =~ s/(?:--progress|-P)\s*[0-9.]+\b//;
+    $vw_cmd =~ s/(?:--quiet\b)//;
+    $vw_cmd =~ s/(?:--audit|-a\b)//;
+    $vw_cmd .= " --quiet --audit";
+
+    v("| 2nd pass: \$vw_cmd: %s\n", $vw_cmd);
+    open(my $vwh, "$vw_cmd 2>&1 |");
+    audit_top_weights($vwh, $top_weights, @example_nos);
+    close $vwh;
+    v("+--- 2nd pass: done!\n");
 }
 
 # -- main
 # FINISH ME
-get_args();
+get_args;
+my @top_errors = first_pass($TopN);
+second_pass($TopWeights, @top_errors);
 
-if ($opt_a) {
-    audit_top_weights(@ExampleNos);
-} else {
-    top_errors($TopN);
-}
 
