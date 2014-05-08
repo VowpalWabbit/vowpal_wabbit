@@ -105,6 +105,17 @@ void parse_affix_argument(vw&all, string str) {
 
 void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
 {
+  po::options_description diag_opt("Diagnostic options");
+
+  diag_opt.add_options()
+    ("version","Version information")
+    ("audit,a", "print weights of features")
+    ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
+    ("quiet", "Don't output disgnostics and progress updates")
+    ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.");
+  
+  vm = add_options(all, diag_opt);
+
   if (vm.count("version")) {
     /* upon direct query for version -- spit it out to stdout */
     cout << version.to_string() << "\n";
@@ -189,6 +200,25 @@ void parse_source(vw& all, po::variables_map& vm)
 
 void parse_feature_tweaks(vw& all, po::variables_map& vm)
 {
+  po::options_description feature_opt("Feature options");
+  feature_opt.add_options()
+    ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
+    ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
+    ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
+    ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
+    ("noconstant", "Don't add a constant feature")
+    ("constant,C", po::value<float>(&(all.initial_constant)), "Set initial value of constant")
+    ("ngram", po::value< vector<string> >(), "Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN.")
+    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fn.")
+    ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
+    ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
+    ("quadratic,q", po::value< vector<string> > (), "Create and use quadratic features")
+    ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
+    ("cubic", po::value< vector<string> > (),
+     "Create and use cubic features");
+
+  vm = add_options(all, feature_opt);
+
   //feature manipulation
   string hash_function("strings");
   if(vm.count("hash")) 
@@ -519,6 +549,18 @@ void parse_output_model(vw& all, po::variables_map& vm)
 void parse_base_algorithm(vw& all, po::variables_map& vm)
 {
   //base learning algorithm.
+  po::options_description base_opt("base algorithms (these are exclusive)");
+  
+  base_opt.add_options()
+    ("bfgs", "use bfgs optimization")
+    ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics")
+    ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
+    ("noop","do no learning")
+    ("print","print examples")
+    ("sendto", po::value< vector<string> >(), "send examples to <host>");
+
+  vm = add_options(all, base_opt);
+
   if (vm.count("bfgs") || vm.count("conjugate_gradient"))
     all.l = BFGS::setup(all, vm);
   else if (vm.count("lda"))
@@ -563,6 +605,17 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
 
 void parse_scorer_reductions(vw& all, po::variables_map& vm)
 {
+  po::options_description score_mod_opt("Score modifying options (can be combined)");
+
+  score_mod_opt.add_options()
+    ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
+    ("new_mf", "use new, reduction-based matrix factorization")
+    ("autolink", po::value<size_t>(), "create link function with polynomial d")
+    ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
+    ("lrqdropout", "use dropout training for low rank quadratic features");
+
+  vm = add_options(all, score_mod_opt);
+
   if(vm.count("nn"))
     all.l = NN::setup(all, vm);
   
@@ -587,6 +640,19 @@ LEARNER::learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_co
 
 void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
 {
+  po::options_description multiclass_opt("Score user options (these are exclusive)");
+  multiclass_opt.add_options()
+    ("top", po::value<size_t>(), "top k recommendation")
+    ("binary", "report loss as binary classification on -1,1")
+    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
+    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
+    ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
+    ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
+    ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
+    ;
+
+  vm = add_options(all, multiclass_opt);
   bool score_consumer = false;
   
   if(vm.count("top"))
@@ -722,13 +788,8 @@ vw* parse_args(int argc, char *argv[])
   po::options_description out_opt("Output options");
 
   out_opt.add_options()
-    ("audit,a", "print weights of features")
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
-    ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("quiet", "Don't output disgnostics and progress updates")
-    ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
-    ("binary", "report loss as binary classification on -1,1")
     ("min_prediction", po::value<float>(&(all->sd->min_label)), "Smallest prediction to output")
     ("max_prediction", po::value<float>(&(all->sd->max_label)), "Largest prediction to output")
     ;
@@ -737,15 +798,10 @@ vw* parse_args(int argc, char *argv[])
 
   update_opt.add_options()
     ("sgd", "use regular stochastic gradient descent update.")
-    ("hessian_on", "use second derivative in line search")
-    ("bfgs", "use bfgs optimization")
-    ("mem", po::value<int>(&(all->m)), "memory in bfgs")
-    ("termination", po::value<float>(&(all->rel_threshold)),"Termination threshold")
     ("adaptive", "use adaptive, individual learning rates.")
     ("invariant", "use safe/importance aware updates.")
     ("normalized", "use per feature normalized updates")
     ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
-    ("conjugate_gradient", "use conjugate gradient based optimization")
     ("l1", po::value<float>(&(all->l1_lambda)), "l_1 lambda")
     ("l2", po::value<float>(&(all->l2_lambda)), "l_2 lambda")
     ("learning_rate,l", po::value<float>(&(all->eta)), "Set Learning Rate")
@@ -762,7 +818,6 @@ vw* parse_args(int argc, char *argv[])
   po::options_description weight_opt("Weight options");
 
   weight_opt.add_options()
-    ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
@@ -781,47 +836,7 @@ vw* parse_args(int argc, char *argv[])
     ("holdout_period", po::value<uint32_t>(&(all->holdout_period)), "holdout period for test only, default 10")
     ("holdout_after", po::value<uint32_t>(&(all->holdout_after)), "holdout after n training examples, default off (disables holdout_period)")
     ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
-    ;
-
-  po::options_description namespace_opt("Feature namespace options");
-  namespace_opt.add_options()
-    ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
-    ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
-    ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
-    ("noconstant", "Don't add a constant feature")
-    ("constant,C", po::value<float>(&(all->initial_constant)), "Set initial value of constant")
     ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
-    ("ngram", po::value< vector<string> >(), "Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN.")
-    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fn.")
-    ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
-    ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)");
-    ;
-
-  po::options_description mf_opt("Matrix factorization options");
-  mf_opt.add_options()
-    ("quadratic,q", po::value< vector<string> > (),
-     "Create and use quadratic features")
-    ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
-    ("cubic", po::value< vector<string> > (),
-     "Create and use cubic features")
-    ("rank", po::value<uint32_t>(&(all->rank)), "rank for matrix factorization.")
-    ("new_mf", "use new, reduction-based matrix factorization")
-    ;
-
-  po::options_description lrq_opt("Low Rank Quadratic options");
-  lrq_opt.add_options()
-    ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
-    ("lrqdropout", "use dropout training for low rank quadratic features")
-    ;
-
-  po::options_description multiclass_opt("Multiclass options");
-  multiclass_opt.add_options()
-    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
-    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
-    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
-    ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
-    ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-    ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
     ;
 
   po::options_description active_opt("Active Learning options");
@@ -842,32 +857,20 @@ vw* parse_args(int argc, char *argv[])
   po::options_description other_opt("Other options");
   other_opt.add_options()
     ("bootstrap", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
-    ("top", po::value<size_t>(), "top k recommendation")
-    ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
-    ("lda", po::value<uint32_t>(&(all->lda)), "Run lda with <int> topics")
-    ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
     ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
     ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
     ;
 
   // Declare the supported options.
   desc.add_options()
-    ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
-    ("version","Version information")
-    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
-    ("noop","do no learning")
-    ("print","print examples");
+    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator");
 
   desc.add(in_opt)
     .add(out_opt)
     .add(update_opt)
     .add(weight_opt)
     .add(holdout_opt)
-    .add(namespace_opt)
-    .add(mf_opt)
-    .add(lrq_opt)
-    .add(multiclass_opt)
     .add(active_opt)
     .add(cluster_opt)
     .add(other_opt);

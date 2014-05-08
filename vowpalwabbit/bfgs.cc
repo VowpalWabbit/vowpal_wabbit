@@ -982,6 +982,16 @@ learner* setup(vw& all, po::variables_map& vm)
   b->no_win_counter = 0;
   b->early_stop_thres = 3;
 
+  po::options_description bfgs_opts("LBFGS options");
+
+  bfgs_opts.add_options()
+    ("hessian_on", "use second derivative in line search")
+    ("mem", po::value<int>(&(all.m)), "memory in bfgs")
+    ("conjugate_gradient", "use conjugate gradient based optimization")
+    ("termination", po::value<float>(&(all.rel_threshold)),"Termination threshold");
+
+  vm = add_options(all, bfgs_opts);
+
   if(!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
