@@ -196,6 +196,12 @@ void parse_source(vw& all, po::variables_map& vm)
       set_compressed(all.p);
   } else
     all.data_filename = "";
+
+  if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
+    {
+      all.holdout_set_off = true;
+      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
+    }
 }
 
 void parse_feature_tweaks(vw& all, po::variables_map& vm)
@@ -450,12 +456,6 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
   if(vm.count("holdout_off"))
       all.holdout_set_off = true;
 
-  if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
-  {
-      all.holdout_set_off = true;
-      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
-  }
-
   if(vm.count("sort_features"))
     all.p->sort_features = true;
   
@@ -544,6 +544,18 @@ void parse_output_preds(vw& all, po::variables_map& vm)
 
 void parse_output_model(vw& all, po::variables_map& vm)
 {
+  po::options_description output_model("Output model");
+  
+  output_model.add_options()
+    ("final_regressor,f", po::value< string >(), "Final regressor")
+    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
+    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names")
+    ("save_per_pass", "Save the model after every pass over data")
+    ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
+    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
+  
+  vm = add_options(all, output_model);
+
   if (vm.count("final_regressor")) {
     all.final_regressor_name = vm["final_regressor"].as<string>();
     if (!all.quiet)
@@ -794,7 +806,6 @@ vw* parse_args(int argc, char *argv[])
 
   in_opt.add_options()
     ("data,d", po::value< string >(), "Example Set")
-    ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
     ("daemon", "persistent daemon mode on port 26542")
     ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
     ("num_children", po::value<size_t>(&(all->num_children)), "number of children for persistent daemon mode")
@@ -805,6 +816,7 @@ vw* parse_args(int argc, char *argv[])
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
     ("no_stdin", "do not default to reading from stdin")
+    ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
     ("save_resume", "save extra state so learning can be resumed later with new data")
     ;
 
@@ -830,15 +842,9 @@ vw* parse_args(int argc, char *argv[])
 
   weight_opt.add_options()
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("final_regressor,f", po::value< string >(), "Final regressor")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
     ("random_weights", po::value<bool>(&(all->random_weights)), "make initial weights random")
-    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
-    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names")
-    ("save_per_pass", "Save the model after every pass over data")
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
-    ("output_feature_regularizer_binary", po::value< string >(&(all->per_feature_regularizer_output)), "Per feature regularization output file")
-    ("output_feature_regularizer_text", po::value< string >(&(all->per_feature_regularizer_text)), "Per feature regularization output file, in text")
     ;
 
   po::options_description active_opt("Active Learning options");
