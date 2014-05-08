@@ -412,6 +412,27 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 
 void parse_example_tweaks(vw& all, po::variables_map& vm)
 {
+  po::options_description example_opts("Example options");
+  
+  example_opts.add_options()
+    ("testonly,t", "Ignore label information and just test")
+    ("holdout_off", "no holdout data in multiple passes")
+    ("holdout_period", po::value<uint32_t>(&(all.holdout_period)), "holdout period for test only, default 10")
+    ("holdout_after", po::value<uint32_t>(&(all.holdout_after)), "holdout after n training examples, default off (disables holdout_period)")
+    ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
+    ("passes", po::value<size_t>(&(all.numpasses)),"Number of Training Passes")
+    ("initial_pass_length", po::value<size_t>(&(all.pass_length)), "initial number of examples per pass")
+    ("examples", po::value<size_t>(&(all.max_examples)), "number of examples to parse")
+    ("min_prediction", po::value<float>(&(all.sd->min_label)), "Smallest prediction to output")
+    ("max_prediction", po::value<float>(&(all.sd->max_label)), "Largest prediction to output")
+    ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
+    ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
+    ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
+    ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
+    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
+
+  vm = add_options(all, example_opts);
+
   if (vm.count("testonly") || all.eta == 0.)
     {
       if (!all.quiet)
@@ -552,6 +573,11 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
   po::options_description base_opt("base algorithms (these are exclusive)");
   
   base_opt.add_options()
+    ("sgd", "use regular stochastic gradient descent update.")
+    ("adaptive", "use adaptive, individual learning rates.")
+    ("invariant", "use safe/importance aware updates.")
+    ("normalized", "use per feature normalized updates")
+    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
     ("bfgs", "use bfgs optimization")
     ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics")
     ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
@@ -769,14 +795,11 @@ vw* parse_args(int argc, char *argv[])
   in_opt.add_options()
     ("data,d", po::value< string >(), "Example Set")
     ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
-    ("examples", po::value<size_t>(&(all->max_examples)), "number of examples to parse")
-    ("testonly,t", "Ignore label information and just test")
     ("daemon", "persistent daemon mode on port 26542")
     ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
     ("num_children", po::value<size_t>(&(all->num_children)), "number of children for persistent daemon mode")
     ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
     ("port_file", po::value< string >(), "Write port used in persistent daemon mode")
-    ("passes", po::value<size_t>(&(all->numpasses)),"Number of Training Passes")
     ("cache,c", "Use a cache.  The default is <data>.cache")
     ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
@@ -790,27 +813,15 @@ vw* parse_args(int argc, char *argv[])
   out_opt.add_options()
     ("predictions,p", po::value< string >(), "File to output predictions to")
     ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
-    ("min_prediction", po::value<float>(&(all->sd->min_label)), "Smallest prediction to output")
-    ("max_prediction", po::value<float>(&(all->sd->max_label)), "Largest prediction to output")
     ;
 
   po::options_description update_opt("Update options");
 
   update_opt.add_options()
-    ("sgd", "use regular stochastic gradient descent update.")
-    ("adaptive", "use adaptive, individual learning rates.")
-    ("invariant", "use safe/importance aware updates.")
-    ("normalized", "use per feature normalized updates")
-    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
-    ("l1", po::value<float>(&(all->l1_lambda)), "l_1 lambda")
-    ("l2", po::value<float>(&(all->l2_lambda)), "l_2 lambda")
     ("learning_rate,l", po::value<float>(&(all->eta)), "Set Learning Rate")
-    ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
-    ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
     ("power_t", po::value<float>(&(all->power_t)), "t power value")
     ("decay_learning_rate",    po::value<float>(&(all->eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
-    ("initial_pass_length", po::value<size_t>(&(all->pass_length)), "initial number of examples per pass")
     ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
     ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.")
     ;
@@ -828,15 +839,6 @@ vw* parse_args(int argc, char *argv[])
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
     ("output_feature_regularizer_binary", po::value< string >(&(all->per_feature_regularizer_output)), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&(all->per_feature_regularizer_text)), "Per feature regularization output file, in text")
-    ;
-
-  po::options_description holdout_opt("Holdout options");
-  holdout_opt.add_options()
-    ("holdout_off", "no holdout data in multiple passes")
-    ("holdout_period", po::value<uint32_t>(&(all->holdout_period)), "holdout period for test only, default 10")
-    ("holdout_after", po::value<uint32_t>(&(all->holdout_after)), "holdout after n training examples, default off (disables holdout_period)")
-    ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
-    ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
     ;
 
   po::options_description active_opt("Active Learning options");
@@ -870,7 +872,6 @@ vw* parse_args(int argc, char *argv[])
     .add(out_opt)
     .add(update_opt)
     .add(weight_opt)
-    .add(holdout_opt)
     .add(active_opt)
     .add(cluster_opt)
     .add(other_opt);
