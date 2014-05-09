@@ -3,8 +3,8 @@
 #include "simple_label.h"
 #include "allreduce.h"
 
-#undef NDEBUG
-#define DEBUG
+//#undef NDEBUG
+//#define DEBUG
 #include <cassert>
 
 #define PARENT_BIT 1
