@@ -174,6 +174,8 @@ namespace StagewisePoly
     assert(poly.synth_ec.example_counter);
     uint32_t num_new_features = pow((poly.sum_input_sparsity * 1.0 / poly.synth_ec.example_counter), poly.sched_exponent);
 
+    cout<<"Updating support after "<<poly.synth_ec.example_counter<<" examples\n";
+
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
     for (uint32_t i = 0; i != poly.all->length(); ++i) {
@@ -278,7 +280,7 @@ namespace StagewisePoly
     uint32_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
     assert(wid_atomic % STRIDE_SHIFT(poly, 1) == 0);
 
-    if (poly.cur_depth < min_depths_get(poly, wid_cur)) {
+    if (poly.cur_depth < min_depths_get(poly, wid_cur) && poly.all->training) {
       if (parent_get(poly, wid_cur)) {
 #ifdef DEBUG
         cout
