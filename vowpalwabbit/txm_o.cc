@@ -497,6 +497,7 @@ namespace TXM_O
   void learn(txm_o& b, learner& base, example& ec)
   {
     static size_t  ec_cnt = 0;
+    //size_t ec_err = 3657;
     
     predict(b,base,ec);
     MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
@@ -524,6 +525,7 @@ namespace TXM_O
 
 	while(1)
 	  {
+	    //if(ec_cnt ==  ec_err) cout << "\t" << cn << endl;
 	    //cout << cn << "\t";
 	    
 	    //if(!track.contain_sorted(cn, tmp))
@@ -561,7 +563,6 @@ namespace TXM_O
 		break;	
 	      }
 	    
-	    float left_or_right = b.nodes[cn].node_pred[index].norm_Ehk - b.nodes[cn].norm_Eh;
 	    if(ec.final_prediction < 0)//b.nodes[cn].Eh/b.nodes[cn].n)
 	      {
 		b.nodes[cn].L++;
