@@ -41,6 +41,7 @@ license as described in the file LICENSE.
 #include "lrq.h"
 #include "autolink.h"
 #include "memory.h"
+#include "stagewise_poly.h"
 
 using namespace std;
 //
@@ -952,6 +953,16 @@ vw* parse_args(int argc, char *argv[])
   parse_cb(*all, vm, got_cs, got_cb);
 
   parse_search(*all, vm, got_cs, got_cb);
+
+  po::options_description sp_opt("Stagewise poly options");
+  sp_opt.add_options()
+    ("stage_poly", "use stagewise polynomial feature learning")
+    ("sched_exponent", po::value<float>(), "exponent on schedule")
+    ("magic_argument", po::value<float>(), "magical feature flag")
+    ("batch_sz", po::value<uint32_t>(), "batch size");
+  vm = add_options(*all, sp_opt);
+  if (vm.count("stage_poly"))
+    all->l = StagewisePoly::setup(*all, vm);
 
   if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);
