@@ -42,7 +42,6 @@ namespace StagewisePoly
     char *bits;
     sort_data *sd;
     uint32_t *min_depths;
-    uint32_t num_features;
 
     uint64_t sum_sparsity; //of synthetic example
     uint64_t sum_input_sparsity; //of input example
@@ -174,8 +173,6 @@ namespace StagewisePoly
     assert(poly.synth_ec.example_counter);
     uint32_t num_new_features = pow((poly.sum_input_sparsity * 1.0 / poly.synth_ec.example_counter), poly.sched_exponent);
 
-    cout<<"Updating support after "<<poly.synth_ec.example_counter<<" examples\n";
-
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
     for (uint32_t i = 0; i != poly.all->length(); ++i) {
@@ -280,7 +277,12 @@ namespace StagewisePoly
     uint32_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
     assert(wid_atomic % STRIDE_SHIFT(poly, 1) == 0);
 
-    if (poly.cur_depth < min_depths_get(poly, wid_cur) && poly.all->training) {
+    //Note: only mutate learner state when in training mode.  This is because
+    //the average test errors across multiple data sets should be equal to
+    //the test error on the merged dataset (which is violated if the code
+    //below is run at training time).
+    if (poly.cur_depth < min_depths_get(poly, wid_cur)
+        && poly.all->training && !poly.original_ec->test_only) {
       if (parent_get(poly, wid_cur)) {
 #ifdef DEBUG
         cout
@@ -347,7 +349,6 @@ namespace StagewisePoly
     synthetic_create(poly, ec);
 
     base.learn(poly.synth_ec);
-    poly.num_features = poly.synth_ec.num_features;
 
     ((label_data *) ec.ld)->prediction = ((label_data *)(poly.synth_ec.ld))->prediction;
     ec.loss = poly.synth_ec.loss;
@@ -382,11 +383,11 @@ namespace StagewisePoly
   }
 #endif //PARALLEL_ENABLE
 
-  void finish_example(vw& all, stagewise_poly& poly, example& ec)
+  void finish_example(vw &all, stagewise_poly &poly, example &ec)
   {
     size_t temp_num_features = ec.num_features;
-    ec.num_features = poly.num_features;
-    output_and_account_example(all,ec);
+    ec.num_features = poly.synth_ec.num_features;
+    output_and_account_example(all, ec);
     ec.num_features = temp_num_features;
     VW::finish_example(all, &ec);
   }
@@ -406,8 +407,6 @@ namespace StagewisePoly
 
   void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   {
-    cout<<"In save_load\n";
-
     uint32_t length = poly.all->length();
     if (model_file.files.size() > 0) {
       bin_text_read_write_fixed(model_file, poly.bits, length * sizeof(char),"", read, "", 0, text);
@@ -424,14 +423,14 @@ namespace StagewisePoly
     bits_create(*poly);
     sort_data_create(*poly);
     min_depths_create(*poly);
-    
+
     po::options_description sp_opt("Stagewise poly options");
-    sp_opt.add_options()      
+    sp_opt.add_options()
       ("sched_exponent", po::value<float>(), "exponent on schedule")
       ("magic_argument", po::value<float>(), "magical feature flag")
       ("batch_sz", po::value<uint32_t>(), "batch size");
     vm = add_options(all, sp_opt);
-        
+
     poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 0.;
     poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
     poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 0;
