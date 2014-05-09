@@ -335,9 +335,6 @@ namespace TXM_O
 	      }
 	      else
 	      {
-		size_t nc, np, npp;
-		bool lr = find_switch_nodes(b, nc, np, npp);
-		size_t nc_l = b.nodes[nc].level;
 		//size_t trsh = b.nodes[0].ec_count >> (nc_l + 1);
 
 		/*display_tree2(b);
@@ -353,52 +350,60 @@ namespace TXM_O
 		else
 		  min_myR_myL = b.nodes[cn].myR;
 
-		if(min_myR_myL > 2*b.nodes[0].min_ec_count && cn != nc)
+		if(min_myR_myL > 2*b.nodes[0].min_ec_count)
 		{
-		  //display_tree2(b);
-		  //cout << "\nSWAP!!" << endl;
-		  //cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << "\t" << b.nodes[0].min_ec_count << endl;
-		  //cin.ignore();
-
-		  if(b.nodes[npp].id_left == np)
+		  size_t nc, np, npp;
+	          b.min_ec_path.erase();	  
+		  bool lr = find_switch_nodes(b, nc, np, npp);
+		  size_t nc_l = b.nodes[nc].level;
+		  
+		  if(cn != nc)
 		    {
-		      if(lr == false)
-			b.nodes[npp].id_left = b.nodes[np].id_right;
+		      //display_tree2(b);
+		      //cout << "\nSWAP!!" << endl;
+		      //cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << "\t" << b.nodes[0].min_ec_count << endl;
+		      //cin.ignore();
+
+		      if(b.nodes[npp].id_left == np)
+			{
+			  if(lr == false)
+			    b.nodes[npp].id_left = b.nodes[np].id_right;
+			  else
+			    b.nodes[npp].id_left = b.nodes[np].id_left;
+			  
+			  update_levels(b, b.nodes[npp].id_left, b.nodes[npp].level + 1);
+			}
 		      else
-			b.nodes[npp].id_left = b.nodes[np].id_left;
+			{
+			  if(lr == false)
+			    b.nodes[npp].id_right = b.nodes[np].id_right;
+			  else
+			    b.nodes[npp].id_right = b.nodes[np].id_left;
+			  
+			  update_levels(b, b.nodes[npp].id_right, b.nodes[npp].level + 1);
+			}
 
-		      update_levels(b, b.nodes[npp].id_left, b.nodes[npp].level + 1);
-		    }
-		  else
-		    {
-		      if(lr == false)
-			b.nodes[npp].id_right = b.nodes[np].id_right;
-		      else
-			b.nodes[npp].id_right = b.nodes[np].id_left;
-
-		      update_levels(b, b.nodes[npp].id_right, b.nodes[npp].level + 1);
-		    }
-
-		  b.nodes[cn].id_left = np;
-		  b.nodes[cn].id_right = nc;
-		  b.nodes[np].leaf = true;
-		  b.nodes[np].id_left = 0;
-		  b.nodes[np].id_right = 0;
-		  b.nodes[nc].leaf = true;
-		  b.nodes[nc].id_left = 0;
-		  b.nodes[nc].id_right = 0;
-		  b.nodes[np].level = b.nodes[cn].level + 1;
-		  b.nodes[nc].level = b.nodes[cn].level + 1;
-
-		  b.nodes[np].ec_count = b.nodes[cn].myR;
-		  b.nodes[nc].ec_count = b.nodes[cn].myL;
-
-		  if(b.nodes[cn].level + 1 > b.max_depth)
-		    b.max_depth = b.nodes[cn].level + 1;	    
-
-		  b.min_ec_path.pop();
-		  b.min_ec_path.pop();
-		  update_min_ec_count(b, &b.min_ec_path);		    	
+		      b.nodes[cn].id_left = np;
+		      b.nodes[cn].id_right = nc;
+		      b.nodes[np].leaf = true;
+		      b.nodes[np].id_left = 0;
+		      b.nodes[np].id_right = 0;
+		      b.nodes[nc].leaf = true;
+		      b.nodes[nc].id_left = 0;
+		      b.nodes[nc].id_right = 0;
+		      b.nodes[np].level = b.nodes[cn].level + 1;
+		      b.nodes[nc].level = b.nodes[cn].level + 1;
+		      
+		      b.nodes[np].ec_count = b.nodes[cn].myR;
+		      b.nodes[nc].ec_count = b.nodes[cn].myL;
+		      
+		      if(b.nodes[cn].level + 1 > b.max_depth)
+			b.max_depth = b.nodes[cn].level + 1;	    
+		      
+		      b.min_ec_path.pop();
+		      b.min_ec_path.pop();
+		      update_min_ec_count(b, &b.min_ec_path);
+		    }		    	
 		  }
 	      }
 	  }	
