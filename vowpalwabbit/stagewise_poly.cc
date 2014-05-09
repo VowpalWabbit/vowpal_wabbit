@@ -3,8 +3,8 @@
 #include "simple_label.h"
 #include "allreduce.h"
 
-//#undef NDEBUG
-//#define DEBUG
+#undef NDEBUG
+#define DEBUG
 #include <cassert>
 
 #define PARENT_BIT 1
@@ -92,6 +92,29 @@ namespace StagewisePoly
     poly.bits[WID_MASK_UN_SHIFTED(wid, poly)] ^= CYCLE_BIT;
   }
 
+  void min_depths_create(stagewise_poly &poly)
+  {
+    poly.min_depths = (uint32_t *) malloc(poly.all->length() * sizeof(uint32_t));
+    memset(poly.min_depths, 0xff, poly.all->length() * sizeof(uint32_t));
+  }
+
+  void min_depths_destroy(stagewise_poly &poly)
+  {
+    free(poly.min_depths);
+  }
+
+  inline uint32_t min_depths_get(const stagewise_poly &poly, uint32_t wid)
+  {
+    assert(wid % STRIDE_SHIFT(poly, 1) == 0);
+    return poly.min_depths[STRIDE_UN_SHIFT(poly, wid)];
+  }
+
+  inline void min_depths_set(stagewise_poly &poly, uint32_t wid, uint32_t depth)
+  {
+    assert(wid % STRIDE_SHIFT(poly, 1) == 0);
+    poly.min_depths[STRIDE_UN_SHIFT(poly, wid)] = depth;
+  }
+
   //Note.  OUTPUT & INPUT masked.
   inline uint32_t child_wid(const stagewise_poly &poly, uint32_t wi_atomic, uint32_t wi_general)
   {
@@ -163,7 +186,7 @@ namespace StagewisePoly
            * a nontrivial computational hit, thus commented out.
            *
            * - poly.magic_argument
-           * sqrtf(poly.min_depths[i] * 1.0 / poly.synth_ec.example_counter)
+           * sqrtf(min_depths_get(poly, STRIDE_SHIFT(poly, i)) * 1.0 / poly.synth_ec.example_counter)
            */
           ;
         if (wval > TOL) {
@@ -254,21 +277,21 @@ namespace StagewisePoly
     uint32_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
     assert(wid_atomic % STRIDE_SHIFT(poly, 1) == 0);
 
-    if (poly.cur_depth < poly.min_depths[STRIDE_UN_SHIFT(poly, wid_cur)]) {
+    if (poly.cur_depth < min_depths_get(poly, wid_cur)) {
       if (parent_get(poly, wid_cur)) {
 #ifdef DEBUG
         cout
           << "FOUND A TRANSPLANT!!! moving [" << wid_cur
-          << "] from depth " << poly.min_depths[STRIDE_UN_SHIFT(poly, wid_cur)]
+          << "] from depth " << min_depths_get(poly, wid_cur)
           << " to depth " << poly.cur_depth << endl;
 #endif //DEBUG
         parent_toggle(poly, wid_cur);
       }
-      poly.min_depths[STRIDE_UN_SHIFT(poly, wid_cur)] = poly.cur_depth;
+      min_depths_set(poly, wid_cur, poly.cur_depth);
     }
 
     if ( ! cycle_get(poly, wid_cur)
-        && (poly.cur_depth == poly.min_depths[STRIDE_UN_SHIFT(poly, wid_cur)])
+        && (poly.cur_depth == min_depths_get(poly, wid_cur))
        ) {
       cycle_toggle(poly, wid_cur);
 
@@ -337,9 +360,9 @@ namespace StagewisePoly
 
 
 #ifdef PARALLEL_ENABLE
-  void reduce_min(uint32_t& v1,const uint32_t& v2)
+  void reduce_min(uint32_t &v1,const uint32_t &v2)
   {
-    v1 = ((v1 <= v2) ? v1 : v2);
+    v1 = (v1 <= v2) ? v1 : v2;
   }
 
   void end_pass(stagewise_poly& poly)
@@ -358,17 +381,17 @@ namespace StagewisePoly
   void finish(stagewise_poly &poly)
   {
 #ifdef DEBUG
-    cout<<"total feature number (after poly expansion!) = "<<poly.sum_sparsity<<endl;
+    cout<<"total feature number (after poly expansion!) = " << poly.sum_sparsity << endl;
 #endif //DEBUG
 
     poly.synth_ec.atomics[TREE_ATOMICS].delete_v();
     bits_destroy(poly);
-    free(poly.min_depths);
     sort_data_destroy(poly);
+    min_depths_destroy(poly);
   }
 
 
-  void save_load(stagewise_poly& poly, io_buf& model_file, bool read, bool text)
+  void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   {
     //LANGFORD POWERS REQUESTED
     //LANGFORD POWERS REQUESTED
@@ -385,14 +408,12 @@ namespace StagewisePoly
 
   learner *setup(vw &all, po::variables_map &vm)
   {
-
-    stagewise_poly *poly = (stagewise_poly *) malloc(sizeof(stagewise_poly));
+    stagewise_poly *poly = (stagewise_poly *) calloc(1, sizeof(stagewise_poly));
     poly->all = &all;
 
     bits_create(*poly);
     sort_data_create(*poly);
-    poly->min_depths = (uint32_t *) malloc(poly->all->length() * sizeof(uint32_t));
-    memset(poly->min_depths, 0xff, poly->all->length() * sizeof(uint32_t));
+    min_depths_create(*poly);
 
     poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 0.;
     poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
