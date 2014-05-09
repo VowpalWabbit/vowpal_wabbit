@@ -651,7 +651,8 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
     ("new_mf", "use new, reduction-based matrix factorization")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
-    ("lrqdropout", "use dropout training for low rank quadratic features");
+    ("lrqdropout", "use dropout training for low rank quadratic features")
+    ("stage_poly", "use stagewise polynomial feature learning");
 
   vm = add_options(all, score_mod_opt);
 
@@ -666,6 +667,9 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
   
   if (vm.count("lrq"))
     all.l = LRQ::setup(all, vm);
+
+  if (vm.count("stage_poly"))
+    all.l = StagewisePoly::setup(all, vm);
   
   all.l = Scorer::setup(all, vm);
 }
@@ -868,7 +872,7 @@ vw* parse_args(int argc, char *argv[])
     ("bootstrap", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
     ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
-    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
+    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")    
     ;
 
   // Declare the supported options.
@@ -940,9 +944,11 @@ vw* parse_args(int argc, char *argv[])
   
   parse_output_preds(*all, vm);
 
+  parse_scorer_reductions(*all, vm);
+
   load_input_model(*all, vm, io_temp);
 
-  parse_scorer_reductions(*all, vm);
+  
 
   bool got_cs = false;
   
@@ -953,16 +959,7 @@ vw* parse_args(int argc, char *argv[])
   parse_cb(*all, vm, got_cs, got_cb);
 
   parse_search(*all, vm, got_cs, got_cb);
-
-  po::options_description sp_opt("Stagewise poly options");
-  sp_opt.add_options()
-    ("stage_poly", "use stagewise polynomial feature learning")
-    ("sched_exponent", po::value<float>(), "exponent on schedule")
-    ("magic_argument", po::value<float>(), "magical feature flag")
-    ("batch_sz", po::value<uint32_t>(), "batch size");
-  vm = add_options(*all, sp_opt);
-  if (vm.count("stage_poly"))
-    all->l = StagewisePoly::setup(*all, vm);
+  
 
   if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);

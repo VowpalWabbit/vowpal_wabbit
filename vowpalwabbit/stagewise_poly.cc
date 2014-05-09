@@ -42,6 +42,7 @@ namespace StagewisePoly
     char *bits;
     sort_data *sd;
     uint32_t *min_depths;
+    uint32_t num_features;
 
     uint64_t sum_sparsity; //of synthetic example
     uint64_t sum_input_sparsity; //of input example
@@ -344,6 +345,8 @@ namespace StagewisePoly
     synthetic_create(poly, ec);
 
     base.learn(poly.synth_ec);
+    poly.num_features = poly.synth_ec.num_features;
+
     ((label_data *) ec.ld)->prediction = ((label_data *)(poly.synth_ec.ld))->prediction;
     ec.loss = poly.synth_ec.loss;
 
@@ -377,6 +380,14 @@ namespace StagewisePoly
   }
 #endif //PARALLEL_ENABLE
 
+  void finish_example(vw& all, stagewise_poly& poly, example& ec)
+  {
+    size_t temp_num_features = ec.num_features;
+    ec.num_features = poly.num_features;
+    output_and_account_example(all,ec);
+    ec.num_features = temp_num_features;
+    VW::finish_example(all, &ec);
+  }
 
   void finish(stagewise_poly &poly)
   {
@@ -393,10 +404,7 @@ namespace StagewisePoly
 
   void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   {
-    //LANGFORD POWERS REQUESTED
-    //LANGFORD POWERS REQUESTED
-    //LANGFORD POWERS REQUESTED
-    //LANGFORD POWERS REQUESTED
+    cout<<"In save_load\n";
 
     uint32_t length = poly.all->length();
     if (model_file.files.size() > 0) {
@@ -414,7 +422,14 @@ namespace StagewisePoly
     bits_create(*poly);
     sort_data_create(*poly);
     min_depths_create(*poly);
-
+    
+    po::options_description sp_opt("Stagewise poly options");
+    sp_opt.add_options()      
+      ("sched_exponent", po::value<float>(), "exponent on schedule")
+      ("magic_argument", po::value<float>(), "magical feature flag")
+      ("batch_sz", po::value<uint32_t>(), "batch size");
+    vm = add_options(all, sp_opt);
+        
     poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 0.;
     poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
     poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 0;
@@ -426,6 +441,7 @@ namespace StagewisePoly
     l->set_learn<stagewise_poly, learn>();
     l->set_finish<stagewise_poly, finish>();
     l->set_save_load<stagewise_poly, save_load>();
+    l->set_finish_example<stagewise_poly,finish_example>();
 #ifdef PARALLEL_ENABLE
     l->set_end_pass<stagewise_poly, end_pass>();
 #endif
