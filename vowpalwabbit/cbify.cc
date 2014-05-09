@@ -87,7 +87,7 @@ namespace CBIFY {
     data.cb_label.costs.erase();
     
     base.predict(ec);
-    uint32_t action = ld->prediction;
+    uint32_t action = data.cb_label.prediction;
 
     float base_prob = data.epsilon / data.k;
     if (frand48() < 1. - data.epsilon)

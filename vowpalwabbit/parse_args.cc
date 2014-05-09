@@ -732,7 +732,7 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
 
 void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  if( vm.count("cb") || vm.count("cb") )
+  if( vm.count("cb"))
     {
       if(!got_cs) {
 	if( vm.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
@@ -747,20 +747,18 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
       got_cb = true;
     }
 
-  if (vm.count("cbify") || vm.count("cbify"))
+  if (vm.count("cbify"))
     {
       if(!got_cs) {
-	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
-	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
+	vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
 	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
-
+      
       if (!got_cb) {
-	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
+	vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
 	all.l = CB_ALGS::setup(all, vm);
 	got_cb = true;
       }
