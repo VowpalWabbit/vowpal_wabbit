@@ -14,10 +14,10 @@
 #define TOL 1e-9
 #define STRIDE_SHIFT(poly, idx) ((idx) << (poly).all->reg.stride_shift)
 #define STRIDE_UN_SHIFT(poly, idx) ((idx) >> (poly).all->reg.stride_shift)
+#define WID_MASK(poly, wid)  ((wid) & poly.all->reg.weight_mask)
+#define WID_MASK_UN_SHIFTED(poly, wid)  (STRIDE_UN_SHIFT((poly), ((wid) & poly.all->reg.weight_mask)))
 #define CONSTANT_FEAT(poly) (STRIDE_SHIFT(poly, constant))
-#define CONSTANT_FEAT_MASKED(poly) (WID_MASK(CONSTANT_FEAT(poly), poly))
-#define WID_MASK(wid, poly)  ((wid) & poly.all->reg.weight_mask)
-#define WID_MASK_UN_SHIFTED(wid, poly)  (STRIDE_UN_SHIFT((poly), ((wid) & poly.all->reg.weight_mask)))
+#define CONSTANT_FEAT_MASKED(poly) (WID_MASK(poly, CONSTANT_FEAT(poly)))
 
 //#define PARALLEL_ENABLE
 
@@ -71,25 +71,25 @@ namespace StagewisePoly
   inline bool parent_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    return poly.bits[WID_MASK_UN_SHIFTED(wid, poly)] & PARENT_BIT;
+    return poly.bits[WID_MASK_UN_SHIFTED(poly, wid)] & PARENT_BIT;
   }
 
   inline void parent_toggle(stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    poly.bits[WID_MASK_UN_SHIFTED(wid, poly)] ^= PARENT_BIT;
+    poly.bits[WID_MASK_UN_SHIFTED(poly, wid)] ^= PARENT_BIT;
   }
 
   inline bool cycle_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    return poly.bits[WID_MASK_UN_SHIFTED(wid, poly)] & CYCLE_BIT;
+    return poly.bits[WID_MASK_UN_SHIFTED(poly, wid)] & CYCLE_BIT;
   }
 
   inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    poly.bits[WID_MASK_UN_SHIFTED(wid, poly)] ^= CYCLE_BIT;
+    poly.bits[WID_MASK_UN_SHIFTED(poly, wid)] ^= CYCLE_BIT;
   }
 
   void min_depths_create(stagewise_poly &poly)
@@ -116,21 +116,23 @@ namespace StagewisePoly
   }
 
   //Note.  OUTPUT & INPUT masked.
+  //It is very important that this function is invariant to stride.
   inline uint32_t child_wid(const stagewise_poly &poly, uint32_t wi_atomic, uint32_t wi_general)
   {
-    assert(wi_atomic == WID_MASK(wi_atomic, poly));
-    assert(wi_general == WID_MASK(wi_general, poly));
+    assert(wi_atomic == WID_MASK(poly, wi_atomic));
+    assert(wi_general == WID_MASK(poly, wi_general));
+    assert((wi_atomic & (STRIDE_SHIFT(poly, 1) - 1)) == 0);
+    assert((wi_general & (STRIDE_SHIFT(poly, 1) - 1)) == 0);
 
     if (wi_atomic == CONSTANT_FEAT_MASKED(poly))
       return wi_general;
     else if (wi_general == CONSTANT_FEAT_MASKED(poly))
       return wi_atomic;
     else if (wi_atomic == wi_general) {
-      uint64_t wi_2_64 = wi_general;
-      //Note, weight_mask used to be (?) all.length()-1, but a vw update (?) made it (all.length() << stride_shift) - 1
-      return WID_MASK(STRIDE_SHIFT(poly, (size_t)(merand48(wi_2_64) * poly.all->reg.weight_mask)), poly);
+      uint64_t wi_2_64 = STRIDE_UN_SHIFT(poly, wi_general);
+      return WID_MASK(poly, STRIDE_SHIFT(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
     } else
-      return WID_MASK((wi_atomic ^ wi_general ) * MURMER_CONST, poly);
+      return WID_MASK(poly, STRIDE_SHIFT(poly, (STRIDE_UN_SHIFT(poly, wi_atomic) ^ STRIDE_UN_SHIFT(poly, wi_general)) * MURMER_CONST));
   }
 
   void sort_data_create(stagewise_poly &poly)
