@@ -2,6 +2,7 @@
 #include "rand48.h"
 #include "simple_label.h"
 #include "allreduce.h"
+#include "accumulate.h"
 
 //#undef NDEBUG
 //#define DEBUG
@@ -382,6 +383,8 @@ namespace StagewisePoly
     vw &all = *poly.all;
     if(all.span_server != "") {
       all_reduce<uint32_t, reduce_min>(poly.min_depths, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
+      poly.sum_input_sparsity = accumulate_scalar(all, all.span_server, poly.sum_input_sparsity);
+      poly.num_examples = accumulate_scalar(all, all.span_server, poly.sum_input_sparsity);
       //XXX also combine poly.sum_input_sparsity and poly.num_examples (with some add/subtract business to avoid double counting)
     }
 
