@@ -45,6 +45,7 @@ namespace StagewisePoly
 
     uint64_t sum_sparsity; //of synthetic example
     uint64_t sum_input_sparsity; //of input example
+    uint64_t num_examples;
 
     example synth_ec;
     //following is bookkeeping in synth_ec creation (dfs)
@@ -172,8 +173,8 @@ namespace StagewisePoly
    */
   void sort_data_update_support(stagewise_poly &poly)
   {
-    assert(poly.synth_ec.example_counter);
-    uint32_t num_new_features = pow((poly.sum_input_sparsity * 1.0 / poly.synth_ec.example_counter), poly.sched_exponent);
+    assert(poly.num_examples);
+    uint32_t num_new_features = pow(poly.sum_input_sparsity * 1.0 / poly.num_examples, poly.sched_exponent);
 
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
@@ -188,7 +189,7 @@ namespace StagewisePoly
            * a nontrivial computational hit, thus commented out.
            *
            * - poly.magic_argument
-           * sqrtf(min_depths_get(poly, STRIDE_SHIFT(poly, i)) * 1.0 / poly.synth_ec.example_counter)
+           * sqrtf(min_depths_get(poly, STRIDE_SHIFT(poly, i)) * 1.0 / poly.num_examples)
            */
           ;
         if (wval > TOL) {
@@ -344,6 +345,7 @@ namespace StagewisePoly
 
     poly.sum_sparsity += poly.synth_ec.num_features;
     poly.sum_input_sparsity += ec.num_features;
+    poly.num_examples = poly.synth_ec.example_counter;
   }
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
@@ -373,11 +375,15 @@ namespace StagewisePoly
     v1 = (v1 <= v2) ? v1 : v2;
   }
 
-  void end_pass(stagewise_poly& poly)
+  void end_pass(stagewise_poly &poly)
   {
-  //vw &all = *poly.all;
-  //if(all.span_server != "")
-  //  all_reduce<uint32_t, reduce_min>(poly.min_depths, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
+    assert(poly.all->span_server == "" || !poly.batch_sz);
+
+    vw &all = *poly.all;
+    if(all.span_server != "") {
+      all_reduce<uint32_t, reduce_min>(poly.min_depths, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
+      //XXX also combine poly.sum_input_sparsity and poly.num_examples (with some add/subtract business to avoid double counting)
+    }
 
     if (!poly.batch_sz) {
       sort_data_update_support(poly);
@@ -439,6 +445,7 @@ namespace StagewisePoly
 
     poly->sum_sparsity = 0;
     poly->sum_input_sparsity = 0;
+    poly->num_examples = 0;
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();
