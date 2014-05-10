@@ -46,6 +46,10 @@ namespace StagewisePoly
     uint64_t sum_sparsity; //of synthetic example
     uint64_t sum_input_sparsity; //of input example
     uint64_t num_examples;
+    //following three are for parallel (see end_pass())
+    uint64_t sum_sparsity_sync;
+    uint64_t sum_input_sparsity_sync;
+    uint64_t num_examples_sync;
 
     example synth_ec;
     //following is bookkeeping in synth_ec creation (dfs)
@@ -345,7 +349,7 @@ namespace StagewisePoly
 
     poly.sum_sparsity += poly.synth_ec.num_features;
     poly.sum_input_sparsity += ec.num_features;
-    poly.num_examples = poly.synth_ec.example_counter;
+    poly.num_examples += 1;
   }
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
@@ -379,11 +383,19 @@ namespace StagewisePoly
   {
     assert(poly.all->span_server == "" || !poly.batch_sz);
 
+    uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
+    uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
+    uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
+
     vw &all = *poly.all;
     if(all.span_server != "") {
       all_reduce<uint32_t, reduce_min>(poly.min_depths, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
-      //XXX also combine poly.sum_input_sparsity and poly.num_examples (with some add/subtract business to avoid double counting)
+      //XXX combine the above _incs
     }
+
+    poly.sum_sparsity = poly.sum_sparsity_sync = poly.sum_sparsity_sync + sum_sparsity_inc;
+    poly.sum_input_sparsity = poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
+    poly.num_examples = poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
 
     if (!poly.batch_sz) {
       sort_data_update_support(poly);
@@ -446,6 +458,9 @@ namespace StagewisePoly
     poly->sum_sparsity = 0;
     poly->sum_input_sparsity = 0;
     poly->num_examples = 0;
+    poly->sum_sparsity_sync = 0;
+    poly->sum_input_sparsity_sync = 0;
+    poly->num_examples_sync = 0;
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();
