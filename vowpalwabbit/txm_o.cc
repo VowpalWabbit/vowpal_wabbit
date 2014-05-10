@@ -120,7 +120,7 @@ namespace TXM_O
     node.max_cnt2 = 0;
     node.max_cnt2_label = 0;
     node.ec_count = 0;
-    node.min_ec_count = 0;
+    node.min_ec_count = 1;
     node.L = 0;
     node.R = 0;
     node.objective = 0;
@@ -209,6 +209,9 @@ namespace TXM_O
 	  b.nodes[p].min_ec_count = b.nodes[l].min_ec_count;
 	else
 	  b.nodes[p].min_ec_count = b.nodes[r].min_ec_count;
+
+	if(b.nodes[p].min_ec_count == 0)
+	  b.nodes[p].min_ec_count = 1;
       }
   }
 
@@ -360,8 +363,8 @@ namespace TXM_O
 		  if(cn != nc)
 		    {
 		      //display_tree2(b);
-		      //cout << "\nSWAP!!" << endl;
-		      //cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << "\t" << b.nodes[0].min_ec_count << endl;
+		      cout << "\nSWAP!!" << endl;
+		      cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << "\t" << b.nodes[0].min_ec_count << "\t" <<  min_myR_myL  << endl;
 		      //cin.ignore();
 
 		      if(b.nodes[npp].id_left == np)
@@ -684,7 +687,7 @@ namespace TXM_O
     (all.p->lp) = MULTICLASS::mc_label_parser;
     
     uint32_t i = ceil_log2(data->k);	
-    data->max_nodes = (2 << (i+1)) - 1;
+    data->max_nodes = (2 << (i)) - 1;
     
     learner* l = new learner(data, all.l, data->max_nodes + 1);
     l->set_save_load<txm_o,save_load_tree>();
