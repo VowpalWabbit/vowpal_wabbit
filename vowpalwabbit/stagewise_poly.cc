@@ -2,6 +2,7 @@
 #include "rand48.h"
 #include "simple_label.h"
 #include "allreduce.h"
+#include "accumulate.h"
 
 //#undef NDEBUG
 //#define DEBUG
@@ -398,19 +399,21 @@ namespace StagewisePoly
   {
     assert(poly.all->span_server == "" || !poly.batch_sz);
 
-    uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
+    //uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
     uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
     uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
 
     vw &all = *poly.all;
     if(all.span_server != "") {
       all_reduce<uint32_t, reduce_min>(poly.min_depths, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
-      //XXX combine the above _incs
+      sum_input_sparsity_inc = accumulate_scalar(all, all.span_server, sum_input_sparsity_inc);
+      num_examples_inc = accumulate_scalar(all, all.span_server, num_examples_inc);
     }
 
-    poly.sum_sparsity = poly.sum_sparsity_sync = poly.sum_sparsity_sync + sum_sparsity_inc;
-    poly.sum_input_sparsity = poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
-    poly.num_examples = poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
+    poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
+    poly.sum_input_sparsity = poly.sum_input_sparsity_sync;
+    poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
+    poly.num_examples = poly.num_examples_sync;
 
     if (!poly.batch_sz) {
       sort_data_update_support(poly);
