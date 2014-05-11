@@ -2752,7 +2752,7 @@ void print_update(vw& all, searn& srn)
     cdbg << "search current_policy = " << srn->priv->current_policy << " total_number_of_policies = " << srn->priv->total_number_of_policies << endl;
 
     srn->task = NULL;
-    for (searn_task** mytask = all_tasks; mytask != NULL; mytask++)
+    for (searn_task** mytask = all_tasks; *mytask != NULL; mytask++)
       if (task_string.compare((*mytask)->task_name) == 0) {
         srn->task = *mytask;
         break;
@@ -2955,6 +2955,17 @@ sys	0m0.208s
 ./vw -k -c -d pos.gz --search_as_dagger 1e-8 --search_task sequence --search 45 --holdout_off -f m
 ./vw -d pos.gz -t --search_task sequence --search 45 -i m -p output
 
+
+last fast commit 2b46732522fe912835cca0252af3bfdd4720f2c0
+  time ./vw -k -c -d pos.gz --search_as_dagger 1e-8 --search_task sequence --search 45 --holdout_off
+  4.764648   4.622070      32768    32768.000000   [27 5 14 17 5 4 17 ..] [27 12 14 17 5 4 17..]      144     0     0          783265          783206
+  real	1m8.606s
+
+
+next slow commit ab38c2fedee0ba7ca86bd4cf4d145a27d4a6f5d5
+  time ./vw -k -c -d pos.gz --search_as_dagger 1e-8 --search_task sequence --search 45 --holdout_off
+  4.761292   4.621216      32768    32768.000000   [27 5 14 17 5 4 17 ..] [27 12 14 17 5 4 17..]      144     0     0          783267          783206
+  real	3m13.804s
 
 
 */
