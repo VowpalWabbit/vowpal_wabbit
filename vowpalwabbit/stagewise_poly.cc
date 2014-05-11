@@ -40,9 +40,8 @@ namespace StagewisePoly
     float magic_argument;
     uint32_t batch_sz;
 
-    char *bits;
     sort_data *sd;
-    uint32_t *min_depths;
+    uint8_t *depthsbits; //interleaved array storing depth information and parent/cycle bits
 
     uint64_t sum_sparsity; //of synthetic example
     uint64_t sum_input_sparsity; //of input example
@@ -65,61 +64,59 @@ namespace StagewisePoly
 #endif //DEBUG
   };
 
-  void bits_create(stagewise_poly &poly)
+  inline uint32_t depthsbits_sizeof(const stagewise_poly &poly)
   {
-    poly.bits = (char *) calloc(poly.all->length(), sizeof(char));
+    return 2 * poly.all->length() * sizeof(uint8_t);
   }
 
-  void bits_destroy(stagewise_poly &poly)
+  void depthsbits_create(stagewise_poly &poly)
   {
-    free(poly.bits);
+    poly.depthsbits = (uint8_t *) malloc(depthsbits_sizeof(poly));
+    for (uint32_t i = 0; i < poly.all->length() * 2; i += 2) {
+      poly.depthsbits[i] = 0xff;
+      poly.depthsbits[i+1] = 0;
+    }
+  }
+
+  void depthsbits_destroy(stagewise_poly &poly)
+  {
+    free(poly.depthsbits);
   }
 
   inline bool parent_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    return poly.bits[WID_MASK_UN_SHIFTED(poly, wid)] & PARENT_BIT;
+    return poly.depthsbits[WID_MASK_UN_SHIFTED(poly, wid) * 2 + 1] & PARENT_BIT;
   }
 
   inline void parent_toggle(stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    poly.bits[WID_MASK_UN_SHIFTED(poly, wid)] ^= PARENT_BIT;
+    poly.depthsbits[WID_MASK_UN_SHIFTED(poly, wid) * 2 + 1] ^= PARENT_BIT;
   }
 
   inline bool cycle_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    return poly.bits[WID_MASK_UN_SHIFTED(poly, wid)] & CYCLE_BIT;
+    return poly.depthsbits[WID_MASK_UN_SHIFTED(poly, wid) * 2 + 1] & CYCLE_BIT;
   }
 
   inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    poly.bits[WID_MASK_UN_SHIFTED(poly, wid)] ^= CYCLE_BIT;
+    poly.depthsbits[WID_MASK_UN_SHIFTED(poly, wid) * 2 + 1] ^= CYCLE_BIT;
   }
 
-  void min_depths_create(stagewise_poly &poly)
-  {
-    poly.min_depths = (uint32_t *) malloc(poly.all->length() * sizeof(uint32_t));
-    memset(poly.min_depths, 0xff, poly.all->length() * sizeof(uint32_t));
-  }
-
-  void min_depths_destroy(stagewise_poly &poly)
-  {
-    free(poly.min_depths);
-  }
-
-  inline uint32_t min_depths_get(const stagewise_poly &poly, uint32_t wid)
+  inline uint8_t min_depths_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    return poly.min_depths[STRIDE_UN_SHIFT(poly, wid)];
+    return poly.depthsbits[STRIDE_UN_SHIFT(poly, wid) * 2];
   }
 
-  inline void min_depths_set(stagewise_poly &poly, uint32_t wid, uint32_t depth)
+  inline void min_depths_set(stagewise_poly &poly, uint32_t wid, uint8_t depth)
   {
     assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    poly.min_depths[STRIDE_UN_SHIFT(poly, wid)] = depth;
+    poly.depthsbits[STRIDE_UN_SHIFT(poly, wid) * 2] = depth;
   }
 
   //Note.  OUTPUT & INPUT masked.
@@ -304,7 +301,7 @@ namespace StagewisePoly
     }
 
     if ( ! cycle_get(poly, wid_cur)
-        && (poly.cur_depth == min_depths_get(poly, wid_cur))
+        && ((poly.cur_depth > 0xff ? 0xff : poly.cur_depth) == min_depths_get(poly, wid_cur))
        ) {
       cycle_toggle(poly, wid_cur);
 
@@ -405,7 +402,9 @@ namespace StagewisePoly
 
     vw &all = *poly.all;
     if(all.span_server != "") {
-      all_reduce<uint32_t, reduce_min>(poly.min_depths, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
+      //XXX most likely we should change this to match the other transplant semantics (clear parent bits if depths disagree)
+      all_reduce<uint8_t, reduce_min>(poly.depthsbits, depthsbits_sizeof(poly), all.span_server, all.unique_id, all.total, all.node, all.socks);
+
       sum_input_sparsity_inc = accumulate_scalar(all, all.span_server, sum_input_sparsity_inc);
       num_examples_inc = accumulate_scalar(all, all.span_server, num_examples_inc);
     }
@@ -437,19 +436,15 @@ namespace StagewisePoly
 #endif //DEBUG
 
     poly.synth_ec.atomics[TREE_ATOMICS].delete_v();
-    bits_destroy(poly);
     sort_data_destroy(poly);
-    min_depths_destroy(poly);
+    depthsbits_destroy(poly);
   }
 
 
   void save_load(stagewise_poly &poly, io_buf &model_file, bool read, bool text)
   {
-    uint32_t length = poly.all->length();
-    if (model_file.files.size() > 0) {
-      bin_text_read_write_fixed(model_file, poly.bits, length * sizeof(char),"", read, "", 0, text);
-      bin_text_read_write_fixed(model_file, (char *) poly.min_depths, length * sizeof(uint32_t),"", read, "", 0, text);
-    }
+    if (model_file.files.size() > 0)
+      bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, depthsbits_sizeof(poly), "", read, "", 0, text);
   }
 
 
@@ -458,9 +453,8 @@ namespace StagewisePoly
     stagewise_poly *poly = (stagewise_poly *) calloc(1, sizeof(stagewise_poly));
     poly->all = &all;
 
-    bits_create(*poly);
+    depthsbits_create(*poly);
     sort_data_create(*poly);
-    min_depths_create(*poly);
 
     po::options_description sp_opt("Stagewise poly options");
     sp_opt.add_options()
