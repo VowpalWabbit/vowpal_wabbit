@@ -72,7 +72,7 @@ namespace TXM_O
     size_t max_cnt2;
     size_t max_cnt2_label;
 
-    uint32_t ec_count;
+    //uint32_t ec_count;
     uint32_t min_ec_count;
 
     uint32_t L;
@@ -121,7 +121,7 @@ namespace TXM_O
     node.leaf = true;
     node.max_cnt2 = 0;
     node.max_cnt2_label = 0;
-    node.ec_count = 0;
+    //node.ec_count = 0;
     node.min_ec_count = 0;
     node.L = 0;
     node.R = 0;
@@ -203,10 +203,10 @@ namespace TXM_O
 	size_t r = b.nodes[p].id_right;	
 	
 	if(b.nodes[l].leaf)
-	  b.nodes[l].min_ec_count = b.nodes[l].ec_count;
+	  b.nodes[l].min_ec_count = b.nodes[l].L + b.nodes[l].R; //b.nodes[l].ec_count;
 
 	if(b.nodes[r].leaf)
-	  b.nodes[r].min_ec_count = b.nodes[r].ec_count;
+	  b.nodes[r].min_ec_count = b.nodes[r].L + b.nodes[r].R; //b.nodes[r].ec_count;
 
 	if(b.nodes[l].min_ec_count < b.nodes[r].min_ec_count)
 	  b.nodes[p].min_ec_count = b.nodes[l].min_ec_count;
@@ -231,12 +231,13 @@ namespace TXM_O
 		if(d.nodes[i].leaf)
 		  {
 		  ratio = (float)d.nodes[i].max_cnt2;
-		  ratio /= (float)d.nodes[i].ec_count;
-		  ratio = 1 - ratio;
-		  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << ratio << "] ";
+		  //ratio /= (float)d.nodes[i].ec_count;
+		  ratio /= (float)(d.nodes[i].L + d.nodes[i].R);
+                  ratio = 1 - ratio;
+		  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].min_ec_count << "," << ratio << "] ";
 		  }
 		else
-		  cout << "(" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].ec_count << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << ") ";
+		  cout << "(" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << ") ";
 	      }
 	  }
 	cout << endl;
@@ -307,7 +308,8 @@ namespace TXM_O
     size_t id_left = b.nodes[cn].id_left;
     size_t id_right = b.nodes[cn].id_right;
     
-    size_t id_left_right;	
+    size_t id_left_right;
+    size_t id_left_right_other;	
     if(left_or_right < 0)
       {
 	simple_temp->label = -1.f;
@@ -331,13 +333,18 @@ namespace TXM_O
 		b.nodes.push_back(init_node(b.nodes[cn].level + 1));	
 		b.nodes.push_back(init_node(b.nodes[cn].level + 1));
 		b.nodes[cn].id_left = id_left_right;
-		b.nodes[cn].id_right = id_left_right + 1;
+		id_left_right_other = id_left_right + 1;
+		b.nodes[cn].id_right = id_left_right_other;
 
-                b.nodes[b.nodes[cn].id_left].ec_count = b.nodes[cn].L;
-                b.nodes[b.nodes[cn].id_right].ec_count = b.nodes[cn].R;
-		
-		b.nodes[b.nodes[cn].id_left].max_cnt2_label = b.nodes[cn].max_cnt2_label;
-		b.nodes[b.nodes[cn].id_right].max_cnt2_label = b.nodes[cn].max_cnt2_label;
+                //b.nodes[b.nodes[cn].id_left].ec_count = b.nodes[cn].L;
+                //b.nodes[b.nodes[cn].id_right].ec_count = b.nodes[cn].R;
+                b.nodes[id_left_right].L = b.nodes[cn].L/2;		
+                b.nodes[id_left_right].R = b.nodes[cn].L - b.nodes[cn].L/2;
+                b.nodes[id_left_right_other].L = b.nodes[cn].R/2;		
+                b.nodes[id_left_right_other].R = b.nodes[cn].R - b.nodes[cn].R/2;
+
+		b.nodes[id_left_right].max_cnt2_label = b.nodes[cn].max_cnt2_label;
+		b.nodes[id_left_right_other].max_cnt2_label = b.nodes[cn].max_cnt2_label;
 
 		if(b.nodes[cn].level + 1 > b.max_depth)
 		    b.max_depth = b.nodes[cn].level + 1;	
@@ -369,10 +376,10 @@ namespace TXM_O
 		  size_t nc_l = b.nodes[nc].level;
 
 		  //cout << "\nSWAP!!" << endl;
-		  //cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << "\t" << b.nodes[0].min_ec_count << "\t" <<  min_myR_myL  << "\t" <<b.nodes[np].ec_count << "\t" << b.nodes[nc].ec_count << "\t" << b.nodes[b.nodes[nc].id_left].ec_count << "\t" << b.nodes[b.nodes[nc].id_right].ec_count << endl;
+		  //cout << cn << "\t" << b.nodes[cn].L + b.nodes[cn].R << "\t" << nc << "\t" << b.nodes[nc].L + b.nodes[nc].R << "\t" << np  << "\t" << b.nodes[np].L + b.nodes[np].R << "\t" << npp  << "\t" << b.nodes[npp].L + b.nodes[npp].R << endl;
 		  
-		  //if(cn != nc)
-		  //{
+		  if(cn != nc)
+		  {
 		      //display_tree2(b);
 	
 		      //cin.ignore();
@@ -409,15 +416,10 @@ namespace TXM_O
 		      b.nodes[np].level = b.nodes[cn].level + 1;
 		      b.nodes[nc].level = b.nodes[cn].level + 1;
 
-		      //if(b.nodes[cn].R <= 2*b.nodes[nc].ec_count + 1)
-		      //cout << "here1!" <<endl;	
-
-		      //if(b.nodes[cn].L <= 2*b.nodes[nc].ec_count + 1)
-		      //cout << "here2!" <<endl;
-	      
-		      b.nodes[np].ec_count = b.nodes[cn].R;
-		      b.nodes[nc].ec_count = b.nodes[cn].L;
-
+		      b.nodes[np].R = b.nodes[cn].R/2;
+		      b.nodes[np].L = b.nodes[cn].R - b.nodes[cn].R/2;
+		      b.nodes[nc].R = b.nodes[cn].L/2;
+		      b.nodes[nc].L = b.nodes[cn].L - b.nodes[cn].L/2;
 
 		      if(b.nodes[cn].level + 1 > b.max_depth)
 			b.max_depth = b.nodes[cn].level + 1;	    
@@ -428,7 +430,7 @@ namespace TXM_O
 		      //cout << endl << b.nodes[0].min_ec_count << endl;
 
 		      update_min_ec_count(b, &b.min_ec_path);
-		      //}		    	
+		      }		    	
 		  }
 	      }
 	  }	
@@ -566,7 +568,7 @@ namespace TXM_O
 	    //	cin.ignore();
 	    //}
 	
-	    b.nodes[cn].ec_count++;
+	    //b.nodes[cn].ec_count++;
 
 	    b.ec_path.push_back(cn);
 
@@ -737,7 +739,7 @@ namespace TXM_O
     (all.p->lp) = MULTICLASS::mc_label_parser;
     
     uint32_t i = ceil_log2(data->k);	
-    data->max_nodes = (2 << (i+1)) - 1;
+    data->max_nodes = (2 << (i+5)) - 1;
     
     learner* l = new learner(data, all.l, data->max_nodes + 1);
     l->set_save_load<txm_o,save_load_tree>();
