@@ -270,7 +270,7 @@ namespace StagewisePoly
       poly.synth_ec.indices.push_back(TREE_ATOMICS);
   }
 
-  void synthetic_cleanup(stagewise_poly &poly)
+  void synthetic_decycle(stagewise_poly &poly)
   {
     for (feature *f = poly.synth_ec.atomics[TREE_ATOMICS].begin;
         f != poly.synth_ec.atomics[TREE_ATOMICS].end; ++f) {
@@ -346,6 +346,7 @@ namespace StagewisePoly
      * Problem with this is if there is a collision with the root...
      */
     GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
+    synthetic_decycle(poly);
     poly.synth_ec.total_sum_feat_sq = poly.synth_ec.sum_feat_sq[TREE_ATOMICS];
 
     if (training) {
@@ -374,8 +375,6 @@ namespace StagewisePoly
        ) {
       sort_data_update_support(poly);
     }
-
-    synthetic_cleanup(poly);
   }
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
