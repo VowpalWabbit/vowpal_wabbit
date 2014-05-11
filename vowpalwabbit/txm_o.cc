@@ -102,6 +102,8 @@ namespace TXM_O
     v_array<size_t> min_ec_path;
     bool ec_cnt_update;
 
+    uint32_t nbofswaps;
+
     size_t ex_num;
     FILE *ex_fp;
   };	
@@ -120,7 +122,7 @@ namespace TXM_O
     node.max_cnt2 = 0;
     node.max_cnt2_label = 0;
     node.ec_count = 0;
-    node.min_ec_count = 1;
+    node.min_ec_count = 0;
     node.L = 0;
     node.R = 0;
     node.objective = 0;
@@ -133,6 +135,7 @@ namespace TXM_O
   {
     d.nodes.push_back(init_node(0));
     d.ex_num = 0;
+    d.nbofswaps = 0;
     //d.ex_fp = fopen("ex_nums.txt", "wt");
   }
 
@@ -210,8 +213,8 @@ namespace TXM_O
 	else
 	  b.nodes[p].min_ec_count = b.nodes[r].min_ec_count;
 
-	if(b.nodes[p].min_ec_count == 0)
-	  b.nodes[p].min_ec_count = 1;
+	//if(b.nodes[p].min_ec_count == 0)
+	//b.nodes[p].min_ec_count = 1;
       }
   }
 
@@ -329,6 +332,9 @@ namespace TXM_O
 		b.nodes.push_back(init_node(b.nodes[cn].level + 1));
 		b.nodes[cn].id_left = id_left_right;
 		b.nodes[cn].id_right = id_left_right + 1;
+
+                b.nodes[b.nodes[cn].id_left].ec_count = b.nodes[cn].L;
+                b.nodes[b.nodes[cn].id_right].ec_count = b.nodes[cn].R;
 		
 		b.nodes[b.nodes[cn].id_left].max_cnt2_label = b.nodes[cn].max_cnt2_label;
 		b.nodes[b.nodes[cn].id_right].max_cnt2_label = b.nodes[cn].max_cnt2_label;
@@ -348,24 +354,30 @@ namespace TXM_O
 		//if(b.nodes[0].min_ec_count < trsh && cn != nc && b.nodes[cn].ec_count > b.nodes[np].ec_count)
 		
 		size_t min_myR_myL;
-		if(b.nodes[cn].myR > b.nodes[cn].myL)
-		  min_myR_myL = b.nodes[cn].myL;
+		
+		if(b.nodes[cn].R > b.nodes[cn].L)
+		  min_myR_myL = b.nodes[cn].L;
 		else
-		  min_myR_myL = b.nodes[cn].myR;
+		  min_myR_myL = b.nodes[cn].R;
 
-		if(min_myR_myL > 2*b.nodes[0].min_ec_count)
+		//cout << min_myR_myL << "\t" << b.nodes[0].min_ec_count << endl;
+		if(min_myR_myL > 2*b.nodes[0].min_ec_count + 1)
 		{
 		  size_t nc, np, npp;
 	          b.min_ec_path.erase();	  
 		  bool lr = find_switch_nodes(b, nc, np, npp);
 		  size_t nc_l = b.nodes[nc].level;
+
+		  //cout << "\nSWAP!!" << endl;
+		  //cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << "\t" << b.nodes[0].min_ec_count << "\t" <<  min_myR_myL  << "\t" <<b.nodes[np].ec_count << "\t" << b.nodes[nc].ec_count << "\t" << b.nodes[b.nodes[nc].id_left].ec_count << "\t" << b.nodes[b.nodes[nc].id_right].ec_count << endl;
 		  
-		  if(cn != nc)
-		    {
+		  //if(cn != nc)
+		  //{
 		      //display_tree2(b);
-		      cout << "\nSWAP!!" << endl;
-		      cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << "\t" << b.nodes[0].min_ec_count << "\t" <<  min_myR_myL  << endl;
+	
 		      //cin.ignore();
+
+		      b.nbofswaps++;
 
 		      if(b.nodes[npp].id_left == np)
 			{
@@ -396,17 +408,27 @@ namespace TXM_O
 		      b.nodes[nc].id_right = 0;
 		      b.nodes[np].level = b.nodes[cn].level + 1;
 		      b.nodes[nc].level = b.nodes[cn].level + 1;
-		      
-		      b.nodes[np].ec_count = b.nodes[cn].myR;
-		      b.nodes[nc].ec_count = b.nodes[cn].myL;
-		      
+
+		      //if(b.nodes[cn].R <= 2*b.nodes[nc].ec_count + 1)
+		      //cout << "here1!" <<endl;	
+
+		      //if(b.nodes[cn].L <= 2*b.nodes[nc].ec_count + 1)
+		      //cout << "here2!" <<endl;
+	      
+		      b.nodes[np].ec_count = b.nodes[cn].R;
+		      b.nodes[nc].ec_count = b.nodes[cn].L;
+
+
 		      if(b.nodes[cn].level + 1 > b.max_depth)
 			b.max_depth = b.nodes[cn].level + 1;	    
 		      
 		      b.min_ec_path.pop();
 		      b.min_ec_path.pop();
+
+		      //cout << endl << b.nodes[0].min_ec_count << endl;
+
 		      update_min_ec_count(b, &b.min_ec_path);
-		    }		    	
+		      //}		    	
 		  }
 	      }
 	  }	
@@ -562,15 +584,26 @@ namespace TXM_O
 
 	    if(b.nodes[cn].leaf)
 	      {	
-		ec.final_prediction = tmp_final_prediction;	
-		ec.ld = mc;
+		if(ec.final_prediction < 0)//b.nodes[cn].Eh/b.nodes[cn].n)
+		  b.nodes[cn].L++;
+		else
+		  {
+		    b.nodes[cn].R++;
+		    b.nodes[cn].node_pred[index].Rk++;	
+		  }
+
+		//cout << cn << "\t" << ec.final_prediction << "\t" << b.nodes[cn].R  << "\t" << b.nodes[cn].L << endl;
 
 		b.ec_path.pop();
 		update_min_ec_count(b, &b.ec_path);	
-	       			
+	       	
+		ec.final_prediction = tmp_final_prediction;	
+		ec.ld = mc;
+		
 		break;	
 	      }
-	    
+	   
+	    //cout << ec.final_prediction <<endl;
 	    if(ec.final_prediction < 0)//b.nodes[cn].Eh/b.nodes[cn].n)
 	      {
 		b.nodes[cn].L++;
@@ -591,6 +624,7 @@ namespace TXM_O
   void finish(txm_o& b)
   {
     //display_tree2(b);
+    cout << "Number of swaps:\t" << b.nbofswaps;
     save_node_stats(b);
     //fclose(b.ex_fp);
   }
@@ -626,10 +660,10 @@ namespace TXM_O
 	  }
 	else
 	  {
-	    update_depth(b);
-	    cout << endl;
-	    cout << "Tree depth: " << b.max_depth << endl;
-	    cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
+	    //update_depth(b);
+	    //cout << endl;
+	    //cout << "Tree depth: " << b.max_depth << endl;
+	    //cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
 	    
 	    text_len = sprintf(buff, ":%d\n", (int) b.nodes.size());	//ilosc nodow
 	    v = b.nodes.size();
@@ -666,6 +700,18 @@ namespace TXM_O
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)	//learner setup
   {
     txm_o* data = (txm_o*)calloc(1, sizeof(txm_o));
+
+    //po::options_description desc("TXM_O options");
+    //desc.add_options()
+    //("txm_o_depth", po::value<int>(), "maximum depth past log k");
+
+    //po::parsed_options parsed = po::command_line_parser(opts).
+    //style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    //options(desc).allow_unregistered().run();
+    //opts = po::collect_unrecognized(parsed.options, po::include_positional);
+    //po::store(parsed, vm);
+    //po::notify(vm);
+
     //first parse for number of actions
     if( vm_file.count("txm_o") )
       {
@@ -683,11 +729,15 @@ namespace TXM_O
 	all.options_from_file.append(ss.str());
       }	
     
+    //int depth = 0;
+    //if (vm.count("txm_o_depth"))
+    //depth = vm["txm_o_depth"].as<int>();
+
     data->all = &all;
     (all.p->lp) = MULTICLASS::mc_label_parser;
     
     uint32_t i = ceil_log2(data->k);	
-    data->max_nodes = (2 << (i)) - 1;
+    data->max_nodes = (2 << (i+1)) - 1;
     
     learner* l = new learner(data, all.l, data->max_nodes + 1);
     l->set_save_load<txm_o,save_load_tree>();
