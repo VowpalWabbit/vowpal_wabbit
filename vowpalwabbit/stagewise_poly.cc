@@ -56,6 +56,7 @@ namespace StagewisePoly
     feature synth_rec_f;
     example *original_ec;
     uint32_t cur_depth;
+    bool training;
 
 #ifdef DEBUG
     uint32_t max_depth;
@@ -288,8 +289,7 @@ namespace StagewisePoly
     //the average test errors across multiple data sets should be equal to
     //the test error on the merged dataset (which is violated if the code
     //below is run at training time).
-    if (poly.cur_depth < min_depths_get(poly, wid_cur)
-        && poly.all->training && !poly.original_ec->test_only) {
+    if (poly.cur_depth < min_depths_get(poly, wid_cur) && poly.training) {
       if (parent_get(poly, wid_cur)) {
 #ifdef DEBUG
         cout
@@ -330,7 +330,7 @@ namespace StagewisePoly
     }
   }
 
-  void synthetic_create(stagewise_poly &poly, example &ec)
+  void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   {
     synthetic_reset(poly, ec);
 
@@ -339,6 +339,7 @@ namespace StagewisePoly
     poly.synth_rec_f.x = 1.0;
     poly.synth_rec_f.weight_index = CONSTANT_FEAT_MASKED(poly);
     poly.original_ec = &ec;
+    poly.training = training;
     /*
      * Another choice is to mark the constant feature as the single initial
      * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
@@ -347,21 +348,26 @@ namespace StagewisePoly
     GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
     poly.synth_ec.total_sum_feat_sq = poly.synth_ec.sum_feat_sq[TREE_ATOMICS];
 
-    poly.sum_sparsity += poly.synth_ec.num_features;
-    poly.sum_input_sparsity += ec.num_features;
-    poly.num_examples += 1;
+    if (training) {
+        poly.sum_sparsity += poly.synth_ec.num_features;
+        poly.sum_input_sparsity += ec.num_features;
+        poly.num_examples += 1;
+    }
   }
 
-  void learn(stagewise_poly &poly, learner &base, example &ec)
+  void process_example(stagewise_poly &poly, learner &base, example &ec, bool training)
   {
-    synthetic_create(poly, ec);
+    synthetic_create(poly, ec, training);
 
-    base.learn(poly.synth_ec);
+    if (training)
+        base.learn(poly.synth_ec);
+    else
+        base.predict(poly.synth_ec);
 
     ((label_data *) ec.ld)->prediction = ((label_data *)(poly.synth_ec.ld))->prediction;
     ec.loss = poly.synth_ec.loss;
 
-    if (poly.all->training && !ec.test_only
+    if (training
         && ec.example_counter
         && poly.batch_sz
         && !(ec.example_counter % poly.batch_sz)
@@ -370,6 +376,16 @@ namespace StagewisePoly
     }
 
     synthetic_cleanup(poly);
+  }
+
+  void learn(stagewise_poly &poly, learner &base, example &ec)
+  {
+      process_example(poly, base, ec, poly.all->training && !ec.test_only);
+  }
+
+  void predict(stagewise_poly &poly, learner &base, example &ec)
+  {
+      process_example(poly, base, ec, false);
   }
 
 
@@ -464,6 +480,7 @@ namespace StagewisePoly
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();
+    l->set_predict<stagewise_poly, predict>();
     l->set_finish<stagewise_poly, finish>();
     l->set_save_load<stagewise_poly, save_load>();
     l->set_finish_example<stagewise_poly,finish_example>();
