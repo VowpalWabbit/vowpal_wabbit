@@ -96,7 +96,8 @@ namespace TXM_O
     
     v_array<txm_o_node_type> nodes;	
     
-    size_t max_depth;	
+    size_t max_depth;
+    double avg_depth;	
     size_t max_nodes;
     v_array<size_t> ec_path;
     v_array<size_t> min_ec_path;
@@ -243,10 +244,6 @@ namespace TXM_O
 	cout << endl;
       }
     cout << endl;
-    
-    cout << endl;
-    cout << "Tree depth: " << d.max_depth << endl;
-    cout << "ceil of log2(k): " << ceil_log2(d.k) << endl;
   }
   
   void update_depth(txm_o& b)
@@ -277,6 +274,16 @@ namespace TXM_O
 		if(b.nodes[cn].level > b.max_depth)
 			b.max_depth = b.nodes[cn].level;
 	}
+	
+	b.avg_depth = 0;
+	size_t leaf_cnt = 0;
+	for(size_t i = 0; i < b.nodes.size(); i++) {
+		if(b.nodes[i].leaf) {
+			leaf_cnt++;
+			b.avg_depth += b.nodes[i].level;
+		}
+	}
+	b.avg_depth /= leaf_cnt;
   }
 
   void update_levels(txm_o& b, size_t n, size_t cl)
@@ -350,16 +357,7 @@ namespace TXM_O
 		    b.max_depth = b.nodes[cn].level + 1;	
 	      }
 	      else
-	      {
-		//size_t trsh = b.nodes[0].ec_count >> (nc_l + 1);
-
-		/*display_tree2(b);
-		cout << cn << "\t" << nc << "\t" << np  << "\t" << npp << endl;
-		cin.ignore();
-		*/
-		//if(((b.nodes[id_left].ec_count < trsh) || (b.nodes[id_right].ec_count < trsh)) && ratio_cn < ratio_cn_el && cn_el != 0 && id_left != cn && id_right != cn)
-		//if(b.nodes[0].min_ec_count < trsh && cn != nc && b.nodes[cn].ec_count > b.nodes[np].ec_count)
-		
+	      {		
 		size_t min_myR_myL;
 		
 		if(b.nodes[cn].R > b.nodes[cn].L)
@@ -378,8 +376,8 @@ namespace TXM_O
 		  //cout << "\nSWAP!!" << endl;
 		  //cout << cn << "\t" << b.nodes[cn].L + b.nodes[cn].R << "\t" << nc << "\t" << b.nodes[nc].L + b.nodes[nc].R << "\t" << np  << "\t" << b.nodes[np].L + b.nodes[np].R << "\t" << npp  << "\t" << b.nodes[npp].L + b.nodes[npp].R << endl;
 		  
-		  if(cn != nc)
-		  {
+		  //if(cn != nc)
+		  //{
 		      //display_tree2(b);
 	
 		      //cin.ignore();
@@ -392,7 +390,7 @@ namespace TXM_O
 			    b.nodes[npp].id_left = b.nodes[np].id_right;
 			  else
 			    b.nodes[npp].id_left = b.nodes[np].id_left;
-			  
+		  
 			  update_levels(b, b.nodes[npp].id_left, b.nodes[npp].level + 1);
 			}
 		      else
@@ -430,7 +428,7 @@ namespace TXM_O
 		      //cout << endl << b.nodes[0].min_ec_count << endl;
 
 		      update_min_ec_count(b, &b.min_ec_path);
-		      }		    	
+		      //}		    	
 		  }
 	      }
 	  }	
@@ -626,7 +624,6 @@ namespace TXM_O
   void finish(txm_o& b)
   {
     //display_tree2(b);
-    cout << "Number of swaps:\t" << b.nbofswaps;
     save_node_stats(b);
     //fclose(b.ex_fp);
   }
@@ -643,7 +640,7 @@ namespace TXM_O
 	int text_len;
 	
 	if(read)
-	  {
+	  { 
 	    brw = bin_read_fixed(model_file, (char*)&i, sizeof(i), "");
 	    
 	    for(j = 0; j < i; j++)
@@ -659,14 +656,16 @@ namespace TXM_O
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 		b.nodes[j].leaf = v;
 	      }
+      	    
+	    update_depth(b);
+	    cout << endl << endl;
+	    cout << "Tree depth: " << b.max_depth << endl;
+	    cout << "Average tree depth: " << b.avg_depth << endl;
+	    cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
+	    cout << "Number of swaps: " << b.nbofswaps << endl << endl;
 	  }
 	else
-	  {
-	    //update_depth(b);
-	    //cout << endl;
-	    //cout << "Tree depth: " << b.max_depth << endl;
-	    //cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
-	    
+	  {    
 	    text_len = sprintf(buff, ":%d\n", (int) b.nodes.size());	//ilosc nodow
 	    v = b.nodes.size();
 	    brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
@@ -739,7 +738,7 @@ namespace TXM_O
     (all.p->lp) = MULTICLASS::mc_label_parser;
     
     uint32_t i = ceil_log2(data->k);	
-    data->max_nodes = (2 << (i+5)) - 1;
+    data->max_nodes = (2 << (i+0)) - 1;
     
     learner* l = new learner(data, all.l, data->max_nodes + 1);
     l->set_save_load<txm_o,save_load_tree>();
