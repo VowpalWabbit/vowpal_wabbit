@@ -291,7 +291,7 @@ namespace CB_ALGS
     vw* all = c.all;
     CB::label* ld = (CB::label*)ec.ld;
 
-    //check if this is a test example where we just want a prediction
+     //check if this is a test example where we just want a prediction
     if( is_test_label(ld) )
     {
       //if so just query base cost-sensitive learner
@@ -300,6 +300,7 @@ namespace CB_ALGS
       ec.ld = &c.cb_cs_ld;
       base.predict(ec);
       ld->prediction = c.cb_cs_ld.prediction;
+
       ec.ld = ld;
       for (size_t i=0; i<ld->costs.size(); i++)
         ld->costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
