@@ -8,18 +8,6 @@
 //#define DEBUG
 #include <cassert>
 
-#define PARENT_BIT 1
-#define CYCLE_BIT 2
-#define TREE_ATOMICS 134
-#define MURMER_CONST 95104348457
-#define TOL 1e-9
-#define STRIDE_SHIFT(poly, idx) ((idx) << (poly).all->reg.stride_shift)
-#define STRIDE_UN_SHIFT(poly, idx) ((idx) >> (poly).all->reg.stride_shift)
-#define WID_MASK(poly, wid)  ((wid) & poly.all->reg.weight_mask)
-#define WID_MASK_UN_SHIFTED(poly, wid)  (STRIDE_UN_SHIFT((poly), ((wid) & poly.all->reg.weight_mask)))
-#define CONSTANT_FEAT(poly) (STRIDE_SHIFT(poly, constant))
-#define CONSTANT_FEAT_MASKED(poly) (WID_MASK(poly, CONSTANT_FEAT(poly)))
-
 //#define PARALLEL_ENABLE
 
 using namespace std;
@@ -27,6 +15,11 @@ using namespace LEARNER;
 
 namespace StagewisePoly
 {
+  static const uint32_t parent_bit = 1;
+  static const uint32_t cycle_bit = 2;
+  static const uint32_t tree_atomics = 134;
+  static const float tolerance = 1e-9;
+
   struct sort_data {
     float wval;
     uint32_t wid;
@@ -65,6 +58,38 @@ namespace StagewisePoly
 #endif //DEBUG
   };
 
+
+  inline uint32_t stride_shift(const stagewise_poly &poly, uint32_t idx)
+  {
+    return idx << poly.all->reg.stride_shift;
+  }
+
+  inline uint32_t stride_un_shift(const stagewise_poly &poly, uint32_t idx)
+  {
+    return idx >> poly.all->reg.stride_shift;
+  }
+
+  inline uint32_t wid_mask(const stagewise_poly &poly, uint32_t wid)
+  {
+    return wid & poly.all->reg.weight_mask;
+  }
+
+  inline uint32_t wid_mask_un_shifted(const stagewise_poly &poly, uint32_t wid)
+  {
+    return stride_un_shift(poly, wid & poly.all->reg.weight_mask);
+  }
+
+  inline uint32_t constant_feat(const stagewise_poly &poly)
+  {
+    return stride_shift(poly, constant);
+  }
+
+  inline uint32_t constant_feat_masked(const stagewise_poly &poly)
+  {
+    return wid_mask(poly, constant_feat(poly));
+  }
+
+
   inline uint32_t depthsbits_sizeof(const stagewise_poly &poly)
   {
     return 2 * poly.all->length() * sizeof(uint8_t);
@@ -86,58 +111,58 @@ namespace StagewisePoly
 
   inline bool parent_get(const stagewise_poly &poly, uint32_t wid)
   {
-    assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    return poly.depthsbits[WID_MASK_UN_SHIFTED(poly, wid) * 2 + 1] & PARENT_BIT;
+    assert(wid % stride_shift(poly, 1) == 0);
+    return poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & parent_bit;
   }
 
   inline void parent_toggle(stagewise_poly &poly, uint32_t wid)
   {
-    assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    poly.depthsbits[WID_MASK_UN_SHIFTED(poly, wid) * 2 + 1] ^= PARENT_BIT;
+    assert(wid % stride_shift(poly, 1) == 0);
+    poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= parent_bit;
   }
 
   inline bool cycle_get(const stagewise_poly &poly, uint32_t wid)
   {
-    assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    return poly.depthsbits[WID_MASK_UN_SHIFTED(poly, wid) * 2 + 1] & CYCLE_BIT;
+    assert(wid % stride_shift(poly, 1) == 0);
+    return poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit;
   }
 
   inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)
   {
-    assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    poly.depthsbits[WID_MASK_UN_SHIFTED(poly, wid) * 2 + 1] ^= CYCLE_BIT;
+    assert(wid % stride_shift(poly, 1) == 0);
+    poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= cycle_bit;
   }
 
   inline uint8_t min_depths_get(const stagewise_poly &poly, uint32_t wid)
   {
-    assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    return poly.depthsbits[STRIDE_UN_SHIFT(poly, wid) * 2];
+    assert(wid % stride_shift(poly, 1) == 0);
+    return poly.depthsbits[stride_un_shift(poly, wid) * 2];
   }
 
   inline void min_depths_set(stagewise_poly &poly, uint32_t wid, uint8_t depth)
   {
-    assert(wid % STRIDE_SHIFT(poly, 1) == 0);
-    poly.depthsbits[STRIDE_UN_SHIFT(poly, wid) * 2] = depth;
+    assert(wid % stride_shift(poly, 1) == 0);
+    poly.depthsbits[stride_un_shift(poly, wid) * 2] = depth;
   }
 
   //Note.  OUTPUT & INPUT masked.
   //It is very important that this function is invariant to stride.
   inline uint32_t child_wid(const stagewise_poly &poly, uint32_t wi_atomic, uint32_t wi_general)
   {
-    assert(wi_atomic == WID_MASK(poly, wi_atomic));
-    assert(wi_general == WID_MASK(poly, wi_general));
-    assert((wi_atomic & (STRIDE_SHIFT(poly, 1) - 1)) == 0);
-    assert((wi_general & (STRIDE_SHIFT(poly, 1) - 1)) == 0);
+    assert(wi_atomic == wid_mask(poly, wi_atomic));
+    assert(wi_general == wid_mask(poly, wi_general));
+    assert((wi_atomic & (stride_shift(poly, 1) - 1)) == 0);
+    assert((wi_general & (stride_shift(poly, 1) - 1)) == 0);
 
-    if (wi_atomic == CONSTANT_FEAT_MASKED(poly))
+    if (wi_atomic == constant_feat_masked(poly))
       return wi_general;
-    else if (wi_general == CONSTANT_FEAT_MASKED(poly))
+    else if (wi_general == constant_feat_masked(poly))
       return wi_atomic;
     else if (wi_atomic == wi_general) {
-      uint64_t wi_2_64 = STRIDE_UN_SHIFT(poly, wi_general);
-      return WID_MASK(poly, STRIDE_SHIFT(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
+      uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
+      return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
     } else
-      return WID_MASK(poly, STRIDE_SHIFT(poly, (STRIDE_UN_SHIFT(poly, wi_atomic) ^ STRIDE_UN_SHIFT(poly, wi_general)) * MURMER_CONST));
+      return wid_mask(poly, stride_shift(poly, (stride_un_shift(poly, wi_atomic) ^ stride_un_shift(poly, wi_general)) * 95104348457));
   }
 
   void sort_data_create(stagewise_poly &poly)
@@ -203,8 +228,8 @@ namespace StagewisePoly
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
     for (uint32_t i = 0; i != poly.all->length(); ++i) {
-      uint32_t wid = STRIDE_SHIFT(poly, i);
-      if (!parent_get(poly, wid) && wid != CONSTANT_FEAT_MASKED(poly)) {
+      uint32_t wid = stride_shift(poly, i);
+      if (!parent_get(poly, wid) && wid != constant_feat_masked(poly)) {
         float wval = (fabsf(poly.all->reg.weight_vector[wid])
             * poly.all->reg.weight_vector[poly.all->normalized_idx + (wid)])
           /*
@@ -213,10 +238,10 @@ namespace StagewisePoly
            * a nontrivial computational hit, thus commented out.
            *
            * - poly.magic_argument
-           * sqrtf(min_depths_get(poly, STRIDE_SHIFT(poly, i)) * 1.0 / poly.num_examples)
+           * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 / poly.num_examples)
            */
           ;
-        if (wval > TOL) {
+        if (wval > tolerance) {
           assert(heap_end >= poly.sd);
           assert(heap_end <= poly.sd + num_new_features);
 
@@ -246,8 +271,8 @@ namespace StagewisePoly
 
     for (uint32_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos) {
       assert(!parent_get(poly, poly.sd[pos].wid)
-          && poly.sd[pos].wval > TOL
-          && poly.sd[pos].wid != CONSTANT_FEAT_MASKED(poly));
+          && poly.sd[pos].wval > tolerance
+          && poly.sd[pos].wid != constant_feat_masked(poly));
       parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
       cout
@@ -278,21 +303,21 @@ namespace StagewisePoly
     poly.synth_ec.sorted = ec.sorted;
     poly.synth_ec.in_use = ec.in_use;
 
-    poly.synth_ec.atomics[TREE_ATOMICS].erase();
-    poly.synth_ec.audit_features[TREE_ATOMICS].erase();
+    poly.synth_ec.atomics[tree_atomics].erase();
+    poly.synth_ec.audit_features[tree_atomics].erase();
     poly.synth_ec.num_features = 0;
     poly.synth_ec.total_sum_feat_sq = 0;
-    poly.synth_ec.sum_feat_sq[TREE_ATOMICS] = 0;
+    poly.synth_ec.sum_feat_sq[tree_atomics] = 0;
     poly.synth_ec.example_t = ec.example_t;
 
     if (poly.synth_ec.indices.size()==0)
-      poly.synth_ec.indices.push_back(TREE_ATOMICS);
+      poly.synth_ec.indices.push_back(tree_atomics);
   }
 
   void synthetic_decycle(stagewise_poly &poly)
   {
-    for (feature *f = poly.synth_ec.atomics[TREE_ATOMICS].begin;
-        f != poly.synth_ec.atomics[TREE_ATOMICS].end; ++f) {
+    for (feature *f = poly.synth_ec.atomics[tree_atomics].begin;
+        f != poly.synth_ec.atomics[tree_atomics].end; ++f) {
       assert(cycle_get(poly, f->weight_index));
       cycle_toggle(poly, f->weight_index);
     }
@@ -302,7 +327,7 @@ namespace StagewisePoly
   {
     uint32_t wid_atomic = (uint32_t)((&w - poly.all->reg.weight_vector));
     uint32_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
-    assert(wid_atomic % STRIDE_SHIFT(poly, 1) == 0);
+    assert(wid_atomic % stride_shift(poly, 1) == 0);
 
     //Note: only mutate learner state when in training mode.  This is because
     //the average test errors across multiple data sets should be equal to
@@ -331,9 +356,9 @@ namespace StagewisePoly
 #endif //DEBUG
 
       feature new_f = { v * poly.synth_rec_f.x, wid_cur };
-      poly.synth_ec.atomics[TREE_ATOMICS].push_back(new_f);
+      poly.synth_ec.atomics[tree_atomics].push_back(new_f);
       poly.synth_ec.num_features++;
-      poly.synth_ec.sum_feat_sq[TREE_ATOMICS] += new_f.x * new_f.x;
+      poly.synth_ec.sum_feat_sq[tree_atomics] += new_f.x * new_f.x;
 
       if (parent_get(poly, new_f.weight_index)) {
         feature parent_f = poly.synth_rec_f;
@@ -356,7 +381,7 @@ namespace StagewisePoly
     poly.cur_depth = 0;
 
     poly.synth_rec_f.x = 1.0;
-    poly.synth_rec_f.weight_index = CONSTANT_FEAT_MASKED(poly);
+    poly.synth_rec_f.weight_index = constant_feat_masked(poly);
     poly.original_ec = &ec;
     poly.training = training;
     /*
@@ -366,12 +391,12 @@ namespace StagewisePoly
      */
     GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
     synthetic_decycle(poly);
-    poly.synth_ec.total_sum_feat_sq = poly.synth_ec.sum_feat_sq[TREE_ATOMICS];
+    poly.synth_ec.total_sum_feat_sq = poly.synth_ec.sum_feat_sq[tree_atomics];
 
     if (training) {
-        poly.sum_sparsity += poly.synth_ec.num_features;
-        poly.sum_input_sparsity += ec.num_features;
-        poly.num_examples += 1;
+      poly.sum_sparsity += poly.synth_ec.num_features;
+      poly.sum_input_sparsity += ec.num_features;
+      poly.num_examples += 1;
     }
   }
 
@@ -380,9 +405,9 @@ namespace StagewisePoly
     synthetic_create(poly, ec, training);
 
     if (training)
-        base.learn(poly.synth_ec);
+      base.learn(poly.synth_ec);
     else
-        base.predict(poly.synth_ec);
+      base.predict(poly.synth_ec);
 
     ((label_data *) ec.ld)->prediction = ((label_data *)(poly.synth_ec.ld))->prediction;
     ec.loss = poly.synth_ec.loss;
@@ -408,7 +433,7 @@ namespace StagewisePoly
 
 
 #ifdef PARALLEL_ENABLE
-  void reduce_min(uint32_t &v1,const uint32_t &v2)
+  void reduce_min(uint8_t &v1,const uint8_t &v2)
   {
     v1 = (v1 <= v2) ? v1 : v2;
   }
@@ -417,21 +442,29 @@ namespace StagewisePoly
   {
     assert(poly.all->span_server == "" || !poly.batch_sz);
 
-    //uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
+    uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
     uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
     uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
 
     vw &all = *poly.all;
     if(all.span_server != "") {
-      //XXX most likely we should change this to match the other transplant semantics (clear parent bits if depths disagree)
+      /*
+       * The following is inconsistent with the transplant code in
+       * synthetic_create_rec(), which clears parent bits on depth mismatches.
+       * But it's unclear what the right behavior is in general for either
+       * case...
+       */
       all_reduce<uint8_t, reduce_min>(poly.depthsbits, depthsbits_sizeof(poly), all.span_server, all.unique_id, all.total, all.node, all.socks);
 
       sum_input_sparsity_inc = accumulate_scalar(all, all.span_server, sum_input_sparsity_inc);
+      sum_sparsity_inc = accumulate_scalar(all, all.span_server, sum_sparsity_inc);
       num_examples_inc = accumulate_scalar(all, all.span_server, num_examples_inc);
     }
 
     poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
     poly.sum_input_sparsity = poly.sum_input_sparsity_sync;
+    poly.sum_sparsity_sync = poly.sum_sparsity_sync + sum_sparsity_inc;
+    poly.sum_sparsity = poly.sum_sparsity_sync;
     poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
     poly.num_examples = poly.num_examples_sync;
 
@@ -456,7 +489,7 @@ namespace StagewisePoly
     cout<<"total feature number (after poly expansion!) = " << poly.sum_sparsity << endl;
 #endif //DEBUG
 
-    poly.synth_ec.atomics[TREE_ATOMICS].delete_v();
+    poly.synth_ec.atomics[tree_atomics].delete_v();
     sort_data_destroy(poly);
     depthsbits_destroy(poly);
   }
