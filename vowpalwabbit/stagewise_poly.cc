@@ -41,6 +41,7 @@ namespace StagewisePoly
     uint32_t batch_sz;
 
     sort_data *sd;
+    uint32_t sd_len;
     uint8_t *depthsbits; //interleaved array storing depth information and parent/cycle bits
 
     uint64_t sum_sparsity; //of synthetic example
@@ -141,7 +142,25 @@ namespace StagewisePoly
 
   void sort_data_create(stagewise_poly &poly)
   {
-    poly.sd = (sort_data *) malloc(poly.all->length() * sizeof(sort_data));
+    poly.sd = NULL;
+    poly.sd_len = 0;
+  }
+
+  void sort_data_ensure_sz(stagewise_poly &poly, uint32_t len)
+  {
+    if (poly.sd_len < len) {
+      uint32_t len_candidate = 2 * len;
+#ifdef DEBUG
+      cout << "resizing sort buffer; current size " << poly.sd_len;
+#endif //DEBUG
+      poly.sd_len = (len_candidate > poly.all->length()) ? poly.all->length() : len_candidate;
+#ifdef DEBUG
+      cout << ", new size " << poly.sd_len << endl;
+#endif //DEBUG
+      free(poly.sd); //okay for null.
+      poly.sd = (sort_data *) malloc(poly.sd_len * sizeof(sort_data));
+    }
+    assert(len <= poly.sd_len);
   }
 
   void sort_data_destroy(stagewise_poly &poly)
@@ -178,6 +197,8 @@ namespace StagewisePoly
   {
     assert(poly.num_examples);
     uint32_t num_new_features = pow(poly.sum_input_sparsity * 1.0 / poly.num_examples, poly.sched_exponent);
+    num_new_features = (num_new_features > poly.all->length()) ? poly.all->length() : num_new_features;
+    sort_data_ensure_sz(poly, num_new_features);
 
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
@@ -205,7 +226,7 @@ namespace StagewisePoly
           }
 
           assert(heap_end >= poly.sd);
-          assert(heap_end < poly.sd + poly.all->length());
+          assert(heap_end < poly.sd + poly.sd_len);
 
           if (heap_end - poly.sd < num_new_features) {
             heap_end->wval = wval;
@@ -223,7 +244,7 @@ namespace StagewisePoly
     qsort(poly.sd, num_new_features, sizeof(sort_data), sort_data_compar);
 #endif //DEBUG
 
-    for (uint32_t pos = 0; pos < num_new_features && pos < poly.all->length(); ++pos) {
+    for (uint32_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos) {
       assert(!parent_get(poly, poly.sd[pos].wid)
           && poly.sd[pos].wval > TOL
           && poly.sd[pos].wid != CONSTANT_FEAT_MASKED(poly));
