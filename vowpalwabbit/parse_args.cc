@@ -937,6 +937,7 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(pos, vm);
   po::notify(vm);
+  all->file_options = "";
 
   parse_feature_tweaks(*all, vm); //feature tweaks
 
