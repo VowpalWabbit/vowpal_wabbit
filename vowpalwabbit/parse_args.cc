@@ -40,7 +40,11 @@ license as described in the file LICENSE.
 #include "binary.h"
 #include "lrq.h"
 #include "autolink.h"
+#include "txm_o.h"
+#include "txm.h"
+#include "rtree.h"
 #include "memory.h"
+#include "centering.h"
 
 using namespace std;
 //
@@ -722,6 +726,9 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
     ("binary", "report loss as binary classification on -1,1")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
     ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    ("rtree", po::value<size_t>(), "Use random tree for multiclass")
+    ("txm", po::value<size_t>(), "Use level-by-level tree for multiclass")
+    ("txm_o", po::value<size_t>(), "Use online tree for multiclass")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
@@ -747,6 +754,10 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
     all.l = exclusive_setup(all, vm, score_consumer, CSOAA::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
+  }
+  
+  if(vm.count("txm_o")){
+    all.l = exclusive_setup(all, vm, score_consumer, TXM_O::setup);
   }
   
   if(vm.count("wap")) {
