@@ -364,8 +364,6 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 	make_write_cache(all, caches[i], quiet);
       else {
 	uint32_t c = cache_numbits(all.p->input, f);
-	if (all.default_bits)
-	  all.num_bits = c;
 	if (c < all.num_bits) {
           all.p->input->close_file();          
 	  make_write_cache(all, caches[i], quiet);

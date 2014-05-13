@@ -55,10 +55,15 @@ namespace ArgmaxTask {
     po::options_description argmax_opts("argmax options");
     argmax_opts.add_options()
       ("cost", po::value<float>(&(my_task_data->false_negative_cost))->default_value(10.0), "False Negative Cost")
-      ("max", po::value<bool>(&(my_task_data->predict_max))->default_value(false), "Disable structure: just predict the max");
+      ("max", "Disable structure: just predict the max");
 
     vm = add_options(*srn.all, argmax_opts);
 
+    if (vm.count("max"))
+      my_task_data->predict_max = true;
+    else
+      my_task_data->predict_max = false;      
+	    
     srn.set_task_data(my_task_data);
 
     if (my_task_data->predict_max)
