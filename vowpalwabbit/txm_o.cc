@@ -334,10 +334,16 @@ namespace TXM_O
 	  }
       }
     base.learn(ec, current);	
+
+    float t = simple_temp->prediction;
     
     simple_temp->label = FLT_MAX;
     base.predict(ec, current);
-
+    /*    cout << simple_temp->prediction << " " 
+	 << ec.partial_prediction << " " 
+	 << ec.updated_prediction << " " 
+	 << t << endl;*/
+    
     b.nodes[current].Eh += (double)ec.partial_prediction;
     b.nodes[current].node_pred[class_index].Ehk += (double)ec.partial_prediction;
     b.nodes[current].n++;
@@ -555,9 +561,9 @@ namespace TXM_O
 		v = b.nodes[i].leaf;
 		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);	
 	      }	
-	  }	
-      }	
-  }	
+	  }
+      }
+  }
   
   void finish_example(vw& all, txm_o&, example& ec)
   {

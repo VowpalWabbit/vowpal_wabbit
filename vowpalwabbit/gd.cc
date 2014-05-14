@@ -583,6 +583,8 @@ void compute_update(vw& all, gd& g, example& ec)
 	    all.sd->gravity += eta_bar * all.l1_lambda;
 	  }
 	  ec.eta_round = (float) (update / all.sd->contraction);
+	  cout << "eta_round = " << ec.eta_round << " norm = " << norm << endl;
+	  ec.updated_prediction = ec.partial_prediction + ec.eta_round * norm;
         }
     }
   else if(all.active)
