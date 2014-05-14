@@ -28,7 +28,7 @@ namespace TXM_O
     return i;
   }
   
-  class txm_o_node_pred_type	
+  class txm_o_node_pred	
   {
   public:
     
@@ -38,21 +38,21 @@ namespace TXM_O
     uint32_t label;	
     uint32_t label_cnt2;
  
-    bool operator==(txm_o_node_pred_type v){
+    bool operator==(txm_o_node_pred v){
       return (label == v.label);
     }
     
-    bool operator>(txm_o_node_pred_type v){
+    bool operator>(txm_o_node_pred v){
       if(label > v.label) return true;	
       return false;
     }
     
-    bool operator<(txm_o_node_pred_type v){
+    bool operator<(txm_o_node_pred v){
       if(label < v.label) return true;	
       return false;
     }
     
-    txm_o_node_pred_type(uint32_t l)
+    txm_o_node_pred(uint32_t l)
     {
       label = l;
       Ehk = 0.f;
@@ -64,8 +64,9 @@ namespace TXM_O
   
   typedef struct
   {
-    size_t id_left;
-    size_t id_right;
+    size_t parent;
+    size_t left;
+    size_t right;
     size_t max_cnt2;
     size_t max_cnt2_label;
 
@@ -75,25 +76,24 @@ namespace TXM_O
     uint32_t myL;
     uint32_t myR;
     bool leaf;
-    v_array<txm_o_node_pred_type> node_pred;
+    v_array<txm_o_node_pred> node_pred;
     
     double Eh;	
     float norm_Eh;
     uint32_t n;	
-  } txm_o_node_type;
+  } txm_o_node;
   
   struct txm_o	
   {
     uint32_t k;	
     vw* all;	
     
-    v_array<txm_o_node_type> nodes;	
+    v_array<txm_o_node> nodes;	
     
     size_t max_nodes;
-    v_array<size_t> ec_path;
-    v_array<size_t> min_ec_path;
     uint32_t min_count;
     bool progress;
+    uint32_t swap_resist;
 
     uint32_t nbofswaps;
 
@@ -101,12 +101,13 @@ namespace TXM_O
     FILE *ex_fp;
   };	
   
-  txm_o_node_type init_node()	
+  txm_o_node init_node()	
   {
-    txm_o_node_type node; 
+    txm_o_node node; 
     
-    node.id_left = 0;
-    node.id_right = 0;
+    node.parent = 0;
+    node.left = 0;
+    node.right = 0;
     node.Eh = 0;
     node.norm_Eh = 0;
     node.n = 0;
@@ -151,58 +152,45 @@ namespace TXM_O
     return w_ratio;
   }
   
-  inline uint32_t min_left_right(txm_o_node_type n)
+  inline uint32_t min_left_right(txm_o_node n)
   {
     return min(n.L, n.R);
   }
 
-  void find_switch_nodes(txm_o& b, size_t& child, size_t& parent, size_t& grandparent)	
+  size_t find_switch_child(txm_o& b)	
   {
-    b.min_ec_path.erase();	  
-
-    child = 0;
+    size_t child = 0;
     while(! b.nodes[child].leaf)
-      {
-	b.min_ec_path.push_back(child);
-	if(min_left_right(b.nodes[b.nodes[child].id_left]) 
-	   < min_left_right(b.nodes[b.nodes[child].id_right]))
-	  child = b.nodes[child].id_left; 
-	else
-	  child = b.nodes[child].id_right;
-      }
-    b.min_ec_path.push_back(child);
-    if (b.min_ec_path.size() < 3)
-      throw exception(); // What are you supposed to do here?
-    else
-      {
-	parent = b.min_ec_path[b.min_ec_path.size()-2];
-	grandparent = b.min_ec_path[b.min_ec_path.size()-3];
-      }
+      if(min_left_right(b.nodes[b.nodes[child].left]) 
+	 < min_left_right(b.nodes[b.nodes[child].right]))
+	child = b.nodes[child].left; 
+      else
+	child = b.nodes[child].right;
+    return child;
   }
   
-  void update_min_count(txm_o& b, v_array<size_t>& arr)	
+  void update_min_count(txm_o& b, size_t node)	
   {//Constant time min count update.    
-    size_t p = b.ec_path.pop();//first thing is a leaf   
-    while(arr.size() > 0)
+    while(node != 0)
       {
-	size_t prev = p;
-	p = arr.pop();
+	size_t prev = node;
+	node = b.nodes[node].parent;
 	
 	uint32_t prev_min = min_left_right(b.nodes[prev]);
 	
-	if (b.nodes[p].id_left == prev)
-	  if (b.nodes[p].L == prev_min)
+	if (b.nodes[node].left == prev)
+	  if (b.nodes[node].L == prev_min)
 	    break;
 	  else
-	    b.nodes[p].L = prev_min;
+	    b.nodes[node].L = prev_min;
 	else
-	  if (b.nodes[p].R == prev_min)
+	  if (b.nodes[node].R == prev_min)
 	    break;
 	  else 
-	    b.nodes[p].R = prev_min;
+	    b.nodes[node].R = prev_min;
       }
-    if (p == 0)
-      b.min_count = min_left_right(b.nodes[p]);
+    if (node == 0)
+      b.min_count = min_left_right(b.nodes[node]);
   }
 
   void display_tree2(txm_o& d)
@@ -225,42 +213,59 @@ namespace TXM_O
       }
     cout << endl;
   }
-  
-  void update_depth(txm_o& b)
-  {
-	size_t cn = 0;
-	size_t *stack;
-	size_t index = 0;
-	
-	stack = new size_t[b.max_nodes];
-	
-	stack[index++] = 0;
-	
-	while(index > 0) {
-		cn = stack[--index];
-		
-		if(b.nodes[cn].id_left != 0) {
-			stack[index++] = b.nodes[cn].id_left;
-		}
-		
-		if(b.nodes[cn].id_right != 0) {
-			stack[index++] = b.nodes[cn].id_right;
-		}
-	}
-	
-	size_t leaf_cnt = 0;
-	for(size_t i = 0; i < b.nodes.size(); i++) {
-	  if(b.nodes[i].leaf) {
-	    leaf_cnt++;
-	  }
-	}
-  }
 
-  void train_node(txm_o& b, learner& base, example& ec, size_t& current, size_t& index)
+  void display_tree_dfs(txm_o& b, txm_o_node node, size_t depth)
+  {
+    for (size_t i = 0; i < depth; i++)
+      cout << "\t";
+    cout << "L = " << node.L << " " << node.myL << " " << node.left << endl;
+    if (!node.leaf)
+      display_tree_dfs(b, b.nodes[node.left], depth+1);
+    
+    for (size_t i = 0; i < depth; i++)
+      cout << "\t";
+    cout << "R = " << node.R << " " << node.myR << " " << node.right << endl;
+    if (!node.leaf)
+      display_tree_dfs(b, b.nodes[node.right], depth+1);
+  }
+  
+  size_t verify_LR_dfs(txm_o& b, txm_o_node node)
+  {
+    if (node.leaf)
+      return min_left_right(node);
+    else
+      {
+	if (node.L != verify_LR_dfs(b, b.nodes[node.left]) 
+	    || node.R != verify_LR_dfs(b, b.nodes[node.right]))
+	  {
+	    cout << "badness! " << node.L << " != " << verify_LR_dfs(b, b.nodes[node.left]) 
+		 << " or " <<  node.R << " != " << verify_LR_dfs(b, b.nodes[node.right]) << endl;
+	    display_tree_dfs(b, b.nodes[0], 0);
+	  }
+	return min_left_right(node);
+      }
+  }
+  
+  size_t sum_LR_dfs(txm_o& b, txm_o_node node)
+  {
+    if (node.leaf)
+      return node.R + node.L;
+    else
+      return sum_LR_dfs(b, b.nodes[node.left]) + sum_LR_dfs(b, b.nodes[node.right]);
+  }
+  
+  void update_new_children(txm_o& b, size_t& current)
+  {
+    b.nodes[current].L = min_left_right(b.nodes[b.nodes[current].left]);
+    b.nodes[current].R = min_left_right(b.nodes[b.nodes[current].right]);
+    update_min_count(b, current);
+  }
+      
+  void train_node(txm_o& b, learner& base, example& ec, size_t& current, size_t& class_index)
   {
     label_data* simple_temp = (label_data*)ec.ld;
        
-    float left_or_right = b.nodes[current].node_pred[index].norm_Ehk - b.nodes[current].norm_Eh;
+    float left_or_right = b.nodes[current].node_pred[class_index].norm_Ehk - b.nodes[current].norm_Eh;
     
     if(left_or_right < 0)
       {
@@ -275,63 +280,58 @@ namespace TXM_O
     
     if( b.nodes[current].myR > 0 && b.nodes[current].myL > 0 && b.nodes[current].leaf)
       {//need children but have no children
-	if(b.nodes.size() + 2 <= b.max_nodes)
+	if(b.nodes.size() + 2 <= b.max_nodes || min_left_right(b.nodes[current]) > b.swap_resist*(b.min_count + 1))
 	  {
-	    size_t id_left_right = b.nodes.size();	
-	    b.nodes.push_back(init_node());	
-	    b.nodes.push_back(init_node());
-	    b.nodes[current].id_left = id_left_right;
-	    size_t id__other = id_left_right + 1;
-	    b.nodes[current].id_right = id__other;
+	    size_t left_child;
+	    size_t right_child;
+	    if (b.nodes.size() + 2 <= b.max_nodes)
+	      {
+		left_child = b.nodes.size();
+		b.nodes.push_back(init_node());	
+		b.nodes.push_back(init_node());
+		right_child = left_child+1;
+	      }
+	    else
+	      {
+		size_t swap_child = find_switch_child(b);
+		size_t swap_parent = b.nodes[swap_child].parent;
+		size_t swap_grandparent = b.nodes[swap_parent].parent;
+		if (min_left_right(b.nodes[swap_child]) != b.min_count)
+		  cout << "glargh " << min_left_right(b.nodes[swap_child]) << " != " << b.min_count << endl;
+		b.nbofswaps++;
+		
+		size_t nonswap_child;
+		if(swap_child == b.nodes[swap_parent].right)
+		  nonswap_child = b.nodes[swap_parent].left;
+		else
+		  nonswap_child = b.nodes[swap_parent].right;
+		
+		if(swap_parent == b.nodes[swap_grandparent].left)
+		  b.nodes[swap_grandparent].left = nonswap_child;
+		else
+		  b.nodes[swap_grandparent].right = nonswap_child;
+		b.nodes[nonswap_child].parent = swap_grandparent;
+		update_min_count(b, nonswap_child);
+		
+		b.nodes[swap_parent].leaf = true;
+		b.nodes[swap_child].leaf = true;
+		
+		left_child = swap_child;
+		right_child = swap_parent;
+	      }
+	    b.nodes[current].left = left_child;
+	    b.nodes[left_child].parent = current;
+	    b.nodes[current].right = right_child;
+	    b.nodes[right_child].parent = current;
+	    	    
+	    b.nodes[left_child].L = b.nodes[current].L/2;
+	    b.nodes[left_child].R = b.nodes[current].L - b.nodes[current].L/2;
+	    b.nodes[right_child].L = b.nodes[current].R/2;
+	    b.nodes[right_child].R = b.nodes[current].R - b.nodes[current].R/2;
 	    
-	    b.nodes[id_left_right].L = b.nodes[current].L/2;		
-	    b.nodes[id_left_right].R = b.nodes[current].L - b.nodes[current].L/2;
-	    b.nodes[id__other].L = b.nodes[current].R/2;		
-	    b.nodes[id__other].R = b.nodes[current].R - b.nodes[current].R/2;
-	    
-	    b.nodes[id_left_right].max_cnt2_label = b.nodes[current].max_cnt2_label;
-	    b.nodes[id__other].max_cnt2_label = b.nodes[current].max_cnt2_label;
+	    update_new_children(b, current);
+	    b.nodes[current].leaf = false;
 	  }
-	else
-	  if(min_left_right(b.nodes[current]) > 2*b.min_count + 1)
-	    {
-	      size_t swap_child, swap_parent, swap_grandparent;
-	      find_switch_nodes(b, swap_child, swap_parent, swap_grandparent);
-	      if (min_left_right(b.nodes[swap_child]) != b.min_count)
-		cout << "glargh" << endl;
-	      b.nbofswaps++;
-	      
-	      if(swap_parent == b.nodes[swap_grandparent].id_left)
-		if(swap_child == b.nodes[swap_parent].id_right)
-		  b.nodes[swap_grandparent].id_left = b.nodes[swap_parent].id_left;
-		else
-		  b.nodes[swap_grandparent].id_left = b.nodes[swap_parent].id_right;
-	      else
-		if(swap_child == b.nodes[swap_parent].id_right)
-		  b.nodes[swap_grandparent].id_right = b.nodes[swap_parent].id_left;
-		else
-		  b.nodes[swap_grandparent].id_right = b.nodes[swap_parent].id_right;
-	      
-	      b.nodes[current].id_left = swap_parent;
-	      b.nodes[current].id_right = swap_child;
-	      b.nodes[swap_parent].leaf = true;
-	      b.nodes[swap_parent].id_left = 0;
-	      b.nodes[swap_parent].id_right = 0;
-	      b.nodes[swap_child].leaf = true;
-	      b.nodes[swap_child].id_left = 0;
-	      b.nodes[swap_child].id_right = 0;
-	      
-	      /*	      if (b.nodes[swap_parent].R*2+1 > b.nodes[current].R/2 && b.nodes[swap_parent].L*2+1 > b.nodes[current].R - b.nodes[current].R/2)
-		cout << "argagghghg " << b.nodes[swap_parent].R << " becomes " << b.nodes[current].R/2 << endl;
-	      */
-	      b.nodes[swap_parent].R = b.nodes[current].R/2;
-	      b.nodes[swap_parent].L = b.nodes[current].R - b.nodes[current].R/2;
-	      b.nodes[swap_child].R = b.nodes[current].L/2;
-	      b.nodes[swap_child].L = b.nodes[current].L - b.nodes[current].L/2;
-	      
-	      b.min_ec_path.pop();
-	      update_min_count(b, b.min_ec_path);
-	    }
       }
     base.learn(ec, current);	
     
@@ -339,17 +339,12 @@ namespace TXM_O
     base.predict(ec, current);
 
     b.nodes[current].Eh += (double)ec.partial_prediction;
-    b.nodes[current].node_pred[index].Ehk += (double)ec.partial_prediction;
+    b.nodes[current].node_pred[class_index].Ehk += (double)ec.partial_prediction;
     b.nodes[current].n++;
-    b.nodes[current].node_pred[index].nk++;	
+    b.nodes[current].node_pred[class_index].nk++;	
   
     b.nodes[current].norm_Eh = b.nodes[current].Eh / b.nodes[current].n;          
-    b.nodes[current].node_pred[index].norm_Ehk = b.nodes[current].node_pred[index].Ehk / b.nodes[current].node_pred[index].nk;
-    
-    if(b.nodes[current].id_left == 0)	
-      b.nodes[current].leaf = true;
-    else	
-      b.nodes[current].leaf = false;	
+    b.nodes[current].node_pred[class_index].norm_Ehk = b.nodes[current].node_pred[class_index].Ehk / b.nodes[current].node_pred[class_index].nk;
   }
   
   void predict(txm_o& b, learner& base, example& ec)	
@@ -373,9 +368,9 @@ namespace TXM_O
 	base.predict(ec, cn);
   
 	if(simple_temp.prediction < 0)//b.nodes[cn].Eh/b.nodes[cn].n)	
-	  cn = b.nodes[cn].id_left;
+	  cn = b.nodes[cn].left;
 	else
-	  cn = b.nodes[cn].id_right;	
+	  cn = b.nodes[cn].right;	
       }	
   }
 
@@ -417,7 +412,7 @@ namespace TXM_O
 	fprintf(fp, "\n");
 	
 	fprintf(fp, "max(lab:cnt:tot):, %3d,%6d,%7d,\n", (int) b->nodes[i].max_cnt2_label, (int) b->nodes[i].max_cnt2, (int) total);
-	fprintf(fp, "left: %4d, right: %4d", (int) b->nodes[i].id_left, (int) b->nodes[i].id_right);
+	fprintf(fp, "left: %4d, right: %4d", (int) b->nodes[i].left, (int) b->nodes[i].right);
 	fprintf(fp, "\n\n");
       }
     
@@ -428,6 +423,10 @@ namespace TXM_O
   {
     MULTICLASS::multiclass *mc = (MULTICLASS::multiclass*)ec.ld;
     
+    /*  verify_LR_dfs(b, b.nodes[0]);
+    if (b.ex_num != sum_LR_dfs(b, b.nodes[0]))
+      cout << "argagghgh " << b.ex_num << " " << sum_LR_dfs(b, b.nodes[0]) << endl;
+    */
     if (mc->label == (uint32_t)-1 || !b.all->training || ec.test_only || b.progress)
       predict(b,base,ec);
 
@@ -451,9 +450,7 @@ namespace TXM_O
 
 	while(1)
 	  {
-	    b.ec_path.push_back(cn);
-
-	    class_index = b.nodes[cn].node_pred.unique_add_sorted(txm_o_node_pred_type(oryginal_label));
+	    class_index = b.nodes[cn].node_pred.unique_add_sorted(txm_o_node_pred(oryginal_label));
 	    
 	    b.nodes[cn].node_pred[class_index].label_cnt2++;
 	    
@@ -472,16 +469,16 @@ namespace TXM_O
 		else
 		  b.nodes[cn].R++;
 		
-		update_min_count(b, b.ec_path);	
+		update_min_count(b, cn);	
 	       	
 		ec.ld = mc;
 		break;	
 	      }
 	   
 	    if(simple_temp.prediction < 0)
-	      cn = b.nodes[cn].id_left;
+	      cn = b.nodes[cn].left;
 	    else
-	      cn = b.nodes[cn].id_right;	
+	      cn = b.nodes[cn].right;	
 	  }	
       }
       b.ex_num++;
@@ -515,16 +512,17 @@ namespace TXM_O
 		b.nodes.push_back(init_node());
 		
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
-		b.nodes[j].id_left = v;
+		b.nodes[j].parent = v;
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
-		b.nodes[j].id_right = v;
+		b.nodes[j].left = v;
+		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
+		b.nodes[j].right = v;
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 		b.nodes[j].max_cnt2_label = v;
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 		b.nodes[j].leaf = v;
 	      }
       	    
-	    update_depth(b);
 	    cout << endl << endl;
 	    cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
 	    cout << "Number of swaps: " << b.nbofswaps << endl << endl;
@@ -537,12 +535,16 @@ namespace TXM_O
 	    
 	    for(i = 0; i < b.nodes.size(); i++)
 	      {	
-		text_len = sprintf(buff, ":%d", (int) b.nodes[i].id_left);
-		v = b.nodes[i].id_left;
+		text_len = sprintf(buff, ":%d", (int) b.nodes[i].parent);
+		v = b.nodes[i].parent;
 		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
 		
-		text_len = sprintf(buff, ":%d", (int) b.nodes[i].id_right);
-		v = b.nodes[i].id_right;
+		text_len = sprintf(buff, ":%d", (int) b.nodes[i].left);
+		v = b.nodes[i].left;
+		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
+		
+		text_len = sprintf(buff, ":%d", (int) b.nodes[i].right);
+		v = b.nodes[i].right;
 		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
 		
 		text_len = sprintf(buff, ":%d", (int) b.nodes[i].max_cnt2_label);
@@ -569,7 +571,8 @@ namespace TXM_O
 
     po::options_description txm_o_opts("TXM Online options");
     txm_o_opts.add_options()
-      ("no_progress", "disable progressive validation");
+      ("no_progress", "disable progressive validation")
+      ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(64), "higher = more resistance to swap, default=64");
     
     vm = add_options(all, txm_o_opts);
     
