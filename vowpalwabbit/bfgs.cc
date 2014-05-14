@@ -761,56 +761,55 @@ void process_example(vw& all, bfgs& b, example& ec)
 void end_pass(bfgs& b)
 {
   vw* all = b.all;
-  
+
   if (b.current_pass <= b.final_pass) 
   {
-       if(b.current_pass < b.final_pass)
-       { 
-          int status = process_pass(*all, b);
+    if(b.current_pass < b.final_pass)
+    { 
+      int status = process_pass(*all, b);
 
-          //reaching the max number of passes regardless of convergence 
-          if(b.final_pass == b.current_pass)
-          {
-             cerr<<"Maximum number of passes reached. ";
-             if(!b.output_regularizer)
-                cerr<<"If you want to optimize further, increase the number of passes\n";
-             if(b.output_regularizer)
-             { 
-               cerr<<"\nRegular model file has been created. "; 
-               cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
-               b.output_regularizer = false;
-             }
+      //reaching the max number of passes regardless of convergence 
+      if(b.final_pass == b.current_pass)
+      {
+        cerr<<"Maximum number of passes reached. ";
+        if(!b.output_regularizer)
+          cerr<<"If you want to optimize further, increase the number of passes\n";
+        if(b.output_regularizer)
+        { 
+          cerr<<"\nRegular model file has been created. "; 
+          cerr<<"Output feature regularizer file is created only when the convergence is reached. Try increasing the number of passes for convergence\n";
+          b.output_regularizer = false;
+        }
 
-          } 
-          
-          //attain convergence before reaching max iterations 
-	   if (status != LEARN_OK && b.final_pass > b.current_pass) {
-	      b.final_pass = b.current_pass;
-	   }
+      } 
 
-	   if (b.output_regularizer && b.final_pass == b.current_pass) {
-	     zero_preconditioner(*all);
-	     b.preconditioner_pass = true;
-	   }
+      //attain convergence before reaching max iterations 
+      if (status != LEARN_OK && b.final_pass > b.current_pass) {
+        b.final_pass = b.current_pass;
+      }
 
-	   if(!all->holdout_set_off)
-	   {
-	     if(summarize_holdout_set(*all, b.no_win_counter))
-               finalize_regressor(*all, all->final_regressor_name); 
-	     if(b.early_stop_thres == b.no_win_counter)
-	     { 
-               set_done(*all);
-               cerr<<"Early termination reached w.r.t. holdout set error";
-             }
+      if (b.output_regularizer && b.final_pass == b.current_pass) {
+        zero_preconditioner(*all);
+        b.preconditioner_pass = true;
+      }
 
-	   } 
-           
-       }else{//reaching convergence in the previous pass
-        if(b.output_regularizer) 
-           preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
-        b.current_pass ++;
-      }   
-                
+      if(!all->holdout_set_off)
+      {
+        if(summarize_holdout_set(*all, b.no_win_counter))
+          finalize_regressor(*all, all->final_regressor_name); 
+        if(b.early_stop_thres == b.no_win_counter)
+        { 
+          set_done(*all);
+          cerr<<"Early termination reached w.r.t. holdout set error";
+        }
+      }
+
+    }else{//reaching convergence in the previous pass
+      if(b.output_regularizer) 
+        preconditioner_to_regularizer(*all, b, (*all).l2_lambda);
+      b.current_pass ++;
+    }   
+
   }
 }
 
