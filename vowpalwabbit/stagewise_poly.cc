@@ -181,6 +181,8 @@ namespace StagewisePoly
     assert(poly.num_examples);
     uint32_t num_new_features = pow(poly.sum_input_sparsity * 1.0 / poly.num_examples, poly.sched_exponent);
 
+    cout<<"Adding "<<num_new_features<<endl;
+
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
     for (uint32_t i = 0; i != poly.all->length(); ++i) {
@@ -219,6 +221,8 @@ namespace StagewisePoly
       }
     }
     num_new_features = (uint32_t) (heap_end - poly.sd);
+
+    cout<<"Added "<<num_new_features<<endl;
 
 #ifdef DEBUG
     //eyeballing weights a pain if unsorted.
