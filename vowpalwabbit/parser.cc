@@ -741,7 +741,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
     return false;
 
   if(all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.audit, ae);
+    unique_sort_features(all.audit, all.parse_mask, ae);
 
   if (all.p->write_cache) 
     {
