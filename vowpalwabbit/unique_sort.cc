@@ -41,21 +41,29 @@ void unique_audit_features(v_array<audit_data> &features)
   features.end = ++last;
 }
 
-void unique_sort_features(bool audit, example* ae)
+void unique_sort_features(bool audit, uint32_t parse_mask, example* ae)
 {
   ae->sorted=true;
   for (unsigned char* b = ae->indices.begin; b != ae->indices.end; b++)
     {
-      qsort(ae->atomics[*b].begin, ae->atomics[*b].size(), sizeof(feature), 
+      v_array<feature> features = ae->atomics[*b];
+
+      for (size_t i = 0; i < features.size(); i++)
+	features[i].weight_index &= parse_mask;
+      qsort(features.begin, features.size(), sizeof(feature), 
 	    order_features);
       unique_features(ae->atomics[*b]);
       
       if (audit)
 	{
-	  qsort(ae->audit_features[*b].begin, ae->audit_features[*b].size(), sizeof(audit_data), 
+	  v_array<audit_data> afeatures = ae->audit_features[*b];
+
+	  for (size_t i = 0; i < ae->atomics[*b].size(); i++)
+	    afeatures[i].weight_index &= parse_mask;
+	  
+	  qsort(afeatures.begin, afeatures.size(), sizeof(audit_data), 
 		order_audit_features);
-	  unique_audit_features(ae->audit_features[*b]);
+	  unique_audit_features(afeatures);
 	}
     }
 }
-
