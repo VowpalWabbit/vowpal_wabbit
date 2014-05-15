@@ -427,7 +427,7 @@ void predict(gd& g, learner& base, example& ec)
 
   label_data& ld = *(label_data*)ec.ld;
   ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
-
+  
   if (all.audit || all.hash_inv)
     print_audit_features(all, ec);
 }
@@ -493,7 +493,7 @@ inline void powert_norm_compute(norm_data& nd, float x, float& fw) {
 }
 
   template <void (*T)(norm_data&,float,float&)>
-float compute_norm(vw& all, example& ec)
+float delta_prediction_per_update(vw& all, example& ec)
 {//We must traverse the features in _precisely_ the same order as during training.
   label_data* ld = (label_data*)ec.ld;
   float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
@@ -560,9 +560,9 @@ void compute_update(vw& all, gd& g, example& ec)
 	  float norm;
           if(adaptive || normalized)
             if(all.power_t == 0.5)
-	      norm = compute_norm<simple_norm_compute<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx> >(all,ec);
+	      norm = delta_prediction_per_update<simple_norm_compute<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx> >(all,ec);
             else
-	      norm = compute_norm<powert_norm_compute<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx> >(all,ec);
+	      norm = delta_prediction_per_update<powert_norm_compute<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx> >(all,ec);
           else
             norm = ec.total_sum_feat_sq;
 
@@ -583,8 +583,6 @@ void compute_update(vw& all, gd& g, example& ec)
 	    all.sd->gravity += eta_bar * all.l1_lambda;
 	  }
 	  ec.eta_round = (float) (update / all.sd->contraction);
-	  cout << "eta_round = " << ec.eta_round << " norm = " << norm << endl;
-	  ec.updated_prediction = ec.partial_prediction + ec.eta_round * norm;
         }
     }
   else if(all.active)
@@ -625,6 +623,7 @@ void learn(gd& g, learner& base, example& ec)
     update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx>(g,base,ec);
   else if(ld->weight > 0)
     ec.loss = all->loss->getLoss(all->sd, ld->prediction, ld->label) * ld->weight;
+  g.predict(g,base,ec);
 }
 
 void sync_weights(vw& all) {

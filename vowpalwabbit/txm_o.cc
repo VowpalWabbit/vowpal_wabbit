@@ -339,10 +339,6 @@ namespace TXM_O
     
     simple_temp->label = FLT_MAX;
     base.predict(ec, current);
-    /*    cout << simple_temp->prediction << " " 
-	 << ec.partial_prediction << " " 
-	 << ec.updated_prediction << " " 
-	 << t << endl;*/
     
     b.nodes[current].Eh += (double)ec.partial_prediction;
     b.nodes[current].node_pred[class_index].Ehk += (double)ec.partial_prediction;
@@ -429,10 +425,8 @@ namespace TXM_O
   {
     MULTICLASS::multiclass *mc = (MULTICLASS::multiclass*)ec.ld;
     
-    /*  verify_LR_dfs(b, b.nodes[0]);
-    if (b.ex_num != sum_LR_dfs(b, b.nodes[0]))
-      cout << "argagghgh " << b.ex_num << " " << sum_LR_dfs(b, b.nodes[0]) << endl;
-    */
+    //verify_LR_dfs(b, b.nodes[0]);
+    
     if (mc->label == (uint32_t)-1 || !b.all->training || ec.test_only || b.progress)
       predict(b,base,ec);
 
