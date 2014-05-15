@@ -528,8 +528,11 @@ namespace TXM_O
   {
     static size_t  ec_cnt = 0;
     //size_t ec_err = 3657;
+    bool progress_val = false;
     
-    predict(b,base,ec);
+    if(progress_val)
+      predict(b,base,ec);
+    
     MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
     b.ec_cnt_update = true;
     
