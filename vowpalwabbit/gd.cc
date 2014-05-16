@@ -1052,3 +1052,7 @@ learner* setup(vw& all, po::variables_map& vm)
   return ret;
 }
 }
+
+
+/* SVRGD */
+
