@@ -47,7 +47,7 @@ void mf_print_offset_features(vw& all, example& ec, size_t offset)
 	  
 	  cout << "\tConstant:";
 	  cout << ((index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
-	  cout  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
+	  cout  << ':' << weights;
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
@@ -95,7 +95,7 @@ float mf_predict(vw& all, example& ec)
   float linear_prediction = 0.;
   // linear terms
   for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
-    GD::foreach_feature<float, vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, linear_prediction);
+    GD::foreach_feature<float, GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, linear_prediction);
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -114,12 +114,12 @@ float mf_predict(vw& all, example& ec)
 	      // l^k is from index+1 to index+all.rank
 	      //float x_dot_l = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, k);
               float x_dot_l = 0.;
-	      GD::foreach_feature<float, vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, x_dot_l, k);
+	      GD::foreach_feature<float, GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[0]].begin, ec.atomics[(int)(*i)[0]].end, x_dot_l, k);
 	      // x_r * r^k
 	      // r^k is from index+all.rank+1 to index+2*all.rank
 	      //float x_dot_r = sd_offset_add(weights, mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, k+all.rank);
               float x_dot_r = 0.;
-	      GD::foreach_feature<float,vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, x_dot_r, k+all.rank);
+	      GD::foreach_feature<float,GD::vec_add>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, x_dot_r, k+all.rank);
 
 	      prediction += x_dot_l * x_dot_r;
 

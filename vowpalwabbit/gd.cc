@@ -19,7 +19,6 @@ license as described in the file LICENSE.
 #include <xmmintrin.h>
 #endif
 
-#include "sparse_dense.h"
 #include "gd.h"
 #include "simple_label.h"
 #include "accumulate.h"
@@ -54,7 +53,7 @@ namespace GD
   template <void (*T)(train_data&, float, float&)>
   void generic_train(vw& all, example& ec, float update, bool sqrt_norm)
   {
-    if (fabs(update) == 0.)
+    if (fabsf(update) == 0.f)
       return;
     
     float total_weight = ec.example_t;
@@ -153,6 +152,12 @@ struct string_value {
   string s;
   friend bool operator<(const string_value& first, const string_value& second);
 };
+
+ inline float sign(float w){ if (w < 0.) return -1.; else  return 1.;}
+ 
+ inline float trunc_weight(const float w, const float gravity){
+   return (gravity < fabsf(w)) ? w - sign(w) * gravity : 0.f;
+ }
 
 bool operator<(const string_value& first, const string_value& second)
 {
@@ -347,6 +352,23 @@ float finalize_prediction(vw& all, float ret)
   return ret;
 }
 
+ struct trunc_data {
+   float prediction;
+   float gravity;
+ };
+ 
+ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw) {
+   p.prediction += trunc_weight(fw, p.gravity) * fx;
+ }
+
+ inline float trunc_predict(vw& all, example& ec, float gravity)
+ {
+   label_data* ld = (label_data*)ec.ld;
+   trunc_data temp = {ld->initial, gravity};
+   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
+   return temp.prediction;
+ }
+
 template<bool reg_mode_odd>
 void predict(gd& g, learner& base, example& ec)
 {
@@ -355,10 +377,10 @@ void predict(gd& g, learner& base, example& ec)
   if (reg_mode_odd)
     {
       float gravity = (float)all.sd->gravity;
-      ec.partial_prediction = inline_predict<float, vec_add_trunc>(all, ec, gravity);
+      ec.partial_prediction = trunc_predict(all, ec, gravity);
     }
   else
-    ec.partial_prediction = inline_predict<vec_add>(all, ec);    
+    ec.partial_prediction = inline_predict(all, ec);    
 
   label_data& ld = *(label_data*)ec.ld;
   ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
@@ -384,7 +406,7 @@ inline void sqrt_pred_per_update(norm_data& nd, float x, float& fw)
     float inv_norm = 1.f;
     float inv_norm2 = 1.f;
     if(normalized) {
-      float x_abs = fabs(x);
+      float x_abs = fabsf(x);
       if( x_abs > w[normalized_idx] ) {// new scale discovered
 	if( w[normalized_idx] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
 	  float rescale = (w[normalized_idx]/x_abs);

@@ -333,7 +333,6 @@
     <ClCompile Include="searn_sequencetask.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
-    <ClCompile Include="sparse_dense.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="wap.cc" />

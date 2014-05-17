@@ -13,7 +13,6 @@ license as described in the file LICENSE.
 #include "example.h"
 #include "parse_regressor.h"
 #include "parser.h"
-#include "sparse_dense.h"
 #include "v_array.h"
 #include "constant.h"
 
@@ -74,23 +73,17 @@ void output_and_account_example(example* ec);
      }
    }
 
- template <class R, void (*T)(predict_data<R>&, const float, float&)>
-   inline float inline_predict(vw& all, example& ec, R extra)
-   {
-     label_data* ld = (label_data*)ec.ld;
-     predict_data<R> temp = {ld->initial, extra};
-     foreach_feature<predict_data<R>, T>(all, ec, temp);
-     return temp.prediction;
-   }
+ inline void vec_add(float& p, const float fx, float& fw) {
+   p += fw * fx;
+ }
 
- template <void (*T)(float&, const float, float&)>
-  inline float inline_predict(vw& all, example& ec)
-   {
-     label_data* ld = (label_data*)ec.ld;
-     float temp = ld->initial;
-     foreach_feature<float, T>(all, ec, temp);
-     return temp;
-   }
+ inline float inline_predict(vw& all, example& ec)
+ {
+   label_data* ld = (label_data*)ec.ld;
+   float temp = ld->initial;
+   foreach_feature<float, vec_add>(all, ec, temp);
+   return temp;
+ }
 }
 
 #endif
