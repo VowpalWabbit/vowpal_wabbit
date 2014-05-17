@@ -348,7 +348,7 @@ float finalize_prediction(vw& all, float ret)
 }
 
 template<bool reg_mode_odd>
-void const_predict(gd& g, learner& base, example& ec)
+void predict(gd& g, learner& base, example& ec)
 {
   vw& all = *g.all;
 
@@ -359,90 +359,6 @@ void const_predict(gd& g, learner& base, example& ec)
     }
   else
     ec.partial_prediction = inline_predict<vec_add>(all, ec);    
-
-  label_data& ld = *(label_data*)ec.ld;
-  ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
-
-  if (all.audit || all.hash_inv)
-    print_audit_features(all, ec);
-}
-
-template<bool normalized_training, bool reg_mode_odd, bool power_t_half>
-void predict(gd& g, learner& base, example& ec)
-{
-  vw& all = *g.all;
-
-  if (normalized_training) {
-    if(power_t_half) {
-      if (reg_mode_odd)
-	{
-	  float gravity = (float)all.sd->gravity;
-	  if (all.adaptive)
-	    if (all.normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<true, 1> >(all, ec, gravity);
-	    else
-	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<true, 2> >(all, ec, gravity);
-	  else
-	    if (all.normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<false, 1> >(all, ec, gravity);
-	    else
-	      ec.partial_prediction = inline_predict<float, vec_add_trunc_rescale<false, 2> >(all, ec, gravity);
-	}
-      else
-	{
-	  if (all.adaptive)
-	    if (all.normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<vec_add_rescale<true, 1> >(all, ec);
-	    else
-	      ec.partial_prediction = inline_predict<vec_add_rescale<true, 2> >(all, ec);
-	  else
-	    if (all.normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<vec_add_rescale<false, 1> >(all, ec);
-	    else
-	      ec.partial_prediction = inline_predict<vec_add_rescale<false, 2> >(all, ec);
-	}
-    }
-    else {
-      if (reg_mode_odd)
-	{
-	  gnp temp = {(float)all.sd->gravity, all.power_t};
-	  if (all.adaptive)
-	    if (all.normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<true, 1> >(all, ec, temp);
-	    else
-	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<true, 2> >(all, ec, temp);
-	  else
-	    if (all.normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<false, 1> >(all, ec, temp);
-	    else
-	      ec.partial_prediction = inline_predict<gnp, vec_add_trunc_rescale_general<false, 2> >(all, ec, temp);
-	}
-      else
-	{
-	  float power_t = all.power_t;
-	  if (all.adaptive)
-	    if (all.normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<true, 1> >(all, ec, power_t);
-	    else
-	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<true, 2> >(all, ec, power_t);
-	  else
-	    if (all.normalized_idx == 1)
-	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<false, 1> >(all, ec, power_t);
-	    else
-	      ec.partial_prediction = inline_predict<float, vec_add_rescale_general<false, 2> >(all, ec, power_t);
-	}
-    }
-  }
-  else {
-    // no rescaling
-    if (reg_mode_odd)
-      {
-	float gravity = (float)all.sd->gravity;
-	ec.partial_prediction = inline_predict<float, vec_add_trunc>(all, ec, gravity);
-      }
-    else
-      ec.partial_prediction = inline_predict<vec_add>(all, ec);
-  }
 
   label_data& ld = *(label_data*)ec.ld;
   ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
@@ -988,13 +904,13 @@ learner* setup(vw& all, po::variables_map& vm)
   // select the appropriate predict function based on normalization, regularization, and power_t
   if (all.reg_mode % 2)
     {
-      ret->set_predict<gd, const_predict<true> >();
-      g->predict = const_predict<true>;
+      ret->set_predict<gd, predict<true> >();
+      g->predict = predict<true>;
     }
   else
     {
-      ret->set_predict<gd, const_predict<false> >();
-      g->predict = const_predict<true>;
+      ret->set_predict<gd, predict<false> >();
+      g->predict = predict<true>;
     }
 
   // select the appropriate learn function based on adaptive, normalization, and feature mask

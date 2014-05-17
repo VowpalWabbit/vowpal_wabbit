@@ -10,12 +10,12 @@ license as described in the file LICENSE.
 #include <sys/socket.h>
 #endif
 
-#include <math.h>
 #include "example.h"
 #include "parse_regressor.h"
 #include "parser.h"
 #include "sparse_dense.h"
 #include "v_array.h"
+#include "constant.h"
 
 namespace GD{
 void print_result(int f, float res, v_array<char> tag);

@@ -14,7 +14,6 @@ license as described in the file LICENSE.
 #endif
 
 #include "constant.h"
-#include "sparse_dense.h"
 #include "gd.h"
 #include "simple_label.h"
 #include "rand48.h"
@@ -155,6 +154,12 @@ float mf_predict(vw& all, example& ec)
   return ld->prediction;
 }
 
+
+void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end, size_t offset, float update, float regularization)
+{
+  for (feature* f = begin; f!= end; f++) 
+    weights[(f->weight_index + offset) & mask] += update * f->x - regularization * weights[(f->weight_index + offset) & mask];
+}
 
 void mf_train(vw& all, example& ec, float update)
 {
