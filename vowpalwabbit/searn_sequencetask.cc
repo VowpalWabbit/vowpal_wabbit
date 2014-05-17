@@ -44,6 +44,7 @@ namespace ArgmaxTask {
 
   struct task_data {
     float false_negative_cost;
+    float negative_weight;
     bool predict_max;
   };
 
@@ -55,6 +56,7 @@ namespace ArgmaxTask {
     po::options_description argmax_opts("argmax options");
     argmax_opts.add_options()
       ("cost", po::value<float>(&(my_task_data->false_negative_cost))->default_value(10.0), "False Negative Cost")
+      ("negative_weight", po::value<float>(&(my_task_data->negative_weight))->default_value(1), "Relative weight of negative examples")
       ("max", "Disable structure: just predict the max");
 
     vm = add_options(*srn.all, argmax_opts);
@@ -98,9 +100,9 @@ namespace ArgmaxTask {
     }
     float loss = 0.;
     if (max_label > max_prediction)
-      loss = my_task_data->false_negative_cost;
+      loss = my_task_data->false_negative_cost / my_task_data->negative_weight;
     else if (max_prediction > max_label)
-      loss = 1.;		
+      loss = 1.;
     srn.loss(loss);
 
     if (srn.output().good())
