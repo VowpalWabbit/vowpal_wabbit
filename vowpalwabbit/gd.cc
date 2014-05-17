@@ -32,7 +32,6 @@ using namespace LEARNER;
 namespace GD
 {
   struct gd{
-    size_t current_pass;
     bool active;
     bool active_simulation;
     float normalized_sum_norm_x;
@@ -348,6 +347,26 @@ float finalize_prediction(vw& all, float ret)
   return ret;
 }
 
+template<bool reg_mode_odd>
+void const_predict(gd& g, learner& base, example& ec)
+{
+  vw& all = *g.all;
+
+  if (reg_mode_odd)
+    {
+      float gravity = (float)all.sd->gravity;
+      ec.partial_prediction = inline_predict<float, vec_add_trunc>(all, ec, gravity);
+    }
+  else
+    ec.partial_prediction = inline_predict<vec_add>(all, ec);    
+
+  label_data& ld = *(label_data*)ec.ld;
+  ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
+
+  if (all.audit || all.hash_inv)
+    print_audit_features(all, ec);
+}
+
 template<bool normalized_training, bool reg_mode_odd, bool power_t_half>
 void predict(gd& g, learner& base, example& ec)
 {
@@ -440,7 +459,7 @@ void predict(gd& g, learner& base, example& ec)
   };
 
 template<bool adaptive, bool normalized, bool feature_mask_off, size_t normalized_idx, size_t feature_mask_idx>
-inline void simple_norm_compute(norm_data& nd, float x, float& fw) 
+inline void sqrt_pred_per_update(norm_data& nd, float x, float& fw) 
 {
   weight* w = &fw;
   if(feature_mask_off || w[feature_mask_idx]==1.){
@@ -449,6 +468,14 @@ inline void simple_norm_compute(norm_data& nd, float x, float& fw)
     float inv_norm = 1.f;
     float inv_norm2 = 1.f;
     if(normalized) {
+      float x_abs = fabs(x);
+      if( x_abs > w[normalized_idx] ) {// new scale discovered
+	if( w[normalized_idx] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+	  float rescale = (w[normalized_idx]/x_abs);
+	  w[0] *= (adaptive ? rescale : rescale*rescale);
+	}
+	w[normalized_idx] = x_abs;
+      }
       inv_norm /= w[normalized_idx];
       inv_norm2 = inv_norm*inv_norm;
       nd.norm_x += x2 * inv_norm2;
@@ -472,11 +499,9 @@ inline void simple_norm_compute(norm_data& nd, float x, float& fw)
 }
 
 template<bool adaptive, bool normalized, bool feature_mask_off, size_t normalized_idx, size_t feature_mask_idx>
-inline void powert_norm_compute(norm_data& nd, float x, float& fw) {
+inline void general_pred_per_update(norm_data& nd, float x, float& fw) {
   weight* w = &fw;
   if(feature_mask_off || w[feature_mask_idx]==1.){
-    float power_t_norm = 1.f - (adaptive ? nd.power_t : 0.f);
-
     float x2 = x * x;
     float t = 1.f;
     if(adaptive){
@@ -484,6 +509,15 @@ inline void powert_norm_compute(norm_data& nd, float x, float& fw) {
       t = powf(w[1], -nd.power_t);
     }
     if(normalized) {
+      float x_abs = fabs(x);
+      float power_t_norm = 1.f - (adaptive ? nd.power_t : 0.f);
+      if( x_abs > w[normalized_idx] ) {
+	if( w[normalized_idx] > 0. ) {
+	  float rescale = (w[normalized_idx]/x_abs);
+	  w[0] *= powf(rescale*rescale,power_t_norm);
+	}
+	w[normalized_idx] = x_abs;
+      }
       float range2 = w[normalized_idx] * w[normalized_idx];
       t *= powf(range2, -power_t_norm);
       nd.norm_x += x2 / range2;
@@ -493,7 +527,7 @@ inline void powert_norm_compute(norm_data& nd, float x, float& fw) {
 }
 
   template <void (*T)(norm_data&,float,float&)>
-float compute_norm(vw& all, example& ec)
+float pred_per_update(vw& all, example& ec)
 {//We must traverse the features in _precisely_ the same order as during training.
   label_data* ld = (label_data*)ec.ld;
   float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
@@ -560,9 +594,9 @@ void compute_update(vw& all, gd& g, example& ec)
 	  float norm;
           if(adaptive || normalized)
             if(all.power_t == 0.5)
-	      norm = compute_norm<simple_norm_compute<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx> >(all,ec);
+	      norm = pred_per_update<sqrt_pred_per_update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx> >(all,ec);
             else
-	      norm = compute_norm<powert_norm_compute<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx> >(all,ec);
+	      norm = pred_per_update<general_pred_per_update<adaptive, normalized, feature_mask_off, normalized_idx, feature_mask_idx> >(all,ec);
           else
             norm = ec.total_sum_feat_sq;
 
@@ -952,52 +986,16 @@ learner* setup(vw& all, po::variables_map& vm)
   learner* ret = new learner(g, 1 << all.reg.stride_shift);
 
   // select the appropriate predict function based on normalization, regularization, and power_t
-  if (all.normalized_updates && all.training)
-    if (all.reg_mode % 2)
-      if (all.power_t == 0.5)
-	{
-	  g->predict = predict<true, true, true>;
-	  ret->set_predict<gd, predict<true, true, true> >();
-	}
-      else
-	{
-	  g->predict = predict<true, true, false>;
-	  ret->set_predict<gd, predict<true, true, false> >();
-	}
-    else
-      if (all.power_t == 0.5)
-	{
-	  g->predict = predict<true, false, true>;
-	  ret->set_predict<gd, predict<true, false, true> >();
-	}
-      else
-	{
-	  g->predict = predict<true, false, false>;
-	  ret->set_predict<gd, predict<true, false, false> >();
-	}
+  if (all.reg_mode % 2)
+    {
+      ret->set_predict<gd, const_predict<true> >();
+      g->predict = const_predict<true>;
+    }
   else
-    if (all.reg_mode % 2)
-      if (all.power_t == 0.5)
-	{
-	  g->predict = predict<false, true, true>;
-	  ret->set_predict<gd, predict<false, true, true> >();
-	}
-      else
-	{
-	  g->predict = predict<false, true, false>;
-	  ret->set_predict<gd, predict<false, true, false> >();
-	}
-    else
-      if (all.power_t == 0.5)
-	{
-	  g->predict = predict<false, false, true>;
-	  ret->set_predict<gd, predict<false, false, true> >();
-	}
-      else
-	{
-	  g->predict = predict<false, false, true>;
-	  ret->set_predict<gd, predict<false, false, true> >();
-	}
+    {
+      ret->set_predict<gd, const_predict<false> >();
+      g->predict = const_predict<true>;
+    }
 
   // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.adaptive)
