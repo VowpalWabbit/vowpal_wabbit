@@ -126,6 +126,9 @@ void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
     all.quiet = true;
     // --quiet wins over --progress
   } else {
+    if (argc == 1)
+      cerr << "For more information use: vw --help" << endl;
+
     all.quiet = false;
 
     if (vm.count("progress")) {
@@ -197,7 +200,7 @@ void parse_source(vw& all, po::variables_map& vm)
     options(all.opts).positional(p).run();
   vm = po::variables_map();
   po::store(pos, vm);
-  
+ 
   //begin input source
   if (vm.count("no_stdin"))
     all.stdin_off = true;
@@ -224,6 +227,12 @@ void parse_source(vw& all, po::variables_map& vm)
       set_compressed(all.p);
   } else
     all.data_filename = "";
+
+  if ((vm.count("cache") || vm.count("cache_file")) && vm.count("invert_hash"))
+    {
+      cout << "invert_hash is incompatible with a cache file.  Use it in single pass mode only." << endl;
+      throw exception();
+    }
 
   if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
     {
