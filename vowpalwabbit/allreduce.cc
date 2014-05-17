@@ -36,18 +36,18 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
   far_end.sin_port = port;
-  
+
   far_end.sin_addr = *(in_addr*)&ip;
   memset(&far_end.sin_zero, '\0',8);
-  
+
   {
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];
     getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV);
-    
+
     cerr << "connecting to " << hostname << ':' << ntohs(port) << endl;
   }
-  
+
   size_t count = 0;
   int ret;
   while ( (ret =connect(sock,(sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
@@ -59,7 +59,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
       cerr << "can't connect to: " ;
       uint32_t pip = ntohl(ip);
       unsigned char * pp = (unsigned char*)&pip;
-      
+
       for (size_t i = 0; i < 4; i++)
 	{
 	  cerr << static_cast<unsigned int>(static_cast<unsigned short>(pp[3-i])) << ".";
@@ -67,7 +67,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
       cerr << ':' << ntohs(port) << endl;
       perror(NULL);
       count++;
-#ifdef _WIN32      
+#ifdef _WIN32
       Sleep(1);
 #else
       sleep(1);
@@ -90,7 +90,7 @@ socket_t getsock()
   // of VW on the same machine to potentially contact the wrong tree node.
 #ifndef _WIN32
     int on = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
       perror("setsockopt SO_REUSEADDR");
 #endif
   return sock;
@@ -104,7 +104,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   int lastError = WSAGetLastError();
 #endif
 
-  
+
 
   struct hostent* master = gethostbyname(master_location.c_str());
 
@@ -119,11 +119,11 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 
   socket_t master_sock = sock_connect(master_ip, htons(port));
   if(send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
-    cerr << "write failed!" << endl; 
+    cerr << "write failed!" << endl;
   if(send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
-    cerr << "write failed!" << endl; 
+    cerr << "write failed!" << endl;
   if(send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
-    cerr << "write failed!" << endl; 
+    cerr << "write failed!" << endl;
   int ok;
   if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok))
     cerr << "read 1 failed!" << endl;
@@ -173,7 +173,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
         if (listen(sock, kid_count) < 0)
         {
           perror("listen failed! ");
-          shutdown(sock, SHUT_RDWR);
+          CLOSESOCK(sock);
           sock = getsock();
         }
         else
@@ -192,7 +192,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   if(recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
     cerr << "read 4 failed!" << endl;
 
-  shutdown(master_sock, SHUT_RDWR);
+  CLOSESOCK(master_sock);
 
   if(parent_ip != (uint32_t)-1) {
     socks.parent = sock_connect(parent_ip, parent_port);
@@ -205,7 +205,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   {
     sockaddr_in child_address;
     socklen_t size = sizeof(child_address);
-    socket_t f = accept(sock,(sockaddr*)&child_address,&size);    
+    socket_t f = accept(sock,(sockaddr*)&child_address,&size);
     if (f < 0)
     {
       cerr << "bad client socket!" << endl;
@@ -219,7 +219,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   }
 
   if (kid_count > 0)
-    shutdown(sock, SHUT_RDWR);
+    CLOSESOCK(sock);
 }
 
 
@@ -229,9 +229,9 @@ void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent
 
   if(my_bufsize > 0) {
     //going to pass up this chunk of data to the children
-    if(child_sockets[0] != -1 && send(child_sockets[0], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize) 
+    if(child_sockets[0] != -1 && send(child_sockets[0], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize)
       cerr<<"Write to left child failed\n";
-    if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize) 
+    if(child_sockets[1] != -1 && send(child_sockets[1], buffer+children_sent_pos, (int)my_bufsize, 0) < (int)my_bufsize)
       cerr<<"Write to right child failed\n";
 
     children_sent_pos += my_bufsize;
@@ -241,16 +241,16 @@ void pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent
 
 
 void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const socket_t * child_sockets) {
- 
+
    size_t parent_read_pos = 0; //First unread float from parent
    size_t children_sent_pos = 0; //First unsent float to children
   //parent_sent_pos <= left_read_pos
   //parent_sent_pos <= right_read_pos
-  
+
    if(parent_sock == -1) {
-     parent_read_pos = n;						 
+     parent_read_pos = n;
    }
-   if(child_sockets[0] == -1 && child_sockets[1] == -1) 
+   if(child_sockets[0] == -1 && child_sockets[1] == -1)
      children_sent_pos = n;
 
    while (parent_read_pos < n || children_sent_pos < n)
@@ -270,8 +270,7 @@ void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const s
 	  cerr <<" Read from parent failed\n";
 	  perror(NULL);
 	}
-	parent_read_pos += read_size;	
+	parent_read_pos += read_size;
       }
     }
 }
-

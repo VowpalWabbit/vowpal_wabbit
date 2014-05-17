@@ -13,7 +13,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include <WS2tcpip.h>
 #include <io.h>
 
-#define SHUT_RDWR SD_BOTH
+#define CLOSESOCK closesocket
 
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
@@ -37,6 +37,8 @@ int getpid()
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <strings.h>
+
+#define CLOSESOCK close
 
 typedef int socket_t;
 
@@ -65,7 +67,7 @@ struct partial {
 };
 
 static int socket_sort(const void* s1, const void* s2) {
-  
+
   client* socket1 = (client*)s1;
   client* socket2 = (client*)s2;
   return socket1->client_ip - socket2->client_ip;
@@ -77,7 +79,7 @@ int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offse
     kid_count[offset] = 0;
     return offset;
   }
-    
+
   int height = (int)floor(log((double)source_count)/log(2.0));
   int root = (1 << height) - 1;
   int left_count = root;
@@ -85,12 +87,12 @@ int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offse
   int left_child = build_tree(parent, kid_count, left_count, left_offset);
   int oroot = root+offset;
   parent[left_child] = oroot;
-  
+
   size_t right_count = source_count - left_count - 1;
   if (right_count > 0)
     {
       int right_offset = oroot+1;
-      
+
       int right_child = build_tree(parent, kid_count, right_count, right_offset);
       parent[right_child] = oroot;
       kid_count[oroot] = 2;
@@ -136,14 +138,14 @@ int main(int argc, char* argv[]) {
   }
 
   int on = 1;
-  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
     perror("setsockopt SO_REUSEADDR");
 
   sockaddr_in address;
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = htonl(INADDR_ANY);
   short unsigned int port = 26543;
-      
+
   address.sin_port = htons(port);
   if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
     {
@@ -159,9 +161,9 @@ int main(int argc, char* argv[]) {
 	cerr << "failure to background!" << endl;
 	exit(1);
       }
-  
+
   if (argc == 2 && strcmp("--nondaemon",argv[1])!=0)
-    {	  
+    {
       ofstream pid_file;
       pid_file.open(argv[1]);
       if (!pid_file.is_open())
@@ -172,11 +174,11 @@ int main(int argc, char* argv[]) {
       pid_file << getpid() << endl;
       pid_file.close();
     }
-  
+
   map<size_t, partial> partial_nodesets;
   while(true) {
     listen(sock, 1024);
-    
+
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     socket_t f = accept(sock,(sockaddr*)&client_address,&size);
@@ -215,20 +217,20 @@ int main(int argc, char* argv[]) {
       }
 
     int ok = true;
-    if ( id >= total ) 
+    if ( id >= total )
       {
 	cout << "invalid id! " << endl;
 	ok = false;
       }
     partial partial_nodeset;
-    
+
     if (partial_nodesets.find(nonce) == partial_nodesets.end() )
       {
 	partial_nodeset.nodes = (client*) calloc(total, sizeof(client));
 	for (size_t i = 0; i < total; i++)
 	  partial_nodeset.nodes[i].client_ip = (uint32_t)-1;
 	partial_nodeset.filled = 0;
-      }    
+      }
     else {
       partial_nodeset = partial_nodesets[nonce];
       partial_nodesets.erase(nonce);
@@ -251,33 +253,33 @@ int main(int argc, char* argv[]) {
     else
       {//Time to make the spanning tree
 	qsort(partial_nodeset.nodes, total, sizeof(client), socket_sort);
-	
-	int* parent = (int*)calloc(total,sizeof(int));	
+
+	int* parent = (int*)calloc(total,sizeof(int));
 	uint16_t* kid_count = (uint16_t*)calloc(total,sizeof(uint16_t));
-	
+
 	int root = build_tree(parent, kid_count, total, 0);
 	parent[root] = -1;
-	
+
 	for (size_t i = 0; i < total; i++)
 	  {
 	    fail_send(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
-	  }	
+	  }
 
 	uint16_t* client_ports=(uint16_t*)calloc(total,sizeof(uint16_t));
 
 	for(size_t i = 0;i < total;i++) {
 	  int done = 0;
-	  if(recv(partial_nodeset.nodes[i].socket, (char*)&(client_ports[i]), sizeof(client_ports[i]), 0) < (int) sizeof(client_ports[i])) 
+	  if(recv(partial_nodeset.nodes[i].socket, (char*)&(client_ports[i]), sizeof(client_ports[i]), 0) < (int) sizeof(client_ports[i]))
 	    cerr<<" Port read failed for node "<<i<<" read "<<done<<endl;
 	}// all clients have bound to their ports.
-	
+
 	for (size_t i = 0; i < total; i++)
 	  {
 	    if (parent[i] >= 0)
 	      {
 		fail_send(partial_nodeset.nodes[i].socket, &partial_nodeset.nodes[parent[i]].client_ip, sizeof(partial_nodeset.nodes[parent[i]].client_ip));
 		fail_send(partial_nodeset.nodes[i].socket, &client_ports[parent[i]], sizeof(client_ports[parent[i]]));
-		}
+              }
 	    else
 	      {
 		int bogus = -1;
@@ -285,19 +287,13 @@ int main(int argc, char* argv[]) {
 		fail_send(partial_nodeset.nodes[i].socket, &bogus2, sizeof(bogus2));
 		fail_send(partial_nodeset.nodes[i].socket, &bogus, sizeof(bogus));
 	      }
-	    shutdown(partial_nodeset.nodes[i].socket, SHUT_RDWR);
-#ifdef _WIN32
-		_close(partial_nodeset.nodes[i].socket);
-#else
-	    close(partial_nodeset.nodes[i].socket);
-#endif
+	    CLOSESOCK(partial_nodeset.nodes[i].socket);
 	  }
 	free (partial_nodeset.nodes);
       }
   }
- 
+
 #ifdef _WIN32
   WSACleanup();
 #endif
 }
-
