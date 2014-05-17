@@ -187,10 +187,10 @@ void parse_source(vw& all, po::variables_map& vm)
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
     ("no_stdin", "do not default to reading from stdin");
-  // Be friendly: if -d was left out, treat positional param as data file
   
   vm = add_options(all, in_opt);
 
+  // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;  
   p.add("data", -1);
   
@@ -779,7 +779,7 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
 
 void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  po::options_description cb_opts("Contextual Bandit Options");
+  po::options_description cb_opts("Contextual Bandit options");
     
   cb_opts.add_options()
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
@@ -869,7 +869,7 @@ vw* parse_args(int argc, char *argv[])
   po::options_description update_opt("Update options");
 
   update_opt.add_options()
-    ("learning_rate,l", po::value<float>(&(all->eta)), "Set Learning Rate")
+    ("learning_rate,l", po::value<float>(&(all->eta)), "Set learning rate")
     ("power_t", po::value<float>(&(all->power_t)), "t power value")
     ("decay_learning_rate",    po::value<float>(&(all->eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
@@ -903,7 +903,7 @@ vw* parse_args(int argc, char *argv[])
 
   po::options_description other_opt("Other options");
   other_opt.add_options()
-    ("bootstrap", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
+    ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
     ;
 
   desc.add(update_opt)
