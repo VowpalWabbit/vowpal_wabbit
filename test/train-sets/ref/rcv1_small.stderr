@@ -23,9 +23,9 @@ num sources = 1
 11 0.29475   	0.00000   	0.00001   	 0.504319  	0.006255  	          	          	0.09031   	1.00000   
 
 finished run
-number of examples = 200000
-weighted example sum = 200000
-weighted label sum = -12720
-average loss = 0.199705
-best constant = -0.0636
-total feature number = 15587880
+number of examples = 110256
+weighted example sum = 110256
+weighted label sum = -7016
+average loss = 0.343943
+best constant = -0.0636337
+total feature number = 8593703

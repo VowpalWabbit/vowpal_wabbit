@@ -802,8 +802,10 @@ void end_pass(bfgs& b)
                set_done(*all);
                cerr<<"Early termination reached w.r.t. holdout set error";
              }
-
-	   } 
+	   } if (b.final_pass == b.current_pass) {
+	     finalize_regressor(*all, all->final_regressor_name); 
+	     set_done(*all);
+	   }
            
        }else{//reaching convergence in the previous pass
         if(b.output_regularizer) 
