@@ -49,12 +49,76 @@ void vec_store(features_and_source& p, float fx, float& fw) {
   p.feature_map.push_back(f);
 }  
   
+audit_data copy_audit_data(audit_data &src) {
+  audit_data dst;
+  dst.space = (char*)calloc_or_die(strlen(src.space)+1, sizeof(char));
+  strcpy(dst.space, src.space);
+  dst.feature = (char*)calloc_or_die(strlen(src.feature)+1, sizeof(char));
+  strcpy(dst.feature, src.feature);
+  dst.weight_index = src.weight_index;
+  dst.x = src.x;
+  dst.alloced = src.alloced;
+  return dst;
+}
+
 namespace VW {
+void copy_example_label(example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+  if (!src->ld) {
+    if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
+    dst->ld = NULL;
+  } else {
+    if ((label_size == 0) && (copy_label == NULL)) {
+      if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
+      dst->ld = NULL;
+    } else if (copy_label) {
+      copy_label(dst->ld, src->ld);
+    } else {
+      //dst->ld = (void*)malloc(label_size);
+      memcpy(dst->ld, src->ld, label_size);
+    }
+  }
+}
+
+void copy_example_data(bool audit, example* dst, example* src)
+{
+  //std::cerr << "copy_example_data dst = " << dst << std::endl;
+  copy_array(dst->tag, src->tag);
+  dst->example_counter = src->example_counter;
+
+  copy_array(dst->indices, src->indices);
+  for (size_t i=0; i<256; i++)
+    copy_array(dst->atomics[i], src->atomics[i]);
+  dst->ft_offset = src->ft_offset;
+
+  if (audit)
+    for (size_t i=0; i<256; i++)
+      copy_array(dst->audit_features[i], src->audit_features[i], copy_audit_data);
+  
+  dst->num_features = src->num_features;
+  dst->partial_prediction = src->partial_prediction;
+  copy_array(dst->topic_predictions, src->topic_predictions);
+  dst->loss = src->loss;
+  dst->eta_round = src->eta_round;
+  dst->eta_global = src->eta_global;
+  dst->example_t = src->example_t;
+  memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
+  dst->total_sum_feat_sq = src->total_sum_feat_sq;
+  dst->revert_weight = src->revert_weight;
+  dst->test_only = src->test_only;
+  dst->end_pass = src->end_pass;
+  dst->sorted = src->sorted;
+  dst->in_use = src->in_use;}
+
+void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
+  copy_example_data(audit, dst, src);
+  copy_example_label(dst, src, label_size, copy_label);
+}
 
 flat_example* flatten_example(vw& all, example *ec) 
 {  
 	flat_example* fec = (flat_example*) calloc_or_die(1,sizeof(flat_example));  
-	fec->ld = ec->ld;
+	fec->ld = (label_data*)calloc_or_die(1, sizeof(label_data));
+	memcpy(fec->ld, ec->ld, sizeof(label_data));
 
 	fec->tag_len = ec->tag.size();
 	if (fec->tag_len >0)
@@ -87,6 +151,7 @@ void free_flatten_example(flat_example* fec)
     {
       if (fec->feature_map_len > 0)
 	free(fec->feature_map);
+      free(fec->ld);
       free(fec);
     }
 }
@@ -140,68 +205,3 @@ void dealloc_example(void(*delete_label)(void*), example&ec)
   ec.indices.delete_v();
 }
 
-audit_data copy_audit_data(audit_data &src) {
-  audit_data dst;
-  dst.space = (char*)calloc_or_die(strlen(src.space)+1, sizeof(char));
-  strcpy(dst.space, src.space);
-  dst.feature = (char*)calloc_or_die(strlen(src.feature)+1, sizeof(char));
-  strcpy(dst.feature, src.feature);
-  dst.weight_index = src.weight_index;
-  dst.x = src.x;
-  dst.alloced = src.alloced;
-  return dst;
-}
-
-namespace VW {
-void copy_example_label(example*dst, example*src, size_t label_size, void(*copy_label)(void*&,void*)) {
-  if (!src->ld) {
-    if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
-    dst->ld = NULL;
-  } else {
-    if ((label_size == 0) && (copy_label == NULL)) {
-      if (dst->ld) free(dst->ld);  // TODO: this should be a delete_label, really
-      dst->ld = NULL;
-    } else if (copy_label) {
-      copy_label(dst->ld, src->ld);
-    } else {
-      //dst->ld = (void*)malloc(label_size);
-      memcpy(dst->ld, src->ld, label_size);
-    }
-  }
-}
-
-void copy_example_data(bool audit, example* dst, example* src)
-{
-  //std::cerr << "copy_example_data dst = " << dst << std::endl;
-  copy_array(dst->tag, src->tag);
-  dst->example_counter = src->example_counter;
-
-  copy_array(dst->indices, src->indices);
-  for (size_t i=0; i<256; i++)
-    copy_array(dst->atomics[i], src->atomics[i]);
-  dst->ft_offset = src->ft_offset;
-
-  if (audit)
-    for (size_t i=0; i<256; i++)
-      copy_array(dst->audit_features[i], src->audit_features[i], copy_audit_data);
-  
-  dst->num_features = src->num_features;
-  dst->partial_prediction = src->partial_prediction;
-  copy_array(dst->topic_predictions, src->topic_predictions);
-  dst->loss = src->loss;
-  dst->eta_round = src->eta_round;
-  dst->eta_global = src->eta_global;
-  dst->example_t = src->example_t;
-  memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
-  dst->total_sum_feat_sq = src->total_sum_feat_sq;
-  dst->revert_weight = src->revert_weight;
-  dst->test_only = src->test_only;
-  dst->end_pass = src->end_pass;
-  dst->sorted = src->sorted;
-  dst->in_use = src->in_use;}
-
-void copy_example_data(bool audit, example* dst, example* src, size_t label_size, void(*copy_label)(void*&,void*)) {
-  copy_example_data(audit, dst, src);
-  copy_example_label(dst, src, label_size, copy_label);
-}
-}
