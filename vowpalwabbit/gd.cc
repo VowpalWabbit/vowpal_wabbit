@@ -392,9 +392,10 @@ void predict(gd& g, learner& base, example& ec)
 
   struct norm_data {
     float g;
-    float norm;
+    float pred_per_update;
     float norm_x;
     float power_t;
+    float power_t_norm;
   };
 
 template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
@@ -403,11 +404,10 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
   if(!feature_mask || w[feature_mask]==1.){
     float x2 = x * x;
     float rate_decay = 1.f;
-    if (sqrt_rate)
-      {
-	if(adaptive){
-	  w[adaptive] += nd.g * x2;
-	  
+    if(adaptive){
+      w[adaptive] += nd.g * x2;
+      if (sqrt_rate)
+	{	  
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
 	  __m128 eta = _mm_load_ss(&w[adaptive]);
 	  eta = _mm_rsqrt_ss(eta);
@@ -416,47 +416,37 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
 	  rate_decay = InvSqrt(w[adaptive]);
 #endif
 	}
-
-	if(normalized) {
-	  float x_abs = fabsf(x);
-	  if( x_abs > w[normalized] ) {// new scale discovered
-	    if( w[normalized] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
-	      float rescale = (w[normalized]/x_abs);
-	      w[0] *= (adaptive ? rescale : rescale*rescale);
-	    }
-	    w[normalized] = x_abs;
-	  }
-	  float inv_norm = 1.f / w[normalized];
-	  float inv_norm2 = inv_norm*inv_norm;
-	  nd.norm_x += x2 * inv_norm2;
-	  if (adaptive)
-	    rate_decay *= inv_norm;
+      else
+	rate_decay = powf(w[adaptive], -nd.power_t);
+    }
+    if(normalized) {
+      float x_abs = fabsf(x);
+      if( x_abs > w[normalized] ) {// new scale discovered
+	if( w[normalized] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+	  float rescale = (w[normalized]/x_abs);
+	  if (sqrt_rate)
+	    w[0] *= (adaptive ? rescale : rescale*rescale);
 	  else
-	    rate_decay *= inv_norm2;
+	    w[0] *= powf(rescale*rescale, nd.power_t_norm);
 	}
+	w[normalized] = x_abs;
       }
-    else
-      {
-	if(adaptive){
-	  w[adaptive] += nd.g * x2;
-	  rate_decay = powf(w[adaptive], -nd.power_t);
-	}
-	if(normalized) {
-	  float x_abs = fabs(x);
-	  float power_t_norm = 1.f - (adaptive ? nd.power_t : 0.f);
-	  if( x_abs > w[normalized] ) {
-	    if( w[normalized] > 0. ) {
-	      float rescale = (w[normalized]/x_abs);
-	      w[0] *= powf(rescale*rescale,power_t_norm);
-	    }
-	    w[normalized] = x_abs;
-	  }
-	  float range2 = w[normalized] * w[normalized];
-	  rate_decay *= powf(range2, -power_t_norm);
-	  nd.norm_x += x2 / range2;
-	}
+      if (sqrt_rate) {
+	float inv_norm = 1.f / w[normalized];
+	float inv_norm2 = inv_norm*inv_norm;
+	nd.norm_x += x2 * inv_norm2;
+	if (adaptive)
+	  rate_decay *= inv_norm;
+	else
+	  rate_decay *= inv_norm2;
       }
-    nd.norm += x2 * rate_decay;
+      else{
+	float range2 = w[normalized] * w[normalized];
+	rate_decay *= powf(range2, -nd.power_t_norm);
+	nd.norm_x += x2 / range2;
+      }
+    }
+    nd.pred_per_update += x2 * rate_decay;
   }
 }
   
@@ -466,7 +456,9 @@ float pred_per_update(vw& all, example& ec)
   label_data* ld = (label_data*)ec.ld;
   float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
   if (g==0) return 1.;
-  norm_data nd = {g, 0., 0., all.power_t};
+
+  float power_t_norm = 1.f - (adaptive ? all.power_t : 0.f);
+  norm_data nd = {g, 0., 0., all.power_t, power_t_norm};
   
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, adaptive, normalized, feature_mask> >(all, ec, nd);
   
@@ -480,15 +472,15 @@ float pred_per_update(vw& all, example& ec)
     
     float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
     if(sqrt_rate) {
-      if(adaptive) nd.norm /= sqrt(avg_sq_norm);
-      else nd.norm /= avg_sq_norm;
+      if(adaptive) nd.pred_per_update /= sqrt(avg_sq_norm);
+      else nd.pred_per_update /= avg_sq_norm;
     } else {
       float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
-      nd.norm *= powf(avg_sq_norm,-power_t_norm);
+      nd.pred_per_update *= powf(avg_sq_norm,-power_t_norm);
     }
   }
   
-  return nd.norm;
+  return nd.pred_per_update;
 }
 
 template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
