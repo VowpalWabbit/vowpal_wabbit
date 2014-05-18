@@ -50,24 +50,6 @@ namespace GD
     float power_t;
   };
 
-  template <void (*T)(train_data&, float, float&)>
-  void generic_train(vw& all, example& ec, float update, bool sqrt_norm)
-  {
-    if (fabsf(update) == 0.f)
-      return;
-    
-    float total_weight = ec.example_t;
-
-    if(!all.holdout_set_off)
-      total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
-    
-    float avg_norm = all.normalized_sum_norm_x / total_weight;
-    if (sqrt_norm) avg_norm = sqrt(avg_norm);
-    
-    train_data d = {avg_norm, update, all.power_t};
-    
-    foreach_feature<train_data,T>(all, ec, d);
-  }
 
 float InvSqrt(float x){
   float xhalf = 0.5f * x;
@@ -78,45 +60,62 @@ float InvSqrt(float x){
   return x;
 }
   
-  template<size_t adaptive, size_t normalized, size_t feature_mask>
-  inline void general_update(train_data& s, float x, float& fw)
+  template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
+  inline void update_feature(train_data& s, float x, float& fw)
   {
     weight* w = &fw;
-    if(!feature_mask || w[feature_mask]==1.){
-      float t = 1.f;
-      if(adaptive) t = powf(w[1],-s.power_t);
-      if(normalized) {
-	float norm = w[normalized] * s.avg_norm;
-	float power_t_norm = 1.f - (adaptive ? s.power_t : 0.f);
-	t *= powf(norm*norm,-power_t_norm);
-      }
-      w[0] += s.update * x * t;
-    }
-  }
-
-  template<size_t adaptive, size_t normalized, size_t feature_mask>
-  inline void specialized_update(train_data& s, float x, float& fw)
-  {
-  weight* w = &fw;
-  if(!feature_mask || w[feature_mask]==1.){
-    float t = 1.f;
-    float inv_norm = 1.f;
-    if(normalized) inv_norm /= (w[normalized] * s.avg_norm);
-    if(adaptive) {
+    if (sqrt_rate)
+      {  
+	if(!feature_mask || w[feature_mask]==1.){
+	  float t = 1.f;
+	  float inv_norm = 1.f;
+	  if(normalized) inv_norm /= (w[normalized] * s.avg_norm);
+	  if(adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-    __m128 eta = _mm_load_ss(&w[1]);
-    eta = _mm_rsqrt_ss(eta);
-    _mm_store_ss(&t, eta);
-    t *= inv_norm;
+	    __m128 eta = _mm_load_ss(&w[1]);
+	    eta = _mm_rsqrt_ss(eta);
+	    _mm_store_ss(&t, eta);
+	    t *= inv_norm;
 #else
-    t = InvSqrt(w[1]) * inv_norm;
+	    t = InvSqrt(w[1]) * inv_norm;
 #endif
-    } else {
-      t *= inv_norm*inv_norm; //if only using normalized updates but not adaptive, need to divide by feature norm squared
-    }
-    w[0] += s.update * x * t;
+	  } else {
+	    t *= inv_norm*inv_norm; //if only using normalized updates but not adaptive, need to divide by feature norm squared
+	  }
+	  w[0] += s.update * x * t;
+	}
+      }
+    else
+      if(!feature_mask || w[feature_mask]==1.){
+	float t = 1.f;
+	if(adaptive) t = powf(w[1],-s.power_t);
+	if(normalized) {
+	  float norm = w[normalized] * s.avg_norm;
+	  float power_t_norm = 1.f - (adaptive ? s.power_t : 0.f);
+	  t *= powf(norm*norm,-power_t_norm);
+	}
+	w[0] += s.update * x * t;
+      }
   }
-}
+  
+  template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
+  void train(vw& all, example& ec, float update)
+  {
+    if (fabsf(update) == 0.f)
+      return;
+    
+    float total_weight = ec.example_t;
+
+    if(!all.holdout_set_off)
+      total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
+    
+    float avg_norm = all.normalized_sum_norm_x / total_weight;
+    if (sqrt_rate) avg_norm = sqrt(avg_norm);
+    
+    train_data d = {avg_norm, update, all.power_t};
+    
+    foreach_feature<train_data,update_feature<sqrt_rate, adaptive, normalized, feature_mask> >(all, ec, d);
+  }
 
   void end_pass(gd& g)
   {
@@ -396,106 +395,106 @@ void predict(gd& g, learner& base, example& ec)
     float power_t;
   };
 
-template<size_t adaptive, size_t normalized, size_t feature_mask>
-inline void sqrt_pred_per_update(norm_data& nd, float x, float& fw) 
-{
+template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
+inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
   weight* w = &fw;
-  if(!feature_mask || w[feature_mask]==1.){
-    float x2 = x * x;
-    float t = 1.f;
-    float inv_norm = 1.f;
-    float inv_norm2 = 1.f;
-    if(normalized) {
-      float x_abs = fabsf(x);
-      if( x_abs > w[normalized] ) {// new scale discovered
-	if( w[normalized] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
-	  float rescale = (w[normalized]/x_abs);
-	  w[0] *= (adaptive ? rescale : rescale*rescale);
+  if (sqrt_rate)
+    {
+      if(!feature_mask || w[feature_mask]==1.){
+	float x2 = x * x;
+	float t = 1.f;
+	float inv_norm = 1.f;
+	float inv_norm2 = 1.f;
+	if(normalized) {
+	  float x_abs = fabsf(x);
+	  if( x_abs > w[normalized] ) {// new scale discovered
+	    if( w[normalized] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
+	      float rescale = (w[normalized]/x_abs);
+	      w[0] *= (adaptive ? rescale : rescale*rescale);
+	    }
+	    w[normalized] = x_abs;
+	  }
+	  inv_norm /= w[normalized];
+	  inv_norm2 = inv_norm*inv_norm;
+	  nd.norm_x += x2 * inv_norm2;
 	}
-	w[normalized] = x_abs;
-      }
-      inv_norm /= w[normalized];
-      inv_norm2 = inv_norm*inv_norm;
-      nd.norm_x += x2 * inv_norm2;
-    }
-    if(adaptive){
-      w[1] += nd.g * x2;
-
+	if(adaptive){
+	  w[1] += nd.g * x2;
+	  
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-    __m128 eta = _mm_load_ss(&w[1]);
-    eta = _mm_rsqrt_ss(eta);
-    _mm_store_ss(&t, eta);
-    t *= inv_norm;
+	  __m128 eta = _mm_load_ss(&w[1]);
+	  eta = _mm_rsqrt_ss(eta);
+	  _mm_store_ss(&t, eta);
+	  t *= inv_norm;
 #else
-    t = InvSqrt(w[1]) * inv_norm;
+	  t = InvSqrt(w[1]) * inv_norm;
 #endif
-    } else {
-      t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
-    }
-    nd.norm += x2 * t;
-  }
-}
-
-template<size_t adaptive, size_t normalized, size_t feature_mask>
-inline void general_pred_per_update(norm_data& nd, float x, float& fw) {
-  weight* w = &fw;
-  if(!feature_mask || w[feature_mask]==1.){
-    float x2 = x * x;
-    float t = 1.f;
-    if(adaptive){
-      w[1] += nd.g * x2;
-      t = powf(w[1], -nd.power_t);
-    }
-    if(normalized) {
-      float x_abs = fabs(x);
-      float power_t_norm = 1.f - (adaptive ? nd.power_t : 0.f);
-      if( x_abs > w[normalized] ) {
-	if( w[normalized] > 0. ) {
-	  float rescale = (w[normalized]/x_abs);
-	  w[0] *= powf(rescale*rescale,power_t_norm);
+	} else {
+	  t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
 	}
-	w[normalized] = x_abs;
+	nd.norm += x2 * t;
       }
-      float range2 = w[normalized] * w[normalized];
-      t *= powf(range2, -power_t_norm);
-      nd.norm_x += x2 / range2;
     }
-    nd.norm += x2 * t;
-  }
+  else
+    {
+      if(!feature_mask || w[feature_mask]==1.){
+	float x2 = x * x;
+	float t = 1.f;
+	if(adaptive){
+	  w[1] += nd.g * x2;
+	  t = powf(w[1], -nd.power_t);
+	}
+	if(normalized) {
+	  float x_abs = fabs(x);
+	  float power_t_norm = 1.f - (adaptive ? nd.power_t : 0.f);
+	  if( x_abs > w[normalized] ) {
+	    if( w[normalized] > 0. ) {
+	      float rescale = (w[normalized]/x_abs);
+	      w[0] *= powf(rescale*rescale,power_t_norm);
+	    }
+	    w[normalized] = x_abs;
+	  }
+	  float range2 = w[normalized] * w[normalized];
+	  t *= powf(range2, -power_t_norm);
+	  nd.norm_x += x2 / range2;
+	}
+	nd.norm += x2 * t;
+      }
+    }
 }
 
-  template <size_t normalized, void (*T)(norm_data&,float,float&)>
-  float pred_per_update(vw& all, example& ec)
-  {//We must traverse the features in _precisely_ the same order as during training.
-    label_data* ld = (label_data*)ec.ld;
-    float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
-    if (g==0) return 1.;
-    norm_data nd = {g, 0., 0., all.power_t};
+template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
+float pred_per_update(vw& all, example& ec)
+{//We must traverse the features in _precisely_ the same order as during training.
+  label_data* ld = (label_data*)ec.ld;
+  float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
+  if (g==0) return 1.;
+  norm_data nd = {g, 0., 0., all.power_t};
+  
+  foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, adaptive, normalized, feature_mask> >(all, ec, nd);
+  
+  if(normalized) {
+    float total_weight = ec.example_t;
     
-    foreach_feature<norm_data,T>(all, ec, nd);
-
-    if(normalized) {
-      float total_weight = ec.example_t;
-      
-      if(!all.holdout_set_off)
-	total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
-      
-      all.normalized_sum_norm_x += ld->weight * nd.norm_x;
-      
-      float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
-      if(all.power_t == 0.5) {
-	if(all.adaptive) nd.norm /= sqrt(avg_sq_norm);
-	else nd.norm /= avg_sq_norm;
-      } else {
-	float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
-	nd.norm *= powf(avg_sq_norm,-power_t_norm);
-      }
+    if(!all.holdout_set_off)
+      total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
+    
+    all.normalized_sum_norm_x += ld->weight * nd.norm_x;
+    
+    float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
+    if(sqrt_rate) {
+      if(adaptive) nd.norm /= sqrt(avg_sq_norm);
+      else nd.norm /= avg_sq_norm;
+    } else {
+      float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
+      nd.norm *= powf(avg_sq_norm,-power_t_norm);
     }
-    
-    return nd.norm;
   }
   
-template<size_t adaptive, size_t normalized, size_t feature_mask>
+  return nd.norm;
+}
+
+template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
 void compute_update(vw& all, gd& g, example& ec)
 {
   label_data* ld = (label_data*)ec.ld;
@@ -530,10 +529,7 @@ void compute_update(vw& all, gd& g, example& ec)
 	  float eta_t;
 	  float norm;
           if(adaptive || normalized)
-            if(all.power_t == 0.5)
-	      norm = pred_per_update<normalized, sqrt_pred_per_update<adaptive, normalized, feature_mask> >(all,ec);
-            else
-	      norm = pred_per_update<normalized, general_pred_per_update<adaptive, normalized, feature_mask> >(all,ec);
+	    norm = pred_per_update<sqrt_rate, adaptive, normalized, feature_mask>(all,ec);
           else
             norm = ec.total_sum_feat_sq;
 
@@ -561,26 +557,23 @@ void compute_update(vw& all, gd& g, example& ec)
 
 }
 
-  template<size_t adaptive, size_t normalized, size_t feature_mask>
+template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
 void update(gd& g, learner& base, example& ec)
 {
   vw* all = g.all;
 
-  compute_update<adaptive, normalized, feature_mask> (*all, g, ec);
+  compute_update<sqrt_rate, adaptive, normalized, feature_mask> (*all, g, ec);
   
   if (ec.eta_round != 0.)
     {
-      if(all->power_t == 0.5)
-	generic_train<specialized_update<adaptive, normalized, feature_mask> > (*all,ec,(float)ec.eta_round,true);
-      else
-	generic_train<general_update<adaptive, normalized, feature_mask> >(*all,ec,(float)ec.eta_round,false);
+      train<sqrt_rate, adaptive, normalized, feature_mask>(*all,ec,(float)ec.eta_round);
       
       if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
 	sync_weights(*all);
     }
 }
 
-template<size_t adaptive, size_t normalized, size_t feature_mask>
+template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
 void learn(gd& g, learner& base, example& ec)
 {
   vw* all = g.all;
@@ -591,7 +584,7 @@ void learn(gd& g, learner& base, example& ec)
   g.predict(g,base,ec);
 
   if ((all->holdout_set_off || !ec.test_only) && ld->weight > 0)
-    update<adaptive, normalized, feature_mask>(g,base,ec);
+    update<sqrt_rate, adaptive, normalized, feature_mask>(g,base,ec);
   else if(ld->weight > 0)
     ec.loss = all->loss->getLoss(all->sd, ld->prediction, ld->label) * ld->weight;
 }
@@ -852,34 +845,43 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     }
 }
 
-template<size_t adaptive, size_t normalized, size_t next>
+template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t next>
 size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 {
   all.normalized_idx = normalized;
   if (feature_mask_off)
     {
-      ret->set_learn<gd, learn<adaptive,normalized,0> >();
-      ret->set_update<gd, update<adaptive,normalized,0> >();
+      ret->set_learn<gd, learn<sqrt_rate, adaptive,normalized,0> >();
+      ret->set_update<gd, update<sqrt_rate, adaptive,normalized,0> >();
       all.feature_mask_idx = 0;
       return next;
     }
   else
     {
-      ret->set_learn<gd, learn<adaptive,normalized,next> >();
-      ret->set_update<gd, update<adaptive,normalized,next> >();
+      ret->set_learn<gd, learn<sqrt_rate, adaptive,normalized,next> >();
+      ret->set_update<gd, update<sqrt_rate, adaptive,normalized,next> >();
       all.feature_mask_idx = next;
       return next+1;
     }
 }
 
-template<size_t adaptive>
+template<bool sqrt_rate, size_t adaptive>
 size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.normalized_updates)
-    return set_learn<adaptive, adaptive+1, adaptive+2>(all, ret, feature_mask_off);
+    return set_learn<sqrt_rate, adaptive, adaptive+1, adaptive+2>(all, ret, feature_mask_off);
   else
-    return set_learn<adaptive, 0, adaptive+1>(all, ret, feature_mask_off);
+    return set_learn<sqrt_rate, adaptive, 0, adaptive+1>(all, ret, feature_mask_off);
+}
+
+template<bool sqrt_rate>
+size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
+{
+  if (all.adaptive)
+    return set_learn<sqrt_rate, 1>(all, ret, feature_mask_off);
+  else
+    return set_learn<sqrt_rate, 0>(all, ret, feature_mask_off);
 }
 
 learner* setup(vw& all, po::variables_map& vm)
@@ -963,10 +965,11 @@ learner* setup(vw& all, po::variables_map& vm)
     }
   
   int stride;
-  if (all.adaptive)
-    stride = set_learn<1>(all, ret, feature_mask_off);
+  if (all.power_t == 0.5)
+    stride = set_learn<true>(all, ret, feature_mask_off);
   else
-    stride = set_learn<0>(all, ret, feature_mask_off);
+    stride = set_learn<false>(all, ret, feature_mask_off);
+    
   //fix me.
   //  ret->increment = stride;
 
