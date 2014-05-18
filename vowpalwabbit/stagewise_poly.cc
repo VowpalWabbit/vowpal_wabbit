@@ -411,9 +411,7 @@ namespace StagewisePoly
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
   {
-    //Note.  John avoid's FLT_MAX in train.
-    //but maybe that's just because his reduction tests will explode in that case?
-    bool training = poly.all->training && !ec.test_only;
+    bool training = poly.all->training && !ec.test_only && ((label_data *) ec.ld)->label != FLT_MAX;
 
     if (training) {
       synthetic_create(poly, ec, training);
