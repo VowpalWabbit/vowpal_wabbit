@@ -48,6 +48,7 @@ namespace GD
     float avg_norm;
     float update;
     float power_t;
+    float power_t_norm;
   };
 
 
@@ -64,38 +65,37 @@ float InvSqrt(float x){
   inline void update_feature(train_data& s, float x, float& fw)
   {
     weight* w = &fw;
-    if (sqrt_rate)
-      {  
-	if(!feature_mask || w[feature_mask]==1.){
-	  float t = 1.f;
-	  float inv_norm = 1.f;
-	  if(normalized) inv_norm /= (w[normalized] * s.avg_norm);
+    if(!feature_mask || w[feature_mask]==1.){
+      float rate_decay = 1.f;
+      if (sqrt_rate)
+	{  
 	  if(adaptive) {
 #if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-	    __m128 eta = _mm_load_ss(&w[1]);
+	    __m128 eta = _mm_load_ss(&w[adaptive]);
 	    eta = _mm_rsqrt_ss(eta);
-	    _mm_store_ss(&t, eta);
-	    t *= inv_norm;
+	    _mm_store_ss(&rate_decay, eta);
 #else
-	    t = InvSqrt(w[1]) * inv_norm;
+	    rate_decay = InvSqrt(w[adaptive]);
 #endif
-	  } else {
-	    t *= inv_norm*inv_norm; //if only using normalized updates but not adaptive, need to divide by feature norm squared
+	  } 
+	  if(normalized) {
+	    float inv_norm = 1.f / (w[normalized] * s.avg_norm);
+	    if (adaptive)
+	      rate_decay *= inv_norm;
+	    else
+	      rate_decay *= inv_norm*inv_norm;
 	  }
-	  w[0] += s.update * x * t;
 	}
-      }
-    else
-      if(!feature_mask || w[feature_mask]==1.){
-	float t = 1.f;
-	if(adaptive) t = powf(w[1],-s.power_t);
-	if(normalized) {
-	  float norm = w[normalized] * s.avg_norm;
-	  float power_t_norm = 1.f - (adaptive ? s.power_t : 0.f);
-	  t *= powf(norm*norm,-power_t_norm);
+      else
+	{
+	  if(adaptive) rate_decay = powf(w[adaptive],-s.power_t);
+	  if(normalized) {
+	    float norm = w[normalized] * s.avg_norm;
+	    rate_decay *= powf(norm*norm,-s.power_t_norm);
+	  }
 	}
-	w[0] += s.update * x * t;
-      }
+      w[0] += s.update * rate_decay * x;
+    }
   }
   
   template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
@@ -111,8 +111,10 @@ float InvSqrt(float x){
     
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_rate) avg_norm = sqrt(avg_norm);
-    
-    train_data d = {avg_norm, update, all.power_t};
+
+    float power_t_norm = 1.f - (adaptive ? all.power_t : 0.f);
+
+    train_data d = {avg_norm, update, all.power_t, power_t_norm};
     
     foreach_feature<train_data,update_feature<sqrt_rate, adaptive, normalized, feature_mask> >(all, ec, d);
   }
@@ -398,13 +400,23 @@ void predict(gd& g, learner& base, example& ec)
 template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
   weight* w = &fw;
-  if (sqrt_rate)
-    {
-      if(!feature_mask || w[feature_mask]==1.){
-	float x2 = x * x;
-	float t = 1.f;
-	float inv_norm = 1.f;
-	float inv_norm2 = 1.f;
+  if(!feature_mask || w[feature_mask]==1.){
+    float x2 = x * x;
+    float rate_decay = 1.f;
+    if (sqrt_rate)
+      {
+	if(adaptive){
+	  w[adaptive] += nd.g * x2;
+	  
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+	  __m128 eta = _mm_load_ss(&w[adaptive]);
+	  eta = _mm_rsqrt_ss(eta);
+	  _mm_store_ss(&rate_decay, eta);
+#else
+	  rate_decay = InvSqrt(w[adaptive]);
+#endif
+	}
+
 	if(normalized) {
 	  float x_abs = fabsf(x);
 	  if( x_abs > w[normalized] ) {// new scale discovered
@@ -414,35 +426,20 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
 	    }
 	    w[normalized] = x_abs;
 	  }
-	  inv_norm /= w[normalized];
-	  inv_norm2 = inv_norm*inv_norm;
+	  float inv_norm = 1.f / w[normalized];
+	  float inv_norm2 = inv_norm*inv_norm;
 	  nd.norm_x += x2 * inv_norm2;
+	  if (adaptive)
+	    rate_decay *= inv_norm;
+	  else
+	    rate_decay *= inv_norm2;
 	}
-	if(adaptive){
-	  w[1] += nd.g * x2;
-	  
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-	  __m128 eta = _mm_load_ss(&w[1]);
-	  eta = _mm_rsqrt_ss(eta);
-	  _mm_store_ss(&t, eta);
-	  t *= inv_norm;
-#else
-	  t = InvSqrt(w[1]) * inv_norm;
-#endif
-	} else {
-	  t *= inv_norm2; //if only using normalized but not adaptive, we're dividing update by feature norm squared
-	}
-	nd.norm += x2 * t;
       }
-    }
-  else
-    {
-      if(!feature_mask || w[feature_mask]==1.){
-	float x2 = x * x;
-	float t = 1.f;
+    else
+      {
 	if(adaptive){
-	  w[1] += nd.g * x2;
-	  t = powf(w[1], -nd.power_t);
+	  w[adaptive] += nd.g * x2;
+	  rate_decay = powf(w[adaptive], -nd.power_t);
 	}
 	if(normalized) {
 	  float x_abs = fabs(x);
@@ -455,14 +452,14 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
 	    w[normalized] = x_abs;
 	  }
 	  float range2 = w[normalized] * w[normalized];
-	  t *= powf(range2, -power_t_norm);
+	  rate_decay *= powf(range2, -power_t_norm);
 	  nd.norm_x += x2 / range2;
 	}
-	nd.norm += x2 * t;
       }
-    }
+    nd.norm += x2 * rate_decay;
+  }
 }
-
+  
 template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
 float pred_per_update(vw& all, example& ec)
 {//We must traverse the features in _precisely_ the same order as during training.
