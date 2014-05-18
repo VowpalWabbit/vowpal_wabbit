@@ -82,9 +82,13 @@ flat_example* flatten_example(vw& all, example *ec)
 }
 
 void free_flatten_example(flat_example* fec) 
-{  
-	if (fec)
-		free(fec);
+{  //note: The label memory should be freed by by freeing the original example.
+  if (fec)
+    {
+      if (fec->feature_map_len > 0)
+	free(fec->feature_map);
+      free(fec);
+    }
 }
 
 }
