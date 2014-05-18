@@ -853,6 +853,31 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     }
 }
 
+template<bool adaptive, bool normalized, size_t normalized_idx, size_t feature_mask_idx>
+void set_learn(vw& all, learner* ret, bool feature_mask_off)
+{
+  if (feature_mask_off)
+    {
+      ret->set_learn<gd, learn<adaptive,normalized,true, normalized_idx, 0> >();
+      ret->set_update<gd, learn<adaptive,normalized,true, normalized_idx, 0> >();
+    }
+  else
+    {
+      ret->set_learn<gd, learn<adaptive,normalized,false, normalized_idx, normalized_idx+1> >();
+      ret->set_update<gd, learn<adaptive,normalized,false, normalized_idx, normalized_idx+1> >();
+    }
+}
+
+template<bool adaptive, size_t normalized_idx>
+void set_learn(vw& all, learner* ret, bool feature_mask_off)
+{
+  // select the appropriate learn function based on adaptive, normalization, and feature mask
+  if (all.normalized_updates)
+    set_learn<adaptive, true, normalized_idx, normalized_idx+1>(all, ret, feature_mask_off);
+  else
+    set_learn<adaptive, false, 0, normalized_idx>(all, ret, feature_mask_off);
+}
+
 learner* setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc_or_die(1, sizeof(gd));
@@ -935,53 +960,11 @@ learner* setup(vw& all, po::variables_map& vm)
       g->predict = predict<true>;
     }
 
-  // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.adaptive)
-    if (all.normalized_updates)
-      if (feature_mask_off)
-	{
-	  ret->set_learn<gd, learn<true,true,true, 2, 0> >();
-	  ret->set_update<gd, update<true,true,true, 2, 0> >();
-	}
-      else
-	{
-	  ret->set_learn<gd, learn<true,true,false, 2, 3> >();
-	  ret->set_update<gd, update<true,true,false, 2, 3> >();
-	}
-    else
-      if (feature_mask_off)
-	{
-	  ret->set_learn<gd, learn<true,false,true, 0, 0> >();
-	  ret->set_update<gd, update<true,false,true, 0, 0> >();
-	}
-      else
-	{
-	  ret->set_learn<gd, learn<true,false,false, 0, 2> >();
-	  ret->set_update<gd, update<true,false,false, 0, 2> >();
-	}
+    set_learn<true, 2>(all, ret, feature_mask_off);
   else
-    if (all.normalized_updates)
-      if (feature_mask_off)
-	{
-	  ret->set_learn<gd, learn<false,true,true, 1, 0> >();
-	  ret->set_update<gd, update<false,true,true, 1, 0> >();
-	}
-      else
-	{
-	  ret->set_learn<gd, learn<false,true,false, 1, 2> >();
-	  ret->set_update<gd, update<false,true,false, 1, 2> >();
-	}
-    else
-      if (feature_mask_off)
-	{
-	  ret->set_learn<gd, learn<false,false,true, 0, 0> >();
-	  ret->set_update<gd, update<false, false, true, 0, 0> >();
-	}
-      else
-	{
-	  ret->set_learn<gd, learn<false,false,false, 0, 1> >();
-	  ret->set_update<gd, update<false, false, false, 0, 1> >();
-	}
+    set_learn<false, 1>(all, ret, feature_mask_off);
+
   ret->set_save_load<gd,save_load>();
 
   ret->set_end_pass<gd, end_pass>();
