@@ -43,12 +43,15 @@ namespace GD
   };
 
   void sync_weights(vw& all);
+
+  struct power_data {
+    float minus_power_t;
+    float minus_power_t_norm;
+  };
   
   struct train_data {
-    float avg_norm;
     float update;
-    float power_t;
-    float power_t_norm;
+    power_data pt;
   };
 
 
@@ -61,39 +64,48 @@ float InvSqrt(float x){
   return x;
 }
   
+  template<bool sqrt_rate, size_t adaptive, size_t normalized>
+  inline float compute_rate_decay(power_data& s, float& fw)
+  {
+    weight* w = &fw;
+    float rate_decay = 1.f;
+    if(adaptive) {
+      if (sqrt_rate)
+	{  
+#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
+	  __m128 eta = _mm_load_ss(&w[adaptive]);
+	  eta = _mm_rsqrt_ss(eta);
+	  _mm_store_ss(&rate_decay, eta);
+#else
+	  rate_decay = InvSqrt(w[adaptive]);
+#endif
+	}
+      else
+	rate_decay = powf(w[adaptive],s.minus_power_t);
+    }
+    if(normalized) {
+      if (sqrt_rate)
+	{
+	  float inv_norm = 1.f / w[normalized];
+	  if (adaptive)
+	    rate_decay *= inv_norm;
+	  else
+	    rate_decay *= inv_norm*inv_norm;
+	}
+      else{
+	float norm = w[normalized];
+	rate_decay *= powf(norm*norm,s.minus_power_t_norm);
+      }
+    }
+    return rate_decay;
+  }
+
   template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
   inline void update_feature(train_data& s, float x, float& fw)
   {
     weight* w = &fw;
     if(!feature_mask || w[feature_mask]==1.){
-      float rate_decay = 1.f;
-      if (sqrt_rate)
-	{  
-	  if(adaptive) {
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-	    __m128 eta = _mm_load_ss(&w[adaptive]);
-	    eta = _mm_rsqrt_ss(eta);
-	    _mm_store_ss(&rate_decay, eta);
-#else
-	    rate_decay = InvSqrt(w[adaptive]);
-#endif
-	  } 
-	  if(normalized) {
-	    float inv_norm = 1.f / (w[normalized] * s.avg_norm);
-	    if (adaptive)
-	      rate_decay *= inv_norm;
-	    else
-	      rate_decay *= inv_norm*inv_norm;
-	  }
-	}
-      else
-	{
-	  if(adaptive) rate_decay = powf(w[adaptive],-s.power_t);
-	  if(normalized) {
-	    float norm = w[normalized] * s.avg_norm;
-	    rate_decay *= powf(norm*norm,-s.power_t_norm);
-	  }
-	}
+      float rate_decay = compute_rate_decay<sqrt_rate, adaptive, normalized>(s.pt, fw);
       w[0] += s.update * rate_decay * x;
     }
   }
@@ -112,9 +124,19 @@ float InvSqrt(float x){
     float avg_norm = all.normalized_sum_norm_x / total_weight;
     if (sqrt_rate) avg_norm = sqrt(avg_norm);
 
-    float power_t_norm = 1.f - (adaptive ? all.power_t : 0.f);
+    float minus_power_t_norm = (adaptive ? all.power_t : 0.f) -1.f;
 
-    train_data d = {avg_norm, update, all.power_t, power_t_norm};
+    if (normalized) {
+      if (sqrt_rate) 
+	if (adaptive)
+	  update /= avg_norm;
+	else
+	  update /= (avg_norm * avg_norm);
+      else 
+	update *= powf(avg_norm * avg_norm, minus_power_t_norm);
+    }
+
+    train_data d = {update, {-all.power_t, minus_power_t_norm}};
     
     foreach_feature<train_data,update_feature<sqrt_rate, adaptive, normalized, feature_mask> >(all, ec, d);
   }
@@ -394,8 +416,7 @@ void predict(gd& g, learner& base, example& ec)
     float g;
     float pred_per_update;
     float norm_x;
-    float power_t;
-    float power_t_norm;
+    power_data pd;
   };
 
 template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
@@ -403,22 +424,8 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
   weight* w = &fw;
   if(!feature_mask || w[feature_mask]==1.){
     float x2 = x * x;
-    float rate_decay = 1.f;
-    if(adaptive){
+    if(adaptive)
       w[adaptive] += nd.g * x2;
-      if (sqrt_rate)
-	{	  
-#if defined(__SSE2__) && !defined(VW_LDA_NO_SSE)
-	  __m128 eta = _mm_load_ss(&w[adaptive]);
-	  eta = _mm_rsqrt_ss(eta);
-	  _mm_store_ss(&rate_decay, eta);
-#else
-	  rate_decay = InvSqrt(w[adaptive]);
-#endif
-	}
-      else
-	rate_decay = powf(w[adaptive], -nd.power_t);
-    }
     if(normalized) {
       float x_abs = fabsf(x);
       if( x_abs > w[normalized] ) {// new scale discovered
@@ -427,25 +434,14 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
 	  if (sqrt_rate)
 	    w[0] *= (adaptive ? rescale : rescale*rescale);
 	  else
-	    w[0] *= powf(rescale*rescale, nd.power_t_norm);
+	    w[0] *= powf(rescale*rescale, -nd.pd.minus_power_t_norm);
 	}
 	w[normalized] = x_abs;
       }
-      if (sqrt_rate) {
-	float inv_norm = 1.f / w[normalized];
-	float inv_norm2 = inv_norm*inv_norm;
-	nd.norm_x += x2 * inv_norm2;
-	if (adaptive)
-	  rate_decay *= inv_norm;
-	else
-	  rate_decay *= inv_norm2;
-      }
-      else{
-	float range2 = w[normalized] * w[normalized];
-	rate_decay *= powf(range2, -nd.power_t_norm);
-	nd.norm_x += x2 / range2;
-      }
+      nd.norm_x += x2 / (w[normalized] * w[normalized]);
     }
+    float rate_decay = compute_rate_decay<sqrt_rate, adaptive, normalized>(nd.pd, fw);
+
     nd.pred_per_update += x2 * rate_decay;
   }
 }
@@ -457,8 +453,8 @@ float pred_per_update(vw& all, example& ec)
   float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
   if (g==0) return 1.;
 
-  float power_t_norm = 1.f - (adaptive ? all.power_t : 0.f);
-  norm_data nd = {g, 0., 0., all.power_t, power_t_norm};
+  float minus_power_t_norm = (adaptive ? all.power_t : 0.f) - 1.f;
+  norm_data nd = {g, 0., 0., {-all.power_t, minus_power_t_norm}};
   
   foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, adaptive, normalized, feature_mask> >(all, ec, nd);
   
@@ -475,7 +471,7 @@ float pred_per_update(vw& all, example& ec)
       if(adaptive) nd.pred_per_update /= sqrt(avg_norm);
       else nd.pred_per_update /= avg_norm;
     } else 
-      nd.pred_per_update *= powf(avg_norm,-power_t_norm);
+      nd.pred_per_update *= powf(avg_norm,minus_power_t_norm);
   }
   
   return nd.pred_per_update;
