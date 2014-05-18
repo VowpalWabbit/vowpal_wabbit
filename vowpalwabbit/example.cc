@@ -122,9 +122,10 @@ flat_example* flatten_example(vw& all, example *ec)
 
 	fec->tag_len = ec->tag.size();
 	if (fec->tag_len >0)
-	{
-		fec->tag = ec->tag.begin;
-	}
+	  {
+	    fec->tag = (char*)calloc_or_die(fec->tag_len+1, sizeof(char));
+	    memcpy(fec->tag,ec->tag.begin, fec->tag_len);
+	  }
 
 	fec->example_counter = ec->example_counter;  
 	fec->ft_offset = ec->ft_offset;  
@@ -151,6 +152,8 @@ void free_flatten_example(flat_example* fec)
     {
       if (fec->feature_map_len > 0)
 	free(fec->feature_map);
+      if (fec->tag_len > 0)
+	free(fec->tag);
       free(fec->ld);
       free(fec);
     }
