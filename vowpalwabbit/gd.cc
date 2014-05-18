@@ -470,14 +470,12 @@ float pred_per_update(vw& all, example& ec)
     
     all.normalized_sum_norm_x += ld->weight * nd.norm_x;
     
-    float avg_sq_norm = all.normalized_sum_norm_x / total_weight;
+    float avg_norm = all.normalized_sum_norm_x / total_weight;
     if(sqrt_rate) {
-      if(adaptive) nd.pred_per_update /= sqrt(avg_sq_norm);
-      else nd.pred_per_update /= avg_sq_norm;
-    } else {
-      float power_t_norm = 1.f - (all.adaptive ? all.power_t : 0.f);
-      nd.pred_per_update *= powf(avg_sq_norm,-power_t_norm);
-    }
+      if(adaptive) nd.pred_per_update /= sqrt(avg_norm);
+      else nd.pred_per_update /= avg_norm;
+    } else 
+      nd.pred_per_update *= powf(avg_norm,-power_t_norm);
   }
   
   return nd.pred_per_update;
@@ -873,6 +871,14 @@ size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
     return set_learn<sqrt_rate, 0>(all, ret, feature_mask_off);
 }
 
+size_t ceil_log_2(size_t v)
+{
+  if (v==0)
+    return 0;
+  else 
+    return 1 + ceil_log_2(v >> 1);
+}
+
 learner* setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc_or_die(1, sizeof(gd));
@@ -898,50 +904,32 @@ learner* setup(vw& all, po::variables_map& vm)
       g->initial_constant = vm["constant"].as<float>();     
   }
 
-  all.reg.stride_shift = 2; //use stride of 4 for default invariant normalized adaptive updates
-  //if the user specified anything in sgd,adaptive,invariant,normalized, we turn off default update rules and use whatever user specified
   if( !all.training || ( ( vm.count("sgd") || vm.count("adaptive") || vm.count("invariant") || vm.count("normalized") ) && !vm.count("exact_adaptive_norm")) )
-  {
-    all.adaptive = all.training && vm.count("adaptive");
-    all.invariant_updates = all.training && vm.count("invariant");
-    all.normalized_updates = all.training && vm.count("normalized");
-
-    all.reg.stride_shift = 0;
-
-    if( all.adaptive ) all.reg.stride_shift += 1;
-
-    if( all.normalized_updates ) all.reg.stride_shift += 1;
-
-    if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
-      if (all.lda == 0)
-        all.eta = 10; //default learning rate to 10 for non default update rule
-
-    //if not using normalized or adaptive, default initial_t to 1 instead of 0
-    if(!all.adaptive && !all.normalized_updates){
-      if (!vm.count("initial_t")) {
-	all.sd->t = 1.f;
-	all.sd->weighted_unlabeled_examples = 1.f;
-	all.initial_t = 1.f;
-      }
-      all.eta *= powf((float)(all.sd->t), all.power_t);
-    }
-    if (vm.count("feature_mask")){
-      if(all.reg.stride_shift == 0){
-        all.reg.stride_shift += 1;//if --sgd, stride->2 and use the second position as mask
-      }
-      else if(all.reg.stride_shift == 1){
-        all.reg.stride_shift += 1;//if either normalized or adaptive, stride->4, mask_idx is still 3
+    {//nondefault
+      all.adaptive = all.training && vm.count("adaptive");
+      all.invariant_updates = all.training && vm.count("invariant");
+      all.normalized_updates = all.training && vm.count("normalized");
+      
+      if(!vm.count("learning_rate") && !vm.count("l") && !(all.adaptive && all.normalized_updates))
+	all.eta = 10; //default learning rate to 10 for non default update rule
+      
+      //if not using normalized or adaptive, default initial_t to 1 instead of 0
+      if(!all.adaptive && !all.normalized_updates){
+	if (!vm.count("initial_t")) {
+	  all.sd->t = 1.f;
+	  all.sd->weighted_unlabeled_examples = 1.f;
+	  all.initial_t = 1.f;
+	}
+	all.eta *= powf((float)(all.sd->t), all.power_t);
       }
     }
-  }
-
+  
   if (pow((double)all.eta_decay_rate, (double)all.numpasses) < 0.0001 )
     cerr << "Warning: the learning rate for the last pass is multiplied by: " << pow((double)all.eta_decay_rate, (double)all.numpasses)
 	 << " adjust --decay_learning_rate larger to avoid this." << endl;
   
-  learner* ret = new learner(g, 1 << all.reg.stride_shift);
+  learner* ret = new learner(g, 1);
 
-  // select the appropriate predict function based on normalization, regularization, and power_t
   if (all.reg_mode % 2)
     {
       ret->set_predict<gd, predict<true> >();
@@ -953,14 +941,14 @@ learner* setup(vw& all, po::variables_map& vm)
       g->predict = predict<true>;
     }
   
-  int stride;
+  size_t stride;
   if (all.power_t == 0.5)
     stride = set_learn<true>(all, ret, feature_mask_off);
   else
     stride = set_learn<false>(all, ret, feature_mask_off);
-    
-  //fix me.
-  //  ret->increment = stride;
+
+  all.reg.stride_shift = ceil_log_2(stride-1);
+  ret->increment = (1 << all.reg.stride_shift);
 
   ret->set_save_load<gd,save_load>();
 
