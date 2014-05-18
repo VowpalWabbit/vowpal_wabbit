@@ -281,7 +281,6 @@
     <ClInclude Include="searn_sequencetask.h" />
     <ClInclude Include="sender.h" />
     <ClInclude Include="simple_label.h" />
-    <ClInclude Include="sparse_dense.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
