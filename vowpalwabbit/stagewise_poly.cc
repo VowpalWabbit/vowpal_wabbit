@@ -404,35 +404,28 @@ namespace StagewisePoly
     }
   }
 
-  void process_example(stagewise_poly &poly, learner &base, example &ec, bool training)
+  void predict(stagewise_poly &poly, learner &base, example &ec)
   {
-    synthetic_create(poly, ec, training);
-
-    if (training)
-      base.learn(poly.synth_ec);
-    else
-      base.predict(poly.synth_ec);
-
-    ((label_data *) ec.ld)->prediction = ((label_data *)(poly.synth_ec.ld))->prediction;
-    ec.loss = poly.synth_ec.loss;
-
-    if (training
-        && ec.example_counter
-        && poly.batch_sz
-        && !(ec.example_counter % poly.batch_sz)
-       ) {
-      sort_data_update_support(poly);
-    }
+    synthetic_create(poly, ec, false);
+    base.predict(poly.synth_ec);
+    label_data *ld = (label_data *) ec.ld;
+    if (ld->label != FLT_MAX)
+      ec.loss = poly.all->loss->getLoss(poly.all->sd, ld->prediction, ld->label) * ld->weight;
   }
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
   {
-      process_example(poly, base, ec, poly.all->training && !ec.test_only);
-  }
+    bool training = poly.all->training && !ec.test_only && ((label_data *) ec.ld)->label != FLT_MAX;
 
-  void predict(stagewise_poly &poly, learner &base, example &ec)
-  {
-      process_example(poly, base, ec, false);
+    if (training) {
+      synthetic_create(poly, ec, training);
+      base.learn(poly.synth_ec);
+      ec.loss = poly.synth_ec.loss;
+
+      if (ec.example_counter && poly.batch_sz && !(ec.example_counter % poly.batch_sz))
+        sort_data_update_support(poly);
+    } else
+      predict(poly, base, ec);
   }
 
 
