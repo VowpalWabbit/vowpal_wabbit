@@ -20,6 +20,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <unistd.h>
 #endif
 #include <sys/timeb.h>
+#include <arpa/inet.h>
 #include "allreduce.h"
 
 using namespace std;
@@ -30,7 +31,7 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1)
     {
-      cerr << "can't get socket " << endl;
+      cerr << "socket: " << strerror(errno) << endl;
       throw exception();
     }
   sockaddr_in far_end;
@@ -41,32 +42,27 @@ socket_t sock_connect(const uint32_t ip, const int port) {
   memset(&far_end.sin_zero, '\0',8);
 
   {
+    char dotted_quad[INET_ADDRSTRLEN];
+    if (NULL == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
+      cerr << "inet_ntop: " << strerror(errno) << endl;
+      throw exception();
+    }
+
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];
-    getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV);
-
-    cerr << "connecting to " << hostname << ':' << ntohs(port) << endl;
+    if (getnameinfo((sockaddr *) &far_end, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, NI_NUMERICSERV)) {
+      cerr << "getnameinfo(" << dotted_quad << "): " << strerror(errno) << endl;
+      throw exception();
+    }
+    cerr << "connecting to " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
   }
 
   size_t count = 0;
   int ret;
   while ( (ret =connect(sock,(sockaddr*)&far_end, sizeof(far_end))) == -1 && count < 100)
     {
-#ifdef _WIN32
-      int err_code = WSAGetLastError();
-      cerr << "Windows Sockets error code: " << err_code << endl;
-#endif
-      cerr << "can't connect to: " ;
-      uint32_t pip = ntohl(ip);
-      unsigned char * pp = (unsigned char*)&pip;
-
-      for (size_t i = 0; i < 4; i++)
-	{
-	  cerr << static_cast<unsigned int>(static_cast<unsigned short>(pp[3-i])) << ".";
-	}
-      cerr << ':' << ntohs(port) << endl;
-      perror(NULL);
       count++;
+      cerr << "connect attempt " << count << " failed: " << strerror(errno) << endl;
 #ifdef _WIN32
       Sleep(1);
 #else
@@ -82,8 +78,8 @@ socket_t getsock()
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
-      cerr << "can't open socket!" << endl;
-      throw exception();
+    cerr << "socket: " << strerror(errno) << endl;
+    throw exception();
   }
 
   // SO_REUSEADDR will allow port rebinding on Windows, causing multiple instances
@@ -91,7 +87,7 @@ socket_t getsock()
 #ifndef _WIN32
     int on = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-      perror("setsockopt SO_REUSEADDR");
+      cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 #endif
   return sock;
 }
@@ -109,7 +105,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   struct hostent* master = gethostbyname(master_location.c_str());
 
   if (master == NULL) {
-    cerr << "can't resolve hostname: " << master_location << endl;
+    cerr << "gethostbyname(" << master_location << "): " << strerror(errno) << endl;
     throw exception();
   }
   socks.current_master = master_location;
@@ -164,7 +160,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
         }
         else
         {
-          perror("Bind failed ");
+          cerr << "bind: " << strerror(errno) << endl;
           throw exception();
         }
       }
@@ -172,7 +168,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
       {
         if (listen(sock, kid_count) < 0)
         {
-          perror("listen failed! ");
+          cerr << "listen: " << strerror(errno) << endl;
           CLOSESOCK(sock);
           sock = getsock();
         }
@@ -208,7 +204,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     socket_t f = accept(sock,(sockaddr*)&child_address,&size);
     if (f < 0)
     {
-      cerr << "bad client socket!" << endl;
+      cerr << "accept: " << strerror(errno) << endl;
       throw exception();
     }
     // char hostname[NI_MAXHOST];
@@ -267,8 +263,7 @@ void broadcast(char* buffer, const size_t n, const socket_t parent_sock, const s
 	size_t count = min(ar_buf_size,n-parent_read_pos);
 	int read_size = recv(parent_sock, buffer + parent_read_pos, (int)count, 0);
 	if(read_size == -1) {
-	  cerr <<" Read from parent failed\n";
-	  perror(NULL);
+	  cerr <<" recv from parent: " << strerror(errno) << endl;
 	}
 	parent_read_pos += read_size;
       }

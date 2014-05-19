@@ -53,6 +53,7 @@ typedef int socket_t;
 #include <fstream>
 #include <cmath>
 #include <map>
+#include <arpa/inet.h>
 
 using namespace std;
 
@@ -107,7 +108,7 @@ void fail_send(const socket_t fd, const void* buf, const int count)
 {
   if (send(fd,(char*)buf,count,0)==-1)
     {
-      cerr << "send failed!" << endl;
+      cerr << "send: " << strerror(errno) << endl;
       exit(1);
     }
 }
@@ -127,19 +128,13 @@ int main(int argc, char* argv[]) {
 
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock < 0) {
-#ifdef _WIN32
-	lastError = WSAGetLastError();
-
-    cerr << "can't open socket! (" << lastError << ")" << endl;
-#else
-    cerr << "can't open socket! " << errno << endl;
-#endif
+    cerr << "socket: " << strerror(errno) << endl;
     exit(1);
   }
 
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-    perror("setsockopt SO_REUSEADDR");
+    cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
   sockaddr_in address;
   address.sin_family = AF_INET;
@@ -149,7 +144,7 @@ int main(int argc, char* argv[]) {
   address.sin_port = htons(port);
   if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
     {
-      cerr << "failure to bind!" << endl;
+      cerr << "bind: " << strerror(errno) << endl;
       exit(1);
     }
 
@@ -158,7 +153,7 @@ int main(int argc, char* argv[]) {
   else
     if (daemon(1,1))
       {
-	cerr << "failure to background!" << endl;
+	cerr << "daemon: " << strerror(errno) << endl;
 	exit(1);
       }
 
@@ -182,20 +177,26 @@ int main(int argc, char* argv[]) {
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     socket_t f = accept(sock,(sockaddr*)&client_address,&size);
-
-    {
-        char hostname[NI_MAXHOST];
-        char servInfo[NI_MAXSERV];
-        getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0);
-
-        cerr << "inbound connection from " << hostname << endl;
+    if (f < 0) {
+      cerr << "accept: " << strerror(errno) << endl;
+      exit (1);
     }
 
-    if (f < 0)
-      {
-	cerr << "bad client socket!" << endl;
-	exit (1);
+    {
+      char dotted_quad[INET_ADDRSTRLEN];
+      if (NULL == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
+        cerr << "inet_ntop: " << strerror(errno) << endl;
+        throw exception();
       }
+
+        char hostname[NI_MAXHOST];
+        char servInfo[NI_MAXSERV];
+        if (getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0)) {
+          cerr << "getnameinfo(" << dotted_quad << "): " << strerror(errno) << endl;
+          throw exception();
+        }
+        cerr << "inbound connection from " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
+    }
 
     size_t nonce = 0;
     if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
