@@ -447,7 +447,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
 }
   
 template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t feature_mask>
-float pred_per_update(vw& all, example& ec)
+float get_pred_per_update(vw& all, example& ec)
 {//We must traverse the features in _precisely_ the same order as during training.
   label_data* ld = (label_data*)ec.ld;
   float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
@@ -509,21 +509,20 @@ void compute_update(vw& all, gd& g, example& ec)
     {
       if (all.training && ec.loss > 0.)
         {
-	  float eta_t;
-	  float norm;
+	  float pred_per_update;
           if(adaptive || normalized)
-	    norm = pred_per_update<sqrt_rate, adaptive, normalized, feature_mask>(all,ec);
+	    pred_per_update = get_pred_per_update<sqrt_rate, adaptive, normalized, feature_mask>(all,ec);
           else
-            norm = ec.total_sum_feat_sq;
+            pred_per_update = ec.total_sum_feat_sq;
 
-          eta_t = all.eta * norm * ld->weight;
-          if(!adaptive && all.power_t != 0) eta_t *= powf(t,-all.power_t);
+          float delta_pred = pred_per_update * all.eta * ld->weight;
+          if(!adaptive && all.power_t != 0) delta_pred *= powf(t,-all.power_t);
 
           float update = 0.f;
           if( all.invariant_updates )
-            update = all.loss->getUpdate(ld->prediction, ld->label, eta_t, norm);
+            update = all.loss->getUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
           else
-            update = all.loss->getUnsafeUpdate(ld->prediction, ld->label, eta_t, norm);
+            update = all.loss->getUnsafeUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
 
 	  if (all.reg_mode && fabs(ec.eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ld->prediction, ld->label);
