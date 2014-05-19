@@ -6,6 +6,7 @@ license as described in the file LICENSE.
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <cerrno>
 #include <cstdlib>
 #ifdef _WIN32
 #include <WinSock2.h>
