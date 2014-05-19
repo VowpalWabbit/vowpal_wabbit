@@ -115,14 +115,15 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 
   socket_t master_sock = sock_connect(master_ip, htons(port));
   if(send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
-    cerr << "write failed!" << endl;
+    cerr << "write unique_id failed!" << endl;
   if(send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
-    cerr << "write failed!" << endl;
+    cerr << "write total failed!" << endl;
   if(send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
-    cerr << "write failed!" << endl;
+    cerr << "write node failed!" << endl;
   int ok;
   if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok))
-    cerr << "read 1 failed!" << endl;
+    cerr << "read ok failed!" << endl;
+  else cerr << "read ok=" << ok << endl;
   if (!ok) {
     cerr << "mapper already connected" << endl;
     throw exception();
@@ -133,8 +134,9 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   uint32_t parent_ip;
 
   if(recv(master_sock, (char*)&kid_count, sizeof(kid_count), 0) < (int)sizeof(kid_count))
-    cerr << "read 2 failed!" << endl;
-
+    cerr << "read kid_count failed!" << endl;
+  else cerr << "read kid_count=" << kid_count << endl;
+  
   socket_t sock = -1;
   short unsigned int netport = htons(26544);
   if(kid_count > 0) {
@@ -181,13 +183,21 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
   }
 
   if(send(master_sock, (const char*)&netport, sizeof(netport), 0) < (int)sizeof(netport))
-    cerr << "write failed!" << endl;
+    cerr << "write netport failed!" << endl;
 
   if(recv(master_sock, (char*)&parent_ip, sizeof(parent_ip), 0) < (int)sizeof(parent_ip))
-    cerr << "read 3 failed!" << endl;
+    cerr << "read parent_ip failed!" << endl;
+  else {
+    char dotted_quad[INET_ADDRSTRLEN];
+    if (NULL == inet_ntop(AF_INET, (char*)&parent_ip, dotted_quad, INET_ADDRSTRLEN)) {
+      cerr << "read parent_ip=" << parent_ip << "(inet_ntop: " << strerror(errno) << ")" << endl;
+    } else
+      cerr << "read parent_ip=" << dotted_quad << endl;
+  }
   if(recv(master_sock, (char*)&parent_port, sizeof(parent_port), 0) < (int)sizeof(parent_port))
-    cerr << "read 4 failed!" << endl;
-
+    cerr << "read parent_port failed!" << endl;
+  else cerr << "read parent_port=" << parent_port << endl;
+  
   CLOSESOCK(master_sock);
 
   if(parent_ip != (uint32_t)-1) {
