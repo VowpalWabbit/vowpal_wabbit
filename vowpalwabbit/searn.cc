@@ -2740,10 +2740,10 @@ void print_update(vw& all, searn& srn)
 
 
   // the interface:
-  uint32_t searn::predict(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for LDF
+  uint32_t searn::predictLDF(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for LDF
   { return searn_predict(this->priv, ecs, ec_len, yallowed, ystar, false); }
 
-  uint32_t searn::predict(example* ecs, size_t ec_len, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for LDF
+  uint32_t searn::predictLDF(example* ecs, size_t ec_len, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for LDF
   { if (one_ystar == (uint32_t)-1) // test example
       return searn_predict(this->priv, ecs, ec_len, yallowed, NULL, false);
     else

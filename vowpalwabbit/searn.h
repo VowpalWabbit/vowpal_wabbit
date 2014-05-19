@@ -48,8 +48,8 @@ namespace Searn {
     uint32_t predict(example* ec, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL); // if there are multiple oracle actions
 
     // for making predictions in LDF mode:
-    uint32_t predict(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL); // if there is a single oracle action
-    uint32_t predict(example* ecs, size_t ec_len, uint32_t       one_ystar, v_array<uint32_t>* yallowed=NULL); // if there is are multiple oracle action
+    uint32_t predictLDF(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL); // if there is a single oracle action
+    uint32_t predictLDF(example* ecs, size_t ec_len, uint32_t       one_ystar, v_array<uint32_t>* yallowed=NULL); // if there is are multiple oracle action
 
     // for generating output (check to see if output().good() before attempting to write!)
     stringstream& output();

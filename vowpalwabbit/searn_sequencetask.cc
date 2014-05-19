@@ -313,7 +313,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
       
-      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, MULTICLASS::get_example_label(ec[i]) - 1);
+      size_t pred_id = srn.predictLDF(data->ldf_examples, data->num_actions, MULTICLASS::get_example_label(ec[i]) - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       
       if (srn.output().good())
