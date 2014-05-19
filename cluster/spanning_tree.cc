@@ -182,45 +182,49 @@ int main(int argc, char* argv[]) {
       exit (1);
     }
 
-    {
-      char dotted_quad[INET_ADDRSTRLEN];
-      if (NULL == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
-        cerr << "inet_ntop: " << strerror(errno) << endl;
-        throw exception();
-      }
-
-        char hostname[NI_MAXHOST];
-        char servInfo[NI_MAXSERV];
-        if (getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0)) {
-          cerr << "getnameinfo(" << dotted_quad << "): " << strerror(errno) << endl;
-          throw exception();
-        }
-        cerr << "inbound connection from " << dotted_quad << " = " << hostname << ':' << ntohs(port) << endl;
+    char dotted_quad[INET_ADDRSTRLEN];
+    if (NULL == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
+      cerr << "inet_ntop: " << strerror(errno) << endl;
+      throw exception();
     }
 
+    char hostname[NI_MAXHOST];
+    char servInfo[NI_MAXSERV];
+    if (getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname,
+                    NI_MAXHOST, servInfo, NI_MAXSERV, 0)) {
+      cerr << "getnameinfo(" << dotted_quad << "): " << strerror(errno) << endl;
+      throw exception();
+    }
+    cerr << "inbound connection from " << dotted_quad << "(" << hostname
+         << ':' << ntohs(port) << ") serv=" << servInfo << endl;
+
     size_t nonce = 0;
-    if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
-      {
-	cerr << "nonce read failed, exiting" << endl;
-	exit(1);
-      }
+    if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce)) {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+           << "): nonce read failed, exiting" << endl;
+      exit(1);
+    } else cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+                << "): nonce=" << nonce << endl;
     size_t total = 0;
-    if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total))
-      {
-	cerr << "total node count read failed, exiting" << endl;
-	exit(1);
-      }
+    if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total)) {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+           << "): total node count read failed, exiting" << endl;
+      exit(1);
+    } else cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+                << "): total=" << total << endl;
     size_t id = 0;
-    if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id))
-      {
-	cerr << "node id read failed, exiting" << endl;
-	exit(1);
-      }
+    if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id)) {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+           << "): node id read failed, exiting" << endl;
+      exit(1);
+    } else cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+                << "): node id=" << id << endl;
 
     int ok = true;
     if ( id >= total )
       {
-	cout << "invalid id! " << endl;
+	cout << dotted_quad << "(" << hostname << ':' << ntohs(port)
+             << "): invalid id=" << id << " >=  " << total << " !" << endl;
 	ok = false;
       }
     partial partial_nodeset;

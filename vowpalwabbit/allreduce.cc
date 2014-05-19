@@ -115,11 +115,14 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
 
   socket_t master_sock = sock_connect(master_ip, htons(port));
   if(send(master_sock, (const char*)&unique_id, sizeof(unique_id), 0) < (int)sizeof(unique_id))
-    cerr << "write unique_id failed!" << endl;
+    cerr << "write unique_id=" << unique_id << " failed!" << endl;
+  else cerr << "wrote unique_id=" << unique_id << endl;
   if(send(master_sock, (const char*)&total, sizeof(total), 0) < (int)sizeof(total))
-    cerr << "write total failed!" << endl;
+    cerr << "write total=" << total << " failed!" << endl;
+  else cerr << "wrote total=" << total << endl;
   if(send(master_sock, (char*)&node, sizeof(node), 0) < (int)sizeof(node))
-    cerr << "write node failed!" << endl;
+    cerr << "write node=" << node << " failed!" << endl;
+  else cerr << "wrote node=" << node << endl;
   int ok;
   if (recv(master_sock, (char*)&ok, sizeof(ok), 0) < (int)sizeof(ok))
     cerr << "read ok failed!" << endl;
