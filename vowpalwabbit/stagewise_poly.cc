@@ -3,12 +3,13 @@
 #include "simple_label.h"
 #include "allreduce.h"
 #include "accumulate.h"
+#include <float.h>
 
 //#undef NDEBUG
 //#define DEBUG
 #include <cassert>
 
-//#define PARALLEL_ENABLE
+#define PARALLEL_ENABLE
 
 using namespace std;
 using namespace LEARNER;
