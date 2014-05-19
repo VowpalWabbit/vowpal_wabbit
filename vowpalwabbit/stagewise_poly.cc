@@ -52,6 +52,7 @@ namespace StagewisePoly
     example *original_ec;
     uint32_t cur_depth;
     bool training;
+    size_t numpasses;
 
 #ifdef DEBUG
     uint32_t max_depth;
@@ -466,8 +467,9 @@ namespace StagewisePoly
     poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
     poly.num_examples = poly.num_examples_sync;
 
-    if (!poly.batch_sz) {
+    if (!poly.batch_sz && poly.numpasses != poly.all->numpasses) {
       sort_data_update_support(poly);
+      poly.numpasses++;
     }
   }
 #endif //PARALLEL_ENABLE
@@ -525,6 +527,7 @@ namespace StagewisePoly
     poly->sum_sparsity_sync = 0;
     poly->sum_input_sparsity_sync = 0;
     poly->num_examples_sync = 0;
+    poly->numpasses = 1;
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();
