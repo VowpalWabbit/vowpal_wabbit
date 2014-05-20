@@ -524,6 +524,7 @@ void compute_update(vw& all, gd& g, example& ec)
           else
             update = all.loss->getUnsafeUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
 
+	  ec.eta_round = (float) (update / all.sd->contraction);
 	  if (all.reg_mode && fabs(ec.eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ld->prediction, ld->label);
 	    double eta_bar = (fabs(dev1) > 1e-8) ? (-ec.eta_round / dev1) : 0.0;
@@ -531,7 +532,6 @@ void compute_update(vw& all, gd& g, example& ec)
 	      all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
 	    all.sd->gravity += eta_bar * all.l1_lambda;
 	  }
-	  ec.eta_round = (float) (update / all.sd->contraction);
         }
     }
   else if(all.active)

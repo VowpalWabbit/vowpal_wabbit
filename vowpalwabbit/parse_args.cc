@@ -937,6 +937,9 @@ vw* parse_args(int argc, char *argv[])
   int temp_argc = 0;
   char** temp_argv = VW::get_argv_from_string(all->file_options, temp_argc);
   add_to_args(*all, temp_argc, temp_argv);
+  for (int i = 0; i < temp_argc; i++)
+    free(temp_argv[i]);
+  free(temp_argv);
   
   po::parsed_options pos = po::command_line_parser(all->args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
