@@ -16,7 +16,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <stdlib.h>
 #ifdef _WIN32
 #include <io.h>
-#define inet_ntop InetNtop
+#define inet_ntop InetNtopA
 #else
 #include <unistd.h>
 #include <arpa/inet.h>

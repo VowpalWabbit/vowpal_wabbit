@@ -14,7 +14,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include <io.h>
 
 #define CLOSESOCK closesocket
-#define inet_ntop InetNtop
+#define inet_ntop InetNtopA
 
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
