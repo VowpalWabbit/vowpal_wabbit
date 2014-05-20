@@ -69,8 +69,8 @@ namespace TXM_O
     uint32_t n;//total events at the node
 
     //leaf has
-    uint32_t max_cnt2;//the number of samples of the most common label
-    uint32_t max_cnt2_label;//the most common label
+    uint32_t max_count;//the number of samples of the most common label
+    uint32_t max_count_label;//the most common label
   } txm_o_node;
   
   struct txm_o	
@@ -99,8 +99,8 @@ namespace TXM_O
     n.norm_Eh = 0;
     n.Eh = 0;
     n.n = 0;
-    n.max_cnt2 = 0;
-    n.max_cnt2_label = 1;
+    n.max_count = 0;
+    n.max_count_label = 1;
     n.left = 0;
     n.right = 0;
   }
@@ -159,7 +159,7 @@ namespace TXM_O
       cout << "\t";
     cout << node.min_count << " " << node.left
 	 << " " << node.right;
-    cout << " label = " << node.max_cnt2_label << " labels = ";
+    cout << " label = " << node.max_count_label << " labels = ";
     for (size_t i = 0; i < node.node_pred.size(); i++)
       cout << node.node_pred[i].label << ":" << node.node_pred[i].label_cnt2 << "\t";
     cout << endl;
@@ -179,10 +179,10 @@ namespace TXM_O
     class_index = b.nodes[current].node_pred.unique_add_sorted(txm_o_node_pred(label));
     b.nodes[current].node_pred[class_index].label_cnt2++;
     
-    if(b.nodes[current].node_pred[class_index].label_cnt2 > b.nodes[current].max_cnt2)
+    if(b.nodes[current].node_pred[class_index].label_cnt2 > b.nodes[current].max_count)
       {
-	b.nodes[current].max_cnt2 = b.nodes[current].node_pred[class_index].label_cnt2;
-	b.nodes[current].max_cnt2_label = b.nodes[current].node_pred[class_index].label;
+	b.nodes[current].max_count = b.nodes[current].node_pred[class_index].label_cnt2;
+	b.nodes[current].max_count_label = b.nodes[current].node_pred[class_index].label;
       }
 
     if (b.nodes[current].internal)
@@ -239,16 +239,9 @@ namespace TXM_O
 	b.nodes[right_child].min_count = b.nodes[left_child].min_count - b.nodes[current].min_count/2;
 	update_min_count(b, left_child);
 
-	for (size_t i = 0; i < b.nodes[current].node_pred.size(); i++)
-	  {
-	    txm_o_node_pred np = b.nodes[current].node_pred[i];
-	    np.label_cnt2 /= 2;//pretend half of labels have gone both directions.
-	    if (np.label_cnt2 > 0)
-	      {
-		b.nodes[left_child].node_pred.push_back(np);
-		b.nodes[right_child].node_pred.push_back(np);
-	      }
-	  }
+	b.nodes[left_child].max_count_label = b.nodes[current].max_count_label;
+	b.nodes[right_child].max_count_label = b.nodes[current].max_count_label;
+
 	b.nodes[current].internal = true;
       }
     return b.nodes[current].internal;
@@ -322,7 +315,7 @@ namespace TXM_O
 	base.predict(ec, b.nodes[cn].base_predictor);
 	cn = descend(b.nodes[cn], simple_temp.prediction);
       }	
-    mc->prediction = b.nodes[cn].max_cnt2_label;
+    mc->prediction = b.nodes[cn].max_count_label;
     ec.ld = mc;
   }
 
@@ -395,7 +388,7 @@ namespace TXM_O
 	  }	
 	fprintf(fp, "\n");
 	
-	fprintf(fp, "max(lab:cnt:tot):, %3d,%6d,%7d,\n", (int) b->nodes[i].max_cnt2_label, (int) b->nodes[i].max_cnt2, (int) total);
+	fprintf(fp, "max(lab:cnt:tot):, %3d,%6d,%7d,\n", (int) b->nodes[i].max_count_label, (int) b->nodes[i].max_count, (int) total);
 	fprintf(fp, "left: %4d, right: %4d", (int) b->nodes[i].left, (int) b->nodes[i].right);
 	fprintf(fp, "\n\n");
       }
@@ -435,7 +428,7 @@ namespace TXM_O
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 		b.nodes[j].right = v;
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
-		b.nodes[j].max_cnt2_label = v;
+		b.nodes[j].max_count_label = v;
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 		b.nodes[j].internal = v;
 	      }
@@ -463,8 +456,8 @@ namespace TXM_O
 		v = b.nodes[i].right;
 		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);
 		
-		text_len = sprintf(buff, ":%d", (int) b.nodes[i].max_cnt2_label);
-		v = b.nodes[i].max_cnt2_label;
+		text_len = sprintf(buff, ":%d", (int) b.nodes[i].max_count_label);
+		v = b.nodes[i].max_count_label;
 		brw = bin_text_write_fixed(model_file,(char *)&v, sizeof (v), buff, text_len, text);	
 		
 		text_len = sprintf(buff, ":%d\n", b.nodes[i].internal);
