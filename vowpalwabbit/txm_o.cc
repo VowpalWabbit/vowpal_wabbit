@@ -18,7 +18,7 @@ using namespace LEARNER;
 
 namespace TXM_O
 {
-  class txm_o_node_pred	
+  class node_pred	
   {
   public:
     
@@ -28,21 +28,21 @@ namespace TXM_O
     uint32_t label;	
     uint32_t label_cnt2;
  
-    bool operator==(txm_o_node_pred v){
+    bool operator==(node_pred v){
       return (label == v.label);
     }
     
-    bool operator>(txm_o_node_pred v){
+    bool operator>(node_pred v){
       if(label > v.label) return true;	
       return false;
     }
     
-    bool operator<(txm_o_node_pred v){
+    bool operator<(node_pred v){
       if(label < v.label) return true;	
       return false;
     }
     
-    txm_o_node_pred(uint32_t l)
+    node_pred(uint32_t l)
     {
       label = l;
       Ehk = 0.f;
@@ -55,7 +55,7 @@ namespace TXM_O
   typedef struct
   {//everyone has
     uint32_t parent;//the parent node
-    v_array<txm_o_node_pred> node_pred;//per-class state
+    v_array<node_pred> preds;//per-class state
     uint32_t min_count;//the number of examples reaching this node (if it's a leaf) or the minimum reaching any grandchild.
 
     bool internal;//internal or leaf
@@ -71,14 +71,14 @@ namespace TXM_O
     //leaf has
     uint32_t max_count;//the number of samples of the most common label
     uint32_t max_count_label;//the most common label
-  } txm_o_node;
+  } node;
   
   struct txm_o	
   {
     uint32_t k;	
     vw* all;	
     
-    v_array<txm_o_node> nodes;	
+    v_array<node> nodes;	
     
     uint32_t max_predictors;
     uint32_t predictors_used;
@@ -91,10 +91,10 @@ namespace TXM_O
     FILE *ex_fp;
   };	
   
-  inline void init_leaf(txm_o_node& n)
+  inline void init_leaf(node& n)
   {
     n.internal = false;
-    n.node_pred.erase();
+    n.preds.erase();
     n.base_predictor = 0;
     n.norm_Eh = 0;
     n.Eh = 0;
@@ -105,9 +105,9 @@ namespace TXM_O
     n.right = 0;
   }
 
-  inline txm_o_node init_node()	
+  inline node init_node()	
   {
-    txm_o_node node; 
+    node node; 
     
     node.parent = 0;
     node.min_count = 0;
@@ -122,7 +122,7 @@ namespace TXM_O
     d.nbofswaps = 0;
   }
 
-  inline uint32_t min_left_right(txm_o& b, txm_o_node& n)
+  inline uint32_t min_left_right(txm_o& b, node& n)
   {
     return min(b.nodes[n.left].min_count, b.nodes[n.right].min_count);
   }
@@ -153,15 +153,15 @@ namespace TXM_O
       }
   }
 
-  void display_tree_dfs(txm_o& b, txm_o_node node, uint32_t depth)
+  void display_tree_dfs(txm_o& b, node node, uint32_t depth)
   {
     for (uint32_t i = 0; i < depth; i++)
       cout << "\t";
     cout << node.min_count << " " << node.left
 	 << " " << node.right;
     cout << " label = " << node.max_count_label << " labels = ";
-    for (size_t i = 0; i < node.node_pred.size(); i++)
-      cout << node.node_pred[i].label << ":" << node.node_pred[i].label_cnt2 << "\t";
+    for (size_t i = 0; i < node.preds.size(); i++)
+      cout << node.preds[i].label << ":" << node.preds[i].label_cnt2 << "\t";
     cout << endl;
     
     if (node.internal)
@@ -176,18 +176,18 @@ namespace TXM_O
 
   bool children(txm_o& b, uint32_t& current, uint32_t& class_index, uint32_t label)
   {
-    class_index = b.nodes[current].node_pred.unique_add_sorted(txm_o_node_pred(label));
-    b.nodes[current].node_pred[class_index].label_cnt2++;
+    class_index = b.nodes[current].preds.unique_add_sorted(node_pred(label));
+    b.nodes[current].preds[class_index].label_cnt2++;
     
-    if(b.nodes[current].node_pred[class_index].label_cnt2 > b.nodes[current].max_count)
+    if(b.nodes[current].preds[class_index].label_cnt2 > b.nodes[current].max_count)
       {
-	b.nodes[current].max_count = b.nodes[current].node_pred[class_index].label_cnt2;
-	b.nodes[current].max_count_label = b.nodes[current].node_pred[class_index].label;
+	b.nodes[current].max_count = b.nodes[current].preds[class_index].label_cnt2;
+	b.nodes[current].max_count_label = b.nodes[current].preds[class_index].label;
       }
 
     if (b.nodes[current].internal)
       return true;
-    else if( b.nodes[current].node_pred.size() > 1 
+    else if( b.nodes[current].preds.size() > 1 
 	     && (b.predictors_used < b.max_predictors 
 				     || b.nodes[current].min_count > b.swap_resist*(b.nodes[0].min_count + 1)))
       { //need children and we can make them.
@@ -251,7 +251,7 @@ namespace TXM_O
   {
     label_data* simple_temp = (label_data*)ec.ld;
 
-    if(b.nodes[current].norm_Eh > b.nodes[current].node_pred[class_index].norm_Ehk)
+    if(b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk)
       simple_temp->label = -1.f;
     else
       simple_temp->label = 1.f;
@@ -262,15 +262,15 @@ namespace TXM_O
     base.predict(ec, b.nodes[current].base_predictor);
     
     b.nodes[current].Eh += (double)ec.partial_prediction;
-    b.nodes[current].node_pred[class_index].Ehk += (double)ec.partial_prediction;
+    b.nodes[current].preds[class_index].Ehk += (double)ec.partial_prediction;
     b.nodes[current].n++;
-    b.nodes[current].node_pred[class_index].nk++;	
+    b.nodes[current].preds[class_index].nk++;	
   
     b.nodes[current].norm_Eh = b.nodes[current].Eh / b.nodes[current].n;          
-    b.nodes[current].node_pred[class_index].norm_Ehk = b.nodes[current].node_pred[class_index].Ehk / b.nodes[current].node_pred[class_index].nk;
+    b.nodes[current].preds[class_index].norm_Ehk = b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
   }
   
-  void verify_min_dfs(txm_o& b, txm_o_node node)
+  void verify_min_dfs(txm_o& b, node node)
   {
     if (node.internal)
       {
@@ -284,7 +284,7 @@ namespace TXM_O
       }
   }
   
-  size_t sum_count_dfs(txm_o& b, txm_o_node node)
+  size_t sum_count_dfs(txm_o& b, node node)
   {
     if (node.internal)
       return sum_count_dfs(b, b.nodes[node.left]) + sum_count_dfs(b, b.nodes[node.right]);
@@ -292,7 +292,7 @@ namespace TXM_O
       return node.min_count;
   }
 
-  inline uint32_t descend(txm_o_node& n, float prediction)
+  inline uint32_t descend(node& n, float prediction)
   {
     if (prediction < 0)
       return n.left;
@@ -365,26 +365,26 @@ namespace TXM_O
 	fprintf(fp, "Node: %4d, Internal: %1d, Eh: %7.4f, n: %6d, \n", (int) i, (int) b->nodes[i].internal, b->nodes[i].Eh / b->nodes[i].n, b->nodes[i].n);
 	
 	fprintf(fp, "Label:, ");
-	for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+	for(j = 0; j < b->nodes[i].preds.size(); j++)
 	  {
-	    fprintf(fp, "%6d,", (int) b->nodes[i].node_pred[j].label);
+	    fprintf(fp, "%6d,", (int) b->nodes[i].preds[j].label);
 	  }	
 	fprintf(fp, "\n");
 	
 	fprintf(fp, "Ehk:, ");
-	for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+	for(j = 0; j < b->nodes[i].preds.size(); j++)
 	  {
-	    fprintf(fp, "%7.4f,", b->nodes[i].node_pred[j].Ehk / b->nodes[i].node_pred[j].nk);
+	    fprintf(fp, "%7.4f,", b->nodes[i].preds[j].Ehk / b->nodes[i].preds[j].nk);
 	  }	
 	fprintf(fp, "\n");
 	
 	total = 0;
 	
 	fprintf(fp, "nk:, ");
-	for(j = 0; j < b->nodes[i].node_pred.size(); j++)
+	for(j = 0; j < b->nodes[i].preds.size(); j++)
 	  {
-	    fprintf(fp, "%6d,", (int) b->nodes[i].node_pred[j].nk);
-	    total += b->nodes[i].node_pred[j].nk;	
+	    fprintf(fp, "%6d,", (int) b->nodes[i].preds[j].nk);
+	    total += b->nodes[i].preds[j].nk;	
 	  }	
 	fprintf(fp, "\n");
 	
@@ -478,12 +478,12 @@ namespace TXM_O
   {
     txm_o* data = (txm_o*)calloc(1, sizeof(txm_o));
 
-    po::options_description txm_o_opts("TXM Online options");
-    txm_o_opts.add_options()
+    po::options_description opts("TXM Online options");
+    opts.add_options()
       ("no_progress", "disable progressive validation")
       ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(64), "higher = more resistance to swap, default=64");
     
-    vm = add_options(all, txm_o_opts);
+    vm = add_options(all, opts);
     
     data->k = (uint32_t)vm["txm_o"].as<size_t>();
     
