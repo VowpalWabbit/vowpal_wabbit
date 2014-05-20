@@ -426,15 +426,17 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       address.sin_port = htons(port);
 
       // attempt to bind to socket
-      if (bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
+      if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
 	{
 	  cerr << "bind: " << strerror(errno) << endl;
 	  throw exception();
 	}
-      int source_count = 1;
 
       // listen on socket
-      listen(all.p->bound_sock, source_count);
+      if (listen(all.p->bound_sock, 1) < 0) {
+        cerr << "listen: " << strerror(errno) << endl;
+        throw exception();
+      }
 
       // write port file
       if (vm.count("port_file"))

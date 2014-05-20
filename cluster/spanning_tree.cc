@@ -173,8 +173,11 @@ int main(int argc, char* argv[]) {
 
   map<size_t, partial> partial_nodesets;
   while(true) {
-    listen(sock, 1024);
-
+    if (listen(sock, 1024) < 0) {
+      cerr << "listen: " << strerror(errno) << endl;
+      throw exception();
+    }
+    
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     socket_t f = accept(sock,(sockaddr*)&client_address,&size);
