@@ -49,7 +49,6 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/searn.h \
 	vowpalwabbit/searn_sequencetask.h \
 	vowpalwabbit/sender.h \
-	vowpalwabbit/sparse_dense.h \
 	vowpalwabbit/topk.h \
 	vowpalwabbit/unique_sort.h \
 	vowpalwabbit/v_hashmap.h

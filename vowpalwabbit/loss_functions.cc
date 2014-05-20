@@ -39,20 +39,20 @@ public:
 	  + 2. * (sd->max_label - label) * (prediction - sd->max_label));
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm) {
-
+  float getUpdate(float prediction, float label, float eta_t, float pred_per_update) 
+  {
     if (eta_t < 1e-6){ 
       /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t) 
        * with its first order Taylor expansion around 0
        * to avoid catastrophic cancellation.
        */
-      return 2.f*(label - prediction)*eta_t/norm;
+      return 2.f*(label - prediction)*eta_t/pred_per_update;
     }
-    return (label - prediction)*(1.f-exp(-2.f*eta_t))/norm;
+    return (label - prediction)*(1.f-exp(-2.f*eta_t))/pred_per_update;
   }
 
-  float getUnsafeUpdate(float prediction, float label,float eta_t,float norm) {
-    return 2.f*(label - prediction)*eta_t/norm;
+  float getUnsafeUpdate(float prediction, float label, float eta_t, float pred_per_update) {
+    return 2.f*(label - prediction)*eta_t/pred_per_update;
   }
 
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
@@ -92,12 +92,12 @@ public:
     return example_loss;
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm) {
-    return 2.f*eta_t*(label - prediction)/norm;
+  float getUpdate(float prediction, float label,float eta_t, float pred_per_update) {
+    return 2.f*eta_t*(label - prediction)/pred_per_update;
   }
 
-  float getUnsafeUpdate(float prediction, float label,float eta_t,float norm) {
-    return 2.f*(label - prediction)*eta_t/norm;
+  float getUnsafeUpdate(float prediction, float label,float eta_t,float pred_per_update) {
+    return 2.f*(label - prediction)*eta_t/pred_per_update;
   }
   
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){
@@ -132,16 +132,15 @@ public:
     return (e > 0) ? e : 0;
   }
   
-  float getUpdate(float prediction, float label,float eta_t, float norm) {
+  float getUpdate(float prediction, float label,float eta_t, float pred_per_update) {
     if(label*prediction >= 1) return 0;
     float err = 1 - label*prediction;
-    float normal= eta_t;
-    return label * (normal < err ? normal : err)/norm;
+    return label * (eta_t < err ? eta_t : err)/pred_per_update;
   }
 
-  float getUnsafeUpdate(float prediction, float label,float eta_t, float norm) {
+  float getUnsafeUpdate(float prediction, float label,float eta_t, float pred_per_update) {
     if(label*prediction >= 1) return 0;
-    return label * eta_t/norm;
+    return label * eta_t/pred_per_update;
   }
 
   float getRevertingWeight(shared_data*, float prediction, float eta_t){
@@ -175,23 +174,23 @@ public:
     return log(1 + exp(-label * prediction));
   }
   
-  float getUpdate(float prediction, float label, float eta_t, float norm) {
+  float getUpdate(float prediction, float label, float eta_t, float pred_per_update) {
     float w,x;
     float d = exp(label * prediction);
     if(eta_t < 1e-6){
       /* As with squared loss, for small eta_t we replace the update
        * with its first order Taylor expansion to avoid numerical problems
        */
-      return label*eta_t/((1+d)*norm);
+      return label*eta_t/((1+d)*pred_per_update);
     }
     x = eta_t + label*prediction + d;
     w = wexpmx(x);
-    return -(label*w+prediction)/norm;
+    return -(label*w+prediction)/pred_per_update;
   }
 
-  float getUnsafeUpdate(float prediction, float label, float eta_t, float norm) {
+  float getUnsafeUpdate(float prediction, float label, float eta_t, float pred_per_update) {
     float d = exp(label * prediction);
-    return label*eta_t/((1+d)*norm);
+    return label*eta_t/((1+d)*pred_per_update);
   }
   
   inline float wexpmx(float x){
@@ -246,24 +245,24 @@ public:
     
   }
   
-  float getUpdate(float prediction, float label, float eta_t, float norm) {
+  float getUpdate(float prediction, float label, float eta_t, float pred_per_update) {
     float err = label - prediction;
     if(err == 0) return 0;
     float normal = eta_t;//base update size
     if(err > 0) {
       normal = tau*normal;
-      return (normal < err ? normal : err) / norm;
+      return (normal < err ? normal : err) / pred_per_update;
     } else {
       normal = -(1-tau) * normal;
-      return ( normal > err ?  normal : err) / norm;
+      return ( normal > err ?  normal : err) / pred_per_update;
     }
   }
 
-  float getUnsafeUpdate(float prediction, float label, float eta_t, float norm) {
+  float getUnsafeUpdate(float prediction, float label, float eta_t, float pred_per_update) {
     float err = label - prediction;
     if(err == 0) return 0;
-    if(err > 0) return tau*eta_t/norm;
-    return -(1-tau)*eta_t/norm;
+    if(err > 0) return tau*eta_t/pred_per_update;
+    return -(1-tau)*eta_t/pred_per_update;
   }
   
   float getRevertingWeight(shared_data* sd, float prediction, float eta_t){

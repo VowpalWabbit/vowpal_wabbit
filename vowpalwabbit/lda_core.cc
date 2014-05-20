@@ -15,7 +15,6 @@ license as described in the file LICENSE.
 #include <stdio.h>
 #include <assert.h>
 #include "constant.h"
-#include "sparse_dense.h"
 #include "gd.h"
 #include "simple_label.h"
 #include "rand48.h"

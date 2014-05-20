@@ -130,6 +130,9 @@ void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
     all.quiet = true;
     // --quiet wins over --progress
   } else {
+    if (argc == 1)
+      cerr << "For more information use: vw --help" << endl;
+
     all.quiet = false;
 
     if (vm.count("progress")) {
@@ -188,10 +191,10 @@ void parse_source(vw& all, po::variables_map& vm)
     ("kill_cache,k", "do not reuse existing cache: create a new one always")
     ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
     ("no_stdin", "do not default to reading from stdin");
-  // Be friendly: if -d was left out, treat positional param as data file
   
   vm = add_options(all, in_opt);
 
+  // Be friendly: if -d was left out, treat positional param as data file
   po::positional_options_description p;  
   p.add("data", -1);
   
@@ -201,7 +204,7 @@ void parse_source(vw& all, po::variables_map& vm)
     options(all.opts).positional(p).run();
   vm = po::variables_map();
   po::store(pos, vm);
-  
+ 
   //begin input source
   if (vm.count("no_stdin"))
     all.stdin_off = true;
@@ -228,6 +231,12 @@ void parse_source(vw& all, po::variables_map& vm)
       set_compressed(all.p);
   } else
     all.data_filename = "";
+
+  if ((vm.count("cache") || vm.count("cache_file")) && vm.count("invert_hash"))
+    {
+      cout << "invert_hash is incompatible with a cache file.  Use it in single pass mode only." << endl;
+      throw exception();
+    }
 
   if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
     {
@@ -781,7 +790,7 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
 
 void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  po::options_description cb_opts("Contextual Bandit Options");
+  po::options_description cb_opts("Contextual Bandit options");
     
   cb_opts.add_options()
     ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
@@ -871,7 +880,7 @@ vw* parse_args(int argc, char *argv[])
   po::options_description update_opt("Update options");
 
   update_opt.add_options()
-    ("learning_rate,l", po::value<float>(&(all->eta)), "Set Learning Rate")
+    ("learning_rate,l", po::value<float>(&(all->eta)), "Set learning rate")
     ("power_t", po::value<float>(&(all->power_t)), "t power value")
     ("decay_learning_rate",    po::value<float>(&(all->eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
@@ -905,7 +914,7 @@ vw* parse_args(int argc, char *argv[])
 
   po::options_description other_opt("Other options");
   other_opt.add_options()
-    ("bootstrap", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
+    ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
     ;
 
   desc.add(update_opt)
