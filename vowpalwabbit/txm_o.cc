@@ -64,8 +64,6 @@ namespace TXM_O
     uint32_t base_predictor;//id of the base predictor
     uint32_t left;//left child
     uint32_t right;//right child
-    uint32_t myL;//number we tried to send left
-    uint32_t myR;//number we tried to send right
     float norm_Eh;//the average margin at the node
     double Eh;//total margin at the node
     uint32_t n;//total events at the node
@@ -93,15 +91,18 @@ namespace TXM_O
     FILE *ex_fp;
   };	
   
-  inline void internal_to_leaf(txm_o_node& n)
+  inline void init_leaf(txm_o_node& n)
   {
+    n.internal = false;
     n.node_pred.erase();
     n.base_predictor = 0;
-    n.myL = 0;
-    n.myR = 0;
     n.norm_Eh = 0;
     n.Eh = 0;
     n.n = 0;
+    n.max_cnt2 = 0;
+    n.max_cnt2_label = 1;
+    n.left = 0;
+    n.right = 0;
   }
 
   inline txm_o_node init_node()	
@@ -110,15 +111,8 @@ namespace TXM_O
     
     node.parent = 0;
     node.min_count = 0;
+    init_leaf(node);
 
-    node.internal = false;
-
-    internal_to_leaf(node);
-    node.left = 0;
-    node.right = 0;
-
-    node.max_cnt2 = 0;
-    node.max_cnt2_label = 0;
     return node;
   }
   
@@ -163,15 +157,21 @@ namespace TXM_O
   {
     for (uint32_t i = 0; i < depth; i++)
       cout << "\t";
-    cout << node.min_count << " " << node.myL << " " << node.left << endl;
-    if (node.internal)
-      display_tree_dfs(b, b.nodes[node.left], depth+1);
+    cout << node.min_count << " " << node.left
+	 << " " << node.right;
+    cout << " label = " << node.max_cnt2_label << " labels = ";
+    for (size_t i = 0; i < node.node_pred.size(); i++)
+      cout << node.node_pred[i].label << ":" << node.node_pred[i].label_cnt2 << "\t";
+    cout << endl;
     
-    for (uint32_t i = 0; i < depth; i++)
-      cout << "\t";
-    cout << " " << node.myR << " " << node.right << endl;
     if (node.internal)
-      display_tree_dfs(b, b.nodes[node.right], depth+1);
+      {
+	cout << "Left";
+	display_tree_dfs(b, b.nodes[node.left], depth+1);
+	
+	cout << "Right";
+	display_tree_dfs(b, b.nodes[node.right], depth+1);
+      }	
   }
 
   bool children(txm_o& b, uint32_t& current, uint32_t& class_index, uint32_t label)
@@ -196,13 +196,14 @@ namespace TXM_O
 	if (b.predictors_used < b.max_predictors)
 	  {
 	    left_child = b.nodes.size();
-	    b.nodes.push_back(init_node());
+	    b.nodes.push_back(init_node());	
 	    right_child = b.nodes.size();
 	    b.nodes.push_back(init_node());
 	    b.nodes[current].base_predictor = b.predictors_used++;
 	  }
 	else
 	  {
+	    cout << "swapping" << endl;
 	    uint32_t swap_child = find_switch_node(b);
 	    uint32_t swap_parent = b.nodes[swap_child].parent;
 	    uint32_t swap_grandparent = b.nodes[swap_parent].parent;
@@ -223,9 +224,10 @@ namespace TXM_O
 	    b.nodes[nonswap_child].parent = swap_grandparent;
 	    update_min_count(b, nonswap_child);
 	    
+	    init_leaf(b.nodes[swap_child]);
 	    left_child = swap_child;
 	    b.nodes[current].base_predictor = b.nodes[swap_parent].base_predictor;
-	    internal_to_leaf(b.nodes[swap_parent]);
+	    init_leaf(b.nodes[swap_parent]);
 	    right_child = swap_parent;
 	  }
 	b.nodes[current].left = left_child;
@@ -235,8 +237,18 @@ namespace TXM_O
 	
 	b.nodes[left_child].min_count = b.nodes[current].min_count/2;
 	b.nodes[right_child].min_count = b.nodes[left_child].min_count - b.nodes[current].min_count/2;
-	
 	update_min_count(b, left_child);
+
+	for (size_t i = 0; i < b.nodes[current].node_pred.size(); i++)
+	  {
+	    txm_o_node_pred np = b.nodes[current].node_pred[i];
+	    np.label_cnt2 /= 2;//pretend half of labels have gone both directions.
+	    if (np.label_cnt2 > 0)
+	      {
+		b.nodes[left_child].node_pred.push_back(np);
+		b.nodes[right_child].node_pred.push_back(np);
+	      }
+	  }
 	b.nodes[current].internal = true;
       }
     return b.nodes[current].internal;
@@ -245,17 +257,11 @@ namespace TXM_O
   void train_node(txm_o& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
   {
     label_data* simple_temp = (label_data*)ec.ld;
-       
-    if(b.nodes[current].norm_Eh < b.nodes[current].node_pred[class_index].norm_Ehk)
-      {
-	simple_temp->label = -1.f;
-	b.nodes[current].myL++;
-      }
+
+    if(b.nodes[current].norm_Eh > b.nodes[current].node_pred[class_index].norm_Ehk)
+      simple_temp->label = -1.f;
     else
-      {
-	simple_temp->label = 1.f;
-	b.nodes[current].myR++;
-      }
+      simple_temp->label = 1.f;
     
     base.learn(ec, b.nodes[current].base_predictor);	
 
@@ -322,7 +328,8 @@ namespace TXM_O
 
   void learn(txm_o& b, learner& base, example& ec)
   {
-    //verify_min_dfs(b, b.nodes[0]);
+    //    verify_min_dfs(b, b.nodes[0]);
+
     MULTICLASS::multiclass *mc = (MULTICLASS::multiclass*)ec.ld;
     
     if (mc->label == (uint32_t)-1 || !b.all->training || ec.test_only || b.progress)
@@ -400,9 +407,6 @@ namespace TXM_O
   {
     save_node_stats(b);
     cout << b.nbofswaps << endl;
-    for (size_t i = 0; i < b.nodes.size(); i++)
-      b.nodes[i].node_pred.delete_v();
-    b.nodes.delete_v();
   }
   
   void save_load_tree(txm_o& b, io_buf& model_file, bool read, bool text)
@@ -509,7 +513,7 @@ namespace TXM_O
     all.loss = getLossFunction(&all, loss_function, loss_parameter);
 
     data->max_predictors = data->k - 1;
-    
+
     learner* l = new learner(data, all.l, data->max_predictors);
     l->set_save_load<txm_o,save_load_tree>();
     l->set_learn<txm_o,learn>();
