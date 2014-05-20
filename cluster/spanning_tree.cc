@@ -14,6 +14,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include <io.h>
 
 #define CLOSESOCK closesocket
+#define inet_ntop InetNtop
 
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
@@ -37,6 +38,7 @@ int getpid()
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <strings.h>
+#include <arpa/inet.h>
 
 #define CLOSESOCK close
 
@@ -53,7 +55,6 @@ typedef int socket_t;
 #include <fstream>
 #include <cmath>
 #include <map>
-#include <arpa/inet.h>
 
 using namespace std;
 

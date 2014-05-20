@@ -16,11 +16,12 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <stdlib.h>
 #ifdef _WIN32
 #include <io.h>
+#define inet_ntop InetNtop
 #else
 #include <unistd.h>
+#include <arpa/inet.h>
 #endif
 #include <sys/timeb.h>
-#include <arpa/inet.h>
 #include "allreduce.h"
 
 using namespace std;
