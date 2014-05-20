@@ -196,7 +196,7 @@ namespace TXM_O
 	if (b.predictors_used < b.max_predictors)
 	  {
 	    left_child = b.nodes.size();
-	    b.nodes.push_back(init_node());	
+	    b.nodes.push_back(init_node());
 	    right_child = b.nodes.size();
 	    b.nodes.push_back(init_node());
 	    b.nodes[current].base_predictor = b.predictors_used++;
@@ -400,6 +400,9 @@ namespace TXM_O
   {
     save_node_stats(b);
     cout << b.nbofswaps << endl;
+    for (size_t i = 0; i < b.nodes.size(); i++)
+      b.nodes[i].node_pred.delete_v();
+    b.nodes.delete_v();
   }
   
   void save_load_tree(txm_o& b, io_buf& model_file, bool read, bool text)
