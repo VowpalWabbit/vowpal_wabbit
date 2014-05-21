@@ -835,15 +835,13 @@ size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
     {
       ret->set_learn<gd, learn<sqrt_rate, true, adaptive,normalized> >();
       ret->set_update<gd, update<sqrt_rate, true, adaptive,normalized> >();
-      all.feature_mask_idx = 0;
       return next;
     }
   else
     {
       ret->set_learn<gd, learn<sqrt_rate, false, adaptive,normalized> >();
       ret->set_update<gd, update<sqrt_rate, false, adaptive,normalized> >();
-      all.feature_mask_idx = next;
-      return next+1;
+      return next;
     }
 }
 
