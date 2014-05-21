@@ -20,6 +20,7 @@ namespace StagewisePoly
   static const uint32_t cycle_bit = 2;
   static const uint32_t tree_atomics = 134;
   static const float tolerance = 1e-9;
+  static const int mult_const = 95104348457;
 
   struct sort_data {
     float wval;
@@ -164,7 +165,7 @@ namespace StagewisePoly
       uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
       return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
     } else
-      return wid_mask(poly, stride_shift(poly, (stride_un_shift(poly, wi_atomic) ^ stride_un_shift(poly, wi_general)) * 95104348457));
+      return wid_mask(poly, stride_shift(poly, ((stride_un_shift(poly, wi_atomic) * mult_const) ^ (stride_un_shift(poly, wi_general) * mult_const))));
   }
 
   void sort_data_create(stagewise_poly &poly)
@@ -246,6 +247,7 @@ namespace StagewisePoly
            */
           ;
         if (wval > tolerance) {
+	  //cout<<wval<<" ";
           assert(heap_end >= poly.sd);
           assert(heap_end <= poly.sd + num_new_features);
 
@@ -266,6 +268,7 @@ namespace StagewisePoly
         }
       }
     }
+    //cout<<endl;
     num_new_features = (uint32_t) (heap_end - poly.sd);
 
     cout<<"Added "<<num_new_features<<endl;
@@ -341,12 +344,12 @@ namespace StagewisePoly
     //below is run at training time).
     if (poly.cur_depth < min_depths_get(poly, wid_cur) && poly.training) {
       if (parent_get(poly, wid_cur)) {
-#ifdef DEBUG
+	//#ifdef DEBUG
         cout
           << "FOUND A TRANSPLANT!!! moving [" << wid_cur
           << "] from depth " << min_depths_get(poly, wid_cur)
           << " to depth " << poly.cur_depth << endl;
-#endif //DEBUG
+	//#endif //DEBUG
         parent_toggle(poly, wid_cur);
       }
       min_depths_set(poly, wid_cur, poly.cur_depth);
@@ -378,6 +381,9 @@ namespace StagewisePoly
         poly.synth_rec_f = parent_f;
       }
     }
+    // else {
+    //   cout<<"Skipping feature "<<cycle_get(poly, wid_cur)<<" "<<(uint32_t)min_depths_get(poly, wid_cur)<<" "<<poly.cur_depth<<" "<<wid_atomic<<" "<<poly.synth_rec_f.weight_index<<" "<<wid_cur<<endl;
+    // }
   }
 
   void synthetic_create(stagewise_poly &poly, example &ec, bool training)
@@ -395,7 +401,9 @@ namespace StagewisePoly
      * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
      * Problem with this is if there is a collision with the root...
      */
+    //cout<<"Starting feature creation\n";
     GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
+    //cout<<"Finished feature creation\n";
     synthetic_decycle(poly);
     poly.synth_ec.total_sum_feat_sq = poly.synth_ec.sum_feat_sq[tree_atomics];
 

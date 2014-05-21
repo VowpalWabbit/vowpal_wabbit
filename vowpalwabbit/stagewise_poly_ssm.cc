@@ -14,12 +14,13 @@
 using namespace std;
 using namespace LEARNER;
 
-namespace StagewisePoly
+namespace StagewisePoly_SSM
 {
   static const uint32_t parent_bit = 1;
   static const uint32_t cycle_bit = 2;
   static const uint32_t tree_atomics = 134;
   static const float tolerance = 1e-9;
+  static const int mult_const = 95104348457;
 
   struct sort_data {
     float wval;
@@ -167,7 +168,7 @@ namespace StagewisePoly
       uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
       return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
     } else
-      return wid_mask(poly, stride_shift(poly, (stride_un_shift(poly, wi_atomic) ^ stride_un_shift(poly, wi_general)) * 95104348457));
+      return wid_mask(poly, stride_shift(poly, ((stride_un_shift(poly, wi_atomic) * mult_const) ^ (stride_un_shift(poly, wi_general) * mult_const))));
   }
 
   void sort_data_create(stagewise_poly &poly)
@@ -234,13 +235,16 @@ namespace StagewisePoly
 
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
+    //cout<<poly.residual<<endl;
     for (uint32_t i = 0; i != poly.all->length(); ++i) {
       uint32_t wid = stride_shift(poly, i);
       if (!parent_get(poly, wid) && wid != constant_feat_masked(poly)) {
 	uint32_t resid = i << 1;
         float wval = 0;
-	if(poly.res_scores[resid+1])
+	if(poly.res_scores[resid+1]) {
 	  wval = poly.res_scores[resid]/poly.res_scores[resid+1];
+	  //cout<<wval<<" ";
+	}
 
 	  //(fabsf(poly.all->reg.weight_vector[wid])
 	  //* poly.all->reg.weight_vector[poly.all->normalized_idx + (wid)])
@@ -274,6 +278,7 @@ namespace StagewisePoly
         }
       }
     }
+    //cout<<endl;
     num_new_features = (uint32_t) (heap_end - poly.sd);
 
     cout<<"Added "<<num_new_features<<endl;
@@ -285,8 +290,8 @@ namespace StagewisePoly
 
     for (uint32_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos) {
       assert(!parent_get(poly, poly.sd[pos].wid)
-          && poly.sd[pos].wval > tolerance
-          && poly.sd[pos].wid != constant_feat_masked(poly));
+	     && poly.sd[pos].wval > tolerance
+	     && poly.sd[pos].wid != constant_feat_masked(poly));
       parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
       cout
@@ -386,6 +391,9 @@ namespace StagewisePoly
         poly.synth_rec_f = parent_f;
       }
     }
+    // else {
+    //   cout<<"Skipping feature "<<cycle_get(poly, wid_cur)<<" "<<(uint32_t)min_depths_get(poly, wid_cur)<<" "<<poly.cur_depth<<" "<<wid_atomic<<" "<<poly.synth_rec_f.weight_index<<" "<<wid_cur<<endl;
+    // }
   }
 
   void feature_res_scores(stagewise_poly &poly, float v, float &w) {
@@ -419,7 +427,9 @@ namespace StagewisePoly
      * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
      * Problem with this is if there is a collision with the root...
      */
+    //cout<<"Starting feature creation\n";
     GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
+    //cout<<"Finished feature creation\n";
     synthetic_decycle(poly);
     poly.synth_ec.total_sum_feat_sq = poly.synth_ec.sum_feat_sq[tree_atomics];
 

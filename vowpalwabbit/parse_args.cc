@@ -42,6 +42,7 @@ license as described in the file LICENSE.
 #include "autolink.h"
 #include "memory.h"
 #include "stagewise_poly.h"
+#include "stagewise_poly_ssm.h"
 
 using namespace std;
 //
@@ -652,7 +653,8 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
     ("lrqdropout", "use dropout training for low rank quadratic features")
-    ("stage_poly", "use stagewise polynomial feature learning");
+    ("stage_poly", "use stagewise polynomial feature learning")
+    ("stage_poly_ssm", "use stagewise polynomial feature learning with SSM heuristic");
 
   vm = add_options(all, score_mod_opt);
 
@@ -670,6 +672,9 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
 
   if (vm.count("stage_poly"))
     all.l = StagewisePoly::setup(all, vm);
+
+  if (vm.count("stage_poly_ssm"))
+    all.l = StagewisePoly_SSM::setup(all, vm);
   
   all.l = Scorer::setup(all, vm);
 }
