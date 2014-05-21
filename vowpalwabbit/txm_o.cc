@@ -542,8 +542,7 @@ namespace TXM_O
     l->set_finish_example<txm_o,finish_example>();
     l->set_finish<txm_o,finish>();
     
-    if(all.training)
-      init_tree(*data);	
+    init_tree(*data);	
     
     return l;
   }	
