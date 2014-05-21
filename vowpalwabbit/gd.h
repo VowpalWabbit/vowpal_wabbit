@@ -10,12 +10,11 @@ license as described in the file LICENSE.
 #include <sys/socket.h>
 #endif
 
-#include <math.h>
 #include "example.h"
 #include "parse_regressor.h"
 #include "parser.h"
-#include "sparse_dense.h"
 #include "v_array.h"
+#include "constant.h"
 
 namespace GD{
 void print_result(int f, float res, v_array<char> tag);
@@ -36,14 +35,6 @@ void output_and_account_example(example* ec);
    {
      for (feature* f = begin; f!= end; f++)
        T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
-   }
-
- template <class R, void (*T)(R&, const float, float&, size_t)>
-   void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
-   {
-     size_t i = 0;
-     for (feature* f = begin; f!= end; f++)
-       T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask], i++);
    }
 
  template <class R, void (*T)(R&, const float, float&)>
@@ -82,59 +73,17 @@ void output_and_account_example(example* ec);
      }
    }
 
-template <class R, void (*T)(R&, const float, float&, size_t)>
-   void foreach_feature(vw& all, example& ec, R& dat)
-   {
-     uint32_t offset = ec.ft_offset;
+ inline void vec_add(float& p, const float fx, float& fw) {
+   p += fw * fx;
+ }
 
-     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
-       foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, dat, offset);
-     
-     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
-       if (ec.atomics[(int)(*i)[0]].size() > 0) {
-		v_array<feature> temp = ec.atomics[(int)(*i)[0]];
-		 for (; temp.begin != temp.end; temp.begin++)
-		   {
-			 uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
-       
-			 foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, dat, 
-					halfhash, temp.begin->x);
-		   }
-       }
-     }
-     
-     for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-       if ((ec.atomics[(int)(*i)[0]].size() == 0) || (ec.atomics[(int)(*i)[1]].size() == 0) || (ec.atomics[(int)(*i)[2]].size() == 0)) { continue; }
-       v_array<feature> temp1 = ec.atomics[(int)(*i)[0]];
-       for (; temp1.begin != temp1.end; temp1.begin++) {
-	 v_array<feature> temp2 = ec.atomics[(int)(*i)[1]];
-	 for (; temp2.begin != temp2.end; temp2.begin++) {
-	   
-	   uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
-	   float mult = temp1.begin->x * temp2.begin->x;
-	   foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[2]].begin, ec.atomics[(int)(*i)[2]].end, dat, halfhash, mult);
-	 }
-       }
-     }
-   }
-
- template <class R, void (*T)(predict_data<R>&, const float, float&)>
-   inline float inline_predict(vw& all, example& ec, R extra)
-   {
-     label_data* ld = (label_data*)ec.ld;
-     predict_data<R> temp = {ld->initial, extra};
-     foreach_feature<predict_data<R>, T>(all, ec, temp);
-     return temp.prediction;
-   }
-
- template <void (*T)(float&, const float, float&)>
-  inline float inline_predict(vw& all, example& ec)
-   {
-     label_data* ld = (label_data*)ec.ld;
-     float temp = ld->initial;
-     foreach_feature<float, T>(all, ec, temp);
-     return temp;
-   }
+ inline float inline_predict(vw& all, example& ec)
+ {
+   label_data* ld = (label_data*)ec.ld;
+   float temp = ld->initial;
+   foreach_feature<float, vec_add>(all, ec, temp);
+   return temp;
+ }
 }
 
 #endif

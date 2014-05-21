@@ -281,7 +281,6 @@
     <ClInclude Include="searn_sequencetask.h" />
     <ClInclude Include="sender.h" />
     <ClInclude Include="simple_label.h" />
-    <ClInclude Include="sparse_dense.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="topk.h" />
     <ClInclude Include="unique_sort.h" />
@@ -333,7 +332,6 @@
     <ClCompile Include="searn_sequencetask.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
-    <ClCompile Include="sparse_dense.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="wap.cc" />
