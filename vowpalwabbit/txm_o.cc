@@ -187,7 +187,7 @@ namespace TXM_O
       return true;
     else if( b.nodes[current].preds.size() > 1 
 	     && (b.predictors_used < b.max_predictors 
-				     || b.nodes[current].min_count > b.swap_resist*(b.nodes[0].min_count + 1)))
+				     || b.nodes[current].min_count - b.nodes[current].max_count > b.swap_resist*(b.nodes[0].min_count + 1)))
       { //need children and we can make them.
 	uint32_t left_child;
 	uint32_t right_child;
