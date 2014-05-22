@@ -218,7 +218,6 @@ struct vw {
 
   float normalized_sum_norm_x;
   size_t normalized_idx; //offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
-  size_t feature_mask_idx; //offset idx where mask is stored
 
   uint32_t lda;
   float lda_alpha;
