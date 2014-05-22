@@ -47,15 +47,18 @@ license as described in the file LICENSE.
     // http://stackoverflow.com/questions/6963659/what-is-the-sopen-s-equivalent-for-the-open-function
     //
 
-#   define  _CRT_NONSTDC_NO_DEPRECATE
-#   define  _SCL_SECURE_NO_WARNINGS
-#   define  _STL_SECURE_NO_WARNINGS
+    // One may chose to ignore warnings by quieting them, however
+    // John feels this is not prudent, so I commented these out
+    // #   define  _CRT_NONSTDC_NO_DEPRECATE
+    // #   define  _SCL_SECURE_NO_WARNINGS
+    // #   define  _STL_SECURE_NO_WARNINGS
 
     // v_array.h: so we can redefine them
 #   undef max
 #   undef min
 
-#else
+#else /* not Windows */
+
 #   include <sys/socket.h>
 #   include <sys/types.h>
 #   include <netinet/in.h>
