@@ -175,6 +175,8 @@ namespace StagewisePoly
         else if (wi_general == constant_feat_masked(poly))
           return wi_atomic;
         else {
+          //This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
+          //to the monomial, whereas this here is sensitive to the path followed, but whatever.
           return wid_mask(poly, stride_shift(poly, stride_un_shift(poly, wi_atomic)
               ^ (16777619 * stride_un_shift(poly, wi_general))));
         }
