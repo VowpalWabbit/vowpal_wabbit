@@ -217,9 +217,9 @@ bool operator<(const string_value& first, const string_value& second)
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
   if(all.current_pass == 0 && all.inv_hash_regressor_name != ""){ //for invert_hash
-    if ( index == (((constant << stride_shift) + offset )& all.reg.weight_mask))
+    if ( index == (((constant << stride_shift) * all.wpp + offset )& all.reg.weight_mask))
       tmp = "Constant";
-
+    
     ostringstream convert;
     convert << ((index >>stride_shift) & all.parse_mask);
     tmp = ns_pre + tmp + ":"+ convert.str();
