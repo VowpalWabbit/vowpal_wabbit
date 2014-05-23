@@ -157,15 +157,30 @@ namespace StagewisePoly
     assert((wi_atomic & (stride_shift(poly, 1) - 1)) == 0);
     assert((wi_general & (stride_shift(poly, 1) - 1)) == 0);
 
-    if (wi_atomic == constant_feat_masked(poly))
-      return wi_general;
-    else if (wi_general == constant_feat_masked(poly))
-      return wi_atomic;
-    else if (wi_atomic == wi_general) {
-      uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
-      return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
-    } else
-      return wid_mask(poly, stride_shift(poly, ((stride_un_shift(poly, wi_atomic) * mult_const) ^ (stride_un_shift(poly, wi_general) * mult_const))));
+    if (poly.magic_argument == 0) { //XXX TEMPORARY CONDITIONAL BLOCK DON'T HATE ME
+        if (wi_atomic == constant_feat_masked(poly))
+          return wi_general;
+        else if (wi_general == constant_feat_masked(poly))
+          return wi_atomic;
+        else if (wi_atomic == wi_general) {
+          uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
+          return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
+        } else
+          return wid_mask(poly, stride_shift(poly, ((stride_un_shift(poly, wi_atomic) * mult_const) ^ (stride_un_shift(poly, wi_general) * mult_const))));
+    } else {
+        assert(poly.magic_argument == 1);
+
+        if (wi_atomic == constant_feat_masked(poly))
+          return wi_general;
+        else if (wi_general == constant_feat_masked(poly))
+          return wi_atomic;
+        else {
+          //This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
+          //to the monomial, whereas this here is sensitive to the path followed, but whatever.
+          return wid_mask(poly, stride_shift(poly, stride_un_shift(poly, wi_atomic)
+              ^ (16777619 * stride_un_shift(poly, wi_general))));
+        }
+    }
   }
 
   void sort_data_create(stagewise_poly &poly)
