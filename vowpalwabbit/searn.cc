@@ -52,7 +52,7 @@ namespace Searn
   string   neighbor_feature_space("neighbor");
 
   uint32_t AUTO_HISTORY = 1, AUTO_HAMMING_LOSS = 2, EXAMPLES_DONT_CHANGE = 4, IS_LDF = 8;
-  enum SearnState { NONE, INIT_TEST, INIT_TRAIN, LEARN, GET_TRUTH_STRING, BEAM_INIT, BEAM_ADVANCE, BEAM_PLAYOUT };
+  enum SearnState { NONE, INIT_TEST, INIT_TRAIN, LEARN, GET_TRUTH_STRING, BEAM_INIT, BEAM_ADVANCE, BEAM_PLAYOUT, FAST_FORWARD };
 
   typedef uint32_t* history;
 
@@ -83,7 +83,13 @@ namespace Searn
     uint32_t hash_value;
   };
 
-  typedef v_hashmap<snapshot_item_ptr, uint32_t> snapmap;
+  struct snapshot_item_result {
+    uint32_t action; // the action taken at this position
+    float    loss;   // the loss _before_ taking that action
+    bool     on_training_path;
+  };
+
+  typedef v_hashmap<snapshot_item_ptr, snapshot_item_result> snapmap;
   // we map from a snapshot_item_ptr to the action taken at that position
   // here, priv->snapshot_data[sip.start .. sip.end] is the full snapshot
 
@@ -134,7 +140,11 @@ namespace Searn
     size_t   most_recent_snapshot_begin;
     size_t   most_recent_snapshot_end;
     uint32_t most_recent_snapshot_hash;
+    float    most_recent_snapshot_loss;  // the loss up to the current point in time
     bool     snapshotted_since_predict;
+
+    size_t   final_snapshot_begin; // this is a pointer to the last snapshot taken at INIT_TRAIN time
+    size_t   final_snapshot_end;
     
     bool should_produce_string;
     stringstream *pred_string;
@@ -148,6 +158,7 @@ namespace Searn
     float  test_loss;      // total test loss for this example
     float  train_loss;     // total training loss for this example
     float  learn_loss;     // total loss for this "varied" example
+    
     bool   loss_declared;  // have we declared a loss at all?
 
     v_array<float> learn_losses;  // losses for all (valid) actions at learn_t
@@ -169,6 +180,7 @@ namespace Searn
     //float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
     size_t beam_size;
     size_t kbest;
+    bool   allow_unsafe_fast_forward;
     
     size_t num_features;
     uint32_t total_number_of_policies;
@@ -641,22 +653,35 @@ namespace Searn
     return opts[(size_t)(r * (float)opts.size())];
   }
 
-  bool get_most_recent_snapshot_action(searn_private* priv, uint32_t &action) {
+  // CLAIM (unproven): will return something along the training path _if available_
+  bool get_most_recent_snapshot_action(searn_private* priv, uint32_t &action, float &loss, bool &was_on_training_path) {
     if (! priv->snapshotted_since_predict) return false;
     snapshot_item_ptr sip = { priv->most_recent_snapshot_begin,
                               priv->most_recent_snapshot_end,
                               priv->most_recent_snapshot_hash };
-    action = priv->snapshot_map->get(sip, sip.hash_value);
-    if (action == 0) return false;
+    snapshot_item_result res = priv->snapshot_map->get(sip, sip.hash_value);
+    if (res.loss < 0.f) return false;
+    cdbg << "found";
+    action = res.action;
+    loss   = res.loss;
+    was_on_training_path = res.on_training_path;
     return true;
   }
 
-  void set_most_recent_snapshot_action(searn_private* priv, uint32_t action) {
-    if (! priv->snapshotted_since_predict) return;
+  void set_most_recent_snapshot_action(searn_private* priv, uint32_t action, float loss) {
+    if (priv->most_recent_snapshot_end == (size_t)-1) return;
+    bool on_training_path = priv->state == INIT_TRAIN || priv->state == BEAM_INIT;
+    cdbg << "set: " << priv->most_recent_snapshot_begin << "\t" << priv->most_recent_snapshot_end << "\t" << priv->most_recent_snapshot_hash << "\totp=" << on_training_path << endl;
     snapshot_item_ptr sip = { priv->most_recent_snapshot_begin,
                               priv->most_recent_snapshot_end,
                               priv->most_recent_snapshot_hash };
-    priv->snapshot_map->put(sip, sip.hash_value, action);
+    snapshot_item_result &res = priv->snapshot_map->get(sip, sip.hash_value);
+    if (res.loss < 0.f) { // not found!
+      snapshot_item_result me = { action, loss, on_training_path };
+      priv->snapshot_map->put_after_get(sip, sip.hash_value, me);
+    } else {
+      assert(false);
+    }
   }
 
   template<class T> bool v_array_contains(v_array<T> &A, T x) {
@@ -668,42 +693,51 @@ namespace Searn
 
 
 
-
+ 
   template <class T>
   uint32_t single_action(vw& all, searn& srn, learner& base, example* ecs, size_t num_ec, T* valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t, bool allow_exploration, bool set_valid_labels_on_oracle=false) {
     uint32_t action;
-    // cerr << "pol=" << pol << endl; //  << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
-    if (pol == -1) { // optimal policy
-      if (ystar_is_uint32t)
-        action = *((uint32_t*)ystar);
-      else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
-        if (srn.priv->rollout_all_actions)
-          action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).class_index;
-        else
-          action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
-      } else 
-        action = choose_random<uint32_t>(*ystar);
+    // cdbg << "pol=" << pol << endl; //  << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
 
-      if (set_valid_labels_on_oracle && (ystar_is_uint32t || ((ystar != NULL) && (ystar->size() > 0)))) {
-        assert(srn.priv->rollout_all_actions);  // TODO: deal with CB
-        v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)valid_labels)->costs;
-        for (size_t i=0; i<costs->size(); i++) {
-          if (ystar_is_uint32t)
-            costs->get(i).partial_prediction = (costs->get(i).class_index == action) ? 0. : 1.;
-          else   // ystar is actually v_array<uint32_t>
-            costs->get(i).partial_prediction = v_array_contains<uint32_t>(*ystar, costs->get(i).class_index) ? 0. : 1.;
-        }
+    float snapshot_loss = -1.;
+    bool was_on_training_path = false;
+    if (get_most_recent_snapshot_action(srn.priv, action, snapshot_loss, was_on_training_path)) {
+      cdbg << "get: " << (srn.priv->state == LEARN) << " " << was_on_training_path << endl;
+      if (srn.priv->allow_unsafe_fast_forward && (srn.priv->state == LEARN) && was_on_training_path && (srn.priv->t > srn.priv->learn_t)) { // TODO: if we're allowed to fastforward
+        srn.priv->state = FAST_FORWARD;
+        srn.priv->learn_loss = srn.priv->learn_loss + (srn.priv->train_loss - snapshot_loss);
+        cdbg << "fast_forward, t=" << srn.priv->t << " and learn_t=" << srn.priv->learn_t << endl;
       }
-      return action;
-    } else {        // learned policy
-      if (! get_most_recent_snapshot_action(srn.priv, action)) {
-        if (!srn.priv->is_ldf) {  // single example
+    } else { // no snapshot found
+      if (pol == -1) { // optimal policy
+        if (ystar_is_uint32t)
+          action = *((uint32_t*)ystar);
+        else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
+          if (srn.priv->rollout_all_actions)
+            action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).class_index;
+          else
+            action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
+        } else 
+          action = choose_random<uint32_t>(*ystar); // TODO: choose according to current model!
+        
+        if (set_valid_labels_on_oracle && (ystar_is_uint32t || ((ystar != NULL) && (ystar->size() > 0)))) {
+          assert(srn.priv->rollout_all_actions);  // TODO: deal with CB
+          v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)valid_labels)->costs;
+          for (size_t i=0; i<costs->size(); i++) {
+            if (ystar_is_uint32t)
+              costs->get(i).partial_prediction = (costs->get(i).class_index == action) ? 0. : 1.;
+            else   // ystar is actually v_array<uint32_t>
+              costs->get(i).partial_prediction = v_array_contains<uint32_t>(*ystar, costs->get(i).class_index) ? 0. : 1.;
+          }
+        }
+      } else {        // learned policy
+        if (!srn.priv->is_ldf) {  // single example (not LDF)
           if (srn.priv->hinfo.length>0) {cdbg << "add_history_to_example: srn.priv->t=" << srn.priv->t << " h=" << srn.priv->rollout_action.begin[srn.priv->t] << endl;}
           if (srn.priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.priv->t+1; i++) cdbg << " " << srn.priv->rollout_action.begin[i]; cdbg << " ], len=" << srn.priv->rollout_action.size() << endl;}
           if (srn.priv->auto_history) add_history_to_example(all, srn.priv->hinfo, ecs, srn.priv->rollout_action.begin+srn.priv->t);
           action = single_prediction_notLDF<T>(all, srn, base, *ecs, valid_labels, pol, allow_exploration);
           if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ecs);
-        } else {
+        } else { // LDF
           if (srn.priv->auto_history)
             for (size_t a=0; a<num_ec; a++) {
               cdbg << "class_index = " << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].class_index << ":" << ((COST_SENSITIVE::label*)ecs[a].ld)->costs[0].x << endl;
@@ -715,10 +749,10 @@ namespace Searn
             for (size_t a=0; a<num_ec; a++)
               remove_history_from_example(all, srn.priv->hinfo, &ecs[a]);
         }
-        set_most_recent_snapshot_action(srn.priv, action);
       }
-      return action;
+      set_most_recent_snapshot_action(srn.priv, action, srn.priv->most_recent_snapshot_loss);
     }
+    return action;
   }
 
   void clear_snapshot(vw& all, searn& srn, bool free_data)
@@ -808,7 +842,7 @@ namespace Searn
       if (srn->priv->auto_history) srn->priv->rollout_action.push_back(a_name);
       srn->priv->t++;
       return a;
-    } else if (srn->priv->state == GET_TRUTH_STRING) {
+    } else if ((srn->priv->state == GET_TRUTH_STRING) || (srn->priv->state == FAST_FORWARD)) {
       int pol = -1;
       get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, false);
@@ -1113,26 +1147,49 @@ namespace Searn
   }
 
   void searn_snapshot_data(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
-    //if (!used_for_prediction) return; // TODO: once we have fast-forward, we'll need to keep track of this!
     if ((priv->state == NONE) || (priv->state == INIT_TEST) || (priv->state == GET_TRUTH_STRING) || (priv->state == BEAM_PLAYOUT))
       return;
 
     if ((priv->state == INIT_TRAIN) || (priv->state == LEARN)) {
       priv->snapshotted_since_predict = true;
       priv->most_recent_snapshot_end = priv->snapshot_data.size();
+      cdbg << "end = " << priv->most_recent_snapshot_end << endl;
 
       void* new_data = NULL;
       if ((data_ptr != NULL) && (sizeof_data != 0)) {
         new_data = malloc(sizeof_data);
         memcpy(new_data, data_ptr, sizeof_data);
-        priv->most_recent_snapshot_hash = uniform_hash(data_ptr, sizeof_data, priv->most_recent_snapshot_hash);
+        if (used_for_prediction) {
+          if (sizeof_data == 1 || sizeof_data == 2 || sizeof_data == 4 || sizeof_data == 8) {
+            // fast hashing
+            priv->most_recent_snapshot_hash *= 398401;
+            if (sizeof_data == 1)      priv->most_recent_snapshot_hash += 4893107 * *(uint8_t*)data_ptr;
+            else if (sizeof_data == 2) priv->most_recent_snapshot_hash += 4893107 * *(uint16_t*)data_ptr;
+            else if (sizeof_data == 4) priv->most_recent_snapshot_hash += 4893107 * *(uint32_t*)data_ptr;
+            else if (sizeof_data == 8) priv->most_recent_snapshot_hash += 4893107 * *(uint64_t*)data_ptr;
+          } else {
+            priv->most_recent_snapshot_hash = uniform_hash(data_ptr, sizeof_data, priv->most_recent_snapshot_hash);
+          }
+        }
       }
       snapshot_item item = { index, tag, new_data, sizeof_data, priv->t };
       priv->snapshot_data.push_back(item);
-
+      //cerr << "priv->snapshot_data.push_back(item);" << endl;
       return;
     }        
 
+    if (priv->state == FAST_FORWARD) { // go to the end!
+      assert(priv->final_snapshot_end >= priv->final_snapshot_begin);
+      assert(priv->final_snapshot_end <  priv->snapshot_data.size());
+
+      snapshot_item &me = priv->snapshot_data[priv->final_snapshot_begin + tag];  // TODO: generalize or ensure that tags are +=1 each time
+      assert(me.tag == tag);
+      assert(me.data_size = sizeof_data);
+      memcpy(data_ptr, me.data_ptr, sizeof_data);
+
+      return;
+    }
+    
     if (priv->state == BEAM_INIT) {
       vw* all = priv->all;
       searn* srn=(searn*)all->searnstr;
@@ -1210,6 +1267,19 @@ namespace Searn
       priv->most_recent_snapshot_hash  = 38429103;
       priv->most_recent_snapshot_begin = priv->snapshot_data.size();
       priv->most_recent_snapshot_end   = -1;
+      cdbg << "end = -1   ***" << endl;
+      priv->most_recent_snapshot_loss  = 0.f;
+      if (priv->loss_declared)
+        switch (priv->state) {
+          case INIT_TEST : priv->most_recent_snapshot_loss = priv->test_loss;  break;
+          case INIT_TRAIN: priv->most_recent_snapshot_loss = priv->train_loss; break;
+          case LEARN     : priv->most_recent_snapshot_loss = priv->learn_loss; break;
+          default        : break;
+        }
+
+      if (priv->state == INIT_TRAIN)
+        priv->final_snapshot_begin = priv->most_recent_snapshot_begin;
+      
       if (priv->auto_history) {
         size_t history_size = sizeof(uint32_t) * priv->hinfo.length;
         searn_snapshot_data(priv, index, 0, priv->rollout_action.begin + priv->t, history_size, true);
@@ -1217,6 +1287,8 @@ namespace Searn
     }
 
     searn_snapshot_data(priv, index, tag, data_ptr, sizeof_data, used_for_prediction);
+    if (priv->state == INIT_TRAIN)
+        priv->final_snapshot_end = priv->most_recent_snapshot_end;
   }
  
 
@@ -1651,7 +1723,6 @@ namespace Searn
 
       // generate training examples on which to learn
       cdbg << "======================================== LEARN (" << srn.priv->current_policy << "," << srn.priv->read_example_last_pass << ") ========================================" << endl;
-      srn.priv->state = LEARN;
       v_array<size_t> tset = get_training_timesteps(all, srn);
       cdbg << "tset ="; for (size_t*t=tset.begin; t!=tset.end; ++t) cdbg << " " << (*t); cdbg << endl;
       for (size_t tid=0; tid<tset.size(); tid++) {
@@ -1682,10 +1753,12 @@ namespace Searn
             srn.priv->loss_last_step = 0;
             srn.priv->learn_loss = 0.f;
             srn.priv->learn_example_len = 0;
+            cdbg << "learn_example_len = 0" << endl;
             
             cdbg << "learn_t = " << srn.priv->learn_t << " || learn_a = " << srn.priv->learn_a << endl;
             // srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
             // srn.priv->snapshot_could_match = true;
+            srn.priv->state = LEARN;
             srn.task->structured_predict(srn, ec);
 
             srn.priv->learn_losses.push_back( srn.priv->learn_loss );
@@ -2245,6 +2318,7 @@ void print_update(vw& all, searn& srn)
   }
 
   bool snapshot_item_ptr_eq0(void*ss_data, snapshot_item_ptr &a, snapshot_item_ptr &b) {
+    // TODO: what to do if not used for prediction?
     if ((a.start == b.start) && (a.end == b.end)) return true;
     v_array<snapshot_item> *ss = (v_array<snapshot_item>*)ss_data;
     if (a.hash_value != b.hash_value) return false;
@@ -2259,9 +2333,23 @@ void print_update(vw& all, searn& srn)
     return true;
   }
 
+  void print_snapshot_item(void*ss_data, snapshot_item_ptr& a) {
+    v_array<snapshot_item> *ss = (v_array<snapshot_item>*)ss_data;
+    cerr << "{ st=" << a.start << ", en=" << a.end << ", h=" << a.hash_value << ", d = [";
+    for (size_t i=0; i<=a.end-a.start; i++) {
+      snapshot_item me = ss->get(a.start+i);
+      cerr << " (" << i << "): idx=" << me.index << " tag=" << me.tag << " dat=" << (*(size_t*)me.data_ptr);
+    }
+    cerr << " ]";
+  }
+    
   bool snapshot_item_ptr_eq(void*ss_data, snapshot_item_ptr &a, snapshot_item_ptr &b) {
     bool r = snapshot_item_ptr_eq0(ss_data, a, b);
-    //cerr << r;
+    // cerr << "snapshot_item_ptr_eq:" << endl << "\t";
+    // print_snapshot_item(ss_data, a);
+    // cerr << endl << " vs\t";
+    // print_snapshot_item(ss_data, b);
+    // cerr << endl << " = " << r << endl;
     return r;
   }
 
@@ -2284,6 +2372,7 @@ void print_update(vw& all, searn& srn)
     //srn.priv->exploration_temperature = -1.0; // don't explore
     srn.priv->beam_size = 0; // 0 ==> no beam
     srn.priv->kbest = 0; // 0 or 1 means just 1 best
+    srn.priv->allow_unsafe_fast_forward = true;
     
     srn.priv->neighbor_features_string = new string();
     
@@ -2316,7 +2405,8 @@ void print_update(vw& all, searn& srn)
     srn.priv->examples_dont_change = false;
     srn.priv->is_ldf = false;
 
-    srn.priv->snapshot_map = new snapmap(102341, 0, snapshot_item_ptr_eq, &srn.priv->snapshot_data);
+    snapshot_item_result def_snapshot_result = { 0, -1.f };
+    srn.priv->snapshot_map = new snapmap(102341, def_snapshot_result, snapshot_item_ptr_eq, &srn.priv->snapshot_data);
     
     srn.priv->empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);
     COST_SENSITIVE::cs_label.default_label(srn.priv->empty_example->ld);
@@ -2586,6 +2676,7 @@ void print_update(vw& all, searn& srn)
         ("search_beam", po::value<size_t>(), "size of beam -- currently only usable in test mode, not for learning")
         ("search_kbest", po::value<size_t>(), "return kbest lists -- currently only usable in test mode, requires beam >= kbest size")
 
+        ("search_no_unsafe_fastforward",                  "turn off efficiency gains from (very slightly) unsafe fastforwarding")
         ("search_no_snapshot",                            "turn off snapshotting capabilities")
         ("search_no_fastforward",                         "turn off fastforwarding (note: fastforwarding requires snapshotting)");
 
@@ -2646,7 +2737,7 @@ void print_update(vw& all, searn& srn)
 
     if (vm.count("search_no_snapshot"))             srn->priv->do_snapshot          = false;
     if (vm.count("search_no_fastforward"))          srn->priv->do_fastforward       = false;
-
+    if (vm.count("search_no_unsafe_fastforward"))   srn->priv->allow_unsafe_fast_forward = false;
 
     if (interpolation_string.compare("data") == 0) { // run as dagger
       srn->priv->adaptive_beta = true;

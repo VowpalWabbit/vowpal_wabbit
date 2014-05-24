@@ -159,7 +159,7 @@ template<class K, class V> class v_hashmap{
       return equivalent_no_data(key, key2);
   }
   
-  V get(K key, size_t hash) {
+  V& get(K key, size_t hash) {
     size_t sz  = base_size();
     size_t first_position = hash % sz;
     last_position = first_position;
