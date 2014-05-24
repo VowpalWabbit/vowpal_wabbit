@@ -21,6 +21,41 @@ namespace StagewisePoly
   static const uint32_t tree_atomics = 134;
   static const float tolerance = 1e-9;
   static const int mult_const = 95104348457;
+  static const uint32_t hash_mod_table[] = {
+    [0] = 0,
+    [1] = 1,
+    [2] = 3,
+    [3] = 3,
+    [4] = 11,
+    [5] = 11,
+    [6] = 43,
+    [7] = 43,
+    [8] = 171,
+    [9] = 171,
+    [10] = 683,
+    [11] = 683,
+    [12] = 2731,
+    [13] = 2731,
+    [14] = 10923,
+    [15] = 10923,
+    [16] = 43691,
+    [17] = 43691,
+    [18] = 174763,
+    [19] = 174763,
+    [20] = 699051,
+    [21] = 699051,
+    [22] = 2796203,
+    [23] = 2796203,
+    [24] = 11184811,
+    [25] = 11184811,
+    [26] = 44739243,
+    [27] = 44739243,
+    [28] = 178956971,
+    [29] = 178956971,
+    [30] = 715827883,
+    [31] = 715827883,
+    [32] = 2863311531
+  };
 
   struct sort_data {
     float wval;
@@ -158,28 +193,44 @@ namespace StagewisePoly
     assert((wi_general & (stride_shift(poly, 1) - 1)) == 0);
 
     if (poly.magic_argument == 0) { //XXX TEMPORARY CONDITIONAL BLOCK DON'T HATE ME
-        if (wi_atomic == constant_feat_masked(poly))
-          return wi_general;
-        else if (wi_general == constant_feat_masked(poly))
-          return wi_atomic;
-        else if (wi_atomic == wi_general) {
-          uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
-          return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
-        } else
-          return wid_mask(poly, stride_shift(poly, ((stride_un_shift(poly, wi_atomic) * mult_const) ^ (stride_un_shift(poly, wi_general) * mult_const))));
-    } else {
-        assert(poly.magic_argument == 1);
-
-        if (wi_atomic == constant_feat_masked(poly))
-          return wi_general;
-        else if (wi_general == constant_feat_masked(poly))
-          return wi_atomic;
-        else {
-          //This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
-          //to the monomial, whereas this here is sensitive to the path followed, but whatever.
-          return wid_mask(poly, stride_shift(poly, stride_un_shift(poly, wi_atomic)
+      if (wi_atomic == constant_feat_masked(poly))
+        return wi_general;
+      else if (wi_general == constant_feat_masked(poly))
+        return wi_atomic;
+      else if (wi_atomic == wi_general) {
+        uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
+        return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
+      } else
+        return wid_mask(poly, stride_shift(poly, ((stride_un_shift(poly, wi_atomic) * mult_const) ^ (stride_un_shift(poly, wi_general) * mult_const))));
+    } else if (poly.magic_argument == 1) {
+      if (wi_atomic == constant_feat_masked(poly))
+        return wi_general;
+      else if (wi_general == constant_feat_masked(poly))
+        return wi_atomic;
+      else {
+        //This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
+        //to the monomial, whereas this here is sensitive to the path followed, but whatever.
+        return wid_mask(poly, stride_shift(poly, stride_un_shift(poly, wi_atomic)
               ^ (16777619 * stride_un_shift(poly, wi_general))));
-        }
+      }
+    } else if (poly.magic_argument == 2) {
+      return 0; //was going to tune constants and add modulus to FNV above but became lazy.
+    } else if (poly.magic_argument == 3) {
+      if (wi_atomic == constant_feat_masked(poly))
+        return wi_general;
+      else if (wi_general == constant_feat_masked(poly))
+        return wi_atomic;
+      else if (wi_atomic == wi_general) {
+        uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
+        return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
+      } else {
+        assert(3 * hash_mod_table[poly.all->num_bits] % poly.all->length() == 1);
+        uint32_t xa = 3 * stride_un_shift(poly, wi_atomic) % poly.all->length();
+        uint32_t xg = 3 * stride_un_shift(poly, wi_general) % poly.all->length();
+        return wid_mask(poly, stride_shift(poly, (xa ^ xg) * hash_mod_table[poly.all->num_bits]));
+      }
+    } else {
+      return 0; //deal with it.
     }
   }
 
