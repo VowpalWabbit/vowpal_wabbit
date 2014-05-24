@@ -58,6 +58,9 @@ namespace StagewisePoly_SSM
     float* res_scores;
     float residual;
 
+    example synth_ec_squared;
+    size_t increment;
+
 #ifdef DEBUG
     uint32_t max_depth;
     uint32_t depths[100000];
@@ -87,7 +90,7 @@ namespace StagewisePoly_SSM
 
   inline uint32_t constant_feat(const stagewise_poly &poly)
   {
-    return stride_shift(poly, constant);
+    return (stride_shift(poly, constant)* poly.all->wpp);
   }
 
   inline uint32_t constant_feat_masked(const stagewise_poly &poly)
@@ -236,15 +239,20 @@ namespace StagewisePoly_SSM
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
     //cout<<poly.residual<<endl;
-    for (uint32_t i = 0; i != poly.all->length(); ++i) {
+    for (uint32_t i = 0; i != poly.all->length(); i += poly.magic_argument) {
       uint32_t wid = stride_shift(poly, i);
       if (!parent_get(poly, wid) && wid != constant_feat_masked(poly)) {
-	uint32_t resid = i << 1;
+	
         float wval = 0;
-	if(poly.res_scores[resid+1]) {
-	  wval = poly.res_scores[resid]/poly.res_scores[resid+1];
-	  //cout<<wval<<" ";
+	if(poly.magic_argument == 1) {
+	  uint32_t resid = i << 1;
+	  if(poly.res_scores[resid+1]) {
+	    wval = poly.res_scores[resid]/poly.res_scores[resid+1];
+	    //cout<<wval<<" ";
+	  }
 	}
+	else
+	  wval = fabsf(poly.all->reg.weight_vector[poly.increment + wid] * poly.all->reg.weight_vector[poly.increment + poly.all->normalized_idx + (wid)]);
 
 	  //(fabsf(poly.all->reg.weight_vector[wid])
 	  //* poly.all->reg.weight_vector[poly.all->normalized_idx + (wid)])
@@ -256,7 +264,7 @@ namespace StagewisePoly_SSM
            * - poly.magic_argument
            * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 / poly.num_examples)
            */
-	//cout<<i<<" "<<resid<<" "<<wval<<" "<<poly.res_scores[resid]<<":"<<poly.res_scores[resid+1]<<" ";
+	//cout<<i<<":"<<wval<<":"<<wid + poly.increment<<" ";//<<" "<<poly.res_scores[resid]<<":"<<poly.res_scores[resid+1]<<" ";
         if (wval > tolerance) {
           assert(heap_end >= poly.sd);
           assert(heap_end <= poly.sd + num_new_features);
@@ -278,10 +286,10 @@ namespace StagewisePoly_SSM
         }
       }
     }
-    //cout<<endl;
+    cout<<endl;
     num_new_features = (uint32_t) (heap_end - poly.sd);
 
-    cout<<"Added "<<num_new_features<<endl;
+    cout<<"Added "<<num_new_features<<" "<<poly.sd[0].wid<<" "<<poly.sd[0].wval<<endl;
 
 #ifdef DEBUG
     //eyeballing weights a pain if unsorted.
@@ -310,27 +318,27 @@ namespace StagewisePoly_SSM
 #endif //DEBUG
   }
 
-  void synthetic_reset(stagewise_poly &poly, example &ec)
+  void synthetic_reset(stagewise_poly &poly, const example &ec, example &new_ec)
   {
-    poly.synth_ec.ld = ec.ld;
-    poly.synth_ec.tag = ec.tag;
-    poly.synth_ec.example_counter = ec.example_counter;
-    poly.synth_ec.ft_offset = ec.ft_offset;
+    new_ec.ld = ec.ld;
+    new_ec.tag = ec.tag;
+    new_ec.example_counter = ec.example_counter;
+    new_ec.ft_offset = ec.ft_offset;
 
-    poly.synth_ec.test_only = ec.test_only;
-    poly.synth_ec.end_pass = ec.end_pass;
-    poly.synth_ec.sorted = ec.sorted;
-    poly.synth_ec.in_use = ec.in_use;
+    new_ec.test_only = ec.test_only;
+    new_ec.end_pass = ec.end_pass;
+    new_ec.sorted = ec.sorted;
+    new_ec.in_use = ec.in_use;
 
-    poly.synth_ec.atomics[tree_atomics].erase();
-    poly.synth_ec.audit_features[tree_atomics].erase();
-    poly.synth_ec.num_features = 0;
-    poly.synth_ec.total_sum_feat_sq = 0;
-    poly.synth_ec.sum_feat_sq[tree_atomics] = 0;
-    poly.synth_ec.example_t = ec.example_t;
+    new_ec.atomics[tree_atomics].erase();
+    new_ec.audit_features[tree_atomics].erase();
+    new_ec.num_features = 0;
+    new_ec.total_sum_feat_sq = 0;
+    new_ec.sum_feat_sq[tree_atomics] = 0;
+    new_ec.example_t = ec.example_t;
 
-    if (poly.synth_ec.indices.size()==0)
-      poly.synth_ec.indices.push_back(tree_atomics);
+    if (new_ec.indices.size()==0)
+      new_ec.indices.push_back(tree_atomics);
   }
 
   void synthetic_decycle(stagewise_poly &poly)
@@ -396,6 +404,11 @@ namespace StagewisePoly_SSM
     // }
   }
 
+  void print_example(stagewise_poly &poly, float v, float& w) {
+    uint32_t wid = (uint32_t)((&w - poly.all->reg.weight_vector));
+    cout<<wid<<":"<<v<<":"<<constant_feat_masked(poly)<<" ";
+  }
+
   void feature_res_scores(stagewise_poly &poly, float v, float &w) {
     uint32_t wid = stride_un_shift(poly, (uint32_t)((&w - poly.all->reg.weight_vector)));
     poly.res_scores[wid*2] += poly.residual*v*v;
@@ -412,9 +425,23 @@ namespace StagewisePoly_SSM
     GD::foreach_feature<stagewise_poly, feature_res_scores>(*(poly.all), ec, poly);
   }
 
+  void create_ec_squared(stagewise_poly &poly, float v, float &w) {
+    uint32_t wid = (uint32_t)((&w - poly.all->reg.weight_vector));    
+    
+    //if(wid == constant_feat_masked(poly))
+    // cout<<"CONSTANT\n";
+    
+    feature f = {v*v, wid};
+    //cout<<wid<<":"<<f.x<<" ";
+    poly.synth_ec_squared.atomics[tree_atomics].push_back(f);
+    poly.synth_ec_squared.num_features++;
+    poly.synth_ec_squared.sum_feat_sq[tree_atomics] += f.x * f.x;
+  }
+
+
   void synthetic_create(stagewise_poly &poly, example &ec, bool training)
   {
-    synthetic_reset(poly, ec);
+    synthetic_reset(poly, ec, poly.synth_ec);
 
     poly.cur_depth = 0;
 
@@ -452,14 +479,50 @@ namespace StagewisePoly_SSM
   void learn(stagewise_poly &poly, learner &base, example &ec)
   {
     bool training = poly.all->training && !ec.test_only && ((label_data *) ec.ld)->label != FLT_MAX;
+    //cout<<"EC:: ";
+    //GD::foreach_feature<stagewise_poly, print_example>(*poly.all, ec, poly);
+    //cout<<endl;
 
     if (training) {
       synthetic_create(poly, ec, training);
+      
+      // cout<<"SYNTH_EC:: ";
+      // GD::foreach_feature<stagewise_poly, print_example>(*poly.all, poly.synth_ec, poly);
+      // cout<<endl;
+      
       base.learn(poly.synth_ec);
+      
       ec.loss = poly.synth_ec.loss;
       ((label_data*)ec.ld)->prediction = ((label_data*)poly.synth_ec.ld)->prediction;
       
-      update_res_scores(poly, poly.synth_ec);
+      if(poly.magic_argument == 1)
+	update_res_scores(poly, poly.synth_ec);
+      else {
+	//cout<<"Before reset:"<<ld1->label<<" "<<ld1->prediction<<" "<<ld2->label<<" "<<ld2->prediction<<endl;
+
+	synthetic_reset(poly, poly.synth_ec, poly.synth_ec_squared);
+	poly.synth_ec_squared.ld = calloc(1, sizeof(label_data));
+	label_data* ld = (label_data*) ec.ld;	
+	((label_data*)poly.synth_ec_squared.ld)->label = (ld->prediction - ld->label)*(ld->prediction - ld->label);
+	((label_data*)poly.synth_ec_squared.ld)->weight = ld->weight;
+	//cout<<"After reset:"<<ld->label<<" "<<ld->prediction<<" "<<((label_data*)poly.synth_ec_squared.ld)->label<<endl;
+	//cout<<"SYNTH_EC_SQUARED:: ";
+	GD::foreach_feature<stagewise_poly, create_ec_squared>(*(poly.all), poly.synth_ec, poly);
+	//cout<<endl;
+
+	// cout<<"SYNTH_EC_SQUARED:: ";
+	// GD::foreach_feature<stagewise_poly, print_example>(*(poly.all), poly.synth_ec_squared, poly);
+	// cout<<endl;
+
+	base.learn(poly.synth_ec_squared, 1);
+
+	// for(int i = 0;i < poly.all->length();i++)
+	//   cout<<i<<":"<<poly.all->reg.weight_vector[i*4]<<" ";
+	// cout<<endl;
+	
+	poly.synth_ec_squared.atomics[tree_atomics].erase();
+	free(poly.synth_ec_squared.ld);
+      }
 
       if (ec.example_counter && poly.batch_sz && !(ec.example_counter % poly.batch_sz))
         sort_data_update_support(poly);
@@ -529,7 +592,8 @@ namespace StagewisePoly_SSM
     poly.synth_ec.atomics[tree_atomics].delete_v();
     sort_data_destroy(poly);
     depthsbits_destroy(poly);
-    free(poly.res_scores);
+    if(poly.magic_argument == 1)
+      free(poly.res_scores);
   }
 
 
@@ -566,9 +630,18 @@ namespace StagewisePoly_SSM
     poly->sum_input_sparsity_sync = 0;
     poly->num_examples_sync = 0;
     poly->numpasses = 1;
-    poly->res_scores = (float*)calloc(2*all.length(), sizeof(float));
+    if(poly->magic_argument == 1)
+      poly->res_scores = (float*)calloc(2*all.length(), sizeof(float));
+    
+    learner *l;
+    if(poly->magic_argument == 1)
+      l = new learner(poly, all.l);
+    else {
+      l = new learner(poly, all.l, 2);
+      poly->increment = all.l->increment;
+      //poly->synth_ec_squared.ld = calloc(1, sizeof(label_data));
+    }
 
-    learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();
     l->set_predict<stagewise_poly, predict>();
     l->set_finish<stagewise_poly, finish>();
