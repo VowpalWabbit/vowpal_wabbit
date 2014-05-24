@@ -1625,7 +1625,7 @@ namespace Searn
     beam* final_beam = new beam(max(1, min(srn.priv->beam_size, srn.priv->kbest)));  // at least 1, but otherwise the min of beam_size and kbest
 
     compute_full_beam(all, srn, ec, hyp_pool, hyp_pool_id, final_beam);
-    
+
     if (srn.priv->should_produce_string && !is_learn) { // TODO: check if this is going to be used at all!!!
       /*UNDOME*/cdbg << "========== FINAL ROLLOUT(S) ==" <<endl;
       assert(final_beam->size() > 0);
@@ -1695,6 +1695,7 @@ namespace Searn
     if (must_run_test(all, ec)) {
       srn.priv->should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0);
       srn.priv->pred_string->str("");
+
       assert(srn.priv->truth_string != NULL);
       srn.task->structured_predict(srn, ec);
       srn.priv->should_produce_string = false;
@@ -2392,6 +2393,7 @@ void print_update(vw& all, searn& srn)
     srn.priv->beam_size = 0; // 0 ==> no beam
     srn.priv->kbest = 0; // 0 or 1 means just 1 best
     srn.priv->allow_unsafe_fast_forward = true;
+
     srn.priv->neighbor_features_string = new string();
 
     srn.priv->passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
@@ -3013,11 +3015,8 @@ last fast commit 2b46732522fe912835cca0252af3bfdd4720f2c0
   4.764648   4.622070      32768    32768.000000   [27 5 14 17 5 4 17 ..] [27 12 14 17 5 4 17..]      144     0     0          783265          783206
   real	1m8.606s
 
-
 next slow commit ab38c2fedee0ba7ca86bd4cf4d145a27d4a6f5d5
   time ./vw -k -c -d pos.gz --search_as_dagger 1e-8 --search_task sequence --search 45 --holdout_off
   4.761292   4.621216      32768    32768.000000   [27 5 14 17 5 4 17 ..] [27 12 14 17 5 4 17..]      144     0     0          783267          783206
   real	3m13.804s
-
-
 */
