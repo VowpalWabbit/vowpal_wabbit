@@ -192,59 +192,31 @@ namespace BS {
     d.pred_vec.~vector();
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     bs* data = (bs*)calloc_or_die(1, sizeof(bs));
     data->ub = FLT_MAX;
     data->lb = -FLT_MAX;
 
-    po::options_description desc("BS options");
-    desc.add_options()
+    po::options_description bs_options("Bootstrap options");
+    bs_options.add_options()
       ("bs_type", po::value<string>(), "prediction type {mean,vote}");
+    
+    vm = add_options(all, bs_options);
 
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    data->B = (uint32_t)vm["bootstrap"].as<size_t>();
 
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
+    //append bs with number of samples to options_from_file so it is saved to regressor later
+    std::stringstream ss;
+    ss << " --bootstrap " << data->B;
+    all.file_options.append(ss.str());
 
-    if( vm_file.count("bs") ) {
-      data->B = (uint32_t)vm_file["bs"].as<size_t>();
-      if( vm.count("bs") && (uint32_t)vm["bs"].as<size_t>() != data->B )
-        std::cerr << "warning: you specified a different number of samples through --bs than the one loaded from predictor. Pursuing with loaded value of: " << data->B << endl;
-    }
-    else {
-      data->B = (uint32_t)vm["bs"].as<size_t>();
+    std::string type_string("mean");
 
-      //append bs with number of samples to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --bs " << data->B;
-      all.options_from_file.append(ss.str());
-    }
-
-    if (vm.count("bs_type") || vm_file.count("bs_type"))
+    if (vm.count("bs_type"))
     {
-      std::string type_string;
-
-      if(vm_file.count("bs_type")) {
-        type_string = vm_file["bs_type"].as<std::string>();
-        if( vm.count("bs_type") && type_string.compare(vm["bs_type"].as<string>()) != 0)
-          cerr << "You specified a different --bs_type than the one loaded from regressor file. Pursuing with loaded value of: " << type_string << endl;
-      }
-      else {
-        type_string = vm["bs_type"].as<std::string>();
-
-        all.options_from_file.append(" --bs_type ");
-        all.options_from_file.append(type_string);
-      }
-
+      type_string = vm["bs_type"].as<std::string>();
+      
       if (type_string.compare("mean") == 0) { 
         data->bs_type = BS_TYPE_MEAN;
       }
@@ -256,11 +228,10 @@ namespace BS {
         data->bs_type = BS_TYPE_MEAN;
       }
     }
-    else {
-      //by default use mean
+    else //by default use mean
       data->bs_type = BS_TYPE_MEAN;
-      all.options_from_file.append(" --bs_type mean");
-    }
+    all.file_options.append(" --bs_type ");
+    all.file_options.append(type_string);
 
     data->pred_vec.reserve(data->B);
     data->all = &all;

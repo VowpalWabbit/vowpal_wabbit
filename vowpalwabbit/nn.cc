@@ -304,59 +304,34 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     free (n.output_layer.atomics[nn_output_namespace].begin);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     nn* n = (nn*)calloc_or_die(1,sizeof(nn));
     n->all = &all;
 
-    po::options_description desc("NN options");
-    desc.add_options()
+    po::options_description nn_opts("NN options");
+    nn_opts.add_options()
       ("inpass", "Train or test sigmoidal feedforward network with input passthrough.")
       ("dropout", "Train or test sigmoidal feedforward network using dropout.")
       ("meanfield", "Train or test sigmoidal feedforward network using mean field.");
 
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
-
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
+    vm = add_options(all, nn_opts);
 
     //first parse for number of hidden units
-    n->k = 0;
-    if( vm_file.count("nn") ) {
-      n->k = (uint32_t)vm_file["nn"].as<size_t>();
-      if( vm.count("nn") && (uint32_t)vm["nn"].as<size_t>() != n->k )
-        std::cerr << "warning: you specified a different number of hidden units through --nn than the one loaded from predictor. Pursuing with loaded value of: " << n->k << endl;
-    }
-    else {
-      n->k = (uint32_t)vm["nn"].as<size_t>();
+    n->k = (uint32_t)vm["nn"].as<size_t>();
+    
+    std::stringstream ss;
+    ss << " --nn " << n->k;
+    all.file_options.append(ss.str());
 
-      std::stringstream ss;
-      ss << " --nn " << n->k;
-      all.options_from_file.append(ss.str());
-    }
-
-    if( vm_file.count("dropout") ) {
-      n->dropout = all.training || vm.count("dropout");
-
-      if (! n->dropout && ! vm.count("meanfield") && ! all.quiet) 
-        std::cerr << "using mean field for testing, specify --dropout explicitly to override" << std::endl;
-    }
-    else if ( vm.count("dropout") ) {
+    if ( vm.count("dropout") ) {
       n->dropout = true;
-
+      
       std::stringstream ss;
       ss << " --dropout ";
-      all.options_from_file.append(ss.str());
+      all.file_options.append(ss.str());
     }
-
+    
     if ( vm.count("meanfield") ) {
       n->dropout = false;
       if (! all.quiet) 
@@ -371,15 +346,12 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
                   << (all.training ? "training" : "testing") 
                   << std::endl;
 
-    if( vm_file.count("inpass") ) {
-      n->inpass = true;
-    }
-    else if (vm.count ("inpass")) {
+    if (vm.count ("inpass")) {
       n->inpass = true;
 
       std::stringstream ss;
       ss << " --inpass";
-      all.options_from_file.append(ss.str());
+      all.file_options.append(ss.str());
     }
 
     if (n->inpass && ! all.quiet)

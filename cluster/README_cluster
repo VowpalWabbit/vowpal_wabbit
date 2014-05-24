@@ -33,6 +33,11 @@ where:
 
 To run the code on Hadoop clusters:
 
+Decide if you are going to control the number of tasks by:
+(a) using gzip compressed files which cannot be broken up by Hadoop
+(b) controlling the number of reducers.
+We'll assume (a) below.
+
 Connect to the span server node for the Hadoop cluster:
 ./spanning_tree
 

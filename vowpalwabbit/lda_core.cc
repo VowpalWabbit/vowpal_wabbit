@@ -15,7 +15,6 @@ license as described in the file LICENSE.
 #include <stdio.h>
 #include <assert.h>
 #include "constant.h"
-#include "sparse_dense.h"
 #include "gd.h"
 #include "simple_label.h"
 #include "rand48.h"
@@ -750,7 +749,7 @@ void end_examples(lda& l)
     ld.v.delete_v();
   }
 
-learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
+learner* setup(vw&all, po::variables_map& vm)
 {
   lda* ld = (lda*)calloc_or_die(1,sizeof(lda));
   ld->sorted_features = vector<index_feature>();
@@ -758,20 +757,15 @@ learner* setup(vw&all, vector<string>&opts, po::variables_map& vm)
   ld->all = &all;
   ld->example_t = all.initial_t;
 
-  po::options_description desc("LDA options");
-  desc.add_options()
+  po::options_description lda_opts("LDA options");
+  lda_opts.add_options()
     ("lda_alpha", po::value<float>(&all.lda_alpha), "Prior on sparsity of per-document topic weights")
     ("lda_rho", po::value<float>(&all.lda_rho), "Prior on sparsity of topic distributions")
     ("lda_D", po::value<float>(&all.lda_D), "Number of documents")
     ("lda_epsilon", po::value<float>(&all.lda_epsilon), "Loop convergence threshold")
     ("minibatch", po::value<size_t>(&all.minibatch), "Minibatch size, for LDA");
 
-  po::parsed_options parsed = po::command_line_parser(opts).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();
-  opts = po::collect_unrecognized(parsed.options, po::include_positional);
-  po::store(parsed, vm);
-  po::notify(vm);
+  vm = add_options(all, lda_opts);
 
   all.p->sort_features = true;
   float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));

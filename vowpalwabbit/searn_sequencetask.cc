@@ -18,7 +18,7 @@ namespace SequenceSpanTask     {  Searn::searn_task task = { "sequencespan",    
 namespace SequenceTask {
   using namespace Searn;
 
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void initialize(searn& srn, size_t& num_actions, po::variables_map& vm) {
     srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
                      AUTO_HAMMING_LOSS    |    // please just use hamming loss on individual predictions -- we won't declare loss
                      EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
@@ -44,25 +44,28 @@ namespace ArgmaxTask {
 
   struct task_data {
     float false_negative_cost;
+    float negative_weight;
     bool predict_max;
   };
 
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) 
+  void initialize(searn& srn, size_t& num_actions, po::variables_map& vm) 
   {
     
     task_data* my_task_data = new task_data();
     
-    po::options_description desc("search sequencespan options");
-    desc.add_options()("cost", po::value<float>(&(my_task_data->false_negative_cost))->default_value(10.0), "False Negative Cost");
-    desc.add_options()("max", po::value<bool>(&(my_task_data->predict_max))->default_value(false), "Disable structure: just predict the max");
+    po::options_description argmax_opts("argmax options");
+    argmax_opts.add_options()
+      ("cost", po::value<float>(&(my_task_data->false_negative_cost))->default_value(10.0), "False Negative Cost")
+      ("negative_weight", po::value<float>(&(my_task_data->negative_weight))->default_value(1), "Relative weight of negative examples")
+      ("max", "Disable structure: just predict the max");
 
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    vm = add_options(*srn.all, argmax_opts);
 
+    if (vm.count("max"))
+      my_task_data->predict_max = true;
+    else
+      my_task_data->predict_max = false;      
+	    
     srn.set_task_data(my_task_data);
 
     if (my_task_data->predict_max)
@@ -97,9 +100,9 @@ namespace ArgmaxTask {
     }
     float loss = 0.;
     if (max_label > max_prediction)
-      loss = my_task_data->false_negative_cost;
+      loss = my_task_data->false_negative_cost / my_task_data->negative_weight;
     else if (max_prediction > max_label)
-      loss = 1.;		
+      loss = 1.;
     srn.loss(loss);
 
     if (srn.output().good())
@@ -167,20 +170,15 @@ namespace SequenceSpanTask {
     v_array<uint32_t> only_two_allowed;  // used for BILOU encoding
   };
 
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void initialize(searn& srn, size_t& num_actions, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
 
-    po::options_description desc("search sequencespan options");
-    desc.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
+    po::options_description sspan_opts("search sequencespan options");
+    sspan_opts.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
 
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    vm = add_options(*srn.all, sspan_opts);
 
-    if (vm.count("search_span_bilou") || vm_file.count("search_span_bilou")) {
+    if (vm.count("search_span_bilou")) {
       cerr << "switching to BILOU encoding for sequence span labeling" << endl;
       my_task_data->encoding = BILOU;
       num_actions = num_actions * 2 - 1;
@@ -268,7 +266,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     size_t   num_actions;
   };
   
-  void initialize(searn& srn, size_t& num_actions, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
+  void initialize(searn& srn, size_t& num_actions, po::variables_map& vm) {
     COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };
 
     example* ldf_examples = alloc_examples(sizeof(COST_SENSITIVE::label), num_actions);
@@ -315,7 +313,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
       
-      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, MULTICLASS::get_example_label(ec[i]) - 1);
+      size_t pred_id = srn.predictLDF(data->ldf_examples, data->num_actions, MULTICLASS::get_example_label(ec[i]) - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       
       if (srn.output().good())

@@ -291,7 +291,7 @@ namespace CB_ALGS
     vw* all = c.all;
     CB::label* ld = (CB::label*)ec.ld;
 
-    //check if this is a test example where we just want a prediction
+     //check if this is a test example where we just want a prediction
     if( is_test_label(ld) )
     {
       //if so just query base cost-sensitive learner
@@ -299,6 +299,8 @@ namespace CB_ALGS
 
       ec.ld = &c.cb_cs_ld;
       base.predict(ec);
+      ld->prediction = c.cb_cs_ld.prediction;
+
       ec.ld = ld;
       for (size_t i=0; i<ld->costs.size(); i++)
         ld->costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
@@ -477,60 +479,37 @@ namespace CB_ALGS
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     cb* c = (cb*)calloc_or_die(1, sizeof(cb));
     c->all = &all;
     c->min_cost = 0.;
     c->max_cost = 1.;
-    po::options_description desc("CB options");
-    desc.add_options()
+
+    uint32_t nb_actions = (uint32_t)vm["cb"].as<size_t>();
+    //append cb with nb_actions to file_options so it is saved to regressor later
+
+    po::options_description cb_opts("CB options");
+    cb_opts.add_options()
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
 
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    vm = add_options(all, cb_opts);
 
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
+    std::stringstream ss;
+    ss << " --cb " << nb_actions;
+    all.file_options.append(ss.str());
 
-    uint32_t nb_actions = 0;
-    if( vm_file.count("cb") ) { //if loaded options from regressor file already
-      nb_actions = (uint32_t)vm_file["cb"].as<size_t>();
-      if( vm.count("cb") && (uint32_t)vm["cb"].as<size_t>() != nb_actions )
-        std::cerr << "warning: you specified a different number of actions through --cb than the one loaded from regressor. Pursuing with loaded value of: " << nb_actions << endl;
-    }
-    else {
-      nb_actions = (uint32_t)vm["cb"].as<size_t>();
-      //append cb with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --cb " << nb_actions;
-      all.options_from_file.append(ss.str());
-    }
     all.sd->k = nb_actions;
 
     size_t problem_multiplier = 2;//default for DR
-    if (vm.count("cb_type") || vm_file.count("cb_type"))
+    if (vm.count("cb_type"))
     {
       std::string type_string;
 
-      if(vm_file.count("cb_type")) {
-        type_string = vm_file["cb_type"].as<std::string>();
-        if( vm.count("cb_type") && type_string.compare(vm["cb_type"].as<string>()) != 0)
-          cerr << "You specified a different --cb_type than the one loaded from regressor file. Pursuing with loaded value of: " << type_string << endl;
-      }
-      else {
-        type_string = vm["cb_type"].as<std::string>();
-
-        all.options_from_file.append(" --cb_type ");
-        all.options_from_file.append(type_string);
-      }
+      type_string = vm["cb_type"].as<std::string>();
+      
+      all.file_options.append(" --cb_type ");
+      all.file_options.append(type_string);
 
       if (type_string.compare("dr") == 0) 
         c->cb_type = CB_TYPE_DR;
@@ -552,7 +531,7 @@ namespace CB_ALGS
     else {
       //by default use doubly robust
       c->cb_type = CB_TYPE_DR;
-      all.options_from_file.append(" --cb_type dr");
+      all.file_options.append(" --cb_type dr");
     }
 
     all.p->lp = CB::cb_label; 

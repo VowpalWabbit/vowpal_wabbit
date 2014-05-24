@@ -82,24 +82,17 @@ namespace OAA {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, po::variables_map& vm)
   {
     oaa* data = (oaa*)calloc_or_die(1, sizeof(oaa));
     //first parse for number of actions
-    if( vm_file.count("oaa") ) {
-      data->k = (uint32_t)vm_file["oaa"].as<size_t>();
-      if( vm.count("oaa") && (uint32_t)vm["oaa"].as<size_t>() != data->k )
-        std::cerr << "warning: you specified a different number of actions through --oaa than the one loaded from predictor. Pursuing with loaded value of: " << data->k << endl;
-    }
-    else {
-      data->k = (uint32_t)vm["oaa"].as<size_t>();
 
-      //append oaa with nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --oaa " << data->k;
-      all.options_from_file.append(ss.str());
-    }
-
+    data->k = (uint32_t)vm["oaa"].as<size_t>();
+    
+    //append oaa with nb_actions to options_from_file so it is saved to regressor later
+    std::stringstream ss;
+    ss << " --oaa " << data->k;
+    all.file_options.append(ss.str());
 
     data->shouldOutput = all.raw_prediction > 0;
     data->all = &all;

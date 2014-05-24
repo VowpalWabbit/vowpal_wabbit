@@ -92,7 +92,8 @@ struct parser {
   bool sorted_cache;
 
   size_t ring_size;
-  uint64_t parsed_examples; // The index of the parsed example.
+  uint64_t begin_parsed_examples; // The index of the beginning parsed example.
+  uint64_t end_parsed_examples; // The index of the fully parsed example.
   uint64_t local_example_number; 
   uint32_t in_pass_counter;
   example* examples;

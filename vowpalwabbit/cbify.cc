@@ -61,7 +61,7 @@ namespace CBIFY {
 	ec.loss = loss(ld->label, ld->prediction);
 	data.tau--;
 	uint32_t action = ld->prediction;
-	CB::cb_class l = {ec.loss, action, 1.f / data.k};
+	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
 	data.cb_label.costs.erase();
 	data.cb_label.costs.push_back(l);
 	ec.ld = &(data.cb_label);
@@ -74,6 +74,7 @@ namespace CBIFY {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
 	base.predict(ec);
+	ld->prediction = data.cb_label.prediction;
 	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
@@ -87,7 +88,7 @@ namespace CBIFY {
     data.cb_label.costs.erase();
     
     base.predict(ec);
-    uint32_t action = ld->prediction;
+    uint32_t action = data.cb_label.prediction;
 
     float base_prob = data.epsilon / data.k;
     if (frand48() < 1. - data.epsilon)
@@ -101,17 +102,19 @@ namespace CBIFY {
 	action = do_uniform(data);
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, base_prob};
-	if (action == ld->prediction)
+	if (action == data.cb_label.prediction)
 	  l.probability = 1.f - data.epsilon + base_prob;
 	data.cb_label.costs.push_back(l);
       }
+    
+    cout << data.cb_label.costs[0].probability << endl;
 
     if (is_learn)
       base.learn(ec);
     
     ld->prediction = action;
-    ec.loss = loss(ld->label, ld->prediction);
     ec.ld = ld;
+    ec.loss = loss(ld->label, action);
   }
 
   template <bool is_learn>
@@ -130,9 +133,9 @@ namespace CBIFY {
     for (size_t i = 0; i < data.bags; i++)
       {
 	base.predict(ec,i);
-	data.count[ld->prediction]++;
+	data.count[data.cb_label.prediction]++;
 	if (i == bag)
-	  action = ld->prediction;
+	  action = data.cb_label.prediction;
       }
     assert(action != 0);
     if (is_learn)
@@ -299,7 +302,7 @@ namespace CBIFY {
     VW::finish_example(all, &ec);
   }
 
-  learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     cbify* data = (cbify*)calloc_or_die(1, sizeof(cbify));
 
@@ -307,39 +310,21 @@ namespace CBIFY {
     data->counter = 0;
     data->tau = 1000;
     data->all = &all;
-    po::options_description desc("CBIFY options");
-    desc.add_options()
+    po::options_description cb_opts("CBIFY options");
+    cb_opts.add_options()
       ("first", po::value<size_t>(), "tau-first exploration")
       ("epsilon",po::value<float>() ,"epsilon-greedy exploration")
       ("bag",po::value<size_t>() ,"bagging-based exploration")
       ("cover",po::value<size_t>() ,"bagging-based exploration");
     
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
+    vm = add_options(all, cb_opts);
     
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc,all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
+    data->k = (uint32_t)vm["cbify"].as<size_t>();
     
-    if( vm_file.count("cbify") ) {
-      data->k = (uint32_t)vm_file["cbify"].as<size_t>();
-      if( vm.count("cbify") && (uint32_t)vm["cbify"].as<size_t>() != data->k )
-        std::cerr << "warning: you specified a different number of actions through --cbify than the one loaded from predictor. Pursuing with loaded value of: " << data->k << endl;
-    }
-    else {
-      data->k = (uint32_t)vm["cbify"].as<size_t>();
-      
-      //appends nb_actions to options_from_file so it is saved to regressor later
-      std::stringstream ss;
-      ss << " --cbify " << data->k;
-      all.options_from_file.append(ss.str());
-    }
+    //appends nb_actions to options_from_file so it is saved to regressor later
+    std::stringstream ss;
+    ss << " --cbify " << data->k;
+    all.file_options.append(ss.str());
 
     all.p->lp = MULTICLASS::mc_label;
     learner* l;

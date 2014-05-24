@@ -215,6 +215,25 @@ void compile_gram(vector<string> grams, uint32_t* dest, char* descriptor, bool q
     }
 }
 
+po::variables_map add_options(vw& all, po::options_description& opts)
+{
+  all.opts.add(opts);
+  po::variables_map new_vm;
+
+  //parse local opts once for notifications.
+  po::parsed_options parsed = po::command_line_parser(all.args).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(opts).allow_unregistered().run();
+  po::store(parsed, new_vm);
+  po::notify(new_vm); 
+  //parse all opts for a complete variable map.
+  parsed = po::command_line_parser(all.args).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(all.opts).allow_unregistered().run();
+  po::store(parsed, new_vm);
+  return new_vm;
+}
+
 vw::vw()
 {
   sd = (shared_data *) calloc_or_die(1, sizeof(shared_data));
@@ -266,7 +285,7 @@ vw::vw()
   per_feature_regularizer_output = "";
   per_feature_regularizer_text = "";
 
-  options_from_file = "";
+  file_options = "";
 
   #ifdef _WIN32
   stdout_fileno = _fileno(stdout);
@@ -304,7 +323,6 @@ vw::vw()
 
   normalized_sum_norm_x = 0.;
   normalized_idx = 2;
-  feature_mask_idx = 3;//by default use the 4th position as mask
 
   add_constant = true;
   audit = false;

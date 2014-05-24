@@ -251,7 +251,7 @@ void reset_source(vw& all, size_t numbits)
 	{
 	  // wait for all predictions to be sent back to client
 	  mutex_lock(&all.p->output_lock);
-	  while (all.p->local_example_number != all.p->parsed_examples)
+	  while (all.p->local_example_number != all.p->end_parsed_examples)
 	    condition_variable_wait(&all.p->output_done, &all.p->output_lock);
 	  mutex_unlock(&all.p->output_lock);
 	  
@@ -364,8 +364,6 @@ void parse_cache(vw& all, po::variables_map &vm, string source,
 	make_write_cache(all, caches[i], quiet);
       else {
 	uint32_t c = cache_numbits(all.p->input, f);
-	if (all.default_bits)
-	  all.num_bits = c;
 	if (c < all.num_bits) {
           all.p->input->close_file();          
 	  make_write_cache(all, caches[i], quiet);
@@ -624,11 +622,19 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
     cerr << "num sources = " << all.p->input->files.size() << endl;
 }
 
+/*Race condition hypothesis:
+
+  parser gets an unused example, discovers that it's done, creates an end-of-pass example, and sets done=true
+  learner finishes example before and calls get_example(), no examples remain but done is set, so it returns NULL. 
+  parser_done() returns true, learner thread exits, 
+  parser thread increments parsed_examples, then exits.
+
+ */
 bool parser_done(parser* p)
 {
   if (p->done)
     {
-      if (p->used_index != p->parsed_examples)
+      if (p->used_index != p->begin_parsed_examples)
 	return false;
       return true;
     }
@@ -716,11 +722,12 @@ example* get_unused_example(vw& all)
   while (true)
     {
       mutex_lock(&all.p->examples_lock);
-      if (all.p->examples[all.p->parsed_examples % all.p->ring_size].in_use == false)
+      if (all.p->examples[all.p->begin_parsed_examples % all.p->ring_size].in_use == false)
 	{
-	  all.p->examples[all.p->parsed_examples % all.p->ring_size].in_use = true;
+	  example& ret = all.p->examples[all.p->begin_parsed_examples++ % all.p->ring_size];
+	  ret.in_use = true;
 	  mutex_unlock(&all.p->examples_lock);
-	  return all.p->examples + (all.p->parsed_examples % all.p->ring_size);
+	  return &ret;
 	}
       else 
 	condition_variable_wait(&all.p->example_unused, &all.p->examples_lock);
@@ -734,14 +741,13 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
     return false;
 
   if(all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.audit, ae);
+    unique_sort_features(all.audit, all.parse_mask, ae);
 
   if (all.p->write_cache) 
     {
       all.p->lp.cache_label(ae->ld,*(all.p->output));
       cache_features(*(all.p->output), ae, (uint32_t)all.parse_mask);
     }
-
   return true;
 }
 
@@ -759,7 +765,7 @@ void setup_example(vw& all, example* ae)
   ae->total_sum_feat_sq = 0;
   ae->loss = 0.;
   
-  ae->example_counter = (size_t)(all.p->parsed_examples + 1);
+  ae->example_counter = (size_t)(all.p->end_parsed_examples);
   if ((!all.p->emptylines_separate_examples) || example_is_newline(*ae))
     all.p->in_pass_counter++;
 
@@ -855,8 +861,8 @@ namespace VW{
   example* new_unused_example(vw& all) { 
     example* ec = get_unused_example(all);
     all.p->lp.default_label(ec->ld);
-    all.p->parsed_examples++;
-    ec->example_counter = all.p->parsed_examples;
+    all.p->begin_parsed_examples++;
+    ec->example_counter = all.p->begin_parsed_examples;
     return ec;
   }
   example* read_example(vw& all, char* example_line)
@@ -866,7 +872,7 @@ namespace VW{
     read_line(all, ret, example_line);
 	parse_atomic_example(all,ret,false);
     setup_example(all, ret);
-    all.p->parsed_examples++;
+    all.p->end_parsed_examples++;
 
     return ret;
   }
@@ -904,7 +910,7 @@ namespace VW{
       }
 	parse_atomic_example(all,ret,false);
     setup_example(all, ret);
-    all.p->parsed_examples++;
+    all.p->end_parsed_examples++;
     return ret;
   }
 
@@ -1059,7 +1065,7 @@ void *main_parse_loop(void *in)
 	       example_number = 0;
 	     }
 	   mutex_lock(&all->p->examples_lock);
-	   all->p->parsed_examples++;
+	   all->p->end_parsed_examples++;
 	   condition_variable_signal_all(&all->p->example_available);
 	   mutex_unlock(&all->p->examples_lock);
 
@@ -1071,10 +1077,10 @@ namespace VW{
 example* get_example(parser* p)
 {
   mutex_lock(&p->examples_lock);
-  if (p->parsed_examples != p->used_index) {
+  if (p->end_parsed_examples != p->used_index) {
     size_t ring_index = p->used_index++ % p->ring_size;
     if (!(p->examples+ring_index)->in_use)
-      cout << p->used_index << " " << p->parsed_examples << " " << ring_index << endl;
+      cout << p->used_index << " " << p->end_parsed_examples << " " << ring_index << endl;
     assert((p->examples+ring_index)->in_use);
     mutex_unlock(&p->examples_lock);
     
@@ -1103,7 +1109,8 @@ label_data* get_label(example* ec)
 void initialize_examples(vw& all)
 {
   all.p->used_index = 0;
-  all.p->parsed_examples = 0;
+  all.p->begin_parsed_examples = 0;
+  all.p->end_parsed_examples = 0;
   all.p->done = false;
 
   all.p->examples = (example*)calloc_or_die(all.p->ring_size, sizeof(example));
@@ -1117,7 +1124,7 @@ void initialize_examples(vw& all)
 
 void adjust_used_index(vw& all)
 {
-	all.p->used_index=all.p->parsed_examples;
+	all.p->used_index=all.p->begin_parsed_examples;
 }
 
 void initialize_parser_datastructures(vw& all)

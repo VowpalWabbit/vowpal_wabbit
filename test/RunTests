@@ -50,6 +50,9 @@ my @PathAdd = qw(. .. ../vowpalwabbit);
 
 my @ToTest = ();
 
+# __DATA__ test counter
+my $TestNo = 0;
+
 sub v($;@) {
     my $verbose_level = shift @_;
     return unless ($opt_v >= $verbose_level);
@@ -91,6 +94,24 @@ sub mysystem {
     my $cmd = shift;
     v(1, "%s\n", $cmd);
     system($cmd);
+}
+
+sub command_failed($) {
+    # Deal with cases where vw crashes, exits prematurely etc.
+    my $cmd = shift;
+    if ($?) {
+        my $exitcode = $? >> 8;
+        my $signal = $? & 127; 
+        my $core = ''; if ($? & 128) { $core = ' (core dumped)'; }
+        if ($signal) {
+            printf STDERR
+                "$0: test $TestNo: '%s' died from signal $signal$core\n", $cmd;
+        } elsif ($exitcode) {
+            printf STDERR
+                "$0: test $TestNo: '%s' failed (exitcode=$exitcode)\n", $cmd;
+        }
+    }
+    $?
 }
 
 sub valgrind_errfile($) {
@@ -237,9 +258,6 @@ sub ref_file($) {
     $file;
 }
 
-# __DATA__ test counter
-my $TestNo = 0;
-
 sub next_test() {
     my ($cmd, $out_ref, $err_ref, $pred_ref, $pred);
 
@@ -374,7 +392,10 @@ sub diff_lenient_float($$) {
         while (<$sdiff>) {
             chomp;
             my ($line1, $line2) = split(/\s*\|\s*/, $_);
-
+            unless (defined $line2) {
+                warn "$0: test $TestNo: $outfile: no data. Can't compare\n";
+                return 1;
+            }
             v(3, "line1: $line1\n");
             v(3, "line2: $line2\n");
 
@@ -432,7 +453,7 @@ sub diff($$) {
     mysystem("$diff_cmd >diff.tmp");
     $status = $? >> 8;
     v(2, "$diff_cmd >diff.tmp: status=$status\n");
-
+ 
     if (-s 'diff.tmp') {
         # There's some difference
         v(2, "diff.tmp has something in it. Is it meaningful?\n");
@@ -558,6 +579,13 @@ sub run_tests() {
         # run the test
         print STDERR "Test $TestNo: ($cmd) >$outf 2>$errf\n" if ($opt_c);
         mysystem("($cmd) >$outf 2>$errf");
+        unless ($opt_V) {
+            if (command_failed($cmd)) {
+                # already printed error
+                exit $? if ($opt_e);
+                next;
+            }
+        }
         my $status = $? >> 8;
         if ($status) {
             $ErrorCount++;
@@ -790,7 +818,7 @@ __DATA__
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
-{VW} -k -d train-sets/0002.dat -f models/bs.reg.model --bs 4 -p bs.reg.predict
+{VW} -k -d train-sets/0002.dat -f models/bs.reg.model --bootstrap 4 -p bs.reg.predict
     train-sets/ref/bs.reg.stderr
     train-sets/ref/bs.reg.predict
 
@@ -800,7 +828,7 @@ __DATA__
     train-sets/ref/bs.prreg.predict
 
 # Test 27: bagging -- binary classifiers
-{VW} -d train-sets/0001.dat -f models/bs.vote.model --bs 4 --bs_type vote -p bs.vote.predict
+{VW} -d train-sets/0001.dat -f models/bs.vote.model --bootstrap 4 --bs_type vote -p bs.vote.predict
     train-sets/ref/bs.vote.stderr
     train-sets/ref/bs.vote.predict
 
@@ -874,17 +902,17 @@ __DATA__
     train-sets/ref/sequence_data.nonldf.train.stderr
 
 # Test 44: searn sequence labeling, non-ldf test
-{VW} -d train-sets/sequence_data -t --search_task sequence --search 5 -i models/sequence_data.model -p sequence_data.predict
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict
     train-sets/ref/sequence_data.nonldf.test.stderr
     train-sets/ref/sequence_data.nonldf.test.predict
 
 # Test 45: searn sequence labeling, non-ldf test, beam 1
-{VW} -d train-sets/sequence_data -t --search_task sequence --search 5 -i models/sequence_data.model -p sequence_data.predict --search_beam 1
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict --search_beam 1
     train-sets/ref/sequence_data.nonldf.test-beam1.stderr
     train-sets/ref/sequence_data.nonldf.test-beam1.predict
 
 # Test 46: searn sequence labeling, non-ldf test, beam 20
-{VW} -d train-sets/sequence_data -t --search_task sequence --search 5 -i models/sequence_data.model -p sequence_data.predict --search_beam 20 --search_kbest 20
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict --search_beam 20 --search_kbest 20
     train-sets/ref/sequence_data.nonldf.test-beam20.stderr
     train-sets/ref/sequence_data.nonldf.test-beam20.predict
 
@@ -893,17 +921,17 @@ __DATA__
     train-sets/ref/sequence_data.ldf.train.stderr
 
 # Test 48: searn sequence labeling, ldf test
-{VW} -d train-sets/sequence_data -t --search_task sequence_demoldf --csoaa_ldf m --search 5 -i models/sequence_data.model -p sequence_data.predict
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict
     train-sets/ref/sequence_data.ldf.test.stderr
     train-sets/ref/sequence_data.ldf.test.predict
 
 # Test 49: searn sequence labeling, ldf test, beam 1
-{VW} -d train-sets/sequence_data -t --search_task sequence_demoldf --csoaa_ldf m --search 5 -i models/sequence_data.model -p sequence_data.predict --search_beam 1
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict --search_beam 1
     train-sets/ref/sequence_data.ldf.test-beam1.stderr
     train-sets/ref/sequence_data.ldf.test-beam1.predict
 
 # Test 50: searn sequence labeling, ldf test, beam 20
-{VW} -d train-sets/sequence_data -t --search_task sequence_demoldf --csoaa_ldf m --search 5 -i models/sequence_data.model -p sequence_data.predict --search_beam 20 --search_kbest 20
+{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict --search_beam 20 --search_kbest 20
     train-sets/ref/sequence_data.ldf.test-beam20.stderr
     train-sets/ref/sequence_data.ldf.test-beam20.predict
 
@@ -912,17 +940,17 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf.train.stderr
 
 # Test 52: searn sequence SPAN labeling BIO, non-ldf test
-{VW} -d train-sets/sequencespan_data -t --search_task sequencespan --search 7 -i models/sequencespan_data.model -p sequencespan_data.predict
+{VW} -d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.predict
     train-sets/ref/sequencespan_data.nonldf.test.stderr
     train-sets/ref/sequencespan_data.nonldf.test.predict
 
 # Test 53: searn sequence SPAN labeling BIO, non-ldf test, beam 1
-{VW} -d train-sets/sequencespan_data -t --search_task sequencespan --search 7 -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 1
+{VW} -d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 1
     train-sets/ref/sequencespan_data.nonldf.test-beam1.stderr
     train-sets/ref/sequencespan_data.nonldf.test-beam1.predict
 
 # Test 54: searn sequence SPAN labeling BIO, non-ldf test, beam 20
-{VW} -d train-sets/sequencespan_data -t --search_task sequencespan --search_span_bilou --search 7 -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 20 --search_kbest 20
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 20 --search_kbest 20
     train-sets/ref/sequencespan_data.nonldf.test-beam20.stderr
     train-sets/ref/sequencespan_data.nonldf.test-beam20.predict
 
@@ -931,17 +959,17 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr
 
 # Test 56: searn sequence SPAN labeling BILOU, non-ldf test
-{VW} -d train-sets/sequencespan_data -t --search_task sequencespan --search_span_bilou --search 7 -i models/sequencespan_data.model -p sequencespan_data.predict
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict
     train-sets/ref/sequencespan_data.nonldf-bilou.test.stderr
     train-sets/ref/sequencespan_data.nonldf-bilou.test.predict
 
 # Test 57: searn sequence SPAN labeling BILOU, non-ldf test, beam 1
-{VW} -d train-sets/sequencespan_data -t --search_task sequencespan --search_span_bilou --search 7 -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 1
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 1
     train-sets/ref/sequencespan_data.nonldf-bilou.test-beam1.stderr
     train-sets/ref/sequencespan_data.nonldf-bilou.test-beam1.predict
 
 # Test 58: searn sequence SPAN labeling BILOU, non-ldf test, beam 20
-{VW} -d train-sets/sequencespan_data -t --search_task sequencespan --search_span_bilou --search 7 -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 20 --search_kbest 20
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 20 --search_kbest 20
     train-sets/ref/sequencespan_data.nonldf-bilou.test-beam20.stderr
     train-sets/ref/sequencespan_data.nonldf-bilou.test-beam20.predict
 

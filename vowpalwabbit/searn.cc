@@ -38,7 +38,6 @@ namespace Searn
 {
   using namespace std;
 
-  const bool PRINT_DEBUG_INFO =0;
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
   const bool PRINT_UPDATE_EVERY_PASS =0;
   const bool PRINT_CLOCK_TIME =0;
@@ -114,7 +113,7 @@ namespace Searn
     bool auto_hamming_loss;     // if you're just optimizing hamming loss, we can do it for you!
     bool examples_dont_change;  // set to true if you don't do any internal example munging
     bool is_ldf;                // set to true if you'll generate LDF data
-    
+
     size_t A;             // total number of actions, [1..A]; 0 means ldf
     SearnState state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
@@ -136,7 +135,7 @@ namespace Searn
     v_array<snapshot_item> beam_restore_to_end;
     v_array<uint32_t> beam_final_action_sequence;
     bool beam_is_training;
-    
+
     size_t   most_recent_snapshot_begin;
     size_t   most_recent_snapshot_end;
     uint32_t most_recent_snapshot_hash;
@@ -172,7 +171,7 @@ namespace Searn
 
     short rollout_method; // 0=policy, 1=oracle, 2=none
     bool  trajectory_oracle; // if true, only construct trajectories using the oracle
-    
+
     bool   allow_current_policy;  // should the current policy be used for training? true for dagger
     //bool   rollout_oracle; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
     bool   adaptive_beta; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
@@ -182,7 +181,7 @@ namespace Searn
     size_t beam_size;
     size_t kbest;
     bool   allow_unsafe_fast_forward;
-    
+
     size_t num_features;
     uint32_t total_number_of_policies;
     bool do_snapshot;
@@ -196,7 +195,7 @@ namespace Searn
     size_t total_predictions_made;
 
     bool hit_new_pass;
-    
+
     size_t passes_per_policy;
 
     vector<example*> ec_seq;
@@ -204,7 +203,7 @@ namespace Searn
     LEARNER::learner* base_learner;
     void* valid_labels;
     clock_t start_clock_time;
-    
+
     example*empty_example;
   };
 
@@ -214,7 +213,7 @@ namespace Searn
 
   uint32_t hash_example(example&ec, uint32_t seed) {
     uint32_t hash = seed;
-    
+
     for (unsigned char* i=ec.indices.begin; i != ec.indices.end; i++)
       hash = uniform_hash((unsigned char*) ec.atomics[*i].begin,
                           sizeof(feature) * (ec.atomics[*i].end - ec.atomics[*i].begin),
@@ -223,7 +222,7 @@ namespace Searn
     hash = uniform_hash( (unsigned char*) &ec.ft_offset,
                          sizeof(uint32_t),
                          hash );
-    
+
     return hash;
   }
 
@@ -248,10 +247,10 @@ namespace Searn
       std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
       return (int)current_policy;
     }
-    
+
     int num_valid_policies = (int)current_policy + allow_optimal + allow_current_policy;
     int pid = -1;
-    
+
     if (num_valid_policies == 0) {
       std::cerr << "internal error (bug): no valid policies to choose from!  defaulting to current" << std::endl;
       return (int)current_policy;
@@ -260,7 +259,7 @@ namespace Searn
     } else {
       float r = frand48();
       pid = 0;
-    
+
       if (r > beta) {
         r -= beta;
         while ((r > 0) && (pid < num_valid_policies-1)) {
@@ -272,7 +271,7 @@ namespace Searn
     // figure out which policy pid refers to
     if (allow_optimal && (pid == num_valid_policies-1))
       return -1; // this is the optimal policy
-  
+
     pid = (int)current_policy - pid;
     if (!allow_current_policy)
       pid--;
@@ -348,7 +347,7 @@ namespace Searn
               char buf[32];
               sprintf(buf, "{%d}", f->weight_index);
               fstring = string(buf);
-            } else 
+            } else
               fstring = string(ec->audit_features[*i][feature_index].feature);
             feature_index++;
           }
@@ -357,7 +356,7 @@ namespace Searn
 
           for (uint32_t t=1; t<=hinfo.features; t++) {
             v0 = ((h[hinfo.length-t]+1) * quadratic_constant * (additional_offset+1) + t) * history_constant;
-          
+
             // add the history/feature pair
             feature temp = {history_value, (uint32_t) ( ((v0 + v)*wpp) & all.reg.weight_mask )};
             ec->atomics[history_namespace].push_back(temp);
@@ -533,7 +532,7 @@ namespace Searn
     searn *srn = (searn*)all.searnstr;
     COST_SENSITIVE::label test_label;
     COST_SENSITIVE::cs_label.default_label(&test_label);
-    
+
     // TODO: modify this to handle contextual bandit base learner with ldf
     float best_prediction = 0;
     uint32_t best_action = 0;
@@ -553,14 +552,14 @@ namespace Searn
       cdbg << "predict: partial_prediction[" << action << "] = " << ecs[action].partial_prediction << endl;
       valid_labels->costs[action].partial_prediction = ecs[action].partial_prediction;
 
-      if ((action == 0) || 
+      if ((action == 0) ||
           (ecs[action].partial_prediction < best_prediction)) {
         cdbg << "best action = " << action << endl;
         best_prediction = ecs[action].partial_prediction;
         best_action     = action; // ((COST_SENSITIVE::label*)ecs[action].ld)->costs[0].weight_index;
       }
     }
-        
+
     if ((srn->priv->state == INIT_TEST) && (all.raw_prediction > 0)) {
       string outputString;
       stringstream outputStringStream(outputString);
@@ -573,7 +572,7 @@ namespace Searn
 
     //if (allow_exploration && (srn->priv->exploration_temperature > 0.))
     //  best_action = sample_with_temperature_partial_prediction(ecs, num_ec, srn->priv->exploration_temperature);
-    
+
     return best_action;
   }
 
@@ -631,7 +630,7 @@ namespace Searn
     //   else
     //     final_prediction = sample_with_temperature_cb(ld, srn.priv->exploration_temperature);
     // }
-    
+
     if ((srn.priv->state == INIT_TEST) && (all.raw_prediction > 0) && (srn.priv->rollout_all_actions)) { // srn.priv->rollout_all_actions ==> this is not CB, so we have COST_SENSITIVE::labels
       string outputString;
       stringstream outputStringStream(outputString);
@@ -642,7 +641,7 @@ namespace Searn
       }
       all.print_text(all.raw_prediction, outputStringStream.str(), ec.tag);
     }
-    
+
     ec.ld = old_label;
 
     return final_prediction;
@@ -806,7 +805,7 @@ namespace Searn
       }
     }
   }
-  
+
   // if not LDF:
   //   *ecs should be a pointer to THE example
   //   num_ec == 0
@@ -826,7 +825,7 @@ namespace Searn
   uint32_t searn_predict_without_loss(vw& all, learner& base, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
   {
     searn* srn=(searn*)all.searnstr;
-    
+
     // check ldf sanity
     if (!srn->priv->is_ldf) {
       assert(num_ec == 0); // searntask is trying to define an ldf example in a non-ldf problem
@@ -902,7 +901,7 @@ namespace Searn
         return srn->priv->learn_a;
       } else { // t > learn_t
         size_t this_a = 0;
-                
+
         if (srn->priv->rollout_method == 1) { // rollout by oracle
           assert(ystar_is_uint32t);
           this_a = *(uint32_t*)ystar;
@@ -1033,9 +1032,9 @@ namespace Searn
       throw exception();
     }
     */
-    
+
     srn->priv->loss_declared = true;
-    
+
     srn->priv->loss_last_step = srn->priv->t;
     cdbg<<"new loss_last_step="<<srn->priv->t<<" incr_loss=" << incr_loss <<endl;
     if (srn->priv->state == INIT_TEST)
@@ -1082,8 +1081,8 @@ namespace Searn
     }
 
     return a;
-  } 
-      
+  }
+
 
   bool snapshot_binary_search_lt(v_array<snapshot_item> a, size_t desired_t, size_t tag, size_t &pos, size_t last_found_pos) {
     size_t hi  = a.size();
@@ -1109,7 +1108,7 @@ namespace Searn
           ((a[pos].pred_step == desired_t) && (a[pos].tag >  tag)))
         hi = pos;
       else break;
-      
+
       pos = hi >> 1;
     }
 
@@ -1129,7 +1128,7 @@ namespace Searn
     if (last_found_pos + 1 < hi) {
       pos = last_found_pos+1;
       if ((a[pos].index == desired_index) && (a[pos].tag == tag)) return true;
-    } else      
+    } else
       pos = (lo + hi) >> 1;
     while (true) {
       if (lo == hi) return false;
@@ -1195,7 +1194,7 @@ namespace Searn
       priv->snapshot_data.push_back(item);
       //cerr << "priv->snapshot_data.push_back(item);" << endl;
       return;
-    }        
+    }
 
     if (priv->state == FAST_FORWARD) { // go to the end!
       snapshot_item &me = priv->snapshot_data[priv->fast_forward_position + tag];  // TODO: generalize or ensure that tags are +=1 each time, also this is broken if they don't auto-history
@@ -1212,7 +1211,7 @@ namespace Searn
       if ((cur_size > 0) && // only need to keep around the NEWEST set of snapshots
           (priv->snapshot_data[cur_size - 1].pred_step < priv->t))
         clear_snapshot(*all, *srn, true);
-      
+
       void* new_data = malloc(sizeof_data);
       memcpy(new_data, data_ptr, sizeof_data);
       snapshot_item item = { index, tag, new_data, sizeof_data, priv->t };
@@ -1269,7 +1268,7 @@ namespace Searn
 
       return;
     }
-    
+
     cerr << "yikes, how did I get here? state = " << priv->state << endl;
     throw exception();
   }
@@ -1305,7 +1304,7 @@ namespace Searn
     if (priv->state == INIT_TRAIN)
         priv->final_snapshot_end = priv->most_recent_snapshot_end;
   }
- 
+
 
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
 
@@ -1332,7 +1331,7 @@ namespace Searn
       }
       std::sort(timesteps.begin, timesteps.end, cmp_size_t);
     }
-      
+
     return timesteps;
   }
 
@@ -1445,9 +1444,9 @@ namespace Searn
     srn.priv->loss_declared = false;
     if (srn.priv->auto_history) clear_rollout_actions(srn);
 
-    // srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
-    // srn.priv->snapshot_could_match = false;
-    // srn.priv->snapshot_last_found_pos = (size_t)-1;
+    srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
+    srn.priv->snapshot_could_match = false;
+    srn.priv->snapshot_last_found_pos = (size_t)-1;
   }
 
   void mark_hyp_pruned(void*data) { ((beam_hyp*)data)->pruned = true; }
@@ -1458,7 +1457,7 @@ namespace Searn
 
     beam* cur_beam   = new beam(srn.priv->beam_size);
     beam* next_beam  = new beam(srn.priv->beam_size);
-    
+
     // initialize first beam
     {
       // in this call to structured_predict, we do the following:
@@ -1466,7 +1465,7 @@ namespace Searn
       //   2) collect the initial snapshot
       //   3) store the final snapshot so we can fast-foward to the end at will
       beam_hyp *hyp = hyp_pool.begin;
-    
+
       hyp->t            = 0;
       hyp->parent       = NULL;
       hyp->action_taken = 0;     // irrelevant because parent==NULL
@@ -1482,7 +1481,7 @@ namespace Searn
       srn.priv->state        = BEAM_INIT;
       srn.priv->cur_beam_hyp = hyp;
       srn.task->structured_predict(srn, ec);
-    
+
       assert(hyp->filled_in_prediction);   // TODO: handle the case that structured_predict just returns or something else weird happens
 
       // collect the costs
@@ -1497,7 +1496,7 @@ namespace Searn
         }
         cdbg << endl;
       }
-      
+
       // collect the final snapshot
       copy_array(srn.priv->beam_restore_to_end, srn.priv->snapshot_data);
 
@@ -1574,7 +1573,7 @@ namespace Searn
         beam_hyp* hyp = (beam_hyp*) be->data;
         /*UNDOME*/cdbg << "\t{ cost=" << be->cost << " t=" << hyp->t << " action_taken=" << hyp->action_taken << " incr_cost=" << hyp->incr_cost << " num_actions=" << hyp->num_actions << " parent=" << hyp->parent << " }" << endl;
       }
-    }    
+    }
 
     // debug print the final beam
     /*UNDOME*/cdbg << "FINAL BEAM =" << endl;
@@ -1614,9 +1613,17 @@ namespace Searn
 
   void beam_predict(vw&all, searn&srn, vector<example*>ec, v_array<beam_hyp> &hyp_pool, size_t &hyp_pool_id, bool is_learn) {
     using namespace Beam;
-    
+
+    if (might_print_update(all)) {
+      reset_searn_structure(srn);
+      srn.priv->state = GET_TRUTH_STRING;
+      srn.priv->should_produce_string = true;
+      srn.priv->truth_string->str("");
+      srn.task->structured_predict(srn, ec);
+    }
+
     beam* final_beam = new beam(max(1, min(srn.priv->beam_size, srn.priv->kbest)));  // at least 1, but otherwise the min of beam_size and kbest
-    
+
     compute_full_beam(all, srn, ec, hyp_pool, hyp_pool_id, final_beam);
     
     if (srn.priv->should_produce_string && !is_learn) { // TODO: check if this is going to be used at all!!!
@@ -1660,7 +1667,7 @@ namespace Searn
         for (int* sink = all.final_prediction_sink.begin; sink != all.final_prediction_sink.end; ++sink)
           all.print_text(*sink, "", ec[0]->tag);
     }
-  
+
     final_beam->erase();
     delete final_beam;
   }
@@ -1688,7 +1695,6 @@ namespace Searn
     if (must_run_test(all, ec)) {
       srn.priv->should_produce_string = might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction > 0);
       srn.priv->pred_string->str("");
-      
       assert(srn.priv->truth_string != NULL);
       srn.task->structured_predict(srn, ec);
       srn.priv->should_produce_string = false;
@@ -1715,12 +1721,12 @@ namespace Searn
       srn.priv->loss_last_step = 0;
       clear_snapshot(all, srn, true);
 
-      // srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
-      // srn.priv->snapshot_last_found_pos = (size_t)-1;
-      // srn.priv->snapshot_could_match = false;
+      srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
+      srn.priv->snapshot_last_found_pos = (size_t)-1;
+      srn.priv->snapshot_could_match = false;
       srn.priv->loss_declared = false;
       srn.priv->should_produce_string = false;
-      
+
       srn.task->structured_predict(srn, ec);
 
       if ( (! srn.priv->loss_declared) &&   // no loss was declared
@@ -1728,7 +1734,7 @@ namespace Searn
            (all.training)              &&   // in training mode
            (! ec[0]->test_only) )           // and not a test example
         cerr << "warning: no loss declared by task on something that looks like a training example!" << endl;
-      
+
       if (srn.priv->t == 0) {
         clear_snapshot(all, srn, true);
         return;  // there was no data
@@ -1769,7 +1775,6 @@ namespace Searn
             srn.priv->learn_loss = 0.f;
             srn.priv->learn_example_len = 0;
             cdbg << "learn_example_len = 0" << endl;
-            
             cdbg << "learn_t = " << srn.priv->learn_t << " || learn_a = " << srn.priv->learn_a << endl;
             // srn.priv->snapshot_is_equivalent_to_t = (size_t)-1;
             // srn.priv->snapshot_could_match = true;
@@ -1806,7 +1811,7 @@ namespace Searn
 
           if (!srn.priv->examples_dont_change) {
             cdbg << "deleting labels for " << srn.priv->learn_example_len << " learn_example_copy items" << endl;
-            for (size_t n=0; n<srn.priv->learn_example_len; n++) 
+            for (size_t n=0; n<srn.priv->learn_example_len; n++)
               //cdbg << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &srn.priv->learn_example_copy[n]);
 	      if (srn.priv->is_ldf) COST_SENSITIVE::cs_label.delete_label(srn.priv->learn_example_copy[n].ld);
               else                  MULTICLASS::mc_label.delete_label(srn.priv->learn_example_copy[n].ld);
@@ -1819,7 +1824,7 @@ namespace Searn
       tset.erase(); tset.delete_v();
       cdbg << endl;
     }
-  
+
     clear_snapshot(all, srn, true);
     srn.priv->train_action.delete_v();
     srn.priv->train_action_ids.delete_v();
@@ -1837,7 +1842,7 @@ namespace Searn
     }
     srn.priv->train_labels.erase();
     srn.priv->train_labels.delete_v();
-    
+
     cdbg << "======================================== DONE (" << srn.priv->current_policy << "," << srn.priv->read_example_last_pass << ") ========================================" << endl;
 
   }
@@ -1863,9 +1868,9 @@ namespace Searn
         out[i] = in[i];
     }
 
-    if (in.length() > max_len) { 
-      out[max_len-2] = '.'; 
-      out[max_len-1] = '.'; 
+    if (in.length() > max_len) {
+      out[max_len-2] = '.';
+      out[max_len-1] = '.';
     }
     out[max_len] = 0;
   }
@@ -1923,7 +1928,7 @@ void print_update(vw& all, searn& srn)
 
     if (!all.holdout_set_off && all.current_pass >= 1)
       fprintf(stderr, " h");
-    
+
     fprintf(stderr, "\n");
 
     all.sd->sum_loss_since_last_dump = 0.0;
@@ -1947,7 +1952,7 @@ void print_update(vw& all, searn& srn)
         size_t  enc_offset = wpp * ((2 * (size_t)(*enc)) + ((*enc < 0) ? 1 : 0));
 
         cdbg << "old_ns = " << old_ns << endl;
-        
+
         if ((n + offset >= 0) && (n + offset < (int32_t)srn.priv->ec_seq.size())) { // we're okay on position
           example*you = srn.priv->ec_seq[n+offset];
           size_t  you_size = you->atomics[old_ns].size();
@@ -1988,7 +1993,7 @@ void print_update(vw& all, searn& srn)
             //cdbg << "copying " << you_size << " features" << endl;
             me->sum_feat_sq[neighbor_namespace] += you->sum_feat_sq[old_ns];
             me->total_sum_feat_sq += you->sum_feat_sq[old_ns];
-            me->num_features += you_size;            
+            me->num_features += you_size;
           }
         } else if ((n + offset == -1) || (n + offset == (int32_t)srn.priv->ec_seq.size())) { // handle <s> and </s>
           size_t bias  = constant * ((n + offset < 0) ? 2 : 3);
@@ -2036,7 +2041,7 @@ void print_update(vw& all, searn& srn)
       cdbg << "del n=" << me->num_features;
       size_t total_size = 0;
       float total_sfs = 0.;
-        
+
       for (int32_t*enc=srn.priv->neighbor_features.begin; enc!=srn.priv->neighbor_features.end; ++enc) {
         int32_t offset = (*enc) >> 24;
         size_t  old_ns = (*enc) & 0xFF;
@@ -2075,10 +2080,10 @@ void print_update(vw& all, searn& srn)
               free(ad->space);
               free(ad->feature);
             }
-          
+
           me->audit_features[neighbor_namespace].end -= total_size;
         }
-            
+
         me->sum_feat_sq[neighbor_namespace] -= total_sfs;
         me->total_sum_feat_sq -= total_sfs;
         me->num_features -= total_size;
@@ -2107,13 +2112,13 @@ void print_update(vw& all, searn& srn)
       priv->learn_losses.erase();
 
       COST_SENSITIVE::label aset;
-      
+
       // TODO: prune training steps ala get_training_timesteps
       cdbg << "t=" << me.t << ", labelset_size=" << me.num_actions << endl;
-      for (size_t aid=0; aid<me.num_actions; aid++) {
+      for (uint32_t aid=0; aid<me.num_actions; aid++) {
         COST_SENSITIVE::wclass my_class = { 0., aid+1, 0., 0. }; // TODO: make this valid for LDF
         aset.costs.push_back( my_class );
-        
+
         if (srn.priv->auto_history)
           clear_rollout_actions(srn);
 
@@ -2122,8 +2127,8 @@ void print_update(vw& all, searn& srn)
         beam_hyp *h = &me;
         for (size_t t=0; t<me.t; t++) {
           assert(h != NULL);
-          priv->train_action[me.t - t - 1] = h->action_taken+1;
-          priv->train_action_ids[me.t - t - 1] = h->action_taken+1;  // TODO: make this valid for ldf
+          priv->train_action[me.t - t - 1] = (uint32_t)h->action_taken+1;
+          priv->train_action_ids[me.t - t - 1] = (uint32_t)h->action_taken+1;  // TODO: make this valid for ldf
           cdbg << "set train_action[" << (me.t-t-1) << "] = " << h->action_taken+1 << endl;
           h = h->parent;
         }
@@ -2133,7 +2138,7 @@ void print_update(vw& all, searn& srn)
         cdbg << "train_action.size = " << priv->train_action.size() << endl;
         for (size_t t=0; t<me.t; t++)
           priv->rollout_action.push_back(priv->train_action[t]);
-        
+
         priv->t = 0;
         priv->learn_a = (uint32_t)aid+1;  // TODO: make this LDF compatible (by remembering what the actions were!)
         priv->loss_last_step = 0;
@@ -2157,7 +2162,7 @@ void print_update(vw& all, searn& srn)
 
         if (!priv->examples_dont_change) {
           cdbg << "deleting labels for " << priv->learn_example_len << " learn_example_copy items" << endl;
-          for (size_t n=0; n<priv->learn_example_len; n++) 
+          for (size_t n=0; n<priv->learn_example_len; n++)
             //cdbg << "free_example_data[" << n << "]: "; GD::print_audit_features(all, &priv->learn_example_copy[n]);
             if (priv->is_ldf) COST_SENSITIVE::cs_label.delete_label(priv->learn_example_copy[n].ld);
             else                  MULTICLASS::mc_label.delete_label(priv->learn_example_copy[n].ld);
@@ -2185,8 +2190,7 @@ void print_update(vw& all, searn& srn)
       srn.priv->truth_string->str("");
       srn.task->structured_predict(srn, srn.priv->ec_seq);
     }
-  
-    
+
     if (srn.priv->beam_size == 0)
       train_single_example<is_learn>(all, srn, srn.priv->ec_seq);
     else {
@@ -2221,7 +2225,7 @@ void print_update(vw& all, searn& srn)
       hyp_pool.delete_v();
       srn.priv->test_loss = cached_test_loss;
     }
-    
+
     del_neighbor_features(srn);
 
     if (srn.priv->ec_seq[0]->test_only) {
@@ -2246,7 +2250,7 @@ void print_update(vw& all, searn& srn)
     srn.priv->base_learner = &base;
     bool is_real_example = true;
 
-    if (example_is_newline(ec) || srn.priv->ec_seq.size() >= all->p->ring_size - 2) { 
+    if (example_is_newline(ec) || srn.priv->ec_seq.size() >= all->p->ring_size - 2) {
       if (srn.priv->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
 	std::cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << std::endl;
       }
@@ -2254,13 +2258,13 @@ void print_update(vw& all, searn& srn)
       do_actual_learning<is_learn>(*all, srn);
       clear_seq(*all, srn);
       srn.priv->hit_new_pass = false;
-      
+
       //VW::finish_example(*all, ec);
       is_real_example = false;
     } else {
       srn.priv->ec_seq.push_back(&ec);
     }
-    
+
     if (is_real_example) {
       srn.priv->read_example_last_id = ec.example_counter;
     }
@@ -2283,7 +2287,7 @@ void print_update(vw& all, searn& srn)
       //reset searn_trained_nb_policies in options_from_file so it is saved to regressor file later
       std::stringstream ss;
       ss << srn.priv->current_policy;
-      VW::cmd_string_replace_value(all->options_from_file,"--search_trained_nb_policies", ss.str());
+      VW::cmd_string_replace_value(all->file_options,"--search_trained_nb_policies", ss.str());
     }
   }
 
@@ -2304,10 +2308,10 @@ void print_update(vw& all, searn& srn)
       std::stringstream ss2;
       ss1 << ((srn.priv->passes_since_new_policy == 0) ? srn.priv->current_policy : (srn.priv->current_policy+1));
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --search_trained_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--search_trained_nb_policies", ss1.str()); 
+      VW::cmd_string_replace_value(all->file_options,"--search_trained_nb_policies", ss1.str());
       ss2 << srn.priv->total_number_of_policies;
       //use cmd_string_replace_value in case we already loaded a predictor which had a value stored for --search_total_nb_policies
-      VW::cmd_string_replace_value(all->options_from_file,"--search_total_nb_policies", ss2.str());
+      VW::cmd_string_replace_value(all->file_options,"--search_total_nb_policies", ss2.str());
     }
   }
 
@@ -2371,7 +2375,7 @@ void print_update(vw& all, searn& srn)
   void searn_initialize(vw& all, searn& srn)
   {
     srn.priv->examples_dont_change = false;
-    
+
     srn.priv->beta = 0.5;
     srn.priv->alpha = 1e-10f;
     srn.priv->allow_current_policy = false;
@@ -2388,14 +2392,13 @@ void print_update(vw& all, searn& srn)
     srn.priv->beam_size = 0; // 0 ==> no beam
     srn.priv->kbest = 0; // 0 or 1 means just 1 best
     srn.priv->allow_unsafe_fast_forward = true;
-    
     srn.priv->neighbor_features_string = new string();
-    
+
     srn.priv->passes_per_policy = 1;     //this should be set to the same value as --passes for dagger
 
     srn.task = NULL;
     srn.task_data = NULL;
-    
+
     srn.priv->read_example_last_id = 0;
     srn.priv->passes_since_new_policy = 0;
     srn.priv->read_example_last_pass = 0;
@@ -2403,14 +2406,14 @@ void print_update(vw& all, searn& srn)
     srn.priv->total_predictions_made = 0;
     srn.priv->hit_new_pass = false;
     srn.priv->subsample_timesteps = 0.;
-    
+
     srn.priv->total_number_of_policies = 1;
 
     srn.priv->truth_string = new stringstream();
     srn.priv->pred_string  = new stringstream();
     srn.priv->bad_string_stream = new stringstream();
     srn.priv->bad_string_stream->clear(srn.priv->bad_string_stream->badbit);
-    
+
     srn.priv->should_produce_string = false;
 
     srn.priv->printed_output_header = false;
@@ -2422,7 +2425,7 @@ void print_update(vw& all, searn& srn)
 
     snapshot_item_result def_snapshot_result = { 0, -1.f };
     srn.priv->snapshot_map = new snapmap(102341, def_snapshot_result, snapshot_item_ptr_eq, &srn.priv->snapshot_data);
-    
+
     srn.priv->empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);
     COST_SENSITIVE::cs_label.default_label(srn.priv->empty_example->ld);
     srn.priv->empty_example->in_use = true;
@@ -2439,7 +2442,7 @@ void print_update(vw& all, searn& srn)
     delete srn.priv->neighbor_features_string;
     srn.priv->neighbor_features.erase();
     srn.priv->neighbor_features.delete_v();
-    
+
     if (srn.priv->rollout_all_actions) { // dst should be a COST_SENSITIVE::label*
       ((COST_SENSITIVE::label*)srn.priv->valid_labels)->costs.erase();
       ((COST_SENSITIVE::label*)srn.priv->valid_labels)->costs.delete_v();
@@ -2447,7 +2450,7 @@ void print_update(vw& all, searn& srn)
       ((CB::label*)srn.priv->valid_labels)->costs.erase();
       ((CB::label*)srn.priv->valid_labels)->costs.delete_v();
     }
-    
+
     if (srn.priv->rollout_all_actions) // labels are COST_SENSITIVE
       delete (COST_SENSITIVE::label*)srn.priv->valid_labels;
     else // labels are CB
@@ -2460,7 +2463,7 @@ void print_update(vw& all, searn& srn)
 
     clear_snapshot(*all, srn, true);
     srn.priv->snapshot_data.delete_v();
-    
+
     for (size_t i=0; i<srn.priv->train_labels.size(); i++) {
       if (srn.priv->rollout_all_actions) {
         ((COST_SENSITIVE::label*)srn.priv->train_labels[i])->costs.erase();
@@ -2481,11 +2484,11 @@ void print_update(vw& all, searn& srn)
         dealloc_example(delete_label, srn.priv->learn_example_copy[n]);
     }
 
-    
+
     if (srn.task->finish != NULL) {
       srn.task->finish(srn);
     }
-    
+
     srn.priv->train_labels.delete_v();
     srn.priv->train_action.delete_v();
     srn.priv->train_action_ids.delete_v();
@@ -2511,79 +2514,48 @@ void print_update(vw& all, searn& srn)
   bool uint32_equal(uint32_t a, uint32_t b) { return a==b; }
   bool size_equal(size_t a, size_t b) { return a==b; }
 
-  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
-    if (vm_file.count(opt_name)) { // loaded from regressor file
-      ret = vm_file[opt_name].as<T>();
-      if (vm.count(opt_name) && !equal(ret, vm[opt_name].as<T>())) {
-        if (default_to_cmdline)
-          ret = vm[opt_name].as<T>();
-        std::cerr << mismatch_error_string << ret << endl;
-      }
-    } else if (vm.count(opt_name)) {
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string) {
+    if (vm.count(opt_name)) {
       ret = vm[opt_name].as<T>();
       stringstream ss;
       ss << " --" << opt_name << " " << ret;
-      all.options_from_file.append(ss.str());
+      all.file_options.append(ss.str());
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
       throw exception();
     }
-  }  
+  }
 
-  void check_option(bool& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
-    if (vm_file.count(opt_name)) { // loaded from regressor file
-      ret = true;
-      if (!vm.count(opt_name)) {
-        if (default_to_cmdline)
-          ret = false;
-        std::cerr << mismatch_error_string << ret << endl;
-      }
-    } else if (vm.count(opt_name)) {
+  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string) {
+    if (vm.count(opt_name)) {
       ret = true;
       stringstream ss;
       ss << " " << opt_name;
-      all.options_from_file.append(ss.str());
-    } else {
+      all.file_options.append(ss.str());
+    } else
       ret = false;
-    }
-  }  
-
-  void setup_searn_options(po::options_description& desc, vw&vw, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
-
-    po::parsed_options parsed_file = po::command_line_parser(vw.options_from_file_argc, vw.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
   }
 
-
-  void handle_history_options(vw& vw, history_info &hinfo, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file) {
-    po::options_description desc("search options");
-    desc.add_options()
+  void handle_history_options(vw& vw, history_info &hinfo, po::variables_map& vm) {
+    po::options_description history_options("history options");
+    history_options.add_options()
       ("search_history",  po::value<size_t>(), "length of history to use")
       ("search_features", po::value<size_t>(), "length of history to pair with observed features")
       ("search_bigrams",                       "use bigrams from history")
       ("search_bigram_features",               "use bigrams from history paired with observed features");
 
-    setup_searn_options(desc, vw, opts, vm, vm_file);
-    
-    check_option<size_t>(hinfo.length, vw, vm, vm_file, "search_history", false, size_equal,
+    vm = add_options(vw, history_options);
+
+    check_option<size_t>(hinfo.length, vw, vm, "search_history", false, size_equal,
                          "warning: you specified a different value for --search_history than the one loaded from regressor. proceeding with loaded value: ", "");
-    
-    check_option<size_t>(hinfo.features, vw, vm, vm_file, "search_features", false, size_equal,
+
+    check_option<size_t>(hinfo.features, vw, vm, "search_features", false, size_equal,
                          "warning: you specified a different value for --search_features than the one loaded from regressor. proceeding with loaded value: ", "");
-    
-    check_option        (hinfo.bigrams, vw, vm, vm_file, "search_bigrams", false,
+
+    check_option        (hinfo.bigrams, vw, vm, "search_bigrams", false,
                          "warning: you specified --search_bigrams but that wasn't loaded from regressor. proceeding with loaded value: ");
-    
-    check_option        (hinfo.bigram_features, vw, vm, vm_file, "search_bigram_features", false,
+
+    check_option        (hinfo.bigram_features, vw, vm, "search_bigram_features", false,
                          "warning: you specified --search_bigram_features but that wasn't loaded from regressor. proceeding with loaded value: ");
   }
 
@@ -2603,12 +2575,12 @@ void print_update(vw& all, searn& srn)
       count++;
     }
     fclose(f);
-   
+
     v_array<COST_SENSITIVE::label> allowed;
 
     for (size_t from=0; from<A; from++) {
       v_array<COST_SENSITIVE::wclass> costs;
-      
+
       for (size_t to=0; to<A; to++)
         if (bg[from * (A+1) + to]) {
           COST_SENSITIVE::wclass c = { FLT_MAX, (uint32_t)to, 0., 0. };
@@ -2621,7 +2593,7 @@ void print_update(vw& all, searn& srn)
     free(bg);
 
     cerr << "read " << count << " allowed transitions from " << filename << endl;
-    
+
     return allowed;
   }
 
@@ -2654,25 +2626,26 @@ void print_update(vw& all, searn& srn)
       }
       int32_t enc = (posn << 24) | (ns & 0xFF);
       srn.priv->neighbor_features.push_back(enc);
-      
+
       p = strtok(NULL, ",");
     }
     cmd.erase();
     cmd.delete_v();
-    
+
     delete cstr;
   }
 
-  learner* setup(vw&all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)
+  learner* setup(vw&all, po::variables_map& vm)
   {
     searn* srn = (searn*)calloc_or_die(1,sizeof(searn));
     srn->priv = new searn_private();
     srn->priv->all = &all;
+    srn->all = &all;
 
     searn_initialize(all, *srn);
 
-    po::options_description desc("Searn options");
-    desc.add_options()
+    po::options_description searn_opts("Searn options");
+    searn_opts.add_options()
         ("search_task",              po::value<string>(), "the search task")
         ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
         ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [*policy|oracle|none]")
@@ -2684,7 +2657,9 @@ void print_update(vw& all, searn& srn)
         ("search_alpha",             po::value<float>(),  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
 
         ("search_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
-        
+
+        ("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in a file")
+
         ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
         ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")
         ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
@@ -2695,55 +2670,31 @@ void print_update(vw& all, searn& srn)
         ("search_no_snapshot",                            "turn off snapshotting capabilities")
         ("search_no_fastforward",                         "turn off fastforwarding (note: fastforwarding requires snapshotting)");
 
-    
-        // removed options:
-        //("search_allow_current_policy", "allow searn labeling to use the current policy")
-        //("search_rollout_oracle", "allow searn/dagger to do rollouts with the oracle when estimating cost-to-go")
-        //("search_as_dagger", po::value<float>(), "sets options to make searn operate as dagger. parameter is the sliding autonomy rate (rate at which beta tends to 1).")
-        //("search_exploration_temperature", po::value<float>(), "if <0, always choose policy action (default); if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting")
-    
-    po::options_description add_desc_file("Searn options only available in regressor file");
-    add_desc_file.add_options()("search_trained_nb_policies", po::value<size_t>(), "the number of trained policies in the regressor file");
+    vm = add_options(all, searn_opts);
 
-    po::options_description desc_file;
-    desc_file.add(desc).add(add_desc_file);
-
-    po::parsed_options parsed = po::command_line_parser(opts).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc).allow_unregistered().run();
-    opts = po::collect_unrecognized(parsed.options, po::include_positional);
-    po::store(parsed, vm);
-    po::notify(vm);
-
-    po::parsed_options parsed_file = po::command_line_parser(all.options_from_file_argc, all.options_from_file_argv).
-      style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-      options(desc_file).allow_unregistered().run();
-    po::store(parsed_file, vm_file);
-    po::notify(vm_file);
-  
     std::string task_string;
     std::string interpolation_string = "data";
     std::string rollout_string = "policy";
     std::string trajectory_string = "policy";
 
-    check_option<string>(task_string, all, vm, vm_file, "search_task", false, string_equal,
+    check_option<string>(task_string, all, vm, "search_task", false, string_equal,
                          "warning: specified --search_task different than the one loaded from regressor. using loaded value of: ",
                          "error: you must specify a task using --search_task");
-    check_option<string>(interpolation_string, all, vm, vm_file, "search_interpolation", false, string_equal,
+    check_option<string>(interpolation_string, all, vm, "search_interpolation", false, string_equal,
                          "warning: specified --search_interpolation different than the one loaded from regressor. using loaded value of: ", "");
-    check_option<string>(rollout_string, all, vm, vm_file, "search_rollout", false, string_equal,
+    check_option<string>(rollout_string, all, vm, "search_rollout", false, string_equal,
                          "warning: specified --search_rollout different than the one loaded from regressor. using loaded value of: ", "");
-    check_option<string>(trajectory_string, all, vm, vm_file, "search_trajectory", false, string_equal,
+    check_option<string>(trajectory_string, all, vm, "search_trajectory", false, string_equal,
                          "warning: specified --search_trajectory different than the one loaded from regressor. using loaded value of: ", "");
-    
+
     if (vm.count("search_passes_per_policy"))       srn->priv->passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
     if (vm.count("search_beta"))                    srn->priv->beta                 = vm["search_beta"             ].as<float>();
 
     if (vm.count("search_alpha"))                   srn->priv->alpha                = vm["search_alpha"            ].as<float>();
 
     if (vm.count("search_subsample_time"))          srn->priv->subsample_timesteps  = vm["search_subsample_time"].as<float>();
-    
-    check_option<string>(*srn->priv->neighbor_features_string, all, vm, vm_file, "search_neighbor_features", false, string_equal,
+
+    check_option<string>(*srn->priv->neighbor_features_string, all, vm, "search_neighbor_features", false, string_equal,
                          "warning: you specified a different feature structure with --search_neighbor_features than the one loaded from predictor. using loaded value of: ", "");
     parse_neighbor_features(*srn);
 
@@ -2785,11 +2736,11 @@ void print_update(vw& all, searn& srn)
       throw exception();
     }
 
-    //check_option<float >(srn->priv->exploration_temperature, all, vm, vm_file, "search_exploration_temperature", false, float_equal,
+    //check_option<float >(srn->priv->exploration_temperature, all, vm, "search_exploration_temperature", false, float_equal,
     //                     "warning: you specified a different value through --search_exploration_temperature than the one loaded from predictor. using loaded value of: ", "");
-    check_option<size_t>(srn->priv->A, all, vm, vm_file, "search", false, size_equal,
+    check_option<size_t>(srn->priv->A, all, vm, "search", false, size_equal,
                          "warning: you specified a different number of actions through --search than the one loaded from predictor. using loaded value of: ", "");
-    
+
     //if (vm.count("search_allow_current_policy"))    srn->priv->allow_current_policy = true;
     //if (vm.count("search_rollout_oracle"))          srn->priv->rollout_oracle       = true;
 
@@ -2807,24 +2758,19 @@ void print_update(vw& all, searn& srn)
       cerr << "error: kbest must be at least equal to beam_size" << endl;
       throw exception();
     }
-    
+
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-    if (vm.count("cb") || vm_file.count("cb")) {
+    if (vm.count("cb")) {
       srn->priv->rollout_all_actions = false;
       srn->priv->valid_labels = new CB::label();
     } else {
       srn->priv->rollout_all_actions = true;
       srn->priv->valid_labels = new COST_SENSITIVE::label();
     }
-    
+
     //if we loaded a regressor with -i option, --search_trained_nb_policies contains the number of trained policies in the file
     // and --search_total_nb_policies contains the total number of policies in the file
-    if ( vm_file.count("search_total_nb_policies") ) {
-      srn->priv->current_policy = (uint32_t)vm_file["search_trained_nb_policies"].as<size_t>();
-      srn->priv->total_number_of_policies = (uint32_t)vm_file["search_total_nb_policies"].as<size_t>();
-      if (vm.count("search_total_nb_policies") && (uint32_t)vm["search_total_nb_policies"].as<size_t>() != srn->priv->total_number_of_policies)
-        std::cerr << "warning: --search_total_nb_policies doesn't match the total number of policies stored in initial predictor. Using loaded value of: " << srn->priv->total_number_of_policies << endl;
-    } else if (vm.count("search_total_nb_policies"))
+    if (vm.count("search_total_nb_policies"))
       srn->priv->total_number_of_policies = (uint32_t)vm["search_total_nb_policies"].as<size_t>();
 
     ensure_param(srn->priv->beta , 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
@@ -2832,11 +2778,11 @@ void print_update(vw& all, searn& srn)
 
     //compute total number of policies we will have at end of training
     // we add current_policy for cases where we start from an initial set of policies loaded through -i option
-    uint32_t tmp_number_of_policies = srn->priv->current_policy; 
+    uint32_t tmp_number_of_policies = srn->priv->current_policy;
     if( all.training )
       tmp_number_of_policies += (int)ceil(((float)all.numpasses) / ((float)srn->priv->passes_per_policy));
 
-    //the user might have specified the number of policies that will eventually be trained through multiple vw calls, 
+    //the user might have specified the number of policies that will eventually be trained through multiple vw calls,
     //so only set total_number_of_policies to computed value if it is larger
     cdbg << "current_policy=" << srn->priv->current_policy << " tmp_number_of_policies=" << tmp_number_of_policies << " total_number_of_policies=" << srn->priv->total_number_of_policies << endl;
     if( tmp_number_of_policies > srn->priv->total_number_of_policies ) {
@@ -2852,8 +2798,8 @@ void print_update(vw& all, searn& srn)
       srn->priv->current_policy--;
 
     std::stringstream ss1, ss2;
-    ss1 << srn->priv->current_policy;           VW::cmd_string_replace_value(all.options_from_file,"--search_trained_nb_policies", ss1.str()); 
-    ss2 << srn->priv->total_number_of_policies; VW::cmd_string_replace_value(all.options_from_file,"--search_total_nb_policies",   ss2.str());
+    ss1 << srn->priv->current_policy;           VW::cmd_string_replace_value(all.file_options,"--search_trained_nb_policies", ss1.str());
+    ss2 << srn->priv->total_number_of_policies; VW::cmd_string_replace_value(all.file_options,"--search_total_nb_policies",   ss2.str());
 
     cdbg << "search current_policy = " << srn->priv->current_policy << " total_number_of_policies = " << srn->priv->total_number_of_policies << endl;
 
@@ -2870,20 +2816,20 @@ void print_update(vw& all, searn& srn)
     all.p->emptylines_separate_examples = true;
 
     // default to OAA labels unless the task wants to override this!
-    all.p->lp = MULTICLASS::mc_label; 
-    srn->task->initialize(*srn, srn->priv->A, opts, vm, vm_file);
+    all.p->lp = MULTICLASS::mc_label;
+    srn->task->initialize(*srn, srn->priv->A, vm);
 
     if (vm.count("search_allowed_transitions"))     read_allowed_transitions((uint32_t)srn->priv->A, vm["search_allowed_transitions"].as<string>().c_str());
-    
+
     // set up auto-history if they want it
     if (srn->priv->auto_history) {
       default_info(&srn->priv->hinfo);
 
-      handle_history_options(all, srn->priv->hinfo, opts, vm, vm_file);
-      
+      handle_history_options(all, srn->priv->hinfo, vm);
+
       if (srn->priv->hinfo.length < srn->priv->hinfo.features)
         srn->priv->hinfo.length = srn->priv->hinfo.features;
-      
+
       if (srn->priv->hinfo.length == 0)
         srn->priv->auto_history = false;
     } else {
@@ -2914,38 +2860,38 @@ void print_update(vw& all, searn& srn)
     l->set_end_examples<searn,end_examples>();
     l->set_finish<searn,searn_finish>();
     l->set_end_pass<searn,end_pass>();
-    
+
     return l;
   }
 
 
   // the interface:
-  uint32_t searn::predict(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for LDF
+  uint32_t searn::predictLDF(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for LDF
   { return searn_predict(this->priv, ecs, ec_len, yallowed, ystar, false); }
 
-  uint32_t searn::predict(example* ecs, size_t ec_len, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for LDF
+  uint32_t searn::predictLDF(example* ecs, size_t ec_len, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for LDF
   { if (one_ystar == (uint32_t)-1) // test example
       return searn_predict(this->priv, ecs, ec_len, yallowed, NULL, false);
     else
       return searn_predict(this->priv, ecs, ec_len, yallowed, (v_array<uint32_t>*)&one_ystar, true);
   }
-  
+
   uint32_t searn::predict(example* ec, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for not LDF
   { return searn_predict(this->priv, ec, 0, yallowed, ystar, false); }
-  
+
   uint32_t searn::predict(example* ec, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for not LDF
   { if (one_ystar == (uint32_t)-1) // test example
       return searn_predict(this->priv, ec, 0, yallowed, NULL, false);
     else
       return searn_predict(this->priv, ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar, true);
   }
-      
+
   void     searn::loss(float incr_loss, size_t predictions_since_last)
   { searn_declare_loss(this->priv, predictions_since_last, incr_loss); }
-  
+
   void     searn::snapshot(size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction)
   { searn_snapshot(this->priv, index, tag, data_ptr, sizeof_data, used_for_prediction); }
-  
+
   stringstream& searn::output() {
     return searn_output_streamstream(this->priv);
   }
@@ -2975,26 +2921,26 @@ void print_update(vw& all, searn& srn)
   NON-LDF BEAM 100
 
   ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence --search 5 -i z2.model -p out --search_beam 100 --search_kbest 100
-  
 
-  
+
+
   LDF TRAIN
   ./vw -k -c -d z2 --passes 50 --invariant --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 --holdout_off -f z2.model --audit --csoaa_ldf m
 
   LDF NO BEAM
-  ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 -i z2.model --audit --csoaa_ldf m -p out  
+  ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 -i z2.model --audit --csoaa_ldf m -p out
 
   LDF BEAM 1
-  
+
   ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 -i z2.model --audit --csoaa_ldf m -p out --search_beam 1
 
   LDF BEAM 100
-  
+
   ./vw -k -c -d z2 -t --search_as_dagger 1e-8 --search_task sequence_demoldf --search 5 -i z2.model --audit --csoaa_ldf m -p out --search_beam 100 --search_kbest 100
 
 
   === SPAN ===
-  
+
   TRAIN
 
   ./vw -k -c -d seqtest --passes 50 --invariant --search_as_dagger 1e-8 --search_task sequencespan --search 7 --holdout_off -f seqtest.model
@@ -3004,11 +2950,11 @@ void print_update(vw& all, searn& srn)
   ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out
 
   BEAM 1
-  
+
   ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_beam 1
 
   BEAM 100
-  
+
   ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_beam 100 --search_kbest 100
 
 
@@ -3023,14 +2969,14 @@ void print_update(vw& all, searn& srn)
   ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_bilou
 
   BEAM 1
-  
+
   ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_bilou --search_beam 1
 
   BEAM 100
-  
+
   ./vw -k -c -d seqtest -t --search_as_dagger 1e-8 --search_task sequencespan --search 7 -i seqtest.model -p out --search_beam 100 --search_kbest 100 --search_bilou
-  
-  
+
+
  */
 
 
@@ -3075,4 +3021,3 @@ next slow commit ab38c2fedee0ba7ca86bd4cf4d145a27d4a6f5d5
 
 
 */
-

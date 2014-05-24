@@ -224,16 +224,16 @@ void save_load_header(vw& all, io_buf& model_file, bool read, bool text)
 				"", read, 
 				"\n",1, text);
       
-      text_len = sprintf(buff, "options:%s\n", all.options_from_file.c_str());
-      uint32_t len = (uint32_t)all.options_from_file.length()+1;
-      memcpy(buff2, all.options_from_file.c_str(),len);
+      text_len = sprintf(buff, "options:%s\n", all.file_options.c_str());
+      uint32_t len = (uint32_t)all.file_options.length()+1;
+      memcpy(buff2, all.file_options.c_str(),len);
       if (read)
 	len = buf_size;
       bin_text_read_write(model_file,buff2, len, 
 			  "", read,
 			  buff, text_len, text);
       if (read)
-	all.options_from_file.assign(buff2);
+	all.file_options.assign(buff2);
     }
 
 }
@@ -316,10 +316,6 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
       if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
            
-        for (size_t j = 0; j < length; j++){	 
-          if(all.reg.weight_vector[j << all.reg.stride_shift] != 0.)
-            all.reg.weight_vector[(j << all.reg.stride_shift) + all.feature_mask_idx] = 1.;
-        } 
         return;
       }
     }
@@ -330,10 +326,6 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
     save_load_header(all, io_temp_mask, true, false);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
-    for (size_t j = 0; j < length; j++){	 
-      if(all.reg.weight_vector[j << all.reg.stride_shift] != 0.)
-        all.reg.weight_vector[(j << all.reg.stride_shift) + all.feature_mask_idx] = 1.;
-    }
 
     // Deal with the over-written header from initial regressor
     if (vm.count("initial_regressor")) {
@@ -351,7 +343,7 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
       }
     } else {
       // If no initial regressor, just clear out the options loaded from the header.
-      all.options_from_file.assign("");
+      all.file_options.assign("");
     }
   }
 }

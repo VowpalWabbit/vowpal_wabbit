@@ -103,14 +103,18 @@ void parse_affix_argument(vw&all, string str) {
   free(cstr);
 }
 
-void parse_diagnostics(vw& all, po::variables_map& vm, po::options_description& desc, int argc)
+void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
 {
-  // Begin diagnostic options
-  if (vm.count("help") || argc == 1) {
-    /* upon direct query for help -- spit it out to stdout */
-    cout << "\n" << desc << "\n";
-    exit(0);
-  }
+  po::options_description diag_opt("Diagnostic options");
+
+  diag_opt.add_options()
+    ("version","Version information")
+    ("audit,a", "print weights of features")
+    ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
+    ("quiet", "Don't output disgnostics and progress updates")
+    ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.");
+  
+  vm = add_options(all, diag_opt);
 
   if (vm.count("version")) {
     /* upon direct query for version -- spit it out to stdout */
@@ -122,6 +126,9 @@ void parse_diagnostics(vw& all, po::variables_map& vm, po::options_description& 
     all.quiet = true;
     // --quiet wins over --progress
   } else {
+    if (argc == 1)
+      cerr << "For more information use: vw --help" << endl;
+
     all.quiet = false;
 
     if (vm.count("progress")) {
@@ -166,6 +173,34 @@ void parse_diagnostics(vw& all, po::variables_map& vm, po::options_description& 
 
 void parse_source(vw& all, po::variables_map& vm)
 {
+  po::options_description in_opt("Input options");
+  
+  in_opt.add_options()
+    ("data,d", po::value< string >(), "Example Set")
+    ("daemon", "persistent daemon mode on port 26542")
+    ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
+    ("num_children", po::value<size_t>(&(all.num_children)), "number of children for persistent daemon mode")
+    ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
+    ("port_file", po::value< string >(), "Write port used in persistent daemon mode")
+    ("cache,c", "Use a cache.  The default is <data>.cache")
+    ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
+    ("kill_cache,k", "do not reuse existing cache: create a new one always")
+    ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
+    ("no_stdin", "do not default to reading from stdin");
+  
+  vm = add_options(all, in_opt);
+
+  // Be friendly: if -d was left out, treat positional param as data file
+  po::positional_options_description p;  
+  p.add("data", -1);
+  
+  vm = po::variables_map();
+  po::parsed_options pos = po::command_line_parser(all.args).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(all.opts).positional(p).run();
+  vm = po::variables_map();
+  po::store(pos, vm);
+ 
   //begin input source
   if (vm.count("no_stdin"))
     all.stdin_off = true;
@@ -192,10 +227,41 @@ void parse_source(vw& all, po::variables_map& vm)
       set_compressed(all.p);
   } else
     all.data_filename = "";
+
+  if ((vm.count("cache") || vm.count("cache_file")) && vm.count("invert_hash"))
+    {
+      cout << "invert_hash is incompatible with a cache file.  Use it in single pass mode only." << endl;
+      throw exception();
+    }
+
+  if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
+    {
+      all.holdout_set_off = true;
+      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
+    }
 }
 
-void parse_feature_tweaks(vw& all, po::variables_map& vm, po::variables_map& vm_file)
+void parse_feature_tweaks(vw& all, po::variables_map& vm)
 {
+  po::options_description feature_opt("Feature options");
+  feature_opt.add_options()
+    ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
+    ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
+    ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
+    ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
+    ("noconstant", "Don't add a constant feature")
+    ("constant,C", po::value<float>(&(all.initial_constant)), "Set initial value of constant")
+    ("ngram", po::value< vector<string> >(), "Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN.")
+    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fn.")
+    ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
+    ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)")
+    ("quadratic,q", po::value< vector<string> > (), "Create and use quadratic features")
+    ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
+    ("cubic", po::value< vector<string> > (),
+     "Create and use cubic features");
+
+  vm = add_options(all, feature_opt);
+
   //feature manipulation
   string hash_function("strings");
   if(vm.count("hash")) 
@@ -209,17 +275,11 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm, po::variables_map& vm_
       else all.spelling_features[(size_t)spelling_ns[id][0]] = true;
   }
 
-  if (vm_file.count("affix") && vm.count("affix")) {
-    cerr << "should not specify --affix when loading a model trained with affix features (they're turned on by default)" << endl;
-    throw exception();
-  }
-  if (vm_file.count("affix"))
-    parse_affix_argument(all, vm_file["affix"].as<string>());
   if (vm.count("affix")) {
     parse_affix_argument(all, vm["affix"].as<string>());
     stringstream ss;
     ss << " --affix " << vm["affix"].as<string>();
-    all.options_from_file.append(ss.str());
+    all.file_options.append(ss.str());
   }
 
   if(vm.count("ngram")){
@@ -301,6 +361,9 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm, po::variables_map& vm_
         else if((*i)[0]==':'&&(*i)[1]==':'){
 	  cout << "in pair creation" << endl;
           newpairs.reserve(newpairs.size() + valid_ns_size*valid_ns_size);
+	  stringstream ss;
+	  ss << ' ' << ' ';
+	  newpairs.push_back(ss.str());
           for (char j=printable_start; j<=printable_end; j++){
             if(valid_ns(j)){
               for (char k=printable_start; k<=printable_end; k++){
@@ -392,6 +455,27 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm, po::variables_map& vm_
 
 void parse_example_tweaks(vw& all, po::variables_map& vm)
 {
+  po::options_description example_opts("Example options");
+  
+  example_opts.add_options()
+    ("testonly,t", "Ignore label information and just test")
+    ("holdout_off", "no holdout data in multiple passes")
+    ("holdout_period", po::value<uint32_t>(&(all.holdout_period)), "holdout period for test only, default 10")
+    ("holdout_after", po::value<uint32_t>(&(all.holdout_after)), "holdout after n training examples, default off (disables holdout_period)")
+    ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
+    ("passes", po::value<size_t>(&(all.numpasses)),"Number of Training Passes")
+    ("initial_pass_length", po::value<size_t>(&(all.pass_length)), "initial number of examples per pass")
+    ("examples", po::value<size_t>(&(all.max_examples)), "number of examples to parse")
+    ("min_prediction", po::value<float>(&(all.sd->min_label)), "Smallest prediction to output")
+    ("max_prediction", po::value<float>(&(all.sd->max_label)), "Largest prediction to output")
+    ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
+    ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
+    ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
+    ("l1", po::value<float>(&(all.l1_lambda)), "l_1 lambda")
+    ("l2", po::value<float>(&(all.l2_lambda)), "l_2 lambda");
+
+  vm = add_options(all, example_opts);
+
   if (vm.count("testonly") || all.eta == 0.)
     {
       if (!all.quiet)
@@ -408,12 +492,6 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
 
   if(vm.count("holdout_off"))
       all.holdout_set_off = true;
-
-  if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
-  {
-      all.holdout_set_off = true;
-      cerr<<"Making holdout_set_off=true since output regularizer specified\n";
-  }
 
   if(vm.count("sort_features"))
     all.p->sort_features = true;
@@ -455,8 +533,17 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
     }
 }
 
-void parse_output_preds(vw& all, po::variables_map& vm, po::variables_map& vm_file)
+void parse_output_preds(vw& all, po::variables_map& vm)
 {
+  po::options_description out_opt("Output options");
+
+  out_opt.add_options()
+    ("predictions,p", po::value< string >(), "File to output predictions to")
+    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
+    ;
+
+  vm = add_options(all, out_opt);
+
   if (vm.count("predictions")) {
     if (!all.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
@@ -482,7 +569,7 @@ void parse_output_preds(vw& all, po::variables_map& vm, po::variables_map& vm_fi
   if (vm.count("raw_predictions")) {
     if (!all.quiet) {
       cerr << "raw predictions = " <<  vm["raw_predictions"].as< string >() << endl;
-      if (vm.count("binary") || vm_file.count("binary"))
+      if (vm.count("binary"))
         cerr << "Warning: --raw has no defined value when --binary specified, expect no output" << endl;
     }
     if (strcmp(vm["raw_predictions"].as< string >().c_str(), "stdout") == 0)
@@ -503,6 +590,19 @@ void parse_output_preds(vw& all, po::variables_map& vm, po::variables_map& vm_fi
 
 void parse_output_model(vw& all, po::variables_map& vm)
 {
+  po::options_description output_model("Output model");
+  
+  output_model.add_options()
+    ("final_regressor,f", po::value< string >(), "Final regressor")
+    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
+    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
+    ("save_resume", "save extra state so learning can be resumed later with new data")
+    ("save_per_pass", "Save the model after every pass over data")
+    ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
+    ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
+  
+  vm = add_options(all, output_model);
+
   if (vm.count("final_regressor")) {
     all.final_regressor_name = vm["final_regressor"].as<string>();
     if (!all.quiet)
@@ -526,13 +626,30 @@ void parse_output_model(vw& all, po::variables_map& vm)
     all.save_resume = true;
 }
 
-void parse_base_algorithm(vw& all, vector<string>& to_pass_further, po::variables_map& vm)
+void parse_base_algorithm(vw& all, po::variables_map& vm)
 {
   //base learning algorithm.
+  po::options_description base_opt("base algorithms (these are exclusive)");
+  
+  base_opt.add_options()
+    ("sgd", "use regular stochastic gradient descent update.")
+    ("adaptive", "use adaptive, individual learning rates.")
+    ("invariant", "use safe/importance aware updates.")
+    ("normalized", "use per feature normalized updates")
+    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
+    ("bfgs", "use bfgs optimization")
+    ("lda", po::value<uint32_t>(&(all.lda)), "Run lda with <int> topics")
+    ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
+    ("noop","do no learning")
+    ("print","print examples")
+    ("sendto", po::value< vector<string> >(), "send examples to <host>");
+
+  vm = add_options(all, base_opt);
+
   if (vm.count("bfgs") || vm.count("conjugate_gradient"))
-    all.l = BFGS::setup(all, to_pass_further, vm);
+    all.l = BFGS::setup(all, vm);
   else if (vm.count("lda"))
-    all.l = LDA::setup(all, to_pass_further, vm);
+    all.l = LDA::setup(all, vm);
   else if (vm.count("noop"))
     all.l = NOOP::setup(all);
   else if (vm.count("print"))
@@ -571,192 +688,191 @@ void load_input_model(vw& all, po::variables_map& vm, io_buf& io_temp)
   }
 }
 
-void parse_scorer_reductions(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file)
+void parse_scorer_reductions(vw& all, po::variables_map& vm)
 {
-  if(vm.count("nn") || vm_file.count("nn") )
-    all.l = NN::setup(all, to_pass_further, vm, vm_file);
+  po::options_description score_mod_opt("Score modifying options (can be combined)");
+
+  score_mod_opt.add_options()
+    ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
+    ("new_mf", "use new, reduction-based matrix factorization")
+    ("autolink", po::value<size_t>(), "create link function with polynomial d")
+    ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
+    ("lrqdropout", "use dropout training for low rank quadratic features");
+
+  vm = add_options(all, score_mod_opt);
+
+  if(vm.count("nn"))
+    all.l = NN::setup(all, vm);
   
   if (vm.count("new_mf") && all.rank > 0)
     all.l = MF::setup(all, vm);
   
-  if(vm.count("autolink") || vm_file.count("autolink") )
-    all.l = ALINK::setup(all, to_pass_further, vm, vm_file);
+  if(vm.count("autolink"))
+    all.l = ALINK::setup(all, vm);
   
-  if (vm.count("lrq") || vm_file.count("lrq"))
-    all.l = LRQ::setup(all, to_pass_further, vm, vm_file);
+  if (vm.count("lrq"))
+    all.l = LRQ::setup(all, vm);
   
-  all.l = Scorer::setup(all, to_pass_further, vm, vm_file);
+  all.l = Scorer::setup(all, vm);
 }
 
-LEARNER::learner* exclusive_setup(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& score_consumer, LEARNER::learner* (*setup)(vw&, vector<string>&, po::variables_map&, po::variables_map&))
+LEARNER::learner* exclusive_setup(vw& all, po::variables_map& vm, bool& score_consumer, LEARNER::learner* (*setup)(vw&, po::variables_map&))
 {
   if (score_consumer) { cerr << "error: cannot specify multiple direct score consumers" << endl; throw exception(); }
   score_consumer = true;
-  return setup(all, to_pass_further, vm, vm_file);
+  return setup(all, vm);
 }
 
-void parse_score_users(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs)
+void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
 {
+  po::options_description multiclass_opt("Score user options (these are exclusive)");
+  multiclass_opt.add_options()
+    ("top", po::value<size_t>(), "top k recommendation")
+    ("binary", "report loss as binary classification on -1,1")
+    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
+    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
+    ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
+    ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
+    ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
+    ;
+
+  vm = add_options(all, multiclass_opt);
   bool score_consumer = false;
   
-  if(vm.count("top") || vm_file.count("top") )
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, TOPK::setup);
+  if(vm.count("top"))
+    all.l = exclusive_setup(all, vm, score_consumer, TOPK::setup);
   
-  if (vm.count("binary") || vm_file.count("binary"))
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, BINARY::setup);
+  if (vm.count("binary"))
+    all.l = exclusive_setup(all, vm, score_consumer, BINARY::setup);
   
-  if (vm.count("oaa") || vm_file.count("oaa") ) 
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, OAA::setup);
+  if (vm.count("oaa")) 
+    all.l = exclusive_setup(all, vm, score_consumer, OAA::setup);
   
-  if (vm.count("ect") || vm_file.count("ect") ) 
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, ECT::setup);
+  if (vm.count("ect")) 
+    all.l = exclusive_setup(all, vm, score_consumer, ECT::setup);
   
-  if(vm.count("csoaa") || vm_file.count("csoaa") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA::setup);
+  if(vm.count("csoaa")) {
+    all.l = exclusive_setup(all, vm, score_consumer, CSOAA::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
-  if(vm.count("wap") || vm_file.count("wap") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, WAP::setup);
+  if(vm.count("wap")) {
+    all.l = exclusive_setup(all, vm, score_consumer, WAP::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
-  if(vm.count("csoaa_ldf") || vm_file.count("csoaa_ldf")) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA_AND_WAP_LDF::setup);
+  if(vm.count("csoaa_ldf") || vm.count("csoaa_ldf")) {
+    all.l = exclusive_setup(all, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
   
-  if(vm.count("wap_ldf") || vm_file.count("wap_ldf") ) {
-    all.l = exclusive_setup(all, to_pass_further, vm, vm_file, score_consumer, CSOAA_AND_WAP_LDF::setup);
+  if(vm.count("wap_ldf") || vm.count("wap_ldf") ) {
+    all.l = exclusive_setup(all, vm, score_consumer, CSOAA_AND_WAP_LDF::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
   }
 }
 
-void parse_cb(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs, bool& got_cb)
+void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  if( vm.count("cb") || vm_file.count("cb") )
+  po::options_description cb_opts("Contextual Bandit options");
+    
+  cb_opts.add_options()
+    ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
+    ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
+
+  vm = add_options(all,cb_opts);
+  
+  if( vm.count("cb"))
     {
       if(!got_cs) {
-	if( vm_file.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cb"]));
+	if( vm.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
 	
-	all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
       
-      all.l = CB_ALGS::setup(all, to_pass_further, vm, vm_file);
+      all.l = CB_ALGS::setup(all, vm);
       got_cb = true;
     }
 
-  if (vm.count("cbify") || vm_file.count("cbify"))
+  if (vm.count("cbify"))
     {
       if(!got_cs) {
-	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["cbify"]));
-	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
+	vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
-	all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless wap is specified
+	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
-
+      
       if (!got_cb) {
-	if( vm_file.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm_file["cbify"]));
-	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	all.l = CB_ALGS::setup(all, to_pass_further, vm, vm_file);
+	vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
+	all.l = CB_ALGS::setup(all, vm);
 	got_cb = true;
       }
 
-      all.l = CBIFY::setup(all, to_pass_further, vm, vm_file);
+      all.l = CBIFY::setup(all, vm);
     }
 }
 
-void parse_search(vw& all, vector<string>& to_pass_further, po::variables_map& vm, po::variables_map vm_file, bool& got_cs, bool& got_cb)
+void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  if (vm.count("search") || vm_file.count("search") ) {
+  po::options_description search_opts("Search");
+    
+  search_opts.add_options()
+    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
+
+  vm = add_options(all,search_opts);
+
+  if (vm.count("search")) {
     if (!got_cs && !got_cb) {
-      if( vm_file.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm_file["search"]));
+      if( vm.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
       
-      all.l = CSOAA::setup(all, to_pass_further, vm, vm_file);  // default to CSOAA unless others have been specified
+      all.l = CSOAA::setup(all, vm);  // default to CSOAA unless others have been specified
       all.cost_sensitive = all.l;
       got_cs = true;
     }
     //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
-    all.l = Searn::setup(all, to_pass_further, vm, vm_file);
+    all.l = Searn::setup(all, vm);
   }
+}
+
+void add_to_args(vw& all, int argc, char* argv[])
+{
+  for (int i = 1; i < argc; i++)
+    all.args.push_back(string(argv[i]));
 }
 
 vw* parse_args(int argc, char *argv[])
 {
-  po::options_description desc("VW options");
-
   vw* all = new vw();
+
+  add_to_args(*all, argc, argv);
 
   size_t random_seed = 0;
   all->program_name = argv[0];
 
-  po::options_description in_opt("Input options");
+  po::options_description desc("VW options");
 
-  in_opt.add_options()
-    ("data,d", po::value< string >(), "Example Set")
-    ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
-    ("examples", po::value<size_t>(&(all->max_examples)), "number of examples to parse")
-    ("testonly,t", "Ignore label information and just test")
-    ("daemon", "persistent daemon mode on port 26542")
-    ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
-    ("num_children", po::value<size_t>(&(all->num_children)), "number of children for persistent daemon mode")
-    ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
-    ("port_file", po::value< string >(), "Write port used in persistent daemon mode")
-    ("passes", po::value<size_t>(&(all->numpasses)),"Number of Training Passes")
-    ("cache,c", "Use a cache.  The default is <data>.cache")
-    ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
-    ("kill_cache,k", "do not reuse existing cache: create a new one always")
-    ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
-    ("no_stdin", "do not default to reading from stdin")
-    ("save_resume", "save extra state so learning can be resumed later with new data")
-    ;
-
-  po::options_description out_opt("Output options");
-
-  out_opt.add_options()
-    ("audit,a", "print weights of features")
-    ("predictions,p", po::value< string >(), "File to output predictions to")
-    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
-    ("sendto", po::value< vector<string> >(), "send examples to <host>")
-    ("quiet", "Don't output disgnostics and progress updates")
-    ("progress,P", po::value< string >(), "Progress update frequency. int: additive, float: multiplicative")
-    ("binary", "report loss as binary classification on -1,1")
-    ("min_prediction", po::value<float>(&(all->sd->min_label)), "Smallest prediction to output")
-    ("max_prediction", po::value<float>(&(all->sd->max_label)), "Largest prediction to output")
-    ;
+  desc.add_options()
+    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
+    ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring");
 
   po::options_description update_opt("Update options");
 
   update_opt.add_options()
-    ("sgd", "use regular stochastic gradient descent update.")
-    ("hessian_on", "use second derivative in line search")
-    ("bfgs", "use bfgs optimization")
-    ("mem", po::value<int>(&(all->m)), "memory in bfgs")
-    ("termination", po::value<float>(&(all->rel_threshold)),"Termination threshold")
-    ("adaptive", "use adaptive, individual learning rates.")
-    ("invariant", "use safe/importance aware updates.")
-    ("normalized", "use per feature normalized updates")
-    ("exact_adaptive_norm", "use current default invariant normalized adaptive update rule")
-    ("conjugate_gradient", "use conjugate gradient based optimization")
-    ("l1", po::value<float>(&(all->l1_lambda)), "l_1 lambda")
-    ("l2", po::value<float>(&(all->l2_lambda)), "l_2 lambda")
-    ("learning_rate,l", po::value<float>(&(all->eta)), "Set Learning Rate")
-    ("loss_function", po::value<string>()->default_value("squared"), "Specify the loss function to be used, uses squared by default. Currently available ones are squared, classic, hinge, logistic and quantile.")
-    ("quantile_tau", po::value<float>()->default_value(0.5), "Parameter \\tau associated with Quantile loss. Defaults to 0.5")
+    ("learning_rate,l", po::value<float>(&(all->eta)), "Set learning rate")
     ("power_t", po::value<float>(&(all->power_t)), "t power value")
     ("decay_learning_rate",    po::value<float>(&(all->eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
-    ("initial_pass_length", po::value<size_t>(&(all->pass_length)), "initial number of examples per pass")
     ("initial_t", po::value<double>(&((all->sd->t))), "initial t value")
     ("feature_mask", po::value< string >(), "Use existing regressor to determine which parameters may be updated.  If no initial_regressor given, also used for initial weights.")
     ;
@@ -764,66 +880,10 @@ vw* parse_args(int argc, char *argv[])
   po::options_description weight_opt("Weight options");
 
   weight_opt.add_options()
-    ("bit_precision,b", po::value<size_t>(), "number of bits in the feature table")
     ("initial_regressor,i", po::value< vector<string> >(), "Initial regressor(s)")
-    ("final_regressor,f", po::value< string >(), "Final regressor")
     ("initial_weight", po::value<float>(&(all->initial_weight)), "Set all weights to an initial value of 1.")
     ("random_weights", po::value<bool>(&(all->random_weights)), "make initial weights random")
-    ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
-    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names")
-    ("save_per_pass", "Save the model after every pass over data")
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
-    ("output_feature_regularizer_binary", po::value< string >(&(all->per_feature_regularizer_output)), "Per feature regularization output file")
-    ("output_feature_regularizer_text", po::value< string >(&(all->per_feature_regularizer_text)), "Per feature regularization output file, in text")
-    ;
-
-  po::options_description holdout_opt("Holdout options");
-  holdout_opt.add_options()
-    ("holdout_off", "no holdout data in multiple passes")
-    ("holdout_period", po::value<uint32_t>(&(all->holdout_period)), "holdout period for test only, default 10")
-    ("holdout_after", po::value<uint32_t>(&(all->holdout_after)), "holdout after n training examples, default off (disables holdout_period)")
-    ("early_terminate", po::value<size_t>(), "Specify the number of passes tolerated when holdout loss doesn't decrease before early termination, default is 3")
-    ;
-
-  po::options_description namespace_opt("Feature namespace options");
-  namespace_opt.add_options()
-    ("hash", po::value< string > (), "how to hash the features. Available options: strings, all")
-    ("ignore", po::value< vector<unsigned char> >(), "ignore namespaces beginning with character <arg>")
-    ("keep", po::value< vector<unsigned char> >(), "keep namespaces beginning with character <arg>")
-    ("noconstant", "Don't add a constant feature")
-    ("constant,C", po::value<float>(&(all->initial_constant)), "Set initial value of constant")
-    ("sort_features", "turn this on to disregard order in which features have been defined. This will lead to smaller cache sizes")
-    ("ngram", po::value< vector<string> >(), "Generate N grams. To generate N grams for a single namespace 'foo', arg should be fN.")
-    ("skips", po::value< vector<string> >(), "Generate skips in N grams. This in conjunction with the ngram tag can be used to generate generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fn.")
-    ("affix", po::value<string>(), "generate prefixes/suffixes of features; argument '+2a,-3b,+1' means generate 2-char prefixes for namespace a, 3-char suffixes for b and 1 char prefixes for default namespace")
-    ("spelling", po::value< vector<string> >(), "compute spelling features for a give namespace (use '_' for default namespace)");
-    ;
-
-  po::options_description mf_opt("Matrix factorization options");
-  mf_opt.add_options()
-    ("quadratic,q", po::value< vector<string> > (),
-     "Create and use quadratic features")
-    ("q:", po::value< string >(), ": corresponds to a wildcard for all printable characters")
-    ("cubic", po::value< vector<string> > (),
-     "Create and use cubic features")
-    ("rank", po::value<uint32_t>(&(all->rank)), "rank for matrix factorization.")
-    ("new_mf", "use new, reduction-based matrix factorization")
-    ;
-
-  po::options_description lrq_opt("Low Rank Quadratic options");
-  lrq_opt.add_options()
-    ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
-    ("lrqdropout", "use dropout training for low rank quadratic features")
-    ;
-
-  po::options_description multiclass_opt("Multiclass options");
-  multiclass_opt.add_options()
-    ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
-    ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
-    ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
-    ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
-    ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
-    ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
     ;
 
   po::options_description active_opt("Active Learning options");
@@ -843,60 +903,20 @@ vw* parse_args(int argc, char *argv[])
 
   po::options_description other_opt("Other options");
   other_opt.add_options()
-    ("bs", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
-    ("top", po::value<size_t>(), "top k recommendation")
-    ("bs_type", po::value<string>(), "bootstrap mode - currently 'mean' or 'vote'")
-    ("autolink", po::value<size_t>(), "create link function with polynomial d")
-    ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
-    ("lda", po::value<uint32_t>(&(all->lda)), "Run lda with <int> topics")
-    ("nn", po::value<size_t>(), "Use sigmoidal feedforward network with <k> hidden units")
-    ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
-    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
+    ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
     ;
 
-  // Declare the supported options.
-  desc.add_options()
-    ("help,h","Look here: http://hunch.net/~vw/ and click on Tutorial.")
-    ("version","Version information")
-    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
-    ("noop","do no learning")
-    ("print","print examples");
-
-  //po::positional_options_description p;
-  // Be friendly: if -d was left out, treat positional param as data file
-  //p.add("data", -1);
-
-  desc.add(in_opt)
-    .add(out_opt)
-    .add(update_opt)
+  desc.add(update_opt)
     .add(weight_opt)
-    .add(holdout_opt)
-    .add(namespace_opt)
-    .add(mf_opt)
-    .add(lrq_opt)
-    .add(multiclass_opt)
     .add(active_opt)
     .add(cluster_opt)
     .add(other_opt);
 
-  po::variables_map vm = po::variables_map();
-  po::variables_map vm_file = po::variables_map(); //separate variable map for storing flags in regressor file
-
-  po::parsed_options parsed = po::command_line_parser(argc, argv).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();   // got rid of ".positional(p)" because it doesn't work well with unrecognized options
-  vector<string> to_pass_further = po::collect_unrecognized(parsed.options, po::include_positional);
-  string last_unrec_arg =
-    (to_pass_further.size() > 0)
-    ? string(to_pass_further[to_pass_further.size()-1])  // we want to write this down in case it's a data argument ala the positional option we got rid of
-    : "";
-
-  po::store(parsed, vm);
-  po::notify(vm);
+  po::variables_map vm = add_options(*all, desc);
 
   msrand48(random_seed);
 
-  parse_diagnostics(*all, vm, desc, argc);
+  parse_diagnostics(*all, vm, argc);
 
   if (vm.count("active_simulation"))
     all->active_simulation = true;
@@ -904,8 +924,6 @@ vw* parse_args(int argc, char *argv[])
   if (vm.count("active_learning") && !all->active_simulation)
     all->active = true;
   
-  parse_source(*all, vm);
-
   all->sd->weighted_unlabeled_examples = all->sd->t;
   all->initial_t = (float)all->sd->t;
 
@@ -915,21 +933,29 @@ vw* parse_args(int argc, char *argv[])
   //Input regressor header
   io_buf io_temp;
   parse_regressor_args(*all, vm, io_temp);
-
-  all->options_from_file_argv = VW::get_argv_from_string(all->options_from_file,all->options_from_file_argc);
-
-  po::parsed_options parsed_file = po::command_line_parser(all->options_from_file_argc, all->options_from_file_argv).
+  
+  int temp_argc = 0;
+  char** temp_argv = VW::get_argv_from_string(all->file_options, temp_argc);
+  add_to_args(*all, temp_argc, temp_argv);
+  for (int i = 0; i < temp_argc; i++)
+    free(temp_argv[i]);
+  free(temp_argv);
+  
+  po::parsed_options pos = po::command_line_parser(all->args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(desc).allow_unregistered().run();
+    options(all->opts).allow_unregistered().run();
 
-  po::store(parsed_file, vm_file);
-  po::notify(vm_file);
+  vm = po::variables_map();
 
-  parse_feature_tweaks(*all, vm, vm_file); //feature tweaks
+  po::store(pos, vm);
+  po::notify(vm);
+  all->file_options = "";
+
+  parse_feature_tweaks(*all, vm); //feature tweaks
 
   parse_example_tweaks(*all, vm); //example manipulation
 
-  parse_base_algorithm(*all, to_pass_further, vm);
+  parse_base_algorithm(*all, vm);
 
   if (!all->quiet)
     {
@@ -945,53 +971,26 @@ vw* parse_args(int argc, char *argv[])
 
   parse_output_model(*all, vm);
   
-  parse_output_preds(*all, vm, vm_file);
+  parse_output_preds(*all, vm);
 
-  load_input_model(*all, vm, io_temp);
-
-  parse_scorer_reductions(*all, to_pass_further, vm, vm_file);
+  parse_scorer_reductions(*all, vm);
 
   bool got_cs = false;
   
-  parse_score_users(*all, to_pass_further, vm, vm_file, got_cs);
+  parse_score_users(*all, vm, got_cs);
 
   bool got_cb = false;
   
-  parse_cb(*all, to_pass_further, vm, vm_file, got_cs, got_cb);
+  parse_cb(*all, vm, got_cs, got_cb);
 
-  parse_search(*all, to_pass_further, vm, vm_file, got_cs, got_cb);
+  parse_search(*all, vm, got_cs, got_cb);
 
-  if(vm.count("bs") || vm_file.count("bs") )
-    all->l = BS::setup(*all, to_pass_further, vm, vm_file);
+  if(vm.count("bootstrap"))
+    all->l = BS::setup(*all, vm);
 
-  if (to_pass_further.size() > 0) {
-    bool is_actually_okay = false;
+  load_input_model(*all, vm, io_temp);
 
-    // special case to try to emulate the missing -d
-    if ((to_pass_further.size() == 1) &&
-        (to_pass_further[to_pass_further.size()-1] == last_unrec_arg)) {
-      int f = io_buf().open_file(last_unrec_arg.c_str(), all->stdin_off, io_buf::READ);
-      if (f != -1) {
-#ifdef _WIN32
-		 _close(f);
-#else
-		  close(f);
-#endif
-        all->data_filename = last_unrec_arg;
-        if (ends_with(last_unrec_arg, ".gz"))
-          set_compressed(all->p);
-        is_actually_okay = true;
-      }
-    }
-
-    if (!is_actually_okay) {
-      cerr << "unrecognized options:";
-      for (size_t i=0; i<to_pass_further.size(); i++)
-        cerr << " " << to_pass_further[i];
-      cerr << endl;
-      throw exception();
-    }
-  }
+  parse_source(*all, vm);
 
   enable_sources(*all, vm, all->quiet,all->numpasses);
 
@@ -1002,6 +1001,12 @@ vw* parse_args(int argc, char *argv[])
     i++;
   all->wpp = (1 << i) >> all->reg.stride_shift;
 
+  if (vm.count("help")) {
+    /* upon direct query for help -- spit it out to stdout */
+    cout << "\n" << all->opts << "\n";
+    exit(0);
+  }
+  
   return all;
 }
 
@@ -1091,9 +1096,6 @@ namespace VW {
     all.p->parse_name.delete_v();
     free(all.p);
     free(all.sd);
-    for (int i = 0; i < all.options_from_file_argc; i++)
-      free(all.options_from_file_argv[i]);
-    free(all.options_from_file_argv);
     for (size_t i = 0; i < all.final_prediction_sink.size(); i++)
       if (all.final_prediction_sink[i] != 1)
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);

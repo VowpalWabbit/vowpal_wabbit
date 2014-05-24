@@ -7,11 +7,11 @@ license as described in the file LICENSE.
 #define CSOAA_H
 
 namespace CSOAA {
-  LEARNER::learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }
 
 namespace CSOAA_AND_WAP_LDF {
-  LEARNER::learner* setup(vw& all, std::vector<std::string>&, po::variables_map& vm, po::variables_map& vm_file);
+  LEARNER::learner* setup(vw& all, po::variables_map& vm);
 }
 
 #endif

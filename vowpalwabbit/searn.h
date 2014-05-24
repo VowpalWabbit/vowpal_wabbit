@@ -48,20 +48,21 @@ namespace Searn {
     uint32_t predict(example* ec, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL); // if there are multiple oracle actions
 
     // for making predictions in LDF mode:
-    uint32_t predict(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL); // if there is a single oracle action
-    uint32_t predict(example* ecs, size_t ec_len, uint32_t       one_ystar, v_array<uint32_t>* yallowed=NULL); // if there is are multiple oracle action
+    uint32_t predictLDF(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL); // if there is a single oracle action
+    uint32_t predictLDF(example* ecs, size_t ec_len, uint32_t       one_ystar, v_array<uint32_t>* yallowed=NULL); // if there is are multiple oracle action
 
     // for generating output (check to see if output().good() before attempting to write!)
     stringstream& output();
     
     // internal data
     searn_task*    task;
+    vw* all;
     searn_private* priv;
     void*          task_data;
   };
 
-  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string);
-  void check_option(bool& ret, vw&all, po::variables_map& vm, po::variables_map& vm_file, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
+  template<class T> void check_option(T& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, bool(*equal)(T,T), const char* mismatch_error_string, const char* required_error_string);
+  void check_option(bool& ret, vw&all, po::variables_map& vm, const char* opt_name, bool default_to_cmdline, const char* mismatch_error_string);
   bool string_equal(string a, string b);
   bool float_equal(float a, float b);
   bool uint32_equal(uint32_t a, uint32_t b);
@@ -69,12 +70,12 @@ namespace Searn {
 
   struct searn_task {
     const char* task_name;
-    void (*initialize)(searn&,size_t&,std::vector<std::string>&, po::variables_map&, po::variables_map&);
+    void (*initialize)(searn&,size_t&, po::variables_map&);
     void (*finish)(searn&);
     void (*structured_predict)(searn&, std::vector<example*>);
   };
 
-  LEARNER::learner* setup(vw&, std::vector<std::string>&, po::variables_map&, po::variables_map&);
+  LEARNER::learner* setup(vw&, po::variables_map&);
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);
