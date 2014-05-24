@@ -316,10 +316,6 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
       vector<string> init_filename = vm["initial_regressor"].as< vector<string> >();
       if(mask_filename == init_filename[0]){//-i and -mask are from same file, just generate mask
            
-        for (size_t j = 0; j < length; j++){	 
-          if(all.reg.weight_vector[j << all.reg.stride_shift] != 0.)
-            all.reg.weight_vector[(j << all.reg.stride_shift) + all.feature_mask_idx] = 1.;
-        } 
         return;
       }
     }
@@ -330,10 +326,6 @@ void parse_mask_regressor_args(vw& all, po::variables_map& vm){
     save_load_header(all, io_temp_mask, true, false);
     all.l->save_load(io_temp_mask, true, false);
     io_temp_mask.close_file();
-    for (size_t j = 0; j < length; j++){	 
-      if(all.reg.weight_vector[j << all.reg.stride_shift] != 0.)
-        all.reg.weight_vector[(j << all.reg.stride_shift) + all.feature_mask_idx] = 1.;
-    }
 
     // Deal with the over-written header from initial regressor
     if (vm.count("initial_regressor")) {
