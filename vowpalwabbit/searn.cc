@@ -145,6 +145,7 @@ namespace Searn
 
     size_t   final_snapshot_begin; // this is a pointer to the last snapshot taken at INIT_TRAIN time
     size_t   final_snapshot_end;
+    size_t   fast_forward_position; // where should we fast forward to?
     
     bool should_produce_string;
     stringstream *pred_string;
@@ -706,6 +707,9 @@ namespace Searn
       if (srn.priv->allow_unsafe_fast_forward && (srn.priv->state == LEARN) && was_on_training_path && (srn.priv->t > srn.priv->learn_t)) { // TODO: if we're allowed to fastforward
         srn.priv->state = FAST_FORWARD;
         srn.priv->learn_loss = srn.priv->learn_loss + (srn.priv->train_loss - snapshot_loss);
+        srn.priv->fast_forward_position = srn.priv->final_snapshot_begin;
+        assert(priv->final_snapshot_end >= priv->final_snapshot_begin);
+        assert(priv->final_snapshot_end <  priv->snapshot_data.size());
         cdbg << "fast_forward, t=" << srn.priv->t << " and learn_t=" << srn.priv->learn_t << endl;
       }
     } else { // no snapshot found
@@ -1150,6 +1154,21 @@ namespace Searn
     if ((priv->state == NONE) || (priv->state == INIT_TEST) || (priv->state == GET_TRUTH_STRING) || (priv->state == BEAM_PLAYOUT))
       return;
 
+    size_t i;
+    if ((priv->state == LEARN) && (priv->t <= priv->learn_t) &&
+        snapshot_binary_search_lt(priv->snapshot_data, priv->learn_t, tag, i, priv->snapshot_last_found_pos)) {
+      // see if we can fast-forward as close as possible
+      // TODO: if tag==1, then loss_last_step = pred_step ???
+      // TODO: check to make sure last_found_pos is getting initialized properly
+      priv->snapshot_last_found_pos = i;
+      snapshot_item &item = priv->snapshot_data[i];
+      assert(sizeof_data == item.data_size);
+
+      memcpy(data_ptr, item.data_ptr, sizeof_data);
+      priv->t = item.pred_step;
+      return;
+    }
+    
     if ((priv->state == INIT_TRAIN) || (priv->state == LEARN)) {
       priv->snapshotted_since_predict = true;
       priv->most_recent_snapshot_end = priv->snapshot_data.size();
@@ -1179,14 +1198,10 @@ namespace Searn
     }        
 
     if (priv->state == FAST_FORWARD) { // go to the end!
-      assert(priv->final_snapshot_end >= priv->final_snapshot_begin);
-      assert(priv->final_snapshot_end <  priv->snapshot_data.size());
-
-      snapshot_item &me = priv->snapshot_data[priv->final_snapshot_begin + tag];  // TODO: generalize or ensure that tags are +=1 each time
+      snapshot_item &me = priv->snapshot_data[priv->fast_forward_position + tag];  // TODO: generalize or ensure that tags are +=1 each time, also this is broken if they don't auto-history
       assert(me.tag == tag);
       assert(me.data_size = sizeof_data);
       memcpy(data_ptr, me.data_ptr, sizeof_data);
-
       return;
     }
     
