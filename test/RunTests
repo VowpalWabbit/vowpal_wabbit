@@ -974,8 +974,8 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf-bilou.test-beam20.predict
 
 # Test 59: silly test for "argmax" task
-{VW} -d train-sets/oneofmany_data -k -c --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
-    train-sets/ref/oneofmany_data.stderr
+{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
+    train-sets/ref/argmax_data.stderr
 
 # Test 60: (holdout-broken regression)
 # ensure we have no holdout loss of '0 h'
