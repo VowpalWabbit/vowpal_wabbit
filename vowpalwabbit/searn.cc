@@ -2437,7 +2437,7 @@ void print_update(vw& all, searn& srn)
   v_array<COST_SENSITIVE::label> read_allowed_transitions(uint32_t A, const char* filename) {
     FILE *f = fopen(filename, "r");
     if (f == NULL) {
-      cerr << "error: could not read file " << filename << "; assuming all transitions are valid" << endl;
+      cerr << "error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid" << endl;
       throw exception();
     }
 
