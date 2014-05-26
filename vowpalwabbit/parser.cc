@@ -622,14 +622,6 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
     cerr << "num sources = " << all.p->input->files.size() << endl;
 }
 
-/*Race condition hypothesis:
-
-  parser gets an unused example, discovers that it's done, creates an end-of-pass example, and sets done=true
-  learner finishes example before and calls get_example(), no examples remain but done is set, so it returns NULL. 
-  parser_done() returns true, learner thread exits, 
-  parser thread increments parsed_examples, then exits.
-
- */
 bool parser_done(parser* p)
 {
   if (p->done)
