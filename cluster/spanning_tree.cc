@@ -105,13 +105,24 @@ int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offse
   return oroot;
 }
 
+void report_error(char* preface)
+{
+	cerr << preface;
+#ifdef _WIN32
+	  char errbuff[100];
+	  _strerror_s(errbuff, 100, NULL);
+      cerr << errbuff;
+#else
+	  cerr << strerror(errno);
+#endif
+	  cerr << endl;
+	  exit(1);
+}
+
 void fail_send(const socket_t fd, const void* buf, const int count)
 {
   if (send(fd,(char*)buf,count,0)==-1)
-    {
-      cerr << "send: " << strerror(errno) << endl;
-      exit(1);
-    }
+	report_error("send: ");
 }
 
 int main(int argc, char* argv[]) {
@@ -128,14 +139,12 @@ int main(int argc, char* argv[]) {
 #endif
 
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
-  if (sock < 0) {
-    cerr << "socket: " << strerror(errno) << endl;
-    exit(1);
-  }
+  if (sock < 0) 
+	  report_error("socket: ");
 
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-    cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
+	  report_error("setsockopt SO_REUSEADDR: ");
 
   sockaddr_in address;
   address.sin_family = AF_INET;
@@ -144,19 +153,13 @@ int main(int argc, char* argv[]) {
 
   address.sin_port = htons(port);
   if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
-    {
-      cerr << "bind: " << strerror(errno) << endl;
-      exit(1);
-    }
+	  report_error("bind: ");
 
   if (argc == 2 && strcmp("--nondaemon",argv[1])==0)
     ;
   else
     if (daemon(1,1))
-      {
-	cerr << "daemon: " << strerror(errno) << endl;
-	exit(1);
-      }
+		report_error("daemon: ");
 
   if (argc == 2 && strcmp("--nondaemon",argv[1])!=0)
     {
@@ -173,33 +176,26 @@ int main(int argc, char* argv[]) {
 
   map<size_t, partial> partial_nodesets;
   while(true) {
-    if (listen(sock, 1024) < 0) {
-      cerr << "listen: " << strerror(errno) << endl;
-      throw exception();
-    }
+    if (listen(sock, 1024) < 0) 
+		report_error("listen: ");
     
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     socket_t f = accept(sock,(sockaddr*)&client_address,&size);
-    if (f < 0) {
-      cerr << "accept: " << strerror(errno) << endl;
-      exit (1);
-    }
+    if (f < 0) 
+		report_error("accept: ");
 
     char dotted_quad[INET_ADDRSTRLEN];
-    if (NULL == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN)) {
-      cerr << "inet_ntop: " << strerror(errno) << endl;
-      throw exception();
-    }
+    if (NULL == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN))
+		report_error("inet_ntop: ");
 
     char hostname[NI_MAXHOST];
     char servInfo[NI_MAXSERV];
     if (getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname,
-                    NI_MAXHOST, servInfo, NI_MAXSERV, 0)) {
-      cerr << "getnameinfo(" << dotted_quad << "): " << strerror(errno) << endl;
-      throw exception();
-    }
-    cerr << "inbound connection from " << dotted_quad << "(" << hostname
+                    NI_MAXHOST, servInfo, NI_MAXSERV, 0)) 
+						report_error("getnameinfo: ");	
+		
+	cerr << "inbound connection from " << dotted_quad << "(" << hostname
          << ':' << ntohs(port) << ") serv=" << servInfo << endl;
 
     size_t nonce = 0;

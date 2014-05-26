@@ -15,8 +15,10 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <string.h>
 #include <stdlib.h>
 #ifdef _WIN32
+#include <WinSock2.h>
+#include <Windows.h>
+#include <WS2tcpip.h>
 #include <io.h>
-#define inet_ntop InetNtopA
 #else
 #include <unistd.h>
 #include <arpa/inet.h>

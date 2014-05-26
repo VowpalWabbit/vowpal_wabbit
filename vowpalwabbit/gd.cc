@@ -827,8 +827,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     }
 }
 
-template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t next>
-size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
+template<bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t next>
+uint32_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 {
   all.normalized_idx = normalized;
   if (feature_mask_off)
@@ -847,8 +847,8 @@ size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
     }
 }
 
-template<bool sqrt_rate, size_t adaptive>
-size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
+template<bool sqrt_rate, uint32_t adaptive>
+uint32_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.normalized_updates)
@@ -858,7 +858,7 @@ size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 }
 
 template<bool sqrt_rate>
-size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
+uint32_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 {
   if (all.adaptive)
     return set_learn<sqrt_rate, 1>(all, ret, feature_mask_off);
@@ -866,7 +866,7 @@ size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
     return set_learn<sqrt_rate, 0>(all, ret, feature_mask_off);
 }
 
-size_t ceil_log_2(size_t v)
+uint32_t ceil_log_2(uint32_t v)
 {
   if (v==0)
     return 0;
@@ -936,7 +936,7 @@ learner* setup(vw& all, po::variables_map& vm)
       g->predict = predict<true>;
     }
   
-  size_t stride;
+  uint32_t stride;
   if (all.power_t == 0.5)
     stride = set_learn<true>(all, ret, feature_mask_off);
   else
