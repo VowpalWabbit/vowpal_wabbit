@@ -31,8 +31,7 @@ namespace TXM_O
   class txm_o_node_pred_type	
   {
   public:
-    
-    uint32_t Rk;	
+    	
     double Ehk;	
     float norm_Ehk;
     uint32_t nk;
@@ -60,7 +59,6 @@ namespace TXM_O
       norm_Ehk = 0;
       nk = 0;
       label_cnt2 = 0;
-      Rk = 0;	
     }
   };
   
@@ -68,7 +66,7 @@ namespace TXM_O
   {
     size_t id_left;
     size_t id_right;
-    size_t level;
+    //size_t level;
     size_t max_cnt2;
     size_t max_cnt2_label;
 
@@ -77,7 +75,6 @@ namespace TXM_O
 
     uint32_t L;
     uint32_t R;
-    float objective;
     
     uint32_t myL;
     uint32_t myR;
@@ -95,9 +92,7 @@ namespace TXM_O
     vw* all;	
     
     v_array<txm_o_node_type> nodes;	
-    
-    size_t max_depth;
-    double avg_depth;	
+    	
     size_t max_nodes;
     v_array<size_t> ec_path;
     v_array<size_t> min_ec_path;
@@ -109,7 +104,8 @@ namespace TXM_O
     FILE *ex_fp;
   };	
   
-  txm_o_node_type init_node(size_t level)	
+  //txm_o_node_type init_node(size_t level)
+  txm_o_node_type init_node()	
   {
     txm_o_node_type node; 
     
@@ -118,7 +114,7 @@ namespace TXM_O
     node.Eh = 0;
     node.norm_Eh = 0;
     node.n = 0;
-    node.level = level;
+    //node.level = level;
     node.leaf = true;
     node.max_cnt2 = 0;
     node.max_cnt2_label = 0;
@@ -126,7 +122,6 @@ namespace TXM_O
     node.min_ec_count = 0;
     node.L = 0;
     node.R = 0;
-    node.objective = 0;
     node.myL = 0;
     node.myR = 0;
     return node;
@@ -134,35 +129,13 @@ namespace TXM_O
   
   void init_tree(txm_o& d)
   {
-    d.nodes.push_back(init_node(0));
+    //d.nodes.push_back(init_node(0));
+    d.nodes.push_back(init_node());
     d.ex_num = 0;
     d.nbofswaps = 0;
     //d.ex_fp = fopen("ex_nums.txt", "wt");
   }
 
- float print_intercept(vw& all, example& ec, learner& base, size_t& cn)
-  {
-    float w_1 = 0.;
-    float w_0 = 0.;
-					       
-    bool got_first = true;
-
-    ec.ft_offset += (uint32_t)(base.increment*cn);
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
-      if (got_first)
-	{
-	  w_1 = all.reg.weight_vector[((ec.atomics[*i].begin)->weight_index + ec.ft_offset) & all.reg.weight_mask];
-	  got_first = false;
-	}
-      else
-	w_0 = all.reg.weight_vector[((ec.atomics[*i].begin)->weight_index + ec.ft_offset) & all.reg.weight_mask];
-    ec.ft_offset -= (uint32_t)(base.increment*cn);
-
-    float w_ratio = -w_0/w_1;
-
-    return w_ratio;
-  }
-  
   bool find_switch_nodes(txm_o& b, size_t& c, size_t& p, size_t& pp)	
   {
     c = 0;
@@ -218,99 +191,10 @@ namespace TXM_O
 	//b.nodes[p].min_ec_count = 1;
       }
   }
-
-  void display_tree2(txm_o& d)
-  {
-    size_t l, i;
-    float ratio;
-    for(l = 0; l <= d.max_depth; l++)
-      {
-	for(i = 0; i < d.nodes.size(); i++)
-	  {
-	    if(d.nodes[i].level == l)
-	      {	
-		if(d.nodes[i].leaf)
-		  {
-		  ratio = (float)d.nodes[i].max_cnt2;
-		  //ratio /= (float)d.nodes[i].ec_count;
-		  ratio /= (float)(d.nodes[i].L + d.nodes[i].R);
-                  ratio = 1 - ratio;
-		  cout << "[" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << d.nodes[i].min_ec_count << "," << ratio << "] ";
-		  }
-		else
-		  cout << "(" << i << "," << d.nodes[i].max_cnt2_label << "," << d.nodes[i].max_cnt2 << "," << "," << d.nodes[i].min_ec_count << "," << d.nodes[i].objective << ") ";
-	      }
-	  }
-	cout << endl;
-      }
-    cout << endl;
-  }
-  
-  void update_depth(txm_o& b)
-  {
-	size_t cn = 0;
-	size_t *stack;
-	size_t index = 0;
-	
-	stack = new size_t[b.max_nodes];
-	
-	stack[index++] = 0;
-	b.nodes[0].level = 0;	
-	b.max_depth = 0;
-	
-	while(index > 0) {
-		cn = stack[--index];
-		
-		if(b.nodes[cn].id_left != 0) {
-			stack[index++] = b.nodes[cn].id_left;
-			b.nodes[b.nodes[cn].id_left].level = b.nodes[cn].level + 1;	
-		}
-		
-		if(b.nodes[cn].id_right != 0) {
-			stack[index++] = b.nodes[cn].id_right;
-			b.nodes[b.nodes[cn].id_right].level = b.nodes[cn].level + 1;
-		}
-		
-		if(b.nodes[cn].level > b.max_depth)
-			b.max_depth = b.nodes[cn].level;
-	}
-	
-	b.avg_depth = 0;
-	size_t leaf_cnt = 0;
-	for(size_t i = 0; i < b.nodes.size(); i++) {
-		if(b.nodes[i].leaf) {
-			leaf_cnt++;
-			b.avg_depth += b.nodes[i].level;
-		}
-	}
-	b.avg_depth /= leaf_cnt;
-  }
-
-  void update_levels(txm_o& b, size_t n, size_t cl)
-  {
-    b.nodes[n].level = cl;
-
-    if(b.nodes[n].id_left != 0)
-      update_levels(b, b.nodes[n].id_left, cl + 1);
-
-    if(b.nodes[n].id_right != 0)
-      update_levels(b, b.nodes[n].id_right, cl + 1);
-  }
           
   void train_node(txm_o& b, learner& base, example& ec, size_t& cn, size_t& index)
   {
-    label_data* simple_temp = (label_data*)ec.ld;
-       
-    b.nodes[cn].objective = 0;
-    float tmp1, tmp2, tmp3;
-    for(size_t i = 0; i < b.nodes[cn].node_pred.size(); i++)
-      {
-	tmp1 = (float)b.nodes[cn].R / (float)b.nodes[cn].n;
-	tmp2 = (float)b.nodes[cn].node_pred[i].Rk / (float)b.nodes[cn].node_pred[i].nk;
-	tmp3 = (float)b.nodes[cn].node_pred[i].nk / (float)b.nodes[cn].n;
-	b.nodes[cn].objective += tmp3 * fabs(tmp1 - tmp2);
-      }
-    
+    label_data* simple_temp = (label_data*)ec.ld;    
     float left_or_right = b.nodes[cn].node_pred[index].norm_Ehk - b.nodes[cn].norm_Eh;
     size_t id_left = b.nodes[cn].id_left;
     size_t id_right = b.nodes[cn].id_right;
@@ -337,8 +221,10 @@ namespace TXM_O
 	    if(b.nodes.size() + 2 <= b.max_nodes)
 	      {
 		id_left_right = b.nodes.size();	
-		b.nodes.push_back(init_node(b.nodes[cn].level + 1));	
-		b.nodes.push_back(init_node(b.nodes[cn].level + 1));
+		//b.nodes.push_back(init_node(b.nodes[cn].level + 1));	
+		//b.nodes.push_back(init_node(b.nodes[cn].level + 1));
+                b.nodes.push_back(init_node());
+		b.nodes.push_back(init_node());
 		b.nodes[cn].id_left = id_left_right;
 		id_left_right_other = id_left_right + 1;
 		b.nodes[cn].id_right = id_left_right_other;
@@ -353,8 +239,8 @@ namespace TXM_O
 		b.nodes[id_left_right].max_cnt2_label = b.nodes[cn].max_cnt2_label;
 		b.nodes[id_left_right_other].max_cnt2_label = b.nodes[cn].max_cnt2_label;
 
-		if(b.nodes[cn].level + 1 > b.max_depth)
-		    b.max_depth = b.nodes[cn].level + 1;	
+		/*if(b.nodes[cn].level + 1 > b.max_depth)
+		  b.max_depth = b.nodes[cn].level + 1;*/	
 	      }
 	      else
 	      {		
@@ -371,7 +257,7 @@ namespace TXM_O
 		  size_t nc, np, npp;
 	          b.min_ec_path.erase();	  
 		  bool lr = find_switch_nodes(b, nc, np, npp);
-		  size_t nc_l = b.nodes[nc].level;
+		  //size_t nc_l = b.nodes[nc].level;
 
 		  //cout << "\nSWAP!!" << endl;
 		  //cout << cn << "\t" << b.nodes[cn].L + b.nodes[cn].R << "\t" << nc << "\t" << b.nodes[nc].L + b.nodes[nc].R << "\t" << np  << "\t" << b.nodes[np].L + b.nodes[np].R << "\t" << npp  << "\t" << b.nodes[npp].L + b.nodes[npp].R << endl;
@@ -391,7 +277,7 @@ namespace TXM_O
 			  else
 			    b.nodes[npp].id_left = b.nodes[np].id_left;
 		  
-			  update_levels(b, b.nodes[npp].id_left, b.nodes[npp].level + 1);
+			  //update_levels(b, b.nodes[npp].id_left, b.nodes[npp].level + 1);
 			}
 		      else
 			{
@@ -400,7 +286,7 @@ namespace TXM_O
 			  else
 			    b.nodes[npp].id_right = b.nodes[np].id_left;
 			  
-			  update_levels(b, b.nodes[npp].id_right, b.nodes[npp].level + 1);
+			  //update_levels(b, b.nodes[npp].id_right, b.nodes[npp].level + 1);
 			}
 
 		      b.nodes[cn].id_left = np;
@@ -411,16 +297,16 @@ namespace TXM_O
 		      b.nodes[nc].leaf = true;
 		      b.nodes[nc].id_left = 0;
 		      b.nodes[nc].id_right = 0;
-		      b.nodes[np].level = b.nodes[cn].level + 1;
-		      b.nodes[nc].level = b.nodes[cn].level + 1;
+		      //b.nodes[np].level = b.nodes[cn].level + 1;
+		      //b.nodes[nc].level = b.nodes[cn].level + 1;
 
 		      b.nodes[np].R = b.nodes[cn].R/2;
 		      b.nodes[np].L = b.nodes[cn].R - b.nodes[cn].R/2;
 		      b.nodes[nc].R = b.nodes[cn].L/2;
 		      b.nodes[nc].L = b.nodes[cn].L - b.nodes[cn].L/2;
 
-		      if(b.nodes[cn].level + 1 > b.max_depth)
-			b.max_depth = b.nodes[cn].level + 1;	    
+		      //if(b.nodes[cn].level + 1 > b.max_depth)
+		      //b.max_depth = b.nodes[cn].level + 1;	    
 		      
 		      b.min_ec_path.pop();
 		      b.min_ec_path.pop();
@@ -478,7 +364,7 @@ namespace TXM_O
 	  cn = b.nodes[cn].id_right;	
       }	
   }
-
+  /*
   void save_node_stats(txm_o& d)
   {
     FILE *fp;
@@ -522,15 +408,13 @@ namespace TXM_O
       }
     
     fclose(fp);
-  }	
+    }*/	
   
   void learn(txm_o& b, learner& base, example& ec)
   {
     static size_t  ec_cnt = 0;
     //size_t ec_err = 3657;
-    bool progress_val = false;
-    
-    if(progress_val)
+  
       predict(b,base,ec);
     
     MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
@@ -590,10 +474,7 @@ namespace TXM_O
 		if(ec.final_prediction < 0)//b.nodes[cn].Eh/b.nodes[cn].n)
 		  b.nodes[cn].L++;
 		else
-		  {
-		    b.nodes[cn].R++;
-		    b.nodes[cn].node_pred[index].Rk++;	
-		  }
+		    b.nodes[cn].R++;	
 
 		//cout << cn << "\t" << ec.final_prediction << "\t" << b.nodes[cn].R  << "\t" << b.nodes[cn].L << endl;
 
@@ -615,7 +496,6 @@ namespace TXM_O
 	    else
 	      {
 		b.nodes[cn].R++;
-		b.nodes[cn].node_pred[index].Rk++;
 		cn = b.nodes[cn].id_right;	
 	      }
 	  }	
@@ -627,7 +507,7 @@ namespace TXM_O
   void finish(txm_o& b)
   {
     //display_tree2(b);
-    save_node_stats(b);
+    //save_node_stats(b);
     //fclose(b.ex_fp);
   }
   
@@ -648,7 +528,8 @@ namespace TXM_O
 	    
 	    for(j = 0; j < i; j++)
 	      {	
-		b.nodes.push_back(init_node(0));
+		//b.nodes.push_back(init_node(0));
+		b.nodes.push_back(init_node());
 		
 		brw +=bin_read_fixed(model_file, (char*)&v, sizeof(v), "");
 		b.nodes[j].id_left = v;
@@ -660,12 +541,12 @@ namespace TXM_O
 		b.nodes[j].leaf = v;
 	      }
       	    
-	    update_depth(b);
+	    /*update_depth(b);
 	    cout << endl << endl;
 	    cout << "Tree depth: " << b.max_depth << endl;
 	    cout << "Average tree depth: " << b.avg_depth << endl;
 	    cout << "ceil of log2(k): " << ceil_log2(b.k) << endl;
-	    cout << "Number of swaps: " << b.nbofswaps << endl << endl;
+	    cout << "Number of swaps: " << b.nbofswaps << endl << endl;*/
 	  }
 	else
 	  {    
@@ -700,7 +581,53 @@ namespace TXM_O
     MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);
   }
-  
+  /*
+  learner* setup(vw& all, po::variables_map& vm)	//learner setup
+  {
+    txm_o* data = (txm_o*)calloc(1, sizeof(txm_o));
+    
+    po::options_description txm_o_opts("TXM Online options");
+    txm_o_opts.add_options()
+      ("no_progress", "disable progressive validation");
+    
+    vm = add_options(all, txm_o_opts);
+    
+    data->k = (uint32_t)vm["txm_o"].as<size_t>();
+    
+    //append txm_o with nb_actions to options_from_file so it is saved to regressor later
+    std::stringstream ss;
+    ss << " --txm_o " << data->k;
+    all.file_options.append(ss.str());
+    
+    if (vm.count("no_progress"))
+      data->progress = false;
+    else
+      data->progress = true;
+    
+    data->all = &all;
+    (all.p->lp) = MULTICLASS::mc_label;
+    
+    string loss_function = "quantile";
+    float loss_parameter = 0.5;
+    delete(all.loss);
+    all.loss = getLossFunction(&all, loss_function, loss_parameter);
+    
+    uint32_t i = ceil_log2(data->k);	
+    data->max_nodes = (2 << (i+0)) - 1;
+    
+    learner* l = new learner(data, all.l, data->max_nodes + 1);
+    l->set_save_load<txm_o,save_load_tree>();
+    l->set_learn<txm_o,learn>();
+    l->set_predict<txm_o,predict>();
+    l->set_finish_example<txm_o,finish_example>();
+    l->set_finish<txm_o,finish>();
+    
+    if(all.training)
+      init_tree(*data);	
+    
+    return l;
+  }	*/
+
   learner* setup(vw& all, std::vector<std::string>&opts, po::variables_map& vm, po::variables_map& vm_file)	//learner setup
   {
     txm_o* data = (txm_o*)calloc(1, sizeof(txm_o));
@@ -750,12 +677,12 @@ namespace TXM_O
     l->set_finish_example<txm_o,finish_example>();
     l->set_finish<txm_o,finish>();
     
-    data->max_depth = 0;
+    //data->max_depth = 0;
     
     if(all.training)
       init_tree(*data);	
     
     return l;
-  }	
+    }
 }
 
