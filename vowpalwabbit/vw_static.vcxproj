@@ -186,10 +186,10 @@
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <BoostIncludeDir>c:\boost\x64\include\boost-1_55</BoostIncludeDir>
+    <BoostIncludeDir>c:\boost\x64\include\boost-1_54</BoostIncludeDir>
     <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
-    <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
-    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc10\x64\ZlibStat$(Configuration)</ZlibLibDir>
+    <ZlibIncludeDir>..\..\..\..\zlib-1.2.8</ZlibIncludeDir>
+    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x64\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
     <BoostIncludeDir>c:\boost\x86\include\boost-1_55</BoostIncludeDir>
@@ -198,10 +198,10 @@
     <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc10\x86\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <BoostIncludeDir>c:\boost\x64\include\boost-1_55</BoostIncludeDir>
+    <BoostIncludeDir>c:\boost\x64\include\boost-1_54</BoostIncludeDir>
     <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
-    <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
-    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc10\x64\ZlibStat$(Configuration)</ZlibLibDir>
+    <ZlibIncludeDir>..\..\..\..\zlib-1.2.8</ZlibIncludeDir>
+    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x64\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
   <Target Name="DepCheck">
     <Error Text=" Cannot find zlibstat.lib in $(ZlibLibDir)" Condition="!Exists($(ZlibLibDir)\zlibstat.lib)" />
@@ -263,6 +263,7 @@
     <ClInclude Include="hash.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="lda_core.h" />
+    <ClInclude Include="learner.h" />
     <ClInclude Include="loss_functions.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
@@ -337,6 +338,8 @@
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="wap.cc" />
+    <ClCompile Include="stagewise_poly.cc" />
+    <ClCompile Include="stagewise_poly_ssm.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

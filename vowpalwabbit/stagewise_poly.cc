@@ -21,7 +21,7 @@ namespace StagewisePoly
   static const uint32_t tree_atomics = 134;
   static const float tolerance = 1e-9;
   static const int mult_const = 95104348457;
-  static const uint32_t hash_mod_table[] = {
+  /*static const uint32_t hash_mod_table[] = {
     [0] = 0,
     [1] = 1,
     [2] = 3,
@@ -55,7 +55,7 @@ namespace StagewisePoly
     [30] = 715827883,
     [31] = 715827883,
     [32] = 2863311531
-  };
+  };*/
 
   struct sort_data {
     float wval;
@@ -215,7 +215,7 @@ namespace StagewisePoly
       }
     } else if (poly.magic_argument == 2) {
       return 0; //was going to tune constants and add modulus to FNV above but became lazy.
-    } else if (poly.magic_argument == 3) {
+    } /*else if (poly.magic_argument == 3) {
       if (wi_atomic == constant_feat_masked(poly))
         return wi_general;
       else if (wi_general == constant_feat_masked(poly))
@@ -229,7 +229,8 @@ namespace StagewisePoly
         uint32_t xg = 3 * stride_un_shift(poly, wi_general) % poly.all->length();
         return wid_mask(poly, stride_shift(poly, (xa ^ xg) * hash_mod_table[poly.all->num_bits]));
       }
-    } else {
+    }*/ 
+	else {
       return 0; //deal with it.
     }
   }
