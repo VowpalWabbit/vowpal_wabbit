@@ -109,8 +109,7 @@ template <class T>void reduce(char* buffer, const size_t n, const socket_t paren
       if(child_read_pos[0] < n || child_read_pos[1] < n) {
 	if (max_fd > 0 && select((int)max_fd,&fds,NULL, NULL, NULL) == -1)
 	  {
-	    cerr << "Select failed!" << endl;
-	    perror(NULL);
+	    cerr << "select: " << strerror(errno) << endl;
 	    throw exception();
 	  }
 
@@ -126,8 +125,7 @@ template <class T>void reduce(char* buffer, const size_t n, const socket_t paren
 	    size_t count = min(ar_buf_size,n - child_read_pos[i]);
 	    int read_size = recv(child_sockets[i], child_read_buf[i] + child_unprocessed[i], (int)count, 0);
 	    if(read_size == -1) {
-	      cerr <<" Read from child failed\n";
-	      perror(NULL);
+	      cerr << "recv from child: " << strerror(errno) << endl;
 	      throw exception();
 	    }
 

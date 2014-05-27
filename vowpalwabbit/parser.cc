@@ -265,7 +265,7 @@ void reset_source(vw& all, size_t numbits)
 	  int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
-	      cerr << "bad client socket!" << endl;
+	      cerr << "accept: " << strerror(errno) << endl;
 	      throw exception();
 	    }
 	  
@@ -409,19 +409,13 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 #endif
       all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
-#ifdef _WIN32
-	lastError = WSAGetLastError();
-
-	cerr << "can't open socket! (" << lastError << ")" << endl;
-#else
-        cerr << "can't open socket! " << errno << endl;
-#endif
+	cerr << "socket: " << strerror(errno) << endl;
 	throw exception();
       }
 
       int on = 1;
-      if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
-	perror("setsockopt SO_REUSEADDR");
+      if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
+	cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
       sockaddr_in address;
       address.sin_family = AF_INET;
@@ -434,13 +428,15 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       // attempt to bind to socket
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
 	{
-	  cerr << "failure to bind!" << endl;
+	  cerr << "bind: " << strerror(errno) << endl;
 	  throw exception();
 	}
-      int source_count = 1;
-      
+
       // listen on socket
-      listen(all.p->bound_sock, source_count);
+      if (listen(all.p->bound_sock, 1) < 0) {
+        cerr << "listen: " << strerror(errno) << endl;
+        throw exception();
+      }
 
       // write port file
       if (vm.count("port_file"))
@@ -448,7 +444,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
           socklen_t address_size = sizeof(address);
           if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
             {
-              cerr << "failure to get port number!" << endl;
+              cerr << "getsockname: " << strerror(errno) << endl;
             }
 	  ofstream port_file;
 	  port_file.open(vm["port_file"].as<string>().c_str());
@@ -464,7 +460,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       // background process
       if (!all.active && daemon(1,1))
 	{
-	  cerr << "failure to background!" << endl;
+	  cerr << "daemon: " << strerror(errno) << endl;
 	  throw exception();
 	}
       // write pid file
@@ -487,8 +483,8 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 		throw exception();
 #else
 	  // weights will be shared across processes, accessible to children
-	  float* shared_weights = 
-	    (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float), 
+	  float* shared_weights =
+	    (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float),
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 
 	  size_t float_count = all.length() << all.reg.stride_shift;
@@ -562,7 +558,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
       if (f < 0)
 	{
-	  cerr << "bad client socket!" << endl;
+	  cerr << "accept: " << strerror(errno) << endl;
 	  throw exception();
 	}
       
@@ -622,14 +618,6 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
     cerr << "num sources = " << all.p->input->files.size() << endl;
 }
 
-/*Race condition hypothesis:
-
-  parser gets an unused example, discovers that it's done, creates an end-of-pass example, and sets done=true
-  learner finishes example before and calls get_example(), no examples remain but done is set, so it returns NULL. 
-  parser_done() returns true, learner thread exits, 
-  parser thread increments parsed_examples, then exits.
-
- */
 bool parser_done(parser* p)
 {
   if (p->done)
@@ -741,7 +729,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
     return false;
 
   if(all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.audit, all.parse_mask, ae);
+    unique_sort_features(all.audit, (uint32_t)all.parse_mask, ae);
 
   if (all.p->write_cache) 
     {

@@ -49,4 +49,6 @@ library/ezexample_predict
 library/ezexample_train
 library/library_example
 library/recommend
+library/gd_mf_weights
 test/RunTests.last.times
+*.dSYM

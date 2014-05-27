@@ -14,6 +14,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include <io.h>
 
 #define CLOSESOCK closesocket
+#define inet_ntop InetNtopA
 
 typedef unsigned int uint32_t;
 typedef unsigned short uint16_t;
@@ -37,6 +38,7 @@ int getpid()
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <strings.h>
+#include <arpa/inet.h>
 
 #define CLOSESOCK close
 
@@ -103,13 +105,24 @@ int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offse
   return oroot;
 }
 
+void report_error(char* preface)
+{
+	cerr << preface;
+#ifdef _WIN32
+	  char errbuff[100];
+	  _strerror_s(errbuff, 100, NULL);
+      cerr << errbuff;
+#else
+	  cerr << strerror(errno);
+#endif
+	  cerr << endl;
+	  exit(1);
+}
+
 void fail_send(const socket_t fd, const void* buf, const int count)
 {
   if (send(fd,(char*)buf,count,0)==-1)
-    {
-      cerr << "send failed!" << endl;
-      exit(1);
-    }
+	report_error("send: ");
 }
 
 int main(int argc, char* argv[]) {
@@ -126,20 +139,12 @@ int main(int argc, char* argv[]) {
 #endif
 
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
-  if (sock < 0) {
-#ifdef _WIN32
-	lastError = WSAGetLastError();
-
-    cerr << "can't open socket! (" << lastError << ")" << endl;
-#else
-    cerr << "can't open socket! " << errno << endl;
-#endif
-    exit(1);
-  }
+  if (sock < 0) 
+	  report_error("socket: ");
 
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-    perror("setsockopt SO_REUSEADDR");
+	  report_error("setsockopt SO_REUSEADDR: ");
 
   sockaddr_in address;
   address.sin_family = AF_INET;
@@ -148,19 +153,13 @@ int main(int argc, char* argv[]) {
 
   address.sin_port = htons(port);
   if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
-    {
-      cerr << "failure to bind!" << endl;
-      exit(1);
-    }
+	  report_error("bind: ");
 
   if (argc == 2 && strcmp("--nondaemon",argv[1])==0)
     ;
   else
     if (daemon(1,1))
-      {
-	cerr << "failure to background!" << endl;
-	exit(1);
-      }
+		report_error("daemon: ");
 
   if (argc == 2 && strcmp("--nondaemon",argv[1])!=0)
     {
@@ -177,49 +176,55 @@ int main(int argc, char* argv[]) {
 
   map<size_t, partial> partial_nodesets;
   while(true) {
-    listen(sock, 1024);
-
+    if (listen(sock, 1024) < 0) 
+		report_error("listen: ");
+    
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     socket_t f = accept(sock,(sockaddr*)&client_address,&size);
+    if (f < 0) 
+		report_error("accept: ");
 
-    {
-        char hostname[NI_MAXHOST];
-        char servInfo[NI_MAXSERV];
-        getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV, 0);
+    char dotted_quad[INET_ADDRSTRLEN];
+    if (NULL == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN))
+		report_error("inet_ntop: ");
 
-        cerr << "inbound connection from " << hostname << endl;
-    }
-
-    if (f < 0)
-      {
-	cerr << "bad client socket!" << endl;
-	exit (1);
-      }
+    char hostname[NI_MAXHOST];
+    char servInfo[NI_MAXSERV];
+    if (getnameinfo((sockaddr *) &client_address, sizeof(sockaddr), hostname,
+                    NI_MAXHOST, servInfo, NI_MAXSERV, 0)) 
+						report_error("getnameinfo: ");	
+		
+	cerr << "inbound connection from " << dotted_quad << "(" << hostname
+         << ':' << ntohs(port) << ") serv=" << servInfo << endl;
 
     size_t nonce = 0;
-    if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce))
-      {
-	cerr << "nonce read failed, exiting" << endl;
-	exit(1);
-      }
+    if (recv(f, (char*)&nonce, sizeof(nonce), 0) != sizeof(nonce)) {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+           << "): nonce read failed, exiting" << endl;
+      exit(1);
+    } else cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+                << "): nonce=" << nonce << endl;
     size_t total = 0;
-    if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total))
-      {
-	cerr << "total node count read failed, exiting" << endl;
-	exit(1);
-      }
+    if (recv(f, (char*)&total, sizeof(total), 0) != sizeof(total)) {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+           << "): total node count read failed, exiting" << endl;
+      exit(1);
+    } else cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+                << "): total=" << total << endl;
     size_t id = 0;
-    if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id))
-      {
-	cerr << "node id read failed, exiting" << endl;
-	exit(1);
-      }
+    if (recv(f, (char*)&id, sizeof(id), 0) != sizeof(id)) {
+      cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+           << "): node id read failed, exiting" << endl;
+      exit(1);
+    } else cerr << dotted_quad << "(" << hostname << ':' << ntohs(port)
+                << "): node id=" << id << endl;
 
     int ok = true;
     if ( id >= total )
       {
-	cout << "invalid id! " << endl;
+	cout << dotted_quad << "(" << hostname << ':' << ntohs(port)
+             << "): invalid id=" << id << " >=  " << total << " !" << endl;
 	ok = false;
       }
     partial partial_nodeset;
