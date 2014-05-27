@@ -21,41 +21,41 @@ namespace StagewisePoly
   static const uint32_t tree_atomics = 134;
   static const float tolerance = 1e-9;
   static const int mult_const = 95104348457;
-  static const uint32_t hash_mod_table[] = {
-    [0] = 0,
-    [1] = 1,
-    [2] = 3,
-    [3] = 3,
-    [4] = 11,
-    [5] = 11,
-    [6] = 43,
-    [7] = 43,
-    [8] = 171,
-    [9] = 171,
-    [10] = 683,
-    [11] = 683,
-    [12] = 2731,
-    [13] = 2731,
-    [14] = 10923,
-    [15] = 10923,
-    [16] = 43691,
-    [17] = 43691,
-    [18] = 174763,
-    [19] = 174763,
-    [20] = 699051,
-    [21] = 699051,
-    [22] = 2796203,
-    [23] = 2796203,
-    [24] = 11184811,
-    [25] = 11184811,
-    [26] = 44739243,
-    [27] = 44739243,
-    [28] = 178956971,
-    [29] = 178956971,
-    [30] = 715827883,
-    [31] = 715827883,
-    [32] = 2863311531
-  };
+  // static const uint32_t hash_mod_table[] = {
+  //   [0] = 0,
+  //   [1] = 1,
+  //   [2] = 3,
+  //   [3] = 3,
+  //   [4] = 11,
+  //   [5] = 11,
+  //   [6] = 43,
+  //   [7] = 43,
+  //   [8] = 171,
+  //   [9] = 171,
+  //   [10] = 683,
+  //   [11] = 683,
+  //   [12] = 2731,
+  //   [13] = 2731,
+  //   [14] = 10923,
+  //   [15] = 10923,
+  //   [16] = 43691,
+  //   [17] = 43691,
+  //   [18] = 174763,
+  //   [19] = 174763,
+  //   [20] = 699051,
+  //   [21] = 699051,
+  //   [22] = 2796203,
+  //   [23] = 2796203,
+  //   [24] = 11184811,
+  //   [25] = 11184811,
+  //   [26] = 44739243,
+  //   [27] = 44739243,
+  //   [28] = 178956971,
+  //   [29] = 178956971,
+  //   [30] = 715827883,
+  //   [31] = 715827883,
+  //   [32] = 2863311531
+  // };
 
   struct sort_data {
     float wval;
@@ -89,6 +89,8 @@ namespace StagewisePoly
     uint32_t cur_depth;
     bool training;
     size_t numpasses;
+
+    bool update_support;
 
 #ifdef DEBUG
     uint32_t max_depth;
@@ -223,12 +225,12 @@ namespace StagewisePoly
       else if (wi_atomic == wi_general) {
         uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
         return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
-      } else {
-        assert(3 * hash_mod_table[poly.all->num_bits] % poly.all->length() == 1);
-        uint32_t xa = 3 * stride_un_shift(poly, wi_atomic) % poly.all->length();
-        uint32_t xg = 3 * stride_un_shift(poly, wi_general) % poly.all->length();
-        return wid_mask(poly, stride_shift(poly, (xa ^ xg) * hash_mod_table[poly.all->num_bits]));
-      }
+      } // else {
+      //   assert(3 * hash_mod_table[poly.all->num_bits] % poly.all->length() == 1);
+      //   uint32_t xa = 3 * stride_un_shift(poly, wi_atomic) % poly.all->length();
+      //   uint32_t xg = 3 * stride_un_shift(poly, wi_general) % poly.all->length();
+      //   return wid_mask(poly, stride_shift(poly, (xa ^ xg) * hash_mod_table[poly.all->num_bits]));
+      // }
     } else {
       return 0; //deal with it.
     }
@@ -494,12 +496,17 @@ namespace StagewisePoly
     bool training = poly.all->training && !ec.test_only && ((label_data *) ec.ld)->label != FLT_MAX;
 
     if (training) {
+      if(poly.update_support) {
+	sort_data_update_support(poly);
+	poly.update_support = false;
+      }
+      
       synthetic_create(poly, ec, training);
       base.learn(poly.synth_ec);
       ec.loss = poly.synth_ec.loss;
 
       if (ec.example_counter && poly.batch_sz && !(ec.example_counter % poly.batch_sz))
-        sort_data_update_support(poly);
+        poly.update_support = true;
     } else
       predict(poly, base, ec);
   }
@@ -508,11 +515,14 @@ namespace StagewisePoly
 #ifdef PARALLEL_ENABLE
   void reduce_min(uint8_t &v1,const uint8_t &v2)
   {
+    //cout<<"v1 = "<<(uint32_t)v1<<" v2 = "<<(uint32_t)v2<<" ";
     if(v1 == 0xff)
       v1 = v2;
     else if(v2 != 0xff)
       v1 = (v1 <= v2) ? v1 : v2;
-  }
+    //cout<<"allreduce(v1, v2) = "<<(uint32_t)v1<<" ";
+  }  
+
 
   void sanity_check_state(stagewise_poly &poly)
   {
@@ -528,8 +538,14 @@ namespace StagewisePoly
       //assert( min_depths_get(poly, wid) != 0xff && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
 
       assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~3) );
+      
     }
+    
+    // for(int i = 0;i < 2*poly.all->length();i++)
+    // 	cout<<(uint32_t) poly.depthsbits[i]<<" ";
+    // cout<<endl;
   }
+
 
   void end_pass(stagewise_poly &poly)
   {
@@ -539,8 +555,11 @@ namespace StagewisePoly
     uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
     uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
 
-    //sanity_check_state(poly);
-
+    // cout<<"Size = "<<sizeof(uint8_t)<<endl
+    
+    // cout<<"Sanity before allreduce\n";
+    // sanity_check_state(poly);
+    
     vw &all = *poly.all;
     if(all.span_server != "") {
       /*
@@ -549,7 +568,9 @@ namespace StagewisePoly
        * But it's unclear what the right behavior is in general for either
        * case...
        */
-      all_reduce<uint8_t, reduce_min>(poly.depthsbits, depthsbits_sizeof(poly), all.span_server, all.unique_id, all.total, all.node, all.socks);
+      //cout<<"In allreduce\n";      
+      all_reduce<uint8_t, reduce_min>(poly.depthsbits, 2*poly.all->length(), all.span_server, all.unique_id, all.total, all.node, all.socks);
+      //cout<<endl;
 
       sum_input_sparsity_inc = accumulate_scalar(all, all.span_server, sum_input_sparsity_inc);
       sum_sparsity_inc = accumulate_scalar(all, all.span_server, sum_sparsity_inc);
@@ -563,13 +584,15 @@ namespace StagewisePoly
     poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
     poly.num_examples = poly.num_examples_sync;
 
+    //cout<<"Sanity after allreduce\n";
     //sanity_check_state(poly);
 
     if (!poly.batch_sz && poly.numpasses != poly.all->numpasses) {
-      sort_data_update_support(poly);
+      poly.update_support = true;
       poly.numpasses++;
     }
 
+    //cout<<"Sanity after sort\n";
     //sanity_check_state(poly);
   }
 
@@ -629,6 +652,7 @@ namespace StagewisePoly
     poly->sum_input_sparsity_sync = 0;
     poly->num_examples_sync = 0;
     poly->numpasses = 1;
+    poly->update_support = false;
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();
