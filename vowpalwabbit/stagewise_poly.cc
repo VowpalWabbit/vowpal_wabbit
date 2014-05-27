@@ -362,7 +362,7 @@ namespace StagewisePoly
 	//#ifdef DEBUG
         cout
           << "FOUND A TRANSPLANT!!! moving [" << wid_cur
-          << "] from depth " << min_depths_get(poly, wid_cur)
+          << "] from depth " << (uint32_t) min_depths_get(poly, wid_cur)
           << " to depth " << poly.cur_depth << endl;
 	//#endif //DEBUG
         parent_toggle(poly, wid_cur);
@@ -457,7 +457,10 @@ namespace StagewisePoly
 #ifdef PARALLEL_ENABLE
   void reduce_min(uint8_t &v1,const uint8_t &v2)
   {
-    v1 = (v1 <= v2) ? v1 : v2;
+    if(v1 == 0xff)
+      v1 = v2;
+    else if(v2 != 0xff)
+      v1 = (v1 <= v2) ? v1 : v2;
   }
 
   void end_pass(stagewise_poly &poly)
