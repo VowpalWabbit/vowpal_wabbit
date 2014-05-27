@@ -514,6 +514,23 @@ namespace StagewisePoly
       v1 = (v1 <= v2) ? v1 : v2;
   }
 
+  void sanity_check_state(stagewise_poly &poly)
+  {
+    for (uint32_t i = 0; i != poly.all->length(); ++i)
+    {
+      uint32_t wid = stride_shift(poly, i);
+
+      assert( ! cycle_get(poly,wid) );
+
+      assert( ! (min_depths_get(poly, wid) == 0xff && parent_get(poly, wid)) );
+
+      assert( ! (min_depths_get(poly, wid) == 0xff && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
+      //assert( min_depths_get(poly, wid) != 0xff && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
+
+      assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~3) );
+    }
+  }
+
   void end_pass(stagewise_poly &poly)
   {
     assert(poly.all->span_server == "" || !poly.batch_sz);
@@ -521,6 +538,8 @@ namespace StagewisePoly
     uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
     uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
     uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
+
+    //sanity_check_state(poly);
 
     vw &all = *poly.all;
     if(all.span_server != "") {
@@ -544,11 +563,16 @@ namespace StagewisePoly
     poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
     poly.num_examples = poly.num_examples_sync;
 
+    //sanity_check_state(poly);
+
     if (!poly.batch_sz && poly.numpasses != poly.all->numpasses) {
       sort_data_update_support(poly);
       poly.numpasses++;
     }
+
+    //sanity_check_state(poly);
   }
+
 #endif //PARALLEL_ENABLE
 
   void finish_example(vw &all, stagewise_poly &poly, example &ec)
