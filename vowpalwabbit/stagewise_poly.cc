@@ -21,6 +21,7 @@ namespace StagewisePoly
   static const uint32_t tree_atomics = 134;
   static const float tolerance = 1e-9;
   static const int mult_const = 95104348457;
+
   /*static const uint32_t hash_mod_table[] = {
     [0] = 0,
     [1] = 1,
@@ -89,6 +90,8 @@ namespace StagewisePoly
     uint32_t cur_depth;
     bool training;
     size_t numpasses;
+
+    bool update_support;
 
 #ifdef DEBUG
     uint32_t max_depth;
@@ -414,7 +417,7 @@ namespace StagewisePoly
 	//#ifdef DEBUG
         cout
           << "FOUND A TRANSPLANT!!! moving [" << wid_cur
-          << "] from depth " << min_depths_get(poly, wid_cur)
+          << "] from depth " << (uint32_t) min_depths_get(poly, wid_cur)
           << " to depth " << poly.cur_depth << endl;
 	//#endif //DEBUG
         parent_toggle(poly, wid_cur);
@@ -495,12 +498,17 @@ namespace StagewisePoly
     bool training = poly.all->training && !ec.test_only && ((label_data *) ec.ld)->label != FLT_MAX;
 
     if (training) {
+      if(poly.update_support) {
+	sort_data_update_support(poly);
+	poly.update_support = false;
+      }
+      
       synthetic_create(poly, ec, training);
       base.learn(poly.synth_ec);
       ec.loss = poly.synth_ec.loss;
 
       if (ec.example_counter && poly.batch_sz && !(ec.example_counter % poly.batch_sz))
-        sort_data_update_support(poly);
+        poly.update_support = true;
     } else
       predict(poly, base, ec);
   }
@@ -509,8 +517,37 @@ namespace StagewisePoly
 #ifdef PARALLEL_ENABLE
   void reduce_min(uint8_t &v1,const uint8_t &v2)
   {
-    v1 = (v1 <= v2) ? v1 : v2;
+    //cout<<"v1 = "<<(uint32_t)v1<<" v2 = "<<(uint32_t)v2<<" ";
+    if(v1 == 0xff)
+      v1 = v2;
+    else if(v2 != 0xff)
+      v1 = (v1 <= v2) ? v1 : v2;
+    //cout<<"allreduce(v1, v2) = "<<(uint32_t)v1<<" ";
+  }  
+
+
+  void sanity_check_state(stagewise_poly &poly)
+  {
+    for (uint32_t i = 0; i != poly.all->length(); ++i)
+    {
+      uint32_t wid = stride_shift(poly, i);
+
+      assert( ! cycle_get(poly,wid) );
+
+      assert( ! (min_depths_get(poly, wid) == 0xff && parent_get(poly, wid)) );
+
+      assert( ! (min_depths_get(poly, wid) == 0xff && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
+      //assert( min_depths_get(poly, wid) != 0xff && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
+
+      assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~3) );
+      
+    }
+    
+    // for(int i = 0;i < 2*poly.all->length();i++)
+    // 	cout<<(uint32_t) poly.depthsbits[i]<<" ";
+    // cout<<endl;
   }
+
 
   void end_pass(stagewise_poly &poly)
   {
@@ -520,6 +557,11 @@ namespace StagewisePoly
     uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
     uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
 
+    // cout<<"Size = "<<sizeof(uint8_t)<<endl
+    
+    // cout<<"Sanity before allreduce\n";
+    // sanity_check_state(poly);
+    
     vw &all = *poly.all;
     if(all.span_server != "") {
       /*
@@ -528,7 +570,9 @@ namespace StagewisePoly
        * But it's unclear what the right behavior is in general for either
        * case...
        */
-      all_reduce<uint8_t, reduce_min>(poly.depthsbits, depthsbits_sizeof(poly), all.span_server, all.unique_id, all.total, all.node, all.socks);
+      //cout<<"In allreduce\n";      
+      all_reduce<uint8_t, reduce_min>(poly.depthsbits, 2*poly.all->length(), all.span_server, all.unique_id, all.total, all.node, all.socks);
+      //cout<<endl;
 
       sum_input_sparsity_inc = accumulate_scalar(all, all.span_server, sum_input_sparsity_inc);
       sum_sparsity_inc = accumulate_scalar(all, all.span_server, sum_sparsity_inc);
@@ -542,11 +586,18 @@ namespace StagewisePoly
     poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
     poly.num_examples = poly.num_examples_sync;
 
+    //cout<<"Sanity after allreduce\n";
+    //sanity_check_state(poly);
+
     if (!poly.batch_sz && poly.numpasses != poly.all->numpasses) {
-      sort_data_update_support(poly);
+      poly.update_support = true;
       poly.numpasses++;
     }
+
+    //cout<<"Sanity after sort\n";
+    //sanity_check_state(poly);
   }
+
 #endif //PARALLEL_ENABLE
 
   void finish_example(vw &all, stagewise_poly &poly, example &ec)
@@ -603,6 +654,7 @@ namespace StagewisePoly
     poly->sum_input_sparsity_sync = 0;
     poly->num_examples_sync = 0;
     poly->numpasses = 1;
+    poly->update_support = false;
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();

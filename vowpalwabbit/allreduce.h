@@ -55,7 +55,7 @@ struct node_socks {
 
 template <class T, void (*f)(T&, const T&)> void addbufs(T* buf1, const T* buf2, const int n) {
   for(int i = 0;i < n;i++) 
-    f(buf1[1], buf2[i]);
+    f(buf1[i], buf2[i]);
 }
 
 void all_reduce_init(const string master_location, const size_t unique_id, const size_t total, const size_t node, node_socks& socks);
