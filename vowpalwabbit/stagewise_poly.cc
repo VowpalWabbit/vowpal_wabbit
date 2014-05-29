@@ -511,7 +511,7 @@ namespace StagewisePoly
       ec.loss = poly.synth_ec.loss;
 
       if (ec.example_counter && poly.batch_sz && !(ec.example_counter % poly.batch_sz))
-        poly.update_support = true;
+        poly.update_support = (poly.all->span_server != "" || poly.numpasses == 1);
     } else
       predict(poly, base, ec);
   }
@@ -574,7 +574,8 @@ namespace StagewisePoly
 
   void end_pass(stagewise_poly &poly)
   {
-    assert(poly.all->span_server == "" || !poly.batch_sz);
+    if (poly.batch_sz && poly.numpasses > 1)
+      return;
 
     uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
     uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
@@ -612,7 +613,7 @@ namespace StagewisePoly
     //cout<<"Sanity after allreduce\n";
     //sanity_check_state(poly);
 
-    if (!poly.batch_sz && poly.numpasses != poly.all->numpasses) {
+    if (poly.numpasses != poly.all->numpasses) {
       poly.update_support = true;
       poly.numpasses++;
     }
