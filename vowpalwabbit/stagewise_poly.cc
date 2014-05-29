@@ -21,42 +21,45 @@ namespace StagewisePoly
   static const uint32_t tree_atomics = 134;
   static const float tolerance = 1e-9;
   static const int mult_const = 95104348457;
+  static const uint32_t indicator_bit = 128;
+  static const uint32_t default_depth = 127;
+  
+  // static const uint32_t hash_mod_table[] = {
+  //   [0] = 0,
+  //   [1] = 1,
+  //   [2] = 3,
+  //   [3] = 3,
+  //   [4] = 11,
+  //   [5] = 11,
+  //   [6] = 43,
+  //   [7] = 43,
+  //   [8] = 171,
+  //   [9] = 171,
+  //   [10] = 683,
+  //   [11] = 683,
+  //   [12] = 2731,
+  //   [13] = 2731,
+  //   [14] = 10923,
+  //   [15] = 10923,
+  //   [16] = 43691,
+  //   [17] = 43691,
+  //   [18] = 174763,
+  //   [19] = 174763,
+  //   [20] = 699051,
+  //   [21] = 699051,
+  //   [22] = 2796203,
+  //   [23] = 2796203,
+  //   [24] = 11184811,
+  //   [25] = 11184811,
+  //   [26] = 44739243,
+  //   [27] = 44739243,
+  //   [28] = 178956971,
+  //   [29] = 178956971,
+  //   [30] = 715827883,
+  //   [31] = 715827883,
+  //   [32] = 2863311531
+  // };
 
-  /*static const uint32_t hash_mod_table[] = {
-    [0] = 0,
-    [1] = 1,
-    [2] = 3,
-    [3] = 3,
-    [4] = 11,
-    [5] = 11,
-    [6] = 43,
-    [7] = 43,
-    [8] = 171,
-    [9] = 171,
-    [10] = 683,
-    [11] = 683,
-    [12] = 2731,
-    [13] = 2731,
-    [14] = 10923,
-    [15] = 10923,
-    [16] = 43691,
-    [17] = 43691,
-    [18] = 174763,
-    [19] = 174763,
-    [20] = 699051,
-    [21] = 699051,
-    [22] = 2796203,
-    [23] = 2796203,
-    [24] = 11184811,
-    [25] = 11184811,
-    [26] = 44739243,
-    [27] = 44739243,
-    [28] = 178956971,
-    [29] = 178956971,
-    [30] = 715827883,
-    [31] = 715827883,
-    [32] = 2863311531
-  };*/
 
   struct sort_data {
     float wval;
@@ -140,8 +143,8 @@ namespace StagewisePoly
   {
     poly.depthsbits = (uint8_t *) malloc(depthsbits_sizeof(poly));
     for (uint32_t i = 0; i < poly.all->length() * 2; i += 2) {
-      poly.depthsbits[i] = 0xff;
-      poly.depthsbits[i+1] = 0;
+      poly.depthsbits[i] = default_depth;
+      poly.depthsbits[i+1] = indicator_bit;
     }
   }
 
@@ -426,7 +429,7 @@ namespace StagewisePoly
     }
 
     if ( ! cycle_get(poly, wid_cur)
-        && ((poly.cur_depth > 0xff ? 0xff : poly.cur_depth) == min_depths_get(poly, wid_cur))
+        && ((poly.cur_depth > default_depth ? default_depth : poly.cur_depth) == min_depths_get(poly, wid_cur))
        ) {
       cycle_toggle(poly, wid_cur);
 
@@ -518,10 +521,30 @@ namespace StagewisePoly
   void reduce_min(uint8_t &v1,const uint8_t &v2)
   {
     //cout<<"v1 = "<<(uint32_t)v1<<" v2 = "<<(uint32_t)v2<<" ";
-    if(v1 == 0xff)
+    if(v1 == default_depth)
       v1 = v2;
-    else if(v2 != 0xff)
+    else if(v2 != default_depth)
       v1 = (v1 <= v2) ? v1 : v2;
+    //cout<<"allreduce(v1, v2) = "<<(uint32_t)v1<<" ";
+  }  
+
+  void reduce_min_max(uint8_t &v1,const uint8_t &v2)
+  {
+    //cout<<"v1 = "<<(uint32_t)v1<<" v2 = "<<(uint32_t)v2<<" "<<(v1 & indicator_bit)<<" "<<(v2 & indicator_bit);
+    bool parent_or_depth = (v1 & indicator_bit);
+    if(parent_or_depth != (bool)(v2 & indicator_bit)) {
+      cout<<"Reducing parent with depth!!!!!";
+      return;
+    }
+
+    if(parent_or_depth)
+      v1 = (v1 >= v2) ? v1 : v2;    
+    else {
+      if(v1 == default_depth)
+	v1 = v2;
+      else if(v2 != default_depth)
+	v1 = (v1 <= v2) ? v1 : v2;
+    }
     //cout<<"allreduce(v1, v2) = "<<(uint32_t)v1<<" ";
   }  
 
@@ -534,10 +557,10 @@ namespace StagewisePoly
 
       assert( ! cycle_get(poly,wid) );
 
-      assert( ! (min_depths_get(poly, wid) == 0xff && parent_get(poly, wid)) );
+      assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
 
-      assert( ! (min_depths_get(poly, wid) == 0xff && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
-      //assert( min_depths_get(poly, wid) != 0xff && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
+      assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
+      //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
 
       assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~3) );
       
@@ -571,7 +594,7 @@ namespace StagewisePoly
        * case...
        */
       //cout<<"In allreduce\n";      
-      all_reduce<uint8_t, reduce_min>(poly.depthsbits, 2*poly.all->length(), all.span_server, all.unique_id, all.total, all.node, all.socks);
+      all_reduce<uint8_t, reduce_min_max>(poly.depthsbits, 2*poly.all->length(), all.span_server, all.unique_id, all.total, all.node, all.socks);
       //cout<<endl;
 
       sum_input_sparsity_inc = accumulate_scalar(all, all.span_server, sum_input_sparsity_inc);
