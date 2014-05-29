@@ -511,7 +511,7 @@ namespace StagewisePoly
       ec.loss = poly.synth_ec.loss;
 
       if (ec.example_counter && poly.batch_sz && !(ec.example_counter % poly.batch_sz))
-        poly.update_support = (poly.all->span_server != "" || poly.numpasses == 1);
+        poly.update_support = (poly.all->span_server == "" || poly.numpasses == 1);
     } else
       predict(poly, base, ec);
   }
