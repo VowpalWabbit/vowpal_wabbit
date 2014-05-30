@@ -349,11 +349,11 @@ sub lenient_array_compare($$) {
 
         # There's some difference, is it significant?
         unless (looks_like_number($word1)) {
-            v(4, "$word1 vs $word2: $word1 is not a number!\n");
+            v(4, "$word1 vs $word2: word1=$word1 is not a number!\n");
             return 1;
         }
         unless (looks_like_number($word2)) {
-            v(4, "$word1 vs $word2: $word2 is not a number!\n");
+            v(4, "$word1 vs $word2: word2=$word2 is not a number!\n");
             return 1;
         }
 
@@ -371,14 +371,14 @@ sub lenient_array_compare($$) {
                 # If numbers are so small (close to zero),
                 # ($delta > $Epsilon) suffices for deciding that
                 # the numbers are meaningfully different
-                v(4, "$word1 vs $word2: delta=$delta > $Epsilon\n");
+                v(4, "$word1 vs $word2: delta=$delta > Epsilon=$Epsilon\n");
                 return 1;
             }
             # Now we can safely divide (since abs($word2) > 0)
             # and determine the ratio difference from 1.0
             my $ratio_delta = abs($word1/$word2 - 1.0);
             if ($ratio_delta > $Epsilon) {
-                v(4, "$word1 vs $word2: ratio_delta=$ratio_delta\n");
+                v(4, "$word1 vs $word2: ratio_delta=$ratio_delta > Epsilon=$Epsilon\n");
                 return 1;
             }
         }
