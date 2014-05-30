@@ -581,7 +581,7 @@ sub run_tests() {
         mysystem("($cmd) >$outf 2>$errf");
         unless ($opt_V) {
             if (command_failed($cmd)) {
-                # already printed error
+                print STDERR `cat $errf`;
                 exit $? if ($opt_e);
                 next;
             }
