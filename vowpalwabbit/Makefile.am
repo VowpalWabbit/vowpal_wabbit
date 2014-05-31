@@ -25,7 +25,7 @@ AM_LDFLAGS = ${BOOST_LDFLAGS} ${BOOST_PROGRAM_OPTIONS_LIB} ${ZLIB_LDFLAGS} ${PTH
 if PROFILE
 AM_CXXFLAGS = -pg -g -D_FILE_OFFSET_BITS=64
 else
-AM_CXXFLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64
+AM_CXXFLAGS = -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing -D_FILE_OFFSET_BITS=64 -DNDEBUG
 endif
 
 if NITPICK

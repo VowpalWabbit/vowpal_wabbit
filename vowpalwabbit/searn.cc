@@ -707,8 +707,8 @@ namespace Searn
         srn.priv->state = FAST_FORWARD;
         srn.priv->learn_loss = srn.priv->learn_loss + (srn.priv->train_loss - snapshot_loss);
         srn.priv->fast_forward_position = srn.priv->final_snapshot_begin;
-        assert(priv->final_snapshot_end >= priv->final_snapshot_begin);
-        assert(priv->final_snapshot_end <  priv->snapshot_data.size());
+        assert(srn.priv->final_snapshot_end >= srn.priv->final_snapshot_begin);
+        assert(srn.priv->final_snapshot_end <  srn.priv->snapshot_data.size());
         cdbg << "fast_forward, t=" << srn.priv->t << " and learn_t=" << srn.priv->learn_t << endl;
       }
     } else { // no snapshot found
@@ -2564,7 +2564,7 @@ void print_update(vw& all, searn& srn)
   v_array<COST_SENSITIVE::label> read_allowed_transitions(uint32_t A, const char* filename) {
     FILE *f = fopen(filename, "r");
     if (f == NULL) {
-      cerr << "error: could not read file " << filename << "; assuming all transitions are valid" << endl;
+      cerr << "error: could not read file " << filename << " (" << strerror(errno) << "); assuming all transitions are valid" << endl;
       throw exception();
     }
 
