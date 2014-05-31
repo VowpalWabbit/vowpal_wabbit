@@ -178,6 +178,7 @@ namespace RTREE
 	void learn(rtree& b, learner& base, example& ec)//(void* d, example* ec) 
 	{
 		predict(b,base,ec);
+		size_t tmp_final_prediction = ec.final_prediction;
 		
 		MULTICLASS::mc_label *mc = (MULTICLASS::mc_label*)ec.ld;
 		
@@ -193,13 +194,12 @@ namespace RTREE
 		
 			uint32_t oryginal_label = mc->label;				
 
-			size_t tmp_final_prediction;
 			size_t cn = 1;
 			while(1)
 			{
 				if(cn >= b.k)	
 				{					
-					tmp_final_prediction = b.nodes[cn].label;		//nie uwzgledniam oaa
+					//tmp_final_prediction = b.nodes[cn].label;		//nie uwzgledniam oaa
 					break;													//if mx depth is reached, finish
 				}
 			
