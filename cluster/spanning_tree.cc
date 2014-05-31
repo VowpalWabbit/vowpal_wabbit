@@ -105,18 +105,18 @@ int build_tree(int*  parent, uint16_t* kid_count, size_t source_count, int offse
   return oroot;
 }
 
-void report_error(char* preface)
+void report_error(const char* preface)
 {
 	cerr << preface;
 #ifdef _WIN32
-	  char errbuff[100];
-	  _strerror_s(errbuff, 100, NULL);
-      cerr << errbuff;
+	char errbuff[100];
+	_strerror_s(errbuff, 100, NULL);
+        cerr << errbuff;
 #else
-	  cerr << strerror(errno);
+        cerr << strerror(errno);
 #endif
-	  cerr << endl;
-	  exit(1);
+	cerr << endl;
+	exit(1);
 }
 
 void fail_send(const socket_t fd, const void* buf, const int count)
