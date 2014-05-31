@@ -348,8 +348,14 @@ sub lenient_array_compare($$) {
         next if ($word1 eq $word2);
 
         # There's some difference, is it significant?
-        return 1 unless (looks_like_number($word1));
-        return 1 unless (looks_like_number($word2));
+        unless (looks_like_number($word1)) {
+            v(4, "$word1 vs $word2: word1=$word1 is not a number!\n");
+            return 1;
+        }
+        unless (looks_like_number($word2)) {
+            v(4, "$word1 vs $word2: word2=$word2 is not a number!\n");
+            return 1;
+        }
 
         my $delta = abs($word1 - $word2);
 
@@ -365,12 +371,16 @@ sub lenient_array_compare($$) {
                 # If numbers are so small (close to zero),
                 # ($delta > $Epsilon) suffices for deciding that
                 # the numbers are meaningfully different
+                v(4, "$word1 vs $word2: delta=$delta > Epsilon=$Epsilon\n");
                 return 1;
             }
             # Now we can safely divide (since abs($word2) > 0)
             # and determine the ratio difference from 1.0
             my $ratio_delta = abs($word1/$word2 - 1.0);
-            return 1 if ($ratio_delta > $Epsilon);
+            if ($ratio_delta > $Epsilon) {
+                v(4, "$word1 vs $word2: ratio_delta=$ratio_delta > Epsilon=$Epsilon\n");
+                return 1;
+            }
         }
     }
     # print STDERR "lenient_array_compare: no meaningful difference\n";
@@ -396,8 +406,8 @@ sub diff_lenient_float($$) {
                 warn "$0: test $TestNo: $outfile: no data. Can't compare\n";
                 return 1;
             }
-            v(3, "line1: $line1\n");
-            v(3, "line2: $line2\n");
+            v(3, "line1: %s\n", $line1);
+            v(3, "line2: %s\n", $line2);
 
             # Break lines into tokens/words
             my (@w1) = split(' ', $line1);
@@ -581,7 +591,7 @@ sub run_tests() {
         mysystem("($cmd) >$outf 2>$errf");
         unless ($opt_V) {
             if (command_failed($cmd)) {
-                # already printed error
+                print STDERR `$Cat $errf`;
                 exit $? if ($opt_e);
                 next;
             }

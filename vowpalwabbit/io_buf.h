@@ -90,7 +90,7 @@ class io_buf {
     }
     if (ret == -1 && *name != '\0')
       {
-	cout << "can't open: " << name << ", error = " << strerror(errno) << endl;
+	cerr << "can't open: " << name << ", error = " << strerror(errno) << endl;
 	throw exception();
       }
     
@@ -186,7 +186,7 @@ inline size_t bin_read_fixed(io_buf& i, char* data, size_t len, const char* read
       else
 	if (memcmp(data,p,len) != 0)
 	  {
-	    cout << read_message << endl;
+	    cerr << read_message << endl;
 	    throw exception();
 	  }
       return ret;
