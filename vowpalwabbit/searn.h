@@ -17,8 +17,8 @@ license as described in the file LICENSE.
 #define MAX_BRANCHING_FACTOR 128
 
 #define cdbg clog
-//#undef cdbg
-//#define cdbg if (1) {} else clog
+#undef cdbg
+#define cdbg if (1) {} else clog
 
 namespace Searn {
 
