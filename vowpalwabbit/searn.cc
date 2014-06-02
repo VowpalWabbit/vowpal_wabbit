@@ -1676,11 +1676,15 @@ namespace Searn
     return
         (all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
         might_print_update(all) ||                  // if we have to print and update to stderr
-        (!all.training) ||                          // if we're just testing
-        (all.current_pass == 0) ||                  // we need error rates for progressive cost
-        (all.holdout_set_off) ||                    // no holdout
-        (ec[0]->test_only) ||                       // it's a holdout example
-        (all.raw_prediction > 0)                    // we need raw predictions
+        (all.raw_prediction > 0) ||                 // we need raw predictions
+        // or:
+        //   it's not quiet AND
+        //     current_pass == 0
+        //     OR holdout is off
+        //     OR it's a test example
+        ( (! all.quiet) &&
+          ( all.holdout_set_off ||                    // no holdout
+            (all.current_pass == 0) ) )               // we need error rates for progressive cost
         ;
   }
 
