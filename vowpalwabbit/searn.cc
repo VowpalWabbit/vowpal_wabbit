@@ -1684,7 +1684,9 @@ namespace Searn
         //     OR it's a test example
         ( (! all.quiet) &&
           ( all.holdout_set_off ||                    // no holdout
-            (all.current_pass == 0) ) )               // we need error rates for progressive cost
+            ec[0]->test_only ||
+            (all.current_pass == 0)                   // we need error rates for progressive cost
+            ) )
         ;
   }
 
@@ -1712,7 +1714,7 @@ namespace Searn
       }
     }
 
-    if (is_learn && (srn.priv->t > 0) && all.training) {
+    if (is_learn && all.training && !ec[0]->test_only) {
       if (srn.priv->adaptive_beta)
         srn.priv->beta = 1.f - powf(1.f - srn.priv->alpha, (float)srn.priv->total_examples_generated);
 
