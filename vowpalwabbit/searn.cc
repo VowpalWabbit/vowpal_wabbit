@@ -2538,7 +2538,7 @@ void print_update(vw& all, searn& srn)
     if (vm.count(opt_name)) {
       ret = true;
       stringstream ss;
-      ss << " " << opt_name;
+      ss << " --" << opt_name;
       all.file_options.append(ss.str());
     } else
       ret = false;
