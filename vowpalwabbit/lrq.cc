@@ -137,9 +137,11 @@ namespace LRQ {
                               {
                                 char* new_space = (char*)calloc_or_die(4, sizeof(char));
                                 strcpy(new_space, "lrq");
-                                size_t n_len = strlen(i->c_str () + 2);
+                                size_t n_len = strlen(i->c_str () + 4);
                                 size_t len = strlen(ra->feature) + n_len + 2;
                                 char* new_feature = (char*)calloc_or_die(len, sizeof(char));
+                                new_feature[0] = right;
+                                new_feature[1] = '^';
                                 strcat(new_feature, ra->feature);
                                 strcat(new_feature, "^");
                                 sprintf(new_feature+strlen(new_feature), "%d", n);
