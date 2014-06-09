@@ -929,7 +929,7 @@ learner* setup(vw& all, po::variables_map& vm)
   else
     {
       ret->set_predict<gd, predict<false> >();
-      g->predict = predict<true>;
+      g->predict = predict<false>;
     }
   
   uint32_t stride;
