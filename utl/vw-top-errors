@@ -220,6 +220,8 @@ sub audit_top_weights($$@) {
             printf "\t%s\t%-8s\t%s\n", 'Feature', 'Weight', 'Full-audit-data';
             for (my $i = 0; $i < $TopWeights; $i++) {
                 my $feature = $sorted_features[$i];
+                next unless (defined $feature);
+
                 my ($name, $hash, $value, $weight) = split(':', $feature);
                 $weight =~ s/\@.*$//;
                 printf "\t%s\t%7.6f\t%s\n", $name, $weight, $feature;
