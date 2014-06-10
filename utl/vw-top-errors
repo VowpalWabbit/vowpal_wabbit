@@ -42,7 +42,7 @@
 #
 
 use Getopt::Std;
-use vars qw($opt_v $opt_V $opt_a);
+use vars qw($opt_v $opt_V $opt_s);
 
 my %ExampleDelta = ();
 my $TopN;
@@ -83,6 +83,8 @@ sub usage(@) {
        and print their highest weights.
 
     $0 options (must precede the 'vw' and its args):
+        -s      Use sum-of-weights instead of mean-of-weights
+                in 'top adverse features' summary
         -v      verbose
 
     $0 args (must precede the 'vw' and its args):
@@ -130,7 +132,7 @@ sub get_args {
     $VWCmd = "@vw_args";
 
     @ARGV = @our_args;
-    getopts('v');
+    getopts('vs');
 }
 
 
@@ -235,12 +237,24 @@ sub audit_top_weights($$@) {
             }
         }
     }
-
     print "\n";
-    print "=== Top adverse features (in descending cumulative weight)\n";
-    printf "%-20s\t%-10s  %s\n", 'Name', 'Weight-Sum', 'Examples';
-    foreach my $name (sort {$feature_weights{$b} <=> $feature_weights{$a}}
-                         keys %feature_weights) {
+    printf "=== Top adverse features (in descending %s weight)\n",
+                            ($opt_s ? 'cummulative' : 'mean');
+    printf "%-20s\t%-10s  %s\n", 'Name',
+                                 ($opt_s ? 'Sum-Weight' : 'Mean-Weight'),
+                                 'Examples';
+
+    unless ($opt_s) {   # Switch from sum of-weights to mean
+        foreach my $name (keys %feature_weights) {
+            my @examples = keys %{$feature_examples{$name}};
+            my $example_count = scalar @examples;
+            $feature_weights{$name} /= $example_count;
+        }
+    }
+
+    foreach my $name (sort
+                        {$feature_weights{$b} <=> $feature_weights{$a}}
+                            keys %feature_weights) {
         
         my @example_list = sort {
                                 $feature_examples{$name}->{$b}
