@@ -1676,11 +1676,17 @@ namespace Searn
     return
         (all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
         might_print_update(all) ||                  // if we have to print and update to stderr
-        (!all.training) ||                          // if we're just testing
-        (all.current_pass == 0) ||                  // we need error rates for progressive cost
-        (all.holdout_set_off) ||                    // no holdout
-        (ec[0]->test_only) ||                       // it's a holdout example
-        (all.raw_prediction > 0)                    // we need raw predictions
+        (all.raw_prediction > 0) ||                 // we need raw predictions
+        // or:
+        //   it's not quiet AND
+        //     current_pass == 0
+        //     OR holdout is off
+        //     OR it's a test example
+        ( (! all.quiet) &&
+          ( all.holdout_set_off ||                    // no holdout
+            ec[0]->test_only ||
+            (all.current_pass == 0)                   // we need error rates for progressive cost
+            ) )
         ;
   }
 
@@ -1708,7 +1714,7 @@ namespace Searn
       }
     }
 
-    if (is_learn && (srn.priv->t > 0) && all.training) {
+    if (is_learn && all.training && !ec[0]->test_only) {
       if (srn.priv->adaptive_beta)
         srn.priv->beta = 1.f - powf(1.f - srn.priv->alpha, (float)srn.priv->total_examples_generated);
 
@@ -2532,7 +2538,7 @@ void print_update(vw& all, searn& srn)
     if (vm.count(opt_name)) {
       ret = true;
       stringstream ss;
-      ss << " " << opt_name;
+      ss << " --" << opt_name;
       all.file_options.append(ss.str());
     } else
       ret = false;
