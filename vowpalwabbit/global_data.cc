@@ -41,8 +41,7 @@ size_t really_read(int sock, void* in, size_t count)
       else
 	if (r < 0)
 	  {
-	    cerr << "argh! bad read! on message from " << sock << endl;
-	    perror(NULL);
+	    cerr << "read(" << sock << "," << count << "-" << done << "): " << strerror(errno) << endl;
 	    throw exception();
 	  }
 	else
@@ -72,8 +71,7 @@ void send_prediction(int sock, global_prediction p)
 #endif
 	  < (int)sizeof(p))
     {
-      cerr << "argh! bad global write! " << sock << endl;
-      perror(NULL);
+      cerr << "send_prediction write(" << sock << "): " << strerror(errno) << endl;
       throw exception();
     }
 }
@@ -323,7 +321,6 @@ vw::vw()
 
   normalized_sum_norm_x = 0.;
   normalized_idx = 2;
-  feature_mask_idx = 3;//by default use the 4th position as mask
 
   add_constant = true;
   audit = false;

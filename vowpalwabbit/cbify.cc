@@ -61,7 +61,7 @@ namespace CBIFY {
 	ec.loss = loss(ld->label, ld->prediction);
 	data.tau--;
 	uint32_t action = ld->prediction;
-	CB::cb_class l = {ec.loss, action, 1.f / data.k};
+	CB::cb_class l = {ec.loss, action, 1.f / data.k, 0};
 	data.cb_label.costs.erase();
 	data.cb_label.costs.push_back(l);
 	ec.ld = &(data.cb_label);
@@ -74,6 +74,7 @@ namespace CBIFY {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
 	base.predict(ec);
+	ld->prediction = data.cb_label.prediction;
 	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
@@ -87,7 +88,7 @@ namespace CBIFY {
     data.cb_label.costs.erase();
     
     base.predict(ec);
-    uint32_t action = ld->prediction;
+    uint32_t action = data.cb_label.prediction;
 
     float base_prob = data.epsilon / data.k;
     if (frand48() < 1. - data.epsilon)
@@ -101,17 +102,19 @@ namespace CBIFY {
 	action = do_uniform(data);
 	CB::cb_class l = {loss(ld->label, action), 
 			  action, base_prob};
-	if (action == ld->prediction)
+	if (action == data.cb_label.prediction)
 	  l.probability = 1.f - data.epsilon + base_prob;
 	data.cb_label.costs.push_back(l);
       }
+    
+    cout << data.cb_label.costs[0].probability << endl;
 
     if (is_learn)
       base.learn(ec);
     
     ld->prediction = action;
-    ec.loss = loss(ld->label, ld->prediction);
     ec.ld = ld;
+    ec.loss = loss(ld->label, action);
   }
 
   template <bool is_learn>
@@ -130,9 +133,9 @@ namespace CBIFY {
     for (size_t i = 0; i < data.bags; i++)
       {
 	base.predict(ec,i);
-	data.count[ld->prediction]++;
+	data.count[data.cb_label.prediction]++;
 	if (i == bag)
-	  action = ld->prediction;
+	  action = data.cb_label.prediction;
       }
     assert(action != 0);
     if (is_learn)

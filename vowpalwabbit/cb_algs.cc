@@ -291,7 +291,7 @@ namespace CB_ALGS
     vw* all = c.all;
     CB::label* ld = (CB::label*)ec.ld;
 
-    //check if this is a test example where we just want a prediction
+     //check if this is a test example where we just want a prediction
     if( is_test_label(ld) )
     {
       //if so just query base cost-sensitive learner
@@ -299,6 +299,8 @@ namespace CB_ALGS
 
       ec.ld = &c.cb_cs_ld;
       base.predict(ec);
+      ld->prediction = c.cb_cs_ld.prediction;
+
       ec.ld = ld;
       for (size_t i=0; i<ld->costs.size(); i++)
         ld->costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
@@ -483,16 +485,16 @@ namespace CB_ALGS
     c->all = &all;
     c->min_cost = 0.;
     c->max_cost = 1.;
+
+    uint32_t nb_actions = (uint32_t)vm["cb"].as<size_t>();
+    //append cb with nb_actions to file_options so it is saved to regressor later
+
     po::options_description cb_opts("CB options");
     cb_opts.add_options()
       ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
-    
+
     vm = add_options(all, cb_opts);
 
-    uint32_t nb_actions = 0;
-
-    nb_actions = (uint32_t)vm["cb"].as<size_t>();
-    //append cb with nb_actions to file_options so it is saved to regressor later
     std::stringstream ss;
     ss << " --cb " << nb_actions;
     all.file_options.append(ss.str());

@@ -44,6 +44,7 @@ namespace ArgmaxTask {
 
   struct task_data {
     float false_negative_cost;
+    float negative_weight;
     bool predict_max;
   };
 
@@ -55,10 +56,16 @@ namespace ArgmaxTask {
     po::options_description argmax_opts("argmax options");
     argmax_opts.add_options()
       ("cost", po::value<float>(&(my_task_data->false_negative_cost))->default_value(10.0), "False Negative Cost")
-      ("max", po::value<bool>(&(my_task_data->predict_max))->default_value(false), "Disable structure: just predict the max");
+      ("negative_weight", po::value<float>(&(my_task_data->negative_weight))->default_value(1), "Relative weight of negative examples")
+      ("max", "Disable structure: just predict the max");
 
     vm = add_options(*srn.all, argmax_opts);
 
+    if (vm.count("max"))
+      my_task_data->predict_max = true;
+    else
+      my_task_data->predict_max = false;      
+	    
     srn.set_task_data(my_task_data);
 
     if (my_task_data->predict_max)
@@ -93,9 +100,9 @@ namespace ArgmaxTask {
     }
     float loss = 0.;
     if (max_label > max_prediction)
-      loss = my_task_data->false_negative_cost;
+      loss = my_task_data->false_negative_cost / my_task_data->negative_weight;
     else if (max_prediction > max_label)
-      loss = 1.;		
+      loss = 1.;
     srn.loss(loss);
 
     if (srn.output().good())
@@ -306,7 +313,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
         lab->costs[0].wap_value = 0.;
       }
       
-      size_t pred_id = srn.predict(data->ldf_examples, data->num_actions, MULTICLASS::get_example_label(ec[i]) - 1);
+      size_t pred_id = srn.predictLDF(data->ldf_examples, data->num_actions, MULTICLASS::get_example_label(ec[i]) - 1);
       size_t prediction = pred_id + 1;  // or ldf_examples[pred_id]->ld.costs[0].weight_index
       
       if (srn.output().good())

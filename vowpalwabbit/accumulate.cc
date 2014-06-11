@@ -108,42 +108,8 @@ void accumulate_weighted_avg(vw& all, string master_location, regressor& reg) {
       weights[stride*i] = 0;
     }
 
-  if(!all.feature_mask_idx) //do in place all_reduce when the feature mask is absent
-    all_reduce<float, add_float>(weights, length*stride, master_location, all.unique_id, all.total, all.node, all.socks);
+  all_reduce<float, add_float>(weights, length*stride, master_location, all.unique_id, all.total, all.node, all.socks);
   
-  else {
-
-    //Find weighted averaged weight
-    all_reduce<float, add_float>(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
-    
-    for(uint32_t i = 0;i < length;i++) 
-      {
-	weights[stride*i] = local_weights[i];
-	local_weights[i] = weights[stride*i+1];
-	
-      }
-    
-    //Find weighted average for adaptation
-    all_reduce<float, add_float>(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
-    
-    for(uint32_t i = 0;i < length;i++) 
-      {      
-	weights[stride*i+1] = local_weights[i];
-	if (all.normalized_updates)
-	  local_weights[i] = weights[stride*i+all.normalized_idx];
-	
-      }
-    
-    if (all.normalized_updates)
-      {
-	//Find weighted average for normalization
-	all_reduce<float, add_float>(local_weights, length, master_location, all.unique_id, all.total, all.node, all.socks);
-	for(uint32_t i = 0;i < length;i++) 
-	  weights[stride*i+all.normalized_idx] = local_weights[i];
-      }
-  }
-
-
   delete[] local_weights;
 }
 

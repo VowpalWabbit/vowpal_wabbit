@@ -127,6 +127,9 @@ void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
     all.quiet = true;
     // --quiet wins over --progress
   } else {
+    if (argc == 1)
+      cerr << "For more information use: vw --help" << endl;
+
     all.quiet = false;
 
     if (vm.count("progress")) {
@@ -171,6 +174,34 @@ void parse_diagnostics(vw& all, po::variables_map& vm, int argc)
 
 void parse_source(vw& all, po::variables_map& vm)
 {
+  po::options_description in_opt("Input options");
+  
+  in_opt.add_options()
+    ("data,d", po::value< string >(), "Example Set")
+    ("daemon", "persistent daemon mode on port 26542")
+    ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
+    ("num_children", po::value<size_t>(&(all.num_children)), "number of children for persistent daemon mode")
+    ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
+    ("port_file", po::value< string >(), "Write port used in persistent daemon mode")
+    ("cache,c", "Use a cache.  The default is <data>.cache")
+    ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
+    ("kill_cache,k", "do not reuse existing cache: create a new one always")
+    ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
+    ("no_stdin", "do not default to reading from stdin");
+  
+  vm = add_options(all, in_opt);
+
+  // Be friendly: if -d was left out, treat positional param as data file
+  po::positional_options_description p;  
+  p.add("data", -1);
+  
+  vm = po::variables_map();
+  po::parsed_options pos = po::command_line_parser(all.args).
+    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
+    options(all.opts).positional(p).run();
+  vm = po::variables_map();
+  po::store(pos, vm);
+ 
   //begin input source
   if (vm.count("no_stdin"))
     all.stdin_off = true;
@@ -197,6 +228,12 @@ void parse_source(vw& all, po::variables_map& vm)
       set_compressed(all.p);
   } else
     all.data_filename = "";
+
+  if ((vm.count("cache") || vm.count("cache_file")) && vm.count("invert_hash"))
+    {
+      cout << "invert_hash is incompatible with a cache file.  Use it in single pass mode only." << endl;
+      throw exception();
+    }
 
   if(!all.holdout_set_off && (vm.count("output_feature_regularizer_binary") || vm.count("output_feature_regularizer_text")))
     {
@@ -499,6 +536,15 @@ void parse_example_tweaks(vw& all, po::variables_map& vm)
 
 void parse_output_preds(vw& all, po::variables_map& vm)
 {
+  po::options_description out_opt("Output options");
+
+  out_opt.add_options()
+    ("predictions,p", po::value< string >(), "File to output predictions to")
+    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
+    ;
+
+  vm = add_options(all, out_opt);
+
   if (vm.count("predictions")) {
     if (!all.quiet)
       cerr << "predictions = " <<  vm["predictions"].as< string >() << endl;
@@ -550,7 +596,8 @@ void parse_output_model(vw& all, po::variables_map& vm)
   output_model.add_options()
     ("final_regressor,f", po::value< string >(), "Final regressor")
     ("readable_model", po::value< string >(), "Output human-readable final regressor with numeric features")
-    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names")
+    ("invert_hash", po::value< string >(), "Output human-readable final regressor with feature names.  Computationally expensive.")
+    ("save_resume", "save extra state so learning can be resumed later with new data")
     ("save_per_pass", "Save the model after every pass over data")
     ("output_feature_regularizer_binary", po::value< string >(&(all.per_feature_regularizer_output)), "Per feature regularization output file")
     ("output_feature_regularizer_text", po::value< string >(&(all.per_feature_regularizer_text)), "Per feature regularization output file, in text");
@@ -737,7 +784,15 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
 
 void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
-  if( vm.count("cb") || vm.count("cb") )
+  po::options_description cb_opts("Contextual Bandit options");
+    
+  cb_opts.add_options()
+    ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
+    ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve");
+
+  vm = add_options(all,cb_opts);
+  
+  if( vm.count("cb"))
     {
       if(!got_cs) {
 	if( vm.count("cb") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cb"]));
@@ -752,20 +807,18 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
       got_cb = true;
     }
 
-  if (vm.count("cbify") || vm.count("cbify"))
+  if (vm.count("cbify"))
     {
       if(!got_cs) {
-	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
-	else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
+	vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["cbify"]));
 	
 	all.l = CSOAA::setup(all, vm);  // default to CSOAA unless wap is specified
 	all.cost_sensitive = all.l;
 	got_cs = true;
       }
-
+      
       if (!got_cb) {
-	if( vm.count("cbify") ) vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
-	else vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
+	vm.insert(pair<string,po::variable_value>(string("cb"),vm["cbify"]));
 	all.l = CB_ALGS::setup(all, vm);
 	got_cb = true;
       }
@@ -776,6 +829,13 @@ void parse_cb(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 
 void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
 {
+  po::options_description search_opts("Search");
+    
+  search_opts.add_options()
+    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
+
+  vm = add_options(all,search_opts);
+
   if (vm.count("search")) {
     if (!got_cs && !got_cb) {
       if( vm.count("search") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["search"]));
@@ -798,8 +858,6 @@ void add_to_args(vw& all, int argc, char* argv[])
 
 vw* parse_args(int argc, char *argv[])
 {
-  po::options_description desc("VW options");
-
   vw* all = new vw();
 
   add_to_args(*all, argc, argv);
@@ -807,35 +865,16 @@ vw* parse_args(int argc, char *argv[])
   size_t random_seed = 0;
   all->program_name = argv[0];
 
-  po::options_description in_opt("Input options");
+  po::options_description desc("VW options");
 
-  in_opt.add_options()
-    ("data,d", po::value< string >(), "Example Set")
-    ("daemon", "persistent daemon mode on port 26542")
-    ("port", po::value<size_t>(),"port to listen on; use 0 to pick unused port")
-    ("num_children", po::value<size_t>(&(all->num_children)), "number of children for persistent daemon mode")
-    ("pid_file", po::value< string >(), "Write pid file in persistent daemon mode")
-    ("port_file", po::value< string >(), "Write port used in persistent daemon mode")
-    ("cache,c", "Use a cache.  The default is <data>.cache")
-    ("cache_file", po::value< vector<string> >(), "The location(s) of cache_file.")
-    ("kill_cache,k", "do not reuse existing cache: create a new one always")
-    ("compressed", "use gzip format whenever possible. If a cache file is being created, this option creates a compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection.")
-    ("no_stdin", "do not default to reading from stdin")
-    ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring")
-    ("save_resume", "save extra state so learning can be resumed later with new data")
-    ;
-
-  po::options_description out_opt("Output options");
-
-  out_opt.add_options()
-    ("predictions,p", po::value< string >(), "File to output predictions to")
-    ("raw_predictions,r", po::value< string >(), "File to output unnormalized predictions to")
-    ;
+  desc.add_options()
+    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator")
+    ("ring_size", po::value<size_t>(&(all->p->ring_size)), "size of example ring");
 
   po::options_description update_opt("Update options");
 
   update_opt.add_options()
-    ("learning_rate,l", po::value<float>(&(all->eta)), "Set Learning Rate")
+    ("learning_rate,l", po::value<float>(&(all->eta)), "Set learning rate")
     ("power_t", po::value<float>(&(all->power_t)), "t power value")
     ("decay_learning_rate",    po::value<float>(&(all->eta_decay_rate)),
      "Set Decay factor for learning_rate between passes")
@@ -869,19 +908,10 @@ vw* parse_args(int argc, char *argv[])
 
   po::options_description other_opt("Other options");
   other_opt.add_options()
-    ("bootstrap", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
-    ("cb", po::value<size_t>(), "Use contextual bandit learning with <k> costs")
-    ("cbify", po::value<size_t>(), "Convert multiclass on <k> classes into a contextual bandit problem and solve")
-    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")    
+    ("bootstrap,B", po::value<size_t>(), "bootstrap mode with k rounds by online importance resampling")
     ;
 
-  // Declare the supported options.
-  desc.add_options()
-    ("random_seed", po::value<size_t>(&random_seed), "seed random number generator");
-
-  desc.add(in_opt)
-    .add(out_opt)
-    .add(update_opt)
+  desc.add(update_opt)
     .add(weight_opt)
     .add(active_opt)
     .add(cluster_opt)
@@ -912,6 +942,9 @@ vw* parse_args(int argc, char *argv[])
   int temp_argc = 0;
   char** temp_argv = VW::get_argv_from_string(all->file_options, temp_argc);
   add_to_args(*all, temp_argc, temp_argv);
+  for (int i = 0; i < temp_argc; i++)
+    free(temp_argv[i]);
+  free(temp_argv);
   
   po::parsed_options pos = po::command_line_parser(all->args).
     style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
@@ -921,6 +954,7 @@ vw* parse_args(int argc, char *argv[])
 
   po::store(pos, vm);
   po::notify(vm);
+  all->file_options = "";
 
   parse_feature_tweaks(*all, vm); //feature tweaks
 
@@ -946,10 +980,6 @@ vw* parse_args(int argc, char *argv[])
 
   parse_scorer_reductions(*all, vm);
 
-  load_input_model(*all, vm, io_temp);
-
-  
-
   bool got_cs = false;
   
   parse_score_users(*all, vm, got_cs);
@@ -964,16 +994,7 @@ vw* parse_args(int argc, char *argv[])
   if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);
 
-  // Be friendly: if -d was left out, treat positional param as data file
-  po::positional_options_description p;  
-  p.add("data", -1);
-
-  vm = po::variables_map();
-  pos = po::command_line_parser(all->args).
-    style(po::command_line_style::default_style ^ po::command_line_style::allow_guessing).
-    options(all->opts).positional(p).run();
-    vm = po::variables_map();
-  po::store(pos, vm);
+  load_input_model(*all, vm, io_temp);
 
   parse_source(*all, vm);
 

@@ -8,6 +8,6 @@ license as described in the file LICENSE.
 #include "parser.h"
 #include "example.h"
 
-void unique_sort_features(bool audit, example* ae);
+void unique_sort_features(bool audit, uint32_t parse_mask, example* ae);
 
 #endif
