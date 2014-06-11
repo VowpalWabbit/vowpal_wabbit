@@ -46,14 +46,14 @@ else
 endif
 
 # for normal fast execution.
-FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG -I $(BOOST_I#NCLUDE) #-DVW_LDA_NO_SSE
+FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET_BITS=64 -DNDEBUG -I $(BOOST_INCLUDE) #-DVW_LDA_NO_SSE
 
 # for profiling -- note that it needs to be gcc
 #FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -O2 -fno-strict-aliasing -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -pg #-DVW_LDA_NO_S
 #CXX = g++
 
 # for valgrind / gdb debugging
-FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
+#FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O0
 
 # for valgrind profiling: run 'valgrind --tool=callgrind PROGRAM' then 'callgrind_annotate --tree=both --inclusive=yes'
 #FLAGS = $(CFLAGS) $(LDFLAGS) -Wall $(ARCH) -ffast-math -D_FILE_OFFSET_BITS=64 -I $(BOOST_INCLUDE) -g -O3 -fomit-frame-pointer -ffast-math -fno-strict-aliasing

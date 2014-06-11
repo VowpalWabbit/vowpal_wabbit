@@ -21,8 +21,6 @@ void add_float(float& c1, const float& c2) {
   c1 += c2;
 }
 
-
-
 void accumulate(vw& all, string master_location, regressor& reg, size_t o) {
   uint32_t length = 1 << all.num_bits; //This is size of gradient
   size_t stride = 1 << all.reg.stride_shift;

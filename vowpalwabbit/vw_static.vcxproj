@@ -339,7 +339,6 @@
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="wap.cc" />
     <ClCompile Include="stagewise_poly.cc" />
-    <ClCompile Include="stagewise_poly_ssm.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

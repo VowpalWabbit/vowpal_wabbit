@@ -9,7 +9,7 @@
 //#define DEBUG
 #include <cassert>
 
-#define PARALLEL_ENABLE
+//#define MAGIC_ARGUMENT //MAY IT NEVER DIE
 
 using namespace std;
 using namespace LEARNER;
@@ -20,46 +20,8 @@ namespace StagewisePoly
   static const uint32_t cycle_bit = 2;
   static const uint32_t tree_atomics = 134;
   static const float tolerance = 1e-9;
-  static const int mult_const = 95104348457;
   static const uint32_t indicator_bit = 128;
   static const uint32_t default_depth = 127;
-  
-  // static const uint32_t hash_mod_table[] = {
-  //   [0] = 0,
-  //   [1] = 1,
-  //   [2] = 3,
-  //   [3] = 3,
-  //   [4] = 11,
-  //   [5] = 11,
-  //   [6] = 43,
-  //   [7] = 43,
-  //   [8] = 171,
-  //   [9] = 171,
-  //   [10] = 683,
-  //   [11] = 683,
-  //   [12] = 2731,
-  //   [13] = 2731,
-  //   [14] = 10923,
-  //   [15] = 10923,
-  //   [16] = 43691,
-  //   [17] = 43691,
-  //   [18] = 174763,
-  //   [19] = 174763,
-  //   [20] = 699051,
-  //   [21] = 699051,
-  //   [22] = 2796203,
-  //   [23] = 2796203,
-  //   [24] = 11184811,
-  //   [25] = 11184811,
-  //   [26] = 44739243,
-  //   [27] = 44739243,
-  //   [28] = 178956971,
-  //   [29] = 178956971,
-  //   [30] = 715827883,
-  //   [31] = 715827883,
-  //   [32] = 2863311531
-  // };
-
 
   struct sort_data {
     float wval;
@@ -71,7 +33,6 @@ namespace StagewisePoly
     vw *all;
 
     float sched_exponent;
-    float magic_argument;
     uint32_t batch_sz;
 
     sort_data *sd;
@@ -100,6 +61,10 @@ namespace StagewisePoly
     uint32_t max_depth;
     uint32_t depths[100000];
 #endif //DEBUG
+
+#ifdef MAGIC_ARGUMENT
+    float magic_argument;
+#endif //MAGIC_ARGUMENT
   };
 
 
@@ -198,46 +163,18 @@ namespace StagewisePoly
     assert((wi_atomic & (stride_shift(poly, 1) - 1)) == 0);
     assert((wi_general & (stride_shift(poly, 1) - 1)) == 0);
 
-    if (poly.magic_argument == 0) { //XXX TEMPORARY CONDITIONAL BLOCK DON'T HATE ME
-      if (wi_atomic == constant_feat_masked(poly))
-        return wi_general;
-      else if (wi_general == constant_feat_masked(poly))
-        return wi_atomic;
-      else if (wi_atomic == wi_general) {
-        uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
-        return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
-      } else
-        return wid_mask(poly, stride_shift(poly, ((stride_un_shift(poly, wi_atomic) * mult_const) ^ (stride_un_shift(poly, wi_general) * mult_const))));
-    } else if (poly.magic_argument == 1) {
-      if (wi_atomic == constant_feat_masked(poly))
-        return wi_general;
-      else if (wi_general == constant_feat_masked(poly))
-        return wi_atomic;
-      else {
-        //This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
-        //to the monomial, whereas this here is sensitive to the path followed, but whatever.
-        return wid_mask(poly, stride_shift(poly, stride_un_shift(poly, wi_atomic)
-              ^ (16777619 * stride_un_shift(poly, wi_general))));
-      }
-    } else if (poly.magic_argument == 2) {
-      return 0; //was going to tune constants and add modulus to FNV above but became lazy.
-    } /*else if (poly.magic_argument == 3) {
-      if (wi_atomic == constant_feat_masked(poly))
-        return wi_general;
-      else if (wi_general == constant_feat_masked(poly))
-        return wi_atomic;
-      else if (wi_atomic == wi_general) {
-        uint64_t wi_2_64 = stride_un_shift(poly, wi_general);
-        return wid_mask(poly, stride_shift(poly, (size_t)(merand48(wi_2_64) * ((poly.all->length()) - 1))));
-      } else {
-        assert(3 * hash_mod_table[poly.all->num_bits] % poly.all->length() == 1);
-        uint32_t xa = 3 * stride_un_shift(poly, wi_atomic) % poly.all->length();
-        uint32_t xg = 3 * stride_un_shift(poly, wi_general) % poly.all->length();
-        return wid_mask(poly, stride_shift(poly, (xa ^ xg) * hash_mod_table[poly.all->num_bits]));
-      }
-    }*/ 
-	else {
-      return 0; //deal with it.
+    if (wi_atomic == constant_feat_masked(poly))
+      return wi_general;
+    else if (wi_general == constant_feat_masked(poly))
+      return wi_atomic;
+    else {
+      //This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
+      //to the monomial, whereas this here is sensitive to the path followed, but whatever.
+      //the two main big differences with FNV are: (1) the "*constant" case should also have
+      //a big prime (so the default hash shouldn't be identity on small things, and (2) the
+      //size should not just be a power of 2, but some big prime.
+      return wid_mask(poly, stride_shift(poly, stride_un_shift(poly, wi_atomic)
+            ^ (16777619 * stride_un_shift(poly, wi_general))));
     }
   }
 
@@ -301,8 +238,6 @@ namespace StagewisePoly
     num_new_features = (num_new_features > poly.all->length()) ? poly.all->length() : num_new_features;
     sort_data_ensure_sz(poly, num_new_features);
 
-    cout<<"Adding "<<num_new_features<<endl;
-
     sort_data *heap_end = poly.sd;
     make_heap(poly.sd, heap_end, sort_data_compar_heap); //redundant
     for (uint32_t i = 0; i != poly.all->length(); ++i) {
@@ -320,7 +255,6 @@ namespace StagewisePoly
            */
           ;
         if (wval > tolerance) {
-	  //cout<<wval<<" ";
           assert(heap_end >= poly.sd);
           assert(heap_end <= poly.sd + num_new_features);
 
@@ -341,10 +275,7 @@ namespace StagewisePoly
         }
       }
     }
-    //cout<<endl;
     num_new_features = (uint32_t) (heap_end - poly.sd);
-
-    cout<<"Added "<<num_new_features<<endl;
 
 #ifdef DEBUG
     //eyeballing weights a pain if unsorted.
@@ -454,9 +385,6 @@ namespace StagewisePoly
         poly.synth_rec_f = parent_f;
       }
     }
-    // else {
-    //   cout<<"Skipping feature "<<cycle_get(poly, wid_cur)<<" "<<(uint32_t)min_depths_get(poly, wid_cur)<<" "<<poly.cur_depth<<" "<<wid_atomic<<" "<<poly.synth_rec_f.weight_index<<" "<<wid_cur<<endl;
-    // }
   }
 
   void synthetic_create(stagewise_poly &poly, example &ec, bool training)
@@ -474,9 +402,7 @@ namespace StagewisePoly
      * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
      * Problem with this is if there is a collision with the root...
      */
-    //cout<<"Starting feature creation\n";
     GD::foreach_feature<stagewise_poly, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
-    //cout<<"Finished feature creation\n";
     synthetic_decycle(poly);
     poly.synth_ec.total_sum_feat_sq = poly.synth_ec.sum_feat_sq[tree_atomics];
 
@@ -502,10 +428,10 @@ namespace StagewisePoly
 
     if (training) {
       if(poly.update_support) {
-	sort_data_update_support(poly);
-	poly.update_support = false;
+        sort_data_update_support(poly);
+        poly.update_support = false;
       }
-      
+
       synthetic_create(poly, ec, training);
       base.learn(poly.synth_ec);
       ec.loss = poly.synth_ec.loss;
@@ -517,43 +443,42 @@ namespace StagewisePoly
   }
 
 
-#ifdef PARALLEL_ENABLE
   void reduce_min(uint8_t &v1,const uint8_t &v2)
   {
-    //cout<<"v1 = "<<(uint32_t)v1<<" v2 = "<<(uint32_t)v2<<" ";
     if(v1 == default_depth)
       v1 = v2;
     else if(v2 != default_depth)
       v1 = (v1 <= v2) ? v1 : v2;
-    //cout<<"allreduce(v1, v2) = "<<(uint32_t)v1<<" ";
-  }  
+  }
 
   void reduce_min_max(uint8_t &v1,const uint8_t &v2)
   {
-    //cout<<"v1 = "<<(uint32_t)v1<<" v2 = "<<(uint32_t)v2<<" "<<(v1 & indicator_bit)<<" "<<(v2 & indicator_bit);
     bool parent_or_depth = (v1 & indicator_bit);
     if(parent_or_depth != (bool)(v2 & indicator_bit)) {
-      cout<<"Reducing parent with depth!!!!!";
+#ifdef DEBUG
+      cout << "Reducing parent with depth!!!!!";
+#endif //DEBUG
       return;
     }
 
     if(parent_or_depth)
-      v1 = (v1 >= v2) ? v1 : v2;    
+      v1 = (v1 >= v2) ? v1 : v2;
     else {
       if(v1 == default_depth)
-	v1 = v2;
+        v1 = v2;
       else if(v2 != default_depth)
-	v1 = (v1 <= v2) ? v1 : v2;
+        v1 = (v1 <= v2) ? v1 : v2;
     }
-    //cout<<"allreduce(v1, v2) = "<<(uint32_t)v1<<" ";
-  }  
+  }
 
 
   void sanity_check_state(stagewise_poly &poly)
   {
     for (uint32_t i = 0; i != poly.all->length(); ++i)
     {
+#ifndef NDEBUG
       uint32_t wid = stride_shift(poly, i);
+#endif //NDEBUG
 
       assert( ! cycle_get(poly,wid) );
 
@@ -562,13 +487,8 @@ namespace StagewisePoly
       assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
       //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
 
-      assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~3) );
-      
+      assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
     }
-    
-    // for(int i = 0;i < 2*poly.all->length();i++)
-    // 	cout<<(uint32_t) poly.depthsbits[i]<<" ";
-    // cout<<endl;
   }
 
 
@@ -581,11 +501,11 @@ namespace StagewisePoly
     uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
     uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
 
-    // cout<<"Size = "<<sizeof(uint8_t)<<endl
-    
-    // cout<<"Sanity before allreduce\n";
-    // sanity_check_state(poly);
-    
+#ifdef DEBUG
+    cout << "Sanity before allreduce\n";
+    sanity_check_state(poly);
+#endif //DEBUG
+
     vw &all = *poly.all;
     if(all.span_server != "") {
       /*
@@ -594,9 +514,7 @@ namespace StagewisePoly
        * But it's unclear what the right behavior is in general for either
        * case...
        */
-      //cout<<"In allreduce\n";      
       all_reduce<uint8_t, reduce_min_max>(poly.depthsbits, 2*poly.all->length(), all.span_server, all.unique_id, all.total, all.node, all.socks);
-      //cout<<endl;
 
       sum_input_sparsity_inc = accumulate_scalar(all, all.span_server, sum_input_sparsity_inc);
       sum_sparsity_inc = accumulate_scalar(all, all.span_server, sum_sparsity_inc);
@@ -610,19 +528,21 @@ namespace StagewisePoly
     poly.num_examples_sync = poly.num_examples_sync + num_examples_inc;
     poly.num_examples = poly.num_examples_sync;
 
-    //cout<<"Sanity after allreduce\n";
-    //sanity_check_state(poly);
+#ifdef DEBUG
+    cout << "Sanity after allreduce\n";
+    sanity_check_state(poly);
+#endif //DEBUG
 
     if (poly.numpasses != poly.all->numpasses) {
       poly.update_support = true;
       poly.numpasses++;
     }
 
-    //cout<<"Sanity after sort\n";
-    //sanity_check_state(poly);
+#ifdef DEBUG
+    cout << "Sanity after sort\n";
+    sanity_check_state(poly);
+#endif //DEBUG
   }
-
-#endif //PARALLEL_ENABLE
 
   void finish_example(vw &all, stagewise_poly &poly, example &ec)
   {
@@ -636,7 +556,7 @@ namespace StagewisePoly
   void finish(stagewise_poly &poly)
   {
 #ifdef DEBUG
-    cout<<"total feature number (after poly expansion!) = " << poly.sum_sparsity << endl;
+    cout << "total feature number (after poly expansion!) = " << poly.sum_sparsity << endl;
 #endif //DEBUG
 
     poly.synth_ec.atomics[tree_atomics].delete_v();
@@ -663,13 +583,18 @@ namespace StagewisePoly
     po::options_description sp_opt("Stagewise poly options");
     sp_opt.add_options()
       ("sched_exponent", po::value<float>(), "exponent on schedule")
+      ("batch_sz", po::value<uint32_t>(), "batch size")
+#ifdef MAGIC_ARGUMENT
       ("magic_argument", po::value<float>(), "magical feature flag")
-      ("batch_sz", po::value<uint32_t>(), "batch size");
+#endif //MAGIC_ARGUMENT
+      ;
     vm = add_options(all, sp_opt);
 
     poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 0.;
-    poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
     poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 0;
+#ifdef MAGIC_ARGUMENT
+    poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
+#endif //MAGIC_ARGUMENT
 
     poly->sum_sparsity = 0;
     poly->sum_input_sparsity = 0;
@@ -686,9 +611,8 @@ namespace StagewisePoly
     l->set_finish<stagewise_poly, finish>();
     l->set_save_load<stagewise_poly, save_load>();
     l->set_finish_example<stagewise_poly,finish_example>();
-#ifdef PARALLEL_ENABLE
     l->set_end_pass<stagewise_poly, end_pass>();
-#endif
+
     return l;
   }
 }
