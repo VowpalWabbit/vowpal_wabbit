@@ -42,7 +42,7 @@
 #
 
 use Getopt::Std;
-use vars qw($opt_v $opt_V $opt_s);
+use vars qw($opt_v $opt_V $opt_s $opt_a);
 
 my %ExampleDelta = ();
 my $TopN;
@@ -85,6 +85,8 @@ sub usage(@) {
     $0 options (must precede the 'vw' and its args):
         -s      Use sum-of-weights instead of mean-of-weights
                 in 'top adverse features' summary
+        -a      Use absolute rather than (the default) relative error
+                (since-last / mean loss) for top N deviant examples
         -v      verbose
 
     $0 args (must precede the 'vw' and its args):
@@ -132,7 +134,7 @@ sub get_args {
     $VWCmd = "@vw_args";
 
     @ARGV = @our_args;
-    getopts('vs');
+    getopts('vsa');
 }
 
 
@@ -145,7 +147,14 @@ sub collect_errors($) {
         my ($avgloss, $sincelast, $example) = ($1, $2, $3);
         if (defined $prev_sincelast) {
             my $delta_since_last = $sincelast - $prev_sincelast;
-            $ExampleDelta{$example} = $delta_since_last;
+            if ($opt_a) {
+                # absolute error
+                $ExampleDelta{$example} = $delta_since_last;
+            } else {
+                # relative error
+                my $relative_error = $delta_since_last / $avgloss;
+                $ExampleDelta{$example} = $relative_error;
+            }
         }
 
         ($prev_avgloss, $prev_sincelast) = ($avgloss, $sincelast);
@@ -281,9 +290,9 @@ sub biggest_errors($) {
 }
 
 sub print_errors(@) {
-    printf "=== Top-%d (highest loss) diverging examples:\n", scalar(@_);
+    printf "=== Top-%d (highest delta loss) diverging examples:\n", scalar(@_);
 
-    print "Example\tLoss\n";
+    printf "Example\t%s-Loss\n", ($opt_a ? 'Absolute' : 'Relative');
     foreach my $example (@_) {
         printf "%d\t%g\n", $example, $ExampleDelta{$example};
     }
