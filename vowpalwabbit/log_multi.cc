@@ -16,7 +16,7 @@ license as described in the file LICENSE.node
 using namespace std;
 using namespace LEARNER;
 
-namespace TXM_O
+namespace LOG_MULTI
 {
   class node_pred	
   {
@@ -73,7 +73,7 @@ namespace TXM_O
     uint32_t max_count_label;//the most common label
   } node;
   
-  struct txm_o
+  struct log_multi
   {
     uint32_t k;	
     vw* all;	
@@ -114,18 +114,18 @@ namespace TXM_O
     return node;
   }
   
-  void init_tree(txm_o& d)
+  void init_tree(log_multi& d)
   {
     d.nodes.push_back(init_node());
     d.nbofswaps = 0;
   }
 
-  inline uint32_t min_left_right(txm_o& b, node& n)
+  inline uint32_t min_left_right(log_multi& b, node& n)
   {
     return min(b.nodes[n.left].min_count, b.nodes[n.right].min_count);
   }
   
-  inline uint32_t find_switch_node(txm_o& b)	
+  inline uint32_t find_switch_node(log_multi& b)	
   {
     uint32_t node = 0;
     while(b.nodes[node].internal)
@@ -137,7 +137,7 @@ namespace TXM_O
     return node;
   }
   
-  inline void update_min_count(txm_o& b, uint32_t node)	
+  inline void update_min_count(log_multi& b, uint32_t node)	
   {//Constant time min count update.    
     while(node != 0)
       {
@@ -151,7 +151,7 @@ namespace TXM_O
       }
   }
 
-  void display_tree_dfs(txm_o& b, node node, uint32_t depth)
+  void display_tree_dfs(log_multi& b, node node, uint32_t depth)
   {
     for (uint32_t i = 0; i < depth; i++)
       cout << "\t";
@@ -172,7 +172,7 @@ namespace TXM_O
       }	
   }
 
-  bool children(txm_o& b, uint32_t& current, uint32_t& class_index, uint32_t label)
+  bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t label)
   {
     class_index = b.nodes[current].preds.unique_add_sorted(node_pred(label));
     b.nodes[current].preds[class_index].label_count++;
@@ -244,7 +244,7 @@ namespace TXM_O
     return b.nodes[current].internal;
   }
   
-  void train_node(txm_o& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
+  void train_node(log_multi& b, learner& base, example& ec, uint32_t& current, uint32_t& class_index)
   {
     label_data* simple_temp = (label_data*)ec.ld;
 
@@ -267,7 +267,7 @@ namespace TXM_O
     b.nodes[current].preds[class_index].norm_Ehk = b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
   }
   
-  void verify_min_dfs(txm_o& b, node node)
+  void verify_min_dfs(log_multi& b, node node)
   {
     if (node.internal)
       {
@@ -281,7 +281,7 @@ namespace TXM_O
       }
   }
   
-  size_t sum_count_dfs(txm_o& b, node node)
+  size_t sum_count_dfs(log_multi& b, node node)
   {
     if (node.internal)
       return sum_count_dfs(b, b.nodes[node.left]) + sum_count_dfs(b, b.nodes[node.right]);
@@ -297,7 +297,7 @@ namespace TXM_O
       return n.right;
   }
 
-  void predict(txm_o& b, learner& base, example& ec)	
+  void predict(log_multi& b, learner& base, example& ec)	
   {
     MULTICLASS::multiclass* mc = (MULTICLASS::multiclass*)ec.ld;
 
@@ -316,7 +316,7 @@ namespace TXM_O
     ec.ld = mc;
   }
 
-  void learn(txm_o& b, learner& base, example& ec)
+  void learn(log_multi& b, learner& base, example& ec)
   {
     //    verify_min_dfs(b, b.nodes[0]);
 
@@ -348,12 +348,12 @@ namespace TXM_O
       }
   }
   
-  void save_node_stats(txm_o& d)
+  void save_node_stats(log_multi& d)
   {
     FILE *fp;
     uint32_t i, j;
     uint32_t total;
-    txm_o* b = &d;
+    log_multi* b = &d;
     
     fp = fopen("atxm_debug.csv", "wt");
     
@@ -393,13 +393,13 @@ namespace TXM_O
     fclose(fp);
   }	
   
-  void finish(txm_o& b)
+  void finish(log_multi& b)
   {
     save_node_stats(b);
     cout << "used " << b.nbofswaps << " swaps" << endl;
   }
   
-  void save_load_tree(txm_o& b, io_buf& model_file, bool read, bool text)
+  void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
   {
     if (model_file.files.size() > 0)
       {	
@@ -496,7 +496,7 @@ namespace TXM_O
       }
   }
   
-  void finish_example(vw& all, txm_o&, example& ec)
+  void finish_example(vw& all, log_multi&, example& ec)
   {
     MULTICLASS::output_example(all, ec);
     VW::finish_example(all, &ec);
@@ -504,7 +504,7 @@ namespace TXM_O
   
   learner* setup(vw& all, po::variables_map& vm)	//learner setup
   {
-    txm_o* data = (txm_o*)calloc(1, sizeof(txm_o));
+    log_multi* data = (log_multi*)calloc(1, sizeof(log_multi));
 
     po::options_description opts("TXM Online options");
     opts.add_options()
@@ -513,11 +513,11 @@ namespace TXM_O
     
     vm = add_options(all, opts);
     
-    data->k = (uint32_t)vm["txm_o"].as<size_t>();
+    data->k = (uint32_t)vm["log_multi"].as<size_t>();
     
-    //append txm_o with nb_actions to options_from_file so it is saved to regressor later
+    //append log_multi with nb_actions to options_from_file so it is saved to regressor later
     std::stringstream ss;
-    ss << " --txm_o " << data->k;
+    ss << " --log_multi " << data->k;
     all.file_options.append(ss.str());
     
     if (vm.count("no_progress"))
@@ -536,11 +536,11 @@ namespace TXM_O
     data->max_predictors = data->k - 1;
 
     learner* l = new learner(data, all.l, data->max_predictors);
-    l->set_save_load<txm_o,save_load_tree>();
-    l->set_learn<txm_o,learn>();
-    l->set_predict<txm_o,predict>();
-    l->set_finish_example<txm_o,finish_example>();
-    l->set_finish<txm_o,finish>();
+    l->set_save_load<log_multi,save_load_tree>();
+    l->set_learn<log_multi,learn>();
+    l->set_predict<log_multi,predict>();
+    l->set_finish_example<log_multi,finish_example>();
+    l->set_finish<log_multi,finish>();
     
     init_tree(*data);	
     

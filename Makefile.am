@@ -33,6 +33,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/mf.h \
 	vowpalwabbit/memory.h \
 	vowpalwabbit/lda_core.h \
+	vowpalwabbit/log_multi.h \
 	vowpalwabbit/lrq.h \
 	vowpalwabbit/network.h \
 	vowpalwabbit/nn.h \
@@ -51,7 +52,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/sender.h \
 	vowpalwabbit/topk.h \
 	vowpalwabbit/unique_sort.h \
-	vowpalwabbit/v_hashmap.h
+	vowpalwabbit/v_hashmap.h 
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 
