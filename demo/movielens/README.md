@@ -37,5 +37,6 @@ You might find a bit of `--l2` regularization improves generalization.
  - lrq: the linear model augmented with rank-7 interactions between users and movies, aka, "seven latent factors".  It achieves test MAE of 0.698.  I determined that 7 was the best number to use through experimentation.  The additional `vw` command-line flags vs. the linear model are `--l2 1e-6 --lrq um7`.  Performance is sensitive to the choice of `--l2` regularization strength.
  - lrqdropout: the linear model augmented with rank-14 interactions between users and movies, and trained with dropout.  It achieves test MAE of 0.689.  The additional `vw` command-line flags vs. the linear model are `--lrq um14 --lrqdropout`.
 - the first time you invoke `make shootout` there is a lot of other output.  invoking it a second time will allow you to just see the cached results.
+- `make movie_dendrogram.pdf` will produce a couple of PDFs with hierarchical clustering of the movies based on the latent factors found by `--lrq`. It serves as an example on how to extract the latent factors from an `--invert_hash` file. You will need to zoom in in the large dendrogram to find the movie names.
 
 Details about how `vw` is invoked is in the `Makefile`.
