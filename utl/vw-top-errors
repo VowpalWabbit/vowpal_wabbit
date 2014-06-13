@@ -4,17 +4,16 @@
 # Goal: improve learning (smaller generalization error)
 #
 # How:  Inspect the learning process in real-time. Single-out
-#       the elements leading to its biggest weaknesses.  More
-#       specifically: track the online learning-process largest
-#       errors (deviations from convergenge) and drill-down
-#       to uncover the features that underlie these biggest errors.
+#       the elements leading to its biggest jumps in loss
+#       (deviations from convergence) and drill-down to uncover
+#       the features that underlie these biggest deviations.
 #
 # The process has two steps:
 #   1) Train with --progress 1 to capture the examples that cause
 #      the biggest divergences (increase in progressive loss) in
 #      the learning process.
 #   2) Audit the examples from step 1) and drill down to their
-#      largest weight features (the features that presumably are
+#      top weighted features (the features that presumably are
 #      throwing the learning process off course: i.e. cause 'un-learning').
 #
 # First step:
@@ -27,8 +26,23 @@
 #   output:   A dump of the biggest-error examples each with its
 #             top-N highest weight features.
 #
+# Caveats:
+#   Running vw-top-errors only points-out the top suspects.
+#   top suspects are not necessarily "guilty".
+#   For example: if the constant feature is large and has a large
+#   relative weight, it may be singled out as a strong-feature in
+#   examples that are deviant.  It is entirely possible that it is
+#   also a strong feature in other/most examples.
+#
+#   So use and enjoy this utility, but be aware of its limitations.
+#
+# -- Copyright (c) ariel faigon, 2014
+# This software is released under the same licence as vowpal-wabbit.
+# itself.  See the file LICENSE.
+#
+
 use Getopt::Std;
-use vars qw($opt_v $opt_V $opt_a);
+use vars qw($opt_v $opt_V $opt_s $opt_a);
 
 my %ExampleDelta = ();
 my $TopN;
@@ -69,6 +83,10 @@ sub usage(@) {
        and print their highest weights.
 
     $0 options (must precede the 'vw' and its args):
+        -s      Use sum-of-weights instead of mean-of-weights
+                in 'top adverse features' summary
+        -a      Use absolute rather than (the default) relative error
+                (since-last / mean loss) for top N deviant examples
         -v      verbose
 
     $0 args (must precede the 'vw' and its args):
@@ -116,7 +134,7 @@ sub get_args {
     $VWCmd = "@vw_args";
 
     @ARGV = @our_args;
-    getopts('v');
+    getopts('vsa');
 }
 
 
@@ -129,7 +147,14 @@ sub collect_errors($) {
         my ($avgloss, $sincelast, $example) = ($1, $2, $3);
         if (defined $prev_sincelast) {
             my $delta_since_last = $sincelast - $prev_sincelast;
-            $ExampleDelta{$example} = $delta_since_last;
+            if ($opt_a) {
+                # absolute error
+                $ExampleDelta{$example} = $delta_since_last;
+            } else {
+                # relative error
+                my $relative_error = $delta_since_last / $avgloss;
+                $ExampleDelta{$example} = $relative_error;
+            }
         }
 
         ($prev_avgloss, $prev_sincelast) = ($avgloss, $sincelast);
@@ -206,6 +231,8 @@ sub audit_top_weights($$@) {
             printf "\t%s\t%-8s\t%s\n", 'Feature', 'Weight', 'Full-audit-data';
             for (my $i = 0; $i < $TopWeights; $i++) {
                 my $feature = $sorted_features[$i];
+                next unless (defined $feature);
+
                 my ($name, $hash, $value, $weight) = split(':', $feature);
                 $weight =~ s/\@.*$//;
                 printf "\t%s\t%7.6f\t%s\n", $name, $weight, $feature;
@@ -219,12 +246,24 @@ sub audit_top_weights($$@) {
             }
         }
     }
-
     print "\n";
-    print "=== Top adverse features (in descending cumulative weight)\n";
-    printf "%-20s\t%-10s  %s\n", 'Name', 'Weight-Sum', 'Examples';
-    foreach my $name (sort {$feature_weights{$b} <=> $feature_weights{$a}}
-                         keys %feature_weights) {
+    printf "=== Top adverse features (in descending %s weight)\n",
+                            ($opt_s ? 'cummulative' : 'mean');
+    printf "%-20s\t%-10s  %s\n", 'Name',
+                                 ($opt_s ? 'Sum-Weight' : 'Mean-Weight'),
+                                 'Examples';
+
+    unless ($opt_s) {   # Switch from sum of-weights to mean
+        foreach my $name (keys %feature_weights) {
+            my @examples = keys %{$feature_examples{$name}};
+            my $example_count = scalar @examples;
+            $feature_weights{$name} /= $example_count;
+        }
+    }
+
+    foreach my $name (sort
+                        {$feature_weights{$b} <=> $feature_weights{$a}}
+                            keys %feature_weights) {
         
         my @example_list = sort {
                                 $feature_examples{$name}->{$b}
@@ -251,9 +290,9 @@ sub biggest_errors($) {
 }
 
 sub print_errors(@) {
-    printf "=== Top-%d (highest loss) diverging examples:\n", scalar(@_);
+    printf "=== Top-%d (highest delta loss) diverging examples:\n", scalar(@_);
 
-    print "Example\tLoss\n";
+    printf "Example\t%s-Loss\n", ($opt_a ? 'Absolute' : 'Relative');
     foreach my $example (@_) {
         printf "%d\t%g\n", $example, $ExampleDelta{$example};
     }
