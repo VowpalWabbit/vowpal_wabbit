@@ -41,6 +41,7 @@ license as described in the file LICENSE.
 #include "lrq.h"
 #include "autolink.h"
 #include "memory.h"
+#include "stagewise_poly.h"
 
 using namespace std;
 //
@@ -697,7 +698,8 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
     ("new_mf", "use new, reduction-based matrix factorization")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
-    ("lrqdropout", "use dropout training for low rank quadratic features");
+    ("lrqdropout", "use dropout training for low rank quadratic features")
+    ("stage_poly", "use stagewise polynomial feature learning");
 
   vm = add_options(all, score_mod_opt);
 
@@ -712,6 +714,9 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
   
   if (vm.count("lrq"))
     all.l = LRQ::setup(all, vm);
+
+  if (vm.count("stage_poly"))
+    all.l = StagewisePoly::setup(all, vm);
   
   all.l = Scorer::setup(all, vm);
 }
@@ -984,6 +989,7 @@ vw* parse_args(int argc, char *argv[])
   parse_cb(*all, vm, got_cs, got_cb);
 
   parse_search(*all, vm, got_cs, got_cb);
+  
 
   if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);
