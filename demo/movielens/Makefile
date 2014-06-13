@@ -9,7 +9,7 @@ all:
 shootout: $(foreach what,linear lrq lrqdropout,$(what).print)
 
 clean:
-	rm -f $(wildcard *results*) $(wildcard *.vw) $(wildcard *.model.txt)
+	rm -f $(wildcard *results*) $(wildcard *.vw) $(wildcard *.model.txt) $(wildcard *.pdf)
 
 ml-%.zip:
 	@echo "downloading movielens $*"
@@ -122,3 +122,12 @@ lrqdropout.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	@echo
 	@${VW} -i $@.model -t --invert_hash $@.model.txt -d $(word 2,$+)
 	@rm -f $@.cache $@.model
+
+movie_dendrogram.pdf: lrqdropout.results
+	@echo "*******************************************************"
+	@echo "* Generating movie clustering based on latent factors *"
+	@echo "*         (Requires an installation of R)             *"
+	@echo "*******************************************************"
+	@grep ^lrq^m $<.model.txt | tr '^' ':' > $<.model.csv
+	@Rscript visualize_factors.R
+	@rm -f $@.model.csv
