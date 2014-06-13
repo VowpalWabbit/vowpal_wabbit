@@ -174,7 +174,7 @@ namespace LOG_MULTI
 
   bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t label)
   {
-    class_index = b.nodes[current].preds.unique_add_sorted(node_pred(label));
+    class_index = (uint32_t)b.nodes[current].preds.unique_add_sorted(node_pred(label));
     b.nodes[current].preds[class_index].label_count++;
     
     if(b.nodes[current].preds[class_index].label_count > b.nodes[current].max_count)
@@ -193,9 +193,9 @@ namespace LOG_MULTI
 	uint32_t right_child;
 	if (b.predictors_used < b.max_predictors)
 	  {
-	    left_child = b.nodes.size();
+	    left_child = (uint32_t)b.nodes.size();
 	    b.nodes.push_back(init_node());	
-	    right_child = b.nodes.size();
+	    right_child = (uint32_t)b.nodes.size();
 	    b.nodes.push_back(init_node());
 	    b.nodes[current].base_predictor = b.predictors_used++;
 	  }
@@ -263,8 +263,8 @@ namespace LOG_MULTI
     b.nodes[current].n++;
     b.nodes[current].preds[class_index].nk++;	
   
-    b.nodes[current].norm_Eh = b.nodes[current].Eh / b.nodes[current].n;          
-    b.nodes[current].preds[class_index].norm_Ehk = b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
+    b.nodes[current].norm_Eh = (float)b.nodes[current].Eh / b.nodes[current].n;          
+    b.nodes[current].preds[class_index].norm_Ehk = (float)b.nodes[current].preds[class_index].Ehk / b.nodes[current].preds[class_index].nk;
   }
   
   void verify_min_dfs(log_multi& b, node node)
@@ -407,7 +407,7 @@ namespace LOG_MULTI
 	
 	uint32_t text_len = sprintf(buff, "k = %d ",b.k);
 	bin_text_read_write_fixed(model_file,(char*)&b.max_predictors, sizeof(b.k), "", read, buff, text_len, text);
-	uint32_t temp = b.nodes.size();
+	uint32_t temp = (uint32_t)b.nodes.size();
 	text_len = sprintf(buff, "nodes = %d ",temp);
 	bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, buff, text_len, text);
 	if (read)
@@ -431,7 +431,7 @@ namespace LOG_MULTI
 	    text_len = sprintf(buff, " parent = %d",n.parent);
 	    bin_text_read_write_fixed(model_file,(char*)&n.parent, sizeof(n.parent), "", read, buff, text_len, text);
 
-	    uint32_t temp = n.preds.size();
+	    uint32_t temp = (uint32_t)n.preds.size();
 	    text_len = sprintf(buff, " preds = %d",temp);
 	    bin_text_read_write_fixed(model_file,(char*)&temp, sizeof(temp), "", read, buff, text_len, text);
 	    if (read)
