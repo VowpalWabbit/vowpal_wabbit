@@ -19,7 +19,7 @@ namespace StagewisePoly
   static const uint32_t parent_bit = 1;
   static const uint32_t cycle_bit = 2;
   static const uint32_t tree_atomics = 134;
-  static const float tolerance = 1e-9;
+  static const float tolerance = 1e-9f;
   static const uint32_t indicator_bit = 128;
   static const uint32_t default_depth = 127;
 
@@ -101,7 +101,7 @@ namespace StagewisePoly
 
   inline uint32_t depthsbits_sizeof(const stagewise_poly &poly)
   {
-    return 2 * poly.all->length() * sizeof(uint8_t);
+    return (uint32_t)(2 * poly.all->length() * sizeof(uint8_t));
   }
 
   void depthsbits_create(stagewise_poly &poly)
@@ -191,7 +191,7 @@ namespace StagewisePoly
 #ifdef DEBUG
       cout << "resizing sort buffer; current size " << poly.sd_len;
 #endif //DEBUG
-      poly.sd_len = (len_candidate > poly.all->length()) ? poly.all->length() : len_candidate;
+      poly.sd_len = (len_candidate > poly.all->length()) ? (uint32_t)poly.all->length() : len_candidate;
 #ifdef DEBUG
       cout << ", new size " << poly.sd_len << endl;
 #endif //DEBUG
@@ -234,8 +234,8 @@ namespace StagewisePoly
   void sort_data_update_support(stagewise_poly &poly)
   {
     assert(poly.num_examples);
-    uint32_t num_new_features = pow(poly.sum_input_sparsity * 1.0 / poly.num_examples, poly.sched_exponent);
-    num_new_features = (num_new_features > poly.all->length()) ? poly.all->length() : num_new_features;
+    uint32_t num_new_features = (uint32_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
+    num_new_features = (num_new_features > poly.all->length()) ? (uint32_t)poly.all->length() : num_new_features;
     sort_data_ensure_sz(poly, num_new_features);
 
     sort_data *heap_end = poly.sd;
@@ -516,9 +516,9 @@ namespace StagewisePoly
        */
       all_reduce<uint8_t, reduce_min_max>(poly.depthsbits, 2*poly.all->length(), all.span_server, all.unique_id, all.total, all.node, all.socks);
 
-      sum_input_sparsity_inc = accumulate_scalar(all, all.span_server, sum_input_sparsity_inc);
-      sum_sparsity_inc = accumulate_scalar(all, all.span_server, sum_sparsity_inc);
-      num_examples_inc = accumulate_scalar(all, all.span_server, num_examples_inc);
+      sum_input_sparsity_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)sum_input_sparsity_inc);
+      sum_sparsity_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)sum_sparsity_inc);
+      num_examples_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)num_examples_inc);
     }
 
     poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
@@ -590,7 +590,7 @@ namespace StagewisePoly
       ;
     vm = add_options(all, sp_opt);
 
-    poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 0.;
+    poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 0.f;
     poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 0;
 #ifdef MAGIC_ARGUMENT
     poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;

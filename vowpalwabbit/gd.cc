@@ -527,7 +527,7 @@ void compute_update(vw& all, gd& g, example& ec)
 	    double eta_bar = (fabs(dev1) > 1e-8) ? (-ec.eta_round / dev1) : 0.0;
 	    if (fabs(dev1) > 1e-8)
 	      all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
-	    ec.eta_round /= all.sd->contraction;
+	    ec.eta_round /= (float)all.sd->contraction;
 	    all.sd->gravity += eta_bar * all.l1_lambda;
 	  }
         }
@@ -939,7 +939,7 @@ learner* setup(vw& all, po::variables_map& vm)
     stride = set_learn<false>(all, ret, feature_mask_off);
 
   all.reg.stride_shift = ceil_log_2(stride-1);
-  ret->increment = (1 << all.reg.stride_shift);
+  ret->increment = ((uint64_t)1 << all.reg.stride_shift);
 
   ret->set_save_load<gd,save_load>();
 
