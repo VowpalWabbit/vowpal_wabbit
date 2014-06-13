@@ -233,7 +233,7 @@ namespace TXM_O
 	b.nodes[right_child].parent = current;
 	
 	b.nodes[left_child].min_count = b.nodes[current].min_count/2;
-	b.nodes[right_child].min_count = b.nodes[left_child].min_count - b.nodes[current].min_count/2;
+	b.nodes[right_child].min_count = b.nodes[current].min_count - b.nodes[left_child].min_count;
 	update_min_count(b, left_child);
 
 	b.nodes[left_child].max_count_label = b.nodes[current].max_count_label;
