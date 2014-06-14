@@ -34,8 +34,6 @@ using namespace LEARNER;
 namespace GD
 {
   struct gd{
-    bool active;
-    bool active_simulation;
     float normalized_sum_norm_x;
     size_t no_win_counter;
     size_t early_stop_thres;
@@ -479,24 +477,6 @@ void compute_update(vw& all, gd& g, example& ec)
 {
   label_data* ld = (label_data*)ec.ld;
 
-  if(g.active_simulation){
-    float k = ec.example_t - ld->weight;
-    ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(k,all.power_t));
-    float importance = query_decision(all, ec, k);
-    if(importance > 0){
-      all.sd->queries += 1;
-      ld->weight *= importance;
-    }
-    else //do not query => do not train
-      ld->label = FLT_MAX;
-  }
-
-  float t;
-  if(all.active && ld->label != FLT_MAX)
-    t = (float)all.sd->weighted_unlabeled_examples;
-  else
-    t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
-
   ec.eta_round = 0;
 
   if (ld->label != FLT_MAX)
@@ -520,7 +500,7 @@ void compute_update(vw& all, gd& g, example& ec)
             update = all.loss->getUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
           else
             update = all.loss->getUnsafeUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
-
+	  
 	  ec.eta_round = (float) (update / all.sd->contraction);
 	  if (all.reg_mode && fabs(ec.eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ld->prediction, ld->label);
@@ -531,9 +511,6 @@ void compute_update(vw& all, gd& g, example& ec)
 	  }
         }
     }
-  else if(all.active)
-    ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(t,all.power_t));
-
 }
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
@@ -873,8 +850,6 @@ learner* setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc_or_die(1, sizeof(gd));
   g->all = &all;
-  g->active = all.active;
-  g->active_simulation = all.active_simulation;
   g->normalized_sum_norm_x = all.normalized_sum_norm_x;
   g->no_win_counter = 0;
   g->early_stop_thres = 3;
