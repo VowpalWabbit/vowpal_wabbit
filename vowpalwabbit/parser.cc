@@ -784,21 +784,21 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) (constant * all.wpp)};
+    feature temp = {1,(uint32_t) constant};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
   
-  if(all.reg.stride_shift != 0) //make room for per-feature information.
+  uint32_t multiplier = all.wpp << all.reg.stride_shift;
+  if(multiplier != 1) //make room for per-feature information.
     {
-      uint32_t stride_shift = all.reg.stride_shift;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-	  j->weight_index = (j->weight_index << stride_shift);
+	  j->weight_index *= multiplier;
       if (all.audit || all.hash_inv)
 	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-	    j->weight_index = (j->weight_index << stride_shift);
+	    j->weight_index *= multiplier;
     }
   
   for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++) 
