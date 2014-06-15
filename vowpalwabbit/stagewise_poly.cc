@@ -499,7 +499,7 @@ namespace StagewisePoly
 
   void end_pass(stagewise_poly &poly)
   {
-    if (!!poly.batch_sz && poly.numpasses > 1)
+    if (!!poly.batch_sz || (poly.all->span_server != "" && poly.numpasses > 1))
       return;
 
     uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
@@ -512,7 +512,7 @@ namespace StagewisePoly
 #endif //DEBUG
 
     vw &all = *poly.all;
-    if(all.span_server != "") {
+    if (all.span_server != "") {
       /*
        * The following is inconsistent with the transplant code in
        * synthetic_create_rec(), which clears parent bits on depth mismatches.

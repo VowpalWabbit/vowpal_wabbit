@@ -1015,3 +1015,7 @@ __DATA__
 # Test 66: stagewise poly with exponent 1.0 and doubling batches
 {VW} --stage_poly --sched_exponent 1.0 --batch_sz -1000 -d train-sets/rcv1_small.dat
     train-sets/ref/stage_poly.s100.doubling.stderr
+
+# Test 67: stagewise poly with exponent 1.0, updates only in end_pass
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 0 -c --passes 5 -d train-sets/rcv1_small.dat
+    train-sets/ref/stage_poly.s100.multipass.stderr
