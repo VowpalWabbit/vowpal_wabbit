@@ -1056,7 +1056,6 @@ void *main_parse_loop(void *in)
 	   all->p->end_parsed_examples++;
 	   condition_variable_signal_all(&all->p->example_available);
 	   mutex_unlock(&all->p->examples_lock);
-
 	  }  
 	return NULL;
 }
@@ -1088,9 +1087,39 @@ example* get_example(parser* p)
   }
 }
 
-label_data* get_label(example* ec)
+float get_label(example* ec)
 {
-	return (label_data*)(ec->ld);
+	return ((label_data*)(ec->ld))->label;
+}
+
+float get_importance(example* ec)
+{
+	return ((label_data*)(ec->ld))->weight;
+}
+
+float get_initial(example* ec)
+{
+	return ((label_data*)(ec->ld))->initial;
+}
+
+float get_prediction(example* ec)
+{
+	return ((label_data*)(ec->ld))->prediction;
+}
+
+size_t get_tag_length(example* ec)
+{
+	return ec->tag.size();
+}
+
+const char* get_tag(example* ec)
+{
+	return ec->tag.begin;
+}
+
+size_t get_feature_number(example* ec)
+{
+	return ec->num_features;
 }
 }
 
