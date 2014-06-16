@@ -509,7 +509,7 @@ namespace LOG_MULTI
     po::options_description opts("TXM Online options");
     opts.add_options()
       ("no_progress", "disable progressive validation")
-      ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(64), "higher = more resistance to swap, default=64");
+      ("swap_resistance", po::value<uint32_t>(&(data->swap_resist))->default_value(4), "higher = more resistance to swap, default=4");
     
     vm = add_options(all, opts);
     
