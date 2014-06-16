@@ -135,19 +135,19 @@ namespace EntityRelationTask {
       hist[0] = 0;
     }
     for(size_t j=0; j< my_task_data->y_allowed_relation.size(); j++){
-      if(hist[0] == 0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j])){
+      if(!my_task_data->constraints || hist[0] == 0  || check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j])){
         constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
       }
     }
 
     // add history feature to relation example
-    if(hist[0]!= 0) {
+    if(my_task_data->history_features && hist[0]!= 0) {
       add_history_to_example(*(srn.all), *hinfo , ex, hist, 0);
     }	
 
     size_t prediction = srn.predict(ex, MULTICLASS::get_example_label(ex),&constrained_relation_labels);
 
-    if(hist[0] != 0) {
+    if(my_task_data->history_features && hist[0] != 0) {
       remove_history_from_example(*(srn.all), *hinfo , ex);
     }
 
