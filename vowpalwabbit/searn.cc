@@ -31,6 +31,7 @@ bool isfinite(float x)
 
 // task-specific includes
 #include "searn_sequencetask.h"
+#include "searn_entityrelationtask.h"
 
 using namespace LEARNER;
 
@@ -46,27 +47,15 @@ namespace Searn
                               &ArgmaxTask::task,
                               &SequenceTask_DemoLDF::task,
                               &SequenceSpanTask::task,
-                              NULL };   // must NULL terminate!
+			      &EntityRelationTask::task,
+			      NULL };   // must NULL terminate!
 
   string   neighbor_feature_space("neighbor");
 
   uint32_t AUTO_HISTORY = 1, AUTO_HAMMING_LOSS = 2, EXAMPLES_DONT_CHANGE = 4, IS_LDF = 8;
   enum SearnState { NONE, INIT_TEST, INIT_TRAIN, LEARN, GET_TRUTH_STRING, BEAM_INIT, BEAM_ADVANCE, BEAM_PLAYOUT, FAST_FORWARD };
 
-  typedef uint32_t* history;
-
-  struct history_info {
-    size_t length;          // was history_length, must be >= features
-    bool   bigrams;         // was sequence_bigrams
-    size_t features;        // was sequence_features
-    bool   bigram_features; // was sequence_bigram_features
-  };
-  void default_info(history_info*);
-
   int  random_policy(uint64_t, float, bool, int, bool, bool);
-
-  void add_history_to_example(vw&, history_info&, example*, history, size_t);
-  void remove_history_from_example(vw&, history_info&, example*);
 
   struct snapshot_item {
     size_t index;

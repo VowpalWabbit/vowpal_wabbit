@@ -79,6 +79,19 @@ namespace Searn {
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);
+
+  typedef uint32_t* history;
+
+  struct history_info {
+    size_t length;          // was history_length, must be >= features
+    bool   bigrams;         // was sequence_bigrams
+    size_t features;        // was sequence_features
+    bool   bigram_features; // was sequence_bigram_features
+  };
+  void default_info(history_info*);
+
+  void add_history_to_example(vw&, history_info&, example*, history, size_t);
+  void remove_history_from_example(vw&, history_info&, example*);
 }
 
 #endif

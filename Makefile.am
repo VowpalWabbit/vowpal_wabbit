@@ -49,6 +49,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/scorer.h \
 	vowpalwabbit/searn.h \
 	vowpalwabbit/searn_sequencetask.h \
+	vowpalwabbit/searn_entityrelationtask.h \
 	vowpalwabbit/sender.h \
 	vowpalwabbit/topk.h \
 	vowpalwabbit/unique_sort.h \
