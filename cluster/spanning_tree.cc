@@ -254,6 +254,16 @@ int main(int argc, char* argv[]) {
     if (partial_nodeset.filled != total) //Need to wait for more connections
       {
 	partial_nodesets[nonce] = partial_nodeset;
+	for(size_t i=0; i<total; i++)
+          {
+            if(partial_nodeset.nodes[i].client_ip == (uint32_t)-1)
+              {
+                cout << "nonce " << nonce 
+                     << " still waiting for " << (total - partial_nodeset.filled) 
+                     << " nodes out of " << total << " for example node " << i << endl;
+                break;
+               }
+          }
       }
     else
       {//Time to make the spanning tree
