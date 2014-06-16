@@ -9,7 +9,7 @@ all:
 shootout: $(foreach what,linear lrq lrqdropout,$(what).print)
 
 clean:
-	rm -f $(wildcard *results*) $(wildcard *.vw)
+	rm -f $(wildcard *results*) $(wildcard *.vw) $(wildcard *.model.txt) $(wildcard *.pdf)
 
 ml-%.zip:
 	@echo "downloading movielens $*"
@@ -58,6 +58,11 @@ linear.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	  -d $(word 1,$+) -p						\
 	  >(perl -lane '$$s+=abs(($$F[0]-$$F[1])); } { 			\
 			1; print $$s/$$.;' > $@)
+	@echo "****************************************************"
+	@echo "*   saving human readable model (--invert_hash)    *"
+	@echo "****************************************************"
+	@echo
+	@${VW} -i $@.model -t --invert_hash $@.model.txt -d $(word 2,$+)
 	@rm -f $@.cache $@.model
 
 #---------------------------------------------------------------------
@@ -82,6 +87,11 @@ lrq.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	  -d $(word 1,$+) -p						\
 	  >(perl -lane '$$s+=abs(($$F[0]-$$F[1])); } { 			\
 			1; print $$s/$$.;' > $@)
+	@echo "****************************************************"
+	@echo "*   saving human readable model (--invert_hash)    *"
+	@echo "****************************************************"
+	@echo
+	@${VW} -i $@.model -t --invert_hash $@.model.txt -d $(word 2,$+)
 	@rm -f $@.cache $@.model
 
 #---------------------------------------------------------------------
@@ -106,4 +116,18 @@ lrqdropout.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	  -d $(word 1,$+) -p						\
 	  >(perl -lane '$$s+=abs(($$F[0]-$$F[1])); } { 			\
 			1; print $$s/$$.;' > $@)
+	@echo "****************************************************"
+	@echo "*   saving human readable model (--invert_hash)    *"
+	@echo "****************************************************"
+	@echo
+	@${VW} -i $@.model -t --invert_hash $@.model.txt -d $(word 2,$+)
 	@rm -f $@.cache $@.model
+
+movie_dendrogram.pdf: lrqdropout.results
+	@echo "*******************************************************"
+	@echo "* Generating movie clustering based on latent factors *"
+	@echo "*         (Requires an installation of R)             *"
+	@echo "*******************************************************"
+	@grep ^lrq^m $<.model.txt | tr '^' ':' > $<.model.csv
+	@Rscript visualize_factors.R
+	@rm -f $@.model.csv

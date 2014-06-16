@@ -728,9 +728,9 @@ namespace Searn
           v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)valid_labels)->costs;
           for (size_t i=0; i<costs->size(); i++) {
             if (ystar_is_uint32t)
-              costs->get(i).partial_prediction = (costs->get(i).class_index == action) ? 0. : 1.;
+              costs->get(i).partial_prediction = (costs->get(i).class_index == action) ? 0.f : 1.f;
             else   // ystar is actually v_array<uint32_t>
-              costs->get(i).partial_prediction = v_array_contains<uint32_t>(*ystar, costs->get(i).class_index) ? 0. : 1.;
+              costs->get(i).partial_prediction = v_array_contains<uint32_t>(*ystar, costs->get(i).class_index) ? 0.f : 1.f;
           }
         }
       } else {        // learned policy
@@ -1184,7 +1184,7 @@ namespace Searn
             if (sizeof_data == 1)      priv->most_recent_snapshot_hash += 4893107 * *(uint8_t*)data_ptr;
             else if (sizeof_data == 2) priv->most_recent_snapshot_hash += 4893107 * *(uint16_t*)data_ptr;
             else if (sizeof_data == 4) priv->most_recent_snapshot_hash += 4893107 * *(uint32_t*)data_ptr;
-            else if (sizeof_data == 8) priv->most_recent_snapshot_hash += 4893107 * *(uint64_t*)data_ptr;
+            else if (sizeof_data == 8) priv->most_recent_snapshot_hash += (uint32_t) 4893107 * *(uint64_t*)data_ptr;
           } else {
             priv->most_recent_snapshot_hash = uniform_hash(data_ptr, sizeof_data, priv->most_recent_snapshot_hash);
           }

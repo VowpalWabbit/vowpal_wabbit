@@ -1,7 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvw", "libvw.vcxproj", "{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1E205806-7F80-47DD-A38D-FC08083F3592} = {1E205806-7F80-47DD-A38D-FC08083F3592}
@@ -21,6 +19,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw", "vw.vcxproj", "{1055A7
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c_test", "..\c_test\c_test.vcxproj", "{E5865596-E5F0-4CA3-B04A-4E34B798744A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1E205806-7F80-47DD-A38D-FC08083F3592} = {1E205806-7F80-47DD-A38D-FC08083F3592}
+		{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9} = {EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}
+		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF} = {1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spanning_tree", "..\cluster\cluster.vcxproj", "{2720BCD9-6731-4A11-BA24-1F74E35BA97F}"
 EndProject
