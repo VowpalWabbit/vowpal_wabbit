@@ -993,6 +993,8 @@ __DATA__
     train-sets/ref/holdout-loss-not-zero.stderr
 
 # Test 61: stagewise poly with exponent 0.25
+####in the following stage_poly tests, there are minute differences in losses, which are not being fuzzy-diffed;
+####thus the stderr is cleared (--quiet) and only comparing (fuzzy-diffed) predictions.
 {VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s025.predict --quiet
     train-sets/ref/stage_poly.s025.stderr
     train-sets/ref/stage_poly.s025.predict
@@ -1011,13 +1013,3 @@ __DATA__
 {VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet
     train-sets/ref/stage_poly.s100.doubling.stderr
     train-sets/ref/stage_poly.s100.doubling.predict
-
-# Test 65: stagewise poly with exponent 0.25, updates only in end_pass
-{VW} --stage_poly --sched_exponent 0.25 --batch_sz 0 -c --passes 5 -d train-sets/rcv1_small.dat -p stage_poly.s025.multipass.predict --quiet
-    train-sets/ref/stage_poly.s025.multipass.stderr
-    train-sets/ref/stage_poly.s025.multipass.predict
-
-# Test 66: stagewise poly with exponent 1.0, updates only in end_pass
-{VW} --stage_poly --sched_exponent 1.0 --batch_sz 0 -c --passes 5 -d train-sets/rcv1_small.dat -p stage_poly.s100.multipass.predict --quiet
-    train-sets/ref/stage_poly.s100.multipass.stderr
-    train-sets/ref/stage_poly.s100.multipass.predict
