@@ -33,8 +33,8 @@ namespace StagewisePoly
     vw *all;
 
     float sched_exponent;
-    int32_t batch_sz;
-    uint32_t next_batch_sz; //used when batch_sz < 0
+    uint32_t batch_sz;
+    bool batch_sz_double;
 
     sort_data *sd;
     uint32_t sd_len;
@@ -55,7 +55,7 @@ namespace StagewisePoly
     uint32_t cur_depth;
     bool training;
     size_t numpasses;
-
+    uint32_t next_batch_sz;
     bool update_support;
 
 #ifdef DEBUG
@@ -438,9 +438,10 @@ namespace StagewisePoly
       ec.loss = poly.synth_ec.loss;
 
       if (ec.example_counter
-          && ( (poly.batch_sz > 0 && !(ec.example_counter % poly.batch_sz))
-            || (poly.batch_sz < 0 && !(ec.example_counter % poly.next_batch_sz)) )) {
-        poly.next_batch_sz *= 2; //noop when poly.batch_sz > 0
+          && poly.batch_sz
+          && ( (poly.batch_sz_double && !(ec.example_counter % poly.next_batch_sz))
+            || (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz)))) {
+        poly.next_batch_sz *= 2; //no effect when !poly.batch_sz_double
         poly.update_support = (poly.all->span_server == "" || poly.numpasses == 1);
       }
     } else
@@ -588,7 +589,8 @@ namespace StagewisePoly
     po::options_description sp_opt("Stagewise poly options");
     sp_opt.add_options()
       ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
-      ("batch_sz", po::value<int32_t>(), "batch size before including more features")
+      ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
+      ("batch_sz_no_doubling", "batch_sz does not double")
 #ifdef MAGIC_ARGUMENT
       ("magic_argument", po::value<float>(), "magical feature flag")
 #endif //MAGIC_ARGUMENT
@@ -596,11 +598,11 @@ namespace StagewisePoly
     vm = add_options(all, sp_opt);
 
     poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.;
-    poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<int32_t>() : -1000;
+    poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
+    poly->batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
 #ifdef MAGIC_ARGUMENT
     poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
 #endif //MAGIC_ARGUMENT
-    poly->next_batch_sz = (poly->batch_sz >= 0) ? 0 : -poly->batch_sz;
 
     poly->sum_sparsity = 0;
     poly->sum_input_sparsity = 0;
@@ -610,6 +612,7 @@ namespace StagewisePoly
     poly->num_examples_sync = 0;
     poly->numpasses = 1;
     poly->update_support = false;
+    poly->next_batch_sz = poly->batch_sz;
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();
