@@ -993,29 +993,30 @@ __DATA__
     train-sets/ref/holdout-loss-not-zero.stderr
 
 # Test 61: stagewise poly with exponent 0.25
-{VW} --stage_poly --sched_exponent 0.25 --batch_sz 2001 -d train-sets/rcv1_small.dat
+{VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.predict --quiet
     train-sets/ref/stage_poly.s025.stderr
+    train-sets/ref/stage_poly.s025.predict
 
-# Test 62: stagewise poly with exponent 0.5
-{VW} --stage_poly --sched_exponent 0.5 --batch_sz 2001 -d train-sets/rcv1_small.dat
-    train-sets/ref/stage_poly.s050.stderr
-
-# Test 63: stagewise poly with exponent 1.0
-{VW} --stage_poly --sched_exponent 1.0 --batch_sz 2001 -d train-sets/rcv1_small.dat
+# Test 62: stagewise poly with exponent 1.0
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.predict --quiet
     train-sets/ref/stage_poly.s100.stderr
+    train-sets/ref/stage_poly.s100.predict
 
-# Test 64: stagewise poly with exponent 0.25 and doubling batches
-{VW} --stage_poly --sched_exponent 0.25 --batch_sz -1000 -d train-sets/rcv1_small.dat
+# Test 63: stagewise poly with exponent 0.25 and doubling batches
+{VW} --stage_poly --sched_exponent 0.25 --batch_sz -1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet
     train-sets/ref/stage_poly.s025.doubling.stderr
+    train-sets/ref/stage_poly.s025.doubling.predict
 
-# Test 65: stagewise poly with exponent 0.5 and doubling batches
-{VW} --stage_poly --sched_exponent 0.5 --batch_sz -1000 -d train-sets/rcv1_small.dat
-    train-sets/ref/stage_poly.s050.doubling.stderr
-
-# Test 66: stagewise poly with exponent 1.0 and doubling batches
-{VW} --stage_poly --sched_exponent 1.0 --batch_sz -1000 -d train-sets/rcv1_small.dat
+# Test 64: stagewise poly with exponent 1.0 and doubling batches
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz -1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet
     train-sets/ref/stage_poly.s100.doubling.stderr
+    train-sets/ref/stage_poly.s100.doubling.predict
 
-# Test 67: stagewise poly with exponent 1.0, updates only in end_pass
-{VW} --stage_poly --sched_exponent 1.0 --batch_sz 0 -c --passes 5 -d train-sets/rcv1_small.dat
+# Test 65: stagewise poly with exponent 0.25, updates only in end_pass
+{VW} --stage_poly --sched_exponent 0.25 --batch_sz 0 -c --passes 5 -d train-sets/rcv1_small.dat -p stage_poly.s025.multipass.predict --quiet
+    train-sets/ref/stage_poly.s025.multipass.stderr
+    train-sets/ref/stage_poly.s025.multipass.predict
+
+# Test 66: stagewise poly with exponent 1.0, updates only in end_pass
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 0 -c --passes 5 -d train-sets/rcv1_small.dat -p stage_poly.s100.multipass.predict --quiet
     train-sets/ref/stage_poly.s100.multipass.stderr
