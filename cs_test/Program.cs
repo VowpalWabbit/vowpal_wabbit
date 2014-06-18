@@ -19,7 +19,7 @@ namespace cs_test
             RunParserTest();
             RunSpeedTest();
             RunFlatExampleTestEx();
-            RunVWParse_and_VWLearn();
+            //RunVWParse_and_VWLearn();
         }
 
         private static void RunFeaturesTest()
@@ -133,7 +133,7 @@ namespace cs_test
             //IntPtr vw = VowpalWabbitInterface.Initialize("--ngram 2 --skips 4 -l 0.25 -b 22 -d rcv1.train.raw.txt -f out");
             //IntPtr vw = VowpalWabbitInterface.Initialize("-d rcv1.train.raw.txt -b 22 --ngram 2 --skips 4 -l 0.25 -c");
             //IntPtr vw = VowpalWabbitInterface.Initialize("-d rcv1.train.raw.txt -c");
-            IntPtr vw = VowpalWabbitInterface.Initialize("-d vw.dat");
+            IntPtr vw = VowpalWabbitInterface.Initialize("-d 0002.dat");
 
             VowpalWabbitInterface.StartParser(vw, false);
 
@@ -245,7 +245,7 @@ namespace cs_test
         private static void RunVWParse_and_VWLearn()
         {
             // parse and cache
-            IntPtr vw0 = VowpalWabbitInterface.Initialize(@"-d rcv1.train.raw.txt -c");
+            IntPtr vw0 = VowpalWabbitInterface.Initialize(@"-d 0002.dat -c");
             VowpalWabbitInterface.StartParser(vw0, false);
 
             long instanceCount = 0;
@@ -267,7 +267,7 @@ namespace cs_test
 
             // learn
             instanceCount = 0;
-            IntPtr vw = VowpalWabbitInterface.Initialize(@"--quiet --random_seed 276518665 -f C:\\Users\\niruc\\AppData\\Local\\Temp\\outl1.tmp --readable_model C:\\Users\\niruc\\AppData\\Local\\Temp\\outl2.tmp");
+            IntPtr vw = VowpalWabbitInterface.Initialize(@"--quiet --random_seed 276518665 -f save_file.reg --readable_model reable.reg");
             foreach (VWInstanceEx vwInstanceEx in vwInstanceExs)
             {
                 VowpalWabbitInterface.FEATURE_SPACE[] featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[vwInstanceEx.featureSpace.Length];
