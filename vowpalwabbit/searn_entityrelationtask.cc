@@ -43,7 +43,7 @@ namespace EntityRelationTask {
       ("history_features", "Use History Features")
       ("constraints", "Use Constraints")
       ("relation_none_cost", po::value<float>(&(my_task_data->relation_none_cost))->default_value(0.5), "None Relation Cost")
-      ("skip_cost", po::value<float>(&(my_task_data->skip_cost))->default_value(0.01), "Skip Cost (only used when search_order = skip")
+      ("skip_cost", po::value<float>(&(my_task_data->skip_cost))->default_value(0.01f), "Skip Cost (only used when search_order = skip")
       ("search_order", po::value<int>(&(my_task_data->search_order))->default_value(0), "Search Order 0: EntityFirst 1: Mix 2: Skip" );
     vm = add_options(*srn.all, sspan_opts);
 	  
@@ -129,8 +129,8 @@ namespace EntityRelationTask {
     decode_tag(ex->tag, type, id1, id2);
     v_array<uint32_t> constrained_relation_labels;
     if((my_task_data->constraints || my_task_data->history_features) && predictions[id1]!=0 &&predictions[id2]!=0){
-      hist[0] = predictions[id1];
-      hist[1] = predictions[id2];
+      hist[0] = (uint32_t)predictions[id1];
+      hist[1] = (uint32_t)predictions[id2];
     } else {
       hist[0] = 0;
     }
@@ -168,7 +168,7 @@ namespace EntityRelationTask {
 
   void entity_first_decoding(searn& srn, vector<example*> ec, history_info* hinfo, v_array<size_t>& predictions) {
     // ec.size = #entity + #entity*(#entity-1)/2
-    size_t n_ent = (sqrt(ec.size()*8+1)-1)/2;
+    size_t n_ent = (size_t)(sqrt(ec.size()*8+1)-1)/2;
     // Do entity recognition first
     for (size_t i=0; i<n_ent; i++) {
       predictions[i] = predict_entity(srn, ec[i], predictions);
@@ -182,14 +182,14 @@ namespace EntityRelationTask {
 
   void er_mixed_decoding(searn& srn, vector<example*> ec, history_info* hinfo, v_array<size_t>& predictions) {
     // ec.size = #entity + #entity*(#entity-1)/2
-    size_t n_ent = (sqrt(ec.size()*8+1)-1)/2;
+    size_t n_ent = (size_t)(sqrt(ec.size()*8+1)-1)/2;
     // Do entity recognition first
     for (size_t i=0; i<n_ent; i++) {
       predictions[i] = predict_entity(srn, ec[i], predictions);
       // When the entity types of the two entities invovled in a relation are resolved,
       // we predict the relation.
       for(size_t j=0; j<i; j++) {
-        int rel_index = n_ent + (2*n_ent-j-1)*j/2 + i-j-1;
+        size_t rel_index = n_ent + (2*n_ent-j-1)*j/2 + i-j-1;
         predictions[rel_index] = predict_relation(srn, ec[rel_index], hinfo, predictions);
       }
     }
@@ -204,7 +204,7 @@ namespace EntityRelationTask {
   void er_allow_skip_decoding(searn& srn, vector<example*> ec, history_info* hinfo, v_array<size_t>& predictions) {
     task_data* my_task_data = srn.get_task_data<task_data>();
     // ec.size = #entity + #entity*(#entity-1)/2
-    size_t n_ent = (sqrt(ec.size()*8+1)-1)/2;
+    size_t n_ent = (size_t)(sqrt(ec.size()*8+1)-1)/2;
     bool must_predict = false;
     size_t n_predicts = 0;
     size_t p_n_predicts = 0;
@@ -223,7 +223,7 @@ namespace EntityRelationTask {
           my_task_data->y_allowed_relation.pop();
 	  my_task_data->y_allowed_entity.pop();
 	}
-        int prediction = 0;
+        size_t prediction = 0;
         if(i < n_ent) {// do entity recognition
           prediction = predict_entity(srn, ec[i], predictions);
         } else { // do relation recognition

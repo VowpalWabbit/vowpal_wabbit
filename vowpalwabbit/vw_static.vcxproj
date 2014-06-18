@@ -327,6 +327,7 @@
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="searn.cc" />
     <ClCompile Include="searn_sequencetask.cc" />
+    <ClCompile Include="searn_entityrelationtask.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
     <ClCompile Include="stagewise_poly.cc" />

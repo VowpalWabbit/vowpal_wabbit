@@ -597,7 +597,7 @@ namespace StagewisePoly
       ;
     vm = add_options(all, sp_opt);
 
-    poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.;
+    poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.f;
     poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
     poly->batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
 #ifdef MAGIC_ARGUMENT

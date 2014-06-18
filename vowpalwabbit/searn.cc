@@ -1173,7 +1173,7 @@ namespace Searn
             if (sizeof_data == 1)      priv->most_recent_snapshot_hash += 4893107 * *(uint8_t*)data_ptr;
             else if (sizeof_data == 2) priv->most_recent_snapshot_hash += 4893107 * *(uint16_t*)data_ptr;
             else if (sizeof_data == 4) priv->most_recent_snapshot_hash += 4893107 * *(uint32_t*)data_ptr;
-            else if (sizeof_data == 8) priv->most_recent_snapshot_hash += (uint32_t) 4893107 * *(uint64_t*)data_ptr;
+            else if (sizeof_data == 8) priv->most_recent_snapshot_hash +=  4893107 * (uint32_t)*(uint64_t*)data_ptr;
           } else {
             priv->most_recent_snapshot_hash = uniform_hash(data_ptr, sizeof_data, priv->most_recent_snapshot_hash);
           }
