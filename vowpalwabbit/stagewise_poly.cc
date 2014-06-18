@@ -34,6 +34,7 @@ namespace StagewisePoly
 
     float sched_exponent;
     uint32_t batch_sz;
+    bool batch_sz_double;
 
     sort_data *sd;
     uint32_t sd_len;
@@ -54,7 +55,7 @@ namespace StagewisePoly
     uint32_t cur_depth;
     bool training;
     size_t numpasses;
-
+    uint32_t next_batch_sz;
     bool update_support;
 
 #ifdef DEBUG
@@ -436,8 +437,13 @@ namespace StagewisePoly
       base.learn(poly.synth_ec);
       ec.loss = poly.synth_ec.loss;
 
-      if (ec.example_counter && poly.batch_sz && !(ec.example_counter % poly.batch_sz))
+      if (ec.example_counter
+          && poly.batch_sz
+          && ( (poly.batch_sz_double && !(ec.example_counter % poly.next_batch_sz))
+            || (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz)))) {
+        poly.next_batch_sz *= 2; //no effect when !poly.batch_sz_double
         poly.update_support = (poly.all->span_server == "" || poly.numpasses == 1);
+      }
     } else
       predict(poly, base, ec);
   }
@@ -494,7 +500,7 @@ namespace StagewisePoly
 
   void end_pass(stagewise_poly &poly)
   {
-    if (poly.batch_sz && poly.numpasses > 1)
+    if (!!poly.batch_sz || (poly.all->span_server != "" && poly.numpasses > 1))
       return;
 
     uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
@@ -507,7 +513,7 @@ namespace StagewisePoly
 #endif //DEBUG
 
     vw &all = *poly.all;
-    if(all.span_server != "") {
+    if (all.span_server != "") {
       /*
        * The following is inconsistent with the transplant code in
        * synthetic_create_rec(), which clears parent bits on depth mismatches.
@@ -582,16 +588,18 @@ namespace StagewisePoly
 
     po::options_description sp_opt("Stagewise poly options");
     sp_opt.add_options()
-      ("sched_exponent", po::value<float>(), "exponent on schedule")
-      ("batch_sz", po::value<uint32_t>(), "batch size")
+      ("sched_exponent", po::value<float>(), "exponent controlling quantity of included features")
+      ("batch_sz", po::value<uint32_t>(), "multiplier on batch size before including more features")
+      ("batch_sz_no_doubling", "batch_sz does not double")
 #ifdef MAGIC_ARGUMENT
       ("magic_argument", po::value<float>(), "magical feature flag")
 #endif //MAGIC_ARGUMENT
       ;
     vm = add_options(all, sp_opt);
 
-    poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 0.f;
-    poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 0;
+    poly->sched_exponent = vm.count("sched_exponent") ? vm["sched_exponent"].as<float>() : 1.;
+    poly->batch_sz = vm.count("batch_sz") ? vm["batch_sz"].as<uint32_t>() : 1000;
+    poly->batch_sz_double = vm.count("batch_sz_no_doubling") ? false : true;
 #ifdef MAGIC_ARGUMENT
     poly->magic_argument = vm.count("magic_argument") ? vm["magic_argument"].as<float>() : 0.;
 #endif //MAGIC_ARGUMENT
@@ -604,6 +612,7 @@ namespace StagewisePoly
     poly->num_examples_sync = 0;
     poly->numpasses = 1;
     poly->update_support = false;
+    poly->next_batch_sz = poly->batch_sz;
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();
