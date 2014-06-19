@@ -792,10 +792,9 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
 	    }
 	}
-
+      
       if (g.initial_constant != 0.0)
         VW::set_weight(*all, constant, 0, g.initial_constant);
-
     }
 
   if (model_file.files.size() > 0)
