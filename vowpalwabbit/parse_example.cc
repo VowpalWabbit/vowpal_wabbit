@@ -75,7 +75,6 @@ public:
   float v;
   parser* p;
   example* ae;
-  uint32_t weights_per_problem;
   uint32_t* affix_features;
   bool* spelling_features;
   v_array<char> spelling;
@@ -129,7 +128,7 @@ public:
       else
 	word_hash = channel_hash + anon++;
       if(v == 0) return; //dont add 0 valued features to list of features
-      feature f = {v,(uint32_t)word_hash * weights_per_problem};
+      feature f = {v,(uint32_t)word_hash };
       ae->sum_feat_sq[index] += v*v;
       ae->atomics[index].push_back(f);
       if(audit){
@@ -154,7 +153,7 @@ public:
               affix_name.begin = affix_name.end - len;
           }
           word_hash = p->hasher(affix_name,(uint32_t)channel_hash) * (affix_constant + (affix & 0xF) * quadratic_constant);
-          feature f2 = { v, (uint32_t) word_hash * weights_per_problem };
+          feature f2 = { v, (uint32_t) word_hash };
           ae->sum_feat_sq[affix_namespace] += v*v;
           ae->atomics[affix_namespace].push_back(f2);
           if (audit) {
@@ -189,7 +188,7 @@ public:
         }
         substring spelling_ss = { spelling.begin, spelling.end };
         size_t word_hash = hashstring(spelling_ss, (uint32_t)channel_hash);
-        feature f2 = { v, (uint32_t) word_hash * weights_per_problem };
+        feature f2 = { v, (uint32_t) word_hash };
         ae->sum_feat_sq[spelling_namespace] += v*v;
         ae->atomics[spelling_namespace].push_back(f2);
         if (audit) {
@@ -313,7 +312,6 @@ public:
 	this->endLine = endLine;
 	this->p = all.p;
 	this->ae = ae;
-	this->weights_per_problem = all.wpp;
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
 	this->base = NULL;

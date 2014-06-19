@@ -36,18 +36,6 @@ float collision_cleanup(v_array<feature>& feature_map) {
   feature_map.end++;  
   return sum_sq;  
 }  
-
-struct features_and_source 
-{
-  v_array<feature> feature_map; //map to store sparse feature vectors  
-  uint32_t stride_shift;
-  weight* base;
-};
-
-void vec_store(features_and_source& p, float fx, float& fw) {  
-  feature f = {fx, (uint32_t)(&fw - p.base) >> p.stride_shift};
-  p.feature_map.push_back(f);
-}  
   
 audit_data copy_audit_data(audit_data &src) {
   audit_data dst;
@@ -113,9 +101,43 @@ void copy_example_data(bool audit, example* dst, example* src, size_t label_size
   copy_example_data(audit, dst, src);
   copy_example_label(dst, src, label_size, copy_label);
 }
+}
+
+struct features_and_source 
+{
+  v_array<feature> feature_map; //map to store sparse feature vectors  
+  uint32_t stride_shift;
+  size_t mask;
+  weight* base;
+};
+
+void vec_store(features_and_source& p, float fx, float& fw) {  
+  feature f = {fx, (uint32_t)((&fw - p.base) >> p.stride_shift) & p.mask};
+  p.feature_map.push_back(f);
+}  
+
+namespace VW {
+feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+{
+	features_and_source fs;
+	fs.stride_shift = all.reg.stride_shift;
+	fs.mask = all.reg.weight_mask >> all.reg.stride_shift;
+	fs.base = all.reg.weight_vector;
+	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 
+	feature_map_len = fs.feature_map.size();
+	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
+	return fs.feature_map.begin;
+}
+
+void return_features(feature* f)
+{
+	if (f != NULL)
+		free(f);
+}
+}
 
 flat_example* flatten_example(vw& all, example *ec) 
-{  
+{
 	flat_example* fec = (flat_example*) calloc_or_die(1,sizeof(flat_example));  
 	fec->ld = (label_data*)calloc_or_die(1, sizeof(label_data));
 	memcpy(fec->ld, ec->ld, sizeof(label_data));
@@ -130,18 +152,8 @@ flat_example* flatten_example(vw& all, example *ec)
 	fec->example_counter = ec->example_counter;  
 	fec->ft_offset = ec->ft_offset;  
 	fec->num_features = ec->num_features;  
-    
-	features_and_source fs;
-	fs.base = all.reg.weight_vector;
-	fs.stride_shift = all.reg.stride_shift;
-	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 
-	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
-    
-	fec->feature_map_len = fs.feature_map.size();
-	if (fec->feature_map_len > 0)
-	{
-		fec->feature_map = fs.feature_map.begin;
-	}
+        
+	fec->feature_map = VW::get_features(all, ec, fec->feature_map_len);
 
 	return fec;  
 }
@@ -157,8 +169,6 @@ void free_flatten_example(flat_example* fec)
       free(fec->ld);
       free(fec);
     }
-}
-
 }
 
 example *alloc_examples(size_t label_size, size_t count=1)

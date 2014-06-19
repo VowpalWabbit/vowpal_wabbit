@@ -348,8 +348,14 @@ sub lenient_array_compare($$) {
         next if ($word1 eq $word2);
 
         # There's some difference, is it significant?
-        return 1 unless (looks_like_number($word1));
-        return 1 unless (looks_like_number($word2));
+        unless (looks_like_number($word1)) {
+            v(4, "$word1 vs $word2: word1=$word1 is not a number!\n");
+            return 1;
+        }
+        unless (looks_like_number($word2)) {
+            v(4, "$word1 vs $word2: word2=$word2 is not a number!\n");
+            return 1;
+        }
 
         my $delta = abs($word1 - $word2);
 
@@ -365,12 +371,16 @@ sub lenient_array_compare($$) {
                 # If numbers are so small (close to zero),
                 # ($delta > $Epsilon) suffices for deciding that
                 # the numbers are meaningfully different
+                v(4, "$word1 vs $word2: delta=$delta > Epsilon=$Epsilon\n");
                 return 1;
             }
             # Now we can safely divide (since abs($word2) > 0)
             # and determine the ratio difference from 1.0
             my $ratio_delta = abs($word1/$word2 - 1.0);
-            return 1 if ($ratio_delta > $Epsilon);
+            if ($ratio_delta > $Epsilon) {
+                v(4, "$word1 vs $word2: ratio_delta=$ratio_delta > Epsilon=$Epsilon\n");
+                return 1;
+            }
         }
     }
     # print STDERR "lenient_array_compare: no meaningful difference\n";
@@ -396,8 +406,8 @@ sub diff_lenient_float($$) {
                 warn "$0: test $TestNo: $outfile: no data. Can't compare\n";
                 return 1;
             }
-            v(3, "line1: $line1\n");
-            v(3, "line2: $line2\n");
+            v(3, "line1: %s\n", $line1);
+            v(3, "line2: %s\n", $line2);
 
             # Break lines into tokens/words
             my (@w1) = split(' ', $line1);
@@ -581,7 +591,7 @@ sub run_tests() {
         mysystem("($cmd) >$outf 2>$errf");
         unless ($opt_V) {
             if (command_failed($cmd)) {
-                # already printed error
+                print STDERR `$Cat $errf`;
                 exit $? if ($opt_e);
                 next;
             }
@@ -974,11 +984,32 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf-bilou.test-beam20.predict
 
 # Test 59: silly test for "argmax" task
-{VW} -d train-sets/oneofmany_data -k -c --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
-    train-sets/ref/oneofmany_data.stderr
+{VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
+    train-sets/ref/argmax_data.stderr
 
 # Test 60: (holdout-broken regression)
 # ensure we have no holdout loss of '0 h'
 {VW} -k -c --passes 2 train-sets/0001.dat
     train-sets/ref/holdout-loss-not-zero.stderr
 
+# Test 61: stagewise poly with exponent 0.25
+####in the following stage_poly tests, there are minute differences in losses, which are not being fuzzy-diffed;
+####thus the stderr is cleared (--quiet) and only comparing (fuzzy-diffed) predictions.
+{VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s025.predict --quiet
+    train-sets/ref/stage_poly.s025.stderr
+    train-sets/ref/stage_poly.s025.predict
+
+# Test 62: stagewise poly with exponent 1.0
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s100.predict --quiet
+    train-sets/ref/stage_poly.s100.stderr
+    train-sets/ref/stage_poly.s100.predict
+
+# Test 63: stagewise poly with exponent 0.25 and doubling batches
+{VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet
+    train-sets/ref/stage_poly.s025.doubling.stderr
+    train-sets/ref/stage_poly.s025.doubling.predict
+
+# Test 64: stagewise poly with exponent 1.0 and doubling batches
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet
+    train-sets/ref/stage_poly.s100.doubling.stderr
+    train-sets/ref/stage_poly.s100.doubling.predict

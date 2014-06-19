@@ -64,7 +64,6 @@ struct example // core example datatype.
 
  struct vw;  
  
-namespace VW {
 struct flat_example 
 {
 	void* ld;  
@@ -80,9 +79,9 @@ struct flat_example
 	size_t feature_map_len;
 	feature* feature_map; //map to store sparse feature vectors  
 };
+
 flat_example* flatten_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
-}
 
 example *alloc_examples(size_t,size_t);
 void dealloc_example(void(*delete_label)(void*), example&);

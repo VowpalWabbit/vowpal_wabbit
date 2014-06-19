@@ -265,7 +265,7 @@ void reset_source(vw& all, size_t numbits)
 	  int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
 	  if (f < 0)
 	    {
-	      cerr << "bad client socket!" << endl;
+	      cerr << "accept: " << strerror(errno) << endl;
 	      throw exception();
 	    }
 	  
@@ -409,19 +409,13 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 #endif
       all.p->bound_sock = (int)socket(PF_INET, SOCK_STREAM, 0);
       if (all.p->bound_sock < 0) {
-#ifdef _WIN32
-	lastError = WSAGetLastError();
-
-	cerr << "can't open socket! (" << lastError << ")" << endl;
-#else
-        cerr << "can't open socket! " << errno << endl;
-#endif
+	cerr << "socket: " << strerror(errno) << endl;
 	throw exception();
       }
 
       int on = 1;
-      if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0) 
-	perror("setsockopt SO_REUSEADDR");
+      if (setsockopt(all.p->bound_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
+	cerr << "setsockopt SO_REUSEADDR: " << strerror(errno) << endl;
 
       sockaddr_in address;
       address.sin_family = AF_INET;
@@ -434,13 +428,15 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       // attempt to bind to socket
       if ( ::bind(all.p->bound_sock,(sockaddr*)&address, sizeof(address)) < 0 )
 	{
-	  cerr << "failure to bind!" << endl;
+	  cerr << "bind: " << strerror(errno) << endl;
 	  throw exception();
 	}
-      int source_count = 1;
-      
+
       // listen on socket
-      listen(all.p->bound_sock, source_count);
+      if (listen(all.p->bound_sock, 1) < 0) {
+        cerr << "listen: " << strerror(errno) << endl;
+        throw exception();
+      }
 
       // write port file
       if (vm.count("port_file"))
@@ -448,7 +444,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
           socklen_t address_size = sizeof(address);
           if (getsockname(all.p->bound_sock, (sockaddr*)&address, &address_size) < 0)
             {
-              cerr << "failure to get port number!" << endl;
+              cerr << "getsockname: " << strerror(errno) << endl;
             }
 	  ofstream port_file;
 	  port_file.open(vm["port_file"].as<string>().c_str());
@@ -464,7 +460,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       // background process
       if (!all.active && daemon(1,1))
 	{
-	  cerr << "failure to background!" << endl;
+	  cerr << "daemon: " << strerror(errno) << endl;
 	  throw exception();
 	}
       // write pid file
@@ -487,8 +483,8 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 		throw exception();
 #else
 	  // weights will be shared across processes, accessible to children
-	  float* shared_weights = 
-	    (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float), 
+	  float* shared_weights =
+	    (float*)mmap(0,(all.length() << all.reg.stride_shift) * sizeof(float),
 			 PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
 
 	  size_t float_count = all.length() << all.reg.stride_shift;
@@ -562,7 +558,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
       int f = (int)accept(all.p->bound_sock,(sockaddr*)&client_address,&size);
       if (f < 0)
 	{
-	  cerr << "bad client socket!" << endl;
+	  cerr << "accept: " << strerror(errno) << endl;
 	  throw exception();
 	}
       
@@ -733,7 +729,7 @@ bool parse_atomic_example(vw& all, example* ae, bool do_read = true)
     return false;
 
   if(all.p->sort_features && ae->sorted == false)
-    unique_sort_features(all.audit, all.parse_mask, ae);
+    unique_sort_features(all.audit, (uint32_t)all.parse_mask, ae);
 
   if (all.p->write_cache) 
     {
@@ -788,21 +784,21 @@ void setup_example(vw& all, example* ae)
   if (all.add_constant) {
     //add constant feature
     ae->indices.push_back(constant_namespace);
-    feature temp = {1,(uint32_t) (constant * all.wpp)};
+    feature temp = {1,(uint32_t) constant};
     ae->atomics[constant_namespace].push_back(temp);
     ae->total_sum_feat_sq++;
   }
   
-  if(all.reg.stride_shift != 0) //make room for per-feature information.
+  uint32_t multiplier = all.wpp << all.reg.stride_shift;
+  if(multiplier != 1) //make room for per-feature information.
     {
-      uint32_t stride_shift = all.reg.stride_shift;
       for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	for(feature* j = ae->atomics[*i].begin; j != ae->atomics[*i].end; j++)
-	  j->weight_index = (j->weight_index << stride_shift);
+	  j->weight_index *= multiplier;
       if (all.audit || all.hash_inv)
 	for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++)
 	  for(audit_data* j = ae->audit_features[*i].begin; j != ae->audit_features[*i].end; j++)
-	    j->weight_index = (j->weight_index << stride_shift);
+	    j->weight_index *= multiplier;
     }
   
   for (unsigned char* i = ae->indices.begin; i != ae->indices.end; i++) 
@@ -1060,7 +1056,6 @@ void *main_parse_loop(void *in)
 	   all->p->end_parsed_examples++;
 	   condition_variable_signal_all(&all->p->example_available);
 	   mutex_unlock(&all->p->examples_lock);
-
 	  }  
 	return NULL;
 }
@@ -1092,9 +1087,39 @@ example* get_example(parser* p)
   }
 }
 
-label_data* get_label(example* ec)
+float get_label(example* ec)
 {
-	return (label_data*)(ec->ld);
+	return ((label_data*)(ec->ld))->label;
+}
+
+float get_importance(example* ec)
+{
+	return ((label_data*)(ec->ld))->weight;
+}
+
+float get_initial(example* ec)
+{
+	return ((label_data*)(ec->ld))->initial;
+}
+
+float get_prediction(example* ec)
+{
+	return ((label_data*)(ec->ld))->prediction;
+}
+
+size_t get_tag_length(example* ec)
+{
+	return ec->tag.size();
+}
+
+const char* get_tag(example* ec)
+{
+	return ec->tag.begin;
+}
+
+size_t get_feature_number(example* ec)
+{
+	return ec->num_features;
 }
 }
 

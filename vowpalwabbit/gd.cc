@@ -171,9 +171,9 @@ bool operator<(const string_value& first, const string_value& second)
     tempstream  << ':' << trunc_weight(weights[index], (float)all.sd->gravity) * (float)all.sd->contraction;
   }
   if(all.current_pass == 0 && all.inv_hash_regressor_name != ""){ //for invert_hash
-    if ( index == (((constant << stride_shift) + offset )& all.reg.weight_mask))
+    if ( index == (((constant << stride_shift) * all.wpp + offset )& all.reg.weight_mask))
       tmp = "Constant";
-
+    
     ostringstream convert;
     convert << ((index >>stride_shift) & all.parse_mask);
     tmp = ns_pre + tmp + ":"+ convert.str();
@@ -338,31 +338,28 @@ float finalize_prediction(vw& all, float ret)
    p.prediction += trunc_weight(fw, p.gravity) * fx;
  }
 
- inline float trunc_predict(vw& all, example& ec, float gravity)
+ inline float trunc_predict(vw& all, example& ec, double gravity)
  {
    label_data* ld = (label_data*)ec.ld;
-   trunc_data temp = {ld->initial, gravity};
+   trunc_data temp = {ld->initial, (float)gravity};
    foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
    return temp.prediction;
  }
 
-template<bool reg_mode_odd>
+template<bool l1, bool audit>
 void predict(gd& g, learner& base, example& ec)
 {
   vw& all = *g.all;
 
-  if (reg_mode_odd)
-    {
-      float gravity = (float)all.sd->gravity;
-      ec.partial_prediction = trunc_predict(all, ec, gravity);
-    }
+  if (l1)
+    ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else
     ec.partial_prediction = inline_predict(all, ec);    
 
   label_data& ld = *(label_data*)ec.ld;
   ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
-
-  if (all.audit || all.hash_inv)
+  
+  if (audit)
     print_audit_features(all, ec);
 }
 
@@ -479,12 +476,9 @@ void compute_update(vw& all, gd& g, example& ec)
 
   ec.eta_round = 0;
 
-  if (ld->label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;
-
-  if (ld->label != FLT_MAX && !ec.test_only)
+  if (ld->label != FLT_MAX )
     {
-      if (all.training && ec.loss > 0.)
+      if (all.loss->getLoss(all.sd, ld->prediction, ld->label) > 0.)
         {
 	  float pred_per_update;
           if(adaptive || normalized)
@@ -500,13 +494,14 @@ void compute_update(vw& all, gd& g, example& ec)
             update = all.loss->getUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
           else
             update = all.loss->getUnsafeUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
-	  
-	  ec.eta_round = (float) (update / all.sd->contraction);
+
+	  ec.eta_round = update;
 	  if (all.reg_mode && fabs(ec.eta_round) > 1e-8) {
 	    double dev1 = all.loss->first_derivative(all.sd, ld->prediction, ld->label);
 	    double eta_bar = (fabs(dev1) > 1e-8) ? (-ec.eta_round / dev1) : 0.0;
 	    if (fabs(dev1) > 1e-8)
 	      all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
+	    ec.eta_round /= (float)all.sd->contraction;
 	    all.sd->gravity += eta_bar * all.l1_lambda;
 	  }
         }
@@ -521,28 +516,22 @@ void update(gd& g, learner& base, example& ec)
   compute_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare> (*all, g, ec);
   
   if (ec.eta_round != 0.)
-    {
-      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(*all,ec,(float)ec.eta_round);
-      
-      if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-	sync_weights(*all);
-    }
+    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(*all, ec, ec.eta_round);
+  
+  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+    sync_weights(*all);
 }
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void learn(gd& g, learner& base, example& ec)
 {
-  vw* all = g.all;
-  label_data* ld = (label_data*)ec.ld;
-
   assert(ec.in_use);
 
   g.predict(g,base,ec);
 
-  if ((all->holdout_set_off || !ec.test_only) && ld->weight > 0)
+  label_data* ld = (label_data*)ec.ld;
+  if (ld->weight > 0)
     update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
-  else if(ld->weight > 0)
-    ec.loss = all->loss->getLoss(all->sd, ld->prediction, ld->label) * ld->weight;
 }
 
 void sync_weights(vw& all) {
@@ -780,10 +769,9 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
 	    }
 	}
-
+      
       if (g.initial_constant != 0.0)
         VW::set_weight(*all, constant, 0, g.initial_constant);
-
     }
 
   if (model_file.files.size() > 0)
@@ -801,8 +789,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     }
 }
 
-template<bool sqrt_rate, size_t adaptive, size_t normalized, size_t spare, size_t next>
-size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
+template<bool sqrt_rate, uint32_t adaptive, uint32_t normalized, uint32_t spare, uint32_t next>
+uint32_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 {
   all.normalized_idx = normalized;
   if (feature_mask_off)
@@ -819,8 +807,8 @@ size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
     }
 }
 
-template<bool sqrt_rate, size_t adaptive, size_t spare>
-size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
+template<bool sqrt_rate, uint32_t adaptive, uint32_t spare>
+uint32_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 {
   // select the appropriate learn function based on adaptive, normalization, and feature mask
   if (all.normalized_updates)
@@ -830,7 +818,7 @@ size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 }
 
 template<bool sqrt_rate>
-size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
+uint32_t set_learn(vw& all, learner* ret, bool feature_mask_off)
 {
   if (all.adaptive)
     return set_learn<sqrt_rate, 1, 2>(all, ret, feature_mask_off);
@@ -838,7 +826,7 @@ size_t set_learn(vw& all, learner* ret, bool feature_mask_off)
     return set_learn<sqrt_rate, 0, 0>(all, ret, feature_mask_off);
 }
 
-size_t ceil_log_2(size_t v)
+uint32_t ceil_log_2(uint32_t v)
 {
   if (v==0)
     return 0;
@@ -896,24 +884,35 @@ learner* setup(vw& all, po::variables_map& vm)
   learner* ret = new learner(g, 1);
 
   if (all.reg_mode % 2)
+    if (all.audit || all.hash_inv)
+      {
+	ret->set_predict<gd, predict<true, true> >();
+	g->predict = predict<true, true>;
+      }
+    else
+      {
+	ret->set_predict<gd, predict<true, false> >();
+	g->predict = predict<true, false>;
+      }
+  else if (all.audit || all.hash_inv)
     {
-      ret->set_predict<gd, predict<true> >();
-      g->predict = predict<true>;
+      ret->set_predict<gd, predict<false, true> >();
+      g->predict = predict<false, true>;
     }
   else
     {
-      ret->set_predict<gd, predict<false> >();
-      g->predict = predict<true>;
+      ret->set_predict<gd, predict<false, false> >();
+      g->predict = predict<false, false>;
     }
   
-  size_t stride;
+  uint32_t stride;
   if (all.power_t == 0.5)
     stride = set_learn<true>(all, ret, feature_mask_off);
   else
     stride = set_learn<false>(all, ret, feature_mask_off);
 
   all.reg.stride_shift = ceil_log_2(stride-1);
-  ret->increment = (1 << all.reg.stride_shift);
+  ret->increment = ((uint64_t)1 << all.reg.stride_shift);
 
   ret->set_save_load<gd,save_load>();
 

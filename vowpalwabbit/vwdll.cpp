@@ -108,13 +108,51 @@ extern "C"
 		return static_cast<VW_EXAMPLE>(VW::get_example(parser_pointer));
 	}
 
-	VW_DLL_MEMBER VW_LABEL VW_CALLING_CONV VW_GetLabel(VW_HANDLE handle, VW_EXAMPLE e)
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetLabel(VW_EXAMPLE e)
 	{
-		vw * pointer = static_cast<vw*>(handle);
-		label_data* ld = VW::get_label(static_cast<example*>(e));
-		return static_cast<VW_LABEL>(ld);
+		return VW::get_label(static_cast<example*>(e));
 	}
 
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetImportance(VW_EXAMPLE e)
+	{
+		return VW::get_importance(static_cast<example*>(e));
+	}
+
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetInitial(VW_EXAMPLE e)
+	{
+		return VW::get_initial(static_cast<example*>(e));
+	}
+
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetPrediction(VW_EXAMPLE e)
+	{
+		return VW::get_prediction(static_cast<example*>(e));
+	}
+
+	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetTagLength(VW_EXAMPLE e)
+	{
+		return VW::get_tag_length(static_cast<example*>(e));
+	}
+
+	VW_DLL_MEMBER const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e)
+	{
+		return VW::get_tag(static_cast<example*>(e));
+	}
+
+	VW_DLL_MEMBER size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e)
+	{
+		return VW::get_feature_number(static_cast<example*>(e));
+	}
+
+	VW_DLL_MEMBER VW_FEATURE VW_CALLING_CONV VW_GetFeatures(VW_HANDLE handle, VW_EXAMPLE e, size_t* plen)
+	{
+		vw* pointer = static_cast<vw*>(handle);
+		return VW::get_features(*pointer, static_cast<example*>(e), *plen);		
+	}
+
+	VW_DLL_MEMBER void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f)
+	{
+		VW::return_features(static_cast<feature*>(f));
+	}
 	VW_DLL_MEMBER void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e)
 	{
 		vw * pointer = static_cast<vw*>(handle);
@@ -162,8 +200,7 @@ extern "C"
 		vw * pointer = static_cast<vw*>(handle);
 		example * ex = static_cast<example*>(e);
 		pointer->learn(ex);
-		label_data* l = static_cast<label_data*>(ex->ld);
-		return l->prediction;
+		return VW::get_prediction(ex);
 	}
 
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, size_t index, size_t offset)
@@ -188,18 +225,5 @@ extern "C"
 	{
 		vw* pointer = static_cast<vw*>(handle);
 		return VW::get_stride(*pointer);
-	}
-
-	VW_DLL_MEMBER VW_FLAT_EXAMPLE VW_CALLING_CONV VW_FlattenExample(VW_HANDLE handle, VW_EXAMPLE e)
-	{
-		vw* pointer = static_cast<vw*>(handle);
-		example* ex = static_cast<example*>(e);
-		return static_cast<VW_FLAT_EXAMPLE>(VW::flatten_example(*pointer, ex));
-	}
-
-	VW_DLL_MEMBER void VW_CALLING_CONV VW_FreeFlattenExample(VW_FLAT_EXAMPLE fec)
-	{
-		VW::flat_example *p = reinterpret_cast<VW::flat_example*>(fec);
-		VW::free_flatten_example(p);
 	}
 }

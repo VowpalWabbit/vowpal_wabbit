@@ -1,3 +1,5 @@
+#include <float.h>
+
 #include "reductions.h"
 
 using namespace LEARNER;
@@ -17,6 +19,9 @@ namespace Scorer {
       base.learn(ec);
     else
       base.predict(ec);
+    
+    if(ld->weight > 0 && ld->label != FLT_MAX)
+      ec.loss = s.all->loss->getLoss(s.all->sd, ld->prediction, ld->label) * ld->weight;
   }
 
   learner* setup(vw& all, po::variables_map& vm)

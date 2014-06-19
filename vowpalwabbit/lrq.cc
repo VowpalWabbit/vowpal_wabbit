@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <float.h>
 #include "reductions.h"
 #include "rand48.h"
@@ -46,7 +48,7 @@ namespace {
   inline bool
   example_is_test (example& ec)
     {
-      return ec.test_only || (((label_data*) ec.ld)->label == FLT_MAX);
+      return ((label_data*) ec.ld)->label == FLT_MAX;
     }
 
   void
@@ -75,9 +77,9 @@ namespace LRQ {
     size_t which = ec.example_counter;
     float first_prediction;
     float first_loss;
-    unsigned int maxiter = (all.training && ! example_is_test (ec)) ? 2 : 1;
+    unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
 
-    bool do_dropout = lrq.dropout && all.training && ! example_is_test (ec);
+    bool do_dropout = lrq.dropout && is_learn && ! example_is_test (ec);
     float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
 
     for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
@@ -110,7 +112,7 @@ namespace LRQ {
                         float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
                         // perturb away from saddle point at (0, 0)
-                        if (all.training && ! example_is_test (ec) && *lw == 0)
+                        if (is_learn && ! example_is_test (ec) && *lw == 0)
                           *lw = cheesyrand (lwindex);
         
                         for (unsigned int rfn = 0; 
@@ -118,6 +120,7 @@ namespace LRQ {
                              ++rfn)
                           {
                             feature* rf = ec.atomics[right].begin + rfn;
+                            audit_data* ra = ec.audit_features[right].begin + rfn;
 
                             // NB: ec.ft_offset added by base learner
                             float rfx = rf->x;
@@ -130,11 +133,19 @@ namespace LRQ {
 
                             ec.atomics[right].push_back (lrq);
 
-                            if (all.audit)
+                            if (all.audit || all.hash_inv)
                               {
-                                char name[4] = { 'l', 'r', 'q', '\0' };
-                                char subname[4] = { left, '^', right, '\0' };
-                                audit_data ad = { name, subname, lrq.weight_index, lrq.x, false };
+                                char* new_space = (char*)calloc_or_die(4, sizeof(char));
+                                strcpy(new_space, "lrq");
+                                size_t n_len = strlen(i->c_str () + 4);
+                                size_t len = strlen(ra->feature) + n_len + 2;
+                                char* new_feature = (char*)calloc_or_die(len, sizeof(char));
+                                new_feature[0] = right;
+                                new_feature[1] = '^';
+                                strcat(new_feature, ra->feature);
+                                strcat(new_feature, "^");
+                                sprintf(new_feature+strlen(new_feature), "%d", n);
+                                audit_data ad = { new_space, new_feature, lrq.weight_index, lrq.x, true };
                                 ec.audit_features[right].push_back (ad);
                               }
                           }
@@ -188,7 +199,7 @@ namespace LRQ {
     if (vm.count("random_seed")) random_seed = vm["random_seed"].as<size_t> ();
 
     lrq->initial_seed = lrq->seed = random_seed | 8675309;
-    lrq->dropout = vm.count("lrqdropout");
+    lrq->dropout = (bool)vm.count("lrqdropout");
 
     all.file_options.append(" --lrqdropout");
     

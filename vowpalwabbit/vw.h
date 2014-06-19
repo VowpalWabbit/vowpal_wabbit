@@ -52,7 +52,15 @@ namespace VW {
   void parse_example_label(vw&all, example&ec, string label);
   example* new_unused_example(vw& all);
   example* get_example(parser* pf);
-  label_data* get_label(example*ec);
+  float get_label(example*ec);
+  float get_importance(example*ec);
+  float get_initial(example*ec);
+  float get_prediction(example*ec);
+  size_t get_tag_length(example* ec);
+  const char* get_tag(example* ec);
+  size_t get_feature_number(example* ec);
+  feature* get_features(vw& all, example* ec, size_t& feature_number);
+  void return_features(feature* f);
 
   void add_constant_feature(vw& all, example*ec);
   void add_label(example* ec, float label, float weight = 1, float base = 0);

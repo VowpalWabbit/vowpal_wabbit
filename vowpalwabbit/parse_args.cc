@@ -40,7 +40,9 @@ license as described in the file LICENSE.
 #include "binary.h"
 #include "lrq.h"
 #include "autolink.h"
+#include "log_multi.h"
 #include "memory.h"
+#include "stagewise_poly.h"
 
 using namespace std;
 //
@@ -697,7 +699,8 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
     ("new_mf", "use new, reduction-based matrix factorization")
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
-    ("lrqdropout", "use dropout training for low rank quadratic features");
+    ("lrqdropout", "use dropout training for low rank quadratic features")
+    ("stage_poly", "use stagewise polynomial feature learning");
 
   vm = add_options(all, score_mod_opt);
 
@@ -712,6 +715,9 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
   
   if (vm.count("lrq"))
     all.l = LRQ::setup(all, vm);
+
+  if (vm.count("stage_poly"))
+    all.l = StagewisePoly::setup(all, vm);
   
   all.l = Scorer::setup(all, vm);
 }
@@ -731,6 +737,7 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
     ("binary", "report loss as binary classification on -1,1")
     ("oaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> labels")
     ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
+    ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
@@ -756,6 +763,10 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
     all.l = exclusive_setup(all, vm, score_consumer, CSOAA::setup);
     all.cost_sensitive = all.l;
     got_cs = true;
+  }
+  
+  if(vm.count("log_multi")){
+    all.l = exclusive_setup(all, vm, score_consumer, LOG_MULTI::setup);
   }
   
   if(vm.count("wap")) {
@@ -984,6 +995,7 @@ vw* parse_args(int argc, char *argv[])
   parse_cb(*all, vm, got_cs, got_cb);
 
   parse_search(*all, vm, got_cs, got_cb);
+  
 
   if(vm.count("bootstrap"))
     all->l = BS::setup(*all, vm);

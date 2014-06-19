@@ -197,12 +197,6 @@
     <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
     <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc10\x86\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <BoostIncludeDir>c:\boost\x64\include\boost-1_55</BoostIncludeDir>
-    <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
-    <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
-    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc10\x64\ZlibStat$(Configuration)</ZlibLibDir>
-  </PropertyGroup>
   <Target Name="DepCheck">
     <Error Text=" Cannot find zlibstat.lib in $(ZlibLibDir)" Condition="!Exists($(ZlibLibDir)\zlibstat.lib)" />
   </Target>
@@ -259,10 +253,12 @@
     <ClInclude Include="mf.h" />
     <ClInclude Include="gd_mf.h" />
     <ClInclude Include="lrq.h" />
+    <ClInclude Include="log_multi.h" />
     <ClInclude Include="global_data.h" />
     <ClInclude Include="hash.h" />
     <ClInclude Include="io_buf.h" />
     <ClInclude Include="lda_core.h" />
+    <ClInclude Include="learner.h" />
     <ClInclude Include="loss_functions.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="nn.h" />
@@ -309,6 +305,7 @@
     <ClCompile Include="mf.cc" />
     <ClCompile Include="gd_mf.cc" />
     <ClCompile Include="lrq.cc" />
+    <ClCompile Include="log_multi.cc" />
     <ClCompile Include="global_data.cc" />
     <ClCompile Include="hash.cc" />
     <ClCompile Include="io_buf.cc" />
@@ -330,8 +327,10 @@
     <ClCompile Include="scorer.cc" />
     <ClCompile Include="searn.cc" />
     <ClCompile Include="searn_sequencetask.cc" />
+    <ClCompile Include="searn_entityrelationtask.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
+    <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
     <ClCompile Include="wap.cc" />

@@ -711,10 +711,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
   // placeholder
   void predict(lda& l, learner& base, example& ec)
   {
-    bool test_only = ec.test_only;
-    ec.test_only = true;
     learn(l, base, ec);
-    ec.test_only = test_only;
   }
 
   void end_pass(lda& l)
