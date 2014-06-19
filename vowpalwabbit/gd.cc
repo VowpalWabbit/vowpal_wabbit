@@ -348,12 +348,12 @@ float finalize_prediction(vw& all, float ret)
    return temp.prediction;
  }
 
-template<bool reg_mode_odd>
+template<bool l1>
 void predict(gd& g, learner& base, example& ec)
 {
   vw& all = *g.all;
 
-  if (reg_mode_odd)
+  if (l1)
     {
       float gravity = (float)all.sd->gravity;
       ec.partial_prediction = trunc_predict(all, ec, gravity);
