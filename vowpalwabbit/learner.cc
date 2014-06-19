@@ -6,7 +6,7 @@ void save_predictor(vw& all, string reg_name, size_t current_pass);
 
 void dispatch_example(vw& all, example& ec)
 {
-  if (ec.test_only)
+  if (ec.test_only || !all.training)
     all.l->predict(ec);
   else
     all.l->learn(ec);

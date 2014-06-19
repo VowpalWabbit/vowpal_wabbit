@@ -502,7 +502,7 @@ void compute_update(vw& all, gd& g, example& ec)
   if (ld->label != FLT_MAX)
     {
       ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;
-      if (all.training && ec.loss > 0.)
+      if (ec.loss > 0.)
         {
 	  float pred_per_update;
           if(adaptive || normalized)

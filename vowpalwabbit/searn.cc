@@ -1703,7 +1703,7 @@ namespace Searn
       }
     }
 
-    if (is_learn && all.training && !ec[0]->test_only) {
+    if (is_learn && !ec[0]->test_only) {
       if (srn.priv->adaptive_beta)
         srn.priv->beta = 1.f - powf(1.f - srn.priv->alpha, (float)srn.priv->total_examples_generated);
 
@@ -1727,7 +1727,6 @@ namespace Searn
 
       if ( (! srn.priv->loss_declared) &&   // no loss was declared
            (is_learn)                  &&   // and we're trying to learn
-           (all.training)              &&   // in training mode
            (! ec[0]->test_only) )           // and not a test example
         cerr << "warning: no loss declared by task on something that looks like a training example!" << endl;
 
@@ -2208,7 +2207,7 @@ void print_update(vw& all, searn& srn)
         free_hyp_pool(hyp_pool, hyp_pool_id);
       }
 
-      srn.priv->beam_is_training = is_learn && all.training && !srn.priv->ec_seq[0]->test_only;
+      srn.priv->beam_is_training = is_learn && !srn.priv->ec_seq[0]->test_only;
       if (srn.priv->beam_is_training) {
         cdbg << "======================================== BEAM TRAIN (" << srn.priv->current_policy << "," << srn.priv->read_example_last_pass << ") ========================================" << endl;
         hyp_pool.resize(10000, true);
@@ -2743,10 +2742,7 @@ void print_update(vw& all, searn& srn)
 
     if (srn->priv->beam_size == 1)
       cerr << "warning: setting searn_beam=1 is kind of a weird thing to do -- just don't use a beam at all" << endl;
-    // if ((srn->priv->beam_size > 0) && all.training) {
-    //   cerr << "error: cannot currently train with beam" << endl;
-    //   throw exception();
-    // }
+
     if ((srn->priv->beam_size > 0) && ((!srn->priv->do_snapshot) || (!srn->priv->do_fastforward))) {
       cerr << "error: beam>0 requires snapshotting and fastforwarding" << endl;
       throw exception();

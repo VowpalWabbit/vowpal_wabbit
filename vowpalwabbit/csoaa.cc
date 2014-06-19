@@ -384,7 +384,7 @@ namespace LabelDict {
 
     // do actual learning
     vector<COST_SENSITIVE::wclass*> all_costs;
-    if (is_learn && all.training && !isTest) {
+    if (is_learn && !isTest) {
       for (size_t k=start_K; k<K; k++) {
         v_array<COST_SENSITIVE::wclass> this_costs = ((label*)l.ec_seq.begin[k]->ld)->costs;
         for (size_t j=0; j<this_costs.size(); j++)
@@ -406,7 +406,7 @@ namespace LabelDict {
 
       for (size_t j1=0; j1<costs1.size(); j1++) {
         if (costs1[j1].class_index == (uint32_t)-1) continue;
-        if (is_learn && all.training && !isTest) {
+        if (is_learn && !isTest) {
           LabelDict::add_example_namespace_from_memory(l, *ec1, costs1[j1].class_index);
 
           for (size_t k2=k1+1; k2<K; k2++) {
@@ -477,7 +477,7 @@ namespace LabelDict {
     }
 
     // do actual learning
-    if (is_learn && all.training && !isTest)
+    if (is_learn && !isTest)
       l.csoaa_example_t += 1.;
     for (size_t k=start_K; k<K; k++) {
       example *ec = l.ec_seq.begin[k];
@@ -489,7 +489,7 @@ namespace LabelDict {
       bool prediction_is_me = false;
       for (size_t j=0; j<costs.size(); j++) {
         //cdbg << "j=" << j << " costs.size=" << costs.size() << endl;
-        if (is_learn && all.training && !isTest) {
+        if (is_learn && !isTest) {
           float example_t = ec->example_t;
           ec->example_t = l.csoaa_example_t;
 
@@ -648,62 +648,6 @@ namespace LabelDict {
   {
     l.first_pass = false;
   }
-
-/*
-  void learn(void* data, learner& base, example *ec) 
-=======
-  template <bool is_learn>
-  void predict_or_learn(ldf* l, learner& base, example *ec) 
->>>>>>> d73d8f6aef1c02dd05554f91ca57e1d304336130
-  {
-    vw* all = l->all;
-    l->base = &base;
-
-    if ((!all->training) || COST_SENSITIVE::example_is_test(ec)) {
-      size_t prediction = 0;
-      float  min_score = FLT_MAX;
-      make_single_prediction(*all, *l, base, ec, &prediction, &min_score, NULL, NULL);
-    }
-    if (l->is_singleline) {
-      // must be test mode
-    } else if (example_is_newline(ec) || l->ec_seq.size() >= all->p->ring_size - 2) {
-      cerr << "newline, example_is_newline=" << example_is_newline(ec) << ", size=" << l->ec_seq.size() << ", indices.size=" << ec->indices.size() << endl;
-      if (l->ec_seq.size() >= all->p->ring_size - 2 && l->first_pass)
-        cerr << "warning: length of sequence at " << ec->example_counter << " exceeds ring size; breaking apart" << endl;
-	
-      do_actual_learning<is_learn>(*all, *l, base);
-
-      if (!LabelDict::ec_seq_is_label_definition(*l, l->ec_seq) && l->ec_seq.size() > 0)
-        global_print_newline(*all);
-
-      if (ec->in_use)
-        VW::finish_example(*all, ec);
-      l->need_to_clear = true;
-    } else if (LabelDict::ec_is_label_definition(ec)) {
-      if (l->ec_seq.size() > 0)
-        cerr << "warning: label definition encountered in data block -- ignoring data!" << endl;
-    
-      if (!((!all->training) || COST_SENSITIVE::example_is_test(ec))) {
-        l->ec_seq.erase();
-        l->ec_seq.push_back(ec);
-        do_actual_learning<is_learn>(*all, *l, base);
-        l->ec_seq.erase();
-      }
-
-      if (ec->in_use)
-        VW::finish_example(*all, ec);
-    } else {
-      cerr << "push_back" << endl;
-      l->ec_seq.push_back(ec);
-    }
-    
-    if (l->need_to_clear) {
-      output_example_seq(*all, *l);
-      clear_seq(*all, *l);
-      l->need_to_clear = false;
-    }
-  }
-*/
 
   void finish_singleline_example(vw& all, ldf&, example& ec)
   {
