@@ -487,7 +487,11 @@ void compute_update(vw& all, gd& g, example& ec)
             pred_per_update = ec.total_sum_feat_sq;
 
           float delta_pred = pred_per_update * all.eta * ld->weight;
-          if(!adaptive && all.power_t != 0) delta_pred *= powf(t,-all.power_t);
+          if(!adaptive && all.power_t != 0) 
+	    {
+	      float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
+	      delta_pred *= powf(t,-all.power_t);
+	    }
 
           float update = 0.f;
           if( all.invariant_updates )

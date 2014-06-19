@@ -43,6 +43,7 @@ license as described in the file LICENSE.
 #include "log_multi.h"
 #include "memory.h"
 #include "stagewise_poly.h"
+#include "active.h"
 
 using namespace std;
 //
@@ -700,10 +701,17 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
     ("autolink", po::value<size_t>(), "create link function with polynomial d")
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
     ("lrqdropout", "use dropout training for low rank quadratic features")
-    ("stage_poly", "use stagewise polynomial feature learning");
+    ("stage_poly", "use stagewise polynomial feature learning")
+    ("active_learning", "enable active learning");
 
   vm = add_options(all, score_mod_opt);
 
+  if (vm.count("active"))
+    {
+      all.active = true;
+      all.l = ACTIVE::setup(all,vm);
+    }
+  
   if(vm.count("nn"))
     all.l = NN::setup(all, vm);
   
@@ -718,7 +726,7 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
 
   if (vm.count("stage_poly"))
     all.l = StagewisePoly::setup(all, vm);
-  
+
   all.l = Scorer::setup(all, vm);
 }
 
@@ -897,13 +905,6 @@ vw* parse_args(int argc, char *argv[])
     ("input_feature_regularizer", po::value< string >(&(all->per_feature_regularizer_input)), "Per feature regularization input file")
     ;
 
-  po::options_description active_opt("Active Learning options");
-  active_opt.add_options()
-    ("active_learning", "active learning mode")
-    ("active_simulation", "active learning simulation mode")
-    ("active_mellowness", po::value<float>(&(all->active_c0)), "active learning mellowness parameter c_0. Default 8")
-    ;
-
   po::options_description cluster_opt("Parallelization options");
   cluster_opt.add_options()
     ("span_server", po::value<string>(&(all->span_server)), "Location of server for setting up spanning tree")
@@ -919,7 +920,6 @@ vw* parse_args(int argc, char *argv[])
 
   desc.add(update_opt)
     .add(weight_opt)
-    .add(active_opt)
     .add(cluster_opt)
     .add(other_opt);
 
@@ -929,12 +929,6 @@ vw* parse_args(int argc, char *argv[])
 
   parse_diagnostics(*all, vm, argc);
 
-  if (vm.count("active_simulation"))
-    all->active_simulation = true;
-  
-  if (vm.count("active_learning") && !all->active_simulation)
-    all->active = true;
-  
   all->sd->weighted_unlabeled_examples = all->sd->t;
   all->initial_t = (float)all->sd->t;
 

@@ -149,7 +149,6 @@ struct vw {
   size_t num_children;
 
   bool save_per_pass;
-  float active_c0;
   float initial_weight;
   float initial_constant;
 
@@ -202,7 +201,6 @@ struct vw {
   bool quiet;//Should I suppress progress-printing of updates?
   bool training;//Should I train if lable data is available?
   bool active;
-  bool active_simulation;
   bool adaptive;//Should I use adaptive individual learning rates?
   bool normalized_updates; //Should every feature be normalized
   bool invariant_updates; //Should we use importance aware/safe updates
@@ -273,7 +271,6 @@ struct vw {
 
 void print_result(int f, float res, float weight, v_array<char> tag);
 void binary_print_result(int f, float res, float weight, v_array<char> tag);
-void active_print_result(int f, float res, float weight, v_array<char> tag);
 void noop_mm(shared_data*, float label);
 void print_lda_result(vw& all, int f, float* res, float weight, v_array<char> tag);
 void get_prediction(int sock, float& res, float& weight);

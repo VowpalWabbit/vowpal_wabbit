@@ -1,6 +1,8 @@
 #include "reductions.h"
 #include "multiclass.h"
 #include "simple_label.h"
+#include "rand48.h"
+#include "float.h"
 
 using namespace LEARNER;
 
@@ -9,7 +11,7 @@ namespace ACTIVE {
   struct active{
     float active_c0;
     vw* all;
-  }
+  };
     
     float get_active_coin_bias(float k, float avg_loss, float g, float c0)
     {
@@ -48,10 +50,11 @@ namespace ACTIVE {
     if (is_learn)
       {
 	label_data* ld = (label_data*)ec.ld;
-	
+	vw& all = *a.all;
+
 	float k = ec.example_t - ld->weight;
 	ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(k,all.power_t));
-	float importance = query_decision(all, ec, k);
+	float importance = query_decision(a, ec, k);
 	if(importance > 0){
 	  all.sd->queries += 1;
 	  ld->weight *= importance;
@@ -63,14 +66,15 @@ namespace ACTIVE {
   
   template <bool is_learn>
   void predict_or_learn_active(active& a, learner& base, example& ec) {
-    if (!is_learn)
-      base.predict(ec);
-    else      
+    if (is_learn)
       base.learn(ec);
+    else
+      base.predict(ec);
 
     label_data* ld = (label_data*)ec.ld;
     
     if (ld->label == FLT_MAX) {
+      vw& all = *a.all;
       float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
       
       ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(t,all.power_t));
@@ -100,7 +104,7 @@ namespace ACTIVE {
       }
   }
   
-  void output_and_account_example(vw& all, example& ec)
+  void output_and_account_example(vw& all, active& a, example& ec)
   {
     label_data* ld = (label_data*)ec.ld;
     
@@ -127,7 +131,7 @@ namespace ACTIVE {
     
     float ai=-1; 
     if(ld->label == FLT_MAX)
-      ai=query_decision(all, ec, (float)all.sd->weighted_unlabeled_examples);
+      ai=query_decision(a, ec, (float)all.sd->weighted_unlabeled_examples);
     
     all.sd->weighted_unlabeled_examples += ld->label == FLT_MAX ? ld->weight : 0;
     
@@ -140,21 +144,38 @@ namespace ACTIVE {
     print_update(all, ec);
   }
 
-  void return_active_example(vw& all, void*, example& ec)
+  void return_active_example(vw& all, active& a, example& ec)
   {
-    output_and_account_example(all, ec);
+    output_and_account_example(all, a, ec);
     VW::finish_example(all,&ec);
   }
   
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
     active* a = (active*)calloc(1, sizeof(active));
-    a->simulation = all.active_simulation;
-    
+
+    po::options_description active_opts("Active Learning options");
+    active_opts.add_options()
+      ("active_simulation", "active learning simulation mode")
+      ("active_mellowness", po::value<float>(&(a->active_c0)), "active learning mellowness parameter c_0. Default 8")
+      ;
+
+    vm = add_options(all, active_opts);
+
     //Create new learner
     learner* ret = new learner(NULL, all.l);
-    ret->set_learn<float, predict_or_learn<true> >();
-    ret->set_predict<float, predict_or_learn<false> >();
+    if (vm.count("active_simulation"))
+      {
+	ret->set_learn<active, predict_or_learn_simulation<true> >();
+	ret->set_predict<active, predict_or_learn_simulation<false> >();
+      }
+    else
+      {
+	ret->set_learn<active, predict_or_learn_active<true> >();
+	ret->set_predict<active, predict_or_learn_active<false> >();
+	ret->set_finish_example<active, return_active_example>();
+      }
+
     return ret;
   }
 }
