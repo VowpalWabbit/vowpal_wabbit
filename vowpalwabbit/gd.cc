@@ -500,10 +500,8 @@ void compute_update(vw& all, gd& g, example& ec)
   ec.eta_round = 0;
 
   if (ld->label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;
-
-  if (ld->label != FLT_MAX && !ec.test_only)
     {
+      ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;
       if (all.training && ec.loss > 0.)
         {
 	  float pred_per_update;
@@ -556,17 +554,13 @@ void update(gd& g, learner& base, example& ec)
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void learn(gd& g, learner& base, example& ec)
 {
-  vw* all = g.all;
-  label_data* ld = (label_data*)ec.ld;
-
   assert(ec.in_use);
 
   g.predict(g,base,ec);
 
-  if ((all->holdout_set_off || !ec.test_only) && ld->weight > 0)
+  label_data* ld = (label_data*)ec.ld;
+  if (ld->weight > 0)
     update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
-  else if(ld->weight > 0)
-    ec.loss = all->loss->getLoss(all->sd, ld->prediction, ld->label) * ld->weight;
 }
 
 void sync_weights(vw& all) {

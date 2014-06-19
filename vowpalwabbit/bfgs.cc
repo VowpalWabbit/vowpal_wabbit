@@ -830,13 +830,7 @@ void learn(bfgs& b, learner& base, example& ec)
 
   if (b.current_pass <= b.final_pass)
     {
-      if(ec.test_only)
-	{ 
-	  label_data* ld = (label_data*)ec.ld;
-	  predict(b, base, ec);
-	  ec.loss = all->loss->getLoss(all->sd, ld->prediction, ld->label) * ld->weight;
-	}
-      else if (test_example(ec))
+      if (test_example(ec))
 	predict(b, base, ec);
       else
 	process_example(*all, b, ec);

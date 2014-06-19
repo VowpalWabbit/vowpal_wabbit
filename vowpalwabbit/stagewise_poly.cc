@@ -425,7 +425,7 @@ namespace StagewisePoly
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
   {
-    bool training = poly.all->training && !ec.test_only && ((label_data *) ec.ld)->label != FLT_MAX;
+    bool training = poly.all->training && ((label_data *) ec.ld)->label != FLT_MAX;
 
     if (training) {
       if(poly.update_support) {
