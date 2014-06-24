@@ -16,13 +16,13 @@ To run the code on non-Hadoop clusters, the script 'single_machine'
 has the simplest possible invocation.
 
 In general: start the span server on one of the cluster nodes:
-./spanning_tree 
+./spanning_tree
 
-Launch vw on each of the worker nodes: 
+Launch vw on each of the worker nodes:
 
 ./vw --span_server <location> --total <t> --node <n> --unique_id <u> -d <file>
 
-where: 
+where:
 <location> is the host running spanning_tree
 <t> is the total number of nodes
 <n> is the node id number
@@ -38,23 +38,23 @@ Decide if you are going to control the number of tasks by:
 (b) controlling the number of reducers.
 We'll assume (a) below.
 
-Connect to the span server node for the Hadoop cluster:
+Start the span server for the Hadoop cluster:
+
 ./spanning_tree
 
-Start the map-reduce job using Hadoop streaming: 
+Start the map-reduce job using Hadoop streaming:
 
-hadoop jar $HADOOP_HOME/hadoop-streaming.jar
--Dmapred.job.map.memory.mb=2500 -input <input> -output <output> -file
-vw -file runvw.sh -mapper 'runvw.sh <output> <span_server>' -reducer
-NONE
+hadoop jar $HADOOP_HOME/hadoop-streaming.jar \
+  -files vw,runvw.sh \
+  -Dmapred.job.map.memory.mb=2500 -input <input> -output <output> \
+  -mapper runvw.sh -reducer NONE
 
 where <output> is the directory on HDFS where you want the trained
-model to be saved and <span_server> is the hostname of the gateway where
-spanning_tree runs. The trained model is saved to the file
+model to be saved. The trained model is saved to the file
 <output>/model on HDFS and can be retreived by hadoop -get.
 
 To modify the arguments to VW, edit the script runvw.sh. Arguments to
-hadoop can be directly added in the hadoop streaming command. 
+hadoop can be directly added in the hadoop streaming command.
 
 See the 'mapscript.sh' which uses 'runvw.sh' for an advanced example
 of running VW in a Hadoop enviornmnent.
@@ -64,13 +64,13 @@ of running VW in a Hadoop enviornmnent.
 The files you need to know about:
 
 runvw.sh: This is the mapper code. It takes as arguments:
-          
+
 The output directory. The trained model from the first mapper is
 stored as the file "model" in the output directory.
 
 The hostname of the cluster gateway, so that the mappers can connect
 to the gateway
-                    
+
 All the other standard VW options are currently hardcoded in the
 script, feel free to mess around with them.
 
@@ -84,15 +84,15 @@ communicate amongst themselves.
 
 #########################################################################
 
-allreduce.h: This is the header file for the nodes. 
+allreduce.h: This is the header file for the nodes.
 
 #########################################################################
 
-allreduce.cc: This is the code for doing allreduce. It implement the 
-routine described above. all_reduce is implemented as a combination of 
-reduce and broadcast routines. reduce reads data from children, adds it 
-with local data and passes it up to the parent with a call to pass_up. 
-broadcast receives data from parent, and passes it down to children with 
+allreduce.cc: This is the code for doing allreduce. It implement the
+routine described above. all_reduce is implemented as a combination of
+reduce and broadcast routines. reduce reads data from children, adds it
+with local data and passes it up to the parent with a call to pass_up.
+broadcast receives data from parent, and passes it down to children with
 a call to pass_down.
 
 #########################################################################
