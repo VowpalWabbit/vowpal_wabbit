@@ -107,8 +107,6 @@ namespace CBIFY {
 	data.cb_label.costs.push_back(l);
       }
     
-    cout << data.cb_label.costs[0].probability << endl;
-
     if (is_learn)
       base.learn(ec);
     
