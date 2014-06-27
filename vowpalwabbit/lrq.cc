@@ -48,7 +48,7 @@ namespace {
   inline bool
   example_is_test (example& ec)
     {
-      return ec.test_only || (((label_data*) ec.ld)->label == FLT_MAX);
+      return ((label_data*) ec.ld)->label == FLT_MAX;
     }
 
   void
@@ -77,9 +77,9 @@ namespace LRQ {
     size_t which = ec.example_counter;
     float first_prediction;
     float first_loss;
-    unsigned int maxiter = (all.training && ! example_is_test (ec)) ? 2 : 1;
+    unsigned int maxiter = (is_learn && ! example_is_test (ec)) ? 2 : 1;
 
-    bool do_dropout = lrq.dropout && all.training && ! example_is_test (ec);
+    bool do_dropout = lrq.dropout && is_learn && ! example_is_test (ec);
     float scale = (! lrq.dropout || do_dropout) ? 1.f : 0.5f;
 
     for (unsigned int iter = 0; iter < maxiter; ++iter, ++which)
@@ -112,7 +112,7 @@ namespace LRQ {
                         float* lw = &all.reg.weight_vector[lwindex & all.reg.weight_mask];
 
                         // perturb away from saddle point at (0, 0)
-                        if (all.training && ! example_is_test (ec) && *lw == 0)
+                        if (is_learn && ! example_is_test (ec) && *lw == 0)
                           *lw = cheesyrand (lwindex);
         
                         for (unsigned int rfn = 0; 

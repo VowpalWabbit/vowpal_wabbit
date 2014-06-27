@@ -4,6 +4,15 @@
 
 void save_predictor(vw& all, string reg_name, size_t current_pass);
 
+void dispatch_example(vw& all, example& ec)
+{
+  if (ec.test_only || !all.training)
+    all.l->predict(ec);
+  else
+    all.l->learn(ec);
+  all.l->finish_example(all, ec);
+}
+
 namespace LEARNER
 {
   void generic_driver(vw* all)
@@ -16,10 +25,7 @@ namespace LEARNER
 	if ((ec = VW::get_example(all->p)) != NULL)//semiblocking operation.
 	  {
 	    if (ec->indices.size() > 1) // 1+ nonconstant feature. (most common case first)
-	      {
-		all->l->learn(*ec);
-		all->l->finish_example(*all, *ec);
-	      }
+	      dispatch_example(*all, *ec);
 	    else if (ec->end_pass)
 	      {
 		all->l->end_pass();
@@ -40,10 +46,7 @@ namespace LEARNER
 		VW::finish_example(*all,ec);
 	      }
 	    else // empty example
-	      {
-		all->l->learn(*ec);
-	        all->l->finish_example(*all, *ec);
-	      }
+	      dispatch_example(*all, *ec);
 	  }
 	else if (parser_done(all->p))
 	  {

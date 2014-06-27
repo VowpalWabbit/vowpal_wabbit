@@ -22,7 +22,7 @@ namespace BINARY {
     if (ld->label == ld->prediction)
       ec.loss = 0.;
     else
-      ec.loss = 1.;
+      ec.loss = ld->weight;
   }
 
   learner* setup(vw& all, po::variables_map& vm)

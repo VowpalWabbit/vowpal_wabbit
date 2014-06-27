@@ -322,7 +322,7 @@ namespace LOG_MULTI
 
     MULTICLASS::multiclass *mc = (MULTICLASS::multiclass*)ec.ld;
     
-    if (mc->label == (uint32_t)-1 || !b.all->training || ec.test_only || b.progress)
+    if (mc->label == (uint32_t)-1 || !b.all->training || b.progress)
       predict(b,base,ec);
 
     if(b.all->training && (mc->label != (uint32_t)-1) && !ec.test_only)	//if training the tree

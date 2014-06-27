@@ -340,31 +340,28 @@ float finalize_prediction(vw& all, float ret)
    p.prediction += trunc_weight(fw, p.gravity) * fx;
  }
 
- inline float trunc_predict(vw& all, example& ec, float gravity)
+ inline float trunc_predict(vw& all, example& ec, double gravity)
  {
    label_data* ld = (label_data*)ec.ld;
-   trunc_data temp = {ld->initial, gravity};
+   trunc_data temp = {ld->initial, (float)gravity};
    foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp);
    return temp.prediction;
  }
 
-template<bool reg_mode_odd>
+template<bool l1, bool audit>
 void predict(gd& g, learner& base, example& ec)
 {
   vw& all = *g.all;
 
-  if (reg_mode_odd)
-    {
-      float gravity = (float)all.sd->gravity;
-      ec.partial_prediction = trunc_predict(all, ec, gravity);
-    }
+  if (l1)
+    ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else
     ec.partial_prediction = inline_predict(all, ec);    
 
   label_data& ld = *(label_data*)ec.ld;
   ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)all.sd->contraction);
   
-  if (all.audit || all.hash_inv)
+  if (audit)
     print_audit_features(all, ec);
 }
 
@@ -499,12 +496,9 @@ void compute_update(vw& all, gd& g, example& ec)
 
   ec.eta_round = 0;
 
-  if (ld->label != FLT_MAX)
-    ec.loss = all.loss->getLoss(all.sd, ld->prediction, ld->label) * ld->weight;
-
-  if (ld->label != FLT_MAX && !ec.test_only)
+  if (ld->label != FLT_MAX )
     {
-      if (all.training && ec.loss > 0.)
+      if (all.loss->getLoss(all.sd, ld->prediction, ld->label) > 0.)
         {
 	  float pred_per_update;
           if(adaptive || normalized)
@@ -545,28 +539,22 @@ void update(gd& g, learner& base, example& ec)
   compute_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare> (*all, g, ec);
   
   if (ec.eta_round != 0.)
-    {
-      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(*all,ec,(float)ec.eta_round);
-      
-      if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-	sync_weights(*all);
-    }
+    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(*all, ec, ec.eta_round);
+  
+  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+    sync_weights(*all);
 }
 
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void learn(gd& g, learner& base, example& ec)
 {
-  vw* all = g.all;
-  label_data* ld = (label_data*)ec.ld;
-
   assert(ec.in_use);
 
   g.predict(g,base,ec);
 
-  if ((all->holdout_set_off || !ec.test_only) && ld->weight > 0)
+  label_data* ld = (label_data*)ec.ld;
+  if (ld->weight > 0)
     update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,base,ec);
-  else if(ld->weight > 0)
-    ec.loss = all->loss->getLoss(all->sd, ld->prediction, ld->label) * ld->weight;
 }
 
 void sync_weights(vw& all) {
@@ -804,10 +792,9 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
 	    }
 	}
-
+      
       if (g.initial_constant != 0.0)
         VW::set_weight(*all, constant, 0, g.initial_constant);
-
     }
 
   if (model_file.files.size() > 0)
@@ -922,14 +909,25 @@ learner* setup(vw& all, po::variables_map& vm)
   learner* ret = new learner(g, 1);
 
   if (all.reg_mode % 2)
+    if (all.audit || all.hash_inv)
+      {
+	ret->set_predict<gd, predict<true, true> >();
+	g->predict = predict<true, true>;
+      }
+    else
+      {
+	ret->set_predict<gd, predict<true, false> >();
+	g->predict = predict<true, false>;
+      }
+  else if (all.audit || all.hash_inv)
     {
-      ret->set_predict<gd, predict<true> >();
-      g->predict = predict<true>;
+      ret->set_predict<gd, predict<false, true> >();
+      g->predict = predict<false, true>;
     }
   else
     {
-      ret->set_predict<gd, predict<false> >();
-      g->predict = predict<false>;
+      ret->set_predict<gd, predict<false, false> >();
+      g->predict = predict<false, false>;
     }
   
   uint32_t stride;
