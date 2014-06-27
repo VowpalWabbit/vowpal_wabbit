@@ -166,8 +166,8 @@ sub collect_errors($) {
 #   compare function to sort features by abs(weight) largest first
 #
 sub by_abs_weight_desc {
-    my $weight1 = (split(':', $a))[3];
-    my $weight2 = (split(':', $b))[3];
+    my $weight1 = (split(':', $a))[-1];
+    my $weight2 = (split(':', $b))[-1];
     $weight1 =~ s/\@.*$//;
     $weight2 =~ s/\@.*$//;
 
@@ -234,6 +234,16 @@ sub audit_top_weights($$@) {
                 next unless (defined $feature);
 
                 my ($name, $hash, $value, $weight) = split(':', $feature);
+                unless (defined $weight) {
+                    # multiple passes (using cache) don't have the
+                    # name but only the hashed value of it so
+                    # fields get shifted by one...
+                    printf STDERR "Undefined weight in audit data: feature=%s\n", $feature;
+                    $weight = $value;
+                    $value = $hash;
+                    $hash = $name;
+                    $name = "[$hash]";
+                }
                 $weight =~ s/\@.*$//;
                 printf "\t%s\t%7.6f\t%s\n", $name, $weight, $feature;
 
