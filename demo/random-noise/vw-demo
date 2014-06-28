@@ -11,7 +11,7 @@
 #       3b) distrib.r - Density distribution plot utility, written in R
 #       3c) x-vs-y.r  - X vs Y correleation plot utility, written in R
 #
-export PATH=$PATH:.
+export PATH=.:$PATH
 Pager='less'
 ImgViewCandidates="gwenview display irfanview xee preview"
 ImgViewer=
