@@ -155,7 +155,7 @@ void all_reduce_init(const string master_location, const size_t unique_id, const
     bool listening = false;
     while(!listening)
     {
-      if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
+      if (::bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
       {
 #ifdef _WIN32
         if (WSAGetLastError() == WSAEADDRINUSE)

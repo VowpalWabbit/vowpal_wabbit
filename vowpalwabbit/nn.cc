@@ -20,7 +20,7 @@ using namespace LEARNER;
 namespace NN {
   const float hidden_min_activation = -3;
   const float hidden_max_activation = 3;
-  const int nn_constant = 533357803;
+  const uint32_t nn_constant = 533357803;
   
   struct nn {
     uint32_t k;
