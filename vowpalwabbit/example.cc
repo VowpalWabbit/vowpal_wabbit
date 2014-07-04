@@ -107,7 +107,7 @@ struct features_and_source
 {
   v_array<feature> feature_map; //map to store sparse feature vectors  
   uint32_t stride_shift;
-  size_t mask;
+  uint32_t mask;
   weight* base;
 };
 
