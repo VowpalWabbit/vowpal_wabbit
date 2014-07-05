@@ -27,23 +27,18 @@ namespace OAA {
 
   template <bool is_learn>
   void predict_or_learn(oaa& o, learner& base, example& ec) {
-    vw* all = o.all;
-
     multiclass* mc_label_data = (multiclass*)ec.ld;
-    uint32_t prediction = 1;
-    float score = INT_MIN;
-  
     if (mc_label_data->label == 0 || (mc_label_data->label > o.k && mc_label_data->label != (uint32_t)-1))
       cout << "label " << mc_label_data->label << " is not in {1,"<< o.k << "} This won't work right." << endl;
     
+    label_data simple_temp = {0.f, mc_label_data->weight, 0.f, 0.f};
+    ec.ld = &simple_temp;
+
     string outputString;
     stringstream outputStringStream(outputString);
 
-    label_data simple_temp;
-    simple_temp.initial = 0.;
-    simple_temp.weight = mc_label_data->weight;
-    ec.ld = &simple_temp;
-
+    uint32_t prediction = 1;
+    float score = INT_MIN;
     for (uint32_t i = 1; i <= o.k; i++)
       {
 	if (is_learn)
@@ -52,7 +47,7 @@ namespace OAA {
 	      simple_temp.label = 1;
 	    else
 	      simple_temp.label = -1;
-
+	    
 	    base.learn(ec, i-1);
 	  }
 	else
@@ -73,7 +68,7 @@ namespace OAA {
     ec.ld = mc_label_data;
     
     if (o.shouldOutput) 
-      all->print_text(all->raw_prediction, outputStringStream.str(), ec.tag);
+      o.all->print_text(o.all->raw_prediction, outputStringStream.str(), ec.tag);
   }
   
   void finish_example(vw& all, oaa&, example& ec)

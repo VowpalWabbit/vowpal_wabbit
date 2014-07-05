@@ -463,6 +463,8 @@ sub is_integer_option($) {
     my $expects_integer =
         ($opt =~ qr{^-*
             bs?
+            |batch_sz
+            |bootstrap|B
             |(?:csoaa|wap)(?:_ldf)?
             |cb
             |num_children

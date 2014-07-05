@@ -87,9 +87,9 @@ namespace ArgmaxTask {
         
     for (size_t i=0; i<ec.size(); i++) {
       // labels should be 1 or 2, and our output is MAX of all predicted values
-      srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
-      srn.snapshot(i, 2, &max_prediction, sizeof(max_prediction), false); 
-
+      //      srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
+      //srn.snapshot(i, 2, &max_prediction, sizeof(max_prediction), false); 
+      
       uint32_t prediction;
       if (my_task_data->predict_max)
 	prediction = srn.predict(ec[i], max_label);

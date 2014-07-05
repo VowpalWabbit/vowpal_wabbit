@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
   short unsigned int port = 26543;
 
   address.sin_port = htons(port);
-  if (bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
+  if (::bind(sock,(sockaddr*)&address, sizeof(address)) < 0)
 	  report_error("bind: ");
 
   if (argc == 2 && strcmp("--nondaemon",argv[1])==0)
