@@ -7,7 +7,7 @@ ifneq ($(CXX),)
   ARCH = -D__extern_always_inline=inline
 else
   CXX = g++
-#$(warning Using g++)
+  $(warning Using g++)
 ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2` \< 4.3 && echo -march=nocona || echo -march=native)
 endif
 
@@ -93,5 +93,7 @@ install: $(BINARIES)
 	cd vowpalwabbit; cp $(BINARIES) /usr/local/bin; cd ../cluster; $(MAKE) install
 
 clean:
-	cd vowpalwabbit; $(MAKE) clean; cd ../cluster; $(MAKE) clean
+	cd vowpalwabbit && $(MAKE) clean
+	cd cluster && $(MAKE) clean
+	cd library && $(MAKE) clean
 
