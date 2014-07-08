@@ -702,15 +702,12 @@ void parse_scorer_reductions(vw& all, po::variables_map& vm)
     ("lrq", po::value<vector<string> > (), "use low rank quadratic features")
     ("lrqdropout", "use dropout training for low rank quadratic features")
     ("stage_poly", "use stagewise polynomial feature learning")
-    ("active_learning", "enable active learning");
+    ("active", "enable active learning");
 
   vm = add_options(all, score_mod_opt);
 
   if (vm.count("active"))
-    {
-      all.active = true;
-      all.l = ACTIVE::setup(all,vm);
-    }
+    all.l = ACTIVE::setup(all,vm);
   
   if(vm.count("nn"))
     all.l = NN::setup(all, vm);

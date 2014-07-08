@@ -18,7 +18,7 @@ namespace ACTIVE {
       float b,sb,rs,sl;
       b=(float)(c0*(log(k+1.)+0.0001)/(k+0.0001));
       sb=sqrt(b);
-      avg_loss = min(1, max(0, avg_loss)); //loss should be in [0,1]
+      avg_loss = min(1.f, max(0.f, avg_loss)); //loss should be in [0,1]
 
       sl=sqrt(avg_loss)+sqrt(avg_loss+g);
       if (g<=sb*sl+b)
@@ -55,12 +55,14 @@ namespace ACTIVE {
 	float k = ec.example_t - ld->weight;
 	ec.revert_weight = all.loss->getRevertingWeight(all.sd, ld->prediction, all.eta/powf(k,all.power_t));
 	float importance = query_decision(a, ec, k);
+
 	if(importance > 0){
 	  all.sd->queries += 1;
 	  ld->weight *= importance;
 	  base.learn(ec);
-	  ld->weight /= importance;
 	}
+	else
+	  ld->label = FLT_MAX;
       }
   }
   
@@ -152,25 +154,28 @@ namespace ACTIVE {
   
   learner* setup(vw& all, po::variables_map& vm)
   {//parse and set arguments
-    active* a = (active*)calloc(1, sizeof(active));
+    active* data = (active*)calloc_or_die(1, sizeof(active));
 
     po::options_description active_opts("Active Learning options");
     active_opts.add_options()
-      ("active_simulation", "active learning simulation mode")
-      ("active_mellowness", po::value<float>(&(a->active_c0)), "active learning mellowness parameter c_0. Default 8")
+      ("simulation", "active learning simulation mode")
+      ("mellowness", po::value<float>(&(data->active_c0)), "active learning mellowness parameter c_0. Default 8")
       ;
 
     vm = add_options(all, active_opts);
 
+    data->all=&all;
+
     //Create new learner
-    learner* ret = new learner(NULL, all.l);
-    if (vm.count("active_simulation"))
+    learner* ret = new learner(data, all.l);
+    if (vm.count("simulation"))
       {
 	ret->set_learn<active, predict_or_learn_simulation<true> >();
 	ret->set_predict<active, predict_or_learn_simulation<false> >();
       }
     else
       {
+	all.active = true;
 	ret->set_learn<active, predict_or_learn_active<true> >();
 	ret->set_predict<active, predict_or_learn_active<false> >();
 	ret->set_finish_example<active, return_active_example>();
