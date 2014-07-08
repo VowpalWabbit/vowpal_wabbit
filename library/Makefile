@@ -2,7 +2,7 @@
 # Critical variables are passed recursively (via the environment)
 # by the top level Makefile when calling $(MAKE)
 #
-# If we don't know where to look for boost, is it's no go.
+# If we don't know where to look for boost - it's a no go.
 #
 ifeq ($(BOOST_LIBRARY),)
   $(error Please run 'make' at the top level only)
