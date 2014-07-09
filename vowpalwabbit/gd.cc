@@ -25,10 +25,8 @@ license as described in the file LICENSE.
 #include "reductions.h"
 
 using namespace std;
-
 using namespace LEARNER;
 //todo: 
-//1. Factor active learning into a reduction
 //3. Make updated_prediction work
 //4. Factor various state out of vw&
 namespace GD
