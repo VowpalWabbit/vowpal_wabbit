@@ -155,7 +155,7 @@ bool test_example(example& ec)
   float bfgs_predict(vw& all, example& ec)
   {
     ec.partial_prediction = GD::inline_predict(all,ec);
-    return GD::finalize_prediction(all, ec.partial_prediction);
+    return GD::finalize_prediction(all.sd, ec.partial_prediction);
   }
 
 inline void add_grad(float& d, float f, float& fw)

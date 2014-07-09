@@ -141,7 +141,7 @@ float mf_predict(vw& all, example& ec)
 
   all.set_minmax(all.sd, ld->label);
 
-  ld->prediction = GD::finalize_prediction(all, ec.partial_prediction);
+  ld->prediction = GD::finalize_prediction(all.sd, ec.partial_prediction);
 
   if (ld->label != FLT_MAX)
     {
@@ -161,7 +161,7 @@ void sd_offset_update(weight* weights, size_t mask, feature* begin, feature* end
     weights[(f->weight_index + offset) & mask] += update * f->x - regularization * weights[(f->weight_index + offset) & mask];
 }
 
-void mf_train(vw& all, example& ec, float update)
+void mf_train(vw& all, example& ec)
 {
       weight* weights = all.reg.weight_vector;
       size_t mask = all.reg.weight_mask;
@@ -170,7 +170,7 @@ void mf_train(vw& all, example& ec, float update)
       // use final prediction to get update size
       // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
       float eta_t = all.eta/pow(ec.example_t,all.power_t) / 3.f * ld->weight;
-      update = all.loss->getUpdate(ld->prediction, ld->label, eta_t, 1.); //ec.total_sum_feat_sq);
+      float update = all.loss->getUpdate(ld->prediction, ld->label, eta_t, 1.); //ec.total_sum_feat_sq);
 
       float regularization = eta_t * all.l2_lambda;
 
@@ -289,7 +289,7 @@ void mf_train(vw& all, example& ec, float update)
  
     predict(d, base, ec);
     if (all->training && ((label_data*)(ec.ld))->label != FLT_MAX)
-      mf_train(*all, ec, ec.eta_round);
+      mf_train(*all, ec);
   }
 
   learner* setup(vw& all, po::variables_map& vm)

@@ -49,7 +49,6 @@ struct example // core example datatype.
   float partial_prediction;//shared data for prediction.
   v_array<float> topic_predictions;
   float loss;
-  float eta_round;
   float eta_global;
   float example_t;//sum of importance weights so far.
   float sum_feat_sq[256];//helper for total_sum_feat_sq.

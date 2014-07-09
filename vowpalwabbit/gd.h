@@ -19,7 +19,7 @@ license as described in the file LICENSE.
 namespace GD{
 void print_result(int f, float res, v_array<char> tag);
 void print_audit_features(regressor &reg, example& ec, size_t offset);
-float finalize_prediction(vw&, float ret);
+float finalize_prediction(shared_data* sd, float ret);
 void print_audit_features(vw&, example& ec);
 void train_one_example(regressor& r, example* ex);
 void train_offset_example(regressor& r, example* ex, size_t offset);

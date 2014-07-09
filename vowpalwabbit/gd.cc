@@ -91,11 +91,10 @@ namespace GD
   template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
   void train(gd& g, example& ec, float update)
   {
-    vw& all = *g.all;
     if (normalized)
       update *= g.update_multiplier;
     
-    foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, update);
+    foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
   }
 
   void end_pass(gd& g)
@@ -124,7 +123,7 @@ namespace GD
            ((all.check_holdout_every_n_passes <= 1) ||
             ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
 	  set_done(all);
-      }   
+      }
   }
 
 struct string_value {
@@ -318,17 +317,17 @@ void print_audit_features(vw& all, example& ec)
   print_features(all, ec);
 }
 
-float finalize_prediction(vw& all, float ret) 
+float finalize_prediction(shared_data* sd, float ret) 
 {
   if ( nanpattern(ret))
     {
-      cerr << "NAN prediction in example " << all.sd->example_number + 1 << ", forcing 0.0" << endl;
+      cerr << "NAN prediction in example " << sd->example_number + 1 << ", forcing 0.0" << endl;
       return 0.;
     }
-  if ( ret > all.sd->max_label )
-    return (float)all.sd->max_label;
-  if (ret < all.sd->min_label)
-    return (float)all.sd->min_label;
+  if ( ret > sd->max_label )
+    return (float)sd->max_label;
+  if (ret < sd->min_label)
+    return (float)sd->min_label;
   return ret;
 }
 
@@ -360,7 +359,7 @@ void predict(gd& g, learner& base, example& ec)
     ec.partial_prediction = inline_predict(all, ec);    
 
   label_data& ld = *(label_data*)ec.ld;
-  ld.prediction = finalize_prediction(all, ec.partial_prediction * (float)g.sd->contraction);
+  ld.prediction = finalize_prediction(g.sd, ec.partial_prediction * (float)g.sd->contraction);
   
   if (audit)
     print_audit_features(all, ec);
@@ -466,7 +465,7 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
   }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-bool compute_update(gd& g, example& ec)
+float compute_update(gd& g, example& ec)
 {//invariant: not a test label, importance weight > 0
   label_data* ld = (label_data*)ec.ld;
   vw& all = *g.all;
@@ -492,31 +491,29 @@ bool compute_update(gd& g, example& ec)
       else
 	update = all.loss->getUnsafeUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
       
-      ec.eta_round = update;
-      if (all.reg_mode && fabs(ec.eta_round) > 1e-8) {
+      if (all.reg_mode && fabs(update) > 1e-8) {
 	double dev1 = all.loss->first_derivative(g.sd, ld->prediction, ld->label);
-	double eta_bar = (fabs(dev1) > 1e-8) ? (-ec.eta_round / dev1) : 0.0;
+	double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
 	if (fabs(dev1) > 1e-8)
 	  g.sd->contraction *= (1. - all.l2_lambda * eta_bar);
-	ec.eta_round /= (float)g.sd->contraction;
+	update /= (float)g.sd->contraction;
 	g.sd->gravity += eta_bar * all.l1_lambda;
       }
-      return true;
+      return update;
     }
   else
-    return false;
+    return 0.;
 }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void update(gd& g, learner& base, example& ec)
 {//invariant: not a test label, importance weight > 0
-  vw& all = *g.all;
-
-  if (compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec))
-    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, ec.eta_round);
+  float update;
+  if ( (update = compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
+    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
   
   if (g.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-    sync_weights(all);
+    sync_weights(*g.all);
 }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>

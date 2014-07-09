@@ -86,7 +86,6 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->partial_prediction = src->partial_prediction;
   copy_array(dst->topic_predictions, src->topic_predictions);
   dst->loss = src->loss;
-  dst->eta_round = src->eta_round;
   dst->eta_global = src->eta_global;
   dst->example_t = src->example_t;
   memcpy(dst->sum_feat_sq, src->sum_feat_sq, 256 * sizeof(float));
