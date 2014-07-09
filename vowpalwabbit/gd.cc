@@ -32,7 +32,8 @@ using namespace LEARNER;
 namespace GD
 {
   struct gd{
-    float normalized_sum_norm_x;
+    double normalized_sum_norm_x;
+    double total_weight;
     size_t no_win_counter;
     size_t early_stop_thres;
     float initial_constant;
@@ -70,24 +71,19 @@ namespace GD
 
   //this deals with few nonzero features vs. all nonzero features issues.  
   template<bool sqrt_rate, size_t adaptive, size_t normalized>
-  float average_update(gd& g, float update, float example_t)
+  float average_update(gd& g, float update)
   {
-    float total_weight = example_t;
-    
-    if(!g.all->holdout_set_off)
-      total_weight -= (float)g.sd->weighted_holdout_examples; //exclude weights from test_only examples   
-    
     if (normalized) {
       if (sqrt_rate) 
 	{
-	  float avg_norm = total_weight / g.normalized_sum_norm_x;
+	  float avg_norm = g.total_weight / g.normalized_sum_norm_x;
 	  if (adaptive)
 	    return sqrt(avg_norm);
 	  else
 	    return avg_norm;
 	}
       else 
-	return powf(g.normalized_sum_norm_x / total_weight, g.neg_norm_power);
+	return powf(g.normalized_sum_norm_x / g.total_weight, g.neg_norm_power);
     }
     return 1.f;
   }
@@ -460,8 +456,9 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     
     if(normalized) {
       g.normalized_sum_norm_x += ld->weight * nd.norm_x;
+      g.total_weight += ld->weight;
 
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g, nd.pred_per_update, ec.example_t);
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g, nd.pred_per_update);
       nd.pred_per_update *= g.update_multiplier;
     }
     
@@ -628,70 +625,70 @@ void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "t %f\n", all.sd->t);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->t, sizeof(all.sd->t), 
+  text_len = sprintf(buff, "t %f\n", g.sd->t);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->t, sizeof(g.sd->t), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "sum_loss %f\n", all.sd->sum_loss);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss, sizeof(all.sd->sum_loss), 
+  text_len = sprintf(buff, "sum_loss %f\n", g.sd->sum_loss);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->sum_loss, sizeof(g.sd->sum_loss), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "sum_loss_since_last_dump %f\n", all.sd->sum_loss_since_last_dump);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump), 
+  text_len = sprintf(buff, "sum_loss_since_last_dump %f\n", g.sd->sum_loss_since_last_dump);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->sum_loss_since_last_dump, sizeof(g.sd->sum_loss_since_last_dump), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "dump_interval %f\n", all.sd->dump_interval);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval), 
+  text_len = sprintf(buff, "dump_interval %f\n", g.sd->dump_interval);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->dump_interval, sizeof(g.sd->dump_interval), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "min_label %f\n", all.sd->min_label);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->min_label, sizeof(all.sd->min_label), 
+  text_len = sprintf(buff, "min_label %f\n", g.sd->min_label);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->min_label, sizeof(g.sd->min_label), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "max_label %f\n", all.sd->max_label);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->max_label, sizeof(all.sd->max_label), 
+  text_len = sprintf(buff, "max_label %f\n", g.sd->max_label);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->max_label, sizeof(g.sd->max_label), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "weighted_examples %f\n", all.sd->weighted_examples);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples), 
+  text_len = sprintf(buff, "weighted_examples %f\n", g.sd->weighted_examples);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->weighted_examples, sizeof(g.sd->weighted_examples), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "weighted_labels %f\n", all.sd->weighted_labels);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_labels, sizeof(all.sd->weighted_labels), 
+  text_len = sprintf(buff, "weighted_labels %f\n", g.sd->weighted_labels);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->weighted_labels, sizeof(g.sd->weighted_labels), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "weighted_unlabeled_examples %f\n", all.sd->weighted_unlabeled_examples);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_unlabeled_examples, sizeof(all.sd->weighted_unlabeled_examples), 
+  text_len = sprintf(buff, "weighted_unlabeled_examples %f\n", g.sd->weighted_unlabeled_examples);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->weighted_unlabeled_examples, sizeof(g.sd->weighted_unlabeled_examples), 
 			    "", read, 
 			    buff, text_len, text);
   
-  text_len = sprintf(buff, "example_number %u\n", (uint32_t)all.sd->example_number);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->example_number, sizeof(all.sd->example_number), 
+  text_len = sprintf(buff, "example_number %u\n", (uint32_t)g.sd->example_number);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->example_number, sizeof(g.sd->example_number), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "total_features %u\n", (uint32_t)all.sd->total_features);
-  bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
+  text_len = sprintf(buff, "total_features %u\n", (uint32_t)g.sd->total_features);
+  bin_text_read_write_fixed(model_file,(char*)&g.sd->total_features, sizeof(g.sd->total_features), 
 			    "", read, 
 			    buff, text_len, text);
   if (!all.training) // reset various things so that we report test set performance properly
     {
-      all.sd->sum_loss = 0;
-      all.sd->sum_loss_since_last_dump = 0;
-      all.sd->dump_interval = 1.;
-      all.sd->weighted_examples = 0.;
-      all.sd->weighted_labels = 0.;
-      all.sd->weighted_unlabeled_examples = 0.;
-      all.sd->example_number = 0;
-      all.sd->total_features = 0;
+      g.sd->sum_loss = 0;
+      g.sd->sum_loss_since_last_dump = 0;
+      g.sd->dump_interval = 1.;
+      g.sd->weighted_examples = 0.;
+      g.sd->weighted_labels = 0.;
+      g.sd->weighted_unlabeled_examples = 0.;
+      g.sd->example_number = 0;
+      g.sd->total_features = 0;
     }
   
   uint32_t length = 1 << all.num_bits;
@@ -850,12 +847,16 @@ learner* setup(vw& all, po::variables_map& vm)
   g->sd = all.sd;
   g->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
+  g->total_weight = 0.;
   g->early_stop_thres = 3;
   g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = - all.power_t;
   
   if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
-    g->normalized_sum_norm_x = all.initial_t;
+    {
+      g->normalized_sum_norm_x = all.initial_t;
+      g->total_weight = all.initial_t;
+    }
 
   bool feature_mask_off = true;
   if(vm.count("feature_mask"))
