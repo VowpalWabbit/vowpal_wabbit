@@ -38,6 +38,8 @@ namespace GD
     size_t no_win_counter;
     size_t early_stop_thres;
     float initial_constant;
+    float neg_norm_power;
+    float neg_power_t;
     void (*predict)(gd&, learner&, example&);
 
     vw* all;
@@ -67,38 +69,36 @@ namespace GD
       }
   }
 
+  //this deals with few nonzero features vs. all nonzero features issues.  
   template<bool sqrt_rate, size_t adaptive, size_t normalized>
-  float average_update(vw& all, float update, float example_t)
+  float average_update(gd& g, float update, float example_t)
   {
     float total_weight = example_t;
     
-    if(!all.holdout_set_off)
-      total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
+    if(!g.all->holdout_set_off)
+      total_weight -= (float)g.sd->weighted_holdout_examples; //exclude weights from test_only examples   
     
     if (normalized) {
-      float avg_norm = all.normalized_sum_norm_x / total_weight;
-
       if (sqrt_rate) 
 	{
+	  float avg_norm = total_weight / g.normalized_sum_norm_x;
 	  if (adaptive)
-	    update /= sqrt(avg_norm);
+	    update *= sqrt(avg_norm);
 	  else
-	    update /= avg_norm;
+	    update *= avg_norm;
 	}
       else 
-	{
-	  float minus_power_t_norm = (adaptive ? all.power_t : 0.f) -1.f;
-	  update *= powf(avg_norm * avg_norm, minus_power_t_norm);
-	}
+	update *= powf(g.normalized_sum_norm_x / total_weight, g.neg_norm_power);
     }
     return update;
   }
   
   template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  void train(vw& all, example& ec, float update)
+  void train(gd& g, example& ec, float update)
   {
+    vw& all = *g.all;
     if (normalized)
-      update = average_update<sqrt_rate, adaptive, normalized>(all, update, ec.example_t);
+      update = average_update<sqrt_rate, adaptive, normalized>(g, update, ec.example_t);
     
     foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, update);
   }
@@ -373,7 +373,7 @@ void predict(gd& g, learner& base, example& ec)
 
   struct power_data {
     float minus_power_t;
-    float minus_power_t_norm;
+    float neg_norm_power;
   };
 
   template<bool sqrt_rate, size_t adaptive, size_t normalized>
@@ -404,16 +404,14 @@ void predict(gd& g, learner& base, example& ec)
 	  else
 	    rate_decay *= inv_norm*inv_norm;
 	}
-      else{
-	float norm = w[normalized];
-	rate_decay *= powf(norm*norm,s.minus_power_t_norm);
-      }
+      else
+	rate_decay *= powf(w[normalized]*w[normalized], s.neg_norm_power);
     }
     return rate_decay;
   }
 
   struct norm_data {
-    float g;
+    float grad_squared;
     float pred_per_update;
     float norm_x;
     power_data pd;
@@ -425,16 +423,19 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
     weight* w = &fw;
     float x2 = x * x;
     if(adaptive)
-      w[adaptive] += nd.g * x2;
+      w[adaptive] += nd.grad_squared * x2;
     if(normalized) {
       float x_abs = fabsf(x);
       if( x_abs > w[normalized] ) {// new scale discovered
 	if( w[normalized] > 0. ) {//If the normalizer is > 0 then rescale the weight so it's as if the new scale was the old scale.
-	  float rescale = (w[normalized]/x_abs);
-	  if (sqrt_rate)
+	  if (sqrt_rate) {
+	    float rescale = w[normalized]/x_abs;	    
 	    w[0] *= (adaptive ? rescale : rescale*rescale);
-	  else
-	    w[0] *= powf(rescale*rescale, -nd.pd.minus_power_t_norm);
+	  }
+	  else {
+	    float rescale = x_abs/w[normalized];	    
+	    w[0] *= powf(rescale*rescale, nd.pd.neg_norm_power);
+	  }
 	}
 	w[normalized] = x_abs;
       }
@@ -447,31 +448,21 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw) {
 }
   
 template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-  float get_pred_per_update(vw& all, example& ec)
+  float get_pred_per_update(gd& g, example& ec)
   {//We must traverse the features in _precisely_ the same order as during training.
     label_data* ld = (label_data*)ec.ld;
-    float g = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
-    if (g==0) return 1.;
+    vw& all = *g.all;
+    float grad_squared = all.loss->getSquareGrad(ld->prediction, ld->label) * ld->weight;
+    if (grad_squared == 0) return 1.;
     
-    float minus_power_t_norm = (adaptive ? all.power_t : 0.f) - 1.f;
-    norm_data nd = {g, 0., 0., {-all.power_t, minus_power_t_norm}};
+    norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}};
     
     foreach_feature<norm_data,pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, nd);
     
     if(normalized) {
-      float total_weight = ec.example_t;
-      
-      if(!all.holdout_set_off)
-	total_weight -= (float)all.sd->weighted_holdout_examples; //exclude weights from test_only examples   
-      
-      all.normalized_sum_norm_x += ld->weight * nd.norm_x;
-      
-      float avg_norm = all.normalized_sum_norm_x / total_weight;
-      if(sqrt_rate) {
-	if(adaptive) nd.pred_per_update /= sqrt(avg_norm);
-	else nd.pred_per_update /= avg_norm;
-      } else 
-	nd.pred_per_update *= powf(avg_norm,minus_power_t_norm);
+      g.normalized_sum_norm_x += ld->weight * nd.norm_x;
+
+      nd.pred_per_update = average_update<sqrt_rate, adaptive, normalized>(g, nd.pred_per_update, ec.example_t);
     }
     
     return nd.pred_per_update;
@@ -486,7 +477,7 @@ bool compute_update(vw& all, gd& g, example& ec)
     {
       float pred_per_update;
       if(adaptive || normalized)
-	pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(all,ec);
+	pred_per_update = get_pred_per_update<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g,ec);
       else
 	pred_per_update = ec.total_sum_feat_sq;
       
@@ -494,7 +485,7 @@ bool compute_update(vw& all, gd& g, example& ec)
       if(!adaptive) 
 	{
 	  float t = (float)(ec.example_t - g.sd->weighted_holdout_examples);
-	  delta_pred *= powf(t,-all.power_t);
+	  delta_pred *= powf(t, g.neg_power_t);
 	}
       
       float update = 0.f;
@@ -524,7 +515,7 @@ void update(gd& g, learner& base, example& ec)
   vw* all = g.all;
 
   if (compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (*all, g, ec))
-    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(*all, ec, ec.eta_round);
+    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, ec.eta_round);
   
   if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
     sync_weights(*all);
@@ -620,8 +611,10 @@ void save_load_regressor(vw& all, io_buf& model_file, bool read, bool text)
   while ((!read && i < length) || (read && brw >0));  
 }
 
-void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
+void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
 {
+  vw& all = *g.all;
+  
   char buff[512];
   
   uint32_t text_len = sprintf(buff, "initial_t %f\n", all.initial_t);
@@ -629,8 +622,8 @@ void save_load_online_state(vw& all, io_buf& model_file, bool read, bool text)
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "norm normalizer %f\n", all.normalized_sum_norm_x);
-  bin_text_read_write_fixed(model_file,(char*)&all.normalized_sum_norm_x, sizeof(all.normalized_sum_norm_x), 
+  text_len = sprintf(buff, "norm normalizer %f\n", g.normalized_sum_norm_x);
+  bin_text_read_write_fixed(model_file,(char*)&g.normalized_sum_norm_x, sizeof(g.normalized_sum_norm_x), 
 			    "", read, 
 			    buff, text_len, text);
 
@@ -789,7 +782,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 				"", read,
 				buff, text_len, text);
       if (resume)
-	save_load_online_state(*all, model_file, read, text);
+	save_load_online_state(g, model_file, read, text);
       else
 	save_load_regressor(*all, model_file, read, text);
     }
@@ -854,9 +847,14 @@ learner* setup(vw& all, po::variables_map& vm)
   gd* g = (gd*)calloc_or_die(1, sizeof(gd));
   g->all = &all;
   g->sd = all.sd;
-  g->normalized_sum_norm_x = all.normalized_sum_norm_x;
+  g->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
   g->early_stop_thres = 3;
+  g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
+  g->neg_power_t = - all.power_t;
+  
+  if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all->initial_t) previous fake datapoints all with norm 1
+    g->normalized_sum_norm_x = all.initial_t;
 
   bool feature_mask_off = true;
   if(vm.count("feature_mask"))

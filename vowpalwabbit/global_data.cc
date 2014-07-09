@@ -296,7 +296,6 @@ vw::vw()
   normalized_updates = true;
   invariant_updates = true;
 
-  normalized_sum_norm_x = 0.;
   normalized_idx = 2;
 
   add_constant = true;

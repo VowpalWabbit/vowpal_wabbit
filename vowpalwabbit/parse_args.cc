@@ -929,9 +929,6 @@ vw* parse_args(int argc, char *argv[])
   all->sd->weighted_unlabeled_examples = all->sd->t;
   all->initial_t = (float)all->sd->t;
 
-  if(all->initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all->initial_t) previous fake datapoints all with norm 1
-    all->normalized_sum_norm_x = all->initial_t;
-
   //Input regressor header
   io_buf io_temp;
   parse_regressor_args(*all, vm, io_temp);
