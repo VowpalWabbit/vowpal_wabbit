@@ -15,7 +15,7 @@ namespace Scorer {
     label_data* ld = (label_data*)ec.ld;
     s.all->set_minmax(s.all->sd, ld->label);
 
-    if (is_learn)
+    if (is_learn && ld->label != FLT_MAX && ld->weight > 0)
       base.learn(ec);
     else
       base.predict(ec);
