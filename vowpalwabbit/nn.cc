@@ -213,7 +213,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.ft_offset = ec.ft_offset;
       n.output_layer.ld = ec.ld;
       n.output_layer.partial_prediction = 0;
-      n.output_layer.eta_global = ec.eta_global;
       n.output_layer.example_t = ec.example_t;
       if (is_learn)
 	base.learn(n.output_layer, n.k);
