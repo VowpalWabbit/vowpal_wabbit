@@ -9,8 +9,7 @@ ARCH = $(shell test `g++ -v 2>&1 | tail -1 | cut -d ' ' -f 3 | cut -d '.' -f 1,2
 endif
 
 ifeq ($(CXX),)
-  $(warning No compiler found)
-  exit 1
+  $(error No compiler found)
 endif
 
 all:	spanning_tree
