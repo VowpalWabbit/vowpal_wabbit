@@ -73,9 +73,7 @@ void output_and_account_example(example* ec);
      }
    }
 
- inline void vec_add(float& p, const float fx, float& fw) {
-   p += fw * fx;
- }
+ inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
 
  inline float inline_predict(vw& all, example& ec)
  {

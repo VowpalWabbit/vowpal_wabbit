@@ -228,6 +228,7 @@ vw::vw()
 
   bfgs = false;
   hessian_on = false;
+  active = false;
   reg.stride_shift = 0;
   num_bits = 18;
   default_bits = true;

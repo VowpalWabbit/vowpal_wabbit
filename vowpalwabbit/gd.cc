@@ -38,6 +38,7 @@ namespace GD
     float initial_constant;
     float neg_norm_power;
     float neg_power_t;
+    float update_multiplier;
     void (*predict)(gd&, learner&, example&);
 
     vw* all;
@@ -81,14 +82,14 @@ namespace GD
 	{
 	  float avg_norm = total_weight / g.normalized_sum_norm_x;
 	  if (adaptive)
-	    update *= sqrt(avg_norm);
+	    return sqrt(avg_norm);
 	  else
-	    update *= avg_norm;
+	    return avg_norm;
 	}
       else 
-	update *= powf(g.normalized_sum_norm_x / total_weight, g.neg_norm_power);
+	return powf(g.normalized_sum_norm_x / total_weight, g.neg_norm_power);
     }
-    return update;
+    return 1.f;
   }
   
   template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
@@ -96,37 +97,37 @@ namespace GD
   {
     vw& all = *g.all;
     if (normalized)
-      update = average_update<sqrt_rate, adaptive, normalized>(g, update, ec.example_t);
+      update *= g.update_multiplier;
     
     foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(all, ec, update);
   }
 
   void end_pass(gd& g)
   {
-    vw* all = g.all;
+    vw& all = *g.all;
     
-    sync_weights(*all);
-    if(all->span_server != "") {
-      if(all->adaptive)
-	accumulate_weighted_avg(*all, all->span_server, all->reg);
+    sync_weights(all);
+    if(all.span_server != "") {
+      if(all.adaptive)
+	accumulate_weighted_avg(all, all.span_server, all.reg);
       else 
-        accumulate_avg(*all, all->span_server, all->reg, 0);	      
+        accumulate_avg(all, all.span_server, all.reg, 0);	      
     }
     
-    all->eta *= all->eta_decay_rate;
-    if (all->save_per_pass)
-      save_predictor(*all, all->final_regressor_name, all->current_pass);   
+    all.eta *= all.eta_decay_rate;
+    if (all.save_per_pass)
+      save_predictor(all, all.final_regressor_name, all.current_pass);   
     
-    all->current_pass++;
+    all.current_pass++;
     
-    if(!all->holdout_set_off)
+    if(!all.holdout_set_off)
       {
-        if(summarize_holdout_set(*all, g.no_win_counter))
-          finalize_regressor(*all, all->final_regressor_name);
+        if(summarize_holdout_set(all, g.no_win_counter))
+          finalize_regressor(all, all.final_regressor_name);
         if((g.early_stop_thres == g.no_win_counter) &&
-           ((all->check_holdout_every_n_passes <= 1) ||
-            ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
-	  set_done(*all);
+           ((all.check_holdout_every_n_passes <= 1) ||
+            ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+	  set_done(all);
       }   
   }
 
@@ -356,7 +357,7 @@ template<bool l1, bool audit>
 void predict(gd& g, learner& base, example& ec)
 {
   vw& all = *g.all;
-
+  
   if (l1)
     ec.partial_prediction = trunc_predict(all, ec, g.sd->gravity);
   else
@@ -460,16 +461,18 @@ template<bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normaliz
     if(normalized) {
       g.normalized_sum_norm_x += ld->weight * nd.norm_x;
 
-      nd.pred_per_update = average_update<sqrt_rate, adaptive, normalized>(g, nd.pred_per_update, ec.example_t);
+      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(g, nd.pred_per_update, ec.example_t);
+      nd.pred_per_update *= g.update_multiplier;
     }
     
     return nd.pred_per_update;
   }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
-bool compute_update(vw& all, gd& g, example& ec)
+bool compute_update(gd& g, example& ec)
 {//invariant: not a test label, importance weight > 0
   label_data* ld = (label_data*)ec.ld;
+  vw& all = *g.all;
 
   if (all.loss->getLoss(g.sd, ld->prediction, ld->label) > 0.)
     {
@@ -510,13 +513,13 @@ bool compute_update(vw& all, gd& g, example& ec)
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 void update(gd& g, learner& base, example& ec)
 {//invariant: not a test label, importance weight > 0
-  vw* all = g.all;
+  vw& all = *g.all;
 
-  if (compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (*all, g, ec))
+  if (compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec))
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, ec.eta_round);
   
-  if (all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
-    sync_weights(*all);
+  if (g.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+    sync_weights(all);
 }
 
 template<bool invariant, bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
@@ -749,18 +752,18 @@ void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 {
-  vw* all = g.all;
+  vw& all = *g.all;
   if(read)
     {
-      initialize_regressor(*all);
+      initialize_regressor(all);
 
-      if(all->adaptive && all->initial_t > 0)
+      if(all.adaptive && all.initial_t > 0)
 	{
-	  uint32_t length = 1 << all->num_bits;
-	  uint32_t stride = 1 << all->reg.stride_shift;
+	  uint32_t length = 1 << all.num_bits;
+	  uint32_t stride = 1 << all.reg.stride_shift;
 	  for (size_t j = 1; j < stride*length; j+=stride)
 	    {
-	      all->reg.weight_vector[j] = all->initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
+	      all.reg.weight_vector[j] = all.initial_t;   //for adaptive update, we interpret initial_t as previously seeing initial_t fake datapoints, all with squared gradient=1
 	      //NOTE: this is not invariant to the scaling of the data (i.e. when combined with normalized). Since scaling the data scales the gradient, this should ideally be 
 	      //feature_range*initial_t, or something like that. We could potentially fix this by just adding this base quantity times the current range to the sum of gradients 
 	      //stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions and multiplications during the update...
@@ -768,12 +771,12 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
 	}
       
       if (g.initial_constant != 0.0)
-        VW::set_weight(*all, constant, 0, g.initial_constant);
+        VW::set_weight(all, constant, 0, g.initial_constant);
     }
 
   if (model_file.files.size() > 0)
     {
-      bool resume = all->save_resume;
+      bool resume = all.save_resume;
       char buff[512];
       uint32_t text_len = sprintf(buff, ":%d\n", resume);
       bin_text_read_write_fixed(model_file,(char *)&resume, sizeof (resume),
@@ -782,7 +785,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       if (resume)
 	save_load_online_state(g, model_file, read, text);
       else
-	save_load_regressor(*all, model_file, read, text);
+	save_load_regressor(all, model_file, read, text);
     }
 }
 
@@ -851,7 +854,7 @@ learner* setup(vw& all, po::variables_map& vm)
   g->neg_norm_power = (all.adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = - all.power_t;
   
-  if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all->initial_t) previous fake datapoints all with norm 1
+  if(all.initial_t > 0)//for the normalized update: if initial_t is bigger than 1 we interpret this as if we had seen (all.initial_t) previous fake datapoints all with norm 1
     g->normalized_sum_norm_x = all.initial_t;
 
   bool feature_mask_off = true;
