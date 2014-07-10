@@ -617,6 +617,11 @@ sub print_feature_report($$$$@) {
         if ($opt_O =~ /^a/i) {
             $normalized_score = abs($normalized_score);
         }
+
+        # On the fly generated (e.g. -q crossed features) don't have a min/max
+        $FeatureMin{$f} = 0 unless (exists $FeatureMin{$f});
+        $FeatureMax{$f} = 0 unless (exists $FeatureMax{$f});
+
         printf "%-*s\t%10u %8.2f %8.2f %+9.4f %9.2f%%\n",
                 $max_flen, $f,
                 $Feature2Hash{$f},
