@@ -259,7 +259,7 @@ namespace StagewisePoly
           assert(heap_end >= poly.sd);
           assert(heap_end <= poly.sd + num_new_features);
 
-          if (heap_end - poly.sd == num_new_features && poly.sd->wval < wval) {
+          if (heap_end - poly.sd == (int)num_new_features && poly.sd->wval < wval) {
             pop_heap(poly.sd, heap_end, sort_data_compar_heap);
             --heap_end;
           }
@@ -267,7 +267,7 @@ namespace StagewisePoly
           assert(heap_end >= poly.sd);
           assert(heap_end < poly.sd + poly.sd_len);
 
-          if (heap_end - poly.sd < num_new_features) {
+          if (heap_end - poly.sd < (int)num_new_features) {
             heap_end->wval = wval;
             heap_end->wid = wid;
             ++heap_end;
