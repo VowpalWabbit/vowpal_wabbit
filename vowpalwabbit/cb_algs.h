@@ -31,7 +31,7 @@ namespace CB_ALGS {
     
     ec.ld = &simple_temp;
 
-    if (is_learn)
+    if (is_learn && simple_temp.label != FLT_MAX)
       all.scorer->learn(ec, index-1+base);
     else
       all.scorer->predict(ec, index-1+base);
