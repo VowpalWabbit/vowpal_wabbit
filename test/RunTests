@@ -402,8 +402,12 @@ sub diff_lenient_float($$) {
         while (<$sdiff>) {
             chomp;
             my ($line1, $line2) = split(/\s*\|\s*/, $_);
-            unless (defined $line2) {
-                warn "$0: test $TestNo: $outfile: no data. Can't compare\n";
+            unless (defined($line1) && defined($line2)) {
+                my $save_diff_file = "test-$TestNo.lenient-diff";
+                warn "$0: test $TestNo: $tmpf: line $.: fuzzy-match missing data on one of the sides. Can't compare\n$_\n";
+                warn "$0: test $TestNo: saving lenient diff in '$save_diff_file' for later inspection\n";
+                close $sdiff;
+                rename($tmpf, $save_diff_file);
                 return 1;
             }
             v(3, "line1: %s\n", $line1);
