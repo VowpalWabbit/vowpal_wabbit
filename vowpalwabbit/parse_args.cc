@@ -954,6 +954,8 @@ vw* parse_args(int argc, char *argv[])
 
   parse_example_tweaks(*all, vm); //example manipulation
 
+  parse_output_model(*all, vm);
+  
   parse_base_algorithm(*all, vm);
 
   if (!all->quiet)
@@ -968,8 +970,6 @@ vw* parse_args(int argc, char *argv[])
 	cerr << "rank = " << all->rank << endl;
     }
 
-  parse_output_model(*all, vm);
-  
   parse_output_preds(*all, vm);
 
   parse_scorer_reductions(*all, vm);
