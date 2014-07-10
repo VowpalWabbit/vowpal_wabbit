@@ -1,9 +1,9 @@
 creating quadratic features for pairs: Tf ff 
+final_regressor = models/0002a.model
 Num weight bits = 18
 learning rate = 10
 initial_t = 1
 power_t = 0.5
-final_regressor = models/0002a.model
 using no cache
 Reading datafile = train-sets/0002.dat
 num sources = 1

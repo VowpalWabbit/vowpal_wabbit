@@ -1,12 +1,12 @@
 creating quadratic features for pairs: ui 
 using l2 regularization = 2e-06
+final_regressor = movielens.reg
 Num weight bits = 16
 learning rate = 0.05
 initial_t = 1
 power_t = 0
 decay_learning_rate = 0.97
 rank = 10
-final_regressor = movielens.reg
 creating cache_file = movielens.cache
 Reading datafile = train-sets/ml100k_small_train
 num sources = 1
