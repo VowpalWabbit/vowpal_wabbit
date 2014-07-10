@@ -1000,9 +1000,8 @@ __DATA__
     train-sets/ref/stage_poly.s025.predict
 
 # Test 62: stagewise poly with exponent 1.0
-{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s100.predict --quiet
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat --quiet
     train-sets/ref/stage_poly.s100.stderr
-    train-sets/ref/stage_poly.s100.predict
 
 # Test 63: stagewise poly with exponent 0.25 and doubling batches
 {VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet
