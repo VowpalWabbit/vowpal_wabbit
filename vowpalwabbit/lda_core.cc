@@ -770,7 +770,11 @@ learner* setup(vw&all, po::variables_map& vm)
   all.random_weights = true;
   all.add_constant = false;
 
-  if (vm.count("lda") && all.eta > 1.)
+  std::stringstream ss;
+  ss << " --lda " << all.lda;
+  all.file_options.append(ss.str());
+
+  if (all.eta > 1.)
     {
       cerr << "your learning rate is too high, setting it to 1" << endl;
       all.eta = min(all.eta,1.f);
