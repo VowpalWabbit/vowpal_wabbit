@@ -68,7 +68,7 @@ namespace cs_test
             tfeatures[2].x = 1;
             featureSpace[1].len = 3;
 
-            IntPtr importedExample = VowpalWabbitInterface.ImportExample(vw, featureSpacePtr, featureSpace.Length);
+            IntPtr importedExample = VowpalWabbitInterface.ImportExample(vw, featureSpacePtr, (IntPtr)featureSpace.Length);
 
             VowpalWabbitInterface.AddLabel(importedExample, 1);
 
@@ -97,13 +97,13 @@ namespace cs_test
                 float label = VowpalWabbitInterface.GetLabel(example);
 
                 count++;
-                int featureSpaceLen = 0;
+                IntPtr featureSpaceLen = (IntPtr)0;
                 IntPtr featureSpacePtr = VowpalWabbitInterface.ExportExample(vw, example, ref featureSpaceLen);
 
-                VowpalWabbitInterface.FEATURE_SPACE[] featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[featureSpaceLen];
+                VowpalWabbitInterface.FEATURE_SPACE[] featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[(int)featureSpaceLen];
                 int featureSpace_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE_SPACE));
 
-                for (int i = 0; i < featureSpaceLen; i++)
+                for (int i = 0; i < (int)featureSpaceLen; i++)
                 {
                     IntPtr curfeatureSpacePos = new IntPtr(featureSpacePtr.ToInt32() + i * featureSpace_size);
                     featureSpace[i] = (VowpalWabbitInterface.FEATURE_SPACE)Marshal.PtrToStructure(curfeatureSpacePos, typeof(VowpalWabbitInterface.FEATURE_SPACE));
@@ -167,7 +167,7 @@ namespace cs_test
 
             VowpalWabbitInterface.StartParser(vw, false);
 
-            uint stride = VowpalWabbitInterface.Get_Stride(vw);
+            uint stride = (uint)VowpalWabbitInterface.Get_Stride(vw);
 
             int count = 0;
             IntPtr example = IntPtr.Zero;
@@ -180,22 +180,22 @@ namespace cs_test
                 float initial = VowpalWabbitInterface.GetInitial(example);
                 float label = VowpalWabbitInterface.GetLabel(example);
 
-                UInt32 tag_len = VowpalWabbitInterface.GetTagLength(example);
+                UInt32 tag_len = (UInt32)VowpalWabbitInterface.GetTagLength(example);
                 byte[] tag = new byte[tag_len];
                 if (tag_len > 0)
-                    //Marshal.Copy(VowpalWabbitInterface.GetTag(example), tag, 0, (int)tag_len); //error CS1502: The best overloaded method match for 'System.Runtime.InteropServices.Marshal.Copy(int[], int, System.IntPtr, int)' has some invalid arguments
-                    ;
-                UInt32 num_features = VowpalWabbitInterface.GetFeatureNumber(example);
+                    Marshal.Copy(VowpalWabbitInterface.GetTag(example), tag, 0, (int)tag_len); 
+
+                UInt32 num_features = (UInt32)VowpalWabbitInterface.GetFeatureNumber(example);
                 VowpalWabbitInterface.FEATURE[] f;
                 if (num_features > 0)
                 {
                     f = new VowpalWabbitInterface.FEATURE[num_features];
 
-                    int feature_count = 0;
+                    IntPtr feature_count = (IntPtr)0;
                     IntPtr ret = VowpalWabbitInterface.GetFeatures(vw, example, ref feature_count);
 
                     int feature_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE));
-                    for (int i = 0; i < feature_count; i++)
+                    for (int i = 0; i < (int)feature_count; i++)
                     {
                         IntPtr curfeaturePos = new IntPtr(ret.ToInt32() + i * feature_size);
                         f[i] = (VowpalWabbitInterface.FEATURE)Marshal.PtrToStructure(curfeaturePos, typeof(VowpalWabbitInterface.FEATURE));
@@ -219,13 +219,13 @@ namespace cs_test
                     IntPtr.Zero == ex)
                     return;
 
-                int featureSpaceLen = 0;
+                IntPtr featureSpaceLen = (IntPtr)0;
                 IntPtr featureSpacePtr = VowpalWabbitInterface.ExportExample(vw, ex, ref featureSpaceLen);
 
-                this.featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[featureSpaceLen];
+                this.featureSpace = new VowpalWabbitInterface.FEATURE_SPACE[(int)featureSpaceLen];
                 int featureSpace_size = Marshal.SizeOf(typeof(VowpalWabbitInterface.FEATURE_SPACE));
 
-                for (int i = 0; i < featureSpaceLen; i++)
+                for (int i = 0; i < (int)featureSpaceLen; i++)
                 {
                     IntPtr curfeatureSpacePos = new IntPtr(featureSpacePtr.ToInt32() + i * featureSpace_size);
                     this.featureSpace[i] = (VowpalWabbitInterface.FEATURE_SPACE)Marshal.PtrToStructure(curfeatureSpacePos, typeof(VowpalWabbitInterface.FEATURE_SPACE));
@@ -239,7 +239,7 @@ namespace cs_test
                     }
                 }
 
-                VowpalWabbitInterface.ReleaseFeatureSpace(featureSpacePtr, featureSpaceLen);
+                VowpalWabbitInterface.ReleaseFeatureSpace(featureSpacePtr, (IntPtr)featureSpaceLen);
             }
         }
         private static void RunVWParse_and_VWLearn()
@@ -280,7 +280,7 @@ namespace cs_test
                 GCHandle pinnedFeatureSpace = GCHandle.Alloc(featureSpace, GCHandleType.Pinned);
                 IntPtr featureSpacePtr = pinnedFeatureSpace.AddrOfPinnedObject();
 
-                IntPtr importedExample = VowpalWabbitInterface.ImportExample(vw, featureSpacePtr, vwInstanceEx.featureSpace.Length);
+                IntPtr importedExample = VowpalWabbitInterface.ImportExample(vw, featureSpacePtr, (IntPtr)vwInstanceEx.featureSpace.Length);
                 VowpalWabbitInterface.Learn(vw, importedExample);
                 VowpalWabbitInterface.FinishExample(vw, importedExample);
 
