@@ -75,14 +75,14 @@ namespace GD
     if (normalized) {
       if (sqrt_rate) 
 	{
-	  float avg_norm = g.total_weight / g.normalized_sum_norm_x;
+	  float avg_norm = (float) g.total_weight / (float) g.normalized_sum_norm_x;
 	  if (adaptive)
 	    return sqrt(avg_norm);
 	  else
 	    return avg_norm;
 	}
       else 
-	return powf(g.normalized_sum_norm_x / g.total_weight, g.neg_norm_power);
+	return powf( (float) g.normalized_sum_norm_x / (float) g.total_weight, g.neg_norm_power);
     }
     return 1.f;
   }

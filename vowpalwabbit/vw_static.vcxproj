@@ -236,6 +236,7 @@
   <ItemGroup>
     <ClInclude Include="autolink.h" />
     <ClInclude Include="accumulate.h" />
+    <ClInclude Include="active.h" />
     <ClInclude Include="allreduce.h" />
     <ClInclude Include="bfgs.h" />
     <ClInclude Include="binary.h" />
@@ -288,6 +289,7 @@
   <ItemGroup>
     <ClCompile Include="autolink.cc" />
     <ClCompile Include="accumulate.cc" />
+    <ClCompile Include="active.cc" />
     <ClCompile Include="allreduce.cc" />
     <ClCompile Include="binary.cc" />
     <ClCompile Include="bfgs.cc" />
