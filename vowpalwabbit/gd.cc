@@ -27,7 +27,6 @@ license as described in the file LICENSE.
 using namespace std;
 using namespace LEARNER;
 //todo: 
-//3. Make updated_prediction work
 //4. Factor various state out of vw&
 namespace GD
 {
@@ -490,6 +489,8 @@ float compute_update(gd& g, example& ec)
 	update = all.loss->getUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
       else
 	update = all.loss->getUnsafeUpdate(ld->prediction, ld->label, delta_pred, pred_per_update);
+
+      ec.updated_prediction = ec.partial_prediction + pred_per_update * update;
       
       if (all.reg_mode && fabs(update) > 1e-8) {
 	double dev1 = all.loss->first_derivative(g.sd, ld->prediction, ld->label);

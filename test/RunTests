@@ -964,9 +964,8 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf.test-beam1.predict
 
 # Test 54: searn sequence SPAN labeling BIO, non-ldf test, beam 20
-{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 20 --search_kbest 20 --quiet
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model --search_beam 20 --search_kbest 20 --quiet
     train-sets/ref/sequencespan_data.nonldf.test-beam20.stderr
-    train-sets/ref/sequencespan_data.nonldf.test-beam20.predict
 
 # Test 55: searn sequence SPAN labeling BILOU, non-ldf train
 {VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model

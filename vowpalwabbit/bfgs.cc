@@ -753,6 +753,7 @@ void process_example(vw& all, bfgs& b, example& ec)
       float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++],ld->label);
       b.curvature += d_dot_x*d_dot_x*sd*ld->weight;
     }
+  ec.updated_prediction = ld->prediction;
   
   if (b.preconditioner_pass)
     update_preconditioner(all, ec);//w[3]
