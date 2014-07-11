@@ -402,8 +402,12 @@ sub diff_lenient_float($$) {
         while (<$sdiff>) {
             chomp;
             my ($line1, $line2) = split(/\s*\|\s*/, $_);
-            unless (defined $line2) {
-                warn "$0: test $TestNo: $outfile: no data. Can't compare\n";
+            unless (defined($line1) && defined($line2)) {
+                my $save_diff_file = "test-$TestNo.lenient-diff";
+                warn "$0: test $TestNo: $tmpf: line $.: fuzzy-match missing data on one of the sides. Can't compare\n$_\n";
+                warn "$0: test $TestNo: saving lenient diff in '$save_diff_file' for later inspection\n";
+                close $sdiff;
+                rename($tmpf, $save_diff_file);
                 return 1;
             }
             v(3, "line1: %s\n", $line1);
@@ -824,7 +828,7 @@ __DATA__
     test-sets/ref/ml100k_small.stderr
 
 # Test 24: active-learning -- training
-{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --progress 1.25
+{VW} -k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 
     train-sets/ref/active-simulation.t24.stderr
 
 # Test 25: bagging -- training regressor
@@ -960,9 +964,8 @@ __DATA__
     train-sets/ref/sequencespan_data.nonldf.test-beam1.predict
 
 # Test 54: searn sequence SPAN labeling BIO, non-ldf test, beam 20
-{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 20 --search_kbest 20 --quiet
+{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model --search_beam 20 --search_kbest 20 --quiet
     train-sets/ref/sequencespan_data.nonldf.test-beam20.stderr
-    train-sets/ref/sequencespan_data.nonldf.test-beam20.predict
 
 # Test 55: searn sequence SPAN labeling BILOU, non-ldf train
 {VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model
@@ -1000,9 +1003,8 @@ __DATA__
     train-sets/ref/stage_poly.s025.predict
 
 # Test 62: stagewise poly with exponent 1.0
-{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s100.predict --quiet
+{VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat --quiet
     train-sets/ref/stage_poly.s100.stderr
-    train-sets/ref/stage_poly.s100.predict
 
 # Test 63: stagewise poly with exponent 0.25 and doubling batches
 {VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet

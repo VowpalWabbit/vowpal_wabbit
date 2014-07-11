@@ -213,8 +213,6 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.ft_offset = ec.ft_offset;
       n.output_layer.ld = ec.ld;
       n.output_layer.partial_prediction = 0;
-      n.output_layer.eta_round = ec.eta_round;
-      n.output_layer.eta_global = ec.eta_global;
       n.output_layer.example_t = ec.example_t;
       if (is_learn)
 	base.learn(n.output_layer, n.k);
@@ -223,7 +221,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
       n.output_layer.ld = 0;
     }
 
-    n.prediction = GD::finalize_prediction (*(n.all), n.output_layer.partial_prediction);
+    n.prediction = GD::finalize_prediction (n.all->sd, n.output_layer.partial_prediction);
 
     if (shouldOutput) {
       outputStringStream << ' ' << n.output_layer.partial_prediction;
@@ -252,7 +250,7 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
             float nu = n.all->reg.weight_vector[nuindex & n.all->reg.weight_mask];
             float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-            ld->label = GD::finalize_prediction (*(n.all), hidden_units[i] - gradhw);
+            ld->label = GD::finalize_prediction (n.all->sd, hidden_units[i] - gradhw);
             if (ld->label != hidden_units[i]) 
               base.learn(ec, i);
           }

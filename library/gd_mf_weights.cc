@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     right_linear((outdir + string("/") + string(1, right_ns) + string(".linear")).c_str()),
     right_quadratic((outdir + string("/") + string(1, right_ns) + string(".quadratic")).c_str());
 
-  example *ec;
+  example *ec = NULL;
   while ((read = getline(&line, &len, file)) != -1)
     {
       line[strlen(line)-1] = 0; // chop
