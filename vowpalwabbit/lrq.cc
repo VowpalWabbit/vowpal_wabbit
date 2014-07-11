@@ -133,7 +133,7 @@ namespace LRQ {
 
                             ec.atomics[right].push_back (lrq);
 
-                            if (all.audit || all.hash_inv)
+                            if (iter == 0 && (all.audit || all.hash_inv))
                               {
                                 char* new_space = (char*)calloc_or_die(4, sizeof(char));
                                 strcpy(new_space, "lrq");
