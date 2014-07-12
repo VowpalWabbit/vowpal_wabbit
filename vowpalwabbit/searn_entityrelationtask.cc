@@ -284,3 +284,4 @@ namespace EntityRelationTask {
     delete hinfo;
 }
 }
+

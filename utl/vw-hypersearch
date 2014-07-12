@@ -463,14 +463,17 @@ sub is_integer_option($) {
     my $expects_integer =
         ($opt =~ qr{^-*
             bs?
+            |autolink
             |batch_sz
             |bootstrap|B
             |(?:csoaa|wap)(?:_ldf)?
-            |cb
+            |cb(?:ify)?
             |num_children
             |holdout_(?:period|after)
             |initial_pass_length
             |lda
+            |log_multi
+            |lrq
             |nn
             |oaa
             |ect
@@ -479,7 +482,9 @@ sub is_integer_option($) {
             |ring_size
             |examples
             |searn
+            |search
             |total
+            |top
             |ngram
             |skips
         $}x);
@@ -535,7 +540,7 @@ sub process_args {
 
     # Some vw option arguments must be integers, if we want to
     # optimize those, we must bisect while rounding to an integer
-    my ($option_before_pct) = ($vw_command_line =~ /(\S+)\s+%/);
+    my ($option_before_pct) = ($vw_command_line =~ /(\S+)\s+\S*%/);
     $IntegerOpt = is_integer_option($option_before_pct);
 
     if ($vw_command_line =~ /--passes/ and
