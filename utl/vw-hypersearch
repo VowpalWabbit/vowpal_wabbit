@@ -467,11 +467,12 @@ sub is_integer_option($) {
             |batch_sz
             |bootstrap|B
             |(?:csoaa|wap)(?:_ldf)?
-            |cb
+            |cb(?:ify)?
             |num_children
             |holdout_(?:period|after)
             |initial_pass_length
             |lda
+            |log_multi
             |lrq
             |nn
             |oaa
@@ -481,7 +482,9 @@ sub is_integer_option($) {
             |ring_size
             |examples
             |searn
+            |search
             |total
+            |top
             |ngram
             |skips
         $}x);
