@@ -349,12 +349,12 @@ namespace StagewisePoly
     //below is run at training time).
     if (poly.cur_depth < min_depths_get(poly, wid_cur) && poly.training) {
       if (parent_get(poly, wid_cur)) {
-	//#ifdef DEBUG
-	/*        cout
+#ifdef DEBUG
+	cout
           << "FOUND A TRANSPLANT!!! moving [" << wid_cur
           << "] from depth " << (uint32_t) min_depths_get(poly, wid_cur)
-          << " to depth " << poly.cur_depth << endl;*/
-	//#endif //DEBUG
+          << " to depth " << poly.cur_depth << endl;
+#endif //DEBUG
         parent_toggle(poly, wid_cur);
       }
       min_depths_set(poly, wid_cur, poly.cur_depth);
