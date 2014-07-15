@@ -3,6 +3,7 @@
 #include "simple_label.h"
 #include "allreduce.h"
 #include "accumulate.h"
+#include "constant.h"
 #include "memory.h"
 #include <float.h>
 
@@ -92,7 +93,7 @@ namespace StagewisePoly
 
   inline uint32_t constant_feat(const stagewise_poly &poly)
   {
-    return stride_shift(poly, constant);
+    return stride_shift(poly, constant * poly.all->wpp);
   }
 
   inline uint32_t constant_feat_masked(const stagewise_poly &poly)
