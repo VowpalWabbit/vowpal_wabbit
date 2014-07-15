@@ -504,9 +504,8 @@ namespace StagewisePoly
     poly.original_ec = &ec;
     synthetic_create(poly, ec, false);
     base.predict(poly.synth_ec);
-    label_data *ld = (label_data *) ec.ld;
-    if (ld->label != FLT_MAX)
-      ec.loss = poly.all->loss->getLoss(poly.all->sd, ld->prediction, ld->label) * ld->weight;
+    ec.partial_prediction = poly.synth_ec.partial_prediction;
+    ec.updated_prediction = poly.synth_ec.updated_prediction;
   }
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
@@ -522,7 +521,8 @@ namespace StagewisePoly
 
       synthetic_create(poly, ec, training);
       base.learn(poly.synth_ec);
-      ec.loss = poly.synth_ec.loss;
+      ec.partial_prediction = poly.synth_ec.partial_prediction;
+      ec.updated_prediction = poly.synth_ec.updated_prediction;
 
       if (ec.example_counter
           && poly.batch_sz
