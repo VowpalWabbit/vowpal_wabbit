@@ -3,6 +3,7 @@
 #include "simple_label.h"
 #include "allreduce.h"
 #include "accumulate.h"
+#include "memory.h"
 #include <float.h>
 
 //#undef NDEBUG
@@ -107,7 +108,7 @@ namespace StagewisePoly
 
   void depthsbits_create(stagewise_poly &poly)
   {
-    poly.depthsbits = (uint8_t *) malloc(depthsbits_sizeof(poly));
+    poly.depthsbits = (uint8_t *) calloc_or_die(1, depthsbits_sizeof(poly));
     for (uint32_t i = 0; i < poly.all->length() * 2; i += 2) {
       poly.depthsbits[i] = default_depth;
       poly.depthsbits[i+1] = indicator_bit;
@@ -197,7 +198,7 @@ namespace StagewisePoly
       cout << ", new size " << poly.sd_len << endl;
 #endif //DEBUG
       free(poly.sd); //okay for null.
-      poly.sd = (sort_data *) malloc(poly.sd_len * sizeof(sort_data));
+      poly.sd = (sort_data *) calloc_or_die(poly.sd_len, sizeof(sort_data));
     }
     assert(len <= poly.sd_len);
   }
@@ -580,7 +581,7 @@ namespace StagewisePoly
 
   learner *setup(vw &all, po::variables_map &vm)
   {
-    stagewise_poly *poly = (stagewise_poly *) calloc(1, sizeof(stagewise_poly));
+    stagewise_poly *poly = (stagewise_poly *) calloc_or_die(1, sizeof(stagewise_poly));
     poly->all = &all;
 
     depthsbits_create(*poly);
