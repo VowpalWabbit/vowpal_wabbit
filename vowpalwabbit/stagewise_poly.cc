@@ -157,6 +157,25 @@ namespace StagewisePoly
     poly.depthsbits[stride_un_shift(poly, wid) * 2] = depth;
   }
 
+#ifndef NDEBUG
+  void sanity_check_state(stagewise_poly &poly)
+  {
+    for (uint32_t i = 0; i != poly.all->length(); ++i)
+    {
+      uint32_t wid = stride_shift(poly, i);
+
+      assert( ! cycle_get(poly,wid) );
+
+      assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
+
+      assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
+      //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
+
+      assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
+    }
+  }
+#endif //NDEBUG
+
   //Note.  OUTPUT & INPUT masked.
   //It is very important that this function is invariant to stride.
   inline uint32_t child_wid(const stagewise_poly &poly, uint32_t wi_atomic, uint32_t wi_general)
@@ -304,6 +323,10 @@ namespace StagewisePoly
     for (uint32_t depth = 0; depth <= poly.max_depth && depth < sizeof(poly.depths) / sizeof(*poly.depths); ++depth)
       cout << "  [" << depth << "] = " << poly.depths[depth];
     cout << endl;
+
+    cout << "Sanity check after sort... " << flush;
+    sanity_check_state(poly);
+    cout << "done" << endl;
 #endif //DEBUG
   }
 
@@ -352,7 +375,7 @@ namespace StagewisePoly
     if (poly.cur_depth < min_depths_get(poly, wid_cur) && poly.training) {
       if (parent_get(poly, wid_cur)) {
 #ifdef DEBUG
-	cout
+        cout
           << "FOUND A TRANSPLANT!!! moving [" << wid_cur
           << "] from depth " << (uint32_t) min_depths_get(poly, wid_cur)
           << " to depth " << poly.cur_depth << endl;
@@ -479,27 +502,6 @@ namespace StagewisePoly
     }
   }
 
-
-  void sanity_check_state(stagewise_poly &poly)
-  {
-    for (uint32_t i = 0; i != poly.all->length(); ++i)
-    {
-#ifndef NDEBUG
-      uint32_t wid = stride_shift(poly, i);
-#endif //NDEBUG
-
-      assert( ! cycle_get(poly,wid) );
-
-      assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
-
-      assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
-      //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
-
-      assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
-    }
-  }
-
-
   void end_pass(stagewise_poly &poly)
   {
     if (!!poly.batch_sz || (poly.all->span_server != "" && poly.numpasses > 1))
@@ -522,7 +524,8 @@ namespace StagewisePoly
        * But it's unclear what the right behavior is in general for either
        * case...
        */
-      all_reduce<uint8_t, reduce_min_max>(poly.depthsbits, 2*poly.all->length(), all.span_server, all.unique_id, all.total, all.node, all.socks);
+      all_reduce<uint8_t, reduce_min_max>(poly.depthsbits, depthsbits_sizeof(poly),
+          all.span_server, all.unique_id, all.total, all.node, all.socks);
 
       sum_input_sparsity_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)sum_input_sparsity_inc);
       sum_sparsity_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)sum_sparsity_inc);
@@ -545,11 +548,6 @@ namespace StagewisePoly
       poly.update_support = true;
       poly.numpasses++;
     }
-
-#ifdef DEBUG
-    cout << "Sanity after sort\n";
-    sanity_check_state(poly);
-#endif //DEBUG
   }
 
   void finish_example(vw &all, stagewise_poly &poly, example &ec)
@@ -577,6 +575,14 @@ namespace StagewisePoly
   {
     if (model_file.files.size() > 0)
       bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, depthsbits_sizeof(poly), "", read, "", 0, text);
+
+    //unfortunately, following can't go here since save_load called before gd::save_load and thus
+    //weight vector state uninitialiazed.
+    //#ifdef DEBUG
+    //      cout << "Sanity check after save_load... " << flush;
+    //      sanity_check_state(poly);
+    //      cout << "done" << endl;
+    //#endif //DEBUG
   }
 
 
@@ -614,6 +620,7 @@ namespace StagewisePoly
     poly->num_examples_sync = 0;
     poly->numpasses = 1;
     poly->update_support = false;
+    poly->original_ec = NULL;
     poly->next_batch_sz = poly->batch_sz;
 
     //following is so that saved models know to load us.
