@@ -56,6 +56,7 @@ namespace StagewisePoly
     example *original_ec;
     uint32_t cur_depth;
     bool training;
+    int64_t last_example_counter;
     size_t numpasses;
     uint32_t next_batch_sz;
     bool update_support;
@@ -525,12 +526,17 @@ namespace StagewisePoly
       ec.updated_prediction = poly.synth_ec.updated_prediction;
 
       if (ec.example_counter
+          //following line is to avoid repeats when multiple reductions on same example.
+          //XXX ideally, would get all "copies" of an example before scheduling the support
+          //update, but how do we know?
+          && poly.last_example_counter != ec.example_counter
           && poly.batch_sz
           && ( (poly.batch_sz_double && !(ec.example_counter % poly.next_batch_sz))
             || (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz)))) {
         poly.next_batch_sz *= 2; //no effect when !poly.batch_sz_double
         poly.update_support = (poly.all->span_server == "" || poly.numpasses == 1);
       }
+      poly.last_example_counter = ec.example_counter;
     } else
       predict(poly, base, ec);
   }
@@ -680,6 +686,7 @@ namespace StagewisePoly
     poly->sum_sparsity_sync = 0;
     poly->sum_input_sparsity_sync = 0;
     poly->num_examples_sync = 0;
+    poly->last_example_counter = -1;
     poly->numpasses = 1;
     poly->update_support = false;
     poly->original_ec = NULL;
