@@ -81,6 +81,26 @@ namespace StagewisePoly
     return idx >> poly.all->reg.stride_shift;
   }
 
+  inline uint32_t do_ft_offset(const stagewise_poly &poly, uint32_t idx)
+  {
+    //cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << endl;
+    assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
+    return idx + poly.synth_ec.ft_offset;
+  }
+
+  inline uint32_t un_ft_offset(const stagewise_poly &poly, uint32_t idx)
+  {
+    assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
+    if (poly.synth_ec.ft_offset == 0)
+      return idx;
+    else {
+      while (idx < poly.synth_ec.ft_offset) {
+        idx += poly.all->length() << poly.all->reg.stride_shift;
+      }
+      return idx - poly.synth_ec.ft_offset;
+    }
+  }
+
   inline uint32_t wid_mask(const stagewise_poly &poly, uint32_t wid)
   {
     return wid & poly.all->reg.weight_mask;
@@ -124,23 +144,27 @@ namespace StagewisePoly
   inline bool parent_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % stride_shift(poly, 1) == 0);
-    return poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & parent_bit;
+    assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
+    return poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] & parent_bit;
   }
 
   inline void parent_toggle(stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % stride_shift(poly, 1) == 0);
-    poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= parent_bit;
+    assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
+    poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] ^= parent_bit;
   }
 
   inline bool cycle_get(const stagewise_poly &poly, uint32_t wid)
   {
+    //note: intentionally leaving out ft_offset.
     assert(wid % stride_shift(poly, 1) == 0);
     return poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit;
   }
 
   inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)
   {
+    //note: intentionally leaving out ft_offset.
     assert(wid % stride_shift(poly, 1) == 0);
     poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= cycle_bit;
   }
@@ -148,13 +172,15 @@ namespace StagewisePoly
   inline uint8_t min_depths_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % stride_shift(poly, 1) == 0);
-    return poly.depthsbits[stride_un_shift(poly, wid) * 2];
+    assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
+    return poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2];
   }
 
   inline void min_depths_set(stagewise_poly &poly, uint32_t wid, uint8_t depth)
   {
     assert(wid % stride_shift(poly, 1) == 0);
-    poly.depthsbits[stride_un_shift(poly, wid) * 2] = depth;
+    assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
+    poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2] = depth;
   }
 
 #ifndef NDEBUG
@@ -256,6 +282,13 @@ namespace StagewisePoly
   void sort_data_update_support(stagewise_poly &poly)
   {
     assert(poly.num_examples);
+
+    //ft_offset affects parent_set / parent_get.  This state must be reset at end.
+    uint32_t pop_ft_offset = poly.original_ec->ft_offset;
+    poly.synth_ec.ft_offset = 0;
+    assert(poly.original_ec);
+    poly.original_ec->ft_offset = 0;
+
     uint32_t num_new_features = (uint32_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
     num_new_features = (num_new_features > poly.all->length()) ? (uint32_t)poly.all->length() : num_new_features;
     sort_data_ensure_sz(poly, num_new_features);
@@ -328,6 +361,10 @@ namespace StagewisePoly
     sanity_check_state(poly);
     cout << "done" << endl;
 #endif //DEBUG
+
+    //it's okay that these may have been initially unequal; synth_ec value irrelevant so far.
+    poly.original_ec->ft_offset = pop_ft_offset;
+    poly.synth_ec.ft_offset = pop_ft_offset;
   }
 
   void synthetic_reset(stagewise_poly &poly, example &ec)
@@ -335,6 +372,26 @@ namespace StagewisePoly
     poly.synth_ec.ld = ec.ld;
     poly.synth_ec.tag = ec.tag;
     poly.synth_ec.example_counter = ec.example_counter;
+
+    /**
+     * Some comments on ft_offset.
+     *
+     * The plan is to do the feature mapping dfs with weight indices ignoring
+     * the ft_offset.  This is because ft_offset is then added at the end,
+     * guaranteeing local/strided access on synth_ec.  This might not matter
+     * too much in this implementation (where, e.g., --oaa runs one after the
+     * other, not interleaved), but who knows.
+     *
+     * (The other choice is to basically ignore adjusting for ft_offset when
+     * doing the traversal, which means synth_ec.ft_offset is 0 here...)
+     *
+     * Anyway, so here is how ft_offset matters:
+     *   - synthetic_create_rec must "normalize it out" of the fed weight value
+     *   - parent and min_depths set/get are adjusted for it.
+     *   - cycle set/get are not adjusted for it, since it doesn't matter for them.
+     *   - operations on the whole weight vector (sorting, save_load, all_reduce)
+     *     ignore ft_offset, just treat the thing as a flat vector.
+     **/
     poly.synth_ec.ft_offset = ec.ft_offset;
 
     poly.synth_ec.test_only = ec.test_only;
@@ -364,7 +421,8 @@ namespace StagewisePoly
 
   void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
   {
-    uint32_t wid_atomic = (uint32_t)((&w - poly.all->reg.weight_vector));
+    //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
+    uint32_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint32_t)((&w - poly.all->reg.weight_vector))));
     uint32_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
     assert(wid_atomic % stride_shift(poly, 1) == 0);
 
@@ -380,6 +438,9 @@ namespace StagewisePoly
           << "] from depth " << (uint32_t) min_depths_get(poly, wid_cur)
           << " to depth " << poly.cur_depth << endl;
 #endif //DEBUG
+        //XXX arguably, should also fear transplants that occured with
+        //a different ft_offset ; e.g., need to look out for cross-reduction
+        //collisions.  Have not played with this issue yet...
         parent_toggle(poly, wid_cur);
       }
       min_depths_set(poly, wid_cur, poly.cur_depth);
@@ -420,8 +481,7 @@ namespace StagewisePoly
     poly.cur_depth = 0;
 
     poly.synth_rec_f.x = 1.0;
-    poly.synth_rec_f.weight_index = constant_feat_masked(poly);
-    poly.original_ec = &ec;
+    poly.synth_rec_f.weight_index = constant_feat_masked(poly); //note: not ft_offset'd
     poly.training = training;
     /*
      * Another choice is to mark the constant feature as the single initial
@@ -441,6 +501,7 @@ namespace StagewisePoly
 
   void predict(stagewise_poly &poly, learner &base, example &ec)
   {
+    poly.original_ec = &ec;
     synthetic_create(poly, ec, false);
     base.predict(poly.synth_ec);
     label_data *ld = (label_data *) ec.ld;
@@ -451,6 +512,7 @@ namespace StagewisePoly
   void learn(stagewise_poly &poly, learner &base, example &ec)
   {
     bool training = poly.all->training && ((label_data *) ec.ld)->label != FLT_MAX;
+    poly.original_ec = &ec;
 
     if (training) {
       if(poly.update_support) {
