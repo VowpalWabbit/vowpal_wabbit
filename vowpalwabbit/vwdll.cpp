@@ -113,6 +113,11 @@ extern "C"
 		return VW::get_label(static_cast<example*>(e));
 	}
 
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetTopicPrediction(VW_EXAMPLE e, size_t i)
+	{
+		return VW::get_topic_prediction(static_cast<example*>(e), i);
+	}
+
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_GetImportance(VW_EXAMPLE e)
 	{
 		return VW::get_importance(static_cast<example*>(e));

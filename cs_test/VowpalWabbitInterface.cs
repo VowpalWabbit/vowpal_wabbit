@@ -64,6 +64,9 @@ namespace Microsoft.Research.MachineLearning
         [DllImport(LIBVW, EntryPoint = "VW_FinishExample")]
         public static extern void FinishExample(VwHandle vw, VwExample example);
 
+        [DllImport(LIBVW, EntryPoint = "VW_GetTopicPrediction")]
+        public static extern float GetTopicPrediction(VwExample example, SizeT i);
+        
         [DllImport(LIBVW, EntryPoint = "VW_GetLabel")]
         public static extern float GetLabel(VwExample example);
 
