@@ -141,9 +141,15 @@ sub get_args {
 sub collect_errors($) {
     my $vw_stderr = shift;
 
+    my $good_lines = 0;
     my ($prev_avgloss, $prev_sincelast);
+    my $stderr = '';
     while (<$vw_stderr>) {
-        next unless (/^([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s/);
+        unless (/^([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s/) {
+            $stderr .= "\t$_";
+            next;
+        }
+        $good_lines++;
         my ($avgloss, $sincelast, $example) = ($1, $2, $3);
         if (defined $prev_sincelast) {
             my $delta_since_last = $sincelast - $prev_sincelast;
@@ -158,6 +164,17 @@ sub collect_errors($) {
         }
 
         ($prev_avgloss, $prev_sincelast) = ($avgloss, $sincelast);
+    }
+    wait;
+    if ($?) {
+        printf STDERR "%s: vw exited w/ status %d\nvw stderr:\n%s\n",
+                        $0, $? >> 8, $stderr;
+        exit 1;
+    }
+    unless ($good_lines > 0) {
+        printf STDERR "%s: no progress lines from vw training\n%s\n",
+                        $0, $stderr;
+        exit 1;
     }
 }
 
@@ -301,7 +318,6 @@ sub biggest_errors($) {
 
 sub print_errors(@) {
     printf "=== Top-%d (highest delta loss) diverging examples:\n", scalar(@_);
-
     printf "Example\t%s-Loss\n", ($opt_a ? 'Absolute' : 'Relative');
     foreach my $example (@_) {
         printf "%d\t%g\n", $example, $ExampleDelta{$example};
