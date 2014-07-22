@@ -744,6 +744,8 @@ namespace LabelDict {
       all.file_options.append(" --wap_ldf ");
       all.file_options.append(ldf_arg);
     }
+    if ( vm.count("ldf_override") )
+      ldf_arg = vm["ldf_override"].as<string>();
 
     all.p->lp = COST_SENSITIVE::cs_label;
 
