@@ -1,0 +1,13 @@
+initializing with: '-t -q st --hash all --noconstant --ldf_override s -i models/library_train.w'
+creating quadratic features for pairs: st 
+only testing
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+using no cache
+Reading datafile = 
+num sources = 0
+2.23517e-08
+1
+1
