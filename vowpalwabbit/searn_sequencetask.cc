@@ -8,11 +8,13 @@ license as described in the file LICENSE.
 #include "memory.h"
 #include "example.h"
 #include "gd.h"
+#include "ezexample.h"
 
 namespace SequenceTask         {  Searn::searn_task task = { "sequence",         initialize, finish, structured_predict };  }
-namespace ArgmaxTask        {  Searn::searn_task task = { "argmax",        initialize, finish, structured_predict };  }
-namespace SequenceTask_DemoLDF {  Searn::searn_task task = { "sequence_demoldf", initialize, finish, structured_predict };  }
+namespace ArgmaxTask           {  Searn::searn_task task = { "argmax",           initialize, finish, structured_predict };  }
+namespace SequenceDoubleTask   {  Searn::searn_task task = { "sequencedouble",   initialize, finish, structured_predict };  }
 namespace SequenceSpanTask     {  Searn::searn_task task = { "sequencespan",     initialize, finish, structured_predict };  }
+namespace SequenceTask_DemoLDF {  Searn::searn_task task = { "sequence_demoldf", initialize, finish, structured_predict };  }
 
 
 namespace SequenceTask {
@@ -109,6 +111,41 @@ namespace ArgmaxTask {
       srn.output() << max_prediction;
   }
 }
+
+
+namespace SequenceDoubleTask {
+  using namespace Searn;
+
+  void initialize(searn& srn, size_t& num_actions, po::variables_map& vm) {
+    srn.set_options( AUTO_HISTORY         |    // automatically add history features to our examples, please
+                     EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+  }
+
+  void finish(searn& srn) { }    // if we had task data, we'd want to free it here
+
+  void structured_predict(searn& srn, vector<example*> ec) {
+    size_t N = ec.size();
+    for (size_t j=0; j<N*2; j++) {
+      srn.snapshot(j, 1, &j, sizeof(j), true);
+      size_t i =
+          (j == 0)     ? 0 :
+          (j == 2*N-1) ? (N-1) :
+          (j%2 == 0)   ? (j/2 - 1) :
+                         ((j+1)/2);
+
+      size_t prediction = srn.predict(ec[i], MULTICLASS::get_example_label(ec[i]));
+
+      if ((j >= 2) && (j%2==0)) {
+        srn.loss( prediction != MULTICLASS::get_example_label(ec[i]) );
+        if (srn.output().good())
+          srn.output() << prediction << ' ';
+      } else
+          srn.loss(0.);
+    }
+  }
+}
+
+
 
 namespace SequenceSpanTask {
   enum EncodingType { BIO, BILOU };
