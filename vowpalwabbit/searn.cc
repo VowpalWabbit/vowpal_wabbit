@@ -47,6 +47,7 @@ namespace Searn
                               &ArgmaxTask::task,
                               &SequenceTask_DemoLDF::task,
                               &SequenceSpanTask::task,
+                              &SequenceDoubleTask::task,
 			      &EntityRelationTask::task,
 			      NULL };   // must NULL terminate!
 
