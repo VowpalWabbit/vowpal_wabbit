@@ -659,17 +659,23 @@ namespace Searn
   }
 
   void set_most_recent_snapshot_action(searn_private* priv, uint32_t action, float loss) {
+    if ((priv->state == GET_TRUTH_STRING) ||
+        (priv->state == INIT_TEST))
+      return;
     if (priv->most_recent_snapshot_end == (size_t)-1) return;
     bool on_training_path = priv->state == INIT_TRAIN || priv->state == BEAM_INIT;
-    cdbg << "set: " << priv->most_recent_snapshot_begin << "\t" << priv->most_recent_snapshot_end << "\t" << priv->most_recent_snapshot_hash << "\totp=" << on_training_path << endl;
+    cdbg << "set: " << priv->most_recent_snapshot_begin << "\t" << priv->most_recent_snapshot_end << "\t" << priv->most_recent_snapshot_hash << "\totp=" << on_training_path << "\tloss=" << loss << "\taction=" << action << endl;
     snapshot_item_ptr sip = { priv->most_recent_snapshot_begin,
                               priv->most_recent_snapshot_end,
                               priv->most_recent_snapshot_hash };
+    cdbg << "sip: start=" << sip.start << " end=" << sip.end << " hash=" << sip.hash_value << endl;
     snapshot_item_result &res = priv->snapshot_map->get(sip, sip.hash_value);
     if (res.loss < 0.f) { // not found!
       snapshot_item_result me = { action, loss, on_training_path };
       priv->snapshot_map->put_after_get(sip, sip.hash_value, me);
+      cdbg << "adding snapshot, new size = " << priv->snapshot_data.size() << endl;
     } else {
+      clog << "found: action=" << res.action << "  loss=" << res.loss << "  otp=" << res.on_training_path << endl;
       assert(false);
     }
   }
@@ -1038,42 +1044,6 @@ namespace Searn
   }
 
 
-  uint32_t searn_predict(searn_private* priv, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
-  {
-    vw* all = priv->all;
-    learner* base = priv->base_learner;
-    searn* srn=(searn*)all->searnstr;
-    uint32_t a;
-
-    //bool found_ss = get_most_recent_snapshot_action(priv, a);
-
-    //if (!found_ss) a = (uint32_t)-1;
-    if (srn->priv->rollout_all_actions)
-      a = searn_predict_without_loss<COST_SENSITIVE::label>(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
-    else
-      a = searn_predict_without_loss<CB::label            >(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
-
-    //set_most_recent_snapshot_action(priv, a);
-    priv->snapshotted_since_predict = false;
-
-    if (priv->auto_hamming_loss) {
-      float this_loss = 0.;
-      if (ystar) {
-        if (ystar_is_uint32t &&   // single allowed ystar
-            (*((uint32_t*)ystar) != (uint32_t)-1) && // not a test example
-            (*((uint32_t*)ystar) != a))  // wrong prediction
-          this_loss = 1.;
-        if ((!ystar_is_uint32t) && // many allowed ystar
-            (!v_array_contains(*ystar, a)))
-          this_loss = 1.;
-      }
-      searn_declare_loss(priv, 1, this_loss);
-    }
-
-    return a;
-  }
-
-
   bool snapshot_binary_search_lt(v_array<snapshot_item> a, size_t desired_t, size_t tag, size_t &pos, size_t last_found_pos) {
     size_t hi  = a.size();
     if (hi == 0) return false;
@@ -1139,9 +1109,12 @@ namespace Searn
     return false;
   }
 
+
   void searn_snapshot_data(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
     if ((priv->state == NONE) || (priv->state == INIT_TEST) || (priv->state == GET_TRUTH_STRING) || (priv->state == BEAM_PLAYOUT))
       return;
+
+    priv->snapshotted_since_predict = true;
 
     size_t i;
     if ((priv->state == LEARN) && (priv->t <= priv->learn_t) &&
@@ -1159,7 +1132,6 @@ namespace Searn
     }
     
     if ((priv->state == INIT_TRAIN) || (priv->state == LEARN)) {
-      priv->snapshotted_since_predict = true;
       priv->most_recent_snapshot_end = priv->snapshot_data.size();
       cdbg << "end = " << priv->most_recent_snapshot_end << endl;
 
@@ -1182,7 +1154,7 @@ namespace Searn
       }
       snapshot_item item = { index, tag, new_data, sizeof_data, priv->t };
       priv->snapshot_data.push_back(item);
-      //cerr << "priv->snapshot_data.push_back(item);" << endl;
+      cdbg << "priv->snapshot_data.push_back(item);" << endl;
       return;
     }
 
@@ -1264,31 +1236,79 @@ namespace Searn
   }
 
 
+
+  void searn_snapshot_initialize(searn_private* priv, size_t index) {
+    priv->most_recent_snapshot_hash  = 38429103;
+    priv->most_recent_snapshot_begin = priv->snapshot_data.size();
+    priv->most_recent_snapshot_end   = -1;
+    cdbg << "end = -1   ***" << endl;
+    priv->most_recent_snapshot_loss  = 0.f;
+    if (priv->loss_declared)
+      switch (priv->state) {
+        case INIT_TEST : priv->most_recent_snapshot_loss = priv->test_loss;  break;
+        case INIT_TRAIN: priv->most_recent_snapshot_loss = priv->train_loss; break;
+        case LEARN     : priv->most_recent_snapshot_loss = priv->learn_loss; break;
+        default        : break;
+      }
+
+    if (priv->state == INIT_TRAIN)
+      priv->final_snapshot_begin = priv->most_recent_snapshot_begin;
+      
+    if (priv->auto_history) {
+      size_t history_size = sizeof(uint32_t) * priv->hinfo.length;
+      searn_snapshot_data(priv, index, 0, priv->rollout_action.begin + priv->t, history_size, true);
+    }
+  }
+
+
+  uint32_t searn_predict(searn_private* priv, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
+  {
+    vw* all = priv->all;
+    learner* base = priv->base_learner;
+    searn* srn=(searn*)all->searnstr;
+    uint32_t a;
+
+    // handle the case where you want auto-history but you're not snapshotting yourself
+    if ((!priv->snapshotted_since_predict) && priv->auto_history) {
+      searn_snapshot_initialize(priv, priv->t);
+    }
+    
+    //bool found_ss = get_most_recent_snapshot_action(priv, a);
+
+    //if (!found_ss) a = (uint32_t)-1;
+    if (srn->priv->rollout_all_actions)
+      a = searn_predict_without_loss<COST_SENSITIVE::label>(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
+    else
+      a = searn_predict_without_loss<CB::label            >(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
+
+    //set_most_recent_snapshot_action(priv, a);
+    priv->snapshotted_since_predict = false;
+
+    if (priv->auto_hamming_loss) {
+      float this_loss = 0.;
+      if (ystar) {
+        if (ystar_is_uint32t &&   // single allowed ystar
+            (*((uint32_t*)ystar) != (uint32_t)-1) && // not a test example
+            (*((uint32_t*)ystar) != a))  // wrong prediction
+          this_loss = 1.;
+        if ((!ystar_is_uint32t) && // many allowed ystar
+            (!v_array_contains(*ystar, a)))
+          this_loss = 1.;
+      }
+      searn_declare_loss(priv, 1, this_loss);
+    }
+
+    return a;
+  }
+
   void searn_snapshot(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
     if (! priv->do_snapshot) return;
-
-    if (tag == 1) {
-      priv->most_recent_snapshot_hash  = 38429103;
-      priv->most_recent_snapshot_begin = priv->snapshot_data.size();
-      priv->most_recent_snapshot_end   = -1;
-      cdbg << "end = -1   ***" << endl;
-      priv->most_recent_snapshot_loss  = 0.f;
-      if (priv->loss_declared)
-        switch (priv->state) {
-          case INIT_TEST : priv->most_recent_snapshot_loss = priv->test_loss;  break;
-          case INIT_TRAIN: priv->most_recent_snapshot_loss = priv->train_loss; break;
-          case LEARN     : priv->most_recent_snapshot_loss = priv->learn_loss; break;
-          default        : break;
-        }
-
-      if (priv->state == INIT_TRAIN)
-        priv->final_snapshot_begin = priv->most_recent_snapshot_begin;
-      
-      if (priv->auto_history) {
-        size_t history_size = sizeof(uint32_t) * priv->hinfo.length;
-        searn_snapshot_data(priv, index, 0, priv->rollout_action.begin + priv->t, history_size, true);
-      }
-    }
+    if ((priv->state == GET_TRUTH_STRING) ||
+        (priv->state == INIT_TEST))
+      return;
+    
+    if (tag == 1)
+      searn_snapshot_initialize(priv, index);
 
     searn_snapshot_data(priv, index, tag, data_ptr, sizeof_data, used_for_prediction);
     if (priv->state == INIT_TRAIN)
