@@ -725,6 +725,13 @@ namespace LabelDict {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
+    po::options_description ldf_opts("LDF Options");
+    ldf_opts.add_options()
+        ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
+        ;
+
+    vm = add_options(all, ldf_opts);
+    
     ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
 
     ld->all = &all;

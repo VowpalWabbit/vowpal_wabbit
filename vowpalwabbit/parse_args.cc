@@ -747,7 +747,6 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
     ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
-    ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
     ;
 
   vm = add_options(all, multiclass_opt);
