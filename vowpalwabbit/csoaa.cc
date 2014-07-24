@@ -725,6 +725,13 @@ namespace LabelDict {
 
   learner* setup(vw& all, po::variables_map& vm)
   {
+    po::options_description ldf_opts("LDF Options");
+    ldf_opts.add_options()
+        ("ldf_override", po::value<string>(), "Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file")
+        ;
+
+    vm = add_options(all, ldf_opts);
+    
     ldf* ld = (ldf*)calloc_or_die(1, sizeof(ldf));
 
     ld->all = &all;
@@ -744,6 +751,8 @@ namespace LabelDict {
       all.file_options.append(" --wap_ldf ");
       all.file_options.append(ldf_arg);
     }
+    if ( vm.count("ldf_override") )
+      ldf_arg = vm["ldf_override"].as<string>();
 
     all.p->lp = COST_SENSITIVE::cs_label;
 

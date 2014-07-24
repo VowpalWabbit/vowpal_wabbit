@@ -29,6 +29,13 @@ namespace SequenceSpanTask {
   extern Searn::searn_task task;
 }
 
+namespace SequenceDoubleTask {
+  void initialize(Searn::searn&, size_t&, po::variables_map&);
+  void finish(Searn::searn&);
+  void structured_predict(Searn::searn&, vector<example*>);
+  extern Searn::searn_task task;
+}
+
 namespace SequenceTask_DemoLDF {
   void initialize(Searn::searn&, size_t&, po::variables_map&);
   void finish(Searn::searn&);

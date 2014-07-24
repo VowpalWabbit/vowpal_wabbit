@@ -288,6 +288,10 @@ sub next_test() {
             }
             next;
         }
+        if ($line =~ /library\/ezexample_/) {
+            $cmd = trim_spaces($line);
+            next;
+        }
         if ($line =~ m/\.stdout\b/) {
             $out_ref = ref_file(trim_spaces($line));
             next;
@@ -1015,3 +1019,13 @@ __DATA__
 {VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet
     train-sets/ref/stage_poly.s100.doubling.stderr
     train-sets/ref/stage_poly.s100.doubling.predict
+
+# Test 65: library test, train the initial model
+{VW} -c -k -d train-sets/library_train -f models/library_train.w -q st --passes 100 --hash all --noconstant --csoaa_ldf m --holdout_off
+    train-sets/ref/library_train.stdout
+    train-sets/ref/library_train.stderr
+
+# Test 66: library test, run ezexample_predict
+../library/ezexample_predict models/library_train.w
+    train-sets/ref/ezexample_predict.stdout
+    train-sets/ref/ezexample_predict.stderr

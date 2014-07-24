@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "../vowpalwabbit/vw.h"
-#include "ezexample.h"
+#include "../vowpalwabbit/ezexample.h"
 
 #include <boost/thread/thread.hpp>
 
@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
   int threadcount = atoi(argv[1]);
   runcount = atoi(argv[2]);
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE -- THIS READS IN A MODEL FROM train.w
-  string vw_init_string_all    = "-t --csoaa_ldf s --quiet -q st --noconstant --hash all -i train.w";
-  string vw_init_string_parser = "-t --csoaa_ldf s --quiet -q st --noconstant --hash all --noop";   // this needs to have enough arguments to get the parser right
+  string vw_init_string_all    = "-t --ldf_override s --quiet -q st --noconstant --hash all -i train.w";
+  string vw_init_string_parser = "-t --ldf_override s --quiet -q st --noconstant --hash all --noop";   // this needs to have enough arguments to get the parser right
   vw*vw = VW::initialize(vw_init_string_all);
   vector<double> results;
 
@@ -104,8 +104,8 @@ int main(int argc, char *argv[])
       ("w^le")
       ("w^homme");
     ex.set_label("1");
-    results.push_back(ex.predict());
-    cerr << "should be near zero = " << ex.predict() << endl;
+    results.push_back(ex.predict_partial());
+    cerr << "should be near zero = " << ex.predict_partial() << endl;
 
     --ex;   // remove the most recent namespace
     ex(vw_namespace('t'))
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
       ("w^un")
       ("w^homme");
     ex.set_label("1");
-    results.push_back(ex.predict());
-    cerr << "should be near one  = " << ex.predict() << endl;
+    results.push_back(ex.predict_partial());
+    cerr << "should be near one  = " << ex.predict_partial() << endl;
 
     --ex;   // remove the most recent namespace
     // add features with explicit ns
@@ -122,8 +122,8 @@ int main(int argc, char *argv[])
       ('t', "w^un")
       ('t', "w^homme");
     ex.set_label("1");
-    results.push_back(ex.predict());
-    cerr << "should be near one  = " << ex.predict() << endl;
+    results.push_back(ex.predict_partial());
+    cerr << "should be near one  = " << ex.predict_partial() << endl;
   }
 
   if (threadcount == 0)
