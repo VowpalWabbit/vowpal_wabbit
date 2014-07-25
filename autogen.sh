@@ -14,6 +14,10 @@ case $( uname -s ) in
     fi
   fi
   ;;
+ Linux)
+  AC_PATH=/usr/share
+  BOOST_DIR_ARG='--with-boost-libdir=/usr/lib/x86_64-linux-gnu'
+  ;;
  *)
   alias vwlibtool=libtoolize
   ${AC_PATH:=/usr/share}
