@@ -746,6 +746,7 @@ void end_pass_example(vw& all, example* ae)
   all.p->in_pass_counter = 0;
 }
 
+namespace VW{
 void setup_example(vw& all, example* ae)
 {
   ae->partial_prediction = 0.;
@@ -844,6 +845,7 @@ void setup_example(vw& all, example* ae)
 	  += (ae->atomics[(int)(*i)[2]].end - ae->atomics[(int)(*i)[2]].begin) * all.rank;
       }
   }
+}
 }
 
 namespace VW{
@@ -983,9 +985,9 @@ namespace VW{
 	    }
 	  ec.audit_features[*i].erase();
 	}
-    
+
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
-      {  
+      {
 	ec.atomics[*i].erase();
 	ec.sum_feat_sq[*i]=0;
       }
@@ -1031,7 +1033,7 @@ void *main_parse_loop(void *in)
 	    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
 		   && parse_atomic_example(*all, ae) )
 	     {
-	       setup_example(*all, ae);
+	       VW::setup_example(*all, ae);
 	       example_number++;
 	     }
 	    else

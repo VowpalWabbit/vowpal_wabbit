@@ -41,7 +41,7 @@ endif
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
 
-OPTIM_FLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing #-ffast-math #uncomment for speed, comment for testability
+OPTIM_FLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing -fPIC #-ffast-math #uncomment for speed, comment for testability
 ifeq ($(UNAME), FreeBSD)
   WARN_FLAGS = -Wall
 else
@@ -64,7 +64,7 @@ FLAGS = $(CFLAGS) $(LDFLAGS) $(ARCH) $(WARN_FLAGS) $(OPTIM_FLAGS) -D_FILE_OFFSET
 BINARIES = vw active_interactor
 MANPAGES = vw.1
 
-all:	vw spanning_tree library_example
+all:	vw spanning_tree library_example python
 
 %.1:	%
 	help2man --no-info --name="Vowpal Wabbit -- fast online learning tool" ./$< > $@
@@ -83,6 +83,9 @@ active_interactor:
 library_example: vw
 	cd library; $(MAKE) -j 8
 
+python: vw
+	cd python; $(MAKE)
+
 .FORCE:
 
 test: .FORCE
@@ -96,4 +99,5 @@ clean:
 	cd vowpalwabbit && $(MAKE) clean
 	cd cluster && $(MAKE) clean
 	cd library && $(MAKE) clean
+	cd python  && $(MAKE) clean
 
