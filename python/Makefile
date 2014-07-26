@@ -17,7 +17,7 @@ STDLIBS = $(BOOST_LIBRARY) $(LIBS) $(PYTHONLIBS)
 
 all: pylibvw.so
 
-pylibvw.so: pylibvw.o
+pylibvw.so: pylibvw.o  ../vowpalwabbit/libvw.a
 	$(CXX) -shared -Wl,--export-dynamic pylibvw.o $(BOOST_LIBRARY) -lboost_python -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION) $(VWLIBS) $(STDLIBS) -o pylibvw.so
  
 pylibvw.o: pylibvw.cc
