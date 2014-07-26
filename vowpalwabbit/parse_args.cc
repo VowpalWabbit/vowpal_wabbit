@@ -1083,7 +1083,7 @@ namespace VW {
     return all;
   }
 
-  void finish(vw& all)
+  void finish(vw& all, bool delete_all)
   {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
@@ -1101,6 +1101,6 @@ namespace VW {
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
     delete all.loss;
-    delete &all;
+    if (delete_all) delete &all;
   }
 }
