@@ -1,7 +1,7 @@
 import sys
 import pyvw
 
-learnFromStrings = True
+learnFromStrings = False
 
 # this is a stupid program that basically mimics vw's behavior,
 # mostly for the purpose of speed comparisons
@@ -9,13 +9,13 @@ learnFromStrings = True
 def mini_vw(inputFile, numPasses, otherArgs):
     vw = pyvw.vw(otherArgs)
     for p in range(numPasses):
-        print 'pass', (p+1),
+        print 'pass', (p+1)
         h = open(inputFile, 'r')
         for l in h.readlines():
             if learnFromStrings:
-                vw.learn(l.strip())
+                vw.learn(l)
             else:
-                ex = pyvw.example(vw, l.strip())
+                ex = vw.example(l)
                 vw.learn(ex)
                 ex.finish()
         h.close()

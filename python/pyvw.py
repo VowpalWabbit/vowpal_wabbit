@@ -31,6 +31,9 @@ class vw(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.finished = True
 
+    def example(self, string=None):
+        return example(self, string)
+
     def __del__(self):
         self.finish()
 
@@ -380,5 +383,10 @@ class example(pylibvw.example):
                 f = self.feature(ns, i)
                 v = self.feature_weight(ns, i)
                 yield f,v
+
+    def get_label(self, label_class=simple_label):
+        """Given a known label class (default is simple_label), get
+        the corresponding label structure for this example."""
+        return label_class(self)
 
 #help(example)

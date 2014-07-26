@@ -381,5 +381,6 @@ int read_features(void* in, example* ex)
 void read_line(vw& all, example* ex, char* line)
 {
   substring ss = {line, line+strlen(line)};
+  while ((ss.end >= ss.begin) && (*(ss.end-1) == '\n')) ss.end--;
   substring_to_example(&all, ex, ss);  
 }

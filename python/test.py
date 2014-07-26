@@ -21,7 +21,7 @@ vw.learn("1 |x a b")
 
 ###############################################################################3
 print '# do some stuff with a read example:'
-ex = pyvw.example(vw, "1 |x a b |y c")
+ex = vw.example("1 |x a b |y c")
 ex.learn() ; ex.learn() ; ex.learn() ; ex.learn()
 updated_pred = ex.get_updated_prediction()
 print 'current partial prediction =', updated_pred
@@ -36,7 +36,7 @@ ex.finish()
 
 ###############################################################################3
 print '# make our own example from scratch'
-ex = pyvw.example(vw)
+ex = vw.example()
 ex.set_label_string("0")
 ex.push_features('x', ['a', 'b'])
 ex.push_features('y', [('c', 1.)])
@@ -56,7 +56,7 @@ ex.finish()
 ###############################################################################3
 exList = []
 for i in range(120):    # note: if this is >=129, we hang!!!
-    ex = pyvw.example(vw)
+    ex = vw.example()
     exList.append(ex)
 
 # this is the safe way to delete the examples for VW to reuse:
@@ -65,7 +65,7 @@ for ex in exList:
 
 exList = [] # this should __del__ the examples, we hope :)
 for i in range(120):    # note: if this is >=129, we hang!!!
-    ex = pyvw.example(vw)
+    ex = vw.example()
     exList.append(ex)
 
 for ex in exList:
@@ -74,14 +74,14 @@ for ex in exList:
 ###############################################################################3
 
 for i in range(2):
-    ex = pyvw.example(vw, "1 foo| a b")
+    ex = vw.example("1 foo| a b")
     ex.learn()
     print 'tag =', ex.get_tag()
     print 'counter =', ex.get_example_counter()
     print 'partial pred =', ex.get_partial_prediction()
     print 'loss =', ex.get_loss()
 
-    print 'label =', pyvw.simple_label(ex)
+    print 'label =', ex.get_label()
     ex.finish()
 
 
@@ -92,7 +92,7 @@ vw.finish()
 ###############################################################################3
 print '# test some save/load behavior'
 vw = pyvw.vw("--quiet -f test.model")
-ex = pyvw.example(vw, "1 |x a b |y c")
+ex = vw.example("1 |x a b |y c")
 ex.learn() ; ex.learn() ; ex.learn() ; ex.learn()
 before_save = ex.get_updated_prediction()
 print 'before saving, prediction =', before_save
@@ -101,7 +101,7 @@ vw.finish()   # this should create the file
 
 # now re-start vw by loading that model
 vw = pyvw.vw("--quiet -i test.model")
-ex = pyvw.example(vw, "1 |x a b |y c")  # test example
+ex = vw.example("1 |x a b |y c")  # test example
 ex.learn()
 after_save = ex.get_partial_prediction()
 print ' after saving, prediction =', after_save
