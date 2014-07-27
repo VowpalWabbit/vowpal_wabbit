@@ -24,6 +24,8 @@ my $LDA;
 my $Diff = 'diff';
 my $Cat = 'cat';
 
+$ENV{PATH} .= ':test:.';
+
 # -V prefixes valgrind like this, we should adjust the default
 # options over time to what looks most useful.
 my $Valgrind = 'valgrind --quiet --error-exitcode=100' .
@@ -1035,7 +1037,7 @@ __DATA__
     train-sets/ref/ezexample_predict.stderr
 
 # Test 67: daemon test
-daemon-test.sh
+./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
 
 # Test 68: empty test, bad builds (without make clean)
