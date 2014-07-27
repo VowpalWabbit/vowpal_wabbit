@@ -112,6 +112,7 @@ sub command_failed($) {
                 "$0: test $TestNo: '%s' failed (exitcode=$exitcode)\n", $cmd;
         }
     }
+    # This is non-zero only if $cmd failed
     $?
 }
 
@@ -687,6 +688,7 @@ sub run_tests() {
 # --- main
 init();
 run_tests();
+exit $ErrorCount;
 
 #
 # Add tests below the __DATA__ line
@@ -1035,12 +1037,12 @@ __DATA__
     train-sets/ref/ezexample_predict.stdout
     train-sets/ref/ezexample_predict.stderr
 
-# Test 67: daemon test
-./daemon-test.sh
-    test-sets/ref/vw-daemon.stdout
-
-# Test 68: empty test, bad builds (without make clean)
+# Test 67: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
 {VW} /dev/null
-    train-sets/empty-set.stderr
+    train-sets/ref/empty-set.stderr
+
+# Test 68: daemon test
+./daemon-test.sh
+    test-sets/ref/vw-daemon.stdout
 
