@@ -63,7 +63,7 @@ start_daemon() {
     # echo starting daemon
     $DaemonCmd
     # give it time to be ready
-    wait
+    wait; wait; wait
 }
 
 cleanup() {
@@ -87,8 +87,10 @@ cat > $PREDREF <<EOF
 EOF
 
 
+set -x
+
 # Train
-$VW --quiet -d $TRAINSET -f $MODEL
+$VW -b 10 --quiet -d $TRAINSET -f $MODEL
 
 start_daemon
 
