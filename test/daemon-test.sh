@@ -1,7 +1,6 @@
 #!/bin/sh
 # -- vw daemon test
 #
-set -x
 
 export PATH="vowpalwabbit:../vowpalwabbit:${PATH}"
 # The VW under test
@@ -76,7 +75,7 @@ $VW --quiet -d $TRAINSET -f $MODEL
 start_daemon
 
 # Test on train-set
-nc localhost $PORT < $TRAINSET > $PREDOUT
+netcat localhost $PORT < $TRAINSET > $PREDOUT
 diff $PREDREF $PREDOUT
 
 case $? in
