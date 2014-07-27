@@ -29,13 +29,31 @@ else
     exit 1
 fi
 
+# -- And netcat too
+NETCAT=`which netcat`
+if [ -x "$NETCAT" ]; then
+    : cool found netcat at: $NETCAT
+else
+    echo "$NAME: can not find 'netcat' under $PATH - sorry"
+    exit 1
+fi
+
+PKILL=`which pkill`
+if [ -x "$PKILL" ]; then
+    : cool found pkill at: $PKILL
+else
+    echo "$NAME: can not find 'pkill' under $PATH - sorry"
+    exit 1
+fi
+
+
 # A command and pattern that will unlikely to match anything but our own test
 DaemonCmd="$VW -t -i $MODEL --daemon --quiet --port 32223"
 
 stop_daemon() {
     # make sure we are not running, may ignore 'error' that we're not
     # echo stopping daemon
-    pkill -9 -f "$DaemonCmd" 2>&1 | grep -q 'no process found'
+    $PKILL -9 -f "$DaemonCmd" 2>&1 | grep -q 'no process found'
     # relinquish CPU by forcing some conext switches to be safe
     # (let existing vw daemon procs die)
     wait
@@ -75,7 +93,7 @@ $VW --quiet -d $TRAINSET -f $MODEL
 start_daemon
 
 # Test on train-set
-netcat localhost $PORT < $TRAINSET > $PREDOUT
+$NETCAT localhost $PORT < $TRAINSET > $PREDOUT
 diff $PREDREF $PREDOUT
 
 case $? in
