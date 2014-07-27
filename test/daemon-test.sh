@@ -19,7 +19,7 @@ MODEL=$NAME.model
 TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
-PORT=32223
+PORT=54245
 
 # -- make sure we can find vw first
 if [ -x "$VW" ]; then
@@ -49,7 +49,7 @@ fi
 
 
 # A command and pattern that will unlikely to match anything but our own test
-DaemonCmd="$VW -t -i $MODEL --daemon --quiet --port 32223"
+DaemonCmd="$VW -t -i $MODEL --daemon --quiet --port $PORT"
 
 stop_daemon() {
     # make sure we are not running, may ignore 'error' that we're not
