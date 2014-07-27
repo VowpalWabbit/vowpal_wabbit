@@ -288,10 +288,6 @@ sub next_test() {
             }
             next;
         }
-        if ($line =~ /library\/ezexample_/) {
-            $cmd = trim_spaces($line);
-            next;
-        }
         if ($line =~ m/\.stdout\b/) {
             $out_ref = ref_file(trim_spaces($line));
             next;
@@ -304,10 +300,18 @@ sub next_test() {
             $pred_ref = ref_file(trim_spaces($line));
             next;
         }
+        # A test can also be an arbitrary (shell) command line
+        # if the 1st non-space sequence is executable
+        my ($first_word) = ($line =~ /^\s*(\S+)/);
+        if (defined $first_word && -x $first_word) {
+            $cmd = trim_spaces($line);
+            next;
+        }
         # if we get here it is some unrecognized pattern
         printf STDERR "Unrecognized test spec line:\n\t%s\n", $line;
         print STDERR "Test lines must match one of the following patterns:\n";
-        print STDERR "\tCommand to run:    {VW}\n";
+        print STDERR "\tshell command to run\n";
+        print STDERR "\tvw command to run: {VW} ...\n";
         print STDERR "\tstdout reference:  *.stdout\n";
         print STDERR "\tstderr reference:  *.stderr\n";
         print STDERR "\tpredict reference: *.predict\n";
@@ -315,12 +319,12 @@ sub next_test() {
     if (eof(DATA) && !defined $cmd) {
         return (undef, undef, undef, undef);
     }
-
     unless (defined $cmd) {
         die "$0: test $TestNo: command is undefined\n";
     }
     unless (defined $err_ref) {
-        die "$0: test $TestNo: stderr ref: undefined\n";
+        v(2, "%s: test %s: stderr ref: undefined\n", $0, $TestNo);
+        $err_ref = '/dev/null';
     }
     # print STDERR "next_test: (\$cmd, $out_ref, $err_ref, $pred_ref, $pred)\n";
     if ($opt_V) {
@@ -1029,3 +1033,8 @@ __DATA__
 ../library/ezexample_predict models/library_train.w
     train-sets/ref/ezexample_predict.stdout
     train-sets/ref/ezexample_predict.stderr
+
+# Test 67: daemon test
+daemon-test.sh
+    test-sets/ref/vw-daemon.stdout
+
