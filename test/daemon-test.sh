@@ -25,24 +25,25 @@ PORT=32223
 if [ -x "$VW" ]; then
     : cool found vw at: $VW
 else
-    echo "$NAME: can not find 'vw' under $PATH - sorry"
+    echo "$NAME: can not find 'vw' in $PATH - sorry"
     exit 1
 fi
 
-# -- And netcat too
+# -- and netcat
 NETCAT=`which netcat`
 if [ -x "$NETCAT" ]; then
     : cool found netcat at: $NETCAT
 else
-    echo "$NAME: can not find 'netcat' under $PATH - sorry"
+    echo "$NAME: can not find 'netcat' in $PATH - sorry"
     exit 1
 fi
 
+# -- and pkill
 PKILL=`which pkill`
 if [ -x "$PKILL" ]; then
     : cool found pkill at: $PKILL
 else
-    echo "$NAME: can not find 'pkill' under $PATH - sorry"
+    echo "$NAME: can not find 'pkill' in $PATH - sorry"
     exit 1
 fi
 
@@ -86,9 +87,6 @@ cat > $PREDREF <<EOF
 0.733882 2
 EOF
 
-
-set -x
-
 # Train
 $VW -b 10 --quiet -d $TRAINSET -f $MODEL
 
@@ -96,18 +94,19 @@ start_daemon
 
 # Test on train-set
 $NETCAT localhost $PORT < $TRAINSET > $PREDOUT
-diff $PREDREF $PREDOUT
+wait
 
+diff $PREDREF $PREDOUT
 case $? in
-    0)  echo $NAME: OK
+    0)  echo "$NAME: OK"
         cleanup
         exit 0
         ;;
-    1)  echo "$NAME FAILED: see $PREDREF vs $PREDOUT "
+    1)  echo "$NAME FAILED: see $PREDREF vs $PREDOUT"
         stop_daemon
         exit 1
         ;;
-    *)  echo $NAME: diff failed - something is fishy
+    *)  echo "$NAME: diff failed - something is fishy"
         stop_daemon
         exit 2
         ;;
