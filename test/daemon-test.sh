@@ -1,6 +1,7 @@
 #!/bin/sh
 # -- vw daemon test
 #
+set -x
 
 export PATH="vowpalwabbit:../vowpalwabbit:${PATH}"
 # The VW under test
@@ -35,7 +36,7 @@ DaemonCmd="$VW -t -i $MODEL --daemon --quiet --port 32223"
 stop_daemon() {
     # make sure we are not running, may ignore 'error' that we're not
     # echo stopping daemon
-    pkill -9 -f "$DaemonCmd" 2>&1 | grep -qv ': no process found'
+    pkill -9 -f "$DaemonCmd" 2>&1 | grep -q 'no process found'
     # relinquish CPU by forcing some conext switches to be safe
     # (let existing vw daemon procs die)
     wait
