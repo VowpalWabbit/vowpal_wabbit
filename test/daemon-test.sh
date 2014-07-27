@@ -20,6 +20,15 @@ TRAINSET=$NAME.train
 PREDREF=$NAME.predref
 PREDOUT=$NAME.predict
 PORT=32223
+
+# -- make sure we can find vw first
+if [ -x "$VW" ]; then
+    : cool found vw at: $VW
+else
+    $NAME: can not find vw under $PATH - sorry
+    exit 1
+fi
+
 # A command and pattern that will unlikely to match anything but our own test
 DaemonCmd="$VW -t -i $MODEL --daemon --quiet --port 32223"
 
