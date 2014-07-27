@@ -44,6 +44,8 @@ stop_daemon() {
 start_daemon() {
     # echo starting daemon
     $DaemonCmd
+    # give it time to be ready
+    wait
 }
 
 cleanup() {
