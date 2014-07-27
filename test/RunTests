@@ -1038,3 +1038,8 @@ __DATA__
 daemon-test.sh
     test-sets/ref/vw-daemon.stdout
 
+# Test 68: empty test, bad builds (without make clean)
+# sometimes cause a SEGV even on empty input
+{VW} /dev/null
+    train-sets/empty-set.stderr
+
