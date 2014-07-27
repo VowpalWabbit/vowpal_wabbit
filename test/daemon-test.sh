@@ -1,5 +1,8 @@
 #!/bin/bash
+# -- vw daemon test
+#
 
+export PATH="wowpalwabbit:../vowpalwabbit:${PATH}"
 # The VW under test
 VW=`which vw`
 #
