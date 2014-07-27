@@ -2,7 +2,7 @@
 # -- vw daemon test
 #
 
-export PATH="wowpalwabbit:../vowpalwabbit:${PATH}"
+export PATH="vowpalwabbit:../vowpalwabbit:${PATH}"
 # The VW under test
 VW=`which vw`
 #
@@ -13,7 +13,7 @@ VW=`which vw`
 #   cad00a0dd558a34f210b712b34da26e31374b8b9    GOOD
 #
 
-NAME=vw-daemon-test
+NAME='vw-daemon-test'
 
 MODEL=$NAME.model
 TRAINSET=$NAME.train
@@ -25,7 +25,7 @@ PORT=32223
 if [ -x "$VW" ]; then
     : cool found vw at: $VW
 else
-    $NAME: can not find vw under $PATH - sorry
+    echo "$NAME: can not find 'vw' under $PATH - sorry"
     exit 1
 fi
 
