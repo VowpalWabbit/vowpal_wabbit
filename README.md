@@ -26,13 +26,16 @@ make
 If that fails, try:
 ```
 ./autogen.sh
-./configure
 make
 (make test)
 make install
 ```
 
-Note that ``./autogen.sh`` requires automake.  On OSX, this implies installing 'glibtools'
+Note that ``./autogen.sh`` requires automake.  On OSX, this implies installing
+'glibtools'.
+
+Options that were passed to `./configure` in 7.6 and earlier may now be passed
+to `./autogen.sh`.
 
 Be sure to read the wiki: https://github.com/JohnLangford/vowpal_wabbit/wiki
 for the tutorial, command line options, etc.  
