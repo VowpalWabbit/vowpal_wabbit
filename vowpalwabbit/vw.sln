@@ -1,5 +1,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvw", "libvw.vcxproj", "{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1E205806-7F80-47DD-A38D-FC08083F3592} = {1E205806-7F80-47DD-A38D-FC08083F3592}
@@ -26,6 +28,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c_test", "..\c_test\c_test.
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spanning_tree", "..\cluster\cluster.vcxproj", "{2720BCD9-6731-4A11-BA24-1F74E35BA97F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_explore", "..\vw_explore\vw_explore.vcxproj", "{ACE47E98-488C-4CDF-B9F1-36337B2855AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -151,6 +155,22 @@ Global
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x64.Build.0 = Release|x64
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x86.ActiveCfg = Release|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x86.Build.0 = Release|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Debug|Win32.Build.0 = Debug|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Debug|x64.ActiveCfg = Debug|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Debug|x86.ActiveCfg = Debug|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Debug|x86.Build.0 = Debug|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Release|Any CPU.ActiveCfg = Release|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Release|Win32.ActiveCfg = Release|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Release|Win32.Build.0 = Release|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Release|x64.ActiveCfg = Release|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Release|x86.ActiveCfg = Release|Win32
+		{ACE47E98-488C-4CDF-B9F1-36337B2855AD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
