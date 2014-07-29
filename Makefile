@@ -16,6 +16,7 @@ ifeq ($(CXX),)
   exit 1
 endif
 
+
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
