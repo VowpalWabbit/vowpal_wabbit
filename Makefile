@@ -3,7 +3,7 @@ CXX = $(shell which clang++)
 #    it sometimes reveals type portability issues
 # CXX = $(shell which clang++) -m32
 ifneq ($(CXX),)
-  $(warning Using clang: "$(CXX)")
+  #$(warning Using clang: "$(CXX)")
   ARCH = -D__extern_always_inline=inline
 else
   CXX = g++
@@ -18,8 +18,8 @@ endif
 
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
-BOOST_INCLUDE = -I /usr/include
-BOOST_LIBRARY = -L /usr/lib
+BOOST_INCLUDE = -I /usr/include 
+BOOST_LIBRARY = -L /usr/lib 
 
 ifeq ($(UNAME), FreeBSD)
   LIBS = -l boost_program_options -l pthread -l z -l compat

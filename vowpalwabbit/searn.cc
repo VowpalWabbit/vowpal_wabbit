@@ -31,6 +31,7 @@ bool isfinite(float x)
 
 // task-specific includes
 #include "searn_sequencetask.h"
+#include "searn_pythontask.h"
 #include "searn_entityrelationtask.h"
 
 using namespace LEARNER;
@@ -49,6 +50,7 @@ namespace Searn
                               &SequenceSpanTask::task,
                               &SequenceDoubleTask::task,
 			      &EntityRelationTask::task,
+                              &PythonTask::task,
 			      NULL };   // must NULL terminate!
 
   string   neighbor_feature_space("neighbor");
@@ -126,6 +128,8 @@ namespace Searn
     v_array<uint32_t> beam_final_action_sequence;
     bool beam_is_training;
 
+    bool last_example_was_newline;
+    
     size_t   most_recent_snapshot_begin;
     size_t   most_recent_snapshot_end;
     uint32_t most_recent_snapshot_hash;
@@ -273,6 +277,7 @@ namespace Searn
 
   void add_history_to_example(vw&all, history_info &hinfo, example* ec, history h, size_t additional_offset=0)
   {
+    cdbg << "add_history_to_example, hinfo.length=" << hinfo.length << endl;
     uint64_t v0, v1, v, max_string_length = 0;
     uint32_t wpp = all.wpp << all.reg.stride_shift;
     if (hinfo.length == 0) return;
@@ -675,7 +680,7 @@ namespace Searn
       priv->snapshot_map->put_after_get(sip, sip.hash_value, me);
       cdbg << "adding snapshot, new size = " << priv->snapshot_data.size() << endl;
     } else {
-      clog << "found: action=" << res.action << "  loss=" << res.loss << "  otp=" << res.on_training_path << endl;
+      cdbg << "found: action=" << res.action << "  loss=" << res.loss << "  otp=" << res.on_training_path << endl;
       assert(false);
     }
   }
@@ -695,9 +700,12 @@ namespace Searn
     uint32_t action;
     // cdbg << "pol=" << pol << endl; //  << " ystar.size()=" << ystar->size() << " ystar[0]=" << ((ystar->size() > 0) ? (*ystar)[0] : 0) << endl;
 
+    cdbg << "single_action: pol=" << pol << " ystar_is_uint32t=" << ystar_is_uint32t << " ystar=" << *((uint32_t*)ystar) << endl;
+    
     float snapshot_loss = -1.;
     bool was_on_training_path = false;
     if (get_most_recent_snapshot_action(srn.priv, action, snapshot_loss, was_on_training_path)) {
+      cdbg << "eek!" << endl;
       cdbg << "get: " << (srn.priv->state == LEARN) << " " << was_on_training_path << endl;
       if (srn.priv->allow_unsafe_fast_forward && (srn.priv->state == LEARN) && was_on_training_path && (srn.priv->t > srn.priv->learn_t)) { // TODO: if we're allowed to fastforward
         srn.priv->state = FAST_FORWARD;
@@ -1260,6 +1268,20 @@ namespace Searn
     }
   }
 
+  void searn_snapshot(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
+    if (! priv->do_snapshot) return;
+    if ((priv->state == GET_TRUTH_STRING) ||
+        (priv->state == INIT_TEST))
+      return;
+    
+    if (tag == 1)
+      searn_snapshot_initialize(priv, index);
+
+    searn_snapshot_data(priv, index, tag, data_ptr, sizeof_data, used_for_prediction);
+    if (priv->state == INIT_TRAIN)
+        priv->final_snapshot_end = priv->most_recent_snapshot_end;
+  }
+
 
   uint32_t searn_predict(searn_private* priv, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
   {
@@ -1270,7 +1292,9 @@ namespace Searn
 
     // handle the case where you want auto-history but you're not snapshotting yourself
     if ((!priv->snapshotted_since_predict) && priv->auto_history) {
-      searn_snapshot_initialize(priv, priv->t);
+      //searn_snapshot_initialize(priv, priv->t);
+      int bogus = priv->t;
+      searn_snapshot(priv, priv->t, 1, &bogus, sizeof(bogus), true);
     }
     
     //bool found_ss = get_most_recent_snapshot_action(priv, a);
@@ -1286,11 +1310,15 @@ namespace Searn
 
     if (priv->auto_hamming_loss) {
       float this_loss = 0.;
+      cdbg << "ystar = " << ystar << ", ystar_is_uint32t = " << ystar_is_uint32t << endl;
       if (ystar) {
         if (ystar_is_uint32t &&   // single allowed ystar
             (*((uint32_t*)ystar) != (uint32_t)-1) && // not a test example
-            (*((uint32_t*)ystar) != a))  // wrong prediction
+            (*((uint32_t*)ystar) != a))  // wrong prediction 
+        {
           this_loss = 1.;
+          cdbg << "this_loss = 1. because ystar_is_uint32t and ystar=" << *((uint32_t*)ystar) << " != " << a << " = a" << endl;
+        }
         if ((!ystar_is_uint32t) && // many allowed ystar
             (!v_array_contains(*ystar, a)))
           this_loss = 1.;
@@ -1300,21 +1328,6 @@ namespace Searn
 
     return a;
   }
-
-  void searn_snapshot(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
-    if (! priv->do_snapshot) return;
-    if ((priv->state == GET_TRUTH_STRING) ||
-        (priv->state == INIT_TEST))
-      return;
-    
-    if (tag == 1)
-      searn_snapshot_initialize(priv, index);
-
-    searn_snapshot_data(priv, index, tag, data_ptr, sizeof_data, used_for_prediction);
-    if (priv->state == INIT_TRAIN)
-        priv->final_snapshot_end = priv->most_recent_snapshot_end;
-  }
-
 
   inline bool cmp_size_t(const size_t a, const size_t b) { return a < b; }
 
@@ -1692,7 +1705,7 @@ namespace Searn
         //     current_pass == 0
         //     OR holdout is off
         //     OR it's a test example
-        ( (! all.quiet) &&
+        ( //   (! all.quiet) &&  // had to disable this because of library mode!
           ( all.holdout_set_off ||                    // no holdout
             ec[0]->test_only ||
             (all.current_pass == 0)                   // we need error rates for progressive cost
@@ -2266,19 +2279,26 @@ void print_update(vw& all, searn& srn)
     srn.priv->base_learner = &base;
     bool is_real_example = true;
 
+    cdbg << "searn_predict_or_learn, einl=" << example_is_newline(ec) << endl;
+    
     if (example_is_newline(ec) || srn.priv->ec_seq.size() >= all->p->ring_size - 2) {
       if (srn.priv->ec_seq.size() >= all->p->ring_size - 2) { // give some wiggle room
 	std::cerr << "warning: length of sequence at " << ec.example_counter << " exceeds ring size; breaking apart" << std::endl;
       }
 
       do_actual_learning<is_learn>(*all, srn);
-      clear_seq(*all, srn);
+      //clear_seq(*all, srn);
       srn.priv->hit_new_pass = false;
 
       //VW::finish_example(*all, ec);
+      srn.priv->last_example_was_newline = true;
       is_real_example = false;
     } else {
+      if (srn.priv->last_example_was_newline)
+        srn.priv->ec_seq.clear();
+      cdbg << "ec.test_only = " << ec.test_only << endl;
       srn.priv->ec_seq.push_back(&ec);
+      srn.priv->last_example_was_newline = false;
     }
 
     if (is_real_example) {
@@ -2311,6 +2331,7 @@ void print_update(vw& all, searn& srn)
     if (ec.end_pass || example_is_newline(ec) || srn.priv->ec_seq.size() >= all.p->ring_size - 2) {
       print_update(all, srn);
       VW::finish_example(all, &ec);
+      clear_seq(all, srn);
     }
   }
 
@@ -2435,7 +2456,7 @@ void print_update(vw& all, searn& srn)
 
     srn.priv->printed_output_header = false;
 
-    srn.priv->auto_history = false;
+    srn.priv->auto_history = true;
     srn.priv->auto_hamming_loss = false;
     srn.priv->examples_dont_change = false;
     srn.priv->is_ldf = false;

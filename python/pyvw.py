@@ -1,4 +1,39 @@
+import sys
 import pylibvw
+
+class SearchTask():
+    def __init__(self, vw, srn, num_actions):
+        self.vw = vw
+        self.srn = srn
+        self.blank_line = self.vw.example("")
+        self.blank_line.finish()
+        self.bogus_example = self.vw.example("1 | x")
+
+    def __del__(self):
+        self.bogus_example.finish()
+        pass
+
+    def _run(self, your_own_input_example):
+        pass
+
+    def _call_vw(self, fn, isTest):
+        self.bogus_example.set_test_only(isTest)
+        self.srn.set_structured_predict_hook(fn)
+        self.vw.learn(self.bogus_example)
+        self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
+        
+
+    def learn(self, data_iterator):
+        for my_example in data_iterator():
+            self._call_vw(lambda: self._run(my_example), isTest=False)
+
+    def predict(self, my_example):
+        def f(): self._output = self._run(my_example)
+        self._output = None
+        self._call_vw(f, isTest=True)
+        if self._output is None:
+            raise Exception('structured predict hook failed to return anything')
+        return self._output
 
 class vw(pylibvw.vw):
     """The pyvw.vw object is a (trivial) wrapper around the pylibvw.vw
@@ -31,11 +66,16 @@ class vw(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.finished = True
 
-    def example(self, string=None):
-        return example(self, string)
+    def example(self, stringOrDict=None):
+        return example(self, stringOrDict)
 
     def __del__(self):
         self.finish()
+
+    def init_search_task(self, search_task):
+        srn = self.get_searn_ptr() 
+        num_actions = srn.get_num_actions()
+        return search_task(self, srn, num_actions)        
 
 class namespace_id():
     """The namespace_id class is simply a wrapper to convert between
@@ -204,24 +244,44 @@ class example(pylibvw.example):
     easier to use (by making the types safer via namespace_id) and
     also with added python-specific functionality."""
     
-    def __init__(self, vw, initString=None):
+    def __init__(self, vw, initStringOrDict=None):
         """Construct a new example from vw. If initString is None, you
         get an"empty" example which you can construct by hand (see, eg,
         example.push_features). If initString is a string, then this
         string is parsed as it would be from a VW data file into an
         example (and "setup_example" is run)."""
-        if initString is None:
+
+        if initStringOrDict is None:
             pylibvw.example.__init__(self, vw)
             self.setup_done = False
-        else:
-            pylibvw.example.__init__(self, vw, initString)
+        elif isinstance(initStringOrDict, str):
+            pylibvw.example.__init__(self, vw, initStringOrDict)
             self.setup_done = True
+        elif isinstance(initStringOrDict, dict):
+            pylibvw.example.__init__(self, vw)
+            self.vw = vw
+            self.stride = vw.get_stride()
+            self.finished = False
+            self.setup_done = False
+            for ns_char,feats in initStringOrDict.iteritems():
+                self.push_features(ns_char, feats)
+            self.setup_example()
+        else:
+            raise TypeError('expecting string or dict as argument for example construction')
+
         self.vw = vw
         self.stride = vw.get_stride()
         self.finished = False
 
     def __del__(self):
         self.finish()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self,typ,value,traceback):
+        self.finish()
+        return typ is None
 
     def get_ns(self, id):
         """Construct a namespace_id from either an integer or string

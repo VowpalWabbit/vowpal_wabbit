@@ -1,16 +1,21 @@
-#include <boost/make_shared.hpp>
-#include <boost/python.hpp>
-#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+// #include "pylibvw.h"
 #include "../vowpalwabbit/vw.h"
 #include "../vowpalwabbit/multiclass.h"
 #include "../vowpalwabbit/cost_sensitive.h"
 #include "../vowpalwabbit/cb.h"
+#include "../vowpalwabbit/searn.h"
+#include "../vowpalwabbit/searn_pythontask.h"
+
+#include <boost/make_shared.hpp>
+#include <boost/python.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 using namespace std;
 namespace py=boost::python;
 
 typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
+typedef boost::shared_ptr<Searn::searn> searn_ptr;
 
 void dont_delete_me(void*arg) {}
 
@@ -22,6 +27,11 @@ vw_ptr my_initialize(string args) {
 void my_finish(vw_ptr all) {
   VW::finish(*all, false);  // don't delete all because python will do that for us!
 }
+
+searn_ptr get_searn_ptr(vw_ptr all) {
+  return boost::shared_ptr<Searn::searn>((Searn::searn*)(all->searnstr), dont_delete_me);
+}
+
 
 example_ptr my_read_example(vw_ptr all, char*str) {
   example*ec = VW::read_example(*all, str);
@@ -166,6 +176,54 @@ float    get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples; }
 
+bool searn_should_output(searn_ptr srn) { return srn->output().good(); }
+void searn_output(searn_ptr srn, string s) { srn->output() << s; }
+
+uint32_t searn_predict1(searn_ptr srn, example* ec, uint32_t one_ystar) {
+  return srn->predict(ec, one_ystar);
+}
+
+void verify_searn_set_properly(searn_ptr srn) {
+  if ((srn->task == NULL) || (srn->task->task_name == NULL)) {
+    cerr << "set_structured_predict_hook: searn task not initialized properly" << endl;
+    throw exception();
+  }
+  if (strcmp(srn->task->task_name, "python_hook") != 0) {
+    cerr << "set_structured_predict_hook: trying to set hook when searn task is not 'python_hook'!" << endl;
+    throw exception();
+  }
+}  
+
+uint32_t searn_get_num_actions(searn_ptr srn) {
+  verify_searn_set_properly(srn);
+  PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
+  return d->num_actions;
+}
+
+void searn_run_fn(Searn::searn&srn) {
+  try {
+    PythonTask::task_data* d = srn.get_task_data<PythonTask::task_data>();
+    py::object run = *(py::object*)d->run_object;
+    run.attr("__call__")();
+  } catch(...) {
+    PyErr_Print();
+    PyErr_Clear();
+    throw exception();
+  }
+}
+
+void set_structured_predict_hook(searn_ptr srn, py::object run_object) {
+  verify_searn_set_properly(srn);
+  PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
+  d->run_f = &searn_run_fn;
+  py::object* new_obj = new py::object(run_object);  // TODO: delete me!
+  d->run_object = new_obj;
+}
+
+void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
+
+//BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(searn_predict_overloads,    Searn::searn::predict,    2, 3);
+//BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(searn_predictLDF_overloads, Searn::searn::predictLDF, 3, 4);
 
 BOOST_PYTHON_MODULE(pylibvw) {
   // This will enable user-defined docstrings and python signatures,
@@ -191,12 +249,16 @@ BOOST_PYTHON_MODULE(pylibvw) {
 
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
+
+      .def("get_searn_ptr", &get_searn_ptr, "TODO")
       ;
 
   // define the example class
   py::class_<example, example_ptr>("example", py::no_init)
       .def("__init__", py::make_constructor(my_read_example), "TODO")
       .def("__init__", py::make_constructor(my_empty_example), "TODO")
+
+      .def("set_test_only", &my_set_test_only, "TODO")
 
       .def("get_tag", &my_get_tag, "Returns the tag associated with this example")
       .def("get_topic_prediction", &VW::get_topic_prediction, "For LDA models, returns the topic prediction for the topic id given")
@@ -256,5 +318,21 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_cbandits_probability", &ex_get_cbandits_probability, "Assuming a contextual_bandits label type, get the bandits probability for a given pair (i=0.. get_cbandits_num_costs)")
       .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction, "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. get_cbandits_num_costs)")
       ;
-}
 
+  py::class_<Searn::searn, searn_ptr>("searn")
+      .def("set_options", &Searn::searn::set_options, "TODO")
+      .def("loss", &Searn::searn::loss, "TODO")
+      .def("predict", &searn_predict1, "TODO")
+      //      .def("predict", &Searn::searn::predict, searn_predict_overloads())
+      //      .def("predictLDF", searn_predictLDF_overloads, "TODO")
+      .def("should_output", &searn_should_output, "TODO")
+      .def("output", &searn_output, "TODO")
+      .def("get_num_actions", &searn_get_num_actions, "TODO")
+      .def("set_structured_predict_hook", &set_structured_predict_hook, "TODO")
+
+      .def_readonly("AUTO_HISTORY", Searn::AUTO_HISTORY, "TODO")
+      .def_readonly("AUTO_HAMMING_LOSS", Searn::AUTO_HAMMING_LOSS, "TODO")
+      .def_readonly("EXAMPLES_DONT_CHANGE", Searn::EXAMPLES_DONT_CHANGE, "TODO")
+      .def_readonly("IS_LDF", Searn::IS_LDF, "TODO")
+      ;
+}
