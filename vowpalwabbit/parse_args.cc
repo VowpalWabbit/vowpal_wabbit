@@ -1006,7 +1006,7 @@ vw* parse_args(int argc, char *argv[])
     cout << "\n" << all->opts << "\n";
     exit(0);
   }
-  
+
   return all;
 }
 

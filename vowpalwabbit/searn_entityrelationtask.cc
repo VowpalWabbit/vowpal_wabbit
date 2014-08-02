@@ -249,7 +249,7 @@ namespace EntityRelationTask {
     my_task_data->y_allowed_relation.pop();
     my_task_data->y_allowed_entity.pop();
   }
-  void structured_predict(searn& srn, vector<example*> ec) {
+  void structured_predict(searn& srn, vector<example*>& ec) {
     task_data* my_task_data = srn.get_task_data<task_data>();
     
     v_array<size_t> predictions;

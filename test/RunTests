@@ -624,7 +624,7 @@ sub run_tests() {
         $status = diff($out_ref, $outf);
         if ($status) {
             $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != stdout(%s)\n",
+            printf STDERR "%s: test %d: FAILED: ref(%s) != stdout(%s)\n\tcmd: $cmd\n",
                 $0, $TestNo, $out_ref, $outf;
             if ($opt_y) { copy_file($outf, $outf . '.test' . $TestNo); }
             exit $status if ($opt_e);
@@ -639,14 +639,14 @@ sub run_tests() {
         # -- compare stderr
         if (! -e $err_ref  and  ! $opt_o) {
             $ErrorCount++;
-            print STDERR "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
+            print STDERR "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n\tcmd: $cmd\n";
             exit 1 if ($opt_e);
             next;
         }
         $status = diff($err_ref, $errf);
         if ($status) {
             $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n",
+            printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n\tcmd: $cmd\n",
                 $0, $TestNo, $err_ref, $errf;
             if ($opt_y) { copy_file($errf, "$errf.test.$TestNo"); }
             exit $status if ($opt_e);
@@ -659,7 +659,7 @@ sub run_tests() {
         $status = diff($pred_ref, $predf);
         if ($status) {
             $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n",
+            printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n\tcmd: $cmd\n",
                 $0, $TestNo, $pred_ref, $predf;
             if ($opt_y) { copy_file($predf, "$predf.test.$TestNo"); }
             exit $status if ($opt_e);

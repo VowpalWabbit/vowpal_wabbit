@@ -650,6 +650,7 @@ namespace Searn
 
   // CLAIM (unproven): will return something along the training path _if available_
   bool get_most_recent_snapshot_action(searn_private* priv, uint32_t &action, float &loss, bool &was_on_training_path) {
+    if (! priv->do_snapshot) return false;
     if (! priv->snapshotted_since_predict) return false;
     snapshot_item_ptr sip = { priv->most_recent_snapshot_begin,
                               priv->most_recent_snapshot_end,
@@ -664,12 +665,13 @@ namespace Searn
   }
 
   void set_most_recent_snapshot_action(searn_private* priv, uint32_t action, float loss) {
+    if (! priv->do_snapshot) return;
     if ((priv->state == GET_TRUTH_STRING) ||
         (priv->state == INIT_TEST))
       return;
     if (priv->most_recent_snapshot_end == (size_t)-1) return;
     bool on_training_path = priv->state == INIT_TRAIN || priv->state == BEAM_INIT;
-    cdbg << "set: " << priv->most_recent_snapshot_begin << "\t" << priv->most_recent_snapshot_end << "\t" << priv->most_recent_snapshot_hash << "\totp=" << on_training_path << "\tloss=" << loss << "\taction=" << action << endl;
+    cdbg << "set: begin=" << priv->most_recent_snapshot_begin << "\tend=" << priv->most_recent_snapshot_end << "\thash=" << priv->most_recent_snapshot_hash << "\totp=" << on_training_path << "\tloss=" << loss << "\taction=" << action << endl;
     snapshot_item_ptr sip = { priv->most_recent_snapshot_begin,
                               priv->most_recent_snapshot_end,
                               priv->most_recent_snapshot_hash };
@@ -757,7 +759,9 @@ namespace Searn
               remove_history_from_example(all, srn.priv->hinfo, &ecs[a]);
         }
       }
-      set_most_recent_snapshot_action(srn.priv, action, srn.priv->most_recent_snapshot_loss);
+      if (srn.priv->do_snapshot && srn.priv->snapshotted_since_predict)
+        set_most_recent_snapshot_action(srn.priv, action, srn.priv->most_recent_snapshot_loss);
+          
     }
     return action;
   }
@@ -1119,6 +1123,7 @@ namespace Searn
 
 
   void searn_snapshot_data(searn_private* priv, size_t index, size_t tag, void* data_ptr, size_t sizeof_data, bool used_for_prediction) {
+    if (! priv->do_snapshot) return;
     if ((priv->state == NONE) || (priv->state == INIT_TEST) || (priv->state == GET_TRUTH_STRING) || (priv->state == BEAM_PLAYOUT))
       return;
 
@@ -1290,16 +1295,8 @@ namespace Searn
     searn* srn=(searn*)all->searnstr;
     uint32_t a;
 
-    // handle the case where you want auto-history but you're not snapshotting yourself
-    if ((!priv->snapshotted_since_predict) && priv->auto_history) {
-      //searn_snapshot_initialize(priv, priv->t);
-      int bogus = priv->t;
-      searn_snapshot(priv, priv->t, 1, &bogus, sizeof(bogus), true);
-    }
-    
-    //bool found_ss = get_most_recent_snapshot_action(priv, a);
+    // TODO: do we need to handle the case when snapshotted_since_predict is false?
 
-    //if (!found_ss) a = (uint32_t)-1;
     if (srn->priv->rollout_all_actions)
       a = searn_predict_without_loss<COST_SENSITIVE::label>(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
     else
@@ -2461,7 +2458,7 @@ void print_update(vw& all, searn& srn)
     srn.priv->examples_dont_change = false;
     srn.priv->is_ldf = false;
 
-    snapshot_item_result def_snapshot_result = { 0, -1.f };
+    snapshot_item_result def_snapshot_result = { 0, -1.f, false };
     srn.priv->snapshot_map = new snapmap(102341, def_snapshot_result, snapshot_item_ptr_eq, &srn.priv->snapshot_data);
 
     srn.priv->empty_example = alloc_examples(sizeof(COST_SENSITIVE::label), 1);

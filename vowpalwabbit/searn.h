@@ -19,6 +19,7 @@ license as described in the file LICENSE.
 #define cdbg clog
 #undef cdbg
 #define cdbg if (1) {} else clog
+// uncomment the previous two lines if you want loads of debug output :)
 
 namespace Searn {
 
@@ -72,7 +73,7 @@ namespace Searn {
     const char* task_name;
     void (*initialize)(searn&,size_t&, po::variables_map&);
     void (*finish)(searn&);
-    void (*structured_predict)(searn&, std::vector<example*>);
+    void (*structured_predict)(searn&, std::vector<example*>&);
   };
 
   LEARNER::learner* setup(vw&, po::variables_map&);

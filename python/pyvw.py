@@ -28,11 +28,13 @@ class SearchTask():
             self._call_vw(lambda: self._run(my_example), isTest=False)
 
     def predict(self, my_example):
-        def f(): self._output = self._run(my_example)
         self._output = None
+        def f(): self._output = self._run(my_example)
         self._call_vw(f, isTest=True)
-        if self._output is None:
-            raise Exception('structured predict hook failed to return anything')
+        #if self._output is None:
+        #    raise Exception('structured predict hook failed to return anything')
+        # don't raise this exception because your _run code legitimately
+        # _could_ return None!
         return self._output
 
 class vw(pylibvw.vw):

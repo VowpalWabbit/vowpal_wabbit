@@ -84,7 +84,7 @@ library_example: vw
 	cd library; $(MAKE) -j 8
 
 python: vw
-	cd python; $(MAKE)
+	cd python; $(MAKE) things
 
 .FORCE:
 

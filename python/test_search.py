@@ -4,7 +4,16 @@ import pyvw
 class SequenceLabeler(pyvw.SearchTask):
     def __init__(self, vw, srn, num_actions):
         # you must must must initialize the parent class
+        # this will automatically store self.srn <- srn, self.vw <- vw
         pyvw.SearchTask.__init__(self, vw, srn, num_actions)
+
+        # you can test program options with srn.po_exists
+        # and get their values with srn.po_get -> string and
+        # srn.po_get_int -> int
+        if srn.po_exists('search'):
+            print 'found --search'
+            print '--search value =', srn.po_get('search'), ', type =', type(srn.po_get('search'))
+        
         # set whatever options you want
         srn.set_options( srn.AUTO_HAMMING_LOSS | srn.AUTO_HISTORY )
 
