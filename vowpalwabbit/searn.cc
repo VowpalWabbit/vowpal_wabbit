@@ -32,6 +32,7 @@ bool isfinite(float x)
 // task-specific includes
 #include "searn_sequencetask.h"
 #include "searn_entityrelationtask.h"
+#include "searn_multiclasstask.h"
 
 using namespace LEARNER;
 
@@ -49,6 +50,7 @@ namespace Searn
                               &SequenceSpanTask::task,
                               &SequenceDoubleTask::task,
 			      &EntityRelationTask::task,
+			      &MulticlassTask::task,
 			      NULL };   // must NULL terminate!
 
   string   neighbor_feature_space("neighbor");
@@ -105,9 +107,11 @@ namespace Searn
     bool is_ldf;                // set to true if you'll generate LDF data
 
     size_t A;             // total number of actions, [1..A]; 0 means ldf
+    size_t num_learners;  // total number of learners;
     SearnState state;           // current state of learning
     size_t learn_t;       // when LEARN, this is the t at which we're varying a
     uint32_t learn_a;     //   and this is the a we're varying it to
+    size_t learn_learner_id; // we allow user to use different learners for different states
     size_t snapshot_is_equivalent_to_t;   // if we've finished snapshotting and are equiv up to this time step, then we can fast forward from there
     bool snapshot_could_match;
     size_t snapshot_last_found_pos;
@@ -158,14 +162,17 @@ namespace Searn
 
     float  beta;                  // interpolation rate
     float  alpha; //parameter used to adapt beta for dagger (see above comment), should be in (0,1)
+    float  gamma;                 // interpolation rate for rollout
+    float  exp_perturbation;      // the rate of perturbation for reference policy (only used for experiment purpose)
 
-    short rollout_method; // 0=policy, 1=oracle, 2=none
+    short rollout_method; // 0=policy, 1=oracle, 2=mix_per_state, 3=mix_per_rollout
     bool  trajectory_oracle; // if true, only construct trajectories using the oracle
 
     bool   allow_current_policy;  // should the current policy be used for training? true for dagger
     //bool   rollout_oracle; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
     bool   adaptive_beta; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
     bool   rollout_all_actions;   // by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
+    size_t rollout_policy; // rollout policy (only valid when rollout method is mix per rollout)
     uint32_t current_policy;      // what policy are we training right now?
     //float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
     size_t beam_size;
@@ -427,10 +434,14 @@ namespace Searn
     ec->indices.decr();
   }
 
-  int choose_policy(searn& srn, bool allow_current, bool allow_optimal)
+  int choose_policy(searn& srn, float interpolate_coef, bool allow_current, bool allow_optimal, size_t learner_id)
   {
     uint32_t seed = (uint32_t) srn.priv->read_example_last_id * 2147483 + (uint32_t)(srn.priv->t * 2147483647);
-    return random_policy(seed, srn.priv->beta, allow_current, srn.priv->current_policy, allow_optimal, false); // srn.priv->rollout_all_actions);
+    int policy = random_policy(seed, interpolate_coef, allow_current, srn.priv->current_policy, allow_optimal, false); // srn.priv->rollout_all_actions);
+	if(policy<0)
+		return policy;
+	else
+		return srn.priv->num_learners+learner_id;
   }
 
   size_t get_all_labels(void*dst, searn& srn, size_t num_ec, v_array<uint32_t> *yallowed)
@@ -709,15 +720,23 @@ namespace Searn
       }
     } else { // no snapshot found
       if (pol == -1) { // optimal policy
-        if (ystar_is_uint32t)
-          action = *((uint32_t*)ystar);
-        else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
-          if (srn.priv->rollout_all_actions)
-            action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).class_index;
-          else
-            action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
-        } else 
-          action = choose_random<uint32_t>(*ystar); // TODO: choose according to current model!
+	float r = frand48();
+	if(r>=srn.priv->exp_perturbation) {
+	  if (ystar_is_uint32t)
+            action = *((uint32_t*)ystar);
+          else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
+            if (srn.priv->rollout_all_actions)
+              action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).class_index;
+            else
+              action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
+          } else 
+            action = choose_random<uint32_t>(*ystar); // TODO: choose according to current model!
+	} else {
+            if (srn.priv->rollout_all_actions)
+              action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).class_index;
+            else
+              action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
+	}
         
         if (set_valid_labels_on_oracle && (ystar_is_uint32t || ((ystar != NULL) && (ystar->size() > 0)))) {
           assert(srn.priv->rollout_all_actions);  // TODO: deal with CB
@@ -818,7 +837,7 @@ namespace Searn
   //     == NULL (or empty) means we don't know the oracle label
   //     otherwise          means the oracle could do any of the listed actions
   template <class T>
-  uint32_t searn_predict_without_loss(vw& all, learner& base, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
+  uint32_t searn_predict_without_loss(vw& all, learner& base, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t, size_t learner_id)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
   {
     searn* srn=(searn*)all.searnstr;
 
@@ -831,7 +850,7 @@ namespace Searn
     }
 
     if (srn->priv->state == INIT_TEST) {
-      int pol = choose_policy(*srn, true, false);
+      int pol = choose_policy(*srn, srn->priv->beta, true, false, learner_id);
       //cerr << "(" << pol << ")";
       get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, false);
@@ -850,7 +869,7 @@ namespace Searn
     } else if (srn->priv->state == INIT_TRAIN) {
       int pol = -1; // oracle
       if (!srn->priv->trajectory_oracle)
-        pol = choose_policy(*srn, srn->priv->allow_current_policy, true);
+        pol = choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, true, learner_id);
       cdbg << "{" << pol << "," << srn->priv->trajectory_oracle << "}";
       get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, true);
@@ -872,6 +891,7 @@ namespace Searn
         size_t a = srn->priv->train_action_ids[srn->priv->t - 1];
         return (uint32_t)a;
       } else if (srn->priv->t == srn->priv->learn_t) {
+        srn->priv->learn_learner_id = learner_id;
         if (srn->priv->learn_example_len == 0) {
           size_t num_to_copy = (num_ec == 0) ? 1 : num_ec;
           if (srn->priv->examples_dont_change) {
@@ -894,6 +914,9 @@ namespace Searn
         srn->priv->t++;
         uint32_t a_name = (! srn->priv->is_ldf) ? srn->priv->learn_a : ((COST_SENSITIVE::label*)ecs[srn->priv->learn_a].ld)->costs[0].class_index;
         if (srn->priv->auto_history) srn->priv->rollout_action.push_back(a_name);
+	if (srn->priv->rollout_method == 3) { // rollout by mixing per rollout
+            srn->priv->rollout_policy = choose_policy(*srn, srn->priv->gamma, srn->priv->allow_current_policy, true, learner_id);
+	}
         return srn->priv->learn_a;
       } else { // t > learn_t
         size_t this_a = 0;
@@ -905,9 +928,9 @@ namespace Searn
           //this_a = single_action(all, *srn, base, ecs, num_ec, srn->priv->valid_labels, -1, ystar, ystar_is_uint32t, false);
           srn->priv->t++;
           //valid_labels.costs.erase(); valid_labels.costs.delete_v();
-        } else if (srn->priv->rollout_method == 0) { // rollout by policy
+        } else if (srn->priv->rollout_method == 2) { // rollout by mixing per state
           //if ((!srn->priv->do_fastforward) || (!srn->priv->snapshot_could_match) || (srn->priv->snapshot_is_equivalent_to_t == ((size_t)-1))) { // we haven't converged, continue predicting
-            int pol = choose_policy(*srn, srn->priv->allow_current_policy, true);
+            int pol = choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, true, learner_id);
             get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
             this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, true);
             cdbg << "predict @" << srn->priv->t << " pol=" << pol << " a=" << this_a << endl;
@@ -922,7 +945,19 @@ namespace Searn
           //   cdbg << "restoring previous prediction @ " << (srn->priv->t-1) << " = " << srn->priv->train_action_ids[srn->priv->t-1] << endl;
           //   this_a = srn->priv->train_action_ids[srn->priv->t - 1];
           // }
-        } else { // rollout_method == 2 ==> rollout by NONE
+        }  else if (srn->priv->rollout_method == 3) { // rollout by mixing per rollout
+            get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
+	    this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, srn->priv->rollout_policy, ystar, ystar_is_uint32t, true);
+            srn->priv->t++;
+        } else if (srn->priv->rollout_method == 0) { // rollout by policy
+            int pol = choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, false, learner_id);
+            get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
+            this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, true);
+            cdbg << "predict @" << srn->priv->t << " pol=" << pol << " a=" << this_a << endl;
+            srn->priv->t++;
+        }
+	
+	else { // rollout_method == 4 ==> rollout by NONE
           // TODO: implement me
           throw exception();
         }
@@ -938,7 +973,7 @@ namespace Searn
         bool allow_current = (! srn->priv->beam_is_training) || srn->priv->allow_current_policy;
         int pol = -1;
         if (!srn->priv->trajectory_oracle)
-          pol = choose_policy(*srn, allow_current, allow_optimal);
+          pol = choose_policy(*srn, srn->priv->beta, allow_current, allow_optimal, learner_id);
         cdbg << "BEAM_INIT: pol = " << pol << ", beta = " << srn->priv->beta << endl;
         size_t num_actions = get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
         single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, false, true);
@@ -973,7 +1008,7 @@ namespace Searn
         bool allow_optimal = srn->priv->beam_is_training;
         int pol = -1;
         if (!srn->priv->trajectory_oracle)
-          pol = choose_policy(*srn, allow_current, allow_optimal);
+          pol = choose_policy(*srn, srn->priv->beta, allow_current, allow_optimal, learner_id);
         cdbg << "BEAM_ADVANCE: pol = " << pol << ", beta = " << srn->priv->beta << endl;
         size_t num_actions = get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
         single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, false, true);
@@ -1261,7 +1296,7 @@ namespace Searn
   }
 
 
-  uint32_t searn_predict(searn_private* priv, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
+  uint32_t searn_predict(searn_private* priv, example* ecs, size_t num_ec, v_array<uint32_t> *yallowed, v_array<uint32_t> *ystar, bool ystar_is_uint32t, size_t learner_id)  // num_ec == 0 means normal example, >0 means ldf, yallowed==NULL means all allowed, ystar==NULL means don't know; ystar_is_uint32t means that the ystar ref is really just a uint32_t
   {
     vw* all = priv->all;
     learner* base = priv->base_learner;
@@ -1277,9 +1312,9 @@ namespace Searn
 
     //if (!found_ss) a = (uint32_t)-1;
     if (srn->priv->rollout_all_actions)
-      a = searn_predict_without_loss<COST_SENSITIVE::label>(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
+      a = searn_predict_without_loss<COST_SENSITIVE::label>(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t, learner_id);
     else
-      a = searn_predict_without_loss<CB::label            >(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t);
+      a = searn_predict_without_loss<CB::label            >(*all, *base, ecs, num_ec, yallowed, ystar, ystar_is_uint32t, learner_id);
 
     //set_most_recent_snapshot_action(priv, a);
     priv->snapshotted_since_predict = false;
@@ -1402,7 +1437,7 @@ namespace Searn
               if (srn.priv->hinfo.length>0) {cdbg << "add_history_to_example: srn.priv->learn_t=" << srn.priv->learn_t << " h=" << srn.priv->rollout_action.begin[srn.priv->learn_t] << endl;}
               if (srn.priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.priv->learn_t+1; i++) cdbg << " " << srn.priv->rollout_action.begin[i]; cdbg << " ], len=" << srn.priv->rollout_action.size() << endl;}
       ec[0].in_use = true;
-      base.learn(ec[0], srn.priv->current_policy);
+      base.learn(ec[0], srn.priv->current_policy*srn.priv->num_learners + srn.priv->learn_learner_id);
       if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ec);
       ec[0].ld = old_label;
       srn.priv->total_examples_generated++;
@@ -1421,7 +1456,7 @@ namespace Searn
           add_history_to_example(all, srn.priv->hinfo, &ec[a], srn.priv->rollout_action.begin+srn.priv->learn_t, a * history_constant);
         //((COST_SENSITIVE::label*)ec[a].ld)->costs[0].class_index);
         ec[a].in_use = true;
-        base.learn(ec[a], srn.priv->current_policy);
+        base.learn(ec[a], srn.priv->current_policy*srn.priv->num_learners + srn.priv->learn_learner_id);
       }
       cdbg << "learn: generate empty example" << endl;
       base.learn(*srn.priv->empty_example);
@@ -2394,8 +2429,10 @@ void print_update(vw& all, searn& srn)
 
     srn.priv->beta = 0.5;
     srn.priv->alpha = 1e-10f;
+    srn.priv->gamma = 0.5;
+    srn.priv->exp_perturbation = 0;
     srn.priv->allow_current_policy = false;
-    srn.priv->rollout_method = 0;
+    srn.priv->rollout_method = 3;
     srn.priv->trajectory_oracle = false;
     srn.priv->adaptive_beta = false;
     srn.priv->num_features = 0;
@@ -2665,10 +2702,12 @@ void print_update(vw& all, searn& srn)
     searn_opts.add_options()
         ("search_task",              po::value<string>(), "the search task")
         ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
-        ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [*policy|oracle|none]")
+        ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_rollout|none]")
         ("search_trajectory",        po::value<string>(), "how should past trajectories be generated? [*policy|oracle]")
 
         ("search_passes_per_policy", po::value<size_t>(), "number of passes per policy (only valid for search_interpolation=policy)     [def=1]")
+	("search_exp_perturbation",  po::value<float>(),  "interpolation rate for policies in rollout (only valid for search_rollout=mix_per_state|mix_per_rollout) [def=0.5]")
+        ("search_gamma",             po::value<float>(),  "interpolation rate for policies in rollout (only valid for search_rollout=mix_per_state|mix_per_rollout) [def=0.5]")
         ("search_beta",              po::value<float>(),  "interpolation rate for policies (only valid for search_interpolation=policy) [def=0.5]")
 
         ("search_alpha",             po::value<float>(),  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
@@ -2708,6 +2747,9 @@ void print_update(vw& all, searn& srn)
     if (vm.count("search_beta"))                    srn->priv->beta                 = vm["search_beta"             ].as<float>();
 
     if (vm.count("search_alpha"))                   srn->priv->alpha                = vm["search_alpha"            ].as<float>();
+    if (vm.count("search_beta"))                    srn->priv->beta                 = vm["search_beta"             ].as<float>();
+    if (vm.count("search_beta"))                    srn->priv->beta                 = vm["search_beta"             ].as<float>();
+    if (vm.count("search_exp_perturbation"))        srn->priv->exp_perturbation     = vm["search_exp_perturbation" ].as<float>();
 
     if (vm.count("search_subsample_time"))          srn->priv->subsample_timesteps  = vm["search_subsample_time"].as<float>();
 
@@ -2737,10 +2779,16 @@ void print_update(vw& all, searn& srn)
       srn->priv->rollout_method = 0;
     } else if (rollout_string.compare("oracle") == 0) {
       srn->priv->rollout_method = 1;
-    } else if (rollout_string.compare("none") == 0) {
+    } else if (rollout_string.compare("mix_per_state") == 0) {
       srn->priv->rollout_method = 2;
-    } else {
-      cerr << "error: --search_rollout must be 'policy', 'oracle' or 'none'" << endl;
+    } else if (rollout_string.compare("mix_per_rollout") == 0) {
+      srn->priv->rollout_method = 3;
+    }
+    else if (rollout_string.compare("none") == 0) {
+      srn->priv->rollout_method = 4;
+    }
+    else {
+      cerr << "error: --search_rollout must be 'policy', 'oracle', 'mix_per_state', 'mix_per_rollout' or 'none'" << endl;
       throw exception();
     }
 
@@ -2789,6 +2837,8 @@ void print_update(vw& all, searn& srn)
 
     ensure_param(srn->priv->beta , 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
     ensure_param(srn->priv->alpha, 0.0, 1.0, 1e-10f, "warning: search_alpha must be in (0,1); resetting to 1e-10");
+    ensure_param(srn->priv->gamma , 0.0, 1.0, 0.5, "warning: search_gamma must be in (0,1); resetting to 0.5");
+    ensure_param(srn->priv->exp_perturbation , 0.0, 1.0, 0.5, "warning: search_exp_perturbation must be in (0,1); resetting to 0.5");
 
     //compute total number of policies we will have at end of training
     // we add current_policy for cases where we start from an initial set of policies loaded through -i option
@@ -2880,24 +2930,24 @@ void print_update(vw& all, searn& srn)
 
 
   // the interface:
-  uint32_t searn::predictLDF(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for LDF
-  { return searn_predict(this->priv, ecs, ec_len, yallowed, ystar, false); }
+  uint32_t searn::predictLDF(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed, size_t learner_id) // for LDF
+  { return searn_predict(this->priv, ecs, ec_len, yallowed, ystar, false, learner_id); }
 
-  uint32_t searn::predictLDF(example* ecs, size_t ec_len, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for LDF
+  uint32_t searn::predictLDF(example* ecs, size_t ec_len, uint32_t one_ystar, v_array<uint32_t>* yallowed, size_t learner_id) // for LDF
   { if (one_ystar == (uint32_t)-1) // test example
-      return searn_predict(this->priv, ecs, ec_len, yallowed, NULL, false);
+      return searn_predict(this->priv, ecs, ec_len, yallowed, NULL, false, learner_id);
     else
-      return searn_predict(this->priv, ecs, ec_len, yallowed, (v_array<uint32_t>*)&one_ystar, true);
+      return searn_predict(this->priv, ecs, ec_len, yallowed, (v_array<uint32_t>*)&one_ystar, true, learner_id);
   }
 
-  uint32_t searn::predict(example* ec, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed) // for not LDF
-  { return searn_predict(this->priv, ec, 0, yallowed, ystar, false); }
+  uint32_t searn::predict(example* ec, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed, size_t learner_id) // for not LDF
+  { return searn_predict(this->priv, ec, 0, yallowed, ystar, false, learner_id); }
 
-  uint32_t searn::predict(example* ec, uint32_t one_ystar, v_array<uint32_t>* yallowed) // for not LDF
+  uint32_t searn::predict(example* ec, uint32_t one_ystar, v_array<uint32_t>* yallowed, size_t learner_id) // for not LDF
   { if (one_ystar == (uint32_t)-1) // test example
-      return searn_predict(this->priv, ec, 0, yallowed, NULL, false);
+      return searn_predict(this->priv, ec, 0, yallowed, NULL, false, learner_id);
     else
-      return searn_predict(this->priv, ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar, true);
+      return searn_predict(this->priv, ec, 0, yallowed, (v_array<uint32_t>*)&one_ystar, true, learner_id);
   }
 
   void     searn::loss(float incr_loss, size_t predictions_since_last)
@@ -2912,6 +2962,10 @@ void print_update(vw& all, searn& srn)
 
   void  searn::set_options(uint32_t opts) {
     searn_set_options(this->priv, opts);
+  }
+
+  void searn::set_num_learners(size_t num_learners) {
+    this->priv->num_learners = num_learners;
   }
 }
 
