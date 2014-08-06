@@ -17,6 +17,7 @@ case $( uname -s ) in
  Linux)
   AC_PATH=/usr/share
   BOOST_DIR_ARG='--with-boost-libdir=/usr/lib/x86_64-linux-gnu'
+  alias vwlibtool=libtoolize
   ;;
  *)
   alias vwlibtool=libtoolize
@@ -24,4 +25,4 @@ case $( uname -s ) in
   ;;
 esac
 
-vwlibtool -f -c && aclocal -I ./acinclude.d -I $AC_PATH/aclocal && autoheader && touch README && automake -ac -Woverride && autoconf && ./configure "$@" CXX=$CXX
+vwlibtool -f -c && aclocal -I ./acinclude.d -I $AC_PATH/aclocal && autoheader && touch README && automake -ac -Woverride && autoconf && ./configure "$@" $BOOST_DIR_ARG CXX=$CXX
