@@ -19,6 +19,7 @@ class SequenceLabeler(pyvw.SearchTask):
 
     def _run(self, sentence):   # it's called _run to remind you that you shouldn't call it directly!
         output = []
+        print help(self.srn.predict)
         for tag,word in sentence:
             # use "with...as..." to guarantee that the example is finished properly
             with self.vw.example({'w': [word]}) as ex:

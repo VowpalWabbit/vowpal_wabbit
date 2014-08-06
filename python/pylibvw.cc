@@ -179,9 +179,83 @@ double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples; }
 bool searn_should_output(searn_ptr srn) { return srn->output().good(); }
 void searn_output(searn_ptr srn, string s) { srn->output() << s; }
 
-uint32_t searn_predict1(searn_ptr srn, example* ec, uint32_t one_ystar) {
-  return srn->predict(ec, one_ystar);
+uint32_t searn_predict_one_all(searn_ptr srn, example_ptr ec, uint32_t one_ystar) {
+  return srn->predict(ec.get(), one_ystar, NULL);
 }
+
+uint32_t searn_predict_one_some(searn_ptr srn, example_ptr ec, uint32_t one_ystar, vector<uint32_t>& yallowed) {
+  v_array<uint32_t> yallowed_va;
+  yallowed_va.begin       = yallowed.data();
+  yallowed_va.end         = yallowed_va.begin + yallowed.size();
+  yallowed_va.end_array   = yallowed_va.end;
+  yallowed_va.erase_count = 0;
+  return srn->predict(ec.get(), one_ystar, &yallowed_va);
+}
+
+uint32_t searn_predict_many_all(searn_ptr srn, example_ptr ec, vector<uint32_t>& ystar) {
+  v_array<uint32_t> ystar_va;
+  ystar_va.begin       = ystar.data();
+  ystar_va.end         = ystar_va.begin + ystar.size();
+  ystar_va.end_array   = ystar_va.end;
+  ystar_va.erase_count = 0;
+  return srn->predict(ec.get(), &ystar_va, NULL);
+}
+
+uint32_t searn_predict_many_some(searn_ptr srn, example_ptr ec, vector<uint32_t>& ystar, vector<uint32_t>& yallowed) {
+  v_array<uint32_t> ystar_va;
+  ystar_va.begin       = ystar.data();
+  ystar_va.end         = ystar_va.begin + ystar.size();
+  ystar_va.end_array   = ystar_va.end;
+  ystar_va.erase_count = 0;
+  v_array<uint32_t> yallowed_va;
+  yallowed_va.begin       = yallowed.data();
+  yallowed_va.end         = yallowed_va.begin + yallowed.size();
+  yallowed_va.end_array   = yallowed_va.end;
+  yallowed_va.erase_count = 0;
+  return srn->predict(ec.get(), &ystar_va, &yallowed_va);
+}
+
+/* IN ORDER TO DO THIS, WE NEED TO MAKE LDF BACK TO example** :(
+uint32_t searn_predictLDF_one_all(searn_ptr srn, vector<example*> ecs, uint32_t one_ystar) {
+  return srn->predictLDF(ecs.data(), ecs.size(), one_ystar, NULL);
+}
+
+uint32_t searn_predictLDF_one_some(searn_ptr srn, example_ptr ec, size_t ec_len, uint32_t one_ystar, vector<uint32_t>& yallowed) {
+  v_array<uint32_t> yallowed_va;
+  yallowed_va.begin       = yallowed.data();
+  yallowed_va.end         = yallowed_va.begin + yallowed.size();
+  yallowed_va.end_array   = yallowed_va.end;
+  yallowed_va.erase_count = 0;
+  return srn->predictLDF(ec.get(), one_ystar, &yallowed_va);
+}
+
+uint32_t searn_predictLDF_many_all(searn_ptr srn, example_ptr ec, size_t ec_len, vector<uint32_t>& ystar) {
+  v_array<uint32_t> ystar_va;
+  ystar_va.begin       = ystar.data();
+  ystar_va.end         = ystar_va.begin + ystar.size();
+  ystar_va.end_array   = ystar_va.end;
+  ystar_va.erase_count = 0;
+  return srn->predictLDF(ec.get(), &ystar_va, NULL);
+}
+
+uint32_t searn_predictLDF_many_some(searn_ptr srn, example_ptr ec, size_t ec_len, vector<uint32_t>& ystar, vector<uint32_t>& yallowed) {
+  v_array<uint32_t> ystar_va;
+  ystar_va.begin       = ystar.data();
+  ystar_va.end         = ystar_va.begin + ystar.size();
+  ystar_va.end_array   = ystar_va.end;
+  ystar_va.erase_count = 0;
+  v_array<uint32_t> yallowed_va;
+  yallowed_va.begin       = yallowed.data();
+  yallowed_va.end         = yallowed_va.begin + yallowed.size();
+  yallowed_va.end_array   = yallowed_va.end;
+  yallowed_va.erase_count = 0;
+  return srn->predictLDF(ec.get(), &ystar_va, &yallowed_va);
+}
+*/
+
+
+
+
 
 void verify_searn_set_properly(searn_ptr srn) {
   if ((srn->task == NULL) || (srn->task->task_name == NULL)) {
@@ -285,15 +359,15 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
-      .def("get_searn_ptr", &get_searn_ptr, "TODO")
+      .def("get_searn_ptr", &get_searn_ptr, "return a pointer to the searn data structure")
       ;
 
   // define the example class
   py::class_<example, example_ptr>("example", py::no_init)
-      .def("__init__", py::make_constructor(my_read_example), "TODO")
-      .def("__init__", py::make_constructor(my_empty_example), "TODO")
+      .def("__init__", py::make_constructor(my_read_example), "Given a string as an argument parse that into a VW example (and run setup on it)")
+      .def("__init__", py::make_constructor(my_empty_example), "Construct an empty (non setup) example")
 
-      .def("set_test_only", &my_set_test_only, "TODO")
+      .def("set_test_only", &my_set_test_only, "Change the test-only bit on an example")
 
       .def("get_tag", &my_get_tag, "Returns the tag associated with this example")
       .def("get_topic_prediction", &VW::get_topic_prediction, "For LDA models, returns the topic prediction for the topic id given")
@@ -355,24 +429,27 @@ BOOST_PYTHON_MODULE(pylibvw) {
       ;
 
   py::class_<Searn::searn, searn_ptr>("searn")
-      .def("set_options", &Searn::searn::set_options, "TODO")
-      .def("loss", &Searn::searn::loss, "TODO")
-      .def("predict", &searn_predict1, "TODO")
-      //      .def("predict", &Searn::searn::predict, searn_predict_overloads())
-      //      .def("predictLDF", searn_predictLDF_overloads, "TODO")
-      .def("should_output", &searn_should_output, "TODO")
-      .def("output", &searn_output, "TODO")
-      .def("get_num_actions", &searn_get_num_actions, "TODO")
-      .def("set_structured_predict_hook", &set_structured_predict_hook, "TODO")
+      .def("set_options", &Searn::searn::set_options, "Set global searn options (auto history, etc.)")
+      .def("loss", &Searn::searn::loss, "Declare a (possibly incremental) loss")
+      .def("predict_one_all", &searn_predict_one_all, "Predict with one true label and all labels valid (non-LDF)")
+      .def("predict_many_all", &searn_predict_many_all, "Predict with several true labels and all labels valid (non-LDF)")
+      .def("predict_one_some", &searn_predict_one_some, "Predict with one true label and only some labels valid (non-LDF)")
+      .def("predict_many_some", &searn_predict_many_some, "Predict with several true labels and only some labels valid (non-LDF)")
 
-      .def("po_exists", &po_exists, "TODO")
-      .def("po_get", &po_get, "TODO")
-      .def("po_get_str", &po_get_string, "TODO")
-      .def("po_get_int", &po_get_int, "TODO")
+      .def("should_output", &searn_should_output, "Check whether searn wants us to output (only happens if you have -p running)")
+      .def("output", &searn_output, "Add a string to the coutput (should only do if should_output returns True)")
+      .def("get_num_actions", &searn_get_num_actions, "Return the total number of actions searn was initialized with")
+      .def("set_structured_predict_hook", &set_structured_predict_hook, "Set the hook (function pointer) that searn should use for structured prediction (you don't want to call this yourself!")
+
+      .def("po_exists", &po_exists, "For program (cmd line) options, check to see if a given option was specified; eg srn.po_exists(\"search\") should be True")
+      .def("po_get", &po_get, "For program (cmd line) options, if an option was specified, get its value; eg srn.po_get(\"search\") should return the # of actions (returns either int or string)")
+      .def("po_get_str", &po_get_string, "Same as po_get, but specialized for string return values.")
+      .def("po_get_int", &po_get_int, "Same as po_get, but specialized for integer return values.")
       
-      .def_readonly("AUTO_HISTORY", Searn::AUTO_HISTORY, "TODO")
-      .def_readonly("AUTO_HAMMING_LOSS", Searn::AUTO_HAMMING_LOSS, "TODO")
-      .def_readonly("EXAMPLES_DONT_CHANGE", Searn::EXAMPLES_DONT_CHANGE, "TODO")
-      .def_readonly("IS_LDF", Searn::IS_LDF, "TODO")
+      .def_readonly("AUTO_HISTORY", Searn::AUTO_HISTORY, "Tell search to automatically add history to the feature set")
+      .def_readonly("AUTO_HAMMING_LOSS", Searn::AUTO_HAMMING_LOSS, "Tell search to automatically compute hamming loss over predictions")
+      .def_readonly("EXAMPLES_DONT_CHANGE", Searn::EXAMPLES_DONT_CHANGE, "Tell search that on a single structured 'run', you don't change the examples you pass to predict")
+      .def_readonly("IS_LDF", Searn::IS_LDF, "Tell search that this is an LDF task")
       ;
 }
+

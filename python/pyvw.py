@@ -22,7 +22,6 @@ class SearchTask():
         self.vw.learn(self.bogus_example)
         self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
         
-
     def learn(self, data_iterator):
         for my_example in data_iterator():
             self._call_vw(lambda: self._run(my_example), isTest=False)
@@ -75,7 +74,43 @@ class vw(pylibvw.vw):
         self.finish()
 
     def init_search_task(self, search_task):
-        srn = self.get_searn_ptr() 
+        srn = self.get_searn_ptr()
+
+        def predict(examples, truth, allowed=None):
+            """The basic (via-reduction) prediction mechanism. Several
+            variants are supported through this overloaded function:
+            
+              a) 'examples' can be a single example (interpreted as non-LDF
+                 mode) or a list of examples (interpreted as LDF mode)
+                 
+              b) 'truth' can be a single label (or in LDF mode a single
+                 array index in 'examples') or a list of such labels if
+                 the oracle policy is indecisive
+
+              c) 'allowed' can be None, in which case all actions are allowed;
+                 or it can be list of valid actions (in LDF mode, this should
+                 be None and you should encode the valid actions in 'examples')
+
+            Returns a single prediction.
+            """
+            if isinstance(examples, list):
+                raise Exception("LDF not yet supported in Python interface :(")
+            elif isinstance(examples, example) or isinstance(examples, pylibvw.example):
+                # we're going to use searn_predict_???
+                if   isinstance(truth, int) and allowed is None:
+                    return srn.predict_one_all(examples, truth)
+                elif isinstance(truth, int) and isinstance(allowed, list):
+                    return srn.predict_one_some(examples, truth, allowed)
+                elif isinstance(truth, list) and allowed is None:
+                    return srn.predict_many_all(examples, truth)
+                elif isinstance(truth, list) and isinstance(allowed, list):
+                    return srn.predict_many_some(examples, truth, allowed)
+                else:
+                    raise TypeError
+            else:
+                raise TypeError
+
+        srn.predict = predict
         num_actions = srn.get_num_actions()
         return search_task(self, srn, num_actions)        
 
@@ -136,7 +171,24 @@ class example_namespace():
         for i in range(self.num_features_in()):
             yield self[i]
 
-    # TODO: def push_feature(self, feature, 
+    def push_feature(self, feature, v=1.):
+        """Add an unhashed feature to the current namespace (fails if
+        setup has already run on this example)."""
+        self.ex.push_feature(self.ns, feature, v)  # TODO: save ns_hash
+
+    def pop_feature(self):
+        """Remove the top feature from the current namespace; returns True
+        if a feature was removed, returns False if there were no
+        features to pop. Fails if setup has run."""
+        return self.ex.pop_feature(self.ns)
+
+    def push_features(self, ns, featureList):
+        """Push a list of features to a given namespace. Each feature
+        in the list can either be an integer (already hashed) or a
+        string (to be hashed) and may be paired with a value or not
+        (if not, the value is assumed to be 1.0). See example.push_features
+        for examples."""
+        self.ex.push_features(self.ns, featureList)
 
 class abstract_label:
     """An abstract class for a VW label."""
@@ -366,8 +418,7 @@ class example(pylibvw.example):
 
     def push_feature(self, ns, feature, v=1., ns_hash=None):
         """Add an unhashed feature to a given namespace (fails if
-        setup has already run on this example). Fails if setup has
-        run."""
+        setup has already run on this example)."""
         f = self.get_feature_id(ns, feature, ns_hash)
         self.push_hashed_feature(ns, f, v)
 
