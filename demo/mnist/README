@@ -11,7 +11,7 @@ the original mnist training set augmented with deformations.
       this will download the mnist training and test sets
       train a neural network model on mnist from raw pixels
       evaluate on the original mnist test set and report a confusion matrix
-      results in test errors: 216 out of 10000
+      results in test errors: 203 out of 10000
         disk requirements: about 10 megabytes
         training time requirements: about 5 minutes on 1 core
         memory requirements: less than 256 megabytes
