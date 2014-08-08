@@ -11,20 +11,27 @@
 PYTHON_VERSION = 2.7
 PYTHON_INCLUDE = /usr/include/python$(PYTHON_VERSION)
 
-PYTHON_LIBS = 
+PYTHON_LIBS = -l boost_python
 VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
-STDLIBS = $(BOOST_LIBRARY) $(LIBS) $(PYTHONLIBS)
+PYLIBVW = pylibvw.so
 
 all:
 	cd ..; $(MAKE) python
 
-things: pylibvw.so
+things: $(PYLIBVW)
 
-pylibvw.so: pylibvw.o  ../vowpalwabbit/libvw.a
-	$(CXX) -shared -Wl,--export-dynamic pylibvw.o $(BOOST_LIBRARY) -lboost_python -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION) $(VWLIBS) $(STDLIBS) -o pylibvw.so
+ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
+  PYTHON_LIBS = -l boost_python-mt
+  PYLIBVW = pylibvw.dll
+endif
+
+STDLIBS = $(BOOST_LIBRARY) $(LIBS) $(PYTHON_LIBS)
+
+$(PYLIBVW): pylibvw.o  ../vowpalwabbit/libvw.a
+	$(CXX) -shared -Wl,--export-dynamic pylibvw.o $(BOOST_LIBRARY) -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
  
 pylibvw.o: pylibvw.cc
 	$(CXX) -I$(PYTHON_INCLUDE) $(BOOST_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
 
 clean:
-	rm -f *.o *.so
+	rm -f *.o $(PYLIBVW)

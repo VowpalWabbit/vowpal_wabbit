@@ -56,7 +56,7 @@ namespace StagewisePoly
     example *original_ec;
     uint32_t cur_depth;
     bool training;
-    int64_t last_example_counter;
+    uint64_t last_example_counter;
     size_t numpasses;
     uint32_t next_batch_sz;
     bool update_support;

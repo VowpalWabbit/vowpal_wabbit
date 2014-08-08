@@ -17,5 +17,5 @@ paste -d' '                                                             \
   <(gunzip -dc train8m-images-idx3-ubyte.gz | ./extractfeatures) |      \
 time ../../vowpalwabbit/vw --oaa 10 -f mnist8m.model                    \
    --loss_function logistic                                             \
-   -b 24 --adaptive --invariant                                         \
+   -b 24 --adaptive --invariant --holdout_off                           \
    -l 1 --nn 49

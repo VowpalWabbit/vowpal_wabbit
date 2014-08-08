@@ -1380,6 +1380,7 @@ namespace Searn
     return (all.sd->weighted_examples >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
+  
   bool might_print_update(vw& all)
   {
     // basically do should_print_update but check me and the next

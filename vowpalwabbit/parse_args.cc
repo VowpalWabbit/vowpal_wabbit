@@ -65,7 +65,6 @@ bool valid_ns(char c)
     return true;
 }
 
-
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
   char* cstr = (char*)calloc_or_die(str.length()+1, sizeof(char));

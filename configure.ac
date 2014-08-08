@@ -28,6 +28,7 @@ ZLIB_LDFLAGS="-L${ZLIB_HOME}/lib -lz"
 AC_SUBST(ZLIB_CPPFLAGS)
 AC_SUBST(ZLIB_LDFLAGS)
 
+PTHREAD_LIBS=-lpthread
 AX_PTHREAD([], [
   AC_MSG_ERROR([Could not find posix thread library.])
 ])
