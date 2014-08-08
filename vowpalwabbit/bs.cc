@@ -60,12 +60,10 @@ namespace BS {
     label_data& ld = *(label_data*)ec.ld;
     if(counter == 0)//no majority exists
       ld.prediction = 1;
-    //will output majority if it exists
-    ld.prediction = current_label;
-    if (ld.prediction == ld.label)
-      ec.loss = 0.;
-    else
-      ec.loss = 1.;
+    else //will output majority if it exists
+      ld.prediction = current_label;
+
+    ec.loss = (ld.prediction == ld.label) ? 0. : 1.;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
