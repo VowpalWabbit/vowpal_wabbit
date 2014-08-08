@@ -62,10 +62,7 @@ namespace BS {
       ld.prediction = 1;
     //will output majority if it exists
     ld.prediction = current_label;
-    if (ld.prediction == ld.label)
-      ec.loss = 0.;
-    else
-      ec.loss = 1.;
+    ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label);
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
