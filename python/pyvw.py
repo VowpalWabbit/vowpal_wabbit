@@ -147,13 +147,14 @@ class example_namespace():
     indexing like ex['x'][0] to get the 0th feature in namespace 'x'
     in example ex."""
     
-    def __init__(self, ex, ns):
+    def __init__(self, ex, ns, ns_hash=None):
         """Construct an example_namespace given an example and a
         target namespace (ns should be a namespace_id)"""
         if not isinstance(ns, namespace_id):
             raise TypeError
         self.ex = ex
         self.ns = ns
+        self.ns_hash = None
 
     def num_features_in(self):
         """Return the total number of features in this namespace."""
@@ -174,7 +175,9 @@ class example_namespace():
     def push_feature(self, feature, v=1.):
         """Add an unhashed feature to the current namespace (fails if
         setup has already run on this example)."""
-        self.ex.push_feature(self.ns, feature, v)  # TODO: save ns_hash
+        if self.ns_hash is None:
+            self.ns_hash = self.ex.vw.hash_space( self.ns )
+        self.ex.push_feature(self.ns, feature, v, self.ns_hash)
 
     def pop_feature(self):
         """Remove the top feature from the current namespace; returns True
