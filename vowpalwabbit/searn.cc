@@ -172,7 +172,7 @@ namespace Searn
     //bool   rollout_oracle; //if true then rollout are performed using oracle instead (optimal approximation discussed in searn's paper). this should be set to true for dagger
     bool   adaptive_beta; //used to implement dagger through searn. if true, beta = 1-(1-alpha)^n after n updates, and policy is mixed with oracle as \pi' = (1-beta)\pi^* + beta \pi
     bool   rollout_all_actions;   // by default we rollout all actions. This is set to false when searn is used with a contextual bandit base learner, where we rollout only one sampled action
-    size_t rollout_policy; // rollout policy (only valid when rollout method is mix per rollout)
+    int rollout_policy; // rollout policy (only valid when rollout method is mix per rollout)
     uint32_t current_policy;      // what policy are we training right now?
     //float exploration_temperature; // if <0, always choose policy action; if T>=0, choose according to e^{-prediction / T} -- done to avoid overfitting
     size_t beam_size;
@@ -434,14 +434,17 @@ namespace Searn
     ec->indices.decr();
   }
 
-  int choose_policy(searn& srn, float interpolate_coef, bool allow_current, bool allow_optimal, size_t learner_id)
+  int choose_policy(searn& srn, float interpolate_coef, bool allow_current, bool allow_optimal)
   {
     uint32_t seed = (uint32_t) srn.priv->read_example_last_id * 2147483 + (uint32_t)(srn.priv->t * 2147483647);
-    int policy = random_policy(seed, interpolate_coef, allow_current, srn.priv->current_policy, allow_optimal, false); // srn.priv->rollout_all_actions);
-	if(policy<0)
-		return policy;
-	else
-		return srn.priv->num_learners+learner_id;
+    return random_policy(seed, interpolate_coef, allow_current, srn.priv->current_policy, allow_optimal, false); // srn.priv->rollout_all_actions);
+  }
+
+  int select_learner(searn &srn, int policy, size_t learner_id){
+   if(policy<0)
+      return policy;
+    else
+      return policy*srn.priv->num_learners+learner_id;
   }
 
   size_t get_all_labels(void*dst, searn& srn, size_t num_ec, v_array<uint32_t> *yallowed)
@@ -686,7 +689,7 @@ namespace Searn
       priv->snapshot_map->put_after_get(sip, sip.hash_value, me);
       cdbg << "adding snapshot, new size = " << priv->snapshot_data.size() << endl;
     } else {
-      clog << "found: action=" << res.action << "  loss=" << res.loss << "  otp=" << res.on_training_path << endl;
+      cdbg << "found: action=" << res.action << "  loss=" << res.loss << "  otp=" << res.on_training_path << endl;
       assert(false);
     }
   }
@@ -850,7 +853,7 @@ namespace Searn
     }
 
     if (srn->priv->state == INIT_TEST) {
-      int pol = choose_policy(*srn, srn->priv->beta, true, false, learner_id);
+      int pol = select_learner(*srn, choose_policy(*srn, srn->priv->beta, true, false), learner_id);
       //cerr << "(" << pol << ")";
       get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, false);
@@ -869,7 +872,7 @@ namespace Searn
     } else if (srn->priv->state == INIT_TRAIN) {
       int pol = -1; // oracle
       if (!srn->priv->trajectory_oracle)
-        pol = choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, true, learner_id);
+        pol = select_learner(*srn, choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, true), learner_id);
       cdbg << "{" << pol << "," << srn->priv->trajectory_oracle << "}";
       get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
       uint32_t a = single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, true);
@@ -915,7 +918,7 @@ namespace Searn
         uint32_t a_name = (! srn->priv->is_ldf) ? srn->priv->learn_a : ((COST_SENSITIVE::label*)ecs[srn->priv->learn_a].ld)->costs[0].class_index;
         if (srn->priv->auto_history) srn->priv->rollout_action.push_back(a_name);
 	if (srn->priv->rollout_method == 3) { // rollout by mixing per rollout
-            srn->priv->rollout_policy = choose_policy(*srn, srn->priv->gamma, srn->priv->allow_current_policy, true, learner_id);
+            srn->priv->rollout_policy = choose_policy(*srn, srn->priv->gamma, srn->priv->allow_current_policy, true);
 	}
         return srn->priv->learn_a;
       } else { // t > learn_t
@@ -930,7 +933,7 @@ namespace Searn
           //valid_labels.costs.erase(); valid_labels.costs.delete_v();
         } else if (srn->priv->rollout_method == 2) { // rollout by mixing per state
           //if ((!srn->priv->do_fastforward) || (!srn->priv->snapshot_could_match) || (srn->priv->snapshot_is_equivalent_to_t == ((size_t)-1))) { // we haven't converged, continue predicting
-            int pol = choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, true, learner_id);
+            int pol = select_learner(*srn, choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, true), learner_id);
             get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
             this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, true);
             cdbg << "predict @" << srn->priv->t << " pol=" << pol << " a=" << this_a << endl;
@@ -947,10 +950,10 @@ namespace Searn
           // }
         }  else if (srn->priv->rollout_method == 3) { // rollout by mixing per rollout
             get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
-	    this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, srn->priv->rollout_policy, ystar, ystar_is_uint32t, true);
+	    this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, select_learner(*srn, srn->priv->rollout_policy, learner_id), ystar, ystar_is_uint32t, true);
             srn->priv->t++;
         } else if (srn->priv->rollout_method == 0) { // rollout by policy
-            int pol = choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, false, learner_id);
+            int pol = select_learner(*srn, choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, false), learner_id);
             get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
             this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, true);
             cdbg << "predict @" << srn->priv->t << " pol=" << pol << " a=" << this_a << endl;
@@ -973,7 +976,7 @@ namespace Searn
         bool allow_current = (! srn->priv->beam_is_training) || srn->priv->allow_current_policy;
         int pol = -1;
         if (!srn->priv->trajectory_oracle)
-          pol = choose_policy(*srn, srn->priv->beta, allow_current, allow_optimal, learner_id);
+          pol = select_learner(*srn, choose_policy(*srn, srn->priv->beta, allow_current, allow_optimal), learner_id);
         cdbg << "BEAM_INIT: pol = " << pol << ", beta = " << srn->priv->beta << endl;
         size_t num_actions = get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
         single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, false, true);
@@ -1008,7 +1011,7 @@ namespace Searn
         bool allow_optimal = srn->priv->beam_is_training;
         int pol = -1;
         if (!srn->priv->trajectory_oracle)
-          pol = choose_policy(*srn, srn->priv->beta, allow_current, allow_optimal, learner_id);
+          pol = select_learner(*srn, choose_policy(*srn, srn->priv->beta, allow_current, allow_optimal), learner_id);
         cdbg << "BEAM_ADVANCE: pol = " << pol << ", beta = " << srn->priv->beta << endl;
         size_t num_actions = get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
         single_action<T>(all, *srn, base, ecs, num_ec, (T*)srn->priv->valid_labels, pol, ystar, ystar_is_uint32t, false, true);
@@ -1437,7 +1440,7 @@ namespace Searn
               if (srn.priv->hinfo.length>0) {cdbg << "add_history_to_example: srn.priv->learn_t=" << srn.priv->learn_t << " h=" << srn.priv->rollout_action.begin[srn.priv->learn_t] << endl;}
               if (srn.priv->hinfo.length>0) {cdbg << "  rollout_action = ["; for (size_t i=0; i<srn.priv->learn_t+1; i++) cdbg << " " << srn.priv->rollout_action.begin[i]; cdbg << " ], len=" << srn.priv->rollout_action.size() << endl;}
       ec[0].in_use = true;
-      base.learn(ec[0], srn.priv->current_policy*srn.priv->num_learners + srn.priv->learn_learner_id);
+      base.learn(ec[0], select_learner(srn, srn.priv->current_policy, srn.priv->learn_learner_id));
       if (srn.priv->auto_history) remove_history_from_example(all, srn.priv->hinfo, ec);
       ec[0].ld = old_label;
       srn.priv->total_examples_generated++;
@@ -1456,7 +1459,7 @@ namespace Searn
           add_history_to_example(all, srn.priv->hinfo, &ec[a], srn.priv->rollout_action.begin+srn.priv->learn_t, a * history_constant);
         //((COST_SENSITIVE::label*)ec[a].ld)->costs[0].class_index);
         ec[a].in_use = true;
-        base.learn(ec[a], srn.priv->current_policy*srn.priv->num_learners + srn.priv->learn_learner_id);
+        base.learn(ec[a], select_learner(srn, srn.priv->current_policy, srn.priv->learn_learner_id));
       }
       cdbg << "learn: generate empty example" << endl;
       base.learn(*srn.priv->empty_example);
@@ -2748,7 +2751,7 @@ void print_update(vw& all, searn& srn)
 
     if (vm.count("search_alpha"))                   srn->priv->alpha                = vm["search_alpha"            ].as<float>();
     if (vm.count("search_beta"))                    srn->priv->beta                 = vm["search_beta"             ].as<float>();
-    if (vm.count("search_beta"))                    srn->priv->beta                 = vm["search_beta"             ].as<float>();
+    if (vm.count("search_gamma"))                   srn->priv->gamma                = vm["search_gamma"            ].as<float>();
     if (vm.count("search_exp_perturbation"))        srn->priv->exp_perturbation     = vm["search_exp_perturbation" ].as<float>();
 
     if (vm.count("search_subsample_time"))          srn->priv->subsample_timesteps  = vm["search_subsample_time"].as<float>();

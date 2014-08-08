@@ -10,7 +10,7 @@ license as described in the file LICENSE.
 #include "gd.h"
 #include "ezexample.h"
 
-namespace MulticlassTask         {  Searn::searn_task task = { "multiclass",         initialize, finish, structured_predict };  }
+namespace MulticlassTask         {  Searn::searn_task task = { "multiclasstask",         initialize, finish, structured_predict };  }
 
 namespace MulticlassTask {
   using namespace Searn;
@@ -29,11 +29,18 @@ namespace MulticlassTask {
     size_t tmp = ceil(log(max_label) /log(2))-1;
     size_t label = 0;
     size_t learner_id = 0;
-   
-    while(learner_id*2 < max_label){
-      size_t prediction = srn.predict(ec[0], ((gold_label-1) >>tmp--)%2, NULL, learner_id);
+    v_array<uint32_t> y_allowed;
+    y_allowed.push_back(1);
+    y_allowed.push_back(2);
+    
+    while(learner_id*2 <= max_label){
+      srn.snapshot(learner_id, 1, &learner_id, sizeof(learner_id), true);
+      srn.snapshot(tmp, 2, &tmp, sizeof(tmp), true);
+      srn.snapshot(label, 3, &label, sizeof(label), true);
+      size_t prediction = srn.predict(ec[0], ((gold_label-1) >>tmp)%2+1, &y_allowed, learner_id);
       learner_id= learner_id * 2 + prediction;
       label = label*2 +(prediction -1);
+      tmp--;
     }
     label+=1;
     srn.loss(!(label == gold_label));
