@@ -689,7 +689,7 @@ namespace Searn
       priv->snapshot_map->put_after_get(sip, sip.hash_value, me);
       cdbg << "adding snapshot, new size = " << priv->snapshot_data.size() << endl;
     } else {
-      cdbg << "found: action=" << res.action << "  loss=" << res.loss << "  otp=" << res.on_training_path << endl;
+      clog << "found: action=" << res.action << "  loss=" << res.loss << "  otp=" << res.on_training_path << endl;
       assert(false);
     }
   }
