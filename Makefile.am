@@ -52,6 +52,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/searn.h \
 	vowpalwabbit/searn_sequencetask.h \
 	vowpalwabbit/searn_entityrelationtask.h \
+	vowpalwabbit/searn_multiclasstask.h \
 	vowpalwabbit/sender.h \
 	vowpalwabbit/stagewise_poly.h \
 	vowpalwabbit/topk.h \
