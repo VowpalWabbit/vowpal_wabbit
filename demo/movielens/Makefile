@@ -78,7 +78,7 @@ lrq.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw
 	@echo
 	@${VW} --loss_function quantile -l 0.1 -b 24 --passes 100 	\
 	  -k --cache_file $@.cache -d $(word 2,$+) --holdout_off	\
-	  --l2 1e-6 --lrq um7 --adaptive --invariant -f $@.model
+	  --power_t 0.333 --l2 1.25e-7 --lrq um7 --adaptive --invariant -f $@.model
 	@echo "********************************************************"
 	@echo "* testing low-rank interaction model (without dropout) *"
 	@echo "********************************************************"
