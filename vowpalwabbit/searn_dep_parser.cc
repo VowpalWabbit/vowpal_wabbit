@@ -18,6 +18,9 @@ namespace DepParserTask         {  Searn::searn_task task = { "dep_parser", init
 
   struct task_data {
     size_t num_actions;
+    bool no_quadratic_features;
+    bool no_cubic_features;
+    bool init_feature_template_flag;
   };
 namespace DepParserTask {
   using namespace Searn;
@@ -26,9 +29,21 @@ namespace DepParserTask {
   void initialize(searn& srn, size_t& num_actions, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
     my_task_data->num_actions = num_actions;
+    my_task_data->init_feature_template_flag = false;
     srn.set_options( 0 );
     srn.set_num_learners(1);
     srn.set_task_data<task_data>(my_task_data);
+    po::options_description sspan_opts("dependency parser options");
+    sspan_opts.add_options()
+      ("dparser_no_quad", "Don't use qudaratic features")
+      ("dparser_no_cubic","Don't use cubic features");
+    vm = add_options(*srn.all, sspan_opts);
+	  
+	// setup entity and relation labels
+	// Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc
+	// Relation label 5:R_Live_in 6:R_OrgBased_in 7:R_Located_in 8:R_Work_For 9:R_Kill 10:R_None
+    my_task_data->no_quadratic_features = (vm.count("dparser_no_quad"))?true:false;
+    my_task_data->no_cubic_features =(vm.count("dparser_no_cubic"))?true:false;
   }
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
@@ -63,9 +78,61 @@ namespace DepParserTask {
   	return i;
   }
 
+  void initialize_feature_template(searn& srn, size_t num_base_feature_space, map<string, example*> ec_buf){
+    task_data *data = srn.get_task_data<task_data>();
+    vector<string> newpairs;
+    vector<string> newtriples;
+    if(data->init_feature_template_flag)
+      return;
+    data->init_feature_template_flag = true;
+    map<string, char> fs_idx_map;
+
+    int fs_idx = 1;
+    for(map<string, example*>::iterator p = ec_buf.begin(); p!=ec_buf.end(); p++, fs_idx++)
+      fs_idx_map[p->first] = fs_idx;
+    fs_idx_map["dis"] = fs_idx;
+
+    string quadratic_feature_template = "s1-s2 s1-b1 s1-s1 s2-s2 s3-s3 b1-b1 b2-b3 b3-b3 ENDQ";
+    string cubic_feature_template = "b1-b2-b3 s1-b1-b2 s1-s2-b1 s1-s2-s3 ENDC";
+    size_t pos = 0;
+    
+    // parse quadratic features
+    while ((pos = quadratic_feature_template.find(" ")) != std::string::npos) {
+      string token = quadratic_feature_template.substr(0, pos);
+      char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
+      char second_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
+      for(size_t i=0; i< num_base_feature_space; i++){
+        for(size_t j=0; j< num_base_feature_space; j++){
+          newpairs.push_back(string(1,(char)(first_fs_idx*num_base_feature_space+i))+string(1,(char)(second_fs_idx*num_base_feature_space+j)));
+        }
+      }
+      quadratic_feature_template.erase(0, pos + 1);
+    }
+    srn.all->pairs.swap(newpairs);
+
+    while ((pos = cubic_feature_template.find(" ")) != std::string::npos) {
+      string token = cubic_feature_template.substr(0, pos);
+      char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
+      token.erase(0, first_fs_idx+1);
+      char second_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
+      char third_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
+      for(size_t i=0; i< num_base_feature_space; i++){
+        for(size_t j=0; j< num_base_feature_space; j++){
+          for(size_t k=0; k< num_base_feature_space; k++){
+            newtriples.push_back(string(1,(char)(first_fs_idx*num_base_feature_space+i))+\
+              string(1,(char)(second_fs_idx*num_base_feature_space+j))+\
+              string(1,(char)(third_fs_idx*num_base_feature_space+k)));
+          }
+        }
+      }
+      cubic_feature_template.erase(0, pos + 1);
+    }
+    srn.all->pairs.swap(newpairs);
+    //srn.all->triples.swap(newtriples);
+  }
 
 
-  void extract_features(searn& srn, uint32_t i,  vector<example*> &ec, v_array<uint32_t> & stack, v_array<uint32_t> & heads, ezexample &ex){
+  void extract_features(searn& srn, uint32_t idx,  vector<example*> &ec, v_array<uint32_t> & stack, v_array<uint32_t> & heads, ezexample &ex){
     // be careful: indices in ec starts from 0, but i is starts from 1
     size_t n = ec.size();
     // get examples in stake
@@ -86,23 +153,22 @@ namespace DepParserTask {
     // features based on examples in buffer
     // todo: add features based on leftmost child in buffer
     ec_buf["b3"]=ec_buf["b2"]=ec_buf["b1"]=NULL;
-    if(i+3 <= n)
-      ec_buf["b3"] = ec[i+3-1];
-    if(i+2 <= n)
-      ec_buf["b2"] = ec[i+2-1];
-    if(i+1 <= n)
-      ec_buf["b1"] = ec[i+1-1];
+    if(idx+3 <= n)
+      ec_buf["b3"] = ec[idx+3-1];
+    if(idx+2 <= n)
+      ec_buf["b2"] = ec[idx+2-1];
+    if(idx+1 <= n)
+      ec_buf["b1"] = ec[idx+1-1];
 
     size_t stack_depth = stack.size();
     size_t dis = 0;
     if(!stack.empty())
-      dis = min(5, i - stack.last());
+      dis = min(5, idx - stack.last());
 
-    cdep << "start generate feature";
+    cdep << "start generating features";
     // unigram features
     int fs_idx = 1;
-    for(map<string, example*>::iterator p = ec_buf.begin(); p!=ec_buf.end(); p++){
-      fs_idx++;
+    for(map<string, example*>::iterator p = ec_buf.begin(); p!=ec_buf.end(); p++,fs_idx++){
       cdep << fs_idx;
       if(p->second == NULL)
         continue;
@@ -110,18 +176,22 @@ namespace DepParserTask {
       // add unigram of all feature_template
       // consider mixing/not mixing all feature spaces
       for (unsigned char* i = ec[0]->indices.begin; i != ec[0]->indices.end; i++){
-         cdep << "add ";
          ex(*(p->second),*i, fs_idx_inner)(*(p->second),*i, fs_idx*nfs+fs_idx_inner);
-         cdep << "done"<<endl;
          fs_idx_inner++;
       }
     }
-  }
 
-  void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t i, uint32_t n, uint32_t stack_depth) {
+    //ex(vw_namespace(fs_idx*nfs))
+//      (dis);
+  
+    //bigram features and trigram featuers are automatllcally generated based on feature template
+    initialize_feature_template(srn, nfs, ec_buf);
+  } 
+
+  void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth) {
     valid_action.erase();
     // SHIFT
-    if(i<=n)
+    if(idx<=n)
       valid_action.push_back(1);
 
     // RIGHT
@@ -129,7 +199,7 @@ namespace DepParserTask {
       valid_action.push_back(2);
 
     // LEFT
-    if(stack_depth >=1)
+    if(stack_depth >=1 && idx<=n)
       valid_action.push_back(3);
   }
 
