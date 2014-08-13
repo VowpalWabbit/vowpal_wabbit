@@ -33,6 +33,7 @@ bool isfinite(float x)
 #include "searn_sequencetask.h"
 #include "searn_entityrelationtask.h"
 #include "searn_multiclasstask.h"
+#include "searn_dep_parser.h"
 
 using namespace LEARNER;
 
@@ -49,9 +50,10 @@ namespace Searn
                               &SequenceTask_DemoLDF::task,
                               &SequenceSpanTask::task,
                               &SequenceDoubleTask::task,
-			      &EntityRelationTask::task,
-			      &MulticlassTask::task,
-			      NULL };   // must NULL terminate!
+                              &EntityRelationTask::task,
+                              &MulticlassTask::task,
+                              &DepParserTask::task,
+                              NULL };   // must NULL terminate!
 
   string   neighbor_feature_space("neighbor");
 
@@ -674,7 +676,8 @@ namespace Searn
 
   void set_most_recent_snapshot_action(searn_private* priv, uint32_t action, float loss) {
     if ((priv->state == GET_TRUTH_STRING) ||
-        (priv->state == INIT_TEST))
+        (priv->state == INIT_TEST) ||
+        priv->do_snapshot == false)
       return;
     if (priv->most_recent_snapshot_end == (size_t)-1) return;
     bool on_training_path = priv->state == INIT_TRAIN || priv->state == BEAM_INIT;
@@ -723,9 +726,9 @@ namespace Searn
       }
     } else { // no snapshot found
       if (pol == -1) { // optimal policy
-	float r = frand48();
-	if(r>=srn.priv->exp_perturbation) {
-	  if (ystar_is_uint32t)
+	      float r = frand48();
+	      if(r>=srn.priv->exp_perturbation) {
+  	      if (ystar_is_uint32t)
             action = *((uint32_t*)ystar);
           else if ((ystar == NULL) || (ystar->size() == 0)) { // TODO: choose according to current model!
             if (srn.priv->rollout_all_actions)
@@ -734,13 +737,12 @@ namespace Searn
               action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
           } else 
             action = choose_random<uint32_t>(*ystar); // TODO: choose according to current model!
-	} else {
-            if (srn.priv->rollout_all_actions)
-              action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).class_index;
-            else
-              action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
-	}
-        
+  	    } else {
+        if (srn.priv->rollout_all_actions)
+          action = choose_random<COST_SENSITIVE::wclass>(((COST_SENSITIVE::label*)valid_labels)->costs).class_index;
+        else
+          action = choose_random<CB::cb_class >(((CB::label   *)valid_labels)->costs).action;
+        }
         if (set_valid_labels_on_oracle && (ystar_is_uint32t || ((ystar != NULL) && (ystar->size() > 0)))) {
           assert(srn.priv->rollout_all_actions);  // TODO: deal with CB
           v_array<COST_SENSITIVE::wclass>* costs = &((COST_SENSITIVE::label*)valid_labels)->costs;
@@ -917,18 +919,16 @@ namespace Searn
         srn->priv->t++;
         uint32_t a_name = (! srn->priv->is_ldf) ? srn->priv->learn_a : ((COST_SENSITIVE::label*)ecs[srn->priv->learn_a].ld)->costs[0].class_index;
         if (srn->priv->auto_history) srn->priv->rollout_action.push_back(a_name);
-	if (srn->priv->rollout_method == 3) { // rollout by mixing per rollout
-            srn->priv->rollout_policy = choose_policy(*srn, srn->priv->gamma, srn->priv->allow_current_policy, true);
-	}
+        if (srn->priv->rollout_method == 3) { // rollout by mixing per rollout
+          srn->priv->rollout_policy = choose_policy(*srn, srn->priv->gamma, srn->priv->allow_current_policy, true);
+        }
         return srn->priv->learn_a;
       } else { // t > learn_t
         size_t this_a = 0;
 
         if (srn->priv->rollout_method == 1) { // rollout by oracle
-          assert(ystar_is_uint32t);
-          this_a = *(uint32_t*)ystar;
-          //get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
-          //this_a = single_action(all, *srn, base, ecs, num_ec, srn->priv->valid_labels, -1, ystar, ystar_is_uint32t, false);
+          get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
+          this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, -1, ystar, ystar_is_uint32t, true);
           srn->priv->t++;
           //valid_labels.costs.erase(); valid_labels.costs.delete_v();
         } else if (srn->priv->rollout_method == 2) { // rollout by mixing per state
@@ -950,7 +950,7 @@ namespace Searn
           // }
         }  else if (srn->priv->rollout_method == 3) { // rollout by mixing per rollout
             get_all_labels(srn->priv->valid_labels, *srn, num_ec, yallowed);
-	    this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, select_learner(*srn, srn->priv->rollout_policy, learner_id), ystar, ystar_is_uint32t, true);
+	          this_a = single_action(all, *srn, base, ecs, num_ec,(T*) srn->priv->valid_labels, select_learner(*srn, srn->priv->rollout_policy, learner_id), ystar, ystar_is_uint32t, true);
             srn->priv->t++;
         } else if (srn->priv->rollout_method == 0) { // rollout by policy
             int pol = select_learner(*srn, choose_policy(*srn, srn->priv->beta, srn->priv->allow_current_policy, false), learner_id);
