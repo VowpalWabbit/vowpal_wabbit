@@ -1,0 +1,31 @@
+final_regressor = models/bs.vote.multi.model
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+predictions = bs.vote.multi.predict
+creating cache_file = train-sets/0001.multi.dat.cache
+Reading datafile = train-sets/0001.multi.dat
+num sources = 1
+average    since         example     example  current  current  current
+loss       last          counter      weight    label  predict features
+1.000000   1.000000            1         1.0   1.0000   0.0000       51
+0.500851   0.001702            2         2.0   0.0000   0.0413      104
+2.454662   4.408473            4         4.0   0.0000   0.1941      135
+2.361341   2.268020            8         8.0   0.0000   0.5304      146
+2.593392   2.825443           16        16.0   1.0000   0.7382      143
+2.386648   2.179905           32        32.0   1.0000   1.0246       70
+2.225134   2.063619           64        64.0  -1.0000   1.0453       34
+1.582231   0.939329          128       128.0   0.0000   0.2605       30
+1.210780   1.210780          256       256.0  -1.0000   0.9113       72 h
+1.291089   1.371398          512       512.0   0.0000   0.3632       37 h
+
+finished run
+number of examples per pass = 180
+passes used = 3
+weighted example sum = 540
+weighted label sum = 0
+average loss = 1.17046 h
+best constant = 0
+total feature number = 41349
