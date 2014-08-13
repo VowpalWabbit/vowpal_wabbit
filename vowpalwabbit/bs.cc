@@ -39,6 +39,7 @@ namespace BS {
   { //majority vote in linear time
     unsigned int counter = 0;
     int current_label = 1, init_label = 1;
+    float sum_labels = 0;
     bool majority_found = false;
     bool multivote_detected = false; // distinct(votes)>2: used to skip part of the algorithm
     int* pred_vec_int = new int[pred_vec.size()];
@@ -48,6 +49,7 @@ namespace BS {
     for(unsigned int i=0; i<pred_vec.size(); i++)
     {
       pred_vec_int[i] = floor(pred_vec[i]+0.5); // link() support could be added here
+      //pred_vec_int[i] = (pred_vec[i] > 0.5) ? 1 : 0; // how to find a global method ?
 
       if(multivote_detected == false) { // distinct(votes)>2 detection bloc
         if(i == 0) {
@@ -72,40 +74,41 @@ namespace BS {
       }
     }
 
-    // if distinct(votes) < 2, majority is ok and no specific ties handling => skipped
-    if(multivote_detected) {
-      if(counter > 0) { // check if strict majority exists
-        counter = 0;
-        for(unsigned int i=0; i<pred_vec.size(); i++)
-          if(pred_vec_int[i] == current_label)
-            counter++;
-        if(counter*2 > pred_vec.size())
-          majority_found = true;
-      }
+    counter = 0;
+    for(unsigned int i=0; i<pred_vec.size(); i++)
+      if(pred_vec_int[i] == current_label) {
+        counter++;
+        sum_labels += pred_vec[i];
+    }
+    if(counter*2 > pred_vec.size())
+      majority_found = true;
 
-      if(majority_found == false) { // then find most frequent element - if tie: smallest tie label
+    if(multivote_detected && majority_found == false) { // then find most frequent element - if tie: smallest tie label
         std::sort(pred_vec_int, pred_vec_int+pred_vec.size());
         int tmp_label = pred_vec_int[0];
         counter = 1;
-        for(unsigned int i=1, max=0; i<pred_vec.size(); i++)
+        for(unsigned int i=1, temp_count=1; i<pred_vec.size(); i++)
         {
           if(tmp_label == pred_vec_int[i])
-            counter++;
+            temp_count++;
           else {
-            if(counter>max) {
+            if(temp_count > counter) {
               current_label = tmp_label;
-              max = counter;
+              counter = temp_count;
             }
             tmp_label = pred_vec_int[i];
-            counter = 1;
+            temp_count = 1;
           }
         }
-      }
+        sum_labels = 0;
+        for(unsigned int i=0; i<pred_vec.size(); i++)
+          if(pred_vec_int[i] == current_label)
+            sum_labels += pred_vec[i];
     }
 
-    ld.prediction = (float)current_label;
+    ld.prediction = sum_labels/(float)counter;
 
-    ec.loss = (ld.prediction == ld.label) ? 0. : 1.; // replace by getLoss() ?
+    ec.loss = all.loss->getLoss(all.sd, ld.prediction, ((label_data*)ec.ld)->label) * ((label_data*)ec.ld)->weight;    
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
