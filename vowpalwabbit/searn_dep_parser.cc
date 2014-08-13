@@ -318,5 +318,11 @@ namespace DepParserTask {
       }
     cdep << "end structured predict"<<endl;
     dealloc_example(COST_SENSITIVE::cs_label.delete_label, an_example[0]);
+    free(an_example);
+    valid_actions.delete_v();
+    gold_heads.delete_v();
+    gold_actions.delete_v();
+    stack.delete_v();
+    heads.delete_v();
   }
 }
