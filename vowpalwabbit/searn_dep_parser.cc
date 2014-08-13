@@ -46,7 +46,10 @@ namespace DepParserTask {
     my_task_data->no_cubic_features =(vm.count("dparser_no_cubic"))?true:false;
   }
 
-  void finish(searn& srn) { }    // if we had task data, we'd want to free it here
+  void finish(searn& srn) {
+      task_data *data = srn.get_task_data<task_data>();
+      delete data;
+  }    // if we had task data, we'd want to free it here
 
   // arc-hybrid System.
   uint32_t transition_hybrid(searn& srn, uint32_t a_id, uint32_t i, v_array<uint32_t> & stack, v_array<uint32_t> & heads, v_array<uint32_t> & gold_heads){
@@ -314,6 +317,6 @@ namespace DepParserTask {
         srn.output() << heads[i] << " ";
       }
     cdep << "end structured predict"<<endl;
-    dealloc_example(NULL, *an_example);
+    dealloc_example(COST_SENSITIVE::cs_label.delete_label, an_example[0]);
   }
 }
