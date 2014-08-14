@@ -18,6 +18,7 @@ namespace DepParserTask         {  Searn::searn_task task = { "dep_parser", init
 
   struct task_data {
     size_t num_actions;
+    ezexample* ex;
     bool no_quadratic_features;
     bool no_cubic_features;
     bool init_feature_template_flag;
@@ -30,6 +31,7 @@ namespace DepParserTask {
     task_data * my_task_data = new task_data();
     my_task_data->num_actions = num_actions;
     my_task_data->init_feature_template_flag = false;
+    my_task_data->ex = new ezexample(srn.all, alloc_examples(sizeof(COST_SENSITIVE::label), 1), false);
     srn.set_options( 0 );
     srn.set_num_learners(1);
     srn.set_task_data<task_data>(my_task_data);
@@ -48,6 +50,9 @@ namespace DepParserTask {
 
   void finish(searn& srn) {
       task_data *data = srn.get_task_data<task_data>();
+      dealloc_example(COST_SENSITIVE::cs_label.delete_label, *(data->ex->get_example()));
+      free(data->ex->get_example());
+      delete data->ex;
       delete data;
   }    // if we had task data, we'd want to free it here
 
@@ -81,7 +86,8 @@ namespace DepParserTask {
   	return i;
   }
 
-  void initialize_feature_template(searn& srn, size_t num_base_feature_space, map<string, example*> ec_buf){
+  // We only call this function once (keep readability)
+  void initialize_feature_template(searn& srn, size_t num_base_feature_space, v_array<example*> ec_buf){
     task_data *data = srn.get_task_data<task_data>();
     vector<string> newpairs;
     vector<string> newtriples;
@@ -89,11 +95,8 @@ namespace DepParserTask {
       return;
     data->init_feature_template_flag = true;
     map<string, char> fs_idx_map;
-
-    int fs_idx = 1;
-    for(map<string, example*>::iterator p = ec_buf.begin(); p!=ec_buf.end(); p++, fs_idx++)
-      fs_idx_map[p->first] = fs_idx;
-    fs_idx_map["dis"] = fs_idx;
+    fs_idx_map["s1"]=0, fs_idx_map["s2"]=1, fs_idx_map["s3"]=2;
+    fs_idx_map["b1"]=3, fs_idx_map["b2"]=4, fs_idx_map["b3"]=5;
 
     string quadratic_feature_template = "s1-s2 s1-b1 s1-s1 s2-s2 s3-s3 b1-b1 b2-b3 b3-b3 ENDQ";
     string cubic_feature_template = "b1-b2-b3 s1-b1-b2 s1-s2-b1 s1-s2-s3 ENDC";
@@ -106,13 +109,14 @@ namespace DepParserTask {
       char second_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
       for(size_t i=0; i< num_base_feature_space; i++){
         for(size_t j=0; j< num_base_feature_space; j++){
-          newpairs.push_back(string(1,(char)(first_fs_idx*num_base_feature_space+i))+string(1,(char)(second_fs_idx*num_base_feature_space+j)));
+          newpairs.push_back(string(1,(char)(first_fs_idx*num_base_feature_space+i))+\
+            string(1,(char)(second_fs_idx*num_base_feature_space+j)));
         }
       }
       quadratic_feature_template.erase(0, pos + 1);
     }
-    srn.all->pairs.swap(newpairs);
 
+    // parse cubic features
     while ((pos = cubic_feature_template.find(" ")) != std::string::npos) {
       string token = cubic_feature_template.substr(0, pos);
       char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
@@ -130,61 +134,54 @@ namespace DepParserTask {
       }
       cubic_feature_template.erase(0, pos + 1);
     }
-    srn.all->pairs.swap(newpairs);
-    //srn.all->triples.swap(newtriples);
+    if(!data->no_quadratic_features)
+      srn.all->pairs.swap(newpairs);
+    if(!data->no_cubic_features)
+      srn.all->triples.swap(newtriples);
   }
 
-
+  // This function needs to be very fast
   void extract_features(searn& srn, uint32_t idx,  vector<example*> &ec, v_array<uint32_t> & stack, v_array<uint32_t> & heads, ezexample &ex){
     // be careful: indices in ec starts from 0, but i is starts from 1
     size_t n = ec.size();
-    // get examples in stake
-    map<string, example*> ec_buf;
-    size_t nfs = ec[0]->indices.size();
+    // use this buffer to collect the examples, default value: NULL
+    v_array<example*> ec_buf;
+    ec_buf.resize(6, true);
 
-    // feature based on examples in stack s?=the top ? element in stack
+    // feature based on top three examples in stack 
+    // ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
     // todo: add features based on leftmost and rightmost child: rc?: the ? rightmost child, lc?: the ? leftmost child
-    ec_buf["s3"]=ec_buf["s2"]=ec_buf["s1"]=NULL;
-    if(stack.size()>=3 && stack[stack.size()-3]!=0)
-      ec_buf["s3"] = ec[stack[stack.size()-3]-1];
-    if(stack.size()>=2 && stack[stack.size()-2]!=0)
-      ec_buf["s2"] = ec[stack[stack.size()-2]-1];
-    if(stack.size()>=1 && stack.last()!=0){
-      ec_buf["s1"] = ec[stack.last()-1];
+    for(size_t i=1; i<=3; i++){
+      if(stack.size()>=i && *(stack.end-i)!=0)
+        ec_buf[i-1] = ec[*(stack.end-i)-1];
     }
 
-    // features based on examples in buffer
+    // features based on examples in string buffer
+    // ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
     // todo: add features based on leftmost child in buffer
-    ec_buf["b3"]=ec_buf["b2"]=ec_buf["b1"]=NULL;
-    if(idx+3 <= n)
-      ec_buf["b3"] = ec[idx+3-1];
-    if(idx+2 <= n)
-      ec_buf["b2"] = ec[idx+2-1];
-    if(idx+1 <= n)
-      ec_buf["b1"] = ec[idx+1-1];
+    for(size_t i=1; i<=3; i++){
+      if(idx+i <= n)
+        ec_buf[i+2] = ec[idx+i-1];
+    }
 
-    size_t stack_depth = stack.size();
     size_t dis = 0;
     if(!stack.empty())
       dis = min(5, idx - stack.last());
 
     cdep << "start generating features";
+
     // unigram features
-    int fs_idx = 1;
-    for(map<string, example*>::iterator p = ec_buf.begin(); p!=ec_buf.end(); p++,fs_idx++){
-      cdep << fs_idx;
-      if(p->second == NULL)
+    size_t nfs = ec[0]->indices.size();
+    for(size_t i=0; i<6; i++){
+      if(!ec_buf[i])
         continue;
-      int fs_idx_inner = 0;
+      size_t fs_idx_inner = 0;
       // add unigram of all feature_template
-      // consider mixing/not mixing all feature spaces
-      for (unsigned char* i = ec[0]->indices.begin; i != ec[0]->indices.end; i++){
-         ex(*(p->second),*i, fs_idx_inner)(*(p->second),*i, fs_idx*nfs+fs_idx_inner);
-         fs_idx_inner++;
+      for (unsigned char* j = ec[0]->indices.begin; j != ec[0]->indices.end; j++,fs_idx_inner++){
+         ex(*ec_buf[i],*j, (char)(i*nfs+fs_idx_inner));
       }
     }
-
-    //ex(vw_namespace(fs_idx*nfs))
+    //ex(vw_namespace((char)(6*nfs)))
 //      (dis);
   
     //bigram features and trigram featuers are automatllcally generated based on feature template
@@ -255,6 +252,7 @@ namespace DepParserTask {
 
   void structured_predict(searn& srn, vector<example*> ec) {
     cdep << "start structured predict"<<endl;
+    task_data *data = srn.get_task_data<task_data>();
     uint32_t n = ec.size();
     uint32_t idx = 1;
     v_array<uint32_t> valid_actions;
@@ -262,10 +260,12 @@ namespace DepParserTask {
     v_array<uint32_t> gold_actions;
     v_array<uint32_t> stack; // stack for transition based parser
     v_array<uint32_t> heads; // output array
+    
+    
 
     cdep<<"create an ezexample for feature engineering" << endl;
-    example* an_example = alloc_examples(sizeof(COST_SENSITIVE::label),1);
-    ezexample ex(srn.all, an_example);
+    //example an_example();
+
 
     // initialization
     heads.push_back(0);
@@ -279,20 +279,18 @@ namespace DepParserTask {
     int count=0;
     cdep << "start decoding"<<endl;
     while(stack.size()>1 || idx <= n){
-      /*
       srn.snapshot(count, 1, &count, sizeof(count), true);
       srn.snapshot(count, 2, &idx, sizeof(idx), true);
       srn.snapshot(count, 3, &stack, sizeof(stack[0])*stack.size(), true);
       srn.snapshot(count, 4, &heads, sizeof(heads[0])*n, true);
-      */
       cdep << "before transition: idx=" << idx << " n=" << n << " ";
       cdep << "stack = [";for(size_t i=0; i<stack.size(); i++){cdep << stack[i] << " ";} cdep << "]" << endl;
       cdep << "buffer = [";for(size_t i=idx; i<=ec.size(); i++){cdep << i << " ";} cdep << "]" << endl;
       cdep << "heads:[";for(size_t i=0; i<ec.size()+1; i++){cdep << heads[i] << " ";}cdep <<"]"<<endl;
-
       cdep << "extracting features"<<endl;
-      ex.clear_features();   
-      extract_features(srn, idx, ec, stack, heads, ex);
+      VW::copy_example_data(false, data->ex->get_example(), ec[0]);  // copy but leave label alone!
+      data->ex->clear_features();   
+      extract_features(srn, idx, ec, stack, heads, *(data->ex));
 
       cdep << "setup valid and gold actions"<<endl;
       get_valid_actions(valid_actions, idx, n, stack.size());
@@ -301,7 +299,7 @@ namespace DepParserTask {
       cdep << "gold_action=["; for(size_t i=0; i<gold_actions.size(); i++){ cdep << gold_actions[i] << " ";} cdep << "]"<<endl;     
 
       cdep << "make prediction"<<endl;
-      uint32_t prediction = srn.predict(ex.get_example(), &gold_actions, &valid_actions);
+      uint32_t prediction = srn.predict(data->ex->get_example(), &gold_actions, &valid_actions);
       idx = transition_hybrid(srn, prediction, idx, stack, heads, gold_heads);
       cdep << "after taking action"<<prediction << " idx="<<idx <<" stack = [";for(size_t i=0; i<stack.size(); i++){cdep << stack[i] << " ";}cdep <<"]"<<endl;
       cdep << "stack = [";for(size_t i=0; i<stack.size(); i++){cdep << stack[i] << " ";} cdep << "]" << endl;
@@ -317,8 +315,6 @@ namespace DepParserTask {
         srn.output() << heads[i] << " ";
       }
     cdep << "end structured predict"<<endl;
-    dealloc_example(COST_SENSITIVE::cs_label.delete_label, an_example[0]);
-    free(an_example);
     valid_actions.delete_v();
     gold_heads.delete_v();
     gold_actions.delete_v();
