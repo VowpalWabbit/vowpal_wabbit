@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="11.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -29,27 +29,27 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -140,16 +140,16 @@
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <BoostIncludeDir>c:\boost\x64\include\boost-1_55</BoostIncludeDir>
-    <BoostLibDir>c:\boost\x64\lib</BoostLibDir>
+    <BoostIncludeDir>..\..\boost\x64\include\boost-1_55</BoostIncludeDir>
+    <BoostLibDir>..\..\boost\x64\lib</BoostLibDir>
     <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
-    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc10\x64\ZlibStat$(Configuration)</ZlibLibDir>
+    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x64\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
-    <BoostIncludeDir>c:\boost\x86\include\boost-1_55</BoostIncludeDir>
-    <BoostLibDir>c:\boost\x86\lib</BoostLibDir>
+    <BoostIncludeDir>..\..\boost\x86\include\boost-1_55</BoostIncludeDir>
+    <BoostLibDir>..\..\boost\x86\lib</BoostLibDir>
     <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
-    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc10\x86\ZlibStat$(Configuration)</ZlibLibDir>
+    <ZlibLibDir>$(ZlibIncludeDir)\contrib\vstudio\vc11\x86\ZlibStat$(Configuration)</ZlibLibDir>
   </PropertyGroup>
   <Target Name="DepCheck">
     <Error Text=" Cannot find zlibstat.lib in $(ZlibLibDir)" Condition="!Exists($(ZlibLibDir)\zlibstat.lib)" />
@@ -166,8 +166,8 @@
       <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(BoostLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(ZlibLibDir)\zlibstat.lib;$(SolutionDir)$(PlatformName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BoostLibDir);$(SolutionDir)\x86\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;$(ZlibLibDir)\zlibstat.lib;$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>win32\make_config_h.exe</Command>

@@ -1,0 +1,353 @@
+diff U3b contrib/vstudio/vc11/zlibvc.vcxproj contrib/vstudio/vc11/zlibvc.vcxproj
+--- contrib/vstudio/vc11/zlibvc.vcxproj	Wed Aug 13 11:59:37 2014
++++ contrib/vstudio/vc11/zlibvc.vcxproj	Tue Aug 12 12:32:52 2014
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup Label="ProjectConfigurations">
+     <ProjectConfiguration Include="Debug|Itanium">
+       <Configuration>Debug</Configuration>
+@@ -46,18 +46,18 @@
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithoutAsm|Win32'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+     <CharacterSet>Unicode</CharacterSet>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Itanium'" Label="Configuration">
+@@ -78,18 +78,18 @@
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithoutAsm|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+   <ImportGroup Label="ExtensionSettings">
+@@ -308,7 +308,7 @@
+       <StringPooling>true</StringPooling>
+       <ExceptionHandling>
+       </ExceptionHandling>
+-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+       <BufferSecurityCheck>false</BufferSecurityCheck>
+       <FunctionLevelLinking>true</FunctionLevelLinking>
+       <PrecompiledHeaderOutputFile>$(IntDir)zlibvc.pch</PrecompiledHeaderOutputFile>
+@@ -390,8 +390,7 @@
+       <TargetMachine>MachineX64</TargetMachine>
+     </Link>
+     <PreBuildEvent>
+-      <Command>cd ..\..\contrib\masmx64
+-bld_ml64.bat</Command>
++      <Command>cd ..\..\masmx64</Command>
+     </PreBuildEvent>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Itanium'">
+diff U3b contrib/vstudio/vc11/zlibvc.def contrib/vstudio/vc11/zlibvc.def
+--- contrib/vstudio/vc11/zlibvc.def	Wed Aug 13 11:59:37 2014
++++ contrib/vstudio/vc11/zlibvc.def	Wed Jul 30 15:19:07 2014
+@@ -1,7 +1,7 @@
+ LIBRARY
+ ; zlib data compression and ZIP file I/O library
+ 
+-VERSION		1.2.8
++VERSION		1.28
+ 
+ EXPORTS
+         adler32                                  @1
+diff U3b contrib/vstudio/vc11/zlibstat.vcxproj contrib/vstudio/vc11/zlibstat.vcxproj
+--- contrib/vstudio/vc11/zlibstat.vcxproj	Wed Aug 13 11:59:37 2014
++++ contrib/vstudio/vc11/zlibstat.vcxproj	Tue Aug 12 12:20:04 2014
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup Label="ProjectConfigurations">
+     <ProjectConfiguration Include="Debug|Itanium">
+       <Configuration>Debug</Configuration>
+@@ -45,17 +45,17 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithoutAsm|Win32'" Label="Configuration">
+     <ConfigurationType>StaticLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+     <ConfigurationType>StaticLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+     <ConfigurationType>StaticLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+     <CharacterSet>Unicode</CharacterSet>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithoutAsm|Itanium'" Label="Configuration">
+@@ -73,17 +73,17 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithoutAsm|x64'" Label="Configuration">
+     <ConfigurationType>StaticLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+     <ConfigurationType>StaticLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>StaticLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+   <ImportGroup Label="ExtensionSettings">
+@@ -198,7 +198,7 @@
+       <StringPooling>true</StringPooling>
+       <ExceptionHandling>
+       </ExceptionHandling>
+-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+       <BufferSecurityCheck>false</BufferSecurityCheck>
+       <FunctionLevelLinking>true</FunctionLevelLinking>
+       <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
+@@ -226,7 +226,7 @@
+       <StringPooling>true</StringPooling>
+       <ExceptionHandling>
+       </ExceptionHandling>
+-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+       <BufferSecurityCheck>false</BufferSecurityCheck>
+       <FunctionLevelLinking>true</FunctionLevelLinking>
+       <PrecompiledHeaderOutputFile>$(IntDir)zlibstat.pch</PrecompiledHeaderOutputFile>
+diff U3b contrib/vstudio/vc11/testzlibdll.vcxproj contrib/vstudio/vc11/testzlibdll.vcxproj
+--- contrib/vstudio/vc11/testzlibdll.vcxproj	Wed Aug 13 11:59:37 2014
++++ contrib/vstudio/vc11/testzlibdll.vcxproj	Tue Aug 12 12:32:52 2014
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup Label="ProjectConfigurations">
+     <ProjectConfiguration Include="Debug|Itanium">
+       <Configuration>Debug</Configuration>
+@@ -34,12 +34,12 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>Unicode</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Itanium'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+@@ -52,12 +52,12 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+   <ImportGroup Label="ExtensionSettings">
+@@ -162,7 +162,7 @@
+       <PreprocessorDefinitions>WIN32;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;ZLIB_WINAPI;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <StringPooling>true</StringPooling>
+       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+       <BufferSecurityCheck>false</BufferSecurityCheck>
+       <FunctionLevelLinking>true</FunctionLevelLinking>
+       <PrecompiledHeader>
+diff U3b contrib/vstudio/vc11/testzlib.vcxproj contrib/vstudio/vc11/testzlib.vcxproj
+--- contrib/vstudio/vc11/testzlib.vcxproj	Wed Aug 13 11:59:37 2014
++++ contrib/vstudio/vc11/testzlib.vcxproj	Tue Aug 12 12:32:52 2014
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup Label="ProjectConfigurations">
+     <ProjectConfiguration Include="Debug|Itanium">
+       <Configuration>Debug</Configuration>
+@@ -48,18 +48,18 @@
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithoutAsm|Win32'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>Unicode</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Itanium'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+@@ -78,16 +78,16 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithoutAsm|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+   <ImportGroup Label="ExtensionSettings">
+@@ -250,7 +250,7 @@
+       <PreprocessorDefinitions>ASMV;ASMINF;WIN32;ZLIB_WINAPI;NDEBUG;_CONSOLE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <StringPooling>true</StringPooling>
+       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+       <BufferSecurityCheck>false</BufferSecurityCheck>
+       <FunctionLevelLinking>true</FunctionLevelLinking>
+       <PrecompiledHeader>
+diff U3b contrib/vstudio/vc11/minizip.vcxproj contrib/vstudio/vc11/minizip.vcxproj
+--- contrib/vstudio/vc11/minizip.vcxproj	Wed Aug 13 11:59:37 2014
++++ contrib/vstudio/vc11/minizip.vcxproj	Wed Jul 30 15:20:39 2014
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup Label="ProjectConfigurations">
+     <ProjectConfiguration Include="Debug|Itanium">
+       <Configuration>Debug</Configuration>
+@@ -34,12 +34,12 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>Unicode</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Itanium'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+@@ -52,12 +52,12 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+   <ImportGroup Label="ExtensionSettings">
+diff U3b contrib/vstudio/vc11/miniunz.vcxproj contrib/vstudio/vc11/miniunz.vcxproj
+--- contrib/vstudio/vc11/miniunz.vcxproj	Wed Aug 13 11:59:37 2014
++++ contrib/vstudio/vc11/miniunz.vcxproj	Wed Jul 30 15:20:40 2014
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup Label="ProjectConfigurations">
+     <ProjectConfiguration Include="Debug|Itanium">
+       <Configuration>Debug</Configuration>
+@@ -34,12 +34,12 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>Unicode</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Itanium'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+@@ -52,12 +52,12 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>Application</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+-    <PlatformToolset>v110</PlatformToolset>
++    <PlatformToolset>v120</PlatformToolset>
+   </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+   <ImportGroup Label="ExtensionSettings">
+diff U3b contrib/masmx86/bld_ml32.bat contrib/masmx86/bld_ml32.bat
+--- contrib/masmx86/bld_ml32.bat	Wed Aug 13 11:59:36 2014
++++ contrib/masmx86/bld_ml32.bat	Tue Jul 29 16:41:12 2014
+@@ -1,2 +1,2 @@
+-ml /coff /Zi /c /Flmatch686.lst match686.asm
+-ml /coff /Zi /c /Flinffas32.lst inffas32.asm
++ml /safeseh  /coff /Zi /c /Flmatch686.lst match686.asm
++ml /safeseh /coff /Zi /c /Flinffas32.lst inffas32.asm

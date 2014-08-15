@@ -1,0 +1,81 @@
+diff U3b boost/config/compiler/visualc.hpp boost/config/compiler/visualc.hpp
+--- boost/config/compiler/visualc.hpp	Wed Aug 13 12:00:48 2014
++++ boost/config/compiler/visualc.hpp	Mon Aug 04 15:13:47 2014
+@@ -180,13 +180,13 @@
+ #  define BOOST_NO_CXX11_TRAILING_RESULT_TYPES
+ #  define BOOST_NO_CXX11_VARIADIC_TEMPLATES
+ #  define BOOST_NO_CXX11_UNIFIED_INITIALIZATION_SYNTAX
++#  define BOOST_NO_CXX11_DECLTYPE_N3276
+ #endif
+ 
+ // C++11 features not supported by any versions
+ #define BOOST_NO_CXX11_CHAR16_T
+ #define BOOST_NO_CXX11_CHAR32_T
+ #define BOOST_NO_CXX11_CONSTEXPR
+-#define BOOST_NO_CXX11_DECLTYPE_N3276
+ #define BOOST_NO_CXX11_NOEXCEPT
+ #define BOOST_NO_CXX11_UNICODE_LITERALS
+ #define BOOST_NO_SFINAE_EXPR
+diff U3b boost/archive/iterators/transform_width.hpp boost/archive/iterators/transform_width.hpp
+--- boost/archive/iterators/transform_width.hpp	Wed Aug 13 12:00:40 2014
++++ boost/archive/iterators/transform_width.hpp	Mon Aug 04 15:11:51 2014
+@@ -29,6 +29,7 @@
+ 
+ #include <boost/iterator/iterator_adaptor.hpp>
+ #include <boost/iterator/iterator_traits.hpp>
++#include <algorithm>
+ 
+ namespace boost { 
+ namespace archive {
+diff U3b libs/config/test/no_decltype_n3276_pass.cpp libs/config/test/no_decltype_n3276_pass.cpp
+--- libs/config/test/no_decltype_n3276_pass.cpp	Wed Aug 13 12:04:20 2014
++++ libs/config/test/no_decltype_n3276_pass.cpp	Mon Aug 04 15:18:18 2014
+@@ -27,11 +27,11 @@
+ #ifndef BOOST_NO_CXX11_DECLTYPE_N3276
+ #include "boost_no_decltype_n3276.ipp"
+ #else
+-namespace boost_no_decltype_n3276 = empty_boost;
++namespace boost_no_cxx11_decltype_n3276 = empty_boost;
+ #endif
+ 
+ int main( int, char *[] )
+ {
+-   return boost_no_decltype_n3276::test();
++	return boost_no_cxx11_decltype_n3276::test();
+ }
+ 
+diff U3b libs/config/test/no_decltype_n3276_fail.cpp libs/config/test/no_decltype_n3276_fail.cpp
+--- libs/config/test/no_decltype_n3276_fail.cpp	Wed Aug 13 12:04:20 2014
++++ libs/config/test/no_decltype_n3276_fail.cpp	Mon Aug 04 15:17:15 2014
+@@ -32,6 +32,6 @@
+ 
+ int main( int, char *[] )
+ {
+-   return boost_no_decltype_n3276::test();
++	return boost_no_cxx11_decltype_n3276::test();
+ }
+ 
+diff U3b boost/signals/detail/named_slot_map.hpp boost/signals/detail/named_slot_map.hpp
+--- boost/signals/detail/named_slot_map.hpp	Wed Aug 13 12:02:05 2014
++++ boost/signals/detail/named_slot_map.hpp	Wed Aug 06 16:21:29 2014
+@@ -127,7 +127,7 @@
+         || slot_ == other.slot_));
+   }
+ 
+-#if BOOST_WORKAROUND(_MSC_VER, <= 1700)
++#if BOOST_WORKAROUND(_MSC_VER, <= 1800)
+   void decrement();
+   void advance(difference_type);
+ #endif
+diff U3b libs/signals/src/named_slot_map.cpp libs/signals/src/named_slot_map.cpp
+--- libs/signals/src/named_slot_map.cpp	Wed Aug 13 12:08:00 2014
++++ libs/signals/src/named_slot_map.cpp	Wed Aug 06 16:31:42 2014
+@@ -24,7 +24,7 @@
+ typedef slot_container_type::const_iterator const_group_iterator;
+ 
+ 
+-#if BOOST_WORKAROUND(_MSC_VER, <= 1700)
++#if BOOST_WORKAROUND(_MSC_VER, <= 1800)
+ void named_slot_map_iterator::decrement() { assert(false); }
+ void named_slot_map_iterator::advance(difference_type) { assert(false); }
+ #endif
