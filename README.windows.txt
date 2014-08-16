@@ -147,7 +147,7 @@ ns)</PreprocessorDefinitions>
 **************************************************************************************************************
 Notes for building VW under Visual Studio 2013 on Windows 8.1
 Nick Nussbaum nickn@seanet.com
-8/13/2014
+8/16/2014
 
 **************************************************************************************************************
 (1) Get Tools
@@ -156,15 +156,15 @@ You'll also need the Windows SDK which you can download from Microsoft at
 	http://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
 
 
-Several patches are needed for boost and zlib to make them compile.
+There's a patch for zlib to make it work.
 There also some changes to vowpal wabbit  Details are at the last section of this file
 
-If you're going to use the patches I've made it's handy to have a bash shell to run patch
+It's  handy to have a bash shell to run patch and git
 You can use a git bash shell fron the https://windows.github.com/ if you don't have it already.
 Or you can just edit the changes using notepad to read the files. Git Patching seemed to have some problems with the files.
 
 **************************************************************************************************************
-(2) make various command shells
+(2) open a copy various command shells
 
 	(a)	Open an x86 command shell: run the Visual Studio 2013 Tools /  VS2013 x86 Native Tools Command Prompt
 			or run:	 cmd.exe /k "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86
@@ -176,27 +176,21 @@ Or you can just edit the changes using notepad to read the files. Git Patching s
 **************************************************************************************************************
 (3) Setup Directories
 
-To avoid conflicts with other projects using older version of boost I use a new directory for boost inside the project
-If you want to use c:\boost then you'll have to modify the proj files to change the boost variable definitions.
-I reccommend waiting untill there is an unpatched tested boost version that works
-
 I use c:\src\vw as my %ROOT% directory; You could use another directory 
 boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 
         (a) mkdir c:\src
         (b) mkdir c:\src\vw
-        (d) mkdir c:\src\vw\boost
-	(d) mkdir c:\src\vw\zlib-1.2.8
 
 **************************************************************************************************************
 (4) Get Vowpal Wabbit 
 
-    (a) In a command chell to %ROOT% : "cd c:\src\vw"
+    (a) In a  command shell to %ROOT% : "cd c:\src\vw"
     (b) run "git clone https://github.com/JohnLangford/vowpal_wabbit.git"
 	details of the changes are in bottom of this file.
 
 **************************************************************************************************************
-(5) Build Zlib with Visual Studio 2013
+(5) Build zlib with Visual Studio 2013
 
 	(a)Get the zlib 1.28.0 file from   http://zlib.net/zlib128.zip
 	(b) unzip zlib-1.2.8.zip into the c:\src\vw\zlib-1.2.8  
@@ -206,9 +200,9 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 
 	(c) from a bash shell cd  /c/src/vw
 
-	  patch --dry-run -po --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt
+	  patch --dry-run -po --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 		check output looks good then
-	  patch  -po --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt
+	  patch  -po --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 
 	(d) Build the zlib libararies using by either of
 
@@ -230,35 +224,38 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 **************************************************************************************************************
 (6) Building Boost
 
-      (a) Download boost_1_55_0.zip from here http://sourceforge.net/projects/boost/files/boost/1.50.0/
-      (b) Unzip to  %ROOT%/boost_1_55_0
-      (c) Rename %ROOT%/boost_1_55_0 to  %ROOT%/boost  e.g. c:\src\vw\boost\
-  
-  
-      (d) go to a git bash shell 
-      (e)cd /c/src/vw
-		
-      (f)  patch --dry-run -po --directory=boost --input=../vowpal_wabbit/boostpatch.txt
-		check output looks good then
-      (g) patch -po --directory=boost --input=../vowpal_wabbit/boostpatch.txt
-      
-      (h) go to the x86 Windows command shell
-      (i) cd c:\src\vw\boost 
-      (j) Run "mkdir x64"
- 
-      (k) run "bootstrap.bat"
-      (j) bootstrap.bat
-      (k) Run "b2 --prefix=c:\src\vw\boost\x86 --build-dir=x86 --toolset=msvc-12.0 install --with-program_options" (You can add " -j 16" to the end to run up to 16 procs at once.)
+I build boost in c:\boost
+You can use another directory but you will have to modify the vw solution and project variables
+
+
+	Get boost from http://www.boost.org/users/history/version_1_56_0.html
+			
+
+	   open a  Windows command shell
+	  (a) mkdir c:\boost 
+			
+      (b) Download boost_1_56_0.zip from http://sourceforge.net/projects/boost/files/boost/1.56.0/boost_1_56_0.zip/download
+	  (c) Unzip it which creates the directory boost_1_56_0
+      (d) mkdir c:\boost\x86
+	  (e) mkdir c:\boost\x64
+ 	  
+build the x86 binaries
+	  (f) run "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat x86"
+	  (g) mkdir c:\boost\x86
+	  (h) cd c:\boost\boost_1_56_0
+	  (i) run "bootstrap.bat"
+	  (j) run "b2 --prefix=c:\boost\x86 --build-dir=x86 --toolset=msvc-12.0 address-model=32 install --with-program_options" 
+			(You can add " -j 16" to the end to run up to 16 procs at once.)
+
 	
+build the x64 binaries
+	  (k) mkdir c:\boost\x64	
+	  (l) run "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"  x86_amd64"
+	  (m) run  "bootstrap.bat"
+	  (n) run ".\b2 --prefix=c:\boost\x64 --build-dir=x64 --toolset=msvc-12.0 address-model=64 install --with-program_options"
 
-      (l)go to x64 Windows command shell 
-      (m)  cd c:\src\vw\boost 
-      (n) Run "mkdir x64"
-      (o) cd c:\src\vw\boost
-      (p) bootstrap.bat
-      (q) Run "b2 --prefix=c:\src\vw\boost\x64 --build-dir=x64 --toolset=msvc-12.0 address-model=64 install --with-program_options"
-
-
+	  
+	  
 **************************************************************************************************************
 (7) Build Vowpal Wabbit 
 
@@ -285,8 +282,7 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 
 (a) misc files
 	   adds this content to Windows.ReadMee
-	   adds the file vowpal_wabbit\boostpatch.txt
-	   adds the  file vowpal_wabbit\zlibpatch.txt
+	   adds the  file vowpal_wabbit\zlibpatch.txt a patch for xlib
 	   adds the file test\test_2_winvw.bat a simple test of x86 and x64 training and prediction
 
 
@@ -315,20 +311,13 @@ The pre build command line for x64 release should be fixed
 Otherwise VS13 will complain about multiple runtime specifications.
 
 
-(c) Changes to Boost
-		It deals with serialization compilation problems based on
-		http://stackoverflow.com/questions/2629421/how-to-use-boost-in-visual-studio-2010/2641513#2641513
-		Include file changes.
-		Some other errors as described in https://svn.boost.org/trac/boost/ticket/1499 fix 
-		All the projects (except MPI and Python which I don't have installed) seem to compile. 
-		There has been no testing except for the program options module which is used in Vowpal Wabbit
-
+(c) Change to Boost 1.56.0
 
 (d) Changes to VowpalWabbit
 	
-	changes vw projects and soluations to run under VS2013 rather than Visual Studio 2012
-	change vw projects to define $(BoostIncludeDir) ..\..\boost\x64\include\boost-1_55 and ..\..\boost\x86\include\boost-1_55<
-	change vw projects to define $(BoostLibDir) ..\..\boost\x64\include\boost-1_55 and ..\..\boost\x86\include\boost-1_55
+	changes vw projects and solutions to run under VS2013 rather than Visual Studio 2012
+	change vw projects to redefine $(BoostIncludeDir) to refer to Boost 1.56.0
+	change vw projects to define $(BoostLibDir) to refer to Boost 1.56.0
 
 	vowpalwabbit/vw_static.vcxproj
 		Define $(IncludePath) 
@@ -342,17 +331,18 @@ Otherwise VS13 will complain about multiple runtime specifications.
 
 	   	adds a reference to the WindowsSDKDir Include\um
  		change vw_static properties for debug 64bit to /Zi from /Zl to shut up some warnings.
- 		change the vw and static_vw to use n intermediate directoryies that appends the $(ProjectName). 
+ 		change the vw and static_vw to use n intermediate directories that appends the $(ProjectName). 
 		this avoid various conflicts and warnings caused by dumping into the same directory.
-		change link build copies to use PlatformShortName rather than PlatformName to avoid Win32 in favor of x86
+		change link build copies to use PlatformShortName rather than PlatformName to use x86 rather than Win32
+		Note building the anycpu solution has problems with cs_test
 	
 
       	vowpalwabbit/vw.sln
 		change configurations to use Debug|x86 from Debug|AnyCpu 
 
       c_test/c_test.vcxproj
-	change to VS 12
-	change configurations to use Debug|x86 from Debug|AnyCpu 
-	change cs_test to use x86 and x64 rather than anycpue
+		change to VS 12
+		change configurations to use Debug|x86 from Debug|AnyCpu 
+		change cs_test to use x86 and x64 rather than anycpu
 
 
