@@ -146,8 +146,8 @@ ns)</PreprocessorDefinitions>
 **************************************************************************************************************
 **************************************************************************************************************
 Notes for building VW under Visual Studio 2013 on Windows 8.1
-Nick Nussbaum nickn@seanet.com
-8/16/2014
+8/16/2014 Nick Nussbaum nickn@seanet.com
+
 
 **************************************************************************************************************
 (1) Get Tools
@@ -204,9 +204,9 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 
 	(c) from a bash shell cd  /c/src/vw
 
-	  patch --dry-run -po --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
+	  patch --dry-run -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 		check output messages looks good then
-	  patch  -po --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
+	  patch  -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 
 	(d) Build the zlib libararies using by either of
 
@@ -214,17 +214,16 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 	Open the solution %ROOT%/zlib-1.2.8\contrib\vstudio\vc11\zlibvc.sln
 	Batch build the configurations you want of x86 and x64 debut and release
 
-    	(e) or from your Visual Studio Command shell run the following four commands (can skip the last two if you only want 32bit binaries)
+    	(e) or from your Visual Studio Command shell 
+	     cd c:\src\vw\zlib-1.2.0\contrib\vstudio\vc11
+		run the following commands (can skip the last four if you only want 32bit binaries)
 
         "msbuild /p:Configuration=Debug;Platform=Win32 zlibstat.vcxproj"
-        "msbuild /p:Configuration=Release;Platform=Win32 zlibstat.vcxproj"
-		"msbuild /p:Configuration=Debug;Platform=Win32 zlibstat.vcxproj"
+        "msbuild /p:Configuration=Release;Platform=Win32 zlibvc.vcxproj"
         "msbuild /p:Configuration=Release;Platform=Win32 zlibstat.vcxproj"
         "msbuild /p:Configuration=Debug;Platform=x64 zlibstat.vcxproj"
-		"msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
-        "msbuild /p:Configuration=Debug;Platform=x64 zlibvc.vcxproj"
+        "msbuild /p:Configuration=Release;Platform=x64 zlibvc.vcxproj"
         "msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
-
 	Ignore the warnings about Platform 'Itanium' referenced in the project file  since Itanium is no longer supported in Visual Studio 2013
 
 **************************************************************************************************************
@@ -266,7 +265,10 @@ build the x64 binaries
 (7) Build Vowpal Wabbit 
 
 
-	Open %ROOT%\vowpal_wabbit\vowpalwabbit\vw.sln in Visual Studio 2010 and run  rebuild or batch build
+	Open %ROOT%\vowpal_wabbit\vowpalwabbit\vw.sln in Visual Studio 2013
+	Set startup project as vw (or the test project)
+	run  build>rebuild solution
+		or run  batch build
 
 	Binaries will be in one of these four directories, based on whether you built DEBUG or RELEASE bits and whether you are building x64 or Win32.
 
