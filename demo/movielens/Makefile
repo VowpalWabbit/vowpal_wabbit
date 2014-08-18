@@ -6,7 +6,7 @@ VW=../../vowpalwabbit/vw
 all:
 	@cat README.md
 
-shootout: $(foreach what,linear lrq lrqdropout,$(what).print)
+shootout: $(foreach what,linear lrq lrqdropout lrqdropouthogwild,$(what).print)
 
 clean:
 	rm -f $(wildcard *results*) $(wildcard *.vw) $(wildcard *.model.txt) $(wildcard *.pdf)
@@ -131,3 +131,26 @@ movie_dendrogram.pdf: lrqdropout.results
 	@grep ^lrq^m $<.model.txt | tr '^' ':' > $<.model.csv
 	@Rscript visualize_factors.R
 	@rm -f $@.model.csv
+
+#---------------------------------------------------------------------
+#               low-rank interaction model (with dropout)
+#                  (HOGWILD training mode)
+#---------------------------------------------------------------------
+
+lrqdropouthogwild.results: ml-1m.ratings.test.vw ml-1m.ratings.train.vw do-lrq-hogwild
+	@echo "******************************************************"
+	@echo "* training low-rank interaction model (with dropout) *"
+	@echo "*      (HOGWILD training mode)                       *"
+	@echo "*                                                    *"
+	@echo "* vw --lrq um14 --lrqdropout ...                     *"
+	@echo "******************************************************"
+	@echo
+	@./do-lrq-hogwild $@.model
+	@echo "*****************************************************"
+	@echo "* testing low-rank interaction model (with dropout) *"
+	@echo "*****************************************************"
+	@echo
+	@${VW} --loss_function quantile -t -i $@.model 			\
+	  -d $(word 1,$+) -p						\
+	  >(perl -lane '$$s+=abs(($$F[0]-$$F[1])); } { 			\
+			1; print $$s/$$.;' > $@)
