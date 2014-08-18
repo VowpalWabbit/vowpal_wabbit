@@ -20,9 +20,9 @@ Scale Learning Challenge (http://largescale.ml.tu-berlin.de/summary/).
       results in APR of 0.512
 
   * make dnann.perf
-      as above but with additionally 4 neural network nodes
+      as above but with additionally 1 neural network hidden node 
       slower (by circa 60 seconds) but better
-      results in APR of 0.522
+      results in APR of 0.532
 
   * make dnasmash.perf
       as above but builds a better model

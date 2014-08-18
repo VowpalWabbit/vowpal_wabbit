@@ -6,7 +6,7 @@ learner() {
      --loss_function logistic                                           \
      -b 18 -l 0.06 --adaptive --invariant                               \
      --total $2 --node $1 --unique_id 0 --span_server localhost         \
-     --nn 4 --inpass
+     --nn 1 --inpass
 }
 
 set -e
