@@ -1,15 +1,15 @@
 #! /bin/zsh
   
 nukeem() { \
-  trap - INT QUIT TERM EXIT
-  pkill -f 'vw.*--port 26542'
+  trap - INT QUIT TERM 
+  pkill -9 -f 'vw.*--port 26542'
 }
 
 rm -f "$1"
 
 { ../../vowpalwabbit/vw --loss_function quantile -l 0.45 -b 24 -d ml-1m.ratings.train.vw --holdout_off --lrq um14 --lrqdropout --adaptive --invariant -f "$1" --daemon --num_children 4 --port 26542 2>&1 | perl -lane 'print $_ unless $c{$F[2]}++; ' } &
 
-trap 'nukeem; exit 1' INT QUIT TERM EXIT
+trap 'nukeem; exit 1' INT QUIT TERM 
 
 while ! netcat -z localhost 26542
   do
@@ -26,7 +26,7 @@ for pass in $(seq 1 100)
   >(netcat localhost 26542 > /dev/null)                 \
   >(netcat localhost 26542 > /dev/null)
 
-nukeem
+pkill -f 'vw.*--port 26542'
 
 while test ! -s "$1"
   do
