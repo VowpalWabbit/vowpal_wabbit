@@ -47,7 +47,7 @@ void mf_print_offset_features(vw& all, example& ec, size_t offset)
 	  
 	  cout << "\tConstant:";
 	  cout << ((index >> all.reg.stride_shift) & all.parse_mask) << ':' << f->x;
-	  cout  << ':' << weights;
+	  cout  << ':' << weights[index];
 	}
   for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) 
     if (ec.atomics[(int)(*i)[0]].size() > 0 && ec.atomics[(int)(*i)[1]].size() > 0)
