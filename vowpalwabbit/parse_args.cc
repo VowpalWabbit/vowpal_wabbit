@@ -44,6 +44,7 @@ license as described in the file LICENSE.
 #include "memory.h"
 #include "stagewise_poly.h"
 #include "active.h"
+#include "kernel_svm.h"
 
 using namespace std;
 //
@@ -644,6 +645,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
     ("noop","do no learning")
     ("print","print examples")
+    ("ksvm", "kernel svm")
     ("sendto", po::value< vector<string> >(), "send examples to <host>");
 
   vm = add_options(all, base_opt);
@@ -660,6 +662,8 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     all.l = GDMF::setup(all, vm);
   else if (vm.count("sendto"))
     all.l = SENDER::setup(all, vm, all.pairs);
+  else if (vm.count("ksvm"))
+    all.l = KSVM::setup(all, vm);
   else
     {
       all.l = GD::setup(all, vm);

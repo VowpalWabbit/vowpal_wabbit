@@ -73,6 +73,60 @@ void output_and_account_example(example* ec);
      }
    }
 
+
+
+
+
+
+
+ template <class R, void (*T)(vw&, R&, float, uint32_t)>
+   void foreach_feature(vw& all, R& dat, feature* begin, feature* end, uint32_t offset=0, float mult=1.)
+   {
+     for (feature* f = begin; f!= end; f++) 
+       T(all, dat, mult*f->x, f->weight_index + offset);
+   }
+ 
+ template <class R, void (*T)(vw&, R&, float, uint32_t)>
+   void foreach_feature(vw& all, example& ec, R& dat)
+   {
+     uint32_t offset = ec.ft_offset;
+
+     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
+       foreach_feature<R,T>(all, dat, ec.atomics[*i].begin, ec.atomics[*i].end, offset);
+     
+     for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
+       if (ec.atomics[(int)(*i)[0]].size() > 0) {
+		v_array<feature> temp = ec.atomics[(int)(*i)[0]];
+		 for (; temp.begin != temp.end; temp.begin++)
+		   {
+			 uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
+			 foreach_feature<R,T>(all, dat, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, 
+					halfhash, temp.begin->x);
+		   }
+       }
+     }
+     
+     for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
+       if ((ec.atomics[(int)(*i)[0]].size() == 0) || (ec.atomics[(int)(*i)[1]].size() == 0) || (ec.atomics[(int)(*i)[2]].size() == 0)) { continue; }
+       v_array<feature> temp1 = ec.atomics[(int)(*i)[0]];
+       for (; temp1.begin != temp1.end; temp1.begin++) {
+	 v_array<feature> temp2 = ec.atomics[(int)(*i)[1]];
+	 for (; temp2.begin != temp2.end; temp2.begin++) {
+	   
+	   uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
+	   float mult = temp1.begin->x * temp2.begin->x;
+	   foreach_feature<R,T>(all, dat, ec.atomics[(int)(*i)[2]].begin, ec.atomics[(int)(*i)[2]].end, halfhash, mult);
+	 }
+       }
+     }
+   }
+
+
+
+
+
+
+
  inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
 
  inline float inline_predict(vw& all, example& ec)

@@ -75,6 +75,7 @@ struct flat_example
 	float global_weight;
 
 	size_t num_features;//precomputed, cause it's fast&easy.  
+        float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
 	size_t feature_map_len;
 	feature* feature_map; //map to store sparse feature vectors  
 };
