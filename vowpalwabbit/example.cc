@@ -20,7 +20,7 @@ int compare_feature(const void* p1, const void* p2) {
   else return 0;
 }  
   
-float collision_cleanup(v_array<feature> feature_map) {  
+float collision_cleanup(v_array<feature>& feature_map) {  
     
  int pos = 0;  
  float sum_sq = 0.;  
@@ -112,7 +112,8 @@ struct features_and_source
 };
 
 void vec_store(vw& all, features_and_source& p, float fx, uint32_t fi) {  
-  feature f = {fx, fi};
+  uint32_t mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
+  feature f = {fx, (fi >> all.reg.stride_shit) & mask};
   p.feature_map.push_back(f);
 }  
 
