@@ -103,6 +103,11 @@ namespace NN {
     if (! n.finished_setup)
       finish_setup (n, *(n.all));
 
+    shared_data sd;
+    memcpy (&sd, n.all->sd, sizeof(shared_data));
+    shared_data* save_sd = n.all->sd;
+    n.all->sd = &sd;
+
     label_data* ld = (label_data*)ec.ld;
     float save_label = ld->label;
     void (*save_set_minmax) (shared_data*, float) = n.all->set_minmax;
@@ -285,6 +290,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec.partial_prediction = save_partial_prediction;
     ld->prediction = save_final_prediction;
     ec.loss = save_ec_loss;
+
+    n.all->sd = save_sd;
   }
 
   void finish_example(vw& all, nn&, example& ec)
