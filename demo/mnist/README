@@ -3,6 +3,9 @@ set for testing neural network implementations.  mnist8m
 (http://leon.bottou.org/papers/loosli-canu-bottou-2006) is a variant of
 the original mnist training set augmented with deformations.
 
+see the dna demo directory for an example of distributed neural network
+training.
+
 === INSTRUCTIONS ===
 
 --- starting from raw pixels ---
