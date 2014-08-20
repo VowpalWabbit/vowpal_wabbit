@@ -113,7 +113,7 @@ struct features_and_source
 
 void vec_store(vw& all, features_and_source& p, float fx, uint32_t fi) {  
   uint32_t mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
-  feature f = {fx, (fi >> all.reg.stride_shit) & mask};
+  feature f = {fx, (fi >> all.reg.stride_shift) & mask};
   p.feature_map.push_back(f);
 }  
 
