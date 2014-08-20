@@ -292,6 +292,8 @@ CONVERSE: // That's right, I'm using goto.  So sue me.
     ec.loss = save_ec_loss;
 
     n.all->sd = save_sd;
+    n.all->set_minmax (n.all->sd, sd.min_label);
+    n.all->set_minmax (n.all->sd, sd.max_label);
   }
 
   void finish_example(vw& all, nn&, example& ec)
