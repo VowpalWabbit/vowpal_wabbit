@@ -944,7 +944,9 @@ namespace KSVM
     }      
     else
       params->kernel_type = SVM_KER_LIN;            
-    
+
+    all.reg.weight_mask = (uint32_t)FLT_MAX;
+    params->all->reg.weight_mask = (uint32_t)FLT_MAX;
     
     learner* l = new learner(params, 1); 
     l->set_learn<svm_params, learn>();

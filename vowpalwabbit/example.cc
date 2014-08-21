@@ -109,11 +109,11 @@ struct features_and_source
   uint32_t stride_shift;
   uint32_t mask;
   weight* base;
+  vw* all;
 };
 
-void vec_store(vw& all, features_and_source& p, float fx, uint32_t fi) {  
-  uint32_t mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
-  feature f = {fx, (fi >> all.reg.stride_shift) & mask};
+void vec_store(features_and_source& p, float fx, uint32_t fi) {    
+  feature f = {fx, (uint32_t)(fi >> p.stride_shift) & p.mask};
   p.feature_map.push_back(f);
 }  
 
@@ -124,6 +124,7 @@ namespace VW {
 	fs.stride_shift = all.reg.stride_shift;
 	fs.mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
 	fs.base = all.reg.weight_vector;
+	fs.all = &all;
 	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 	
 	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
 	total_sum_sq = collision_cleanup(fs.feature_map);

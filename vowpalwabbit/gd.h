@@ -79,14 +79,14 @@ void output_and_account_example(example* ec);
 
 
 
- template <class R, void (*T)(vw&, R&, float, uint32_t)>
+ template <class R, void (*T)(R&, float, uint32_t)>
    void foreach_feature(vw& all, R& dat, feature* begin, feature* end, uint32_t offset=0, float mult=1.)
    {
      for (feature* f = begin; f!= end; f++) 
-       T(all, dat, mult*f->x, f->weight_index + offset);
+       T(dat, mult*f->x, f->weight_index + offset);
    }
  
- template <class R, void (*T)(vw&, R&, float, uint32_t)>
+ template <class R, void (*T)(R&, float, uint32_t)>
    void foreach_feature(vw& all, example& ec, R& dat)
    {
      uint32_t offset = ec.ft_offset;
