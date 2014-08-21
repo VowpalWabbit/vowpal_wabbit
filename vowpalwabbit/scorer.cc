@@ -26,9 +26,16 @@ namespace Scorer {
     ld->prediction = link(ld->prediction);
   }
 
+  // y = f(x) -> [0, 1]
   float logistic(float in)
   {
     return 1.f / (1.f + exp(- in));
+  }
+
+  // y = f(x) -> [-1, 1]
+  float logistic_1(float in)
+  {
+    return 2.f / (1.f + exp(- in)) - 1.f;
   }
 
   float noop(float in)
@@ -44,7 +51,7 @@ namespace Scorer {
     po::options_description link_opts("Link options");
     
     link_opts.add_options()
-      ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity or logistic");
+      ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or logistic1");
 
     vm = add_options(all, link_opts);
 
@@ -61,6 +68,12 @@ namespace Scorer {
 	all.file_options.append(" --link=logistic ");
 	l->set_learn<scorer, predict_or_learn<true, logistic> >();
 	l->set_predict<scorer, predict_or_learn<false, logistic> >();
+      }
+    else if (link.compare("logistic1") == 0)
+      {
+	all.file_options.append(" --link=logistic1 ");
+	l->set_learn<scorer, predict_or_learn<true, logistic_1> >();
+	l->set_predict<scorer, predict_or_learn<false, logistic_1> >();
       }
     else 
       {
