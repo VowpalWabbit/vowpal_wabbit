@@ -5,7 +5,7 @@ learner() {
   ../../vowpalwabbit/vw -f dnasmash.model.$1                            \
      --loss_function logistic                                           \
      --compressed --cache_file dnacache.$1                              \
-     -b 18 -l 0.06 --adaptive --invariant --passes 10                   \
+     -b 20 -l 0.06 --adaptive --invariant --passes 10                   \
      --total $2 --node $1 --unique_id 0 --span_server localhost         \
      --nn 4 --inpass
 }

@@ -20,9 +20,9 @@ Scale Learning Challenge (http://largescale.ml.tu-berlin.de/summary/).
       results in APR of 0.512
 
   * make dnann.perf
-      as above but with additionally 4 neural network nodes
+      same as dna.perf, but with additionally 1 neural network hidden node 
       slower (by circa 60 seconds) but better
-      results in APR of 0.522
+      results in APR of 0.532
 
   * make dnasmash.perf
       as above but builds a better model
@@ -34,3 +34,13 @@ Scale Learning Challenge (http://largescale.ml.tu-berlin.de/summary/).
           subsequently, 6 minute per pass if you have SSD or enough RAM cache
             10 passes = 60 minutes (x 6 cores)
       results in APR of 0.545
+
+  * make dnahogwild.perf
+      same as dna.perf, but trained via lock-free multicore sgd ("hogwild") 
+        rather than parallel sgd + averaging
+      nondeterministic, but a typical result is APR of 0.516
+
+  * make dnahogwildnn.perf
+      same as dnann.perf, but trained via lock-free multicore sgd ("hogwild")
+        rather than parallel sgd + averaging
+      nondeterministic, but a typical result is APR of 0.536

@@ -531,6 +531,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 		{
 		  for (size_t i = 0; i < num_children; i++)
 		    kill(children[i], SIGTERM);
+                  VW::finish(all);
 		  exit(0);
 		}
 	      if (pid < 0)
