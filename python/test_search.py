@@ -27,20 +27,24 @@ class SequenceLabeler(pyvw.SearchTask):
         return output
     
 # wow! your data can be ANY type you want... does NOT have to be VW examples
-my_dataset = [ [(1, 'the'),
-                (2, 'monster'),
-                (3, 'ate'),
-                (1, 'a'),
-                (4, 'big'),
-                (2, 'sandwich')],
-               [(1, 'the'),
-                (2, 'sandwich'),
-                (3, 'was'),
-                (4, 'tasty')],
-               [(2, 'it'),
-                (3, 'ate'),
-                (2, 'it'),
-                (4, 'all')] ]
+DET  = 1
+NOUN = 2
+VERB = 3
+ADJ  = 4
+my_dataset = [ [(DET , 'the'),
+                (NOUN, 'monster'),
+                (VERB, 'ate'),
+                (DET , 'a'),
+                (ADJ , 'big'),
+                (NOUN, 'sandwich')],
+               [(DET , 'the'),
+                (NOUN, 'sandwich'),
+                (VERB, 'was'),
+                (ADJ , 'tasty')],
+               [(NOUN, 'it'),
+                (VERB, 'ate'),
+                (NOUN, 'it'),
+                (ADJ , 'all')] ]
 
 
 # initialize VW as usual, but use 'python_hook' as the search_task

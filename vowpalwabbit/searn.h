@@ -45,15 +45,18 @@ namespace Searn {
     void loss(float incr_loss, size_t predictions_since_last=1);
 
     // for making predictions in regular (non-LDF) mode:
-    uint32_t predict(example* ec, uint32_t       one_ystar, v_array<uint32_t>* yallowed=NULL); // if there is a single oracle action
-    uint32_t predict(example* ec, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL); // if there are multiple oracle actions
+    uint32_t predict(example* ec, uint32_t       one_ystar, v_array<uint32_t>* yallowed=NULL, size_t learner_id=0); // if there is a single oracle action
+    uint32_t predict(example* ec, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL, size_t learner_id=0); // if there are multiple oracle actions
 
     // for making predictions in LDF mode:
-    uint32_t predictLDF(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL); // if there is a single oracle action
-    uint32_t predictLDF(example* ecs, size_t ec_len, uint32_t       one_ystar, v_array<uint32_t>* yallowed=NULL); // if there is are multiple oracle action
+    uint32_t predictLDF(example* ecs, size_t ec_len, v_array<uint32_t>* ystar, v_array<uint32_t>* yallowed=NULL, size_t learner_id=0); // if there is a single oracle action
+    uint32_t predictLDF(example* ecs, size_t ec_len, uint32_t       one_ystar, v_array<uint32_t>* yallowed=NULL, size_t learner_id=0); // if there is are multiple oracle action
 
     // for generating output (check to see if output().good() before attempting to write!)
     stringstream& output();
+
+    // set number of learners
+    void set_num_learners(size_t num_learner);
     
     // internal data
     searn_task*    task;
