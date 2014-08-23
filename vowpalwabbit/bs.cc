@@ -39,7 +39,7 @@ namespace BS {
   { //majority vote in linear time
     unsigned int counter = 0;
     int current_label = 1, init_label = 1;
-    // float sum_labels = 0; // uncomment for: "avg on votes" and getLoss()
+    float sum_labels = 0; // uncomment for: "avg on votes" and getLoss()
     bool majority_found = false;
     bool multivote_detected = false; // distinct(votes)>2: used to skip part of the algorithm
     int* pred_vec_int = new int[pred_vec.size()];
@@ -49,8 +49,10 @@ namespace BS {
     for(unsigned int i=0; i<pred_vec.size(); i++)
     {
       pred_vec_int[i] = floor(pred_vec[i]+0.5); // could be added: link(), min_label/max_label, cutoff between true/false for binary
+      // pred_vec_int[i] = pred_vec[i] > 0. ? +1 : -1;
 
-      if(multivote_detected == false) { // distinct(votes)>2 detection bloc
+      //if(multivote_detected == false) { // distinct(votes)>2 detection bloc
+      if(true) { // distinct(votes)>2 detection bloc
         if(i == 0) {
           init_label = pred_vec_int[i];
           current_label = pred_vec_int[i];
@@ -73,12 +75,13 @@ namespace BS {
       }
     }
 
-    if(counter > 0 && multivote_detected) { // remove this condition for: "avg on votes" and getLoss()
+    //if(counter > 0 && multivote_detected) { // remove this condition for: "avg on votes" and getLoss()
+    if(true) { // remove this condition for: "avg on votes" and getLoss()
       counter = 0;
       for(unsigned int i=0; i<pred_vec.size(); i++)
         if(pred_vec_int[i] == current_label) {
           counter++;
-          // sum_labels += pred_vec[i]; // uncomment for: "avg on votes" and getLoss()
+          sum_labels += pred_vec[i]; // uncomment for: "avg on votes" and getLoss()
       }
       if(counter*2 > pred_vec.size())
         majority_found = true;
@@ -101,18 +104,19 @@ namespace BS {
             temp_count = 1;
           }
         }
-        /* uncomment for: "avg on votes" and getLoss()
+        // uncomment for: "avg on votes" and getLoss()
         sum_labels = 0;
         for(unsigned int i=0; i<pred_vec.size(); i++)
           if(pred_vec_int[i] == current_label)
-            sum_labels += pred_vec[i]; */
+            sum_labels += pred_vec[i]; //*/
     }
 
-    // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
-    ld.prediction = current_label;
+    ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
+    //ld.prediction = current_label;
 
-    // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight; //replace line below for: "avg on votes" and getLoss()
-    ec.loss = ((ld.prediction == ld.label) ? 0. : 1.) * ld.weight;
+    //ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight; //replace line below for: "avg on votes" and getLoss()
+    ec.loss = all.loss->getLoss(all.sd, ld.prediction, ((label_data*)ec.ld)->label) * ((label_data*)ec.ld)->weight;    
+    // ec.loss = ((ld.prediction == ld.label) ? 0. : 1.) * ld.weight;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)
