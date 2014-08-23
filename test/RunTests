@@ -175,7 +175,7 @@ sub init() {
     getopts('wcdDefyE:ov:Vt:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
 
-    my $hostname = `hostname -f`; chomp($hostname);
+    my $hostname = `hostname`; chomp($hostname);
     printf STDERR "Testing on: hostname=%s OS=%s\n", $hostname, $^O;
 
     if ($^O =~ /MSWin/i) {

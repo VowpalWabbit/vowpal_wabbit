@@ -6,7 +6,7 @@ NAME='vw-daemon-test'
 # This is a ugly hack:
 # Travis doesn't like this test, possibly because of firewall rules
 # on the travis-ci env, so don't bother running it on travis machines.
-HOSTNAME=`hostname -f`
+HOSTNAME=`hostname`
 case $HOSTNAME in
     *worker-linux*|*travis-ci.org)
         echo "travis host: $HOSTNAME detected, skipping test: $0" 1>&2
