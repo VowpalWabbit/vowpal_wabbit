@@ -1,6 +1,7 @@
 #!/bin/sh
 # -- vw daemon test
 #
+NAME='vw-daemon-test'
 
 # This is a ugly hack:
 # Travis doesn't like this test, possibly because of firewall rules
@@ -8,7 +9,8 @@
 HOSTNAME=`hostname -f`
 case $HOSTNAME in
     *worker-linux*|*travis-ci.org)
-        echo "travis host: $HOSTNAME detected, skipping test: $0"
+        echo "travis host: $HOSTNAME detected, skipping test: $0" 1>&2
+        echo "$NAME: OK"
         exit 0
         ;;
 esac
@@ -24,7 +26,6 @@ VW=`which vw`
 #   cad00a0dd558a34f210b712b34da26e31374b8b9    GOOD
 #
 
-NAME='vw-daemon-test'
 
 MODEL=$NAME.model
 TRAINSET=$NAME.train
