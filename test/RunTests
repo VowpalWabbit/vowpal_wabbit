@@ -175,7 +175,9 @@ sub init() {
     getopts('wcdDefyE:ov:Vt:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
 
-    print STDERR "testing $^O ";
+    my $hostname = `hostname`; chomp($hostname);
+    printf STDERR "Testing on: hostname=%s OS=%s\n", $hostname, $^O;
+
     if ($^O =~ /MSWin/i) {
         v(1, "OS is $^O\n");
         # On MS Windows we need to change paths to external executables
