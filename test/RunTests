@@ -102,20 +102,22 @@ sub command_failed($) {
     # print a message to distinguish between all cases
     # return non-zero status if anything is bad
     my $cmd = shift;
+    my $exitcode = 0;
     if ($?) {
-        my $exitcode = $? >> 8;
+        $exitcode = $? >> 8;
         my $signal = $? & 127; 
         my $core = ''; if ($? & 128) { $core = ' (core dumped)'; }
         if ($signal) {
             printf STDERR
                 "$0: test $TestNo: '%s' died from signal $signal$core\n", $cmd;
+            $exitcode = 1;
         } elsif ($exitcode) {
             printf STDERR
                 "$0: test $TestNo: '%s' failed (exitcode=$exitcode)\n", $cmd;
         }
     }
     # This is non-zero only if $cmd failed
-    $?
+    $exitcode;
 }
 
 sub valgrind_errfile($) {
