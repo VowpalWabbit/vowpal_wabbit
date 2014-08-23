@@ -76,7 +76,7 @@ sub usage(@) {
         -c      print test-suite commands before running them
         -d      print diff output on significant diff failure
         -D      print diff output even if it is not significant
-        -e      Abort on first diff error
+        -e      exit with non-zero status on first error
         -w      Ignore white-space differences (diff --ignore-space-change)
         -f      Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
         -E<e>   Tolerance epsilon <e> for fuzzy compares (default $Epsilon)
@@ -574,7 +574,7 @@ sub run_tests() {
         unless ($opt_d);
     print STDERR "$0: '-o' to force overwrite references\n"
         unless ($opt_o);
-    print STDERR "$0: '-e' to abort on first failure\n"
+    print STDERR "$0: '-e' to abort/exit on first failure\n"
         unless ($opt_e);
 
     my ($cmd, $out_ref, $err_ref, $pred_ref);
@@ -603,14 +603,15 @@ sub run_tests() {
         # run the test
         print STDERR "Test $TestNo: ($cmd) >$outf 2>$errf\n" if ($opt_c);
         mysystem("($cmd) >$outf 2>$errf");
+        my $full_status = $?;
+        my $status = $full_status >> 8;
         unless ($opt_V) {
             if (command_failed($cmd)) {
                 print STDERR `$Cat $errf`;
-                exit $? if ($opt_e);
+                exit $full_status if ($opt_e);
                 next;
             }
         }
-        my $status = $? >> 8;
         if ($status) {
             $ErrorCount++;
             if ($opt_V && $status == 100) {
@@ -621,7 +622,7 @@ sub run_tests() {
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
             }
-            exit $status if ($opt_e);
+            exit $full_status if ($opt_e);
             next;
         }
 
