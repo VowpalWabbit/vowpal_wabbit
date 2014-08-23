@@ -1042,17 +1042,7 @@ __DATA__
 {VW} /dev/null
     train-sets/ref/empty-set.stderr
 
-# Test 68: bagging -- multiclass
-{VW} -d train-sets/0001.multi.dat -f models/bs.vote.multi.model --bootstrap 4 --bs_type vote -p bs.vote.multi.predict --passes 3 -c -k
-    train-sets/ref/bs.vote.multi.stderr
-    train-sets/ref/bs.vote.multi.predict
-
-# Test 69: bagging -- predict with bagged classifier (multiclass)
-{VW} -d train-sets/0001.multi.dat -i models/bs.vote.multi.model -p bs.prvote.multi.predict -t
-    train-sets/ref/bs.prvote.multi.stderr
-    train-sets/ref/bs.prvote.multi.predict
-
-# Test 70: daemon test
+# Test 68: daemon test
 ./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
 
