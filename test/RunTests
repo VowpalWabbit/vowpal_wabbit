@@ -99,6 +99,8 @@ sub mysystem {
 
 sub command_failed($) {
     # Deal with cases where vw crashes, exits prematurely etc.
+    # print a message to distinguish between all cases
+    # return non-zero status if anything is bad
     my $cmd = shift;
     if ($?) {
         my $exitcode = $? >> 8;
@@ -606,9 +608,12 @@ sub run_tests() {
         my $full_status = $?;
         my $status = $full_status >> 8;
         unless ($opt_V) {
-            if (command_failed($cmd)) {
+            if (my $failure = command_failed($cmd)) {
                 print STDERR `$Cat $errf`;
-                exit $full_status if ($opt_e);
+                if ($opt_e) {
+                    printf STDERR "$0: exiting with status=$failure\n";
+                    exit $failure;
+                }
                 next;
             }
         }
