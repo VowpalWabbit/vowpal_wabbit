@@ -7,7 +7,7 @@
 # on the travis-ci env, so don't bother running it on travis machines.
 HOSTNAME=`hostname`
 case $HOSTNAME in
-    *travis*)
+    testing-worker-linux*)
         echo "travis host: $HOSTNAME detected, skipping test: $0"
         exit 0
         ;;
