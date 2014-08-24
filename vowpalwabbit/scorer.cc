@@ -8,7 +8,7 @@ namespace Scorer {
   struct scorer{
     vw* all;
   };
-  
+
   template <bool is_learn, float (*link)(float in)>
   void predict_or_learn(scorer& s, learner& base, example& ec)
   {
@@ -19,16 +19,26 @@ namespace Scorer {
       base.learn(ec);
     else
       base.predict(ec);
-    
+
     if(ld->weight > 0 && ld->label != FLT_MAX)
       ec.loss = s.all->loss->getLoss(s.all->sd, ld->prediction, ld->label) * ld->weight;
 
     ld->prediction = link(ld->prediction);
   }
 
+  // y = f(x) -> [0, 1]
   float logistic(float in)
   {
     return 1.f / (1.f + exp(- in));
+  }
+
+  // http://en.wikipedia.org/wiki/Generalized_logistic_curve
+  // where the lower & upper asymptotes are -1 & 1 respectively
+  // 'glf1' stands for 'Generalized Logistic Function with [-1,1] range'
+  //    y = f(x) -> [-1, 1]
+  float glf1(float in)
+  {
+    return 2.f / (1.f + exp(- in)) - 1.f;
   }
 
   float noop(float in)
@@ -42,9 +52,9 @@ namespace Scorer {
     s->all = &all;
 
     po::options_description link_opts("Link options");
-    
+
     link_opts.add_options()
-      ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity or logistic");
+      ("link", po::value<string>()->default_value("identity"), "Specify the link function: identity, logistic or glf1");
 
     vm = add_options(all, link_opts);
 
@@ -52,7 +62,7 @@ namespace Scorer {
 
     string link = vm["link"].as<string>();
     if (!vm.count("link") || link.compare("identity") == 0)
-      {      
+      {
 	l->set_learn<scorer, predict_or_learn<true, noop> >();
 	l->set_predict<scorer, predict_or_learn<false, noop> >();
       }
@@ -62,7 +72,13 @@ namespace Scorer {
 	l->set_learn<scorer, predict_or_learn<true, logistic> >();
 	l->set_predict<scorer, predict_or_learn<false, logistic> >();
       }
-    else 
+    else if (link.compare("glf1") == 0)
+      {
+	all.file_options.append(" --link=glf1 ");
+	l->set_learn<scorer, predict_or_learn<true, glf1> >();
+	l->set_predict<scorer, predict_or_learn<false, glf1> >();
+      }
+    else
       {
 	cerr << "Unknown link function: " << link << endl;
 	throw exception();
