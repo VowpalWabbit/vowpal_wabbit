@@ -5,7 +5,15 @@
 #include "stdafx.h"
 #include "example.h"
 
-class Interaction
+class ISerializable
+{
+public:
+	virtual ~ISerializable(){}
+	virtual void Serialize(u8*&, int&) = 0;
+	virtual void Deserialize(u8*, int) = 0;
+};
+
+class Interaction : public ISerializable
 {
 public:
 	Interaction(Context* context, Action* action, double prob) : pContext(context), pAction(action), prob(prob)
@@ -30,6 +38,34 @@ public:
 	}
 	*/
 
+	void Serialize(u8*& data, int& length)
+	{
+		if (pContext == nullptr ||
+			pAction == nullptr)
+		{
+			throw;
+		}
+
+		// TODO: Count length of data in bytes
+		length = 0;
+
+		pContext->Serialize(data, length);
+		pAction->Serialize(data, length);
+
+		if (pReward == nullptr)
+		{
+			pReward->Serialize(data, length);
+		}
+
+	}
+
+	void Deserialize(u8* data, int length)
+	{
+		pContext->Deserialize(data, length);
+		pAction->Deserialize(data, length);
+		pReward->Deserialize(data, length);
+	}
+
 private:
 	Context* pContext = nullptr;
 	Action* pAction = nullptr;
@@ -40,7 +76,7 @@ private:
 	static std::atomic_uint64_t gId = 0;
 };
 
-class Context
+class Context : public ISerializable
 {
 public:
 	/*
@@ -71,7 +107,7 @@ private:
 	std::string otherContext;
 };
 
-class Reward
+class Reward : public ISerializable
 {
 public:
 	Reward(double reward) : reward(reward)
@@ -92,7 +128,7 @@ private:
 	std::string otherOutcomes;
 };
 
-class Action
+class Action : public ISerializable
 {
 public:
 	Action(u32 id) : id(id)
@@ -123,4 +159,39 @@ private:
 	Action startAction;
 	Action endAction;
 	std::vector<Action> actionSet;
+};
+
+// Currently based on assumption that each app stores separate files
+class Logger
+{
+public:
+	void Store(int appId, Interaction** interactions, int numInteractions)
+	{
+		if (interactions == nullptr)
+		{
+			return;
+		}
+		for (int i = 0; i < numInteractions; i++)
+		{
+			u8* bytes = nullptr;
+			int byteLength = 0;
+			if (interactions[i] != nullptr)
+			{
+				interactions[i]->Serialize(bytes, byteLength);
+				// TODO: write bytes to file
+			}
+		}
+	}
+
+	Interaction* Load(int appId, u64 interactionID)
+	{
+		
+	}
+
+	void Join(int appId, u64 interactionID, Reward* reward)
+	{
+		
+	}
+
+
 };
