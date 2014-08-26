@@ -30,10 +30,16 @@
     <ClInclude Include="init.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Policy.h">
+    <ClInclude Include="utility.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="utility.h">
+    <ClInclude Include="MWT.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OfflineEvaluator.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

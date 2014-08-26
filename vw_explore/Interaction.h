@@ -27,6 +27,11 @@ public:
 		pReward = reward;
 	}
 
+	u64 GetId()
+	{
+		return id;
+	}
+
 	/*
 	public override string ToString()
 	{
@@ -161,37 +166,10 @@ private:
 	std::vector<Action> actionSet;
 };
 
-// Currently based on assumption that each app stores separate files
-class Logger
+class Policy
 {
-public:
-	void Store(int appId, Interaction** interactions, int numInteractions)
+	virtual std::pair<Action, float> ChooseAction(Context* context, ActionSet* actions) = 0;
+	virtual ~Policy()
 	{
-		if (interactions == nullptr)
-		{
-			return;
-		}
-		for (int i = 0; i < numInteractions; i++)
-		{
-			u8* bytes = nullptr;
-			int byteLength = 0;
-			if (interactions[i] != nullptr)
-			{
-				interactions[i]->Serialize(bytes, byteLength);
-				// TODO: write bytes to file
-			}
-		}
 	}
-
-	Interaction* Load(int appId, u64 interactionID)
-	{
-		
-	}
-
-	void Join(int appId, u64 interactionID, Reward* reward)
-	{
-		
-	}
-
-
 };
