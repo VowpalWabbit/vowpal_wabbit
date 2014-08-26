@@ -18,11 +18,11 @@ public:
 
 	void Store(std::vector<Interaction*> interactions)
 	{
-		if (interactions == nullptr)
+		if (interactions.size() == 0)
 		{
 			return;
 		}
-		for (int i = 0; i < numInteractions; i++)
+		for (int i = 0; i < interactions.size(); i++)
 		{
 			u8* bytes = nullptr;
 			int byteLength = 0;
