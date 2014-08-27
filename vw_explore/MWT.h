@@ -22,6 +22,7 @@ public:
 	std::pair<Action*, float> ChooseAction(Context* context, ActionSet* actions)
 	{
 		// Interface with VW
+		// TODO: Samples uniformly during epsilon of the time & rest from default policy
 	}
 
 	void AdjustFrequency(float frequency)
@@ -50,6 +51,8 @@ class MWT
 	MWT()
 	{
 		IDGenerator::Initialize();
+
+		// TODO: where does appId come from?
 		pLogger = new Logger(appId);
 	}
 
@@ -69,7 +72,8 @@ class MWT
 		auto actionProb = pExplorer->ChooseAction(context, actions);
 		Interaction* pInteraction = new Interaction(context, actionProb.first, actionProb.second);
 		pLogger->Store(pInteraction);
-		//...
+		
+		// TODO: Anything else to do here?
 
 		return std::pair<Action*, u64>(actionProb.first, pInteraction->GetId());
 	}
@@ -77,8 +81,8 @@ class MWT
 	void ReportReward(u64 id, Reward* reward)
 	{
 		pLogger->Join(id, reward);
-		// Update performance measures of current and default policy (estimated via offline eval)
-		// Evaluate how we're doing relative to default policy 
+		// TODO: Update performance measures of current and default policy (estimated via offline eval)
+		// TODO: Evaluate how we're doing relative to default policy 
 	}
 
 

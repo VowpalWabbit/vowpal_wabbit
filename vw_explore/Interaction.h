@@ -127,7 +127,7 @@ public:
 				thisIter++;
 				thatIter++;
 			}
-
+			// TODO: should this also compare other context? Probably not.
 		}
 		
 		return match;
