@@ -15,14 +15,30 @@ public:
 class EpsilonGreedyExplorer : public Explorer
 {
 public:
-	EpsilonGreedyExplorer(float epsilon, Policy* defaultPolicy, bool smartExploration)
+	EpsilonGreedyExplorer(float epsilon, Policy* defaultPolicy, bool smartExploration) : 
+		epsilon(epsilon), defaultPolicy(defaultPolicy), smartExploration(smartExploration), doExplore(true)
 	{
+		if (defaultPolicy == nullptr)
+		{
+			throw std::invalid_argument("Default Policy must be specified.");
+		}
+		if (epsilon <= 0)
+		{
+			throw std::invalid_argument("Initial epsilon value must be positive.");
+		}
 	}
 
 	std::pair<Action*, float> ChooseAction(Context* context, ActionSet* actions)
 	{
-		// Interface with VW
-		// TODO: Samples uniformly during epsilon of the time & rest from default policy
+		if (doExplore)
+		{
+			// Interface with VW
+			// TODO: Samples uniformly or with learner during epsilon of the time
+		}
+		else
+		{
+			return defaultPolicy->ChooseAction(context, actions);
+		}
 	}
 
 	void AdjustFrequency(float frequency)
@@ -32,18 +48,19 @@ public:
 
 	void StopExplore()
 	{
-		//TODO: implement
+		doExplore = false;
 	}
 	
 	void StartExplore()
 	{
-		//TODO: implement
+		doExplore = true;
 	}
 
 private:
 	float epsilon;
 	Policy* defaultPolicy;
 	bool smartExploration;
+	bool doExplore;
 };
 
 class MWT
