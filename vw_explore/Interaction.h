@@ -72,6 +72,8 @@ public:
 		delete endAction;
 	}
 
+	// TODO: should support GetAction() methods with a few overloads. current there's no way to iterate or get an action out of the set
+
 	virtual bool Match(Action* firstAction, Action* secondAction)
 	{
 		return firstAction->GetID() == secondAction->GetID();

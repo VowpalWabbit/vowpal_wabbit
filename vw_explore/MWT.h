@@ -34,6 +34,7 @@ public:
 		{
 			// Interface with VW
 			// TODO: Samples uniformly or with learner during epsilon of the time
+			return std::pair<Action*, float>(nullptr, 0.f);
 		}
 		else
 		{
@@ -65,11 +66,16 @@ private:
 
 class MWT
 {
-	MWT()
+public:
+	MWT(std::string& appId)
 	{
 		IDGenerator::Initialize();
 
-		// TODO: where does appId come from?
+		if (appId.empty())
+		{
+			appId = this->GenerateAppId();
+		}
+
 		pLogger = new Logger(appId);
 	}
 
@@ -79,11 +85,17 @@ class MWT
 		delete pExplorer;
 	}
 
+	// TODO: should we restrict explorationBudget to some small numbers to prevent users from unwanted effect?
 	void InitializeEpsilonGreedy(float epsilon, Policy* defaultPolicy, float explorationBudget, bool smartExploration = false)
 	{
+		if (defaultPolicy == nullptr) // For now default policy is required
+		{
+			throw std::invalid_argument("A default policy must be specified.");
+		}
 		pExplorer = new EpsilonGreedyExplorer(epsilon, defaultPolicy, smartExploration);
 	}
 
+	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
 	std::pair<Action*, u64> ChooseAction(Context* context, ActionSet* actions)
 	{
 		auto actionProb = pExplorer->ChooseAction(context, actions);
@@ -102,6 +114,11 @@ class MWT
 		// TODO: Evaluate how we're doing relative to default policy 
 	}
 
+private:
+	std::string GenerateAppId()
+	{
+		return ""; // TODO: implement
+	}
 
 	/// <summary>
 	/// Initializes learner with parameters specified in config.

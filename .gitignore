@@ -52,3 +52,13 @@ library/recommend
 library/gd_mf_weights
 test/RunTests.last.times
 *.dSYM
+
+# build folders
+*/x64
+*/obj
+*/dll
+
+# VS files
+*.opensdf
+*.suo
+*.sdf
