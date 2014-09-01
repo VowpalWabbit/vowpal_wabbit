@@ -53,7 +53,7 @@ vw = pyvw.vw("--search 4 --quiet --search_task python_hook --search_no_snapshot 
 # tell VW to construct your search task object
 sequenceLabeler = vw.init_search_task(SequenceLabeler)
 
-# train it on the above dataset ten times
+# train it on the above dataset ten times; the my_dataset.__iter__ feeds into _run above
 print >>sys.stderr, 'training!'
 for curPass in range(10):
     sequenceLabeler.learn(my_dataset.__iter__)
@@ -61,4 +61,4 @@ for curPass in range(10):
 # now see the predictions on a test sentence
 print >>sys.stderr, 'predicting!'
 print sequenceLabeler.predict( [(0,w) for w in "the sandwich ate a monster".split()] )
-
+print 'should have printed: [1, 2, 3, 1, 2]'

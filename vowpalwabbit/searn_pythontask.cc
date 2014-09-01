@@ -14,7 +14,7 @@ namespace PythonTask {
     td->run_f = NULL;
     td->run_object = NULL;
     td->delete_run_object = NULL;
-    td->var_map = &vm;
+    td->var_map = new po::variables_map(vm);
     td->num_actions = num_actions;
     srn.set_task_data<task_data>(td);
   }
@@ -22,6 +22,7 @@ namespace PythonTask {
   void finish(searn& srn) {
     task_data *td = srn.get_task_data<task_data>();
     if (td->run_object && td->delete_run_object) td->delete_run_object(td->run_object);
+    delete td->var_map;
     delete td;
   }
 
