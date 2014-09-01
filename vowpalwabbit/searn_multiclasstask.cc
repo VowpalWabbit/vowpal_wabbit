@@ -48,3 +48,5 @@ namespace MulticlassTask {
         srn.output() << label << ' ';
   }
 }
+
+
