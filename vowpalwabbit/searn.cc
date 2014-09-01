@@ -2598,7 +2598,8 @@ void print_update(vw& all, searn& srn)
       all.file_options.append(ss.str());
     } else if (strlen(required_error_string)>0) {
       std::cerr << required_error_string << endl;
-      throw exception();
+      if (! vm.count("help"))
+        throw exception();
     }
   }
 
@@ -2720,7 +2721,7 @@ void print_update(vw& all, searn& srn)
 
     searn_initialize(all, *srn);
 
-    po::options_description searn_opts("Searn options");
+    po::options_description searn_opts("Search Options");
     searn_opts.add_options()
         ("search_task",              po::value<string>(), "the search task")
         ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
@@ -2896,14 +2897,17 @@ void print_update(vw& all, searn& srn)
         break;
       }
     if (srn->task == NULL) {
-      cerr << "fail: unknown task for --search_task: " << task_string << endl;
-      throw exception();
+      if (! vm.count("help")) {
+        cerr << "fail: unknown task for --search_task: " << task_string << endl;
+        throw exception();
+      }
     }
     all.p->emptylines_separate_examples = true;
 
     // default to OAA labels unless the task wants to override this!
     all.p->lp = MULTICLASS::mc_label;
-    srn->task->initialize(*srn, srn->priv->A, vm);
+    if (srn->task)
+      srn->task->initialize(*srn, srn->priv->A, vm);
 
     if (vm.count("search_allowed_transitions"))     read_allowed_transitions((uint32_t)srn->priv->A, vm["search_allowed_transitions"].as<string>().c_str());
 
