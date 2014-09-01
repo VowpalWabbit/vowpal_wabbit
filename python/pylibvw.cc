@@ -286,38 +286,44 @@ void searn_run_fn(Searn::searn&srn) {
   }
 }
 
+void py_delete_run_object(void* pyobj) {
+  py::object* o = (py::object*)pyobj;
+  delete o;
+}
+
 void set_structured_predict_hook(searn_ptr srn, py::object run_object) {
   verify_searn_set_properly(srn);
   PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
   d->run_f = &searn_run_fn;
   py::object* new_obj = new py::object(run_object);  // TODO: delete me!
   d->run_object = new_obj;
+  d->delete_run_object = &py_delete_run_object;
 }
 
 void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
 
 bool po_exists(searn_ptr srn, string arg) {
   PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
-  return d->var_map.count(arg) > 0;
+  return (*d->var_map).count(arg) > 0;
 }
 
 string po_get_string(searn_ptr srn, string arg) {
   PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
-  return d->var_map[arg].as<string>();
+  return (*d->var_map)[arg].as<string>();
 }
 
 int32_t po_get_int(searn_ptr srn, string arg) {
   PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
-  try { return d->var_map[arg].as<int>(); } catch (...) {}
-  try { return d->var_map[arg].as<size_t>(); } catch (...) {}
-  try { return d->var_map[arg].as<uint32_t>(); } catch (...) {}
-  try { return d->var_map[arg].as<uint64_t>(); } catch (...) {}
-  try { return d->var_map[arg].as<uint16_t>(); } catch (...) {}
-  try { return d->var_map[arg].as<int32_t>(); } catch (...) {}
-  try { return d->var_map[arg].as<int64_t>(); } catch (...) {}
-  try { return d->var_map[arg].as<int16_t>(); } catch (...) {}
+  try { return (*d->var_map)[arg].as<int>(); } catch (...) {}
+  try { return (*d->var_map)[arg].as<size_t>(); } catch (...) {}
+  try { return (*d->var_map)[arg].as<uint32_t>(); } catch (...) {}
+  try { return (*d->var_map)[arg].as<uint64_t>(); } catch (...) {}
+  try { return (*d->var_map)[arg].as<uint16_t>(); } catch (...) {}
+  try { return (*d->var_map)[arg].as<int32_t>(); } catch (...) {}
+  try { return (*d->var_map)[arg].as<int64_t>(); } catch (...) {}
+  try { return (*d->var_map)[arg].as<int16_t>(); } catch (...) {}
   // we know this'll fail but do it anyway to get the exception
-  return d->var_map[arg].as<int>();
+  return (*d->var_map)[arg].as<int>();
 }
 
 PyObject* po_get(searn_ptr srn, string arg) {
@@ -330,9 +336,6 @@ PyObject* po_get(searn_ptr srn, string arg) {
   // return None
   return py::incref(py::object().ptr());
 }
-
-//BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(searn_predict_overloads,    Searn::searn::predict,    2, 3);
-//BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(searn_predictLDF_overloads, Searn::searn::predictLDF, 3, 4);
 
 BOOST_PYTHON_MODULE(pylibvw) {
   // This will enable user-defined docstrings and python signatures,

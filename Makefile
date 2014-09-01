@@ -18,8 +18,8 @@ endif
 
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
-BOOST_INCLUDE = -I /usr/include 
-BOOST_LIBRARY = -L /usr/lib 
+BOOST_INCLUDE = -I /usr/include
+BOOST_LIBRARY = -L /usr/lib -L /usr/lib/x86_64-linux-gnu
 
 ifeq ($(UNAME), FreeBSD)
   LIBS = -l boost_program_options -l pthread -l z -l compat

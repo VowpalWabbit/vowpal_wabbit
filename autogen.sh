@@ -16,7 +16,10 @@ case $( uname -s ) in
   ;;
  Linux)
   AC_PATH=/usr/share
-  BOOST_DIR_ARG='--with-boost-libdir=/usr/lib/x86_64-linux-gnu'
+  LIBFILE=`ldconfig -p | grep program_options | tail -n 1 | cut -d '>' -f 2`
+  echo "Boost at: $LIBFILE"
+  BOOST_DIR_ARG="--with-boost-libdir=`dirname $LIBFILE`"
+  echo "Using $BOOST_DIR_ARG"
   alias vwlibtool=libtoolize
   ;;
  *)
