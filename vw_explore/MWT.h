@@ -36,7 +36,9 @@ public:
 		}
 		else
 		{
-			//return defaultPolicyFunc( ChooseAction(context, actions);
+			// TODO: what is the argument type of default policy func?
+			Action chosenAction = defaultPolicyFunc(nullptr);
+			return std::pair<Action, float>(chosenAction, 1.f);
 		}
 	}
 
@@ -89,7 +91,7 @@ public:
 	//}
 
 	template<class T>
-	void InitializeEpsilonGreedy(float epsilon, PolicyFunc defaultPolicyFunc, T* data, float explorationBudget)
+	void InitializeEpsilonGreedy(float epsilon, PolicyFunc defaultPolicyFunc, float explorationBudget)
 	{
 		pExplorer = new EpsilonGreedyExplorer(epsilon, defaultPolicyFunc);
 	}

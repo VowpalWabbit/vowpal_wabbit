@@ -21,7 +21,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Create a new MWT instance
 	MWT* mwt = new MWT(appId);
 
-	mwt->InitializeEpsilonGreedy<int>(0.2f, MyPolicyFunc, nullptr, 0.05f);
+	mwt->InitializeEpsilonGreedy<int>(0.2f, MyPolicyFunc, 0.05f);
 
 	// Create Features & Context
 	vector<feature> commonFeatures;
