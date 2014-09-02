@@ -608,7 +608,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
       l.total_new.push_back(0.f);
     
     size_t batch_size = l.examples.size();
-   
+    
     sort(l.sorted_features.begin(), l.sorted_features.end());
     
     eta = l.all->eta * powf((float)l.example_t, - l.all->power_t);
@@ -764,7 +764,6 @@ learner* setup(vw&all, po::variables_map& vm)
 
   vm = add_options(all, lda_opts);
 
-  all.p->sort_features = true;
   float temp = ceilf(logf((float)(all.lda*2+1)) / logf (2.f));
   all.reg.stride_shift = (size_t)temp;
   all.random_weights = true;
