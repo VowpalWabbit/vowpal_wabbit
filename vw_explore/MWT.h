@@ -4,6 +4,8 @@
 
 #include "stdafx.h"
 
+typedef Action PolicyFunc(void* data);
+
 class Explorer : public Policy
 {
 public:
@@ -15,30 +17,26 @@ public:
 class EpsilonGreedyExplorer : public Explorer
 {
 public:
-	EpsilonGreedyExplorer(float epsilon, Policy* defaultPolicy, bool smartExploration) : 
-		epsilon(epsilon), defaultPolicy(defaultPolicy), smartExploration(smartExploration), doExplore(true)
+	EpsilonGreedyExplorer(float epsilon, PolicyFunc& defaultPolicyFunc) : 
+		epsilon(epsilon), defaultPolicyFunc(defaultPolicyFunc), doExplore(true)
 	{
-		if (defaultPolicy == nullptr)
-		{
-			throw std::invalid_argument("Default Policy must be specified.");
-		}
 		if (epsilon <= 0)
 		{
 			throw std::invalid_argument("Initial epsilon value must be positive.");
 		}
 	}
 
-	std::pair<Action*, float> ChooseAction(Context* context, ActionSet* actions)
+	std::pair<Action, float> ChooseAction(Context& context, ActionSet& actions)
 	{
 		if (doExplore)
 		{
 			// Interface with VW
 			// TODO: Samples uniformly or with learner during epsilon of the time
-			return std::pair<Action*, float>(nullptr, 0.f);
+			return std::pair<Action, float>(Action(0), 0.f);
 		}
 		else
 		{
-			return defaultPolicy->ChooseAction(context, actions);
+			//return defaultPolicyFunc( ChooseAction(context, actions);
 		}
 	}
 
@@ -59,8 +57,7 @@ public:
 
 private:
 	float epsilon;
-	Policy* defaultPolicy;
-	bool smartExploration;
+	PolicyFunc& defaultPolicyFunc;
 	bool doExplore;
 };
 
@@ -86,17 +83,19 @@ public:
 	}
 
 	// TODO: should we restrict explorationBudget to some small numbers to prevent users from unwanted effect?
-	void InitializeEpsilonGreedy(float epsilon, Policy* defaultPolicy, float explorationBudget, bool smartExploration = false)
+	//void InitializeEpsilonGreedy(float epsilon, Policy& defaultPolicy, float explorationBudget, bool smartExploration = false)
+	//{
+	//	pExplorer = new EpsilonGreedyExplorer(epsilon, defaultPolicy, smartExploration);
+	//}
+
+	template<class T>
+	void InitializeEpsilonGreedy(float epsilon, PolicyFunc defaultPolicyFunc, T* data, float explorationBudget)
 	{
-		if (defaultPolicy == nullptr) // For now default policy is required
-		{
-			throw std::invalid_argument("A default policy must be specified.");
-		}
-		pExplorer = new EpsilonGreedyExplorer(epsilon, defaultPolicy, smartExploration);
+		pExplorer = new EpsilonGreedyExplorer(epsilon, defaultPolicyFunc);
 	}
 
 	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
-	std::pair<Action*, u64> ChooseAction(Context* context, ActionSet* actions)
+	std::pair<Action, u64> ChooseAction(Context& context, ActionSet& actions)
 	{
 		auto actionProb = pExplorer->ChooseAction(context, actions);
 		Interaction* pInteraction = new Interaction(context, actionProb.first, actionProb.second);
@@ -104,7 +103,7 @@ public:
 		
 		// TODO: Anything else to do here?
 
-		return std::pair<Action*, u64>(actionProb.first, pInteraction->GetId());
+		return std::pair<Action, u64>(actionProb.first, pInteraction->GetId());
 	}
 
 	void ReportReward(u64 id, Reward* reward)

@@ -8,14 +8,10 @@ using namespace std;
 
 atomic_uint64_t IDGenerator::gId = 0;
 
-class MyPolicy : public Policy
+Action MyPolicyFunc(void* data)
 {
-public:
-	pair<Action*, float> ChooseAction(Context* context, ActionSet* actions)
-	{
-		return pair<Action*, float>(nullptr, 1.f);
-	}
-};
+	return Action(10);
+}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -25,10 +21,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Create a new MWT instance
 	MWT* mwt = new MWT(appId);
 
-	// Create my own policy
-	Policy* myPolicy = new MyPolicy();
-
-	mwt->InitializeEpsilonGreedy(0.2f, myPolicy, 0.05f);
+	mwt->InitializeEpsilonGreedy<int>(0.2f, MyPolicyFunc, nullptr, 0.05f);
 
 	// Create Features & Context
 	vector<feature> commonFeatures;
@@ -43,7 +36,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	ActionSet* actset = new	ActionSet(100, 200);
 
 	// Now let MWT explore & choose an action
-	pair<Action*, u64> chosenAction = mwt->ChooseAction(ctx, actset);
+	pair<Action, u64> chosenAction = mwt->ChooseAction(*ctx, *actset);
 	
 	// Create a Reward and report
 	Reward* myReward = new Reward(2.5);

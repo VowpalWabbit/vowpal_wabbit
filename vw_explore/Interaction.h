@@ -185,7 +185,7 @@ private:
 class Policy
 {
 public:
-	virtual std::pair<Action*, float> ChooseAction(Context* context, ActionSet* actions) = 0;
+	virtual std::pair<Action, float> ChooseAction(Context& context, ActionSet& actions) = 0;
 	virtual ~Policy()
 	{
 	}
@@ -194,7 +194,7 @@ public:
 class Interaction : public ISerializable
 {
 public:
-	Interaction(Context* context, Action* action, double prob) : pContext(context), pAction(action), prob(prob)
+	Interaction(Context& context, Action action, double prob) : rContext(context), action(action), prob(prob)
 	{
 		pReward = nullptr;
 		id = IDGenerator::GetID();
@@ -223,17 +223,11 @@ public:
 
 	void Serialize(u8*& data, int& length)
 	{
-		if (pContext == nullptr ||
-			pAction == nullptr)
-		{
-			throw;
-		}
-
 		// TODO: Count length of data in bytes
 		length = 0;
 
-		pContext->Serialize(data, length);
-		pAction->Serialize(data, length);
+		rContext.Serialize(data, length);
+		action.Serialize(data, length);
 
 		if (pReward == nullptr)
 		{
@@ -244,14 +238,14 @@ public:
 
 	void Deserialize(u8* data, int length)
 	{
-		pContext->Deserialize(data, length);
-		pAction->Deserialize(data, length);
+		rContext.Deserialize(data, length);
+		action.Deserialize(data, length);
 		pReward->Deserialize(data, length);
 	}
 
 private:
-	Context* pContext;
-	Action* pAction;
+	Context& rContext;
+	Action action;
 	Reward* pReward;
 	double prob;
 	u64 id;
