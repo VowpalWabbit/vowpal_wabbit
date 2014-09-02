@@ -3,7 +3,7 @@ CXX = $(shell which clang++)
 #    it sometimes reveals type portability issues
 # CXX = $(shell which clang++) -m32
 ifneq ($(CXX),)
-  $(warning Using clang: "$(CXX)")
+  #$(warning Using clang: "$(CXX)")
   ARCH = -D__extern_always_inline=inline
 else
   CXX = g++
@@ -84,7 +84,7 @@ library_example: vw
 	cd library; $(MAKE) -j 8
 
 python: vw
-	cd python; $(MAKE)
+	cd python; $(MAKE) things
 
 .FORCE:
 

@@ -24,7 +24,7 @@ namespace MulticlassTask {
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
-  void structured_predict(searn& srn, vector<example*> ec) {
+  void structured_predict(searn& srn, vector<example*>& ec) {
     size_t gold_label = MULTICLASS::get_example_label(ec[0]);
     size_t tmp = ceil(log(max_label) /log(2))-1;
     size_t label = 0;
