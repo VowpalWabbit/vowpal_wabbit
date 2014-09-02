@@ -83,7 +83,7 @@ namespace Searn {
   void searn_finish(void*);
   void searn_drive(void*);
   void searn_learn(void*,example*);
-
+ 
   typedef uint32_t* history;
 
   struct history_info {
@@ -99,3 +99,19 @@ namespace Searn {
 }
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
