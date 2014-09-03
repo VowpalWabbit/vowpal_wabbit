@@ -50,7 +50,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	Context* ctx = new Context(commonFeatures);
 
 	// Create ActionSet
-	ActionSet* actset = new	ActionSet(100, 200);
+	ActionSet* actset = new	ActionSet(100);
 
 	// Now let MWT explore & choose an action
 	pair<Action, u64> chosenAction = mwt->ChooseAction(*ctx, *actset);

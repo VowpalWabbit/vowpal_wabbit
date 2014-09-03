@@ -25,12 +25,13 @@ public:
 	PolicyFunc* PolicyFunction;
 };
 
+// TODO: for exploration budget, exploration algo should implement smth like this
 class Explorer : public Policy
 {
-public:
-	virtual void AdjustFrequency(float frequency) = 0;
-	virtual void StopExplore() = 0;
-	virtual void StartExplore() = 0;
+//public:
+//	virtual void AdjustFrequency(float frequency) = 0;
+//	virtual void StopExplore() = 0;
+//	virtual void StartExplore() = 0;
 };
 
 template <class T>
@@ -50,51 +51,78 @@ public:
 		{
 			throw std::invalid_argument("Initial epsilon value must be positive.");
 		}
+		randomGenerator = new PRG<u32>();
+	}
+
+	~EpsilonGreedyExplorer()
+	{
+		delete randomGenerator;
 	}
 
 	std::pair<Action, float> ChooseAction(Context& context, ActionSet& actions)
 	{
-		if (doExplore)
+		// Invoke the default policy function to get the action
+		Action* chosenAction = nullptr;
+		if (typeid(defaultPolicyWrapper) == typeid(StatelessFunctionWrapper))
 		{
-			// Interface with VW
-			// TODO: Samples uniformly or with learner during epsilon of the time
-			return std::pair<Action, float>(Action(0), 0.f);
+			StatelessFunctionWrapper* statelessFunctionWrapper = (StatelessFunctionWrapper*)(&defaultPolicyWrapper);
+			chosenAction = &statelessFunctionWrapper->PolicyFunction(context, actions);
 		}
 		else
 		{
-			Action* chosenAction = nullptr;
-			if (typeid(defaultPolicyWrapper) == typeid(StatelessFunctionWrapper))
+			StatefulFunctionWrapper<T>* statefulFunctionWrapper = (StatefulFunctionWrapper<T>*)(&defaultPolicyWrapper);
+			chosenAction = &statefulFunctionWrapper->PolicyFunction(pDefaultPolicyStateContext, context, actions);
+		}
+
+		float actionProb = 0.f;
+		float baseProb = epsilon / actions.Count(); // uniform probability
+		
+		// TODO: check this random generation
+		if (((float)randomGenerator->uniformInt() / (2e32 - 1)) < 1.f - epsilon)
+		{
+			actionProb = 1.f - epsilon + baseProb;
+		}
+		else
+		{
+			// Get uniform random action ID
+			u32 actionId = (uint32_t)ceil(randomGenerator->uniformInt(0, actions.Count() - 1));
+
+			if (actionId == chosenAction->GetID())
 			{
-				StatelessFunctionWrapper* statelessFunctionWrapper = (StatelessFunctionWrapper*)(&defaultPolicyWrapper);
-				chosenAction = &statelessFunctionWrapper->PolicyFunction(context, actions);
+				// IF it matches the one chosen by the default policy
+				// then increase the probability
+				actionProb = 1.f - epsilon + baseProb;
 			}
 			else
 			{
-				StatefulFunctionWrapper<T>* statefulFunctionWrapper = (StatefulFunctionWrapper<T>*)(&defaultPolicyWrapper);
-				chosenAction = &statefulFunctionWrapper->PolicyFunction(pDefaultPolicyStateContext, context, actions);
+				// Otherwise it's just the uniform probability
+				actionProb = baseProb;
 			}
-			return std::pair<Action, float>(*chosenAction, 1.f);
+			chosenAction = &actions.Get(actionId);
 		}
+
+		return std::pair<Action, float>(*chosenAction, actionProb);
 	}
 
-	void AdjustFrequency(float frequency)
-	{
-		epsilon += frequency;
-	}
+	//void AdjustFrequency(float frequency)
+	//{
+	//	epsilon += frequency;
+	//}
 
-	void StopExplore()
-	{
-		doExplore = false;
-	}
-	
-	void StartExplore()
-	{
-		doExplore = true;
-	}
+	//void StopExplore()
+	//{
+	//	doExplore = false;
+	//}
+	//
+	//void StartExplore()
+	//{
+	//	doExplore = true;
+	//}
 
 private:
 	float epsilon;
 	bool doExplore;
+	PRG<u32>* randomGenerator;
 
 	BaseFunctionWrapper& defaultPolicyWrapper;
 	T* pDefaultPolicyStateContext;
@@ -153,7 +181,7 @@ public:
 	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
 	std::pair<Action, u64> ChooseAction(Context& context, ActionSet& actions)
 	{
-		auto actionProb = pExplorer->ChooseAction(context, actions);
+		std::pair<Action, float> actionProb = pExplorer->ChooseAction(context, actions);
 		Interaction* pInteraction = new Interaction(context, actionProb.first, actionProb.second);
 		pLogger->Store(pInteraction);
 		
@@ -163,6 +191,9 @@ public:
 	}
 
 private:
+	// TODO: App ID + Interaction ID is the unique identifier
+	// Users can specify a seed and we use it to generate app id for them
+	// so we can guarantee uniqueness.
 	std::string GenerateAppId()
 	{
 		return ""; // TODO: implement

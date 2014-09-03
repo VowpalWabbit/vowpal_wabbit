@@ -56,20 +56,28 @@ class ActionSet
 {
 public:
 
-	ActionSet(u32 startId, u32 endId)
+	// TODO: support opaque IDs, will need to update Action class as well
+	// e.g. add GetStringID() or GetDescription() etc...
+	ActionSet(u32 count)
 	{
-		startAction = new Action(startId);
-		endAction = new Action(endId);
-	}
-
-	ActionSet(std::vector<Action*> actionSet) : actionSet(actionSet)
-	{
+		for (u32 i = 0; i < count; i++)
+		{
+			actionSet.push_back(Action(i));
+		}
 	}
 
 	~ActionSet()
 	{
-		delete startAction;
-		delete endAction;
+	}
+
+	Action Get(u32 id)
+	{
+		return actionSet.at(id);
+	}
+
+	u32 Count()
+	{
+		return (u32)actionSet.size();
 	}
 
 	// TODO: should support GetAction() methods with a few overloads. current there's no way to iterate or get an action out of the set
@@ -80,9 +88,7 @@ public:
 	}
 
 private:
-	Action* startAction;
-	Action* endAction;
-	std::vector<Action*> actionSet;
+	std::vector<Action> actionSet;
 };
 
 class Context : public ISerializable
@@ -96,7 +102,7 @@ public:
 	}
 	*/
 
-	Context(std::vector<feature> commonFeatures, std::map<Action, feature> actionFeatures) :
+	Context(std::vector<feature> commonFeatures, std::map<Action, std::vector<feature>> actionFeatures) :
 		commonFeatures(commonFeatures), actionFeatures(actionFeatures)
 	{
 	}
@@ -116,7 +122,8 @@ public:
 		
 		if (match)
 		{
-			std::map<Action, feature>::iterator thisIter = actionFeatures.begin();
+			// TODO: implement
+			/*std::map<Action, feature>::iterator thisIter = actionFeatures.begin();
 			std::map<Action, feature>::iterator thatIter = secondContext->actionFeatures.begin();
 			while (thisIter != actionFeatures.end())
 			{
@@ -128,7 +135,7 @@ public:
 				}
 				thisIter++;
 				thatIter++;
-			}
+			}*/
 			// TODO: should this also compare other context? Probably not.
 		}
 		
@@ -147,7 +154,7 @@ public:
 
 private:
 	std::vector<feature> commonFeatures;
-	std::map<Action, feature> actionFeatures;
+	std::map<Action, std::vector<feature>> actionFeatures;
 	std::string otherContext;
 };
 

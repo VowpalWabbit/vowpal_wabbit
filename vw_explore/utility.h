@@ -1,3 +1,7 @@
+#pragma once
+
+#include <random>
+
 typedef unsigned __int64 u64;
 typedef unsigned __int32 u32;
 typedef unsigned __int16 u16;
@@ -9,13 +13,31 @@ typedef signed __int32 i32;
 typedef signed __int16 i16;
 typedef signed __int8  i8;
 
-/*
-typedef struct _GUID {
-	u32 Data1;
-	u16 Data2;
-	u16 Data3;
-	u8 Data4[8];
-} GUID;
-*/
-
 //TODO: Create a custom Guid class, use std::atomic internally for now
+
+///
+/// Convenience wrapper for psuedo-random number generation. 
+///
+template <typename IntType>
+class PRG
+{
+public:
+	PRG() : engine(rd()) { }
+
+	PRG(IntType seed) : engine(seed) { }
+
+    IntType uniformInt()
+	{
+		return uniform(engine);
+	}
+
+    IntType uniformInt(IntType low, IntType high)
+	{
+		return (uniform(engine) % (high - low + 1)) + low;
+	}
+
+private:
+    std::random_device rd;
+    std::mt19937_64 engine;
+    std::uniform_int_distribution<IntType> uniform;
+};
