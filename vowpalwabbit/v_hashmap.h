@@ -67,7 +67,8 @@ template<class K, class V> class v_hashmap{
   v_hashmap(size_t min_size, V def, bool (*eq)(void*,K&,K&), void*eq_dat=NULL) { init(min_size, def, eq, eq_dat); }
   v_hashmap(size_t min_size, V def, bool (*eq)(K&,K&))                         { init(min_size, def, eq); }
 
-  void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=NULL) { equivalent = eq; eq_data = eq_dat; }
+  void set_equivalent(bool (*eq)(void*,K&,K&), void*eq_dat=NULL) { equivalent = eq; eq_data = eq_dat; equivalent_no_data = NULL; }
+  void set_equivalent(bool (*eq)(K&,K&)) { equivalent_no_data = eq; eq_data = NULL; equivalent = NULL; }
 
   void delete_v() { dat.delete_v(); }
   
@@ -153,7 +154,7 @@ template<class K, class V> class v_hashmap{
   bool is_equivalent(K key, K key2) {
     if ((equivalent == NULL) && (equivalent_no_data == NULL))
       return true;
-    if (equivalent != NULL)
+    else if (equivalent != NULL)
       return equivalent(eq_data, key, key2);
     else
       return equivalent_no_data(key, key2);

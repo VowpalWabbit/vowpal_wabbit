@@ -877,8 +877,8 @@ namespace KSVM
 	params->active_c = 1.;
       if(vm.count("pool_greedy"))
 	params->active_pool_greedy = 1;
-      if(vm.count("para_active"))
-	params->para_active = 1;
+      /*if(vm.count("para_active"))
+	params->para_active = 1;*/
     }
     
     if(vm.count("pool_size")) 

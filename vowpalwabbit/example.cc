@@ -125,7 +125,7 @@ namespace VW {
 	fs.mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
 	fs.base = all.reg.weight_vector;
 	fs.all = &all;
-	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 	
+	GD::foreach_feature<features_and_source, uint32_t, vec_store>(all, *ec, fs); 	
 	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
 	total_sum_sq = collision_cleanup(fs.feature_map);
 	feature_map_len = fs.feature_map.size();

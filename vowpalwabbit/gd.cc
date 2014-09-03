@@ -243,7 +243,7 @@ void print_features(vw& all, example& ec)
     {
       size_t count = 0;
       for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-	count += ec.audit_features[*i].size() + ec.atomics[*i].size();
+	count += ec.atomics[*i].size();
       for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
 	for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
 	  {
