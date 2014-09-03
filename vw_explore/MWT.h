@@ -182,7 +182,7 @@ public:
 	std::pair<Action, u64> ChooseAction(Context& context, ActionSet& actions)
 	{
 		std::pair<Action, float> actionProb = pExplorer->ChooseAction(context, actions);
-		Interaction* pInteraction = new Interaction(context, actionProb.first, actionProb.second);
+		Interaction* pInteraction = new Interaction(&context, actionProb.first, actionProb.second);
 		pLogger->Store(pInteraction);
 		
 		// TODO: Anything else to do here?

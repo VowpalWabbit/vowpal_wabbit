@@ -9,7 +9,17 @@ public:
 
 	Logger(std::string appId) : appId(appId)
 	{
-		memInteractions.clear();
+		this->ClearData();
+	}
+
+	~Logger()
+	{
+		// If the logger is deleted while still having in-mem data then try flushing it
+		try
+		{
+			this->AutoFlush();
+		}
+		catch (std::exception) { }
 	}
 
 	void Store(Interaction* interaction)
@@ -19,7 +29,8 @@ public:
 		{
 			throw std::invalid_argument("Interaction to store is NULL");
 		}
-		memInteractions.push_back(interaction);
+
+		memInteractions.push_back(interaction->Copy());
 
 		this->AutoFlush();
 	}
@@ -37,7 +48,7 @@ public:
 				throw std::invalid_argument("Interaction set to store is empty");
 			}
 			
-			memInteractions.push_back(interactions[i]);
+			memInteractions.push_back(interactions[i]->Copy());
 			
 			this->AutoFlush();
 		}
@@ -95,6 +106,17 @@ private:
 
 			// TODO: write to disk
 		}
+		this->ClearData();
+	}
+
+	void ClearData()
+	{
+		// Delete all heap-allocated interactions
+		for (size_t i = 0; i < memInteractions.size(); i++)
+		{
+			delete memInteractions[i];
+		}
+
 		memInteractions.clear();
 	}
 

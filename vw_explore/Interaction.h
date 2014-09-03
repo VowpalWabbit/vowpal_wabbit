@@ -201,10 +201,19 @@ public:
 class Interaction : public ISerializable
 {
 public:
-	Interaction(Context& context, Action action, double prob) : rContext(context), action(action), prob(prob)
+	Interaction(Context* context, Action action, double prob, bool isCopy = false) : 
+		pContext(context), action(action), prob(prob), isCopy(isCopy)
 	{
 		pReward = nullptr;
 		id = IDGenerator::GetID();
+	}
+
+	~Interaction()
+	{
+		if (isCopy)
+		{
+			delete pContext;
+		}
 	}
 
 	void UpdateReward(Reward* reward)
@@ -215,6 +224,11 @@ public:
 	u64 GetId()
 	{
 		return id;
+	}
+
+	Interaction* Copy()
+	{
+		return new Interaction(new Context(*pContext), action, prob, /* isCopy = */ true);
 	}
 
 	/*
@@ -233,7 +247,7 @@ public:
 		// TODO: Count length of data in bytes
 		length = 0;
 
-		rContext.Serialize(data, length);
+		pContext->Serialize(data, length);
 		action.Serialize(data, length);
 
 		if (pReward != nullptr)
@@ -245,15 +259,16 @@ public:
 
 	void Deserialize(u8* data, int length)
 	{
-		rContext.Deserialize(data, length);
+		pContext->Deserialize(data, length);
 		action.Deserialize(data, length);
 		pReward->Deserialize(data, length);
 	}
 
 private:
-	Context& rContext;
+	Context* pContext;
 	Action action;
 	Reward* pReward;
 	double prob;
+	bool isCopy;
 	u64 id;
 };
