@@ -122,10 +122,6 @@ public:
 	}
 
 	// TODO: should we restrict explorationBudget to some small numbers to prevent users from unwanted effect?
-	//void InitializeEpsilonGreedy(float epsilon, Policy& defaultPolicy, float explorationBudget, bool smartExploration = false)
-	//{
-	//	pExplorer = new EpsilonGreedyExplorer(epsilon, defaultPolicy, smartExploration);
-	//}
 	template <class T>
 	void InitializeEpsilonGreedy(
 		float epsilon, 
@@ -166,17 +162,17 @@ public:
 		return std::pair<Action, u64>(actionProb.first, pInteraction->GetId());
 	}
 
+private:
+	std::string GenerateAppId()
+	{
+		return ""; // TODO: implement
+	}
+
 	void ReportReward(u64 id, Reward* reward)
 	{
 		pLogger->Join(id, reward);
 		// TODO: Update performance measures of current and default policy (estimated via offline eval)
 		// TODO: Evaluate how we're doing relative to default policy 
-	}
-
-private:
-	std::string GenerateAppId()
-	{
-		return ""; // TODO: implement
 	}
 
 	/// <summary>
