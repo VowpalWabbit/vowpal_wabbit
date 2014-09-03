@@ -4,7 +4,19 @@
 
 #include "stdafx.h"
 
-typedef Action PolicyFunc(void* data);
+class BaseFunctionWrapper
+{
+	
+};
+
+template <class T>
+class FunctionWrapper : public BaseFunctionWrapper
+{
+public:
+	typedef Action PolicyFunc(T* stateContext, Context& applicationContext, ActionSet& actions);
+
+	PolicyFunc* PolicyFunction;
+};
 
 class Explorer : public Policy
 {
@@ -14,11 +26,18 @@ public:
 	virtual void StartExplore() = 0;
 };
 
+template <class T>
 class EpsilonGreedyExplorer : public Explorer
 {
 public:
-	EpsilonGreedyExplorer(float epsilon, PolicyFunc& defaultPolicyFunc) : 
-		epsilon(epsilon), defaultPolicyFunc(defaultPolicyFunc), doExplore(true)
+	EpsilonGreedyExplorer(
+		float epsilon, 
+		FunctionWrapper<T>& defaultPolicyFuncWrapper, 
+		T* defaultPolicyFuncStateContext) :
+			epsilon(epsilon), 
+			doExplore(true), 
+			defaultPolicyWrapper(defaultPolicyFuncWrapper), 
+			pDefaultPolicyStateContext(defaultPolicyFuncStateContext)
 	{
 		if (epsilon <= 0)
 		{
@@ -36,8 +55,7 @@ public:
 		}
 		else
 		{
-			// TODO: what is the argument type of default policy func?
-			Action chosenAction = defaultPolicyFunc(nullptr);
+			Action chosenAction = defaultPolicyWrapper.PolicyFunction(nullptr, context, actions);
 			return std::pair<Action, float>(chosenAction, 1.f);
 		}
 	}
@@ -59,8 +77,10 @@ public:
 
 private:
 	float epsilon;
-	PolicyFunc& defaultPolicyFunc;
 	bool doExplore;
+
+	FunctionWrapper<T>& defaultPolicyWrapper;
+	T* pDefaultPolicyStateContext;
 };
 
 class MWT
@@ -89,11 +109,19 @@ public:
 	//{
 	//	pExplorer = new EpsilonGreedyExplorer(epsilon, defaultPolicy, smartExploration);
 	//}
-
-	template<class T>
-	void InitializeEpsilonGreedy(float epsilon, PolicyFunc defaultPolicyFunc, float explorationBudget)
+	template <class T>
+	void InitializeEpsilonGreedy(
+		float epsilon, 
+		typename FunctionWrapper<T>::PolicyFunc defaultPolicyFunc, 
+		T* defaultPolicyFuncStateContext, 
+		float explorationBudget)
 	{
-		pExplorer = new EpsilonGreedyExplorer(epsilon, defaultPolicyFunc);
+		FunctionWrapper<T>* funcWrapper = new FunctionWrapper<T>();
+		funcWrapper->PolicyFunction = &defaultPolicyFunc;
+		
+		pExplorer = new EpsilonGreedyExplorer<T>(epsilon, *funcWrapper, defaultPolicyFuncStateContext);
+		
+		pDefaultFuncWrapper = funcWrapper;
 	}
 
 	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
@@ -162,6 +190,6 @@ private:
 private:
 	std::string appId;
 	Explorer* pExplorer;
-	Policy* defaultPolicy;
 	Logger* pLogger;
+	BaseFunctionWrapper* pDefaultFuncWrapper;
 };

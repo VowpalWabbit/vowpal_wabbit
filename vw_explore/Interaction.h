@@ -229,7 +229,7 @@ public:
 		rContext.Serialize(data, length);
 		action.Serialize(data, length);
 
-		if (pReward == nullptr)
+		if (pReward != nullptr)
 		{
 			pReward->Serialize(data, length);
 		}

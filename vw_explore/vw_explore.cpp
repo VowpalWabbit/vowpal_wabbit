@@ -8,9 +8,9 @@ using namespace std;
 
 atomic_uint64_t IDGenerator::gId = 0;
 
-Action MyPolicyFunc(void* data)
+Action Default_Policy(int* stateContext, Context& applicationContext, ActionSet& actions)
 {
-	return Action(10);
+	return Action(101);
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -21,7 +21,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Create a new MWT instance
 	MWT* mwt = new MWT(appId);
 
-	mwt->InitializeEpsilonGreedy<int>(0.2f, MyPolicyFunc, 0.05f);
+	int data = 10;
+	mwt->InitializeEpsilonGreedy<int>(0.2f, Default_Policy, &data, 0.05f);
 
 	// Create Features & Context
 	vector<feature> commonFeatures;
@@ -38,11 +39,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Now let MWT explore & choose an action
 	pair<Action, u64> chosenAction = mwt->ChooseAction(*ctx, *actset);
 	
-	// Create a Reward and report
-	Reward* myReward = new Reward(2.5);
-	mwt->ReportReward(chosenAction.second, myReward);
+	cout << "Chosen Action ID is: " << chosenAction.first.GetID() << endl;
 
-	delete myReward;
+	// Create a Reward and report
+	//Reward* myReward = new Reward(2.5);
+	//mwt->ReportReward(chosenAction.second, myReward);
+
+	//delete myReward;
 	delete actset;
 	delete ctx;
 	delete mwt;
