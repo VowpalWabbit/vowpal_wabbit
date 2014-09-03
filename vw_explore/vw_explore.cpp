@@ -8,9 +8,14 @@ using namespace std;
 
 atomic_uint64_t IDGenerator::gId = 0;
 
-Action Default_Policy(int* stateContext, Context& applicationContext, ActionSet& actions)
+Action Stateful_Default_Policy(int* stateContext, Context& applicationContext, ActionSet& actions)
 {
-	return Action(101);
+	return Action(*stateContext);
+}
+
+Action Stateless_Default_Policy(Context& applicationContext, ActionSet& actions)
+{
+	return Action(99);
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -21,8 +26,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Create a new MWT instance
 	MWT* mwt = new MWT(appId);
 
-	int data = 10;
-	mwt->InitializeEpsilonGreedy<int>(0.2f, Default_Policy, &data, 0.05f);
+	float epsilon = .2f;
+	float exploreBudget = .05f;
+
+	bool useStatefulFunc = false;
+	if (useStatefulFunc)
+	{
+		int data = 101;
+		mwt->InitializeEpsilonGreedy<int>(epsilon, Stateful_Default_Policy, &data, exploreBudget);
+	}
+	else
+	{
+		mwt->InitializeEpsilonGreedy(epsilon, Stateless_Default_Policy, exploreBudget);
+	}
 
 	// Create Features & Context
 	vector<feature> commonFeatures;

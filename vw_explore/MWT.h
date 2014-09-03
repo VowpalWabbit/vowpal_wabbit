@@ -3,17 +3,24 @@
 //
 
 #include "stdafx.h"
+#include <typeinfo>
 
-class BaseFunctionWrapper
-{
-	
-};
+class BaseFunctionWrapper { };
+class MWTEmpty { };
 
 template <class T>
-class FunctionWrapper : public BaseFunctionWrapper
+class StatefulFunctionWrapper : public BaseFunctionWrapper
 {
 public:
 	typedef Action PolicyFunc(T* stateContext, Context& applicationContext, ActionSet& actions);
+
+	PolicyFunc* PolicyFunction;
+};
+
+class StatelessFunctionWrapper : public BaseFunctionWrapper
+{
+public:
+	typedef Action PolicyFunc(Context& applicationContext, ActionSet& actions);
 
 	PolicyFunc* PolicyFunction;
 };
@@ -32,7 +39,7 @@ class EpsilonGreedyExplorer : public Explorer
 public:
 	EpsilonGreedyExplorer(
 		float epsilon, 
-		FunctionWrapper<T>& defaultPolicyFuncWrapper, 
+		BaseFunctionWrapper& defaultPolicyFuncWrapper, 
 		T* defaultPolicyFuncStateContext) :
 			epsilon(epsilon), 
 			doExplore(true), 
@@ -55,8 +62,18 @@ public:
 		}
 		else
 		{
-			Action chosenAction = defaultPolicyWrapper.PolicyFunction(nullptr, context, actions);
-			return std::pair<Action, float>(chosenAction, 1.f);
+			Action* chosenAction = nullptr;
+			if (typeid(defaultPolicyWrapper) == typeid(StatelessFunctionWrapper))
+			{
+				StatelessFunctionWrapper* statelessFunctionWrapper = (StatelessFunctionWrapper*)(&defaultPolicyWrapper);
+				chosenAction = &statelessFunctionWrapper->PolicyFunction(context, actions);
+			}
+			else
+			{
+				StatefulFunctionWrapper<T>* statefulFunctionWrapper = (StatefulFunctionWrapper<T>*)(&defaultPolicyWrapper);
+				chosenAction = &statefulFunctionWrapper->PolicyFunction(pDefaultPolicyStateContext, context, actions);
+			}
+			return std::pair<Action, float>(*chosenAction, 1.f);
 		}
 	}
 
@@ -79,7 +96,7 @@ private:
 	float epsilon;
 	bool doExplore;
 
-	FunctionWrapper<T>& defaultPolicyWrapper;
+	BaseFunctionWrapper& defaultPolicyWrapper;
 	T* pDefaultPolicyStateContext;
 };
 
@@ -112,14 +129,27 @@ public:
 	template <class T>
 	void InitializeEpsilonGreedy(
 		float epsilon, 
-		typename FunctionWrapper<T>::PolicyFunc defaultPolicyFunc, 
+		typename StatefulFunctionWrapper<T>::PolicyFunc defaultPolicyFunc, 
 		T* defaultPolicyFuncStateContext, 
 		float explorationBudget)
 	{
-		FunctionWrapper<T>* funcWrapper = new FunctionWrapper<T>();
+		StatefulFunctionWrapper<T>* funcWrapper = new StatefulFunctionWrapper<T>();
 		funcWrapper->PolicyFunction = &defaultPolicyFunc;
 		
 		pExplorer = new EpsilonGreedyExplorer<T>(epsilon, *funcWrapper, defaultPolicyFuncStateContext);
+		
+		pDefaultFuncWrapper = funcWrapper;
+	}
+
+	void InitializeEpsilonGreedy(
+		float epsilon, 
+		StatelessFunctionWrapper::PolicyFunc defaultPolicyFunc, 
+		float explorationBudget)
+	{
+		StatelessFunctionWrapper* funcWrapper = new StatelessFunctionWrapper();
+		funcWrapper->PolicyFunction = defaultPolicyFunc;
+		
+		pExplorer = new EpsilonGreedyExplorer<MWTEmpty>(epsilon, *funcWrapper, nullptr);
 		
 		pDefaultFuncWrapper = funcWrapper;
 	}
