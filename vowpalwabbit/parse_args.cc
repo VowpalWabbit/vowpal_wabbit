@@ -1082,7 +1082,7 @@ namespace VW {
     return all;
   }
 
-  void finish(vw& all, bool delete_all)
+  void finish(vw& all, bool delete_all=true)
   {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
