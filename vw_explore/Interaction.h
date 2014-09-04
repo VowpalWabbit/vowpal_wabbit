@@ -56,7 +56,7 @@ public:
 	{
 		for (u32 i = 0; i < count; i++)
 		{
-			actionSet.push_back(Action(i));
+			actionSet.push_back(Action(i + 1)); // 1-based Action id
 		}
 	}
 
@@ -82,7 +82,7 @@ public:
 	}
 
 private:
-	std::vector<Action> actionSet; // TODO: should be 1-based
+	std::vector<Action> actionSet;
 	int count;
 };
 
@@ -160,7 +160,7 @@ public:
 class Interaction : public Serializable
 {
 public:
-	Interaction(Context* context, Action action, double prob, bool isCopy = false) : 
+	Interaction(Context* context, Action action, float prob, bool isCopy = false) : 
 		pContext(context), action(action), prob(prob), isCopy(isCopy)
 	{
 		id = Id_Generator::Get_Id();
@@ -193,7 +193,7 @@ public:
 private:
 	Context* pContext;
 	Action action;
-	double prob;
+	float prob;
 	bool isCopy;
 	u64 id;
 };

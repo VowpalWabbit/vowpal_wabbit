@@ -32,7 +32,7 @@ public:
 			throw std::invalid_argument("Interaction to store is NULL");
 		}
 
-		memory_Interactions.push_back(interaction->Copy());
+		interaction->Serialize(serialized_Stream);
 	}
 
 	void Store(std::vector<Interaction*> interactions)
@@ -47,33 +47,24 @@ public:
 		}
 	}
 
-	std::stringstream Get_All_Interactions()
+	std::string Get_All_Interactions()
 	{
-		std::stringstream string_data;
+		std::string content = serialized_Stream.str();
+		
+		this->Clear_Data();
 
-		for (size_t i = 0; i < memory_Interactions.size(); i++)
-		{
-			memory_Interactions[i]->Serialize(string_data);
-		}
-
-		return string_data;
+		return content;
 	}
 
 private:
 
 	void Clear_Data()
 	{
-		// Delete all heap-allocated interactions
-		for (size_t i = 0; i < memory_Interactions.size(); i++)
-		{
-			delete memory_Interactions[i];
-		}
-
-		memory_Interactions.clear();
+		serialized_Stream.clear();
 	}
 
 private:
 	std::string appId;
 
-	std::vector<Interaction*> memory_Interactions;
+	std::stringstream serialized_Stream;
 };

@@ -80,7 +80,7 @@ public:
 		else
 		{
 			// Get uniform random action ID
-			u32 actionId = (uint32_t)ceil(random_Generator->uniform_Int(0, actions.Count() - 1));
+			u32 actionId = random_Generator->uniform_Int(1, actions.Count());
 
 			if (actionId == chosen_Action->Get_Id())
 			{
