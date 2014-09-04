@@ -5,12 +5,11 @@
 #include "stdafx.h"
 #include "example.h"
 
-class ISerializable
+class Serializable
 {
 public:
-	virtual ~ISerializable(){}
-	virtual void Serialize(u8*&, int&) = 0;
-	virtual void Deserialize(u8*, int) = 0;
+	virtual ~Serializable(){}
+	virtual void Serialize(std::stringstream&) = 0;
 };
 
 class Id_Generator
@@ -30,7 +29,7 @@ private:
 	static std::atomic_uint64_t gId;
 };
 
-class Action : public ISerializable
+class Action : public Serializable
 {
 public:
 	Action(u32 id) : id(id)
@@ -38,12 +37,7 @@ public:
 	}
 	u32 Get_Id() const { return id; }
 
-	void Serialize(u8*& data, int& length)
-	{
-		//TODO: implement
-	}
-
-	void Deserialize(u8* data, int length)
+	void Serialize(std::stringstream& stream)
 	{
 		//TODO: implement
 	}
@@ -88,11 +82,11 @@ public:
 	}
 
 private:
-	std::vector<Action> actionSet;
+	std::vector<Action> actionSet; // TODO: should be 1-based
 	int count;
 };
 
-class Context : public ISerializable
+class Context : public Serializable
 {
 public:
 	/*
@@ -143,12 +137,7 @@ public:
 		return match;
 	}
 
-	void Serialize(u8*& data, int& length)
-	{
-		//TODO: implement
-	}
-
-	void Deserialize(u8* data, int length)
+	void Serialize(std::stringstream& stream)
 	{
 		//TODO: implement
 	}
@@ -157,37 +146,6 @@ private:
 	std::vector<feature> commonFeatures;
 	std::map<Action, std::vector<feature>> actionFeatures;
 	std::string otherContext;
-};
-
-class Reward : public ISerializable
-{
-public:
-	Reward(double reward) : reward(reward)
-	{
-	}
-
-	Reward(double reward, std::string otherOutcomes) : reward(reward), otherOutcomes(otherOutcomes)
-	{
-	}
-
-	double Get()
-	{
-		return reward;
-	}
-
-	void Serialize(u8*& data, int& length)
-	{
-		//TODO: implement
-	}
-
-	void Deserialize(u8* data, int length)
-	{
-		//TODO: implement
-	}
-
-private:
-	double reward;
-	std::string otherOutcomes;
 };
 
 class Policy
@@ -199,13 +157,12 @@ public:
 	}
 };
 
-class Interaction : public ISerializable
+class Interaction : public Serializable
 {
 public:
 	Interaction(Context* context, Action action, double prob, bool isCopy = false) : 
 		pContext(context), action(action), prob(prob), isCopy(isCopy)
 	{
-		pReward = nullptr;
 		id = Id_Generator::Get_Id();
 	}
 
@@ -215,11 +172,6 @@ public:
 		{
 			delete pContext;
 		}
-	}
-
-	void Update_Reward(Reward* reward)
-	{
-		pReward = reward;
 	}
 
 	u64 Get_Id()
@@ -232,43 +184,15 @@ public:
 		return new Interaction(new Context(*pContext), action, prob, /* isCopy = */ true);
 	}
 
-	/*
-	public override string ToString()
+	void Serialize(std::stringstream& stream)
 	{
-	string outString = "||i t:" + Context.Timestamp + " p:" + PScore + " tag:" + Tag + " ||a 1:" + Action.Arm + " ||r 1:" + Feedback.GetReward()
-	+ " ||x " + Context.CommonFeature.ToString();
-	foreach(KeyValuePair<string, Feature> entry in Context.ArmFeatures)
-	outString += " ||" + entry.Key + " " + entry.Value.ToString();
-	return outString;
-	}
-	*/
-
-	void Serialize(u8*& data, int& length)
-	{
-		// TODO: Count length of data in bytes
-		length = 0;
-
-		pContext->Serialize(data, length);
-		action.Serialize(data, length);
-
-		if (pReward != nullptr)
-		{
-			pReward->Serialize(data, length);
-		}
-
-	}
-
-	void Deserialize(u8* data, int length)
-	{
-		pContext->Deserialize(data, length);
-		action.Deserialize(data, length);
-		pReward->Deserialize(data, length);
+		pContext->Serialize(stream);
+		action.Serialize(stream);
 	}
 
 private:
 	Context* pContext;
 	Action action;
-	Reward* pReward;
 	double prob;
 	bool isCopy;
 	u64 id;
