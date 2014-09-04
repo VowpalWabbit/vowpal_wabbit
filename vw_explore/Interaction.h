@@ -13,7 +13,7 @@ public:
 	virtual void Deserialize(u8*, int) = 0;
 };
 
-class IDGenerator
+class Id_Generator
 {
 public:
 	static void Initialize()
@@ -21,7 +21,7 @@ public:
 		gId = 0;
 	}
 
-	static u64 GetID()
+	static u64 Get_Id()
 	{
 		return gId++;
 	}
@@ -36,7 +36,7 @@ public:
 	Action(u32 id) : id(id)
 	{
 	}
-	u32 GetID() const { return id; }
+	u32 Get_Id() const { return id; }
 
 	void Serialize(u8*& data, int& length)
 	{
@@ -52,13 +52,13 @@ private:
 	u32 id;
 };
 
-class ActionSet
+class Action_Set
 {
 public:
 
 	// TODO: support opaque IDs, will need to update Action class as well
 	// e.g. add GetStringID() or GetDescription() etc...
-	ActionSet(u32 count)
+	Action_Set(u32 count)
 	{
 		for (u32 i = 0; i < count; i++)
 		{
@@ -66,7 +66,7 @@ public:
 		}
 	}
 
-	~ActionSet()
+	~Action_Set()
 	{
 	}
 
@@ -84,7 +84,7 @@ public:
 
 	virtual bool Match(Action* firstAction, Action* secondAction)
 	{
-		return firstAction->GetID() == secondAction->GetID();
+		return firstAction->Get_Id() == secondAction->Get_Id();
 	}
 
 private:
@@ -111,7 +111,7 @@ public:
 	{
 	}
 
-	virtual bool IsMatch(Context* secondContext)
+	virtual bool Is_Match(Context* secondContext)
 	{
 		// Compare common features
 		bool match = (
@@ -127,7 +127,7 @@ public:
 			std::map<Action, feature>::iterator thatIter = secondContext->actionFeatures.begin();
 			while (thisIter != actionFeatures.end())
 			{
-				if (!(thisIter->first.GetID() == thatIter->first.GetID() && 
+				if (!(thisIter->first.Get_Id() == thatIter->first.Get_Id() && 
 					thisIter->second == thatIter->second))
 				{
 					match = false;
@@ -192,7 +192,7 @@ private:
 class Policy
 {
 public:
-	virtual std::pair<Action, float> ChooseAction(Context& context, ActionSet& actions) = 0;
+	virtual std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions) = 0;
 	virtual ~Policy()
 	{
 	}
@@ -205,7 +205,7 @@ public:
 		pContext(context), action(action), prob(prob), isCopy(isCopy)
 	{
 		pReward = nullptr;
-		id = IDGenerator::GetID();
+		id = Id_Generator::Get_Id();
 	}
 
 	~Interaction()
@@ -216,12 +216,12 @@ public:
 		}
 	}
 
-	void UpdateReward(Reward* reward)
+	void Update_Reward(Reward* reward)
 	{
 		pReward = reward;
 	}
 
-	u64 GetId()
+	u64 Get_Id()
 	{
 		return id;
 	}

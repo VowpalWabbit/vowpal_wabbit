@@ -6,14 +6,14 @@
 
 using namespace std;
 
-atomic_uint64_t IDGenerator::gId = 0;
+atomic_uint64_t Id_Generator::gId = 0;
 
-Action Stateful_Default_Policy(int* stateContext, Context& applicationContext, ActionSet& actions)
+Action Stateful_Default_Policy(int* stateContext, Context& applicationContext, Action_Set& actions)
 {
 	return Action(*stateContext);
 }
 
-Action Stateless_Default_Policy(Context& applicationContext, ActionSet& actions)
+Action Stateless_Default_Policy(Context& applicationContext, Action_Set& actions)
 {
 	return Action(99);
 }
@@ -33,11 +33,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (useStatefulFunc)
 	{
 		int data = 101;
-		mwt->InitializeEpsilonGreedy<int>(epsilon, Stateful_Default_Policy, &data, exploreBudget);
+		mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &data, exploreBudget);
 	}
 	else
 	{
-		mwt->InitializeEpsilonGreedy(epsilon, Stateless_Default_Policy, exploreBudget);
+		mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, exploreBudget);
 	}
 
 	// Create Features & Context
@@ -49,17 +49,17 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Context* ctx = new Context(commonFeatures);
 
-	// Create ActionSet
-	ActionSet* actset = new	ActionSet(100);
+	// Create Action_Set
+	Action_Set* actset = new Action_Set(100);
 
 	// Now let MWT explore & choose an action
-	pair<Action, u64> chosenAction = mwt->ChooseAction(*ctx, *actset);
+	pair<Action, u64> chosenAction = mwt->Choose_Action(*ctx, *actset);
 	
-	cout << "Chosen Action ID is: " << chosenAction.first.GetID() << endl;
+	cout << "Chosen Action ID is: " << chosenAction.first.Get_Id() << endl;
 
 	// Create a Reward and report
 	//Reward* myReward = new Reward(2.5);
-	//mwt->ReportReward(chosenAction.second, myReward);
+	//mwt->Report_Reward(chosenAction.second, myReward);
 
 	//delete myReward;
 	delete actset;

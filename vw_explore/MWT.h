@@ -5,24 +5,24 @@
 #include "stdafx.h"
 #include <typeinfo>
 
-class BaseFunctionWrapper { };
-class MWTEmpty { };
+class Base_Function_Wrapper { };
+class MWT_Empty { };
 
 template <class T>
-class StatefulFunctionWrapper : public BaseFunctionWrapper
+class Stateful_Function_Wrapper : public Base_Function_Wrapper
 {
 public:
-	typedef Action PolicyFunc(T* stateContext, Context& applicationContext, ActionSet& actions);
+	typedef Action Policy_Func(T* state_Context, Context& application_Context, Action_Set& actions);
 
-	PolicyFunc* PolicyFunction;
+	Policy_Func* Policy_Function;
 };
 
-class StatelessFunctionWrapper : public BaseFunctionWrapper
+class Stateless_Function_Wrapper : public Base_Function_Wrapper
 {
 public:
-	typedef Action PolicyFunc(Context& applicationContext, ActionSet& actions);
+	typedef Action Policy_Func(Context& application_Context, Action_Set& actions);
 
-	PolicyFunc* PolicyFunction;
+	Policy_Func* Policy_Function;
 };
 
 // TODO: for exploration budget, exploration algo should implement smth like this
@@ -35,73 +35,73 @@ class Explorer : public Policy
 };
 
 template <class T>
-class EpsilonGreedyExplorer : public Explorer
+class Epsilon_Greedy_Explorer : public Explorer
 {
 public:
-	EpsilonGreedyExplorer(
+	Epsilon_Greedy_Explorer(
 		float epsilon, 
-		BaseFunctionWrapper& defaultPolicyFuncWrapper, 
-		T* defaultPolicyFuncStateContext) :
+		Base_Function_Wrapper& default_Policy_Func_Wrapper, 
+		T* default_Policy_Func_State_Context) :
 			epsilon(epsilon), 
-			doExplore(true), 
-			defaultPolicyWrapper(defaultPolicyFuncWrapper), 
-			pDefaultPolicyStateContext(defaultPolicyFuncStateContext)
+			//doExplore(true), 
+			default_Policy_Wrapper(default_Policy_Func_Wrapper),
+			pDefault_Policy_State_Context(default_Policy_Func_State_Context)
 	{
 		if (epsilon <= 0)
 		{
 			throw std::invalid_argument("Initial epsilon value must be positive.");
 		}
-		randomGenerator = new PRG<u32>();
+		random_Generator = new PRG<u32>();
 	}
 
-	~EpsilonGreedyExplorer()
+	~Epsilon_Greedy_Explorer()
 	{
-		delete randomGenerator;
+		delete random_Generator;
 	}
 
-	std::pair<Action, float> ChooseAction(Context& context, ActionSet& actions)
+	std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions)
 	{
 		// Invoke the default policy function to get the action
-		Action* chosenAction = nullptr;
-		if (typeid(defaultPolicyWrapper) == typeid(StatelessFunctionWrapper))
+		Action* chosen_Action = nullptr;
+		if (typeid(default_Policy_Wrapper) == typeid(Stateless_Function_Wrapper))
 		{
-			StatelessFunctionWrapper* statelessFunctionWrapper = (StatelessFunctionWrapper*)(&defaultPolicyWrapper);
-			chosenAction = &statelessFunctionWrapper->PolicyFunction(context, actions);
+			Stateless_Function_Wrapper* stateless_Function_Wrapper = (Stateless_Function_Wrapper*)(&default_Policy_Wrapper);
+			chosen_Action = &stateless_Function_Wrapper->Policy_Function(context, actions);
 		}
 		else
 		{
-			StatefulFunctionWrapper<T>* statefulFunctionWrapper = (StatefulFunctionWrapper<T>*)(&defaultPolicyWrapper);
-			chosenAction = &statefulFunctionWrapper->PolicyFunction(pDefaultPolicyStateContext, context, actions);
+			Stateful_Function_Wrapper<T>* stateful_Function_Wrapper = (Stateful_Function_Wrapper<T>*)(&default_Policy_Wrapper);
+			chosen_Action = &stateful_Function_Wrapper->Policy_Function(pDefault_Policy_State_Context, context, actions);
 		}
 
-		float actionProb = 0.f;
-		float baseProb = epsilon / actions.Count(); // uniform probability
+		float action_Probability = 0.f;
+		float base_Probability = epsilon / actions.Count(); // uniform probability
 		
 		// TODO: check this random generation
-		if (((float)randomGenerator->uniformInt() / (2e32 - 1)) < 1.f - epsilon)
+		if (((float)random_Generator->uniform_Int() / (2e32 - 1)) < 1.f - epsilon)
 		{
-			actionProb = 1.f - epsilon + baseProb;
+			action_Probability = 1.f - epsilon + base_Probability;
 		}
 		else
 		{
 			// Get uniform random action ID
-			u32 actionId = (uint32_t)ceil(randomGenerator->uniformInt(0, actions.Count() - 1));
+			u32 actionId = (uint32_t)ceil(random_Generator->uniform_Int(0, actions.Count() - 1));
 
-			if (actionId == chosenAction->GetID())
+			if (actionId == chosen_Action->Get_Id())
 			{
 				// IF it matches the one chosen by the default policy
 				// then increase the probability
-				actionProb = 1.f - epsilon + baseProb;
+				action_Probability = 1.f - epsilon + base_Probability;
 			}
 			else
 			{
 				// Otherwise it's just the uniform probability
-				actionProb = baseProb;
+				action_Probability = base_Probability;
 			}
-			chosenAction = &actions.Get(actionId);
+			chosen_Action = &actions.Get(actionId);
 		}
 
-		return std::pair<Action, float>(*chosenAction, actionProb);
+		return std::pair<Action, float>(*chosen_Action, action_Probability);
 	}
 
 	//void AdjustFrequency(float frequency)
@@ -121,11 +121,11 @@ public:
 
 private:
 	float epsilon;
-	bool doExplore;
-	PRG<u32>* randomGenerator;
+	//bool doExplore;
+	PRG<u32>* random_Generator;
 
-	BaseFunctionWrapper& defaultPolicyWrapper;
-	T* pDefaultPolicyStateContext;
+	Base_Function_Wrapper& default_Policy_Wrapper;
+	T* pDefault_Policy_State_Context;
 };
 
 class MWT
@@ -133,11 +133,11 @@ class MWT
 public:
 	MWT(std::string& appId)
 	{
-		IDGenerator::Initialize();
+		Id_Generator::Initialize();
 
 		if (appId.empty())
 		{
-			appId = this->GenerateAppId();
+			appId = this->Generate_App_Id();
 		}
 
 		pLogger = new Logger(appId);
@@ -151,55 +151,55 @@ public:
 
 	// TODO: should we restrict explorationBudget to some small numbers to prevent users from unwanted effect?
 	template <class T>
-	void InitializeEpsilonGreedy(
+	void Initialize_Epsilon_Greedy(
 		float epsilon, 
-		typename StatefulFunctionWrapper<T>::PolicyFunc defaultPolicyFunc, 
+		typename Stateful_Function_Wrapper<T>::Policy_Func defaultPolicyFunc, 
 		T* defaultPolicyFuncStateContext, 
 		float explorationBudget)
 	{
-		StatefulFunctionWrapper<T>* funcWrapper = new StatefulFunctionWrapper<T>();
-		funcWrapper->PolicyFunction = &defaultPolicyFunc;
+		Stateful_Function_Wrapper<T>* func_Wrapper = new Stateful_Function_Wrapper<T>();
+		func_Wrapper->Policy_Function = &defaultPolicyFunc;
 		
-		pExplorer = new EpsilonGreedyExplorer<T>(epsilon, *funcWrapper, defaultPolicyFuncStateContext);
+		pExplorer = new Epsilon_Greedy_Explorer<T>(epsilon, *func_Wrapper, defaultPolicyFuncStateContext);
 		
-		pDefaultFuncWrapper = funcWrapper;
+		pDefault_Func_Wrapper = func_Wrapper;
 	}
 
-	void InitializeEpsilonGreedy(
+	void Initialize_Epsilon_Greedy(
 		float epsilon, 
-		StatelessFunctionWrapper::PolicyFunc defaultPolicyFunc, 
-		float explorationBudget)
+		Stateless_Function_Wrapper::Policy_Func default_Policy_Func, 
+		float exploration_Budget)
 	{
-		StatelessFunctionWrapper* funcWrapper = new StatelessFunctionWrapper();
-		funcWrapper->PolicyFunction = defaultPolicyFunc;
+		Stateless_Function_Wrapper* func_Wrapper = new Stateless_Function_Wrapper();
+		func_Wrapper->Policy_Function = default_Policy_Func;
 		
-		pExplorer = new EpsilonGreedyExplorer<MWTEmpty>(epsilon, *funcWrapper, nullptr);
+		pExplorer = new Epsilon_Greedy_Explorer<MWT_Empty>(epsilon, *func_Wrapper, nullptr);
 		
-		pDefaultFuncWrapper = funcWrapper;
+		pDefault_Func_Wrapper = func_Wrapper;
 	}
 
 	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
-	std::pair<Action, u64> ChooseAction(Context& context, ActionSet& actions)
+	std::pair<Action, u64> Choose_Action(Context& context, Action_Set& actions)
 	{
-		std::pair<Action, float> actionProb = pExplorer->ChooseAction(context, actions);
-		Interaction* pInteraction = new Interaction(&context, actionProb.first, actionProb.second);
+		std::pair<Action, float> action_Probability_Pair = pExplorer->Choose_Action(context, actions);
+		Interaction* pInteraction = new Interaction(&context, action_Probability_Pair.first, action_Probability_Pair.second);
 		pLogger->Store(pInteraction);
 		
 		// TODO: Anything else to do here?
 
-		return std::pair<Action, u64>(actionProb.first, pInteraction->GetId());
+		return std::pair<Action, u64>(action_Probability_Pair.first, pInteraction->Get_Id());
 	}
 
 private:
 	// TODO: App ID + Interaction ID is the unique identifier
 	// Users can specify a seed and we use it to generate app id for them
 	// so we can guarantee uniqueness.
-	std::string GenerateAppId()
+	std::string Generate_App_Id()
 	{
 		return ""; // TODO: implement
 	}
 
-	void ReportReward(u64 id, Reward* reward)
+	void Report_Reward(u64 id, Reward* reward)
 	{
 		pLogger->Join(id, reward);
 		// TODO: Update performance measures of current and default policy (estimated via offline eval)
@@ -248,5 +248,5 @@ private:
 	std::string appId;
 	Explorer* pExplorer;
 	Logger* pLogger;
-	BaseFunctionWrapper* pDefaultFuncWrapper;
+	Base_Function_Wrapper* pDefault_Func_Wrapper;
 };

@@ -9,7 +9,7 @@ public:
 
 	Logger(std::string appId) : appId(appId)
 	{
-		this->ClearData();
+		this->Clear_Data();
 	}
 
 	~Logger()
@@ -17,7 +17,7 @@ public:
 		// If the logger is deleted while still having in-mem data then try flushing it
 		try
 		{
-			this->AutoFlush();
+			this->Auto_Flush();
 		}
 		catch (std::exception) { }
 	}
@@ -30,9 +30,9 @@ public:
 			throw std::invalid_argument("Interaction to store is NULL");
 		}
 
-		memInteractions.push_back(interaction->Copy());
+		memory_Interactions.push_back(interaction->Copy());
 
-		this->AutoFlush();
+		this->Auto_Flush();
 	}
 
 	void Store(std::vector<Interaction*> interactions)
@@ -48,80 +48,80 @@ public:
 				throw std::invalid_argument("Interaction set to store is empty");
 			}
 			
-			memInteractions.push_back(interactions[i]->Copy());
+			memory_Interactions.push_back(interactions[i]->Copy());
 			
-			this->AutoFlush();
+			this->Auto_Flush();
 		}
 	}
 
-	Interaction* Load(u64 interactionID)
+	Interaction* Load(u64 interaction_Id)
 	{
-		Interaction* retInter = nullptr;
+		Interaction* return_Interaction = nullptr;
 
 		// First check if it's already in memory
 		// TODO: maybe index the in-mem vector by ID for faster lookups 
-		for (size_t i = 0; i < memInteractions.size(); i++)
+		for (size_t i = 0; i < memory_Interactions.size(); i++)
 		{
-			if (memInteractions[i]->GetId() == interactionID)
+			if (memory_Interactions[i]->Get_Id() == interaction_Id)
 			{
-				retInter = memInteractions[i];
+				return_Interaction = memory_Interactions[i];
 				break;
 			}
 		}
-		if (retInter == nullptr)
+		if (return_Interaction == nullptr)
 		{
 			// TODO: load from disk if needed or contact the service
 		}
-		return retInter;
+		return return_Interaction;
 	}
 
-	void Join(u64 interactionID, Reward* reward)
+	void Join(u64 interaction_Id, Reward* reward)
 	{
 		if (reward == nullptr)
 		{
 			throw new std::invalid_argument("Reward must be specified.");
 		}
-		Interaction* interaction = this->Load(interactionID);
+		Interaction* interaction = this->Load(interaction_Id);
 		if (interaction == nullptr)
 		{
 			throw new std::exception("Interaction should have been stored but is not found.");
 		}
-		interaction->UpdateReward(reward);
+		interaction->Update_Reward(reward);
 
 		// TODO: store the updated interaction back either to memory or to file
 	}
 
 private:
 	// Check and flush data to disk if necessary
-	void AutoFlush()
+	void Auto_Flush()
 	{
 		bool shouldFlush = false;
 		// TODO: check for flush criteria
 
-		for (size_t i = 0; i < memInteractions.size(); i++)
+		for (size_t i = 0; i < memory_Interactions.size(); i++)
 		{
 			u8* bytes = nullptr;
 			int byteLength = 0;
-			memInteractions[i]->Serialize(bytes, byteLength);
+			memory_Interactions[i]->Serialize(bytes, byteLength);
 
 			// TODO: write to disk
 		}
-		this->ClearData();
+		this->Clear_Data();
 	}
 
-	void ClearData()
+	void Clear_Data()
 	{
 		// Delete all heap-allocated interactions
-		for (size_t i = 0; i < memInteractions.size(); i++)
+		for (size_t i = 0; i < memory_Interactions.size(); i++)
 		{
-			delete memInteractions[i];
+			delete memory_Interactions[i];
 		}
 
-		memInteractions.clear();
+		memory_Interactions.clear();
 	}
 
 private:
 	std::string appId;
 
-	std::vector<Interaction*> memInteractions;
+	std::vector<Interaction*> memory_Interactions;
 };
