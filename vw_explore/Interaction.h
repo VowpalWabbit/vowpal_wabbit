@@ -89,52 +89,19 @@ private:
 class Context : public Serializable
 {
 public:
-	/*
-	Context() : commonFeature()
-	{
-		commonFeature = new std::vector<Feature>();
-		actionFeatures = new std::map<Action, Feature>();
-	}
-	*/
-
-	Context(std::vector<feature> commonFeatures, std::map<Action, std::vector<feature>> actionFeatures) :
-		commonFeatures(commonFeatures), actionFeatures(actionFeatures)
-	{
-	}
-
 	Context(std::vector<feature> commonFeatures) : commonFeatures(commonFeatures)
+	{
+	}
+
+	Context(std::vector<feature> commonFeatures, std::string otherContext) : 
+		commonFeatures(commonFeatures), otherContext(otherContext)
 	{
 	}
 
 	virtual bool Is_Match(Context* secondContext)
 	{
-		// Compare common features
-		bool match = (
-			commonFeatures.size() == secondContext->commonFeatures.size() &&
-			std::equal(commonFeatures.begin(), commonFeatures.end(), secondContext->commonFeatures.begin())
-		);
-		match &= (actionFeatures.size() == secondContext->actionFeatures.size());
-		
-		if (match)
-		{
-			// TODO: implement
-			/*std::map<Action, feature>::iterator thisIter = actionFeatures.begin();
-			std::map<Action, feature>::iterator thatIter = secondContext->actionFeatures.begin();
-			while (thisIter != actionFeatures.end())
-			{
-				if (!(thisIter->first.Get_Id() == thatIter->first.Get_Id() && 
-					thisIter->second == thatIter->second))
-				{
-					match = false;
-					break;
-				}
-				thisIter++;
-				thatIter++;
-			}*/
-			// TODO: should this also compare other context? Probably not.
-		}
-		
-		return match;
+		return (commonFeatures.size() == secondContext->commonFeatures.size() &&
+			std::equal(commonFeatures.begin(), commonFeatures.end(), secondContext->commonFeatures.begin()));
 	}
 
 	void Serialize(std::stringstream& stream)
@@ -144,7 +111,6 @@ public:
 
 private:
 	std::vector<feature> commonFeatures;
-	std::map<Action, std::vector<feature>> actionFeatures;
 	std::string otherContext;
 };
 
@@ -161,27 +127,14 @@ class Interaction : public Serializable
 {
 public:
 	Interaction(Context* context, Action action, float prob, bool isCopy = false) : 
-		pContext(context), action(action), prob(prob), isCopy(isCopy)
+		pContext(context), action(action), prob(prob)
 	{
 		id = Id_Generator::Get_Id();
-	}
-
-	~Interaction()
-	{
-		if (isCopy)
-		{
-			delete pContext;
-		}
 	}
 
 	u64 Get_Id()
 	{
 		return id;
-	}
-
-	Interaction* Copy()
-	{
-		return new Interaction(new Context(*pContext), action, prob, /* isCopy = */ true);
 	}
 
 	void Serialize(std::stringstream& stream)
@@ -194,6 +147,5 @@ private:
 	Context* pContext;
 	Action action;
 	float prob;
-	bool isCopy;
 	u64 id;
 };
