@@ -174,6 +174,11 @@ public:
 		return pExplorer->Choose_Action(context, actions).first;
 	}
 
+	std::string Get_All_Interactions()
+	{
+		return pLogger->Get_All_Interactions();
+	}
+
 private:
 	// TODO: App ID + Interaction ID is the unique identifier
 	// Users can specify a seed and we use it to generate app id for them

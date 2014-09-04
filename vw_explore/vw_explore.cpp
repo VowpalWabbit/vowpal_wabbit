@@ -56,6 +56,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	pair<Action, u64> chosenAction = mwt->Choose_Action_Join_Key(*ctx, *actset);
 	
 	cout << "Chosen Action ID is: " << chosenAction.first.Get_Id() << endl;
+	cout << mwt->Get_All_Interactions() << endl;
 
 	delete actset;
 	delete ctx;

@@ -4,12 +4,16 @@
 
 #include "stdafx.h"
 #include "example.h"
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+
+using namespace std;
 
 class Serializable
 {
 public:
-	virtual ~Serializable(){}
-	virtual void Serialize(std::stringstream&) = 0;
+	virtual void Serialize(std::ostringstream&) = 0;
 };
 
 class Id_Generator
@@ -37,9 +41,9 @@ public:
 	}
 	u32 Get_Id() const { return id; }
 
-	void Serialize(std::stringstream& stream)
+	void Serialize(std::ostringstream& stream)
 	{
-		//TODO: implement
+		stream << id;
 	}
 
 private:
@@ -104,9 +108,13 @@ public:
 			std::equal(commonFeatures.begin(), commonFeatures.end(), secondContext->commonFeatures.begin()));
 	}
 
-	void Serialize(std::stringstream& stream)
+	void Serialize(std::ostringstream& stream)
 	{
-		//TODO: implement
+		for (size_t i = 0; i < commonFeatures.size(); i++)
+		{
+			stream << commonFeatures[i].weight_index << ":" << commonFeatures[i].x << " ";
+		}
+		stream << "| " << otherContext;
 	}
 
 private:
@@ -137,10 +145,12 @@ public:
 		return id;
 	}
 
-	void Serialize(std::stringstream& stream)
+	void Serialize(std::ostringstream& stream)
 	{
-		pContext->Serialize(stream);
 		action.Serialize(stream);
+		stream << ":0:"; // for now report reward as 0
+		stream << std::fixed << std::setprecision(2) << prob << " | "; // 2 decimal places probability
+		pContext->Serialize(stream);
 	}
 
 private:

@@ -66,5 +66,5 @@ private:
 private:
 	std::string appId;
 
-	std::stringstream serialized_Stream;
+	std::ostringstream serialized_Stream;
 };
