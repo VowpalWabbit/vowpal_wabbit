@@ -162,10 +162,11 @@ Details are at the last section of this file
 
 It's  handy to have a bash shell to run git
 You can use a git bash shell fron the https://windows.github.com/ if you don't have it already.
-Or you can just edit the changes using notepad to read the files. Git Patching seemed to have some problems with the files.
+Or you can just edit the changes using notepad to read the files. 
 
-There are end of line problems with patching with git.
-I used the GnuWin32 patch package hhttp://gnuwin32.sourceforge.net/packages/patch.htm which will run in a dos batch file.
+There are end of line problems with patching with git patch.
+I used the GnuWin32 patch package binaries from
+http://gnuwin32.sourceforge.net/packages/patch.htm which will run in a dos batch file.
 This seems to be able to deal with patching without damaging the windows <CR><LF> pairs.
 
 **************************************************************************************************************
@@ -204,12 +205,12 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 	(b) unzip zlib-1.2.8.zip into the c:\src\vw\zlib-1.2.8  
 
 	use contrib/vstudio/vc11 since there is no contrib/vstudio/vc12 as yet
+	
 	get the GnuWin32 Patch Utility http://gnuwin32.sourceforge.net/packages/patch.htm patch.exe
 	and simply put it in vw.
 
-	(c) from a dos command shell
+	(c) from a dos command shell run as administrator
 	
-
 	  patch --dry-run -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 		check output messages looks good then
 	  patch  -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
@@ -230,7 +231,8 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
         "msbuild /p:Configuration=Debug;Platform=x64 zlibstat.vcxproj"
         "msbuild /p:Configuration=Release;Platform=x64 zlibvc.vcxproj"
         "msbuild /p:Configuration=Release;Platform=x64 zlibstat.vcxproj"
-	Ignore the warnings about Platform 'Itanium' referenced in the project file  since Itanium is no longer supported in Visual Studio 2013
+
+	Ignore the warnings about Platform 'Itanium' referenced in the project file  since Itanium is no longer supported 
 
 **************************************************************************************************************
 (6) Building Boost
