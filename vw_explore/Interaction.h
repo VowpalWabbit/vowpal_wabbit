@@ -58,7 +58,7 @@ public:
 
 	// TODO: support opaque IDs, will need to update Action class as well
 	// e.g. add GetStringID() or GetDescription() etc...
-	Action_Set(u32 count)
+	Action_Set(u32 count) : count(count)
 	{
 		for (u32 i = 0; i < count; i++)
 		{
@@ -77,7 +77,7 @@ public:
 
 	u32 Count()
 	{
-		return (u32)actionSet.size();
+		return count;
 	}
 
 	// TODO: should support GetAction() methods with a few overloads. current there's no way to iterate or get an action out of the set
@@ -89,6 +89,7 @@ public:
 
 private:
 	std::vector<Action> actionSet;
+	int count;
 };
 
 class Context : public ISerializable

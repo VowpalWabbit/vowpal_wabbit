@@ -179,15 +179,22 @@ public:
 	}
 
 	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
-	std::pair<Action, u64> Choose_Action(Context& context, Action_Set& actions)
+	std::pair<Action, u64> Choose_Action_Join_Key(Context& context, Action_Set& actions)
 	{
 		std::pair<Action, float> action_Probability_Pair = pExplorer->Choose_Action(context, actions);
-		Interaction* pInteraction = new Interaction(&context, action_Probability_Pair.first, action_Probability_Pair.second);
-		pLogger->Store(pInteraction);
+		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second);
+		pLogger->Store(&pInteraction);
 		
 		// TODO: Anything else to do here?
 
-		return std::pair<Action, u64>(action_Probability_Pair.first, pInteraction->Get_Id());
+		return std::pair<Action, u64>(action_Probability_Pair.first, pInteraction.Get_Id());
+	}
+
+	Action Choose_Action(Context& context, Action_Set& actions)
+	{
+		// TODO: Anything else to do here?
+
+		return pExplorer->Choose_Action(context, actions).first;
 	}
 
 private:
