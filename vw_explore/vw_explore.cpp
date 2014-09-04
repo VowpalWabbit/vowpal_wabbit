@@ -33,11 +33,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (useStatefulFunc)
 	{
 		int data = 101;
-		mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &data, exploreBudget);
+		mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &data);
 	}
 	else
 	{
-		mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, exploreBudget);
+		mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy);
 	}
 
 	// Create Features & Context
@@ -53,15 +53,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	Action_Set* actset = new Action_Set(100);
 
 	// Now let MWT explore & choose an action
-	pair<Action, u64> chosenAction = mwt->Choose_Action(*ctx, *actset);
+	pair<Action, u64> chosenAction = mwt->Choose_Action_Join_Key(*ctx, *actset);
 	
 	cout << "Chosen Action ID is: " << chosenAction.first.Get_Id() << endl;
 
-	// Create a Reward and report
-	//Reward* myReward = new Reward(2.5);
-	//mwt->Report_Reward(chosenAction.second, myReward);
-
-	//delete myReward;
 	delete actset;
 	delete ctx;
 	delete mwt;
