@@ -146,7 +146,7 @@ ns)</PreprocessorDefinitions>
 **************************************************************************************************************
 **************************************************************************************************************
 Notes for building VW under Visual Studio 2013 on Windows 8.1
-8/16/2014 Nick Nussbaum nickn@seanet.com
+9/02/2014 Nick Nussbaum nickn@seanet.com
 
 
 **************************************************************************************************************
@@ -160,9 +160,13 @@ There's a patch for zlib to make it work.
 There also some changes to Vowpal Wabbit in this commit.
 Details are at the last section of this file
 
-It's  handy to have a bash shell to run patch and git
+It's  handy to have a bash shell to run git
 You can use a git bash shell fron the https://windows.github.com/ if you don't have it already.
 Or you can just edit the changes using notepad to read the files. Git Patching seemed to have some problems with the files.
+
+There are end of line problems with patching with git.
+I used the GnuWin32 patch package hhttp://gnuwin32.sourceforge.net/packages/patch.htm which will run in a dos batch file.
+This seems to be able to deal with patching without damaging the windows <CR><LF> pairs.
 
 **************************************************************************************************************
 (2) open a copy various command shells
@@ -200,9 +204,11 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 	(b) unzip zlib-1.2.8.zip into the c:\src\vw\zlib-1.2.8  
 
 	use contrib/vstudio/vc11 since there is no contrib/vstudio/vc12 as yet
+	get the GnuWin32 Patch Utility http://gnuwin32.sourceforge.net/packages/patch.htm patch.exe
+	and simply put it in vw.
 
-
-	(c) from a bash shell cd  /c/src/vw
+	(c) from a dos command shell
+	
 
 	  patch --dry-run -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 		check output messages looks good then
