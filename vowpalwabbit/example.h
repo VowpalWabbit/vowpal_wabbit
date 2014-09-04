@@ -81,6 +81,7 @@ struct flat_example
 };
 
 flat_example* flatten_example(vw& all, example *ec);
+flat_example* flatten_sort_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 
 example *alloc_examples(size_t,size_t);

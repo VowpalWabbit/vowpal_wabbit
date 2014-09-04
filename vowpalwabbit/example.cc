@@ -20,12 +20,12 @@ int compare_feature(const void* p1, const void* p2) {
   else return 0;
 }  
   
-float collision_cleanup(v_array<feature>& feature_map) {  
+float collision_cleanup(feature* feature_map, size_t& len) {  
     
  int pos = 0;  
  float sum_sq = 0.;  
   
- for(uint32_t i = 1;i < feature_map.size();i++) {  
+ for(uint32_t i = 1;i < len;i++) {  
     if(feature_map[i].weight_index == feature_map[pos].weight_index)   
       feature_map[pos].x += feature_map[i].x;  
     else {  
@@ -34,8 +34,7 @@ float collision_cleanup(v_array<feature>& feature_map) {
     }  
   }  
   sum_sq += feature_map[pos].x*feature_map[pos].x;  
-  feature_map.end = &(feature_map[pos]);    
-  feature_map.end++;  
+  len = pos+1;
   return sum_sq;  
 }  
   
@@ -125,9 +124,7 @@ namespace VW {
 	fs.mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
 	fs.base = all.reg.weight_vector;
 	fs.all = &all;
-	GD::foreach_feature<features_and_source, uint32_t, vec_store>(all, *ec, fs); 	
-	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
-	total_sum_sq = collision_cleanup(fs.feature_map);
+	GD::foreach_feature<features_and_source, uint32_t, vec_store>(all, *ec, fs); 		
 	feature_map_len = fs.feature_map.size();
 	return fs.feature_map.begin;
 }
@@ -159,6 +156,14 @@ flat_example* flatten_example(vw& all, example *ec)
 	fec->feature_map = VW::get_features(all, ec, fec->feature_map_len, fec->total_sum_feat_sq);
 
 	return fec;  
+}
+
+flat_example* flatten_sort_example(vw& all, example *ec) 
+{
+  flat_example* fec = flatten_example(all, ec);
+  qsort(fec->feature_map, fec->feature_map_len, sizeof(feature), compare_feature);  
+  fec->total_sum_feat_sq = collision_cleanup(fec->feature_map, fec->feature_map_len);
+  return fec;
 }
 
 void free_flatten_example(flat_example* fec) 

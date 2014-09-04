@@ -406,7 +406,7 @@ namespace KSVM
   }
   
   void predict(svm_params& params, learner &base, example& ec) {
-    flat_example* fec = flatten_example(*(params.all),&ec);    
+    flat_example* fec = flatten_sort_example(*(params.all),&ec);    
     if(fec) {
       svm_example* sec = new svm_example(fec);
       double score;
@@ -759,7 +759,7 @@ namespace KSVM
   }
 
   void learn(svm_params& params, learner& base, example& ec) {
-    flat_example* fec = flatten_example(*(params.all),&ec);
+    flat_example* fec = flatten_sort_example(*(params.all),&ec);
     // for(int i = 0;i < fec->feature_map_len;i++)
     //   cout<<i<<":"<<fec->feature_map[i].x<<" "<<fec->feature_map[i].weight_index<<" ";
     // cout<<endl;
