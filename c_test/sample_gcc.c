@@ -2,7 +2,7 @@
 
 /*
 compile me with
-LD_LIBRARY_PATH=../vowpalwabbit/.libs ; gcc -Werror -fpic sample_gcc.c -l:libvw_c_wrapper.so -I../vowpalwabbit/ -o sample_gcc
+gcc sample_gcc.c -I./../vowpalwabbit/ -L./../.libs/ -lvw -lvw_c_wrapper -lallreduce -o sample_gcc
 */
 
 
