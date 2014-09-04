@@ -117,7 +117,7 @@ void vec_store(features_and_source& p, float fx, uint32_t fi) {
 }  
 
 namespace VW {
-  feature* get_features(vw& all, example* ec, size_t& feature_map_len, float& total_sum_sq)
+  feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 {
 	features_and_source fs;
 	fs.stride_shift = all.reg.stride_shift;
@@ -153,7 +153,7 @@ flat_example* flatten_example(vw& all, example *ec)
 	fec->ft_offset = ec->ft_offset;  
 	fec->num_features = ec->num_features;  
         
-	fec->feature_map = VW::get_features(all, ec, fec->feature_map_len, fec->total_sum_feat_sq);
+	fec->feature_map = VW::get_features(all, ec, fec->feature_map_len);
 
 	return fec;  
 }
