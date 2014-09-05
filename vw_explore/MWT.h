@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include <typeinfo>
+#include "hash.h"
 
 class Base_Function_Wrapper { };
 class MWT_Empty { };
@@ -55,6 +56,18 @@ public:
 	}
 
 	std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions)
+	{
+		return this->Choose_Action(context, actions, *random_Generator);
+	}
+
+	std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions, u32 seed)
+	{
+		PRG<u32> random_generator(seed);
+		return this->Choose_Action(context, actions, random_generator);
+	}
+
+private:
+	std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions, PRG<u32>& random_generator)
 	{
 		// Invoke the default policy function to get the action
 		Action* chosen_Action = nullptr;
@@ -167,11 +180,18 @@ public:
 		return std::pair<Action, u64>(action_Probability_Pair.first, pInteraction.Get_Id());
 	}
 
-	Action Choose_Action(Context& context, Action_Set& actions)
+	// TODO: check whether char* could be std::string
+	Action Choose_Action(Context& context, Action_Set& actions, char* unique_id, u32 length)
 	{
+		u32 seed = this->Compute_Seed(unique_id, length);
+
+		std::pair<Action, float> action_Probability_Pair = pExplorer->Choose_Action(context, actions, seed);
+		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second, seed);
+		pLogger->Store(&pInteraction);
+
 		// TODO: Anything else to do here?
 
-		return pExplorer->Choose_Action(context, actions).first;
+		return action_Probability_Pair.first;
 	}
 
 	std::string Get_All_Interactions()
@@ -186,6 +206,12 @@ private:
 	std::string Generate_App_Id()
 	{
 		return ""; // TODO: implement
+	}
+
+	u32 MWT::Compute_Seed(char* unique_id, u32 length)
+	{
+		// TODO: change it to u64, may change this hash function
+		return ::uniform_hash(unique_id, length, 0);
 	}
 
 private:

@@ -126,6 +126,7 @@ class Policy
 {
 public:
 	virtual std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions) = 0;
+	virtual std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions, u32 seed) = 0;
 	virtual ~Policy()
 	{
 	}
@@ -134,10 +135,17 @@ public:
 class Interaction : public Serializable
 {
 public:
-	Interaction(Context* context, Action action, float prob, bool isCopy = false) : 
+	Interaction(Context* context, Action action, float prob, u64 unique_id = 0) : 
 		pContext(context), action(action), prob(prob)
 	{
-		id = Id_Generator::Get_Id();
+		if (unique_id > 0)
+		{
+			id = unique_id;
+		}
+		else
+		{
+			id = Id_Generator::Get_Id();
+		}
 	}
 
 	u64 Get_Id()
