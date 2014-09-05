@@ -302,7 +302,6 @@
     <ClCompile Include="ect.cc" />
     <ClCompile Include="example.cc" />
     <ClCompile Include="gd.cc" />
-    <ClCompile Include="kernel_svm.cc" />
     <ClCompile Include="memory.cc" />
     <ClCompile Include="multiclass.cc" />
     <ClCompile Include="cost_sensitive.cc" />
