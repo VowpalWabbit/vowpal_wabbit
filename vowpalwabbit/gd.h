@@ -37,7 +37,14 @@ namespace GD{
       T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
   }
 
-  template <class R, void (*T)(R&, const float, float&)>
+ template <class R, void (*T)(R&, float, uint32_t)>
+   void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
+   {
+     for (feature* f = begin; f!= end; f++) 
+       T(dat, mult*f->x, f->weight_index + offset);
+   }
+ 
+ template <class R, class S, void (*T)(R&, float, S)>
   inline void foreach_feature(vw& all, example& ec, R& dat)
   {
     uint32_t offset = ec.ft_offset;
@@ -73,7 +80,13 @@ namespace GD{
     }
   }
 
-  inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
+template <class R, void (*T)(R&, float, float&)>
+  inline void foreach_feature(vw& all, example& ec, R& dat)
+  {
+    foreach_feature<R,float&,T>(all, ec, dat);
+  }
+
+ inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
 
   inline float inline_predict(vw& all, example& ec)
   {
