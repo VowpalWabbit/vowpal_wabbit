@@ -13,7 +13,7 @@ template <class T>
 class Stateful_Function_Wrapper : public Base_Function_Wrapper
 {
 public:
-	typedef Action Policy_Func(T* state_Context, Context& application_Context, Action_Set& actions);
+	typedef Action Policy_Func(T* state_Context, Context& application_Context);
 
 	Policy_Func* Policy_Function;
 };
@@ -21,7 +21,7 @@ public:
 class Stateless_Function_Wrapper : public Base_Function_Wrapper
 {
 public:
-	typedef Action Policy_Func(Context& application_Context, Action_Set& actions);
+	typedef Action Policy_Func(Context& application_Context);
 
 	Policy_Func* Policy_Function;
 };
@@ -74,12 +74,12 @@ private:
 		if (typeid(default_Policy_Wrapper) == typeid(Stateless_Function_Wrapper))
 		{
 			Stateless_Function_Wrapper* stateless_Function_Wrapper = (Stateless_Function_Wrapper*)(&default_Policy_Wrapper);
-			chosen_Action = &stateless_Function_Wrapper->Policy_Function(context, actions);
+			chosen_Action = &stateless_Function_Wrapper->Policy_Function(context);
 		}
 		else
 		{
 			Stateful_Function_Wrapper<T>* stateful_Function_Wrapper = (Stateful_Function_Wrapper<T>*)(&default_Policy_Wrapper);
-			chosen_Action = &stateful_Function_Wrapper->Policy_Function(pDefault_Policy_State_Context, context, actions);
+			chosen_Action = &stateful_Function_Wrapper->Policy_Function(pDefault_Policy_State_Context, context);
 		}
 
 		float action_Probability = 0.f;
@@ -123,7 +123,7 @@ private:
 class MWT
 {
 public:
-	MWT(std::string& appId)
+	MWT(std::string& appId, u32 num_actions)
 	{
 		Id_Generator::Initialize();
 
@@ -133,12 +133,14 @@ public:
 		}
 
 		pLogger = new Logger(appId);
+		action_set = new Action_Set(num_actions);
 	}
 
 	~MWT()
 	{
 		delete pLogger;
 		delete pExplorer;
+		delete action_set;
 	}
 
 	// TODO: should we restrict explorationBudget to some small numbers to prevent users from unwanted effect?
@@ -169,9 +171,9 @@ public:
 	}
 
 	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
-	std::pair<Action, u64> Choose_Action_Join_Key(Context& context, Action_Set& actions)
+	std::pair<Action, u64> Choose_Action_Join_Key(Context& context)
 	{
-		std::pair<Action, float> action_Probability_Pair = pExplorer->Choose_Action(context, actions);
+		std::pair<Action, float> action_Probability_Pair = pExplorer->Choose_Action(context, *action_set);
 		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second);
 		pLogger->Store(&pInteraction);
 		
@@ -181,11 +183,11 @@ public:
 	}
 
 	// TODO: check whether char* could be std::string
-	Action Choose_Action(Context& context, Action_Set& actions, char* unique_id, u32 length)
+	Action Choose_Action(Context& context, char* unique_id, u32 length)
 	{
 		u32 seed = this->Compute_Seed(unique_id, length);
 
-		std::pair<Action, float> action_Probability_Pair = pExplorer->Choose_Action(context, actions, seed);
+		std::pair<Action, float> action_Probability_Pair = pExplorer->Choose_Action(context, *action_set, seed);
 		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second, seed);
 		pLogger->Store(&pInteraction);
 
@@ -210,13 +212,15 @@ private:
 
 	u32 MWT::Compute_Seed(char* unique_id, u32 length)
 	{
-		// TODO: change it to u64, may change this hash function
-		return ::uniform_hash(unique_id, length, 0);
+		// TODO: fix linker errors, change return type to u64, may change this hash function
+		// return ::uniform_hash(unique_id, length, 0);
+		return 0;
 	}
 
 private:
 	std::string appId;
 	Explorer* pExplorer;
 	Logger* pLogger;
+	Action_Set* action_set;
 	Base_Function_Wrapper* pDefault_Func_Wrapper;
 };

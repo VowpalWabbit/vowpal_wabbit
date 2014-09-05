@@ -8,12 +8,12 @@ using namespace std;
 
 atomic_uint64_t Id_Generator::gId = 0;
 
-Action Stateful_Default_Policy(int* stateContext, Context& applicationContext, Action_Set& actions)
+Action Stateful_Default_Policy(int* stateContext, Context& applicationContext)
 {
 	return Action(*stateContext);
 }
 
-Action Stateless_Default_Policy(Context& applicationContext, Action_Set& actions)
+Action Stateless_Default_Policy(Context& applicationContext)
 {
 	return Action(99);
 }
@@ -24,7 +24,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	string appId = "myapp";
 	
 	// Create a new MWT instance
-	MWT* mwt = new MWT(appId);
+	MWT* mwt = new MWT(appId, 10);
 
 	float epsilon = .2f;
 	float exploreBudget = .05f;
@@ -49,16 +49,16 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Context* ctx = new Context(commonFeatures);
 
-	// Create Action_Set
-	Action_Set* actset = new Action_Set(100);
-
 	// Now let MWT explore & choose an action
-	pair<Action, u64> chosenAction = mwt->Choose_Action_Join_Key(*ctx, *actset);
+	pair<Action, u64> chosen_action_join_key = mwt->Choose_Action_Join_Key(*ctx);
+
+	char* unique_key = "1001";
+	Action chosen_action = mwt->Choose_Action(*ctx, unique_key, 4);
 	
-	cout << "Chosen Action ID is: " << chosenAction.first.Get_Id() << endl;
+	cout << "Chosen Action ID with join key is: " << chosen_action_join_key.first.Get_Id() << endl;
+	cout << "Chosen Action ID is: " << chosen_action.Get_Id() << endl;
 	cout << mwt->Get_All_Interactions() << endl;
 
-	delete actset;
 	delete ctx;
 	delete mwt;
 	return 0;
