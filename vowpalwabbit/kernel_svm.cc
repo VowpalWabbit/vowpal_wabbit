@@ -120,7 +120,7 @@ namespace KSVM
   {
     int alloc = 0;
     svm_model *model = params.model;
-    int n = model->num_support;
+    size_t n = model->num_support;
    
     if (krow.size() < n)
       {
@@ -129,7 +129,7 @@ namespace KSVM
 	//trim_cache(params);
 	num_kernel_evals += krow.size();
 	//cerr<<"Kernels ";
-	for (int i=krow.size(); i<n; i++)
+	for (size_t i=krow.size(); i<n; i++)
 	  {	    
 	    svm_example *sec = model->support_vec[i];
 	    float kv = kernel_function(this, sec, params.kernel_params, params.kernel_type);
@@ -155,10 +155,10 @@ namespace KSVM
 
   
   static int 
-  make_hot_sv(svm_params& params, int svi)
+  make_hot_sv(svm_params& params, size_t svi)
   {
     svm_model *model = params.model;    
-    int n = model->num_support;
+    size_t n = model->num_support;
     if (svi >= model->num_support) 
       cerr << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
     // rotate params fields
@@ -166,7 +166,7 @@ namespace KSVM
     int alloc = svi_e->compute_kernels(params);
     float svi_alpha = model->alpha[svi];
     float svi_delta = model->delta[svi];
-    for (int i=svi; i>0; --i)
+    for (size_t i=svi; i>0; --i)
       {
 	model->support_vec[i] = model->support_vec[i-1]; 
 	model->alpha[i] = model->alpha[i-1];
@@ -176,10 +176,10 @@ namespace KSVM
     model->alpha[0] = svi_alpha;
     model->delta[0] = svi_delta;
     // rotate cache    
-    for (int j=0; j<n; j++)
+    for (size_t j=0; j<n; j++)
       {
 	svm_example *e = model->support_vec[j];
-	int rowsize = e->krow.size();
+	size_t rowsize = e->krow.size();
 	if (svi < rowsize)
 	  {
 	    float kv = e->krow[svi];
@@ -203,7 +203,7 @@ namespace KSVM
   static int 
   trim_cache(svm_params& params)
   {
-    size_t sz = params.maxcache;
+    int sz = params.maxcache;
     svm_model *model = params.model;
     int n = model->num_support;
     int alloc = 0;
@@ -441,13 +441,13 @@ namespace KSVM
     return max_pos;
   }  
 
-  int remove(svm_params& params, int svi) {
+  int remove(svm_params& params, size_t svi) {
     svm_model* model = params.model;
     if (svi >= model->num_support) 
       cerr << "Internal error at " << __FILE__ << ":" << __LINE__ << endl;
     // shift params fields
     svm_example* svi_e = model->support_vec[svi];
-    for (int i=svi; i<model->num_support-1; ++i)
+    for (size_t i=svi; i<model->num_support-1; ++i)
       {
 	model->support_vec[i] = model->support_vec[i+1];
 	model->alpha[i] = model->alpha[i+1];
@@ -460,13 +460,13 @@ namespace KSVM
     model->num_support--;
     // shift cache
     int alloc = 0;
-    for (int j=0; j<model->num_support; j++)
+    for (size_t j=0; j<model->num_support; j++)
       {
 	svm_example *e = model->support_vec[j];
-	int rowsize = e->krow.size();
+	size_t rowsize = e->krow.size();
 	if (svi < rowsize)
 	  {
-	    for (int i=svi; i<rowsize-1; i++)
+	    for (size_t i=svi; i<rowsize-1; i++)
 	      e->krow[i] = e->krow[i+1];
 	    e->krow.pop();
 	    alloc -= 1;
@@ -571,7 +571,7 @@ namespace KSVM
     char* queries;
     flat_example* fec;
 
-    for(int i = 0;i < params.pool_pos;i++) {
+    for(size_t i = 0;i < params.pool_pos;i++) {
       if(!train_pool[i])
 	continue;
       
@@ -586,8 +586,8 @@ namespace KSVM
     //cerr<<"Sizes = "<<sizes[all.node]<<" ";
     all_reduce<size_t, add_size_t>(sizes, all.total, all.span_server, all.unique_id, all.total, all.node, all.socks);
 
-    int prev_sum = 0, total_sum = 0;
-    for(int i = 0;i < all.total;i++) {
+    size_t prev_sum = 0, total_sum = 0;
+    for(size_t i = 0;i < all.total;i++) {
       if(i <= (int)(all.node - 1))
 	prev_sum += sizes[i];
       total_sum += sizes[i];
@@ -642,7 +642,7 @@ namespace KSVM
     //cerr<<"In train "<<params.all->training<<endl;
     
     bool* train_pool = (bool*)calloc(params.pool_size, sizeof(bool));
-    for(int i = 0;i < params.pool_size;i++)
+    for(size_t i = 0;i < params.pool_size;i++)
       train_pool[i] = false;
     
     double* scores = (double*)calloc(params.pool_pos, sizeof(double));
@@ -653,7 +653,7 @@ namespace KSVM
     if(params.active) {           
       if(params.active_pool_greedy) { 
 	multimap<double, int> scoremap;
-	for(int i = 0;i < params.pool_pos; i++)
+	for(size_t i = 0;i < params.pool_pos; i++)
 	  scoremap.insert(pair<const double, const int>(fabs(scores[i]),i));
 
 	multimap<double, int>::iterator iter = scoremap.begin();
@@ -686,7 +686,7 @@ namespace KSVM
 
     
     if(params.para_active) {
-      for(int i = 0;i < params.pool_pos;i++)
+      for(size_t i = 0;i < params.pool_pos;i++)
 	if(!train_pool[i])
 	  delete params.pool[i];
       sync_queries(*(params.all), params, train_pool);
