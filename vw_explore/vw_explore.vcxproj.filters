@@ -27,9 +27,6 @@
     <ClInclude Include="Interaction.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="init.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="utility.h">
       <Filter>Source Files</Filter>
     </ClInclude>
