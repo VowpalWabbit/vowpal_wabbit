@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvw", "libvw.vcxproj", "{EA52DE0D-A5BE-4FB9-8C84-3A57BDFEBED9}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -28,6 +28,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c_test", "..\c_test\c_test.
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spanning_tree", "..\cluster\cluster.vcxproj", "{2720BCD9-6731-4A11-BA24-1F74E35BA97F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "deploy_vw", "..\deploy_vw\deploy_vw.vcxproj", "{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF} = {1055A78F-1E3A-4E6C-BBF5-0B63299C4ADF}
+		{2720BCD9-6731-4A11-BA24-1F74E35BA97F} = {2720BCD9-6731-4A11-BA24-1F74E35BA97F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -155,6 +161,20 @@ Global
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x64.Build.0 = Release|x64
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x86.ActiveCfg = Release|Win32
 		{2720BCD9-6731-4A11-BA24-1F74E35BA97F}.Release|x86.Build.0 = Release|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Debug|x64.ActiveCfg = Debug|x64
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Debug|x86.ActiveCfg = Debug|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Debug|x86.Build.0 = Debug|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Release|Any CPU.ActiveCfg = Release|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Release|Win32.ActiveCfg = Release|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Release|x64.ActiveCfg = Release|x64
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Release|x86.ActiveCfg = Release|Win32
+		{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
