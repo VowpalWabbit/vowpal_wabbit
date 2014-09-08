@@ -9,7 +9,7 @@ class Logger
 {
 public:
 
-	Logger(std::string appId) : appId(appId)
+	Logger(std::string app_id) : m_app_id(app_id)
 	{
 		this->Clear_Data();
 	}
@@ -32,7 +32,7 @@ public:
 			throw std::invalid_argument("Interaction to store is NULL");
 		}
 
-		interaction->Serialize(serialized_Stream);
+		interaction->Serialize(m_serialized_stream);
 	}
 
 	void Store(std::vector<Interaction*> interactions)
@@ -49,7 +49,7 @@ public:
 
 	std::string Get_All_Interactions()
 	{
-		std::string content = serialized_Stream.str();
+		std::string content = m_serialized_stream.str();
 		
 		this->Clear_Data();
 
@@ -60,11 +60,11 @@ private:
 
 	void Clear_Data()
 	{
-		serialized_Stream.clear();
+		m_serialized_stream.clear();
 	}
 
 private:
-	std::string appId;
+	std::string m_app_id;
 
-	std::ostringstream serialized_Stream;
+	std::ostringstream m_serialized_stream;
 };
