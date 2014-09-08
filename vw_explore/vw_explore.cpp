@@ -6,7 +6,7 @@
 
 using namespace std;
 
-atomic_uint64_t Id_Generator::gId = 0;
+atomic_uint64_t Id_Generator::g_id = 0;
 
 Action Stateful_Default_Policy(int* stateContext, Context& applicationContext)
 {
