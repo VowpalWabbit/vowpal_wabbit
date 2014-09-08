@@ -55,19 +55,19 @@ public:
 		delete random_Generator;
 	}
 
-	std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions)
+	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions)
 	{
 		return this->Choose_Action(context, actions, *random_Generator);
 	}
 
-	std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions, u32 seed)
+	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
 		return this->Choose_Action(context, actions, random_generator);
 	}
 
 private:
-	std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions, PRG<u32>& random_generator)
+	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
 	{
 		// Invoke the default policy function to get the action
 		Action* chosen_Action = nullptr;
@@ -125,7 +125,7 @@ class MWT
 public:
 	MWT(std::string& appId, u32 num_actions)
 	{
-		Id_Generator::Initialize();
+		IdGenerator::Initialize();
 
 		if (appId.empty())
 		{
@@ -133,7 +133,7 @@ public:
 		}
 
 		pLogger = new Logger(appId);
-		action_set = new Action_Set(num_actions);
+		action_set = new ActionSet(num_actions);
 	}
 
 	~MWT()
@@ -221,6 +221,6 @@ private:
 	std::string appId;
 	Explorer* pExplorer;
 	Logger* pLogger;
-	Action_Set* action_set;
+	ActionSet* action_set;
 	Base_Function_Wrapper* pDefault_Func_Wrapper;
 };

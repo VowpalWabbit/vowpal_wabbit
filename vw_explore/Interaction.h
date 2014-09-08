@@ -16,7 +16,7 @@ public:
 	virtual void Serialize(std::ostringstream&) = 0;
 };
 
-class Id_Generator
+class IdGenerator
 {
 public:
 	static void Initialize()
@@ -50,13 +50,13 @@ private:
 	u32 m_id;
 };
 
-class Action_Set
+class ActionSet
 {
 public:
 
 	// TODO: support opaque IDs, will need to update Action class as well
 	// e.g. add GetStringID() or GetDescription() etc...
-	Action_Set(u32 count) : m_count(count)
+	ActionSet(u32 count) : m_count(count)
 	{
 		for (u32 i = 0; i < count; i++)
 		{
@@ -64,7 +64,7 @@ public:
 		}
 	}
 
-	~Action_Set()
+	~ActionSet()
 	{
 	}
 
@@ -125,8 +125,8 @@ private:
 class Policy
 {
 public:
-	virtual std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions) = 0;
-	virtual std::pair<Action, float> Choose_Action(Context& context, Action_Set& actions, u32 seed) = 0;
+	virtual std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions) = 0;
+	virtual std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions, u32 seed) = 0;
 	virtual ~Policy()
 	{
 	}
@@ -144,7 +144,7 @@ public:
 		}
 		else
 		{
-			m_id = Id_Generator::Get_Id();
+			m_id = IdGenerator::Get_Id();
 		}
 	}
 
