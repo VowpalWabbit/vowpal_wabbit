@@ -26,12 +26,12 @@ public:
 
 	PRG(IntType seed) : engine(seed) { }
 
-    IntType uniform_Int()
+    IntType Uniform_Int()
 	{
 		return uniform(engine);
 	}
 
-    IntType uniform_Int(IntType low, IntType high)
+    IntType Uniform_Int(IntType low, IntType high)
 	{
 		return (uniform(engine) % (high - low + 1)) + low;
 	}

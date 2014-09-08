@@ -86,14 +86,14 @@ private:
 		float base_probability = m_epsilon / actions.Count(); // uniform probability
 		
 		// TODO: check this random generation
-		if (((float)random_generator.uniform_Int() / (2e32 - 1)) < 1.f - m_epsilon)
+		if (((double)random_generator.Uniform_Int() / (2e32 - 1)) < 1.f - m_epsilon)
 		{
 			action_probability = 1.f - m_epsilon + base_probability;
 		}
 		else
 		{
 			// Get uniform random action ID
-			u32 actionId = random_generator.uniform_Int(1, actions.Count());
+			u32 actionId = random_generator.Uniform_Int(1, actions.Count());
 
 			if (actionId == chosen_action->Get_Id())
 			{
