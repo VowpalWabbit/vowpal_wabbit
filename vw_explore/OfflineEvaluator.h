@@ -11,12 +11,12 @@ class PolicyStats
 
 class OfflineEvaluator
 {
-	PolicyStats* addExample(Interaction* interaction)
+	PolicyStats* Add_Example(Interaction* interaction)
 	{
 		// TODO: Do offline eval computation, update pStats...
 	}
 
 private:
-	Policy* pPolicy;
-	PolicyStats* pStats;
+	Policy* m_policy;
+	PolicyStats* m_stats;
 };
