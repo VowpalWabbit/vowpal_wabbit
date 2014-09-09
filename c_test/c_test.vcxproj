@@ -103,7 +103,7 @@
       <AdditionalDependencies>$(SolutionDir)dll\$(Platform)\$(ConfigurationName)\libvw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y/d $(SolutionDir)dll\$(PlatformName)\$(ConfigurationName)\libvw.* $(TargetDir)</Command>
+      <Command>xcopy /y/d $(SolutionDir)dll\$(PlatformShortName)\$(ConfigurationName)\libvw.* $(TargetDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
