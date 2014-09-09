@@ -13,7 +13,8 @@ nobase_include_HEADERS = vowpalwabbit/allreduce.h \
 	vowpalwabbit/parser.h \
 	vowpalwabbit/simple_label.h \
 	vowpalwabbit/v_array.h \
-	vowpalwabbit/vw.h
+	vowpalwabbit/vw.h \
+	vowpalwabbit/vwdll.h
 
 noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/autolink.h \
