@@ -113,7 +113,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /y/d $(ProjectDir)..\vowpalwabbit\dll\x86\$(ConfigurationName)\libvw.* $(TargetDir)
+    <PostBuildEvent>xcopy /y/d $(ProjectDir)..\vowpalwabbit\dll\$(PlatformName)\$(ConfigurationName)\libvw.* $(TargetDir)
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
