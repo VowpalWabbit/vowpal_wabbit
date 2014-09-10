@@ -15,6 +15,7 @@ const size_t constant_namespace = 128;
 const size_t nn_output_namespace  = 129;
 const size_t autolink_namespace  = 130;
 const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
+const size_t conditioning_namespace = neighbor_namespace;
 const size_t affix_namespace     = 132;   // this is \x84
 const size_t spelling_namespace  = 133;   // this is \x85
 

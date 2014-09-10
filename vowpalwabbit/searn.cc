@@ -701,15 +701,6 @@ namespace Searn
     }
   }
 
-  template<class T> bool v_array_contains(v_array<T> &A, T x) {
-    for (T* e = A.begin; e != A.end; ++e)
-      if (*e == x)
-        return true;
-    return false;
-  }
-
-
-
  
   template <class T>
   uint32_t single_action(vw& all, searn& srn, learner& base, example* ecs, size_t num_ec, T* valid_labels, int pol, v_array<uint32_t> *ystar, bool ystar_is_uint32t, bool allow_exploration, bool set_valid_labels_on_oracle=false) {
