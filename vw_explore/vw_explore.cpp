@@ -6,7 +6,8 @@
 
 using namespace std;
 
-atomic_uint64_t IdGenerator::g_id = 0;
+u64	IdGenerator::g_id = 0;
+CRITICAL_SECTION IdGenerator::g_id_mutex;
 
 Action Stateful_Default_Policy(int* stateContext, Context& applicationContext)
 {

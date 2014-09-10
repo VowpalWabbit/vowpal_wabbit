@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <Windows.h>
 
 using namespace std;
 
@@ -22,15 +23,27 @@ public:
 	static void Initialize()
 	{
 		g_id = 0;
+		::InitializeCriticalSection(&g_id_mutex);
 	}
 
 	static u64 Get_Id()
 	{
-		return g_id++;
+		::EnterCriticalSection(&g_id_mutex);
+		u64 return_id = g_id;
+		g_id++;
+		::LeaveCriticalSection(&g_id_mutex);
+
+		return return_id;
+	}
+
+	static void Destroy()
+	{
+		::DeleteCriticalSection(&g_id_mutex);
 	}
 
 private:
-	static std::atomic_uint64_t g_id;
+	static u64 g_id;
+	static CRITICAL_SECTION g_id_mutex;
 };
 
 class Action : public Serializable

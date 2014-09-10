@@ -138,6 +138,8 @@ public:
 
 	~MWT()
 	{
+		IdGenerator::Destroy();
+
 		delete m_logger;
 		delete m_explorer;
 		delete m_action_set;

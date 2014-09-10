@@ -57,8 +57,10 @@ test/RunTests.last.times
 */x64
 */obj
 */dll
+*/ipch
 
 # VS files
 *.opensdf
 *.suo
 *.sdf
+*.vcxproj.user
