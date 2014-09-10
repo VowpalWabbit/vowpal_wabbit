@@ -214,6 +214,14 @@ extern "C"
 		return VW::get_prediction(ex);
 	}
 
+	VW_DLL_MEMBER float VW_CALLING_CONV VW_Predict(VW_HANDLE handle, VW_EXAMPLE e) 
+	{
+		vw * pointer = static_cast<vw*>(handle);
+		example * ex = static_cast<example*>(e);
+		pointer->l->predict(*ex);
+		return VW::get_prediction(ex);
+	}
+
 	VW_DLL_MEMBER float VW_CALLING_CONV VW_Get_Weight(VW_HANDLE handle, size_t index, size_t offset)
 	{
 		vw* pointer = static_cast<vw*>(handle);
