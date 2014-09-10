@@ -397,9 +397,7 @@ namespace EntityRelationTask {
     }
   }
 
-  
-  
-  void structured_predict(searn& srn, vector<example*> ec) {
+  void structured_predict(searn& srn, vector<example*>& ec) {
     task_data* my_task_data = srn.get_task_data<task_data>();
     
     v_array<size_t> predictions;

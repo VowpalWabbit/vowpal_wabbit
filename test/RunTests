@@ -76,7 +76,7 @@ sub usage(@) {
         -c      print test-suite commands before running them
         -d      print diff output on significant diff failure
         -D      print diff output even if it is not significant
-        -e      Abort on first diff error
+        -e      exit with non-zero status on first error
         -w      Ignore white-space differences (diff --ignore-space-change)
         -f      Ignore small (< $Epsilon) floating-point differences (fuzzy compare)
         -E<e>   Tolerance epsilon <e> for fuzzy compares (default $Epsilon)
@@ -99,21 +99,25 @@ sub mysystem {
 
 sub command_failed($) {
     # Deal with cases where vw crashes, exits prematurely etc.
+    # print a message to distinguish between all cases
+    # return non-zero status if anything is bad
     my $cmd = shift;
+    my $exitcode = 0;
     if ($?) {
-        my $exitcode = $? >> 8;
+        $exitcode = $? >> 8;
         my $signal = $? & 127; 
         my $core = ''; if ($? & 128) { $core = ' (core dumped)'; }
         if ($signal) {
             printf STDERR
                 "$0: test $TestNo: '%s' died from signal $signal$core\n", $cmd;
+            $exitcode = 1;
         } elsif ($exitcode) {
             printf STDERR
                 "$0: test $TestNo: '%s' failed (exitcode=$exitcode)\n", $cmd;
         }
     }
     # This is non-zero only if $cmd failed
-    $?
+    $exitcode;
 }
 
 sub valgrind_errfile($) {
@@ -171,7 +175,9 @@ sub init() {
     getopts('wcdDefyE:ov:Vt:') || usage();
     $opt_v = 0 unless (defined $opt_v and $opt_v);
 
-    print STDERR "testing $^O ";
+    my $hostname = `hostname`; chomp($hostname);
+    printf STDERR "Testing on: hostname=%s OS=%s\n", $hostname, $^O;
+
     if ($^O =~ /MSWin/i) {
         v(1, "OS is $^O\n");
         # On MS Windows we need to change paths to external executables
@@ -574,7 +580,7 @@ sub run_tests() {
         unless ($opt_d);
     print STDERR "$0: '-o' to force overwrite references\n"
         unless ($opt_o);
-    print STDERR "$0: '-e' to abort on first failure\n"
+    print STDERR "$0: '-e' to abort/exit on first failure\n"
         unless ($opt_e);
 
     my ($cmd, $out_ref, $err_ref, $pred_ref);
@@ -603,14 +609,18 @@ sub run_tests() {
         # run the test
         print STDERR "Test $TestNo: ($cmd) >$outf 2>$errf\n" if ($opt_c);
         mysystem("($cmd) >$outf 2>$errf");
+        my $full_status = $?;
+        my $status = $full_status >> 8;
         unless ($opt_V) {
-            if (command_failed($cmd)) {
+            if (my $failure = command_failed($cmd)) {
                 print STDERR `$Cat $errf`;
-                exit $? if ($opt_e);
+                if ($opt_e) {
+                    printf STDERR "$0: exiting with status=$failure\n";
+                    exit $failure;
+                }
                 next;
             }
         }
-        my $status = $? >> 8;
         if ($status) {
             $ErrorCount++;
             if ($opt_V && $status == 100) {
@@ -621,7 +631,7 @@ sub run_tests() {
             } else {
                 warn "$0: test $TestNo: '$cmd' failed: status=$status\n";
             }
-            exit $status if ($opt_e);
+            exit $full_status if ($opt_e);
             next;
         }
 
@@ -630,7 +640,7 @@ sub run_tests() {
         $status = diff($out_ref, $outf);
         if ($status) {
             $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != stdout(%s)\n",
+            printf STDERR "%s: test %d: FAILED: ref(%s) != stdout(%s)\n\tcmd: $cmd\n",
                 $0, $TestNo, $out_ref, $outf;
             if ($opt_y) { copy_file($outf, $outf . '.test' . $TestNo); }
             exit $status if ($opt_e);
@@ -645,14 +655,14 @@ sub run_tests() {
         # -- compare stderr
         if (! -e $err_ref  and  ! $opt_o) {
             $ErrorCount++;
-            print STDERR "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n";
+            print STDERR "$0: test $TestNo: FAILED: stderr ref: $err_ref: $!\n\tcmd: $cmd\n";
             exit 1 if ($opt_e);
             next;
         }
         $status = diff($err_ref, $errf);
         if ($status) {
             $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n",
+            printf STDERR "%s: test %d: FAILED: ref(%s) != stderr(%s)\n\tcmd: $cmd\n",
                 $0, $TestNo, $err_ref, $errf;
             if ($opt_y) { copy_file($errf, "$errf.test.$TestNo"); }
             exit $status if ($opt_e);
@@ -665,7 +675,7 @@ sub run_tests() {
         $status = diff($pred_ref, $predf);
         if ($status) {
             $ErrorCount++;
-            printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n",
+            printf STDERR "%s: test %d: FAILED: ref(%s) != predict(%s)\n\tcmd: $cmd\n",
                 $0, $TestNo, $pred_ref, $predf;
             if ($opt_y) { copy_file($predf, "$predf.test.$TestNo"); }
             exit $status if ($opt_e);
@@ -1045,4 +1055,19 @@ __DATA__
 # Test 68: daemon test
 ./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
+
+# Test 69: SVM linear kernel
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 -p train-sets/ref/ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.linear.stderr
+    train-sets/ref/ksvm_train.linear.predict
+
+# Test 70: SVM polynomial kernel
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel poly -p train-sets/ref/ksvm_train.poly.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.poly.stderr
+    train-sets/ref/ksvm_train.poly.predict
+
+# Test 71: SVM rbf kernel
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf -p train-sets/ref/ksvm_train.rbf.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.rbf.stderr
+    train-sets/ref/ksvm_train.rbf.predict
 

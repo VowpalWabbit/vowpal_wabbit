@@ -28,7 +28,7 @@ namespace SequenceTask {
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
-  void structured_predict(searn& srn, vector<example*> ec) {
+  void structured_predict(searn& srn, vector<example*>& ec) {
     for (size_t i=0; i<ec.size(); i++) { //save state for optimization
       srn.snapshot(i, 1, &i, sizeof(i), true);
 
@@ -79,7 +79,7 @@ namespace ArgmaxTask {
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
-  void structured_predict(searn& srn, vector<example*> ec) {
+  void structured_predict(searn& srn, vector<example*>& ec) {
     task_data * my_task_data = srn.get_task_data<task_data>();
     uint32_t max_prediction = 1;
     uint32_t max_label = 1;
@@ -89,8 +89,8 @@ namespace ArgmaxTask {
         
     for (size_t i=0; i<ec.size(); i++) {
       // labels should be 1 or 2, and our output is MAX of all predicted values
-      //      srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
-      //srn.snapshot(i, 2, &max_prediction, sizeof(max_prediction), false); 
+      srn.snapshot(i, 1, &i, sizeof(i), true); //save state for optimization
+      srn.snapshot(i, 2, &max_prediction, sizeof(max_prediction), false); 
       
       uint32_t prediction;
       if (my_task_data->predict_max)
@@ -123,7 +123,7 @@ namespace SequenceDoubleTask {
 
   void finish(searn& srn) { }    // if we had task data, we'd want to free it here
 
-  void structured_predict(searn& srn, vector<example*> ec) {
+  void structured_predict(searn& srn, vector<example*>& ec) {
     size_t N = ec.size();
     for (size_t j=0; j<N*2; j++) {
       srn.snapshot(j, 1, &j, sizeof(j), true);
@@ -253,7 +253,7 @@ namespace SequenceSpanTask {
     delete my_task_data;
   }
 
-  void structured_predict(searn& srn, vector<example*> ec) {
+  void structured_predict(searn& srn, vector<example*>& ec) {
     task_data * my_task_data = srn.get_task_data<task_data>();
     uint32_t last_prediction = 1;
     v_array<uint32_t> * y_allowed = &(my_task_data->y_allowed);
@@ -330,7 +330,7 @@ namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LD
     free(data);
   }
 
-  void structured_predict(searn& srn, vector<example*> ec) {
+  void structured_predict(searn& srn, vector<example*>& ec) {
     task_data *data = srn.get_task_data<task_data>();
     
     for (size_t i=0; i<ec.size(); i++) { //save state for optimization
