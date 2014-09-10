@@ -72,6 +72,7 @@ namespace Search {
     SearchState state;             // current state of learning
     size_t learn_learner_id;       // we allow user to use different learners for different states
     int mix_per_roll_policy;       // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2 means "not selected yet")
+    bool no_caching;               // turn off caching
     
     size_t t;                      // current search step
     size_t T;                      // length of root trajectory
@@ -137,10 +138,13 @@ namespace Search {
     vector<example*> ec_seq;  // the collected examples
     v_hashmap<unsigned char*, action> cache_hash_map;
     
-    // for foreach_feature temporary storage for conditioning
-    uint32_t ec_conditioning_idx;
-    example* ec_conditioning_ec;
-    stringstream ec_conditioning_audit_ss;
+    // for foreach_feature temporary storage for conditioning; TODO: rename these
+    uint32_t dat_new_feature_idx;
+    example* dat_new_feature_ec;
+    stringstream dat_new_feature_audit_ss;
+    size_t dat_new_feature_namespace;
+    string* dat_new_feature_feature_space;
+    float dat_new_feature_value;
     
     LEARNER::learner* base_learner;
     clock_t start_clock_time;
@@ -155,6 +159,7 @@ namespace Search {
   uint32_t example_number = 0;
 
   int random_policy(search_private& priv, bool allow_current, bool allow_optimal) {
+    // TODO: make sure that for the same example, for the same time step, this makes the same choice!
     if (false) { // was: if rollout_all_actions
       uint32_t seed = (uint32_t) priv.read_example_last_id * 2147483 + (uint32_t)(priv.t * 2147483647);
       msrand48(seed * 2147483647);
@@ -324,150 +329,99 @@ namespace Search {
     VW::update_dump_interval(all);
   }
 
-  void add_neighbor_features(search& sch) {
-    // TODO: rewrite this using foreach_feature
-    size_t neighbor_constant = 8349204823;
-    vw*all = sch.priv->all;
-    if (sch.priv->neighbor_features.size() == 0) return;
-    uint32_t wpp = sch.priv->all->wpp << sch.priv->all->reg.stride_shift;
-
-    for (int32_t n=0; n<(int32_t)sch.priv->ec_seq.size(); n++) {
-      example*me = sch.priv->ec_seq[n];
-      for (int32_t*enc=sch.priv->neighbor_features.begin; enc!=sch.priv->neighbor_features.end; ++enc) {
-        int32_t offset = (*enc) >> 24;
-        size_t  old_ns = (*enc) & 0xFF;
-        size_t  enc_offset = wpp * ((2 * (size_t)(*enc)) + ((*enc < 0) ? 1 : 0));
-
-        if ((n + offset >= 0) && (n + offset < (int32_t)sch.priv->ec_seq.size())) { // we're okay on position
-          example*you = sch.priv->ec_seq[n+offset];
-          size_t  you_size = you->atomics[old_ns].size();
-
-          if (you_size > 0) {
-            if (me->atomics[neighbor_namespace].size() == 0)
-              me->indices.push_back(neighbor_namespace);
-
-            me->atomics[neighbor_namespace].resize(me->atomics[neighbor_namespace].size() + you_size + 1);
-            for (feature*f = you->atomics[old_ns].begin; f != you->atomics[old_ns].end; ++f) {
-              feature f2 = { (*f).x, (uint32_t)( ((*f).weight_index * neighbor_constant + enc_offset) & sch.priv->all->reg.weight_mask ) };
-              me->atomics[neighbor_namespace].push_back(f2);
-            }
-
-            if (all->audit && (all->current_pass==0)) {
-              assert(you->atomics[old_ns].size() == you->audit_features[old_ns].size());
-              for (audit_data*f = you->audit_features[old_ns].begin; f != you->audit_features[old_ns].end; ++f) {
-                uint32_t wi = (uint32_t)((*f).weight_index * neighbor_constant + enc_offset) & sch.priv->all->reg.weight_mask;
-                audit_data f2 = { NULL, NULL, wi, f->x, true };
-
-                f2.space = (char*) calloc_or_die(neighbor_feature_space.length()+1, sizeof(char));
-                strcpy(f2.space, neighbor_feature_space.c_str());
-
-                f2.feature = (char*) calloc_or_die( strlen(f->feature) + 6, sizeof(char) );
-                f2.feature[0] = '@';
-                f2.feature[1] = (offset > 0) ? '+' : '-';
-                f2.feature[2] = (char)(abs(offset) + '0');
-                f2.feature[3] = (char)old_ns;
-                f2.feature[4] = '=';
-                strcpy(f2.feature+5, f->feature);
-
-                me->audit_features[neighbor_namespace].push_back(f2);
-              }
-
-            }
-            me->sum_feat_sq[neighbor_namespace] += you->sum_feat_sq[old_ns];
-            me->total_sum_feat_sq += you->sum_feat_sq[old_ns];
-            me->num_features += you_size;
-          }
-        } else if ((n + offset == -1) || (n + offset == (int32_t)sch.priv->ec_seq.size())) { // handle <s> and </s>
-          size_t bias  = constant * ((n + offset < 0) ? 2 : 3);
-          uint32_t fid = ((uint32_t)(( bias * neighbor_constant + enc_offset))) & sch.priv->all->reg.weight_mask;
-
-          if (me->atomics[neighbor_namespace].size() == 0)
-            me->indices.push_back(neighbor_namespace);
-
-          feature f = { 1., fid };
-          me->atomics[neighbor_namespace].push_back(f);
-
-          if (all->audit && (all->current_pass==0)) {
-            audit_data f2 = { NULL, NULL, fid, 1., true };
-
-            f2.space = (char*) calloc_or_die(neighbor_feature_space.length()+1, sizeof(char));
-            strcpy(f2.space, neighbor_feature_space.c_str());
-
-            f2.feature = (char*) calloc_or_die(4, sizeof(char) );
-            f2.feature[0] = 'b';
-            f2.feature[1] = '@';
-            f2.feature[2] = (offset > 0) ? '+' : '-';
-            f2.feature[3] = 0;
-
-            me->audit_features[neighbor_namespace].push_back(f2);
-          }
-
-          me->sum_feat_sq[neighbor_namespace] += 1.;
-          me->total_sum_feat_sq += 1.;
-          me->num_features += 1;
-        }
-      }
+  // TODO: multiply dat_new_feature_idx by either quadratic_constant or neighbor_constant -- done
+  // TODO: set dat_new_feature_namespace to either conditioning_namespace or neighbor_namespace
+  // TODO: set dat_new_feature_feature_space to either condition_feature_space or neighbor_feature_space
+  void add_new_feature(search_private& priv, const uint32_t idx, const float val, float& cur_weight) {
+    size_t wpp  = priv.all->wpp << priv.all->reg.stride_shift;
+    size_t mask = priv.all->reg.weight_mask;
+    feature f = { val * priv.dat_new_feature_value, // TODO: use feature_value if wanted priv.acset.feature_value
+                  (uint32_t) (((priv.dat_new_feature_idx + idx) * wpp) & mask) };
+    priv.dat_new_feature_ec->atomics[priv.dat_new_feature_namespace].push_back(f);
+    priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
+    
+    if (priv.all->audit) {
+      audit_data a = { NULL, NULL, f.weight_index, f.x, true };
+      a.space   = (char*)calloc_or_die(priv.dat_new_feature_feature_space->length()+1, sizeof(char));
+      a.feature = (char*)calloc_or_die(priv.dat_new_feature_audit_ss.str().length() + 32, sizeof(char));
+      strcpy(a.space, priv.dat_new_feature_feature_space->c_str());
+      int num = sprintf(a.feature, "fid=%lu_", (idx & mask) >> priv.all->reg.stride_shift);
+      strcpy(a.feature+num, priv.dat_new_feature_audit_ss.str().c_str());
+      priv.dat_new_feature_ec->audit_features[priv.dat_new_feature_namespace].push_back(a);
     }
   }
 
-  void del_neighbor_features(search& sch) {
-    if (sch.priv->neighbor_features.size() == 0) return;
-    vw*all = sch.priv->all;
-
-    for (int32_t n=0; n<(int32_t)sch.priv->ec_seq.size(); n++) {
-      example*me = sch.priv->ec_seq[n];
-      size_t total_size = 0;
-      float total_sfs = 0.;
-
-      for (int32_t*enc=sch.priv->neighbor_features.begin; enc!=sch.priv->neighbor_features.end; ++enc) {
-        int32_t offset = (*enc) >> 24;
-        size_t  old_ns = (*enc) & 0xFF;
-
-        if ((n + offset >= 0) && (n + offset < (int32_t)sch.priv->ec_seq.size())) { // we're okay on position
-          example*you = sch.priv->ec_seq[n+offset];
-          total_size += you->atomics[old_ns].size();
-          total_sfs  += you->sum_feat_sq[old_ns];
-        } else if ((n + offset == -1) || (n + offset == (int32_t)sch.priv->ec_seq.size())) {
-          total_size += 1;
-          total_sfs += 1;
-        }
-      }
-
-      if (total_size > 0) {
-        if (me->atomics[neighbor_namespace].size() == total_size) {
-          char last_idx = me->indices.pop();
-          if (last_idx != (char)neighbor_namespace) {
-            cerr << "error: some namespace was added after the neighbor namespace" << endl;
-            throw exception();
-          }
-          cdbg << "erasing new ns '" << (char)neighbor_namespace << "' of size " << me->atomics[neighbor_namespace].size() << endl;
-          me->atomics[neighbor_namespace].erase();
-        } else {
-          cerr << "warning: neighbor namespace seems to be the wrong size? (total_size=" << total_size << " but ns.size=" << me->atomics[neighbor_namespace].size() << ")" << endl;
-          assert(false);
-          me->atomics[neighbor_namespace].end -= total_size;
-          cdbg << "erasing " << total_size << " features" << endl;
-        }
-
-        if (all->audit && (all->current_pass == 0)) {
-          assert(total_size == me->audit_features[neighbor_namespace].size());
-
-          for (audit_data*ad = me->audit_features[neighbor_namespace].begin; ad != me->audit_features[neighbor_namespace].end; ++ad)
-            if (ad->alloced) {
-              free(ad->space);
-              free(ad->feature);
-            }
-
-          me->audit_features[neighbor_namespace].end -= total_size;
-        }
-
-        me->sum_feat_sq[neighbor_namespace] -= total_sfs;
-        me->total_sum_feat_sq -= total_sfs;
-        me->num_features -= total_size;
-      } else {
-        // TODO: add dummy features for <s> or </s>
-      }
+  void del_features_in_top_namespace(search_private& priv, example& ec, size_t ns) {
+    if ((ec.indices.size() == 0) || (ec.indices.last() != ns)) {
+      cerr << "internal error (bug): expecting top namespace to be '" << ns << "' but it was ";
+      if (ec.indices.size() == 0) cerr << "empty";
+      else cerr << (size_t)ec.indices.last();
+      cerr << endl;
+      throw exception();
     }
+    ec.num_features -= ec.atomics[ns].size();
+    ec.total_sum_feat_sq -= ec.sum_feat_sq[ns];
+    ec.sum_feat_sq[ns] = 0;
+    ec.indices.decr();
+    ec.atomics[ns].erase();
+    if (priv.all->audit) {
+      for (size_t i=0; i<ec.audit_features[ns].size(); i++)
+        if (ec.audit_features[ns][i].alloced) {
+          free(ec.audit_features[ns][i].space);
+          free(ec.audit_features[ns][i].feature);
+        }
+      ec.audit_features[ns].erase();
+    }
+  }
+  
+  void add_neighbor_features(search_private& priv) {
+    vw& all = *priv.all;
+    float  _ignored = 0.;
+    if (priv.neighbor_features.size() == 0) return;
+
+    for (int n=0; n<priv.ec_seq.size(); n++) {  // iterate over every example in the sequence
+      example& me = *priv.ec_seq[n];
+      for (size_t n_id=0; n_id < priv.neighbor_features.size(); n_id++) {
+        int32_t offset = priv.neighbor_features[n_id] >> 24;
+        size_t  ns     = priv.neighbor_features[n_id] & 0xFF;
+
+        priv.dat_new_feature_ec = &me;  // TODO: rename this :P
+        priv.dat_new_feature_value = 1.;
+        priv.dat_new_feature_idx = priv.neighbor_features[n_id] * 13748127;
+        priv.dat_new_feature_namespace = neighbor_namespace;
+        if (priv.all->audit) {
+          priv.dat_new_feature_feature_space = &neighbor_feature_space;
+          priv.dat_new_feature_audit_ss.str("");
+          priv.dat_new_feature_audit_ss << '@' << ((offset > 0) ? '+' : '-') << (char)(abs(offset) + '0');
+          if (ns != ' ') priv.dat_new_feature_audit_ss << (char)ns;
+        }
+        
+        if (n + offset < 0) // add <s> feature
+          add_new_feature(priv, 925871901, 1., _ignored);
+        else if (n + offset >= priv.ec_seq.size()) // add </s> feature
+          add_new_feature(priv, 3824917, 1., _ignored);
+        else { // this is actually a neighbor
+          example& other = *priv.ec_seq[n + offset];
+          GD::foreach_feature<search_private,add_new_feature>(all.reg.weight_vector, all.reg.weight_mask, other.atomics[ns].begin, other.atomics[ns].end, priv, me.ft_offset);
+        }
+      }
+
+      size_t sz = me.atomics[neighbor_namespace].size();
+      if ((sz > 0) && (me.sum_feat_sq[neighbor_namespace] > 0.)) {
+        me.indices.push_back(neighbor_namespace);
+        me.total_sum_feat_sq += me.sum_feat_sq[neighbor_namespace];
+        me.num_features += sz;
+      } else {
+        me.atomics[neighbor_namespace].erase();
+        if (priv.all->audit) me.audit_features[neighbor_namespace].erase();
+    }
+    }
+  }
+
+  void del_neighbor_features(search_private& priv) {
+    if (priv.neighbor_features.size() == 0) return;
+    for (int n=0; n<priv.ec_seq.size(); n++)
+      del_features_in_top_namespace(priv, *priv.ec_seq[n], neighbor_namespace);
   }
 
   void reset_search_structure(search_private& priv) {
@@ -480,6 +434,7 @@ namespace Search {
     priv.train_loss = 0.;
     priv.num_features = 0;
     priv.should_produce_string = false;
+    priv.mix_per_roll_policy = -2;
     if (priv.adaptive_beta)
       priv.beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
     priv.ptag_to_action.erase();
@@ -503,27 +458,6 @@ namespace Search {
            random(ec_cnt);
   }
 
-  void add_conditioning_feature(search_private& priv, const uint32_t idx, const float val, float& cur_weight) {
-    //bool found = priv.ec_conditioning_audit_ss.str().find("n=") != string::npos;
-    //if (!found) return;
-    
-    size_t wpp  = priv.all->wpp << priv.all->reg.stride_shift;
-    size_t mask = priv.all->reg.weight_mask;
-    feature f = { val * priv.acset.feature_value,
-                  (uint32_t) (((priv.ec_conditioning_idx * quadratic_constant + idx) * wpp) & mask) };
-    priv.ec_conditioning_ec->atomics[conditioning_namespace].push_back(f);
-
-    if (priv.all->audit) {
-      audit_data a = { NULL, NULL, f.weight_index, f.x, true };
-      a.space   = (char*)calloc_or_die(condition_feature_space.length()+1, sizeof(char));
-      a.feature = (char*)calloc_or_die(priv.ec_conditioning_audit_ss.str().length() + 32, sizeof(char));
-      strcpy(a.space, condition_feature_space.c_str());
-      int num = sprintf(a.feature, "fid=%lu_", (idx & mask) >> priv.all->reg.stride_shift);
-      strcpy(a.feature+num, priv.ec_conditioning_audit_ss.str().c_str());
-      priv.ec_conditioning_ec->audit_features[conditioning_namespace].push_back(a);
-    }
-  }
-  
   void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
     float _ignored = 0.;
     // if override_values is non-null then we use those as the values for condition_on, rather than
@@ -536,59 +470,55 @@ namespace Search {
     for (size_t i=0; i<I; i++) { // position in conditioning
       uint32_t fid = 71933;
       if (priv.all->audit) {
-        priv.ec_conditioning_audit_ss.str("");
-        priv.ec_conditioning_audit_ss.clear();
+        priv.dat_new_feature_audit_ss.str("");
+        priv.dat_new_feature_audit_ss.clear();
+        priv.dat_new_feature_feature_space = &condition_feature_space;
       }
 
       for (size_t n=0; n<N; n++) { // length of ngram
         if (i + n >= I) break; // no more ngrams
         // we're going to add features for the ngram condition_on_actions[i .. i+N]
-        char name = condition_on_names ? condition_on_names[i+n] : i;
+        char name = condition_on_names[i+n];
         fid = fid * 328901 + 71933 * ((condition_on_actions[i+n] + 349101) * (name + 38490137));
 
-        priv.ec_conditioning_ec  = &ec;
-        priv.ec_conditioning_idx = fid;
+        priv.dat_new_feature_ec  = &ec;
+        priv.dat_new_feature_idx = fid * quadratic_constant;
+        priv.dat_new_feature_namespace = conditioning_namespace;
+        priv.dat_new_feature_value = priv.acset.feature_value;
 
         if (priv.all->audit) {
-          if (n > 0) priv.ec_conditioning_audit_ss << ',';
-          if ((33 <= name) && (name <= 126)) priv.ec_conditioning_audit_ss << name;
-          else priv.ec_conditioning_audit_ss << '#' << (int)name;
-          priv.ec_conditioning_audit_ss << '=' << condition_on_actions[i+n];
+          if (n > 0) priv.dat_new_feature_audit_ss << ',';
+          if ((33 <= name) && (name <= 126)) priv.dat_new_feature_audit_ss << name;
+          else priv.dat_new_feature_audit_ss << '#' << (int)name;
+          priv.dat_new_feature_audit_ss << '=' << condition_on_actions[i+n];
         }
         
         // add the single bias feature
         if (n < priv.acset.max_bias_ngram_length)
-          add_conditioning_feature(priv, 1, 1., _ignored);
+          add_new_feature(priv, 1, 1., _ignored);
 
         // add the quadratic features
         if (n < priv.acset.max_quad_ngram_length)
-          GD::foreach_feature<search_private,add_conditioning_feature>(*priv.all, ec, priv);
+          GD::foreach_feature<search_private,add_new_feature>(*priv.all, ec, priv);
       }
     }
 
-    ec.indices.push_back(conditioning_namespace);
-    ec.sum_feat_sq[conditioning_namespace] = priv.acset.feature_value * priv.acset.feature_value * (float)ec.atomics[conditioning_namespace].size();
-    ec.total_sum_feat_sq += ec.sum_feat_sq[conditioning_namespace];
-    ec.num_features += ec.atomics[conditioning_namespace].size();
-  }
-  
-  void del_example_conditioning(search_private& priv, example& ec) {
-    if ((ec.indices.size() == 0) || (ec.indices.last() != conditioning_namespace)) throw exception();
-    ec.num_features -= ec.atomics[conditioning_namespace].size();
-    ec.total_sum_feat_sq -= ec.sum_feat_sq[conditioning_namespace];
-    ec.sum_feat_sq[conditioning_namespace] = 0;
-    ec.indices.decr();
-    ec.atomics[conditioning_namespace].erase();
-    if (priv.all->audit) {
-      for (size_t i=0; i<ec.audit_features[conditioning_namespace].size(); i++)
-        if (ec.audit_features[conditioning_namespace][i].alloced) {
-          free(ec.audit_features[conditioning_namespace][i].space);
-          free(ec.audit_features[conditioning_namespace][i].feature);
-        }
-      ec.audit_features[conditioning_namespace].erase();
+    size_t sz = ec.atomics[conditioning_namespace].size();
+    if ((sz > 0) && (ec.sum_feat_sq[conditioning_namespace] > 0.)) {
+      ec.indices.push_back(conditioning_namespace);
+      ec.total_sum_feat_sq += ec.sum_feat_sq[conditioning_namespace];
+      ec.num_features += sz;
+    } else {
+      ec.atomics[conditioning_namespace].erase();
+      if (priv.all->audit) ec.audit_features[conditioning_namespace].erase();
     }
   }
 
+  void del_example_conditioning(search_private& priv, example& ec) {
+    if ((ec.indices.size() > 0) && (ec.indices.last() == conditioning_namespace))
+      del_features_in_top_namespace(priv, ec, conditioning_namespace);
+  }
+  
   uint32_t cs_get_prediction(bool isCB, void* ld) {
     return isCB ? ((CB::label*)ld)->prediction
                 : ((CS::label*)ld)->prediction;
@@ -779,6 +709,7 @@ namespace Search {
   
   // returns true if found and do_store is false. if do_store is true, always returns true.
   bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, const action* condition_on_actions, size_t condition_on_cnt, int policy, action &a, bool do_store) {
+    if (priv.no_caching) return do_store;
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
     for (size_t i=0; i<condition_on_cnt; i++)
       if (condition_on[i] == 0) return do_store; // don't attempt to cache when conditioning on a zero tag
@@ -855,7 +786,6 @@ namespace Search {
           void (*label_copy_fn)(void*&,void*) = priv.is_ldf ? CS::cs_label.copy_label : NULL;
           
           ensure_size(priv.learn_ec_copy, ec_cnt);
-          // current bug: we need to make sure ld is valid so we can copy to it, but the memset above might lead to leaks too
           for (size_t i=0; i<ec_cnt; i++) {
             if (!priv.learn_ec_copy[i].ld)
               priv.learn_ec_copy[i].ld = calloc_or_die(1, label_size);
@@ -880,7 +810,7 @@ namespace Search {
           // TODO: make this faster
           free(priv.learn_condition_on_names);
           priv.learn_condition_on_names = NULL;
-          if (condition_on_names != 0) {
+          if (condition_on_names != NULL) {
             priv.learn_condition_on_names = (char*)calloc_or_die(strlen(condition_on_names)+1, sizeof(char));
             strcpy(priv.learn_condition_on_names, condition_on_names);
           }
@@ -912,7 +842,6 @@ namespace Search {
           if ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
             condition_on_actions[i] = priv.ptag_to_action[condition_on[i]];
 
-        // TODO: test equiv, which means we must store size for memcmp!
         if (cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, condition_on_actions, condition_on_cnt, policy, a, false))
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
@@ -1101,7 +1030,7 @@ namespace Search {
       priv.done_with_all_actions = false;
       // for each action, roll out to get a loss
       while (! priv.done_with_all_actions) {
-        reset_search_structure(priv); // should set mix_per_roll_policy to -2
+        reset_search_structure(priv);
         priv.state = LEARN;
         priv.learn_t = timesteps[tid];
         cdbg << "learn_t = " << priv.learn_t << ", learn_a_idx = " << priv.learn_a_idx << endl;
@@ -1141,9 +1070,9 @@ namespace Search {
       priv.task->run(sch, priv.ec_seq);
     }
 
-    add_neighbor_features(sch);
+    add_neighbor_features(priv);
     train_single_example<is_learn>(sch);
-    del_neighbor_features(sch);
+    del_neighbor_features(priv);
 
     if (priv.task->run_takedown) priv.task->run_takedown(sch, priv.ec_seq);
   }
@@ -1478,7 +1407,7 @@ namespace Search {
     }
     cmd.delete_v();
 
-    delete cstr;
+    delete[] cstr;
   }
 
   learner* setup(vw&all, po::variables_map& vm) {
@@ -1508,6 +1437,8 @@ namespace Search {
         ("search_allowed_transitions",po::value<string>(),"read file of allowed transitions [def: all transitions are allowed]")
         ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")
         ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
+
+        ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
         ;
 
     vm = add_options(all, search_opts);
@@ -1537,6 +1468,7 @@ namespace Search {
     //if (vm.count("search_exp_perturbation"))        priv.exp_perturbation     = vm["search_exp_perturbation" ].as<float>();
 
     if (vm.count("search_subsample_time"))          priv.subsample_timesteps  = vm["search_subsample_time"].as<float>();
+    if (vm.count("search_no_caching"))              priv.no_caching           = true;
 
     priv.A = vm["searchnew"].as<size_t>(); // TODO: change to "search"
 
@@ -1671,8 +1603,6 @@ namespace Search {
     l->set_finish<search,search_finish>();
     l->set_end_pass<search,end_pass>();
 
-    cerr << "set" << endl;
-    
     return l;
   }
 

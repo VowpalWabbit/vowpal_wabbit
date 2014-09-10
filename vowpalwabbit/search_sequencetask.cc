@@ -14,7 +14,8 @@ namespace SequenceTask2 {
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
     sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                      Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
-                     0); //Search::EXAMPLES_DONT_CHANGE     );   // we don't do any internal example munging
+                     0);
+    //Search::EXAMPLES_DONT_CHANGE     );   // we don't do any internal example munging
   }
 
   void run(Search::search& sch, vector<example*>& ec) {
