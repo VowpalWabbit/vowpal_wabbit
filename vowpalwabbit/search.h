@@ -9,8 +9,8 @@ license as described in the file LICENSE.
 #include "global_data.h"
 
 #define cdbg clog
-//#undef cdbg
-//#define cdbg if (1) {} else clog
+// #undef cdbg
+// #define cdbg if (1) {} else clog
 // uncomment the previous two lines if you want loads of debug output :)
 
 typedef uint32_t    action;

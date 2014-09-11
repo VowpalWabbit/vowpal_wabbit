@@ -138,7 +138,7 @@ namespace Search {
     vector<example*> ec_seq;  // the collected examples
     v_hashmap<unsigned char*, action> cache_hash_map;
     
-    // for foreach_feature temporary storage for conditioning; TODO: rename these
+    // for foreach_feature temporary storage for conditioning
     uint32_t dat_new_feature_idx;
     example* dat_new_feature_ec;
     stringstream dat_new_feature_audit_ss;
@@ -159,8 +159,7 @@ namespace Search {
   uint32_t example_number = 0;
 
   int random_policy(search_private& priv, bool allow_current, bool allow_optimal) {
-    // TODO: make sure that for the same example, for the same time step, this makes the same choice!
-    if (false) { // was: if rollout_all_actions
+    if (! priv.cb_learner) { // was: if rollout_all_actions
       uint32_t seed = (uint32_t) priv.read_example_last_id * 2147483 + (uint32_t)(priv.t * 2147483647);
       msrand48(seed * 2147483647);
     }
@@ -329,13 +328,10 @@ namespace Search {
     VW::update_dump_interval(all);
   }
 
-  // TODO: multiply dat_new_feature_idx by either quadratic_constant or neighbor_constant -- done
-  // TODO: set dat_new_feature_namespace to either conditioning_namespace or neighbor_namespace
-  // TODO: set dat_new_feature_feature_space to either condition_feature_space or neighbor_feature_space
   void add_new_feature(search_private& priv, const uint32_t idx, const float val, float& cur_weight) {
     size_t wpp  = priv.all->wpp << priv.all->reg.stride_shift;
     size_t mask = priv.all->reg.weight_mask;
-    feature f = { val * priv.dat_new_feature_value, // TODO: use feature_value if wanted priv.acset.feature_value
+    feature f = { val * priv.dat_new_feature_value,
                   (uint32_t) (((priv.dat_new_feature_idx + idx) * wpp) & mask) };
     priv.dat_new_feature_ec->atomics[priv.dat_new_feature_namespace].push_back(f);
     priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
@@ -385,7 +381,7 @@ namespace Search {
         int32_t offset = priv.neighbor_features[n_id] >> 24;
         size_t  ns     = priv.neighbor_features[n_id] & 0xFF;
 
-        priv.dat_new_feature_ec = &me;  // TODO: rename this :P
+        priv.dat_new_feature_ec = &me;
         priv.dat_new_feature_value = 1.;
         priv.dat_new_feature_idx = priv.neighbor_features[n_id] * 13748127;
         priv.dat_new_feature_namespace = neighbor_namespace;
@@ -465,10 +461,18 @@ namespace Search {
     // "remember" the old actions, in case some have been overwritten
     if (condition_on_cnt == 0) return;
 
+    uint32_t extra_offset=0;
+    if (priv.is_ldf) {
+      CS::label* lab = (CS::label*)ec.ld;
+      if (lab->costs.size() > 0)
+        extra_offset = 3849017 * lab->costs[0].class_index;
+    }
+    cerr << "extra_offset = " << extra_offset << endl;
+    
     size_t I = condition_on_cnt;
     size_t N = max(priv.acset.max_bias_ngram_length, priv.acset.max_quad_ngram_length);
     for (size_t i=0; i<I; i++) { // position in conditioning
-      uint32_t fid = 71933;
+      uint32_t fid = 71933 + 8491087 * extra_offset;
       if (priv.all->audit) {
         priv.dat_new_feature_audit_ss.str("");
         priv.dat_new_feature_audit_ss.clear();
@@ -618,6 +622,7 @@ namespace Search {
     action best_action = 0;
 
     for (action a=0; a<ec_cnt; a++) {
+      cdbg << "== single_prediction_LDF a=" << a << "==" << endl;
       void* old_label = ecs[a].ld;
       ecs[a].ld = &test_label;
       priv.base_learner->predict(ecs[a], policy);
@@ -626,6 +631,7 @@ namespace Search {
       priv.empty_example->in_use = true;
       priv.base_learner->predict(*priv.empty_example);
 
+      cerr << "pp = " << ecs[a].partial_prediction << endl;
       if ((a == 0) || (ecs[a].partial_prediction < best_prediction)) {
         best_prediction = ecs[a].partial_prediction;
         best_action     = a;
@@ -690,6 +696,7 @@ namespace Search {
   
   void record_action(search_private& priv, ptag mytag, action a) {
     if (mytag == 0) return;
+    cerr << "recording " << mytag << " -> " << a << endl;
     push_at(priv.ptag_to_action, a, mytag);
   }
   
@@ -821,7 +828,7 @@ namespace Search {
       }
 
       assert((allowed_actions_cnt == 0) || (a < allowed_actions_cnt));
-      return (allowed_actions_cnt > 0) ? allowed_actions[a] : (a+1);
+      return (allowed_actions_cnt > 0) ? allowed_actions[a] : priv.is_ldf ? a : (a+1);
     }
     
     if ((priv.state == INIT_TRAIN) ||
@@ -841,7 +848,7 @@ namespace Search {
         for (size_t i=0; i<condition_on_cnt; i++)
           if ((1 <= condition_on[i]) && (condition_on[i] < priv.ptag_to_action.size()))
             condition_on_actions[i] = priv.ptag_to_action[condition_on[i]];
-
+            
         if (cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, condition_on_actions, condition_on_cnt, policy, a, false))
           // if this succeeded, 'a' has the right action
           priv.total_cache_hits++;
@@ -913,19 +920,20 @@ namespace Search {
     for (size_t i=0; i<losses.size(); i++)
       if (losses[i] < min_loss) min_loss = losses[i];
 
-    void* labels = allowed_actions_to_ld(priv, priv.learn_ec_ref_cnt, priv.learn_allowed_actions.begin, priv.learn_allowed_actions.size());
-    for (size_t i=0; i<losses.size(); i++)
-      if (priv.cb_learner)   ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
-      else                   ((CS::label*)labels)->costs[i].x    = losses[i] - min_loss;
-
+    int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id);
+    
     if (!priv.is_ldf) {   // not LDF
       // since we're not LDF, it should be the case that ec_ref_cnt == 1
       // and learn_ec_ref[0] is a pointer to a single example
       assert(priv.learn_ec_ref_cnt == 1);
       assert(priv.learn_ec_ref != NULL);
 
+      void* labels = allowed_actions_to_ld(priv, priv.learn_ec_ref_cnt, priv.learn_allowed_actions.begin, priv.learn_allowed_actions.size());
+      for (size_t i=0; i<losses.size(); i++)
+        if (priv.cb_learner)   ((CB::label*)labels)->costs[i].cost = losses[i] - min_loss;
+        else                   ((CS::label*)labels)->costs[i].x    = losses[i] - min_loss;
+      
       // replace the label, add conditioning, and learn!
-      int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id);
       example& ec = priv.learn_ec_ref[0];
       void* old_label = ec.ld;
       ec.ld = labels;
@@ -936,8 +944,24 @@ namespace Search {
       ec.ld = old_label;
       priv.total_examples_generated++;
     } else {              // is  LDF
-      // TODO
-      throw exception();
+      assert(losses.size() == priv.learn_ec_ref_cnt);
+      for (action a=0; a<priv.learn_ec_ref_cnt; a++) {
+        example& ec = priv.learn_ec_ref[a];
+        CS::label* lab = (CS::label*)ec.ld;
+        //CS::cs_label.default_label(lab);
+        //CS::wclass c = { losses[a] - min_loss, (uint32_t)a, 0., 0. };
+        lab->costs[0].x = losses[a] - min_loss;
+        ec.in_use = true;
+        add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names, priv.learn_condition_on_act.begin);
+        priv.base_learner->learn(ec, learner);
+        priv.total_examples_generated++;
+      }
+      priv.base_learner->learn(*priv.empty_example, learner);
+
+      for (action a=0; a<priv.learn_ec_ref_cnt; a++) {
+        example& ec = priv.learn_ec_ref[a];
+        del_example_conditioning(priv, ec);
+      }
     }
   }
 
@@ -1619,14 +1643,17 @@ namespace Search {
     record_action(*this->priv, mytag, a);
     if (this->priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
+    cerr << "predict returning " << a << endl;
     return a;
   }
 
   action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id) {
     action a = search_predict(*this->priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, NULL, 0, learner_id);
-    record_action(*this->priv, mytag, a);
+    action a_name = ((CS::label*)ecs[a].ld)->costs[0].class_index;
+    record_action(*this->priv, mytag, a_name);
     if (this->priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
+    cerr << "predict returning " << a << endl;
     return a;
   }
 
