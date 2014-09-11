@@ -6,9 +6,6 @@
 
 using namespace std;
 
-u64	IdGenerator::g_id = 0;
-CRITICAL_SECTION IdGenerator::g_id_mutex;
-
 Action Stateful_Default_Policy(int* stateContext, Context& applicationContext)
 {
 	return Action(*stateContext);
@@ -64,4 +61,3 @@ int _tmain(int argc, _TCHAR* argv[])
 	delete mwt;
 	return 0;
 }
-
