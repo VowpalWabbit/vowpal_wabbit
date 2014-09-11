@@ -13,7 +13,7 @@ template <class T>
 class StatefulFunctionWrapper : public BaseFunctionWrapper
 {
 public:
-	typedef Action Policy_Func(T* state_Context, Context& application_Context);
+	typedef MWTAction Policy_Func(T* state_Context, Context& application_Context);
 
 	Policy_Func* m_policy_function;
 };
@@ -21,7 +21,7 @@ public:
 class StatelessFunctionWrapper : public BaseFunctionWrapper
 {
 public:
-	typedef Action Policy_Func(Context& application_Context);
+	typedef MWTAction Policy_Func(Context& application_Context);
 
 	Policy_Func* m_policy_function;
 };
@@ -55,22 +55,22 @@ public:
 		delete m_random_generator;
 	}
 
-	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions)
 	{
 		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
-	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions, u32 seed)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
 		return this->Choose_Action(context, actions, random_generator);
 	}
 
 private:
-	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
 	{
 		// Invoke the default policy function to get the action
-		Action* chosen_action = nullptr;
+		MWTAction* chosen_action = nullptr;
 		if (typeid(m_default_policy_wrapper) == typeid(StatelessFunctionWrapper))
 		{
 			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_policy_wrapper);
@@ -109,7 +109,7 @@ private:
 			chosen_action = &actions.Get(actionId);
 		}
 
-		return std::pair<Action, float>(*chosen_action, action_probability);
+		return std::pair<MWTAction, float>(*chosen_action, action_probability);
 	}
 
 private:
@@ -173,23 +173,23 @@ public:
 	}
 
 	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
-	std::pair<Action, u64> Choose_Action_Join_Key(Context& context)
+	std::pair<MWTAction, u64> Choose_Action_Join_Key(Context& context)
 	{
-		std::pair<Action, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set);
+		std::pair<MWTAction, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set);
 		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second);
 		m_logger->Store(&pInteraction);
 		
 		// TODO: Anything else to do here?
 
-		return std::pair<Action, u64>(action_Probability_Pair.first, pInteraction.Get_Id());
+		return std::pair<MWTAction, u64>(action_Probability_Pair.first, pInteraction.Get_Id());
 	}
 
 	// TODO: check whether char* could be std::string
-	Action Choose_Action(Context& context, char* unique_id, u32 length)
+	MWTAction Choose_Action(Context& context, char* unique_id, u32 length)
 	{
 		u32 seed = this->Compute_Seed(unique_id, length);
 
-		std::pair<Action, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set, seed);
+		std::pair<MWTAction, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set, seed);
 		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second, seed);
 		m_logger->Store(&pInteraction);
 

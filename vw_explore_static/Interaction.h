@@ -46,10 +46,10 @@ private:
 	static CRITICAL_SECTION g_id_mutex;
 };
 
-class Action : public Serializable
+class MWTAction : public Serializable
 {
 public:
-	Action(u32 id) : m_id(id)
+	MWTAction(u32 id) : m_id(id)
 	{
 	}
 	u32 Get_Id() const { return m_id; }
@@ -73,7 +73,7 @@ public:
 	{
 		for (u32 i = 0; i < count; i++)
 		{
-			m_action_set.push_back(Action(i + 1)); // 1-based Action id
+			m_action_set.push_back(MWTAction(i + 1)); // 1-based Action id
 		}
 	}
 
@@ -81,7 +81,7 @@ public:
 	{
 	}
 
-	Action Get(u32 id)
+	MWTAction Get(u32 id)
 	{
 		return m_action_set.at(id);
 	}
@@ -93,13 +93,13 @@ public:
 
 	// TODO: should support GetAction() methods with a few overloads. current there's no way to iterate or get an action out of the set
 
-	virtual bool Match(Action* firstAction, Action* secondAction)
+	virtual bool Match(MWTAction* firstAction, MWTAction* secondAction)
 	{
 		return firstAction->Get_Id() == secondAction->Get_Id();
 	}
 
 private:
-	std::vector<Action> m_action_set;
+	std::vector<MWTAction> m_action_set;
 	int m_count;
 };
 
@@ -138,8 +138,8 @@ private:
 class Policy
 {
 public:
-	virtual std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions) = 0;
-	virtual std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions, u32 seed) = 0;
+	virtual std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions) = 0;
+	virtual std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, u32 seed) = 0;
 	virtual ~Policy()
 	{
 	}
@@ -148,7 +148,7 @@ public:
 class Interaction : public Serializable
 {
 public:
-	Interaction(Context* context, Action action, float prob, u64 unique_id = 0) : 
+	Interaction(Context* context, MWTAction action, float prob, u64 unique_id = 0) : 
 		m_context(context), m_action(action), m_prob(prob)
 	{
 		if (unique_id > 0)
@@ -176,7 +176,7 @@ public:
 
 private:
 	Context* m_context;
-	Action m_action;
+	MWTAction m_action;
 	float m_prob;
 	u64 m_id;
 };

@@ -111,6 +111,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VowpalWabbitInterface.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\vw_explore_clr_wrapper\vw_explore_clr_wrapper.vcxproj">
+      <Project>{8400da16-1f46-4a31-a126-bbe16f62bfd7}</Project>
+      <Name>vw_explore_clr_wrapper</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y/d $(ProjectDir)..\vowpalwabbit\dll\$(PlatformName)\$(ConfigurationName)\libvw.* $(TargetDir)
