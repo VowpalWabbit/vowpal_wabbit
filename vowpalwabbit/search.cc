@@ -336,7 +336,7 @@ namespace Search {
   }
 
   void add_new_feature(search_private& priv, const uint32_t idx, const float val, float& cur_weight) {
-    size_t wpp  = priv.all->wpp << priv.all->reg.stride_shift;
+    // TODO: clean up
     size_t mask = priv.all->reg.weight_mask;
     size_t index = idx  & mask;
     size_t index2 = ((index >> priv.all->reg.stride_shift) & mask);
@@ -549,7 +549,7 @@ namespace Search {
                 : ((CS::label*)ld)->costs[k].class_index;
   }
 
-  uint32_t cs_get_cost_partial_prediction(bool isCB, void* ld, size_t k) {
+  float cs_get_cost_partial_prediction(bool isCB, void* ld, size_t k) {
     return isCB ? ((CB::label*)ld)->costs[k].partial_prediction
                 : ((CS::label*)ld)->costs[k].partial_prediction;
   }
@@ -750,8 +750,8 @@ namespace Search {
   bool cached_action_store_or_find(search_private& priv, ptag mytag, const ptag* condition_on, const char* condition_on_names, const action* condition_on_actions, size_t condition_on_cnt, int policy, action &a, bool do_store) {
     if (priv.no_caching) return do_store;
     if (mytag == 0) return do_store; // don't attempt to cache when tag is zero
-    for (size_t i=0; i<condition_on_cnt; i++)
-      if (condition_on[i] == 0) return do_store; // don't attempt to cache when conditioning on a zero tag
+    //for (size_t i=0; i<condition_on_cnt; i++)
+    //  if (condition_on[i] == 0) return do_store; // don't attempt to cache when conditioning on a zero tag
 
     size_t sz  = sizeof(size_t) + sizeof(ptag) + sizeof(int) + sizeof(size_t) + condition_on_cnt * (sizeof(ptag) + sizeof(action) + sizeof(char));
     if (sz % 4 != 0) sz = 4 * (sz / 4 + 1); // make sure sz aligns to 4 so that uniform_hash does the right thing
