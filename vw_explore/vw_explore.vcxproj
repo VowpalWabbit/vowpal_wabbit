@@ -145,6 +145,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\vowpalwabbit\TauFirstExplorer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MWT.h" />
     <ClInclude Include="OfflineEvaluator.h" />

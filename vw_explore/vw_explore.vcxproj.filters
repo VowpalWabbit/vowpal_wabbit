@@ -39,6 +39,9 @@
     <ClInclude Include="OfflineEvaluator.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\vowpalwabbit\TauFirstExplorer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
