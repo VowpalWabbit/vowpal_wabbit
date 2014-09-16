@@ -6,17 +6,14 @@
 
 using namespace std;
 
-u64	IdGenerator::g_id = 0;
-CRITICAL_SECTION IdGenerator::g_id_mutex;
-
-Action Stateful_Default_Policy(int* stateContext, Context& applicationContext)
+MWTAction Stateful_Default_Policy(int* stateContext, Context& applicationContext)
 {
-	return Action(*stateContext);
+	return MWTAction(*stateContext);
 }
 
-Action Stateless_Default_Policy(Context& applicationContext)
+MWTAction Stateless_Default_Policy(Context& applicationContext)
 {
-	return Action(99);
+	return MWTAction(99);
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -51,10 +48,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	Context* ctx = new Context(commonFeatures);
 
 	// Now let MWT explore & choose an action
-	pair<Action, u64> chosen_action_join_key = mwt->Choose_Action_Join_Key(*ctx);
+	pair<MWTAction, u64> chosen_action_join_key = mwt->Choose_Action_Join_Key(*ctx);
 
 	char* unique_key = "1001";
-	Action chosen_action = mwt->Choose_Action(*ctx, unique_key, 4);
+	MWTAction chosen_action = mwt->Choose_Action(*ctx, unique_key, 4);
 	
 	cout << "Chosen Action ID with join key is: " << chosen_action_join_key.first.Get_Id() << endl;
 	cout << "Chosen Action ID is: " << chosen_action.Get_Id() << endl;
@@ -64,4 +61,3 @@ int _tmain(int argc, _TCHAR* argv[])
 	delete mwt;
 	return 0;
 }
-
