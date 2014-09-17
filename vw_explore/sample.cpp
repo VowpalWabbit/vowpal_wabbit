@@ -6,14 +6,14 @@
 
 using namespace std;
 
-MWTAction Stateful_Default_Policy(int* stateContext, Context& applicationContext)
+u32 Stateful_Default_Policy(int* stateContext, Context* applicationContext)
 {
-	return MWTAction(*stateContext);
+	return *stateContext;
 }
 
-MWTAction Stateless_Default_Policy(Context& applicationContext)
+u32 Stateless_Default_Policy(Context* applicationContext)
 {
-	return MWTAction(99);
+	return 99;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -27,11 +27,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	float epsilon = .2f;
 	float exploreBudget = .05f;
 
-	bool useStatefulFunc = false;
+	int policyFuncArgument = 101;
+	bool useStatefulFunc = true;
 	if (useStatefulFunc)
 	{
-		int data = 101;
-		mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &data);
+		mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &policyFuncArgument);
 	}
 	else
 	{
@@ -39,22 +39,20 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	// Create Features & Context
-	vector<feature> commonFeatures;
-	feature f;
-	f.weight_index = 1;
-	f.x = 0.5;
-	commonFeatures.push_back(f);
+	feature f[1];
+	f[0].weight_index = 1;
+	f[0].x = 0.5;
 
-	Context* ctx = new Context(commonFeatures);
+	Context* ctx = new Context(f, 1);
 
 	// Now let MWT explore & choose an action
-	pair<MWTAction, u64> chosen_action_join_key = mwt->Choose_Action_Join_Key(*ctx);
+	pair<u32, u64> chosen_action_join_key = mwt->Choose_Action_Join_Key(*ctx);
 
 	char* unique_key = "1001";
-	MWTAction chosen_action = mwt->Choose_Action(*ctx, unique_key, 4);
+	u32 chosen_action = mwt->Choose_Action(*ctx, unique_key, 4);
 	
-	cout << "Chosen Action ID with join key is: " << chosen_action_join_key.first.Get_Id() << endl;
-	cout << "Chosen Action ID is: " << chosen_action.Get_Id() << endl;
+	cout << "Chosen Action ID with join key is: " << chosen_action_join_key.first << endl;
+	cout << "Chosen Action ID is: " << chosen_action << endl;
 	cout << mwt->Get_All_Interactions() << endl;
 
 	delete ctx;

@@ -2,6 +2,7 @@
 // Offline evaluation interface for the MWT service.
 //
 
+#pragma once
 #include "stdafx.h"
 
 class PolicyStats

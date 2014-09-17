@@ -2,6 +2,7 @@
 // Logging module of the MWT service
 //
 
+#pragma once
 #include <sstream>
 
 // Currently based on assumption that each app stores separate files

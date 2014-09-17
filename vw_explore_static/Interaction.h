@@ -1,13 +1,13 @@
 //
 // Classes and definitions for interacting with the MWT service.
 //
+#pragma once
 
 #include "stdafx.h"
 #include "example.h"
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <Windows.h>
 
 using namespace std;
 
@@ -106,33 +106,28 @@ private:
 class Context : public Serializable
 {
 public:
-	Context(std::vector<feature> common_features) : m_common_features(common_features)
+	Context(feature* common_features, size_t num_features) : m_common_features(common_features), m_num_features(num_features)
 	{
 	}
 
-	Context(std::vector<feature> common_features, std::string other_context) :
-		m_common_features(common_features), m_other_context(other_context)
+	Context(feature* common_features, size_t num_features, std::string* other_context) :
+		m_common_features(common_features), m_num_features(num_features), m_other_context(other_context)
 	{
-	}
-
-	virtual bool Is_Match(Context* second_context)
-	{
-		return (m_common_features.size() == second_context->m_common_features.size() &&
-			std::equal(m_common_features.begin(), m_common_features.end(), second_context->m_common_features.begin()));
 	}
 
 	void Serialize(std::ostringstream& stream)
 	{
-		for (size_t i = 0; i < m_common_features.size(); i++)
+		for (size_t i = 0; i < m_num_features; i++)
 		{
 			stream << m_common_features[i].weight_index << ":" << m_common_features[i].x << " ";
 		}
-		stream << "| " << m_other_context;
+		stream << "| " << *m_other_context;
 	}
 
 private:
-	std::vector<feature> m_common_features;
-	std::string m_other_context;
+	feature* m_common_features;
+	size_t m_num_features;
+	std::string* m_other_context;
 };
 
 class Policy
