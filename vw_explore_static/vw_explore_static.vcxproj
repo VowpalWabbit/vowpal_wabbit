@@ -51,6 +51,10 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <BoostIncludeDir>c:\boost\x64\include\boost-1_55</BoostIncludeDir>
+    <ZlibIncludeDir>..\..\zlib-1.2.8</ZlibIncludeDir>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -133,7 +137,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>..\vowpalwabbit;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vowpalwabbit;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,9 +156,7 @@
     <ClInclude Include="Interaction.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="TauFirstExplorer.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="TauFirstExplorer.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>

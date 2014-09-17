@@ -8,8 +8,6 @@ using Microsoft.Research.MachineLearning;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 
-using MultiWorldTesting;
-
 namespace cs_test
 {
 
@@ -17,17 +15,14 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
+            VWExploreTests.RunMWTExploreTest();
+            return;
             RunFeaturesTest();
             RunParserTest();
             RunSpeedTest();
             RunFlatExampleTestEx();
     //      RunLDAPredict();
             //RunVWParse_and_VWLearn();
-        }
-
-        private static void RunMWTExploreTest()
-        {
-            MWTWrapper mwt = new MWTWrapper("myTestApp", 10);
         }
 
         private static void RunFeaturesTest()
