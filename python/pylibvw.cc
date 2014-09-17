@@ -1,10 +1,9 @@
-// #include "pylibvw.h"
 #include "../vowpalwabbit/vw.h"
 #include "../vowpalwabbit/multiclass.h"
 #include "../vowpalwabbit/cost_sensitive.h"
 #include "../vowpalwabbit/cb.h"
 #include "../vowpalwabbit/searn.h"
-#include "../vowpalwabbit/searn_pythontask.h"
+#include "../vowpalwabbit/searn_hooktask.h"
 
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
@@ -262,21 +261,21 @@ void verify_searn_set_properly(searn_ptr srn) {
     cerr << "set_structured_predict_hook: searn task not initialized properly" << endl;
     throw exception();
   }
-  if (strcmp(srn->task->task_name, "python_hook") != 0) {
-    cerr << "set_structured_predict_hook: trying to set hook when searn task is not 'python_hook'!" << endl;
+  if (strcmp(srn->task->task_name, "hook") != 0) {
+    cerr << "set_structured_predict_hook: trying to set hook when searn task is not 'hook'!" << endl;
     throw exception();
   }
 }  
 
 uint32_t searn_get_num_actions(searn_ptr srn) {
   verify_searn_set_properly(srn);
-  PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
+  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
   return d->num_actions;
 }
 
 void searn_run_fn(Searn::searn&srn) {
   try {
-    PythonTask::task_data* d = srn.get_task_data<PythonTask::task_data>();
+    HookTask::task_data* d = srn.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)d->run_object;
     run.attr("__call__")();
   } catch(...) {
@@ -293,7 +292,7 @@ void py_delete_run_object(void* pyobj) {
 
 void set_structured_predict_hook(searn_ptr srn, py::object run_object) {
   verify_searn_set_properly(srn);
-  PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
+  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
   d->run_f = &searn_run_fn;
   py::object* new_obj = new py::object(run_object);  // TODO: delete me!
   d->run_object = new_obj;
@@ -303,17 +302,17 @@ void set_structured_predict_hook(searn_ptr srn, py::object run_object) {
 void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
 
 bool po_exists(searn_ptr srn, string arg) {
-  PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
+  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
   return (*d->var_map).count(arg) > 0;
 }
 
 string po_get_string(searn_ptr srn, string arg) {
-  PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
+  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
   return (*d->var_map)[arg].as<string>();
 }
 
 int32_t po_get_int(searn_ptr srn, string arg) {
-  PythonTask::task_data* d = srn->get_task_data<PythonTask::task_data>();
+  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
   try { return (*d->var_map)[arg].as<int>(); } catch (...) {}
   try { return (*d->var_map)[arg].as<size_t>(); } catch (...) {}
   try { return (*d->var_map)[arg].as<uint32_t>(); } catch (...) {}

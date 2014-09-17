@@ -24,13 +24,18 @@ namespace SequenceTask2 {
       ptag last_tag = i;
       //ptag last_tags[2] = { max(0,i-1), i };
       action oracle     = MULTICLASS::get_example_label(ec[i]);
-      size_t prediction = sch.predict(*ec[i],    // predict using features from ec[i]
-                                      i+1,       // our "tag" is i+1 (because tags are 1-based)
-                                      &oracle,   // this is the (only) oracle action
-                                      1,         // there is only one oracle action
-                                      &last_tag, "p");
-                                      //last_tags, // condition on the previous _prediction_
-                                      //"qp");     // call the conditioning 'p' for "previous" and 'q' for prevprev
+      // the  old way of doing it:
+
+      size_t prediction = Search::predictor(sch).set_input(*ec[i]).set_oracle(oracle).add_condition(last_tag, 'p').predict();
+      
+      // size_t prediction = sch.predict(*ec[i],    // predict using features from ec[i]
+      //                                 i+1,       // our "tag" is i+1 (because tags are 1-based)
+      //                                 &oracle,   // this is the (only) oracle action
+      //                                 1,         // there is only one oracle action
+      //                                 &last_tag, // condition on the previous _prediction_
+      //                                 "p");      // call the conditioning 'p' for "previous"
+      //                                 //last_tags, 
+      //                                 //"qp");     // call the conditioning 'p' for "previous" and 'q' for prevprev
 
       if (sch.output().good())
         sch.output() << prediction << ' ';

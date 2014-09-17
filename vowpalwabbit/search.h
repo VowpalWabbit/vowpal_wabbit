@@ -11,7 +11,7 @@ license as described in the file LICENSE.
 #define cdbg clog
 #undef cdbg
 #define cdbg if (1) {} else clog
-// uncomment the previous two lines if you want loads of debug output :)
+// comment the previous two lines if you want loads of debug output :)
 
 typedef uint32_t    action;
 typedef uint32_t    ptag;
@@ -59,7 +59,7 @@ namespace Search {
                       , const char*    condition_on_names   = NULL
                       ,       size_t   learner_id           = 0
                       );
-
+    
     // where you should write output
     std::stringstream& output();
 
@@ -82,6 +82,104 @@ namespace Search {
     void (*finish)(search&);
     void (*run_setup)(search&, std::vector<example*>&);
     void (*run_takedown)(search&, std::vector<example*>&);
+  };
+
+  // to make calls to "predict" (and "predictLDF") cleaner when you
+  // want to use crazy combinations of arguments
+  class predictor {
+    public:
+    predictor(search& sch) : my_tag(0), sch(sch) {}
+
+    predictor& set_input(example&input_example) {
+      is_ldf = false;
+      ec = &input_example;
+      ec_cnt = 1;
+      return *this;
+    }
+
+    predictor& set_input(example*input_example, size_t input_length) {
+      is_ldf = true;
+      ec = input_example;
+      ec_cnt = input_length;
+      return *this;
+    }
+
+    // different ways of adding to the list of oracle actions
+    predictor& add_oracle(action a) { oracle_actions.push_back(a); return *this; }
+    predictor& add_oracle(action*a, size_t action_count) {
+      if (oracle_actions.size() > 0)
+        push_many<action>(oracle_actions, a, action_count);
+      else {
+        oracle_actions.begin = a;
+        oracle_actions.end   = a + action_count;
+        oracle_actions.end_array = a + action_count;
+      }
+      return *this;
+    }
+    predictor& add_oracle(v_array<action> a) { add_oracle(a.begin, a.size()); return *this; }
+
+    predictor& set_oracle(action a) { oracle_actions.erase(); return add_oracle(a); }
+    predictor& set_oracle(action*a, size_t action_count) { oracle_actions.erase(); return add_oracle(a, action_count); }
+    predictor& set_oracle(v_array<action> a) { oracle_actions.erase(); return add_oracle(a); }
+    
+    // different ways of adding allowed actions
+    predictor& add_allowed(action a) { allowed_actions.push_back(a); return *this; }
+    predictor& add_allowed(action*a, size_t action_count) {
+      if (allowed_actions.size() > 0)
+        push_many<action>(allowed_actions, a, action_count);
+      else {
+        allowed_actions.begin = a;
+        allowed_actions.end   = a + action_count;
+        allowed_actions.end_array = allowed_actions.end;
+      }
+      return *this;
+    }
+    predictor& add_allowed(v_array<action> a) { add_allowed(a.begin, a.size()); return *this; }
+    
+    predictor& set_allowed(action a) { allowed_actions.erase(); return add_allowed(a); }
+    predictor& set_allowed(action*a, size_t action_count) { allowed_actions.erase(); return add_allowed(a, action_count); }
+    predictor& set_allowed(v_array<action> a) { allowed_actions.erase(); return add_allowed(a); }
+
+    // different ways of adding conditioning
+    predictor& add_condition(ptag tag, char name) { condition_on_tags.push_back(tag); condition_on_names.push_back(name); return *this; }
+    predictor& set_condition(ptag tag, char name) { condition_on_tags.erase(); condition_on_names.erase(); return add_condition(tag, name); }
+
+    // set learner id
+    predictor& set_learner_id(size_t id) { learner_id = id; return *this; }
+
+    // set tag
+    predictor& set_tag(ptag tag) { my_tag = tag; return *this; }
+    
+    action predict() {
+      const action* orA = oracle_actions.size() == 0 ? NULL : oracle_actions.begin;
+      const ptag*   cOn = condition_on_names.size() == 0 ? NULL : condition_on_tags.begin;
+      const char*   cNa = NULL;
+      if (condition_on_names.size() > 0) {
+        condition_on_names.push_back((char)0);  // null terminate
+        cNa = condition_on_names.begin;
+      }
+      const action* alA = (allowed_actions.size() == 0) ? NULL : allowed_actions.begin;
+
+      if (is_ldf)
+        return sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id);
+      else
+        return sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, allowed_actions.size(), learner_id);
+
+      if (condition_on_names.size() > 0)
+        condition_on_names.pop();  // un-null-terminate
+    }
+    
+    private:
+    bool is_ldf;
+    ptag my_tag;
+    example* ec;
+    size_t ec_cnt;
+    v_array<action> oracle_actions;
+    v_array<ptag> condition_on_tags;
+    v_array<char> condition_on_names;
+    v_array<action> allowed_actions;
+    size_t learner_id;
+    search&sch;
   };
   
   // some helper functions you might find helpful
