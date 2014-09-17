@@ -39,8 +39,8 @@ private:
 
 		Action* chosen_action = nullptr;
 		float action_probability = 0.f;
-		if (tau){
-			tau--;
+		if (m_tau){
+			m_tau--;
 			u32 actionId = random_generator.Uniform_Int(1, actions.Count());
 			action_probability = 1.f/actions.Count();
 			chosen_action = &actions.Get(actionId);
