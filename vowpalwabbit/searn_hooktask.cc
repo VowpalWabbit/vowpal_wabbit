@@ -23,6 +23,7 @@ namespace HookTask {
 
   void finish(searn& srn) {
     task_data *td = srn.get_task_data<task_data>();
+    cerr << "hook finish" << endl;
     if (td->run_object && td->delete_run_object) td->delete_run_object(td->run_object);
     delete td->var_map;
     delete td;
