@@ -14,6 +14,8 @@ class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
   SequenceLabelerTask(vw& vw_obj)
       : SearchTask< vector<wt>, vector<uint32_t> >(vw_obj) {  // must run parent constructor!
     srn.set_options( Searn::AUTO_HAMMING_LOSS | Searn::AUTO_HISTORY );
+    HookTask::task_data* d = srn.get_task_data<HookTask::task_data>();
+    cerr << "num_actions = " << d->num_actions << endl;
   }
 
   // using vanilla vw interface

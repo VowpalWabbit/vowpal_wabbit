@@ -22,8 +22,6 @@ template<class INPUT, class OUTPUT> class SearchTask {
     HookTask::task_data* d = srn.get_task_data<HookTask::task_data>();
     d->run_f = _searn_run_fn;
     d->run_object = this;
-    d->var_map = NULL; // TODO
-    //d->num_actions = num_actions;  // TODO
     d->extra_data  = NULL;
     d->extra_data2 = NULL;
   }
