@@ -522,7 +522,6 @@ namespace LabelDict {
 
         // fill in test predictions
         ec->partial_prediction = costs[j].partial_prediction;
-        cerr << "csoaa: ec->partial_prediction = " << ec->partial_prediction << endl;
         if (prediction == costs[j].class_index) prediction_is_me = true;
       }
       ld->prediction = prediction_is_me ? prediction : 0;

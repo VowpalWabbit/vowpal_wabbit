@@ -871,6 +871,8 @@ namespace VW{
     return ret;
   }
 
+  example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
+  
   void add_constant_feature(vw& vw, example*ec) {
     uint32_t cns = constant_namespace;
     ec->indices.push_back(cns);

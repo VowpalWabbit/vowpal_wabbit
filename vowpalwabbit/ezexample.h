@@ -215,6 +215,12 @@ class ezexample {
     ec->num_features      += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
   }
+
+  example* get() {
+    if (example_changed_since_prediction)
+      mini_setup_example();
+    return ec;
+  }
   
   float predict() {
     setup_for_predict();
