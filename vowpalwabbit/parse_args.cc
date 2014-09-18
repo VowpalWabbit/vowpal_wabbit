@@ -28,7 +28,7 @@ license as described in the file LICENSE.
 #include "cb_algs.h"
 #include "scorer.h"
 #include "searn.h"
-#include "search.h"
+//#include "search.h"
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
