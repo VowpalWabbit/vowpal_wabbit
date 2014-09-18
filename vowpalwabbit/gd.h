@@ -37,15 +37,14 @@ namespace GD{
       T(dat, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
   }
 
-
-  template <class R, void (*T)(R&, const uint32_t, const float, float&)>
-  inline void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R& dat, uint32_t offset=0, float mult=1.)
-  {
-    for (feature* f = begin; f!= end; f++)
-      T(dat, f->weight_index, mult*f->x, weight_vector[(f->weight_index + offset) & weight_mask]);
-  }
-  
-  template <class R, void (*T)(R&, const float, float&)>
+ template <class R, void (*T)(R&, float, uint32_t)>
+   void foreach_feature(weight* weight_vector, size_t weight_mask, feature* begin, feature* end, R&dat, uint32_t offset=0, float mult=1.)
+   {
+     for (feature* f = begin; f!= end; f++) 
+       T(dat, mult*f->x, f->weight_index + offset);
+   }
+ 
+ template <class R, class S, void (*T)(R&, float, S)>
   inline void foreach_feature(vw& all, example& ec, R& dat)
   {
     uint32_t offset = ec.ft_offset;
@@ -81,43 +80,13 @@ namespace GD{
     }
   }
 
-  template <class R, void (*T)(R&, const uint32_t, const float, float&)>
+template <class R, void (*T)(R&, float, float&)>
   inline void foreach_feature(vw& all, example& ec, R& dat)
   {
-    uint32_t offset = ec.ft_offset;
-
-    for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
-      foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[*i].begin, ec.atomics[*i].end, dat, offset);
-     
-    for (vector<string>::iterator i = all.pairs.begin(); i != all.pairs.end();i++) {
-      if (ec.atomics[(int)(*i)[0]].size() > 0) {
-        v_array<feature> temp = ec.atomics[(int)(*i)[0]];
-        for (; temp.begin != temp.end; temp.begin++)
-        {
-          uint32_t halfhash = quadratic_constant * (temp.begin->weight_index + offset);
-       
-          foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[1]].begin, ec.atomics[(int)(*i)[1]].end, dat, 
-                               halfhash, temp.begin->x);
-        }
-      }
-    }
-     
-    for (vector<string>::iterator i = all.triples.begin(); i != all.triples.end();i++) {
-      if ((ec.atomics[(int)(*i)[0]].size() == 0) || (ec.atomics[(int)(*i)[1]].size() == 0) || (ec.atomics[(int)(*i)[2]].size() == 0)) { continue; }
-      v_array<feature> temp1 = ec.atomics[(int)(*i)[0]];
-      for (; temp1.begin != temp1.end; temp1.begin++) {
-        v_array<feature> temp2 = ec.atomics[(int)(*i)[1]];
-        for (; temp2.begin != temp2.end; temp2.begin++) {
-           
-          uint32_t halfhash = cubic_constant2 * (cubic_constant * (temp1.begin->weight_index + offset) + temp2.begin->weight_index + offset);
-          float mult = temp1.begin->x * temp2.begin->x;
-          foreach_feature<R,T>(all.reg.weight_vector, all.reg.weight_mask, ec.atomics[(int)(*i)[2]].begin, ec.atomics[(int)(*i)[2]].end, dat, halfhash, mult);
-        }
-      }
-    }
+    foreach_feature<R,float&,T>(all, ec, dat);
   }
-  
-  inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
+
+ inline void vec_add(float& p, const float fx, float& fw) { p += fw * fx; }
 
   inline float inline_predict(vw& all, example& ec)
   {

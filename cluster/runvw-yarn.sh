@@ -20,7 +20,7 @@ set -u
 
 # This works on both MR1 and MR2/YARN
 mapper=`printenv mapred_task_id | cut -d "_" -f 5`
-mapred_job_id=`echo "$mapred_job_id" | tr -d 'job_'`
+mapred_job_id=`echo "$mapred_job_id" | awk -F "_" '{print $NF}'`
 
 # debug
 echo $mapper > /dev/stderr

@@ -45,6 +45,7 @@ license as described in the file LICENSE.
 #include "memory.h"
 #include "stagewise_poly.h"
 #include "active.h"
+#include "kernel_svm.h"
 
 using namespace std;
 //
@@ -645,6 +646,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
     ("noop","do no learning")
     ("print","print examples")
+    ("ksvm", "kernel svm")
     ("sendto", po::value< vector<string> >(), "send examples to <host>");
 
   vm = add_options(all, base_opt);
@@ -661,6 +663,12 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     all.l = GDMF::setup(all, vm);
   else if (vm.count("sendto"))
     all.l = SENDER::setup(all, vm, all.pairs);
+  else if (vm.count("ksvm")) {
+    string loss_function = "hinge";
+    float loss_parameter = 0.0;
+    all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+    all.l = KSVM::setup(all, vm);
+  }
   else
     {
       all.l = GD::setup(all, vm);
@@ -843,8 +851,8 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
   po::options_description search_opts("Search");
     
   search_opts.add_options()
-    ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF")
-    ("searchnew", po::value<size_t>(), "use new version of search-based structured prediction, argument=maximum action id or 0 for LDF");
+    //("searchnew", po::value<size_t>(), "use new version of search-based structured prediction, argument=maximum action id or 0 for LDF");
+      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
 
   vm = add_options(all,search_opts);
 
@@ -860,18 +868,18 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
     //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
     all.l = Searn::setup(all, vm);
   }
-  else if (vm.count("searchnew")) {
-    if (!got_cs && !got_cb) {
-      if( vm.count("searchnew") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searchnew"]));
-      else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searchnew"]));
+  // else if (vm.count("searchnew")) {
+  //   if (!got_cs && !got_cb) {
+  //     if( vm.count("searchnew") ) vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searchnew"]));
+  //     else vm.insert(pair<string,po::variable_value>(string("csoaa"),vm["searchnew"]));
       
-      all.l = CSOAA::setup(all, vm);  // default to CSOAA unless others have been specified
-      all.cost_sensitive = all.l;
-      got_cs = true;
-    }
-    //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
-    all.l = Search::setup(all, vm);
-  }
+  //     all.l = CSOAA::setup(all, vm);  // default to CSOAA unless others have been specified
+  //     all.cost_sensitive = all.l;
+  //     got_cs = true;
+  //   }
+  //   //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
+  //   all.l = Search::setup(all, vm);
+  // }
 }
 
 void add_to_args(vw& all, int argc, char* argv[])

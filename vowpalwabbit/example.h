@@ -76,11 +76,13 @@ struct flat_example
 	float global_weight;
 
 	size_t num_features;//precomputed, cause it's fast&easy.  
+        float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
 	size_t feature_map_len;
 	feature* feature_map; //map to store sparse feature vectors  
 };
 
 flat_example* flatten_example(vw& all, example *ec);
+flat_example* flatten_sort_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 
 example *alloc_examples(size_t,size_t);
