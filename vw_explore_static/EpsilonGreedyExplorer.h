@@ -3,6 +3,7 @@
 #include "PolicyFunc.h"
 #include "Explorer.h"
 
+// TODO: This template is probably not needed any more, since we are going to convert everything to void* internally
 template <class T>
 class EpsilonGreedyExplorer : public Explorer
 {

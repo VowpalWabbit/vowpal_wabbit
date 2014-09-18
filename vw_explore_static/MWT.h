@@ -36,22 +36,17 @@ public:
 	template <class T>
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
-		typename StatefulFunctionWrapper<T>::Policy_Func defaultPolicyFunc, 
-		T* defaultPolicyFuncStateContext)
+		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
+		T* default_policy_func_state_context)
 	{
-		StatefulFunctionWrapper<T>* func_Wrapper = new StatefulFunctionWrapper<T>();
-		func_Wrapper->m_policy_function = (Stateful_Policy_Func*)&defaultPolicyFunc;
-		
-		m_explorer = new EpsilonGreedyExplorer<T>(epsilon, *func_Wrapper, defaultPolicyFuncStateContext);
-		
-		m_default_func_wrapper = func_Wrapper;
+		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_func_state_context);
 	}
 
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
-		StatelessFunctionWrapper::Policy_Func default_Policy_Func)
+		StatelessFunctionWrapper::Policy_Func default_policy_func)
 	{
-		this->Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_Policy_Func);
+		this->Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_policy_func);
 	}
 
 	std::pair<u32, u64> Choose_Action_Join_Key(Context& context)
