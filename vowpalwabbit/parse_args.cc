@@ -852,7 +852,7 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
     
   search_opts.add_options()
     //("searchnew", po::value<size_t>(), "use new version of search-based structured prediction, argument=maximum action id or 0 for LDF");
-      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
+      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF";)
 
   vm = add_options(all,search_opts);
 
