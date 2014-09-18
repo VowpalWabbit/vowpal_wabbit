@@ -12,7 +12,11 @@ PYTHON_VERSION = 2.7
 PYTHON_INCLUDE = /usr/include/python$(PYTHON_VERSION)
 
 PYTHON_LIBS = -l boost_python
-VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
+ifeq (,$(wildcard ../vowpalwabbit/vw.so))
+  VWLIBS = ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
+else
+  VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
+endif
 PYLIBVW = pylibvw.so
 
 all:
