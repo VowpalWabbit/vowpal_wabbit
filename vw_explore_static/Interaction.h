@@ -104,7 +104,10 @@ private:
 class Context : public Serializable
 {
 public:
-	Context(feature* common_features, size_t num_features) : m_common_features(common_features), m_num_features(num_features)
+	Context(feature* common_features, size_t num_features) : 
+		m_common_features(common_features), 
+		m_num_features(num_features),
+		m_other_context(nullptr)
 	{
 	}
 
@@ -115,11 +118,17 @@ public:
 
 	void Serialize(std::ostringstream& stream)
 	{
-		for (size_t i = 0; i < m_num_features; i++)
+		if (m_common_features != nullptr)
 		{
-			stream << m_common_features[i].weight_index << ":" << m_common_features[i].x << " ";
+			for (size_t i = 0; i < m_num_features; i++)
+			{
+				stream << m_common_features[i].weight_index << ":" << m_common_features[i].x << " ";
+			}
 		}
-		stream << "| " << *m_other_context;
+		if (m_other_context != nullptr)
+		{
+			stream << "| " << *m_other_context;
+		}
 	}
 
 private:

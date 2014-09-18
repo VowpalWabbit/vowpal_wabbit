@@ -1,3 +1,8 @@
+#pragma once
+
+#include "PolicyFunc.h"
+#include "Explorer.h"
+
 template <class T>
 class TauFirstExplorer : public Explorer
 {
@@ -22,22 +27,22 @@ public:
 		delete m_random_generator;
 	}
 
-	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions)
 	{
 		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
-	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions, u32 seed)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
 		return this->Choose_Action(context, actions, random_generator);
 	}
 
 private:
-	std::pair<Action, float> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
 	{
 
-		Action* chosen_action = nullptr;
+		MWTAction* chosen_action = nullptr;
 		float action_probability = 0.f;
 		if (m_tau){
 			m_tau--;
@@ -64,7 +69,7 @@ private:
 			action_probability = 1.f;
 		}
 
-		return std::pair<Action, float>(*chosen_action, action_probability);
+		return std::pair<MWTAction, float>(*chosen_action, action_probability);
 	}
 
 private:
