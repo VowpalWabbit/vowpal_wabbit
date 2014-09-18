@@ -27,7 +27,6 @@ public:
 
 	void Store(Interaction* interaction)
 	{
-		// TODO: maybe do a deep copy here to avoid invalid mem addresses later
 		if (interaction == nullptr)
 		{
 			throw std::invalid_argument("Interaction to store is NULL");

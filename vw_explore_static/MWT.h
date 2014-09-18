@@ -148,7 +148,6 @@ public:
 		delete m_action_set;
 	}
 
-	// TODO: should we restrict explorationBudget to some small numbers to prevent users from unwanted effect?
 	template <class T>
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
@@ -170,7 +169,6 @@ public:
 		this->Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_Policy_Func);
 	}
 
-	// TODO: should include defaultPolicy here? From users view, it's much more intuitive
 	std::pair<u32, u64> Choose_Action_Join_Key(Context& context)
 	{
 		std::pair<MWTAction, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set);
@@ -246,9 +244,8 @@ private:
 
 	u32 MWT::Compute_Seed(char* unique_id, u32 length)
 	{
-		// TODO: fix linker errors, change return type to u64, may change this hash function
-		// return ::uniform_hash(unique_id, length, 0);
-		return 0;
+		// TODO: change return type to u64, may need to revisit this hash function
+		return ::uniform_hash(unique_id, length, 0);
 	}
 
 private:

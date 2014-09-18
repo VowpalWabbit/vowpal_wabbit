@@ -91,8 +91,6 @@ public:
 		return m_count;
 	}
 
-	// TODO: should support GetAction() methods with a few overloads. current there's no way to iterate or get an action out of the set
-
 	virtual bool Match(MWTAction* firstAction, MWTAction* secondAction)
 	{
 		return firstAction->Get_Id() == secondAction->Get_Id();

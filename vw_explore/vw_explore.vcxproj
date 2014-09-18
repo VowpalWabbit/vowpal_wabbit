@@ -160,6 +160,9 @@
     <ClCompile Include="sample.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">
+      <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\vw_explore_static\vw_explore_static.vcxproj">
       <Project>{ace47e98-488c-4cdf-b9f1-36337b2855ad}</Project>
     </ProjectReference>
