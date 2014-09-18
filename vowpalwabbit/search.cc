@@ -15,6 +15,7 @@ license as described in the file LICENSE.
 #include "cb.h"
 #include "search_sequencetask.h"
 #include "gd.h" // for GD::foreach_feature
+#include <math.h>
 
 using namespace LEARNER;
 using namespace std;
@@ -165,9 +166,6 @@ namespace Search {
 
   string   audit_feature_space("conditional");
   uint32_t conditional_constant = 8290743;
-
-  template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str << " = ["; for (size_t i=0; i<A.size(); i++) cdbg << " " << A[i]; cdbg << " ]" << endl; }
-  template<class T> void cerr_print_array(string str, v_array<T>& A) { cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) cerr << " " << A[i]; cerr << " ]" << endl; }
   
   int random_policy(search_private& priv, bool allow_current, bool allow_optimal) {
     if (priv.beta >= 1) {
@@ -276,12 +274,19 @@ namespace Search {
     out[max_len] = 0;
   }
 
+  void number_to_natural(size_t big, char* c) {
+    if      (big > 9999999999) sprintf(c, "%dg", (int)(big / 1000000000));
+    else if (big >    9999999) sprintf(c, "%dm", (int)(big /    1000000));
+    else if (big >       9999) sprintf(c, "%dk", (int)(big /       1000));
+    else                       sprintf(c, "%d",  (int)(big));
+  }
+  
   void print_update(search_private& priv) {
     vw& all = *priv.all;
     if (!priv.printed_output_header && !all.quiet) {
-      const char * header_fmt = "%-10s %-10s %8s %15s %24s %22s %5s %5s %15s %15s %15s %-8s\n";
-      fprintf(stderr, header_fmt, "average", "since", "instance", "example",   "current true",  "current predicted", "cur",  "cur", "predic.", "cache", "examples", "");
-      fprintf(stderr, header_fmt, "loss",    "last",  "counter",  "weight",    "output prefix",  "output prefix",    "pass", "pol", "made",    "hits",  "gener.", "beta");
+      const char * header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
+      fprintf(stderr, header_fmt, "average", "since", "instance", "current true",  "current predicted", "cur",  "cur", "predic", "cache", "examples", "");
+      fprintf(stderr, header_fmt, "loss",    "last",  "counter",  "output prefix",  "output prefix",    "pass", "pol", "made",    "hits",  "gener", "beta");
       std::cerr.precision(5);
       priv.printed_output_header = true;
     }
@@ -307,19 +312,22 @@ namespace Search {
       avg_loss_since = safediv((float)all.sd->sum_loss_since_last_dump, (float) (all.sd->weighted_examples - all.sd->old_weighted_examples));
     }
 
-    fprintf(stderr, "%-10.6f %-10.6f %8ld %15f   [%s] [%s] %5d %5d %15lu %15lu %15lu %-8f",
+    char inst_cntr[9];  number_to_natural(all.sd->example_number, inst_cntr);
+    char total_pred[8]; number_to_natural(priv.total_predictions_made, total_pred);
+    char total_cach[8]; number_to_natural(priv.total_cache_hits, total_cach);
+    char total_exge[8]; number_to_natural(priv.total_examples_generated, total_exge);
+    
+    fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f",
             avg_loss,
             avg_loss_since,
-            (long int)all.sd->example_number,
-            all.sd->weighted_examples,
+            inst_cntr,
             true_label,
             pred_label,
-            //(long unsigned int)priv.num_features,
             (int)priv.read_example_last_pass,
             (int)priv.current_policy,
-            (long unsigned int)priv.total_predictions_made,
-            (long unsigned int)priv.total_cache_hits,
-            (long unsigned int)priv.total_examples_generated,
+            total_pred,
+            total_cach,
+            total_exge,
             priv.beta);
 
     if (PRINT_CLOCK_TIME) {
@@ -443,10 +451,31 @@ namespace Search {
     priv.num_features = 0;
     priv.should_produce_string = false;
     priv.mix_per_roll_policy = -2;
-    if (priv.adaptive_beta)
-      priv.beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
+    if (priv.adaptive_beta) {
+      float x = - log1pf(- priv.alpha) * (float)priv.total_examples_generated;
+      static const float log_of_2 = 0.6931471805599453;
+      priv.beta = (x <= log_of_2) ? -expm1f(-x) : (1-expf(-x)); // numerical stability
+      //float priv_beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
+      //assert( fabs(priv_beta - priv.beta) < 1e-2 );
+      if (priv.beta > 1) priv.beta = 1;
+    }
+    /* beta = 1 - (1-a)^n
+            = 1 - exp[ log [(1-a)^n] ]
+            = 1 - exp[ n log (1-a) ]
+            = 1 - exp[ - n log 1/(1-a) ]
+       log b= log [1 - exp(-x)] for x = - n log (1-a)
+            = log1mexp(x)
+            = { log(- expm1(-x))   if 0 < x <= log 2
+              { log1p(-exp(-x))    if log 2 < x
+       where expm1(x) = exp(x) - 1
+         and log1p(x) = log(1+x)
+       so  b= { -expm1(-x)         if ...
+              { exp(log1p(-exp(-x))
+                = exp(log(1+-exp(-x)))
+                = 1+-exp(-x)
+    */
     priv.ptag_to_action.erase();
-
+    
     if (! priv.cb_learner) { // was: if rollout_all_actions
       uint32_t seed = (priv.read_example_last_id * 147483 + 4831921) * 2147483647;
       msrand48(seed);
@@ -715,7 +744,7 @@ namespace Search {
   template<class T>
   void ensure_size(v_array<T>& A, size_t sz) {
     if (A.end_array - A.begin < sz) A.resize(sz*2+1, true);
-    else A.end = A.begin + sz;
+    A.end = A.begin + sz;
   }
 
 
@@ -813,6 +842,7 @@ namespace Search {
       assert(priv.learn_ec_ref != NULL);
 
       void* labels = allowed_actions_to_ld(priv, priv.learn_ec_ref_cnt, priv.learn_allowed_actions.begin, priv.learn_allowed_actions.size());
+      cdbg_print_array("learn_allowed_actions", priv.learn_allowed_actions);
       //bool any_gt_1 = false;
       for (size_t i=0; i<losses.size(); i++) {
         losses[i] = (losses[i] <= min_loss) ? 0. : 1.; // binary loss
@@ -944,7 +974,8 @@ namespace Search {
         }
 
         ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
-        memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt);
+        memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt*sizeof(action));
+        cdbg_print_array("in LEARN, learn_allowed_actions", priv.learn_allowed_actions);
       }
 
       assert((allowed_actions_cnt == 0) || (a < allowed_actions_cnt));
@@ -1003,7 +1034,7 @@ namespace Search {
             priv.learn_ec_ref = ecs;
             priv.learn_ec_ref_cnt = ec_cnt;
             ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
-            memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt);
+            memcpy(priv.learn_allowed_actions.begin, allowed_actions, allowed_actions_cnt * sizeof(action));
             generate_training_example(priv, losses, false);
             losses.delete_v();
           }
@@ -1770,4 +1801,9 @@ namespace Search {
   }
 
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
+
+  void search::add_program_options(po::variables_map& vw, po::options_description& opts) {
+    vw = add_options( *this->priv->all, opts );
+  }
+  
 }

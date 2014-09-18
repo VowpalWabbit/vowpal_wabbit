@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     struct timeb t_start, t_end;
     ftime(&t_start);
     
-    if (!all->quiet && !all->bfgs && !all->searn)
+    if (!all->quiet && !all->bfgs && !all->searn && !all->searnstr)
         {
         const char * header_fmt = "%-10s %-10s %10s %11s %8s %8s %8s\n";
         fprintf(stderr, header_fmt,

@@ -32,6 +32,9 @@ namespace Search {
     // this should be an or ("|") of AUTO_CONDITION_FEATURES, etc.
     void set_options(uint32_t opts);
 
+    // for adding command-line options
+    void add_program_options(po::variables_map& vw, po::options_description& opts);
+    
     // for explicitly declaring a loss incrementally
     void loss(float incr_loss);
 
@@ -84,6 +87,9 @@ namespace Search {
     void (*run_takedown)(search&, std::vector<example*>&);
   };
 
+  template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str << " = ["; for (size_t i=0; i<A.size(); i++) cdbg << " " << A[i]; cdbg << " ]" << endl; }
+  template<class T> void cerr_print_array(string str, v_array<T>& A) { cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) cerr << " " << A[i]; cerr << " ]" << endl; }
+  
   // to make calls to "predict" (and "predictLDF") cleaner when you
   // want to use crazy combinations of arguments
   class predictor {
@@ -160,13 +166,13 @@ namespace Search {
       }
       const action* alA = (allowed_actions.size() == 0) ? NULL : allowed_actions.begin;
 
-      if (is_ldf)
-        return sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id);
-      else
-        return sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, allowed_actions.size(), learner_id);
+      action p = is_ldf ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id)
+                        : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, allowed_actions.size(), learner_id);
 
       if (condition_on_names.size() > 0)
         condition_on_names.pop();  // un-null-terminate
+
+      return p;
     }
     
     private:
@@ -189,7 +195,7 @@ namespace Search {
   bool float_equal(float a, float b);
   bool uint32_equal(uint32_t a, uint32_t b);
   bool size_equal(size_t a, size_t b);
-
+  
   // our interface within VW
   LEARNER::learner* setup(vw&, po::variables_map&);
   void search_finish(void*);

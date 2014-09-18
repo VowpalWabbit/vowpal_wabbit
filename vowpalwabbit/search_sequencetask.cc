@@ -71,6 +71,10 @@ namespace SequenceSpanTask2 {
 //     m%4=2 -> m, m+1                                in-X to { in-X, last-X }              4, 8, 12, 16, ...
 //     m%4=3 -> 1; 2, 6, 8, ...; 3, 7, 9, ...         last-X to { out, unit-Y, begin-Y }    5, 9, 13, 17, ...
 
+  inline action bilou_to_bio(action y) {
+    return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
+  }
+
   void convert_bio_to_bilou(vector<example*> ec) {
     for (size_t n=0; n<ec.size(); n++) {
       MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
@@ -88,12 +92,8 @@ namespace SequenceSpanTask2 {
         else // should be in-X
           ylab->label = (y-1) * 2;      // from 3 to 4, 5 to 8, 7 to 12, etc.
       }
-      assert(ylab->label <= 13);
+      assert( y == bilou_to_bio(ylab->label) );
     }
-  }
-
-  inline action bilou_to_bio(action y) {
-    return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
   }
 
   struct task_data {
@@ -106,14 +106,15 @@ namespace SequenceSpanTask2 {
     task_data * my_task_data = new task_data();
 
     // TODO: options!
-    // po::options_description sspan_opts("search sequencespan options");
-    // sspan_opts.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
-    // vm = add_options(*sch.all, sspan_opts);
-    // if (vm.count("search_span_bilou")) {
-    //   cerr << "switching to BILOU encoding for sequence span labeling" << endl;
-    //   my_task_data->encoding = BILOU;
-    //   num_actions = num_actions * 2 - 1;
-    // } else
+    po::options_description sspan_opts("search sequencespan options");
+    sspan_opts.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
+    sch.add_program_options(vm, sspan_opts);
+
+    if (vm.count("search_span_bilou")) {
+      cerr << "switching to BILOU encoding for sequence span labeling" << endl;
+      my_task_data->encoding = BILOU;
+      num_actions = num_actions * 2 - 1;
+    } else
       my_task_data->encoding = BIO;
     
     
@@ -152,35 +153,44 @@ namespace SequenceSpanTask2 {
     task_data * my_task_data = sch.get_task_data<task_data>();
     action last_prediction = 1;
     v_array<action> * y_allowed = &(my_task_data->allowed_actions);
-
+    
     if (my_task_data->encoding == BILOU)  // TODO: move this out of here!
       convert_bio_to_bilou(ec);
     
     for (size_t i=0; i<ec.size(); i++) {
+      action oracle = MULTICLASS::get_example_label(ec[i]);
+      Search::predictor P = Search::predictor(sch).set_input(*ec[i]).set_oracle(oracle).set_condition(i, 'p');
+      
+      size_t y_allowed_length = y_allowed->size();
       if (my_task_data->encoding == BIO) {
-        if      (last_prediction == 1)      (*y_allowed)[y_allowed->size()-1] = 1;
-        else if (last_prediction % 2 == 0)  (*y_allowed)[y_allowed->size()-1] = last_prediction+1;
-        else                                (*y_allowed)[y_allowed->size()-1] = last_prediction;
+        // if      (last_prediction == 1)      (*y_allowed)[y_allowed->size()-1] = 1;
+        // else if (last_prediction % 2 == 0)  (*y_allowed)[y_allowed->size()-1] = last_prediction+1;
+        // else                                (*y_allowed)[y_allowed->size()-1] = last_prediction;
+        if      (last_prediction == 1)       P.set_allowed(y_allowed->begin, y_allowed->size()-1);
+        else if (last_prediction % 2 == 0) { (*y_allowed)[y_allowed->size()-1] = last_prediction+1; P.set_allowed(*y_allowed); }
+        else                               { (*y_allowed)[y_allowed->size()-1] = last_prediction;   P.set_allowed(*y_allowed); }
       } else if (my_task_data->encoding == BILOU) {
         if ((last_prediction == 1) || ((last_prediction-2) % 4 == 0) || ((last_prediction-2) % 4 == 3))
-          y_allowed = &(my_task_data->allowed_actions);
+          P.set_allowed(my_task_data->allowed_actions);
         else {
-          y_allowed = &(my_task_data->only_two_allowed);
-          my_task_data->only_two_allowed[0] = last_prediction+1;
-          my_task_data->only_two_allowed[1] = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
+          P.set_allowed(last_prediction+1);
+          P.add_allowed(((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction);
         }
       }
 
-      ptag last_tag = i;
-      action oracle = MULTICLASS::get_example_label(ec[i]);
       //last_prediction = sch.predict(ec[i], MULTICLASS::get_example_label(ec[i]), y_allowed);
+      /*
       last_prediction = sch.predict(*ec[i],
                                     i+1,
                                     &oracle,
                                     1,
                                     &last_tag,
                                     "p");
+      */
+      //cerr << "last_prediction = " << last_prediction << "    ";
+      last_prediction = P.set_allowed(y_allowed->begin, y_allowed_length).predict();
 
+      
       action printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
       
       if (sch.output().good())
