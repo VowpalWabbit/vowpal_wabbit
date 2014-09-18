@@ -150,6 +150,9 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BaggingExplorer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MWT.h" />
     <ClInclude Include="Interaction.h" />
