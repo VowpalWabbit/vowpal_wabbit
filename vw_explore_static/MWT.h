@@ -55,7 +55,7 @@ public:
 	/* Tau-first initialization */
 	template <class T>
 	void Initialize_Tau_First(
-		int tau, 
+		u32 tau, 
 		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
 		T* default_policy_func_state_context)
 	{
@@ -63,7 +63,7 @@ public:
 	}
 
 	void Initialize_Tau_First(
-		int tau, 
+		u32 tau, 
 		StatelessFunctionWrapper::Policy_Func default_policy_func)
 	{
 		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func);
@@ -122,7 +122,7 @@ public:
 	}
 
 	void Initialize_Tau_First(
-		int tau, 
+		u32 tau, 
 		Stateful_Policy_Func default_policy_func, 
 		void* default_policy_func_argument)
 	{
@@ -135,7 +135,7 @@ public:
 	}
 
 	void Initialize_Tau_First(
-		int tau, 
+		u32 tau, 
 		Stateless_Policy_Func default_policy_func)
 	{
 		StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();

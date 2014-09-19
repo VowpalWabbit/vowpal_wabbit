@@ -8,7 +8,7 @@ class TauFirstExplorer : public Explorer
 {
 public:
 	TauFirstExplorer(
-		int tau,
+		u32 tau,
 		BaseFunctionWrapper& default_policy_func_wrapper,
 		T* default_policy_func_state_context) :
 		m_tau(tau),
@@ -67,7 +67,7 @@ private:
 	}
 
 private:
-	int m_tau;
+	u32 m_tau;
 	PRG<u32>* m_random_generator;
 
 	BaseFunctionWrapper& m_default_policy_wrapper;

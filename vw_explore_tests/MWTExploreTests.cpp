@@ -104,7 +104,7 @@ namespace vw_explore_tests
 		MWT* m_mwt;
 
 		float m_epsilon;
-		int m_tau;
+		u32 m_tau;
 		int m_policy_func_arg;
 
 		Context* m_context;
