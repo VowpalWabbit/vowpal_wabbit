@@ -21,7 +21,9 @@ public:
 		}
 
 		m_logger = new Logger(m_app_id);
+		m_explorer = nullptr;
 		m_action_set = new ActionSet(num_actions);
+		m_default_func_wrapper = nullptr;
 	}
 
 	~MWT()

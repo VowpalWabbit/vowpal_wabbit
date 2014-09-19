@@ -16,10 +16,6 @@ public:
 			m_default_policy_wrapper(default_policy_func_wrapper),
 			m_default_policy_state_context(default_policy_func_state_context)
 	{
-		if (epsilon <= 0)
-		{
-			throw std::invalid_argument("Initial epsilon value must be positive.");
-		}
 		m_random_generator = new PRG<u32>();
 	}
 
