@@ -3,11 +3,13 @@ Copyright (c) by respective owners including Yahoo!, Microsoft, and
 individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
-#include "searn_pythontask.h"
+#include "searn_hooktask.h"
 
-namespace PythonTask {
+// this is used for the C++ library and python library hook; hopefully
+// it can be used for any foreign library too!
+namespace HookTask {
   using namespace Searn;
-  searn_task task = { "python_hook", initialize, finish, structured_predict };
+  searn_task task = { "hook", initialize, finish, structured_predict };
 
   void initialize(searn& srn, size_t& num_actions, po::variables_map& vm) {
     task_data *td = new task_data;
@@ -31,7 +33,7 @@ namespace PythonTask {
     if (td->run_f)
       td->run_f(srn);
     else
-      cerr << "warning: PythonTask::structured_predict called before hook is set" << endl;
+      cerr << "warning: HookTask::structured_predict called before hook is set" << endl;
   }
 }
 

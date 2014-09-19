@@ -92,7 +92,6 @@ namespace CSOAA {
 }
 
 namespace CSOAA_AND_WAP_LDF {
-
   struct ldf {
     v_array<example*> ec_seq;
     v_hashmap< size_t, v_array<feature> > label_features;

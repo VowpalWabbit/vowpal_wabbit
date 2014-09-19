@@ -47,8 +47,8 @@ my_dataset = [ [(DET , 'the'),
                 (ADJ , 'all')] ]
 
 
-# initialize VW as usual, but use 'python_hook' as the search_task
-vw = pyvw.vw("--search 4 --quiet --search_task python_hook --search_no_snapshot --ring_size 1024")
+# initialize VW as usual, but use 'hook' as the search_task
+vw = pyvw.vw("--search 4 --quiet --search_task hook --search_no_snapshot --ring_size 1024")
 
 # tell VW to construct your search task object
 sequenceLabeler = vw.init_search_task(SequenceLabeler)

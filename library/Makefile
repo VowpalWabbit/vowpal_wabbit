@@ -11,7 +11,7 @@ endif
 VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 
-all: ezexample_predict ezexample_train library_example recommend gd_mf_weights # ezexample_predict_threaded
+all: ezexample_predict ezexample_train library_example recommend gd_mf_weights test_search # ezexample_predict_threaded
 
 ezexample_predict: ezexample_predict.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
@@ -25,6 +25,9 @@ ezexample_train: ezexample_train.cc ../vowpalwabbit/libvw.a
 library_example: library_example.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
 
+test_search: test_search.cc ../vowpalwabbit/libvw.a
+	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
+
 recommend: recommend.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
 
@@ -32,5 +35,5 @@ gd_mf_weights: gd_mf_weights.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)
 
 clean:
-	rm -f *.o ezexample_predict ezexample_train library_example recommend ezexample_predict_threaded
+	rm -f *.o ezexample_predict ezexample_train library_example test_search recommend ezexample_predict_threaded
 

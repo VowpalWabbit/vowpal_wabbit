@@ -31,7 +31,7 @@ bool isfinite(float x)
 
 // task-specific includes
 #include "searn_sequencetask.h"
-#include "searn_pythontask.h"
+#include "searn_hooktask.h"
 #include "searn_entityrelationtask.h"
 #include "searn_multiclasstask.h"
 
@@ -51,7 +51,7 @@ namespace Searn
                               &SequenceSpanTask::task,
                               &SequenceDoubleTask::task,
 			      &EntityRelationTask::task,
-                              &PythonTask::task,
+                              &HookTask::task,
 			      &MulticlassTask::task,
 			      NULL };   // must NULL terminate!
 
@@ -700,15 +700,6 @@ namespace Searn
       assert(false);
     }
   }
-
-  template<class T> bool v_array_contains(v_array<T> &A, T x) {
-    for (T* e = A.begin; e != A.end; ++e)
-      if (*e == x)
-        return true;
-    return false;
-  }
-
-
 
  
   template <class T>
