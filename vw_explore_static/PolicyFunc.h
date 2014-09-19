@@ -3,7 +3,12 @@
 #include "utility.h"
 #include "Interaction.h"
 
-class BaseFunctionWrapper { };
+class BaseFunctionWrapper
+{ 
+public:
+	virtual ~BaseFunctionWrapper() { }
+};
+
 class MWT_Empty { };
 
 typedef u32 Stateful_Policy_Func(void* state_Context, void* application_Context);
