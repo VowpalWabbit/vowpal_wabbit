@@ -21,7 +21,9 @@ public:
 		}
 
 		m_logger = new Logger(m_app_id);
+		m_explorer = nullptr;
 		m_action_set = new ActionSet(num_actions);
+		m_default_func_wrapper = nullptr;
 	}
 
 	~MWT()
@@ -31,6 +33,7 @@ public:
 		delete m_logger;
 		delete m_explorer;
 		delete m_action_set;
+		delete m_default_func_wrapper;
 	}
 
 	template <class T>
@@ -47,6 +50,23 @@ public:
 		StatelessFunctionWrapper::Policy_Func default_policy_func)
 	{
 		this->Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_policy_func);
+	}
+
+	/* Tau-first initialization */
+	template <class T>
+	void Initialize_Tau_First(
+		u32 tau, 
+		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
+		T* default_policy_func_state_context)
+	{
+		this->Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_func_state_context);
+	}
+
+	void Initialize_Tau_First(
+		u32 tau, 
+		StatelessFunctionWrapper::Policy_Func default_policy_func)
+	{
+		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func);
 	}
 
 	std::pair<u32, u64> Choose_Action_Join_Key(Context& context)
@@ -89,7 +109,6 @@ public:
 		m_default_func_wrapper = func_Wrapper;
 	}
 
-	// Port interface for Initialize Epsilon Greedy with a stateless policy function
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
 		Stateless_Policy_Func default_policy_func)
@@ -100,6 +119,31 @@ public:
 		m_explorer = new EpsilonGreedyExplorer<MWT_Empty>(epsilon, *func_Wrapper, nullptr);
 		
 		m_default_func_wrapper = func_Wrapper;
+	}
+
+	void Initialize_Tau_First(
+		u32 tau, 
+		Stateful_Policy_Func default_policy_func, 
+		void* default_policy_func_argument)
+	{
+		StatefulFunctionWrapper<void>* func_wrapper = new StatefulFunctionWrapper<void>();
+		func_wrapper->m_policy_function = default_policy_func;
+		
+		m_explorer = new TauFirstExplorer<void>(tau, *func_wrapper, default_policy_func_argument);
+		
+		m_default_func_wrapper = func_wrapper;
+	}
+
+	void Initialize_Tau_First(
+		u32 tau, 
+		Stateless_Policy_Func default_policy_func)
+	{
+		StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
+		func_wrapper->m_policy_function = default_policy_func;
+		
+		m_explorer = new TauFirstExplorer<MWT_Empty>(tau, *func_wrapper, nullptr);
+		
+		m_default_func_wrapper = func_wrapper;
 	}
 
 	u32 Choose_Action(feature* context_features, size_t num_features, std::string* other_context, char* unique_id, u32 length)
