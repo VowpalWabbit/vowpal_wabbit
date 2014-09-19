@@ -138,14 +138,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>..\vw_explore_static;..\vowpalwabbit;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vw_explore_static;..\vowpalwabbit;c:\boost-trunk;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(BoostLibDir);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BoostLibDir);c:\boost-trunk\stage_vc110\lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

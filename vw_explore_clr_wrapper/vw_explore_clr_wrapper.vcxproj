@@ -139,14 +139,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;VW_EXPLORE_CLR_WRAPPER_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\vowpalwabbit;..\vw_explore_static;$(BoostIncludeDir);$(ZlibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vowpalwabbit;..\vw_explore_static;c:\boost-trunk;$(BoostIncludeDir);$(ZlibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(BoostLibDir);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BoostLibDir);c:\boost-trunk\stage_vc110\lib;</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;$(ZlibLibDir)\zlibstat.lib;$(SolutionDir)$(PlatformName)\$(Configuration)\vw_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
