@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}</ProjectGuid>
+    <RootNamespace>deploy_vw</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)deploy\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)deploy\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)deploy\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)deploy\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)deploy\stage\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <CustomBuildStep>
+      <Command>rd /s /y $(OutputPath)</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Cleaning Deploy</Message>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.pdb"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.pdb"  "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)\redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugCRT" "$(OutputPath)"
+xcopy /v /i /r  /y "%$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugCXXAMP" "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugOPENMP" "$(OutputPath)"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <CustomBuildStep>
+      <Command>rd /s /y $(OutputPath)</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Cleaning Deploy</Message>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.pdb"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.pdb"  "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)\redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugCRT" "$(OutputPath)"
+xcopy /v /i /r  /y "%$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugCXXAMP" "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)redist\Debug_NonRedist\$(PlatformShortName)\Microsoft.VC120.DebugOPENMP" "$(OutputPath)"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <CustomBuildStep>
+      <Command>rd /s /y $(OutputPath)</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Cleaning Deploy</Message>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.exe"  "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)\redist\$(PlatformShortName)\Microsoft.VC120.CRT" "$(OutputPath)"
+xcopy /v /i /r  /y "%$(VCInstallDir)redist\$(PlatformShortName)\Microsoft.VC120.CXXAMP" "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)redist\$(PlatformShortName)\Microsoft.VC120.OPENMP" "$(OutputPath)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <CustomBuildStep>
+      <Command>rd /s /y $(OutputPath)</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Cleaning Deploy</Message>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\vw.exe"  "$(OutputPath)"
+xcopy /f  /v /i /r  /y  "$(SolutionDir)$(PlatformShortName)\$(Configuration)\spanning_tree.exe"  "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)\redist\$(PlatformShortName)\Microsoft.VC120.CRT" "$(OutputPath)"
+xcopy /v /i /r  /y "%$(VCInstallDir)redist\$(PlatformShortName)\Microsoft.VC120.CXXAMP" "$(OutputPath)"
+xcopy /v /i /r  /y "$(VCInstallDir)redist\$(PlatformShortName)\Microsoft.VC120.OPENMP" "$(OutputPath)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

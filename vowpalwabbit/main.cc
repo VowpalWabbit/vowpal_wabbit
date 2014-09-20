@@ -21,7 +21,6 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 #include "accumulate.h"
 #include "vw.h"
-#include "searn.h"
 
 using namespace std;
 
@@ -32,7 +31,7 @@ int main(int argc, char *argv[])
     struct timeb t_start, t_end;
     ftime(&t_start);
     
-    if (!all->quiet && !all->bfgs && !all->searn && !all->searnstr)
+    if (!all->quiet && !all->bfgs && !all->searchstr)
         {
         const char * header_fmt = "%-10s %-10s %10s %11s %8s %8s %8s\n";
         fprintf(stderr, header_fmt,

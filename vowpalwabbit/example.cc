@@ -15,15 +15,17 @@ license as described in the file LICENSE.
 int compare_feature(const void* p1, const void* p2) {  
   feature* f1 = (feature*) p1;  
   feature* f2 = (feature*) p2;  
-  return (f1->weight_index - f2->weight_index);  
+  if(f1->weight_index < f2->weight_index) return -1;
+  else if(f1->weight_index > f2->weight_index) return 1;
+  else return 0;
 }  
   
-float collision_cleanup(v_array<feature>& feature_map) {  
+float collision_cleanup(feature* feature_map, size_t& len) {  
     
  int pos = 0;  
  float sum_sq = 0.;  
   
- for(uint32_t i = 1;i < feature_map.size();i++) {  
+ for(uint32_t i = 1;i < len;i++) {  
     if(feature_map[i].weight_index == feature_map[pos].weight_index)   
       feature_map[pos].x += feature_map[i].x;  
     else {  
@@ -32,8 +34,7 @@ float collision_cleanup(v_array<feature>& feature_map) {
     }  
   }  
   sum_sq += feature_map[pos].x*feature_map[pos].x;  
-  feature_map.end = &(feature_map[pos]);    
-  feature_map.end++;  
+  len = pos+1;
   return sum_sq;  
 }  
   
@@ -113,23 +114,24 @@ struct features_and_source
   uint32_t stride_shift;
   uint32_t mask;
   weight* base;
+  vw* all;
 };
 
-void vec_store(features_and_source& p, float fx, float& fw) {  
-  feature f = {fx, (uint32_t)((&fw - p.base) >> p.stride_shift) & p.mask};
+void vec_store(features_and_source& p, float fx, uint32_t fi) {    
+  feature f = {fx, (uint32_t)(fi >> p.stride_shift) & p.mask};
   p.feature_map.push_back(f);
 }  
 
 namespace VW {
-feature* get_features(vw& all, example* ec, size_t& feature_map_len)
+  feature* get_features(vw& all, example* ec, size_t& feature_map_len)
 {
 	features_and_source fs;
 	fs.stride_shift = all.reg.stride_shift;
 	fs.mask = (uint32_t)all.reg.weight_mask >> all.reg.stride_shift;
 	fs.base = all.reg.weight_vector;
-	GD::foreach_feature<features_and_source, vec_store>(all, *ec, fs); 
+	fs.all = &all;
+	GD::foreach_feature<features_and_source, uint32_t, vec_store>(all, *ec, fs); 		
 	feature_map_len = fs.feature_map.size();
-	qsort(fs.feature_map.begin, fs.feature_map.size(), sizeof(feature), compare_feature);  
 	return fs.feature_map.begin;
 }
 
@@ -160,6 +162,14 @@ flat_example* flatten_example(vw& all, example *ec)
 	fec->feature_map = VW::get_features(all, ec, fec->feature_map_len);
 
 	return fec;  
+}
+
+flat_example* flatten_sort_example(vw& all, example *ec) 
+{
+  flat_example* fec = flatten_example(all, ec);
+  qsort(fec->feature_map, fec->feature_map_len, sizeof(feature), compare_feature);  
+  fec->total_sum_feat_sq = collision_cleanup(fec->feature_map, fec->feature_map_len);
+  return fec;
 }
 
 void free_flatten_example(flat_example* fec) 

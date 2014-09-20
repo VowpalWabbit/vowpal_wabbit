@@ -38,8 +38,32 @@ namespace Search {
     // for explicitly declaring a loss incrementally
     void loss(float incr_loss);
 
-    // make a prediction with lots of options
-    //    TODO: describe options
+    // make a prediction on an example. returns the predicted action.
+    // arguments:
+    //   ec                    the example (features) on which to make a prediction
+    //   my_tag                a tag for this prediction, so that you can explicitly
+    //                           state, for future predictions, which ones depend
+    //                           explicitely or implicitly on this prediction
+    //   oracle_actions        an array of actions that the oracle would take
+    //                           NULL => the oracle doesn't know (is random!)
+    //   oracle_actions_cnt    the length of the previous array, or 0 if it's NULL
+    //   condition_on          an array of previous (or future) predictions on which
+    //                           this prediction depends. the semantics of conditioning
+    //                           is that IF the predictions for all the tags in
+    //                           condition_on were the same, then the prediction for
+    //                           _this_ example will also be the same. i.e., same
+    //                           features, etc. (also assuming same policy). if
+    //                           AUTO_CONDITION_FEATURES is on, then we will automatically
+    //                           add features to ec based on what you're conditioning on.
+    //                           NULL => independent prediction
+    //   condition_on_names    a string containing the list of names of features you're
+    //                           conditioning on. used explicitly for auditing, implicitly
+    //                           for keeping tags separated. also, strlen(condition_on_names)
+    //                           tells us how long condition_on is
+    //   allowed_actions       an array of actions that are allowed at this step, or
+    //                           NULL if everything is allowed
+    //   allowed_actions_cnt   the length of allowed_actions
+    //   learner_id            the id for the underlying learner to use (via set_num_learners)
     action predict(        example& ec
                    ,       ptag     my_tag
                    , const action*  oracle_actions
@@ -51,8 +75,12 @@ namespace Search {
                    ,       size_t   learner_id           = 0
                    );
 
-    // make an LDF prediction with lots of options
-    //    TODO: describe options
+    // make an LDF prediction on a list of examples. arguments are identical to predict(...)
+    // with the following exceptions:
+    //   * ecs/ec_cnt replace ec. ecs is the list of examples the make up a single
+    //     LDF example, and ec_cnt is its length
+    //   * there are no more "allowed_actions" because that is implicit in the LDF
+    //     example structure
     action predictLDF(        example* ecs
                       ,       size_t ec_cnt
                       ,       ptag     my_tag
@@ -72,6 +100,7 @@ namespace Search {
     // internal data that you don't get to see!
     search_private* priv;
     void*           task_data;  // your task data!
+    const char*     task_name;
   };
 
   // for defining new tasks, you must fill out a search_task
@@ -87,105 +116,75 @@ namespace Search {
     void (*run_takedown)(search&, std::vector<example*>&);
   };
 
-  template<class T> void cdbg_print_array(string str, v_array<T>& A) { cdbg << str << " = ["; for (size_t i=0; i<A.size(); i++) cdbg << " " << A[i]; cdbg << " ]" << endl; }
-  template<class T> void cerr_print_array(string str, v_array<T>& A) { cerr << str << " = ["; for (size_t i=0; i<A.size(); i++) cerr << " " << A[i]; cerr << " ]" << endl; }
-  
   // to make calls to "predict" (and "predictLDF") cleaner when you
   // want to use crazy combinations of arguments
   class predictor {
     public:
-    predictor(search& sch) : my_tag(0), sch(sch) {}
+    predictor(search& sch, ptag my_tag);
+    ~predictor();
 
-    predictor& set_input(example&input_example) {
-      is_ldf = false;
-      ec = &input_example;
-      ec_cnt = 1;
-      return *this;
-    }
+    // tell the predictor what to use as input. a single example input
+    // means non-LDF mode; an array of inputs means LDF mode
+    predictor& set_input(example&input_example);
+    predictor& set_input(example*input_example, size_t input_length);
 
-    predictor& set_input(example*input_example, size_t input_length) {
-      is_ldf = true;
-      ec = input_example;
-      ec_cnt = input_length;
-      return *this;
-    }
+    // different ways of adding to the list of oracle actions. you can
+    // either add_ or set_; setting erases previous actions. these
+    // functions attempt to allocate as little memory as possible, so if
+    // you pass a v_array or an action*, unless you later add something
+    // else, we'll just store a pointer to your memory. this means that
+    // you probably shouldn't change the data there, or free that pointer,
+    // between calling add/set_oracle and calling predict()
+    predictor& add_oracle(action a);
+    predictor& add_oracle(action*a, size_t action_count);
+    predictor& add_oracle(v_array<action>& a);
 
-    // different ways of adding to the list of oracle actions
-    predictor& add_oracle(action a) { oracle_actions.push_back(a); return *this; }
-    predictor& add_oracle(action*a, size_t action_count) {
-      if (oracle_actions.size() > 0)
-        push_many<action>(oracle_actions, a, action_count);
-      else {
-        oracle_actions.begin = a;
-        oracle_actions.end   = a + action_count;
-        oracle_actions.end_array = a + action_count;
-      }
-      return *this;
-    }
-    predictor& add_oracle(v_array<action> a) { add_oracle(a.begin, a.size()); return *this; }
-
-    predictor& set_oracle(action a) { oracle_actions.erase(); return add_oracle(a); }
-    predictor& set_oracle(action*a, size_t action_count) { oracle_actions.erase(); return add_oracle(a, action_count); }
-    predictor& set_oracle(v_array<action> a) { oracle_actions.erase(); return add_oracle(a); }
+    predictor& set_oracle(action a);
+    predictor& set_oracle(action*a, size_t action_count);
+    predictor& set_oracle(v_array<action>& a);
     
-    // different ways of adding allowed actions
-    predictor& add_allowed(action a) { allowed_actions.push_back(a); return *this; }
-    predictor& add_allowed(action*a, size_t action_count) {
-      if (allowed_actions.size() > 0)
-        push_many<action>(allowed_actions, a, action_count);
-      else {
-        allowed_actions.begin = a;
-        allowed_actions.end   = a + action_count;
-        allowed_actions.end_array = allowed_actions.end;
-      }
-      return *this;
-    }
-    predictor& add_allowed(v_array<action> a) { add_allowed(a.begin, a.size()); return *this; }
+    // same as add/set_oracle but for allowed actions
+    predictor& add_allowed(action a);
+    predictor& add_allowed(action*a, size_t action_count);
+    predictor& add_allowed(v_array<action>& a);
     
-    predictor& set_allowed(action a) { allowed_actions.erase(); return add_allowed(a); }
-    predictor& set_allowed(action*a, size_t action_count) { allowed_actions.erase(); return add_allowed(a, action_count); }
-    predictor& set_allowed(v_array<action> a) { allowed_actions.erase(); return add_allowed(a); }
+    predictor& set_allowed(action a);
+    predictor& set_allowed(action*a, size_t action_count);
+    predictor& set_allowed(v_array<action>& a);
 
-    // different ways of adding conditioning
-    predictor& add_condition(ptag tag, char name) { condition_on_tags.push_back(tag); condition_on_names.push_back(name); return *this; }
-    predictor& set_condition(ptag tag, char name) { condition_on_tags.erase(); condition_on_names.erase(); return add_condition(tag, name); }
+    // add a tag to condition on with a name, or set the conditioning
+    // variables (i.e., erase previous ones)
+    predictor& add_condition(ptag tag, char name);
+    predictor& set_condition(ptag tag, char name);
 
     // set learner id
-    predictor& set_learner_id(size_t id) { learner_id = id; return *this; }
+    predictor& set_learner_id(size_t id);
 
-    // set tag
-    predictor& set_tag(ptag tag) { my_tag = tag; return *this; }
-    
-    action predict() {
-      const action* orA = oracle_actions.size() == 0 ? NULL : oracle_actions.begin;
-      const ptag*   cOn = condition_on_names.size() == 0 ? NULL : condition_on_tags.begin;
-      const char*   cNa = NULL;
-      if (condition_on_names.size() > 0) {
-        condition_on_names.push_back((char)0);  // null terminate
-        cNa = condition_on_names.begin;
-      }
-      const action* alA = (allowed_actions.size() == 0) ? NULL : allowed_actions.begin;
+    // change the current tag
+    predictor& set_tag(ptag tag);
 
-      action p = is_ldf ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id)
-                        : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, allowed_actions.size(), learner_id);
-
-      if (condition_on_names.size() > 0)
-        condition_on_names.pop();  // un-null-terminate
-
-      return p;
-    }
+    // make a prediction
+    action predict();
     
     private:
     bool is_ldf;
     ptag my_tag;
     example* ec;
     size_t ec_cnt;
-    v_array<action> oracle_actions;
+    v_array<action> oracle_actions;    bool oracle_is_pointer;   // if we're pointing to your memory TRUE; if it's our own memory FALSE
     v_array<ptag> condition_on_tags;
     v_array<char> condition_on_names;
-    v_array<action> allowed_actions;
+    v_array<action> allowed_actions;   bool allowed_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
     size_t learner_id;
     search&sch;
+
+    void make_new_pointer(v_array<action>& A, size_t new_size);
+    predictor& add_to(v_array<action>& A, bool& A_is_ptr, action a, bool clear_first);
+    predictor& add_to(v_array<action>&A, bool& A_is_ptr, action*a, size_t action_count, bool clear_first);
+
+    // prevent the user from doing something stupid :) ... ugh needed to turn this off for python :(
+    //predictor(const predictor&P);
+    //predictor&operator=(const predictor&P);
   };
   
   // some helper functions you might find helpful

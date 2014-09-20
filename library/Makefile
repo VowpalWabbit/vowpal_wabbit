@@ -4,14 +4,17 @@
 #
 # If we don't know where to look for boost - it's a no go.
 #
-ifeq ($(BOOST_LIBRARY),)
-  $(error Please run 'make' at the top level only)
-endif
+#ifeq ($(BOOST_LIBRARY),)
+#  $(error Please run 'make' at the top level only)
+#endif
 
 VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
 STDLIBS = $(BOOST_LIBRARY) $(LIBS)
 
-all: ezexample_predict ezexample_train library_example recommend gd_mf_weights test_search # ezexample_predict_threaded
+all:
+	cd ..; $(MAKE) library_example
+
+things: ezexample_predict ezexample_train library_example recommend gd_mf_weights test_search # ezexample_predict_threaded
 
 ezexample_predict: ezexample_predict.cc ../vowpalwabbit/libvw.a
 	$(CXX) -g $(FLAGS) -o $@ $< $(VWLIBS) $(STDLIBS)

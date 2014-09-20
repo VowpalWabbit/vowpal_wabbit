@@ -143,7 +143,7 @@ void handle_sigterm (int)
 bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdout_off, uint32_t target_modulus)  // target should be 0 in the normal case, or period-1 in the case that emptylines separate examples
 {
   if(holdout_off) return false;
-  //cerr << "(" << counter << ")";
+  //cerr << "(" << counter << "," << period << "," << target_modulus << ")";
   if (after == 0) // hold out by period
     return (counter % period == target_modulus);
   else // hold out by position
@@ -757,11 +757,14 @@ void setup_example(vw& all, example* ae)
   ae->loss = 0.;
   
   ae->example_counter = (size_t)(all.p->end_parsed_examples);
-  if ((!all.p->emptylines_separate_examples) || example_is_newline(*ae))
+  if (!all.p->emptylines_separate_examples)
     all.p->in_pass_counter++;
 
   ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off, all.p->emptylines_separate_examples ? (all.holdout_period-1) : 0);
-  //cerr << ae->test_only;
+
+  if (all.p->emptylines_separate_examples && example_is_newline(*ae))
+    all.p->in_pass_counter++;
+  
   all.sd->t += all.p->lp.get_weight(ae->ld);
   ae->example_t = (float)all.sd->t;
 

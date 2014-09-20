@@ -7,11 +7,11 @@ license as described in the file LICENSE.
 #include "multiclass.h"      // needed for non-LDF
 #include "cost_sensitive.h"  // needed for LDF
 
-namespace SequenceTask2 { Search::search_task task = { "sequence", run, initialize, NULL, NULL, NULL }; }
-namespace SequenceSpanTask2 { Search::search_task task = { "sequencespan",  run, initialize, finish, NULL, NULL };  }
-namespace SequenceTask_DemoLDF2 { Search::search_task task = { "sequenceldf", run, initialize, finish, NULL, NULL }; }
+namespace SequenceTask         { Search::search_task task = { "sequence",     run, initialize, NULL,   NULL,  NULL     }; }
+namespace SequenceSpanTask     { Search::search_task task = { "sequencespan", run, initialize, finish, setup, takedown }; }
+namespace SequenceTask_DemoLDF { Search::search_task task = { "sequenceldf",  run, initialize, finish, NULL,  NULL     }; }
 
-namespace SequenceTask2 {
+namespace SequenceTask {
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
     sch.set_options( Search::AUTO_CONDITION_FEATURES  |    // automatically add history features to our examples, please
                      Search::AUTO_HAMMING_LOSS        |    // please just use hamming loss on individual predictions -- we won't declare loss
@@ -21,21 +21,8 @@ namespace SequenceTask2 {
 
   void run(Search::search& sch, vector<example*>& ec) {
     for (int i=0; i<ec.size(); i++) {
-      ptag last_tag = i;
-      //ptag last_tags[2] = { max(0,i-1), i };
       action oracle     = MULTICLASS::get_example_label(ec[i]);
-      // the  old way of doing it:
-
-      size_t prediction = Search::predictor(sch).set_input(*ec[i]).set_oracle(oracle).add_condition(last_tag, 'p').predict();
-      
-      // size_t prediction = sch.predict(*ec[i],    // predict using features from ec[i]
-      //                                 i+1,       // our "tag" is i+1 (because tags are 1-based)
-      //                                 &oracle,   // this is the (only) oracle action
-      //                                 1,         // there is only one oracle action
-      //                                 &last_tag, // condition on the previous _prediction_
-      //                                 "p");      // call the conditioning 'p' for "previous"
-      //                                 //last_tags, 
-      //                                 //"qp");     // call the conditioning 'p' for "previous" and 'q' for prevprev
+      size_t prediction = Search::predictor(sch, i+1).set_input(*ec[i]).set_oracle(oracle).set_condition(i, 'p').predict();
 
       if (sch.output().good())
         sch.output() << prediction << ' ';
@@ -44,7 +31,7 @@ namespace SequenceTask2 {
 }
 
 
-namespace SequenceSpanTask2 {
+namespace SequenceSpanTask {
   enum EncodingType { BIO, BILOU };
 // the format for the BIO encoding is:
 //     label     description
@@ -65,11 +52,11 @@ namespace SequenceSpanTask2 {
 //       m % 4 == 2    in-(m div 4)
 //       m % 4 == 3    last-(m div 4)
 //   thus, valid transitions are:
-//     1     -> 1; 2, 6, 8, ...; 3, 7, 9, ...         out to { out, unit-Y, begin-Y }       1
-//     m%4=0 -> 1; 2, 6, 8, ..., 3, 7, 9, ...         unit-X to { out, unit-Y, begin-Y }    2, 6, 10, 14, ...
-//     m%4=1 -> m+1, m+2                              begin-X to { in-X, last-X }           3, 7, 11, 15, ...
-//     m%4=2 -> m, m+1                                in-X to { in-X, last-X }              4, 8, 12, 16, ...
-//     m%4=3 -> 1; 2, 6, 8, ...; 3, 7, 9, ...         last-X to { out, unit-Y, begin-Y }    5, 9, 13, 17, ...
+//     1     -> 1; 2, 6, 10, ...; 3, 7, 11, ...         out to { out, unit-Y, begin-Y }       1
+//     m%4=0 -> 1; 2, 6, 10, ..., 3, 7, 11, ...         unit-X to { out, unit-Y, begin-Y }    2, 6, 10, 14, ...
+//     m%4=1 -> m+1, m+2                                begin-X to { in-X, last-X }           3, 7, 11, 15, ...
+//     m%4=2 -> m, m+1                                  in-X to { in-X, last-X }              4, 8, 12, 16, ...
+//     m%4=3 -> 1; 2, 6, 10, ...; 3, 7, 11, ...         last-X to { out, unit-Y, begin-Y }    5, 9, 13, 17, ...
 
   inline action bilou_to_bio(action y) {
     return y / 2 + 1;  // out -> out, {unit,begin} -> begin; {in,last} -> in
@@ -105,7 +92,6 @@ namespace SequenceSpanTask2 {
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
     task_data * my_task_data = new task_data();
 
-    // TODO: options!
     po::options_description sspan_opts("search sequencespan options");
     sspan_opts.add_options()("search_span_bilou", "switch to (internal) BILOU encoding instead of BIO encoding");
     sch.add_program_options(vm, sspan_opts);
@@ -149,64 +135,63 @@ namespace SequenceSpanTask2 {
     delete my_task_data;
   }
 
+  void setup(Search::search& sch, vector<example*>& ec) {
+    task_data * my_task_data = sch.get_task_data<task_data>();
+    if (my_task_data->encoding == BILOU)
+      convert_bio_to_bilou(ec);
+  }
+
+  void takedown(Search::search& sch, vector<example*>& ec) {
+    task_data * my_task_data = sch.get_task_data<task_data>();
+
+    if (my_task_data->encoding == BILOU)
+      for (size_t n=0; n<ec.size(); n++) {
+        MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
+        ylab->label = bilou_to_bio(ylab->label);
+      }
+  }
+  
   void run(Search::search& sch, vector<example*>& ec) {
     task_data * my_task_data = sch.get_task_data<task_data>();
     action last_prediction = 1;
     v_array<action> * y_allowed = &(my_task_data->allowed_actions);
     
-    if (my_task_data->encoding == BILOU)  // TODO: move this out of here!
-      convert_bio_to_bilou(ec);
-    
     for (size_t i=0; i<ec.size(); i++) {
       action oracle = MULTICLASS::get_example_label(ec[i]);
-      Search::predictor P = Search::predictor(sch).set_input(*ec[i]).set_oracle(oracle).set_condition(i, 'p');
-      
-      size_t y_allowed_length = y_allowed->size();
+      size_t len = y_allowed->size();
+      Search::predictor P(sch, i+1);
       if (my_task_data->encoding == BIO) {
-        // if      (last_prediction == 1)      (*y_allowed)[y_allowed->size()-1] = 1;
-        // else if (last_prediction % 2 == 0)  (*y_allowed)[y_allowed->size()-1] = last_prediction+1;
-        // else                                (*y_allowed)[y_allowed->size()-1] = last_prediction;
-        if      (last_prediction == 1)       P.set_allowed(y_allowed->begin, y_allowed->size()-1);
-        else if (last_prediction % 2 == 0) { (*y_allowed)[y_allowed->size()-1] = last_prediction+1; P.set_allowed(*y_allowed); }
-        else                               { (*y_allowed)[y_allowed->size()-1] = last_prediction;   P.set_allowed(*y_allowed); }
+        if      (last_prediction == 1)       P.set_allowed(y_allowed->begin, len-1);
+        else if (last_prediction % 2 == 0) { (*y_allowed)[len-1] = last_prediction+1; P.set_allowed(*y_allowed); }
+        else                               { (*y_allowed)[len-1] = last_prediction;   P.set_allowed(*y_allowed); }
+        if ((oracle > 1) && (oracle % 2 == 1) && (last_prediction != oracle) && (last_prediction != oracle-1))
+          oracle = 1; // if we are supposed to I-X, but last wasn't B-X or I-X, then say O
       } else if (my_task_data->encoding == BILOU) {
-        if ((last_prediction == 1) || ((last_prediction-2) % 4 == 0) || ((last_prediction-2) % 4 == 3))
+        if ((last_prediction == 1) || ((last_prediction-2) % 4 == 0) || ((last_prediction-2) % 4 == 3)) { // O or unit-X or last-X
           P.set_allowed(my_task_data->allowed_actions);
-        else {
+          // we cannot allow in-X or last-X next
+          if ((oracle > 1) && (((oracle-2) % 4 == 2) || ((oracle-2) % 4 == 3)))
+            oracle = 1;
+        } else { // begin-X or in-X
+          action other = ((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction;
           P.set_allowed(last_prediction+1);
-          P.add_allowed(((last_prediction-2) % 4 == 1) ? (last_prediction+2) : last_prediction);
+          P.add_allowed(other);
+          if ((oracle != last_prediction+1) && (oracle != other))
+            oracle = other;
         }
       }
-
-      //last_prediction = sch.predict(ec[i], MULTICLASS::get_example_label(ec[i]), y_allowed);
-      /*
-      last_prediction = sch.predict(*ec[i],
-                                    i+1,
-                                    &oracle,
-                                    1,
-                                    &last_tag,
-                                    "p");
-      */
-      //cerr << "last_prediction = " << last_prediction << "    ";
-      last_prediction = P.set_allowed(y_allowed->begin, y_allowed_length).predict();
-
+      last_prediction = P.set_input(*ec[i]).set_condition(i, 'p').set_oracle(oracle).predict();
       
       action printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
       
       if (sch.output().good())
         sch.output() << printed_prediction << ' ';
     }
-
-    if (my_task_data->encoding == BILOU)  // TODO: move this out of here!
-      for (size_t n=0; n<ec.size(); n++) {
-        MULTICLASS::multiclass* ylab = (MULTICLASS::multiclass*)ec[n]->ld;
-        ylab->label = bilou_to_bio(ylab->label);
-      }
   }
 }
 
 
-namespace SequenceTask_DemoLDF2 {  // this is just to debug/show off how to do LDF
+namespace SequenceTask_DemoLDF {  // this is just to debug/show off how to do LDF
   namespace CS=COST_SENSITIVE;
   struct task_data {
     example* ldf_examples;

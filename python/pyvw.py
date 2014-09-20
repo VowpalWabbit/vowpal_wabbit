@@ -2,9 +2,9 @@ import sys
 import pylibvw
 
 class SearchTask():
-    def __init__(self, vw, srn, num_actions):
+    def __init__(self, vw, sch, num_actions):
         self.vw = vw
-        self.srn = srn
+        self.sch = sch
         self.blank_line = self.vw.example("")
         self.blank_line.finish()
         self.bogus_example = self.vw.example("1 | x")
@@ -18,7 +18,7 @@ class SearchTask():
 
     def _call_vw(self, fn, isTest):
         self.bogus_example.set_test_only(isTest)
-        self.srn.set_structured_predict_hook(fn)
+        self.sch.set_structured_predict_hook(fn)
         self.vw.learn(self.bogus_example)
         self.vw.learn(self.blank_line) # this will cause our ._run hook to get called
         
@@ -74,45 +74,68 @@ class vw(pylibvw.vw):
         self.finish()
 
     def init_search_task(self, search_task):
-        srn = self.get_searn_ptr()
+        sch = self.get_search_ptr()
 
-        def predict(examples, truth, allowed=None):
+        def predict(examples, my_tag, oracle, condition=None, allowed=None, learner_id=0):
             """The basic (via-reduction) prediction mechanism. Several
             variants are supported through this overloaded function:
             
-              a) 'examples' can be a single example (interpreted as non-LDF
+              'examples' can be a single example (interpreted as non-LDF
                  mode) or a list of examples (interpreted as LDF mode)
-                 
-              b) 'truth' can be a single label (or in LDF mode a single
-                 array index in 'examples') or a list of such labels if
-                 the oracle policy is indecisive
 
-              c) 'allowed' can be None, in which case all actions are allowed;
+              'my_tag' should be an integer id, specifying this prediction
+                 
+              'oracle' can be a single label (or in LDF mode a single
+                 array index in 'examples') or a list of such labels if
+                 the oracle policy is indecisive; if it is None, then
+                 the oracle doesn't care
+
+              'condition' should be a list of (tag,char) pairs of other
+                 tags on which to condition, plus a character id for that
+                 other tag. if you're only conditioning on one item, then
+                 this can just be a pair (not a list of pairs)
+
+              'allowed' can be None, in which case all actions are allowed;
                  or it can be list of valid actions (in LDF mode, this should
                  be None and you should encode the valid actions in 'examples')
+
+              'learner_id' specifies the underlying learner id
 
             Returns a single prediction.
             """
             if isinstance(examples, list):
                 raise Exception("LDF not yet supported in Python interface :(")
-            elif isinstance(examples, example) or isinstance(examples, pylibvw.example):
-                # we're going to use searn_predict_???
-                if   isinstance(truth, int) and allowed is None:
-                    return srn.predict_one_all(examples, truth)
-                elif isinstance(truth, int) and isinstance(allowed, list):
-                    return srn.predict_one_some(examples, truth, allowed)
-                elif isinstance(truth, list) and allowed is None:
-                    return srn.predict_many_all(examples, truth)
-                elif isinstance(truth, list) and isinstance(allowed, list):
-                    return srn.predict_many_some(examples, truth, allowed)
-                else:
-                    raise TypeError
+            elif not (isinstance(examples, example) or isinstance(examples, pylibvw.example)):
+                raise TypeError("'examples' should be a pyvw example (or a pylibvw example)")
             else:
-                raise TypeError
+                P = sch.get_predictor(my_tag)
+                P.set_input(examples)
+                
+                if isinstance(oracle, list): P.set_oracles(oracle)
+                elif isinstance(oracle, int): P.set_oracle(oracle)
+                else: raise TypeError('expecting oracle to be a list or an integer')
 
-        srn.predict = predict
-        num_actions = srn.get_num_actions()
-        return search_task(self, srn, num_actions)        
+                if condition is not None:
+                    if isinstance(condition, tuple) and len(condition) == 2 and isinstance(condition[0], int) and isinstance(condition[1], str) and len(condition[1]) == 1:
+                        P.set_condition(condition[0], condition[1])
+                    elif isinstance(condition, list) and len(condition) > 0:
+                        for c in condition:
+                            if not (len(c) == 2 and isinstance(c[0], int) and isinstance(c[1], str) and len(c[1]) == 1): raise TypeError('item in condition list malformed')
+                            P.add_condition(c[0], c[1])
+                    else: raise TypeError('condition argument wrong type')
+
+                if allowed is None: pass
+                elif isinstance(allowed, list):
+                    P.set_alloweds(allowed)
+                else: raise TypeError('allowed argument wrong type')
+
+                if learner_id != 0: P.set_learner_id(learner_id)
+
+                return P.predict()
+
+        sch.predict = predict
+        num_actions = sch.get_num_actions()
+        return search_task(self, sch, num_actions)        
 
 class namespace_id():
     """The namespace_id class is simply a wrapper to convert between

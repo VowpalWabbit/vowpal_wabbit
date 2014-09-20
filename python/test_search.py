@@ -2,27 +2,28 @@ import sys
 import pyvw
 
 class SequenceLabeler(pyvw.SearchTask):
-    def __init__(self, vw, srn, num_actions):
+    def __init__(self, vw, sch, num_actions):
         # you must must must initialize the parent class
-        # this will automatically store self.srn <- srn, self.vw <- vw
-        pyvw.SearchTask.__init__(self, vw, srn, num_actions)
+        # this will automatically store self.sch <- sch, self.vw <- vw
+        pyvw.SearchTask.__init__(self, vw, sch, num_actions)
 
-        # you can test program options with srn.po_exists
-        # and get their values with srn.po_get -> string and
-        # srn.po_get_int -> int
-        if srn.po_exists('search'):
+        # you can test program options with sch.po_exists
+        # and get their values with sch.po_get -> string and
+        # sch.po_get_int -> int
+        if sch.po_exists('search'):
             print 'found --search'
-            print '--search value =', srn.po_get('search'), ', type =', type(srn.po_get('search'))
+            print '--search value =', sch.po_get('search'), ', type =', type(sch.po_get('search'))
         
         # set whatever options you want
-        srn.set_options( srn.AUTO_HAMMING_LOSS | srn.AUTO_HISTORY )
+        sch.set_options( sch.AUTO_HAMMING_LOSS | sch.AUTO_CONDITION_FEATURES )
 
     def _run(self, sentence):   # it's called _run to remind you that you shouldn't call it directly!
         output = []
-        for tag,word in sentence:
+        for n in range(len(sentence)):
+            tag,word = sentence[n]
             # use "with...as..." to guarantee that the example is finished properly
             with self.vw.example({'w': [word]}) as ex:
-                pred = self.srn.predict(ex, tag)
+                pred = self.sch.predict(ex, n+1, tag, (n,'p'))
                 output.append(pred)
         return output
     
@@ -48,7 +49,7 @@ my_dataset = [ [(DET , 'the'),
 
 
 # initialize VW as usual, but use 'hook' as the search_task
-vw = pyvw.vw("--search 4 --quiet --search_task hook --search_no_snapshot --ring_size 1024")
+vw = pyvw.vw("--search 4 --quiet --search_task hook --ring_size 1024")
 
 # tell VW to construct your search task object
 sequenceLabeler = vw.init_search_task(SequenceLabeler)
