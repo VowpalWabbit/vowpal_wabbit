@@ -309,11 +309,13 @@ void my_add_oracles(predictor_ptr P, vector<action>& a) { P->add_oracle(a.data()
 void my_add_allowed(predictor_ptr P, action a) { P->add_allowed(a); }
 void my_add_alloweds(predictor_ptr P, vector<action>& a) { P->add_allowed(a.data(), a.size()); }
 void my_add_condition(predictor_ptr P, ptag t, char c) { P->add_condition(t, c); }
+void my_add_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->add_condition_range(hi, count, name0); }
 void my_set_oracle(predictor_ptr P, action a) { P->set_oracle(a); }
 void my_set_oracles(predictor_ptr P, vector<action>& a) { P->set_oracle(a.data(), a.size()); }
 void my_set_allowed(predictor_ptr P, action a) { P->set_allowed(a); }
 void my_set_alloweds(predictor_ptr P, vector<action>& a) { P->set_allowed(a.data(), a.size()); }
 void my_set_condition(predictor_ptr P, ptag t, char c) { P->set_condition(t, c); }
+void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->set_condition_range(hi, count, name0); }
 void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }
 void my_set_tag(predictor_ptr P, ptag t) { P->set_tag(t); }
 
@@ -420,18 +422,22 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("add_allowed", &my_add_allowed, "TODO")
       .def("add_alloweds", &my_add_alloweds, "TODO")
       .def("add_condition", &my_add_condition, "TODO")
+      .def("add_condition_range", &my_add_condition_range, "TODO")
       .def("set_oracle", &my_set_oracle, "TODO")
       .def("set_oracles", &my_set_oracles, "TODO")
       .def("set_allowed", &my_set_allowed, "TODO")
       .def("set_alloweds", &my_set_alloweds, "TODO")
       .def("set_condition", &my_set_condition, "TODO")
+      .def("set_condition_range", &my_set_condition_range, "TODO")
       .def("set_learner_id", &my_set_learner_id, "TODO")
       .def("set_tag", &my_set_tag, "TODO")
       .def("predict", &Search::predictor::predict, "TODO")
       ;
   
   py::class_<Search::search, search_ptr>("search")
-      .def("set_options", &Search::search::set_options, "Set global search options (auto history, etc.)")
+      .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
+      .def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to train")
+      .def("get_history_length", &Search::search::get_history_length, "Get the value specified by --search_history_length")
       .def("loss", &Search::search::loss, "Declare a (possibly incremental) loss")
       .def("should_output", &search_should_output, "Check whether search wants us to output (only happens if you have -p running)")
       .def("output", &search_output, "Add a string to the coutput (should only do if should_output returns True)")

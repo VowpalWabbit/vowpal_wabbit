@@ -90,6 +90,9 @@ namespace Search {
                       , const char*    condition_on_names   = NULL
                       ,       size_t   learner_id           = 0
                       );
+
+    // get the value specified by --search_history_length
+    uint32_t get_history_length();
     
     // where you should write output
     std::stringstream& output();
@@ -156,6 +159,8 @@ namespace Search {
     // variables (i.e., erase previous ones)
     predictor& add_condition(ptag tag, char name);
     predictor& set_condition(ptag tag, char name);
+    predictor& add_condition_range(ptag hi, ptag count, char name0); // add (hi,name0), (hi-1,name0+1), ..., (h-count,name0+count)
+    predictor& set_condition_range(ptag hi, ptag count, char name0); // set (hi,name0), (hi-1,name0+1), ..., (h-count,name0+count)
 
     // set learner id
     predictor& set_learner_id(size_t id);

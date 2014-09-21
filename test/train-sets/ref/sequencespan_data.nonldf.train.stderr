@@ -7,21 +7,19 @@ decay_learning_rate = 1
 creating cache_file = train-sets/sequencespan_data.cache
 Reading datafile = train-sets/sequencespan_data
 num sources = 1
-average    since         example     example  current  current  current
-loss       last          counter      weight    label  predict features
-average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
-loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
-10.000000  10.000000         1        1.000000   [2 1 1 2 2 1 6 7 7 ..] [1 1 1 1 1 1 1 1 1 ..]       45     0     0              15              15
-11.500000  13.000000         2        2.000000   [2 1 1 2 2 1 6 7 7 ..] [2 1 6 4 1 6 4 1 6 ..]       45     1     0              30              30
-7.500000   3.500000          4        4.000000   [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]       45     3     0              60              60
-3.750000   0.000000          8        8.000000   [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]       45     7     0             120             120
-1.875000   0.000000         16       16.000000   [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]       45    15     0             240             240
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+6.000000   6.000000          1  [2 1 1 2 2 1 6 7 7 ..] [1 1 1 1 1 1 1 1 1 ..]     0     0       15        0       15  0.000000
+8.500000   11.000000         2  [2 1 1 2 2 1 6 7 7 ..] [2 1 6 4 1 6 4 1 6 ..]     1     0       30        0       30  0.000000
+6.000000   3.500000          4  [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]     3     0       60        0       60  0.000001
+3.000000   0.000000          8  [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]     7     0      120        0      120  0.000001
+1.500000   0.000000         16  [2 1 1 2 2 1 6 7 7 ..] [2 1 1 2 2 1 6 7 7 ..]    15     0      240        0      240  0.000002
 
 finished run
 number of examples per pass = 1
 passes used = 20
 weighted example sum = 20
 weighted label sum = 0
-average loss = 1.5
+average loss = 1.2
 best constant = -0.0526316
 total feature number = 900

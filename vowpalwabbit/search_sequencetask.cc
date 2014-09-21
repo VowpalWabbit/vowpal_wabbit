@@ -7,9 +7,10 @@ license as described in the file LICENSE.
 #include "multiclass.h"      // needed for non-LDF
 #include "cost_sensitive.h"  // needed for LDF
 
-namespace SequenceTask         { Search::search_task task = { "sequence",     run, initialize, NULL,   NULL,  NULL     }; }
-namespace SequenceSpanTask     { Search::search_task task = { "sequencespan", run, initialize, finish, setup, takedown }; }
-namespace SequenceTask_DemoLDF { Search::search_task task = { "sequenceldf",  run, initialize, finish, NULL,  NULL     }; }
+namespace SequenceTask         { Search::search_task task = { "sequence",          run, initialize, NULL,   NULL,  NULL     }; }
+namespace SequenceSpanTask     { Search::search_task task = { "sequencespan",      run, initialize, finish, setup, takedown }; }
+namespace ArgmaxTask           { Search::search_task task = { "argmax",            run, initialize, NULL,   NULL,  NULL     }; }
+namespace SequenceTask_DemoLDF { Search::search_task task = { "sequence_demoldf",  run, initialize, finish, NULL,  NULL     }; }
 
 namespace SequenceTask {
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
@@ -22,7 +23,7 @@ namespace SequenceTask {
   void run(Search::search& sch, vector<example*>& ec) {
     for (int i=0; i<ec.size(); i++) {
       action oracle     = MULTICLASS::get_example_label(ec[i]);
-      size_t prediction = Search::predictor(sch, i+1).set_input(*ec[i]).set_oracle(oracle).set_condition(i, 'p').predict();
+      size_t prediction = Search::predictor(sch, i+1).set_input(*ec[i]).set_oracle(oracle).set_condition_range(i, sch.get_history_length(), 'p').predict();
 
       if (sch.output().good())
         sch.output() << prediction << ' ';
@@ -180,13 +181,68 @@ namespace SequenceSpanTask {
             oracle = other;
         }
       }
-      last_prediction = P.set_input(*ec[i]).set_condition(i, 'p').set_oracle(oracle).predict();
+      last_prediction = P.set_input(*ec[i]).set_condition_range(i, sch.get_history_length(), 'p').set_oracle(oracle).predict();
       
       action printed_prediction = (my_task_data->encoding == BIO) ? last_prediction : bilou_to_bio(last_prediction);
       
       if (sch.output().good())
         sch.output() << printed_prediction << ' ';
     }
+  }
+}
+
+namespace ArgmaxTask {
+  struct task_data {
+    float false_negative_cost;
+    float negative_weight;
+    bool predict_max;
+  };
+
+  void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
+    task_data* my_task_data = new task_data();
+    
+    po::options_description argmax_opts("argmax options");
+    argmax_opts.add_options()
+      ("cost", po::value<float>(&(my_task_data->false_negative_cost))->default_value(10.0), "False Negative Cost")
+      ("negative_weight", po::value<float>(&(my_task_data->negative_weight))->default_value(1), "Relative weight of negative examples")
+      ("max", "Disable structure: just predict the max");
+    sch.add_program_options(vm, argmax_opts);
+
+    my_task_data->predict_max = vm.count("max") > 0;
+
+    sch.set_task_data(my_task_data);
+
+    if (my_task_data->predict_max)
+      sch.set_options( Search::EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+    else
+      sch.set_options( Search::AUTO_CONDITION_FEATURES |    // automatically add history features to our examples, please
+                       Search::EXAMPLES_DONT_CHANGE );   // we don't do any internal example munging
+  }
+
+  void run(Search::search& sch, vector<example*>& ec) {
+    task_data * my_task_data = sch.get_task_data<task_data>();
+    uint32_t max_prediction = 1;
+    uint32_t max_label = 1;
+
+    for(size_t i = 0; i < ec.size(); i++)
+      max_label = max(MULTICLASS::get_example_label(ec[i]), max_label);
+        
+    for (ptag i=0; i<ec.size(); i++) {
+      // labels should be 1 or 2, and our output is MAX of all predicted values
+      uint32_t oracle = my_task_data->predict_max ? max_label : MULTICLASS::get_example_label(ec[i]);
+      uint32_t prediction = sch.predict(*ec[i], i+1, &oracle, 1, &i, "p");
+
+      max_prediction = max(prediction, max_prediction);
+    }
+    float loss = 0.;
+    if (max_label > max_prediction)
+      loss = my_task_data->false_negative_cost / my_task_data->negative_weight;
+    else if (max_prediction > max_label)
+      loss = 1.;
+    sch.loss(loss);
+
+    if (sch.output().good())
+      sch.output() << max_prediction;
   }
 }
 

@@ -27,11 +27,11 @@ namespace MC = MULTICLASS;
 namespace Search {
   search_task* all_tasks[] = { &SequenceTask::task,
                                &SequenceSpanTask::task,
+                               &ArgmaxTask::task,
                                &SequenceTask_DemoLDF::task,
                                &MulticlassTask::task,
                                &HookTask::task,
                                NULL };   // must NULL terminate!
-  // TODO: list tasks!
 
   const bool PRINT_UPDATE_EVERY_EXAMPLE =0;
   const bool PRINT_UPDATE_EVERY_PASS =0;
@@ -69,7 +69,8 @@ namespace Search {
     bool is_ldf;                   // set to true if you'll generate LDF data
     v_array<int32_t> neighbor_features; // ugly encoding of neighbor feature requirements
     auto_condition_settings acset; // settings for auto-conditioning
-
+    size_t history_length;         // value of --search_history_length, used by some tasks, default 1
+    
     size_t A;                      // total number of actions, [1..A]; 0 means ldf
     size_t num_learners;           // total number of learners;
     bool cb_learner;               // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
@@ -1323,7 +1324,8 @@ namespace Search {
     priv.total_examples_generated = 0;
     priv.total_predictions_made = 0;
     priv.total_cache_hits = 0;
-    
+
+    priv.history_length = 1;
     priv.acset.max_bias_ngram_length = 1;
     priv.acset.max_quad_ngram_length = 0;
     priv.acset.feature_value = 1.;
@@ -1530,7 +1532,7 @@ namespace Search {
 
     po::options_description search_opts("Search Options");
     search_opts.add_options()
-        ("search_task",              po::value<string>(), "the search task")
+        ("search_task",              po::value<string>(), "the search task (use \"--search_task list\" to get a list of available tasks)")
         ("search_interpolation",     po::value<string>(), "at what level should interpolation happen? [*data|policy]")
         ("search_rollout",           po::value<string>(), "how should rollouts be executed?           [policy|oracle|*mix_per_state|mix_per_roll|none]")
         ("search_rollin",            po::value<string>(), "how should past trajectories be generated? [policy|oracle|*mix_per_state|mix_per_roll]")
@@ -1549,6 +1551,7 @@ namespace Search {
         ("search_subsample_time",    po::value<float>(),  "instead of training at all timesteps, use a subset. if value in (0,1), train on a random v%. if v>=1, train on precisely v steps per example")
         ("search_neighbor_features", po::value<string>(), "copy features from neighboring lines. argument looks like: '-1:a,+2' meaning copy previous line namespace a and next next line from namespace _unnamed_, where ',' separates them")
         ("search_rollout_num_steps", po::value<size_t>(), "how many calls of \"loss\" before we stop really predicting on rollouts and switch to oracle (def: 0 means \"infinite\")")
+        ("search_history_length",    po::value<size_t>(), "some tasks allow you to specify how much history their depend on; specify that here [def: 1]")
 
         ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
         ;
@@ -1616,6 +1619,9 @@ namespace Search {
     check_option<size_t>(priv.A, all, vm, "search", false, size_equal,
                          "warning: you specified a different number of actions through --search than the one loaded from predictor. using loaded value of: ", "");
 
+    check_option<size_t>(priv.history_length, all, vm, "search_history_length", false, size_equal,
+                         "warning: you specified a different history length through --search_history_length than the one loaded from predictor. using loaded value of: ", "");
+    
     //check if the base learner is contextual bandit, in which case, we dont rollout all actions.
     if (vm.count("cb")) {
       priv.cb_learner = true;
@@ -1660,6 +1666,13 @@ namespace Search {
 
     cdbg << "search current_policy = " << priv.current_policy << " total_number_of_policies = " << priv.total_number_of_policies << endl;
 
+    if (task_string.compare("list") == 0) {
+      cerr << endl << "available search tasks:" << endl;
+      for (search_task** mytask = all_tasks; *mytask != NULL; mytask++)
+        cerr << "  " << (*mytask)->task_name << endl;
+      cerr << endl;
+      exit(0);
+    }
     for (search_task** mytask = all_tasks; *mytask != NULL; mytask++)
       if (task_string.compare((*mytask)->task_name) == 0) {
         priv.task = *mytask;
@@ -1668,7 +1681,7 @@ namespace Search {
       }
     if (priv.task == NULL) {
       if (! vm.count("help")) {
-        std::cerr << "fail: unknown task for --search_task: " << task_string << endl;
+        std::cerr << "fail: unknown task for --search_task '" << task_string << "'; use --search_task list to get a list" << endl;
         throw exception();
       }
     }
@@ -1680,7 +1693,7 @@ namespace Search {
       priv.task->initialize(*sch, priv.A, vm);
 
     if (vm.count("search_allowed_transitions"))     read_allowed_transitions((action)priv.A, vm["search_allowed_transitions"].as<string>().c_str());
-
+    
     // set up auto-history if they want it
     if (priv.auto_condition_features) {
       handle_condition_options(all, priv.acset, vm);
@@ -1760,6 +1773,9 @@ namespace Search {
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
   void search::add_program_options(po::variables_map& vm, po::options_description& opts) { vm = add_options( *this->priv->all, opts ); }
 
+  uint32_t search::get_history_length() { return this->priv->history_length; }
+  
+  
   // predictor implementation
   predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }
 
@@ -1855,6 +1871,18 @@ namespace Search {
   
   predictor& predictor::add_condition(ptag tag, char name) { condition_on_tags.push_back(tag); condition_on_names.push_back(name); return *this; }
   predictor& predictor::set_condition(ptag tag, char name) { condition_on_tags.erase(); condition_on_names.erase(); return add_condition(tag, name); }
+
+  predictor& predictor::add_condition_range(ptag hi, ptag count, char name0) {
+    if (count == 0) return *this;
+    for (ptag i=0; i<count; i++) {
+      if (i > hi) break;
+      char name = name0 + i;
+      condition_on_tags.push_back(hi-i);
+      condition_on_names.push_back(name);
+    }
+    return *this;
+  }
+  predictor& predictor::set_condition_range(ptag hi, ptag count, char name0) { condition_on_tags.erase(); condition_on_names.erase(); return add_condition_range(hi, count, name0); }
 
   predictor& predictor::set_learner_id(size_t id) { learner_id = id; return *this; }
 

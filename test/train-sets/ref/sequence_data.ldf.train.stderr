@@ -1,21 +1,19 @@
 final_regressor = models/sequence_data.model
 Num weight bits = 18
-learning rate = 10
-initial_t = 1
+learning rate = 0.5
+initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
 creating cache_file = train-sets/sequence_data.cache
 Reading datafile = train-sets/sequence_data
 num sources = 1
-average    since         example     example  current  current  current
-loss       last          counter      weight    label  predict features
-average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
-loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
-4.000000   4.000000          1        1.000000   [5 4 3 2 1           ] [1 1 1 1 1           ]       50     0     0              25               5
-2.000000   0.000000          2        2.000000   [5 4 3 2 1           ] [5 4 3 2 1           ]       50     1     0              50              10
-1.000000   0.000000          4        4.000000   [5 4 3 2 1           ] [5 4 3 2 1           ]       50     3     0             100              20
-0.500000   0.000000          8        8.000000   [5 4 3 2 1           ] [5 4 3 2 1           ]       50     7     0             200              40
-0.250000   0.000000         16       16.000000   [5 4 3 2 1           ] [5 4 3 2 1           ]       50    15     0             400              80
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+4.000000   4.000000          1  [5 4 3 2 1           ] [1 1 1 1 1           ]     0     0        5        0       25  0.000000
+2.000000   0.000000          2  [5 4 3 2 1           ] [5 4 3 2 1           ]     1     0       10        0       50  0.000000
+1.000000   0.000000          4  [5 4 3 2 1           ] [5 4 3 2 1           ]     3     0       20        0      100  0.000001
+0.500000   0.000000          8  [5 4 3 2 1           ] [5 4 3 2 1           ]     7     0       40        0      200  0.000002
+0.250000   0.000000         16  [5 4 3 2 1           ] [5 4 3 2 1           ]    15     0       80        0      400  0.000004
 
 finished run
 number of examples per pass = 1
@@ -23,5 +21,5 @@ passes used = 20
 weighted example sum = 20
 weighted label sum = 0
 average loss = 0.2
-best constant = -0.0526316
+best constant = 0
 total feature number = 1000

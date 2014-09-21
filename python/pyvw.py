@@ -90,10 +90,12 @@ class vw(pylibvw.vw):
                  the oracle policy is indecisive; if it is None, then
                  the oracle doesn't care
 
-              'condition' should be a list of (tag,char) pairs of other
-                 tags on which to condition, plus a character id for that
-                 other tag. if you're only conditioning on one item, then
-                 this can just be a pair (not a list of pairs)
+              'condition' should be either: (1) a (tag,char) pair, indicating
+                 to condition on the given tag with identifier from the char;
+                 or (2) a (tag,len,char) triple, indicating to condition on
+                 tag, tag-1, tag-2, ..., tag-len with identifiers char,
+                 char+1, char+2, ..., char+len. or it can be a (heterogenous)
+                 list of such things.
 
               'allowed' can be None, in which case all actions are allowed;
                  or it can be list of valid actions (in LDF mode, this should
@@ -116,13 +118,15 @@ class vw(pylibvw.vw):
                 else: raise TypeError('expecting oracle to be a list or an integer')
 
                 if condition is not None:
-                    if isinstance(condition, tuple) and len(condition) == 2 and isinstance(condition[0], int) and isinstance(condition[1], str) and len(condition[1]) == 1:
-                        P.set_condition(condition[0], condition[1])
-                    elif isinstance(condition, list) and len(condition) > 0:
-                        for c in condition:
-                            if not (len(c) == 2 and isinstance(c[0], int) and isinstance(c[1], str) and len(c[1]) == 1): raise TypeError('item in condition list malformed')
+                    if not isinstance(condition, list): condition = [condition]
+                    for c in condition:
+                        if not isinstance(c, tuple): raise TypeError('item ' + str(c) + ' in condition list is malformed')
+                        if   len(c) == 2 and isinstance(c[0], int) and isinstance(c[1], str) and len(c[1]) == 1:
                             P.add_condition(c[0], c[1])
-                    else: raise TypeError('condition argument wrong type')
+                        elif len(c) == 3 and isinstance(c[0], int) and isinstance(c[1], int) and isinstance(c[2], str) and len(c[2]) == 1:
+                            P.add_condition_range(c[0], c[1], c[2])
+                        else:
+                            raise TypeError('item ' + str(c) + ' in condition list malformed')
 
                 if allowed is None: pass
                 elif isinstance(allowed, list):
