@@ -13,7 +13,7 @@
 #define cdep cerr
 #undef cdep
 #define cdep if (1) {} else cerr
-#define val_namespace 126 // valency and distance feature space
+#define val_namespace 100 // valency and distance feature space
 #define offset_const 79867
 
 namespace DepParserTask         {  Searn::searn_task task = { "dep_parser", initialize, finish, structured_predict };  }
@@ -23,6 +23,7 @@ struct task_data {
 	bool no_quadratic_features;
 	bool no_cubic_features;
 	bool my_init_flag;
+	int nfs;
 	v_array<uint32_t> valid_actions;
 	v_array<uint32_t> gold_heads; // gold labels
 	v_array<uint32_t> gold_actions;
@@ -45,7 +46,6 @@ namespace DepParserTask {
 		data->children = new v_array<uint32_t>[6]; 
 
 
-		srn.set_options(0);
 		srn.set_num_learners(1);
 		srn.set_task_data<task_data>(data);
 		po::options_description sspan_opts("dependency parser options");
@@ -59,6 +59,7 @@ namespace DepParserTask {
 		// Relation label 5:R_Live_in 6:R_OrgBased_in 7:R_Located_in 8:R_Work_For 9:R_Kill 10:R_None
 		data->no_quadratic_features = (vm.count("dparser_no_quad"))?true:false;
 		data->no_cubic_features =(vm.count("dparser_no_cubic"))?true:false;
+		srn.set_options(0);
 	}
 
 	void finish(searn& srn) {
@@ -92,7 +93,7 @@ namespace DepParserTask {
 			case 2:
 				heads[stack.last()] = stack[stack.size()-2];
 				cdep << "make a right link" << stack[stack.size()-2] << " ====> " << (stack.last()) << endl;
-				srn.loss((gold_heads[stack.last()] != heads[stack.last()])/((float)gold_heads.size()));
+				srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
 				children[5][stack[stack.size()-2]]=children[4][stack[stack.size()-2]];
 				children[4][stack[stack.size()-2]]=stack.last();
 				children[1][stack[stack.size()-2]]++;
@@ -103,7 +104,7 @@ namespace DepParserTask {
 			case 3:
 				heads[stack.last()] = idx;
 				cdep << "make a left link" << stack.last() << "<==== " << idx << endl;
-				srn.loss((gold_heads[stack.last()] != heads[stack.last()])/((float)gold_heads.size()));
+				srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
 				children[3][idx]=children[2][idx];
 				children[2][idx]=stack.last();
 				children[0][idx]++;
@@ -134,13 +135,15 @@ namespace DepParserTask {
 	// We use VW's internal implementation to create second-order and third-order features
 	void my_initialize(searn& srn, example *base_ex) {
 		task_data *data = srn.get_task_data<task_data>();
-		size_t num_base_feature_space = base_ex->indices.size();
-
+    	uint32_t wpp = srn.all->wpp;// << srn.all->reg.stride_shift;
 
 		// setup example
 		example *ex = data->ex;
-		size_t nfs = base_ex->indices.size();
-		uint64_t offset = offset_const;
+		data->nfs = base_ex->indices.size();
+		if (srn.all->add_constant) 
+			data->nfs-=1;
+		size_t nfs = data->nfs;
+		uint64_t offset = offset_const, v0;
 		for (size_t i=0; i<12; i++) {
 			offset= (offset*offset_const) & srn.all->reg.weight_mask;
 			unsigned char j = 0;
@@ -149,7 +152,8 @@ namespace DepParserTask {
 					continue;
 				ex->indices.push_back(i*nfs+j);				
 				for (size_t k=0; k<base_ex->atomics[*fs].size(); k++) {
-					uint32_t idx = (offset + j * ex->atomics[i*nfs+j].size() + k + affix_constant) & srn.all->reg.weight_mask;
+					v0 = affix_constant*((j+1)*quadratic_constant + k)*offset;
+					uint32_t idx = (uint32_t) ((v0*wpp) & srn.all->reg.weight_mask);
 					feature f = {1.0f, idx};
 					ex->atomics[i*nfs+j].push_back(f);
 					ex->total_sum_feat_sq += 1.0f;
@@ -157,7 +161,7 @@ namespace DepParserTask {
 					ex->sum_feat_sq[i*nfs+j] += 1.0f;
 					if(srn.all->audit){
 						cerr << base_ex->atomics[*fs][k].weight_index<<endl;
-						audit_data a_feature = {NULL, NULL, (uint32_t) ((offset + ex->atomics[i*nfs+j].size()*j +k + affix_constant) & srn.all->reg.weight_mask), 1.0f, true};
+						audit_data a_feature = {NULL, NULL, idx, 1.0f, true};
 						a_feature.space = (char*)calloc_or_die(1,sizeof(char));
 						a_feature.feature = (char*)calloc_or_die(30,sizeof(char));
 						sprintf(a_feature.feature, "%d,%d,%d=%d", (int)i, (int)j, (int)k, (int)idx);
@@ -167,15 +171,15 @@ namespace DepParserTask {
 				j++;
 			}
 		}
-		ex->indices.push_back(val_namespace);
 
 		// add valency and distance features
 		for(int i=0; i<4; i++){
 			offset= (offset*offset_const) & srn.all->reg.weight_mask;
-			feature f = {1.0f, (uint32_t) offset};
+			uint32_t idx = (uint32_t) ((wpp*offset) & srn.all->reg.weight_mask);
+			feature f = {1.0f, idx};
 			ex->atomics[val_namespace].push_back(f);
 			if(srn.all->audit){
-				audit_data a_feature = {NULL, NULL, (uint32_t) offset, 1.0f, true};
+				audit_data a_feature = {NULL, NULL, idx, 1.0f, true};
 				a_feature.space = (char*)calloc_or_die(1,sizeof(char));
 				a_feature.feature = (char*)calloc_or_die(30,sizeof(char));
 				sprintf(a_feature.feature, "%d=%d", (int)i, 0);
@@ -186,6 +190,7 @@ namespace DepParserTask {
 		ex->num_features+=4;
 		ex->sum_feat_sq[val_namespace] += 4.0f;
 		ex->total_sum_feat_sq += 4.0f;
+		ex->indices.push_back(val_namespace);
 
 		// add constant
 		if (srn.all->add_constant) {
@@ -199,62 +204,64 @@ namespace DepParserTask {
 		fs_idx_map["s1"]=0, fs_idx_map["s2"]=1, fs_idx_map["s3"]=2;
 		fs_idx_map["b1"]=3, fs_idx_map["b2"]=4, fs_idx_map["b3"]=5;
 		fs_idx_map["sl1"]=6, fs_idx_map["sl2"]=7, fs_idx_map["sr1"]=8;
-		fs_idx_map["sr2"]=9, fs_idx_map["bl1"]=10, fs_idx_map["br2"]=11;
+		fs_idx_map["sr2"]=9, fs_idx_map["bl1"]=10, fs_idx_map["bl2"]=11;
 
 		size_t pos = 0;
 
 		if(!data->no_quadratic_features){
 			// features based on context
-			string quadratic_feature_template = "s1-s2 s1-b1 s1-s1 s2-s2 s3-s3 b1-b1 b2-b3 b3-b3 ENDQ";
+			string quadratic_feature_template = "s1-s2 s1-b1 s1-s1 s2-s2 s3-s3 b1-b1 b2-b2 b3-b3 b1-b2 s1-sl1 s1-sr1 b1-bl1 ENDQ";
 			// Generate quadratic features
 			while ((pos = quadratic_feature_template.find(" ")) != std::string::npos) {
 				string token = quadratic_feature_template.substr(0, pos);
 				char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
 				char second_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
-				for (size_t i=0; i<num_base_feature_space; i++) {
-					for (size_t j=0; j<num_base_feature_space; j++) {
-						char space_a = (char)(first_fs_idx*num_base_feature_space+i);
-						char space_b = (char)(second_fs_idx*num_base_feature_space+j);
+				for (size_t i=0; i<nfs; i++) {
+					for (size_t j=0; j<nfs; j++) {
+						char space_a = (char)(first_fs_idx*nfs+i);
+						char space_b = (char)(second_fs_idx*nfs+j);
 						newpairs.push_back(string(1, space_a)+ string(1, space_b));
 						ex->num_features 
-							+= (ex->atomics[(int)space_a].end - ex->atomics[(int)space_a].begin)
-							*(ex->atomics[(int)space_b].end - ex->atomics[(int)space_b].begin);
+							+= ex->atomics[(int)space_a].size()*(ex->atomics[(int)space_b].size());
 						ex->total_sum_feat_sq += ex->sum_feat_sq[(int)space_a]*ex->sum_feat_sq[(int)space_b];
 					}
 				}
 				quadratic_feature_template.erase(0, pos + 1);
 			}
-			/*
-			for(size_t i=0; i<12; i++){
-					for (size_t j=0; j<num_base_feature_space; j++) {
+			for(size_t i=0; i<1; i++){
+					for (size_t j=0; j<nfs; j++) {
 						char space_a = (char)(val_namespace);
-						char space_b = (char)(i*num_base_feature_space+j);
+						char space_b = (char)(i*nfs+j);
 						newpairs.push_back(string(1, space_a)+ string(1, space_b));
-						ex->num_features 
-							+= (ex->atomics[(int)space_b].end - ex->atomics[(int)space_b].begin);
-						ex->total_sum_feat_sq += ex->sum_feat_sq[(int)space_b];
-
+						ex->num_features += ex->atomics[(int)space_a].size()*(ex->atomics[(int)space_b].size());
+						ex->total_sum_feat_sq += ex->sum_feat_sq[(int)space_b]*ex->sum_feat_sq[(int)space_a];
 					}
-			}*/
+			}
+
+			char space_a = (char)(val_namespace);
+			newpairs.push_back(string(1, space_a)+ string(1, space_a));
+			ex->num_features += ex->atomics[(int)space_a].size()* ex->atomics[(int)space_a].size();
+			ex->total_sum_feat_sq += ex->sum_feat_sq[(int)space_a]*ex->sum_feat_sq[(int)space_a];
+
 			srn.all->pairs.swap(newpairs);
 		}
 
 		// Generate cubic features
 
 		if(!data->no_cubic_features){
-			string cubic_feature_template = "b1-b2-b3 s1-b1-b2 s1-s2-b1 s1-s2-s3 ENDC";
+			string cubic_feature_template = "b1-b2-b3 s1-b1-b2 s1-s2-b1 s1-s2-s3 s1-b1-bl1 b1-bl1-bl2 s1-sl1-sl2 s1-s2-s2 s1-sr1-b1 s1-sl1-b1 s1-sr1-sr2 ENDC";
 			while ((pos = cubic_feature_template.find(" ")) != std::string::npos) {
 				string token = cubic_feature_template.substr(0, pos);
 				char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
 				token.erase(0, token.find("-")+1);
 				char second_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
 				char third_fs_idx = fs_idx_map[token.substr(token.find("-")+1,token.size())];
-				for (size_t i=0; i<num_base_feature_space; i++) {
-					for (size_t j=0; j<num_base_feature_space; j++) {
-						for (size_t k=0; k<num_base_feature_space; k++) {
-							char space_a = (char)(first_fs_idx*num_base_feature_space+i);
-							char space_b = (char)(second_fs_idx*num_base_feature_space+j);
-							char space_c = (char)(third_fs_idx*num_base_feature_space+k);
+				for (size_t i=0; i<nfs; i++) {
+					for (size_t j=0; j<nfs; j++) {
+						for (size_t k=0; k<nfs; k++) {
+							char space_a = (char)(first_fs_idx*nfs+i);
+							char space_b = (char)(second_fs_idx*nfs+j);
+							char space_c = (char)(third_fs_idx*nfs+k);
 							newtriples.push_back(string(1,space_a)+string(1, space_b)+string(1, space_c));
 							ex->num_features 
 								+= (ex->atomics[(int)space_a].end - ex->atomics[(int)space_a].begin)
@@ -267,6 +274,8 @@ namespace DepParserTask {
 				}
 				cubic_feature_template.erase(0, pos + 1);
 			}
+
+
 			srn.all->triples.swap(newtriples);
 		}
 	}
@@ -275,10 +284,11 @@ namespace DepParserTask {
 	void extract_features(searn& srn, uint32_t idx,  vector<example*> &ec) {
 		task_data *data = srn.get_task_data<task_data>();
 		v_array<uint32_t> &stack = data->stack;
-		v_array<uint32_t> *children = data->children;
+		v_array<uint32_t> *children = data->children, &temp=data->temp;
 		v_array<example*> &ec_buf = data->ec_buf;
-
 		example &ex = *(data->ex);
+    	uint32_t wpp = srn.all->wpp;
+		//<< srn.all->reg.stride_shift;
 
 		// be careful: indices in ec starts from 0, but i is starts from 1
 		size_t n = ec.size();
@@ -307,15 +317,13 @@ namespace DepParserTask {
 		// ec_buf[10]: bl1, ec_buf[11]: bl2
 		for(size_t i=10; i<12; i++)
 			ec_buf[i] = (idx <=n && children[i-8][idx]!=0)? ec[children[i-8][idx]-1] : 0;
-
-		size_t dis = (!stack.empty() && idx <=n) ? min(5, idx - stack.last()) : 0;
+		
 
 		cdep << "start generating features";
 
 		// unigram features
-		size_t nfs = ec[0]->indices.size();
-		uint64_t offset = (uint64_t)offset_const;
-
+		size_t nfs = data->nfs;
+		uint64_t offset = (uint64_t)offset_const, v0;
 		for(size_t i=0; i<12; i++) {
 			offset= (offset*offset_const) & srn.all->reg.weight_mask;
 			if(!ec_buf[i]) {
@@ -325,7 +333,12 @@ namespace DepParserTask {
 						continue;
 					for(size_t k=0; k<ex.atomics[i*nfs+j].size(); k++) {
 						// use affix_constant to represent the features that not appear
-						ex.atomics[i*nfs+j][k].weight_index = (uint32_t) ((affix_constant + j*ex.atomics[i*nfs+j].size()+k + offset) & srn.all->reg.weight_mask);
+						v0 = affix_constant*((j+1)*quadratic_constant + k)*offset;
+						ex.atomics[i*nfs+j][k].weight_index = (uint32_t) ((v0*wpp) & srn.all->reg.weight_mask);
+						if(srn.all->audit){
+							ex.audit_features[i*nfs+j][k].weight_index =  (uint32_t) ((v0*wpp) & srn.all->reg.weight_mask);
+							sprintf(ex.audit_features[i*nfs+j][k].feature, "%d,%d,%d=null", (int)i, (int)j, (int)k);
+						}
 					}
 					j++;
 				}
@@ -335,56 +348,37 @@ namespace DepParserTask {
 					if(*fs == constant_namespace) // ignore constant_namespace
 						continue;
 					for(size_t k=0; k<ex.atomics[i*nfs+j].size(); k++) {
-						ex.atomics[i*nfs+j][k].weight_index = (uint32_t) ((ec_buf[i]->atomics[*fs][k].weight_index + offset) & srn.all->reg.weight_mask);
-					}
-					j++;
-				}
-			}
-		}
-		offset= (offset*offset_const) & srn.all->reg.weight_mask;
-		ex.atomics[val_namespace][0].weight_index = (offset + dis) & srn.all->reg.weight_mask;
-		offset= (offset*offset_const) & srn.all->reg.weight_mask;
-		ex.atomics[val_namespace][1].weight_index = (offset + (stack.empty() ? 0: min(5,children[0][stack.last()]))) & srn.all->reg.weight_mask;
-		offset= (offset*offset_const) & srn.all->reg.weight_mask;
-		ex.atomics[val_namespace][2].weight_index = (offset + (stack.empty()? 0 : min(5, children[1][stack.last()]))) & srn.all->reg.weight_mask;
-		offset= (offset*constant) & srn.all->reg.weight_mask;
-		ex.atomics[val_namespace][3].weight_index = (offset + (idx>n?0:min(5 , children[0][idx]))) & srn.all->reg.weight_mask;
-
-		if(srn.all->audit){
-			uint64_t offset = (uint64_t)offset_const;
-			for(size_t i=0; i<12; i++) {
-				offset= (offset*offset_const) & srn.all->reg.weight_mask;
-				if(!ec_buf[i]) {
-					for (unsigned char* j = ec[0]->indices.begin,fs_idx_inner = 0; j != ec[0]->indices.end; j++,fs_idx_inner++) {
-						if(*j == constant_namespace) // ignore constant_namespace
-							continue;
-						for(size_t k=0; k<ex.atomics[i*nfs+fs_idx_inner].size(); k++) {
-							ex.audit_features[i*nfs+fs_idx_inner][k].weight_index = (uint32_t) ((affix_constant + fs_idx_inner*ex.atomics[i*nfs+fs_idx_inner].size()+k + offset) & srn.all->reg.weight_mask);
-							sprintf(ex.audit_features[i*nfs+fs_idx_inner][k].feature, "%d,%d,%d=null", (int)i, (int)fs_idx_inner, (int)k);
-						}
-					}
-				} else {
-					unsigned char j = 0;
-					for (unsigned char* fs= ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
-						if(*fs == constant_namespace) // ignore constant_namespace
-							continue;
-						for(size_t k=0; k<ex.atomics[i*nfs+j].size(); k++) {
-							ex.audit_features[i*nfs+j][k].weight_index = (uint32_t) ((ec_buf[i]->atomics[*fs][k].weight_index + offset) & srn.all->reg.weight_mask);
+						v0 =  (ec_buf[i]->atomics[*fs][k].weight_index & srn.all->reg.weight_mask);
+						ex.atomics[i*nfs+j][k].weight_index = (uint32_t)((v0*wpp*offset) & srn.all->reg.weight_mask);
+						if(srn.all->audit){
+							ex.audit_features[i*nfs+j][k].weight_index =  (uint32_t) ((v0*wpp) & srn.all->reg.weight_mask);
 							sprintf(ex.audit_features[i*nfs+j][k].feature, "%d,%d,%d=%d", (int)i, (int)j, (int)k, (int)ec_buf[i]->atomics[*fs][k].weight_index);
 						}
 					}
 					j++;
 				}
 			}
+		}
+		temp.resize(4,true);
+		// distance
+		temp[0] = stack.empty()?0: (idx >n? 1: 2+min(5, idx - stack.last()));
+
+		// #left child of top item in stack
+		temp[1] = stack.empty()? 1: 1+min(5, children[0][stack.last()]);
+
+		// #right child of top item in stack
+		temp[2] = stack.empty()? 1: 1+min(5, children[1][stack.last()]);
+
+		// #left child of rightmost item in buf
+		temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
+
+		for(int j=0; j< 4;j++) {
 			offset= (offset*offset_const) & srn.all->reg.weight_mask;
-			ex.audit_features[val_namespace][0].weight_index = offset + dis;
-			sprintf(ex.audit_features[val_namespace][0].feature, "0=%d", (int)dis);
-			ex.audit_features[val_namespace][1].weight_index = offset + children[0][stack.last()];
-			sprintf(ex.audit_features[val_namespace][1].feature, "1=%d", (int)min(5,children[0][stack.last()]));
-			ex.audit_features[val_namespace][2].weight_index = offset + children[1][stack.last()];
-			sprintf(ex.audit_features[val_namespace][2].feature, "2=%d", (int)min(5,children[1][stack.last()]));
-			ex.audit_features[val_namespace][3].weight_index = offset + children[0][idx];
-			sprintf(ex.audit_features[val_namespace][3].feature, "3=%d", (int)min(5,children[0][idx]), offset, ((ex.audit_features[val_namespace][3].weight_index >> srn.all->reg.stride_shift) & srn.all->parse_mask));
+			ex.atomics[val_namespace][j].weight_index = (uint32_t) ((wpp*temp[j]*offset) & srn.all->reg.weight_mask);
+			if(srn.all->audit){
+				ex.audit_features[val_namespace][j].weight_index =  (uint32_t) ((wpp*temp[j]*offset) & srn.all->reg.weight_mask);
+				sprintf(ex.audit_features[val_namespace][j].feature, "0=%d", (int)temp[j]);
+			}
 		}
 	}
 
@@ -514,11 +508,11 @@ namespace DepParserTask {
 		}
 		heads[stack.last()] = 0;
 		cdep << "root link to the last element in stack" <<  "root ====> " << (stack.last()) << endl;
-		srn.loss((gold_heads[stack.last()] != heads[stack.last()])/((float)gold_heads.size()));
+		srn.loss((gold_heads[stack.last()] != heads[stack.last()]));
 		if (srn.output().good())
 			for(size_t i=1; i<=n; i++) {
 				cdep << heads[i] << " ";
-				srn.output() << heads[i] << " ";
+				srn.output() << (heads[i]) << endl;
 			}
 		cdep << "end structured predict"<<endl;
 	}
