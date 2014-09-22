@@ -1,0 +1,28 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/wsj_small.dat.gz.cache
+Reading datafile = train-sets/wsj_small.dat.gz
+num sources = 1
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+30.000000  30.000000         1  [1 2 3 1 4 5 6 7 8 ..] [1 1 1 1 1 1 1 1 1 ..]     0     0       37        0       37  0.000036
+23.000000  16.000000         2  [11 2 3 11 11 11 15..] [1 2 1 2 11 12 2 1 ..]     0     0       64        0       64  0.000063
+21.750000  20.500000         4  [3 4 6 3 1 2 3 1 1 ..] [11 11 11 11 11 2 3..]     0     0      129        0      129  0.000128
+19.375000  17.000000         8  [3 11 1 14 3 24 18 ..] [3 9 1 2 3 24 18 18..]     0     0      260        0      260  0.000259
+15.312500  11.250000        16  [5 12 9 1 2 3 1 4 5..] [5 12 19 3 2 3 1 2 ..]     0     0      481     2007      462  0.000461
+12.281250  9.250000         32  [9 1 10 21 2 3 1 1 ..] [2 1 1 1 2 3 1 21 2..]     0     0      881     2097      861  0.000860
+10.312500  8.343750         64  [14 2 9 2 3 1 21 5 ..] [14 2 30 2 3 1 2 1 ..]     0     0     1637     2097     1617  0.001615
+5.914062   1.515625        128  [11 9 11 11 14 11 1..] [11 9 11 11 14 11 1..]     1     0     3182     4297     3155  0.003149
+2.996094   0.078125        256  [11 11 21 3 10 13 3..] [11 11 21 3 10 13 3..]     3     1      10k      15k     6409  0.006388
+
+finished run
+number of examples per pass = 78
+passes used = 6
+weighted example sum = 468
+weighted label sum = 0
+average loss = 1.6453
+best constant = 0
+total feature number = 1033128

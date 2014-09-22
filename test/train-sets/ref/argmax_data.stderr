@@ -6,17 +6,15 @@ decay_learning_rate = 1
 creating cache_file = train-sets/argmax_data.cache
 Reading datafile = train-sets/argmax_data
 num sources = 1
-average    since         example     example  current  current  current
-loss       last          counter      weight    label  predict features
-average    since      sequence         example            current label      current predicted  current   cur   cur         predic.        examples
-loss       last        counter          weight          sequence prefix        sequence prefix features  pass   pol            made          gener.
-10.000000  10.000000         1        1.000000   [2                   ] [1                   ]       15     0     0               5               5
-5.500000   1.000000          2        2.000000   [1                   ] [2                   ]       12     0     0               9               9
-5.250000   5.000000          4        4.000000   [2                   ] [1                   ]        9     0     0              15              15
-2.875000   0.500000          8        8.000000   [2                   ] [2                   ]        9     1     0              30              30
-1.687500   0.500000         16       16.000000   [2                   ] [2                   ]        9     3     0              60              60
-1.093750   0.500000         32       32.000000   [2                   ] [2                   ]        9     7     0             120             120
-0.796875   0.500000         64       64.000000   [2                   ] [2                   ]        9    15     0             240             240
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+10.000000  10.000000         1  [2                   ] [1                   ]     0     0        5        0        5  0.000000
+5.500000   1.000000          2  [1                   ] [2                   ]     0     0        9        0        9  0.000000
+5.250000   5.000000          4  [2                   ] [1                   ]     0     0       15        0       15  0.000000
+2.875000   0.500000          8  [2                   ] [2                   ]     1     0       30        0       30  0.000000
+1.687500   0.500000         16  [2                   ] [2                   ]     3     0       60        0       60  0.000001
+1.093750   0.500000         32  [2                   ] [2                   ]     7     0      120        0      120  0.000001
+0.796875   0.500000         64  [2                   ] [2                   ]    15     0      240        0      240  0.000002
 
 finished run
 number of examples per pass = 4

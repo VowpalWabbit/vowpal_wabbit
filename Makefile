@@ -90,7 +90,7 @@ active_interactor:
 	cd vowpalwabbit; $(MAKE)
 
 library_example: vw
-	cd library; $(MAKE) -j 8
+	cd library; $(MAKE) things
 
 python: vw
 	cd python; $(MAKE) things

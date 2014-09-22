@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "../vowpalwabbit/vw.h"
 #include "../vowpalwabbit/ezexample.h"
-#include "libsearn.h"
+#include "libsearch.h"
 
 struct wt {
   string word;
@@ -13,29 +13,29 @@ class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
   public:
   SequenceLabelerTask(vw& vw_obj)
       : SearchTask< vector<wt>, vector<uint32_t> >(vw_obj) {  // must run parent constructor!
-    srn.set_options( Searn::AUTO_HAMMING_LOSS | Searn::AUTO_HISTORY );
-    HookTask::task_data* d = srn.get_task_data<HookTask::task_data>();
+    sch.set_options( Search::AUTO_HAMMING_LOSS | Search::AUTO_CONDITION_FEATURES );
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     cerr << "num_actions = " << d->num_actions << endl;
   }
 
   // using vanilla vw interface
-  void _run(Searn::searn& srn, vector<wt> & input_example, vector<uint32_t> & output) {
+  void _run(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output) {
     output.clear();
     for (size_t i=0; i<input_example.size(); i++) {
       example* ex = VW::read_example(vw_obj, "1 |w " + input_example[i].word);
-      uint32_t p  = srn.predict(ex, input_example[i].tag);
+      action p  = Search::predictor(sch, i+1).set_input(*ex).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       VW::finish_example(vw_obj, ex);
       output.push_back(p);
     }
   }
 
   // using ezexample
-  void _run2(Searn::searn& srn, vector<wt> & input_example, vector<uint32_t> & output) {
+  void _run2(Search::search& sch, vector<wt> & input_example, vector<uint32_t> & output) {
     output.clear();
     for (size_t i=0; i<input_example.size(); i++) {
       ezexample ex(&vw_obj);
       ex(vw_namespace('w'))(input_example[i].word);  // add the feature
-      uint32_t p  = srn.predict(ex.get(), input_example[i].tag);
+      action p  = Search::predictor(sch, i+1).set_input(*ex.get()).set_oracle(input_example[i].tag).set_condition(i, 'p').predict();
       output.push_back(p);
     }
   }
@@ -44,7 +44,7 @@ class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
 
 int main(int argc, char *argv[]) {
   // initialize VW as usual, but use 'hook' as the search_task
-  vw& vw_obj = *VW::initialize("--search 4 --quiet --search_task hook --search_no_snapshot --ring_size 1024");
+  vw& vw_obj = *VW::initialize("--search 4 --quiet --search_task hook --ring_size 1024");
 
   {
     // we put this in its own scope so that its destructor gets called
@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
     cerr << "output = [";
     for (size_t i=0; i<output.size(); i++) cerr << " " << output[i];
     cerr << " ]" << endl;
+    cerr << "should have printed: 1 2 3 1 4 2" << endl;
   }
   
   VW::finish(vw_obj);

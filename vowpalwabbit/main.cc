@@ -21,7 +21,6 @@ license as described in the file LICENSE.
 #include "parse_args.h"
 #include "accumulate.h"
 #include "vw.h"
-#include "searn.h"
 
 using namespace std;
 
@@ -32,7 +31,7 @@ int main(int argc, char *argv[])
     struct timeb t_start, t_end;
     ftime(&t_start);
     
-    if (!all->quiet && !all->bfgs && !all->searn)
+    if (!all->quiet && !all->bfgs && !all->searchstr)
         {
         const char * header_fmt = "%-10s %-10s %10s %11s %8s %8s %8s\n";
         fprintf(stderr, header_fmt,
@@ -86,7 +85,7 @@ int main(int argc, char *argv[])
         }
         cerr << endl << "weighted example sum = " << all->sd->weighted_examples;
         cerr << endl << "weighted label sum = " << all->sd->weighted_labels;
-        if(all->holdout_set_off)
+        if(all->holdout_set_off || (all->sd->holdout_best_loss == FLT_MAX))
         {
             cerr << endl << "average loss = " << all->sd->sum_loss / all->sd->weighted_examples;
         }  

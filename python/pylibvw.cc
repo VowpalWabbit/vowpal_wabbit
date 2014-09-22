@@ -2,8 +2,8 @@
 #include "../vowpalwabbit/multiclass.h"
 #include "../vowpalwabbit/cost_sensitive.h"
 #include "../vowpalwabbit/cb.h"
-#include "../vowpalwabbit/searn.h"
-#include "../vowpalwabbit/searn_hooktask.h"
+#include "../vowpalwabbit/search.h"
+#include "../vowpalwabbit/search_hooktask.h"
 
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
@@ -14,7 +14,8 @@ namespace py=boost::python;
 
 typedef boost::shared_ptr<vw> vw_ptr;
 typedef boost::shared_ptr<example> example_ptr;
-typedef boost::shared_ptr<Searn::searn> searn_ptr;
+typedef boost::shared_ptr<Search::search> search_ptr;
+typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 
 void dont_delete_me(void*arg) {}
 
@@ -27,8 +28,13 @@ void my_finish(vw_ptr all) {
   VW::finish(*all, false);  // don't delete all because python will do that for us!
 }
 
-searn_ptr get_searn_ptr(vw_ptr all) {
-  return boost::shared_ptr<Searn::searn>((Searn::searn*)(all->searnstr), dont_delete_me);
+search_ptr get_search_ptr(vw_ptr all) {
+  return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
+}
+
+predictor_ptr get_predictor(search_ptr sch, ptag my_tag) {
+  Search::predictor* P = new Search::predictor(*sch, my_tag);
+  return boost::shared_ptr<Search::predictor>(P);
 }
 
 
@@ -175,69 +181,33 @@ float    get_total_sum_feat_sq(example_ptr ec) { return ec->total_sum_feat_sq; }
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples; }
 
-bool searn_should_output(searn_ptr srn) { return srn->output().good(); }
-void searn_output(searn_ptr srn, string s) { srn->output() << s; }
+bool search_should_output(search_ptr sch) { return sch->output().good(); }
+void search_output(search_ptr sch, string s) { sch->output() << s; }
 
-uint32_t searn_predict_one_all(searn_ptr srn, example_ptr ec, uint32_t one_ystar) {
-  return srn->predict(ec.get(), one_ystar, NULL);
+/*
+uint32_t search_predict_one_all(search_ptr sch, example_ptr ec, uint32_t one_ystar) {
+  return sch->predict(ec.get(), one_ystar, NULL);
 }
 
-uint32_t searn_predict_one_some(searn_ptr srn, example_ptr ec, uint32_t one_ystar, vector<uint32_t>& yallowed) {
+uint32_t search_predict_one_some(search_ptr sch, example_ptr ec, uint32_t one_ystar, vector<uint32_t>& yallowed) {
   v_array<uint32_t> yallowed_va;
   yallowed_va.begin       = yallowed.data();
   yallowed_va.end         = yallowed_va.begin + yallowed.size();
   yallowed_va.end_array   = yallowed_va.end;
   yallowed_va.erase_count = 0;
-  return srn->predict(ec.get(), one_ystar, &yallowed_va);
+  return sch->predict(ec.get(), one_ystar, &yallowed_va);
 }
 
-uint32_t searn_predict_many_all(searn_ptr srn, example_ptr ec, vector<uint32_t>& ystar) {
+uint32_t search_predict_many_all(search_ptr sch, example_ptr ec, vector<uint32_t>& ystar) {
   v_array<uint32_t> ystar_va;
   ystar_va.begin       = ystar.data();
   ystar_va.end         = ystar_va.begin + ystar.size();
   ystar_va.end_array   = ystar_va.end;
   ystar_va.erase_count = 0;
-  return srn->predict(ec.get(), &ystar_va, NULL);
+  return sch->predict(ec.get(), &ystar_va, NULL);
 }
 
-uint32_t searn_predict_many_some(searn_ptr srn, example_ptr ec, vector<uint32_t>& ystar, vector<uint32_t>& yallowed) {
-  v_array<uint32_t> ystar_va;
-  ystar_va.begin       = ystar.data();
-  ystar_va.end         = ystar_va.begin + ystar.size();
-  ystar_va.end_array   = ystar_va.end;
-  ystar_va.erase_count = 0;
-  v_array<uint32_t> yallowed_va;
-  yallowed_va.begin       = yallowed.data();
-  yallowed_va.end         = yallowed_va.begin + yallowed.size();
-  yallowed_va.end_array   = yallowed_va.end;
-  yallowed_va.erase_count = 0;
-  return srn->predict(ec.get(), &ystar_va, &yallowed_va);
-}
-
-/* IN ORDER TO DO THIS, WE NEED TO MAKE LDF BACK TO example** :(
-uint32_t searn_predictLDF_one_all(searn_ptr srn, vector<example*> ecs, uint32_t one_ystar) {
-  return srn->predictLDF(ecs.data(), ecs.size(), one_ystar, NULL);
-}
-
-uint32_t searn_predictLDF_one_some(searn_ptr srn, example_ptr ec, size_t ec_len, uint32_t one_ystar, vector<uint32_t>& yallowed) {
-  v_array<uint32_t> yallowed_va;
-  yallowed_va.begin       = yallowed.data();
-  yallowed_va.end         = yallowed_va.begin + yallowed.size();
-  yallowed_va.end_array   = yallowed_va.end;
-  yallowed_va.erase_count = 0;
-  return srn->predictLDF(ec.get(), one_ystar, &yallowed_va);
-}
-
-uint32_t searn_predictLDF_many_all(searn_ptr srn, example_ptr ec, size_t ec_len, vector<uint32_t>& ystar) {
-  v_array<uint32_t> ystar_va;
-  ystar_va.begin       = ystar.data();
-  ystar_va.end         = ystar_va.begin + ystar.size();
-  ystar_va.end_array   = ystar_va.end;
-  ystar_va.erase_count = 0;
-  return srn->predictLDF(ec.get(), &ystar_va, NULL);
-}
-
-uint32_t searn_predictLDF_many_some(searn_ptr srn, example_ptr ec, size_t ec_len, vector<uint32_t>& ystar, vector<uint32_t>& yallowed) {
+uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, vector<uint32_t>& ystar, vector<uint32_t>& yallowed) {
   v_array<uint32_t> ystar_va;
   ystar_va.begin       = ystar.data();
   ystar_va.end         = ystar_va.begin + ystar.size();
@@ -248,34 +218,30 @@ uint32_t searn_predictLDF_many_some(searn_ptr srn, example_ptr ec, size_t ec_len
   yallowed_va.end         = yallowed_va.begin + yallowed.size();
   yallowed_va.end_array   = yallowed_va.end;
   yallowed_va.erase_count = 0;
-  return srn->predictLDF(ec.get(), &ystar_va, &yallowed_va);
+  return sch->predict(ec.get(), &ystar_va, &yallowed_va);
 }
 */
 
-
-
-
-
-void verify_searn_set_properly(searn_ptr srn) {
-  if ((srn->task == NULL) || (srn->task->task_name == NULL)) {
-    cerr << "set_structured_predict_hook: searn task not initialized properly" << endl;
+void verify_search_set_properly(search_ptr sch) {
+  if (sch->task_name == NULL) {
+    cerr << "set_structured_predict_hook: search task not initialized properly" << endl;
     throw exception();
   }
-  if (strcmp(srn->task->task_name, "hook") != 0) {
-    cerr << "set_structured_predict_hook: trying to set hook when searn task is not 'hook'!" << endl;
+  if (strcmp(sch->task_name, "hook") != 0) {
+    cerr << "set_structured_predict_hook: trying to set hook when search task is not 'hook'!" << endl;
     throw exception();
   }
 }  
 
-uint32_t searn_get_num_actions(searn_ptr srn) {
-  verify_searn_set_properly(srn);
-  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
+uint32_t search_get_num_actions(search_ptr sch) {
+  verify_search_set_properly(sch);
+  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   return d->num_actions;
 }
 
-void searn_run_fn(Searn::searn&srn) {
+void search_run_fn(Search::search&sch) {
   try {
-    HookTask::task_data* d = srn.get_task_data<HookTask::task_data>();
+    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
     py::object run = *(py::object*)d->run_object;
     run.attr("__call__")();
   } catch(...) {
@@ -290,10 +256,10 @@ void py_delete_run_object(void* pyobj) {
   delete o;
 }
 
-void set_structured_predict_hook(searn_ptr srn, py::object run_object) {
-  verify_searn_set_properly(srn);
-  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
-  d->run_f = &searn_run_fn;
+void set_structured_predict_hook(search_ptr sch, py::object run_object) {
+  verify_search_set_properly(sch);
+  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  d->run_f = &search_run_fn;
   py::object* new_obj = new py::object(run_object);  // TODO: delete me!
   d->run_object = new_obj;
   d->delete_run_object = &py_delete_run_object;
@@ -301,18 +267,18 @@ void set_structured_predict_hook(searn_ptr srn, py::object run_object) {
 
 void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
 
-bool po_exists(searn_ptr srn, string arg) {
-  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
+bool po_exists(search_ptr sch, string arg) {
+  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   return (*d->var_map).count(arg) > 0;
 }
 
-string po_get_string(searn_ptr srn, string arg) {
-  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
+string po_get_string(search_ptr sch, string arg) {
+  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   return (*d->var_map)[arg].as<string>();
 }
 
-int32_t po_get_int(searn_ptr srn, string arg) {
-  HookTask::task_data* d = srn->get_task_data<HookTask::task_data>();
+int32_t po_get_int(search_ptr sch, string arg) {
+  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
   try { return (*d->var_map)[arg].as<int>(); } catch (...) {}
   try { return (*d->var_map)[arg].as<size_t>(); } catch (...) {}
   try { return (*d->var_map)[arg].as<uint32_t>(); } catch (...) {}
@@ -325,16 +291,34 @@ int32_t po_get_int(searn_ptr srn, string arg) {
   return (*d->var_map)[arg].as<int>();
 }
 
-PyObject* po_get(searn_ptr srn, string arg) {
+PyObject* po_get(search_ptr sch, string arg) {
   try {
-    return py::incref(py::object(po_get_string(srn, arg)).ptr());
+    return py::incref(py::object(po_get_string(sch, arg)).ptr());
   } catch (...) {}
   try {
-    return py::incref(py::object(po_get_int(srn, arg)).ptr());
+    return py::incref(py::object(po_get_int(sch, arg)).ptr());
   } catch (...) {}
   // return None
   return py::incref(py::object().ptr());
 }
+
+void my_set_input(predictor_ptr P, example_ptr ec) { P->set_input(*ec); }
+void my_set_input_LDF(predictor_ptr P, vector<example_ptr>&ecs) { throw exception(); }  // TODO
+void my_add_oracle(predictor_ptr P, action a) { P->add_oracle(a); }
+void my_add_oracles(predictor_ptr P, vector<action>& a) { P->add_oracle(a.data(), a.size()); }
+void my_add_allowed(predictor_ptr P, action a) { P->add_allowed(a); }
+void my_add_alloweds(predictor_ptr P, vector<action>& a) { P->add_allowed(a.data(), a.size()); }
+void my_add_condition(predictor_ptr P, ptag t, char c) { P->add_condition(t, c); }
+void my_add_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->add_condition_range(hi, count, name0); }
+void my_set_oracle(predictor_ptr P, action a) { P->set_oracle(a); }
+void my_set_oracles(predictor_ptr P, vector<action>& a) { P->set_oracle(a.data(), a.size()); }
+void my_set_allowed(predictor_ptr P, action a) { P->set_allowed(a); }
+void my_set_alloweds(predictor_ptr P, vector<action>& a) { P->set_allowed(a.data(), a.size()); }
+void my_set_condition(predictor_ptr P, ptag t, char c) { P->set_condition(t, c); }
+void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->set_condition_range(hi, count, name0); }
+void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }
+void my_set_tag(predictor_ptr P, ptag t) { P->set_tag(t); }
+
 
 BOOST_PYTHON_MODULE(pylibvw) {
   // This will enable user-defined docstrings and python signatures,
@@ -361,7 +345,7 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
-      .def("get_searn_ptr", &get_searn_ptr, "return a pointer to the searn data structure")
+      .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
       ;
 
   // define the example class
@@ -375,12 +359,6 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_topic_prediction", &VW::get_topic_prediction, "For LDA models, returns the topic prediction for the topic id given")
       .def("get_feature_number", &VW::get_feature_number, "Returns the total number of features for this example")
 
-      // the following four are redundant with get_simplelabel_...
-      //.def("get_label", &VW::get_label, "Returns the label (simple_label only!) for this example")
-      //.def("get_importance", &VW::get_importance, "Returns the importance (simple_label only!) for this example")
-      //.def("get_initial", &VW::get_initial, "TODO")
-      //.def("get_prediction", &VW::get_prediction, "TODO")
-      
       .def("get_example_counter", &get_example_counter, "Returns the counter of total number of examples seen up to and including this one")
       .def("get_ft_offset", &get_ft_offset, "Returns the feature offset for this example (used, eg, by multiclass classification to bulk offset all features)")
       .def("get_partial_prediction", &get_partial_prediction, "Returns the partial prediction associated with this example")
@@ -388,11 +366,6 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_loss", &get_loss, "Returns the loss associated with this example")
       .def("get_example_t", &get_example_t, "The total sum of importance weights up to and including this example")
       .def("get_total_sum_feat_sq", &get_total_sum_feat_sq, "The total sum of feature-value squared for this example")
-      //      .def_readwrite("revert_weight", &example::revert_weight)
-      //      .def_readwrite("test_only", &example::test_only)
-      //      .def_readwrite("end_pass", &example::end_pass)
-      //      .def_readwrite("sorted", &example::sorted)
-      //      .def_readwrite("in_use", &example::in_use)
 
       .def("num_namespaces", &ex_num_namespaces, "The total number of namespaces associated with this example")
       .def("namespace", &ex_namespace, "Get the namespace id for namespace i (for i = 0.. num_namespaces); specifically returns the ord() of the corresponding character id")
@@ -430,28 +403,59 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction, "Assuming a contextual_bandits label type, get the partial prediction for a given pair (i=0.. get_cbandits_num_costs)")
       ;
 
-  py::class_<Searn::searn, searn_ptr>("searn")
-      .def("set_options", &Searn::searn::set_options, "Set global searn options (auto history, etc.)")
-      .def("loss", &Searn::searn::loss, "Declare a (possibly incremental) loss")
-      .def("predict_one_all", &searn_predict_one_all, "Predict with one true label and all labels valid (non-LDF)")
-      .def("predict_many_all", &searn_predict_many_all, "Predict with several true labels and all labels valid (non-LDF)")
-      .def("predict_one_some", &searn_predict_one_some, "Predict with one true label and only some labels valid (non-LDF)")
-      .def("predict_many_some", &searn_predict_many_some, "Predict with several true labels and only some labels valid (non-LDF)")
+  py::class_<Search::predictor, predictor_ptr>("predictor", py::no_init)
+      .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
+      .def("set_input_ldf", &my_set_input_LDF, "set the inputs (a list of examples) for this predictor (LDF mode only)")
+      .def("add_oracle", &my_add_oracle, "add an action to the current list of oracle actions")
+      .def("add_oracles", &my_add_oracles, "add a list of actions to the current list of oracle actions")
+      .def("add_allowed", &my_add_allowed, "add an action to the current list of allowed actions")
+      .def("add_alloweds", &my_add_alloweds, "add a list of actions to the current list of allowed actions")
+      .def("add_condition", &my_add_condition, "add a (tag,char) pair to the list of variables on which to condition")
+      .def("add_condition_range", &my_add_condition_range, "given (tag,len,char), add (tag,char), (tag-1,char+1), ..., (tag-len,char+len) to the list of conditionings")
+      .def("set_oracle", &my_set_oracle, "set an action as the current list of oracle actions")
+      .def("set_oracles", &my_set_oracles, "set a list of actions as the current list of oracle actions")
+      .def("set_allowed", &my_set_allowed, "set an action as the current list of allowed actions")
+      .def("set_alloweds", &my_set_alloweds, "set a list of actions as the current list of allowed actions")
+      .def("set_condition", &my_set_condition, "set a (tag,char) pair as the list of variables on which to condition")
+      .def("set_condition_range", &my_set_condition_range, "given (tag,len,char), set (tag,char), (tag-1,char+1), ..., (tag-len,char+len) as the list of conditionings")
+      .def("set_learner_id", &my_set_learner_id, "select the learner with which to make this prediction")
+      .def("set_tag", &my_set_tag, "change the tag of this prediction")
+      .def("predict", &Search::predictor::predict, "make a prediction")
+      ;
+  
+  py::class_<Search::search, search_ptr>("search")
+      .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
+      .def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to train")
+      .def("get_history_length", &Search::search::get_history_length, "Get the value specified by --search_history_length")
+      .def("loss", &Search::search::loss, "Declare a (possibly incremental) loss")
+      .def("should_output", &search_should_output, "Check whether search wants us to output (only happens if you have -p running)")
+      .def("output", &search_output, "Add a string to the coutput (should only do if should_output returns True)")
+      .def("get_num_actions", &search_get_num_actions, "Return the total number of actions search was initialized with")
+      .def("set_structured_predict_hook", &set_structured_predict_hook, "Set the hook (function pointer) that search should use for structured prediction (you don't want to call this yourself!")
 
-      .def("should_output", &searn_should_output, "Check whether searn wants us to output (only happens if you have -p running)")
-      .def("output", &searn_output, "Add a string to the coutput (should only do if should_output returns True)")
-      .def("get_num_actions", &searn_get_num_actions, "Return the total number of actions searn was initialized with")
-      .def("set_structured_predict_hook", &set_structured_predict_hook, "Set the hook (function pointer) that searn should use for structured prediction (you don't want to call this yourself!")
-
-      .def("po_exists", &po_exists, "For program (cmd line) options, check to see if a given option was specified; eg srn.po_exists(\"search\") should be True")
-      .def("po_get", &po_get, "For program (cmd line) options, if an option was specified, get its value; eg srn.po_get(\"search\") should return the # of actions (returns either int or string)")
+      .def("po_exists", &po_exists, "For program (cmd line) options, check to see if a given option was specified; eg sch.po_exists(\"search\") should be True")
+      .def("po_get", &po_get, "For program (cmd line) options, if an option was specified, get its value; eg sch.po_get(\"search\") should return the # of actions (returns either int or string)")
       .def("po_get_str", &po_get_string, "Same as po_get, but specialized for string return values.")
       .def("po_get_int", &po_get_int, "Same as po_get, but specialized for integer return values.")
+
+      .def("get_predictor", &get_predictor, "Get a predictor object that can be used for making predictions; requires a tag argument to tag the prediction.")
       
-      .def_readonly("AUTO_HISTORY", Searn::AUTO_HISTORY, "Tell search to automatically add history to the feature set")
-      .def_readonly("AUTO_HAMMING_LOSS", Searn::AUTO_HAMMING_LOSS, "Tell search to automatically compute hamming loss over predictions")
-      .def_readonly("EXAMPLES_DONT_CHANGE", Searn::EXAMPLES_DONT_CHANGE, "Tell search that on a single structured 'run', you don't change the examples you pass to predict")
-      .def_readonly("IS_LDF", Searn::IS_LDF, "Tell search that this is an LDF task")
+      .def_readonly("AUTO_CONDITION_FEATURES", Search::AUTO_CONDITION_FEATURES, "Tell search to automatically add features based on conditioned-on variables")
+      .def_readonly("AUTO_HAMMING_LOSS", Search::AUTO_HAMMING_LOSS, "Tell search to automatically compute hamming loss over predictions")
+      .def_readonly("EXAMPLES_DONT_CHANGE", Search::EXAMPLES_DONT_CHANGE, "Tell search that on a single structured 'run', you don't change the examples you pass to predict")
+      .def_readonly("IS_LDF", Search::IS_LDF, "Tell search that this is an LDF task")
       ;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -146,7 +146,6 @@ template<class K, class V> class v_hashmap{
   void double_size() {
     //    printf("doubling size!\n");
     // remember the old occupants
-    cerr << "[(double)]";
     v_array<hash_elem>tmp = v_array<hash_elem>();
     tmp.resize(num_occupants+10, true);
     for (hash_elem* e=dat.begin; e!=dat.end_array; e++)
