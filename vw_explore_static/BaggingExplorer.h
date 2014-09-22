@@ -12,7 +12,7 @@ public:
 	{
 		if (bags <= 0)
 		{
-			throw std::invalid_argument("Initial bags value must be positive.");
+			throw std::invalid_argument("Bags value must be positive.");
 		}
 		m_random_generator = new PRG<u32>();
 	}
@@ -36,45 +36,33 @@ public:
 private:
 	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
 	{
+		//Select Bag
+		u32 chosen_bag = random_generator.Uniform_Int(1, m_bags);
 		// Invoke the default policy function to get the action
 		MWTAction* chosen_action = nullptr;
-		if (typeid(m_default_policy_wrapper) == typeid(StatelessFunctionWrapper))
-		{
-			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_policy_wrapper);
-			chosen_action = &stateless_function_wrapper->m_policy_function(context);
+		MWTAction* action_from_bag = nullptr;
+		u32 actions_selected[actions.Count()];
+		for (int i = 0; i < actions.Count(); i++){
+			actions_selected[i] = 0;
 		}
-		else
-		{
-			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_policy_wrapper);
-			chosen_action = &stateful_function_wrapper->m_policy_function(m_default_policy_state_context, context);
-		}
-
-		float action_probability = 0.f;
-		float base_probability = m_epsilon / actions.Count(); // uniform probability
-
-		// TODO: check this random generation
-		if (((double)random_generator.Uniform_Int() / (2e32 - 1)) < 1.f - m_epsilon)
-		{
-			action_probability = 1.f - m_epsilon + base_probability;
-		}
-		else
-		{
-			// Get uniform random action ID
-			u32 actionId = random_generator.Uniform_Int(1, actions.Count());
-
-			if (actionId == chosen_action->Get_Id())
+		for (int current_bag = 0; current_bag < m_bags; current_bag++;){
+			if (typeid(m_default_policy_wrapper) == typeid(StatelessFunctionWrapper))
 			{
-				// IF it matches the one chosen by the default policy
-				// then increase the probability
-				action_probability = 1.f - m_epsilon + base_probability;
+				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(m_default_policy_wrapper_array[current_bag]);
+				action_from_bag = &stateless_function_wrapper->m_policy_function(context);
 			}
 			else
 			{
-				// Otherwise it's just the uniform probability
-				action_probability = base_probability;
+				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(m_default_policy_wrapper_array[current_bag]);
+				action_from_bag = &stateful_function_wrapper->m_policy_function(m_default_policy_state_context_array[current_bag], context);
 			}
-			chosen_action = &actions.Get(actionId);
+			if (current_bag == chosen_bag){
+				chosen_action = action_from_bag;
+			}
+			//this won't work if actions aren't 0 to Count
+			actions_selected[action_from_bag.get_ID()]++;
 		}
+		float action_probability = actions_selected[chosen_action.getID()]/actions.Count();
 
 		return std::pair<MWTAction, float>(*chosen_action, action_probability);
 	}
