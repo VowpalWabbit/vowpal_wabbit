@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
         }
         cerr << endl << "weighted example sum = " << all->sd->weighted_examples;
         cerr << endl << "weighted label sum = " << all->sd->weighted_labels;
-        if(all->holdout_set_off)
+        if(all->holdout_set_off || (all->sd->holdout_best_loss == FLT_MAX))
         {
             cerr << endl << "average loss = " << all->sd->sum_loss / all->sd->weighted_examples;
         }  

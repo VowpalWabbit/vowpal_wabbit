@@ -79,6 +79,7 @@ namespace Search {
     int mix_per_roll_policy;       // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2 means "not selected yet")
     bool no_caching;               // turn off caching
     size_t rollout_num_steps;      // how many calls of "loss" before we stop really predicting on rollouts and switch to oracle (0 means "infinite")
+    bool (*label_is_test)(void*);  // tell me if the label data from an example is test
     
     size_t t;                      // current search step
     size_t T;                      // length of root trajectory
@@ -191,7 +192,7 @@ namespace Search {
     else if (num_valid_policies == 2)
       pid = frand48() >= priv.beta;
     else {
-      // TODO: speed this up in the case that beta is small!
+      // SPEEDUP this up in the case that beta is small!
       float r = frand48();
       pid = 0;
 
@@ -236,11 +237,11 @@ namespace Search {
     // example because of off-by-ones
 
     if (PRINT_UPDATE_EVERY_EXAMPLE) return true;
-    if (PRINT_UPDATE_EVERY_PASS) return true;  // TODO: make this better
+    if (PRINT_UPDATE_EVERY_PASS) return true;  // SPEEDUP: make this better
     return (all.sd->weighted_examples + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
   }
 
-  bool must_run_test(vw&all, vector<example*>ec) {
+  bool must_run_test(vw&all, vector<example*>ec, bool is_test_ex) {
     return
         (all.final_prediction_sink.size() > 0) ||   // if we have to produce output, we need to run this
         might_print_update(all) ||                  // if we have to print and update to stderr
@@ -251,6 +252,7 @@ namespace Search {
         //     OR holdout is off
         //     OR it's a test example
         ( //   (! all.quiet) &&  // had to disable this because of library mode!
+          (! is_test_ex) &&
           ( all.holdout_set_off ||                    // no holdout
             ec[0]->test_only ||
             (all.current_pass == 0)                   // we need error rates for progressive cost
@@ -305,7 +307,8 @@ namespace Search {
 
     float avg_loss = 0.;
     float avg_loss_since = 0.;
-    if (!all.holdout_set_off && all.current_pass >= 1) {
+    bool use_heldout_loss = (!all.holdout_set_off && all.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
+    if (use_heldout_loss) {
       avg_loss       = safediv((float)all.sd->holdout_sum_loss, (float)all.sd->weighted_holdout_examples);
       avg_loss_since = safediv((float)all.sd->holdout_sum_loss_since_last_dump, (float)all.sd->weighted_holdout_examples_since_last_dump);
 
@@ -339,7 +342,7 @@ namespace Search {
       fprintf(stderr, " %15lusec", num_sec);
     }
 
-    if (!all.holdout_set_off && all.current_pass >= 1)
+    if (use_heldout_loss)
       fprintf(stderr, " h");
 
     fprintf(stderr, "\n");
@@ -471,7 +474,6 @@ namespace Search {
   }
 
   void search_declare_loss(search_private& priv, float loss) {
-    // TODO: if it's a test example...
     priv.loss_declared_cnt++;
     switch (priv.state) {
       case INIT_TEST:  priv.test_loss  += loss; break;
@@ -801,7 +803,7 @@ namespace Search {
   }
 
   void generate_training_example(search_private& priv, v_array<float>& losses, bool add_conditioning=true) {
-    // TODO: should we really subtract out min-loss?
+    // should we really subtract out min-loss?
     float min_loss = FLT_MAX, max_loss = -FLT_MAX;
     size_t num_min = 0;
     for (size_t i=0; i<losses.size(); i++) {
@@ -986,8 +988,6 @@ namespace Search {
             a = priv.is_ldf ? single_prediction_LDF(priv, ecs, ec_cnt, policy)
                             : single_prediction_notLDF(priv, *ecs, policy, allowed_actions, allowed_actions_cnt);
           
-          // TODO: need to look at oracle actions to make sure it's not "test example"!!!
-          
           if (gte_here) {
             cdbg << "INIT_TRAIN, NO_ROLLOUT, at least one oracle_actions" << endl;
             // we can generate a training example _NOW_ because we're not doing rollouts
@@ -1052,7 +1052,7 @@ namespace Search {
   }
   
   template <bool is_learn>
-  void train_single_example(search& sch) {
+  void train_single_example(search& sch, bool is_test_ex) {
     search_private& priv = *sch.priv;
     vw&all = *priv.all;
     bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
@@ -1060,7 +1060,7 @@ namespace Search {
 
     clear_cache_hash_map(priv);
     
-    if (must_run_test(all, priv.ec_seq)) {
+    if (must_run_test(all, priv.ec_seq, is_test_ex)) {
       cdbg << "======================================== INIT TEST (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
 
       ran_test = true;
@@ -1073,19 +1073,21 @@ namespace Search {
       priv.task->run(sch, priv.ec_seq);
 
       // accumulate loss
-      if (priv.ec_seq[0]->test_only) {
-        all.sd->weighted_holdout_examples += 1.f;//test weight seen
-        all.sd->weighted_holdout_examples_since_last_dump += 1.f;
-        all.sd->weighted_holdout_examples_since_last_pass += 1.f;
-        all.sd->holdout_sum_loss += priv.test_loss;
-        all.sd->holdout_sum_loss_since_last_dump += priv.test_loss;
-        all.sd->holdout_sum_loss_since_last_pass += priv.test_loss;//since last pass
-      } else {
-        all.sd->weighted_examples += 1.f;
-        all.sd->total_features += priv.num_features;
-        all.sd->sum_loss += priv.test_loss;
-        all.sd->sum_loss_since_last_dump += priv.test_loss;
-        all.sd->example_number++;
+      if (! is_test_ex) { // we cannot accumulate loss on test examples!
+        if (priv.ec_seq[0]->test_only) {
+          all.sd->weighted_holdout_examples += 1.f;//test weight seen
+          all.sd->weighted_holdout_examples_since_last_dump += 1.f;
+          all.sd->weighted_holdout_examples_since_last_pass += 1.f;
+          all.sd->holdout_sum_loss += priv.test_loss;
+          all.sd->holdout_sum_loss_since_last_dump += priv.test_loss;
+          all.sd->holdout_sum_loss_since_last_pass += priv.test_loss;//since last pass
+        } else {
+          all.sd->weighted_examples += 1.f;
+          all.sd->total_features += priv.num_features;
+          all.sd->sum_loss += priv.test_loss;
+          all.sd->sum_loss_since_last_dump += priv.test_loss;
+          all.sd->example_number++;
+        }
       }
       
       // generate output
@@ -1097,7 +1099,7 @@ namespace Search {
     }
 
     // if we're not training, then we're done!
-    if ((!is_learn) || priv.ec_seq[0]->test_only || (!priv.all->training))
+    if ((!is_learn) || is_test_ex || priv.ec_seq[0]->test_only || (!priv.all->training))
       return;
 
     // SPEEDUP: if the oracle was never called, we can skip this!
@@ -1167,20 +1169,28 @@ namespace Search {
     if (priv.ec_seq.size() == 0)
       return;  // nothing to do :)
 
+    bool is_test_ex = false;
+    for (size_t i=0; i<priv.ec_seq.size(); i++)
+      if (priv.label_is_test(priv.ec_seq[i]->ld)) { is_test_ex = true; break; }
+    
     if (priv.task->run_setup) priv.task->run_setup(sch, priv.ec_seq);
     
     // if we're going to have to print to the screen, generate the "truth" string
     cdbg << "======================================== GET TRUTH STRING (" << priv.current_policy << "," << priv.read_example_last_pass << ") ========================================" << endl;
     if (might_print_update(all)) {
-      reset_search_structure(*sch.priv);
-      priv.state = GET_TRUTH_STRING;
-      priv.should_produce_string = true;
-      priv.truth_string->str("");
-      priv.task->run(sch, priv.ec_seq);
+      if (is_test_ex)
+        priv.truth_string->str("**test**");
+      else {
+        reset_search_structure(*sch.priv);
+        priv.state = GET_TRUTH_STRING;
+        priv.should_produce_string = true;
+        priv.truth_string->str("");
+        priv.task->run(sch, priv.ec_seq);
+      }
     }
 
     add_neighbor_features(priv);
-    train_single_example<is_learn>(sch);
+    train_single_example<is_learn>(sch, is_test_ex);
     del_neighbor_features(priv);
 
     if (priv.task->run_takedown) priv.task->run_takedown(sch, priv.ec_seq);
@@ -1260,6 +1270,8 @@ namespace Search {
       VW::cmd_string_replace_value(all->file_options,"--search_total_nb_policies", ss2.str());
     }
   }
+
+  bool mc_label_is_test(void* lab) { return MC::label_is_test((MC::multiclass*)lab); }
   
   void search_initialize(vw* all, search& sch) {
     search_private& priv = *sch.priv;
@@ -1270,6 +1282,8 @@ namespace Search {
     priv.examples_dont_change = false;
     priv.is_ldf = false;
 
+    priv.label_is_test = mc_label_is_test;
+    
     priv.A = 1;
     priv.num_learners = 1;
     priv.cb_learner = false;
@@ -1597,11 +1611,14 @@ namespace Search {
       throw exception();
     }
 
+    if (vm.count("search_rollout")) rollout_string = vm["search_rollout"].as<string>();
+    if (vm.count("search_rollin" )) rollin_string  = vm["search_rollin" ].as<string>();
+    
     if      (rollout_string.compare("policy") == 0)          priv.rollout_method = POLICY;
     else if (rollout_string.compare("oracle") == 0)          priv.rollout_method = ORACLE;
     else if (rollout_string.compare("mix_per_state") == 0)   priv.rollout_method = MIX_PER_STATE;
     else if (rollout_string.compare("mix_per_roll") == 0)    priv.rollout_method = MIX_PER_ROLL;
-    else if (rollout_string.compare("none") == 0)          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; }
+    else if (rollout_string.compare("none") == 0)          { priv.rollout_method = NO_ROLLOUT; priv.no_caching = true; cerr << "no rollout!" << endl; }
     else {
       std::cerr << "error: --search_rollout must be 'policy', 'oracle', 'mix_per_state', 'mix_per_roll' or 'none'" << endl;
       throw exception();
@@ -1687,7 +1704,7 @@ namespace Search {
     }
     all.p->emptylines_separate_examples = true;
 
-    // default to OAA labels unless the task wants to override this!
+    // default to OAA labels unless the task wants to override this (which they can do in initialize)
     all.p->lp = MC::mc_label;
     if (priv.task)
       priv.task->initialize(*sch, priv.A, vm);
@@ -1770,6 +1787,15 @@ namespace Search {
     if ((opts & IS_LDF)                  != 0) this->priv->is_ldf = true;
   }
 
+  void search::set_label_parser(label_parser&lp, bool (*is_test)(void*)) {
+    if (this->priv->state != INITIALIZE) {
+      std::cerr << "error: task cannot set label parser except in initialize function!" << endl;
+      throw exception();
+    }
+    this->priv->all->p->lp = lp;
+    this->priv->label_is_test = is_test;
+  }
+  
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
   void search::add_program_options(po::variables_map& vm, po::options_description& opts) { vm = add_options( *this->priv->all, opts ); }
 

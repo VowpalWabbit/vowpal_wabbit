@@ -954,8 +954,8 @@ __DATA__
     train-sets/ref/sequence_data.ldf.test.stderr
     train-sets/ref/sequence_data.ldf.test.predict
 
-# Test 48: search sequence SPAN labeling BIO, non-ldf train
-{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model
+# Test 48: search sequence SPAN labeling BIO, non-ldf train, no rollouts
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model
     train-sets/ref/sequencespan_data.nonldf.train.stderr
 
 # Test 49: search sequence SPAN labeling BIO, non-ldf test
