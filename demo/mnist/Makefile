@@ -4,6 +4,21 @@ CXXFLAGS=-O3 -Wall
 help:
 	@cat README
 
+RAW = mnist mnist8m
+PNG = mnistpng mnist11png mnist8mpng mnist8m11png
+
+raw : $(addsuffix .test.confusion, $(RAW))
+
+png : $(addsuffix .test.confusion, $(PNG))
+
+MNIST = mnist mnistpng mnist11png
+
+mnist : $(addsuffix .test.confusion, $(MNIST))
+
+mnist8m : $(addsuffix 8m.test.confusion, $(MNIST))
+
+.PHONY : clean testclean %.test.confusion mnist mnist8m raw png
+
 %.check:
 	@test -x "$$(which $*)" || {				\
 	  echo "ERROR: you need to install $*" 1>&2;		\
@@ -53,7 +68,7 @@ CONFUSION='++$$n; 							\
 	   print "confusion matrix (rows = truth, columns = prediction):"; \
 	   foreach $$true (1 .. 10) {					\
 	     print join "\t", map { $$m{"$$true:$$_"} || 0 } (1 .. 10);	\
-           }' 
+           }'
 
 %.test.confusion: %.test.predictions perl.check
 	@perl -lane $(CONFUSION) $*.test.predictions
