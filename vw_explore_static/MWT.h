@@ -7,6 +7,7 @@
 #include "hash.h"
 #include "EpsilonGreedyExplorer.h"
 #include "TauFirstExplorer.h"
+#include "SoftMaxExplorer.h"
 
 class MWT
 {
@@ -67,6 +68,23 @@ public:
 		StatelessFunctionWrapper::Policy_Func default_policy_func)
 	{
 		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func);
+	}
+
+	/* Softmax initialization */
+	template <class T>
+	void Initialize_Softmax(
+		float lambda,
+		typename StatefulFunctionWrapper<T>::Scorer_Func default_scorer_func,
+		T* default_scorer_func_state_context)
+	{
+		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)default_scorer_func_state_context);
+	}
+
+	void Initialize_Softmax(
+		float lambda,
+		StatelessFunctionWrapper::Scorer_Func default_scorer_func)
+	{
+		this->Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func);
 	}
 
 	std::pair<u32, u64> Choose_Action_Join_Key(Context& context)
@@ -143,6 +161,31 @@ public:
 		
 		m_explorer = new TauFirstExplorer<MWT_Empty>(tau, *func_wrapper, nullptr);
 		
+		m_default_func_wrapper = func_wrapper;
+	}
+
+	void Initialize_Softmax(
+		float lambda,
+		Stateful_Scorer_Func default_scorer_func,
+		void* default_scorer_func_argument)
+	{
+		StatefulFunctionWrapper<void>* func_Wrapper = new StatefulFunctionWrapper<void>();
+		func_Wrapper->m_scorer_function = default_scorer_func;
+
+		m_explorer = new SoftmaxExplorer<void>(lambda, *func_Wrapper, default_scorer_func_argument);
+
+		m_default_func_wrapper = func_Wrapper;
+	}
+
+	void Initialize_Softmax(
+		float lambda,
+		Stateless_Scorer_Func default_scorer_func)
+	{
+		StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
+		func_wrapper->m_scorer_function = default_scorer_func;
+
+		m_explorer = new SoftmaxExplorer<MWT_Empty>(lambda, *func_wrapper, nullptr);
+
 		m_default_func_wrapper = func_wrapper;
 	}
 

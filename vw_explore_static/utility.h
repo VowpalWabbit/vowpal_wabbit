@@ -36,6 +36,12 @@ public:
 		return (uniform(engine) % (high - low + 1)) + low;
 	}
 
+	double Uniform_Unit()
+	{
+		//TODO: Why doesn't numeric_limits work?
+		return uniform(engine) / (std::numeric_limits<IntType>::max)();
+	}
+
 private:
     std::random_device rd;
     std::mt19937_64 engine;

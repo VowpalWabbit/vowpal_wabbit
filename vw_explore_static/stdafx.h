@@ -13,6 +13,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <limits.h>
 
 // TODO: reference additional headers your program requires here
 #include "vw.h"

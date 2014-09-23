@@ -55,7 +55,7 @@ private:
 		float base_probability = m_epsilon / actions.Count(); // uniform probability
 		
 		// TODO: check this random generation
-		if (((double)random_generator.Uniform_Int() / (2e32 - 1)) < 1.f - m_epsilon)
+		if (random_generator.Uniform_Unit() < 1.f - m_epsilon)
 		{
 			action_probability = 1.f - m_epsilon + base_probability;
 		}
