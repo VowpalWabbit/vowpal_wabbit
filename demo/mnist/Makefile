@@ -12,10 +12,11 @@ raw : $(addsuffix .test.confusion, $(RAW))
 png : $(addsuffix .test.confusion, $(PNG))
 
 MNIST = mnist mnistpng mnist11png
+8M = mnist8m mnist8mpng mnist8m11png
 
 mnist : $(addsuffix .test.confusion, $(MNIST))
 
-mnist8m : $(addsuffix 8m.test.confusion, $(MNIST))
+mnist8m : $(addsuffix .test.confusion, $(8M))
 
 .PHONY : clean testclean %.test.confusion mnist mnist8m raw png
 
@@ -31,8 +32,17 @@ testclean:
 clean:
 	rm -f $(wildcard mnist8mpng.*) $(wildcard mnist8m11png.*) $(wildcard mnist11png.*) $(wildcard mnistpng.*) $(wildcard mnist8m.*) $(wildcard mnist.*)
 
-train8m-%.gz: wget.check
-	wget http://ml.nec-labs.com/download/data/mnist8m/train8m-$*.gz
+# http://leon.bottou.org/projects/infimnist
+infimnist.tar.gz : wget.check
+	wget http://leon.bottou.org/_media/projects/$@
+
+infimnist : infimnist.tar.gz
+	tar xvfz $<
+	make -C $@
+
+train8m-%.gz: infimnist
+	cd infimnist && ./infimnist lab 10000 8109999 | gzip > ../train8m-labels-idx1-ubyte.gz
+	cd infimnist && ./infimnist pat 10000 8109999 | gzip > ../train8m-images-idx3-ubyte.gz
 
 train-%.gz: wget.check
 	wget http://yann.lecun.com/exdb/mnist/train-$*.gz
