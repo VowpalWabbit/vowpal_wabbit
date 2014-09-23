@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -276,8 +276,8 @@
     <ClInclude Include="parse_regressor.h" />
     <ClInclude Include="rand48.h" />
     <ClInclude Include="scorer.h" />
-    <ClInclude Include="searn.h" />
-    <ClInclude Include="searn_sequencetask.h" />
+    <ClInclude Include="search.h" />
+    <ClInclude Include="search_sequencetask.h" />
     <ClInclude Include="sender.h" />
     <ClInclude Include="simple_label.h" />
     <ClInclude Include="targetver.h" />
@@ -330,11 +330,11 @@
     <ClCompile Include="parse_regressor.cc" />
     <ClCompile Include="rand48.cc" />
     <ClCompile Include="scorer.cc" />
-    <ClCompile Include="searn.cc" />
-    <ClCompile Include="searn_multiclasstask.cc" />
-    <ClCompile Include="searn_pythontask.cc" />
-    <ClCompile Include="searn_sequencetask.cc" />
-    <ClCompile Include="searn_entityrelationtask.cc" />
+    <ClCompile Include="search.cc" />
+    <ClCompile Include="search_multiclasstask.cc" />
+    <ClCompile Include="search_hooktask.cc" />
+    <ClCompile Include="search_sequencetask.cc" />
+    <ClCompile Include="search_entityrelationtask.cc" />
     <ClCompile Include="sender.cc" />
     <ClCompile Include="simple_label.cc" />
     <ClCompile Include="stagewise_poly.cc" />
