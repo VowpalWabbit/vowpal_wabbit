@@ -28,21 +28,21 @@ public:
 		delete m_random_generator;
 	}
 
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions)
 	{
 		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, u32 seed)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
 		return this->Choose_Action(context, actions, random_generator);
 	}
 
 private:
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
+	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
 	{
-		// Invoke the default scorer function to get the score of each action 
+		// Invoke the default scorer function to score each action 
 		MWTAction chosen_action(0);
 		std::vector<float> scores;
 		if (typeid(m_default_scorer_wrapper) == typeid(StatelessFunctionWrapper))
@@ -56,27 +56,24 @@ private:
 			scores = stateful_function_wrapper->m_scorer_function(m_default_scorer_state_context, &context);
 		}
 
-		//TODO: THIS IS SILLY, IMPLEMENT DISCRETE DIST IN PRG INSTEAD
-		double sum = 0.0;
-		for (u32 i = 0; i < scores.size(); i++)
+		u32 i = 0;
+		// Create a normalized exponential distribution based on the returned scores
+		for (i = 0; i < scores.size(); i++)
 		{
-			sum += exp(m_lambda * scores[i]);
+			scores[i] = exp(m_lambda * scores[i]);
 		}
-		double rand_unit = random_generator.Uniform_Unit();
-		double cum = 0.0;
-		float action_probability = 0.f;
-		for (u32 i = 0; i < scores.size(); i++)
+		i = 0;
+		//TODO: VS2013 doesn't support the iterator based constructor of discrete_distribution
+		std::discrete_distribution<u32> softmax_dist(scores.size(), 0, 1,  // 0 and 1 are nonsense parameters here
+			[&scores, &i](float)
 		{
-			cum += exp(m_lambda * scores[i]) / sum;
-			if (cum >= rand_unit)
-			{
-				chosen_action = actions.Get(i);
-				action_probability = exp(m_lambda * scores[i]) / sum;
-				break;
-			}
-		}
+			auto w = scores[i];
+			++i;
+			return w;
+		});
+		u32 action_index = softmax_dist(random_generator.Get_Engine());
 
-		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
+		return std::pair<MWTAction, float>(actions.Get(action_index), softmax_dist.probabilities()[action_index]);
 	}
 
 private:

@@ -13,6 +13,7 @@ class MWT_Empty { };
 
 typedef u32 Stateful_Policy_Func(void* state_Context, void* application_Context);
 typedef u32 Stateless_Policy_Func(void* application_Context);
+//TODO: I think vectors will cause problem with C# interop
 typedef std::vector<float> Stateful_Scorer_Func(void* state_Context, void* application_Context);
 typedef std::vector<float> Stateless_Scorer_Func(void* application_Context);
 
