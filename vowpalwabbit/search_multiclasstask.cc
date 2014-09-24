@@ -17,7 +17,7 @@ namespace MulticlassTask {
 
   void initialize(Search::search& sch, size_t& num_actions, po::variables_map& vm) {
     sch.set_options( 0 );
-    sch.set_num_learners(ceil(num_actions/2));
+    sch.set_num_learners((size_t)ceil(num_actions/2));
     max_label = num_actions;
   }
 
@@ -25,7 +25,7 @@ namespace MulticlassTask {
 
   void run(Search::search& sch, vector<example*>& ec) {
     size_t gold_label = MULTICLASS::get_example_label(ec[0]);
-    size_t tmp = ceil(log(max_label) /log(2))-1;
+    size_t tmp = (size_t)ceil(log(max_label) /log(2))-1;
     size_t label = 0;
     size_t learner_id = 0;
     v_array<uint32_t> y_allowed;

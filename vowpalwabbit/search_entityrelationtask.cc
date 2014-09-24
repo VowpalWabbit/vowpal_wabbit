@@ -213,7 +213,7 @@ namespace EntityRelationTask {
           lab->costs[0].wap_value = 0.f;
           //cerr << constrained_relation_labels[a]<<" ";
           if(constrained_relation_labels[a] == MULTICLASS::get_example_label(ex)){
-            correct_label = a;
+            correct_label = (int)a;
           }
         }
         //cerr << correct_label<<endl;
@@ -264,7 +264,7 @@ namespace EntityRelationTask {
     for(size_t t=0; t<ec.size(); t++){
       // Do entity recognition first
       size_t count = 0;
-      for (size_t i=0; i<n_ent; i++) {
+      for (int32_t i=0; i<n_ent; i++) {
                 
         if(count ==t){
           predictions[i] = predict_entity(sch, ec[i], predictions, i);
@@ -273,7 +273,7 @@ namespace EntityRelationTask {
         count ++;
         for(size_t j=0; j<i; j++) {
           if(count ==t){
-            size_t rel_index = n_ent + (2*n_ent-j-1)*j/2 + i-j-1;
+            uint32_t rel_index = n_ent + (2*n_ent-j-1)*j/2 + i-j-1;
             predictions[rel_index] = predict_relation(sch, ec[rel_index], predictions, rel_index);
             break;
           }
@@ -296,7 +296,7 @@ namespace EntityRelationTask {
              
     // loop until all the entity and relation types are predicted
     for(size_t t=0; ; t++){
-      size_t i = t % ec.size();
+      uint32_t i = t % ec.size();
       //cerr << t <<" " <<n_predicts << " " << must_predict <<" " << ec.size()<< " " << p_n_predicts <<endl;
       if(n_predicts == ec.size())
         break;
@@ -349,7 +349,7 @@ namespace EntityRelationTask {
         int idx = 0;
         v_array<uint32_t> star_labels;
         v_array<uint32_t> position_labels;
-        for(size_t a=0; a<ec.size(); a++){
+        for(uint32_t a=0; a<ec.size(); a++){
           if(predictions[a] >0)
             continue;
           star_labels.push_back(idx);

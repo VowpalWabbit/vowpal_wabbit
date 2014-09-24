@@ -28,6 +28,7 @@ license as described in the file LICENSE.
 #include "learner.h"
 #include "vw.h"
 #include <map>
+#include "memory.h"
 
 #define SVM_KER_LIN 0
 #define SVM_KER_RBF 1
@@ -76,7 +77,7 @@ namespace KSVM
     //size_t curcache;
 
     svm_example** pool;
-    double lambda;
+    float lambda;
 
     void* kernel_params;
     size_t kernel_type;
@@ -91,8 +92,8 @@ namespace KSVM
 
 
 
-  static int num_kernel_evals = 0;
-  static int num_cache_evals = 0;
+  static size_t num_kernel_evals = 0;
+  static size_t num_cache_evals = 0;
 
 
   svm_example::svm_example(flat_example *fec)
@@ -147,7 +148,7 @@ namespace KSVM
   int 
   svm_example::clear_kernels()
   {
-    int rowsize = krow.size();
+    int rowsize = (int)krow.size();
     krow.end = krow.begin;
     krow.resize(0);
     return -rowsize;
@@ -183,7 +184,7 @@ namespace KSVM
 	if (svi < rowsize)
 	  {
 	    float kv = e->krow[svi];
-	    for (int i=svi; i>0; --i)
+	    for (size_t i=svi; i>0; --i)
 	      e->krow[i] = e->krow[i-1];
 	    e->krow[0] = kv;
 	  }
@@ -192,7 +193,7 @@ namespace KSVM
 	    float kv = svi_e->krow[j];
 	    e->krow.push_back(0);
 	    alloc += 1;
-	    for (int i=e->krow.size()-1; i>0; --i)
+	    for (size_t i=e->krow.size()-1; i>0; --i)
 	      e->krow[i] = e->krow[i-1];
 	    e->krow[0] = kv;
 	  }
@@ -203,14 +204,14 @@ namespace KSVM
   static int 
   trim_cache(svm_params& params)
   {
-    int sz = params.maxcache;
+    int sz = (int)params.maxcache;
     svm_model *model = params.model;
-    int n = model->num_support;
+    size_t n = model->num_support;
     int alloc = 0;
-    for (int i=0; i<n; i++)
+    for (size_t i=0; i<n; i++)
       {
 	svm_example *e = model->support_vec[i];
-	sz -= e->krow.size();
+	sz -= (int)e->krow.size();
 	if (sz < 0)
 	  alloc += e->clear_kernels();
       }
@@ -249,14 +250,14 @@ namespace KSVM
 	  if(!brw) return 4;
 	}
 	if(fec->tag_len > 0) {
-	  brw = bin_write_fixed(model_file, (char*) fec->tag, fec->tag_len*sizeof(char));
+	  brw = bin_write_fixed(model_file, (char*) fec->tag, (uint32_t)fec->tag_len*sizeof(char));
 	  if(!brw) {
 	    cerr<<fec->tag_len<<" "<<fec->tag<<endl;
 	    return 2;
 	  }
 	}
 	if(fec->feature_map_len > 0) {
-	  brw = bin_write_fixed(model_file, (char*) fec->feature_map, fec->feature_map_len*sizeof(feature));    	  if(!brw) return 3;
+	  brw = bin_write_fixed(model_file, (char*) fec->feature_map, (uint32_t)fec->feature_map_len*sizeof(feature));    	  if(!brw) return 3;
 	}
       }
       else return 1;
@@ -302,11 +303,11 @@ namespace KSVM
     
     if(read)
       model->alpha.resize(model->num_support);
-    bin_text_read_write_fixed(model_file, (char*)model->alpha.begin, model->num_support*sizeof(float),
+    bin_text_read_write_fixed(model_file, (char*)model->alpha.begin, (uint32_t)model->num_support*sizeof(float),
 			      "", read, "", 0, text);
     if(read)
       model->delta.resize(model->num_support);
-    bin_text_read_write_fixed(model_file, (char*)model->delta.begin, model->num_support*sizeof(float),
+    bin_text_read_write_fixed(model_file, (char*)model->delta.begin, (uint32_t)model->num_support*sizeof(float),
 			      "", read, "", 0, text);        
 
     // cerr<<"In save_load\n";
@@ -371,10 +372,10 @@ namespace KSVM
     return pow(1 + dotprod, power);
   }
 
-  float rbf_kernel(const flat_example* fec1, const flat_example* fec2, double bandwidth) {
+  float rbf_kernel(const flat_example* fec1, const flat_example* fec2, float bandwidth) {
     float dotprod = linear_kernel(fec1, fec2);    
     //cerr<<"Bandwidth = "<<bandwidth<<endl;
-    return exp(-(fec1->total_sum_feat_sq + fec2->total_sum_feat_sq - 2*dotprod)*bandwidth);
+    return expf(-(fec1->total_sum_feat_sq + fec2->total_sum_feat_sq - 2*dotprod)*bandwidth);
   }
 
   float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type) {
@@ -397,7 +398,7 @@ namespace KSVM
   }
 
 
-  void predict (svm_params& params, svm_example** ec_arr, double* scores, size_t n) { 
+  void predict (svm_params& params, svm_example** ec_arr, float* scores, size_t n) { 
     svm_model* model = params.model;
     for(size_t i = 0;i < n; i++) {
       ec_arr[i]->compute_kernels(params);
@@ -409,7 +410,7 @@ namespace KSVM
     flat_example* fec = flatten_sort_example(*(params.all),&ec);    
     if(fec) {
       svm_example* sec = new svm_example(fec);
-      double score;
+      float score;
       predict(params, &sec, &score, 1);
       ((label_data*) ec.ld)->prediction = score;
     }
@@ -418,7 +419,7 @@ namespace KSVM
       
   size_t suboptimality(svm_model* model, double* subopt) {
 
-    int max_pos = 0;
+    size_t max_pos = 0;
     //cerr<<"Subopt ";
     double max_val = 0;
     for(size_t i = 0;i < model->num_support;i++) {
@@ -482,10 +483,10 @@ namespace KSVM
     model->alpha.push_back(0.);
     model->delta.push_back(0.);
     //cout<<"After adding "<<model->num_support<<endl;
-    return (model->support_vec.size()-1);
+    return (int)(model->support_vec.size()-1);
   }
 
-  bool update(svm_params& params, int pos) {
+  bool update(svm_params& params, size_t pos) {
 
     //cerr<<"Update\n";
     svm_model* model = params.model;
@@ -496,14 +497,14 @@ namespace KSVM
     label_data* ld = (label_data*) fec->ld;
     fec->compute_kernels(params);
     float *inprods = fec->krow.begin;
-    double alphaKi = dense_dot(inprods, model->alpha, model->num_support);
+    float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
     model->delta[pos] = alphaKi*ld->label/params.lambda - 1;
-    double alpha_old = model->alpha[pos];
+    float alpha_old = model->alpha[pos];
     alphaKi -= model->alpha[pos]*inprods[pos];
     model->alpha[pos] = 0.;
     
-    double proj = alphaKi*ld->label;
-    double ai = (params.lambda - proj)/inprods[pos];
+    float proj = alphaKi*ld->label;
+    float ai = (params.lambda - proj)/inprods[pos];
     //cerr<<model->num_support<<" "<<pos<<" "<<proj<<" "<<alphaKi<<" "<<alpha_old<<" "<<ld->label<<" "<<model->delta[pos]<<" ";
 
     if(ai > ld->weight)				
@@ -512,7 +513,7 @@ namespace KSVM
       ai = 0;
 
     ai *= ld->label;
-    double diff = ai - alpha_old;
+    float diff = ai - alpha_old;
 
     if(fabs(diff) > 1.0e-06) 
       overshoot = true;
@@ -645,7 +646,7 @@ namespace KSVM
     for(size_t i = 0;i < params.pool_size;i++)
       train_pool[i] = false;
     
-    double* scores = (double*)calloc(params.pool_pos, sizeof(double));
+    float* scores = (float*)calloc(params.pool_pos, sizeof(float));
     predict(params, params.pool, scores, params.pool_pos);
     //cout<<scores[0]<<endl;
     
@@ -672,7 +673,7 @@ namespace KSVM
       else {
 
 	for(size_t i = 0;i < params.pool_pos;i++) {
-	  double queryp = 2.0/(1.0 + exp(params.active_c*fabs(scores[i])*pow(params.pool[i]->example_counter,0.5)));
+	  float queryp = 2.0/(1.0 + expf((float)params.active_c*fabs(scores[i])*pow(params.pool[i]->example_counter,0.5)));
 	  if(rand() < queryp) {
 	    svm_example* fec = params.pool[i];
 	    label_data* ld = (label_data*)fec->ld;
@@ -766,11 +767,11 @@ namespace KSVM
     if(fec) {
       svm_example* sec = new svm_example(fec);
       free_flatten_example(fec);
-      double score = 0;
+      float score = 0;
       predict(params, &sec, &score, 1);
       ((label_data*) ec.ld)->prediction = score;
       float label = ((label_data*)ec.ld)->label;
-      ec.loss = max(0., 1 - score*label);
+      ec.loss = max(0.f, 1.f - score*label);
       params.loss_sum += ec.loss;
       if(params.all->training && ec.example_counter % 100 == 0)
 	trim_cache(params);
@@ -892,7 +893,7 @@ namespace KSVM
     if(vm.count("subsample"))
 	params->subsample = vm["subsample"].as<std::size_t>();
       else if(params->para_active)
-	params->subsample = ceil(params->pool_size / all.total);
+	params->subsample = (size_t)ceil(params->pool_size / all.total);
       else
 	params->subsample = 1;
     
