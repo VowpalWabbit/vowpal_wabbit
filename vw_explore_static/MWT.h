@@ -89,27 +89,34 @@ public:
 
 	std::pair<u32, u64> Choose_Action_Join_Key(Context& context)
 	{
-		std::pair<MWTAction, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set);
-		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second);
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set);
+		if(!std::get<2>(action_Probability_Log_Tuple)){
+			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
+		}
+		Interaction pInteraction(&context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
 		m_logger->Store(&pInteraction);
+		
 		
 		// TODO: Anything else to do here?
 
-		return std::pair<u32, u64>(action_Probability_Pair.first.Get_Id(), pInteraction.Get_Id());
+		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), pInteraction.Get_Id());
 	}
 
 	// TODO: check whether char* could be std::string
 	u32 Choose_Action(Context& context, char* unique_id, u32 length)
 	{
 		u32 seed = this->Compute_Seed(unique_id, length);
-
-		std::pair<MWTAction, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set, seed);
-		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second, seed);
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set, seed);
+		if (!std::get<2>(action_Probability_Log_Tuple)){
+			return std::get<0>(action_Probability_Log_Tuple).Get_Id();
+		}
+		Interaction pInteraction(&context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), seed);
 		m_logger->Store(&pInteraction);
+
 
 		// TODO: Anything else to do here?
 
-		return action_Probability_Pair.first.Get_Id();
+		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 	}
 
 // Cross-language interface

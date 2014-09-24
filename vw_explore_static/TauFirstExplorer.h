@@ -23,28 +23,30 @@ public:
 		delete m_random_generator;
 	}
 
-	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions)
+	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions)
 	{
 		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
-	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, u32 seed)
+	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
 		return this->Choose_Action(context, actions, random_generator);
 	}
 
 private:
-	std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
+	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
 	{
 		MWTAction chosen_action(0);
 		float action_probability = 0.f;
+		bool log_action;
 		if (m_tau)
 		{
 			m_tau--;
 			u32 actionId = random_generator.Uniform_Int(1, actions.Count());
 			action_probability = 1.f / actions.Count();
 			chosen_action = actions.Get(actionId);
+			log_action = true;
 		}
 		else 
 		{
@@ -61,9 +63,10 @@ private:
 			}
 
 			action_probability = 1.f;
+			log_action = false;
 		}
 
-		return std::pair<MWTAction, float>(chosen_action, action_probability);
+		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, log_action);
 	}
 
 private:
