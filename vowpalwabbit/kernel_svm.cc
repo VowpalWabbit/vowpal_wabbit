@@ -855,7 +855,7 @@ namespace KSVM
       ("pool_size", po::value<size_t>(), "size of pools for active learning")
       ("subsample", po::value<size_t>(), "number of items to subsample from the pool")
       ("kernel", po::value<string>(), "type of kernel (rbf or linear (default))")
-      ("bandwidth", po::value<double>(), "bandwidth of rbf kernel")
+      ("bandwidth", po::value<float>(), "bandwidth of rbf kernel")
       ("degree", po::value<int>(), "degree of poly kernel")
       ("lambda", po::value<double>(), "saving regularization for test time");
 
@@ -940,14 +940,14 @@ namespace KSVM
 	  all.file_options.append(ss.str());
 	}
       cerr<<"degree = "<<degree<<endl;
-      params->kernel_params = calloc(1,sizeof(double*));
-      *((double*)params->kernel_params) = degree;
+      params->kernel_params = calloc(1,sizeof(int*));
+      *((int*)params->kernel_params) = degree;
     }      
     else
       params->kernel_type = SVM_KER_LIN;            
 	
-    //all.reg.weight_mask = (uint32_t)FLT_MAX;
-    //params->all->reg.weight_mask = (uint32_t)FLT_MAX;
+    all.reg.weight_mask = (uint32_t)FLT_MAX;
+    params->all->reg.weight_mask = (uint32_t)FLT_MAX;
     
     learner* l = new learner(params, 1); 
     l->set_learn<svm_params, learn>();
