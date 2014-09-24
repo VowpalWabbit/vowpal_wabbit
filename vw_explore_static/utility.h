@@ -21,6 +21,8 @@ typedef signed __int8  i8;
 template <typename IntType>
 class PRG
 {
+	typedef std::mt19937_64 RNGType;
+
 public:
 	PRG() : engine(rd()) { }
 
@@ -42,8 +44,13 @@ public:
 		return uniform(engine) / (std::numeric_limits<IntType>::max)();
 	}
 
+	RNGType Get_Engine()
+	{
+		return engine;
+	}
+
 private:
     std::random_device rd;
-    std::mt19937_64 engine;
+    RNGType engine;
     std::uniform_int_distribution<IntType> uniform;
 };
