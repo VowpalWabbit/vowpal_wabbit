@@ -381,9 +381,9 @@ namespace KSVM
   float kernel_function(const flat_example* fec1, const flat_example* fec2, void* params, size_t kernel_type) {
     switch(kernel_type) {
     case SVM_KER_RBF:
-      return rbf_kernel(fec1, fec2, *((double*)params));
+      return rbf_kernel(fec1, fec2, *((float*)params));
     case SVM_KER_POLY:
-      return poly_kernel(fec1, fec2, *((double*)params));
+      return poly_kernel(fec1, fec2, *((int*)params));
     case SVM_KER_LIN:
       return linear_kernel(fec1, fec2);
     }
@@ -653,11 +653,11 @@ namespace KSVM
       
     if(params.active) {           
       if(params.active_pool_greedy) { 
-	multimap<double, int> scoremap;
+	multimap<double, size_t> scoremap;
 	for(size_t i = 0;i < params.pool_pos; i++)
-	  scoremap.insert(pair<const double, const int>(fabs(scores[i]),i));
+	  scoremap.insert(pair<const double, const size_t>(fabs(scores[i]),i));
 
-	multimap<double, int>::iterator iter = scoremap.begin();
+	multimap<double, size_t>::iterator iter = scoremap.begin();
 	//cerr<<params.pool_size<<" "<<"Scoremap: ";
 	//for(;iter != scoremap.end();iter++)
 	//cerr<<iter->first<<" "<<iter->second<<" "<<((label_data*)params.pool[iter->second]->ld)->label<<"\t";
@@ -919,16 +919,16 @@ namespace KSVM
 
     if(kernel_type.compare("rbf") == 0) {
       params->kernel_type = SVM_KER_RBF;
-      double bandwidth = 1.;
+      float bandwidth = 1.;
       if(vm.count("bandwidth")) {
-	std::stringstream ss;
-	bandwidth = vm["bandwidth"].as<double>();	
-	ss<<" --bandwidth "<<bandwidth;
-	all.file_options.append(ss.str());
+		std::stringstream ss;
+		bandwidth = vm["bandwidth"].as<float>();	
+		ss<<" --bandwidth "<<bandwidth;
+		all.file_options.append(ss.str());
       }
       cerr<<"bandwidth = "<<bandwidth<<endl;
       params->kernel_params = calloc(1,sizeof(double*));
-      *((double*)params->kernel_params) = bandwidth;
+      *((float*)params->kernel_params) = bandwidth;
     }
     else if(kernel_type.compare("poly") == 0) {
       params->kernel_type = SVM_KER_POLY;
@@ -945,9 +945,9 @@ namespace KSVM
     }      
     else
       params->kernel_type = SVM_KER_LIN;            
-
-    all.reg.weight_mask = (uint32_t)FLT_MAX;
-    params->all->reg.weight_mask = (uint32_t)FLT_MAX;
+	
+    //all.reg.weight_mask = (uint32_t)FLT_MAX;
+    //params->all->reg.weight_mask = (uint32_t)FLT_MAX;
     
     learner* l = new learner(params, 1); 
     l->set_learn<svm_params, learn>();
