@@ -42,47 +42,45 @@ class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
 
 };
 
-int main(int argc, char *argv[]) {
-  // initialize VW as usual, but use 'hook' as the search_task
-  vw& vw_obj = *VW::initialize("--search 4 --quiet --search_task hook --ring_size 1024");
-
-  {
-    // we put this in its own scope so that its destructor gets called
-    // *before* VW::finish gets called; otherwise we'll get a
-    // segfault :(. not sure what to do about this :(.
-    SequenceLabelerTask task(vw_obj);
-    vector<wt> data;
-    vector<uint32_t> output;
-    uint32_t DET = 1, NOUN = 2, VERB = 3, ADJ = 4;
-    data.push_back( wt("the", DET) );
-    data.push_back( wt("monster", NOUN) );
-    data.push_back( wt("ate", VERB) );
-    data.push_back( wt("a", DET) );
-    data.push_back( wt("big", ADJ) );
-    data.push_back( wt("sandwich", NOUN) );
-    task.learn(data, output);
-    task.learn(data, output);
-    task.learn(data, output);
-    task.predict(data, output);
-    cerr << "output = [";
-    for (size_t i=0; i<output.size(); i++) cerr << " " << output[i];
-    cerr << " ]" << endl;
-    cerr << "should have printed: 1 2 3 1 4 2" << endl;
-  }
-  
-  VW::finish(vw_obj);
+void run(vw& vw_obj) {
+  // we put this in its own scope so that its destructor gets called
+  // *before* VW::finish gets called; otherwise we'll get a
+  // segfault :(. not sure what to do about this :(.
+  SequenceLabelerTask task(vw_obj);
+  vector<wt> data;
+  vector<uint32_t> output;
+  uint32_t DET = 1, NOUN = 2, VERB = 3, ADJ = 4;
+  data.push_back( wt("the", DET) );
+  data.push_back( wt("monster", NOUN) );
+  data.push_back( wt("ate", VERB) );
+  data.push_back( wt("a", DET) );
+  data.push_back( wt("big", ADJ) );
+  data.push_back( wt("sandwich", NOUN) );
+  task.learn(data, output);
+  task.learn(data, output);
+  task.learn(data, output);
+  task.predict(data, output);
+  cerr << "output = [";
+  for (size_t i=0; i<output.size(); i++) cerr << " " << output[i];
+  cerr << " ]" << endl;
+  cerr << "should have printed: 1 2 3 1 4 2" << endl;
 }
 
 
+void train() {
+  // initialize VW as usual, but use 'hook' as the search_task
+  vw& vw_obj = *VW::initialize("--search 4 --quiet --search_task hook --ring_size 1024 -f my_model");
+  run(vw_obj);
+  VW::finish(vw_obj);
+}
 
-
-
-
-
-
-
-
-
-
-
-
+void predict() {
+  vw& vw_obj = *VW::initialize("--quiet -t --ring_size 1024 -i my_model");
+  run(vw_obj);
+  VW::finish(vw_obj);
+}
+  
+int main(int argc, char *argv[]) {
+  train();
+  predict();
+}
