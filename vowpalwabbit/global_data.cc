@@ -269,8 +269,7 @@ vw::vw()
   stdout_fileno = fileno(stdout);
   #endif
 
-  searn = false;
-  searnstr = NULL;
+  searchstr = NULL;
 
   nonormalize = false;
   l1_lambda = 0.0;

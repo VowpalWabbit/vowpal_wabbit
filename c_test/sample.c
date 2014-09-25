@@ -1,5 +1,9 @@
 #include <stdio.h>
 
+/*
+To compule with gcc use this command
+LD_LIBRARY_PATH=../vowpalwabbit/.libs ; gcc sample_gcc.c -I./../vowpalwabbit/ -L./../vowpalwabbit/.libs -lvw -lvw_c_wrapper -lallreduce -o sample_gcc
+*/
 
 
 typedef short char16_t;

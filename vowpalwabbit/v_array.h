@@ -67,7 +67,7 @@ template<class T> class v_array{
   }
   void push_back(const T &new_ele)
   {
-    if(end == end_array)
+   if(end == end_array)
       resize(2 * (end_array-begin) + 3);
     *(end++) = new_ele;
   }
@@ -181,5 +181,11 @@ template<class T> v_array<T> pop(v_array<v_array<T> > &stack)
   else
     return v_array<T>();
 }  
+
+template<class T> bool v_array_contains(v_array<T> &A, T x) {
+  for (T* e = A.begin; e != A.end; ++e)
+    if (*e == x) return true;
+  return false;
+}
 
 #endif  // VARRAY_H__

@@ -96,7 +96,7 @@ namespace StagewisePoly
       return idx;
     else {
       while (idx < poly.synth_ec.ft_offset) {
-        idx += poly.all->length() << poly.all->reg.stride_shift;
+        idx += (uint32_t) poly.all->length() << poly.all->reg.stride_shift;
       }
       return idx - poly.synth_ec.ft_offset;
     }

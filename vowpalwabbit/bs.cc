@@ -48,7 +48,7 @@ namespace BS {
 
     for(unsigned int i=0; i<pred_vec.size(); i++)
     {
-      pred_vec_int[i] = floor(pred_vec[i]+0.5); // could be added: link(), min_label/max_label, cutoff between true/false for binary
+      pred_vec_int[i] = (int)floor(pred_vec[i]+0.5); // could be added: link(), min_label/max_label, cutoff between true/false for binary
 
       if(multivote_detected == false) { // distinct(votes)>2 detection bloc
         if(i == 0) {
@@ -109,10 +109,10 @@ namespace BS {
     }
 
     // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
-    ld.prediction = current_label;
+    ld.prediction = (float)current_label;
 
     // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight; //replace line below for: "avg on votes" and getLoss()
-    ec.loss = ((ld.prediction == ld.label) ? 0. : 1.) * ld.weight;
+    ec.loss = ((ld.prediction == ld.label) ? 0.f : 1.f) * ld.weight;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)

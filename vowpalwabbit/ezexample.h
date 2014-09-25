@@ -196,7 +196,7 @@ class ezexample {
   void mini_setup_example() {
     ec->partial_prediction = 0.;
     vw_ref->sd->t += vw_par_ref->p->lp.get_weight(ec->ld);
-    ec->example_t = vw_ref->sd->t;
+    ec->example_t = (float)vw_ref->sd->t;
 
     ec->num_features      -= quadratic_features_num;
     ec->total_sum_feat_sq -= quadratic_features_sqr;
@@ -214,6 +214,12 @@ class ezexample {
     }
     ec->num_features      += quadratic_features_num;
     ec->total_sum_feat_sq += quadratic_features_sqr;
+  }
+
+  example* get() {
+    if (example_changed_since_prediction)
+      mini_setup_example();
+    return ec;
   }
   
   float predict() {
