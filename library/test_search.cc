@@ -43,9 +43,10 @@ class SequenceLabelerTask : public SearchTask< vector<wt>, vector<uint32_t> > {
 };
 
 void run(vw& vw_obj) {
-  // we put this in its own scope so that its destructor gets called
-  // *before* VW::finish gets called; otherwise we'll get a
-  // segfault :(. not sure what to do about this :(.
+  // we put this in its own scope so that its destructor on
+  // SequenceLabelerTask gets called *before* VW::finish gets called;
+  // otherwise we'll get a segfault :(. i'm not sure what to do about
+  // this :(.
   SequenceLabelerTask task(vw_obj);
   vector<wt> data;
   vector<uint32_t> output;
