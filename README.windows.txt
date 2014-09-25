@@ -63,22 +63,26 @@ boost, vowpal_wabbit, and zlib-1.2.8 are directories inside that directory
 
 	use contrib/vstudio/vc11 since there is no contrib/vstudio/vc12 as yet
 	
-	get the GnuWin32 Patch Utility http://gnuwin32.sourceforge.net/packages/patch.htm patch.exe
-	and simply put it in vw.
+	(c)Get the GnuWin32 Patch Utility http://gnuwin32.sourceforge.net/packages/patch.htm patch.exe
+	and simply put it in the c:\src\vw
 
-	(c) from a dos command shell run as administrator
+	(d)Unzip the zlibpatch.zip file and place the contained zlibpatch.txt file in vowpa_wabbit 
+
+
+
+	(e) From a dos command shell run as administrator
 	
 	  patch --dry-run -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 		check output messages looks good then
 	  patch  -p0 --directory=zlib-1.2.8 --input=../vowpal_wabbit/zlibpatch.txt -F3
 
-	(d) Build the zlib libararies using by either of
+	(f) Build the zlib libararies by either of the following steps. 
 
 	Launch Visual Studio 2013
 	Open the solution %ROOT%/zlib-1.2.8\contrib\vstudio\vc11\zlibvc.sln
 	Batch build the configurations you want of x86 and x64 debut and release
 
-    	(e) or from your Visual Studio Command shell 
+    	 or from your Visual Studio Command shell 
 	     cd c:\src\vw\zlib-1.2.0\contrib\vstudio\vc11
 		run the following commands (can skip the last four if you only want 32bit binaries)
 
