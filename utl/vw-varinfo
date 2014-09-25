@@ -286,7 +286,7 @@ sub read_features($) {
 
     my $ts;
     if ($trainset =~ /\.gz$/) {
-        open($ts, "zcat $trainset|") || die "$0: zcat $trainset|: $!\n";
+        open($ts, "gunzip -c $trainset|") || die "$0: gunzip -c $trainset|: $!\n";
     } else {
         open($ts, $trainset) || die "$0: $trainset: $!\n";
     }
