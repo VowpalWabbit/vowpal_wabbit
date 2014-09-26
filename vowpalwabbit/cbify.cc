@@ -134,6 +134,9 @@ namespace CBIFY {
     ld->prediction = action;
     ec.ld = ld;
     ec.loss = loss(ld->label, action);
+
+	delete interactions[0];
+	delete[] interactions;
   }
 
   template <bool is_learn>
