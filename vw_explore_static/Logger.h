@@ -18,11 +18,10 @@ public:
 	~Logger()
 	{
 		// If the logger is deleted while still having in-mem data then try flushing it
-		try
+		if (m_interactions.size() > 0)
 		{
-			this->Clear_Data();
+			throw std::exception("Logger still has data during destruction");
 		}
-		catch (std::exception) { }
 	}
 
 	void Store(Interaction* interaction)
