@@ -56,8 +56,25 @@ namespace vw_explore_tests
 
 		TEST_METHOD(PRGCoverage)
 		{
-			u32 const NUM_ACTIONS = 1000;
-			PRG<u32> prg();
+			u32 const NUM_ACTIONS = 10;
+			// Using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time T of the coupon collector
+			// problem, setting c = 0.5 yields a failure probability of ~0.45. 
+			u8 const c = 0.5;
+
+			// We're going to throw balls in bins, so 8 bits should be sufficient
+			u8 actions[NUM_ACTIONS] = { 0 };
+			u32 numBalls = NUM_ACTIONS * log(NUM_ACTIONS) + c * NUM_ACTIONS;
+			PRG<u32> prg;
+			u32 i;
+			for (i = 0; i < numBalls; i++)
+			{
+				actions[prg.Uniform_Int(0, NUM_ACTIONS - 1)]++;
+			}
+			// Ensure all actions are covered
+			for (i = 0; i < NUM_ACTIONS; i++)
+			{
+				Assert::IsTrue(actions[i] > 0);
+			}
 		}
 
 		TEST_METHOD_INITIALIZE(TestInitialize)

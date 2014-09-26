@@ -39,9 +39,8 @@ public:
 		return (uniform(engine) % (high - low + 1)) + low;
 	}
 
-	double Uniform_Unit()
+	double Uniform_Unit_Interval()
 	{
-		//TODO: Why doesn't numeric_limits work?
 		return uniform(engine) / (std::numeric_limits<IntType>::max)();
 	}
 
