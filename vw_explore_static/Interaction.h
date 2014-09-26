@@ -11,6 +11,8 @@
 
 using namespace std;
 
+#define NO_JOIN_KEY -99999
+
 class Serializable
 {
 public:
@@ -140,8 +142,8 @@ private:
 class Policy
 {
 public:
-	virtual std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions) = 0;
-	virtual std::pair<MWTAction, float> Choose_Action(Context& context, ActionSet& actions, u32 seed) = 0;
+	virtual std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions) = 0;
+	virtual std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, u32 seed) = 0;
 	virtual ~Policy()
 	{
 	}

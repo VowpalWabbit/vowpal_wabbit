@@ -8,6 +8,7 @@
 #include "EpsilonGreedyExplorer.h"
 #include "TauFirstExplorer.h"
 #include "SoftMaxExplorer.h"
+#include "BaggingExplorer.h"
 
 class MWT
 {
@@ -89,27 +90,34 @@ public:
 
 	std::pair<u32, u64> Choose_Action_Join_Key(Context& context)
 	{
-		std::pair<MWTAction, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set);
-		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second);
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set);
+		if(!std::get<2>(action_Probability_Log_Tuple)){
+			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
+		}
+		Interaction pInteraction(&context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
 		m_logger->Store(&pInteraction);
+		
 		
 		// TODO: Anything else to do here?
 
-		return std::pair<u32, u64>(action_Probability_Pair.first.Get_Id(), pInteraction.Get_Id());
+		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), pInteraction.Get_Id());
 	}
 
 	// TODO: check whether char* could be std::string
 	u32 Choose_Action(Context& context, char* unique_id, u32 length)
 	{
 		u32 seed = this->Compute_Seed(unique_id, length);
-
-		std::pair<MWTAction, float> action_Probability_Pair = m_explorer->Choose_Action(context, *m_action_set, seed);
-		Interaction pInteraction(&context, action_Probability_Pair.first, action_Probability_Pair.second, seed);
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set, seed);
+		if (!std::get<2>(action_Probability_Log_Tuple)){
+			return std::get<0>(action_Probability_Log_Tuple).Get_Id();
+		}
+		Interaction pInteraction(&context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), seed);
 		m_logger->Store(&pInteraction);
+
 
 		// TODO: Anything else to do here?
 
-		return action_Probability_Pair.first.Get_Id();
+		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 	}
 
 // Cross-language interface
@@ -162,6 +170,41 @@ public:
 		m_explorer = new TauFirstExplorer<MWT_Empty>(tau, *func_wrapper, nullptr);
 		
 		m_default_func_wrapper = func_wrapper;
+	}
+
+	void Initialize_Bagging(
+		u32 bags,
+		std::vector<Stateful_Policy_Func*> default_policy_func_ptr_vec,
+		std::vector<void*> default_policy_func_argument_ptr_vec)
+	{
+		
+		std::vector<BaseFunctionWrapper*> default_policy_func_wrapper_ptr_vec;
+		for (u32 i = 0; i < bags; i++){
+			StatefulFunctionWrapper<void>* func_wrapper = new StatefulFunctionWrapper<void>();
+			func_wrapper->m_policy_function = default_policy_func_ptr_vec[i];
+			default_policy_func_wrapper_ptr_vec.push_back(func_wrapper);
+		}
+
+		m_explorer = new BaggingExplorer<void>(bags, &default_policy_func_wrapper_ptr_vec, &default_policy_func_argument_ptr_vec);
+
+		m_default_func_wrapper =  default_policy_func_wrapper_ptr_vec[0];
+	}
+
+	void Initialize_Bagging(
+		u32 bags,
+		std::vector<Stateless_Policy_Func*> default_policy_func_ptr_vec)
+	{
+
+		std:vector<BaseFunctionWrapper*> default_policy_func_wrapper_ptr_vec;
+		for (u32 i = 0; i < bags; i++){
+			StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
+			func_wrapper->m_policy_function = default_policy_func_ptr_vec[i];
+			default_policy_func_wrapper_ptr_vec.push_back(func_wrapper);
+		}
+
+		m_explorer = new BaggingExplorer<MWT_Empty>(bags, &default_policy_func_wrapper_ptr_vec, nullptr);
+
+		m_default_func_wrapper = default_policy_func_wrapper_ptr_vec[0];
 	}
 
 	void Initialize_Softmax(
