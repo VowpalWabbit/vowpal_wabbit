@@ -32,7 +32,7 @@ public:
 			throw std::invalid_argument("Interaction to store is NULL");
 		}
 
-		interaction->Serialize(m_serialized_stream);
+		m_interactions.push_back(interaction);
 	}
 
 	void Store(std::vector<Interaction*> interactions)
@@ -49,22 +49,42 @@ public:
 
 	std::string Get_All_Interactions()
 	{
-		std::string content = m_serialized_stream.str();
+		std::ostringstream serialized_stream;
+
+		for (size_t i = 0; i < m_interactions.size(); i++)
+		{
+			m_interactions[i]->Serialize(serialized_stream);
+		}
+
+		std::string content = serialized_stream.str();
 		
 		this->Clear_Data();
 
 		return content;
 	}
 
+	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
+	{
+		num_interactions = m_interactions.size();
+		interactions = new Interaction*[num_interactions];
+		for (size_t i = 0; i < m_interactions.size(); i++)
+		{
+			// TODO: potential perf issue here since the Copy() dynamically creates
+			// memory that are non-contiguous. This could change to malloc a chunk of
+			// memory and realloc if necessary.
+			 interactions[i] = m_interactions[i]->Copy();
+		}
+	}
+
 private:
 
 	void Clear_Data()
 	{
-		m_serialized_stream.clear();
+		m_interactions.clear();
 	}
 
 private:
 	std::string m_app_id;
 
-	std::ostringstream m_serialized_stream;
+	std::vector<Interaction*> m_interactions;
 };

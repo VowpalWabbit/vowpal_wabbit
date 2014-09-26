@@ -11,7 +11,9 @@ using namespace std;
 
 struct vw;
 void return_simple_example(vw& all, void*, example& ec);  
-  
+
+class MWT;
+
 namespace LEARNER
 {
   struct learner;
@@ -101,6 +103,7 @@ private:
 public:
   size_t weights; //this stores the number of "weight vectors" required by the learner.
   size_t increment;
+  MWT* mwt;
 
   //called once for each example.  Must work under reduction.
   inline void learn(example& ec, size_t i=0) 
@@ -229,6 +232,13 @@ public:
 
     weights = ws;
     increment = base->increment * weights;
+  }
+
+  inline ~learner()
+  {
+	// TODO: separate implementation in MWT.h to .cpp so the header file
+	// can be included here to avoid deletion of incomplete type
+	// delete mwt;
   }
 };
 

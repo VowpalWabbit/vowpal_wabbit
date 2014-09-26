@@ -106,16 +106,52 @@ private:
 class Context : public Serializable
 {
 public:
-	Context(feature* common_features, size_t num_features) : 
+	Context(feature* common_features, size_t num_features, bool is_copy = false) : 
 		m_common_features(common_features), 
 		m_num_features(num_features),
-		m_other_context(nullptr)
+		m_other_context(nullptr),
+		m_is_copy(is_copy)
 	{
 	}
 
-	Context(feature* common_features, size_t num_features, std::string* other_context) :
-		m_common_features(common_features), m_num_features(num_features), m_other_context(other_context)
+	Context(feature* common_features, size_t num_features, 
+		std::string* other_context, bool is_copy = false) :
+		m_common_features(common_features), 
+		m_num_features(num_features), 
+		m_other_context(other_context),
+		m_is_copy(is_copy)
 	{
+	}
+
+	~Context()
+	{
+		if (m_is_copy)
+		{
+			delete[] m_common_features;
+			delete m_other_context;
+		}
+	}
+
+	Context* Copy()
+	{
+		feature* features = nullptr;
+		std::string* other_context = nullptr;
+
+		if (m_num_features > 0 && m_common_features != nullptr)
+		{
+			features = new feature[m_num_features];
+			for (size_t f = 0; f < m_num_features; f++)
+			{
+				features[f] = m_common_features[f];
+			}
+		}
+
+		if (m_other_context != nullptr)
+		{
+			other_context = new std::string(m_other_context->c_str());
+		}
+
+		return new Context(features, m_num_features, other_context);
 	}
 
 	void Serialize(std::ostringstream& stream)
@@ -137,6 +173,7 @@ private:
 	feature* m_common_features;
 	size_t m_num_features;
 	std::string* m_other_context;
+	bool m_is_copy;
 };
 
 class Policy
@@ -152,8 +189,8 @@ public:
 class Interaction : public Serializable
 {
 public:
-	Interaction(Context* context, MWTAction action, float prob, u64 unique_id = 0) : 
-		m_context(context), m_action(action), m_prob(prob)
+	Interaction(Context* context, MWTAction action, float prob, u64 unique_id = 0, bool is_copy = false) : 
+		m_context(context), m_action(action), m_prob(prob), m_is_copy(is_copy)
 	{
 		if (unique_id > 0)
 		{
@@ -165,9 +202,37 @@ public:
 		}
 	}
 
+	~Interaction()
+	{
+		if (m_is_copy)
+		{
+			delete m_context;
+		}
+	}
+
 	u64 Get_Id()
 	{
 		return m_id;
+	}
+
+	MWTAction Get_Action()
+	{
+		return m_action;
+	}
+
+	float Get_Prob()
+	{
+		return m_prob;
+	}
+
+	Context* Get_Context()
+	{
+		return m_context;
+	}
+
+	Interaction* Copy()
+	{
+		return new Interaction(m_context->Copy(), m_action, m_prob, m_id, true);
 	}
 
 	void Serialize(std::ostringstream& stream)
@@ -183,4 +248,5 @@ private:
 	MWTAction m_action;
 	float m_prob;
 	u64 m_id;
+	bool m_is_copy;
 };

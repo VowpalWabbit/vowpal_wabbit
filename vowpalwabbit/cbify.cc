@@ -6,6 +6,7 @@
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
+#include "MWT.h"
 
 using namespace LEARNER;
 
@@ -32,6 +33,11 @@ namespace CBIFY {
     vw* all;
   };
   
+  struct vw_context {
+	  learner* learner;
+	  example* example;
+  };
+
   uint32_t do_uniform(cbify& data)
   {  //Draw an action
     return (uint32_t)ceil(frand48() * data.k);
@@ -80,6 +86,13 @@ namespace CBIFY {
     ec.ld = ld;
   }
   
+  u32 greedy_policy(void* context, void* application_context)
+  {
+	  vw_context* ctx = (vw_context*)context;
+	  ctx->learner->predict(*ctx->example);
+	  return (u32)(((CB::label*)ctx->example->ld)->prediction);
+  }
+
   template <bool is_learn>
   void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
@@ -87,25 +100,33 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
-    base.predict(ec);
-    uint32_t action = data.cb_label.prediction;
+	// TODO: idealy this Initialize call should happen only once at setup time, 
+	// however at the moment since it requires the policy function's argument 
+	// which is only available here. This can also fixed if the Context object 
+	// allows for a void* data instance, then we can pass the argument in at the
+	// time of choose_action
+	vw_context context;
+	context.learner = &base;
+	context.example = &ec;
+	base.mwt->Initialize_Epsilon_Greedy(data.epsilon, greedy_policy, &context);
 
-    float base_prob = data.epsilon / data.k;
-    if (frand48() < 1. - data.epsilon)
-      {
-	CB::cb_class l = {loss(ld->label, ld->prediction), 
-			  action, 1.f - data.epsilon + base_prob};
+	Context dummy(nullptr, 0);
+    base.mwt->Choose_Action_Join_Key(dummy);
+
+	size_t num_interactions = 0;
+	Interaction** interactions = nullptr;
+	base.mwt->Get_All_Interactions(num_interactions, interactions);
+	
+	if (num_interactions != 1)
+	{
+		throw std::exception();
+	}
+
+	u32 action = interactions[0]->Get_Action().Get_Id();
+	float prob = interactions[0]->Get_Prob();
+
+	CB::cb_class l = { loss(ld->label, ld->prediction), action, prob };
 	data.cb_label.costs.push_back(l);
-      }
-    else
-      {
-	action = do_uniform(data);
-	CB::cb_class l = {loss(ld->label, action), 
-			  action, base_prob};
-	if (action == data.cb_label.prediction)
-	  l.probability = 1.f - data.epsilon + base_prob;
-	data.cb_label.costs.push_back(l);
-      }
     
     if (is_learn)
       base.learn(ec);
@@ -360,6 +381,7 @@ namespace CBIFY {
 	if ( vm.count("epsilon") ) 
 	  data->epsilon = vm["epsilon"].as<float>();
 	l = new learner(data, all.l, 1);
+	l->mwt = new MWT(string("VW"), data->k);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }
