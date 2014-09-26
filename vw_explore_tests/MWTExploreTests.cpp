@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
 #include "MWT.h"
+#include "utility.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -51,6 +52,12 @@ namespace vw_explore_tests
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
+		}
+
+		TEST_METHOD(PRGCoverage)
+		{
+			u32 const NUM_ACTIONS = 1000;
+			PRG<u32> prg();
 		}
 
 		TEST_METHOD_INITIALIZE(TestInitialize)

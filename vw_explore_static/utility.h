@@ -21,6 +21,7 @@ typedef signed __int8  i8;
 template <typename IntType>
 class PRG
 {
+	// This type should be used by callers who get access to the underlying engine
 	typedef std::mt19937_64 RNGType;
 
 public:
