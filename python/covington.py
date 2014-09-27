@@ -54,7 +54,7 @@ class CovingtonDepParser(pyvw.SearchTask):
     
 vw = pyvw.vw("--search 2 --quiet --search_task hook --ring_size 1024")
 task = vw.init_search_task(CovingtonDepParser)
-for p in range(10):
+for p in range(10): # do ten passes over the training data
     task.learn(my_dataset.__iter__)
 print 'testing'
 print task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] )
