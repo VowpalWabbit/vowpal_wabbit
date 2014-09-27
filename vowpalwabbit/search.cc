@@ -219,7 +219,7 @@ namespace Search {
 
   int select_learner(search_private& priv, int policy, size_t learner_id) {
     if (policy<0) return policy;  // optimal policy
-    else          return policy*priv.num_learners+learner_id;
+    else          return (int) (policy*priv.num_learners+learner_id);
   }
 
 
@@ -461,7 +461,7 @@ namespace Search {
     priv.mix_per_roll_policy = -2;
     if (priv.adaptive_beta) {
       float x = - log1pf(- priv.alpha) * (float)priv.total_examples_generated;
-      static const float log_of_2 = 0.6931471805599453;
+      static const float log_of_2 = (float)0.6931471805599453;
       priv.beta = (x <= log_of_2) ? -expm1f(-x) : (1-expf(-x)); // numerical stability
       //float priv_beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
       //assert( fabs(priv_beta - priv.beta) < 1e-2 );
@@ -470,7 +470,7 @@ namespace Search {
     priv.ptag_to_action.erase();
     
     if (! priv.cb_learner) { // was: if rollout_all_actions
-      uint32_t seed = (priv.read_example_last_id * 147483 + 4831921) * 2147483647;
+      uint32_t seed = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
       msrand48(seed);
     }
   }
@@ -494,7 +494,7 @@ namespace Search {
     cdbg << "choose_oracle_action from oracle_actions = ["; for (size_t i=0; i<oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i]; cdbg << " ]" << endl;
     return ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
            (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
-           random(ec_cnt);
+           (action)random(ec_cnt);
   }
 
   void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
@@ -599,7 +599,7 @@ namespace Search {
   void* allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt) {
     bool isCB = priv.cb_learner;
     void* ld  = priv.allowed_actions_cache;
-    size_t num_costs = cs_get_costs_size(isCB, ld);
+    uint32_t num_costs = (uint32_t)cs_get_costs_size(isCB, ld);
 
     if (priv.is_ldf) {  // LDF version easier
       if (num_costs > ec_cnt)
@@ -635,15 +635,15 @@ namespace Search {
   void allowed_actions_to_losses(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt, const action* oracle_actions, size_t oracle_actions_cnt, v_array<float>& losses) {
     if (priv.is_ldf)  // LDF version easier
       for (action k=0; k<ec_cnt; k++)
-        losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0. : 1. );
+        losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
     else { // non-LDF
       if ((allowed_actions == NULL) || (allowed_actions_cnt == 0))  // any action is allowed
         for (action k=1; k<=priv.A; k++)
-          losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0. : 1. );
+          losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
       else
         for (size_t i=0; i<allowed_actions_cnt; i++) {
           action k = allowed_actions[i];
-          losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0. : 1. );
+          losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
         }
     }
   }
@@ -784,10 +784,10 @@ namespace Search {
 
     unsigned char* item = (unsigned char*)calloc(sz, 1);
     unsigned char* here = item;
-    *here = sz;                here += sizeof(size_t);
-    *here = mytag;             here += sizeof(ptag);
-    *here = policy;            here += sizeof(int);
-    *here = condition_on_cnt;  here += sizeof(size_t);
+    *here = (unsigned char)sz;                here += (unsigned char)sizeof(size_t);
+    *here = mytag;             here += (unsigned char)sizeof(ptag);
+    *here = policy;            here += (unsigned char)sizeof(int);
+    *here = (unsigned char)condition_on_cnt;  here += (unsigned char)sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
       *here = condition_on[i];         here += sizeof(ptag);
       *here = condition_on_actions[i]; here += sizeof(action);
@@ -892,7 +892,7 @@ namespace Search {
     //   - decide if we're done
     //   - if we are, then copy/mark the example ref
     if ((priv.state == LEARN) && (t == priv.learn_t)) {
-      action a = priv.learn_a_idx;
+      action a = (action)priv.learn_a_idx;
       priv.loss_declared_cnt = 0;
       
       priv.learn_a_idx++;
@@ -1824,7 +1824,7 @@ namespace Search {
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
   void search::add_program_options(po::variables_map& vm, po::options_description& opts) { vm = add_options( *this->priv->all, opts ); }
 
-  uint32_t search::get_history_length() { return this->priv->history_length; }
+  uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
   
   
   // predictor implementation

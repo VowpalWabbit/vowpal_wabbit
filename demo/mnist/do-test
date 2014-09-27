@@ -14,11 +14,11 @@ test -e t10k-labels-idx1-ubyte.gz || {
 
 test -e t10k-images-idx3-ubyte.gz || {
   echo "ERROR: you need to download t10k-images-idx3-ubyte.gz" 1>&2
-  echo "ERROR: from http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz" 1>&2 
+  echo "ERROR: from http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz" 1>&2
   exit 1
 }
 
 paste -d' '                                                     \
-  <(zcat t10k-labels-idx1-ubyte.gz | ./extract-labels)          \
-  <(zcat t10k-images-idx3-ubyte.gz | ./extractfeatures) |       \
+  <(gunzip -c t10k-labels-idx1-ubyte.gz | ./extract-labels)          \
+  <(gunzip -c t10k-images-idx3-ubyte.gz | ./extractfeatures) |       \
 ../../vowpalwabbit/vw -t -i $1.model -p $1.test.predictions

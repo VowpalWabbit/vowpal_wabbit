@@ -124,7 +124,7 @@ sub do_file($) {
     # Fresh file: clear feature inventory
     clear_features();
 
-    open(IF, ($file =~ /\.gz$/) ? "zcat $file|" : $file)
+    open(IF, ($file =~ /\.gz$/) ? "gunzip -c $file|" : $file)
         || die "$0: $file: $!\n";
 
     open(OF, ">$outfile") || die "$0: >$outfile: $!\n";
