@@ -32,11 +32,6 @@ namespace CBIFY {
     learner* cs;
     vw* all;
   };
-  
-  struct vw_context {
-	  learner* learner;
-	  example* example;
-  };
 
   uint32_t do_uniform(cbify& data)
   {  //Draw an action
@@ -100,15 +95,13 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
-	// TODO: idealy this Initialize call should happen only once at setup time, 
-	// however at the moment since it requires the policy function's argument 
-	// which is only available here. This can also fixed if the Context object 
+	// TODO: ideally these call to modify the policy context are not needed, 
+	// however at the moment MWT::Initialize requires the policy function's argument 
+	// which is not available at calling time. This can be fixed if the Context object 
 	// allows for a void* data instance, then we can pass the argument in at the
-	// time of choose_action
-	vw_context context;
-	context.learner = &base;
-	context.example = &ec;
-	base.mwt->Initialize_Epsilon_Greedy(data.epsilon, greedy_policy, &context);
+	// time of choose_action. Or if Choose_Action takes a separate parameter for this arg.
+	base.mwt_policy_context->learner = &base;
+	base.mwt_policy_context->example = &ec;
 
 	Context dummy(nullptr, 0);
     base.mwt->Choose_Action_Join_Key(dummy);
@@ -384,7 +377,9 @@ namespace CBIFY {
 	if ( vm.count("epsilon") ) 
 	  data->epsilon = vm["epsilon"].as<float>();
 	l = new learner(data, all.l, 1);
-	l->mwt = new MWT(string("VW"), data->k);
+	all.l->mwt = new MWT(string("VW"), data->k);
+	all.l->mwt_policy_context = new vw_context();
+	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, greedy_policy, all.l->mwt_policy_context);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }

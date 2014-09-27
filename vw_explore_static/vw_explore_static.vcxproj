@@ -167,6 +167,7 @@
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="vw_explore.cpp" />
   </ItemGroup>
