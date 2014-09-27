@@ -104,6 +104,9 @@ namespace Search {
     // set the number of learners
     void set_num_learners(size_t num_learners);
 
+    // get the action sequence from the test run (only run if test_only or -t or...)
+    void get_test_action_sequence(vector<action>&);
+    
     // internal data that you don't get to see!
     search_private* priv;
     void*           task_data;  // your task data!

@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h> // for system
 #include "../vowpalwabbit/vw.h"
 #include "../vowpalwabbit/ezexample.h"
+#include "../vowpalwabbit/search_sequencetask.h"
 #include "libsearch.h"
 
 struct wt {
@@ -80,8 +82,46 @@ void predict() {
   run(vw_obj);
   VW::finish(vw_obj);
 }
+
+void test_buildin_task() {
+  // train a model on the command line
+  system("../vowpalwabbit/vw -k -c --holdout_off --passes 20 --search 4 --search_task sequence -d sequence.data -f sequence.model");
+
+  // now, load that model using the BuiltInTask library
+  vw& vw_obj = *VW::initialize("-t -i sequence.model --search_task hook");
+  {  // create a new scope for the task object
+    BuiltInTask task(vw_obj, &SequenceTask::task);
+    vector<example*> V;
+    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
+    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
+    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
+    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
+    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
+    vector<action> out;
+    task.predict(V, out);
+    cerr << "out (should be 1 2 3 4 3) =";
+    for (size_t i=0; i<out.size(); i++)
+      cerr << " " << out[i];
+    cerr << endl;
+    for (size_t i=0; i<V.size(); i++)
+      VW::finish_example(vw_obj, V[i]);
+  }
   
+  VW::finish(vw_obj);
+}
+
 int main(int argc, char *argv[]) {
   train();
   predict();
+  test_buildin_task();
 }
+
+
+
+
+
+
+
+
+
+
