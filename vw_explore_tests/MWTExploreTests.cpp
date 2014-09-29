@@ -57,13 +57,21 @@ namespace vw_explore_tests
 		/*
 		TEST_METHOD(SoftmaxStateful)
 		{
-			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, &m_policy_scorer_arg)
+			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, &m_policy_scorer_arg);
+			u32 num_decisions = m_num_actions * log(NUM_ACTIONS) + c * NUM_ACTIONS;
+			u8 actions[m_num_actions] = { 0 };
+			u32 i;
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_Join_Key(*m_context);
-			Assert::AreEqual(chosen_action_join_key.first, (u32)m_policy_func_arg);
-
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
-			Assert::AreEqual(chosen_action, (u32)m_policy_func_arg);
+			for (i = 0; i < num_decisions; i++)
+			{
+				pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_Join_Key(*m_context);
+				actions[chosen_action_join_key.first]++;
+			}
+			// Ensure all actions are covered
+			for (i = 0; i < m_num_actions; i++)
+			{
+				Assert::IsTrue(actions[i] > 0);
+			}
 		}
 
 		TEST_METHOD(SoftmaxStateless)
@@ -87,10 +95,10 @@ namespace vw_explore_tests
 
 			// We're going to throw balls in bins, so 8 bits should be sufficient
 			u8 actions[NUM_ACTIONS] = { 0 };
-			u32 numBalls = NUM_ACTIONS * log(NUM_ACTIONS) + c * NUM_ACTIONS;
+			u32 num_balls = NUM_ACTIONS * log(NUM_ACTIONS) + c * NUM_ACTIONS;
 			PRG<u32> prg;
 			u32 i;
-			for (i = 0; i < numBalls; i++)
+			for (i = 0; i < num_balls; i++)
 			{
 				actions[prg.Uniform_Int(0, NUM_ACTIONS - 1)]++;
 			}

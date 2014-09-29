@@ -44,28 +44,29 @@ private:
 	{
 		// Invoke the default scorer function to score each action 
 		MWTAction chosen_action(0);
-		std::vector<float> scores;
+		u32 numScores = actions.Count();
+		float* scores = new float[numScores];
 		if (typeid(m_default_scorer_wrapper) == typeid(StatelessFunctionWrapper))
 		{
 			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_scorer_wrapper);
-			scores = stateless_function_wrapper->m_scorer_function(&context);
+			stateless_function_wrapper->m_scorer_function(&context, scores, actions.Count());
 		}
 		else
 		{
 			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_scorer_wrapper);
-			scores = stateful_function_wrapper->m_scorer_function(m_default_scorer_state_context, &context);
+			stateful_function_wrapper->m_scorer_function(m_default_scorer_state_context, &context, scores, actions.Count());
 		}
 
 		u32 i = 0;
 		// Create a normalized exponential distribution based on the returned scores
-		for (i = 0; i < scores.size(); i++)
+		for (i = 0; i < numScores; i++)
 		{
 			scores[i] = exp(m_lambda * scores[i]);
 		}
-		i = 0;
 		//TODO: VS2013 doesn't support the iterator based constructor of discrete_distribution
-		std::discrete_distribution<u32> softmax_dist(scores.size(), 0, 1,  // 0 and 1 are nonsense parameters here
-			[&scores, &i](float)
+		i = 0;
+		std::discrete_distribution<u32> softmax_dist(numScores, 0, 1,  // 0 and 1 are nonsense parameters here
+			[scores, &i](float)
 		{
 			auto w = scores[i];
 			++i;
