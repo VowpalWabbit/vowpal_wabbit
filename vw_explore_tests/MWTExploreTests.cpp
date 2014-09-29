@@ -19,6 +19,8 @@ namespace vw_explore_tests
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
 			Assert::AreEqual(chosen_action, (u32)m_policy_func_arg);
+
+			this->Test_Logger(2);
 		}
 
 		TEST_METHOD(EpsilonGreedyStateless)
@@ -30,6 +32,8 @@ namespace vw_explore_tests
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
+
+			this->Test_Logger(2);
 		}
 
 		TEST_METHOD(TauFirstStateful)
@@ -41,6 +45,8 @@ namespace vw_explore_tests
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
 			Assert::AreEqual(chosen_action, (u32)m_policy_func_arg);
+
+			this->Test_Logger(0); // tau = 0 means no randomization and no logging
 		}
 
 		TEST_METHOD(TauFirstStateless)
@@ -52,6 +58,8 @@ namespace vw_explore_tests
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
+
+			this->Test_Logger(0);
 		}
 
 		/*
@@ -165,6 +173,18 @@ namespace vw_explore_tests
 			return 199;
 		}
 		*/
+
+	private: 
+		inline void Test_Logger(int num_interactions_expected)
+		{
+			size_t num_interactions = 0;
+			Interaction** interactions = nullptr;
+			m_mwt->Get_All_Interactions(num_interactions, interactions);
+
+			Assert::AreEqual(num_interactions_expected, (int)num_interactions);
+
+			delete[] interactions;
+		}
 
 	private:
 		char* Unique_Key() { return const_cast<char*>(m_unique_key.c_str()); }
