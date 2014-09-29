@@ -23,7 +23,6 @@ license as described in the file LICENSE.
 #include "topk.h"
 #include "ect.h"
 #include "csoaa.h"
-#include "wap.h"
 #include "cb.h"
 #include "cb_algs.h"
 #include "scorer.h"
@@ -757,7 +756,6 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
     ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
     ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
-    ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
     ;
@@ -785,12 +783,6 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
   
   if(vm.count("log_multi")){
     all.l = exclusive_setup(all, vm, score_consumer, LOG_MULTI::setup);
-  }
-  
-  if(vm.count("wap")) {
-    all.l = exclusive_setup(all, vm, score_consumer, WAP::setup);
-    all.cost_sensitive = all.l;
-    got_cs = true;
   }
   
   if(vm.count("csoaa_ldf") || vm.count("csoaa_ldf")) {
