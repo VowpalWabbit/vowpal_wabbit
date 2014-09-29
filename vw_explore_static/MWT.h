@@ -2,6 +2,8 @@
 // Main interface for clients to the MWT service.
 //
 
+#pragma once
+
 #include "stdafx.h"
 #include <typeinfo>
 #include "hash.h"
@@ -241,6 +243,11 @@ public:
 	std::string Get_All_Interactions()
 	{
 		return m_logger->Get_All_Interactions();
+	}
+
+	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
+	{
+		m_logger->Get_All_Interactions(num_interactions, interactions);
 	}
 
 private:

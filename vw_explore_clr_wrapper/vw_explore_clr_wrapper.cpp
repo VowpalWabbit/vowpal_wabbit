@@ -45,6 +45,28 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
+	void MWTWrapper::InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext)
+	{
+		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
+		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
+
+		Stateful_Policy_Func* nativeFunc = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
+		m_mwt->Initialize_Tau_First(tau, nativeFunc, defaultPolicyFuncContext.ToPointer());
+
+		gch.Free();
+	}
+
+	void MWTWrapper::InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc)
+	{
+		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
+		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
+
+		Stateless_Policy_Func* nativeFunc = static_cast<Stateless_Policy_Func*>(ip.ToPointer());
+		m_mwt->Initialize_Tau_First(tau, nativeFunc);
+
+		gch.Free();
+	}
+
 	UInt32 MWTWrapper::ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId)
 	{
 		UInt32 chosenAction = 0;

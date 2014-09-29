@@ -6,6 +6,7 @@
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
+#include "MWT.h"
 
 using namespace LEARNER;
 
@@ -31,7 +32,7 @@ namespace CBIFY {
     learner* cs;
     vw* all;
   };
-  
+
   uint32_t do_uniform(cbify& data)
   {  //Draw an action
     return (uint32_t)ceil(frand48() * data.k);
@@ -50,14 +51,24 @@ namespace CBIFY {
       return 0.;
   }
 
+  u32 explore_policy(void* context, void* application_context)
+  {
+	  vw_context* ctx = (vw_context*)context;
+	  ctx->learner->predict(*ctx->example);
+	  return (u32)(((CB::label*)ctx->example->ld)->prediction);
+  }
+
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
+	base.mwt_policy_context->learner = &base;
+	base.mwt_policy_context->example = &ec;
+	Context dummy(nullptr, 0);
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
-	ld->prediction = (uint32_t)do_uniform(data);
+	ld->prediction = (uint32_t)base.mwt->Choose_Action_Join_Key(dummy).first;
 	ec.loss = loss(ld->label, ld->prediction);
 	data.tau--;
 	uint32_t action = ld->prediction;
@@ -73,13 +84,12 @@ namespace CBIFY {
       {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
-	base.predict(ec);
-	ld->prediction = data.cb_label.prediction;
+	ld->prediction = (uint32_t)base.mwt->Choose_Action_Join_Key(dummy).first;
 	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
   }
-  
+
   template <bool is_learn>
   void predict_or_learn_greedy(cbify& data, learner& base, example& ec)
   {//Explore uniform random an epsilon fraction of the time.
@@ -87,25 +97,31 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
     
-    base.predict(ec);
-    uint32_t action = data.cb_label.prediction;
+	// TODO: ideally these call to modify the policy context are not needed, 
+	// however at the moment MWT::Initialize requires the policy function's argument 
+	// which is not available at calling time. This can be fixed if the Context object 
+	// allows for a void* data instance, then we can pass the argument in at the
+	// time of choose_action. Or if Choose_Action takes a separate parameter for this arg.
+	base.mwt_policy_context->learner = &base;
+	base.mwt_policy_context->example = &ec;
 
-    float base_prob = data.epsilon / data.k;
-    if (frand48() < 1. - data.epsilon)
-      {
-	CB::cb_class l = {loss(ld->label, ld->prediction), 
-			  action, 1.f - data.epsilon + base_prob};
+	Context dummy(nullptr, 0);
+    base.mwt->Choose_Action_Join_Key(dummy);
+
+	size_t num_interactions = 0;
+	Interaction** interactions = nullptr;
+	base.mwt->Get_All_Interactions(num_interactions, interactions);
+	
+	if (num_interactions != 1)
+	{
+		throw std::exception();
+	}
+
+	u32 action = interactions[0]->Get_Action().Get_Id();
+	float prob = interactions[0]->Get_Prob();
+
+	CB::cb_class l = { loss(ld->label, ld->prediction), action, prob };
 	data.cb_label.costs.push_back(l);
-      }
-    else
-      {
-	action = do_uniform(data);
-	CB::cb_class l = {loss(ld->label, action), 
-			  action, base_prob};
-	if (action == data.cb_label.prediction)
-	  l.probability = 1.f - data.epsilon + base_prob;
-	data.cb_label.costs.push_back(l);
-      }
     
     if (is_learn)
       base.learn(ec);
@@ -113,6 +129,9 @@ namespace CBIFY {
     ld->prediction = action;
     ec.ld = ld;
     ec.loss = loss(ld->label, action);
+
+	delete interactions[0];
+	delete[] interactions;
   }
 
   template <bool is_learn>
@@ -352,6 +371,9 @@ namespace CBIFY {
       {
 	data->tau = (uint32_t)vm["first"].as<size_t>();
 	l = new learner(data, all.l, 1);
+	all.l->mwt = new MWT(string("VW"), data->k);
+	all.l->mwt_policy_context = new vw_context();
+	all.l->mwt->Initialize_Tau_First(data->tau, explore_policy, all.l->mwt_policy_context);
 	l->set_learn<cbify, predict_or_learn_first<true> >();
 	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
@@ -360,6 +382,9 @@ namespace CBIFY {
 	if ( vm.count("epsilon") ) 
 	  data->epsilon = vm["epsilon"].as<float>();
 	l = new learner(data, all.l, 1);
+	all.l->mwt = new MWT(string("VW"), data->k);
+	all.l->mwt_policy_context = new vw_context();
+	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, explore_policy, all.l->mwt_policy_context);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }

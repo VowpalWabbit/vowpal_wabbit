@@ -11,7 +11,9 @@ using namespace std;
 
 struct vw;
 void return_simple_example(vw& all, void*, example& ec);  
-  
+
+class MWT;
+
 namespace LEARNER
 {
   struct learner;
@@ -88,6 +90,11 @@ namespace LEARNER
       }
     };
 
+struct vw_context {
+	learner* learner;
+	example* example;
+};
+
 struct learner {
 private:
   func_data init_fd;
@@ -101,6 +108,8 @@ private:
 public:
   size_t weights; //this stores the number of "weight vectors" required by the learner.
   size_t increment;
+  MWT* mwt;
+  vw_context* mwt_policy_context;
 
   //called once for each example.  Must work under reduction.
   inline void learn(example& ec, size_t i=0) 
@@ -201,6 +210,8 @@ public:
     init_fd = LEARNER::generic_func_fd;
     finisher_fd = LEARNER::generic_func_fd;
     save_load_fd = LEARNER::generic_save_load_fd;
+
+	mwt_policy_context = nullptr;
   }
 
   inline learner(void* dat, size_t params_per_weight)
@@ -214,6 +225,7 @@ public:
     finisher_fd.func = LEARNER::generic_func;
 
     increment = params_per_weight;
+	mwt_policy_context = nullptr;
   }
 
   inline learner(void *dat, learner* base, size_t ws = 1) 
@@ -229,6 +241,15 @@ public:
 
     weights = ws;
     increment = base->increment * weights;
+	mwt_policy_context = nullptr;
+  }
+
+  inline ~learner()
+  {
+	// TODO: separate implementation in MWT.h to .cpp so the header file
+	// can be included here to avoid deletion of incomplete type
+	// delete mwt;
+	  delete mwt_policy_context;
   }
 };
 
