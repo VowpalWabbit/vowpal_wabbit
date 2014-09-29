@@ -316,7 +316,6 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 	  cout << "Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work." << endl;
 	  throw exception();
 	}
-      cout << "all.default_bits = " << all.default_bits << endl;
       all.default_bits = false;
       all.num_bits = new_bits;
       if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
