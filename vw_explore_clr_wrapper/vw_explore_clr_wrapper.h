@@ -11,6 +11,9 @@ namespace MultiWorldTesting {
 	public delegate UInt32 StatefulPolicyDelegate(IntPtr, IntPtr);
 	public delegate UInt32 StatelessPolicyDelegate(IntPtr);
 
+	public delegate void StatefulScorerDelegate(IntPtr, IntPtr, cli::array<float>^ scores, UInt32 size);
+	public delegate void StatelessScorerDelegate(IntPtr, cli::array<float>^ scores, UInt32 size);
+
 	[StructLayout(LayoutKind::Sequential)]
 	public value struct FEATURE
 	{
@@ -35,6 +38,9 @@ namespace MultiWorldTesting {
 
 		void InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs);
 		void InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs);
+
+		void InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext);
+		void InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc);
 
 		UInt32 ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId);
 

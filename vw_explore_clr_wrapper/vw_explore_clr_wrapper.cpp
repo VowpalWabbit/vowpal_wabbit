@@ -116,6 +116,28 @@ namespace MultiWorldTesting {
 		delete[] native_funcs;
 	}
 
+	void MWTWrapper::InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext)
+	{
+		GCHandle gch = GCHandle::Alloc(defaultScorerFunc);
+		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
+
+		Stateful_Scorer_Func* nativeFunc = static_cast<Stateful_Scorer_Func*>(ip.ToPointer());
+		m_mwt->Initialize_Softmax(lambda, nativeFunc, defaultPolicyFuncContext.ToPointer());
+
+		gch.Free();
+	}
+
+	void MWTWrapper::InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc)
+	{
+		GCHandle gch = GCHandle::Alloc(defaultScorerFunc);
+		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
+
+		Stateless_Scorer_Func* nativeFunc = static_cast<Stateless_Scorer_Func*>(ip.ToPointer());
+		m_mwt->Initialize_Softmax(lambda, nativeFunc);
+
+		gch.Free();
+	}
+
 	UInt32 MWTWrapper::ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId)
 	{
 		UInt32 chosenAction = 0;
