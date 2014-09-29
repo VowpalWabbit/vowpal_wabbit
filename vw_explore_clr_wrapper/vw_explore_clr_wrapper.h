@@ -30,6 +30,9 @@ namespace MultiWorldTesting {
 		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext);
 		void InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc);
 
+		void InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext);
+		void InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc);
+
 		UInt32 ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId);
 
 		String^ GetAllInteractions();
