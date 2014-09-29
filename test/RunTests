@@ -798,14 +798,14 @@ __DATA__
 {VW} -k --ect 10 --error 3 -c --passes 10 --invariant train-sets/multiclass --holdout_off
     train-sets/ref/multiclass.stderr
 
-# Test 13: Run searn on wsj_small for 12 passes, 4 passes per policy, extra features
-{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 12 --invariant --search_passes_per_policy 4 --search_task sequence --search 5 --search_history 2 --search_bigrams --search_features 1 --quiet --holdout_off
-    train-sets/ref/searn_wsj.stderr
+# Test 13: Run search (dagger) on wsj_small for 6 passes extra features
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off
+    train-sets/ref/search_wsj.stderr
 
-# Test 14: Run searn (wap) on wsj_small for 2 passes, 1 pass per policy, extra features
-{VW} -k -b 19 -c -d train-sets/wsj_small.dat.gz --passes 2 --invariant --search_passes_per_policy 1 --search_task sequence --search 5 --wap 5 --search_history 2 --search_bigrams --search_features 1 --quiet --holdout_off
-    train-sets/ref/searn_wsj2.dat.stdout
-    train-sets/ref/searn_wsj2.dat.stderr
+# Test 14: Run search (searn) on wsj_small for 6 passes extra features
+{VW} -k -c -d train-sets/wsj_small.dat.gz --passes 6 --search_task sequence --search 45 --search_alpha 1e-6 --search_max_bias_ngram_length 2 --search_max_quad_ngram_length 1 --holdout_off --search_passes_per_policy 3 --search_interpolation policy
+    train-sets/ref/search_wsj2.dat.stdout
+    train-sets/ref/search_wsj2.dat.stderr
 
 # Test 15: LBFGS on zero derivative input
 {VW} -k -c -d train-sets/zero.dat --loss_function=squared -b 20 --bfgs --mem 7 --passes 5 --l2 1.0 --holdout_off
@@ -821,9 +821,9 @@ __DATA__
 {LDA} -k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 --minibatch 128 --invariant train-sets/wiki1K.dat
     train-sets/ref/wiki1K.stderr
 
-# Test 18: Run searn on seq_small for 12 passes, 4 passes per policy
-{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --search_passes_per_policy 4 --search 4 --search_task sequence --quiet --holdout_off
-    train-sets/ref/searn_small.stderr
+# Test 18: Run search on seq_small for 12 passes, 4 passes per policy
+{VW} -k -c -d train-sets/seq_small --passes 12 --invariant --search 4 --search_task sequence --holdout_off
+    train-sets/ref/search_small.stderr
 
 # Test 19: neural network 3-parity with 2 hidden units
 {VW} -k -c -d train-sets/3parity --hash all --passes 3000 -b 16 --nn 2 -l 10 --invariant -f models/0021.model --random_seed 15 --quiet --holdout_off
@@ -932,127 +932,107 @@ __DATA__
 {VW} -k -d train-sets/lda-2pass-hang.dat --lda 10 -c --passes 2 --holdout_off
     train-sets/ref/lda-2pass-hang.stderr
 
-# Test 43: searn sequence labeling, non-ldf train
+# Test 43: search sequence labeling, non-ldf train
 {VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequence --search 5 --holdout_off -f models/sequence_data.model
     train-sets/ref/sequence_data.nonldf.train.stderr
 
-# Test 44: searn sequence labeling, non-ldf test
+# Test 44: search sequence labeling, non-ldf test
 {VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict
     train-sets/ref/sequence_data.nonldf.test.stderr
     train-sets/ref/sequence_data.nonldf.test.predict
 
-# Test 45: searn sequence labeling, non-ldf test, beam 1
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict --search_beam 1
-    train-sets/ref/sequence_data.nonldf.test-beam1.stderr
-    train-sets/ref/sequence_data.nonldf.test-beam1.predict
+# Test 45: make sure that history works
+{VW} -k -c -d train-sets/seq_small2 --passes 4 --search 4 --search_task sequence --holdout_off
+    train-sets/ref/search_small2.stderr
 
-# Test 46: searn sequence labeling, non-ldf test, beam 20
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict --search_beam 20 --search_kbest 20
-    train-sets/ref/sequence_data.nonldf.test-beam20.stderr
-    train-sets/ref/sequence_data.nonldf.test-beam20.predict
-
-# Test 47: searn sequence labeling, ldf train
-{VW} -k -c -d train-sets/sequence_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.model
+# Test 46: search sequence labeling, ldf train
+{VW} -k -c -d train-sets/sequence_data --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task sequence_demoldf --csoaa_ldf m --search 5 --holdout_off -f models/sequence_data.model
     train-sets/ref/sequence_data.ldf.train.stderr
 
-# Test 48: searn sequence labeling, ldf test
+# Test 47: search sequence labeling, ldf test
 {VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict
     train-sets/ref/sequence_data.ldf.test.stderr
     train-sets/ref/sequence_data.ldf.test.predict
 
-# Test 49: searn sequence labeling, ldf test, beam 1
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict --search_beam 1
-    train-sets/ref/sequence_data.ldf.test-beam1.stderr
-    train-sets/ref/sequence_data.ldf.test-beam1.predict
-
-# Test 50: searn sequence labeling, ldf test, beam 20
-{VW} -d train-sets/sequence_data -t -i models/sequence_data.model -p sequence_data.predict --search_beam 20 --search_kbest 20
-    train-sets/ref/sequence_data.ldf.test-beam20.stderr
-    train-sets/ref/sequence_data.ldf.test-beam20.predict
-
-# Test 51: searn sequence SPAN labeling BIO, non-ldf train
-{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model
+# Test 48: search sequence SPAN labeling BIO, non-ldf train, no rollouts
+{VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout none --search_task sequencespan --search 7 --holdout_off -f models/sequencespan_data.model
     train-sets/ref/sequencespan_data.nonldf.train.stderr
 
-# Test 52: searn sequence SPAN labeling BIO, non-ldf test
+# Test 49: search sequence SPAN labeling BIO, non-ldf test
 {VW} -d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.predict
     train-sets/ref/sequencespan_data.nonldf.test.stderr
     train-sets/ref/sequencespan_data.nonldf.test.predict
 
-# Test 53: searn sequence SPAN labeling BIO, non-ldf test, beam 1
-{VW} -d train-sets/sequencespan_data -t -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 1
-    train-sets/ref/sequencespan_data.nonldf.test-beam1.stderr
-    train-sets/ref/sequencespan_data.nonldf.test-beam1.predict
-
-# Test 54: searn sequence SPAN labeling BIO, non-ldf test, beam 20
-{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model --search_beam 20 --search_kbest 20 --quiet
-    train-sets/ref/sequencespan_data.nonldf.test-beam20.stderr
-
-# Test 55: searn sequence SPAN labeling BILOU, non-ldf train
+# Test 50: search sequence SPAN labeling BILOU, non-ldf train
 {VW} -k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout oracle --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model
     train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr
 
-# Test 56: searn sequence SPAN labeling BILOU, non-ldf test
+# Test 51: search sequence SPAN labeling BILOU, non-ldf test
 {VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict
     train-sets/ref/sequencespan_data.nonldf-bilou.test.stderr
     train-sets/ref/sequencespan_data.nonldf-bilou.test.predict
 
-# Test 57: searn sequence SPAN labeling BILOU, non-ldf test, beam 1
-{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 1
-    train-sets/ref/sequencespan_data.nonldf-bilou.test-beam1.stderr
-    train-sets/ref/sequencespan_data.nonldf-bilou.test-beam1.predict
-
-# Test 58: searn sequence SPAN labeling BILOU, non-ldf test, beam 20
-{VW} -d train-sets/sequencespan_data -t --search_span_bilou -i models/sequencespan_data.model -p sequencespan_data.predict --search_beam 20 --search_kbest 20
-    train-sets/ref/sequencespan_data.nonldf-bilou.test-beam20.stderr
-    train-sets/ref/sequencespan_data.nonldf-bilou.test-beam20.predict
-
-# Test 59: silly test for "argmax" task
+# Test 52: silly test for "argmax" task
 {VW} -d train-sets/argmax_data -k -c --passes 20 --search_rollout oracle --search_alpha 1e-8 --search_task argmax --search 2 --holdout_off
     train-sets/ref/argmax_data.stderr
 
-# Test 60: (holdout-broken regression)
+# Test 53: (holdout-broken regression)
 # ensure we have no holdout loss of '0 h'
 {VW} -k -c --passes 2 train-sets/0001.dat
     train-sets/ref/holdout-loss-not-zero.stderr
 
-# Test 61: stagewise poly with exponent 0.25
+# Test 54: stagewise poly with exponent 0.25
 ####in the following stage_poly tests, there are minute differences in losses, which are not being fuzzy-diffed;
 ####thus the stderr is cleared (--quiet) and only comparing (fuzzy-diffed) predictions.
 {VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat -p stage_poly.s025.predict --quiet
     train-sets/ref/stage_poly.s025.stderr
     train-sets/ref/stage_poly.s025.predict
 
-# Test 62: stagewise poly with exponent 1.0
+# Test 55: stagewise poly with exponent 1.0
 {VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 --batch_sz_no_doubling -d train-sets/rcv1_small.dat --quiet
     train-sets/ref/stage_poly.s100.stderr
 
-# Test 63: stagewise poly with exponent 0.25 and doubling batches
+# Test 56: stagewise poly with exponent 0.25 and doubling batches
 {VW} --stage_poly --sched_exponent 0.25 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s025.doubling.predict --quiet
     train-sets/ref/stage_poly.s025.doubling.stderr
     train-sets/ref/stage_poly.s025.doubling.predict
 
-# Test 64: stagewise poly with exponent 1.0 and doubling batches
+# Test 57: stagewise poly with exponent 1.0 and doubling batches
 {VW} --stage_poly --sched_exponent 1.0 --batch_sz 1000 -d train-sets/rcv1_small.dat -p stage_poly.s100.doubling.predict --quiet
     train-sets/ref/stage_poly.s100.doubling.stderr
     train-sets/ref/stage_poly.s100.doubling.predict
 
-# Test 65: library test, train the initial model
+# Test 58: library test, train the initial model
 {VW} -c -k -d train-sets/library_train -f models/library_train.w -q st --passes 100 --hash all --noconstant --csoaa_ldf m --holdout_off
     train-sets/ref/library_train.stdout
     train-sets/ref/library_train.stderr
 
-# Test 66: library test, run ezexample_predict
+# Test 59: library test, run ezexample_predict
 ../library/ezexample_predict models/library_train.w
     train-sets/ref/ezexample_predict.stdout
     train-sets/ref/ezexample_predict.stderr
 
-# Test 67: empty test, bad builds (without make clean)
+# Test 60: empty test, bad builds (without make clean)
 # sometimes cause a SEGV even on empty input
 {VW} /dev/null
     train-sets/ref/empty-set.stderr
 
-# Test 68: daemon test
+# Test 61: daemon test
 ./daemon-test.sh
     test-sets/ref/vw-daemon.stdout
+
+# Test 62: SVM linear kernel
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 -p train-sets/ref/ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.linear.stderr
+    train-sets/ref/ksvm_train.linear.predict
+
+# Test 63: SVM polynomial kernel
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel poly -p train-sets/ref/ksvm_train.poly.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.poly.stderr
+    train-sets/ref/ksvm_train.poly.predict
+
+# Test 64: SVM rbf kernel
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf -p train-sets/ref/ksvm_train.rbf.predict -d train-sets/rcv1_smaller.dat
+    train-sets/ref/ksvm_train.rbf.stderr
+    train-sets/ref/ksvm_train.rbf.predict
 

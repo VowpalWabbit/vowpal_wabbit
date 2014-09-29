@@ -25,7 +25,7 @@ my $ncl = 0;
 my $na = 0;
 
 my @truth = ();
-if ($truthFile =~ /.gz$/ ) { open T, "zcat  $truthFile |" or die; }
+if ($truthFile =~ /.gz$/ ) { open T, "gunzip -c $truthFile |" or die; }
 elsif ($truthFile =~ /.bz2$/) { open T, "bzcat $truthFile |" or die; }
 else { open T, $truthFile or die; }
 while (<T>) {

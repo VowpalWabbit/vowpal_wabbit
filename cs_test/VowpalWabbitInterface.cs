@@ -112,6 +112,9 @@ namespace Microsoft.Research.MachineLearning
         [DllImport(LIBVW, EntryPoint = "VW_Learn")]
         public static extern float Learn(VwHandle vw, VwExample example);
 
+        [DllImport(LIBVW, EntryPoint = "VW_Predict")]
+        public static extern float Predict(VwHandle vw, VwExample example);
+
         [DllImport(LIBVW, EntryPoint = "VW_AddLabel")]
         public static extern void AddLabel(VwExample example, float label = float.MaxValue, float weight = 1, float initial = 0);
 

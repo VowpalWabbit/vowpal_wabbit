@@ -27,7 +27,7 @@ license as described in the file LICENSE.
 #include "cb.h"
 #include "cb_algs.h"
 #include "scorer.h"
-#include "searn.h"
+#include "search.h"
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
@@ -857,7 +857,7 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
   po::options_description search_opts("Search");
     
   search_opts.add_options()
-    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
+      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
 
   vm = add_options(all,search_opts);
 
@@ -870,8 +870,7 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
       all.cost_sensitive = all.l;
       got_cs = true;
     }
-    //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
-    all.l = Searn::setup(all, vm);
+    all.l = Search::setup(all, vm);
   }
 }
 

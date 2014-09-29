@@ -19,8 +19,11 @@ endif
 UNAME := $(shell uname)
 LIBS = -l boost_program_options -l pthread -l z
 BOOST_INCLUDE = -I /usr/include
-BOOST_LIBRARY = -L /usr/lib -L /usr/lib/x86_64-linux-gnu
+BOOST_LIBRARY = -L /usr/lib
 
+ifeq ($(UNAME), Linux)
+  BOOST_LIBRARY += -L /usr/lib/x86_64-linux-gnu
+endif
 ifeq ($(UNAME), FreeBSD)
   LIBS = -l boost_program_options -l pthread -l z -l compat
   BOOST_INCLUDE = -I /usr/local/include
@@ -35,8 +38,14 @@ ifeq ($(UNAME), Darwin)
   #	brew uses /usr/local
   #	but /opt/local seems to be preferred by some users
   #	so we try them both
-  BOOST_INCLUDE = -I /usr/local/include -I /opt/local/include
-  BOOST_LIBRARY = -L /usr/local/lib     -L /opt/local/lib
+  ifneq (,$(wildcard /usr/local/include))
+    BOOST_INCLUDE += -I /usr/local/include
+    BOOST_LIBRARY += -L /usr/local/lib
+  endif
+  ifneq (,$(wildcard /opt/local/include))
+    BOOST_INCLUDE += -I /opt/local/include
+    BOOST_LIBRARY += -L /opt/local/lib
+  endif
 endif
 
 #LIBS = -l boost_program_options-gcc34 -l pthread -l z
@@ -71,7 +80,7 @@ all:	vw spanning_tree library_example python
 
 export
 
-spanning_tree: 
+spanning_tree:
 	cd cluster; $(MAKE)
 
 vw:
@@ -81,7 +90,7 @@ active_interactor:
 	cd vowpalwabbit; $(MAKE)
 
 library_example: vw
-	cd library; $(MAKE) -j 8
+	cd library; $(MAKE) things
 
 python: vw
 	cd python; $(MAKE) things
@@ -100,4 +109,3 @@ clean:
 	cd cluster && $(MAKE) clean
 	cd library && $(MAKE) clean
 	cd python  && $(MAKE) clean
-

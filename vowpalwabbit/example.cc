@@ -80,8 +80,14 @@ void copy_example_data(bool audit, example* dst, example* src)
   dst->ft_offset = src->ft_offset;
 
   if (audit)
-    for (size_t i=0; i<256; i++)
+    for (size_t i=0; i<256; i++) {
+      for (size_t j=0; j<dst->audit_features[i].size(); j++)
+        if (dst->audit_features[i][j].alloced) {
+          free(dst->audit_features[i][j].space);
+          free(dst->audit_features[i][j].feature);
+        }
       copy_array(dst->audit_features[i], src->audit_features[i], copy_audit_data);
+    }
   
   dst->num_features = src->num_features;
   dst->partial_prediction = src->partial_prediction;
