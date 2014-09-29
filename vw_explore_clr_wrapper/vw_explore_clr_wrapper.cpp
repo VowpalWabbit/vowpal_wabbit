@@ -67,6 +67,55 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
+	void MWTWrapper::InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs)
+	{
+		cli::array<GCHandle>^ gcHandles = gcnew cli::array<GCHandle>(bags);
+
+		Stateful_Policy_Func** native_funcs = new Stateful_Policy_Func*[bags];
+		void** native_args = new void*[bags];
+
+		for (int i = 0; i < bags; i++)
+		{
+			gcHandles[i] = GCHandle::Alloc(defaultPolicyFuncs[i]);
+			IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFuncs[i]);
+
+			native_funcs[i] = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
+			native_args[i] = defaultPolicyArgs[i].ToPointer();
+		}
+
+		m_mwt->Initialize_Bagging(bags, native_funcs, native_args);
+
+		for (int i = 0; i < bags; i++)
+		{
+			gcHandles[i].Free();
+		}
+		delete[] native_funcs;
+		delete[] native_args;
+	}
+
+	void MWTWrapper::InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs)
+	{
+		cli::array<GCHandle>^ gcHandles = gcnew cli::array<GCHandle>(bags);
+
+		Stateless_Policy_Func** native_funcs = new Stateless_Policy_Func*[bags];
+
+		for (int i = 0; i < bags; i++)
+		{
+			gcHandles[i] = GCHandle::Alloc(defaultPolicyFuncs[i]);
+			IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFuncs[i]);
+
+			native_funcs[i] = static_cast<Stateless_Policy_Func*>(ip.ToPointer());
+		}
+
+		m_mwt->Initialize_Bagging(bags, native_funcs);
+
+		for (int i = 0; i < bags; i++)
+		{
+			gcHandles[i].Free();
+		}
+		delete[] native_funcs;
+	}
+
 	UInt32 MWTWrapper::ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId)
 	{
 		UInt32 chosenAction = 0;

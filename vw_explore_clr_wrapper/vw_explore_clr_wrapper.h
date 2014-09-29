@@ -33,6 +33,9 @@ namespace MultiWorldTesting {
 		void InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext);
 		void InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc);
 
+		void InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs);
+		void InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs);
+
 		UInt32 ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId);
 
 		String^ GetAllInteractions();
