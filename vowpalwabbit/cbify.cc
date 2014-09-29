@@ -51,14 +51,24 @@ namespace CBIFY {
       return 0.;
   }
 
+  u32 explore_policy(void* context, void* application_context)
+  {
+	  vw_context* ctx = (vw_context*)context;
+	  ctx->learner->predict(*ctx->example);
+	  return (u32)(((CB::label*)ctx->example->ld)->prediction);
+  }
+
   template <bool is_learn>
   void predict_or_learn_first(cbify& data, learner& base, example& ec)
   {//Explore tau times, then act according to optimal.
     MULTICLASS::multiclass* ld = (MULTICLASS::multiclass*)ec.ld;
+	base.mwt_policy_context->learner = &base;
+	base.mwt_policy_context->example = &ec;
+	Context dummy(nullptr, 0);
     //Use CB to find current prediction for remaining rounds.
     if (data.tau && is_learn)
       {
-	ld->prediction = (uint32_t)do_uniform(data);
+	ld->prediction = (uint32_t)base.mwt->Choose_Action_Join_Key(dummy).first;
 	ec.loss = loss(ld->label, ld->prediction);
 	data.tau--;
 	uint32_t action = ld->prediction;
@@ -74,18 +84,10 @@ namespace CBIFY {
       {
 	data.cb_label.costs.erase();
 	ec.ld = &(data.cb_label);
-	base.predict(ec);
-	ld->prediction = data.cb_label.prediction;
+	ld->prediction = (uint32_t)base.mwt->Choose_Action_Join_Key(dummy).first;
 	ec.loss = loss(ld->label, ld->prediction);
       }
     ec.ld = ld;
-  }
-  
-  u32 greedy_policy(void* context, void* application_context)
-  {
-	  vw_context* ctx = (vw_context*)context;
-	  ctx->learner->predict(*ctx->example);
-	  return (u32)(((CB::label*)ctx->example->ld)->prediction);
   }
 
   template <bool is_learn>
@@ -369,6 +371,9 @@ namespace CBIFY {
       {
 	data->tau = (uint32_t)vm["first"].as<size_t>();
 	l = new learner(data, all.l, 1);
+	all.l->mwt = new MWT(string("VW"), data->k);
+	all.l->mwt_policy_context = new vw_context();
+	all.l->mwt->Initialize_Tau_First(data->tau, explore_policy, all.l->mwt_policy_context);
 	l->set_learn<cbify, predict_or_learn_first<true> >();
 	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
@@ -379,7 +384,7 @@ namespace CBIFY {
 	l = new learner(data, all.l, 1);
 	all.l->mwt = new MWT(string("VW"), data->k);
 	all.l->mwt_policy_context = new vw_context();
-	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, greedy_policy, all.l->mwt_policy_context);
+	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, explore_policy, all.l->mwt_policy_context);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }
