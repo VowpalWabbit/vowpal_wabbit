@@ -310,8 +310,15 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 
   if (vm.count("bit_precision"))
     {
+      uint32_t new_bits = (uint32_t)vm["bit_precision"].as< size_t>();
+      if (all.default_bits == false && new_bits != all.num_bits)
+	{
+	  cout << "Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work." << endl;
+	  throw exception();
+	}
+      cout << "all.default_bits = " << all.default_bits << endl;
       all.default_bits = false;
-      all.num_bits = (uint32_t)vm["bit_precision"].as< size_t>();
+      all.num_bits = new_bits;
       if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
 	{
 	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
