@@ -205,7 +205,7 @@ namespace CB_EVAL
 	throw exception();
       }
     
-    ld->prediction = (uint32_t)hashstring(p->parse_name[0], 0);    
+    ld->prediction = (uint32_t)hashstring(words[0], 0);    
     
     words.begin++;
     

@@ -16,8 +16,6 @@ using namespace LEARNER;
 #define CB_TYPE_DR 0
 #define CB_TYPE_DM 1
 #define CB_TYPE_IPS 2
-#define CB_TYPE_IPS_EVAL 3
-#define CB_TYPE_DR_EVAL 4
 
 using namespace CB;
 
@@ -347,6 +345,30 @@ namespace CB_ALGS
       }
   }
 
+  void predict_eval(cb& c, learner& base, example& ec) {
+    cout << "can not use a test label for evaluation" << endl;
+    throw exception();
+  }
+
+  void learn_eval(cb& c, learner& base, example& ec) {
+    vw* all = c.all;
+    CB::label* ld = (CB::label*)ec.ld;
+    
+    //check if this is a test example where we just want a prediction
+    if( is_test_label(ld) )
+      predict_eval(c,base, ec);
+    
+    c.known_cost = get_observed_cost(ld);
+    
+    if (c.cb_type == CB_TYPE_DR)
+      gen_cs_example_dr<true>(*all,c,ec,c.cb_cs_ld);
+    else //c.cb_type == CB_TYPE_IPS
+      gen_cs_example_ips(*all,c,ec,c.cb_cs_ld);
+    
+    for (size_t i=0; i<ld->costs.size(); i++)
+      ld->costs[i].partial_prediction = c.cb_cs_ld.costs[i].partial_prediction;
+  }
+  
   void init_driver(cb&)
   {
     fprintf(stderr, "*estimate* *estimate*                                                avglossreg last pred  last correct\n");
@@ -464,8 +486,6 @@ namespace CB_ALGS
         int f = all.final_prediction_sink[i];
         all.print(f, (float)ld->prediction, 0, ec.tag);
       }
-  
-
 
     print_update(all, c, is_test_label((CB::label*)ec.ld), ec);
   }
@@ -505,10 +525,9 @@ namespace CB_ALGS
 
     all.sd->k = nb_actions;
 
+    bool eval = false;
     if (vm.count("eval"))
-      {
-
-      }
+      eval = true;
 
     size_t problem_multiplier = 2;//default for DR
     if (vm.count("cb_type"))
@@ -521,9 +540,14 @@ namespace CB_ALGS
       all.file_options.append(type_string);
 
       if (type_string.compare("dr") == 0) 
-        c->cb_type = CB_TYPE_DR;
+	c->cb_type = CB_TYPE_DR;
       else if (type_string.compare("dm") == 0)
 	{
+	  if (eval)
+	    {
+	      cout << "direct method can not be used for evaluation --- it is biased." << endl;
+	      throw exception();
+	    }
 	  c->cb_type = CB_TYPE_DM;
 	  problem_multiplier = 1;
 	}
@@ -543,11 +567,22 @@ namespace CB_ALGS
       all.file_options.append(" --cb_type dr");
     }
 
-    all.p->lp = CB::cb_label; 
+    if (eval)
+      all.p->lp = CB_EVAL::cb_eval; 
+    else
+      all.p->lp = CB::cb_label; 
 
     learner* l = new learner(c, all.l, problem_multiplier);
-    l->set_learn<cb, predict_or_learn<true> >();
-    l->set_predict<cb, predict_or_learn<false> >();
+    if (eval)
+      {
+	l->set_learn<cb, learn_eval>();
+	l->set_predict<cb, predict_eval>();
+      }
+    else
+      {
+	l->set_learn<cb, predict_or_learn<true> >();
+	l->set_predict<cb, predict_or_learn<false> >();
+      }
     l->set_finish_example<cb,finish_example>(); 
     l->set_init_driver<cb,init_driver>();
     l->set_finish<cb,finish>();
