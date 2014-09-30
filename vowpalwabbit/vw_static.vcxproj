@@ -286,7 +286,6 @@
     <ClInclude Include="vw.h" />
     <ClInclude Include="v_array.h" />
     <ClInclude Include="v_hashmap.h" />
-    <ClInclude Include="wap.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="autolink.cc" />
@@ -340,7 +339,6 @@
     <ClCompile Include="stagewise_poly.cc" />
     <ClCompile Include="topk.cc" />
     <ClCompile Include="unique_sort.cc" />
-    <ClCompile Include="wap.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
