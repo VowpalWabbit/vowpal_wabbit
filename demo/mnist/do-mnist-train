@@ -12,16 +12,16 @@ test -e train-labels-idx1-ubyte.gz || {
   exit 1
 }
 
-SHUFFLE='BEGIN { srand 69; };                          
+SHUFFLE='BEGIN { srand 69; };
          $i = int rand 1000;
          print $b[$i] if $b[$i];
          $b[$i] = $_; } { print grep { defined $_ } @b;'
 
 paste -d' '                                                             \
-  <(zcat train-labels-idx1-ubyte.gz | ./extract-labels)                 \
-  <(zcat train-images-idx3-ubyte.gz | ./extractfeatures) |              \
+  <(gunzip -c train-labels-idx1-ubyte.gz | ./extract-labels)            \
+  <(gunzip -c train-images-idx3-ubyte.gz | ./extractfeatures) |         \
 perl -ne ${SHUFFLE} |                                                   \
 time ../../vowpalwabbit/vw --oaa 10 -f mnist.model                      \
-   -b 24 --adaptive --invariant                                         \
-   -l 0.325 --nn 40 --passes 16 -k --compressed --cache_file mnist.cache && \
+   -b 24 --adaptive --invariant --holdout_off                           \
+   -l 0.1 --nn 40 --passes 14 -k --compressed --cache_file mnist.cache && \
 rm -f mnist.cache

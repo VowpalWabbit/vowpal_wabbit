@@ -38,34 +38,81 @@ namespace BS {
   void bs_predict_vote(vw& all, example& ec, vector<double> &pred_vec)
   { //majority vote in linear time
     unsigned int counter = 0;
-    float current_label = 1.;
+    int current_label = 1, init_label = 1;
+    // float sum_labels = 0; // uncomment for: "avg on votes" and getLoss()
+    bool majority_found = false;
+    bool multivote_detected = false; // distinct(votes)>2: used to skip part of the algorithm
+    int* pred_vec_int = new int[pred_vec.size()];
+
+    label_data& ld = *(label_data*)ec.ld;
+
     for(unsigned int i=0; i<pred_vec.size(); i++)
     {
-      if(pred_vec[i] == current_label)
-        counter++;
-      else
-      { 
-        if (counter == 0)
-        {
-          counter = 1;
-          current_label = (float)pred_vec[i];
+      pred_vec_int[i] = (int)floor(pred_vec[i]+0.5); // could be added: link(), min_label/max_label, cutoff between true/false for binary
+
+      if(multivote_detected == false) { // distinct(votes)>2 detection bloc
+        if(i == 0) {
+          init_label = pred_vec_int[i];
+          current_label = pred_vec_int[i];
         }
-        else
-          counter--;
+        else if(init_label != current_label && pred_vec_int[i] != current_label
+                 && pred_vec_int[i] != init_label)
+             multivote_detected = true; // more than 2 distinct votes detected
       }
-       
-      if(counter==0)
-        current_label = -1;
+
+      if (counter == 0) {
+        counter = 1;
+        current_label = pred_vec_int[i];
+      }
+      else {
+        if(pred_vec_int[i] == current_label)
+          counter++;
+        else {
+          counter--;
+        }
+      }
     }
-    label_data& ld = *(label_data*)ec.ld;
-    if(counter == 0)//no majority exists
-      ld.prediction = 1;
-    //will output majority if it exists
-    ld.prediction = current_label;
-    if (ld.prediction == ld.label)
-      ec.loss = 0.;
-    else
-      ec.loss = 1.;
+
+    if(counter > 0 && multivote_detected) { // remove this condition for: "avg on votes" and getLoss()
+      counter = 0;
+      for(unsigned int i=0; i<pred_vec.size(); i++)
+        if(pred_vec_int[i] == current_label) {
+          counter++;
+          // sum_labels += pred_vec[i]; // uncomment for: "avg on votes" and getLoss()
+      }
+      if(counter*2 > pred_vec.size())
+        majority_found = true;
+    }
+
+    if(multivote_detected && majority_found == false) { // then find most frequent element - if tie: smallest tie label
+        std::sort(pred_vec_int, pred_vec_int+pred_vec.size());
+        int tmp_label = pred_vec_int[0];
+        counter = 1;
+        for(unsigned int i=1, temp_count=1; i<pred_vec.size(); i++)
+        {
+          if(tmp_label == pred_vec_int[i])
+            temp_count++;
+          else {
+            if(temp_count > counter) {
+              current_label = tmp_label;
+              counter = temp_count;
+            }
+            tmp_label = pred_vec_int[i];
+            temp_count = 1;
+          }
+        }
+        /* uncomment for: "avg on votes" and getLoss()
+        sum_labels = 0;
+        for(unsigned int i=0; i<pred_vec.size(); i++)
+          if(pred_vec_int[i] == current_label)
+            sum_labels += pred_vec[i]; */
+    }
+
+    // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and getLoss()
+    ld.prediction = (float)current_label;
+
+    // ec.loss = all.loss->getLoss(all.sd, ld.prediction, ld.label) * ld.weight; //replace line below for: "avg on votes" and getLoss()
+    ec.loss = ((ld.prediction == ld.label) ? 0.f : 1.f) * ld.weight;
   }
 
   void print_result(int f, float res, float weight, v_array<char> tag, float lb, float ub)

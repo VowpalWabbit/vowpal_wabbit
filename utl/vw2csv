@@ -48,7 +48,7 @@ sub populate_features($) {
     my $line = shift;
 
     my $idx = 0;
-    if ($line =~ /^[0-9.]/) {
+    if ($line =~ /^-?[0-9.]/) {
 	push(@Idx2feature, 'label');
 	$Feature2Idx{'label'} = $idx++;
     } else {
@@ -56,7 +56,7 @@ sub populate_features($) {
     }
 
     #
-    # Ugly: this is TCA specific:
+    # Ugly: this is too specific:
     #	1) we always tag the lines
     #	2) all our features are numeric and they always include a ':'
     #	3) No collisions in feature names (only one namespace is used)
@@ -124,7 +124,7 @@ sub do_file($) {
     # Fresh file: clear feature inventory
     clear_features();
 
-    open(IF, ($file =~ /\.gz$/) ? "zcat $file|" : $file)
+    open(IF, ($file =~ /\.gz$/) ? "gunzip -c $file|" : $file)
         || die "$0: $file: $!\n";
 
     open(OF, ">$outfile") || die "$0: >$outfile: $!\n";

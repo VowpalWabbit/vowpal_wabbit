@@ -17,6 +17,7 @@ const size_t autolink_namespace  = 130;
 const size_t neighbor_namespace  = 131;   // this is \x83 -- to do quadratic, say "-q a`printf "\x83"` on the command line
 const size_t affix_namespace     = 132;   // this is \x84
 const size_t spelling_namespace  = 133;   // this is \x85
+const size_t conditioning_namespace = 134;
 
 struct feature {
   float x;
@@ -75,11 +76,13 @@ struct flat_example
 	float global_weight;
 
 	size_t num_features;//precomputed, cause it's fast&easy.  
+        float total_sum_feat_sq;//precomputed, cause it's kind of fast & easy.
 	size_t feature_map_len;
 	feature* feature_map; //map to store sparse feature vectors  
 };
 
 flat_example* flatten_example(vw& all, example *ec);
+flat_example* flatten_sort_example(vw& all, example *ec);
 void free_flatten_example(flat_example* fec);
 
 example *alloc_examples(size_t,size_t);

@@ -3,6 +3,8 @@
 #include "simple_label.h"
 #include "allreduce.h"
 #include "accumulate.h"
+#include "constant.h"
+#include "memory.h"
 #include <float.h>
 
 //#undef NDEBUG
@@ -54,6 +56,7 @@ namespace StagewisePoly
     example *original_ec;
     uint32_t cur_depth;
     bool training;
+    uint64_t last_example_counter;
     size_t numpasses;
     uint32_t next_batch_sz;
     bool update_support;
@@ -79,6 +82,26 @@ namespace StagewisePoly
     return idx >> poly.all->reg.stride_shift;
   }
 
+  inline uint32_t do_ft_offset(const stagewise_poly &poly, uint32_t idx)
+  {
+    //cout << poly.synth_ec.ft_offset << "  " << poly.original_ec->ft_offset << endl;
+    assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
+    return idx + poly.synth_ec.ft_offset;
+  }
+
+  inline uint32_t un_ft_offset(const stagewise_poly &poly, uint32_t idx)
+  {
+    assert(!poly.original_ec || poly.synth_ec.ft_offset == poly.original_ec->ft_offset);
+    if (poly.synth_ec.ft_offset == 0)
+      return idx;
+    else {
+      while (idx < poly.synth_ec.ft_offset) {
+        idx += (uint32_t) poly.all->length() << poly.all->reg.stride_shift;
+      }
+      return idx - poly.synth_ec.ft_offset;
+    }
+  }
+
   inline uint32_t wid_mask(const stagewise_poly &poly, uint32_t wid)
   {
     return wid & poly.all->reg.weight_mask;
@@ -91,7 +114,7 @@ namespace StagewisePoly
 
   inline uint32_t constant_feat(const stagewise_poly &poly)
   {
-    return stride_shift(poly, constant);
+    return stride_shift(poly, constant * poly.all->wpp);
   }
 
   inline uint32_t constant_feat_masked(const stagewise_poly &poly)
@@ -107,7 +130,7 @@ namespace StagewisePoly
 
   void depthsbits_create(stagewise_poly &poly)
   {
-    poly.depthsbits = (uint8_t *) malloc(depthsbits_sizeof(poly));
+    poly.depthsbits = (uint8_t *) calloc_or_die(1, depthsbits_sizeof(poly));
     for (uint32_t i = 0; i < poly.all->length() * 2; i += 2) {
       poly.depthsbits[i] = default_depth;
       poly.depthsbits[i+1] = indicator_bit;
@@ -122,23 +145,27 @@ namespace StagewisePoly
   inline bool parent_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % stride_shift(poly, 1) == 0);
-    return poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & parent_bit;
+    assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
+    return poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] & parent_bit;
   }
 
   inline void parent_toggle(stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % stride_shift(poly, 1) == 0);
-    poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= parent_bit;
+    assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
+    poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] ^= parent_bit;
   }
 
   inline bool cycle_get(const stagewise_poly &poly, uint32_t wid)
   {
+    //note: intentionally leaving out ft_offset.
     assert(wid % stride_shift(poly, 1) == 0);
     return poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit;
   }
 
   inline void cycle_toggle(stagewise_poly &poly, uint32_t wid)
   {
+    //note: intentionally leaving out ft_offset.
     assert(wid % stride_shift(poly, 1) == 0);
     poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= cycle_bit;
   }
@@ -146,14 +173,35 @@ namespace StagewisePoly
   inline uint8_t min_depths_get(const stagewise_poly &poly, uint32_t wid)
   {
     assert(wid % stride_shift(poly, 1) == 0);
-    return poly.depthsbits[stride_un_shift(poly, wid) * 2];
+    assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
+    return poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2];
   }
 
   inline void min_depths_set(stagewise_poly &poly, uint32_t wid, uint8_t depth)
   {
     assert(wid % stride_shift(poly, 1) == 0);
-    poly.depthsbits[stride_un_shift(poly, wid) * 2] = depth;
+    assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
+    poly.depthsbits[stride_un_shift(poly, do_ft_offset(poly, wid)) * 2] = depth;
   }
+
+#ifndef NDEBUG
+  void sanity_check_state(stagewise_poly &poly)
+  {
+    for (uint32_t i = 0; i != poly.all->length(); ++i)
+    {
+      uint32_t wid = stride_shift(poly, i);
+
+      assert( ! cycle_get(poly,wid) );
+
+      assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
+
+      assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
+      //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
+
+      assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
+    }
+  }
+#endif //NDEBUG
 
   //Note.  OUTPUT & INPUT masked.
   //It is very important that this function is invariant to stride.
@@ -197,7 +245,7 @@ namespace StagewisePoly
       cout << ", new size " << poly.sd_len << endl;
 #endif //DEBUG
       free(poly.sd); //okay for null.
-      poly.sd = (sort_data *) malloc(poly.sd_len * sizeof(sort_data));
+      poly.sd = (sort_data *) calloc_or_die(poly.sd_len, sizeof(sort_data));
     }
     assert(len <= poly.sd_len);
   }
@@ -235,6 +283,13 @@ namespace StagewisePoly
   void sort_data_update_support(stagewise_poly &poly)
   {
     assert(poly.num_examples);
+
+    //ft_offset affects parent_set / parent_get.  This state must be reset at end.
+    uint32_t pop_ft_offset = poly.original_ec->ft_offset;
+    poly.synth_ec.ft_offset = 0;
+    assert(poly.original_ec);
+    poly.original_ec->ft_offset = 0;
+
     uint32_t num_new_features = (uint32_t)pow(poly.sum_input_sparsity * 1.0f / poly.num_examples, poly.sched_exponent);
     num_new_features = (num_new_features > poly.all->length()) ? (uint32_t)poly.all->length() : num_new_features;
     sort_data_ensure_sz(poly, num_new_features);
@@ -302,7 +357,15 @@ namespace StagewisePoly
     for (uint32_t depth = 0; depth <= poly.max_depth && depth < sizeof(poly.depths) / sizeof(*poly.depths); ++depth)
       cout << "  [" << depth << "] = " << poly.depths[depth];
     cout << endl;
+
+    cout << "Sanity check after sort... " << flush;
+    sanity_check_state(poly);
+    cout << "done" << endl;
 #endif //DEBUG
+
+    //it's okay that these may have been initially unequal; synth_ec value irrelevant so far.
+    poly.original_ec->ft_offset = pop_ft_offset;
+    poly.synth_ec.ft_offset = pop_ft_offset;
   }
 
   void synthetic_reset(stagewise_poly &poly, example &ec)
@@ -310,6 +373,26 @@ namespace StagewisePoly
     poly.synth_ec.ld = ec.ld;
     poly.synth_ec.tag = ec.tag;
     poly.synth_ec.example_counter = ec.example_counter;
+
+    /**
+     * Some comments on ft_offset.
+     *
+     * The plan is to do the feature mapping dfs with weight indices ignoring
+     * the ft_offset.  This is because ft_offset is then added at the end,
+     * guaranteeing local/strided access on synth_ec.  This might not matter
+     * too much in this implementation (where, e.g., --oaa runs one after the
+     * other, not interleaved), but who knows.
+     *
+     * (The other choice is to basically ignore adjusting for ft_offset when
+     * doing the traversal, which means synth_ec.ft_offset is 0 here...)
+     *
+     * Anyway, so here is how ft_offset matters:
+     *   - synthetic_create_rec must "normalize it out" of the fed weight value
+     *   - parent and min_depths set/get are adjusted for it.
+     *   - cycle set/get are not adjusted for it, since it doesn't matter for them.
+     *   - operations on the whole weight vector (sorting, save_load, all_reduce)
+     *     ignore ft_offset, just treat the thing as a flat vector.
+     **/
     poly.synth_ec.ft_offset = ec.ft_offset;
 
     poly.synth_ec.test_only = ec.test_only;
@@ -339,7 +422,8 @@ namespace StagewisePoly
 
   void synthetic_create_rec(stagewise_poly &poly, float v, float &w)
   {
-    uint32_t wid_atomic = (uint32_t)((&w - poly.all->reg.weight_vector));
+    //Note: need to un_ft_shift since gd::foreach_feature bakes in the offset.
+    uint32_t wid_atomic = wid_mask(poly, un_ft_offset(poly, (uint32_t)((&w - poly.all->reg.weight_vector))));
     uint32_t wid_cur = child_wid(poly, wid_atomic, poly.synth_rec_f.weight_index);
     assert(wid_atomic % stride_shift(poly, 1) == 0);
 
@@ -349,12 +433,15 @@ namespace StagewisePoly
     //below is run at training time).
     if (poly.cur_depth < min_depths_get(poly, wid_cur) && poly.training) {
       if (parent_get(poly, wid_cur)) {
-	//#ifdef DEBUG
-	/*        cout
+#ifdef DEBUG
+        cout
           << "FOUND A TRANSPLANT!!! moving [" << wid_cur
           << "] from depth " << (uint32_t) min_depths_get(poly, wid_cur)
-          << " to depth " << poly.cur_depth << endl;*/
-	//#endif //DEBUG
+          << " to depth " << poly.cur_depth << endl;
+#endif //DEBUG
+        //XXX arguably, should also fear transplants that occured with
+        //a different ft_offset ; e.g., need to look out for cross-reduction
+        //collisions.  Have not played with this issue yet...
         parent_toggle(poly, wid_cur);
       }
       min_depths_set(poly, wid_cur, poly.cur_depth);
@@ -395,8 +482,7 @@ namespace StagewisePoly
     poly.cur_depth = 0;
 
     poly.synth_rec_f.x = 1.0;
-    poly.synth_rec_f.weight_index = constant_feat_masked(poly);
-    poly.original_ec = &ec;
+    poly.synth_rec_f.weight_index = constant_feat_masked(poly); //note: not ft_offset'd
     poly.training = training;
     /*
      * Another choice is to mark the constant feature as the single initial
@@ -416,16 +502,17 @@ namespace StagewisePoly
 
   void predict(stagewise_poly &poly, learner &base, example &ec)
   {
+    poly.original_ec = &ec;
     synthetic_create(poly, ec, false);
     base.predict(poly.synth_ec);
-    label_data *ld = (label_data *) ec.ld;
-    if (ld->label != FLT_MAX)
-      ec.loss = poly.all->loss->getLoss(poly.all->sd, ld->prediction, ld->label) * ld->weight;
+    ec.partial_prediction = poly.synth_ec.partial_prediction;
+    ec.updated_prediction = poly.synth_ec.updated_prediction;
   }
 
   void learn(stagewise_poly &poly, learner &base, example &ec)
   {
     bool training = poly.all->training && ((label_data *) ec.ld)->label != FLT_MAX;
+    poly.original_ec = &ec;
 
     if (training) {
       if(poly.update_support) {
@@ -435,15 +522,21 @@ namespace StagewisePoly
 
       synthetic_create(poly, ec, training);
       base.learn(poly.synth_ec);
-      ec.loss = poly.synth_ec.loss;
+      ec.partial_prediction = poly.synth_ec.partial_prediction;
+      ec.updated_prediction = poly.synth_ec.updated_prediction;
 
       if (ec.example_counter
+          //following line is to avoid repeats when multiple reductions on same example.
+          //XXX ideally, would get all "copies" of an example before scheduling the support
+          //update, but how do we know?
+          && poly.last_example_counter != ec.example_counter
           && poly.batch_sz
           && ( (poly.batch_sz_double && !(ec.example_counter % poly.next_batch_sz))
             || (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz)))) {
         poly.next_batch_sz *= 2; //no effect when !poly.batch_sz_double
         poly.update_support = (poly.all->span_server == "" || poly.numpasses == 1);
       }
+      poly.last_example_counter = ec.example_counter;
     } else
       predict(poly, base, ec);
   }
@@ -477,27 +570,6 @@ namespace StagewisePoly
     }
   }
 
-
-  void sanity_check_state(stagewise_poly &poly)
-  {
-    for (uint32_t i = 0; i != poly.all->length(); ++i)
-    {
-#ifndef NDEBUG
-      uint32_t wid = stride_shift(poly, i);
-#endif //NDEBUG
-
-      assert( ! cycle_get(poly,wid) );
-
-      assert( ! (min_depths_get(poly, wid) == default_depth && parent_get(poly, wid)) );
-
-      assert( ! (min_depths_get(poly, wid) == default_depth && fabsf(poly.all->reg.weight_vector[wid]) > 0) );
-      //assert( min_depths_get(poly, wid) != default_depth && fabsf(poly.all->reg.weight_vector[wid]) < tolerance );
-
-      assert( ! (poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)) );
-    }
-  }
-
-
   void end_pass(stagewise_poly &poly)
   {
     if (!!poly.batch_sz || (poly.all->span_server != "" && poly.numpasses > 1))
@@ -520,7 +592,8 @@ namespace StagewisePoly
        * But it's unclear what the right behavior is in general for either
        * case...
        */
-      all_reduce<uint8_t, reduce_min_max>(poly.depthsbits, 2*poly.all->length(), all.span_server, all.unique_id, all.total, all.node, all.socks);
+      all_reduce<uint8_t, reduce_min_max>(poly.depthsbits, depthsbits_sizeof(poly),
+          all.span_server, all.unique_id, all.total, all.node, all.socks);
 
       sum_input_sparsity_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)sum_input_sparsity_inc);
       sum_sparsity_inc = (uint64_t)accumulate_scalar(all, all.span_server, (float)sum_sparsity_inc);
@@ -543,11 +616,6 @@ namespace StagewisePoly
       poly.update_support = true;
       poly.numpasses++;
     }
-
-#ifdef DEBUG
-    cout << "Sanity after sort\n";
-    sanity_check_state(poly);
-#endif //DEBUG
   }
 
   void finish_example(vw &all, stagewise_poly &poly, example &ec)
@@ -575,12 +643,20 @@ namespace StagewisePoly
   {
     if (model_file.files.size() > 0)
       bin_text_read_write_fixed(model_file, (char *) poly.depthsbits, depthsbits_sizeof(poly), "", read, "", 0, text);
+
+    //unfortunately, following can't go here since save_load called before gd::save_load and thus
+    //weight vector state uninitialiazed.
+    //#ifdef DEBUG
+    //      cout << "Sanity check after save_load... " << flush;
+    //      sanity_check_state(poly);
+    //      cout << "done" << endl;
+    //#endif //DEBUG
   }
 
 
   learner *setup(vw &all, po::variables_map &vm)
   {
-    stagewise_poly *poly = (stagewise_poly *) calloc(1, sizeof(stagewise_poly));
+    stagewise_poly *poly = (stagewise_poly *) calloc_or_die(1, sizeof(stagewise_poly));
     poly->all = &all;
 
     depthsbits_create(*poly);
@@ -610,9 +686,14 @@ namespace StagewisePoly
     poly->sum_sparsity_sync = 0;
     poly->sum_input_sparsity_sync = 0;
     poly->num_examples_sync = 0;
+    poly->last_example_counter = -1;
     poly->numpasses = 1;
     poly->update_support = false;
+    poly->original_ec = NULL;
     poly->next_batch_sz = poly->batch_sz;
+
+    //following is so that saved models know to load us.
+    all.file_options.append(" --stage_poly");
 
     learner *l = new learner(poly, all.l);
     l->set_learn<stagewise_poly, learn>();

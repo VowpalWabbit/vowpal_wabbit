@@ -13,7 +13,8 @@ nobase_include_HEADERS = vowpalwabbit/allreduce.h \
 	vowpalwabbit/parser.h \
 	vowpalwabbit/simple_label.h \
 	vowpalwabbit/v_array.h \
-	vowpalwabbit/vw.h
+	vowpalwabbit/vw.h \
+	vowpalwabbit/vwdll.h
 
 noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/autolink.h \
@@ -32,6 +33,7 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/ect.h \
 	vowpalwabbit/gd.h \
 	vowpalwabbit/gd_mf.h \
+	vowpalwabbit/kernel_svm.h \
 	vowpalwabbit/lda_core.h \
 	vowpalwabbit/log_multi.h \
 	vowpalwabbit/lrq.h \
@@ -49,15 +51,16 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/rand48.h \
 	vowpalwabbit/reductions.h \
 	vowpalwabbit/scorer.h \
-	vowpalwabbit/searn.h \
-	vowpalwabbit/searn_sequencetask.h \
-	vowpalwabbit/searn_entityrelationtask.h \
+	vowpalwabbit/search.h \
+	vowpalwabbit/search_sequencetask.h \
+	vowpalwabbit/search_entityrelationtask.h \
+	vowpalwabbit/search_hooktask.h \
+	vowpalwabbit/search_multiclasstask.h \
 	vowpalwabbit/sender.h \
 	vowpalwabbit/stagewise_poly.h \
 	vowpalwabbit/topk.h \
 	vowpalwabbit/unique_sort.h \
-	vowpalwabbit/v_hashmap.h \
-	vowpalwabbit/wap.h
+	vowpalwabbit/v_hashmap.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 

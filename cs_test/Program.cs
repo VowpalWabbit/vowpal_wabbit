@@ -89,7 +89,7 @@ namespace cs_test
 
         private static void RunParserTest()
         {
-            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d ..\\..\\..\\test\\train-sets\\0002.dat -f out");
 
             VowpalWabbitInterface.StartParser(vw, false);
 
@@ -136,7 +136,7 @@ namespace cs_test
             //IntPtr vw = VowpalWabbitInterface.Initialize("--ngram 2 --skips 4 -l 0.25 -b 22 -d rcv1.train.raw.txt -f out");
             //IntPtr vw = VowpalWabbitInterface.Initialize("-d rcv1.train.raw.txt -b 22 --ngram 2 --skips 4 -l 0.25 -c");
             //IntPtr vw = VowpalWabbitInterface.Initialize("-d rcv1.train.raw.txt -c");
-            IntPtr vw = VowpalWabbitInterface.Initialize("-d 0002.dat");
+            IntPtr vw = VowpalWabbitInterface.Initialize("-d ..\\..\\..\\test\\train-sets\\0002.dat");
 
             VowpalWabbitInterface.StartParser(vw, false);
 
@@ -166,7 +166,7 @@ namespace cs_test
         private static void RunFlatExampleTestEx()
         {
             //IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d rcv1.train.raw.txt -f out");
-            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d 0002.dat -f out");
+            IntPtr vw = VowpalWabbitInterface.Initialize("-q st -d ..\\..\\..\\test\\train-sets\\0002.dat -f out");
 
             VowpalWabbitInterface.StartParser(vw, false);
 

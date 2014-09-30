@@ -140,13 +140,14 @@ void handle_sigterm (int)
   got_sigterm = true;
 }
 
-bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdout_off)
+bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdout_off, uint32_t target_modulus)  // target should be 0 in the normal case, or period-1 in the case that emptylines separate examples
 {
   if(holdout_off) return false;
+  //cerr << "(" << counter << "," << period << "," << target_modulus << ")";
   if (after == 0) // hold out by period
-    return (counter % period == 0);
+    return (counter % period == target_modulus);
   else // hold out by position
-    return (counter+1 >= after);
+    return (counter >= after);
 }
 
 parser* new_parser()
@@ -531,6 +532,7 @@ void enable_sources(vw& all, po::variables_map& vm, bool quiet, size_t passes)
 		{
 		  for (size_t i = 0; i < num_children; i++)
 		    kill(children[i], SIGTERM);
+                  VW::finish(all);
 		  exit(0);
 		}
 	      if (pid < 0)
@@ -746,6 +748,7 @@ void end_pass_example(vw& all, example* ae)
   all.p->in_pass_counter = 0;
 }
 
+namespace VW{
 void setup_example(vw& all, example* ae)
 {
   ae->partial_prediction = 0.;
@@ -754,13 +757,18 @@ void setup_example(vw& all, example* ae)
   ae->loss = 0.;
   
   ae->example_counter = (size_t)(all.p->end_parsed_examples);
-  if ((!all.p->emptylines_separate_examples) || example_is_newline(*ae))
+  if (!all.p->emptylines_separate_examples)
     all.p->in_pass_counter++;
 
-  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off);
+  ae->test_only = is_test_only(all.p->in_pass_counter, all.holdout_period, all.holdout_after, all.holdout_set_off, all.p->emptylines_separate_examples ? (all.holdout_period-1) : 0);
+
+  if (all.p->emptylines_separate_examples && example_is_newline(*ae))
+    all.p->in_pass_counter++;
+  
   all.sd->t += all.p->lp.get_weight(ae->ld);
   ae->example_t = (float)all.sd->t;
 
+  
   if (all.ignore_some)
     {
       if (all.audit || all.hash_inv)
@@ -844,6 +852,7 @@ void setup_example(vw& all, example* ae)
       }
   }
 }
+}
 
 namespace VW{
   example* new_unused_example(vw& all) { 
@@ -865,6 +874,8 @@ namespace VW{
     return ret;
   }
 
+  example* read_example(vw& all, string example_line) { return read_example(all, (char*)example_line.c_str()); }
+  
   void add_constant_feature(vw& vw, example*ec) {
     uint32_t cns = constant_namespace;
     ec->indices.push_back(cns);
@@ -982,9 +993,9 @@ namespace VW{
 	    }
 	  ec.audit_features[*i].erase();
 	}
-    
+
     for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
-      {  
+      {
 	ec.atomics[*i].erase();
 	ec.sum_feat_sq[*i]=0;
       }
@@ -1030,7 +1041,7 @@ void *main_parse_loop(void *in)
 	    if (!all->do_reset_source && example_number != all->pass_length && all->max_examples > example_number
 		   && parse_atomic_example(*all, ae) )
 	     {
-	       setup_example(*all, ae);
+	       VW::setup_example(*all, ae);
 	       example_number++;
 	     }
 	    else

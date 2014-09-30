@@ -42,7 +42,6 @@ namespace GD
     void (*predict)(gd&, learner&, example&);
 
     vw* all;
-    shared_data* sd;
   };
 
   void sync_weights(vw& all);
@@ -244,7 +243,7 @@ void print_features(vw& all, example& ec)
     {
       size_t count = 0;
       for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++)
-	count += ec.audit_features[*i].size() + ec.atomics[*i].size();
+	count += ec.atomics[*i].size();
       for (unsigned char* i = ec.indices.begin; i != ec.indices.end; i++) 
 	for (audit_data *f = ec.audit_features[*i].begin; f != ec.audit_features[*i].end; f++)
 	  {
@@ -353,12 +352,12 @@ void predict(gd& g, learner& base, example& ec)
   vw& all = *g.all;
   
   if (l1)
-    ec.partial_prediction = trunc_predict(all, ec, g.sd->gravity);
+    ec.partial_prediction = trunc_predict(all, ec, all.sd->gravity);
   else
     ec.partial_prediction = inline_predict(all, ec);    
 
   label_data& ld = *(label_data*)ec.ld;
-  ld.prediction = finalize_prediction(g.sd, ec.partial_prediction * (float)g.sd->contraction);
+  ld.prediction = finalize_prediction(all.sd, ec.partial_prediction * (float)all.sd->contraction);
   
   if (audit)
     print_audit_features(all, ec);
@@ -469,7 +468,7 @@ float compute_update(gd& g, example& ec)
   label_data* ld = (label_data*)ec.ld;
   vw& all = *g.all;
 
-  if (all.loss->getLoss(g.sd, ld->prediction, ld->label) > 0.)
+  if (all.loss->getLoss(all.sd, ld->prediction, ld->label) > 0.)
     {
       float pred_per_update;
       if(adaptive || normalized)
@@ -480,7 +479,7 @@ float compute_update(gd& g, example& ec)
       float delta_pred = pred_per_update * all.eta * ld->weight;
       if(!adaptive) 
 	{
-	  float t = (float)(ec.example_t - g.sd->weighted_holdout_examples);
+	  float t = (float)(ec.example_t - all.sd->weighted_holdout_examples);
 	  delta_pred *= powf(t, g.neg_power_t);
 	}
       
@@ -493,12 +492,12 @@ float compute_update(gd& g, example& ec)
       ec.updated_prediction = ec.partial_prediction + pred_per_update * update;
       
       if (all.reg_mode && fabs(update) > 1e-8) {
-	double dev1 = all.loss->first_derivative(g.sd, ld->prediction, ld->label);
+	double dev1 = all.loss->first_derivative(all.sd, ld->prediction, ld->label);
 	double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
 	if (fabs(dev1) > 1e-8)
-	  g.sd->contraction *= (1. - all.l2_lambda * eta_bar);
-	update /= (float)g.sd->contraction;
-	g.sd->gravity += eta_bar * all.l1_lambda;
+	  all.sd->contraction *= (1. - all.l2_lambda * eta_bar);
+	update /= (float)all.sd->contraction;
+	all.sd->gravity += eta_bar * all.l1_lambda;
       }
       return update;
     }
@@ -513,7 +512,7 @@ void update(gd& g, learner& base, example& ec)
   if ( (update = compute_update<invariant, sqrt_rate, feature_mask_off, adaptive, normalized, spare> (g, ec)) != 0.)
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
   
-  if (g.sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
+  if (g.all->sd->contraction < 1e-10)  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
 }
 
@@ -625,70 +624,70 @@ void save_load_online_state(gd& g, io_buf& model_file, bool read, bool text)
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "t %f\n", g.sd->t);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->t, sizeof(g.sd->t), 
+  text_len = sprintf(buff, "t %f\n", all.sd->t);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->t, sizeof(all.sd->t), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "sum_loss %f\n", g.sd->sum_loss);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->sum_loss, sizeof(g.sd->sum_loss), 
+  text_len = sprintf(buff, "sum_loss %f\n", all.sd->sum_loss);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss, sizeof(all.sd->sum_loss), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "sum_loss_since_last_dump %f\n", g.sd->sum_loss_since_last_dump);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->sum_loss_since_last_dump, sizeof(g.sd->sum_loss_since_last_dump), 
+  text_len = sprintf(buff, "sum_loss_since_last_dump %f\n", all.sd->sum_loss_since_last_dump);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->sum_loss_since_last_dump, sizeof(all.sd->sum_loss_since_last_dump), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "dump_interval %f\n", g.sd->dump_interval);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->dump_interval, sizeof(g.sd->dump_interval), 
+  text_len = sprintf(buff, "dump_interval %f\n", all.sd->dump_interval);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->dump_interval, sizeof(all.sd->dump_interval), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "min_label %f\n", g.sd->min_label);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->min_label, sizeof(g.sd->min_label), 
+  text_len = sprintf(buff, "min_label %f\n", all.sd->min_label);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->min_label, sizeof(all.sd->min_label), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "max_label %f\n", g.sd->max_label);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->max_label, sizeof(g.sd->max_label), 
+  text_len = sprintf(buff, "max_label %f\n", all.sd->max_label);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->max_label, sizeof(all.sd->max_label), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "weighted_examples %f\n", g.sd->weighted_examples);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->weighted_examples, sizeof(g.sd->weighted_examples), 
+  text_len = sprintf(buff, "weighted_examples %f\n", all.sd->weighted_examples);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_examples, sizeof(all.sd->weighted_examples), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "weighted_labels %f\n", g.sd->weighted_labels);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->weighted_labels, sizeof(g.sd->weighted_labels), 
+  text_len = sprintf(buff, "weighted_labels %f\n", all.sd->weighted_labels);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_labels, sizeof(all.sd->weighted_labels), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "weighted_unlabeled_examples %f\n", g.sd->weighted_unlabeled_examples);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->weighted_unlabeled_examples, sizeof(g.sd->weighted_unlabeled_examples), 
+  text_len = sprintf(buff, "weighted_unlabeled_examples %f\n", all.sd->weighted_unlabeled_examples);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->weighted_unlabeled_examples, sizeof(all.sd->weighted_unlabeled_examples), 
 			    "", read, 
 			    buff, text_len, text);
   
-  text_len = sprintf(buff, "example_number %u\n", (uint32_t)g.sd->example_number);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->example_number, sizeof(g.sd->example_number), 
+  text_len = sprintf(buff, "example_number %u\n", (uint32_t)all.sd->example_number);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->example_number, sizeof(all.sd->example_number), 
 			    "", read, 
 			    buff, text_len, text);
 
-  text_len = sprintf(buff, "total_features %u\n", (uint32_t)g.sd->total_features);
-  bin_text_read_write_fixed(model_file,(char*)&g.sd->total_features, sizeof(g.sd->total_features), 
+  text_len = sprintf(buff, "total_features %u\n", (uint32_t)all.sd->total_features);
+  bin_text_read_write_fixed(model_file,(char*)&all.sd->total_features, sizeof(all.sd->total_features), 
 			    "", read, 
 			    buff, text_len, text);
   if (!all.training) // reset various things so that we report test set performance properly
     {
-      g.sd->sum_loss = 0;
-      g.sd->sum_loss_since_last_dump = 0;
-      g.sd->dump_interval = 1.;
-      g.sd->weighted_examples = 0.;
-      g.sd->weighted_labels = 0.;
-      g.sd->weighted_unlabeled_examples = 0.;
-      g.sd->example_number = 0;
-      g.sd->total_features = 0;
+      all.sd->sum_loss = 0;
+      all.sd->sum_loss_since_last_dump = 0;
+      all.sd->dump_interval = 1.;
+      all.sd->weighted_examples = 0.;
+      all.sd->weighted_labels = 0.;
+      all.sd->weighted_unlabeled_examples = 0.;
+      all.sd->example_number = 0;
+      all.sd->total_features = 0;
     }
   
   uint32_t length = 1 << all.num_bits;
@@ -844,7 +843,6 @@ learner* setup(vw& all, po::variables_map& vm)
 {
   gd* g = (gd*)calloc_or_die(1, sizeof(gd));
   g->all = &all;
-  g->sd = all.sd;
   g->normalized_sum_norm_x = 0;
   g->no_win_counter = 0;
   g->total_weight = 0.;

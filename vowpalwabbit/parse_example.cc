@@ -18,12 +18,12 @@ using namespace std;
 
 size_t hashstring (substring s, uint32_t h)
 {
-  size_t ret = 0;
   //trim leading whitespace but not UTF-8
-  for(; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin) >= 0; s.begin++);
+  for(; s.begin < s.end && *(s.begin) <= 0x20 && (int)*(s.begin)>= 0; s.begin++);
   //trim trailing white space but not UTF-8
   for(; s.end > s.begin && *(s.end-1) <= 0x20 && (int)*(s.end-1) >=0; s.end--);
 
+  size_t ret = 0;
   char *p = s.begin;
   while (p != s.end)
     if (*p >= '0' && *p <= '9')
@@ -59,6 +59,7 @@ char* copy(char* base)
   return ret;
 }
 
+template<bool audit>
 class TC_parser {
   
 public:
@@ -68,7 +69,6 @@ public:
   float cur_channel_v;
   bool  new_index;
   size_t anon; 
-  bool audit;
   size_t channel_hash;
   char* base;
   unsigned char index;
@@ -82,7 +82,7 @@ public:
   ~TC_parser(){ }
   
   inline float featureValue(){
-    if(reading_head == endLine || *reading_head == '|' || *reading_head == ' ' || *reading_head == '\t' || *reading_head == '\r')
+    if(*reading_head == ' ' || *reading_head == '\t' || *reading_head == '|' || reading_head == endLine || *reading_head == '\r')
       return 1.;
     else if(*reading_head == ':'){
       // featureValue --> ':' 'Float'
@@ -108,7 +108,7 @@ public:
   inline substring read_name(){
     substring ret;
     ret.begin = reading_head;
-    while( !(*reading_head == ' ' || *reading_head == '\t' || *reading_head == ':' ||*reading_head == '|' || reading_head == endLine || *reading_head == '\r' ))
+    while( !(*reading_head == ' ' || *reading_head == ':' || *reading_head == '\t' || *reading_head == '|' || reading_head == endLine || *reading_head == '\r' ))
       ++reading_head;
     ret.end = reading_head;
 
@@ -315,7 +315,6 @@ public:
 	this->affix_features = all.affix_features;
 	this->spelling_features = all.spelling_features;
 	this->base = NULL;
-	audit = all.audit || all.hash_inv;
 	listNameSpace();
 	if (base != NULL)
 	  free(base);
@@ -352,7 +351,10 @@ void substring_to_example(vw* all, example* ae, substring example)
   if (all->p->words.size() > 0)
     all->p->lp.parse_label(all->p, all->sd, ae->ld, all->p->words);
   
-  TC_parser parser_line(bar_location,example.end,*all,ae);
+  if (all->audit || all->hash_inv)
+    TC_parser<true> parser_line(bar_location,example.end,*all,ae);
+  else
+    TC_parser<false> parser_line(bar_location,example.end,*all,ae);
 }
 
 int read_features(void* in, example* ex)
@@ -381,5 +383,6 @@ int read_features(void* in, example* ex)
 void read_line(vw& all, example* ex, char* line)
 {
   substring ss = {line, line+strlen(line)};
+  while ((ss.end >= ss.begin) && (*(ss.end-1) == '\n')) ss.end--;
   substring_to_example(&all, ex, ss);  
 }

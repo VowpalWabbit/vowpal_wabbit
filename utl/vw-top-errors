@@ -50,8 +50,8 @@ my $TopWeights;
 my %ExampleNos;
 my @ExampleNos;
 
-my $DefaultTopN = 5;
-my $DefaultTopWeights = 10;
+my $DefaultTopN = 10;
+my $DefaultTopWeights = 5;
 
 my $VWCmd;
 
@@ -135,29 +135,57 @@ sub get_args {
 
     @ARGV = @our_args;
     getopts('vsa');
+
+    # Make wide-char output safe from warnings
+    binmode STDOUT, ":utf8";
 }
 
-
+#
+# collect_errors
+#   Reads vw progress output and collects delta-loss magnitudes
+#   in the hash %ExampleDelta.
+#
+#   We're looking for positive deltas, i.e. examples where the
+#   loss went up instead of down.
+#
 sub collect_errors($) {
     my $vw_stderr = shift;
 
+    my $good_lines = 0;
     my ($prev_avgloss, $prev_sincelast);
+    my $stderr = '';
     while (<$vw_stderr>) {
-        next unless (/^([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s/);
-        my ($avgloss, $sincelast, $example) = ($1, $2, $3);
+        unless (/^([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s/) {
+            # Not a progress line, may be needed if 'vw' crashes etc.
+            $stderr .= "\t$_";
+            next;
+        }
+        $good_lines++;
+        my ($avgloss, $sincelast, $example_no) = ($1, $2, $3);
         if (defined $prev_sincelast) {
             my $delta_since_last = $sincelast - $prev_sincelast;
             if ($opt_a) {
-                # absolute error
-                $ExampleDelta{$example} = $delta_since_last;
+                # absolute error (rare need)
+                $ExampleDelta{$example_no} = $delta_since_last;
             } else {
-                # relative error
+                # relative error (default)
                 my $relative_error = $delta_since_last / $avgloss;
-                $ExampleDelta{$example} = $relative_error;
+                $ExampleDelta{$example_no} = $relative_error;
             }
         }
 
         ($prev_avgloss, $prev_sincelast) = ($avgloss, $sincelast);
+    }
+    wait;
+    if ($?) {
+        printf STDERR "%s: vw exited w/ status %d\nvw stderr:\n%s\n",
+                        $0, $? >> 8, $stderr;
+        exit 1;
+    }
+    unless ($good_lines > 0) {
+        printf STDERR "%s: no progress lines from vw training\n%s\n",
+                        $0, $stderr;
+        exit 1;
     }
 }
 
@@ -287,11 +315,18 @@ sub audit_top_weights($$@) {
     }
 }
 
+#
+# sort delta loss numerically, descending
+#
 sub by_delta() {
     $ExampleDelta{$b} <=> $ExampleDelta{$a};
 }
 
-sub biggest_errors($) {
+#
+# biggest_error_examples(N)
+#   list of top N loss example_numbers
+#
+sub biggest_error_examples($) {
     my $howmany = shift;
 
     my @sorted_examples = sort by_delta keys %ExampleDelta;
@@ -299,15 +334,24 @@ sub biggest_errors($) {
     @sorted_examples[0 .. $howmany-1];
 }
 
+#
+# print_errors(@examples)
+#   Print the top N loss example numbers and their absolute or
+#   relative loss.
+#
 sub print_errors(@) {
     printf "=== Top-%d (highest delta loss) diverging examples:\n", scalar(@_);
-
     printf "Example\t%s-Loss\n", ($opt_a ? 'Absolute' : 'Relative');
     foreach my $example (@_) {
         printf "%d\t%g\n", $example, $ExampleDelta{$example};
     }
     print "\n";
 }
+
+#
+# first_pass(N)
+#   First training pass to capture progressive loss numbers.
+#
 sub first_pass($) {
     my $top_n = shift;
 
@@ -321,13 +365,18 @@ sub first_pass($) {
     open(my $vwh, "$vw_cmd 2>&1 |");
     collect_errors($vwh);
     close $vwh;
-    my @top_error_examples = biggest_errors($top_n);
+    my @top_error_examples = biggest_error_examples($top_n);
     print_errors(@top_error_examples);
     v("+--- 1st pass: done!\n\n");
 
     @top_error_examples;
 }
 
+#
+# second_pass($top_weights, @example_nos)
+#   2nd training pass with --audit to capture individual features
+#   causing the biggest loss jumps.
+#
 sub second_pass($@) {
     my ($top_weights, @example_nos) = @_;
 

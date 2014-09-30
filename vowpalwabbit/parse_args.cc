@@ -23,11 +23,10 @@ license as described in the file LICENSE.
 #include "topk.h"
 #include "ect.h"
 #include "csoaa.h"
-#include "wap.h"
 #include "cb.h"
 #include "cb_algs.h"
 #include "scorer.h"
-#include "searn.h"
+#include "search.h"
 #include "bfgs.h"
 #include "lda_core.h"
 #include "noop.h"
@@ -44,6 +43,7 @@ license as described in the file LICENSE.
 #include "memory.h"
 #include "stagewise_poly.h"
 #include "active.h"
+#include "kernel_svm.h"
 
 using namespace std;
 //
@@ -64,7 +64,6 @@ bool valid_ns(char c)
         return false;
     return true;
 }
-
 
 void parse_affix_argument(vw&all, string str) {
   if (str.length() == 0) return;
@@ -310,8 +309,14 @@ void parse_feature_tweaks(vw& all, po::variables_map& vm)
 
   if (vm.count("bit_precision"))
     {
+      uint32_t new_bits = (uint32_t)vm["bit_precision"].as< size_t>();
+      if (all.default_bits == false && new_bits != all.num_bits)
+	{
+	  cout << "Number of bits is set to " << new_bits << " and " << all.num_bits << " by argument and model.  That does not work." << endl;
+	  throw exception();
+	}
       all.default_bits = false;
-      all.num_bits = (uint32_t)vm["bit_precision"].as< size_t>();
+      all.num_bits = new_bits;
       if (all.num_bits > min(32, sizeof(size_t)*8 - 3))
 	{
 	  cout << "Only " << min(32, sizeof(size_t)*8 - 3) << " or fewer bits allowed.  If this is a serious limit, speak up." << endl;
@@ -645,6 +650,7 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     ("rank", po::value<uint32_t>(&(all.rank)), "rank for matrix factorization.")
     ("noop","do no learning")
     ("print","print examples")
+    ("ksvm", "kernel svm")
     ("sendto", po::value< vector<string> >(), "send examples to <host>");
 
   vm = add_options(all, base_opt);
@@ -661,6 +667,12 @@ void parse_base_algorithm(vw& all, po::variables_map& vm)
     all.l = GDMF::setup(all, vm);
   else if (vm.count("sendto"))
     all.l = SENDER::setup(all, vm, all.pairs);
+  else if (vm.count("ksvm")) {
+    string loss_function = "hinge";
+    float loss_parameter = 0.0;
+    all.loss = getLossFunction(&all, loss_function, (float)loss_parameter);
+    all.l = KSVM::setup(all, vm);
+  }
   else
     {
       all.l = GD::setup(all, vm);
@@ -744,7 +756,6 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
     ("ect", po::value<size_t>(), "Use error correcting tournament with <k> labels")
     ("log_multi", po::value<size_t>(), "Use online tree for multiclass")
     ("csoaa", po::value<size_t>(), "Use one-against-all multiclass learning with <k> costs")
-    ("wap", po::value<size_t>(), "Use weighted all-pairs multiclass learning with <k> costs")
     ("csoaa_ldf", po::value<string>(), "Use one-against-all multiclass learning with label dependent features.  Specify singleline or multiline.")
     ("wap_ldf", po::value<string>(), "Use weighted all-pairs multiclass learning with label dependent features.  Specify singleline or multiline.")
     ;
@@ -772,12 +783,6 @@ void parse_score_users(vw& all, po::variables_map& vm, bool& got_cs)
   
   if(vm.count("log_multi")){
     all.l = exclusive_setup(all, vm, score_consumer, LOG_MULTI::setup);
-  }
-  
-  if(vm.count("wap")) {
-    all.l = exclusive_setup(all, vm, score_consumer, WAP::setup);
-    all.cost_sensitive = all.l;
-    got_cs = true;
   }
   
   if(vm.count("csoaa_ldf") || vm.count("csoaa_ldf")) {
@@ -843,7 +848,7 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
   po::options_description search_opts("Search");
     
   search_opts.add_options()
-    ("search", po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
+      ("search",  po::value<size_t>(), "use search-based structured prediction, argument=maximum action id or 0 for LDF");
 
   vm = add_options(all,search_opts);
 
@@ -856,8 +861,7 @@ void parse_search(vw& all, po::variables_map& vm, bool& got_cs, bool& got_cb)
       all.cost_sensitive = all.l;
       got_cs = true;
     }
-    //all.searnstr = (Searn::searn*)calloc_or_die(1, sizeof(Searn::searn));
-    all.l = Searn::setup(all, vm);
+    all.l = Search::setup(all, vm);
   }
 }
 
@@ -1006,7 +1010,7 @@ vw* parse_args(int argc, char *argv[])
     cout << "\n" << all->opts << "\n";
     exit(0);
   }
-  
+
   return all;
 }
 
@@ -1083,7 +1087,7 @@ namespace VW {
     return all;
   }
 
-  void finish(vw& all)
+  void finish(vw& all, bool delete_all)
   {
     finalize_regressor(all, all.final_regressor_name);
     all.l->finish();
@@ -1101,6 +1105,6 @@ namespace VW {
 	io_buf::close_file_or_socket(all.final_prediction_sink[i]);
     all.final_prediction_sink.delete_v();
     delete all.loss;
-    delete &all;
+    if (delete_all) delete &all;
   }
 }

@@ -142,7 +142,7 @@ namespace CBIFY {
     ec.ld = &(data.cb_label);
     data.cb_label.costs.erase();
 
-    for (size_t j = 1; j <= data.bags; j++)
+    for (size_t j = 1; j <= data.k; j++)
        data.count[j] = 0;
 	 
     size_t bag = choose_bag(data);
@@ -349,7 +349,7 @@ namespace CBIFY {
       {
 	data->bags = (uint32_t)vm["cover"].as<size_t>();
 	data->cs = all.cost_sensitive;
-	data->count.resize(data->k);
+	data->count.resize(data->k+1);
 	data->predictions.resize(data->bags);
 	data->second_cs_label.costs.resize(data->k);
 	data->second_cs_label.costs.end = data->second_cs_label.costs.begin+data->k;
@@ -362,7 +362,7 @@ namespace CBIFY {
     else if (vm.count("bag"))
       {
 	data->bags = (uint32_t)vm["bag"].as<size_t>();
-	data->count.resize(data->bags+1);
+	data->count.resize(data->k+1);
 	l = new learner(data, all.l, data->bags);
 	l->set_learn<cbify, predict_or_learn_bag<true> >();
 	l->set_predict<cbify, predict_or_learn_bag<false> >();
