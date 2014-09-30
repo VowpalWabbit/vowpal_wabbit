@@ -6,7 +6,7 @@
 #include "cb_algs.h"
 #include "rand48.h"
 #include "bs.h"
-#include "MWT.h"
+#include "../vw_explore_static/MWT.h"
 
 using namespace LEARNER;
 
