@@ -50,5 +50,10 @@ library/ezexample_train
 library/library_example
 library/recommend
 library/gd_mf_weights
+library/test_search
 test/RunTests.last.times
 *.dSYM
+*.so
+demo/mnist/infimnist
+demo/ocr/letter.*
+demo/ocr/run.*
