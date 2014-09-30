@@ -21,7 +21,11 @@ namespace CB {
     uint32_t prediction;
   };
 
-  extern label_parser cb_label;
+  extern label_parser cb_label;//for learning
+}
+
+namespace CB_EVAL {
+  extern label_parser cb_eval;//for evaluation of an arbitrary policy.
 }
 
 #endif

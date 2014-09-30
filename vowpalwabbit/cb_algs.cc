@@ -16,6 +16,8 @@ using namespace LEARNER;
 #define CB_TYPE_DR 0
 #define CB_TYPE_DM 1
 #define CB_TYPE_IPS 2
+#define CB_TYPE_IPS_EVAL 3
+#define CB_TYPE_DR_EVAL 4
 
 using namespace CB;
 
@@ -491,7 +493,9 @@ namespace CB_ALGS
 
     po::options_description cb_opts("CB options");
     cb_opts.add_options()
-      ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}");
+      ("cb_type", po::value<string>(), "contextual bandit method to use in {ips,dm,dr}")
+      ("eval", "Evaluate a policy rather than optimizing.")
+      ;
 
     vm = add_options(all, cb_opts);
 
@@ -500,6 +504,11 @@ namespace CB_ALGS
     all.file_options.append(ss.str());
 
     all.sd->k = nb_actions;
+
+    if (vm.count("eval"))
+      {
+
+      }
 
     size_t problem_multiplier = 2;//default for DR
     if (vm.count("cb_type"))
