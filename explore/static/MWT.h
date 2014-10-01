@@ -109,9 +109,9 @@ public:
 	}
 
 	// TODO: check whether char* could be std::string
-	u32 Choose_Action(Context& context, char* unique_id, u32 length)
+	u32 Choose_Action(Context& context, std::string unique_id)
 	{
-		u32 seed = this->Compute_Seed(unique_id, length);
+		u32 seed = this->Compute_Seed(const_cast<char*>(unique_id.c_str()), unique_id.size());
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set, seed);
 		if (!std::get<2>(action_Probability_Log_Tuple)){
 			return std::get<0>(action_Probability_Log_Tuple).Get_Id();
@@ -260,10 +260,10 @@ public:
 		m_default_func_wrapper = func_wrapper;
 	}
 
-	u32 Choose_Action(feature* context_features, size_t num_features, std::string* other_context, char* unique_id, u32 length)
+	u32 Choose_Action(feature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
 	{
 		Context context(context_features, num_features, other_context);
-		return this->Choose_Action(context, unique_id, length);
+		return this->Choose_Action(context, unique_id);
 	}
 
 	std::string Get_All_Interactions()

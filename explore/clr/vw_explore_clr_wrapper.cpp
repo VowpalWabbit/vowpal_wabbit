@@ -142,28 +142,18 @@ namespace MultiWorldTesting {
 	{
 		UInt32 chosenAction = 0;
 
-		IntPtr ptrNativeUniqueId = Marshal::StringToHGlobalAnsi(uniqueId);
 		std::string nativeOtherContext = marshal_as<std::string>(otherContext);
+		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
 		pin_ptr<FEATURE> pinnedContextFeatures = &contextFeatures[0]; 
 		FEATURE* nativeContextFeatures = pinnedContextFeatures;
 
-		try
-		{
-			size_t uniqueIdLength = (size_t)uniqueId->Length;
-			char* unique_id = static_cast<char*>(ptrNativeUniqueId.ToPointer());
+		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
-			chosenAction = m_mwt->Choose_Action(
-				(feature*)nativeContextFeatures, (size_t)contextFeatures->Length, 
-				&nativeOtherContext, 
-				unique_id, uniqueIdLength);
-		}
-		catch (System::Exception^ exception)
-		{
-			Marshal::FreeHGlobal(ptrNativeUniqueId);
-			throw exception;
-		}
-		Marshal::FreeHGlobal(ptrNativeUniqueId);
+		chosenAction = m_mwt->Choose_Action(
+			(feature*)nativeContextFeatures, (size_t)contextFeatures->Length, 
+			&nativeOtherContext, 
+			nativeUniqueKey);
 
 		return chosenAction;
 	}

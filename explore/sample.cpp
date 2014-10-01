@@ -51,8 +51,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	// todo: 
 	pair<u32, u64> action_and_key = mwt.Choose_Action_And_Key(ctx);
 
-	char* unique_key = "1001";
-	u32 chosen_action = mwt.Choose_Action(ctx, unique_key, 4);
+	string unique_key = "1001";
+	u32 chosen_action = mwt.Choose_Action(ctx, unique_key);
 	
 	cout << "Chosen Action ID with join key is: " << action_and_key.first << endl;
 	cout << "Chosen Action ID is: " << chosen_action << endl;

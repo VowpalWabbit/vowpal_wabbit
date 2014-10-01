@@ -17,7 +17,7 @@ namespace vw_explore_tests
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, (u32)m_policy_func_arg);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
 			Assert::AreEqual(chosen_action, (u32)m_policy_func_arg);
 
 			this->Test_Logger(2);
@@ -30,7 +30,7 @@ namespace vw_explore_tests
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			this->Test_Logger(2);
@@ -43,7 +43,7 @@ namespace vw_explore_tests
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, (u32)m_policy_func_arg);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
 			Assert::AreEqual(chosen_action, (u32)m_policy_func_arg);
 
 			this->Test_Logger(0); // tau = 0 means no randomization and no logging
@@ -56,7 +56,7 @@ namespace vw_explore_tests
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			this->Test_Logger(0);
@@ -185,10 +185,6 @@ namespace vw_explore_tests
 
 			delete[] interactions;
 		}
-
-	private:
-		char* Unique_Key() { return const_cast<char*>(m_unique_key.c_str()); }
-		u32 Unique_Key_Length() { return (u32)m_unique_key.length(); }
 
 	private:
 		string m_app_id;
