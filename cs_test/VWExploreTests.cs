@@ -38,7 +38,10 @@ namespace cs_test
             f[1].X = 0.9f;
             f[1].WeightIndex = 2;
 
-            UInt32 chosenAction = mwt.ChooseAction(f, "saywhathahahahah", "myId");
+            string otherContext = "Some other context data that might be helpful to log";
+            Context context = new Context(f, otherContext);
+
+            UInt32 chosenAction = mwt.ChooseAction(context, "myId");
 
             string interactions = mwt.GetAllInteractions();
 
