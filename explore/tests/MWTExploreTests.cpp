@@ -121,7 +121,7 @@ namespace vw_explore_tests
 		{
 			m_num_actions = 10;
 			m_app_id = "MWT Test App";
-			m_mwt = new MWT(m_app_id, m_num_actions);
+			m_mwt = new MWTExplorer(m_app_id, m_num_actions);
 
 			//TODO: We should eventually test randomization, else we are missing code paths
 			// Initialize with 0 to test deterministic result
@@ -192,7 +192,7 @@ namespace vw_explore_tests
 
 	private:
 		string m_app_id;
-		MWT* m_mwt;
+		MWTExplorer* m_mwt;
 
 		float m_epsilon;
 		u32 m_tau;

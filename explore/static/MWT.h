@@ -12,10 +12,10 @@
 #include "SoftMaxExplorer.h"
 #include "BaggingExplorer.h"
 
-class MWT
+class MWTExplorer
 {
 public:
-	MWT(std::string& app_id, u32 num_actions) : m_app_id(app_id)
+	MWTExplorer(std::string& app_id, u32 num_actions) : m_app_id(app_id)
 	{
 		IdGenerator::Initialize();
 
@@ -30,7 +30,7 @@ public:
 		m_default_func_wrapper = nullptr;
 	}
 
-	~MWT()
+	~MWTExplorer()
 	{
 		IdGenerator::Destroy();
 
@@ -261,7 +261,7 @@ private:
 		return ""; // TODO: implement
 	}
 
-	u32 MWT::Compute_Seed(char* unique_id, u32 length)
+	u32 Compute_Seed(char* unique_id, u32 length)
 	{
 		// TODO: change return type to u64, may need to revisit this hash function
 		return ::uniform_hash(unique_id, length, 0);

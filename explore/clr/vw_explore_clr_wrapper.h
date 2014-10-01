@@ -24,7 +24,7 @@ namespace MultiWorldTesting {
 	public ref class MWTWrapper
 	{
 	private:
-		MWT* m_mwt;
+		MWTExplorer* m_mwt;
 
 	public:
 		MWTWrapper(String^ appId, UInt32 numActions);

@@ -22,7 +22,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	string appId = "myapp";
 	
 	// Create a new MWT instance
-	MWT mwt(appId, /*num_actions = */ 10);
+	MWTExplorer mwt(appId, /*num_actions = */ 10);
 
 	float epsilon = .2f;
 	float exploreBudget = .05f;

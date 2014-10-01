@@ -15,7 +15,7 @@ namespace MultiWorldTesting {
 
 	MWTWrapper::MWTWrapper(System::String^ appId, System::UInt32 numActions)
 	{
-		m_mwt = new MWT(msclr::interop::marshal_as<std::string>(appId), numActions);
+		m_mwt = new MWTExplorer(msclr::interop::marshal_as<std::string>(appId), numActions);
 	}
 
 	MWTWrapper::~MWTWrapper()
