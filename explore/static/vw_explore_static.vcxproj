@@ -22,7 +22,7 @@
     <ProjectGuid>{ACE47E98-488C-4CDF-B9F1-36337B2855AD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>vw_explore_static</RootNamespace>
-    <ProjectName>vw_explore_static</ProjectName>
+    <ProjectName>explore_static</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

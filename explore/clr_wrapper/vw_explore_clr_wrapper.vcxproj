@@ -22,6 +22,7 @@
     <ProjectGuid>{8400DA16-1F46-4A31-A126-BBE16F62BFD7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>vw_explore_clr_wrapper</RootNamespace>
+    <ProjectName>explore_clr</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
