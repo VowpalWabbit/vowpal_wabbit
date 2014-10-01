@@ -16,7 +16,7 @@
 #include <limits.h>
 
 // TODO: reference additional headers your program requires here
-#include "../vowpalwabbit/vw.h"
+#include "vw.h"
 #include "utility.h"
 #include "Interaction.h"
 #include "Logger.h"

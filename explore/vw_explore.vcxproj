@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -104,7 +104,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\vw_explore_static;..\vowpalwabbit;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>static;..\vowpalwabbit;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,7 +140,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>..\vw_explore_static;..\vowpalwabbit;c:\boost-trunk;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>static;..\vowpalwabbit;c:\boost-trunk;$(BoostIncludeDir);$(ZlibIncludeDir);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -165,7 +165,7 @@
     <ProjectReference Include="..\vowpalwabbit\vw_static.vcxproj">
       <Project>{1e205806-7f80-47dd-a38d-fc08083f3592}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\vw_explore_static\vw_explore_static.vcxproj">
+    <ProjectReference Include="static\vw_explore_static.vcxproj">
       <Project>{ace47e98-488c-4cdf-b9f1-36337b2855ad}</Project>
     </ProjectReference>
   </ItemGroup>

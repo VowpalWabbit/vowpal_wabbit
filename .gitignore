@@ -54,12 +54,12 @@ test/RunTests.last.times
 *.dSYM
 
 # build folders
-*/x64
-*/obj
-*/Debug
-*/Release
-*/dll
-*/ipch
+**/x64
+**/obj
+**/Debug
+**/Release
+**/dll
+**/ipch
 
 # VS files
 *.opensdf
