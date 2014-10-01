@@ -13,9 +13,9 @@ using namespace msclr::interop;
 
 namespace MultiWorldTesting {
 
-	MWTWrapper::MWTWrapper(System::String^ appId, System::UInt32 numActions)
+	MWTWrapper::MWTWrapper(System::String^ appId)
 	{
-		m_mwt = new MWTExplorer(msclr::interop::marshal_as<std::string>(appId), numActions);
+		m_mwt = new MWTExplorer(msclr::interop::marshal_as<std::string>(appId));
 	}
 
 	MWTWrapper::~MWTWrapper()
@@ -23,51 +23,51 @@ namespace MultiWorldTesting {
 		delete m_mwt;
 	}
 
-	void MWTWrapper::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext)
+	void MWTWrapper::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
 
 		Stateful_Policy_Func* nativeFunc = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Epsilon_Greedy(epsilon, nativeFunc, defaultPolicyFuncContext.ToPointer());
+		m_mwt->Initialize_Epsilon_Greedy(epsilon, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc)
+	void MWTWrapper::InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
 
 		Stateless_Policy_Func* nativeFunc = static_cast<Stateless_Policy_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Epsilon_Greedy(epsilon, nativeFunc);
+		m_mwt->Initialize_Epsilon_Greedy(epsilon, nativeFunc, numActions);
 
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext)
+	void MWTWrapper::InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
 
 		Stateful_Policy_Func* nativeFunc = static_cast<Stateful_Policy_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Tau_First(tau, nativeFunc, defaultPolicyFuncContext.ToPointer());
+		m_mwt->Initialize_Tau_First(tau, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc)
+	void MWTWrapper::InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
 
 		Stateless_Policy_Func* nativeFunc = static_cast<Stateless_Policy_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Tau_First(tau, nativeFunc);
+		m_mwt->Initialize_Tau_First(tau, nativeFunc, numActions);
 
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs)
+	void MWTWrapper::InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions)
 	{
 		cli::array<GCHandle>^ gcHandles = gcnew cli::array<GCHandle>(bags);
 
@@ -83,7 +83,7 @@ namespace MultiWorldTesting {
 			native_args[i] = defaultPolicyArgs[i].ToPointer();
 		}
 
-		m_mwt->Initialize_Bagging(bags, native_funcs, native_args);
+		m_mwt->Initialize_Bagging(bags, native_funcs, native_args, numActions);
 
 		for (int i = 0; i < bags; i++)
 		{
@@ -93,7 +93,7 @@ namespace MultiWorldTesting {
 		delete[] native_args;
 	}
 
-	void MWTWrapper::InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs)
+	void MWTWrapper::InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions)
 	{
 		cli::array<GCHandle>^ gcHandles = gcnew cli::array<GCHandle>(bags);
 
@@ -107,7 +107,7 @@ namespace MultiWorldTesting {
 			native_funcs[i] = static_cast<Stateless_Policy_Func*>(ip.ToPointer());
 		}
 
-		m_mwt->Initialize_Bagging(bags, native_funcs);
+		m_mwt->Initialize_Bagging(bags, native_funcs, numActions);
 
 		for (int i = 0; i < bags; i++)
 		{
@@ -116,24 +116,24 @@ namespace MultiWorldTesting {
 		delete[] native_funcs;
 	}
 
-	void MWTWrapper::InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext)
+	void MWTWrapper::InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultScorerFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
 
 		Stateful_Scorer_Func* nativeFunc = static_cast<Stateful_Scorer_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Softmax(lambda, nativeFunc, defaultPolicyFuncContext.ToPointer());
+		m_mwt->Initialize_Softmax(lambda, nativeFunc, defaultPolicyFuncContext.ToPointer(), numActions);
 
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc)
+	void MWTWrapper::InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultScorerFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
 
 		Stateless_Scorer_Func* nativeFunc = static_cast<Stateless_Scorer_Func*>(ip.ToPointer());
-		m_mwt->Initialize_Softmax(lambda, nativeFunc);
+		m_mwt->Initialize_Softmax(lambda, nativeFunc, numActions);
 
 		gch.Free();
 	}

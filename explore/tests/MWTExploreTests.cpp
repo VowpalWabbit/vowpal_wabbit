@@ -12,7 +12,7 @@ namespace vw_explore_tests
 	public:
 		TEST_METHOD(EpsilonGreedyStateful)
 		{
-			m_mwt->Initialize_Epsilon_Greedy<int>(m_epsilon, Stateful_Default_Policy, &m_policy_func_arg);
+			m_mwt->Initialize_Epsilon_Greedy<int>(m_epsilon, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
 
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, (u32)m_policy_func_arg);
@@ -25,7 +25,7 @@ namespace vw_explore_tests
 
 		TEST_METHOD(EpsilonGreedyStateless)
 		{
-			m_mwt->Initialize_Epsilon_Greedy(m_epsilon, Stateless_Default_Policy);
+			m_mwt->Initialize_Epsilon_Greedy(m_epsilon, Stateless_Default_Policy, m_num_actions);
 
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
@@ -38,7 +38,7 @@ namespace vw_explore_tests
 
 		TEST_METHOD(TauFirstStateful)
 		{
-			m_mwt->Initialize_Tau_First<int>(m_tau, Stateful_Default_Policy, &m_policy_func_arg);
+			m_mwt->Initialize_Tau_First<int>(m_tau, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
 
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, (u32)m_policy_func_arg);
@@ -51,7 +51,7 @@ namespace vw_explore_tests
 
 		TEST_METHOD(TauFirstStateless)
 		{
-			m_mwt->Initialize_Tau_First(m_tau, Stateless_Default_Policy);
+			m_mwt->Initialize_Tau_First(m_tau, Stateless_Default_Policy, m_num_actions);
 
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
@@ -121,7 +121,7 @@ namespace vw_explore_tests
 		{
 			m_num_actions = 10;
 			m_app_id = "MWT Test App";
-			m_mwt = new MWTExplorer(m_app_id, m_num_actions);
+			m_mwt = new MWTExplorer(m_app_id);
 
 			//TODO: We should eventually test randomization, else we are missing code paths
 			// Initialize with 0 to test deterministic result

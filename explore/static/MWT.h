@@ -15,7 +15,7 @@
 class MWTExplorer
 {
 public:
-	MWTExplorer(std::string& app_id, u32 num_actions) : m_app_id(app_id)
+	MWTExplorer(std::string& app_id) : m_app_id(app_id)
 	{
 		IdGenerator::Initialize();
 
@@ -26,7 +26,6 @@ public:
 
 		m_logger = new Logger(m_app_id);
 		m_explorer = nullptr;
-		m_action_set = new ActionSet(num_actions);
 		m_default_func_wrapper = nullptr;
 	}
 
@@ -44,16 +43,17 @@ public:
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
 		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
-		T* default_policy_params)
+		T* default_policy_params, u32 num_actions)
 	{
-		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_params);
+		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_params, num_actions);
 	}
 
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
-		StatelessFunctionWrapper::Policy_Func default_policy_func)
+		StatelessFunctionWrapper::Policy_Func default_policy_func,
+		u32 num_actions)
 	{
-		this->Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_policy_func);
+		this->Initialize_Epsilon_Greedy(epsilon, (Stateless_Policy_Func*)default_policy_func, num_actions);
 	}
 
 	/* Tau-first initialization */
@@ -61,16 +61,18 @@ public:
 	void Initialize_Tau_First(
 		u32 tau, 
 		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
-		T* default_policy_params)
+		T* default_policy_params,
+		u32 num_actions)
 	{
-		this->Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_params);
+		this->Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_params, num_actions);
 	}
 
 	void Initialize_Tau_First(
 		u32 tau, 
-		StatelessFunctionWrapper::Policy_Func default_policy_func)
+		StatelessFunctionWrapper::Policy_Func default_policy_func,
+		u32 num_actions)
 	{
-		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func);
+		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func, num_actions);
 	}
 
 	/* Softmax initialization */
@@ -78,16 +80,17 @@ public:
 	void Initialize_Softmax(
 		float lambda,
 		typename StatefulFunctionWrapper<T>::Scorer_Func default_scorer_func,
-		T* default_scorer_params)
+		T* default_scorer_params, u32 num_actions)
 	{
-		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)default_scorer_params);
+		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)default_scorer_params, num_actions);
 	}
 
 	void Initialize_Softmax(
 		float lambda,
-		StatelessFunctionWrapper::Scorer_Func default_scorer_func)
+		StatelessFunctionWrapper::Scorer_Func default_scorer_func,
+		u32 num_actions)
 	{
-		this->Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func);
+		this->Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func, num_actions);
 	}
 
 	std::pair<u32, u64> Choose_Action_And_Key(Context& context)
@@ -127,8 +130,10 @@ public:
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
 		Stateful_Policy_Func default_policy_func, 
-		void* default_policy_func_argument)
+		void* default_policy_func_argument, u32 num_actions)
 	{
+		m_action_set = new ActionSet(num_actions);
+
 		StatefulFunctionWrapper<void>* func_Wrapper = new StatefulFunctionWrapper<void>();
 		func_Wrapper->m_policy_function = default_policy_func;
 		
@@ -139,8 +144,11 @@ public:
 
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
-		Stateless_Policy_Func default_policy_func)
+		Stateless_Policy_Func default_policy_func,
+		u32 num_actions)
 	{
+		m_action_set = new ActionSet(num_actions);
+
 		StatelessFunctionWrapper* func_Wrapper = new StatelessFunctionWrapper();
 		func_Wrapper->m_policy_function = default_policy_func;
 		
@@ -152,8 +160,11 @@ public:
 	void Initialize_Tau_First(
 		u32 tau, 
 		Stateful_Policy_Func default_policy_func, 
-		void* default_policy_func_argument)
+		void* default_policy_func_argument,
+		u32 num_actions)
 	{
+		m_action_set = new ActionSet(num_actions);
+
 		StatefulFunctionWrapper<void>* func_wrapper = new StatefulFunctionWrapper<void>();
 		func_wrapper->m_policy_function = default_policy_func;
 		
@@ -164,8 +175,11 @@ public:
 
 	void Initialize_Tau_First(
 		u32 tau, 
-		Stateless_Policy_Func default_policy_func)
+		Stateless_Policy_Func default_policy_func,
+		u32 num_actions)
 	{
+		m_action_set = new ActionSet(num_actions);
+
 		StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
 		func_wrapper->m_policy_function = default_policy_func;
 		
@@ -177,9 +191,11 @@ public:
 	void Initialize_Bagging(
 		u32 bags,
 		Stateful_Policy_Func** default_policy_functions,
-		void** default_policy_args)
+		void** default_policy_args,
+		u32 num_actions)
 	{
-		
+		m_action_set = new ActionSet(num_actions);
+
 		std::vector<BaseFunctionWrapper*> default_policy_func_wrapper_ptr_vec;
 		std::vector<void*> default_policy_arg_vec;
 		for (u32 i = 0; i < bags; i++){
@@ -196,8 +212,10 @@ public:
 
 	void Initialize_Bagging(
 		u32 bags,
-		Stateless_Policy_Func** default_policy_functions)
+		Stateless_Policy_Func** default_policy_functions,
+		u32 num_actions)
 	{
+		m_action_set = new ActionSet(num_actions);
 
 		std:vector<BaseFunctionWrapper*> default_policy_func_wrapper_ptr_vec;
 		for (u32 i = 0; i < bags; i++){
@@ -214,8 +232,11 @@ public:
 	void Initialize_Softmax(
 		float lambda,
 		Stateful_Scorer_Func default_scorer_func,
-		void* default_scorer_func_argument)
+		void* default_scorer_func_argument,
+		u32 num_actions)
 	{
+		m_action_set = new ActionSet(num_actions);
+
 		StatefulFunctionWrapper<void>* func_Wrapper = new StatefulFunctionWrapper<void>();
 		func_Wrapper->m_scorer_function = default_scorer_func;
 
@@ -226,8 +247,11 @@ public:
 
 	void Initialize_Softmax(
 		float lambda,
-		Stateless_Scorer_Func default_scorer_func)
+		Stateless_Scorer_Func default_scorer_func,
+		u32 num_actions)
 	{
+		m_action_set = new ActionSet(num_actions);
+
 		StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
 		func_wrapper->m_scorer_function = default_scorer_func;
 

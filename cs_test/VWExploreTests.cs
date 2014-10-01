@@ -20,15 +20,16 @@ namespace cs_test
 
         public static void RunMWTExploreTest()
         {
-            MWTWrapper mwt = new MWTWrapper("myTestApp", 10);
+            MWTWrapper mwt = new MWTWrapper("myTestApp");
 
+            uint numActions = 10;
             if (true)
             {
-                mwt.InitializeEpsilonGreedy(0.5f, new StatelessPolicyDelegate(MyStatelessPolicyFunc));
+                mwt.InitializeEpsilonGreedy(0.5f, new StatelessPolicyDelegate(MyStatelessPolicyFunc), numActions);
             }
             else
             {
-                mwt.InitializeEpsilonGreedy(0.5f, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(1003));
+                mwt.InitializeEpsilonGreedy(0.5f, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(1003), numActions);
             }
 
             FEATURE[] f = new FEATURE[2];

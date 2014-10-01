@@ -371,9 +371,9 @@ namespace CBIFY {
       {
 	data->tau = (uint32_t)vm["first"].as<size_t>();
 	l = new learner(data, all.l, 1);
-	all.l->mwt = new MWTExplorer(string("VW"), data->k);
+	all.l->mwt = new MWTExplorer(string("VW"));
 	all.l->mwt_policy_context = new vw_context();
-	all.l->mwt->Initialize_Tau_First(data->tau, explore_policy, all.l->mwt_policy_context);
+	all.l->mwt->Initialize_Tau_First(data->tau, explore_policy, all.l->mwt_policy_context, data->k);
 	l->set_learn<cbify, predict_or_learn_first<true> >();
 	l->set_predict<cbify, predict_or_learn_first<false> >();
       }
@@ -382,9 +382,9 @@ namespace CBIFY {
 	if ( vm.count("epsilon") ) 
 	  data->epsilon = vm["epsilon"].as<float>();
 	l = new learner(data, all.l, 1);
-	all.l->mwt = new MWTExplorer(string("VW"), data->k);
+	all.l->mwt = new MWTExplorer(string("VW"));
 	all.l->mwt_policy_context = new vw_context();
-	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, explore_policy, all.l->mwt_policy_context);
+	all.l->mwt->Initialize_Epsilon_Greedy(data->epsilon, explore_policy, all.l->mwt_policy_context, data->k);
 	l->set_learn<cbify, predict_or_learn_greedy<true> >();
 	l->set_predict<cbify, predict_or_learn_greedy<false> >();
       }
