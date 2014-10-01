@@ -29,13 +29,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c_test", "..\c_test\c_test.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spanning_tree", "..\cluster\cluster.vcxproj", "{2720BCD9-6731-4A11-BA24-1F74E35BA97F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_explore_static", "..\explore\static\vw_explore_static.vcxproj", "{ACE47E98-488C-4CDF-B9F1-36337B2855AD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "explore_static", "..\explore\static\explore_static.vcxproj", "{ACE47E98-488C-4CDF-B9F1-36337B2855AD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_explore", "..\explore\vw_explore.vcxproj", "{FFC1BEDC-8D26-4456-93D8-F0ED091E6CE4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "explore", "..\explore\explore.vcxproj", "{FFC1BEDC-8D26-4456-93D8-F0ED091E6CE4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_explore_clr_wrapper", "..\explore\clr_wrapper\\vw_explore_clr_wrapper.vcxproj", "{8400DA16-1F46-4A31-A126-BBE16F62BFD7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "explore_clr", "..\explore\clr_wrapper\\explore_clr.vcxproj", "{8400DA16-1F46-4A31-A126-BBE16F62BFD7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vw_explore_tests", "..\explore\tests\vw_explore_tests.vcxproj", "{5AE3AA40-BEB0-4979-8166-3B885172C430}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "explore_tests", "..\explore\tests\explore_tests.vcxproj", "{5AE3AA40-BEB0-4979-8166-3B885172C430}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "deploy_vw", "..\deploy_vw\deploy_vw.vcxproj", "{D3D9B744-D0FC-4BC7-94A8-89C1AC5692DE}"
 	ProjectSection(ProjectDependencies) = postProject
