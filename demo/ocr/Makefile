@@ -12,6 +12,8 @@ space = $(noop) $(noop)
 VW_RUN = $(subst $(space),_,$(VW_OPTS))
 
 RM = rm -f
+# Python > 2.7 is required
+PYTHON = python
 
 help:
 	@echo handwritten words dataset collected by
@@ -26,7 +28,7 @@ letter.names:
 	wget http://ai.stanford.edu/~btaskar/ocr/letter.names
 
 letter.vw: ocr2vw.py letter.data.gz letter.names
-	python $^ $@ $@.test
+	$(PYTHON) $^ $@ $@.test
 	cut -d' ' -f1 $@ | sort | uniq -c | sort -n
 
 # category count
@@ -35,7 +37,7 @@ CATN = 26
 letter.model_$(VW_RUN): letter.vw
 	time $(VW) --oaa $(CATN) --final_regressor $@		\
 	  --adaptive --invariant --holdout_off			\
-	  --loss_function logistic --passes 100			\
+	  --loss_function logistic --passes 14			\
 	  $(VW_OPTS) --data $< -k --cache_file $<.cache_$(VW_RUN)
 	$(RM) $<.cache_$(VW_RUN)
 
