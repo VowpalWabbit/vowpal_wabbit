@@ -5,10 +5,10 @@ public:
 	BaggingExplorer(
 		u32 bags,
 		std::vector<BaseFunctionWrapper*>* default_policy_func_wrapper_ptr_vec,
-		std::vector<T*>* default_policy_func_state_context_ptr_vec) :
+		std::vector<T*>* default_policy_params_ptr_vec) :
 		m_bags(bags),
 		m_default_policy_wrapper_ptr_vec(default_policy_func_wrapper_ptr_vec),
-		m_default_policy_state_context_ptr_vec(default_policy_func_state_context_ptr_vec)
+		m_default_policy_params_ptr_vec(default_policy_params_ptr_vec)
 	{
 		if (bags <= 0)
 		{
@@ -55,7 +55,7 @@ private:
 			else
 			{
 				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)((*m_default_policy_wrapper_ptr_vec)[current_bag]);
-				action_from_bag = MWTAction(stateful_function_wrapper->m_policy_function((*m_default_policy_state_context_ptr_vec)[current_bag], &context));
+				action_from_bag = MWTAction(stateful_function_wrapper->m_policy_function((*m_default_policy_params_ptr_vec)[current_bag], &context));
 			}
 			if (current_bag == chosen_bag){
 				chosen_action = action_from_bag;
@@ -75,5 +75,5 @@ private:
 	PRG<u32>* m_random_generator;
 
 	std::vector<BaseFunctionWrapper*>* m_default_policy_wrapper_ptr_vec;
-	std::vector<T*>* m_default_policy_state_context_ptr_vec;
+	std::vector<T*>* m_default_policy_params_ptr_vec;
 };

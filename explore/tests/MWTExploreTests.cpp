@@ -14,7 +14,7 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Epsilon_Greedy<int>(m_epsilon, Stateful_Default_Policy, &m_policy_func_arg);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_Join_Key(*m_context);
+			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, (u32)m_policy_func_arg);
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
@@ -27,7 +27,7 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Epsilon_Greedy(m_epsilon, Stateless_Default_Policy);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_Join_Key(*m_context);
+			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
@@ -40,7 +40,7 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Tau_First<int>(m_tau, Stateful_Default_Policy, &m_policy_func_arg);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_Join_Key(*m_context);
+			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, (u32)m_policy_func_arg);
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
@@ -53,7 +53,7 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Tau_First(m_tau, Stateless_Default_Policy);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_Join_Key(*m_context);
+			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
@@ -72,7 +72,7 @@ namespace vw_explore_tests
 
 			for (i = 0; i < num_decisions; i++)
 			{
-				pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_Join_Key(*m_context);
+				pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 				actions[chosen_action_join_key.first]++;
 			}
 			// Ensure all actions are covered
@@ -86,7 +86,7 @@ namespace vw_explore_tests
 		{
 			m_mwt->Initialize_Epsilon_Greedy(m_epsilon, Stateless_Default_Policy);
 
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_Join_Key(*m_context);
+			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
@@ -152,9 +152,9 @@ namespace vw_explore_tests
 		}
 
 	public:
-		static u32 Stateful_Default_Policy(int* stateContext, Context* applicationContext)
+		static u32 Stateful_Default_Policy(int* policy_params, Context* applicationContext)
 		{
-			return *stateContext;
+			return *policy_params;
 		}
 
 		static u32 Stateless_Default_Policy(Context* applicationContext)
@@ -163,9 +163,9 @@ namespace vw_explore_tests
 		}
 
 		/*
-		static u32 Stateful_Default_Scorer(int* stateContext, Context* applicationContext)
+		static u32 Stateful_Default_Scorer(int* policy_params, Context* applicationContext)
 		{
-			return *stateContext;
+			return *policy_params;
 		}
 
 		static u32 Stateless_Default_Scorer(Context* applicationContext)

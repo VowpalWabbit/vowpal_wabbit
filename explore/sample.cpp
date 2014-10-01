@@ -6,9 +6,9 @@
 
 using namespace std;
 
-u32 Stateful_Default_Policy(int* stateContext, Context* applicationContext)
+u32 Stateful_Default_Policy(int* policy_params, Context* applicationContext)
 {
-	return *stateContext;
+	return *policy_params;
 }
 
 u32 Stateless_Default_Policy(Context* applicationContext)

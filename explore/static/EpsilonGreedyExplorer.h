@@ -11,10 +11,10 @@ public:
 	EpsilonGreedyExplorer(
 		float epsilon, 
 		BaseFunctionWrapper& default_policy_func_wrapper, 
-		T* default_policy_func_state_context) :
+		T* default_policy_params) :
 			m_epsilon(epsilon),
 			m_default_policy_wrapper(default_policy_func_wrapper),
-			m_default_policy_state_context(default_policy_func_state_context)
+			m_default_policy_params(default_policy_params)
 	{
 		m_random_generator = new PRG<u32>();
 	}
@@ -48,7 +48,7 @@ private:
 		else
 		{
 			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_policy_wrapper);
-			chosen_action = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_state_context, &context));
+			chosen_action = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params, &context));
 		}
 
 		float action_probability = 0.f;
@@ -86,5 +86,5 @@ private:
 	PRG<u32>* m_random_generator;
 
 	BaseFunctionWrapper& m_default_policy_wrapper;
-	T* m_default_policy_state_context;
+	T* m_default_policy_params;
 };

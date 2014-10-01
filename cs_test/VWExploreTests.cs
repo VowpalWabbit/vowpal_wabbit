@@ -13,7 +13,7 @@ namespace cs_test
             return 222;
         }
 
-        private static UInt32 MyStatefulPolicyFunc(IntPtr stateContext, IntPtr applicationContext)
+        private static UInt32 MyStatefulPolicyFunc(IntPtr policyParams, IntPtr applicationContext)
         {
             return 111;
         }

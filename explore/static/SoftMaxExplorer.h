@@ -11,10 +11,10 @@ public:
 	SoftmaxExplorer(
 		float lambda,
 		BaseFunctionWrapper& default_scorer_func_wrapper,
-		T* default_scorer_func_state_context) :
+		T* default_scorer_params) :
 		m_lambda(lambda),
 		m_default_scorer_wrapper(default_scorer_func_wrapper),
-		m_default_scorer_state_context(default_scorer_func_state_context)
+		m_default_scorer_params(default_scorer_params)
 	{
 		if (lambda < 0)
 		{
@@ -54,7 +54,7 @@ private:
 		else
 		{
 			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_scorer_wrapper);
-			stateful_function_wrapper->m_scorer_function(m_default_scorer_state_context, &context, scores, actions.Count());
+			stateful_function_wrapper->m_scorer_function(m_default_scorer_params, &context, scores, actions.Count());
 		}
 
 		u32 i = 0;
@@ -82,5 +82,5 @@ private:
 	PRG<u32>* m_random_generator;
 
 	BaseFunctionWrapper& m_default_scorer_wrapper;
-	T* m_default_scorer_state_context;
+	T* m_default_scorer_params;
 };

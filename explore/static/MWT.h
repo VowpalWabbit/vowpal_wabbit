@@ -44,9 +44,9 @@ public:
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
 		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
-		T* default_policy_func_state_context)
+		T* default_policy_params)
 	{
-		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_func_state_context);
+		this->Initialize_Epsilon_Greedy(epsilon, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_params);
 	}
 
 	void Initialize_Epsilon_Greedy(
@@ -61,9 +61,9 @@ public:
 	void Initialize_Tau_First(
 		u32 tau, 
 		typename StatefulFunctionWrapper<T>::Policy_Func default_policy_func, 
-		T* default_policy_func_state_context)
+		T* default_policy_params)
 	{
-		this->Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_func_state_context);
+		this->Initialize_Tau_First(tau, (Stateful_Policy_Func*)default_policy_func, (void*)default_policy_params);
 	}
 
 	void Initialize_Tau_First(
@@ -78,9 +78,9 @@ public:
 	void Initialize_Softmax(
 		float lambda,
 		typename StatefulFunctionWrapper<T>::Scorer_Func default_scorer_func,
-		T* default_scorer_func_state_context)
+		T* default_scorer_params)
 	{
-		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)default_scorer_func_state_context);
+		this->Initialize_Softmax(lambda, (Stateful_Scorer_Func*)default_scorer_func, (void*)default_scorer_params);
 	}
 
 	void Initialize_Softmax(
@@ -90,7 +90,7 @@ public:
 		this->Initialize_Softmax(lambda, (Stateless_Scorer_Func*)default_scorer_func);
 	}
 
-	std::pair<u32, u64> Choose_Action_Join_Key(Context& context)
+	std::pair<u32, u64> Choose_Action_And_Key(Context& context)
 	{
 		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set);
 		if(!std::get<2>(action_Probability_Log_Tuple)){
