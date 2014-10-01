@@ -75,6 +75,25 @@ public:
 		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func, num_actions);
 	}
 
+	/* Bagging initialization */
+	template <class T>
+	void Initialize_Bagging(
+		u32 bags,
+		typename StatefulFunctionWrapper<T>::Policy_Func** default_policy_functions,
+		T** default_policy_params,
+		u32 num_actions)
+	{
+		this->Initialize_Bagging(bags, (Stateful_Policy_Func**)default_policy_functions, (void**)default_policy_params, num_actions);
+	}
+
+	void Initialize_Bagging(
+		u32 bags,
+		StatelessFunctionWrapper::Policy_Func** default_policy_functions,
+		u32 num_actions)
+	{
+		this->Initialize_Bagging(bags, (Stateless_Policy_Func**)default_policy_functions, num_actions);
+	}
+
 	/* Softmax initialization */
 	template <class T>
 	void Initialize_Softmax(
