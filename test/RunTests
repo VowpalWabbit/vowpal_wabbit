@@ -1022,17 +1022,17 @@ __DATA__
     test-sets/ref/vw-daemon.stdout
 
 # Test 62: SVM linear kernel
-{VW} --ksvm --l2 1 --reprocess 5 -b 18 -p train-sets/ref/ksvm_train.linear.predict -d train-sets/rcv1_smaller.dat
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 -p linear.predict -d train-sets/rcv1_smaller.dat
     train-sets/ref/ksvm_train.linear.stderr
     train-sets/ref/ksvm_train.linear.predict
 
 # Test 63: SVM polynomial kernel
-{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel poly -p train-sets/ref/ksvm_train.poly.predict -d train-sets/rcv1_smaller.dat
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel poly -p ksvm_train.poly.predict -d train-sets/rcv1_smaller.dat
     train-sets/ref/ksvm_train.poly.stderr
     train-sets/ref/ksvm_train.poly.predict
 
 # Test 64: SVM rbf kernel
-{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf -p train-sets/ref/ksvm_train.rbf.predict -d train-sets/rcv1_smaller.dat
+{VW} --ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf -p ksvm_train.rbf.predict -d train-sets/rcv1_smaller.dat
     train-sets/ref/ksvm_train.rbf.stderr
     train-sets/ref/ksvm_train.rbf.predict
 

@@ -166,4 +166,57 @@ namespace CB
 				  delete_label, weight, 
 				  copy_label,
 				  sizeof(label)};
+
+}
+
+namespace CB_EVAL
+{
+  size_t read_cached_label(shared_data*sd, void* v, io_buf& cache)
+  {
+    CB::label* ld = (CB::label*) v;
+    char* c;
+    size_t total = sizeof(uint32_t);
+    if (buf_read(cache, c, total) < total) 
+      return 0;
+    ld->prediction = *(uint32_t*)c;
+    c += sizeof(uint32_t);
+    
+    return total + CB::read_cached_label(sd, ld, cache);
+  }
+
+  void cache_label(void* v, io_buf& cache)
+  {
+    char *c;
+    CB::label* ld = (CB::label*) v;
+    buf_write(cache, c, sizeof(uint32_t));
+    *(uint32_t *)c = ld->prediction;
+    c+= sizeof(uint32_t);
+    
+    CB::cache_label(ld, cache);
+  }
+
+  void parse_label(parser* p, shared_data* sd, void* v, v_array<substring>& words)
+  {
+    CB::label* ld = (CB::label*)v;
+    
+    if (words.size() < 2)
+      {
+	cout << "Evaluation can not happen without an action and an exploration" << endl;
+	throw exception();
+      }
+    
+    ld->prediction = (uint32_t)hashstring(words[0], 0);    
+    
+    words.begin++;
+    
+    CB::parse_label(p, sd, ld, words);
+    
+    words.begin--;
+  }
+
+  label_parser cb_eval = {CB::default_label, parse_label, 
+			  cache_label, read_cached_label, 
+			  CB::delete_label, CB::weight, 
+			  CB::copy_label,
+			  sizeof(CB::label)};
 }
