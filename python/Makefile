@@ -12,7 +12,11 @@ PYTHON_VERSION = 2.7
 PYTHON_INCLUDE = /usr/include/python$(PYTHON_VERSION)
 
 PYTHON_LIBS = -l boost_python
-VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
+ifeq (,$(wildcard ../vowpalwabbit/vw.so))
+  VWLIBS = ../vowpalwabbit/libvw.a ../vowpalwabbit/liballreduce.a
+else
+  VWLIBS = -L ../vowpalwabbit -l vw -l allreduce
+endif
 PYLIBVW = pylibvw.so
 
 all:
@@ -24,12 +28,15 @@ ifeq "CYGWIN" "$(findstring CYGWIN,$(UNAME))"
   PYTHON_LIBS = -l boost_python-mt
   PYLIBVW = pylibvw.dll
 endif
+ifneq ($(UNAME), Darwin)
+  EXPORT_DYNAMIC = -Wl,--export-dynamic
+endif
 
 STDLIBS = $(BOOST_LIBRARY) $(LIBS) $(PYTHON_LIBS)
 
 $(PYLIBVW): pylibvw.o  ../vowpalwabbit/libvw.a
-	$(CXX) -shared -Wl,--export-dynamic pylibvw.o $(BOOST_LIBRARY) -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
- 
+	$(CXX) -shared $(EXPORT_DYNAMIC) pylibvw.o $(BOOST_LIBRARY) -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION) $(VWLIBS) $(STDLIBS) -o $(PYLIBVW)
+
 pylibvw.o: pylibvw.cc
 	$(CXX) -I$(PYTHON_INCLUDE) $(BOOST_INCLUDE) -fPIC -c pylibvw.cc -o pylibvw.o
 

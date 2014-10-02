@@ -12,6 +12,7 @@ if %VSINSTALLDIR%
 devenv vowpalwabbit\vw.sln /Clean "Release|x86"
 devenv vowpalwabbit\vw.sln /Rebuild "Release|x86"
 xcopy /v /i /r  /y  vowpalwabbit\x86\Release\vw.exe   deploy\x86\Release\
+xcopy /v /i /r  /y  vowpalwabbit\x86\Release\spanning_tree.exe   deploy\x86\Release\
 xcopy /v /i /r  /y "%VSINSTALLDIR%VC\redist\x86\Microsoft.VC120.CRT" deploy\x86\Release\
 xcopy /v /i /r  /y "%VSINSTALLDIR%VC\redist\x86\Microsoft.VC120.CXXAMP" deploy\x86\Release\
 xcopy /v /i /r  /y "%VSINSTALLDIR%VC\redist\x86\Microsoft.VC120.OPENMP" deploy\x86\Release\
@@ -21,6 +22,7 @@ goto :eof
 devenv vowpalwabbit\vw.sln /Clean "Release|x64"
 devenv vowpalwabbit\vw.sln /Rebuild "Release|x64"
 xcopy /v /i /r  /y vowpalwabbit\x64\Release\vw.exe   deploy\x64\Release\
+xcopy /v /i /r  /y vowpalwabbit\x64\Release\spanning_tree.exe   deploy\x64\Release\
 xcopy /v /i /r  /y "%VSINSTALLDIR%VC\redist\x64\Microsoft.VC120.CRT" deploy\x64\Release\
 xcopy /v /i /r  /y "%VSINSTALLDIR%VC\redist\x64\Microsoft.VC120.CXXAMP" deploy\x64\Release\
 xcopy /v /i /r  /y "%VSINSTALLDIR%VC\redist\x64\Microsoft.VC120.OPENMP" deploy\x64\Release\

@@ -6,13 +6,13 @@ license as described in the file LICENSE.
 #ifndef SEARN_DEP_PARSER_H
 #define SEARN_DEP_PARSER_H
 
-#include "searn.h"
+#include "search.h"
 
 namespace DepParserTask {
-  void initialize(Searn::searn&, size_t&, po::variables_map&);
-  void finish(Searn::searn&);
-  void structured_predict(Searn::searn&, vector<example*>&);
-  extern Searn::searn_task task;
+  void initialize(Search::search&, size_t&, po::variables_map&);
+  void finish(Search::search&);
+  void run(Search::search&, vector<example*>&);
+  extern Search::search_task task;
 }
 
 #endif

@@ -3,7 +3,7 @@
    individual contributors. All rights reserved.  Released under a BSD (revised)
    license as described in the file LICENSE.
    */
-#include "searn_dep_parser.h"
+#include "search_dep_parser.h"
 #include "multiclass.h"
 #include "memory.h"
 #include "example.h"
@@ -16,7 +16,7 @@
 #define val_namespace 100 // valency and distance feature space
 #define offset_const 79867
 
-namespace DepParserTask         {  Searn::searn_task task = { "dep_parser", initialize, finish, structured_predict };  }
+namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, NULL, NULL};  }
 
 struct task_data {
 	example *ex;
@@ -35,10 +35,10 @@ struct task_data {
 };
 
 namespace DepParserTask {
-	using namespace Searn;
+	using namespace Search;
 	uint32_t max_label = 0;
 
-	void initialize(searn& srn, size_t& num_actions, po::variables_map& vm) {
+	void initialize(Search::search& srn, size_t& num_actions, po::variables_map& vm) {
 		task_data *data = new task_data();
 		data->my_init_flag = false;
 		data->ex = (example*)calloc_or_die(1, sizeof(example));
@@ -48,11 +48,11 @@ namespace DepParserTask {
 
 		srn.set_num_learners(1);
 		srn.set_task_data<task_data>(data);
-		po::options_description sspan_opts("dependency parser options");
-		sspan_opts.add_options()
+		po::options_description dparser_opts("dependency parser options");
+		dparser_opts.add_options()
 			("dparser_no_quad", "Don't use qudaratic features")
 			("dparser_no_cubic","Don't use cubic features");
-		vm = add_options(*srn.all, sspan_opts);
+    	srn.add_program_options(vm, dparser_opts);
 
 		// setup entity and relation labels
 		// Entity label 1:E_Other 2:E_Peop 3:E_Org 4:E_Loc
@@ -62,9 +62,9 @@ namespace DepParserTask {
 		srn.set_options(0);
 	}
 
-	void finish(searn& srn) {
+	void finish(Search::search& srn) {
 		task_data *data = srn.get_task_data<task_data>();
-		dealloc_example(srn.all->p->lp.delete_label, *(data->ex));
+		dealloc_example(CS::cs_label.delete_label, *(data->ex));
 		data->valid_actions.delete_v();
 		data->gold_heads.delete_v();
 		data->gold_actions.delete_v();
@@ -79,7 +79,7 @@ namespace DepParserTask {
 	} // if we had task data, we'd want to free it here
 
 	// arc-hybrid System.
-	uint32_t transition_hybrid(searn& srn, uint32_t a_id, uint32_t idx) {
+	uint32_t transition_hybrid(Search::search& srn, uint32_t a_id, uint32_t idx) {
 		task_data *data = srn.get_task_data<task_data>();
 		v_array<uint32_t> &heads=data->heads, &stack=data->stack, &gold_heads=data->gold_heads;
 		v_array<uint32_t> *children = data->children;
@@ -111,7 +111,7 @@ namespace DepParserTask {
 				stack.pop();
 				return idx;
 		}
-		cerr << "Unknown action (searn_dep_parser.cc).";
+		cerr << "Unknown action (search_dep_parser.cc).";
 		return idx;
 	}
 	void check_feature_vector(example *ec){
@@ -133,14 +133,14 @@ namespace DepParserTask {
 
 	// This function will only be called once
 	// We use VW's internal implementation to create second-order and third-order features
-	void my_initialize(searn& srn, example *base_ex) {
+	void my_initialize(Search::search& srn, example *base_ex) {
 		task_data *data = srn.get_task_data<task_data>();
-    	uint32_t wpp = srn.all->wpp;// << srn.all->reg.stride_shift;
+//    	uint32_t wpp = srn.all->wpp;// << srn.all->reg.stride_shift;
 
 		// setup example
 		example *ex = data->ex;
 		data->nfs = base_ex->indices.size();
-		if (srn.all->add_constant) 
+		if (srn.priv->all->add_constant) 
 			data->nfs-=1;
 		size_t nfs = data->nfs;
 		uint64_t offset = offset_const, v0;
@@ -153,7 +153,7 @@ namespace DepParserTask {
 				ex->indices.push_back(i*nfs+j);				
 				for (size_t k=0; k<base_ex->atomics[*fs].size(); k++) {
 					v0 = affix_constant*((j+1)*quadratic_constant + k)*offset;
-					uint32_t idx = (uint32_t) ((v0*wpp) & srn.all->reg.weight_mask);
+					uint32_t idx = (uint32_t) ((v0) & srn.all->reg.weight_mask);
 					feature f = {1.0f, idx};
 					ex->atomics[i*nfs+j].push_back(f);
 					ex->total_sum_feat_sq += 1.0f;
@@ -175,7 +175,7 @@ namespace DepParserTask {
 		// add valency and distance features
 		for(int i=0; i<4; i++){
 			offset= (offset*offset_const) & srn.all->reg.weight_mask;
-			uint32_t idx = (uint32_t) ((wpp*offset) & srn.all->reg.weight_mask);
+			uint32_t idx = (uint32_t) ((offset) & srn.all->reg.weight_mask);
 			feature f = {1.0f, idx};
 			ex->atomics[val_namespace].push_back(f);
 			if(srn.all->audit){
@@ -281,13 +281,13 @@ namespace DepParserTask {
 	}
 
 	// This function needs to be very fast
-	void extract_features(searn& srn, uint32_t idx,  vector<example*> &ec) {
+	void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
 		task_data *data = srn.get_task_data<task_data>();
 		v_array<uint32_t> &stack = data->stack;
 		v_array<uint32_t> *children = data->children, &temp=data->temp;
 		v_array<example*> &ec_buf = data->ec_buf;
 		example &ex = *(data->ex);
-    	uint32_t wpp = srn.all->wpp;
+//    	uint32_t wpp = srn.all->wpp;
 		//<< srn.all->reg.stride_shift;
 
 		// be careful: indices in ec starts from 0, but i is starts from 1
@@ -334,9 +334,9 @@ namespace DepParserTask {
 					for(size_t k=0; k<ex.atomics[i*nfs+j].size(); k++) {
 						// use affix_constant to represent the features that not appear
 						v0 = affix_constant*((j+1)*quadratic_constant + k)*offset;
-						ex.atomics[i*nfs+j][k].weight_index = (uint32_t) ((v0*wpp) & srn.all->reg.weight_mask);
+						ex.atomics[i*nfs+j][k].weight_index = (uint32_t) ((v0) & srn.all->reg.weight_mask);
 						if(srn.all->audit){
-							ex.audit_features[i*nfs+j][k].weight_index =  (uint32_t) ((v0*wpp) & srn.all->reg.weight_mask);
+							ex.audit_features[i*nfs+j][k].weight_index =  (uint32_t) ((v0) & srn.all->reg.weight_mask);
 							sprintf(ex.audit_features[i*nfs+j][k].feature, "%d,%d,%d=null", (int)i, (int)j, (int)k);
 						}
 					}
@@ -351,7 +351,7 @@ namespace DepParserTask {
 						v0 =  (ec_buf[i]->atomics[*fs][k].weight_index & srn.all->reg.weight_mask);
 						ex.atomics[i*nfs+j][k].weight_index = (uint32_t)((v0*wpp*offset) & srn.all->reg.weight_mask);
 						if(srn.all->audit){
-							ex.audit_features[i*nfs+j][k].weight_index =  (uint32_t) ((v0*wpp) & srn.all->reg.weight_mask);
+							ex.audit_features[i*nfs+j][k].weight_index =  (uint32_t) ((v0) & srn.all->reg.weight_mask);
 							sprintf(ex.audit_features[i*nfs+j][k].feature, "%d,%d,%d=%d", (int)i, (int)j, (int)k, (int)ec_buf[i]->atomics[*fs][k].weight_index);
 						}
 					}
@@ -374,9 +374,9 @@ namespace DepParserTask {
 
 		for(int j=0; j< 4;j++) {
 			offset= (offset*offset_const) & srn.all->reg.weight_mask;
-			ex.atomics[val_namespace][j].weight_index = (uint32_t) ((wpp*temp[j]*offset) & srn.all->reg.weight_mask);
+			ex.atomics[val_namespace][j].weight_index = (uint32_t) ((temp[j]*offset) & srn.all->reg.weight_mask);
 			if(srn.all->audit){
-				ex.audit_features[val_namespace][j].weight_index =  (uint32_t) ((wpp*temp[j]*offset) & srn.all->reg.weight_mask);
+				ex.audit_features[val_namespace][j].weight_index =  (uint32_t) ((temp[j]*offset) & srn.all->reg.weight_mask);
 				sprintf(ex.audit_features[val_namespace][j].feature, "0=%d", (int)temp[j]);
 			}
 		}
@@ -411,7 +411,7 @@ namespace DepParserTask {
 		return false;
 	}
 
-	void get_gold_actions(searn &srn, uint32_t idx, uint32_t n){
+	void get_gold_actions(Search::search &srn, uint32_t idx, uint32_t n){
 		task_data *data = srn.get_task_data<task_data>();
 		v_array<uint32_t> &gold_actions = data->gold_actions, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &temp=data->temp;
 		gold_actions.erase();
@@ -446,7 +446,7 @@ namespace DepParserTask {
 		}
 	}
 
-	void structured_predict(searn& srn, vector<example*>& ec) {
+	void run(Search::search& srn, vector<example*>& ec) {
 		cdep << "start structured predict"<<endl;
 		task_data *data = srn.get_task_data<task_data>();
 		v_array<uint32_t> &gold_actions = data->gold_actions, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads;
