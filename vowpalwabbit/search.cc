@@ -4,6 +4,7 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
  */
 #include <float.h>
+#include <string.h>
 #include "search.h"
 #include "v_hashmap.h"
 #include "hash.h"
@@ -91,6 +92,7 @@ namespace Search {
     v_array<char>   learn_condition_on_names;// the names of the actions
     v_array<action> learn_allowed_actions; // which actions were allowed at training time?
     v_array<action> ptag_to_action;// tag to action mapping for conditioning
+    vector<action> test_action_sequence; // if test-mode was run, what was the corresponding action sequence; it's a vector cuz we might expose it to the library
     action learn_oracle_action;    // store an oracle action for debugging purposes
     
     void* allowed_actions_cache;   // either a CS::label* or CB::label* depending on cb_learner
@@ -217,7 +219,7 @@ namespace Search {
 
   int select_learner(search_private& priv, int policy, size_t learner_id) {
     if (policy<0) return policy;  // optimal policy
-    else          return policy*priv.num_learners+learner_id;
+    else          return (int) (policy*priv.num_learners+learner_id);
   }
 
 
@@ -459,7 +461,7 @@ namespace Search {
     priv.mix_per_roll_policy = -2;
     if (priv.adaptive_beta) {
       float x = - log1pf(- priv.alpha) * (float)priv.total_examples_generated;
-      static const float log_of_2 = 0.6931471805599453;
+      static const float log_of_2 = (float)0.6931471805599453;
       priv.beta = (x <= log_of_2) ? -expm1f(-x) : (1-expf(-x)); // numerical stability
       //float priv_beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
       //assert( fabs(priv_beta - priv.beta) < 1e-2 );
@@ -468,7 +470,7 @@ namespace Search {
     priv.ptag_to_action.erase();
     
     if (! priv.cb_learner) { // was: if rollout_all_actions
-      uint32_t seed = (priv.read_example_last_id * 147483 + 4831921) * 2147483647;
+      uint32_t seed = (uint32_t)(priv.read_example_last_id * 147483 + 4831921) * 2147483647;
       msrand48(seed);
     }
   }
@@ -492,7 +494,7 @@ namespace Search {
     cdbg << "choose_oracle_action from oracle_actions = ["; for (size_t i=0; i<oracle_actions_cnt; i++) cdbg << " " << oracle_actions[i]; cdbg << " ]" << endl;
     return ( oracle_actions_cnt > 0) ?  oracle_actions[random(oracle_actions_cnt )] :
            (allowed_actions_cnt > 0) ? allowed_actions[random(allowed_actions_cnt)] :
-           random(ec_cnt);
+           (action)random(ec_cnt);
   }
 
   void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
@@ -597,7 +599,7 @@ namespace Search {
   void* allowed_actions_to_ld(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt) {
     bool isCB = priv.cb_learner;
     void* ld  = priv.allowed_actions_cache;
-    size_t num_costs = cs_get_costs_size(isCB, ld);
+    uint32_t num_costs = (uint32_t)cs_get_costs_size(isCB, ld);
 
     if (priv.is_ldf) {  // LDF version easier
       if (num_costs > ec_cnt)
@@ -633,15 +635,15 @@ namespace Search {
   void allowed_actions_to_losses(search_private& priv, size_t ec_cnt, const action* allowed_actions, size_t allowed_actions_cnt, const action* oracle_actions, size_t oracle_actions_cnt, v_array<float>& losses) {
     if (priv.is_ldf)  // LDF version easier
       for (action k=0; k<ec_cnt; k++)
-        losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0. : 1. );
+        losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
     else { // non-LDF
       if ((allowed_actions == NULL) || (allowed_actions_cnt == 0))  // any action is allowed
         for (action k=1; k<=priv.A; k++)
-          losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0. : 1. );
+          losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
       else
         for (size_t i=0; i<allowed_actions_cnt; i++) {
           action k = allowed_actions[i];
-          losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0. : 1. );
+          losses.push_back( array_contains<action>(k, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f );
         }
     }
   }
@@ -754,6 +756,7 @@ namespace Search {
   }
   
   void record_action(search_private& priv, ptag mytag, action a) {
+    if (priv.state == INIT_TEST) priv.test_action_sequence.push_back(a);
     if (mytag == 0) return;
     push_at(priv.ptag_to_action, a, mytag);
   }
@@ -781,10 +784,10 @@ namespace Search {
 
     unsigned char* item = (unsigned char*)calloc(sz, 1);
     unsigned char* here = item;
-    *here = sz;                here += sizeof(size_t);
-    *here = mytag;             here += sizeof(ptag);
-    *here = policy;            here += sizeof(int);
-    *here = condition_on_cnt;  here += sizeof(size_t);
+    *here = (unsigned char)sz;                here += (unsigned char)sizeof(size_t);
+    *here = mytag;             here += (unsigned char)sizeof(ptag);
+    *here = policy;            here += (unsigned char)sizeof(int);
+    *here = (unsigned char)condition_on_cnt;  here += (unsigned char)sizeof(size_t);
     for (size_t i=0; i<condition_on_cnt; i++) {
       *here = condition_on[i];         here += sizeof(ptag);
       *here = condition_on_actions[i]; here += sizeof(action);
@@ -889,7 +892,7 @@ namespace Search {
     //   - decide if we're done
     //   - if we are, then copy/mark the example ref
     if ((priv.state == LEARN) && (t == priv.learn_t)) {
-      action a = priv.learn_a_idx;
+      action a = (action)priv.learn_a_idx;
       priv.loss_declared_cnt = 0;
       
       priv.learn_a_idx++;
@@ -1070,6 +1073,7 @@ namespace Search {
       priv.pred_string->str("");
 
       // do the prediction
+      priv.test_action_sequence.clear();
       priv.task->run(sch, priv.ec_seq);
 
       // accumulate loss
@@ -1570,8 +1574,17 @@ namespace Search {
         ("search_no_caching",                             "turn off the built-in caching ability (makes things slower, but technically more safe)")
         ;
 
-    vm = add_options(all, search_opts);
+    bool has_hook_task = false;
+    for (size_t i=0; i<all.args.size()-1; i++)
+      if (all.args[i] == "--search_task" && all.args[i+1] == "hook")
+        has_hook_task = true;
+    if (has_hook_task)
+      for (int i = all.args.size()-2; i >= 0; i--)
+        if (all.args[i] == "--search_task" && all.args[i+1] != "hook")
+          all.args.erase(all.args.begin() + i, all.args.begin() + i + 2);
 
+    vm = add_options(all, search_opts);
+ 
     std::string task_string;
     std::string interpolation_string = "data";
     std::string rollout_string = "mix_per_state";
@@ -1580,6 +1593,11 @@ namespace Search {
     check_option<string>(task_string, all, vm, "search_task", false, string_equal,
                          "warning: specified --search_task different than the one loaded from regressor. using loaded value of: ",
                          "error: you must specify a task using --search_task");
+    // if (vm.count("search_task")) {
+    //   task_string = vm["search_task"].as<string>();
+    //   cerr << "task_string = " << task_string << endl;
+    // }
+      
     check_option<string>(interpolation_string, all, vm, "search_interpolation", false, string_equal,
                          "warning: specified --search_interpolation different than the one loaded from regressor. using loaded value of: ", "");
 
@@ -1795,11 +1813,18 @@ namespace Search {
     this->priv->all->p->lp = lp;
     this->priv->label_is_test = is_test;
   }
+
+  void search::get_test_action_sequence(vector<action>& V) {
+    V.clear();
+    for (size_t i=0; i<this->priv->test_action_sequence.size(); i++)
+      V.push_back(this->priv->test_action_sequence[i]);
+  }
+
   
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
   void search::add_program_options(po::variables_map& vm, po::options_description& opts) { vm = add_options( *this->priv->all, opts ); }
 
-  uint32_t search::get_history_length() { return this->priv->history_length; }
+  uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
   
   
   // predictor implementation

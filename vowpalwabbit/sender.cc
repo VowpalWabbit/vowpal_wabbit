@@ -71,7 +71,7 @@ void receive_result(sender& s)
 
   void learn(sender& s, learner& base, example& ec) 
   { 
-    if (s.received_index + s.all->p->ring_size - 1 == s.sent_index)
+    if (s.received_index + s.all->p->ring_size / 2 - 1 == s.sent_index)
       receive_result(s);
 
     label_data* ld = (label_data*)ec.ld;

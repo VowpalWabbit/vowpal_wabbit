@@ -56,12 +56,12 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/searn_entityrelationtask.h \
 	vowpalwabbit/searn_multiclasstask.h \
 	vowpalwabbit/searn_dep_parser.h \
+	vowpalwabbit/search_hooktask.h \
 	vowpalwabbit/sender.h \
 	vowpalwabbit/stagewise_poly.h \
 	vowpalwabbit/topk.h \
 	vowpalwabbit/unique_sort.h \
-	vowpalwabbit/v_hashmap.h \
-	vowpalwabbit/wap.h
+	vowpalwabbit/v_hashmap.h
 
 ACLOCAL_AMFLAGS = -I acinclude.d
 

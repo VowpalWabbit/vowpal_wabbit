@@ -20,10 +20,10 @@ class SequenceLabeler(pyvw.SearchTask):
     def _run(self, sentence):   # it's called _run to remind you that you shouldn't call it directly!
         output = []
         for n in range(len(sentence)):
-            tag,word = sentence[n]
+            pos,word = sentence[n]
             # use "with...as..." to guarantee that the example is finished properly
             with self.vw.example({'w': [word]}) as ex:
-                pred = self.sch.predict(ex, n+1, tag, (n,'p'))
+                pred = self.sch.predict(examples=ex, my_tag=n+1, oracle=pos, condition=(n,'p'))
                 output.append(pred)
         return output
     
