@@ -97,6 +97,9 @@ namespace Search {
 
     // get the value specified by --search_history_length
     uint32_t get_history_length();
+
+    // check if the user declared ldf mode
+    bool is_ldf();
     
     // where you should write output
     std::stringstream& output();
@@ -135,8 +138,12 @@ namespace Search {
 
     // tell the predictor what to use as input. a single example input
     // means non-LDF mode; an array of inputs means LDF mode
-    predictor& set_input(example&input_example);
-    predictor& set_input(example*input_example, size_t input_length);
+    predictor& set_input(example& input_example);
+    predictor& set_input(example* input_example, size_t input_length);    // if you're lucky and have an array of examples
+
+    // the following is mostly to make life manageable for the Python interface
+    void set_input_length(size_t input_length);  // declare that we have an input_length-long LDF example
+    void set_input_at(size_t posn, example&input_example); // set the corresponding input (*after* set_input_length)
 
     // different ways of adding to the list of oracle actions. you can
     // either add_ or set_; setting erases previous actions. these
@@ -183,6 +190,7 @@ namespace Search {
     ptag my_tag;
     example* ec;
     size_t ec_cnt;
+    bool ec_alloced;
     v_array<action> oracle_actions;    bool oracle_is_pointer;   // if we're pointing to your memory TRUE; if it's our own memory FALSE
     v_array<ptag> condition_on_tags;
     v_array<char> condition_on_names;

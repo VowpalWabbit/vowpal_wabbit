@@ -4,6 +4,8 @@
 #include "../vowpalwabbit/cb.h"
 #include "../vowpalwabbit/search.h"
 #include "../vowpalwabbit/search_hooktask.h"
+#include "../vowpalwabbit/parse_example.h"
+#include "../vowpalwabbit/gd.h"
 
 #include <boost/make_shared.hpp>
 #include <boost/python.hpp>
@@ -17,7 +19,15 @@ typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 
-void dont_delete_me(void*arg) {}
+const size_t lDEFAULT = 0;
+const size_t lBINARY = 1;
+const size_t lMULTICLASS = 2;
+const size_t lCOST_SENSITIVE = 3;
+const size_t lCONTEXTUAL_BANDIT = 4;
+const size_t lMAX = 5;
+
+
+void dont_delete_me(void*arg) { }
 
 vw_ptr my_initialize(string args) {
   vw*foo = VW::initialize(args);
@@ -32,15 +42,63 @@ search_ptr get_search_ptr(vw_ptr all) {
   return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
 }
 
+void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
+
 predictor_ptr get_predictor(search_ptr sch, ptag my_tag) {
   Search::predictor* P = new Search::predictor(*sch, my_tag);
   return boost::shared_ptr<Search::predictor>(P);
 }
 
+label_parser* get_label_parser(vw*all, size_t labelType) {
+  switch (labelType) {
+    case lDEFAULT:           return &all->p->lp; // TODO: check null
+    case lBINARY:            return &simple_label;
+    case lMULTICLASS:        return &MULTICLASS::mc_label;
+    case lCOST_SENSITIVE:    return &COST_SENSITIVE::cs_label;
+    case lCONTEXTUAL_BANDIT: return &CB::cb_label;
+    default: cerr << "get_label_parser called on invalid label type" << endl; throw exception();
+  }
+}
 
-example_ptr my_read_example(vw_ptr all, char*str) {
-  example*ec = VW::read_example(*all, str);
-  return boost::shared_ptr<example>(ec, dont_delete_me);
+void my_delete_example(void*voidec) {
+  example* ec = (example*) voidec;
+  size_t labelType = ec->example_counter;
+  label_parser* lp = get_label_parser(NULL, labelType);
+  dealloc_example(lp->delete_label, *ec);
+  free(ec);
+}
+
+
+example* my_empty_example0(vw_ptr vw, size_t labelType) {
+  label_parser* lp = get_label_parser(&*vw, labelType);
+  example* ec = alloc_examples(lp->label_size, 1);
+  lp->default_label(ec->ld);
+  ec->example_counter = labelType; // example_counter unused in our own examples, so hide labelType in it!
+  return ec;
+}
+
+example_ptr my_empty_example(vw_ptr vw, size_t labelType) {
+  if (labelType == lDEFAULT) {
+    example* new_ec = VW::new_unused_example(*vw);
+    return boost::shared_ptr<example>(new_ec, dont_delete_me);
+  } else {
+    example* ec = my_empty_example0(vw, labelType);
+    return boost::shared_ptr<example>(ec, my_delete_example);
+  }
+}  
+
+example_ptr my_read_example(vw_ptr all, size_t labelType, char*str) {
+  if (labelType == lDEFAULT) {
+    example*ec = VW::read_example(*all, str);
+    return boost::shared_ptr<example>(ec, dont_delete_me);
+  } else {
+    example*ec = my_empty_example0(all, labelType);
+    read_line(*all, ec, str);
+    parse_atomic_example(*all, ec, false);
+    VW::setup_example(*all, ec);
+    ec->example_counter = labelType;
+    return boost::shared_ptr<example>(ec, my_delete_example);
+  }
 }
 
 void my_finish_example(vw_ptr all, example_ptr ec) {
@@ -136,14 +194,11 @@ void my_setup_example(vw_ptr vw, example_ptr ec) {
   VW::setup_example(*vw, ec.get());
 }
 
-example_ptr my_empty_example(vw_ptr vw) {
-  example* new_ec = VW::new_unused_example(*vw);
-  vw->p->lp.default_label(new_ec->ld);
-  return boost::shared_ptr<example>(new_ec, dont_delete_me);
-}  
-
-void ex_set_label_string(example_ptr ec, vw_ptr vw, string label) {
+void ex_set_label_string(example_ptr ec, vw_ptr vw, string label, size_t labelType) {
+  label_parser& old_lp = vw->p->lp;
+  vw->p->lp = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
+  vw->p->lp = old_lp;
 }
 
 float ex_get_simplelabel_label(example_ptr ec) { return ((label_data*)ec->ld)->label; }
@@ -303,7 +358,8 @@ PyObject* po_get(search_ptr sch, string arg) {
 }
 
 void my_set_input(predictor_ptr P, example_ptr ec) { P->set_input(*ec); }
-void my_set_input_LDF(predictor_ptr P, vector<example_ptr>&ecs) { throw exception(); }  // TODO
+void my_set_input_at(predictor_ptr P, size_t posn, example_ptr ec) { P->set_input_at(posn, *ec); }
+
 void my_add_oracle(predictor_ptr P, action a) { P->add_oracle(a); }
 void my_add_oracles(predictor_ptr P, vector<action>& a) { P->add_oracle(a.data(), a.size()); }
 void my_add_allowed(predictor_ptr P, action a) { P->add_allowed(a); }
@@ -346,12 +402,19 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
+      .def("audit_example", &my_audit_example, "print example audit information")
+
+      .def_readonly("lDefault", lDEFAULT, "Default label type (whatever vw was initialized with) -- used as input to the example() initializer")
+      .def_readonly("lBinary", lBINARY, "Binary label type -- used as input to the example() initializer")
+      .def_readonly("lMulticlass", lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
+      .def_readonly("lCostSensitive", lCOST_SENSITIVE, "Cost sensitive label type (for LDF!) -- used as input to the example() initializer")
+      .def_readonly("lContextualBandit", lCONTEXTUAL_BANDIT, "Contextual bandit label type -- used as input to the example() initializer")
       ;
 
   // define the example class
   py::class_<example, example_ptr>("example", py::no_init)
-      .def("__init__", py::make_constructor(my_read_example), "Given a string as an argument parse that into a VW example (and run setup on it)")
-      .def("__init__", py::make_constructor(my_empty_example), "Construct an empty (non setup) example")
+      .def("__init__", py::make_constructor(my_read_example), "Given a string as an argument parse that into a VW example (and run setup on it) -- default to multiclass label type")
+      .def("__init__", py::make_constructor(my_empty_example), "Construct an empty (non setup) example; you must provide a label type (vw.lBinary, vw.lMulticlass, etc.)")
 
       .def("set_test_only", &my_set_test_only, "Change the test-only bit on an example")
 
@@ -405,7 +468,9 @@ BOOST_PYTHON_MODULE(pylibvw) {
 
   py::class_<Search::predictor, predictor_ptr>("predictor", py::no_init)
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
-      .def("set_input_ldf", &my_set_input_LDF, "set the inputs (a list of examples) for this predictor (LDF mode only)")
+      //.def("set_input_ldf", &my_set_input_ldf, "set the inputs (a list of examples) for this predictor (LDF mode only)")
+      .def("set_input_length", &Search::predictor::set_input_length, "declare the length of an LDF-sequence of examples")
+      .def("set_input_at", &my_set_input_at, "put a given example at position in the LDF sequence (call after set_input_length)")
       .def("add_oracle", &my_add_oracle, "add an action to the current list of oracle actions")
       .def("add_oracles", &my_add_oracles, "add a list of actions to the current list of oracle actions")
       .def("add_allowed", &my_add_allowed, "add an action to the current list of allowed actions")
@@ -446,16 +511,3 @@ BOOST_PYTHON_MODULE(pylibvw) {
       .def_readonly("IS_LDF", Search::IS_LDF, "Tell search that this is an LDF task")
       ;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
