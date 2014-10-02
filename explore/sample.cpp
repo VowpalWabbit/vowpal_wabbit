@@ -8,11 +8,11 @@ using namespace std;
 
 u32 Stateful_Default_Policy1(int* policy_params, Context* applicationContext)
 {
-	return *policy_params;
+	return *policy_params % 10;
 }
 u32 Stateful_Default_Policy2(int* policy_params, Context* applicationContext)
 {
-	return -*policy_params;
+	return *policy_params % 5;
 }
 void Stateful_Default_Scorer(int* policy_params, Context* application_Context, float scores[], u32 size)
 {
@@ -50,13 +50,13 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	float epsilon = .2f;
 	u32 tau = 5;
-	u32 bags = 10;
+	u32 bags = 2;
 	float lambda = 0.5f;
 
 	int policy_params = 101;
 
 	/*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
-	mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, num_actions);
+	//mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, num_actions);
 
 	/*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
 	//mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy1, num_actions);
@@ -68,9 +68,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	//mwt.Initialize_Tau_First(tau, Stateless_Default_Policy1, num_actions);
 
 	/*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
-	//StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
-	//int* params[2] = { &policy_params, &policy_params };
-	//mwt.Initialize_Bagging<int>(bags, funcs, params, num_actions);
+	StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
+	int* params[2] = { &policy_params, &policy_params };
+	mwt.Initialize_Bagging<int>(bags, funcs, params, num_actions);
 
 	/*** Initialize Bagging explore algorithm using a stateless default policy function ***/
 	//StatelessFunctionWrapper::Policy_Func* funcs[2] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };

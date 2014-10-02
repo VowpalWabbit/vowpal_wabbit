@@ -4,15 +4,34 @@ class BaggingExplorer : public Explorer
 public:
 	BaggingExplorer(
 		u32 bags,
-		std::vector<BaseFunctionWrapper*>* default_policy_func_wrapper_ptr_vec,
-		std::vector<T*>* default_policy_params_ptr_vec) :
-		m_bags(bags),
-		m_default_policy_wrapper_ptr_vec(default_policy_func_wrapper_ptr_vec),
-		m_default_policy_params_ptr_vec(default_policy_params_ptr_vec)
+		Stateful_Policy_Func** default_policy_functions,
+		void** default_policy_args) :
+		m_bags(bags)
 	{
-		if (bags <= 0)
-		{
-			throw std::invalid_argument("Bags value must be positive.");
+		m_default_policy_funcs.clear();
+		m_default_policy_params.clear();
+
+		for (u32 i = 0; i < bags; i++){
+			StatefulFunctionWrapper<void>* func_wrapper = new StatefulFunctionWrapper<void>();
+			func_wrapper->m_policy_function = default_policy_functions[i];
+			m_default_policy_funcs.push_back(func_wrapper);
+			m_default_policy_params.push_back(default_policy_args[i]);
+		}
+		m_random_generator = new PRG<u32>();
+	}
+
+	BaggingExplorer(
+		u32 bags,
+		Stateless_Policy_Func** default_policy_functions) :
+		m_bags(bags)
+	{
+		m_default_policy_funcs.clear();
+		m_default_policy_params.clear();
+
+		for (u32 i = 0; i < bags; i++){
+			StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
+			func_wrapper->m_policy_function = default_policy_functions[i];
+			m_default_policy_funcs.push_back(func_wrapper);
 		}
 		m_random_generator = new PRG<u32>();
 	}
@@ -20,6 +39,14 @@ public:
 	~BaggingExplorer()
 	{
 		delete m_random_generator;
+
+		for (size_t i = 0; i < m_default_policy_funcs.size(); i++)
+		{
+			delete m_default_policy_funcs[i];
+		}
+
+		m_default_policy_funcs.clear();
+		m_default_policy_params.clear();
 	}
 
 	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions)
@@ -47,15 +74,15 @@ private:
 			actions_selected[i] = 0;
 		}
 		for (u32 current_bag = 0; current_bag < m_bags; current_bag++){
-			if (typeid(m_default_policy_wrapper_ptr_vec[0]) == typeid(StatelessFunctionWrapper*))
+			if (typeid(m_default_policy_funcs[current_bag]) == typeid(StatelessFunctionWrapper*))
 			{
-				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)((*m_default_policy_wrapper_ptr_vec)[current_bag]);
+				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(m_default_policy_funcs[current_bag]);
 				action_from_bag = MWTAction(stateless_function_wrapper->m_policy_function(&context));
 			}
 			else
 			{
-				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)((*m_default_policy_wrapper_ptr_vec)[current_bag]);
-				action_from_bag = MWTAction(stateful_function_wrapper->m_policy_function((*m_default_policy_params_ptr_vec)[current_bag], &context));
+				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(m_default_policy_funcs[current_bag]);
+				action_from_bag = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params[current_bag], &context));
 			}
 			if (current_bag == chosen_bag){
 				chosen_action = action_from_bag;
@@ -66,7 +93,6 @@ private:
 		float action_probability = (float) actions_selected[chosen_action.Get_Id()]/ (float) actions.Count();
 		delete actions_selected;
 
-
 		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
 	}
 
@@ -74,6 +100,6 @@ private:
 	u32 m_bags;
 	PRG<u32>* m_random_generator;
 
-	std::vector<BaseFunctionWrapper*>* m_default_policy_wrapper_ptr_vec;
-	std::vector<T*>* m_default_policy_params_ptr_vec;
+	std::vector<BaseFunctionWrapper*> m_default_policy_funcs;
+	std::vector<T*> m_default_policy_params;
 };
