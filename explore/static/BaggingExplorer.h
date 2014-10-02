@@ -64,17 +64,19 @@ private:
 	std::tuple<MWTAction, float,bool> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
 	{
 		//Select Bag
-		u32 chosen_bag = random_generator.Uniform_Int(1, m_bags);
+		u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
 		// Invoke the default policy function to get the action
 		MWTAction chosen_action(0);
 		MWTAction action_from_bag(0);
 		//maybe be best to make this static size
 		u32* actions_selected = new u32[actions.Count()];
-		for (int i = 0; i < actions.Count(); i++){
+		for (int i = 0; i < actions.Count(); i++)
+		{
 			actions_selected[i] = 0;
 		}
-		for (u32 current_bag = 0; current_bag < m_bags; current_bag++){
-			if (typeid(m_default_policy_funcs[current_bag]) == typeid(StatelessFunctionWrapper*))
+		for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
+		{
+			if (typeid(*m_default_policy_funcs[current_bag]) == typeid(StatelessFunctionWrapper))
 			{
 				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(m_default_policy_funcs[current_bag]);
 				action_from_bag = MWTAction(stateless_function_wrapper->m_policy_function(&context));
@@ -84,13 +86,15 @@ private:
 				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(m_default_policy_funcs[current_bag]);
 				action_from_bag = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params[current_bag], &context));
 			}
-			if (current_bag == chosen_bag){
+
+			if (current_bag == chosen_bag)
+			{
 				chosen_action = action_from_bag;
 			}
 			//this won't work if actions aren't 0 to Count
-			actions_selected[action_from_bag.Get_Id()]++;
+			actions_selected[action_from_bag.Get_Id_ZeroBased()]++;
 		}
-		float action_probability = (float) actions_selected[chosen_action.Get_Id()]/ (float) actions.Count();
+		float action_probability = (float)actions_selected[chosen_action.Get_Id_ZeroBased()] / (float)actions.Count();
 		delete actions_selected;
 
 		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);
