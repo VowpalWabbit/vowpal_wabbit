@@ -180,8 +180,8 @@ private:
 class Policy
 {
 public:
-	virtual std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions) = 0;
-	virtual std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, u32 seed) = 0;
+	virtual std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions) = 0;
+	virtual std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed) = 0;
 	virtual ~Policy()
 	{
 	}

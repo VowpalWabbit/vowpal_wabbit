@@ -23,19 +23,19 @@ public:
 		delete m_random_generator;
 	}
 
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions)
+	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions)
 	{
 		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, u32 seed)
+	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
 		return this->Choose_Action(context, actions, random_generator);
 	}
 
 private:
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
+	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, PRG<u32>& random_generator)
 	{
 		MWTAction chosen_action(0);
 		float action_probability = 0.f;
@@ -54,12 +54,12 @@ private:
 			if (typeid(m_default_policy_wrapper) == typeid(StatelessFunctionWrapper))
 			{
 				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_policy_wrapper);
-				chosen_action = MWTAction(stateless_function_wrapper->m_policy_function(&context));
+				chosen_action = MWTAction(stateless_function_wrapper->m_policy_function(context));
 			}
 			else
 			{
 				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_policy_wrapper);
-				chosen_action = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params, &context));
+				chosen_action = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params, context));
 			}
 
 			action_probability = 1.f;

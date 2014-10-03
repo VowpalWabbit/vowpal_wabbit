@@ -60,6 +60,6 @@ namespace MultiWorldTesting {
 		String^ GetAllInteractions();
 
 	private:
-		UInt32 ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId);
+		UInt32 ChooseAction(Context^ context, cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId);
 	};
 }

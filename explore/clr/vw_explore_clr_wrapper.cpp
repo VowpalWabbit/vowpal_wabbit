@@ -140,12 +140,15 @@ namespace MultiWorldTesting {
 
 	UInt32 MWTWrapper::ChooseAction(Context^ context, String^ uniqueId)
 	{
-		return this->ChooseAction(context->Features, context->OtherContext, uniqueId);
+		return this->ChooseAction(context, context->Features, context->OtherContext, uniqueId);
 	}
 
-	UInt32 MWTWrapper::ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId)
+	UInt32 MWTWrapper::ChooseAction(Context^ context, cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId)
 	{
 		UInt32 chosenAction = 0;
+
+		GCHandle contextHandle = GCHandle::Alloc(context);
+		IntPtr contextPtr = (IntPtr)contextHandle;
 
 		std::string nativeOtherContext = marshal_as<std::string>(otherContext);
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
@@ -156,9 +159,12 @@ namespace MultiWorldTesting {
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
 		chosenAction = m_mwt->Choose_Action(
+			contextPtr.ToPointer(),
 			(feature*)nativeContextFeatures, (size_t)contextFeatures->Length, 
 			&nativeOtherContext, 
 			nativeUniqueKey);
+
+		contextHandle.Free();
 
 		return chosenAction;
 	}

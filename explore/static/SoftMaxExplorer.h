@@ -28,19 +28,19 @@ public:
 		delete m_random_generator;
 	}
 
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions)
+	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions)
 	{
 		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, u32 seed)
+	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
 		return this->Choose_Action(context, actions, random_generator);
 	}
 
 private:
-	std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, PRG<u32>& random_generator)
+	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, PRG<u32>& random_generator)
 	{
 		// Invoke the default scorer function to score each action 
 		MWTAction chosen_action(0);
@@ -49,12 +49,12 @@ private:
 		if (typeid(m_default_scorer_wrapper) == typeid(StatelessFunctionWrapper))
 		{
 			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_scorer_wrapper);
-			stateless_function_wrapper->m_scorer_function(&context, scores, actions.Count());
+			stateless_function_wrapper->m_scorer_function(context, scores, actions.Count());
 		}
 		else
 		{
 			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_scorer_wrapper);
-			stateful_function_wrapper->m_scorer_function(m_default_scorer_params, &context, scores, actions.Count());
+			stateful_function_wrapper->m_scorer_function(m_default_scorer_params, context, scores, actions.Count());
 		}
 
 		u32 i = 0;
