@@ -92,7 +92,7 @@ namespace cs_test
 
             UInt32 chosenAction = mwt.ChooseAction(context, "myId");
 
-            string interactions = mwt.GetAllInteractions();
+            string interactions = mwt.GetAllInteractionsAsString();
 
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);

@@ -194,9 +194,35 @@ namespace MultiWorldTesting {
 		return chosenActionAndKey;
 	}
 
-	String^ MWTWrapper::GetAllInteractions()
+	String^ MWTWrapper::GetAllInteractionsAsString()
 	{
 		std::string all_interactions = m_mwt->Get_All_Interactions();
 		return gcnew String(all_interactions.c_str());
+	}
+
+	cli::array<INTERACTION^>^ MWTWrapper::GetAllInteractions()
+	{
+		size_t num_interactions = 0;
+		Interaction** native_interactions = nullptr;
+		m_mwt->Get_All_Interactions(num_interactions, native_interactions);
+
+		cli::array<INTERACTION^>^ interactions = gcnew cli::array<INTERACTION^>((int)num_interactions);
+		if (num_interactions > 0 && native_interactions != nullptr)
+		{
+			for (size_t i = 0; i < num_interactions; i++)
+			{
+				interactions[i] = gcnew INTERACTION();
+
+				// TODO: copy the context 
+				//interactions[i]->ApplicationContext = native_interactions[i]->Get_Context();
+
+				interactions[i]->ChosenAction = native_interactions[i]->Get_Action().Get_Id();
+				interactions[i]->Probability = native_interactions[i]->Get_Prob();
+				interactions[i]->JoinId = native_interactions[i]->Get_Id();
+
+				delete native_interactions[i];
+			}
+			delete[] native_interactions;
+		}
 	}
 }

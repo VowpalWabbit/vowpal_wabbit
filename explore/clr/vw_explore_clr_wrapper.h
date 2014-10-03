@@ -34,6 +34,15 @@ namespace MultiWorldTesting {
 		String^ OtherContext;
 	};
 
+	public ref class INTERACTION
+	{
+	public:
+		CONTEXT^ ApplicationContext;
+		UInt32 ChosenAction;
+		float Probability;
+		UInt64 JoinId;
+	};
+
 	public ref class MWTWrapper
 	{
 	private:
@@ -58,6 +67,7 @@ namespace MultiWorldTesting {
 		UInt32 ChooseAction(CONTEXT^ context, String^ uniqueId);
 		Tuple<UInt32, UInt64>^ ChooseActionAndKey(CONTEXT^ context);
 
-		String^ GetAllInteractions();
+		String^ GetAllInteractionsAsString();
+		cli::array<INTERACTION^>^ GetAllInteractions();
 	};
 }

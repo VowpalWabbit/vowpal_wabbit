@@ -54,13 +54,21 @@ std::string Logger::Get_All_Interactions()
 
 void Logger::Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
 {
-	num_interactions = m_interactions.size();
-	interactions = new Interaction*[num_interactions];
-	for (size_t i = 0; i < m_interactions.size(); i++)
+	if (m_interactions.size() > 0)
 	{
-		 interactions[i] = m_interactions[i];
+		num_interactions = m_interactions.size();
+		interactions = new Interaction*[num_interactions];
+		for (size_t i = 0; i < m_interactions.size(); i++)
+		{
+			interactions[i] = m_interactions[i];
+		}
+		m_interactions.clear();
 	}
-	m_interactions.clear();
+	else
+	{
+		num_interactions = 0;
+		interactions = nullptr;
+	}
 }
 
 void Logger::Clear_Data()
