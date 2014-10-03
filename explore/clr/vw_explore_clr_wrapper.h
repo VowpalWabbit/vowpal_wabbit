@@ -21,10 +21,10 @@ namespace MultiWorldTesting {
 		UInt32 WeightIndex;
 	};
 
-	public ref class Context
+	public ref class CONTEXT
 	{
 	public:
-		Context(cli::array<FEATURE>^ features, String^ otherContext)
+		CONTEXT(cli::array<FEATURE>^ features, String^ otherContext)
 		{
 			Features = features;
 			OtherContext = otherContext;
@@ -55,11 +55,9 @@ namespace MultiWorldTesting {
 		void InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
 		void InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
 
-		UInt32 ChooseAction(Context^ context, String^ uniqueId);
+		UInt32 ChooseAction(CONTEXT^ context, String^ uniqueId);
+		Tuple<UInt32, UInt64>^ ChooseActionAndKey(CONTEXT^ context);
 
 		String^ GetAllInteractions();
-
-	private:
-		UInt32 ChooseAction(Context^ context, cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId);
 	};
 }

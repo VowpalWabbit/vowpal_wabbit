@@ -35,7 +35,7 @@ namespace ExploreTests
             features[1].X = 0.9f;
             features[1].WeightIndex = 2;
 
-            context = new Context(features, "Other C# test context");
+            context = new CONTEXT(features, "Other C# test context");
             contextHandle = GCHandle.Alloc(context);
         }
 
@@ -48,7 +48,7 @@ namespace ExploreTests
         private static UInt32 TestStatelessPolicyFunc(IntPtr applicationContext)
         {
             GCHandle contextHandle = (GCHandle)applicationContext;
-            Context context = (contextHandle.Target as Context);
+            CONTEXT context = (contextHandle.Target as CONTEXT);
             
             return (uint)context.Features.Length % MWTExploreTests.NumActions + 1;
         }
@@ -56,7 +56,7 @@ namespace ExploreTests
         private static UInt32 TestStatefulPolicyFunc(IntPtr policyParams, IntPtr applicationContext)
         {
             GCHandle contextHandle = (GCHandle)applicationContext;
-            Context context = (contextHandle.Target as Context);
+            CONTEXT context = (contextHandle.Target as CONTEXT);
 
             return (uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions + 1;
         }
@@ -86,7 +86,7 @@ namespace ExploreTests
 
         private MWTWrapper mwt;
         private FEATURE[] features;
-        private Context context;
+        private CONTEXT context;
         private GCHandle contextHandle;
     }
 }

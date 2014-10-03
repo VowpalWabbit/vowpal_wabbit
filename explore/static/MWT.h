@@ -115,17 +115,7 @@ public:
 
 	std::pair<u32, u64> Choose_Action_And_Key(Context& context)
 	{
-		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(&context, *m_action_set);
-		if(!std::get<2>(action_Probability_Log_Tuple)){
-			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
-		}
-		Interaction pInteraction(&context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
-		m_logger->Store(&pInteraction);
-		
-		
-		// TODO: Anything else to do here?
-
-		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), pInteraction.Get_Id());
+		return this->Choose_Action_And_Key(&context, context);
 	}
 
 	// TODO: check whether char* could be std::string
@@ -271,6 +261,20 @@ public:
 		m_logger->Store(&pInteraction);
 
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
+	}
+
+	// The parameters here look weird but are required to interface with C#
+	std::pair<u32, u64> Choose_Action_And_Key(void* context, Context& log_context)
+	{
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set);
+		if (!std::get<2>(action_Probability_Log_Tuple))
+		{
+			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
+		}
+		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
+		m_logger->Store(&pInteraction);
+
+		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), pInteraction.Get_Id());
 	}
 
 	std::string Get_All_Interactions()

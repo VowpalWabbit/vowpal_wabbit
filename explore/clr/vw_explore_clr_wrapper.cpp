@@ -138,35 +138,60 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
-	UInt32 MWTWrapper::ChooseAction(Context^ context, String^ uniqueId)
-	{
-		return this->ChooseAction(context, context->Features, context->OtherContext, uniqueId);
-	}
-
-	UInt32 MWTWrapper::ChooseAction(Context^ context, cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId)
+	UInt32 MWTWrapper::ChooseAction(CONTEXT^ context, String^ uniqueId)
 	{
 		UInt32 chosenAction = 0;
 
 		GCHandle contextHandle = GCHandle::Alloc(context);
 		IntPtr contextPtr = (IntPtr)contextHandle;
 
+		cli::array<FEATURE>^ contextFeatures = context->Features;
+		String^ otherContext = context->OtherContext;
+
 		std::string nativeOtherContext = marshal_as<std::string>(otherContext);
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
-		pin_ptr<FEATURE> pinnedContextFeatures = &contextFeatures[0]; 
+		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
 		FEATURE* nativeContextFeatures = pinnedContextFeatures;
+
+		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, &nativeOtherContext);
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
 		chosenAction = m_mwt->Choose_Action(
 			contextPtr.ToPointer(),
-			(feature*)nativeContextFeatures, (size_t)contextFeatures->Length, 
-			&nativeOtherContext, 
-			nativeUniqueKey);
+			nativeUniqueKey, 
+			log_context);
 
 		contextHandle.Free();
 
 		return chosenAction;
+	}
+
+	Tuple<UInt32, UInt64>^ MWTWrapper::ChooseActionAndKey(CONTEXT^ context)
+	{
+		GCHandle contextHandle = GCHandle::Alloc(context);
+		IntPtr contextPtr = (IntPtr)contextHandle;
+
+		cli::array<FEATURE>^ contextFeatures = context->Features;
+		String^ otherContext = context->OtherContext;
+
+		std::string nativeOtherContext = marshal_as<std::string>(otherContext);
+
+		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
+		FEATURE* nativeContextFeatures = pinnedContextFeatures;
+
+		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, &nativeOtherContext);
+
+		std::pair<u32, u64> actionAndKey = m_mwt->Choose_Action_And_Key(
+			contextPtr.ToPointer(),
+			log_context);
+
+		Tuple<UInt32, UInt64>^ chosenActionAndKey = gcnew Tuple<UInt32, UInt64>(actionAndKey.first, actionAndKey.second);
+
+		contextHandle.Free();
+
+		return chosenActionAndKey;
 	}
 
 	String^ MWTWrapper::GetAllInteractions()

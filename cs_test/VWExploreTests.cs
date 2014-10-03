@@ -88,7 +88,7 @@ namespace cs_test
             f[1].WeightIndex = 2;
 
             string otherContext = "Some other context data that might be helpful to log";
-            Context context = new Context(f, otherContext);
+            CONTEXT context = new CONTEXT(f, otherContext);
 
             UInt32 chosenAction = mwt.ChooseAction(context, "myId");
 
