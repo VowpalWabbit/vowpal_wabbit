@@ -66,12 +66,8 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
                                 'd': [ str(m-n <= d) + '<=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] +
                                      [ str(m-n >= d) + '>=' + str(d) for d in [-8, -4, -2, -1, 1, 2, 4, 8] ] },
                               labelType=self.vw.lCostSensitive)
-        # the label string is 100+n-m.. the 100 is to make sure
-        # negative values of (n-m) are still >=1; the reason we use
-        # this label rather than just, eg, m (which is what we're
-        # trying to predict) is that we expect the conditioning
-        # feature(s) automatically created from positional _deltas_
-        # are more useful than absolute positions.
+        # the label string is (m+2):0. The :0 means cost zero (this is
+        # irrelevant and could be any number). +2 ensures >= 1
         ex.set_label_string(str(100 + n - m) + ":0")
         return ex
             
@@ -91,7 +87,7 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
             pred = self.sch.predict(examples  = examples,
                                     my_tag    = n+1,
                                     oracle    = oracle,
-                                    condition = [ (n-1, 'p'), (n-2, 'q') ] )
+                                    condition = [ (n, 'p'), (n-1, 'q') ] )
 
             output[n] = pred-1 if pred < n else pred # have to +1 because n==m excluded
 
@@ -101,10 +97,24 @@ class CovingtonDepParserLDF(pyvw.SearchTask):
 
 # TODO: if they make sure search=0 <==> ldf <==> csoaa_ldf
 
-vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 -q ab")
+# demo the non-ldf version:
+
+print 'training non-LDF'
+vw = pyvw.vw("--search 2 --search_task hook --ring_size 1024 --quiet")
+task = vw.init_search_task(CovingtonDepParser)
+for p in range(2): # do two passes over the training data
+    task.learn(my_dataset.__iter__)
+print 'testing non-LDF'
+print task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] )
+print 'should have printed [ 1 2 -1 4 2 ]'
+
+# demo the ldf version:
+
+print 'training LDF'
+vw = pyvw.vw("--search 0 --csoaa_ldf m --search_task hook --ring_size 1024 --quiet")
 task = vw.init_search_task(CovingtonDepParserLDF)
 for p in range(2): # do two passes over the training data
     task.learn(my_dataset.__iter__)
-print 'testing'
+print 'testing LDF'
 print task.predict( [(w,-1) for w in "the monster ate a sandwich".split()] )
 print 'should have printed [ 1 2 -1 4 2 ]'

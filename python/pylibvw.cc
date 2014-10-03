@@ -73,6 +73,10 @@ example* my_empty_example0(vw_ptr vw, size_t labelType) {
   label_parser* lp = get_label_parser(&*vw, labelType);
   example* ec = alloc_examples(lp->label_size, 1);
   lp->default_label(ec->ld);
+  if (labelType == lCOST_SENSITIVE) {
+    COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };
+    ((COST_SENSITIVE::label*)ec->ld)->costs.push_back(zero);
+  }
   ec->example_counter = labelType; // example_counter unused in our own examples, so hide labelType in it!
   return ec;
 }
@@ -361,15 +365,15 @@ void my_set_input(predictor_ptr P, example_ptr ec) { P->set_input(*ec); }
 void my_set_input_at(predictor_ptr P, size_t posn, example_ptr ec) { P->set_input_at(posn, *ec); }
 
 void my_add_oracle(predictor_ptr P, action a) { P->add_oracle(a); }
-void my_add_oracles(predictor_ptr P, vector<action>& a) { P->add_oracle(a.data(), a.size()); }
+void my_add_oracles(predictor_ptr P, py::list& a) { for (size_t i=0; i<len(a); i++) P->add_oracle(py::extract<action>(a[i])); }
 void my_add_allowed(predictor_ptr P, action a) { P->add_allowed(a); }
-void my_add_alloweds(predictor_ptr P, vector<action>& a) { P->add_allowed(a.data(), a.size()); }
+void my_add_alloweds(predictor_ptr P, py::list& a) { for (size_t i=0; i<len(a); i++) P->add_allowed(py::extract<action>(a[i])); }
 void my_add_condition(predictor_ptr P, ptag t, char c) { P->add_condition(t, c); }
 void my_add_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->add_condition_range(hi, count, name0); }
 void my_set_oracle(predictor_ptr P, action a) { P->set_oracle(a); }
-void my_set_oracles(predictor_ptr P, vector<action>& a) { P->set_oracle(a.data(), a.size()); }
+void my_set_oracles(predictor_ptr P, py::list& a) { if (len(a) > 0) P->set_oracle(py::extract<action>(a[0])); else P->erase_oracles(); for (size_t i=1; i<len(a); i++) P->add_oracle(py::extract<action>(a[i])); }
 void my_set_allowed(predictor_ptr P, action a) { P->set_allowed(a); }
-void my_set_alloweds(predictor_ptr P, vector<action>& a) { P->set_allowed(a.data(), a.size()); }
+void my_set_alloweds(predictor_ptr P, py::list& a) { if (len(a) > 0) P->set_allowed(py::extract<action>(a[0])); else P->erase_alloweds(); for (size_t i=1; i<len(a); i++) P->add_allowed(py::extract<action>(a[i])); }
 void my_set_condition(predictor_ptr P, ptag t, char c) { P->set_condition(t, c); }
 void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0) { P->set_condition_range(hi, count, name0); }
 void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }

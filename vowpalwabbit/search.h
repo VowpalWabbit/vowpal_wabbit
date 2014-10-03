@@ -152,6 +152,8 @@ namespace Search {
     // else, we'll just store a pointer to your memory. this means that
     // you probably shouldn't change the data there, or free that pointer,
     // between calling add/set_oracle and calling predict()
+    predictor& erase_oracles();
+
     predictor& add_oracle(action a);
     predictor& add_oracle(action*a, size_t action_count);
     predictor& add_oracle(v_array<action>& a);
@@ -161,6 +163,8 @@ namespace Search {
     predictor& set_oracle(v_array<action>& a);
     
     // same as add/set_oracle but for allowed actions
+    predictor& erase_alloweds();
+
     predictor& add_allowed(action a);
     predictor& add_allowed(action*a, size_t action_count);
     predictor& add_allowed(v_array<action>& a);
