@@ -27,20 +27,17 @@ public:
 		m_logger = new Logger(m_app_id);
 		m_explorer = nullptr;
 		m_default_func_wrapper = nullptr;
+		m_action_set = nullptr;
 	}
 
 	~MWTExplorer()
 	{
 		IdGenerator::Destroy();
 
-		if (m_logger)
-			delete m_logger;
-		if (m_explorer)
-			delete m_explorer;
-		if (m_action_set)
-			delete m_action_set;
-		if (m_default_func_wrapper)
-			delete m_default_func_wrapper;
+		delete m_logger;
+		delete m_explorer;
+		delete m_action_set;
+		delete m_default_func_wrapper;
 	}
 
 	template <class T>
@@ -305,21 +302,21 @@ private:
 class MWTRewardReporter
 {
 public:
-	MWTRewardReporter(std::string& app_id) : m_app_id(app_id)
+	MWTRewardReporter(size_t& num_interactions, Interaction**& interactions)
 	{
-
+		st
 	}
 
+	ReportReward(u64 id, float reward)
+	{
+	}
+
+	ReportRewards(std::ma)
 
 private:
-			std::string m_app_id;
-			Explorer* m_explorer;
-			Logger* m_logger;
-			ActionSet* m_action_set;
-			BaseFunctionWrapper* m_default_func_wrapper;
+	Logger* m_logger;
 
-		}
-	}
+}
 }
 
 #endif

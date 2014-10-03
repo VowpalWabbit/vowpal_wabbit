@@ -109,31 +109,40 @@ namespace vw_explore_tests
 
 		TEST_METHOD(SoftmaxStateful)
 		{
-			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, &m_policy_scorer_arg, NUM_ACTIONS);
-			u32 num_decisions = NUM_ACTIONS * log(NUM_ACTIONS) + C * NUM_ACTIONS;
-			u8 actions[NUM_ACTIONS] = { 0 };
+			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
+			u32 num_decisions = m_num_actions * log(m_num_actions) + C * m_num_actions;
+			// The () following the array should ensure zero-initialization
+			u8* actions = new u8[m_num_actions](); 
 			u32 i;
-
 			for (i = 0; i < num_decisions; i++)
 			{
 				pair<u32, u64> action_and_key = m_mwt->Choose_Action_And_Key(*m_context);
 				actions[action_and_key.first]++;
 			}
 			// Ensure all actions are covered
-			for (i = 0; i < NUM_ACTIONS; i++)
+			for (i = 0; i < m_num_actions; i++)
 			{
 				Assert::IsTrue(actions[i] > 0);
+			}			
+			float* expected_probs = new float[num_decisions];
+			for (i = 0; i < num_decisions; i++)
+			{
+				// Our default scorer currently assigns equal weight to each action
+				expected_probs[i] = 1.0 / m_num_actions;
 			}
-			//this->Test_Logger
+			this->Test_Logger(num_decisions, expected_probs);
+			
+			delete actions;
+			delete expected_probs;
 		}
 
 		TEST_METHOD(SoftmaxStateless)
 		{
-			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, NUM_ACTIONS);
-			u32 num_decisions = NUM_ACTIONS * log(NUM_ACTIONS) + C * NUM_ACTIONS;
-			u8 actions[NUM_ACTIONS] = { 0 };
+			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
+			u32 num_decisions = m_num_actions * log(m_num_actions) + C * m_num_actions;
+			// The () following the array should ensure zero-initialization
+			u8* actions = new u8[m_num_actions]();
 			u32 i;
-
 			for (i = 0; i < num_decisions; i++)
 			{
 				pair<u32, u64> action_and_key = m_mwt->Choose_Action_And_Key(*m_context);
@@ -144,31 +153,43 @@ namespace vw_explore_tests
 			{
 				Assert::IsTrue(actions[i] > 0);
 			}
+			float* expected_probs = new float[num_decisions];
+			for (i = 0; i < num_decisions; i++)
+			{
+				// Our default scorer currently assigns equal weight to each action
+				expected_probs[i] = 1.0 / m_num_actions;
+			}
+			this->Test_Logger(num_decisions, expected_probs);
+
+			delete actions;
+			delete expected_probs;
 		}
 
 		TEST_METHOD(PRGCoverage)
 		{
+			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);
 			//We're going to throw balls in bins, so 8 bits should be sufficient
-			u8 bins[NUM_ACTIONS] = { 0 };
-			u32 num_balls = NUM_ACTIONS * log(NUM_ACTIONS) + C * NUM_ACTIONS;
+			u8 bins[NUM_ACTIONS_COVER] = { 0 };
+			u32 num_balls = NUM_ACTIONS_COVER * log(NUM_ACTIONS_COVER) + C * NUM_ACTIONS_COVER;
 			PRG<u32> prg;
 			u32 i;
 			for (i = 0; i < num_balls; i++)
 			{
-				bins[prg.Uniform_Int(0, NUM_ACTIONS - 1)]++;
+				bins[prg.Uniform_Int(0, NUM_ACTIONS_COVER - 1)]++;
 			}
 			// Ensure all actions are covered
-			for (i = 0; i < NUM_ACTIONS; i++)
+			for (i = 0; i < NUM_ACTIONS_COVER; i++)
 			{
-				//Assert::IsTrue(bins[i] > 0);
+				Assert::IsTrue(bins[i] > 0);
 			}
+			this->Test_Logger(0, nullptr);
 		}
 
 		TEST_METHOD_INITIALIZE(TestInitialize)
 		{
 			// Constant for coverage tests: using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time
 			// T of the coupon collector problem, C = 0.5 yields a failure probability of ~0.45. 
-			C = 0.5;
+			C = 5.0;
 
 			m_num_actions = 10;
 			m_app_id = "MWT Test App";
@@ -204,12 +225,9 @@ namespace vw_explore_tests
 
 		TEST_METHOD_CLEANUP(TestCleanup)
 		{
-			if (m_features)
-				delete m_features;
-			if (m_context)
-				delete m_context;
-			if (m_mwt)
-				delete m_mwt;
+			delete m_features;
+			delete m_context;
+			delete m_mwt;
 
 			m_features = nullptr;
 			m_context = nullptr;
@@ -268,7 +286,7 @@ namespace vw_explore_tests
 
 	private:
 		// Constants for action space coverage tests (balls-in-bins)
-		static const u32 NUM_ACTIONS = 100;
+		static const u32 NUM_ACTIONS_COVER = 100;
 		float C;
 
 		string m_app_id;
