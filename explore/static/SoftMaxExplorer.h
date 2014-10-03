@@ -45,7 +45,7 @@ private:
 		// Invoke the default scorer function to score each action 
 		MWTAction chosen_action(0);
 		u32 numScores = actions.Count();
-		float* scores = new float[numScores];
+		float* scores = new float[numScores]();
 		if (typeid(m_default_scorer_wrapper) == typeid(StatelessFunctionWrapper))
 		{
 			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_scorer_wrapper);
@@ -69,9 +69,10 @@ private:
 			[scores, &i](float)
 		{
 			auto w = scores[i];
-			++i;
+			i++;
 			return w;
 		});
+		// This retrives the PRG engine by reference, so evolving it will evolve the original PRG
 		u32 action_index = softmax_dist(random_generator.Get_Engine());
 
 		return std::tuple<MWTAction, float, bool>(actions.Get(action_index), softmax_dist.probabilities()[action_index], true);

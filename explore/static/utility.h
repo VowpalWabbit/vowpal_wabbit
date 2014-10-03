@@ -21,6 +21,7 @@ typedef signed __int8  i8;
 template <typename IntType>
 class PRG
 {
+public:
 	// This type should be used by callers who get access to the underlying engine
 	typedef std::mt19937_64 RNGType;
 
@@ -44,7 +45,9 @@ public:
 		return uniform(engine) / (std::numeric_limits<IntType>::max)();
 	}
 
-	RNGType Get_Engine()
+	// Passing by reference is important here: if we pass by value and the caller evolves the 
+	// PRG engine, it will only evolve the *copy*, not this engine
+	RNGType& Get_Engine()
 	{
 		return engine;
 	}
