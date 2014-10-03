@@ -62,18 +62,37 @@ namespace vw_explore_tests
 			this->Test_Logger(0);
 		}
 
-		/*
 		TEST_METHOD(SoftmaxStateful)
 		{
-			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, &m_policy_scorer_arg);
-			u32 num_decisions = m_num_actions * log(NUM_ACTIONS) + c * NUM_ACTIONS;
-			u8 actions[m_num_actions] = { 0 };
+			m_mwt->Initialize_Softmax<int>(m_lambda, Stateful_Default_Scorer, &m_policy_scorer_arg, NUM_ACTIONS);
+			u32 num_decisions = NUM_ACTIONS * log(NUM_ACTIONS) + C * NUM_ACTIONS;
+			u8 actions[NUM_ACTIONS] = { 0 };
 			u32 i;
 
 			for (i = 0; i < num_decisions; i++)
 			{
-				pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
-				actions[chosen_action_join_key.first]++;
+				pair<u32, u64> action_and_key = m_mwt->Choose_Action_And_Key(*m_context);
+				actions[action_and_key.first]++;
+			}
+			// Ensure all actions are covered
+			for (i = 0; i < NUM_ACTIONS; i++)
+			{
+				Assert::IsTrue(actions[i] > 0);
+			}
+			//this->Test_Logger
+		}
+
+		TEST_METHOD(SoftmaxStateless)
+		{
+			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, NUM_ACTIONS);
+			u32 num_decisions = NUM_ACTIONS * log(NUM_ACTIONS) + C * NUM_ACTIONS;
+			u8 actions[NUM_ACTIONS] = { 0 };
+			u32 i;
+
+			for (i = 0; i < num_decisions; i++)
+			{
+				pair<u32, u64> action_and_key = m_mwt->Choose_Action_And_Key(*m_context);
+				actions[action_and_key.first]++;
 			}
 			// Ensure all actions are covered
 			for (i = 0; i < m_num_actions; i++)
@@ -82,43 +101,30 @@ namespace vw_explore_tests
 			}
 		}
 
-		TEST_METHOD(SoftmaxStateless)
-		{
-			m_mwt->Initialize_Epsilon_Greedy(m_epsilon, Stateless_Default_Policy);
-
-			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
-			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
-
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Unique_Key(), this->Unique_Key_Length());
-			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
-		}
-		*/
-
 		TEST_METHOD(PRGCoverage)
 		{
-			u32 const NUM_ACTIONS = 1000;
-			// Using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time T of the coupon collector
-			// problem, setting c = 0.5 yields a failure probability of ~0.45. 
-			u8 const c = 0.5;
-
-			// We're going to throw balls in bins, so 8 bits should be sufficient
-			u8 actions[NUM_ACTIONS] = { 0 };
-			u32 num_balls = NUM_ACTIONS * log(NUM_ACTIONS) + c * NUM_ACTIONS;
+			//We're going to throw balls in bins, so 8 bits should be sufficient
+			u8 bins[NUM_ACTIONS] = { 0 };
+			u32 num_balls = NUM_ACTIONS * log(NUM_ACTIONS) + C * NUM_ACTIONS;
 			PRG<u32> prg;
 			u32 i;
 			for (i = 0; i < num_balls; i++)
 			{
-				actions[prg.Uniform_Int(0, NUM_ACTIONS - 1)]++;
+				bins[prg.Uniform_Int(0, NUM_ACTIONS - 1)]++;
 			}
 			// Ensure all actions are covered
 			for (i = 0; i < NUM_ACTIONS; i++)
 			{
-				Assert::IsTrue(actions[i] > 0);
+				//Assert::IsTrue(bins[i] > 0);
 			}
 		}
 
 		TEST_METHOD_INITIALIZE(TestInitialize)
 		{
+			// Constant for coverage tests: using Pr(T > nlnn + cn) < 1 - exp(-e^(-c)) for the time
+			// T of the coupon collector problem, C = 0.5 yields a failure probability of ~0.45. 
+			C = 0.5;
+
 			m_num_actions = 10;
 			m_app_id = "MWT Test App";
 			m_mwt = new MWTExplorer(m_app_id);
@@ -128,7 +134,7 @@ namespace vw_explore_tests
 			m_epsilon = 0;
 			m_tau = 0;
 			m_policy_func_arg = 101;
-			m_policy_scorer_arg = 102;
+			m_policy_scorer_arg = 7;
 			m_lambda = 0;
 
 			m_num_features = 1;
@@ -142,9 +148,12 @@ namespace vw_explore_tests
 
 		TEST_METHOD_CLEANUP(TestCleanup)
 		{
-			delete m_features;
-			delete m_context;
-			delete m_mwt;
+			if (m_features)
+				delete m_features;
+			if (m_context)
+				delete m_context;
+			if (m_mwt)
+				delete m_mwt;
 
 			m_features = nullptr;
 			m_context = nullptr;
@@ -162,17 +171,25 @@ namespace vw_explore_tests
 			return 99;
 		}
 
-		/*
-		static u32 Stateful_Default_Scorer(int* policy_params, Context* applicationContext)
+		//TODO: For now assume the size of the score array is the number of action scores to
+		// report, but we need a more general way to determine per-action features (opened github issue)
+		static void Stateful_Default_Scorer(int* policy_params, Context* applicationContext, float scores[], u32 size)
 		{
-			return *policy_params;
+			for (u32 i = 0; i < size; i++)
+			{
+				// Specify uniform weights using the app-supplied policy parameter (for testing, we
+				// could just as easily give every action a score of 1 or 0 or whatever) 
+				scores[i] = *policy_params;
+			}
 		}
 
-		static u32 Stateless_Default_Scorer(Context* applicationContext)
+		static void Stateless_Default_Scorer(Context* applicationContext, float scores[], u32 size)
 		{
-			return 199;
+			for (u32 i = 0; i < size; i++)
+			{
+				scores[i] = 1;
+			}
 		}
-		*/
 
 	private: 
 		inline void Test_Logger(int num_interactions_expected)
@@ -187,6 +204,10 @@ namespace vw_explore_tests
 		}
 
 	private:
+		// Constants for action space coverage tests (balls-in-bins)
+		static const u32 NUM_ACTIONS = 100;
+		float C;
+
 		string m_app_id;
 		MWTExplorer* m_mwt;
 

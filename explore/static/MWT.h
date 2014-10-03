@@ -33,10 +33,14 @@ public:
 	{
 		IdGenerator::Destroy();
 
-		delete m_logger;
-		delete m_explorer;
-		delete m_action_set;
-		delete m_default_func_wrapper;
+		if (m_logger)
+			delete m_logger;
+		if (m_explorer)
+			delete m_explorer;
+		if (m_action_set)
+			delete m_action_set;
+		if (m_default_func_wrapper)
+			delete m_default_func_wrapper;
 	}
 
 	template <class T>
@@ -298,3 +302,27 @@ private:
 	ActionSet* m_action_set;
 	BaseFunctionWrapper* m_default_func_wrapper;
 };
+
+#if FALSE
+
+class MWTRewardReporter
+{
+public:
+	MWTRewardReporter(std::string& app_id) : m_app_id(app_id)
+	{
+
+	}
+
+
+private:
+			std::string m_app_id;
+			Explorer* m_explorer;
+			Logger* m_logger;
+			ActionSet* m_action_set;
+			BaseFunctionWrapper* m_default_func_wrapper;
+
+		}
+	}
+}
+
+#endif
