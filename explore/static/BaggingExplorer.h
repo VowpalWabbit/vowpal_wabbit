@@ -94,7 +94,7 @@ private:
 			//this won't work if actions aren't 0 to Count
 			actions_selected[action_from_bag.Get_Id_ZeroBased()]++;
 		}
-		float action_probability = (float)actions_selected[chosen_action.Get_Id_ZeroBased()] / (float)actions.Count();
+		float action_probability = (float)actions_selected[chosen_action.Get_Id_ZeroBased()] / m_bags;
 		delete actions_selected;
 
 		return std::tuple<MWTAction, float, bool>(chosen_action, action_probability, true);

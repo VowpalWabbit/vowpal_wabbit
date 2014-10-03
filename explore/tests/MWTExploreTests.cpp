@@ -84,7 +84,7 @@ namespace vw_explore_tests
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
 			Assert::AreEqual(expected_action, chosen_action);
 			
-			// TODO: Failing for now, pending issue with Bagging probabilities
+			// All bags choose the same action, so prob = 1
 			float expected_probs[2] = { 1.f, 1.f };
 			this->Test_Logger(2, expected_probs);
 		}
@@ -102,7 +102,7 @@ namespace vw_explore_tests
 			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
 			Assert::AreEqual(expected_action, chosen_action);
 
-			// TODO: Failing for now, pending issue with Bagging probabilities
+			// All bags choose the same action, so prob = 1
 			float expected_probs[2] = { 1.f, 1.f };
 			this->Test_Logger(2, expected_probs);
 		}
