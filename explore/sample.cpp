@@ -6,14 +6,36 @@
 
 using namespace std;
 
-u32 Stateful_Default_Policy(int* policy_params, Context* applicationContext)
+u32 Stateful_Default_Policy1(int* policy_params, Context* applicationContext)
 {
-	return *policy_params;
+	return *policy_params % 10;
+}
+u32 Stateful_Default_Policy2(int* policy_params, Context* applicationContext)
+{
+	return *policy_params % 5;
+}
+void Stateful_Default_Scorer(int* policy_params, Context* application_Context, float scores[], u32 size)
+{
+	for (u32 i = 0; i < size; i++)
+	{
+		scores[i] = *policy_params + i;
+	}
 }
 
-u32 Stateless_Default_Policy(Context* applicationContext)
+u32 Stateless_Default_Policy1(Context* applicationContext)
 {
 	return 99;
+}
+u32 Stateless_Default_Policy2(Context* applicationContext)
+{
+	return 98;
+}
+void Stateless_Default_Scorer(Context* application_Context, float scores[], u32 size)
+{
+	for (u32 i = 0; i < size; i++)
+	{
+		scores[i] = 97 + i;
+	}
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -27,35 +49,53 @@ int _tmain(int argc, _TCHAR* argv[])
 	MWTExplorer mwt(appId);
 
 	float epsilon = .2f;
-	float exploreBudget = .05f;
+	u32 tau = 5;
+	u32 bags = 2;
+	float lambda = 0.5f;
 
 	int policy_params = 101;
-	bool useStatefulFunc = true;
-	if (useStatefulFunc)
-	{
-		mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &policy_params, num_actions);
-	}
-	else
-	{
-		mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, num_actions);
-	}
+
+	/*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
+	//mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, num_actions);
+
+	/*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
+	//mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy1, num_actions);
+
+	/*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
+	//mwt.Initialize_Tau_First<int>(tau, Stateful_Default_Policy1, &policy_params, num_actions);
+
+	/*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
+	//mwt.Initialize_Tau_First(tau, Stateless_Default_Policy1, num_actions);
+
+	/*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
+	StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
+	int* params[2] = { &policy_params, &policy_params };
+	mwt.Initialize_Bagging<int>(bags, funcs, params, num_actions);
+
+	/*** Initialize Bagging explore algorithm using a stateless default policy function ***/
+	//StatelessFunctionWrapper::Policy_Func* funcs[2] = { Stateless_Default_Policy1, Stateless_Default_Policy2 };
+	//mwt.Initialize_Bagging(bags, funcs, num_actions);
+
+	/*** Initialize Softmax explore algorithm using a default scorer function that accepts parameters ***/
+	//mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, &policy_params, num_actions);
+
+	/*** Initialize Softmax explore algorithm using a stateless default scorer function ***/
+	//mwt.Initialize_Softmax(lambda, Stateless_Default_Scorer, num_actions);
 
 	// Create Features & Context
-	feature f[1];
-	f[0].weight_index = 1;
-	f[0].x = 0.5;
+	feature features[1];
+	features[0].weight_index = 1;
+	features[0].x = 0.5;
 
-	Context ctx(f, 1);
+	Context context(features, 1);
 
 	// Now let MWT explore & choose an action
-	// todo: 
-	pair<u32, u64> action_and_key = mwt.Choose_Action_And_Key(ctx);
+	pair<u32, u64> action_and_key = mwt.Choose_Action_And_Key(context);
 
 	string unique_key = "1001";
-	u32 chosen_action = mwt.Choose_Action(ctx, unique_key);
+	u32 chosen_action = mwt.Choose_Action(context, unique_key);
 	
-	cout << "Chosen Action ID with join key is: " << action_and_key.first << endl;
-	cout << "Chosen Action ID is: " << chosen_action << endl;
+	// Get the logged data
 	cout << mwt.Get_All_Interactions() << endl;
 
 	return 0;

@@ -55,6 +55,7 @@ public:
 	{
 	}
 	u32 Get_Id() const { return m_id; }
+	u32 Get_Id_ZeroBased() const { return m_id - 1; }
 
 	void Serialize(std::ostringstream& stream)
 	{

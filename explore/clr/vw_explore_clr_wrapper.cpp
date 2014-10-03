@@ -138,6 +138,11 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
+	UInt32 MWTWrapper::ChooseAction(Context^ context, String^ uniqueId)
+	{
+		return this->ChooseAction(context->Features, context->OtherContext, uniqueId);
+	}
+
 	UInt32 MWTWrapper::ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId)
 	{
 		UInt32 chosenAction = 0;

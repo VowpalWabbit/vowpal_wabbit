@@ -79,6 +79,25 @@ public:
 		this->Initialize_Tau_First(tau, (Stateless_Policy_Func*)default_policy_func, num_actions);
 	}
 
+	/* Bagging initialization */
+	template <class T>
+	void Initialize_Bagging(
+		u32 bags,
+		typename StatefulFunctionWrapper<T>::Policy_Func** default_policy_functions,
+		T** default_policy_params,
+		u32 num_actions)
+	{
+		this->Initialize_Bagging(bags, (Stateful_Policy_Func**)default_policy_functions, (void**)default_policy_params, num_actions);
+	}
+
+	void Initialize_Bagging(
+		u32 bags,
+		StatelessFunctionWrapper::Policy_Func** default_policy_functions,
+		u32 num_actions)
+	{
+		this->Initialize_Bagging(bags, (Stateless_Policy_Func**)default_policy_functions, num_actions);
+	}
+
 	/* Softmax initialization */
 	template <class T>
 	void Initialize_Softmax(
@@ -199,19 +218,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-
-		std::vector<BaseFunctionWrapper*> default_policy_func_wrapper_ptr_vec;
-		std::vector<void*> default_policy_arg_vec;
-		for (u32 i = 0; i < bags; i++){
-			StatefulFunctionWrapper<void>* func_wrapper = new StatefulFunctionWrapper<void>();
-			func_wrapper->m_policy_function = default_policy_functions[i];
-			default_policy_func_wrapper_ptr_vec.push_back(func_wrapper);
-			default_policy_arg_vec.push_back(default_policy_args[i]);
-		}
-
-		m_explorer = new BaggingExplorer<void>(bags, &default_policy_func_wrapper_ptr_vec, &default_policy_arg_vec);
-
-		m_default_func_wrapper =  default_policy_func_wrapper_ptr_vec[0];
+		m_explorer = new BaggingExplorer<void>(bags, default_policy_functions, default_policy_args);
 	}
 
 	void Initialize_Bagging(
@@ -220,17 +227,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-
-		std:vector<BaseFunctionWrapper*> default_policy_func_wrapper_ptr_vec;
-		for (u32 i = 0; i < bags; i++){
-			StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
-			func_wrapper->m_policy_function = default_policy_functions[i];
-			default_policy_func_wrapper_ptr_vec.push_back(func_wrapper);
-		}
-
-		m_explorer = new BaggingExplorer<MWT_Empty>(bags, &default_policy_func_wrapper_ptr_vec, nullptr);
-
-		m_default_func_wrapper = default_policy_func_wrapper_ptr_vec[0];
+		m_explorer = new BaggingExplorer<void>(bags, default_policy_functions);
 	}
 
 	void Initialize_Softmax(
