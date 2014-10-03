@@ -58,12 +58,9 @@ void Logger::Get_All_Interactions(size_t& num_interactions, Interaction**& inter
 	interactions = new Interaction*[num_interactions];
 	for (size_t i = 0; i < m_interactions.size(); i++)
 	{
-		// TODO: potential perf issue here since the Copy() dynamically creates
-		// memory that are non-contiguous. This could change to malloc a chunk of
-		// memory and realloc if necessary.
-		 interactions[i] = m_interactions[i]->Copy();
+		 interactions[i] = m_interactions[i];
 	}
-	this->Clear_Data();
+	m_interactions.clear();
 }
 
 void Logger::Clear_Data()
