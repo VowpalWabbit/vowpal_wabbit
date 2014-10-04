@@ -297,7 +297,6 @@ private:
 	BaseFunctionWrapper* m_default_func_wrapper;
 };
 
-#if FALSE
 
 class MWTRewardReporter
 {
@@ -318,5 +317,3 @@ private:
 
 }
 }
-
-#endif
