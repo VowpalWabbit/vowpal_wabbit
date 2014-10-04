@@ -22,6 +22,15 @@ namespace ExploreTests
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
+
+            Tuple<uint, ulong> chosenActionAndKey = mwt.ChooseActionAndKey(context);
+            Assert.AreEqual(expectedAction, chosenActionAndKey.Item1);
+
+            INTERACTION[] interactions = mwt.GetAllInteractions();
+            Assert.AreEqual(2, interactions.Length);
+
+            Assert.AreEqual(2, interactions[0].ApplicationContext.Features.Length);
+            Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
         }
 
         [TestInitialize]

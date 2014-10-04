@@ -170,6 +170,17 @@ public:
 		}
 	}
 
+	void Get_Features(feature*& features, size_t& num_features)
+	{
+		features = m_common_features;
+		num_features = m_num_features;
+	}
+
+	void Get_Other_Context(std::string*& other_context)
+	{
+		m_other_context = other_context;
+	}
+
 private:
 	feature* m_common_features;
 	size_t m_num_features;

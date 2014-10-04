@@ -213,9 +213,23 @@ namespace MultiWorldTesting {
 			{
 				interactions[i] = gcnew INTERACTION();
 
-				// TODO: copy the context 
-				//interactions[i]->ApplicationContext = native_interactions[i]->Get_Context();
+				Context* native_context = native_interactions[i]->Get_Context();
 
+				feature* native_features = nullptr;
+				size_t native_num_features = 0;
+				native_context->Get_Features(native_features, native_num_features);
+				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
+				for (int i = 0; i < features->Length; i++)
+				{
+					features[i].X = native_features[i].x;
+					features[i].WeightIndex = native_features[i].weight_index;
+				}
+
+				std::string* native_other_context = nullptr;
+				native_context->Get_Other_Context(native_other_context);
+				String^ otherContext = (native_other_context == nullptr) ? nullptr : gcnew String(native_other_context->c_str());
+
+				interactions[i]->ApplicationContext = gcnew CONTEXT(features, otherContext);
 				interactions[i]->ChosenAction = native_interactions[i]->Get_Action().Get_Id();
 				interactions[i]->Probability = native_interactions[i]->Get_Prob();
 				interactions[i]->JoinId = native_interactions[i]->Get_Id();
@@ -224,5 +238,7 @@ namespace MultiWorldTesting {
 			}
 			delete[] native_interactions;
 		}
+
+		return interactions;
 	}
 }
