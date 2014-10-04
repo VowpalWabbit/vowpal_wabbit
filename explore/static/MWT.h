@@ -115,34 +115,13 @@ public:
 
 	std::pair<u32, u64> Choose_Action_And_Key(Context& context)
 	{
-		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set);
-		if(!std::get<2>(action_Probability_Log_Tuple)){
-			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
-		}
-		Interaction pInteraction(&context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
-		m_logger->Store(&pInteraction);
-		
-		
-		// TODO: Anything else to do here?
-
-		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), pInteraction.Get_Id());
+		return this->Choose_Action_And_Key(&context, context);
 	}
 
 	// TODO: check whether char* could be std::string
 	u32 Choose_Action(Context& context, std::string unique_id)
 	{
-		u32 seed = this->Compute_Seed(const_cast<char*>(unique_id.c_str()), unique_id.size());
-		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set, seed);
-		if (!std::get<2>(action_Probability_Log_Tuple)){
-			return std::get<0>(action_Probability_Log_Tuple).Get_Id();
-		}
-		Interaction pInteraction(&context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), seed);
-		m_logger->Store(&pInteraction);
-
-
-		// TODO: Anything else to do here?
-
-		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
+		return this->Choose_Action(&context, unique_id, context);
 	}
 
 // Cross-language interface
@@ -258,10 +237,44 @@ public:
 		m_default_func_wrapper = func_wrapper;
 	}
 
-	u32 Choose_Action(feature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
+	u32 Choose_Action(void* context, feature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
 	{
-		Context context(context_features, num_features, other_context);
-		return this->Choose_Action(context, unique_id);
+		Context log_context(context_features, num_features, other_context);
+		return this->Choose_Action(context, unique_id, log_context);
+	}
+
+	// The parameters here look weird but are required to interface with C#:
+	// The void* and Context& parameters are references to the same Context object.
+	// Void* is required to pass back to the default policy function which could live in either native or managed space.
+	// Context& is used internally to log data only since we need to access its members for serialization.
+	u32 Choose_Action(void* context, std::string unique_id, Context& log_context)
+	{
+		u32 seed = this->Compute_Seed(const_cast<char*>(unique_id.c_str()), unique_id.size());
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set, seed);
+		
+		if (!std::get<2>(action_Probability_Log_Tuple))
+		{
+			return std::get<0>(action_Probability_Log_Tuple).Get_Id();
+		}
+
+		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), seed);
+		m_logger->Store(&pInteraction);
+
+		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
+	}
+
+	// The parameters here look weird but are required to interface with C#
+	std::pair<u32, u64> Choose_Action_And_Key(void* context, Context& log_context)
+	{
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set);
+		if (!std::get<2>(action_Probability_Log_Tuple))
+		{
+			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
+		}
+		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
+		m_logger->Store(&pInteraction);
+
+		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), pInteraction.Get_Id());
 	}
 
 	std::string Get_All_Interactions()

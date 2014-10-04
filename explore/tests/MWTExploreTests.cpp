@@ -285,6 +285,10 @@ namespace vw_explore_tests
 				Assert::AreEqual(probs_expected[i], interactions[i]->Get_Prob());
 			}
 
+			for (int i = 0; i < num_interactions_expected; i++)
+			{
+				delete interactions[i];
+			}
 			delete[] interactions;
 		}
 

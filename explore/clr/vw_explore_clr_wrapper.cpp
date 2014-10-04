@@ -138,34 +138,107 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
-	UInt32 MWTWrapper::ChooseAction(Context^ context, String^ uniqueId)
-	{
-		return this->ChooseAction(context->Features, context->OtherContext, uniqueId);
-	}
-
-	UInt32 MWTWrapper::ChooseAction(cli::array<FEATURE>^ contextFeatures, String^ otherContext, String^ uniqueId)
+	UInt32 MWTWrapper::ChooseAction(CONTEXT^ context, String^ uniqueId)
 	{
 		UInt32 chosenAction = 0;
+
+		GCHandle contextHandle = GCHandle::Alloc(context);
+		IntPtr contextPtr = (IntPtr)contextHandle;
+
+		cli::array<FEATURE>^ contextFeatures = context->Features;
+		String^ otherContext = context->OtherContext;
 
 		std::string nativeOtherContext = marshal_as<std::string>(otherContext);
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
-		pin_ptr<FEATURE> pinnedContextFeatures = &contextFeatures[0]; 
+		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
 		FEATURE* nativeContextFeatures = pinnedContextFeatures;
+
+		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, &nativeOtherContext);
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
 		chosenAction = m_mwt->Choose_Action(
-			(feature*)nativeContextFeatures, (size_t)contextFeatures->Length, 
-			&nativeOtherContext, 
-			nativeUniqueKey);
+			contextPtr.ToPointer(),
+			nativeUniqueKey, 
+			log_context);
+
+		contextHandle.Free();
 
 		return chosenAction;
 	}
 
-	String^ MWTWrapper::GetAllInteractions()
+	Tuple<UInt32, UInt64>^ MWTWrapper::ChooseActionAndKey(CONTEXT^ context)
+	{
+		GCHandle contextHandle = GCHandle::Alloc(context);
+		IntPtr contextPtr = (IntPtr)contextHandle;
+
+		cli::array<FEATURE>^ contextFeatures = context->Features;
+		String^ otherContext = context->OtherContext;
+
+		std::string nativeOtherContext = marshal_as<std::string>(otherContext);
+
+		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
+		FEATURE* nativeContextFeatures = pinnedContextFeatures;
+
+		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, &nativeOtherContext);
+
+		std::pair<u32, u64> actionAndKey = m_mwt->Choose_Action_And_Key(
+			contextPtr.ToPointer(),
+			log_context);
+
+		Tuple<UInt32, UInt64>^ chosenActionAndKey = gcnew Tuple<UInt32, UInt64>(actionAndKey.first, actionAndKey.second);
+
+		contextHandle.Free();
+
+		return chosenActionAndKey;
+	}
+
+	String^ MWTWrapper::GetAllInteractionsAsString()
 	{
 		std::string all_interactions = m_mwt->Get_All_Interactions();
 		return gcnew String(all_interactions.c_str());
+	}
+
+	cli::array<INTERACTION^>^ MWTWrapper::GetAllInteractions()
+	{
+		size_t num_interactions = 0;
+		Interaction** native_interactions = nullptr;
+		m_mwt->Get_All_Interactions(num_interactions, native_interactions);
+
+		cli::array<INTERACTION^>^ interactions = gcnew cli::array<INTERACTION^>((int)num_interactions);
+		if (num_interactions > 0 && native_interactions != nullptr)
+		{
+			for (size_t i = 0; i < num_interactions; i++)
+			{
+				interactions[i] = gcnew INTERACTION();
+
+				Context* native_context = native_interactions[i]->Get_Context();
+
+				feature* native_features = nullptr;
+				size_t native_num_features = 0;
+				native_context->Get_Features(native_features, native_num_features);
+				cli::array<FEATURE>^ features = gcnew cli::array<FEATURE>((int)native_num_features);
+				for (int i = 0; i < features->Length; i++)
+				{
+					features[i].X = native_features[i].x;
+					features[i].WeightIndex = native_features[i].weight_index;
+				}
+
+				std::string* native_other_context = nullptr;
+				native_context->Get_Other_Context(native_other_context);
+				String^ otherContext = (native_other_context == nullptr) ? nullptr : gcnew String(native_other_context->c_str());
+
+				interactions[i]->ApplicationContext = gcnew CONTEXT(features, otherContext);
+				interactions[i]->ChosenAction = native_interactions[i]->Get_Action().Get_Id();
+				interactions[i]->Probability = native_interactions[i]->Get_Prob();
+				interactions[i]->JoinId = native_interactions[i]->Get_Id();
+
+				delete native_interactions[i];
+			}
+			delete[] native_interactions;
+		}
+
+		return interactions;
 	}
 }

@@ -170,6 +170,17 @@ public:
 		}
 	}
 
+	void Get_Features(feature*& features, size_t& num_features)
+	{
+		features = m_common_features;
+		num_features = m_num_features;
+	}
+
+	void Get_Other_Context(std::string*& other_context)
+	{
+		m_other_context = other_context;
+	}
+
 private:
 	feature* m_common_features;
 	size_t m_num_features;
@@ -180,8 +191,8 @@ private:
 class Policy
 {
 public:
-	virtual std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions) = 0;
-	virtual std::tuple<MWTAction, float, bool> Choose_Action(Context& context, ActionSet& actions, u32 seed) = 0;
+	virtual std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions) = 0;
+	virtual std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed) = 0;
 	virtual ~Policy()
 	{
 	}
