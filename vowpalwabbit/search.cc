@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include <math.h>
 #include "search_sequencetask.h"
 #include "search_multiclasstask.h"
+#include "search_dep_parser.h"
 #include "search_hooktask.h"
 
 using namespace LEARNER;
@@ -31,6 +32,7 @@ namespace Search {
                                &ArgmaxTask::task,
                                &SequenceTask_DemoLDF::task,
                                &MulticlassTask::task,
+							   &DepParserTask::task,
                                &HookTask::task,
                                NULL };   // must NULL terminate!
 
@@ -739,8 +741,9 @@ namespace Search {
   }
 
   template<class T> void push_at(v_array<T>& v, T item, size_t pos) {
-    if (v.size() > pos)
+    if (v.size() > pos){
       v.begin[pos] = item;
+	}
     else {
       if (v.end_array > v.begin + pos) {
         // there's enough memory, just not enough filler
@@ -1359,6 +1362,7 @@ namespace Search {
     priv.empty_example->in_use = true;
 
     priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
+    priv.ptag_to_action.erase();
   }
 
   void search_finish(search& sch) {
@@ -1824,7 +1828,11 @@ namespace Search {
   void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
   void search::add_program_options(po::variables_map& vm, po::options_description& opts) { vm = add_options( *this->priv->all, opts ); }
 
+  size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
+  size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}
   uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
+  void search::set_triples(vector<string> &triples) { this->priv->all->triples.swap(triples);}
+  void search::set_pairs(vector<string> &pairs) {this->priv->all->pairs.swap(pairs);}
   
   
   // predictor implementation
@@ -1951,6 +1959,7 @@ namespace Search {
 
     action p = is_ldf ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id)
                       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, allowed_actions.size(), learner_id);
+
 
     if (condition_on_names.size() > 0)
       condition_on_names.pop();  // un-null-terminate

@@ -16,6 +16,22 @@ license as described in the file LICENSE.
 typedef uint32_t    action;
 typedef uint32_t    ptag;
 
+  // a data structure that allows users to new features during structured training
+  struct auto_feature {
+	  size_t idx; // index
+	  float val;  // value
+	  char d_fs;  // target feature space
+	  char name;  // a name tag
+  };
+
+  // a data structure that allows users to copy a feature space from an example to another
+  struct auto_copy_ex {
+	  example* ex;
+	  char s_fs; // source feature space
+	  char d_fs; // target feature space
+	  char name;  // a name tag
+  };
+
 namespace Search {
   struct search_private;
   struct search_task;
@@ -106,7 +122,15 @@ namespace Search {
 
     // get the action sequence from the test run (only run if test_only or -t or...)
     void get_test_action_sequence(vector<action>&);
-    
+	
+	void set_triples(vector<string> &triples);
+
+	void set_pairs(vector<string> &pairs);
+   
+	// get vw (will remove this function later)
+	size_t get_mask();
+	size_t get_stride_shift();
+
     // internal data that you don't get to see!
     search_private* priv;
     void*           task_data;  // your task data!
@@ -186,6 +210,8 @@ namespace Search {
     v_array<action> oracle_actions;    bool oracle_is_pointer;   // if we're pointing to your memory TRUE; if it's our own memory FALSE
     v_array<ptag> condition_on_tags;
     v_array<char> condition_on_names;
+    v_array<struct auto_feature> auto_features;
+	v_array<struct auto_copy_ex> auto_copy_exs;
     v_array<action> allowed_actions;   bool allowed_is_pointer;  // if we're pointing to your memory TRUE; if it's our own memory FALSE
     size_t learner_id;
     search&sch;
