@@ -212,6 +212,8 @@ public:
 		{
 			m_id = IdGenerator::Get_Id();
 		}
+		//TODO: What's an appropriate "invalid" value? Could instead make it a pointer, but that's messy.
+		m_reward = 0.0;
 	}
 
 	~Interaction()
@@ -242,6 +244,16 @@ public:
 		return m_context;
 	}
 
+	float Get_Reward()
+	{
+		return m_reward;
+	}
+
+	void Set_Reward(float reward)
+	{
+		m_reward = reward;
+	}
+
 	Interaction* Copy()
 	{
 		return new Interaction(m_context->Copy(), m_action, m_prob, m_id, true);
@@ -250,8 +262,9 @@ public:
 	void Serialize(std::ostringstream& stream)
 	{
 		m_action.Serialize(stream);
-		stream << ":0:"; // for now report reward as 0
-		stream << std::fixed << std::setprecision(2) << m_prob << " | "; // 2 decimal places probability
+		// Use 2 decimal places for reward, probability
+		stream << ":" << std::fixed << std::setprecision(2) << m_reward << ":";
+		stream << std::fixed << std::setprecision(2) << m_prob << " | "; 
 		m_context->Serialize(stream);
 	}
 
@@ -259,6 +272,7 @@ private:
 	Context* m_context;
 	MWTAction m_action;
 	float m_prob;
+	float m_reward;
 	u64 m_id;
 	bool m_is_copy;
 };

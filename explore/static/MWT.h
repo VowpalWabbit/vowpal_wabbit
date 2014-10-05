@@ -12,6 +12,9 @@
 #include "SoftMaxExplorer.h"
 #include "BaggingExplorer.h"
 
+//
+// Top-level internal API for exploration (randomized decision making).
+//
 class MWTExplorer
 {
 public:
@@ -311,22 +314,59 @@ private:
 };
 
 
+//
+// Top-level internal API for joining reward information to interaction data.
+//
 class MWTRewardReporter
 {
 public:
-	MWTRewardReporter(size_t& num_interactions, Interaction**& interactions)
+	MWTRewardReporter(size_t& num_interactions, Interaction* interactions[])
 	{
-		st
+		for (u64 i = 0; i < num_interactions; i++)
+		{
+			m_interactions[interactions[i]->Get_Id()] = interactions[i];
+		}
 	}
 
-	ReportReward(u64 id, float reward)
+	bool ReportReward(u64 id, float reward)
 	{
+		bool id_present = false;
+		if (m_interactions.find(id) != m_interactions.end())
+		{
+			id_present = true;
+			m_interactions[id]->Set_Reward(reward);
+		}
+		return id_present;			
 	}
 
-	ReportRewards(std::ma)
+	bool ReportReward(size_t num_entries, u64 ids[], float rewards[])
+	{
+		bool all_ids_present = false;
+		for (u64 i = 0; i < num_entries; i++)
+		{
+			all_ids_present &= ReportReward(ids[i], rewards[i]);
+		}
+	}
+
+	std::string Get_All_Interactions()
+	{
+		std::ostringstream serialized_stream;
+		for (auto iter : m_interactions)
+		{
+			iter.second->Serialize(serialized_stream);
+		}
+		return serialized_stream.str();
+	}
 
 private:
-	Logger* m_logger;
+	std::map<u64, Interaction*> m_interactions;
+};
 
-}
-}
+
+//
+// Top-level internal API for offline evaluation/optimization.
+//
+class MWTOptimizer
+{
+
+};
