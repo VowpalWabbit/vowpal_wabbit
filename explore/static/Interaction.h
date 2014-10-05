@@ -57,6 +57,9 @@ public:
 	u32 Get_Id() const { return m_id; }
 	u32 Get_Id_ZeroBased() const { return m_id - 1; }
 
+	static u32 Make_OneBased(u32 id) { return id + 1; }
+	static u32 Make_ZeroBased(u32 id) { return id - 1; }
+
 	void Serialize(std::ostringstream& stream)
 	{
 		stream << m_id;
@@ -86,7 +89,7 @@ public:
 
 	MWTAction Get(u32 id)
 	{
-		return m_action_set.at(id);
+		return m_action_set.at(MWTAction::Make_ZeroBased(id)); // Action ID is 1-based but index is 0-based
 	}
 
 	u32 Count()

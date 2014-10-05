@@ -11,7 +11,8 @@ namespace ExploreTests
         [TestMethod]
         public void EpsilonGreedyStateful()
         {
-            mwt.InitializeEpsilonGreedy(Epsilon, 
+            float epsilon = 0;
+            mwt.InitializeEpsilonGreedy(epsilon, 
                 new StatefulPolicyDelegate(TestStatefulPolicyFunc),
                 new IntPtr(PolicyParams),
                 NumActions);
@@ -86,7 +87,6 @@ namespace ExploreTests
         }
 
         private static readonly uint NumActions = 10;
-        private static readonly float Epsilon = 0.2f;
         private static readonly uint Tau = 5;
         private static readonly uint Bags = 2;
         private static readonly float Lambda = 0.5f;

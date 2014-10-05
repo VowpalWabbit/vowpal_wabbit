@@ -75,7 +75,7 @@ private:
 		// This retrives the PRG engine by reference, so evolving it will evolve the original PRG
 		u32 action_index = softmax_dist(random_generator.Get_Engine());
 
-		return std::tuple<MWTAction, float, bool>(actions.Get(action_index), softmax_dist.probabilities()[action_index], true);
+		return std::tuple<MWTAction, float, bool>(actions.Get(MWTAction::Make_OneBased(action_index)), softmax_dist.probabilities()[action_index], true);
 	}
 
 private:
