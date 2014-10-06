@@ -317,16 +317,16 @@ namespace vw_explore_tests
 	public:
 		static u32 Stateful_Default_Policy(int* policy_params, Context* applicationContext)
 		{
-			return *policy_params % m_num_actions + 1; // 1-based index
+			return MWTAction::Make_OneBased(*policy_params % m_num_actions);
 		}
 		static u32 Stateful_Default_Policy2(int* policy_params, Context* applicationContext)
 		{
-			return *policy_params % m_num_actions + 2; // 1-based index
+			return MWTAction::Make_OneBased(*policy_params % m_num_actions) + 1;
 		}
 
 		static u32 Stateless_Default_Policy(Context* applicationContext)
 		{
-			return 99 % m_num_actions + 1; // 1-based index
+			return MWTAction::Make_OneBased(99 % m_num_actions);
 		}
 
 		//TODO: For now assume the size of the score array is the number of action scores to

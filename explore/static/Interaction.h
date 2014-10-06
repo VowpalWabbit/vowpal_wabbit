@@ -85,7 +85,7 @@ public:
 	{
 		for (u32 i = 0; i < count; i++)
 		{
-			m_action_set.push_back(MWTAction(i + 1)); // 1-based Action id
+			m_action_set.push_back(MWTAction(MWTAction::Make_OneBased(i))); // 1-based Action id
 		}
 	}
 
