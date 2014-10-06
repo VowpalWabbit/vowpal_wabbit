@@ -18,6 +18,7 @@ license as described in the file LICENSE.
 #include <math.h>
 #include "search_sequencetask.h"
 #include "search_multiclasstask.h"
+#include "search_entityrelationtask.h"
 #include "search_hooktask.h"
 
 using namespace LEARNER;
@@ -31,6 +32,7 @@ namespace Search {
                                &ArgmaxTask::task,
                                &SequenceTask_DemoLDF::task,
                                &MulticlassTask::task,
+                               &EntityRelationTask::task,
                                &HookTask::task,
                                NULL };   // must NULL terminate!
 
