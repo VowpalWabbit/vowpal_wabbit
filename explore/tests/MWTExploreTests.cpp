@@ -176,9 +176,9 @@ namespace vw_explore_tests
 			u32 i;
 			for (i = 0; i < num_decisions; i++)
 			{
-				pair<u32, u64> action_and_key = m_mwt->Choose_Action_And_Key(*m_context);
+				u32 action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(i + 1));
 				// Action IDs are 1-based
-				actions[action_and_key.first - 1]++;
+				actions[MWTAction::Make_ZeroBased(action)]++;
 			}
 			// Ensure all actions are covered
 			for (i = 0; i < m_num_actions; i++)
@@ -206,9 +206,9 @@ namespace vw_explore_tests
 			u32 i;
 			for (i = 0; i < num_decisions; i++)
 			{
-				pair<u32, u64> action_and_key = m_mwt->Choose_Action_And_Key(*m_context);
+				u32 action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(i + 1));
 				// Action IDs are 1-based
-				actions[action_and_key.first - 1]++;
+				actions[MWTAction::Make_ZeroBased(action)]++;
 			}
 			// Ensure all actions are covered
 			for (i = 0; i < m_num_actions; i++)
