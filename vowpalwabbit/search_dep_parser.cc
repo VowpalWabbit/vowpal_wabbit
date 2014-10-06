@@ -271,7 +271,7 @@ namespace DepParserTask {
 		// features based on examples in string buffer
 		// ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
 		for(size_t i=3; i<6; i++)
-			ec_buf[i] = (idx+(i-3) < n) ? ec[idx+i-3] : 0;
+			ec_buf[i] = (idx+(i-3)-1 < n) ? ec[idx+i-3-1] : 0;
 
 		// features based on leftmost and rightmost children of the top element stack
 		// ec_buf[6]: sl1, ec_buf[7]: sl2, ec_buf[8]: sr1, ec_buf[9]: sr2;
@@ -301,7 +301,7 @@ namespace DepParserTask {
 					else
 						v0 = (ec_buf[i]->atomics[*fs][k].weight_index>>ss);
 					add_feature(&ex, (uint32_t) v0, i*nfs+j, mask, ss);
-				}				
+				}
 				j++;
 			}
 		}
