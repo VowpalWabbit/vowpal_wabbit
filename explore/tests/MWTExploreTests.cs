@@ -60,7 +60,7 @@ namespace ExploreTests
             GCHandle contextHandle = (GCHandle)applicationContext;
             CONTEXT context = (contextHandle.Target as CONTEXT);
             
-            return (uint)context.Features.Length % MWTExploreTests.NumActions + 1;
+            return ActionID.Make_OneBased((uint)context.Features.Length % MWTExploreTests.NumActions);
         }
 
         private static UInt32 TestStatefulPolicyFunc(IntPtr policyParams, IntPtr applicationContext)
@@ -68,7 +68,7 @@ namespace ExploreTests
             GCHandle contextHandle = (GCHandle)applicationContext;
             CONTEXT context = (contextHandle.Target as CONTEXT);
 
-            return (uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions + 1;
+            return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
         }
 
         private static void TestStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, float[] scores, uint size)

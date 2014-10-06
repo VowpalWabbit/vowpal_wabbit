@@ -43,6 +43,13 @@ namespace MultiWorldTesting {
 		UInt64 JoinId;
 	};
 
+	public ref class ActionID
+	{
+	public:
+		static UInt32 Make_OneBased(UInt32 id) { return MWTAction::Make_OneBased(id); }
+		static UInt32 Make_ZeroBased(UInt32 id) { return MWTAction::Make_ZeroBased(id); }
+	};
+
 	public ref class MWTWrapper
 	{
 	private:
