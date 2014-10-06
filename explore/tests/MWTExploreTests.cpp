@@ -12,7 +12,8 @@ namespace vw_explore_tests
 	public:
 		TEST_METHOD(EpsilonGreedyStateful)
 		{
-			m_mwt->Initialize_Epsilon_Greedy<int>(m_epsilon, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
+			float epsilon = 0.f; // No randomization
+			m_mwt->Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
 
 			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
 
@@ -28,7 +29,8 @@ namespace vw_explore_tests
 
 		TEST_METHOD(EpsilonGreedyStateless)
 		{
-			m_mwt->Initialize_Epsilon_Greedy(m_epsilon, Stateless_Default_Policy, m_num_actions);
+			float epsilon = 0.f; // No randomization
+			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
 
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
@@ -40,35 +42,73 @@ namespace vw_explore_tests
 			this->Test_Logger(2, expected_probs);
 		}
 
+		TEST_METHOD(EpsilonGreedyRandom)
+		{
+			float epsilon = 0.2f;
+			m_mwt->Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy, m_num_actions);
+
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			Assert::AreEqual((u32)3, chosen_action); // explored but differed from default policy
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			Assert::AreEqual((u32)10, chosen_action); // did not explore, used default policy
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(70));
+			Assert::AreEqual((u32)10, chosen_action); // explored & matched default policy
+
+			float expected_probs[3] = { .02f, .82f, .82f };
+			this->Test_Logger(3, expected_probs);
+		}
+
 		TEST_METHOD(TauFirstStateful)
 		{
-			m_mwt->Initialize_Tau_First<int>(m_tau, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
+			u32 tau = 0;
+			m_mwt->Initialize_Tau_First<int>(tau, Stateful_Default_Policy, &m_policy_func_arg, m_num_actions);
 
 			u32 expected_action = VWExploreUnitTests::Stateful_Default_Policy(&m_policy_func_arg, m_context);
 
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(expected_action, chosen_action_join_key.first);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
 			Assert::AreEqual(expected_action, chosen_action);
 
 			// tau = 0 means no randomization and no logging
-			// TODO: test probabilities when randomization is covered in another fix
 			this->Test_Logger(0, nullptr);
 		}
 
 		TEST_METHOD(TauFirstStateless)
 		{
-			m_mwt->Initialize_Tau_First(m_tau, Stateless_Default_Policy, m_num_actions);
+			u32 tau = 0;
+			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
 
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(chosen_action_join_key.first, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
 			Assert::AreEqual(chosen_action, VWExploreUnitTests::Stateless_Default_Policy(m_context));
 
-			// TODO: test probabilities when randomization is covered in another fix
 			this->Test_Logger(0, nullptr);
+		}
+
+		TEST_METHOD(TauFirstRandom)
+		{
+			u32 tau = 2;
+			m_mwt->Initialize_Tau_First(tau, Stateless_Default_Policy, m_num_actions);
+
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			Assert::AreEqual((u32)2, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			Assert::AreEqual((u32)1, chosen_action);
+
+			// Tau expired, did not explore
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+			Assert::AreEqual((u32)10, chosen_action);
+
+			// Only 2 interactions logged, 3rd one should not be stored
+			float expected_probs[2] = { .1f, .1f };
+			this->Test_Logger(2, expected_probs);
 		}
 
 		TEST_METHOD(BaggingStateful)
@@ -81,7 +121,7 @@ namespace vw_explore_tests
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(expected_action, chosen_action_join_key.first);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
 			Assert::AreEqual(expected_action, chosen_action);
 			
 			// All bags choose the same action, so prob = 1
@@ -99,11 +139,30 @@ namespace vw_explore_tests
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(expected_action, chosen_action_join_key.first);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
 			Assert::AreEqual(expected_action, chosen_action);
 
 			// All bags choose the same action, so prob = 1
 			float expected_probs[2] = { 1.f, 1.f };
+			this->Test_Logger(2, expected_probs);
+		}
+
+		TEST_METHOD(BaggingRandom)
+		{
+			u32 bags = 2;
+			StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
+			int* params[2] = { &m_policy_func_arg, &m_policy_func_arg };
+
+			m_mwt->Initialize_Bagging<int>(bags, funcs, params, m_num_actions);
+
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			Assert::AreEqual((u32)3, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			Assert::AreEqual((u32)2, chosen_action);
+
+			// Two bags choosing different actions so prob of each is 1/2
+			float expected_probs[2] = { .5f, .5f };
 			this->Test_Logger(2, expected_probs);
 		}
 
@@ -217,8 +276,6 @@ namespace vw_explore_tests
 
 			//TODO: We should eventually test randomization, else we are missing code paths
 			// Initialize with 0 to test deterministic result
-			m_epsilon = 0;
-			m_tau = 0;
 			m_bags = 2;
 			m_policy_func_arg = 101;
 			m_policy_scorer_arg = 7;
@@ -261,6 +318,10 @@ namespace vw_explore_tests
 		static u32 Stateful_Default_Policy(int* policy_params, Context* applicationContext)
 		{
 			return *policy_params % m_num_actions + 1; // 1-based index
+		}
+		static u32 Stateful_Default_Policy2(int* policy_params, Context* applicationContext)
+		{
+			return *policy_params % m_num_actions + 2; // 1-based index
 		}
 
 		static u32 Stateless_Default_Policy(Context* applicationContext)
@@ -308,6 +369,16 @@ namespace vw_explore_tests
 			delete[] interactions;
 		}
 
+		string Get_Unique_Key(u32 seed)
+		{
+			PRG<u32> prg(seed);
+
+			std::ostringstream unique_key_container;
+			unique_key_container << prg.Uniform_Unit_Interval();
+
+			return unique_key_container.str();
+		}
+
 	private:
 		// Constants for action space coverage tests (balls-in-bins)
 		static const u32 NUM_ACTIONS_COVER = 100;
@@ -316,8 +387,6 @@ namespace vw_explore_tests
 		string m_app_id;
 		MWTExplorer* m_mwt;
 
-		float m_epsilon;
-		u32 m_tau;
 		u32 m_bags;
 		float m_lambda;
 		int m_policy_func_arg;

@@ -42,7 +42,7 @@ public:
 
 	double Uniform_Unit_Interval()
 	{
-		return uniform(engine) / (std::numeric_limits<IntType>::max)();
+		return (double)uniform(engine) / (std::numeric_limits<IntType>::max)();
 	}
 
 	// Passing by reference is important here: if we pass by value and the caller evolves the 
