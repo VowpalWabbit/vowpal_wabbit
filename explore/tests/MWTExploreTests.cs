@@ -204,7 +204,7 @@ namespace ExploreTests
         [TestInitialize]
         public void TestInitialize()
         {
-            mwt = new MWTWrapper("MWTManagedTests");
+            mwt = new MwtExplorer("MWTManagedTests");
 
             features = new FEATURE[2];
             features[0].X = 0.5f;
@@ -270,7 +270,7 @@ namespace ExploreTests
         private static readonly int PolicyParams = 1003;
         private static readonly string UniqueKey = "ManagedTestId";
 
-        private MWTWrapper mwt;
+        private MwtExplorer mwt;
         private FEATURE[] features;
         private CONTEXT context;
         private GCHandle contextHandle;

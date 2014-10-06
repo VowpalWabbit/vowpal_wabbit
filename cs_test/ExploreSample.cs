@@ -35,7 +35,7 @@ namespace cs_test
 
         public static void RunMWTExploreTest()
         {
-            MWTWrapper mwt = new MWTWrapper("myTestApp");
+            MwtExplorer mwt = new MwtExplorer("myTestApp");
 
             uint numActions = 10;
             
@@ -117,7 +117,7 @@ namespace cs_test
             {
                 watch.Restart();
                 
-                MWTWrapper mwt = new MWTWrapper(appId);
+                MwtExplorer mwt = new MwtExplorer(appId);
                 mwt.InitializeEpsilonGreedy(epsilon, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
 
                 timeInit += (iter == 0) ? 0 : watch.ElapsedMilliseconds;

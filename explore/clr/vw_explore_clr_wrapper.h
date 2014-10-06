@@ -50,14 +50,14 @@ namespace MultiWorldTesting {
 		static UInt32 Make_ZeroBased(UInt32 id) { return MWTAction::Make_ZeroBased(id); }
 	};
 
-	public ref class MWTWrapper
+	public ref class MwtExplorer
 	{
 	private:
 		MWTExplorer* m_mwt;
 
 	public:
-		MWTWrapper(String^ appId);
-		~MWTWrapper();
+		MwtExplorer(String^ appId);
+		~MwtExplorer();
 
 		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
 		void InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);

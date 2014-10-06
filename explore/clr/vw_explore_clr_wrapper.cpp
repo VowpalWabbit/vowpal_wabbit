@@ -13,17 +13,17 @@ using namespace msclr::interop;
 
 namespace MultiWorldTesting {
 
-	MWTWrapper::MWTWrapper(System::String^ appId)
+	MwtExplorer::MwtExplorer(System::String^ appId)
 	{
 		m_mwt = new MWTExplorer(msclr::interop::marshal_as<std::string>(appId));
 	}
 
-	MWTWrapper::~MWTWrapper()
+	MwtExplorer::~MwtExplorer()
 	{
 		delete m_mwt;
 	}
 
-	void MWTWrapper::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
+	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
@@ -34,7 +34,7 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
+	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
@@ -45,7 +45,7 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
+	void MwtExplorer::InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
@@ -56,7 +56,7 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
+	void MwtExplorer::InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultPolicyFunc);
@@ -67,7 +67,7 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions)
+	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions)
 	{
 		cli::array<GCHandle>^ gcHandles = gcnew cli::array<GCHandle>(bags);
 
@@ -93,7 +93,7 @@ namespace MultiWorldTesting {
 		delete[] native_args;
 	}
 
-	void MWTWrapper::InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions)
+	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions)
 	{
 		cli::array<GCHandle>^ gcHandles = gcnew cli::array<GCHandle>(bags);
 
@@ -116,7 +116,7 @@ namespace MultiWorldTesting {
 		delete[] native_funcs;
 	}
 
-	void MWTWrapper::InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions)
+	void MwtExplorer::InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultScorerFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
@@ -127,7 +127,7 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
-	void MWTWrapper::InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions)
+	void MwtExplorer::InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultScorerFunc);
 		IntPtr ip = Marshal::GetFunctionPointerForDelegate(defaultScorerFunc);
@@ -138,7 +138,7 @@ namespace MultiWorldTesting {
 		gch.Free();
 	}
 
-	UInt32 MWTWrapper::ChooseAction(CONTEXT^ context, String^ uniqueId)
+	UInt32 MwtExplorer::ChooseAction(CONTEXT^ context, String^ uniqueId)
 	{
 		UInt32 chosenAction = 0;
 
@@ -168,7 +168,7 @@ namespace MultiWorldTesting {
 		return chosenAction;
 	}
 
-	Tuple<UInt32, UInt64>^ MWTWrapper::ChooseActionAndKey(CONTEXT^ context)
+	Tuple<UInt32, UInt64>^ MwtExplorer::ChooseActionAndKey(CONTEXT^ context)
 	{
 		GCHandle contextHandle = GCHandle::Alloc(context);
 		IntPtr contextPtr = (IntPtr)contextHandle;
@@ -194,13 +194,13 @@ namespace MultiWorldTesting {
 		return chosenActionAndKey;
 	}
 
-	String^ MWTWrapper::GetAllInteractionsAsString()
+	String^ MwtExplorer::GetAllInteractionsAsString()
 	{
 		std::string all_interactions = m_mwt->Get_All_Interactions();
 		return gcnew String(all_interactions.c_str());
 	}
 
-	cli::array<INTERACTION^>^ MWTWrapper::GetAllInteractions()
+	cli::array<INTERACTION^>^ MwtExplorer::GetAllInteractions()
 	{
 		size_t num_interactions = 0;
 		Interaction** native_interactions = nullptr;
