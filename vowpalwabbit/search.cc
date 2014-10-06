@@ -32,7 +32,7 @@ namespace Search {
                                &ArgmaxTask::task,
                                &SequenceTask_DemoLDF::task,
                                &MulticlassTask::task,
-							   &DepParserTask::task,
+                               &DepParserTask::task,
                                &HookTask::task,
                                NULL };   // must NULL terminate!
 
@@ -124,7 +124,6 @@ namespace Search {
 
     // parameters controlling interpolation
     float  beta;                   // interpolation rate
-    float  max_beta;               // max_beta
     float  alpha;                  // parameter used to adapt beta for dagger (see above comment), should be in (0,1)
 
     RollMethod rollout_method;     // 0=policy, 1=oracle, 2=mix_per_state, 3=mix_per_roll
@@ -468,7 +467,7 @@ namespace Search {
       priv.beta = (x <= log_of_2) ? -expm1f(-x) : (1-expf(-x)); // numerical stability
       //float priv_beta = 1.f - powf(1.f - priv.alpha, (float)priv.total_examples_generated);
       //assert( fabs(priv_beta - priv.beta) < 1e-2 );
-      if (priv.beta > priv.max_beta) priv.beta = priv.max_beta;
+      if (priv.beta > 1) priv.beta = 1;
     }
     priv.ptag_to_action.erase();
     
@@ -501,7 +500,7 @@ namespace Search {
   }
 
   void add_example_conditioning(search_private& priv, example& ec, const ptag* condition_on, size_t condition_on_cnt, const char* condition_on_names, const action* condition_on_actions) {
-	if (condition_on_cnt == 0) return;
+    if (condition_on_cnt == 0) return;
 
     uint32_t extra_offset=0;
     if (priv.is_ldf) {
@@ -537,6 +536,7 @@ namespace Search {
           else priv.dat_new_feature_audit_ss << '#' << (int)name;
           priv.dat_new_feature_audit_ss << '=' << condition_on_actions[i+n];
         }
+        
         // add the single bias feature
         if (n < priv.acset.max_bias_ngram_length)
           add_new_feature(priv, 1., 4398201 << priv.all->reg.stride_shift);
@@ -741,9 +741,8 @@ namespace Search {
   }
 
   template<class T> void push_at(v_array<T>& v, T item, size_t pos) {
-    if (v.size() > pos){
+    if (v.size() > pos)
       v.begin[pos] = item;
-	}
     else {
       if (v.end_array > v.begin + pos) {
         // there's enough memory, just not enough filler
@@ -1362,7 +1361,6 @@ namespace Search {
     priv.empty_example->in_use = true;
 
     priv.rawOutputStringStream = new stringstream(priv.rawOutputString);
-    priv.ptag_to_action.erase();
   }
 
   void search_finish(search& sch) {
@@ -1564,7 +1562,6 @@ namespace Search {
         ("search_beta",              po::value<float>(),  "interpolation rate for policies (only valid for search_interpolation=policy) [def=0.5]")
 
         ("search_alpha",             po::value<float>(),  "annealed beta = 1-(1-alpha)^t (only valid for search_interpolation=data)     [def=1e-10]")
-        ("search_max_beta",             po::value<float>(),  "max beta (only valid for search_interpolation=data)     [def=1]")
 
         ("search_total_nb_policies", po::value<size_t>(), "if we are going to train the policies through multiple separate calls to vw, we need to specify this parameter and tell vw how many policies are eventually going to be trained")
 
@@ -1607,7 +1604,6 @@ namespace Search {
                          "warning: specified --search_interpolation different than the one loaded from regressor. using loaded value of: ", "");
 
     if (vm.count("search_passes_per_policy"))       priv.passes_per_policy    = vm["search_passes_per_policy"].as<size_t>();
-    if (vm.count("search_max_beta"))                priv.max_beta             = vm["search_max_beta"             ].as<float>();
 
     if (vm.count("search_alpha"))                   priv.alpha                = vm["search_alpha"            ].as<float>();
     if (vm.count("search_beta"))                    priv.beta                 = vm["search_beta"             ].as<float>();
@@ -1677,7 +1673,6 @@ namespace Search {
       priv.total_number_of_policies = (uint32_t)vm["search_total_nb_policies"].as<size_t>();
 
     ensure_param(priv.beta , 0.0, 1.0, 0.5, "warning: search_beta must be in (0,1); resetting to 0.5");
-    ensure_param(priv.max_beta , 0.0, 1.0, 1, "warning: search_max_beta must be in (0,1); resetting to 1");
     ensure_param(priv.alpha, 0.0, 1.0, 1e-10f, "warning: search_alpha must be in (0,1); resetting to 1e-10");
 
     //compute total number of policies we will have at end of training
@@ -1833,9 +1828,6 @@ namespace Search {
   size_t search::get_mask() { return this->priv->all->reg.weight_mask;}
   size_t search::get_stride_shift() { return this->priv->all->reg.stride_shift;}
   uint32_t search::get_history_length() { return (uint32_t)this->priv->history_length; }
-  void search::set_triples(vector<string> &triples) { this->priv->all->triples.swap(triples);}
-  void search::set_pairs(vector<string> &pairs) {this->priv->all->pairs.swap(pairs);}
-  
   
   // predictor implementation
   predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }
@@ -1961,7 +1953,6 @@ namespace Search {
 
     action p = is_ldf ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id)
                       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, allowed_actions.size(), learner_id);
-
 
     if (condition_on_names.size() > 0)
       condition_on_names.pop();  // un-null-terminate

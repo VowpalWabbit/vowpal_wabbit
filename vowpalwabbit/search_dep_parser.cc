@@ -289,7 +289,7 @@ namespace DepParserTask {
 
 		// unigram features
 		size_t nfs = data->nfs;
-		uint64_t offset = (uint64_t)offset_const, v0;
+		uint64_t v0;
 		for(size_t i=0; i<12; i++) {
 			unsigned char j=0;
 			for (unsigned char* fs = ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
