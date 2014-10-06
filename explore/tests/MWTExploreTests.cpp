@@ -121,7 +121,7 @@ namespace vw_explore_tests
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(expected_action, chosen_action_join_key.first);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
 			Assert::AreEqual(expected_action, chosen_action);
 			
 			// All bags choose the same action, so prob = 1
@@ -139,11 +139,30 @@ namespace vw_explore_tests
 			pair<u32, u64> chosen_action_join_key = m_mwt->Choose_Action_And_Key(*m_context);
 			Assert::AreEqual(expected_action, chosen_action_join_key.first);
 
-			u32 chosen_action = m_mwt->Choose_Action(*m_context, m_unique_key);
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
 			Assert::AreEqual(expected_action, chosen_action);
 
 			// All bags choose the same action, so prob = 1
 			float expected_probs[2] = { 1.f, 1.f };
+			this->Test_Logger(2, expected_probs);
+		}
+
+		TEST_METHOD(BaggingRandom)
+		{
+			u32 bags = 2;
+			StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy, Stateful_Default_Policy2 };
+			int* params[2] = { &m_policy_func_arg, &m_policy_func_arg };
+
+			m_mwt->Initialize_Bagging<int>(bags, funcs, params, m_num_actions);
+
+			u32 chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			Assert::AreEqual((u32)3, chosen_action);
+
+			chosen_action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			Assert::AreEqual((u32)2, chosen_action);
+
+			// Two bags choosing different actions so prob of each is 1/2
+			float expected_probs[2] = { .5f, .5f };
 			this->Test_Logger(2, expected_probs);
 		}
 
@@ -283,6 +302,10 @@ namespace vw_explore_tests
 		static u32 Stateful_Default_Policy(int* policy_params, Context* applicationContext)
 		{
 			return *policy_params % m_num_actions + 1; // 1-based index
+		}
+		static u32 Stateful_Default_Policy2(int* policy_params, Context* applicationContext)
+		{
+			return *policy_params % m_num_actions + 2; // 1-based index
 		}
 
 		static u32 Stateless_Default_Policy(Context* applicationContext)
