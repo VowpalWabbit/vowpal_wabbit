@@ -15,7 +15,7 @@ namespace cs_test
     {
         static void Main(string[] args)
         {
-            VWExploreTests.RunMWTExploreTest();
+            ExploreSample.Clock();
             return;
             RunFeaturesTest();
             RunParserTest();

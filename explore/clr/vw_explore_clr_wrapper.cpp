@@ -148,13 +148,13 @@ namespace MultiWorldTesting {
 		cli::array<FEATURE>^ contextFeatures = context->Features;
 		String^ otherContext = context->OtherContext;
 
-		std::string nativeOtherContext = marshal_as<std::string>(otherContext);
+		std::string* nativeOtherContext = (otherContext != nullptr) ? &marshal_as<std::string>(otherContext) : nullptr;
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
 		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
 		FEATURE* nativeContextFeatures = pinnedContextFeatures;
 
-		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, &nativeOtherContext);
+		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, nativeOtherContext);
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
@@ -176,12 +176,12 @@ namespace MultiWorldTesting {
 		cli::array<FEATURE>^ contextFeatures = context->Features;
 		String^ otherContext = context->OtherContext;
 
-		std::string nativeOtherContext = marshal_as<std::string>(otherContext);
+		std::string* nativeOtherContext = (otherContext != nullptr) ? &marshal_as<std::string>(otherContext) : nullptr;
 
 		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
 		FEATURE* nativeContextFeatures = pinnedContextFeatures;
 
-		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, &nativeOtherContext);
+		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, nativeOtherContext);
 
 		std::pair<u32, u64> actionAndKey = m_mwt->Choose_Action_And_Key(
 			contextPtr.ToPointer(),

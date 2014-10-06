@@ -6,7 +6,7 @@ using MultiWorldTesting;
 
 namespace cs_test
 {
-    class VWExploreTests
+    class ExploreSample
     {
         private static UInt32 MyStatelessPolicyFunc(IntPtr applicationContext)
         {
@@ -96,6 +96,76 @@ namespace cs_test
 
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);
+        }
+
+        public static void Clock()
+        {
+            string appId = "ClockApp";
+            float epsilon = .2f;
+            int policyParams = 1003;
+            string uniqueKey = "clock";
+            int numFeatures = 10000;
+            int numIter = 5;
+            int numInteractions = 200;
+            uint numActions = 10;
+            string otherContext = null;
+            
+            double timeInit = 0, timeChoose = 0, timeSerializedLog = 0, timeTypedLog = 0;
+
+            System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
+            for (int iter = 0; iter < numIter + 1; iter++)
+            {
+                watch.Restart();
+                
+                MWTWrapper mwt = new MWTWrapper(appId);
+                mwt.InitializeEpsilonGreedy(epsilon, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
+
+                timeInit += (iter == 0) ? 0 : watch.ElapsedMilliseconds;
+
+                FEATURE[] f = new FEATURE[numFeatures];
+                for (int i = 0; i < numFeatures; i++)
+                {
+                    f[i].WeightIndex = (uint)i + 1;
+                    f[i].X = 0.5f;
+                }
+                
+                watch.Restart();
+
+                CONTEXT context = new CONTEXT(f, otherContext);
+
+                for (int i = 0; i < numInteractions / 2; i++)
+                {
+                    mwt.ChooseAction(context, uniqueKey);
+                    mwt.ChooseActionAndKey(context);
+                }
+
+                timeChoose += (iter == 0) ? 0 : watch.ElapsedMilliseconds;
+
+                watch.Restart();
+
+                string interactions = mwt.GetAllInteractionsAsString();
+
+                timeSerializedLog += (iter == 0) ? 0 : watch.ElapsedMilliseconds;
+
+                for (int i = 0; i < numInteractions / 2; i++)
+                {
+                    mwt.ChooseAction(context, uniqueKey);
+                    mwt.ChooseActionAndKey(context);
+                }
+
+                watch.Restart();
+
+                mwt.GetAllInteractions();
+
+                timeTypedLog += (iter == 0) ? 0 : watch.ElapsedMilliseconds;
+
+                Console.WriteLine("Iteration {0}", iter + 1);
+            }
+            Console.WriteLine("# iterations: {0}, # interactions: {1}, # context features {2}", numIter, numInteractions, numFeatures);
+            Console.WriteLine("Init: {0}ms", timeInit / numIter);
+            Console.WriteLine("Choose Action: {0}ms", timeChoose / (numIter * numInteractions));
+            Console.WriteLine("Get Serialized Log: {0}ms", timeSerializedLog / numIter);
+            Console.WriteLine("Get Typed Log: {0}ms", timeTypedLog / numIter);
         }
     }
 }
