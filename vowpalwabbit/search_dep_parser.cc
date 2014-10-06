@@ -14,7 +14,9 @@
 #undef cdep
 #define cdep if (1) {} else cerr
 #define val_namespace 100 // valency and distance feature space
-#define offset_const 79867
+#define quad_namespace 101 // namespace for quadratic feature
+#define cubic_namespace 102 // namespace for cubic feature
+#define offset_const 344429
 
 namespace DepParserTask         {  Search::search_task task = { "dep_parser", run, initialize, finish, NULL, NULL};  }
 
@@ -32,6 +34,8 @@ struct task_data {
 	v_array<uint32_t> heads; // output array
 	v_array<uint32_t> temp;
 	v_array<example *> ec_buf;
+	vector<string> pairs;
+	vector<string> triples;
 };
 
 namespace DepParserTask {
@@ -57,7 +61,7 @@ namespace DepParserTask {
 		// setup entity and relation labels
 		data->no_quadratic_features = (vm.count("dparser_no_quad"))?true:false;
 		data->no_cubic_features =(vm.count("dparser_no_cubic"))?true:false;
-		srn.set_options(0);
+		srn.set_options(AUTO_CONDITION_FEATURES);
 	}
 
 	void finish(Search::search& srn) {
@@ -70,12 +74,62 @@ namespace DepParserTask {
 		data->heads.delete_v();
 		data->ec_buf.delete_v();
 		data->temp.delete_v();
+
 		for(size_t i=0; i<6; i++)
 			data->children[i].delete_v();
 		delete[] data->children;
 		delete data;
 	} // if we had task data, we'd want to free it here
 
+	void inline add_feature(example *ex,  uint32_t idx, unsigned  char ns, size_t mask, size_t ss){
+		feature f = {1.0f, ((idx+offset_const*ns)<<ss)&mask};
+		ex->atomics[(int)ns].push_back(f);
+	}
+	void add_quad_features(Search::search& srn, example *ex){
+		size_t ss = srn.get_stride_shift();
+		size_t mask = srn.get_mask();
+		task_data *data = srn.get_task_data<task_data>();
+		for(uint32_t idx=0; idx< data->pairs.size(); idx++){
+			unsigned char ns_a = data->pairs[idx][0];
+			unsigned char ns_b = data->pairs[idx][1];
+			for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
+				for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
+					uint32_t idx1 =  ex->atomics[(int)ns_a][i].weight_index>>ss;
+					uint32_t idx2 =  ex->atomics[(int)ns_b][j].weight_index>>ss;
+					add_feature(ex, (idx1*quadratic_constant + idx2) ,quad_namespace, mask, ss);
+				}
+			}
+		}
+	}
+	void add_cubic_features(Search::search& srn, example *ex){
+		size_t ss = srn.get_stride_shift();
+		size_t mask = srn.get_mask();
+		task_data *data = srn.get_task_data<task_data>();
+		for(uint32_t idx=0; idx< data->triples.size(); idx++){
+			unsigned char ns_a = data->triples[idx][0];
+			unsigned char ns_b = data->triples[idx][1];
+			unsigned char ns_c = data->triples[idx][2];
+			for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
+				for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
+					for(uint32_t k=0; k< ex->atomics[(int)ns_c].size();k++){
+					uint32_t idx1 =  ex->atomics[(int)ns_a][i].weight_index>>ss;
+					uint32_t idx2 =  ex->atomics[(int)ns_b][j].weight_index>>ss;
+					uint32_t idx3 =  ex->atomics[(int)ns_c][j].weight_index>>ss;
+						add_feature(ex, (cubic_constant2 * (cubic_constant * idx3 + idx2)+idx1), cubic_namespace, mask, ss);
+					}
+				}
+			}
+		}
+	}
+
+	void inline reset_ex(example *ex){
+		ex->num_features = 0;
+		ex->total_sum_feat_sq = 0;
+		for(unsigned char *ns = ex->indices.begin; ns!=ex->indices.end; ns++){
+			ex->sum_feat_sq[(int)*ns] = 0;
+			ex->atomics[(int)*ns].erase();
+		}
+	}
 	// arc-hybrid System.
 	uint32_t transition_hybrid(Search::search& srn, uint32_t a_id, uint32_t idx) {
 		task_data *data = srn.get_task_data<task_data>();
@@ -112,106 +166,34 @@ namespace DepParserTask {
 		cerr << "Unknown action (search_dep_parser.cc).";
 		return idx;
 	}
-	void check_feature_vector(example *ec){
-		float total_fs = 0.0;
-		int total_num_features = 0;
-		for (unsigned char* j = ec->indices.begin,fs_idx_inner = 0; j != ec->indices.end; j++,fs_idx_inner++) {
-			for(size_t k=0; k<ec->atomics[*j].size(); k++) {
-				total_num_features+=1;
-				total_fs += 1;
-			}
-		}
-
-		if(ec->total_sum_feat_sq != total_fs){
-			cerr<< ec->total_sum_feat_sq<<" " << total_fs <<endl;
-			cerr<< ec->num_features <<" "<< total_num_features<<endl;
-		}
-
-	}
 
 	// This function is only called once
 	// We use VW's internal implementation to create second-order and third-order features
 	void my_initialize(Search::search& srn, example *base_ex) {
 		task_data *data = srn.get_task_data<task_data>();
+		vector<string> &newpairs = data->pairs;
+		vector<string> &newtriples = data->triples;
     	data->ex = alloc_examples(sizeof(MULTICLASS::get_example_label(&base_ex[0])), 1);
-//    	uint32_t wpp = srn.get_vw()->wpp;// << srn.all->reg.stride_shift;
-
-		// setup example
-		example *ex = data->ex;
-		data->nfs = base_ex->indices.size();
-//		if (srn.get_vw()->add_constant) 
-			data->nfs-=1;
+		data->nfs = base_ex->indices.size()-1; // remove constant fs
 		size_t nfs = data->nfs;
-		uint64_t offset = offset_const, v0;
-		for (size_t i=0; i<12; i++) {
-			offset= (offset*offset_const) & srn.get_mask();
-			unsigned char j = 0;
-			for (unsigned char* fs = base_ex->indices.begin; fs != base_ex->indices.end; fs++) {
-				if(*fs == constant_namespace) // ignore constant_namespace
-					continue;
-				ex->indices.push_back(i*nfs+j);				
-				for (size_t k=0; k<base_ex->atomics[*fs].size(); k++) {
-					v0 = affix_constant*((j+1)*quadratic_constant + k)*offset;
-					uint32_t idx = (uint32_t) ((v0) & srn.get_mask());
-					feature f = {1.0f, idx};
-					ex->atomics[i*nfs+j].push_back(f);
-					ex->total_sum_feat_sq += 1.0f;
-					ex->num_features++;
-					ex->sum_feat_sq[i*nfs+j] += 1.0f;
-/*					if(srn.get_vw()->audit){
-						cerr << base_ex->atomics[*fs][k].weight_index<<endl;
-						audit_data a_feature = {NULL, NULL, idx, 1.0f, true};
-						a_feature.space = (char*)calloc_or_die(1,sizeof(char));
-						a_feature.feature = (char*)calloc_or_die(30,sizeof(char));
-						sprintf(a_feature.feature, "%d,%d,%d=%d", (int)i, (int)j, (int)k, (int)idx);
-						ex->audit_features[i*nfs+j].push_back(a_feature);
-					}*/
-				}
-				j++;
-			}
-		}
-
-		// add valency and distance features
-		for(int i=0; i<4; i++){
-			offset= (offset*offset_const) & srn.get_mask();
-			uint32_t idx = (uint32_t) ((offset) & srn.get_mask());
-			feature f = {1.0f, idx};
-			ex->atomics[val_namespace].push_back(f);
-/*			if(srn.get_vw()->audit){
-				audit_data a_feature = {NULL, NULL, idx, 1.0f, true};
-				a_feature.space = (char*)calloc_or_die(1,sizeof(char));
-				a_feature.feature = (char*)calloc_or_die(30,sizeof(char));
-				sprintf(a_feature.feature, "%d=%d", (int)i, 0);
-				ex->audit_features[val_namespace].push_back(a_feature);
-			}*/
-
-		}
-		ex->num_features+=4;
-		ex->sum_feat_sq[val_namespace] += 4.0f;
-		ex->total_sum_feat_sq += 4.0f;
-		ex->indices.push_back(val_namespace);
-
-		// add constant
-/*		if (srn.get_vw()->add_constant) {
-			VW::add_constant_feature(*(srn.get_vw()), ex);
-		}*/
-
+		
 		// setup feature template
-
-
 		map<string, char> fs_idx_map;
 		fs_idx_map["s1"]=0, fs_idx_map["s2"]=1, fs_idx_map["s3"]=2;
 		fs_idx_map["b1"]=3, fs_idx_map["b2"]=4, fs_idx_map["b3"]=5;
 		fs_idx_map["sl1"]=6, fs_idx_map["sl2"]=7, fs_idx_map["sr1"]=8;
 		fs_idx_map["sr2"]=9, fs_idx_map["bl1"]=10, fs_idx_map["bl2"]=11;
 
+	    data->ex->indices.push_back(val_namespace);
+		for(size_t i=0; i<12*nfs; i++)
+	        data->ex->indices.push_back(i);
+
 		size_t pos = 0;
-		
 		if(!data->no_quadratic_features){
-		vector<string> newpairs;
-			// features based on context
+			// quadratic feature encoding
 			string quadratic_feature_template = "s1-s2 s1-b1 s1-s1 s2-s2 s3-s3 b1-b1 b2-b2 b3-b3 b1-b2 s1-sl1 s1-sr1 b1-bl1 ENDQ";
-			// Generate quadratic features
+
+			// Generate quadratic features templete
 			while ((pos = quadratic_feature_template.find(" ")) != std::string::npos) {
 				string token = quadratic_feature_template.substr(0, pos);
 				char first_fs_idx = fs_idx_map[token.substr(0,token.find("-"))];
@@ -221,34 +203,26 @@ namespace DepParserTask {
 						char space_a = (char)(first_fs_idx*nfs+i);
 						char space_b = (char)(second_fs_idx*nfs+j);
 						newpairs.push_back(string(1, space_a)+ string(1, space_b));
-						ex->num_features 
-							+= ex->atomics[(int)space_a].size()*(ex->atomics[(int)space_b].size());
-						ex->total_sum_feat_sq += ex->sum_feat_sq[(int)space_a]*ex->sum_feat_sq[(int)space_b];
 					}
 				}
 				quadratic_feature_template.erase(0, pos + 1);
 			}
-			for(size_t i=0; i<1; i++){
+
+			for(size_t i=0; i<6; i++){
 					for (size_t j=0; j<nfs; j++) {
 						char space_a = (char)(val_namespace);
 						char space_b = (char)(i*nfs+j);
 						newpairs.push_back(string(1, space_a)+ string(1, space_b));
-						ex->num_features += ex->atomics[(int)space_a].size()*(ex->atomics[(int)space_b].size());
-						ex->total_sum_feat_sq += ex->sum_feat_sq[(int)space_b]*ex->sum_feat_sq[(int)space_a];
 					}
 			}
-
 			char space_a = (char)(val_namespace);
 			newpairs.push_back(string(1, space_a)+ string(1, space_a));
-			ex->num_features += ex->atomics[(int)space_a].size()* ex->atomics[(int)space_a].size();
-			ex->total_sum_feat_sq += ex->sum_feat_sq[(int)space_a]*ex->sum_feat_sq[(int)space_a];
-			srn.set_pairs(newpairs);
+	        data->ex->indices.push_back(quad_namespace);
 		}
 
 		// Generate cubic features
 
 		if(!data->no_cubic_features){
-		    vector<string> newtriples;
 			string cubic_feature_template = "b1-b2-b3 s1-b1-b2 s1-s2-b1 s1-s2-s3 s1-b1-bl1 b1-bl1-bl2 s1-sl1-sl2 s1-s2-s2 s1-sr1-b1 s1-sl1-b1 s1-sr1-sr2 ENDC";
 			while ((pos = cubic_feature_template.find(" ")) != std::string::npos) {
 				string token = cubic_feature_template.substr(0, pos);
@@ -261,33 +235,27 @@ namespace DepParserTask {
 						for (size_t k=0; k<nfs; k++) {
 							char str[3] ={(char)(first_fs_idx*nfs+i), (char)(second_fs_idx*nfs+j), (char)(third_fs_idx*nfs+k)};
 							newtriples.push_back(string(1, str[0])+ string(1, str[1])+string(1,str[2]));
-							ex->num_features 
-								+= (ex->atomics[(int)str[0]].end - ex->atomics[(int)str[0]].begin)
-								*(ex->atomics[(int)str[1]].end - ex->atomics[(int)str[1]].begin)
-								*(ex->atomics[(int)str[2]].end - ex->atomics[(int)str[2]].begin);
-							ex->total_sum_feat_sq += ex->sum_feat_sq[(int)str[0]]*ex->sum_feat_sq[(int)str[1]]*ex->sum_feat_sq[(int)str[2]];
-
 						}
 					}
 				}
 				cubic_feature_template.erase(0, pos + 1);
 			}
-			srn.set_triples(newtriples);
+	        data->ex->indices.push_back(cubic_namespace);
 		}
-		
+	    data->ex->indices.push_back(constant_namespace);
 	}
 
 	// This function needs to be very fast
 	void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
 		task_data *data = srn.get_task_data<task_data>();
 		size_t ss = srn.get_stride_shift();
+		size_t mask = srn.get_mask();
 		v_array<uint32_t> &stack = data->stack;
 		v_array<uint32_t> *children = data->children, &temp=data->temp;
 		v_array<example*> &ec_buf = data->ec_buf;
 		example &ex = *(data->ex);
-//    	uint32_t wpp = srn.get_vw()->wpp;
-		//<< srn.get_vw()->reg.stride_shift;
-
+		//add constant
+		add_feature(&ex, (uint32_t) constant, constant_namespace, mask, ss);
 		// be careful: indices in ec starts from 0, but i is starts from 1
 		size_t n = ec.size();
 		// use this buffer to c_vw()ect the examples, default value: NULL
@@ -323,41 +291,18 @@ namespace DepParserTask {
 		size_t nfs = data->nfs;
 		uint64_t offset = (uint64_t)offset_const, v0;
 		for(size_t i=0; i<12; i++) {
-			offset= (offset*offset_const) & srn.get_mask();
-			if(!ec_buf[i]) {
-				unsigned char j=0;
-				for (unsigned char* fs = ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
-					if(*fs == constant_namespace) // ignore constant_namespace
-						continue;
-					for(size_t k=0; k<ex.atomics[i*nfs+j].size(); k++) {
-						// use affix_constant to represent the features that not appear
-						v0 = affix_constant*((j+1)*quadratic_constant + k)*offset<<ss;
-
-//	  					cerr << "v0_mask:" << v0;
-//						cerr << "v0_mask:" << srn.get_mask();
-						ex.atomics[i*nfs+j][k].weight_index = (uint32_t) ((v0) & srn.get_mask());
-/*						if(srn.get_vw()->audit){
-							ex.audit_features[i*nfs+j][k].weight_index =  (uint32_t) ((v0) & srn.get_mask());
-							sprintf(ex.audit_features[i*nfs+j][k].feature, "%d,%d,%d=null", (int)i, (int)j, (int)k);
-						}*/
-					}
-					j++;
-				}
-			} else {
-				unsigned char j = 0;
-				for (unsigned char* fs= ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
-					if(*fs == constant_namespace) // ignore constant_namespace
-						continue;
-					for(size_t k=0; k<ex.atomics[i*nfs+j].size(); k++) {
-						v0 =  ((ec_buf[i]->atomics[*fs][k].weight_index>>ss) & srn.get_mask())<<ss;
-						ex.atomics[i*nfs+j][k].weight_index = (uint32_t)((v0*offset) & srn.get_mask());
-/*						if(srn.get_vw()->audit){
-							ex.audit_features[i*nfs+j][k].weight_index =  (uint32_t) ((v0) & srn.get_mask());
-							sprintf(ex.audit_features[i*nfs+j][k].feature, "%d,%d,%d=%d", (int)i, (int)j, (int)k, (int)ec_buf[i]->atomics[*fs][k].weight_index);
-						}*/
-					}
-					j++;
-				}
+			unsigned char j=0;
+			for (unsigned char* fs = ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
+				if(*fs == constant_namespace) // ignore constant_namespace
+					continue;
+				for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
+					if(!ec_buf[i])
+						v0 = affix_constant*((j+1)*quadratic_constant + k);
+					else
+						v0 = (ec_buf[i]->atomics[*fs][k].weight_index>>ss);
+					add_feature(&ex, (uint32_t) v0, i*nfs+j, mask, ss);
+				}				
+				j++;
 			}
 		}
 		temp.resize(4,true);
@@ -374,13 +319,20 @@ namespace DepParserTask {
 		temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
 
 		for(int j=0; j< 4;j++) {
-			offset= (offset*offset_const) & srn.get_mask();
-			ex.atomics[val_namespace][j].weight_index = (uint32_t) ((temp[j]*offset) & srn.get_mask())<<ss;
-/*			if(srn.get_vw()->audit){
-				ex.audit_features[val_namespace][j].weight_index =  (uint32_t) ((temp[j]*offset) & srn.get_mask());
-				sprintf(ex.audit_features[val_namespace][j].feature, "0=%d", (int)temp[j]);
-			}*/
+			add_feature(&ex, (uint32_t) temp[j], val_namespace, mask, ss);
 		}
+	
+		if(!data->no_quadratic_features)
+			add_quad_features(srn, data->ex);
+		if(!data->no_cubic_features)
+			add_cubic_features(srn, data->ex);
+		size_t count=0;
+		for (unsigned char* ns = data->ex->indices.begin; ns != data->ex->indices.end; ns++) {
+			data->ex->sum_feat_sq[(int)*ns] = data->ex->atomics[(int)*ns].size();
+			count+= data->ex->atomics[(int)*ns].size();
+		}
+		data->ex->num_features = count;
+		data->ex->total_sum_feat_sq = count;
 	}
 
 	void get_valid_actions(v_array<uint32_t> & valid_action, uint32_t idx, uint32_t n, uint32_t stack_depth) {
@@ -449,7 +401,6 @@ namespace DepParserTask {
 
 	void run(Search::search& srn, vector<example*>& ec) {
 		cdep << "start structured predict"<<endl;
-//	  	cerr << "tart_0_mask:" << srn.get_mask();
 		task_data *data = srn.get_task_data<task_data>();
 		v_array<uint32_t> &gold_actions = data->gold_actions, &stack = data->stack, &gold_heads=data->gold_heads, &valid_actions=data->valid_actions, &heads=data->heads;
 		uint32_t n = ec.size();
@@ -459,8 +410,7 @@ namespace DepParserTask {
 		if(!data->my_init_flag) {
 			my_initialize(srn, ec[0]);
 			data->my_init_flag = true;
-		}
-
+		}		
 		heads.resize(ec.size()+1, true);
 		gold_heads.erase();
 		gold_heads.push_back(0);
@@ -480,29 +430,12 @@ namespace DepParserTask {
 		int count=0;
 		cdep << "start decoding"<<endl;
 		while(stack.size()>1 || idx <= n){
-			cdep << "before transition: idx=" << idx << " n=" << n << " ";
-			cdep << "stack = [";for(size_t i=0; i<stack.size(); i++){cdep << stack[i] << " ";} cdep << "]" << endl;
-			cdep << "buffer = [";for(size_t i=idx; i<=ec.size(); i++){cdep << i << " ";} cdep << "]" << endl;
-			cdep << "heads:[";for(size_t i=0; i<ec.size()+1; i++){cdep << heads[i] << " ";}cdep <<"]"<<endl;
-			cdep << "extracting features"<<endl;
+			reset_ex(data->ex);
 			extract_features(srn, idx, ec);
-
-			cdep << "setup valid and gold actions"<<endl;
 			get_valid_actions(valid_actions, idx, n, stack.size());
 			get_gold_actions(srn, idx, n);
-			cdep << "valid_action=[";for(size_t i=0; i<valid_actions.size(); i++){cdep << valid_actions[i] << " ";}cdep << "]"<<endl;
-			cdep << "gold_action=["; for(size_t i=0; i<gold_actions.size(); i++){cdep << gold_actions[i] << " ";} cdep << "]"<<endl;
-			cdep << "make prediction"<<endl;
 			uint32_t prediction = Search::predictor(srn, (ptag) 0).set_input(*(data->ex)).set_oracle(gold_actions[0]).set_allowed(valid_actions).set_condition_range(count, srn.get_history_length(), 'p').predict();
-
 			idx = transition_hybrid(srn, prediction, idx);
-			cdep << "after taking action"<<prediction << " idx="<<idx <<" stack = [";for(size_t i=0; i<stack.size(); i++){cdep << stack[i] << " ";}cdep <<"]"<<endl;
-			cdep << "stack = [";for(size_t i=0; i<stack.size(); i++){cdep << stack[i] << " ";} cdep << "]" << endl;
-			cdep << "buffer = [";for(size_t i=idx; i<=ec.size(); i++){cdep << i << " ";} cdep << "]" << endl;
-			cdep << "heads:[";for(size_t i=0; i<ec.size()+1; i++){cdep << heads[i] << " ";}cdep <<"]"<<endl;
-			cdep << "gold_heads:[";for(size_t i=0; i<ec.size()+1; i++){cdep << gold_heads[i] << " ";}cdep <<"]"<<endl;
-			cdep << endl;
-
 			count++;
 		}
 		heads[stack.last()] = 0;
