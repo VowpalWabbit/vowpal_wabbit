@@ -11,8 +11,8 @@ namespace MultiWorldTesting {
 	public delegate UInt32 StatefulPolicyDelegate(IntPtr, IntPtr);
 	public delegate UInt32 StatelessPolicyDelegate(IntPtr);
 
-	public delegate void StatefulScorerDelegate(IntPtr, IntPtr, cli::array<float>^ scores, UInt32 size);
-	public delegate void StatelessScorerDelegate(IntPtr, cli::array<float>^ scores, UInt32 size);
+	public delegate void StatefulScorerDelegate(IntPtr, IntPtr, IntPtr scores, UInt32 size);
+	public delegate void StatelessScorerDelegate(IntPtr, IntPtr scores, UInt32 size);
 
 	[StructLayout(LayoutKind::Sequential)]
 	public value struct FEATURE

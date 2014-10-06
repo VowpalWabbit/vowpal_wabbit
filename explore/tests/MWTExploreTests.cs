@@ -157,7 +157,7 @@ namespace ExploreTests
             Assert.AreEqual(0.9f, interactions[0].ApplicationContext.Features[1].X);
         }
 
-        [TestMethod] // Currently failing
+        [TestMethod]
         public void SoftmaxStateful()
         {
             mwt.InitializeSoftmax(Lambda,
@@ -173,7 +173,29 @@ namespace ExploreTests
                 actions[ActionID.Make_ZeroBased(actionAndKey.Item1)]++;
             }
             
+            for (uint i = 0; i < NumActions; i++)
+            {
+                Assert.IsTrue(actions[i] > 0);
+            }
+        }
+
+        [TestMethod]
+        public void SoftmaxStateless()
+        {
+            mwt.InitializeSoftmax(Lambda,
+                new StatelessScorerDelegate(TestStatelessScorerFunc),
+                NumActions);
+
+            uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
+            uint[] actions = new uint[NumActions];
+
             for (uint i = 0; i < numDecisions; i++)
+            {
+                Tuple<uint, ulong> actionAndKey = mwt.ChooseActionAndKey(context);
+                actions[ActionID.Make_ZeroBased(actionAndKey.Item1)]++;
+            }
+
+            for (uint i = 0; i < NumActions; i++)
             {
                 Assert.IsTrue(actions[i] > 0);
             }
@@ -216,15 +238,21 @@ namespace ExploreTests
             return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
         }
 
-        private static void TestStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, float[] scores, uint size)
+        private static void TestStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, IntPtr scoresPtr, uint size)
         {
+            float[] scores = new float[size];
+            Marshal.Copy(scoresPtr, scores, 0, (int)size);
+
             for (uint i = 0; i < size; i++)
             {
                 scores[i] = (int)policyParams + i;
             }
         }
-        private static void TestStatelessScorerFunc(IntPtr applicationContext, float[] scores, uint size)
+        private static void TestStatelessScorerFunc(IntPtr applicationContext, IntPtr scoresPtr, uint size)
         {
+            float[] scores = new float[size];
+            Marshal.Copy(scoresPtr, scores, 0, (int)size);
+
             for (uint i = 0; i < size; i++)
             {
                 scores[i] = i;
