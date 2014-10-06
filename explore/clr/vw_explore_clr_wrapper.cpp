@@ -241,4 +241,26 @@ namespace MultiWorldTesting {
 
 		return interactions;
 	}
+
+	cli::array<float>^ MwtExplorer::IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size)
+	{
+		cli::array<float>^ scores = gcnew cli::array<float>(size);
+		Marshal::Copy(scoresPtr, scores, 0, (int)size);
+		return scores;
+	}
+
+	generic <class T>
+	T MwtExplorer::FromIntPtr(IntPtr objectPtr)
+	{
+		GCHandle contextHandle = (GCHandle)objectPtr;
+		T obj = (T)(contextHandle.Target);
+		return obj;
+	}
+
+	generic <class T>
+	IntPtr MwtExplorer::ToIntPtr(T obj, [Out] GCHandle% objHandle)
+	{
+		objHandle = GCHandle::Alloc(obj);
+		return (IntPtr)objHandle;
+	}
 }

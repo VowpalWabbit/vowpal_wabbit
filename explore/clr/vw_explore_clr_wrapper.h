@@ -76,5 +76,15 @@ namespace MultiWorldTesting {
 
 		String^ GetAllInteractionsAsString();
 		cli::array<INTERACTION^>^ GetAllInteractions();
+
+	// Helper methods
+	public:
+		static cli::array<float>^ IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size);
+
+		generic <class T> where T : System::Object
+		static T FromIntPtr(IntPtr objectPtr);
+
+		generic <class T> where T : System::Object
+		static IntPtr ToIntPtr(T obj, [Out] GCHandle% objHandle);
 	};
 }

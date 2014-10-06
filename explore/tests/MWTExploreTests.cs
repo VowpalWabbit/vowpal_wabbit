@@ -22,7 +22,7 @@ namespace ExploreTests
 
             uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
                 new IntPtr(PolicyParams),
-                (IntPtr)contextHandle);
+                contextPtr);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -44,7 +44,7 @@ namespace ExploreTests
                 new StatelessPolicyDelegate(TestStatelessPolicyFunc),
                 NumActions);
 
-            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc((IntPtr)contextHandle);
+            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(contextPtr);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -69,7 +69,7 @@ namespace ExploreTests
 
             uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
                 new IntPtr(PolicyParams),
-                (IntPtr)contextHandle);
+                contextPtr);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -88,7 +88,7 @@ namespace ExploreTests
                 new StatelessPolicyDelegate(TestStatelessPolicyFunc),
                 NumActions);
 
-            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc((IntPtr)contextHandle);
+            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(contextPtr);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -115,7 +115,7 @@ namespace ExploreTests
 
             uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
                 new IntPtr(PolicyParams),
-                (IntPtr)contextHandle);
+                contextPtr);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -142,7 +142,7 @@ namespace ExploreTests
             mwt.InitializeBagging(Bags, funcs, NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(
-                (IntPtr)contextHandle);
+                contextPtr);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -213,7 +213,7 @@ namespace ExploreTests
             features[1].WeightIndex = 2;
 
             context = new CONTEXT(features, "Other C# test context");
-            contextHandle = GCHandle.Alloc(context);
+            contextPtr = MwtExplorer.ToIntPtr<CONTEXT>(context, out contextHandle);
         }
 
         [TestCleanup]
@@ -224,24 +224,21 @@ namespace ExploreTests
 
         private static UInt32 TestStatelessPolicyFunc(IntPtr applicationContext)
         {
-            GCHandle contextHandle = (GCHandle)applicationContext;
-            CONTEXT context = (contextHandle.Target as CONTEXT);
+            CONTEXT context = MwtExplorer.FromIntPtr<CONTEXT>(applicationContext);
             
             return ActionID.Make_OneBased((uint)context.Features.Length % MWTExploreTests.NumActions);
         }
 
         private static UInt32 TestStatefulPolicyFunc(IntPtr policyParams, IntPtr applicationContext)
         {
-            GCHandle contextHandle = (GCHandle)applicationContext;
-            CONTEXT context = (contextHandle.Target as CONTEXT);
+            CONTEXT context = MwtExplorer.FromIntPtr<CONTEXT>(applicationContext);
 
             return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
         }
 
         private static void TestStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, IntPtr scoresPtr, uint size)
         {
-            float[] scores = new float[size];
-            Marshal.Copy(scoresPtr, scores, 0, (int)size);
+            float[] scores = MwtExplorer.IntPtrToScoreArray(scoresPtr, size);
 
             for (uint i = 0; i < size; i++)
             {
@@ -250,8 +247,7 @@ namespace ExploreTests
         }
         private static void TestStatelessScorerFunc(IntPtr applicationContext, IntPtr scoresPtr, uint size)
         {
-            float[] scores = new float[size];
-            Marshal.Copy(scoresPtr, scores, 0, (int)size);
+            float[] scores = MwtExplorer.IntPtrToScoreArray(scoresPtr, size);
 
             for (uint i = 0; i < size; i++)
             {
@@ -273,6 +269,7 @@ namespace ExploreTests
         private MwtExplorer mwt;
         private FEATURE[] features;
         private CONTEXT context;
+        private IntPtr contextPtr;
         private GCHandle contextHandle;
     }
 }

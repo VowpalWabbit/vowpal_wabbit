@@ -18,15 +18,17 @@ namespace cs_test
             return 111;
         }
 
-        private static void MyStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, float[] scores, uint size)
+        private static void MyStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, IntPtr scoresPtr, uint size)
         {
+            float[] scores = MwtExplorer.IntPtrToScoreArray(scoresPtr, size);
             for (uint i = 0; i < size; i++)
             {
                 scores[i] = (int)policyParams + i;
             }
         }
-        private static void MyStatelessScorerFunc(IntPtr applicationContext, float[] scores, uint size)
+        private static void MyStatelessScorerFunc(IntPtr applicationContext, IntPtr scoresPtr, uint size)
         {
+            float[] scores = MwtExplorer.IntPtrToScoreArray(scoresPtr, size);
             for (uint i = 0; i < size; i++)
             {
                 scores[i] = i;
