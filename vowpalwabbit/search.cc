@@ -69,7 +69,8 @@ namespace Search {
     bool auto_condition_features;  // do you want us to automatically add conditioning features?
     bool auto_hamming_loss;        // if you're just optimizing hamming loss, we can do it for you!
     bool examples_dont_change;     // set to true if you don't do any internal example munging
-    bool is_ldf;                   // set to true if you'll generate LDF data
+    bool is_ldf;                   // user declared ldf
+    
     v_array<int32_t> neighbor_features; // ugly encoding of neighbor feature requirements
     auto_condition_settings acset; // settings for auto-conditioning
     size_t history_length;         // value of --search_history_length, used by some tasks, default 1
@@ -365,7 +366,6 @@ namespace Search {
                   (uint32_t) (((priv.dat_new_feature_idx + idx2) << ss) ) };
     priv.dat_new_feature_ec->atomics[priv.dat_new_feature_namespace].push_back(f);
     priv.dat_new_feature_ec->sum_feat_sq[priv.dat_new_feature_namespace] += f.x * f.x;
-    
     if (priv.all->audit) {
       audit_data a = { NULL, NULL, f.weight_index, f.x, true };
       a.space   = (char*)calloc_or_die(priv.dat_new_feature_feature_space->length()+1, sizeof(char));
@@ -678,6 +678,8 @@ namespace Search {
 
   action single_prediction_LDF(search_private& priv, example* ecs, size_t ec_cnt, int policy) {
     CS::cs_label.default_label(&priv.ldf_test_label);
+    CS::wclass wc = { 0., 1, 0., 0. };
+    priv.ldf_test_label.costs.push_back(wc);
 
     // keep track of best (aka chosen) action
     float  best_prediction = 0.;
@@ -758,7 +760,6 @@ namespace Search {
   }
   
   void record_action(search_private& priv, ptag mytag, action a) {
-    if (priv.state == INIT_TEST) priv.test_action_sequence.push_back(a);
     if (mytag == 0) return;
     push_at(priv.ptag_to_action, a, mytag);
   }
@@ -845,22 +846,39 @@ namespace Search {
       priv.total_examples_generated++;
     } else {              // is  LDF
       assert(losses.size() == priv.learn_ec_ref_cnt);
+      bool alloced[losses.size()];
       for (action a=0; a<priv.learn_ec_ref_cnt; a++) {
         example& ec = priv.learn_ec_ref[a];
-        CS::label* lab = (CS::label*)ec.ld;
-        lab->costs[0].x = losses[a] - min_loss;
+        if (ec.ld == NULL) {
+          ec.ld = new CS::label;
+          alloced[a] = true;
+        }
+        CS::label& lab = * (CS::label*)ec.ld;
+        if (lab.costs.size() == 0) {
+          CS::wclass wc = { 0., 1, 0., 0. };
+          lab.costs.push_back(wc);
+        }
+        lab.costs[0].x = losses[a] - min_loss;
         ec.in_use = true;
         if (add_conditioning) add_example_conditioning(priv, ec, priv.learn_condition_on.begin, priv.learn_condition_on.size(), priv.learn_condition_on_names.begin, priv.learn_condition_on_act.begin);
         priv.base_learner->learn(ec, learner);
+        cdbg << "generate_training_example called learn on action a=" << a << ", costs.size=" << lab.costs.size() << " ec=" << &ec << endl;
         priv.total_examples_generated++;
       }
       priv.base_learner->learn(*priv.empty_example, learner);
+      cdbg << "generate_training_example called learn on empty_example" << endl;
 
-      if (add_conditioning) 
-        for (action a=0; a<priv.learn_ec_ref_cnt; a++) {
-          example& ec = priv.learn_ec_ref[a];
-          del_example_conditioning(priv, ec);
+      for (action a=0; a<priv.learn_ec_ref_cnt; a++) {
+        example& ec = priv.learn_ec_ref[a];
+        if (alloced[a]) {
+          CS::label* lab = (CS::label*)ec.ld;
+          lab->costs.delete_v();
+          delete lab;
+          ec.ld = NULL;
         }
+        if (add_conditioning) 
+          del_example_conditioning(priv, ec);
+      }
     }
   }
   
@@ -1595,10 +1613,6 @@ namespace Search {
     check_option<string>(task_string, all, vm, "search_task", false, string_equal,
                          "warning: specified --search_task different than the one loaded from regressor. using loaded value of: ",
                          "error: you must specify a task using --search_task");
-    // if (vm.count("search_task")) {
-    //   task_string = vm["search_task"].as<string>();
-    //   cerr << "task_string = " << task_string << endl;
-    // }
       
     check_option<string>(interpolation_string, all, vm, "search_interpolation", false, string_equal,
                          "warning: specified --search_interpolation different than the one loaded from regressor. using loaded value of: ", "");
@@ -1704,10 +1718,10 @@ namespace Search {
     cdbg << "search current_policy = " << priv.current_policy << " total_number_of_policies = " << priv.total_number_of_policies << endl;
 
     if (task_string.compare("list") == 0) {
-      cerr << endl << "available search tasks:" << endl;
+      std::cerr << endl << "available search tasks:" << endl;
       for (search_task** mytask = all_tasks; *mytask != NULL; mytask++)
-        cerr << "  " << (*mytask)->task_name << endl;
-      cerr << endl;
+        std::cerr << "  " << (*mytask)->task_name << endl;
+      std::cerr << endl;
       exit(0);
     }
     for (search_task** mytask = all_tasks; *mytask != NULL; mytask++)
@@ -1769,9 +1783,12 @@ namespace Search {
   }
   
   // the interface:
+  bool search::is_ldf() { return this->priv->is_ldf; }
+
   action search::predict(example& ec, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, const action* allowed_actions, size_t allowed_actions_cnt, size_t learner_id) {
     action a = search_predict(*this->priv, &ec, 1, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, allowed_actions, allowed_actions_cnt, learner_id);
-    record_action(*this->priv, mytag, a);
+    if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
+    if (mytag != 0) push_at(priv->ptag_to_action, a, mytag);
     if (this->priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
     cdbg << "predict returning " << a << endl;
@@ -1780,8 +1797,8 @@ namespace Search {
 
   action search::predictLDF(example* ecs, size_t ec_cnt, ptag mytag, const action* oracle_actions, size_t oracle_actions_cnt, const ptag* condition_on, const char* condition_on_names, size_t learner_id) {
     action a = search_predict(*this->priv, ecs, ec_cnt, mytag, oracle_actions, oracle_actions_cnt, condition_on, condition_on_names, NULL, 0, learner_id);
-    action a_name = ((CS::label*)ecs[a].ld)->costs[0].class_index;
-    record_action(*this->priv, mytag, a_name);
+    if (priv->state == INIT_TEST) priv->test_action_sequence.push_back(a);
+    if (mytag != 0) push_at(priv->ptag_to_action, ((CS::label*)ecs[a].ld)->costs[0].class_index, mytag);
     if (this->priv->auto_hamming_loss)
       loss(action_hamming_loss(a, oracle_actions, oracle_actions_cnt));
     cdbg << "predict returning " << a << endl;
@@ -1830,29 +1847,50 @@ namespace Search {
   
   
   // predictor implementation
-  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }
+  predictor::predictor(search& sch, ptag my_tag) : is_ldf(false), my_tag(my_tag), ec(NULL), ec_cnt(0), ec_alloced(false), oracle_is_pointer(false), allowed_is_pointer(false), learner_id(0), sch(sch) { }
 
   predictor::~predictor() {
     if (! oracle_is_pointer) oracle_actions.delete_v();
     if (! allowed_is_pointer) allowed_actions.delete_v();
+    if (ec_alloced)
+      free(ec);
     condition_on_tags.delete_v();
     condition_on_names.delete_v();
   }
 
   predictor& predictor::set_input(example&input_example) {
+    if (ec_alloced) free(ec);
     is_ldf = false;
     ec = &input_example;
     ec_cnt = 1;
+    ec_alloced = false;
     return *this;
   }
 
   predictor& predictor::set_input(example*input_example, size_t input_length) {
+    if (ec_alloced) free(ec);
     is_ldf = true;
     ec = input_example;
     ec_cnt = input_length;
+    ec_alloced = false;
     return *this;
   }
 
+  void predictor::set_input_length(size_t input_length) {
+    is_ldf = true;
+    if (ec_alloced) ec = (example*)realloc(ec, input_length * sizeof(example));
+    else            ec = (example*)calloc(input_length, sizeof(example));
+    for (size_t i=ec_cnt; i<input_length; i++)
+      ec[i].ld = calloc(1, CS::cs_label.label_size);
+    ec_cnt = input_length;
+    ec_alloced = true;
+  }
+  void predictor::set_input_at(size_t posn, example&ex) {
+    if (!ec_alloced) { std::cerr << "call to set_input_at without previous call to set_input_length" << endl; throw exception(); }
+    if (posn >= ec_cnt) { std::cerr << "call to set_input_at with too large a position" << endl; throw exception(); }
+    VW::copy_example_data(false, ec+posn, &ex, CS::cs_label.label_size, CS::cs_label.copy_label); // TODO: the false is "audit"
+  }
+  
   void predictor::make_new_pointer(v_array<action>& A, size_t new_size) {
     size_t old_size      = A.size();
     action* old_pointer  = A.begin;
@@ -1905,7 +1943,7 @@ namespace Search {
     return *this;
   }
 
-  
+  predictor& predictor::erase_oracles() { if (oracle_is_pointer) oracle_actions.end = oracle_actions.begin; else oracle_actions.erase(); return *this; }
   predictor& predictor::add_oracle(action a) { return add_to(oracle_actions, oracle_is_pointer, a, false); }
   predictor& predictor::add_oracle(action*a, size_t action_count) { return add_to(oracle_actions, oracle_is_pointer, a, action_count, false); }
   predictor& predictor::add_oracle(v_array<action>& a) { return add_to(oracle_actions, oracle_is_pointer, a.begin, a.size(), false); }
@@ -1914,6 +1952,7 @@ namespace Search {
   predictor& predictor::set_oracle(action*a, size_t action_count) { return add_to(oracle_actions, oracle_is_pointer, a, action_count, true); }
   predictor& predictor::set_oracle(v_array<action>& a) { return add_to(oracle_actions, oracle_is_pointer, a.begin, a.size(), true); }
 
+  predictor& predictor::erase_alloweds() { if (allowed_is_pointer) allowed_actions.end = allowed_actions.begin; else allowed_actions.erase(); return *this; }
   predictor& predictor::add_allowed(action a) { return add_to(allowed_actions, allowed_is_pointer, a, false); }
   predictor& predictor::add_allowed(action*a, size_t action_count) { return add_to(allowed_actions, allowed_is_pointer, a, action_count, false); }
   predictor& predictor::add_allowed(v_array<action>& a) { return add_to(allowed_actions, allowed_is_pointer, a.begin, a.size(), false); }
