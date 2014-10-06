@@ -168,6 +168,22 @@ namespace vw_explore_tests
 			delete expected_probs;
 		}
 
+		/*
+		TEST_METHOD(RewardReporter)
+		{
+			size_t num_interactions = 0;
+			Interaction** interactions = nullptr;
+			m_mwt->Get_All_Interactions(num_interactions, interactions);
+
+			//TODO: These are completely bogus calls for now just to force compilation of templated methods
+			MWTRewardReporter* rew = new MWTRewardReporter(num_interactions, interactions);
+			MWTOptimizer* opt = new MWTOptimizer(num_interactions, interactions);
+			rew->ReportReward(1, 2.0);
+			int temp = 5;
+			opt->Evaluate_Policy<int>(Stateful_Default_Policy, &temp);
+		}
+		*/
+
 		TEST_METHOD(PRGCoverage)
 		{
 			m_mwt->Initialize_Softmax(m_lambda, Stateless_Default_Scorer, m_num_actions);

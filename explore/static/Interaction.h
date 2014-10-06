@@ -57,6 +57,12 @@ public:
 	u32 Get_Id() const { return m_id; }
 	u32 Get_Id_ZeroBased() const { return m_id - 1; }
 
+	//TODO: Consider making this virtual and extensible (depends on ActionSet and what we expose to the user)
+	bool Match(MWTAction& second_action)
+	{
+		return m_id == second_action.Get_Id();
+	}
+
 	void Serialize(std::ostringstream& stream)
 	{
 		stream << m_id;
@@ -94,9 +100,10 @@ public:
 		return m_count;
 	}
 
-	virtual bool Match(MWTAction* firstAction, MWTAction* secondAction)
+	virtual bool Match(MWTAction& first_action, MWTAction& second_action)
 	{
-		return firstAction->Get_Id() == secondAction->Get_Id();
+		// The default matcher just compares the two actions in isolation
+		return first_action.Match(second_action);
 	}
 
 private:

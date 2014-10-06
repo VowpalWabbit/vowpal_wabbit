@@ -132,7 +132,8 @@ public:
 	void Initialize_Epsilon_Greedy(
 		float epsilon, 
 		Stateful_Policy_Func default_policy_func, 
-		void* default_policy_func_argument, u32 num_actions)
+		void* default_policy_func_argument, 
+		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
 
@@ -274,10 +275,10 @@ public:
 		{
 			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
 		}
-		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
-		m_logger->Store(&pInteraction);
+		Interaction interaction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
+		m_logger->Store(&interaction);
 
-		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), pInteraction.Get_Id());
+		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), interaction.Get_Id());
 	}
 
 	std::string Get_All_Interactions()
@@ -324,7 +325,12 @@ public:
 	{
 		for (u64 i = 0; i < num_interactions; i++)
 		{
-			m_interactions[interactions[i]->Get_Id()] = interactions[i];
+			// Datasets returned by MWT apis should not contain null entries, but we check here
+			// in case the user modified/mishandled the dataset. 
+			if (interactions[i])
+			{
+				m_interactions[interactions[i]->Get_Id()] = interactions[i];
+			}
 		}
 	}
 
@@ -346,17 +352,21 @@ public:
 		{
 			all_ids_present &= ReportReward(ids[i], rewards[i]);
 		}
+		return all_ids_present;
 	}
 
 	std::string Get_All_Interactions()
 	{
 		std::ostringstream serialized_stream;
-		for (auto iter : m_interactions)
+		for (auto interaction : m_interactions)
 		{
-			iter.second->Serialize(serialized_stream);
+			interaction.second->Serialize(serialized_stream);
 		}
 		return serialized_stream.str();
 	}
+
+	//TODO: Add interface to get all interactions as array? How about get all complete interactions? 
+	// Or something to set the reward for all incomplete interactions?
 
 private:
 	std::map<u64, Interaction*> m_interactions;
@@ -368,5 +378,81 @@ private:
 //
 class MWTOptimizer
 {
+public:
+	MWTOptimizer(size_t& num_interactions, Interaction* interactions[])
+	{
+		//TODO: Accept an ActionSet param that we'll use to call Match()? Maybe we should just accept a 
+		// Match() method
 
+		for (u64 i = 0; i < num_interactions; i++)
+		{
+			// Datasets returned by MWT apis should not contain null entries, but we check here
+			// in case the user modified/mishandled the dataset. 
+			if (interactions[i])
+			{
+				m_interactions.push_back(interactions[i]);
+			}
+		}
+	}
+
+	template <class T>
+	float Evaluate_Policy(
+		typename StatefulFunctionWrapper<T>::Policy_Func policy_func,
+		T* policy_params)
+	{
+		StatefulFunctionWrapper<T> func_Wrapper = StatefulFunctionWrapper<T>();
+		func_Wrapper.m_policy_function = (Stateful_Policy_Func*)policy_func;
+
+		return Evaluate_Policy<T>(func_Wrapper, policy_params);
+	}
+
+	float Evaluate_Policy(StatelessFunctionWrapper::Policy_Func policy_func)
+	{
+		StatelessFunctionWrapper func_Wrapper = StatelessFunctionWrapper();
+		func_Wrapper.m_policy_function = (Stateless_Policy_Func*)policy_func;
+
+		return Evaluate_Policy<MWT_Empty>(func_Wrapper, nullptr);
+	}
+
+	//TODO: Invoke vw.exe command-line or internal API
+	void Optimize_Policy()
+	{
+	}
+
+private:
+	template <class T>
+	float Evaluate_Policy(
+		BaseFunctionWrapper& policy_func_wrapper,
+		T* policy_params)
+	{
+		double sum_weighted_rewards = 0.0;
+		u64 count = 0;
+
+		for (auto pInteraction : m_interactions)
+		{
+			MWTAction policy_action(0);
+			if (typeid(policy_func_wrapper) == typeid(StatelessFunctionWrapper))
+			{
+				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&policy_func_wrapper);
+				policy_action = MWTAction(stateless_function_wrapper->m_policy_function(pInteraction->Get_Context()));
+			}
+			else
+			{
+				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&policy_func_wrapper);
+				policy_action = MWTAction(stateful_function_wrapper->m_policy_function(policy_params, pInteraction->Get_Context()));
+			}
+			// If the policy action matches the action logged in the interaction, include the
+			// (importance-weighted) reward in our average
+			if (policy_action.Match(pInteraction->Get_Action()))
+			{
+				sum_weighted_rewards += pInteraction->Get_Reward() * (1.0 / pInteraction->Get_Prob());
+				count++;
+			}
+		}
+
+		return (sum_weighted_rewards / count);
+	}
+
+private:
+	std::vector<Interaction*> m_interactions;
 };
