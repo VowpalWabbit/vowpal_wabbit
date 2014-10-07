@@ -82,21 +82,21 @@ namespace DepParserTask {
 	} // if we had task data, we'd want to free it here
 
 	void inline add_feature(example *ex,  uint32_t idx, unsigned  char ns, size_t mask, size_t ss){
-		feature f = {1.0f, ((idx+offset_const*ns)<<ss)&mask};
+		feature f = {1.0f, (idx<<ss)&mask};
 		ex->atomics[(int)ns].push_back(f);
 	}
 	void add_quad_features(Search::search& srn, example *ex){
 		size_t ss = srn.get_stride_shift();
 		size_t mask = srn.get_mask();
+		size_t additional_offset = quad_namespace*offset_const;
 		task_data *data = srn.get_task_data<task_data>();
 		for(uint32_t idx=0; idx< data->pairs.size(); idx++){
 			unsigned char ns_a = data->pairs[idx][0];
 			unsigned char ns_b = data->pairs[idx][1];
 			for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
+				uint32_t offset = (ex->atomics[(int)ns_a][i].weight_index>>ss) *quadratic_constant+additional_offset;
 				for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
-					uint32_t idx1 =  ex->atomics[(int)ns_a][i].weight_index>>ss;
-					uint32_t idx2 =  ex->atomics[(int)ns_b][j].weight_index>>ss;
-					add_feature(ex, (idx1*quadratic_constant + idx2) ,quad_namespace, mask, ss);
+					add_feature(ex,  offset+ (ex->atomics[(int)ns_b][j].weight_index>>ss) , quad_namespace, mask, ss);
 				}
 			}
 		}
@@ -105,17 +105,17 @@ namespace DepParserTask {
 		size_t ss = srn.get_stride_shift();
 		size_t mask = srn.get_mask();
 		task_data *data = srn.get_task_data<task_data>();
+		size_t additional_offset = cubic_namespace*offset_const;
 		for(uint32_t idx=0; idx< data->triples.size(); idx++){
 			unsigned char ns_a = data->triples[idx][0];
 			unsigned char ns_b = data->triples[idx][1];
 			unsigned char ns_c = data->triples[idx][2];
 			for(uint32_t i=0; i< ex->atomics[(int)ns_a].size();i++){
+				uint32_t offset1 =  (ex->atomics[(int)ns_a][i].weight_index>>ss)*cubic_constant;
 				for(uint32_t j=0; j< ex->atomics[(int)ns_b].size();j++){
+					uint32_t offset2 =  ((ex->atomics[(int)ns_b][j].weight_index>>ss)+offset1)*cubic_constant2+additional_offset;
 					for(uint32_t k=0; k< ex->atomics[(int)ns_c].size();k++){
-					uint32_t idx1 =  ex->atomics[(int)ns_a][i].weight_index>>ss;
-					uint32_t idx2 =  ex->atomics[(int)ns_b][j].weight_index>>ss;
-					uint32_t idx3 =  ex->atomics[(int)ns_c][j].weight_index>>ss;
-						add_feature(ex, (cubic_constant2 * (cubic_constant * idx3 + idx2)+idx1), cubic_namespace, mask, ss);
+						add_feature(ex, offset2 + ( ex->atomics[(int)ns_c][k].weight_index>>ss) , cubic_namespace, mask, ss);
 					}
 				}
 			}
@@ -244,7 +244,7 @@ namespace DepParserTask {
 		}
 	    data->ex->indices.push_back(constant_namespace);
 	}
-
+	
 	// This function needs to be very fast
 	void extract_features(Search::search& srn, uint32_t idx,  vector<example*> &ec) {
 		task_data *data = srn.get_task_data<task_data>();
@@ -295,12 +295,14 @@ namespace DepParserTask {
 			for (unsigned char* fs = ec[0]->indices.begin; fs != ec[0]->indices.end; fs++) {
 				if(*fs == constant_namespace) // ignore constant_namespace
 					continue;
+
+				size_t additional_offset = (i*nfs+j)*offset_const;
 				for(size_t k=0; k<ec[0]->atomics[*fs].size(); k++) {
 					if(!ec_buf[i])
 						v0 = affix_constant*((j+1)*quadratic_constant + k);
 					else
 						v0 = (ec_buf[i]->atomics[*fs][k].weight_index>>ss);
-					add_feature(&ex, (uint32_t) v0, i*nfs+j, mask, ss);
+					add_feature(&ex, (uint32_t) v0 + additional_offset, i*nfs+j, mask, ss);
 				}
 				j++;
 			}
@@ -318,8 +320,9 @@ namespace DepParserTask {
 		// #left child of rightmost item in buf
 		temp[3] = idx>n? 1: 1+min(5 , children[0][idx]);
 
+		size_t additional_offset = val_namespace*offset_const;
 		for(int j=0; j< 4;j++) {
-			add_feature(&ex, (uint32_t) temp[j], val_namespace, mask, ss);
+			add_feature(&ex, (uint32_t) temp[j]+additional_offset , val_namespace, mask, ss);
 		}
 	
 		if(!data->no_quadratic_features)
