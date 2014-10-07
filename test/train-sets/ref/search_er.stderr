@@ -1,0 +1,24 @@
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+creating cache_file = train-sets/er_small.vw.cache
+Reading datafile = train-sets/er_small.vw
+num sources = 1
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+1.000000   1.000000          1  [4                   ] [1                   ]     0     0        1        0        1  0.000000
+2.500000   4.000000          2  [2 4 2 5 10 10       ] [4 4 4 7 7 7         ]     0     0        7        0        7  0.000000
+3.500000   4.500000          4  [1 4 4 1 10 10 10 1..] [4 4 4 4 10 10 10 1..]     1     0       33        0       33  0.000000
+1.750000   0.000000          8  [2 4 2 5 10 10       ] [2 4 2 5 10 10       ]     2     0       39        0       71  0.000001
+0.937500   0.125000         16  [1 4 4 1 10 10 10 1..] [1 4 4 1 10 10 10 1..]     5     0       50        0      161  0.000002
+
+finished run
+number of examples per pass = 3
+passes used = 6
+weighted example sum = 19
+weighted label sum = 0
+average loss = 0.789474
+best constant = 0
+total feature number = 613

@@ -1036,3 +1036,8 @@ __DATA__
     train-sets/ref/ksvm_train.rbf.stderr
     train-sets/ref/ksvm_train.rbf.predict
 
+# Test 65: Run search (dagger) on an entity-relation recognitions data set, er_small, for 6 passes with constraints
+{VW} -k -c -d train-sets/er_small.vw --passes 6 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8 
+    train-sets/ref/search_er.stderr
+
+
