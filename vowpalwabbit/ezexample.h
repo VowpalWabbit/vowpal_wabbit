@@ -172,9 +172,9 @@ class ezexample {
   // copy an entire namespace from this other example, you can even give it a new namespace name if you want!
   void add_other_example_ns(example& other, char other_ns, char to_ns) {
     if (ensure_ns_exists(to_ns)) return;
-    for (feature*f = other.atomics[(unsigned char)other_ns].begin; f != other.atomics[(unsigned char)other_ns].end; ++f) {
-      ec->atomics[(unsigned char)to_ns].push_back(*f);
-      ec->sum_feat_sq[(unsigned char)to_ns] += f->x * f->x;
+    for (feature*f = other.atomics[(int)other_ns].begin; f != other.atomics[(int)other_ns].end; ++f) {
+      ec->atomics[(int)to_ns].push_back(*f);
+      ec->sum_feat_sq[(int)to_ns] += f->x * f->x;
       ec->total_sum_feat_sq += f->x * f->x;
       ec->num_features++;
     }
@@ -268,10 +268,7 @@ class ezexample {
       example_copies.erase();
     }
   }
-
-  example* get_example(){
-	  return ec;
-  }
+    
 
   // HELPER FUNCTIONALITY
 
