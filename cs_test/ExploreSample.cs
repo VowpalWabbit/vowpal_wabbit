@@ -35,7 +35,7 @@ namespace cs_test
             }
         }
 
-        public static void RunMWTExploreTest()
+        public static void Run()
         {
             MwtExplorer mwt = new MwtExplorer();
 
@@ -105,23 +105,24 @@ namespace cs_test
             float epsilon = .2f;
             int policyParams = 1003;
             string uniqueKey = "clock";
-            int numFeatures = 10000;
-            int numIter = 5;
-            int numInteractions = 200;
+            int numFeatures = 1000;
+            int numIter = 1000;
+            int numWarmup = 1000;
+            int numInteractions = 1;
             uint numActions = 10;
             string otherContext = null;
             
             double timeInit = 0, timeChoose = 0, timeSerializedLog = 0, timeTypedLog = 0;
 
             System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
-            for (int iter = 0; iter < numIter + 1; iter++)
+            for (int iter = 0; iter < numIter + numWarmup; iter++)
             {
                 watch.Restart();
                 
                 MwtExplorer mwt = new MwtExplorer();
                 mwt.InitializeEpsilonGreedy(epsilon, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
 
-                timeInit += (iter == 0) ? 0 : watch.ElapsedMilliseconds;
+                timeInit += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 
                 FEATURE[] f = new FEATURE[numFeatures];
                 for (int i = 0; i < numFeatures; i++)
@@ -140,13 +141,13 @@ namespace cs_test
                     mwt.ChooseActionAndKey(context);
                 }
 
-                timeChoose += (iter == 0) ? 0 : watch.ElapsedMilliseconds;
+                timeChoose += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 
                 watch.Restart();
 
                 string interactions = mwt.GetAllInteractionsAsString();
 
-                timeSerializedLog += (iter == 0) ? 0 : watch.ElapsedMilliseconds;
+                timeSerializedLog += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 
                 for (int i = 0; i < numInteractions / 2; i++)
                 {
@@ -158,15 +159,15 @@ namespace cs_test
 
                 mwt.GetAllInteractions();
 
-                timeTypedLog += (iter == 0) ? 0 : watch.ElapsedMilliseconds;
-
-                Console.WriteLine("Iteration {0}", iter + 1);
+                timeTypedLog += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
             }
+            Console.WriteLine("--- PER ITERATION ---");
             Console.WriteLine("# iterations: {0}, # interactions: {1}, # context features {2}", numIter, numInteractions, numFeatures);
-            Console.WriteLine("Init: {0}ms", timeInit / numIter);
-            Console.WriteLine("Choose Action: {0}ms", timeChoose / (numIter * numInteractions));
-            Console.WriteLine("Get Serialized Log: {0}ms", timeSerializedLog / numIter);
-            Console.WriteLine("Get Typed Log: {0}ms", timeTypedLog / numIter);
+            Console.WriteLine("Init: {0} micro", timeInit * 1000 / numIter);
+            Console.WriteLine("Choose Action: {0} micro", timeChoose * 1000 / (numIter * numInteractions));
+            Console.WriteLine("Get Serialized Log: {0} micro", timeSerializedLog * 1000 / numIter);
+            Console.WriteLine("Get Typed Log: {0} micro", timeTypedLog * 1000 / numIter);
+            Console.WriteLine("--- TOTAL TIME: {0} micro", (timeInit + timeChoose + timeSerializedLog + timeTypedLog) * 1000);
         }
     }
 }
