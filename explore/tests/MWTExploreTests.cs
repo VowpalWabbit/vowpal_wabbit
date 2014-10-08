@@ -204,7 +204,7 @@ namespace ExploreTests
         [TestInitialize]
         public void TestInitialize()
         {
-            mwt = new MwtExplorer("MWTManagedTests");
+            mwt = new MwtExplorer();
 
             features = new FEATURE[2];
             features[0].X = 0.5f;

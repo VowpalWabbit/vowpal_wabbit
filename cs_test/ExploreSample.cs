@@ -37,7 +37,7 @@ namespace cs_test
 
         public static void RunMWTExploreTest()
         {
-            MwtExplorer mwt = new MwtExplorer("myTestApp");
+            MwtExplorer mwt = new MwtExplorer();
 
             uint numActions = 10;
             
@@ -102,7 +102,6 @@ namespace cs_test
 
         public static void Clock()
         {
-            string appId = "ClockApp";
             float epsilon = .2f;
             int policyParams = 1003;
             string uniqueKey = "clock";
@@ -119,7 +118,7 @@ namespace cs_test
             {
                 watch.Restart();
                 
-                MwtExplorer mwt = new MwtExplorer(appId);
+                MwtExplorer mwt = new MwtExplorer();
                 mwt.InitializeEpsilonGreedy(epsilon, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
 
                 timeInit += (iter == 0) ? 0 : watch.ElapsedMilliseconds;

@@ -13,9 +13,9 @@ using namespace msclr::interop;
 
 namespace MultiWorldTesting {
 
-	MwtExplorer::MwtExplorer(System::String^ appId)
+	MwtExplorer::MwtExplorer()
 	{
-		m_mwt = new MWTExplorer(msclr::interop::marshal_as<std::string>(appId));
+		m_mwt = new MWTExplorer();
 	}
 
 	MwtExplorer::~MwtExplorer()

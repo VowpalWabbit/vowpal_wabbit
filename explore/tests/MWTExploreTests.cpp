@@ -271,8 +271,7 @@ namespace vw_explore_tests
 			C = 5.0;
 
 			m_num_actions = 10;
-			m_app_id = "MWT Test App";
-			m_mwt = new MWTExplorer(m_app_id);
+			m_mwt = new MWTExplorer();
 
 			//TODO: We should eventually test randomization, else we are missing code paths
 			// Initialize with 0 to test deterministic result
@@ -384,7 +383,6 @@ namespace vw_explore_tests
 		static const u32 NUM_ACTIONS_COVER = 100;
 		float C;
 
-		string m_app_id;
 		MWTExplorer* m_mwt;
 
 		u32 m_bags;

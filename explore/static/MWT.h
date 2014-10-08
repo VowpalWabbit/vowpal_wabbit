@@ -18,16 +18,11 @@
 class MWTExplorer
 {
 public:
-	MWTExplorer(std::string& app_id) : m_app_id(app_id)
+	MWTExplorer()
 	{
 		IdGenerator::Initialize();
 
-		if (m_app_id.empty())
-		{
-			m_app_id = this->Generate_App_Id();
-		}
-
-		m_logger = new Logger(m_app_id);
+		m_logger = new Logger();
 		m_explorer = nullptr;
 		m_default_func_wrapper = nullptr;
 		m_action_set = nullptr;
@@ -292,14 +287,6 @@ public:
 	}
 
 private:
-	// TODO: App ID + Interaction ID is the unique identifier
-	// Users can specify a seed and we use it to generate app id for them
-	// so we can guarantee uniqueness.
-	std::string Generate_App_Id()
-	{
-		return ""; // TODO: implement
-	}
-
 	u32 Compute_Seed(char* unique_id, u32 length)
 	{
 		// TODO: change return type to u64, may need to revisit this hash function
@@ -307,7 +294,6 @@ private:
 	}
 
 private:
-	std::string m_app_id;
 	Explorer* m_explorer;
 	Logger* m_logger;
 	ActionSet* m_action_set;

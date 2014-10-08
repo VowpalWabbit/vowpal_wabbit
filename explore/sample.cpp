@@ -44,7 +44,6 @@ void Stateless_Default_Scorer(Context* application_Context, float scores[], u32 
 
 void Clock_Explore()
 {
-	string appId = "myapp";
 	float epsilon = .2f;
 	int policy_params = 101;
 	string unique_key = "key";
@@ -57,7 +56,7 @@ void Clock_Explore()
 	{
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-		MWTExplorer mwt(appId);
+		MWTExplorer mwt;
 		mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
 
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -116,11 +115,8 @@ void Clock_Explore()
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	// Sample driver code
-	string appId = "myapp";
-
 	// Create a new MWT instance
-	MWTExplorer mwt(appId);
+	MWTExplorer mwt;
 
 	float epsilon = .2f;
 	u32 tau = 5;

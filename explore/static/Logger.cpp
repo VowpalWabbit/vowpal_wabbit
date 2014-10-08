@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-Logger::Logger(std::string app_id) : m_app_id(app_id)
+Logger::Logger()
 {
 	this->Clear_Data();
 }

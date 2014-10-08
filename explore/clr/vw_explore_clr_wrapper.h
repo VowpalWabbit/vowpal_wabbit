@@ -56,7 +56,7 @@ namespace MultiWorldTesting {
 		MWTExplorer* m_mwt;
 
 	public:
-		MwtExplorer(String^ appId);
+		MwtExplorer();
 		~MwtExplorer();
 
 		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);

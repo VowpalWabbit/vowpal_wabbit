@@ -10,7 +10,7 @@ class Logger
 {
 public:
 
-	Logger(std::string app_id);
+	Logger();
 	~Logger();
 
 	void Store(Interaction* interaction);
@@ -24,7 +24,5 @@ private:
 	void Clear_Data();
 
 private:
-	std::string m_app_id;
-
 	std::vector<Interaction*> m_interactions;
 };
