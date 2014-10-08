@@ -47,31 +47,29 @@ void Clock_Explore()
 	float epsilon = .2f;
 	int policy_params = 101;
 	string unique_key = "key";
-	int num_features = 10000;
-	int num_iter = 5;
-	int num_interactions = 200;
+	int num_features = 1000;
+	int num_iter = 1000;
+	int num_warmup = 100;
+	int num_interactions = 1;
 
-	double time_init = 0, time_choose = 0, time_serialized_log = 0, time_typed_log = 0;
-	for (int iter = 0; iter < num_iter + 1; iter++)
+	// pre-create features
+	feature* features = new feature[num_features];
+	for (int i = 0; i < num_features; i++)
+	{
+		features[i].weight_index = i + 1;
+		features[i].x = 0.5;
+	}
+
+	long long time_init = 0, time_choose = 0, time_serialized_log = 0, time_typed_log = 0;
+	for (int iter = 0; iter < num_iter + num_warmup; iter++)
 	{
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
 		MWTExplorer mwt;
 		mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
-
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
-		
-		time_init += iter == 0 ? 0 : duration_cast<duration<double>>(t2 - t1).count();
-
-		feature* features = new feature[num_features];
-		for (int i = 0; i < num_features; i++)
-		{
-			features[i].weight_index = i + 1;
-			features[i].x = 0.5;
-		}
+		time_init += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
 		t1 = high_resolution_clock::now();
-
 		Context context(features, num_features);
 		for (int i = 0; i < num_interactions / 2; i++)
 		{
@@ -79,42 +77,43 @@ void Clock_Explore()
 			mwt.Choose_Action(context, unique_key);
 		}
 		t2 = high_resolution_clock::now();
-		time_choose += iter == 0 ? 0 : duration_cast<duration<double>>(t2 - t1).count();
+		time_choose += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
 		t1 = high_resolution_clock::now();
-
 		string logs = mwt.Get_All_Interactions();
-		
 		t2 = high_resolution_clock::now();
-		time_serialized_log += iter == 0 ? 0 : duration_cast<duration<double>>(t2 - t1).count();
+		time_serialized_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 
 		for (int i = 0; i < num_interactions / 2; i++)
 		{
 			mwt.Choose_Action_And_Key(context);
 			mwt.Choose_Action(context, unique_key);
 		}
-		t1 = high_resolution_clock::now();
 
+		t1 = high_resolution_clock::now();
 		Interaction** interactions = nullptr;
 		size_t n_inter = 0;
 		mwt.Get_All_Interactions(n_inter, interactions);
-		
 		t2 = high_resolution_clock::now();
-		time_typed_log += iter == 0 ? 0 : duration_cast<duration<double>>(t2 - t1).count();
-		delete features;
-
-		cout << "Iteration " << iter + 1 << endl;
+		time_typed_log += iter < num_warmup ? 0 : duration_cast<chrono::microseconds>(t2 - t1).count();
 	}
+	
+	delete features;
 
 	cout << "# iterations: " << num_iter << ", # interactions: " << num_interactions << ", # context features: " << num_features << endl;
-	cout << "Init: " << time_init * 1000 / num_iter << " ms" << endl;
-	cout << "Choose Action: " << time_choose * 1000 / (num_iter * num_interactions) << " ms" << endl;
-	cout << "Get Serialized Log: " << time_serialized_log * 1000 / num_iter << " ms" << endl;
-	cout << "Get Typed Log: " << time_typed_log * 1000 / num_iter << " ms" << endl;
+	cout << "--- PER ITERATION ---" << endl;
+	cout << "Init: " << (double)time_init / num_iter << " micro" << endl;
+	cout << "Choose Action: " << (double)time_choose / (num_iter * num_interactions) << " micro" << endl;
+	cout << "Get Serialized Log: " << (double)time_serialized_log / num_iter << " micro" << endl;
+	cout << "Get Typed Log: " << (double)time_typed_log / num_iter << " micro" << endl;
+	cout << "--- TOTAL TIME ---: " << (time_init + time_choose + time_serialized_log + time_typed_log) << " micro" << endl;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	Clock_Explore();
+	return 0;
+
 	// Create a new MWT instance
 	MWTExplorer mwt;
 
