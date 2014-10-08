@@ -50,19 +50,53 @@ namespace MultiWorldTesting {
 		static UInt32 Make_ZeroBased(UInt32 id) { return MWTAction::Make_ZeroBased(id); }
 	};
 
+	generic <class T>
+	public delegate UInt32 TemplateStatefulPolicyDelegate(T, CONTEXT^);
+
+	interface class IFunctionWrapper
+	{
+		public:
+			virtual UInt32 InvokeFunction(CONTEXT^) abstract;
+	};
+
+	generic <class T>
+	public ref class DefaultPolicyWrapper : IFunctionWrapper
+	{
+		public:
+			DefaultPolicyWrapper(TemplateStatefulPolicyDelegate<T>^ policyFunc, T policyParams)
+			{
+				defaultPolicy = policyFunc;
+				parameters = policyParams;
+			}
+
+			virtual UInt32 InvokeFunction(CONTEXT^ c) override
+			{
+				return defaultPolicy(parameters, c);
+			}
+		private:
+			T parameters;
+			TemplateStatefulPolicyDelegate<T>^ defaultPolicy;
+	};
+
 	public ref class MwtExplorer
 	{
 	private:
 		MWTExplorer* m_mwt;
+		IFunctionWrapper^ policyWrapper;
+		GCHandle selfHandle;
 
 	public:
 		MwtExplorer();
 		~MwtExplorer();
 
-		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+		generic <class T>
+		void InitializeEpsilonGreedy(float epsilon, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
+
 		void InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
 
-		void InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+		generic <class T>
+		void InitializeTauFirst(UInt32 tau, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
+
 		void InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
 
 		void InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions);
@@ -86,5 +120,14 @@ namespace MultiWorldTesting {
 
 		generic <class T> where T : System::Object
 		static IntPtr ToIntPtr(T obj, [Out] GCHandle% objHandle);
+
+	internal:
+		virtual UInt32 InvokeDefaultPolicyFunction(CONTEXT^) override;
+
+	private:
+		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+		void InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+
+		static UInt32 InternalStatefulPolicy(IntPtr, IntPtr);
 	};
 }

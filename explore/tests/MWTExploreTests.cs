@@ -15,9 +15,9 @@ namespace ExploreTests
         [TestMethod]
         public void EpsilonGreedyStateful()
         {
-            mwt.InitializeEpsilonGreedy(Epsilon, 
-                new StatefulPolicyDelegate(TestStatefulPolicyFunc),
-                new IntPtr(PolicyParams),
+            mwt.InitializeEpsilonGreedy<int>(Epsilon,
+                new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc),
+                PolicyParams,
                 NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
@@ -62,9 +62,9 @@ namespace ExploreTests
         [TestMethod]
         public void TauFirstStateful()
         {
-            mwt.InitializeTauFirst(Tau,
-                new StatefulPolicyDelegate(TestStatefulPolicyFunc),
-                new IntPtr(PolicyParams),
+            mwt.InitializeTauFirst<int>(Tau,
+                new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc),
+                PolicyParams,
                 NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
@@ -233,6 +233,11 @@ namespace ExploreTests
         {
             CONTEXT context = MwtExplorer.FromIntPtr<CONTEXT>(applicationContext);
 
+            return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
+        }
+
+        private static UInt32 TemplateStatefulPolicyFunc(int policyParams, CONTEXT context)
+        {
             return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
         }
 

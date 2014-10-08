@@ -35,6 +35,22 @@ namespace cs_test
             }
         }
 
+        private static UInt32 TemplateStatefulPolicyFunc(int parameters, CONTEXT context)
+        {
+            return (uint)((parameters + context.Features.Length) % 10 + 1);
+        }
+
+        private static UInt32 TemplateStatefulPolicyFunc(CustomParams parameters, CONTEXT context)
+        {
+            return (uint)((parameters.Value1 + parameters.Value2 + context.Features.Length) % 10 + 1);
+        }
+
+        class CustomParams
+        {
+            public int Value1;
+            public int Value2;
+        }
+
         public static void Run()
         {
             MwtExplorer mwt = new MwtExplorer();
@@ -42,20 +58,21 @@ namespace cs_test
             uint numActions = 10;
             
             float epsilon = 0.2f;
-            uint tau = 5;
+            uint tau = 0;
             uint bags = 10;
             float lambda = 0.5f;
 
             int policyParams = 1003;
+            CustomParams customParams = new CustomParams() { Value1 = policyParams, Value2 = policyParams + 1 };
 
             /*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
-            mwt.InitializeEpsilonGreedy(epsilon, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
+            //mwt.InitializeEpsilonGreedy<int>(epsilon, new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
 
             /*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
             //mwt.InitializeEpsilonGreedy(epsilon, new StatelessPolicyDelegate(MyStatelessPolicyFunc), numActions);
 
             /*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeTauFirst(tau, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
+            mwt.InitializeTauFirst<CustomParams>(tau, new TemplateStatefulPolicyDelegate<CustomParams>(TemplateStatefulPolicyFunc), customParams, numActions);
 
             /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
             //mwt.InitializeTauFirst(tau, new StatelessPolicyDelegate(MyStatelessPolicyFunc), numActions);
@@ -120,7 +137,7 @@ namespace cs_test
                 watch.Restart();
                 
                 MwtExplorer mwt = new MwtExplorer();
-                mwt.InitializeEpsilonGreedy(epsilon, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
+                mwt.InitializeEpsilonGreedy<int>(epsilon, new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
 
                 timeInit += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 

@@ -20,7 +20,28 @@ namespace MultiWorldTesting {
 
 	MwtExplorer::~MwtExplorer()
 	{
+		selfHandle.Free();
 		delete m_mwt;
+	}
+
+	generic <class T>
+	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultPolicyFunc, defaultPolicyFuncParams);
+		selfHandle = GCHandle::Alloc(this);
+		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
+		
+		this->InitializeEpsilonGreedy(epsilon, spDelegate, (IntPtr)selfHandle, numActions);
+	}
+
+	generic <class T>
+	void MwtExplorer::InitializeTauFirst(UInt32 tau, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultPolicyFunc, defaultPolicyFuncParams);
+		selfHandle = GCHandle::Alloc(this);
+		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
+
+		this->InitializeTauFirst(tau, spDelegate, (IntPtr)selfHandle, numActions);
 	}
 
 	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
@@ -240,6 +261,22 @@ namespace MultiWorldTesting {
 		}
 
 		return interactions;
+	}
+
+	UInt32 MwtExplorer::InvokeDefaultPolicyFunction(CONTEXT^ context)
+	{
+		return policyWrapper->InvokeFunction(context);
+	}
+
+	UInt32 MwtExplorer::InternalStatefulPolicy(IntPtr mwtPtr, IntPtr contextPtr)
+	{
+		GCHandle mwtHandle = (GCHandle)mwtPtr;
+		MwtExplorer^ mwt = (MwtExplorer^)(mwtHandle.Target);
+
+		GCHandle contextHandle = (GCHandle)contextPtr;
+		CONTEXT^ context = (CONTEXT^)(contextHandle.Target);
+
+		return mwt->InvokeDefaultPolicyFunction(context);
 	}
 
 	cli::array<float>^ MwtExplorer::IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size)
