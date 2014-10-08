@@ -40,6 +40,11 @@ namespace cs_test
             return (uint)((parameters + context.Features.Length) % 10 + 1);
         }
 
+        private static UInt32 TemplateStatefulPolicyFunc2(int parameters, CONTEXT context)
+        {
+            return (uint)((parameters + context.Features.Length) % 10 + 2);
+        }
+
         private static UInt32 TemplateStatefulPolicyFunc(CustomParams parameters, CONTEXT context)
         {
             return (uint)((parameters.Value1 + parameters.Value2 + context.Features.Length) % 10 + 1);
@@ -59,7 +64,7 @@ namespace cs_test
             
             float epsilon = 0.2f;
             uint tau = 0;
-            uint bags = 10;
+            uint bags = 2;
             float lambda = 0.5f;
 
             int policyParams = 1003;
@@ -72,19 +77,19 @@ namespace cs_test
             //mwt.InitializeEpsilonGreedy(epsilon, new StatelessPolicyDelegate(MyStatelessPolicyFunc), numActions);
 
             /*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
-            mwt.InitializeTauFirst<CustomParams>(tau, new TemplateStatefulPolicyDelegate<CustomParams>(TemplateStatefulPolicyFunc), customParams, numActions);
+            //mwt.InitializeTauFirst<CustomParams>(tau, new TemplateStatefulPolicyDelegate<CustomParams>(TemplateStatefulPolicyFunc), customParams, numActions);
 
             /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
             //mwt.InitializeTauFirst(tau, new StatelessPolicyDelegate(MyStatelessPolicyFunc), numActions);
 
             /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
-            //StatefulPolicyDelegate[] funcs = 
-            //{
-            //    new StatefulPolicyDelegate(MyStatefulPolicyFunc), 
-            //    new StatefulPolicyDelegate(MyStatefulPolicyFunc) 
-            //};
-            //IntPtr[] parameters = { new IntPtr(policyParams), new IntPtr(policyParams) };
-            //mwt.InitializeBagging(bags, funcs, parameters, numActions);
+            TemplateStatefulPolicyDelegate<int>[] funcs = 
+            {
+                new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), 
+                new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc2) 
+            };
+            int[] parameters = { policyParams, policyParams };
+            mwt.InitializeBagging<int>(bags, funcs, parameters, numActions);
 
             /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
             //StatelessPolicyDelegate[] funcs = 
@@ -112,6 +117,8 @@ namespace cs_test
             UInt32 chosenAction = mwt.ChooseAction(context, "myId");
 
             string interactions = mwt.GetAllInteractionsAsString();
+
+            mwt.Unintialize();
 
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);

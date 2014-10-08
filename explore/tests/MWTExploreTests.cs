@@ -103,12 +103,12 @@ namespace ExploreTests
         [TestMethod]
         public void BaggingStateful()
         {
-            StatefulPolicyDelegate[] funcs = new StatefulPolicyDelegate[Bags];
-            IntPtr[] funcParams = new IntPtr[Bags];
+            TemplateStatefulPolicyDelegate<int>[] funcs = new TemplateStatefulPolicyDelegate<int>[Bags];
+            int[] funcParams = new int[Bags];
             for (int i = 0; i < Bags; i++)
 			{
-                funcs[i] = new StatefulPolicyDelegate(TestStatefulPolicyFunc);
-                funcParams[i] = new IntPtr(PolicyParams);
+                funcs[i] = new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc);
+                funcParams[i] = PolicyParams;
 			}
 
             mwt.InitializeBagging(Bags, funcs, funcParams, NumActions);
@@ -177,6 +177,8 @@ namespace ExploreTests
             {
                 Assert.IsTrue(actions[i] > 0);
             }
+
+            mwt.GetAllInteractions();
         }
 
         [TestMethod]
@@ -199,6 +201,8 @@ namespace ExploreTests
             {
                 Assert.IsTrue(actions[i] > 0);
             }
+
+            mwt.GetAllInteractions();
         }
 
         [TestInitialize]
@@ -219,6 +223,7 @@ namespace ExploreTests
         [TestCleanup]
         public void TestCleanup()
         {
+            mwt.Unintialize();
             contextHandle.Free();
         }
 
