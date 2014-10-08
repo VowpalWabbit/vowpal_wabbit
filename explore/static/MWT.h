@@ -12,6 +12,8 @@
 #include "SoftMaxExplorer.h"
 #include "BaggingExplorer.h"
 
+#include "vwdll.h"
+
 //
 // Top-level internal API for exploration (randomized decision making).
 //
@@ -400,9 +402,23 @@ public:
 		return Evaluate_Policy<MWT_Empty>(func_Wrapper, nullptr);
 	}
 
-	//TODO: Invoke vw.exe command-line or internal API
-	void Optimize_Policy()
+	void* Optimize_Policy_One_Against_All()
 	{
+		//TODO: Sample invocation code below. We can also extract the model as a void*, or save it to a file
+		//specified by the caller.
+
+		/*
+		VW_HANDLE vw;
+		VW_EXAMPLE example;
+		float score;
+
+		printf("this is a native c program calling vw\n");
+		vw = VW_InitializeA("-q st --noconstant --quiet");
+		example = VW_ReadExampleA(vw, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
+		score = VW_Learn(vw, example);
+		VW_Finish(vw);
+		printf("Score = %f\n", score);
+		*/
 	}
 
 private:
