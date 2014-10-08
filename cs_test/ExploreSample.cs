@@ -107,7 +107,7 @@ namespace cs_test
             string uniqueKey = "clock";
             int numFeatures = 1000;
             int numIter = 1000;
-            int numWarmup = 1000;
+            int numWarmup = 100;
             int numInteractions = 1;
             uint numActions = 10;
             string otherContext = null;
