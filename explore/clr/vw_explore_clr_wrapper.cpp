@@ -55,10 +55,28 @@ namespace MultiWorldTesting {
 		this->InitializeEpsilonGreedy(epsilon, spDelegate, (IntPtr)selfHandle, numActions);
 	}
 
+	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultPolicyFunc);
+		selfHandle = GCHandle::Alloc(this);
+		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
+
+		this->InitializeEpsilonGreedy(epsilon, spDelegate, (IntPtr)selfHandle, numActions);
+	}
+
 	generic <class T>
 	void MwtExplorer::InitializeTauFirst(UInt32 tau, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
 	{
 		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultPolicyFunc, defaultPolicyFuncParams);
+		selfHandle = GCHandle::Alloc(this);
+		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
+
+		this->InitializeTauFirst(tau, spDelegate, (IntPtr)selfHandle, numActions);
+	}
+
+	void MwtExplorer::InitializeTauFirst(UInt32 tau, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultPolicyFunc);
 		selfHandle = GCHandle::Alloc(this);
 		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
 

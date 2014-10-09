@@ -41,7 +41,7 @@ namespace ExploreTests
         public void EpsilonGreedyStateless()
         {
             mwt.InitializeEpsilonGreedy(Epsilon,
-                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
+                new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc),
                 NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(contextPtr);
@@ -85,7 +85,7 @@ namespace ExploreTests
         public void TauFirstStateless()
         {
             mwt.InitializeTauFirst(Tau,
-                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
+                new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc),
                 NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(contextPtr);
@@ -244,6 +244,11 @@ namespace ExploreTests
         private static UInt32 TemplateStatefulPolicyFunc(int policyParams, CONTEXT context)
         {
             return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
+        }
+
+        private static UInt32 TemplateStatelessPolicyFunc(CONTEXT context)
+        {
+            return ActionID.Make_OneBased((uint)context.Features.Length % MWTExploreTests.NumActions);
         }
 
         private static void TestStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, IntPtr scoresPtr, uint size)

@@ -52,6 +52,7 @@ namespace MultiWorldTesting {
 
 	generic <class T>
 	public delegate UInt32 TemplateStatefulPolicyDelegate(T, CONTEXT^);
+	public delegate UInt32 TemplateStatelessPolicyDelegate(CONTEXT^);
 
 	generic <class T>
 	public delegate void TemplateStatefulScorerDelegate(T, CONTEXT^, cli::array<float>^ scores);
@@ -79,9 +80,21 @@ namespace MultiWorldTesting {
 				parameters = policyParams;
 			}
 
+			DefaultPolicyWrapper(TemplateStatelessPolicyDelegate^ policyFunc)
+			{
+				statelessPolicy = policyFunc;
+			}
+
 			virtual UInt32 InvokeFunction(CONTEXT^ c) override
 			{
-				return defaultPolicy(parameters, c);
+				if (defaultPolicy != nullptr)
+				{
+					return defaultPolicy(parameters, c);
+				}
+				else
+				{
+					return statelessPolicy(c);
+				}
 			}
 
 			virtual void InvokeScorer(CONTEXT^ c, cli::array<float>^ scores) override
@@ -91,6 +104,7 @@ namespace MultiWorldTesting {
 		private:
 			T parameters;
 			TemplateStatefulPolicyDelegate<T>^ defaultPolicy;
+			TemplateStatelessPolicyDelegate^ statelessPolicy;
 			TemplateStatefulScorerDelegate<T>^ defaultScorer;
 	};
 
@@ -109,13 +123,11 @@ namespace MultiWorldTesting {
 
 		generic <class T>
 		void InitializeEpsilonGreedy(float epsilon, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
-
-		void InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
+		void InitializeEpsilonGreedy(float epsilon, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
 
 		generic <class T>
 		void InitializeTauFirst(UInt32 tau, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
-
-		void InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
+		void InitializeTauFirst(UInt32 tau, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
 
 		generic <class T>
 		void InitializeBagging(UInt32 bags, cli::array<TemplateStatefulPolicyDelegate<T>^>^ defaultPolicyFuncs, cli::array<T>^ defaultPolicyArgs, UInt32 numActions);
@@ -152,7 +164,11 @@ namespace MultiWorldTesting {
 
 	private:
 		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+		void InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
+		
 		void InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+		void InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
+		
 		void InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions);
 		void InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
 
