@@ -87,6 +87,17 @@ namespace MultiWorldTesting {
 		this->InitializeBagging(bags, spDelegates, baggingParameters, numActions);
 	}
 
+	generic <class T>
+	void MwtExplorer::InitializeSoftmax(float lambda, TemplateStatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultScorerFunc, defaultScorerFuncParams);
+		selfHandle = GCHandle::Alloc(this);
+		
+		StatefulScorerDelegate^ ssDelegate = gcnew StatefulScorerDelegate(&MwtExplorer::InternalScorerFunction);
+
+		this->InitializeSoftmax(lambda, ssDelegate, (IntPtr)selfHandle, numActions);
+	}
+
 	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
@@ -316,6 +327,11 @@ namespace MultiWorldTesting {
 		return policyWrappers[bagIndex]->InvokeFunction(context);
 	}
 
+	void MwtExplorer::InvokeDefaultScorerFunction(CONTEXT^ context, cli::array<float>^ scores)
+	{
+		policyWrapper->InvokeScorer(context, scores);
+	}
+
 	UInt32 MwtExplorer::InternalStatefulPolicy(IntPtr mwtPtr, IntPtr contextPtr)
 	{
 		GCHandle mwtHandle = (GCHandle)mwtPtr;
@@ -338,8 +354,22 @@ namespace MultiWorldTesting {
 		return bp.Mwt->InvokeBaggingDefaultPolicyFunction(context, bp.BagIndex);
 	}
 
+	void MwtExplorer::InternalScorerFunction(IntPtr mwtPtr, IntPtr contextPtr, IntPtr scoresPtr, UInt32 numScores)
+	{
+		GCHandle mwtHandle = (GCHandle)mwtPtr;
+		MwtExplorer^ mwt = (MwtExplorer^)(mwtHandle.Target);
+
+		GCHandle contextHandle = (GCHandle)contextPtr;
+		CONTEXT^ context = (CONTEXT^)(contextHandle.Target);
+
+		cli::array<float>^ scores = MwtExplorer::IntPtrToScoreArray(scoresPtr, numScores);
+
+		return mwt->InvokeDefaultScorerFunction(context, scores);
+	}
+
 	cli::array<float>^ MwtExplorer::IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size)
 	{
+		// PERF: scores are sent from native space to managed space and thus have to be copied.
 		cli::array<float>^ scores = gcnew cli::array<float>(size);
 		Marshal::Copy(scoresPtr, scores, 0, (int)size);
 		return scores;

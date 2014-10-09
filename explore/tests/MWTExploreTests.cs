@@ -160,9 +160,9 @@ namespace ExploreTests
         [TestMethod]
         public void SoftmaxStateful()
         {
-            mwt.InitializeSoftmax(Lambda,
-                new StatefulScorerDelegate(TestStatefulScorerFunc), 
-                new IntPtr(PolicyParams), NumActions);
+            mwt.InitializeSoftmax<int>(Lambda,
+                new TemplateStatefulScorerDelegate<int>(TemplateStatefulScorerFunc), 
+                PolicyParams, NumActions);
 
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
             uint[] actions = new uint[NumActions];
@@ -262,6 +262,14 @@ namespace ExploreTests
             for (uint i = 0; i < size; i++)
             {
                 scores[i] = i;
+            }
+        }
+
+        private static void TemplateStatefulScorerFunc(int policyParams, CONTEXT applicationContext, float[] scores)
+        {
+            for (uint i = 0; i < scores.Length; i++)
+            {
+                scores[i] = (int)policyParams + i;
             }
         }
 

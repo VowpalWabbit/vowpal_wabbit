@@ -53,10 +53,14 @@ namespace MultiWorldTesting {
 	generic <class T>
 	public delegate UInt32 TemplateStatefulPolicyDelegate(T, CONTEXT^);
 
+	generic <class T>
+	public delegate void TemplateStatefulScorerDelegate(T, CONTEXT^, cli::array<float>^ scores);
+
 	interface class IFunctionWrapper
 	{
 		public:
 			virtual UInt32 InvokeFunction(CONTEXT^) abstract;
+			virtual void InvokeScorer(CONTEXT^, cli::array<float>^) abstract;
 	};
 
 	generic <class T>
@@ -69,13 +73,25 @@ namespace MultiWorldTesting {
 				parameters = policyParams;
 			}
 
+			DefaultPolicyWrapper(TemplateStatefulScorerDelegate<T>^ scorerFunc, T policyParams)
+			{
+				defaultScorer = scorerFunc;
+				parameters = policyParams;
+			}
+
 			virtual UInt32 InvokeFunction(CONTEXT^ c) override
 			{
 				return defaultPolicy(parameters, c);
 			}
+
+			virtual void InvokeScorer(CONTEXT^ c, cli::array<float>^ scores) override
+			{
+				defaultScorer(parameters, c, scores);
+			}
 		private:
 			T parameters;
 			TemplateStatefulPolicyDelegate<T>^ defaultPolicy;
+			TemplateStatefulScorerDelegate<T>^ defaultScorer;
 	};
 
 	public ref class MwtExplorer
@@ -106,7 +122,9 @@ namespace MultiWorldTesting {
 
 		void InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions);
 
-		void InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+		generic <class T>
+		void InitializeSoftmax(float lambda, TemplateStatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions);
+
 		void InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
 
 		void Unintialize();
@@ -130,14 +148,17 @@ namespace MultiWorldTesting {
 	internal:
 		UInt32 InvokeDefaultPolicyFunction(CONTEXT^);
 		UInt32 InvokeBaggingDefaultPolicyFunction(CONTEXT^, int);
+		void InvokeDefaultScorerFunction(CONTEXT^, cli::array<float>^);
 
 	private:
 		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
 		void InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
 		void InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions);
+		void InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
 
 		static UInt32 InternalStatefulPolicy(IntPtr, IntPtr);
 		static UInt32 BaggingStatefulPolicy(IntPtr, IntPtr);
+		static void InternalScorerFunction(IntPtr, IntPtr, IntPtr, UInt32);
 	};
 
 	private value struct BaggingParameter
