@@ -51,12 +51,12 @@ noinst_HEADERS = vowpalwabbit/accumulate.h \
 	vowpalwabbit/rand48.h \
 	vowpalwabbit/reductions.h \
 	vowpalwabbit/scorer.h \
-	vowpalwabbit/searn.h \
-	vowpalwabbit/searn_sequencetask.h \
-	vowpalwabbit/searn_entityrelationtask.h \
-	vowpalwabbit/searn_multiclasstask.h \
-	vowpalwabbit/searn_dep_parser.h \
+	vowpalwabbit/search.h \
+	vowpalwabbit/search_sequencetask.h \
+	vowpalwabbit/search_entityrelationtask.h \
 	vowpalwabbit/search_hooktask.h \
+	vowpalwabbit/search_multiclasstask.h \
+	vowpalwabbit/search_dep_parser.h \
 	vowpalwabbit/sender.h \
 	vowpalwabbit/stagewise_poly.h \
 	vowpalwabbit/topk.h \
