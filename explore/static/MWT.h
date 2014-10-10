@@ -267,12 +267,16 @@ public:
 	// The parameters here look weird but are required to interface with C#
 	std::pair<u32, u64> Choose_Action_And_Key(void* context, Context& log_context)
 	{
-		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set);
+		// Generate an ID for this interaction and use this to seed the PRG within the explorer
+		u64 id = IdGenerator::Get_Id();
+		std::tuple<MWTAction, float, bool> action_Probability_Log_Tuple = m_explorer->Choose_Action(context, *m_action_set, (u32)id);
 		if (!std::get<2>(action_Probability_Log_Tuple))
 		{
+			// Since we aren't logging the interaction, don't return a join key (we are effectively
+			// throwing away this ID, but so be it)
 			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
 		}
-		Interaction interaction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple));
+		Interaction interaction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), id);
 		m_logger->Store(&interaction);
 
 		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), interaction.Get_Id());
