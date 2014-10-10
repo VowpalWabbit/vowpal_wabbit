@@ -368,18 +368,4 @@ namespace MultiWorldTesting {
 		return scores;
 	}
 
-	generic <class T>
-	T MwtExplorer::FromIntPtr(IntPtr objectPtr)
-	{
-		GCHandle contextHandle = (GCHandle)objectPtr;
-		T obj = (T)(contextHandle.Target);
-		return obj;
-	}
-
-	generic <class T>
-	IntPtr MwtExplorer::ToIntPtr(T obj, [Out] GCHandle% objHandle)
-	{
-		objHandle = GCHandle::Alloc(obj);
-		return (IntPtr)objHandle;
-	}
 }

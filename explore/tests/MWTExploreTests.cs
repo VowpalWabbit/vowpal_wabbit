@@ -16,13 +16,13 @@ namespace ExploreTests
         public void EpsilonGreedyStateful()
         {
             mwt.InitializeEpsilonGreedy<int>(Epsilon,
-                new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc),
+                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
                 PolicyParams,
                 NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
-                new IntPtr(PolicyParams),
-                contextPtr);
+                PolicyParams,
+                context);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -41,10 +41,10 @@ namespace ExploreTests
         public void EpsilonGreedyStateless()
         {
             mwt.InitializeEpsilonGreedy(Epsilon,
-                new StatelessPolicyDelegate(TemplateStatelessPolicyFunc),
+                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
                 NumActions);
 
-            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(contextPtr);
+            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -63,13 +63,13 @@ namespace ExploreTests
         public void TauFirstStateful()
         {
             mwt.InitializeTauFirst<int>(Tau,
-                new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc),
+                new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc),
                 PolicyParams,
                 NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
-                new IntPtr(PolicyParams),
-                contextPtr);
+                PolicyParams,
+                context);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -85,10 +85,10 @@ namespace ExploreTests
         public void TauFirstStateless()
         {
             mwt.InitializeTauFirst(Tau,
-                new StatelessPolicyDelegate(TemplateStatelessPolicyFunc),
+                new StatelessPolicyDelegate(TestStatelessPolicyFunc),
                 NumActions);
 
-            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(contextPtr);
+            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -107,15 +107,15 @@ namespace ExploreTests
             int[] funcParams = new int[Bags];
             for (int i = 0; i < Bags; i++)
 			{
-                funcs[i] = new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc);
+                funcs[i] = new StatefulPolicyDelegate<int>(TestStatefulPolicyFunc);
                 funcParams[i] = PolicyParams;
 			}
 
             mwt.InitializeBagging(Bags, funcs, funcParams, NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatefulPolicyFunc(
-                new IntPtr(PolicyParams),
-                contextPtr);
+                PolicyParams,
+                context);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -136,13 +136,12 @@ namespace ExploreTests
             StatelessPolicyDelegate[] funcs = new StatelessPolicyDelegate[Bags];
             for (int i = 0; i < Bags; i++)
             {
-                funcs[i] = new StatelessPolicyDelegate(TemplateStatelessPolicyFunc);
+                funcs[i] = new StatelessPolicyDelegate(TestStatelessPolicyFunc);
             }
 
             mwt.InitializeBagging(Bags, funcs, NumActions);
 
-            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(
-                contextPtr);
+            uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(context);
 
             uint chosenAction = mwt.ChooseAction(context, UniqueKey);
             Assert.AreEqual(expectedAction, chosenAction);
@@ -161,7 +160,7 @@ namespace ExploreTests
         public void SoftmaxStateful()
         {
             mwt.InitializeSoftmax<int>(Lambda,
-                new StatefulScorerDelegate<int>(TemplateStatefulScorerFunc), 
+                new StatefulScorerDelegate<int>(TestStatefulScorerFunc), 
                 PolicyParams, NumActions);
 
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
@@ -185,7 +184,7 @@ namespace ExploreTests
         public void SoftmaxStateless()
         {
             mwt.InitializeSoftmax(Lambda,
-                new StatelessScorerDelegate(TemplateStatelessScorerFunc),
+                new StatelessScorerDelegate(TestStatelessScorerFunc),
                 NumActions);
 
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
@@ -217,60 +216,25 @@ namespace ExploreTests
             features[1].WeightIndex = 2;
 
             context = new CONTEXT(features, "Other C# test context");
-            contextPtr = MwtExplorer.ToIntPtr<CONTEXT>(context, out contextHandle);
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
             mwt.Unintialize();
-            contextHandle.Free();
         }
 
-        private static UInt32 TestStatelessPolicyFunc(IntPtr applicationContext)
-        {
-            CONTEXT context = MwtExplorer.FromIntPtr<CONTEXT>(applicationContext);
-            
-            return ActionID.Make_OneBased((uint)context.Features.Length % MWTExploreTests.NumActions);
-        }
-
-        private static UInt32 TestStatefulPolicyFunc(IntPtr policyParams, IntPtr applicationContext)
-        {
-            CONTEXT context = MwtExplorer.FromIntPtr<CONTEXT>(applicationContext);
-
-            return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
-        }
-
-        private static UInt32 TemplateStatefulPolicyFunc(int policyParams, CONTEXT context)
+        private static UInt32 TestStatefulPolicyFunc(int policyParams, CONTEXT context)
         {
             return ActionID.Make_OneBased((uint)(policyParams + context.Features.Length) % MWTExploreTests.NumActions);
         }
 
-        private static UInt32 TemplateStatelessPolicyFunc(CONTEXT context)
+        private static UInt32 TestStatelessPolicyFunc(CONTEXT context)
         {
             return ActionID.Make_OneBased((uint)context.Features.Length % MWTExploreTests.NumActions);
         }
 
-        private static void TestStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, IntPtr scoresPtr, uint size)
-        {
-            float[] scores = MwtExplorer.IntPtrToScoreArray(scoresPtr, size);
-
-            for (uint i = 0; i < size; i++)
-            {
-                scores[i] = (int)policyParams + i;
-            }
-        }
-        private static void TestStatelessScorerFunc(IntPtr applicationContext, IntPtr scoresPtr, uint size)
-        {
-            float[] scores = MwtExplorer.IntPtrToScoreArray(scoresPtr, size);
-
-            for (uint i = 0; i < size; i++)
-            {
-                scores[i] = i;
-            }
-        }
-
-        private static void TemplateStatefulScorerFunc(int policyParams, CONTEXT applicationContext, float[] scores)
+        private static void TestStatefulScorerFunc(int policyParams, CONTEXT applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -278,7 +242,7 @@ namespace ExploreTests
             }
         }
 
-        private static void TemplateStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
+        private static void TestStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -300,7 +264,5 @@ namespace ExploreTests
         private MwtExplorer mwt;
         private FEATURE[] features;
         private CONTEXT context;
-        private IntPtr contextPtr;
-        private GCHandle contextHandle;
     }
 }

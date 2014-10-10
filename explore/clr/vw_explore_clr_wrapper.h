@@ -162,12 +162,6 @@ namespace MultiWorldTesting {
 	public:
 		static cli::array<float>^ IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size);
 
-		generic <class T> where T : System::Object
-		static T FromIntPtr(IntPtr objectPtr);
-
-		generic <class T> where T : System::Object
-		static IntPtr ToIntPtr(T obj, [Out] GCHandle% objHandle);
-
 	internal:
 		UInt32 InvokeDefaultPolicyFunction(CONTEXT^);
 		UInt32 InvokeBaggingDefaultPolicyFunction(CONTEXT^, int);

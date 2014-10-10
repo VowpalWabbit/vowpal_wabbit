@@ -8,59 +8,32 @@ namespace cs_test
 {
     class ExploreSample
     {
-        private static UInt32 MyStatelessPolicyFunc(IntPtr applicationContext)
-        {
-            return 222;
-        }
-
-        private static UInt32 MyStatefulPolicyFunc(IntPtr policyParams, IntPtr applicationContext)
-        {
-            return 111;
-        }
-
-        private static void MyStatefulScorerFunc(IntPtr policyParams, IntPtr applicationContext, IntPtr scoresPtr, uint size)
-        {
-            float[] scores = MwtExplorer.IntPtrToScoreArray(scoresPtr, size);
-            for (uint i = 0; i < size; i++)
-            {
-                scores[i] = (int)policyParams + i;
-            }
-        }
-        private static void MyStatelessScorerFunc(IntPtr applicationContext, IntPtr scoresPtr, uint size)
-        {
-            float[] scores = MwtExplorer.IntPtrToScoreArray(scoresPtr, size);
-            for (uint i = 0; i < size; i++)
-            {
-                scores[i] = i;
-            }
-        }
-
-        private static UInt32 TemplateStatefulPolicyFunc(int parameters, CONTEXT context)
+        private static UInt32 SampleStatefulPolicyFunc(int parameters, CONTEXT context)
         {
             return (uint)((parameters + context.Features.Length) % 10 + 1);
         }
 
-        private static UInt32 TemplateStatefulPolicyFunc2(int parameters, CONTEXT context)
+        private static UInt32 SampleStatefulPolicyFunc2(int parameters, CONTEXT context)
         {
             return (uint)((parameters + context.Features.Length) % 10 + 2);
         }
 
-        private static UInt32 TemplateStatefulPolicyFunc(CustomParams parameters, CONTEXT context)
+        private static UInt32 SampleStatefulPolicyFunc(CustomParams parameters, CONTEXT context)
         {
             return (uint)((parameters.Value1 + parameters.Value2 + context.Features.Length) % 10 + 1);
         }
 
-        private static UInt32 TemplateStatelessPolicyFunc(CONTEXT applicationContext)
+        private static UInt32 SampleStatelessPolicyFunc(CONTEXT applicationContext)
         {
             return (UInt32)applicationContext.Features.Length;
         }
 
-        private static UInt32 TemplateStatelessPolicyFunc2(CONTEXT applicationContext)
+        private static UInt32 SampleStatelessPolicyFunc2(CONTEXT applicationContext)
         {
             return (UInt32)applicationContext.Features.Length + 1;
         }
 
-        private static void TemplateStatefulScorerFunc(int parameters, CONTEXT applicationContext, float[] scores)
+        private static void SampleStatefulScorerFunc(int parameters, CONTEXT applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -68,7 +41,7 @@ namespace cs_test
             }
         }
 
-        private static void TemplateStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
+        private static void SampleStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
             {
@@ -97,22 +70,22 @@ namespace cs_test
             CustomParams customParams = new CustomParams() { Value1 = policyParams, Value2 = policyParams + 1 };
 
             /*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
+            //mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams, numActions);
 
             /*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
-            //mwt.InitializeEpsilonGreedy(epsilon, new StatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
+            //mwt.InitializeEpsilonGreedy(epsilon, new StatelessPolicyDelegate(SampleStatelessPolicyFunc), numActions);
 
             /*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeTauFirst<CustomParams>(tau, new StatefulPolicyDelegate<CustomParams>(TemplateStatefulPolicyFunc), customParams, numActions);
+            //mwt.InitializeTauFirst<CustomParams>(tau, new StatefulPolicyDelegate<CustomParams>(SampleStatefulPolicyFunc), customParams, numActions);
 
             /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
-            //mwt.InitializeTauFirst(tau, new StatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
+            //mwt.InitializeTauFirst(tau, new StatelessPolicyDelegate(SampleStatelessPolicyFunc), numActions);
 
             /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
             //StatefulPolicyDelegate<int>[] funcs = 
             //{
-            //    new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), 
-            //    new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc2) 
+            //    new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), 
+            //    new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc2) 
             //};
             //int[] parameters = { policyParams, policyParams };
             //mwt.InitializeBagging<int>(bags, funcs, parameters, numActions);
@@ -120,16 +93,16 @@ namespace cs_test
             /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
             //StatelessPolicyDelegate[] funcs = 
             //{
-            //    new StatelessPolicyDelegate(TemplateStatelessPolicyFunc), 
-            //    new StatelessPolicyDelegate(TemplateStatelessPolicyFunc2) 
+            //    new StatelessPolicyDelegate(SampleStatelessPolicyFunc), 
+            //    new StatelessPolicyDelegate(SampleStatelessPolicyFunc2) 
             //};
             //mwt.InitializeBagging(bags, funcs, numActions);
 
             /*** Initialize Softmax explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeSoftmax<int>(lambda, new StatefulScorerDelegate<int>(TemplateStatefulScorerFunc), policyParams, numActions);
+            //mwt.InitializeSoftmax<int>(lambda, new StatefulScorerDelegate<int>(SampleStatefulScorerFunc), policyParams, numActions);
 
             /*** Initialize Softmax explore algorithm using a stateless default policy function ***/
-            mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(TemplateStatelessScorerFunc), numActions);
+            mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(SampleStatelessScorerFunc), numActions);
 
             FEATURE[] f = new FEATURE[2];
             f[0].X = 0.5f;
@@ -170,7 +143,7 @@ namespace cs_test
                 watch.Restart();
                 
                 MwtExplorer mwt = new MwtExplorer();
-                mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
+                mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams, numActions);
 
                 timeInit += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 
