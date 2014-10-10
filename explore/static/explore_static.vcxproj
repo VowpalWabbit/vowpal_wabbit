@@ -156,6 +156,7 @@
     </ClInclude>
     <ClInclude Include="EpsilonGreedyExplorer.h" />
     <ClInclude Include="Explorer.h" />
+    <ClInclude Include="GenericExplorer.h" />
     <ClInclude Include="SoftMaxExplorer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MWT.h" />

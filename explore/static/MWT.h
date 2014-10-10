@@ -11,6 +11,7 @@
 #include "TauFirstExplorer.h"
 #include "SoftMaxExplorer.h"
 #include "BaggingExplorer.h"
+#include "GenericExplorer.h"
 #include "vwdll.h"
 
 //
@@ -411,7 +412,7 @@ public:
 		double sum_weighted_rewards = 0.0;
 		u64 count = 0;
 
-		std::string params = "-t -i " + model_input_file + " --noconstant --quiet";
+		std::string params = "-i " + model_input_file + " --noconstant --quiet";
 		vw = VW_InitializeA(params.c_str());
 		MWTAction policy_action(0);
 		for (auto pInteraction : m_interactions)
