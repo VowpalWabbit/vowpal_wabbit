@@ -7,11 +7,7 @@
 #include "stdafx.h"
 #include <typeinfo>
 #include "hash.h"
-#include "EpsilonGreedyExplorer.h"
-#include "TauFirstExplorer.h"
-#include "SoftMaxExplorer.h"
-#include "BaggingExplorer.h"
-#include "GenericExplorer.h"
+#include "Explorer.h"
 #include "vwdll.h"
 
 //

@@ -20,3 +20,4 @@
 #include "utility.h"
 #include "Interaction.h"
 #include "Logger.h"
+#include "PolicyFunc.h"
