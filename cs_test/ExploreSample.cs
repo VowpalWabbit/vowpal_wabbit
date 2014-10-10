@@ -35,6 +35,40 @@ namespace cs_test
             }
         }
 
+        private static UInt32 TemplateStatefulPolicyFunc(int parameters, CONTEXT context)
+        {
+            return (uint)((parameters + context.Features.Length) % 10 + 1);
+        }
+
+        private static UInt32 TemplateStatefulPolicyFunc2(int parameters, CONTEXT context)
+        {
+            return (uint)((parameters + context.Features.Length) % 10 + 2);
+        }
+
+        private static UInt32 TemplateStatefulPolicyFunc(CustomParams parameters, CONTEXT context)
+        {
+            return (uint)((parameters.Value1 + parameters.Value2 + context.Features.Length) % 10 + 1);
+        }
+
+        private static UInt32 TemplateStatelessPolicyFunc(CONTEXT applicationContext)
+        {
+            return (UInt32)applicationContext.Features.Length;
+        }
+
+        private static void TemplateStatefulScorerFunc(int parameters, CONTEXT applicationContext, float[] scores)
+        {
+            for (uint i = 0; i < scores.Length; i++)
+            {
+                scores[i] = (int)parameters + i;
+            }
+        }
+
+        class CustomParams
+        {
+            public int Value1;
+            public int Value2;
+        }
+
         public static void Run()
         {
             MwtExplorer mwt = new MwtExplorer();
@@ -42,32 +76,33 @@ namespace cs_test
             uint numActions = 10;
             
             float epsilon = 0.2f;
-            uint tau = 5;
-            uint bags = 10;
+            uint tau = 0;
+            uint bags = 2;
             float lambda = 0.5f;
 
             int policyParams = 1003;
+            CustomParams customParams = new CustomParams() { Value1 = policyParams, Value2 = policyParams + 1 };
 
             /*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
-            mwt.InitializeEpsilonGreedy(epsilon, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
+            //mwt.InitializeEpsilonGreedy<int>(epsilon, new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
 
             /*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
-            //mwt.InitializeEpsilonGreedy(epsilon, new StatelessPolicyDelegate(MyStatelessPolicyFunc), numActions);
+            //mwt.InitializeEpsilonGreedy(epsilon, new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
 
             /*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeTauFirst(tau, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
+            //mwt.InitializeTauFirst<CustomParams>(tau, new TemplateStatefulPolicyDelegate<CustomParams>(TemplateStatefulPolicyFunc), customParams, numActions);
 
             /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
-            //mwt.InitializeTauFirst(tau, new StatelessPolicyDelegate(MyStatelessPolicyFunc), numActions);
+            mwt.InitializeTauFirst(tau, new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
 
             /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
-            //StatefulPolicyDelegate[] funcs = 
+            //TemplateStatefulPolicyDelegate<int>[] funcs = 
             //{
-            //    new StatefulPolicyDelegate(MyStatefulPolicyFunc), 
-            //    new StatefulPolicyDelegate(MyStatefulPolicyFunc) 
+            //    new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), 
+            //    new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc2) 
             //};
-            //IntPtr[] parameters = { new IntPtr(policyParams), new IntPtr(policyParams) };
-            //mwt.InitializeBagging(bags, funcs, parameters, numActions);
+            //int[] parameters = { policyParams, policyParams };
+            //mwt.InitializeBagging<int>(bags, funcs, parameters, numActions);
 
             /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
             //StatelessPolicyDelegate[] funcs = 
@@ -78,7 +113,7 @@ namespace cs_test
             //mwt.InitializeBagging(bags, funcs, numActions);
 
             /*** Initialize Softmax explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeSoftmax(lambda, new StatefulScorerDelegate(MyStatefulScorerFunc), new IntPtr(policyParams), numActions);
+            //mwt.InitializeSoftmax<int>(lambda, new TemplateStatefulScorerDelegate<int>(TemplateStatefulScorerFunc), policyParams, numActions);
 
             /*** Initialize Softmax explore algorithm using a stateless default policy function ***/
             //mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(MyStatelessScorerFunc), numActions);
@@ -95,6 +130,8 @@ namespace cs_test
             UInt32 chosenAction = mwt.ChooseAction(context, "myId");
 
             string interactions = mwt.GetAllInteractionsAsString();
+
+            mwt.Unintialize();
 
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);
@@ -120,7 +157,7 @@ namespace cs_test
                 watch.Restart();
                 
                 MwtExplorer mwt = new MwtExplorer();
-                mwt.InitializeEpsilonGreedy(epsilon, new StatefulPolicyDelegate(MyStatefulPolicyFunc), new IntPtr(policyParams), numActions);
+                mwt.InitializeEpsilonGreedy<int>(epsilon, new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
 
                 timeInit += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 

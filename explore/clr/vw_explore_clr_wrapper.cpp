@@ -20,7 +20,100 @@ namespace MultiWorldTesting {
 
 	MwtExplorer::~MwtExplorer()
 	{
+		this->Unintialize();
+	}
+
+	void MwtExplorer::Unintialize()
+	{
+		if (selfHandle.IsAllocated)
+		{
+			selfHandle.Free();
+		}
+		if (baggingParameters != nullptr)
+		{
+			for (int i = 0; i < baggingParameters->Length; i++)
+			{
+				GCHandle handle = (GCHandle)baggingParameters[i];
+				if (handle.IsAllocated)
+				{
+					handle.Free();
+				}
+			}
+			baggingParameters = nullptr;
+		}
 		delete m_mwt;
+		m_mwt = nullptr;
+	}
+
+	generic <class T>
+	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultPolicyFunc, defaultPolicyFuncParams);
+		selfHandle = GCHandle::Alloc(this);
+		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
+		
+		this->InitializeEpsilonGreedy(epsilon, spDelegate, (IntPtr)selfHandle, numActions);
+	}
+
+	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultPolicyFunc);
+		selfHandle = GCHandle::Alloc(this);
+		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
+
+		this->InitializeEpsilonGreedy(epsilon, spDelegate, (IntPtr)selfHandle, numActions);
+	}
+
+	generic <class T>
+	void MwtExplorer::InitializeTauFirst(UInt32 tau, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultPolicyFunc, defaultPolicyFuncParams);
+		selfHandle = GCHandle::Alloc(this);
+		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
+
+		this->InitializeTauFirst(tau, spDelegate, (IntPtr)selfHandle, numActions);
+	}
+
+	void MwtExplorer::InitializeTauFirst(UInt32 tau, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultPolicyFunc);
+		selfHandle = GCHandle::Alloc(this);
+		StatefulPolicyDelegate^ spDelegate = gcnew StatefulPolicyDelegate(&MwtExplorer::InternalStatefulPolicy);
+
+		this->InitializeTauFirst(tau, spDelegate, (IntPtr)selfHandle, numActions);
+	}
+
+	generic <class T>
+	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<TemplateStatefulPolicyDelegate<T>^>^ defaultPolicyFuncs, cli::array<T>^ defaultPolicyArgs, UInt32 numActions)
+	{
+		policyWrappers = gcnew cli::array<IFunctionWrapper^>(defaultPolicyFuncs->Length);
+		cli::array<StatefulPolicyDelegate^>^ spDelegates = gcnew cli::array<StatefulPolicyDelegate^>(policyWrappers->Length);
+		baggingParameters = gcnew cli::array<IntPtr>(policyWrappers->Length);
+
+		for (int i = 0; i < policyWrappers->Length; i++)
+		{
+			policyWrappers[i] = gcnew DefaultPolicyWrapper<T>(defaultPolicyFuncs[i], defaultPolicyArgs[i]);
+			spDelegates[i] = gcnew StatefulPolicyDelegate(&MwtExplorer::BaggingStatefulPolicy);
+
+			BaggingParameter bp;
+			bp.Mwt = this;
+			bp.BagIndex = i;
+
+			baggingParameters[i] = (IntPtr)GCHandle::Alloc(bp);
+		}
+
+		this->InitializeBagging(bags, spDelegates, baggingParameters, numActions);
+	}
+
+	generic <class T>
+	void MwtExplorer::InitializeSoftmax(float lambda, TemplateStatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultScorerFunc, defaultScorerFuncParams);
+		selfHandle = GCHandle::Alloc(this);
+		
+		StatefulScorerDelegate^ ssDelegate = gcnew StatefulScorerDelegate(&MwtExplorer::InternalScorerFunction);
+
+		this->InitializeSoftmax(lambda, ssDelegate, (IntPtr)selfHandle, numActions);
 	}
 
 	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
@@ -242,8 +335,59 @@ namespace MultiWorldTesting {
 		return interactions;
 	}
 
+	UInt32 MwtExplorer::InvokeDefaultPolicyFunction(CONTEXT^ context)
+	{
+		return policyWrapper->InvokeFunction(context);
+	}
+
+	UInt32 MwtExplorer::InvokeBaggingDefaultPolicyFunction(CONTEXT^ context, int bagIndex)
+	{
+		return policyWrappers[bagIndex]->InvokeFunction(context);
+	}
+
+	void MwtExplorer::InvokeDefaultScorerFunction(CONTEXT^ context, cli::array<float>^ scores)
+	{
+		policyWrapper->InvokeScorer(context, scores);
+	}
+
+	UInt32 MwtExplorer::InternalStatefulPolicy(IntPtr mwtPtr, IntPtr contextPtr)
+	{
+		GCHandle mwtHandle = (GCHandle)mwtPtr;
+		MwtExplorer^ mwt = (MwtExplorer^)(mwtHandle.Target);
+
+		GCHandle contextHandle = (GCHandle)contextPtr;
+		CONTEXT^ context = (CONTEXT^)(contextHandle.Target);
+
+		return mwt->InvokeDefaultPolicyFunction(context);
+	}
+
+	UInt32 MwtExplorer::BaggingStatefulPolicy(IntPtr baggingParamPtr, IntPtr contextPtr)
+	{
+		GCHandle mwtHandle = (GCHandle)baggingParamPtr;
+		BaggingParameter bp = (BaggingParameter)(mwtHandle.Target);
+
+		GCHandle contextHandle = (GCHandle)contextPtr;
+		CONTEXT^ context = (CONTEXT^)(contextHandle.Target);
+
+		return bp.Mwt->InvokeBaggingDefaultPolicyFunction(context, bp.BagIndex);
+	}
+
+	void MwtExplorer::InternalScorerFunction(IntPtr mwtPtr, IntPtr contextPtr, IntPtr scoresPtr, UInt32 numScores)
+	{
+		GCHandle mwtHandle = (GCHandle)mwtPtr;
+		MwtExplorer^ mwt = (MwtExplorer^)(mwtHandle.Target);
+
+		GCHandle contextHandle = (GCHandle)contextPtr;
+		CONTEXT^ context = (CONTEXT^)(contextHandle.Target);
+
+		cli::array<float>^ scores = MwtExplorer::IntPtrToScoreArray(scoresPtr, numScores);
+
+		return mwt->InvokeDefaultScorerFunction(context, scores);
+	}
+
 	cli::array<float>^ MwtExplorer::IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size)
 	{
+		// PERF: scores are sent from native space to managed space and thus have to be copied.
 		cli::array<float>^ scores = gcnew cli::array<float>(size);
 		Marshal::Copy(scoresPtr, scores, 0, (int)size);
 		return scores;
