@@ -55,6 +55,11 @@ namespace cs_test
             return (UInt32)applicationContext.Features.Length;
         }
 
+        private static UInt32 TemplateStatelessPolicyFunc2(CONTEXT applicationContext)
+        {
+            return (UInt32)applicationContext.Features.Length + 1;
+        }
+
         private static void TemplateStatefulScorerFunc(int parameters, CONTEXT applicationContext, float[] scores)
         {
             for (uint i = 0; i < scores.Length; i++)
@@ -93,7 +98,7 @@ namespace cs_test
             //mwt.InitializeTauFirst<CustomParams>(tau, new TemplateStatefulPolicyDelegate<CustomParams>(TemplateStatefulPolicyFunc), customParams, numActions);
 
             /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
-            mwt.InitializeTauFirst(tau, new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
+            //mwt.InitializeTauFirst(tau, new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
 
             /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
             //TemplateStatefulPolicyDelegate<int>[] funcs = 
@@ -105,12 +110,12 @@ namespace cs_test
             //mwt.InitializeBagging<int>(bags, funcs, parameters, numActions);
 
             /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
-            //StatelessPolicyDelegate[] funcs = 
-            //{
-            //    new StatelessPolicyDelegate(MyStatelessPolicyFunc), 
-            //    new StatelessPolicyDelegate(MyStatelessPolicyFunc) 
-            //};
-            //mwt.InitializeBagging(bags, funcs, numActions);
+            TemplateStatelessPolicyDelegate[] funcs = 
+            {
+                new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), 
+                new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc2) 
+            };
+            mwt.InitializeBagging(bags, funcs, numActions);
 
             /*** Initialize Softmax explore algorithm using a default policy function that accepts parameters ***/
             //mwt.InitializeSoftmax<int>(lambda, new TemplateStatefulScorerDelegate<int>(TemplateStatefulScorerFunc), policyParams, numActions);

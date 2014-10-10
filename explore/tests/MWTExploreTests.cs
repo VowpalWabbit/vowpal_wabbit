@@ -133,10 +133,10 @@ namespace ExploreTests
         [TestMethod]
         public void BaggingStateless()
         {
-            StatelessPolicyDelegate[] funcs = new StatelessPolicyDelegate[Bags];
+            TemplateStatelessPolicyDelegate[] funcs = new TemplateStatelessPolicyDelegate[Bags];
             for (int i = 0; i < Bags; i++)
             {
-                funcs[i] = new StatelessPolicyDelegate(TestStatelessPolicyFunc);
+                funcs[i] = new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc);
             }
 
             mwt.InitializeBagging(Bags, funcs, NumActions);

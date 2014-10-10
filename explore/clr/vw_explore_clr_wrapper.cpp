@@ -105,6 +105,27 @@ namespace MultiWorldTesting {
 		this->InitializeBagging(bags, spDelegates, baggingParameters, numActions);
 	}
 
+	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<TemplateStatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions)
+	{
+		policyWrappers = gcnew cli::array<IFunctionWrapper^>(defaultPolicyFuncs->Length);
+		cli::array<StatefulPolicyDelegate^>^ spDelegates = gcnew cli::array<StatefulPolicyDelegate^>(policyWrappers->Length);
+		baggingParameters = gcnew cli::array<IntPtr>(policyWrappers->Length);
+
+		for (int i = 0; i < policyWrappers->Length; i++)
+		{
+			policyWrappers[i] = gcnew DefaultPolicyWrapper<int>(defaultPolicyFuncs[i]);
+			spDelegates[i] = gcnew StatefulPolicyDelegate(&MwtExplorer::BaggingStatefulPolicy);
+
+			BaggingParameter bp;
+			bp.Mwt = this;
+			bp.BagIndex = i;
+
+			baggingParameters[i] = (IntPtr)GCHandle::Alloc(bp);
+		}
+
+		this->InitializeBagging(bags, spDelegates, baggingParameters, numActions);
+	}
+
 	generic <class T>
 	void MwtExplorer::InitializeSoftmax(float lambda, TemplateStatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions)
 	{
