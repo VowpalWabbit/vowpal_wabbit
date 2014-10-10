@@ -46,7 +46,7 @@ namespace MultiWorldTesting {
 	}
 
 	generic <class T>
-	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
+	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
 	{
 		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultPolicyFunc, defaultPolicyFuncParams);
 		selfHandle = GCHandle::Alloc(this);
@@ -55,7 +55,7 @@ namespace MultiWorldTesting {
 		this->InitializeEpsilonGreedy(epsilon, spDelegate, (IntPtr)selfHandle, numActions);
 	}
 
-	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
+	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
 	{
 		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultPolicyFunc);
 		selfHandle = GCHandle::Alloc(this);
@@ -65,7 +65,7 @@ namespace MultiWorldTesting {
 	}
 
 	generic <class T>
-	void MwtExplorer::InitializeTauFirst(UInt32 tau, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
+	void MwtExplorer::InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions)
 	{
 		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultPolicyFunc, defaultPolicyFuncParams);
 		selfHandle = GCHandle::Alloc(this);
@@ -74,7 +74,7 @@ namespace MultiWorldTesting {
 		this->InitializeTauFirst(tau, spDelegate, (IntPtr)selfHandle, numActions);
 	}
 
-	void MwtExplorer::InitializeTauFirst(UInt32 tau, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
+	void MwtExplorer::InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions)
 	{
 		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultPolicyFunc);
 		selfHandle = GCHandle::Alloc(this);
@@ -84,7 +84,7 @@ namespace MultiWorldTesting {
 	}
 
 	generic <class T>
-	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<TemplateStatefulPolicyDelegate<T>^>^ defaultPolicyFuncs, cli::array<T>^ defaultPolicyArgs, UInt32 numActions)
+	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate<T>^>^ defaultPolicyFuncs, cli::array<T>^ defaultPolicyArgs, UInt32 numActions)
 	{
 		policyWrappers = gcnew cli::array<IFunctionWrapper^>(defaultPolicyFuncs->Length);
 		cli::array<InternalStatefulPolicyDelegate^>^ spDelegates = gcnew cli::array<InternalStatefulPolicyDelegate^>(policyWrappers->Length);
@@ -105,7 +105,7 @@ namespace MultiWorldTesting {
 		this->InitializeBagging(bags, spDelegates, baggingParameters, numActions);
 	}
 
-	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<TemplateStatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions)
+	void MwtExplorer::InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions)
 	{
 		policyWrappers = gcnew cli::array<IFunctionWrapper^>(defaultPolicyFuncs->Length);
 		cli::array<InternalStatefulPolicyDelegate^>^ spDelegates = gcnew cli::array<InternalStatefulPolicyDelegate^>(policyWrappers->Length);
@@ -127,7 +127,7 @@ namespace MultiWorldTesting {
 	}
 
 	generic <class T>
-	void MwtExplorer::InitializeSoftmax(float lambda, TemplateStatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions)
+	void MwtExplorer::InitializeSoftmax(float lambda, StatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions)
 	{
 		policyWrapper = gcnew DefaultPolicyWrapper<T>(defaultScorerFunc, defaultScorerFuncParams);
 		selfHandle = GCHandle::Alloc(this);
@@ -137,7 +137,7 @@ namespace MultiWorldTesting {
 		this->InitializeSoftmax(lambda, ssDelegate, (IntPtr)selfHandle, numActions);
 	}
 
-	void MwtExplorer::InitializeSoftmax(float lambda, TemplateStatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions)
+	void MwtExplorer::InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions)
 	{
 		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultScorerFunc);
 		selfHandle = GCHandle::Alloc(this);

@@ -97,39 +97,39 @@ namespace cs_test
             CustomParams customParams = new CustomParams() { Value1 = policyParams, Value2 = policyParams + 1 };
 
             /*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeEpsilonGreedy<int>(epsilon, new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
+            //mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
 
             /*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
-            //mwt.InitializeEpsilonGreedy(epsilon, new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
+            //mwt.InitializeEpsilonGreedy(epsilon, new StatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
 
             /*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeTauFirst<CustomParams>(tau, new TemplateStatefulPolicyDelegate<CustomParams>(TemplateStatefulPolicyFunc), customParams, numActions);
+            //mwt.InitializeTauFirst<CustomParams>(tau, new StatefulPolicyDelegate<CustomParams>(TemplateStatefulPolicyFunc), customParams, numActions);
 
             /*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
-            //mwt.InitializeTauFirst(tau, new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
+            //mwt.InitializeTauFirst(tau, new StatelessPolicyDelegate(TemplateStatelessPolicyFunc), numActions);
 
             /*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
-            //TemplateStatefulPolicyDelegate<int>[] funcs = 
+            //StatefulPolicyDelegate<int>[] funcs = 
             //{
-            //    new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), 
-            //    new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc2) 
+            //    new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), 
+            //    new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc2) 
             //};
             //int[] parameters = { policyParams, policyParams };
             //mwt.InitializeBagging<int>(bags, funcs, parameters, numActions);
 
             /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
-            //TemplateStatelessPolicyDelegate[] funcs = 
+            //StatelessPolicyDelegate[] funcs = 
             //{
-            //    new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), 
-            //    new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc2) 
+            //    new StatelessPolicyDelegate(TemplateStatelessPolicyFunc), 
+            //    new StatelessPolicyDelegate(TemplateStatelessPolicyFunc2) 
             //};
             //mwt.InitializeBagging(bags, funcs, numActions);
 
             /*** Initialize Softmax explore algorithm using a default policy function that accepts parameters ***/
-            //mwt.InitializeSoftmax<int>(lambda, new TemplateStatefulScorerDelegate<int>(TemplateStatefulScorerFunc), policyParams, numActions);
+            //mwt.InitializeSoftmax<int>(lambda, new StatefulScorerDelegate<int>(TemplateStatefulScorerFunc), policyParams, numActions);
 
             /*** Initialize Softmax explore algorithm using a stateless default policy function ***/
-            mwt.InitializeSoftmax(lambda, new TemplateStatelessScorerDelegate(TemplateStatelessScorerFunc), numActions);
+            mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(TemplateStatelessScorerFunc), numActions);
 
             FEATURE[] f = new FEATURE[2];
             f[0].X = 0.5f;
@@ -170,7 +170,7 @@ namespace cs_test
                 watch.Restart();
                 
                 MwtExplorer mwt = new MwtExplorer();
-                mwt.InitializeEpsilonGreedy<int>(epsilon, new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
+                mwt.InitializeEpsilonGreedy<int>(epsilon, new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc), policyParams, numActions);
 
                 timeInit += (iter < numWarmup) ? 0 : watch.Elapsed.TotalMilliseconds;
 

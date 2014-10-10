@@ -16,7 +16,7 @@ namespace ExploreTests
         public void EpsilonGreedyStateful()
         {
             mwt.InitializeEpsilonGreedy<int>(Epsilon,
-                new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc),
+                new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc),
                 PolicyParams,
                 NumActions);
 
@@ -41,7 +41,7 @@ namespace ExploreTests
         public void EpsilonGreedyStateless()
         {
             mwt.InitializeEpsilonGreedy(Epsilon,
-                new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc),
+                new StatelessPolicyDelegate(TemplateStatelessPolicyFunc),
                 NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(contextPtr);
@@ -63,7 +63,7 @@ namespace ExploreTests
         public void TauFirstStateful()
         {
             mwt.InitializeTauFirst<int>(Tau,
-                new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc),
+                new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc),
                 PolicyParams,
                 NumActions);
 
@@ -85,7 +85,7 @@ namespace ExploreTests
         public void TauFirstStateless()
         {
             mwt.InitializeTauFirst(Tau,
-                new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc),
+                new StatelessPolicyDelegate(TemplateStatelessPolicyFunc),
                 NumActions);
 
             uint expectedAction = MWTExploreTests.TestStatelessPolicyFunc(contextPtr);
@@ -103,11 +103,11 @@ namespace ExploreTests
         [TestMethod]
         public void BaggingStateful()
         {
-            TemplateStatefulPolicyDelegate<int>[] funcs = new TemplateStatefulPolicyDelegate<int>[Bags];
+            StatefulPolicyDelegate<int>[] funcs = new StatefulPolicyDelegate<int>[Bags];
             int[] funcParams = new int[Bags];
             for (int i = 0; i < Bags; i++)
 			{
-                funcs[i] = new TemplateStatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc);
+                funcs[i] = new StatefulPolicyDelegate<int>(TemplateStatefulPolicyFunc);
                 funcParams[i] = PolicyParams;
 			}
 
@@ -133,10 +133,10 @@ namespace ExploreTests
         [TestMethod]
         public void BaggingStateless()
         {
-            TemplateStatelessPolicyDelegate[] funcs = new TemplateStatelessPolicyDelegate[Bags];
+            StatelessPolicyDelegate[] funcs = new StatelessPolicyDelegate[Bags];
             for (int i = 0; i < Bags; i++)
             {
-                funcs[i] = new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc);
+                funcs[i] = new StatelessPolicyDelegate(TemplateStatelessPolicyFunc);
             }
 
             mwt.InitializeBagging(Bags, funcs, NumActions);
@@ -161,7 +161,7 @@ namespace ExploreTests
         public void SoftmaxStateful()
         {
             mwt.InitializeSoftmax<int>(Lambda,
-                new TemplateStatefulScorerDelegate<int>(TemplateStatefulScorerFunc), 
+                new StatefulScorerDelegate<int>(TemplateStatefulScorerFunc), 
                 PolicyParams, NumActions);
 
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
@@ -185,7 +185,7 @@ namespace ExploreTests
         public void SoftmaxStateless()
         {
             mwt.InitializeSoftmax(Lambda,
-                new TemplateStatelessScorerDelegate(TemplateStatelessScorerFunc),
+                new StatelessScorerDelegate(TemplateStatelessScorerFunc),
                 NumActions);
 
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);

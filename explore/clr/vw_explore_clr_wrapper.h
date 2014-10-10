@@ -46,12 +46,12 @@ namespace MultiWorldTesting {
 	};
 
 	generic <class T>
-	public delegate UInt32 TemplateStatefulPolicyDelegate(T, CONTEXT^);
-	public delegate UInt32 TemplateStatelessPolicyDelegate(CONTEXT^);
+	public delegate UInt32 StatefulPolicyDelegate(T, CONTEXT^);
+	public delegate UInt32 StatelessPolicyDelegate(CONTEXT^);
 
 	generic <class T>
-	public delegate void TemplateStatefulScorerDelegate(T, CONTEXT^, cli::array<float>^ scores);
-	public delegate void TemplateStatelessScorerDelegate(CONTEXT^, cli::array<float>^ scores);
+	public delegate void StatefulScorerDelegate(T, CONTEXT^, cli::array<float>^ scores);
+	public delegate void StatelessScorerDelegate(CONTEXT^, cli::array<float>^ scores);
 
 	// Internal delegate denifition
 	private delegate UInt32 InternalStatefulPolicyDelegate(IntPtr, IntPtr);
@@ -68,24 +68,24 @@ namespace MultiWorldTesting {
 	public ref class DefaultPolicyWrapper : IFunctionWrapper
 	{
 		public:
-			DefaultPolicyWrapper(TemplateStatefulPolicyDelegate<T>^ policyFunc, T policyParams)
+			DefaultPolicyWrapper(StatefulPolicyDelegate<T>^ policyFunc, T policyParams)
 			{
 				defaultPolicy = policyFunc;
 				parameters = policyParams;
 			}
 
-			DefaultPolicyWrapper(TemplateStatefulScorerDelegate<T>^ scorerFunc, T policyParams)
+			DefaultPolicyWrapper(StatefulScorerDelegate<T>^ scorerFunc, T policyParams)
 			{
 				defaultScorer = scorerFunc;
 				parameters = policyParams;
 			}
 
-			DefaultPolicyWrapper(TemplateStatelessPolicyDelegate^ policyFunc)
+			DefaultPolicyWrapper(StatelessPolicyDelegate^ policyFunc)
 			{
 				statelessPolicy = policyFunc;
 			}
 
-			DefaultPolicyWrapper(TemplateStatelessScorerDelegate^ scorerFunc)
+			DefaultPolicyWrapper(StatelessScorerDelegate^ scorerFunc)
 			{
 				statelessScorer = scorerFunc;
 			}
@@ -115,10 +115,10 @@ namespace MultiWorldTesting {
 			}
 		private:
 			T parameters;
-			TemplateStatefulPolicyDelegate<T>^ defaultPolicy;
-			TemplateStatelessPolicyDelegate^ statelessPolicy;
-			TemplateStatefulScorerDelegate<T>^ defaultScorer;
-			TemplateStatelessScorerDelegate^ statelessScorer;
+			StatefulPolicyDelegate<T>^ defaultPolicy;
+			StatelessPolicyDelegate^ statelessPolicy;
+			StatefulScorerDelegate<T>^ defaultScorer;
+			StatelessScorerDelegate^ statelessScorer;
 	};
 
 	public ref class MwtExplorer
@@ -135,20 +135,20 @@ namespace MultiWorldTesting {
 		~MwtExplorer();
 
 		generic <class T>
-		void InitializeEpsilonGreedy(float epsilon, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
-		void InitializeEpsilonGreedy(float epsilon, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
+		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
+		void InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
 
 		generic <class T>
-		void InitializeTauFirst(UInt32 tau, TemplateStatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
-		void InitializeTauFirst(UInt32 tau, TemplateStatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
+		void InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate<T>^ defaultPolicyFunc, T defaultPolicyFuncParams, UInt32 numActions);
+		void InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
 
 		generic <class T>
-		void InitializeBagging(UInt32 bags, cli::array<TemplateStatefulPolicyDelegate<T>^>^ defaultPolicyFuncs, cli::array<T>^ defaultPolicyArgs, UInt32 numActions);
-		void InitializeBagging(UInt32 bags, cli::array<TemplateStatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions);
+		void InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate<T>^>^ defaultPolicyFuncs, cli::array<T>^ defaultPolicyArgs, UInt32 numActions);
+		void InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions);
 
 		generic <class T>
-		void InitializeSoftmax(float lambda, TemplateStatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions);
-		void InitializeSoftmax(float lambda, TemplateStatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
+		void InitializeSoftmax(float lambda, StatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions);
+		void InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
 
 		void Unintialize();
 
