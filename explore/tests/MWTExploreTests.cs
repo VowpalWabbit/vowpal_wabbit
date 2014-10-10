@@ -185,7 +185,7 @@ namespace ExploreTests
         public void SoftmaxStateless()
         {
             mwt.InitializeSoftmax(Lambda,
-                new StatelessScorerDelegate(TestStatelessScorerFunc),
+                new TemplateStatelessScorerDelegate(TemplateStatelessScorerFunc),
                 NumActions);
 
             uint numDecisions = (uint)(NumActions * Math.Log(NumActions * 1.0) + Math.Log(NumActionsCover * 1.0 / NumActions) * C * NumActions);
@@ -275,6 +275,14 @@ namespace ExploreTests
             for (uint i = 0; i < scores.Length; i++)
             {
                 scores[i] = (int)policyParams + i;
+            }
+        }
+
+        private static void TemplateStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
+        {
+            for (uint i = 0; i < scores.Length; i++)
+            {
+                scores[i] = applicationContext.Features.Length + i;
             }
         }
 

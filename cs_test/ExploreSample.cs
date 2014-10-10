@@ -68,6 +68,14 @@ namespace cs_test
             }
         }
 
+        private static void TemplateStatelessScorerFunc(CONTEXT applicationContext, float[] scores)
+        {
+            for (uint i = 0; i < scores.Length; i++)
+            {
+                scores[i] = applicationContext.Features.Length + i;
+            }
+        }
+
         class CustomParams
         {
             public int Value1;
@@ -110,18 +118,18 @@ namespace cs_test
             //mwt.InitializeBagging<int>(bags, funcs, parameters, numActions);
 
             /*** Initialize Bagging explore algorithm using a stateless default policy function ***/
-            TemplateStatelessPolicyDelegate[] funcs = 
-            {
-                new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), 
-                new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc2) 
-            };
-            mwt.InitializeBagging(bags, funcs, numActions);
+            //TemplateStatelessPolicyDelegate[] funcs = 
+            //{
+            //    new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc), 
+            //    new TemplateStatelessPolicyDelegate(TemplateStatelessPolicyFunc2) 
+            //};
+            //mwt.InitializeBagging(bags, funcs, numActions);
 
             /*** Initialize Softmax explore algorithm using a default policy function that accepts parameters ***/
             //mwt.InitializeSoftmax<int>(lambda, new TemplateStatefulScorerDelegate<int>(TemplateStatefulScorerFunc), policyParams, numActions);
 
             /*** Initialize Softmax explore algorithm using a stateless default policy function ***/
-            //mwt.InitializeSoftmax(lambda, new StatelessScorerDelegate(MyStatelessScorerFunc), numActions);
+            mwt.InitializeSoftmax(lambda, new TemplateStatelessScorerDelegate(TemplateStatelessScorerFunc), numActions);
 
             FEATURE[] f = new FEATURE[2];
             f[0].X = 0.5f;

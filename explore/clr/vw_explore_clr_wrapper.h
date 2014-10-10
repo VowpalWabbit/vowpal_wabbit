@@ -56,6 +56,7 @@ namespace MultiWorldTesting {
 
 	generic <class T>
 	public delegate void TemplateStatefulScorerDelegate(T, CONTEXT^, cli::array<float>^ scores);
+	public delegate void TemplateStatelessScorerDelegate(CONTEXT^, cli::array<float>^ scores);
 
 	interface class IFunctionWrapper
 	{
@@ -85,6 +86,11 @@ namespace MultiWorldTesting {
 				statelessPolicy = policyFunc;
 			}
 
+			DefaultPolicyWrapper(TemplateStatelessScorerDelegate^ scorerFunc)
+			{
+				statelessScorer = scorerFunc;
+			}
+
 			virtual UInt32 InvokeFunction(CONTEXT^ c) override
 			{
 				if (defaultPolicy != nullptr)
@@ -99,13 +105,21 @@ namespace MultiWorldTesting {
 
 			virtual void InvokeScorer(CONTEXT^ c, cli::array<float>^ scores) override
 			{
-				defaultScorer(parameters, c, scores);
+				if (defaultScorer != nullptr)
+				{
+					defaultScorer(parameters, c, scores);
+				}
+				else
+				{
+					statelessScorer(c, scores);
+				}
 			}
 		private:
 			T parameters;
 			TemplateStatefulPolicyDelegate<T>^ defaultPolicy;
 			TemplateStatelessPolicyDelegate^ statelessPolicy;
 			TemplateStatefulScorerDelegate<T>^ defaultScorer;
+			TemplateStatelessScorerDelegate^ statelessScorer;
 	};
 
 	public ref class MwtExplorer
@@ -135,8 +149,7 @@ namespace MultiWorldTesting {
 
 		generic <class T>
 		void InitializeSoftmax(float lambda, TemplateStatefulScorerDelegate<T>^ defaultScorerFunc, T defaultScorerFuncParams, UInt32 numActions);
-
-		void InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
+		void InitializeSoftmax(float lambda, TemplateStatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
 
 		void Unintialize();
 
@@ -172,6 +185,7 @@ namespace MultiWorldTesting {
 		void InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions);
 
 		void InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
+		void InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
 
 		static UInt32 InternalStatefulPolicy(IntPtr, IntPtr);
 		static UInt32 BaggingStatefulPolicy(IntPtr, IntPtr);

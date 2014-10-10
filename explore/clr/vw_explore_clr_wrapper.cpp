@@ -137,6 +137,16 @@ namespace MultiWorldTesting {
 		this->InitializeSoftmax(lambda, ssDelegate, (IntPtr)selfHandle, numActions);
 	}
 
+	void MwtExplorer::InitializeSoftmax(float lambda, TemplateStatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions)
+	{
+		policyWrapper = gcnew DefaultPolicyWrapper<int>(defaultScorerFunc);
+		selfHandle = GCHandle::Alloc(this);
+
+		StatefulScorerDelegate^ ssDelegate = gcnew StatefulScorerDelegate(&MwtExplorer::InternalScorerFunction);
+
+		this->InitializeSoftmax(lambda, ssDelegate, (IntPtr)selfHandle, numActions);
+	}
+
 	void MwtExplorer::InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, System::IntPtr defaultPolicyFuncContext, UInt32 numActions)
 	{
 		GCHandle gch = GCHandle::Alloc(defaultPolicyFunc);
