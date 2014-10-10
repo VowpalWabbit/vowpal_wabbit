@@ -9,10 +9,8 @@ using namespace System::Runtime::InteropServices;
 
 namespace MultiWorldTesting {
 	public delegate UInt32 StatefulPolicyDelegate(IntPtr, IntPtr);
-	public delegate UInt32 StatelessPolicyDelegate(IntPtr);
 
 	public delegate void StatefulScorerDelegate(IntPtr, IntPtr, IntPtr scores, UInt32 size);
-	public delegate void StatelessScorerDelegate(IntPtr, IntPtr scores, UInt32 size);
 
 	[StructLayout(LayoutKind::Sequential)]
 	public value struct FEATURE
@@ -176,16 +174,12 @@ namespace MultiWorldTesting {
 
 	private:
 		void InitializeEpsilonGreedy(float epsilon, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
-		void InitializeEpsilonGreedy(float epsilon, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
 		
 		void InitializeTauFirst(UInt32 tau, StatefulPolicyDelegate^ defaultPolicyFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
-		void InitializeTauFirst(UInt32 tau, StatelessPolicyDelegate^ defaultPolicyFunc, UInt32 numActions);
 		
 		void InitializeBagging(UInt32 bags, cli::array<StatefulPolicyDelegate^>^ defaultPolicyFuncs, cli::array<IntPtr>^ defaultPolicyArgs, UInt32 numActions);
-		void InitializeBagging(UInt32 bags, cli::array<StatelessPolicyDelegate^>^ defaultPolicyFuncs, UInt32 numActions);
 
 		void InitializeSoftmax(float lambda, StatefulScorerDelegate^ defaultScorerFunc, IntPtr defaultPolicyFuncContext, UInt32 numActions);
-		void InitializeSoftmax(float lambda, StatelessScorerDelegate^ defaultScorerFunc, UInt32 numActions);
 
 		static UInt32 InternalStatefulPolicy(IntPtr, IntPtr);
 		static UInt32 BaggingStatefulPolicy(IntPtr, IntPtr);
