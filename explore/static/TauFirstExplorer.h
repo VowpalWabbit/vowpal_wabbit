@@ -15,28 +15,11 @@ public:
 		m_default_policy_wrapper(default_policy_func_wrapper),
 		m_default_policy_params(default_policy_params)
 	{
-		m_random_generator = new PRG<u32>();
-	}
-
-	~TauFirstExplorer()
-	{
-		delete m_random_generator;
-	}
-
-	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions)
-	{
-		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
-		return this->Choose_Action(context, actions, random_generator);
-	}
-
-private:
-	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, PRG<u32>& random_generator)
-	{
 		MWTAction chosen_action(0);
 		float action_probability = 0.f;
 		bool log_action;
@@ -71,7 +54,6 @@ private:
 
 private:
 	u32 m_tau;
-	PRG<u32>* m_random_generator;
 
 	BaseFunctionWrapper& m_default_policy_wrapper;
 	T* m_default_policy_params;

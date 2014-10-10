@@ -17,7 +17,6 @@ public:
 			m_default_policy_funcs.push_back(func_wrapper);
 			m_default_policy_params.push_back(default_policy_args[i]);
 		}
-		m_random_generator = new PRG<u32>();
 	}
 
 	BaggingExplorer(
@@ -33,13 +32,10 @@ public:
 			func_wrapper->m_policy_function = default_policy_functions[i];
 			m_default_policy_funcs.push_back(func_wrapper);
 		}
-		m_random_generator = new PRG<u32>();
 	}
 
 	~BaggingExplorer()
 	{
-		delete m_random_generator;
-
 		for (size_t i = 0; i < m_default_policy_funcs.size(); i++)
 		{
 			delete m_default_policy_funcs[i];
@@ -49,26 +45,15 @@ public:
 		m_default_policy_params.clear();
 	}
 
-	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions)
-	{
-		return this->Choose_Action(context, actions, *m_random_generator);
-	}
-
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
-		return this->Choose_Action(context, actions, random_generator);
-	}
-
-private:
-	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, PRG<u32>& random_generator)
-	{
-		//Select Bag
+		// Select bag
 		u32 chosen_bag = random_generator.Uniform_Int(0, m_bags - 1);
 		// Invoke the default policy function to get the action
 		MWTAction chosen_action(0);
 		MWTAction action_from_bag(0);
-		//maybe be best to make this static size
+		// Maybe be best to make this static size
 		u32* actions_selected = new u32[actions.Count()];
 		for (int i = 0; i < actions.Count(); i++)
 		{
@@ -102,7 +87,6 @@ private:
 
 private:
 	u32 m_bags;
-	PRG<u32>* m_random_generator;
 
 	std::vector<BaseFunctionWrapper*> m_default_policy_funcs;
 	std::vector<T*> m_default_policy_params;

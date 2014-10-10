@@ -16,28 +16,15 @@ public:
 			m_default_policy_wrapper(default_policy_func_wrapper),
 			m_default_policy_params(default_policy_params)
 	{
-		m_random_generator = new PRG<u32>();
 	}
 
 	~EpsilonGreedyExplorer()
 	{
-		delete m_random_generator;
-	}
-
-	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions)
-	{
-		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
-		return this->Choose_Action(context, actions, random_generator);
-	}
-
-private:
-	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, PRG<u32>& random_generator)
-	{
 		// Invoke the default policy function to get the action
 		MWTAction chosen_action(0);
 		if (typeid(m_default_policy_wrapper) == typeid(StatelessFunctionWrapper))
@@ -82,8 +69,7 @@ private:
 	}
 
 private:
-	float m_epsilon;
-	PRG<u32>* m_random_generator;
+	float m_epsilon;	
 
 	BaseFunctionWrapper& m_default_policy_wrapper;
 	T* m_default_policy_params;

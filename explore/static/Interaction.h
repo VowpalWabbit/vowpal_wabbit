@@ -187,16 +187,6 @@ private:
 	bool m_is_copy;
 };
 
-class Policy
-{
-public:
-	virtual std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions) = 0;
-	virtual std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed) = 0;
-	virtual ~Policy()
-	{
-	}
-};
-
 class Interaction : public Serializable
 {
 public:

@@ -14,32 +14,15 @@ public:
 		m_default_scorer_wrapper(default_scorer_func_wrapper),
 		m_default_scorer_params(default_scorer_params)
 	{
-		m_random_generator = new PRG<u32>();
-	}
-
-	~GenericExplorer()
-	{
-		delete m_random_generator;
-	}
-
-	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions)
-	{
-		return this->Choose_Action(context, actions, *m_random_generator);
 	}
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
 	{
 		PRG<u32> random_generator(seed);
-		return this->Choose_Action(context, actions, random_generator);
-	}
-
-private:
-	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, PRG<u32>& random_generator)
-	{
-		// Invoke the default scorer function to get the weight of each action 
 		MWTAction chosen_action(0);
 		u32 numWeights = actions.Count();
 		float* weights = new float[numWeights]();
+		// Invoke the default scorer function to get the weight of each action 
 		if (typeid(m_default_scorer_wrapper) == typeid(StatelessFunctionWrapper))
 		{
 			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_scorer_wrapper);
@@ -69,8 +52,6 @@ private:
 	}
 
 private:
-	PRG<u32>* m_random_generator;
-
 	BaseFunctionWrapper& m_default_scorer_wrapper;
 	T* m_default_scorer_params;
 };
