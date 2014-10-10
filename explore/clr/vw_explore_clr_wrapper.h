@@ -158,10 +158,6 @@ namespace MultiWorldTesting {
 		String^ GetAllInteractionsAsString();
 		cli::array<INTERACTION^>^ GetAllInteractions();
 
-	// Helper methods
-	public:
-		static cli::array<float>^ IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size);
-
 	internal:
 		UInt32 InvokeDefaultPolicyFunction(CONTEXT^);
 		UInt32 InvokeBaggingDefaultPolicyFunction(CONTEXT^, int);
@@ -184,5 +180,35 @@ namespace MultiWorldTesting {
 	public:
 		MwtExplorer^ Mwt;
 		int BagIndex;
+	};
+
+	public ref class MwtRewardReporter
+	{
+	private:
+		MWTRewardReporter* m_mwt_reward_reporter;
+
+	public:
+		MwtRewardReporter(cli::array<INTERACTION^>^ interactions);
+		~MwtRewardReporter();
+
+		bool ReportReward(UInt64 id, float reward);
+		bool ReportReward(cli::array<UInt64>^ ids, cli::array<float>^ rewards);
+		String^ GetAllInteractions();
+	};
+
+	public ref class MwtOptimizer
+	{
+	private:
+		MWTOptimizer* m_mwt_optimizer;
+
+	public:
+		MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions);
+		~MwtOptimizer();
+
+		generic <class T>
+		float EvaluatePolicy(StatefulPolicyDelegate<T>^ policyFunc, T policyParams);
+		float EvaluatePolicy(StatelessPolicyDelegate^ policy_func);
+		float EvaluatePolicyOneAgainstAll(String^ model_input_file);
+		void OptimizePolicyOneAgainstAll(String^ model_output_file);
 	};
 }

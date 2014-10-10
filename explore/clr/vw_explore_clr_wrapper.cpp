@@ -366,12 +366,67 @@ namespace MultiWorldTesting {
 		}
 	}
 
-	cli::array<float>^ MwtExplorer::IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size)
+	MwtRewardReporter::MwtRewardReporter(cli::array<INTERACTION^>^ interactions)
 	{
-		// PERF: scores are sent from native space to managed space and thus have to be copied.
-		cli::array<float>^ scores = gcnew cli::array<float>(size);
-		Marshal::Copy(scoresPtr, scores, 0, (int)size);
-		return scores;
+		// TODO: implement
+		m_mwt_reward_reporter = nullptr;
 	}
 
+	MwtRewardReporter::~MwtRewardReporter()
+	{
+		delete m_mwt_reward_reporter;
+	}
+
+	bool MwtRewardReporter::ReportReward(UInt64 id, float reward)
+	{
+		// TODO: implement
+		return false;
+	}
+
+	bool MwtRewardReporter::ReportReward(cli::array<UInt64>^ ids, cli::array<float>^ rewards)
+	{
+		// TODO: implement
+		return false;
+	}
+	
+	String^ MwtRewardReporter::GetAllInteractions()
+	{
+		// TODO: implement
+		return String::Empty;
+	}
+
+	MwtOptimizer::MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions)
+	{
+		// TODO: implement
+		m_mwt_optimizer = nullptr;
+	}
+
+	MwtOptimizer::~MwtOptimizer()
+	{
+		delete m_mwt_optimizer;
+	}
+
+	generic <class T>
+	float MwtOptimizer::EvaluatePolicy(StatefulPolicyDelegate<T>^ policyFunc, T policyParams)
+	{
+		// TODO: implement
+		return 0.f;
+	}
+
+	float MwtOptimizer::EvaluatePolicy(StatelessPolicyDelegate^ policy_func)
+	{
+		// TODO: implement
+		return 0.f;
+	}
+
+	float MwtOptimizer::EvaluatePolicyOneAgainstAll(String^ model_input_file)
+	{
+		// TODO: implement
+		return 0.f;
+	}
+
+	void MwtOptimizer::OptimizePolicyOneAgainstAll(String^ model_output_file)
+	{
+		// TODO: implement
+	}
 }
