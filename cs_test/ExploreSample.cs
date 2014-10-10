@@ -115,9 +115,25 @@ namespace cs_test
 
             UInt32 chosenAction = mwt.ChooseAction(context, "myId");
 
-            string interactions = mwt.GetAllInteractionsAsString();
+            INTERACTION[] interactions = mwt.GetAllInteractions();
 
             mwt.Unintialize();
+
+            MwtRewardReporter mrr = new MwtRewardReporter(interactions);
+
+            UInt64 joinKey = 10;
+            float reward = 0.5f;
+            if (!mrr.ReportReward(joinKey, reward))
+            {
+                throw new Exception();
+            }
+
+            MwtOptimizer mot = new MwtOptimizer(interactions, numActions);
+            
+            float eval1 = mot.EvaluatePolicy(new StatefulPolicyDelegate<int>(SampleStatefulPolicyFunc), policyParams);
+
+            mot.OptimizePolicyOneAgainstAll("model_file");
+            float eval2 = mot.EvaluatePolicyOneAgainstAll("model_file");
 
             Console.WriteLine(chosenAction);
             Console.WriteLine(interactions);
