@@ -238,7 +238,7 @@ namespace ExploreTests
         {
             for (uint i = 0; i < scores.Length; i++)
             {
-                scores[i] = (int)policyParams + i;
+                scores[i] = policyParams;
             }
         }
 
@@ -246,7 +246,7 @@ namespace ExploreTests
         {
             for (uint i = 0; i < scores.Length; i++)
             {
-                scores[i] = applicationContext.Features.Length + i;
+                scores[i] = applicationContext.Features.Length;
             }
         }
 
@@ -258,7 +258,7 @@ namespace ExploreTests
         private static readonly uint Tau = 0;
         private static readonly uint Bags = 2;
         private static readonly float Lambda = 0.5f;
-        private static readonly int PolicyParams = 1003;
+        private static readonly int PolicyParams = 7;
         private static readonly string UniqueKey = "ManagedTestId";
 
         private MwtExplorer mwt;

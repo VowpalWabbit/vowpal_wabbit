@@ -355,9 +355,15 @@ namespace MultiWorldTesting {
 		GCHandle contextHandle = (GCHandle)contextPtr;
 		CONTEXT^ context = (CONTEXT^)(contextHandle.Target);
 
-		cli::array<float>^ scores = MwtExplorer::IntPtrToScoreArray(scoresPtr, numScores);
+		cli::array<float>^ scores = gcnew cli::array<float>(numScores);
 
-		return mwt->InvokeDefaultScorerFunction(context, scores);
+		mwt->InvokeDefaultScorerFunction(context, scores);
+
+		float* native_scores = (float*)scoresPtr.ToPointer();
+		for (int i = 0; i < numScores; i++)
+		{
+			native_scores[i] = scores[i];
+		}
 	}
 
 	cli::array<float>^ MwtExplorer::IntPtrToScoreArray(IntPtr scoresPtr, UInt32 size)
