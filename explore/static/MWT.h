@@ -11,7 +11,7 @@
 #include "TauFirstExplorer.h"
 #include "SoftMaxExplorer.h"
 #include "BaggingExplorer.h"
-
+#include "GenericExplorer.h"
 #include "vwdll.h"
 
 //
@@ -367,7 +367,8 @@ private:
 class MWTOptimizer
 {
 public:
-	MWTOptimizer(size_t& num_interactions, Interaction* interactions[])
+	MWTOptimizer(size_t& num_interactions, Interaction* interactions[], u32 num_actions) 
+		: m_num_actions(num_actions)
 	{
 		//TODO: Accept an ActionSet param that we'll use to call Match()? Maybe we should just accept a 
 		// Match() method
@@ -381,6 +382,7 @@ public:
 				m_interactions.push_back(interactions[i]);
 			}
 		}
+		m_num_actions = num_actions;
 	}
 
 	template <class T>
@@ -402,23 +404,51 @@ public:
 		return Evaluate_Policy<MWT_Empty>(func_Wrapper, nullptr);
 	}
 
-	void* Optimize_Policy_One_Against_All()
+	float Evaluate_Policy_VW_CSOAA(std::string model_input_file)
 	{
-		//TODO: Sample invocation code below. We can also extract the model as a void*, or save it to a file
-		//specified by the caller.
-
-		/*
 		VW_HANDLE vw;
 		VW_EXAMPLE example;
-		float score;
+		u32 action;
+		double sum_weighted_rewards = 0.0;
+		u64 count = 0;
 
-		printf("this is a native c program calling vw\n");
-		vw = VW_InitializeA("-q st --noconstant --quiet");
-		example = VW_ReadExampleA(vw, "1 |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
-		score = VW_Learn(vw, example);
+		std::string params = "-i " + model_input_file + " --noconstant --quiet";
+		vw = VW_InitializeA(params.c_str());
+		MWTAction policy_action(0);
+		for (auto pInteraction : m_interactions)
+		{
+			std::ostringstream serialized_stream;
+			pInteraction->Serialize_VW_CSOAA(serialized_stream);
+			example = VW_ReadExampleA(vw, serialized_stream.str().c_str());
+			policy_action = MWTAction((u32)VW_Predict(vw, example));
+			// If the policy action matches the action logged in the interaction, include the
+			// (importance-weighted) reward in our average
+			if (policy_action.Match(pInteraction->Get_Action()))
+			{
+				sum_weighted_rewards += pInteraction->Get_Reward() * (1.0 / pInteraction->Get_Prob());
+				count++;
+			}
+		}
 		VW_Finish(vw);
-		printf("Score = %f\n", score);
-		*/
+		return (sum_weighted_rewards / count);
+	}
+
+	void Optimize_Policy_VW_CSOAA(std::string model_output_file)
+	{
+		VW_HANDLE vw;
+		VW_EXAMPLE example;
+
+		std::string params = "--csoaa " + std::to_string(m_num_actions) + "--noconstant --quiet -f " + model_output_file;
+
+		vw = VW_InitializeA(params.c_str());
+		for (auto pInteraction : m_interactions)
+		{
+			std::ostringstream serialized_stream;
+			pInteraction->Serialize_VW_CSOAA(serialized_stream);
+			example = VW_ReadExampleA(vw, serialized_stream.str().c_str());	
+			(void)VW_Learn(vw, example);
+		}
+		VW_Finish(vw);
 	}
 
 private:
@@ -455,6 +485,8 @@ private:
 		return (sum_weighted_rewards / count);
 	}
 
+
 private:
 	std::vector<Interaction*> m_interactions;
+	u32 m_num_actions;
 };
