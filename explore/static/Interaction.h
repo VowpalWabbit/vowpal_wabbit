@@ -83,10 +83,6 @@ public:
 	// e.g. add GetStringID() or GetDescription() etc...
 	ActionSet(u32 count) : m_count(count)
 	{
-		for (u32 i = 0; i < count; i++)
-		{
-			m_action_set.push_back(MWTAction(MWTAction::Make_OneBased(i))); // 1-based Action id
-		}
 	}
 
 	~ActionSet()
@@ -95,7 +91,7 @@ public:
 
 	MWTAction Get(u32 id)
 	{
-		return m_action_set.at(MWTAction::Make_ZeroBased(id)); // Action ID is 1-based but index is 0-based
+		return MWTAction(id);
 	}
 
 	u32 Count()
@@ -103,14 +99,7 @@ public:
 		return m_count;
 	}
 
-	virtual bool Match(MWTAction& first_action, MWTAction& second_action)
-	{
-		// The default matcher just compares the two actions in isolation
-		return first_action.Match(second_action);
-	}
-
 private:
-	std::vector<MWTAction> m_action_set;
 	int m_count;
 };
 
