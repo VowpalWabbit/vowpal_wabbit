@@ -213,25 +213,19 @@ namespace MultiWorldTesting {
 		GCHandle contextHandle = GCHandle::Alloc(context);
 		IntPtr contextPtr = (IntPtr)contextHandle;
 
-		cli::array<FEATURE>^ contextFeatures = context->Features;
-		String^ otherContext = context->OtherContext;
-
-		std::string* nativeOtherContext = (otherContext != nullptr) ? &marshal_as<std::string>(otherContext) : nullptr;
 		std::string nativeUniqueKey = marshal_as<std::string>(uniqueId);
 
-		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
-		FEATURE* nativeContextFeatures = pinnedContextFeatures;
-
-		Context log_context((feature*)nativeContextFeatures, (size_t)context->Features->Length, nativeOtherContext);
+		Context* log_context = MwtHelper::ToNativeContext(context);
 
 		size_t uniqueIdLength = (size_t)uniqueId->Length;
 
 		chosenAction = m_mwt->Choose_Action(
 			contextPtr.ToPointer(),
 			nativeUniqueKey, 
-			log_context);
+			*log_context);
 
 		contextHandle.Free();
+		delete log_context;
 
 		return chosenAction;
 	}
@@ -368,31 +362,47 @@ namespace MultiWorldTesting {
 
 	MwtRewardReporter::MwtRewardReporter(cli::array<INTERACTION^>^ interactions)
 	{
-		// TODO: implement
-		m_mwt_reward_reporter = nullptr;
+		m_num_native_interactions = interactions->Length;
+		m_native_interactions = new Interaction*[m_num_native_interactions];
+		for (int i = 0; i < m_num_native_interactions; i++)
+		{
+			Context* native_context = MwtHelper::ToNativeContext(interactions[i]->ApplicationContext);
+			
+			m_native_interactions[i] = new Interaction(native_context,
+				interactions[i]->ChosenAction,
+				interactions[i]->Probability,
+				interactions[i]->JoinId);
+		}
+		size_t native_num_interactions = (size_t)m_num_native_interactions;
+		m_mwt_reward_reporter = new MWTRewardReporter(native_num_interactions, m_native_interactions);
 	}
 
 	MwtRewardReporter::~MwtRewardReporter()
 	{
+		for (int i = 0; i < m_num_native_interactions; i++)
+		{
+			delete m_native_interactions[i];
+		}
+		delete[] m_native_interactions;
 		delete m_mwt_reward_reporter;
 	}
 
 	bool MwtRewardReporter::ReportReward(UInt64 id, float reward)
 	{
-		// TODO: implement
-		return false;
+		return m_mwt_reward_reporter->ReportReward(id, reward);
 	}
 
 	bool MwtRewardReporter::ReportReward(cli::array<UInt64>^ ids, cli::array<float>^ rewards)
 	{
-		// TODO: implement
-		return false;
+		pin_ptr<UInt64> pinnedIds = &ids[0];
+		pin_ptr<float> pinnedRewards = &rewards[0];
+
+		return m_mwt_reward_reporter->ReportReward((size_t)ids->Length, (u64*)pinnedIds, (float*)pinnedRewards);
 	}
 	
 	String^ MwtRewardReporter::GetAllInteractions()
 	{
-		// TODO: implement
-		return String::Empty;
+		return gcnew String(m_mwt_reward_reporter->Get_All_Interactions().c_str());
 	}
 
 	MwtOptimizer::MwtOptimizer(cli::array<INTERACTION^>^ interactions, UInt32 numActions)
@@ -428,5 +438,18 @@ namespace MultiWorldTesting {
 	void MwtOptimizer::OptimizePolicyOneAgainstAll(String^ model_output_file)
 	{
 		// TODO: implement
+	}
+
+	Context* MwtHelper::ToNativeContext(CONTEXT^ context)
+	{
+		cli::array<FEATURE>^ contextFeatures = context->Features;
+		String^ otherContext = context->OtherContext;
+
+		std::string* nativeOtherContext = (otherContext != nullptr) ? &marshal_as<std::string>(otherContext) : nullptr;
+
+		pin_ptr<FEATURE> pinnedContextFeatures = &context->Features[0];
+		FEATURE* nativeContextFeatures = pinnedContextFeatures;
+
+		return new Context((feature*)nativeContextFeatures, (size_t)context->Features->Length, nativeOtherContext);
 	}
 }

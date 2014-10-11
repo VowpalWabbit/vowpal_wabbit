@@ -186,6 +186,8 @@ namespace MultiWorldTesting {
 	{
 	private:
 		MWTRewardReporter* m_mwt_reward_reporter;
+		Interaction** m_native_interactions;
+		int m_num_native_interactions;
 
 	public:
 		MwtRewardReporter(cli::array<INTERACTION^>^ interactions);
@@ -210,5 +212,11 @@ namespace MultiWorldTesting {
 		float EvaluatePolicy(StatelessPolicyDelegate^ policy_func);
 		float EvaluatePolicyOneAgainstAll(String^ model_input_file);
 		void OptimizePolicyOneAgainstAll(String^ model_output_file);
+	};
+
+	private ref class MwtHelper
+	{
+	public:
+		static Context* ToNativeContext(CONTEXT^ context);
 	};
 }
