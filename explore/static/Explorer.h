@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Interaction.h"
-
+#include <float.h>
 //
 // Common interface for all exploration algorithms
 //
@@ -329,7 +329,7 @@ public:
 		MWTAction action_from_bag(0);
 		// Maybe be best to make this static size
 		u32* actions_selected = new u32[actions.Count()];
-		for (int i = 0; i < actions.Count(); i++)
+		for (size_t i = 0; i < actions.Count(); i++)
 		{
 			actions_selected[i] = 0;
 		}

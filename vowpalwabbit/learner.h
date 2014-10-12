@@ -91,8 +91,8 @@ namespace LEARNER
     };
 
 struct vw_context {
-	learner* learner;
-	example* example;
+	learner* l;
+	example* e;
 };
 
 struct learner {

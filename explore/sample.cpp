@@ -109,7 +109,7 @@ void Clock_Explore()
 	cout << "--- TOTAL TIME ---: " << (time_init + time_choose + time_serialized_log + time_typed_log) << " micro" << endl;
 }
 
-int _tmain(int argc, _TCHAR* argv[])
+int _tmain(int argc, char* argv[])
 {
 	//Clock_Explore();
 	//return 0;
@@ -117,26 +117,24 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Create a new MWT instance
 	MWTExplorer mwt;
 
-	float epsilon = .2f;
-	u32 tau = 5;
-	u32 bags = 2;
-	float lambda = 0.5f;
-
 	int policy_params = 101;
 
 	/*** Initialize Epsilon-Greedy explore algorithm using a default policy function that accepts parameters ***/
+	//float epsilon = .2f;
 	//mwt.Initialize_Epsilon_Greedy<int>(epsilon, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
 
 	/*** Initialize Epsilon-Greedy explore algorithm using a stateless default policy function ***/
 	//mwt.Initialize_Epsilon_Greedy(epsilon, Stateless_Default_Policy1, NUM_ACTIONS);
 
 	/*** Initialize Tau-First explore algorithm using a default policy function that accepts parameters ***/
+	//	u32 tau = 5;
 	//mwt.Initialize_Tau_First<int>(tau, Stateful_Default_Policy1, &policy_params, NUM_ACTIONS);
 
 	/*** Initialize Tau-First explore algorithm using a stateless default policy function ***/
 	//mwt.Initialize_Tau_First(tau, Stateless_Default_Policy1, NUM_ACTIONS);
 
 	/*** Initialize Bagging explore algorithm using a default policy function that accepts parameters ***/
+	u32 bags = 2;
 	StatefulFunctionWrapper<int>::Policy_Func* funcs[2] = { Stateful_Default_Policy1, Stateful_Default_Policy2 };
 	int* params[2] = { &policy_params, &policy_params };
 	mwt.Initialize_Bagging<int>(bags, funcs, params, NUM_ACTIONS);
@@ -146,6 +144,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//mwt.Initialize_Bagging(bags, funcs, NUM_ACTIONS);
 
 	/*** Initialize Softmax explore algorithm using a default scorer function that accepts parameters ***/
+	//	float lambda = 0.5f;
 	//mwt.Initialize_Softmax<int>(lambda, Stateful_Default_Scorer, &policy_params, NUM_ACTIONS);
 
 	/*** Initialize Softmax explore algorithm using a stateless default scorer function ***/
@@ -161,8 +160,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Now let MWT explore & choose an action
 	pair<u32, u64> action_and_key = mwt.Choose_Action_And_Key(context);
 
+	cout << "action = " << action_and_key.first << "\tkey = " << action_and_key.second << endl;
+
 	string unique_key = "1001";
 	u32 chosen_action = mwt.Choose_Action(context, unique_key);
+	
+	cout << "action = " << chosen_action << endl;
 	
 	// Get the logged data
 	cout << mwt.Get_All_Interactions() << endl;

@@ -390,19 +390,18 @@ public:
 		typename StatefulFunctionWrapper<T>::Policy_Func policy_func,
 		T* policy_params)
 	{
-		this->Evaluate_Policy((Stateful_Policy_Func*)policy_func, (void*)policy_params);
+	  return this->Evaluate_Policy((Stateful_Policy_Func*)policy_func, (void*)policy_params);
 	}
 
 	float Evaluate_Policy(StatelessFunctionWrapper::Policy_Func policy_func)
 	{
-		this->Evaluate_Policy((Stateless_Policy_Func*)policy_func);
+	  return this->Evaluate_Policy((Stateless_Policy_Func*)policy_func);
 	}
 
 	float Evaluate_Policy_VW_CSOAA(std::string model_input_file)
 	{
 		VW_HANDLE vw;
 		VW_EXAMPLE example;
-		u32 action;
 		double sum_weighted_rewards = 0.0;
 		u64 count = 0;
 
@@ -417,7 +416,8 @@ public:
 			policy_action = MWTAction((u32)VW_Predict(vw, example));
 			// If the policy action matches the action logged in the interaction, include the
 			// (importance-weighted) reward in our average
-			if (policy_action.Match(pInteraction->Get_Action()))
+			MWTAction a =pInteraction->Get_Action();
+			if (policy_action.Match(a))
 			{
 				sum_weighted_rewards += pInteraction->Get_Reward() * (1.0 / pInteraction->Get_Prob());
 				count++;
@@ -488,7 +488,8 @@ private:
 			}
 			// If the policy action matches the action logged in the interaction, include the
 			// (importance-weighted) reward in our average
-			if (policy_action.Match(pInteraction->Get_Action()))
+			MWTAction a = pInteraction->Get_Action();
+			if (policy_action.Match(a))
 			{
 				sum_weighted_rewards += pInteraction->Get_Reward() * (1.0 / pInteraction->Get_Prob());
 				count++;

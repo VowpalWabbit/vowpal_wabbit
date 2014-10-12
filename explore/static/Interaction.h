@@ -25,27 +25,27 @@ public:
 	static void Initialize()
 	{
 		g_id = 0;
-		::InitializeCriticalSection(&g_id_mutex);
+		//	::InitializeCriticalSection(&g_id_mutex);
 	}
 
 	static u64 Get_Id()
 	{
-		::EnterCriticalSection(&g_id_mutex);
+	  //		::EnterCriticalSection(&g_id_mutex);
 		u64 return_id = g_id;
 		g_id++;
-		::LeaveCriticalSection(&g_id_mutex);
+		//	::LeaveCriticalSection(&g_id_mutex);
 
 		return return_id;
 	}
 
 	static void Destroy()
 	{
-		::DeleteCriticalSection(&g_id_mutex);
+	  //	::DeleteCriticalSection(&g_id_mutex);
 	}
 
 private:
 	static u64 g_id;
-	static CRITICAL_SECTION g_id_mutex;
+	//static CRITICAL_SECTION g_id_mutex;
 };
 
 class MWTAction : public Serializable
