@@ -95,22 +95,28 @@ private:
 };
 
 
-template <class T>
 class SoftmaxExplorer : public Explorer
 {
 public:
 	SoftmaxExplorer(
 		float lambda,
-		BaseFunctionWrapper& default_scorer_func_wrapper,
-		T* default_scorer_params) :
+		Stateful_Scorer_Func* default_scorer_func,
+		void* default_scorer_params) :
 		m_lambda(lambda),
-		m_default_scorer_wrapper(default_scorer_func_wrapper),
+		m_stateful_default_scorer_func(default_scorer_func),
+		m_stateless_default_scorer_func(nullptr),
 		m_default_scorer_params(default_scorer_params)
 	{
-		if (lambda < 0)
-		{
-			throw std::invalid_argument("Lambda value must be non-negative.");
-		}
+	}
+
+	SoftmaxExplorer(
+		float lambda,
+		Stateless_Scorer_Func* default_scorer_func) :
+		m_lambda(lambda),
+		m_stateful_default_scorer_func(nullptr),
+		m_stateless_default_scorer_func(default_scorer_func),
+		m_default_scorer_params(nullptr)
+	{
 	}
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
@@ -120,15 +126,13 @@ public:
 		u32 numScores = actions.Count();
 		float* scores = new float[numScores]();
 		// Invoke the default scorer function to score each action 
-		if (typeid(m_default_scorer_wrapper) == typeid(StatelessFunctionWrapper))
+		if (m_stateless_default_scorer_func != nullptr)
 		{
-			StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(&m_default_scorer_wrapper);
-			stateless_function_wrapper->m_scorer_function(context, scores, actions.Count());
+			m_stateless_default_scorer_func(context, scores, actions.Count());
 		}
 		else
 		{
-			StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(&m_default_scorer_wrapper);
-			stateful_function_wrapper->m_scorer_function(m_default_scorer_params, context, scores, actions.Count());
+			m_stateful_default_scorer_func(m_default_scorer_params, context, scores, actions.Count());
 		}
 
 		u32 i = 0;
@@ -165,8 +169,9 @@ public:
 private:
 	float m_lambda;
 
-	BaseFunctionWrapper& m_default_scorer_wrapper;
-	T* m_default_scorer_params;
+	Stateful_Scorer_Func* m_stateful_default_scorer_func;
+	Stateless_Scorer_Func* m_stateless_default_scorer_func;
+	void* m_default_scorer_params;
 };
 
 
@@ -242,7 +247,8 @@ public:
 		Stateless_Policy_Func* default_policy_func) :
 		m_tau(tau),
 		m_stateful_default_policy_func(nullptr),
-		m_stateless_default_policy_func(default_policy_func)
+		m_stateless_default_policy_func(default_policy_func),
+		m_default_policy_params(nullptr)
 	{
 	}
 

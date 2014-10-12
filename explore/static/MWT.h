@@ -180,11 +180,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-
-		StatefulFunctionWrapper<void>* func_Wrapper = new StatefulFunctionWrapper<void>();
-		func_Wrapper->m_scorer_function = default_scorer_func;
-
-		m_explorer = new SoftmaxExplorer<void>(lambda, *func_Wrapper, default_scorer_func_argument);
+		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func, default_scorer_func_argument);
 	}
 
 	void Initialize_Softmax(
@@ -193,11 +189,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-
-		StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
-		func_wrapper->m_scorer_function = default_scorer_func;
-
-		m_explorer = new SoftmaxExplorer<MWT_Empty>(lambda, *func_wrapper, nullptr);
+		m_explorer = new SoftmaxExplorer(lambda, default_scorer_func);
 	}
 
 	u32 Choose_Action(void* context, feature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
