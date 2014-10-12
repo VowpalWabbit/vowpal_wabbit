@@ -288,7 +288,6 @@ private:
 };
 
 
-template <class T>
 class BaggingExplorer : public Explorer
 {
 public:
@@ -296,43 +295,25 @@ public:
 		u32 bags,
 		Stateful_Policy_Func** default_policy_functions,
 		void** default_policy_args) :
+		m_stateful_default_policy_funcs(default_policy_functions),
+		m_stateless_default_policy_funcs(nullptr),
+		m_default_policy_params(default_policy_args),
 		m_bags(bags)
 	{
-		m_default_policy_funcs.clear();
-		m_default_policy_params.clear();
-
-		for (u32 i = 0; i < bags; i++){
-			StatefulFunctionWrapper<void>* func_wrapper = new StatefulFunctionWrapper<void>();
-			func_wrapper->m_policy_function = default_policy_functions[i];
-			m_default_policy_funcs.push_back(func_wrapper);
-			m_default_policy_params.push_back(default_policy_args[i]);
-		}
 	}
 
 	BaggingExplorer(
 		u32 bags,
 		Stateless_Policy_Func** default_policy_functions) :
+		m_stateful_default_policy_funcs(nullptr),
+		m_stateless_default_policy_funcs(default_policy_functions),
+		m_default_policy_params(nullptr),
 		m_bags(bags)
 	{
-		m_default_policy_funcs.clear();
-		m_default_policy_params.clear();
-
-		for (u32 i = 0; i < bags; i++){
-			StatelessFunctionWrapper* func_wrapper = new StatelessFunctionWrapper();
-			func_wrapper->m_policy_function = default_policy_functions[i];
-			m_default_policy_funcs.push_back(func_wrapper);
-		}
 	}
 
 	~BaggingExplorer()
 	{
-		for (size_t i = 0; i < m_default_policy_funcs.size(); i++)
-		{
-			delete m_default_policy_funcs[i];
-		}
-
-		m_default_policy_funcs.clear();
-		m_default_policy_params.clear();
 	}
 
 	std::tuple<MWTAction, float, bool> Choose_Action(void* context, ActionSet& actions, u32 seed)
@@ -351,15 +332,13 @@ public:
 		}
 		for (u32 current_bag = 0; current_bag < m_bags; current_bag++)
 		{
-			if (typeid(*m_default_policy_funcs[current_bag]) == typeid(StatelessFunctionWrapper))
+			if (m_stateless_default_policy_funcs != nullptr)
 			{
-				StatelessFunctionWrapper* stateless_function_wrapper = (StatelessFunctionWrapper*)(m_default_policy_funcs[current_bag]);
-				action_from_bag = MWTAction(stateless_function_wrapper->m_policy_function(context));
+				action_from_bag = MWTAction(m_stateless_default_policy_funcs[current_bag](context));
 			}
 			else
 			{
-				StatefulFunctionWrapper<T>* stateful_function_wrapper = (StatefulFunctionWrapper<T>*)(m_default_policy_funcs[current_bag]);
-				action_from_bag = MWTAction(stateful_function_wrapper->m_policy_function(m_default_policy_params[current_bag], context));
+				action_from_bag = MWTAction(m_stateful_default_policy_funcs[current_bag](m_default_policy_params[current_bag], context));
 			}
 
 			if (current_bag == chosen_bag)
@@ -378,6 +357,7 @@ public:
 private:
 	u32 m_bags;
 
-	std::vector<BaseFunctionWrapper*> m_default_policy_funcs;
-	std::vector<T*> m_default_policy_params;
+	Stateful_Policy_Func** m_stateful_default_policy_funcs;
+	Stateless_Policy_Func** m_stateless_default_policy_funcs;
+	void** m_default_policy_params;
 };

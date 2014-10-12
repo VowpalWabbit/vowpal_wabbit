@@ -161,7 +161,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-		m_explorer = new BaggingExplorer<void>(bags, default_policy_functions, default_policy_args);
+		m_explorer = new BaggingExplorer(bags, default_policy_functions, default_policy_args);
 	}
 
 	void Initialize_Bagging(
@@ -170,7 +170,7 @@ public:
 		u32 num_actions)
 	{
 		m_action_set = new ActionSet(num_actions);
-		m_explorer = new BaggingExplorer<void>(bags, default_policy_functions);
+		m_explorer = new BaggingExplorer(bags, default_policy_functions);
 	}
 
 	void Initialize_Softmax(
