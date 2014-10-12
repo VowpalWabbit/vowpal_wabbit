@@ -20,9 +20,7 @@ public:
 	{
 		IdGenerator::Initialize();
 
-		m_logger = new Logger();
 		m_explorer = nullptr;
-		m_default_func_wrapper = nullptr;
 		m_action_set = nullptr;
 	}
 
@@ -30,10 +28,8 @@ public:
 	{
 		IdGenerator::Destroy();
 
-		delete m_logger;
 		delete m_explorer;
 		delete m_action_set;
-		delete m_default_func_wrapper;
 	}
 
 	template <class T>
@@ -134,8 +130,6 @@ public:
 		func_Wrapper->m_policy_function = default_policy_func;
 		
 		m_explorer = new EpsilonGreedyExplorer<void>(epsilon, *func_Wrapper, default_policy_func_argument);
-		
-		m_default_func_wrapper = func_Wrapper;
 	}
 
 	void Initialize_Epsilon_Greedy(
@@ -149,8 +143,6 @@ public:
 		func_Wrapper->m_policy_function = default_policy_func;
 		
 		m_explorer = new EpsilonGreedyExplorer<MWT_Empty>(epsilon, *func_Wrapper, nullptr);
-		
-		m_default_func_wrapper = func_Wrapper;
 	}
 
 	void Initialize_Tau_First(
@@ -165,8 +157,6 @@ public:
 		func_wrapper->m_policy_function = default_policy_func;
 		
 		m_explorer = new TauFirstExplorer<void>(tau, *func_wrapper, default_policy_func_argument);
-		
-		m_default_func_wrapper = func_wrapper;
 	}
 
 	void Initialize_Tau_First(
@@ -180,8 +170,6 @@ public:
 		func_wrapper->m_policy_function = default_policy_func;
 		
 		m_explorer = new TauFirstExplorer<MWT_Empty>(tau, *func_wrapper, nullptr);
-		
-		m_default_func_wrapper = func_wrapper;
 	}
 
 	void Initialize_Bagging(
@@ -215,8 +203,6 @@ public:
 		func_Wrapper->m_scorer_function = default_scorer_func;
 
 		m_explorer = new SoftmaxExplorer<void>(lambda, *func_Wrapper, default_scorer_func_argument);
-
-		m_default_func_wrapper = func_Wrapper;
 	}
 
 	void Initialize_Softmax(
@@ -230,8 +216,6 @@ public:
 		func_wrapper->m_scorer_function = default_scorer_func;
 
 		m_explorer = new SoftmaxExplorer<MWT_Empty>(lambda, *func_wrapper, nullptr);
-
-		m_default_func_wrapper = func_wrapper;
 	}
 
 	u32 Choose_Action(void* context, feature* context_features, size_t num_features, std::string* other_context, std::string unique_id)
@@ -255,7 +239,7 @@ public:
 		}
 
 		Interaction pInteraction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), seed);
-		m_logger->Store(&pInteraction);
+		m_logger.Store(&pInteraction);
 
 		return std::get<0>(action_Probability_Log_Tuple).Get_Id();
 	}
@@ -273,19 +257,19 @@ public:
 			return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), NO_JOIN_KEY);
 		}
 		Interaction interaction(&log_context, std::get<0>(action_Probability_Log_Tuple), std::get<1>(action_Probability_Log_Tuple), id);
-		m_logger->Store(&interaction);
+		m_logger.Store(&interaction);
 
 		return std::pair<u32, u64>(std::get<0>(action_Probability_Log_Tuple).Get_Id(), interaction.Get_Id());
 	}
 
 	std::string Get_All_Interactions()
 	{
-		return m_logger->Get_All_Interactions();
+		return m_logger.Get_All_Interactions();
 	}
 
 	void Get_All_Interactions(size_t& num_interactions, Interaction**& interactions)
 	{
-		m_logger->Get_All_Interactions(num_interactions, interactions);
+		m_logger.Get_All_Interactions(num_interactions, interactions);
 	}
 
 private:
@@ -297,9 +281,8 @@ private:
 
 private:
 	Explorer* m_explorer;
-	Logger* m_logger;
+	Logger m_logger;
 	ActionSet* m_action_set;
-	BaseFunctionWrapper* m_default_func_wrapper;
 };
 
 
