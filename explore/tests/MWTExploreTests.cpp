@@ -227,6 +227,48 @@ namespace vw_explore_tests
 			delete expected_probs;
 		}
 
+		TEST_METHOD(SoftmaxStatefulScores)
+		{
+			m_mwt->Initialize_Softmax<int>(0.5f, Non_Uniform_Stateful_Default_Scorer, &m_policy_scorer_arg, m_num_actions);
+			
+			u32 action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+
+			size_t num_interactions = 0;
+			Interaction** interactions = nullptr;
+			m_mwt->Get_All_Interactions(num_interactions, interactions);
+
+			Assert::AreEqual(3, (int)num_interactions);
+			for (int i = 0; i < num_interactions; i++)
+			{
+				Assert::AreNotEqual(1.f / m_num_actions, interactions[i]->Get_Prob());
+				delete interactions[i];
+			}
+			delete[] interactions;
+		}
+
+		TEST_METHOD(SoftmaxStatelessScores)
+		{
+			m_mwt->Initialize_Softmax(0.5f, Non_Uniform_Stateless_Default_Scorer, m_num_actions);
+
+			u32 action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(1));
+			action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(2));
+			action = m_mwt->Choose_Action(*m_context, this->Get_Unique_Key(3));
+
+			size_t num_interactions = 0;
+			Interaction** interactions = nullptr;
+			m_mwt->Get_All_Interactions(num_interactions, interactions);
+
+			Assert::AreEqual(3, (int)num_interactions);
+			for (int i = 0; i < num_interactions; i++)
+			{
+				Assert::AreNotEqual(1.f / m_num_actions, interactions[i]->Get_Prob());
+				delete interactions[i];
+			}
+			delete[] interactions;
+		}
+
 		/*
 		TEST_METHOD(RewardReporter)
 		{
@@ -345,6 +387,24 @@ namespace vw_explore_tests
 			for (u32 i = 0; i < size; i++)
 			{
 				scores[i] = 1;
+			}
+		}
+
+		static void Non_Uniform_Stateful_Default_Scorer(int* policy_params, Context* applicationContext, float scores[], u32 size)
+		{
+			for (u32 i = 0; i < size; i++)
+			{
+				// Specify uniform weights using the app-supplied policy parameter (for testing, we
+				// could just as easily give every action a score of 1 or 0 or whatever) 
+				scores[i] = *policy_params + i;
+			}
+		}
+
+		static void Non_Uniform_Stateless_Default_Scorer(Context* applicationContext, float scores[], u32 size)
+		{
+			for (u32 i = 0; i < size; i++)
+			{
+				scores[i] = i;
 			}
 		}
 
